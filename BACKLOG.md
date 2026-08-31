@@ -338,7 +338,7 @@ Acceptance criteria:
 
 - Provide a Settings page reachable from desktop and mobile navigation, with endpoint, model ID, key handling, timeout, evidence budget, maximum output tokens, temperature, and JSON-mode controls.
 - Test the current form with an actual adapter request without implicitly saving it; make unavailable, invalid, and successful connection states explicit.
-- Offer the documented Public AI address/model as draft defaults, preserving the key and other parameters. Explain authentication, access, route/model, and quota failures separately.
+- Offer the documented direct Public AI and Hugging Face router address/model as draft defaults, preserving the key and other parameters. Explain which provider credential each route needs, and authentication, access, route/model, and quota failures separately.
 - Save valid settings in the workspace database and apply them to new requests immediately. Preserve them across service restarts.
 - Keep an existing key when editing other fields; allow explicit replacement, removal, and environment inheritance. Never return keys through the API, including validation errors.
 - Retain environment defaults and offer an explicit reset without affecting documents, versions, or scans. Document that saved keys are held server-side in the local database and its backups.

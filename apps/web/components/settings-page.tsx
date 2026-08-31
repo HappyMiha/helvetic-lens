@@ -268,6 +268,21 @@ function ApertusForm({
                   changed();
                   setDraft((current) => ({
                     ...current,
+                    base_url: "https://router.huggingface.co/v1",
+                    model: "swiss-ai/Apertus-v1.5-8B:publicai",
+                  }));
+                }}
+              >
+                Use Hugging Face
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  changed();
+                  setDraft((current) => ({
+                    ...current,
                     base_url: "https://api.publicai.co/v1",
                     model: "swiss-ai/apertus-v1.5-8b",
                   }));
@@ -281,12 +296,25 @@ function ApertusForm({
                 rel="noreferrer"
                 className="text-xs inline-flex items-center gap-1"
               >
-                Provider setup <ArrowUpRight size={12} />
+                Public AI setup <ArrowUpRight size={12} />
+              </a>
+              <a
+                href="https://huggingface.co/docs/inference-providers/providers/publicai"
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs inline-flex items-center gap-1"
+              >
+                Hugging Face setup <ArrowUpRight size={12} />
               </a>
             </div>
             <p className="field-help !mb-0">
               Fills the API address and model ID only. Your key and other
               parameters stay unchanged. Test before saving.
+            </p>
+            <p className="field-help !mb-0">
+              Hugging Face needs a Hugging Face token with Inference Providers
+              permission. Direct Public AI needs a Public AI API key. These
+              credentials are not interchangeable.
             </p>
           </div>
           <label>
@@ -301,7 +329,8 @@ function ApertusForm({
             />
             <span className="field-help">
               Include /v1 if your server uses it. RegWatch adds
-              /chat/completions. Leave empty to disconnect.
+              /chat/completions. A Hugging Face model page is not an API base
+              URL. Leave empty to disconnect.
             </span>
           </label>
           <label>
