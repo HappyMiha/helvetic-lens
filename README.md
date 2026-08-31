@@ -8,6 +8,8 @@ The MVP must be a functional product with a narrow scope. Sources are configured
 
 > **Project status:** This repository currently contains the MVP plan. The application and the features described below are not implemented yet.
 
+Development tasks, priorities, dependencies, and acceptance criteria are tracked in [BACKLOG.md](BACKLOG.md).
+
 ## The value proposition
 
 Teams should not have to reread every regulatory document to find out whether an update matters to them. RegWatch connects three questions in one screen:
