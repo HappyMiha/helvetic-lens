@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Check, FileUp, Globe2, Loader2, Search, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +16,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { api, errorText, refreshWorkspace, useResource } from "@/lib/api";
 import type { Health, Law, Preview, Source, Version } from "@/lib/types";
 import { ErrorNote } from "./common";
+
+function documentUrl(value: string) {
+  try {
+    const parsed = new URL(value.trim());
+    parsed.hash = "";
+    return parsed.toString();
+  } catch {
+    return "";
+  }
+}
 
 function PreviewBox({ preview }: { preview: Preview }) {
   return (
@@ -55,6 +66,9 @@ export function AddDocumentDialog({
   onCreated?: (record: Law | Source) => void;
 }) {
   const { data: health } = useResource<Health>(open ? "/health" : null);
+  const { data: trackedLaws } = useResource<Law[]>(
+    open && mode === "law" ? "/laws" : null,
+  );
   const [url, setUrl] = useState(""),
     [name, setName] = useState(""),
     [section, setSection] = useState("/");
@@ -63,6 +77,9 @@ export function AddDocumentDialog({
   const [preview, setPreview] = useState<Preview | null>(null),
     [busy, setBusy] = useState(""),
     [error, setError] = useState("");
+  const existingLaw = trackedLaws?.find(
+    (law) => documentUrl(law.url) === documentUrl(url),
+  );
   useEffect(() => {
     if (open) {
       setUrl(source?.url || initialUrl);
@@ -105,6 +122,7 @@ export function AddDocumentDialog({
   }
   async function save(event: React.FormEvent) {
     event.preventDefault();
+    if (existingLaw) return;
     if (!preview) {
       await test();
       return;
@@ -186,7 +204,7 @@ export function AddDocumentDialog({
               />
               <span className="field-help">
                 Use / for the whole host, or a path such as /en/documentation.
-                Discovery lists at most 50 direct links.
+                Discovery inspects at most 50 direct documents.
               </span>
             </label>
           )}
@@ -229,6 +247,19 @@ export function AddDocumentDialog({
             </label>
           )}
           <ErrorNote message={error} />
+          {existingLaw && (
+            <div className="info-note">
+              <p>This document is already tracked as {existingLaw.name}.</p>
+              <Button asChild variant="outline" size="sm">
+                <Link
+                  href={"/laws/" + existingLaw.id}
+                  onClick={() => onOpenChange(false)}
+                >
+                  Open existing document
+                </Link>
+              </Button>
+            </div>
+          )}
           {preview && <PreviewBox preview={preview} />}
           <div className="form-actions">
             <Button
@@ -244,7 +275,10 @@ export function AddDocumentDialog({
               )}
               {mode === "source" ? "Test connection" : "Preview document"}
             </Button>
-            <Button type="submit" disabled={!!busy || !preview}>
+            <Button
+              type="submit"
+              disabled={!!busy || !preview || !!existingLaw}
+            >
               {busy === "save" ? (
                 <Loader2 className="animate-spin" />
               ) : (
@@ -272,7 +306,7 @@ export function ImportDialog({
   open: boolean;
   onOpenChange: (value: boolean) => void;
   law: Law;
-  onImported: (version: Version) => void;
+  onImported: (version: Version, reused: boolean) => void;
 }) {
   const [mode, setMode] = useState<"file" | "text" | "url">("file");
   const [file, setFile] = useState<File | null>(null),
@@ -336,7 +370,7 @@ export function ImportDialog({
       );
       refreshWorkspace();
       onOpenChange(false);
-      onImported(result.version);
+      onImported(result.version, result.reused);
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -365,6 +399,7 @@ export function ImportDialog({
                 onClick={() => {
                   setMode(value);
                   setPreview(null);
+                  setConfirmed(false);
                   setError("");
                 }}
               >
@@ -389,6 +424,7 @@ export function ImportDialog({
                 onChange={(e) => {
                   setFile(e.target.files?.[0] || null);
                   setPreview(null);
+                  setConfirmed(false);
                 }}
               />
             </label>
@@ -402,6 +438,7 @@ export function ImportDialog({
                 onChange={(e) => {
                   setText(e.target.value);
                   setPreview(null);
+                  setConfirmed(false);
                 }}
                 maxLength={1200000}
                 placeholder="Paste the previous wording here…"
@@ -417,6 +454,7 @@ export function ImportDialog({
                 onChange={(e) => {
                   setUrl(e.target.value);
                   setPreview(null);
+                  setConfirmed(false);
                 }}
                 placeholder="https://…"
               />
@@ -426,7 +464,11 @@ export function ImportDialog({
             Stated version date{" "}
             <span className="muted font-normal">(optional)</span>
             <Input
-              type="date"
+              type="text"
+              aria-label="Stated version date"
+              placeholder="YYYY-MM-DD"
+              pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}"
+              maxLength={10}
               value={date}
               onChange={(e) => setDate(e.target.value)}
             />

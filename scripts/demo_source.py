@@ -14,7 +14,9 @@ def main():
     handler = partial(SimpleHTTPRequestHandler, directory=str(directory))
     server = ThreadingHTTPServer(("127.0.0.1", args.port), handler)
     print(f"Synthetic demo source: http://127.0.0.1:{args.port}/index.html")
-    print("Use ALLOW_PRIVATE_SOURCES=true only in your local test API to fetch this loopback source.")
+    print(
+        "Use ALLOW_PRIVATE_SOURCES=true only in your local test API to fetch this loopback source."
+    )
     try:
         server.serve_forever()
     except KeyboardInterrupt:

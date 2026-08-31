@@ -438,10 +438,10 @@ export function Workspace({
       {view === "sources" && (
         <>
           <div className="info-note mb-6">
-            Discovery checks one listing page and lists up to 50 direct links
-            within your selected website section. A document is fetched and
-            verified when you preview and add it. Discovery does not imply a
-            legal amendment.
+            Discovery reads one listing page and inspects up to 50 direct
+            documents within your selected website section. Review real
+            extraction previews and individual errors before choosing what to
+            monitor. Discovery does not imply a legal amendment.
           </div>
           {sources.loading && !sources.data ? (
             <Loading />
@@ -652,7 +652,13 @@ function DiscoveryDialog({
     }
   }
   const candidates = (discovery.candidates || []).filter((candidate) =>
-    (candidate.title + " " + candidate.url)
+    (
+      candidate.title +
+      " " +
+      candidate.url +
+      " " +
+      (candidate.preview?.excerpt || "")
+    )
       .toLowerCase()
       .includes(query.toLowerCase()),
   );
@@ -667,15 +673,15 @@ function DiscoveryDialog({
         <DialogHeader>
           <DialogTitle>Discover documents</DialogTitle>
           <DialogDescription>
-            {source.name} · {source.section}. Choose a link to preview the
-            actual document before adding it.
+            {source.name} · {source.section}. Inspect at most 50 linked
+            documents, then choose which ones to monitor.
           </DialogDescription>
         </DialogHeader>
         <div className="flex gap-3">
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Filter titles or URLs…"
+            placeholder="Filter titles, URLs, or preview text…"
             aria-label="Filter discovered links"
           />
           <Button onClick={discover} disabled={busy}>
@@ -683,35 +689,87 @@ function DiscoveryDialog({
             {discovery.candidates ? "Search again" : "Search website"}
           </Button>
         </div>
+        {busy && (
+          <p role="status" className="text-sm muted">
+            Fetching the listing and inspecting linked documents. Up to three
+            requests run at once; results return within the two-minute
+            inspection limit. No monitoring versions are created during
+            discovery.
+          </p>
+        )}
+        {source.provider === "firecrawl" && (
+          <p className="text-xs muted">
+            This source uses Firecrawl. A search can make one listing request
+            and up to 50 document requests against your configured account.
+          </p>
+        )}
         <ErrorNote message={error} />
         {discovery.candidates ? (
           <>
             <div className="text-xs muted">
-              {discovery.returned_count} links returned · limit{" "}
+              {discovery.inspected_count ?? 0} inspected ·{" "}
+              {discovery.verified_count ?? 0} verified ·{" "}
+              {discovery.error_count ?? 0} failed ·{" "}
+              {discovery.uninspected_count ?? discovery.returned_count} not
+              inspected. {discovery.returned_count} of{" "}
+              {discovery.candidate_count} links selected · limit{" "}
               {discovery.limit}
-              {discovery.limit_reached ? " reached" : ""}. {discovery.note}
+              {discovery.limit_reached ? " reached" : ""}.
+              {discovery.time_limit_reached
+                ? " Inspection time limit reached."
+                : ""}{" "}
+              {discovery.note}
             </div>
             <div className="candidate-list">
               {candidates.map((candidate) => {
-                const tracked = laws.some((law) => law.url === candidate.url);
+                const tracked = laws.find((law) => law.url === candidate.url);
                 return (
                   <div className="candidate" key={candidate.url}>
                     <div className="min-w-0">
                       <strong>{candidate.title}</strong>
                       <p>{candidate.url}</p>
                       <span className="text-xs muted">
-                        {candidate.format_hint} · extraction not yet verified
+                        {candidate.verified
+                          ? candidate.content_type + " · extraction verified"
+                          : candidate.format_hint +
+                            " hint · extraction not verified"}
                       </span>
+                      {candidate.error && (
+                        <p className="text-sm text-red-700">
+                          {candidate.error}
+                        </p>
+                      )}
+                      {candidate.preview && (
+                        <details className="mt-2 text-sm">
+                          <summary className="cursor-pointer">
+                            Extracted preview ·{" "}
+                            {candidate.preview.characters.toLocaleString()}{" "}
+                            characters
+                          </summary>
+                          <p className="whitespace-pre-wrap max-h-48 overflow-y-auto">
+                            {candidate.preview.excerpt}
+                          </p>
+                        </details>
+                      )}
                     </div>
-                    <Button
-                      variant={tracked ? "ghost" : "outline"}
-                      size="sm"
-                      disabled={tracked || busy}
-                      onClick={() => onSelect(candidate)}
-                    >
-                      {tracked ? <Check /> : <Plus />}
-                      {tracked ? "Tracked" : "Preview & add"}
-                    </Button>
+                    {tracked ? (
+                      <Button asChild variant="ghost" size="sm">
+                        <Link href={"/laws/" + tracked.id} onClick={onClose}>
+                          <Check />
+                          Tracked · Open
+                        </Link>
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={busy}
+                        onClick={() => onSelect(candidate)}
+                      >
+                        <Plus />
+                        {candidate.error ? "Retry preview" : "Preview & add"}
+                      </Button>
+                    )}
                   </div>
                 );
               })}
@@ -725,8 +783,9 @@ function DiscoveryDialog({
           </>
         ) : (
           <div className="py-8 text-center muted">
-            Start a bounded discovery request. No background crawl runs until
-            you choose Search website.
+            Start a bounded discovery request. Only direct links from this
+            listing are inspected; links found inside those documents are not
+            followed. Search and previews do not add laws automatically.
           </div>
         )}
       </DialogContent>

@@ -11,8 +11,11 @@ def test_connect_discover_preview_and_add_without_code_changes(harness):
     result = client.post("/api/sources/" + source["id"] + "/discover").json()
     assert len(result["candidates"]) == 1
     assert result["candidates"][0]["url"] == LAW_URL
-    assert result["candidates"][0]["verified"] is False
-    assert not any(url == LAW_URL for url, _ in fetcher.calls)
+    assert result["candidates"][0]["verified"] is True
+    assert result["inspected_count"] == result["verified_count"] == 1
+    assert "30 days" in result["candidates"][0]["preview"]["excerpt"]
+    assert any(url == LAW_URL for url, _ in fetcher.calls)
+    assert client.get("/api/laws").json() == []
     preview = client.post("/api/preview", json={"url": LAW_URL}).json()
     assert preview["passage_count"] == 3
     law = add_law(client, source_id=source["id"])
@@ -80,9 +83,17 @@ def test_duplicate_import_preview_pasted_text_and_historical_url(harness):
     law = add_law(client)
     original = law["current_version_id"]
     first = import_old(client, law["id"])
-    duplicate = import_old(client, law["id"])
+    duplicate = import_old(client, law["id"], declared_date="2025-02-01")
     assert duplicate["reused"] is True
     assert duplicate["version"]["id"] == first["version"]["id"]
+    assert duplicate["version"]["declared_date"] == "2025-01-01"
+    observations = client.get("/api/laws/" + law["id"]).json()["observations"]
+    assert any(
+        observation["version_id"] == first["version"]["id"]
+        and observation["declared_date"] == "2025-02-01"
+        and observation["origin"] == "uploaded"
+        for observation in observations
+    )
     text = (
         "Synthetic earlier wording.\n\nThe original retention period was five days in this fictional example."
     )
@@ -248,3 +259,86 @@ def test_first_fetch_without_a_live_pointer_creates_baseline(harness):
     result = run_scan(client, [law_id])
     assert result["items"][0]["result"] == "baseline_created"
     assert client.get("/api/laws/" + law_id).json()["current_version_id"]
+
+
+def test_source_edits_are_persisted_and_conflicts_leave_original_configuration(harness):
+    client, fetcher, _, _ = harness
+    source = client.post("/api/sources", json={"url": LIST_URL}).json()
+    edited = client.patch(
+        "/api/sources/" + source["id"],
+        json={"url": LIST_URL, "name": "Selected regulations", "section": "/laws"},
+    )
+    assert edited.status_code == 200
+    assert edited.json()["name"] == "Selected regulations"
+    assert edited.json()["section"] == "/laws"
+    other_url = LIST_URL + "?page=2"
+    fetcher.values[other_url] = fetcher.values[LIST_URL]
+    other = client.post("/api/sources", json={"url": other_url}).json()
+    conflict = client.patch("/api/sources/" + other["id"], json={"url": LIST_URL})
+    assert conflict.status_code == 409 and conflict.json()["code"] == "duplicate_source"
+    sources = {item["id"]: item for item in client.get("/api/sources").json()}
+    assert sources[other["id"]]["url"] == other_url
+    assert sources[source["id"]]["name"] == "Selected regulations"
+
+
+def test_discovery_inspects_at_most_fifty_pages_preserves_errors_and_never_crawls_deeper(harness):
+    client, fetcher, _, _ = harness
+    links = "".join(f'<a href="candidate-{number}.html">Linked document</a>' for number in range(55))
+    fetcher.values[LIST_URL] = (
+        "<main><h1>Synthetic regulator index</h1><p>Choose a document to inspect.</p>" + links + "</main>"
+    ).encode()
+    for number in range(55):
+        fetcher.values[LIST_URL + f"candidate-{number}.html"] = policy(
+            30, '<p><a href="deeper.html">This deeper link must not be followed.</a></p>'
+        )
+    fetcher.values[LIST_URL + "candidate-1.html"] = b"<main></main>"
+    fetcher.values[LIST_URL + "candidate-2.html"] = DomainError(
+        "This source is unavailable.", 422, "source_unavailable"
+    )
+    source = client.post("/api/sources", json={"url": LIST_URL, "section": "/laws"}).json()
+    result = client.post("/api/sources/" + source["id"] + "/discover").json()
+    assert result["candidate_count"] == 55 and result["inspected_count"] == 50
+    assert result["verified_count"] == 48 and result["error_count"] == 2
+    assert result["uninspected_count"] == 0 and result["limit_reached"]
+    assert result["candidates"][1]["error_code"] == "empty_extraction"
+    assert result["candidates"][2]["error_code"] == "source_unavailable"
+    assert all(
+        candidate["preview"]["content_type"] == "text/html"
+        for candidate in result["candidates"]
+        if candidate["verified"]
+    )
+    assert not any("deeper.html" in url or "candidate-50.html" in url for url, _ in fetcher.calls)
+    saved = client.get("/api/sources").json()[0]["discovery"]
+    assert saved["candidates"] == result["candidates"]
+    assert client.get("/api/laws").json() == []
+
+
+def test_discovery_time_budget_returns_partial_results_instead_of_hanging(harness, monkeypatch):
+    import asyncio
+
+    import regwatch.service
+
+    client, fetcher, _, _ = harness
+    fetcher.values[LIST_URL] = (
+        "<main><h1>Synthetic listing with slow documents</h1><p>Inspect these documents without adding any to the watchlist.</p>"
+        + "".join(f'<a href="slow-{number}.html">Document {number}</a>' for number in range(5))
+        + "</main>"
+    ).encode()
+    original_fetch = fetcher.fetch
+
+    async def delayed_fetch(url, provider="native", *, boundary=None):
+        if url != LIST_URL:
+            await asyncio.sleep(0.2)
+        return await original_fetch(url, provider, boundary=boundary)
+
+    monkeypatch.setattr(fetcher, "fetch", delayed_fetch)
+    monkeypatch.setattr(regwatch.service, "DISCOVERY_TIMEOUT_SECONDS", 0.03)
+    source = client.post("/api/sources", json={"url": LIST_URL, "section": "/laws"}).json()
+    response = client.post("/api/sources/" + source["id"] + "/discover")
+    assert response.status_code == 200
+    result = response.json()
+    assert result["time_limit_reached"] and result["verified_count"] == 0
+    assert result["inspected_count"] == result["error_count"] == 3
+    assert result["uninspected_count"] == 2
+    assert all(c["error_code"] == "discovery_time_limit" for c in result["candidates"])
+    assert client.get("/api/laws").json() == []

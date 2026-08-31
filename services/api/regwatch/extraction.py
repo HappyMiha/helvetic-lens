@@ -63,6 +63,14 @@ async def validate_public_url(value: str, allow_private: bool = False) -> str:
     return url
 
 
+def within_section(url: str, source_url: str, section: str) -> bool:
+    parsed, origin = urlsplit(canonical_url(url)), urlsplit(canonical_url(source_url))
+    boundary = "/" + section.strip("/")
+    return parsed.netloc == origin.netloc and (
+        boundary == "/" or parsed.path == boundary or parsed.path.startswith(boundary + "/")
+    )
+
+
 @dataclass
 class Fetched:
     url: str
@@ -102,9 +110,22 @@ class Fetcher:
     def __init__(self, settings: Settings):
         self.settings = settings
 
-    async def fetch(self, url: str, provider: str = "native") -> Fetched:
+    async def fetch(
+        self, url: str, provider: str = "native", *, boundary: tuple[str, str] | None = None
+    ) -> Fetched:
+        def check_boundary(target: str):
+            if boundary and not within_section(target, *boundary):
+                raise DomainError(
+                    "This document redirects outside the selected website section. Add its URL directly if you want to track it.",
+                    422,
+                    "outside_section",
+                )
+
+        check_boundary(url)
         if provider == "firecrawl":
-            return await self._firecrawl(url)
+            fetched = await self._firecrawl(url)
+            check_boundary(fetched.url)
+            return fetched
         if provider != "native":
             raise DomainError("Choose native extraction or Firecrawl.")
         try:
@@ -115,6 +136,7 @@ class Fetcher:
                 headers={"User-Agent": "ApertusRegWatch/0.1 (+document monitoring)"},
             ) as client:
                 for _ in range(6):
+                    check_boundary(url)
                     url = await validate_public_url(url, self.settings.allow_private_sources)
                     async with client.stream("GET", url) as response:
                         if response.status_code in {301, 302, 303, 307, 308}:
@@ -321,9 +343,9 @@ def discover_links(fetched: Fetched, section: str = "/", limit: int = 50) -> dic
     if fetched.body.startswith(b"%PDF"):
         raise DomainError("Choose an HTML listing page for discovery, or add this PDF directly as a law.")
     soup = BeautifulSoup(fetched.body, "html.parser")
-    root = soup.find("main") or soup.find("article") or soup.body or soup
-    origin = urlsplit(fetched.url)
-    boundary = "/" + section.strip("/")
+    for node in soup.select("nav, header, footer, aside, form, script, style, [role=navigation]"):
+        node.decompose()
+    root = soup.find("main") or soup.find(attrs={"role": "main"}) or soup.find("article") or soup.body or soup
     seen, candidates = set(), []
     for link in root.find_all("a", href=True):
         try:
@@ -331,9 +353,7 @@ def discover_links(fetched: Fetched, section: str = "/", limit: int = 50) -> dic
         except DomainError:
             continue
         parsed = urlsplit(url)
-        if parsed.netloc.lower() != origin.netloc.lower():
-            continue
-        if boundary != "/" and parsed.path != boundary and not parsed.path.startswith(boundary + "/"):
+        if not within_section(url, fetched.url, section):
             continue
         if url in seen or url == canonical_url(fetched.url):
             continue
@@ -347,10 +367,18 @@ def discover_links(fetched: Fetched, section: str = "/", limit: int = 50) -> dic
             {
                 "url": url,
                 "title": label[:300],
-                "format_hint": "PDF" if parsed.path.lower().endswith(".pdf") else "HTML",
+                "format_hint": (
+                    "PDF"
+                    if parsed.path.lower().endswith(".pdf")
+                    else "TXT"
+                    if parsed.path.lower().endswith((".txt", ".md"))
+                    else "HTML"
+                ),
                 "verified": False,
             }
         )
+    # Give direct document files a place in a bounded result, even on link-heavy portals.
+    candidates.sort(key=lambda candidate: candidate["format_hint"] == "HTML")
     return {
         "candidates": candidates[:limit],
         "candidate_count": len(candidates),

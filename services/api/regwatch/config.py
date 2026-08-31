@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     apertus_api_key: SecretStr = SecretStr("")
     apertus_timeout_seconds: int = Field(default=90, ge=5, le=300)
     apertus_context_chars: int = Field(default=24000, ge=1000, le=100000)
+    apertus_max_tokens: int = Field(default=1600, ge=128, le=8192)
+    apertus_temperature: float = Field(default=0.1, ge=0, le=2)
     apertus_json_mode: bool = False
     firecrawl_api_key: SecretStr = SecretStr("")
     firecrawl_api_url: str = "https://api.firecrawl.dev"

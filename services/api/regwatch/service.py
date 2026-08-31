@@ -2,6 +2,7 @@ import asyncio
 import hashlib
 import logging
 import threading
+import time
 from datetime import UTC, date, datetime
 from pathlib import PurePosixPath
 from urllib.parse import urlsplit
@@ -14,9 +15,23 @@ from .config import DomainError, Settings
 from .db import Database, utcnow
 from .diffing import compare_passages
 from .extraction import Extracted, Fetcher, canonical_url, discover_links, extract
-from .models import Analysis, Comparison, Law, Observation, Profile, Scan, ScanItem, Source, Version
+from .model_settings import ApertusSettingsInput, public_settings, resolve_key, resolved_settings
+from .models import (
+    Analysis,
+    ApertusConfiguration,
+    Comparison,
+    Law,
+    Observation,
+    Profile,
+    Scan,
+    ScanItem,
+    Source,
+    Version,
+)
 
 logger = logging.getLogger(__name__)
+DISCOVERY_TIMEOUT_SECONDS = 120
+DISCOVERY_CONCURRENCY = 3
 
 
 def as_dict(record, omit=()) -> dict:
@@ -52,6 +67,7 @@ def version_summary(version: Version) -> dict:
 class RegWatch:
     def __init__(self, settings: Settings, fetcher=None, model_client=None):
         self.settings = settings
+        self.environment_settings = settings.model_copy(deep=True)
         self.db = Database(settings)
         self.fetcher = fetcher or Fetcher(settings)
         self.model_client = model_client or ai.ModelClient(settings)
@@ -79,9 +95,67 @@ class RegWatch:
                     "Analysis was interrupted by a service restart. Retry it.",
                 )
             session.commit()
+            saved = session.get(ApertusConfiguration, "default")
+            if saved:
+                self.apply_model_settings(resolved_settings(self.environment_settings, saved))
 
-    async def preview(self, url: str, provider: str = "native"):
-        fetched = await self.fetcher.fetch(canonical_url(url), provider)
+    def apply_model_settings(self, settings: Settings):
+        self.settings = settings
+        if isinstance(self.model_client, ai.ModelClient):
+            self.model_client = ai.ModelClient(settings)
+
+    def apertus_configuration(self):
+        with self.db.session() as session:
+            saved = session.get(ApertusConfiguration, "default")
+            return public_settings(self.settings, saved)
+
+    def save_model_settings(self, data: ApertusSettingsInput):
+        with self.write_guard, self.db.session() as session:
+            saved = session.get(ApertusConfiguration, "default")
+            next_settings = resolved_settings(self.environment_settings, saved, data)
+            key_source, stored_key, _ = resolve_key(self.environment_settings, saved, data)
+            if saved is None:
+                saved = ApertusConfiguration(id="default")
+                session.add(saved)
+            saved.values = data.public_values()
+            saved.key_source, saved.api_key = key_source, stored_key
+            saved.updated_at = utcnow()
+            session.commit()
+            self.apply_model_settings(next_settings)
+            return public_settings(self.settings, saved)
+
+    def reset_model_settings(self):
+        with self.write_guard, self.db.session() as session:
+            saved = session.get(ApertusConfiguration, "default")
+            if saved:
+                session.delete(saved)
+                session.commit()
+            self.apply_model_settings(self.environment_settings.model_copy(deep=True))
+            return public_settings(self.settings, None)
+
+    async def test_model_settings(self, data: ApertusSettingsInput | None = None):
+        if data is not None:
+            with self.db.session() as session:
+                saved = session.get(ApertusConfiguration, "default")
+                settings = resolved_settings(self.environment_settings, saved, data)
+            model_client = ai.ModelClient(settings)
+        else:
+            settings, model_client = self.settings, self.model_client
+        start = time.monotonic()
+        reply = await model_client.complete(
+            "Return only a JSON object with a status field equal to ok.", "Test the RegWatch connection."
+        )
+        return {
+            "status": "connected",
+            "model": settings.apertus_model,
+            "base_url": settings.apertus_base_url,
+            "latency_ms": round((time.monotonic() - start) * 1000),
+            "received_reply": bool(reply.strip()),
+            "saved": data is None,
+        }
+
+    async def preview(self, url: str, provider: str = "native", *, boundary: tuple[str, str] | None = None):
+        fetched = await self.fetcher.fetch(canonical_url(url), provider, boundary=boundary)
         name = PurePosixPath(urlsplit(fetched.url).path).name or "document.html"
         extracted = await asyncio.to_thread(extract, fetched.body, fetched.content_type, name, provider)
         return {**extracted.preview(), "url": fetched.url, "metadata": fetched.metadata}
@@ -198,6 +272,8 @@ class RegWatch:
         provider = data.get("provider", values["provider"])
         preview = await self.preview(url, provider)
         with self.write_guard, self.db.session() as session:
+            if session.scalar(select(Source).where(Source.url == url, Source.id != source_id)):
+                raise DomainError("This website is already connected.", 409, "duplicate_source")
             source = get(session, Source, source_id)
             source.name = data.get("name") or source.name
             source.url, source.provider = url, provider
@@ -214,6 +290,52 @@ class RegWatch:
         try:
             fetched = await self.fetcher.fetch(url, provider)
             result = discover_links(fetched, section)
+            semaphore = asyncio.Semaphore(DISCOVERY_CONCURRENCY)
+            for candidate in result["candidates"]:
+                candidate.update(inspected=False, status="pending", preview=None, error=None)
+
+            async def inspect_candidate(candidate):
+                async with semaphore:
+                    candidate["inspected"] = True
+                    candidate["status"] = "inspecting"
+                    try:
+                        preview = await self.preview(
+                            candidate["url"], provider, boundary=(fetched.url, section)
+                        )
+                        candidate.update(
+                            title=preview["title"],
+                            content_type=preview["content_type"],
+                            preview=preview,
+                            verified=True,
+                            status="verified",
+                        )
+                    except DomainError as exc:
+                        candidate.update(status="failed", error=exc.message, error_code=exc.code)
+
+            timed_out = False
+            try:
+                await asyncio.wait_for(
+                    asyncio.gather(*(inspect_candidate(c) for c in result["candidates"])),
+                    timeout=DISCOVERY_TIMEOUT_SECONDS,
+                )
+            except TimeoutError:
+                timed_out = True
+            for candidate in result["candidates"]:
+                if candidate["status"] in {"pending", "inspecting"}:
+                    candidate.update(
+                        status="failed" if candidate["inspected"] else "not_inspected",
+                        error="The discovery time limit was reached. Preview this document separately to retry.",
+                        error_code="discovery_time_limit",
+                    )
+            result.update(
+                inspected_count=sum(c["inspected"] for c in result["candidates"]),
+                verified_count=sum(c["verified"] for c in result["candidates"]),
+                error_count=sum(c["status"] == "failed" for c in result["candidates"]),
+                uninspected_count=sum(not c["inspected"] for c in result["candidates"]),
+                time_limit_seconds=DISCOVERY_TIMEOUT_SECONDS,
+                time_limit_reached=timed_out,
+                note="One listing page and at most 50 direct documents in the selected section. Each result shows its real extraction outcome. No deeper links are followed; this is not exhaustive site coverage or evidence of an amendment.",
+            )
         except DomainError as exc:
             with self.write_guard, self.db.session() as session:
                 source = get(session, Source, source_id)
@@ -581,6 +703,7 @@ class RegWatch:
     async def analyse(self, comparison_id: str):
         lock = self.analysis_locks.setdefault(comparison_id, asyncio.Lock())
         async with lock:
+            settings, model_client = self.settings, self.model_client
             with self.db.session() as session:
                 comparison = get(session, Comparison, comparison_id)
                 if not comparison.diff["changed"]:
@@ -592,7 +715,7 @@ class RegWatch:
                     get(session, Version, comparison.old_version_id),
                     get(session, Version, comparison.new_version_id),
                 )
-                key = ai.cache_key(comparison, profile, self.settings)
+                key = ai.cache_key(comparison, profile, settings)
                 cached = session.scalar(
                     select(Analysis)
                     .where(Analysis.cache_key == key, Analysis.status == "succeeded")
@@ -601,21 +724,19 @@ class RegWatch:
                 )
                 if cached:
                     return {**as_dict(cached), "cached": True, "stale": False}
-                if not self.settings.model_configured:
+                if not settings.model_configured:
                     raise DomainError(
-                        "Apertus is not connected. Configure its endpoint on the server to enable analysis.",
+                        "Apertus is not connected. Open Settings to configure its endpoint and model.",
                         503,
                         "model_not_configured",
                     )
-                record = Analysis(
-                    comparison_id=comparison.id, cache_key=key, model=self.settings.apertus_model
-                )
+                record = Analysis(comparison_id=comparison.id, cache_key=key, model=settings.apertus_model)
                 session.add(record)
                 session.commit()
                 record_id = record.id
             try:
                 result, coverage = await ai.impact_analysis(
-                    self.model_client, self.settings, comparison, old, new, profile
+                    model_client, settings, comparison, old, new, profile
                 )
                 status, error = "succeeded", None
             except Exception as exc:
@@ -631,9 +752,14 @@ class RegWatch:
                 record = get(session, Analysis, record_id)
                 record.result, record.coverage, record.status, record.error = result, coverage, status, error
                 session.commit()
-                return {**as_dict(record), "cached": False, "stale": False}
+                return {
+                    **as_dict(record),
+                    "cached": False,
+                    "stale": key != ai.cache_key(comparison, get(session, Profile, "default"), self.settings),
+                }
 
     async def ask(self, comparison_id: str, question: str, history: list[dict]):
+        settings, model_client = self.settings, self.model_client
         with self.db.session() as session:
             comparison = get(session, Comparison, comparison_id)
             old, new = (
@@ -642,5 +768,5 @@ class RegWatch:
             )
             profile = get(session, Profile, "default")
         return await ai.answer_question(
-            self.model_client, self.settings, comparison, old, new, profile, question, history
+            model_client, settings, comparison, old, new, profile, question, history
         )

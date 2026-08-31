@@ -95,19 +95,26 @@ export function Shell({
             <Settings2 size={17} />
             Company profile
           </button>
+          <Link
+            className={"nav-item " + (pathname === "/settings" ? "active" : "")}
+            href="/settings"
+          >
+            <Settings2 size={17} />
+            Settings
+          </Link>
         </nav>
         <div className="sidebar-bottom">
-          <div className="model-card">
+          <Link className="model-card" href="/settings">
             <Sparkles size={17} />
             <div>
-              <strong>Apertus 1.5 · 8B</strong>
+              <strong>Apertus settings</strong>
               <span>
                 {health?.apertus.configured
                   ? "Endpoint configured"
                   : "Connect your model endpoint"}
               </span>
             </div>
-          </div>
+          </Link>
           <p className="text-xs muted leading-relaxed">
             Your sources. Your versions.
             <br />
@@ -147,7 +154,7 @@ export function Shell({
           <Link href="/">Overview</Link>
           <Link href="/sources">Sources</Link>
           <Link href="/activity">Activity</Link>
-          <button onClick={() => setProfileOpen(true)}>Profile</button>
+          <Link href="/settings">Settings</Link>
         </nav>
         <div className={"content " + (wide ? "content-wide" : "")}>
           {error && (
@@ -169,7 +176,7 @@ export function Shell({
   );
 }
 
-function ProfileDialog({
+export function ProfileDialog({
   open,
   onOpenChange,
   health,
@@ -294,10 +301,15 @@ function ProfileDialog({
             {health?.apertus.model || "swiss-ai/Apertus-v1.5-8B"}
           </p>
           <p className="text-xs muted">
-            Set APERTUS_BASE_URL and, if required, APERTUS_API_KEY in the server
-            environment. Keys are never stored in this browser. Restart the API
-            after changing configuration.
+            Open Settings to edit the endpoint, model, key, and request limits.
+            Saved settings apply immediately; existing keys are never returned
+            to this browser.
           </p>
+          <Button asChild variant="outline" size="sm" className="mr-2 mb-2">
+            <Link href="/settings" onClick={() => onOpenChange(false)}>
+              Apertus settings
+            </Link>
+          </Button>
           <Button variant="outline" size="sm" onClick={test} disabled={!!busy}>
             {busy === "test" ? (
               <Loader2 className="animate-spin" />

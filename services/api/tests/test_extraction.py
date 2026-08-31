@@ -75,6 +75,16 @@ def test_discovery_normalises_fragments_keeps_queries_and_obeys_limits():
     assert canonical_url("HTTPS://EXAMPLE.COM:443/a?q=1#part") == "https://example.com/a?q=1"
 
 
+def test_discovery_ignores_navigation_and_prioritises_direct_documents_before_the_limit():
+    body = '<body><nav><a href="/navigation">Navigation only</a></nav><div role="main">'
+    body += "".join(f'<a href="/section/{number}">Related page</a>' for number in range(55))
+    body += '<a href="/files/law.pdf">Actual circular PDF</a></div></body>'
+    result = discover_links(Fetched("https://example.com/list", body.encode(), "text/html"))
+    assert result["candidate_count"] == 56 and result["returned_count"] == 50
+    assert result["candidates"][0]["url"] == "https://example.com/files/law.pdf"
+    assert all("/navigation" not in candidate["url"] for candidate in result["candidates"])
+
+
 @pytest.mark.parametrize(
     "url", ["file:///etc/passwd", "ftp://example.com/file", "https://user:password@example.com", "not a url"]
 )
@@ -115,3 +125,24 @@ async def test_downloader_bounds_response_size_and_follows_redirects(monkeypatch
         await fetcher.fetch("http://test.invalid/redirect")
     assert error.value.code == "document_too_large"
     assert requested == ["http://test.invalid/redirect", "http://test.invalid/law"]
+
+
+@pytest.mark.asyncio
+async def test_discovery_download_stops_before_a_redirect_outside_the_selected_section(monkeypatch):
+    real_client = httpx.AsyncClient
+    requested = []
+
+    def respond(request):
+        requested.append(str(request.url))
+        return httpx.Response(302, headers={"location": "/outside/another-document"})
+
+    transport = httpx.MockTransport(respond)
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **kwargs: real_client(transport=transport, **kwargs))
+    fetcher = Fetcher(Settings(_env_file=None, allow_private_sources=True))
+    with pytest.raises(DomainError) as error:
+        await fetcher.fetch(
+            "http://test.invalid/laws/redirect",
+            boundary=("http://test.invalid/laws/", "/laws"),
+        )
+    assert error.value.code == "outside_section"
+    assert requested == ["http://test.invalid/laws/redirect"]

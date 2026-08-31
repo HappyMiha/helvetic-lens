@@ -7,7 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from regwatch.config import DomainError, Settings
-from regwatch.extraction import Fetched
+from regwatch.extraction import Fetched, within_section
 from regwatch.main import create_app
 
 LAW_URL = "https://regulator.example/laws/retention.html"
@@ -42,7 +42,9 @@ class FakeFetcher:
     )
     calls: list = field(default_factory=list)
 
-    async def fetch(self, url, provider="native"):
+    async def fetch(self, url, provider="native", *, boundary=None):
+        if boundary and not within_section(url, *boundary):
+            raise DomainError("Outside the selected section.", 422, "outside_section")
         self.calls.append((url, provider))
         value = self.values.get(url, DomainError("Source is unavailable.", 422, "source_unavailable"))
         if isinstance(value, Exception):

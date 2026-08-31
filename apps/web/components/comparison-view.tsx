@@ -308,11 +308,19 @@ export function ComparisonView({ id }: { id: string }) {
                       <Sparkles size={25} />
                       <h3>Connect Apertus to explain this change.</h3>
                       <p>
-                        The source text and visual diff already work. Set the
-                        model endpoint in the server environment to generate an
+                        The source text and visual diff already work. Open
+                        Settings to connect your model endpoint and generate an
                         actual assessment.
                       </p>
                       <span>No AI response has been generated.</span>
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        className="mt-3"
+                      >
+                        <Link href="/settings">Configure Apertus</Link>
+                      </Button>
                     </div>
                   )}
                   {analysis?.stale && (

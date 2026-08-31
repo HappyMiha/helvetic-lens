@@ -5,6 +5,20 @@ export type Health = {
   firecrawl: { configured: boolean };
   private_sources_enabled: boolean;
 };
+export type ApertusSettings = {
+  base_url: string;
+  model: string;
+  timeout_seconds: number;
+  context_chars: number;
+  max_tokens: number;
+  temperature: number;
+  json_mode: boolean;
+  configured: boolean;
+  api_key_configured: boolean;
+  key_source: "environment" | "saved" | "none";
+  source: "environment" | "workspace";
+  updated_at: string | null;
+};
 export type Preview = {
   title: string;
   content_type: string;
@@ -20,11 +34,22 @@ export type Candidate = {
   format_hint: string;
   verified: boolean;
   tracked?: boolean;
+  inspected?: boolean;
+  content_type?: string;
+  preview?: Preview | null;
+  error?: string | null;
+  status?: string;
 };
 export type Discovery = {
   candidates: Candidate[];
   candidate_count: number;
   returned_count: number;
+  inspected_count: number;
+  verified_count: number;
+  error_count: number;
+  uninspected_count: number;
+  time_limit_reached: boolean;
+  time_limit_seconds: number;
   limit: number;
   limit_reached: boolean;
   note: string;
@@ -120,6 +145,8 @@ export type LawDetail = Law & {
     version_id: string;
     origin: string;
     created_at: string;
+    declared_date: string | null;
+    source_url: string | null;
     synthetic: boolean;
     filename: string;
   }[];

@@ -1,16 +1,17 @@
 import asyncio
 import re
-import time
 from contextlib import asynccontextmanager
 from typing import Annotated, Literal
 
 from fastapi import BackgroundTasks, FastAPI, File, Form, UploadFile
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select, text
 
 from .config import DomainError, Settings
+from .model_settings import ApertusSettingsInput
 from .models import Law, Profile, Scan, Source, Version
 from .service import RegWatch, as_dict, get, version_summary
 
@@ -87,6 +88,20 @@ def create_app(settings: Settings | None = None, fetcher=None, model_client=None
     async def domain_error(_request, error: DomainError):
         return JSONResponse(status_code=error.status, content={"detail": error.message, "code": error.code})
 
+    @app.exception_handler(RequestValidationError)
+    async def invalid_request(_request, error: RequestValidationError):
+        # Validation errors must not echo credential inputs back to the browser.
+        return JSONResponse(
+            status_code=422,
+            content={
+                "detail": [
+                    {"loc": list(item["loc"]), "msg": item["msg"], "type": item["type"]}
+                    for item in error.errors()
+                ],
+                "code": "invalid_input",
+            },
+        )
+
     @app.middleware("http")
     async def bounded_requests(request, call_next):
         length = request.headers.get("content-length", "")
@@ -106,7 +121,10 @@ def create_app(settings: Settings | None = None, fetcher=None, model_client=None
         return {
             "status": "ok",
             "database": service.db.engine.dialect.name,
-            "apertus": {"configured": settings.model_configured, "model": settings.apertus_model},
+            "apertus": {
+                "configured": service.settings.model_configured,
+                "model": service.settings.apertus_model,
+            },
             "firecrawl": {"configured": bool(settings.firecrawl_api_key.get_secret_value())},
             "limits": {
                 "document_bytes": settings.max_document_bytes,
@@ -271,16 +289,23 @@ def create_app(settings: Settings | None = None, fetcher=None, model_client=None
 
     @app.post("/api/model/test")
     async def test_model():
-        start = time.monotonic()
-        reply = await service.model_client.complete(
-            "Return only a JSON object with a status field equal to ok.", "Test the RegWatch connection."
-        )
-        return {
-            "status": "connected",
-            "model": settings.apertus_model,
-            "latency_ms": round((time.monotonic() - start) * 1000),
-            "received_reply": bool(reply.strip()),
-        }
+        return await service.test_model_settings()
+
+    @app.get("/api/settings/apertus")
+    def model_settings():
+        return service.apertus_configuration()
+
+    @app.patch("/api/settings/apertus")
+    def save_model_settings(data: ApertusSettingsInput):
+        return service.save_model_settings(data)
+
+    @app.post("/api/settings/apertus/test")
+    async def test_model_draft(data: ApertusSettingsInput):
+        return await service.test_model_settings(data)
+
+    @app.post("/api/settings/apertus/reset")
+    def reset_model_settings():
+        return service.reset_model_settings()
 
     return app
 

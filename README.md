@@ -6,7 +6,7 @@ Apertus RegWatch lets users connect regulatory websites, add specific laws or do
 
 The MVP must be a functional product with a narrow scope. Sources are configured through the interface, data persists between sessions, and the demonstration uses the same fetching, comparison, and analysis pipeline as everyday use.
 
-> **Project status:** A first working implementation is available: source connections, direct URLs, imports, immutable history, live scans, saved comparisons, and visual evidence. The Apertus adapter and cited-answer interface are implemented, but a real inference endpoint has not yet been supplied or validated. This is not the fully accepted model-enabled MVP. See [verification notes](docs/VERIFICATION.md).
+> **Project status:** A first working implementation is available: source connections, direct URLs, imports, immutable history, live scans, saved comparisons, visual evidence, and persisted Apertus settings. The model adapter and cited-answer interface are implemented, but successful real inference has not yet been validated. This is not the fully accepted model-enabled MVP. See [verification notes](docs/VERIFICATION.md).
 
 Development tasks, priorities, dependencies, and acceptance criteria are tracked in [BACKLOG.md](BACKLOG.md).
 
@@ -22,7 +22,7 @@ docker compose up --build -d
 
 Open [RegWatch](http://127.0.0.1:3000) and the [API reference](http://127.0.0.1:8000/docs). PostgreSQL and saved artifacts use persistent volumes. Migrations run on API startup. Default ports are 3000 (web), 8000 (API), and 54329 (database); stop development processes using those ports before starting Compose.
 
-No model or paid extraction service is required for source monitoring and visual comparisons. To configure Apertus, copy [.env.example](.env.example) to .env and supply your endpoint. Never commit .env or credentials.
+No model or paid extraction service is required for source monitoring and visual comparisons. Open **Settings → Apertus** to configure your inference endpoint in the app. [.env.example](.env.example) also provides optional server defaults. Never commit .env, credentials, or runtime data.
 
 For development, install Node.js 22+ (tested with 24), Python 3.11+, and uv. Create .env from the example and set DATABASE_URL to the following before starting:
 
@@ -51,17 +51,26 @@ npm run test:api
 
 ## Connect a real Apertus deployment
 
-The intended model ID is [swiss-ai/Apertus-v1.5-8B](https://huggingface.co/swiss-ai/Apertus-v1.5-8B). Model weights are not bundled and no alternate model is silently substituted.
+The intended model is [Apertus v1.5 8B](https://huggingface.co/swiss-ai/Apertus-v1.5-8B). The served ID depends on your provider. Model weights are not bundled and no alternate model is silently substituted.
 
-Set APERTUS_BASE_URL to your OpenAI-compatible inference API base, including /v1, APERTUS_MODEL to the actual served ID, and APERTUS_API_KEY if required. The adapter calls /chat/completions. The default timeout is 90 seconds; APERTUS_CONTEXT_CHARS bounds selected evidence, not the model's token limit. Confirm the endpoint's supported context budget. APERTUS_JSON_MODE is optional and off by default.
+Open [Settings](http://127.0.0.1:3000/settings) from the sidebar or mobile navigation:
 
-Restart the development API after changes, or recreate the Compose API:
+1. Enter the OpenAI-compatible **API base URL**, including /v1 if required, and the exact **Model ID** served there. Do not append /chat/completions; RegWatch adds it.
+2. Keep the existing key, replace it, use no key for an unauthenticated local server, or inherit the server environment key. A stored key is never returned to the browser, including in validation errors.
+3. Adjust the request timeout, evidence budget, maximum answer length, temperature, and optional JSON mode. Defaults are 90 seconds, 24,000 evidence characters, 1,600 answer tokens, temperature 0.1, and JSON mode off.
+4. Choose **Test connection** to make an actual request with the form's current values, without saving. Choose **Save settings** to apply them immediately to new requests.
 
-~~~sh
-docker compose up -d --force-recreate api
-~~~
+For **Public AI**, choose **Use Public AI defaults** to fill `https://api.publicai.co/v1` and `swiss-ai/apertus-v1.5-8b`. This changes only those two draft fields, not the key or other parameters, and does not save automatically. Use an API key created in the provider's developer portal, rather than a chat login credential. RegWatch includes the required User-Agent header. These connection values follow the [Public AI quick start](https://platform.publicai.co/docs).
 
-Open **Company profile → Test real connection**. Configuration alone does not prove connectivity. Impact analysis and Ask Apertus need actual responses with working evidence links for acceptance. When disconnected or unavailable, the UI says so and keeps the diff usable.
+Connection errors distinguish a rejected key (401), denied model access (403), an incorrect route/model (404), rate limit or quota (429), an unreachable server, and a timeout. Provider response bodies and credentials are not echoed to the browser.
+
+The evidence budget measures selected source characters, not the endpoint's token window. Confirm your server's input/output limits and JSON-mode support. Connection success is only a connectivity check; a real cited analysis must still pass acceptance. For Docker, the endpoint must be reachable from the API container; its localhost is not the host machine.
+
+Settings persist in PostgreSQL (or the explicitly selected SQLite trial database) and take precedence over APERTUS_* environment defaults. Keys saved through the app are stored server-side in this local workspace database, so protect its volumes and backups. Nothing is written to Git or browser storage. **Use environment defaults** removes the saved overrides, including a saved key, without changing document history.
+
+Changing settings through the interface needs no restart. Changes made directly to .env require an API restart, and saved overrides must be removed if those defaults should take effect. Changes to the endpoint, model, evidence budget, or generation parameters mark previous analyses as stale; in-flight requests retain their original settings.
+
+Edit **Company profile** from Settings to supply business context. Impact analysis and Ask Apertus need actual model responses with working evidence links for acceptance. When disconnected or unavailable, the UI says so and keeps the diff usable.
 
 ## The value proposition
 
@@ -95,6 +104,7 @@ Connecting a website and monitoring a law are separate actions: a **source** is 
 | **Version detection and history** | Extract and normalize text, compare a content hash, and preserve version history. Choose an earlier snapshot for comparison without replacing the latest successfully observed version. |
 | **Visual diff** | Choose old and new versions and see added, removed, and modified passages. Show side-by-side text, inline word highlights, a list of changes, and links to the saved evidence and original source. |
 | **Apertus impact analysis** | Generate a concise summary, why it matters, affected business areas, an indicative high/medium/low impact, and 1-3 suggested actions. Keep supporting passages visible. |
+| **Settings** | Configure the Apertus endpoint, model, key handling, timeout, evidence budget, answer length, temperature, and JSON mode. Test unsaved values, save without restarting, restore environment defaults, and edit the company profile. |
 | **Ask Apertus with citations** | Ask questions about the selected document or comparison. Cite the version and an identifiable passage, with the source URL or imported file provenance and a PDF page where available. Say when the supplied text does not support an answer. |
 | **Optional: impact matrix** | Show changes against business areas such as HR, IT, Legal, and Operations, with an indicative priority and a short reason. Add only if the core demo is complete. |
 
@@ -102,9 +112,9 @@ Impact labels and suggested actions are AI-generated aids for review, not author
 
 ## Connecting real sources
 
-The first implementation supports public HTML pages, text-based PDFs, and plain text. Discovery fetches one listing page and returns at most 50 distinct direct links within the configured host/path boundary. It does not fetch all candidates automatically. Direct document URLs bypass discovery.
+The first implementation supports public HTML pages, text-based PDFs, and plain text. Discovery fetches one listing page and inspects at most 50 distinct direct links within the configured host/path boundary. Direct PDF/TXT links are prioritised before applying that limit, and common navigation is excluded. Direct document URLs bypass discovery.
 
-A result has a link title, URL, and unverified format hint. **Preview & add** fetches that candidate, confirms its format, and shows extracted text before saving. Filtering covers only the returned links. This is a narrower first iteration of RW-008; automatic candidate inspection and per-candidate errors remain on the backlog. A new link is not evidence of a legal amendment.
+Results show extracted titles, actual content types and previews, or an individual error. Filtering covers titles, URLs, and the stored preview text of returned candidates; it is not full-site search. The interface shows inspected/verified/failed counts and any limits reached. Up to three candidates are processed at once, with a 120-second total inspection budget. Unfinished candidates remain visible and can be previewed separately. **Preview & add** confirms a selected document before creating its first live snapshot. A new link is not evidence of a legal amendment.
 
 See [source compatibility notes](docs/SOURCES.md) for real examples. Native extraction does not render JavaScript. FINMA's circulars page returns static text, but its dynamic list is not fully available. Fedlex landing pages may require a direct PDF URL. A successful HTML response does not establish complete legal coverage.
 
@@ -160,7 +170,7 @@ For example, a clearly synthetic demo could replace **"within 30 days"** with **
 | Diff engine | **Python `difflib`** | Compare normalized passages and produce word highlights for the visual comparison. |
 | Optional retrieval | **pgvector** | Add passage retrieval only if the corpus outgrows direct context selection. Not needed for the first demo. |
 
-Confirm access to the proposed Apertus model endpoint before implementation. Keep its endpoint and model identifier configurable; hosting a model server is a separate setup choice, not another product feature.
+The model adapter and settings interface are implemented; access to a real served Apertus endpoint is still required for model acceptance. Hosting a model server is a separate setup choice, not another product feature.
 
 ## Keep the implementation small
 
@@ -192,11 +202,12 @@ Selected baseline + current snapshot
 
 ## Build order
 
-- [ ] Implement persistent source and law management, including direct document URLs.
-- [ ] Add real HTML/PDF fetching, extraction previews, and bounded document discovery.
-- [ ] Add previous-version import, immutable snapshots, and explicit baseline selection.
-- [ ] Implement live scanning with real progress, version detection, and repeatable historical comparisons.
-- [ ] Render the version history and visual diff with passage navigation and word highlights.
+- [x] Implement persistent source and law management, including direct document URLs.
+- [x] Add real HTML/PDF fetching, extraction previews, and bounded document discovery.
+- [x] Add previous-version import, immutable snapshots, and explicit baseline selection.
+- [x] Implement live scanning with real progress, version detection, and repeatable historical comparisons.
+- [x] Render the version history and visual diff with passage navigation and word highlights.
+- [x] Add persisted Apertus settings, a real connection check, and company context in the interface.
 - [ ] Connect Apertus and display an impact summary with suggested actions and evidence.
 - [ ] Add Ask Apertus with working citations.
 - [ ] Verify the complete workflow with real supported sources and an imported previous version, then rehearse the demo through that same workflow.

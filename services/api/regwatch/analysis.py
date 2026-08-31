@@ -46,19 +46,19 @@ class ModelClient:
     async def complete(self, system: str, user: str) -> str:
         if not self.settings.model_configured:
             raise DomainError(
-                "Apertus is not connected. Set APERTUS_BASE_URL and APERTUS_MODEL on the server; source monitoring and diffs remain available.",
+                "Apertus is not connected. Open Settings to add the API base URL and model ID; source monitoring and diffs remain available.",
                 503,
                 "model_not_configured",
             )
-        headers = {}
+        headers = {"User-Agent": "ApertusRegWatch/0.1"}
         key = self.settings.apertus_api_key.get_secret_value()
         if key:
             headers["Authorization"] = f"Bearer {key}"
         payload = {
             "model": self.settings.apertus_model,
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
-            "temperature": 0.1,
-            "max_tokens": 1600,
+            "temperature": self.settings.apertus_temperature,
+            "max_tokens": self.settings.apertus_max_tokens,
         }
         if self.settings.apertus_json_mode:
             payload["response_format"] = {"type": "json_object"}
@@ -71,9 +71,30 @@ class ModelClient:
                     headers=headers,
                     json=payload,
                 )
+            upstream_errors = {
+                401: (
+                    "Apertus rejected the API key (HTTP 401). Replace it with a valid key for this provider in Settings.",
+                    "model_authentication_failed",
+                ),
+                403: (
+                    "Apertus denied access (HTTP 403). Check that your provider account and key can use this model.",
+                    "model_access_denied",
+                ),
+                404: (
+                    "The Apertus API endpoint or model was not found (HTTP 404). Check the API base URL, including /v1 if required, and the provider's exact model ID.",
+                    "model_not_found",
+                ),
+                429: (
+                    "Apertus reached a rate limit or quota (HTTP 429). Retry later or check usage with your provider.",
+                    "model_rate_limited",
+                ),
+            }
+            if response.status_code in upstream_errors:
+                message, code = upstream_errors[response.status_code]
+                raise DomainError(message, 503 if response.status_code == 429 else 502, code)
             if response.status_code >= 400:
                 raise DomainError(
-                    f"Apertus returned HTTP {response.status_code}. Check the endpoint, model ID, and server credentials.",
+                    f"Apertus returned HTTP {response.status_code}. Check the endpoint, model ID, request parameters, and server credentials.",
                     502,
                     "model_error",
                 )
@@ -84,6 +105,12 @@ class ModelClient:
         except httpx.TimeoutException as exc:
             raise DomainError(
                 "Apertus timed out. The saved comparison is still available.", 504, "model_timeout"
+            ) from exc
+        except httpx.ConnectError as exc:
+            raise DomainError(
+                "Cannot reach Apertus. Check that the model server is running and that its API address is reachable from the RegWatch API.",
+                503,
+                "model_unreachable",
             ) from exc
         except (httpx.HTTPError, KeyError, IndexError, ValueError, TypeError) as exc:
             raise DomainError(
@@ -101,6 +128,9 @@ def cache_key(comparison: Comparison, profile: Profile, settings: Settings) -> s
         "endpoint": settings.apertus_base_url,
         "prompt": PROMPT_VERSION,
         "context_chars": settings.apertus_context_chars,
+        "max_tokens": settings.apertus_max_tokens,
+        "temperature": settings.apertus_temperature,
+        "json_mode": settings.apertus_json_mode,
     }
     return hashlib.sha256(json.dumps(context, sort_keys=True).encode()).hexdigest()
 

@@ -127,6 +127,16 @@ class Profile(Base):
     revision: Mapped[int] = mapped_column(Integer, default=1)
 
 
+class ApertusConfiguration(Base):
+    __tablename__ = "apertus_configuration"
+    id: Mapped[str] = mapped_column(String(30), primary_key=True, default="default")
+    values: Mapped[dict] = mapped_column(JSON, default=dict)
+    # A workspace credential stays on the server and is never serialized to clients.
+    api_key: Mapped[str | None] = mapped_column(Text)
+    key_source: Mapped[str] = mapped_column(String(30), default="environment")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class Analysis(Base):
     __tablename__ = "analyses"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)

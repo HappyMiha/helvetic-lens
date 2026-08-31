@@ -464,8 +464,10 @@ export function LawDetail({ id }: { id: string }) {
                 </summary>
                 <p className="field-help">
                   An unchanged check or duplicate import reuses the saved
-                  content and adds an observation. Importing does not prove
-                  official historical status.
+                  content and adds an observation. Each import retains its
+                  supplied date here; it does not rewrite the snapshot's first
+                  provenance. Importing does not prove official historical
+                  status.
                 </p>
                 <div className="table-scroll">
                   <table className="watch-table">
@@ -473,6 +475,7 @@ export function LawDetail({ id }: { id: string }) {
                       <tr>
                         <th>WHEN</th>
                         <th>ORIGIN</th>
+                        <th>STATED DATE</th>
                         <th>VERSION</th>
                         <th>FILE</th>
                       </tr>
@@ -486,6 +489,11 @@ export function LawDetail({ id }: { id: string }) {
                             {observation.synthetic && " · synthetic"}
                           </td>
                           <td>
+                            {observation.declared_date
+                              ? observation.declared_date + " · user supplied"
+                              : "Unknown"}
+                          </td>
+                          <td>
                             <Link
                               className="text-primary"
                               href={"/evidence/" + observation.version_id}
@@ -493,7 +501,21 @@ export function LawDetail({ id }: { id: string }) {
                               {observation.version_id.slice(0, 8)}
                             </Link>
                           </td>
-                          <td>{observation.filename}</td>
+                          <td>
+                            {observation.source_url ? (
+                              <a
+                                href={observation.source_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-link"
+                              >
+                                {observation.filename}
+                                <ArrowUpRight size={11} />
+                              </a>
+                            ) : (
+                              observation.filename
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -537,11 +559,13 @@ export function LawDetail({ id }: { id: string }) {
               open={importOpen}
               onOpenChange={setImportOpen}
               law={law}
-              onImported={(version) => {
+              onImported={(version, reused) => {
                 setBaseline(version.id);
                 setOldId(version.id);
                 setNote(
-                  "Previous version saved and selected. Run Fetch & compare with history to compare it with the live source.",
+                  reused
+                    ? "Existing content reused and selected. The new import date and provenance are recorded under Fetch & import observations."
+                    : "Previous version saved and selected. Run Fetch & compare with history to compare it with the live source.",
                 );
               }}
             />

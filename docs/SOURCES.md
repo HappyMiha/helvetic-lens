@@ -19,7 +19,7 @@ Do not attach an annual report or synthetic policy to an unrelated real act as i
 ## Boundaries
 
 - Native HTML selects main/article content when possible and removes common navigation, scripts, forms, headers, and footers. It does not execute JavaScript. Unusual structure and template fragments can require a better direct URL.
-- Discovery stays within the selected host and path, without recursive crawling or off-host expansion. Candidate extraction happens when selected for preview.
+- Discovery inspects at most 50 direct candidates within the selected host/path, prioritising PDF/TXT links and excluding common navigation. It follows no links inside those candidates. Native redirects outside the boundary are rejected; returned rendered-provider URLs are also checked. Previews and individual errors are persisted, with a 120-second inspection budget and explicit coverage counts.
 - PyMuPDF extracts text and page numbers. Image-only and password-protected PDFs are rejected; no OCR is included.
 - Login-gated sources are unsupported.
 - Firecrawl is an explicit optional provider, requesting a fresh scrape with maxAge=0. No silent fallback or bundled credit is provided, and no real Firecrawl result has been validated for this build.

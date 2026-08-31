@@ -4,7 +4,7 @@
 
 This backlog implements the product described in [README.md](README.md): user-configured websites, tracked laws, imported previous versions, real scans, visual comparisons, and Apertus analysis with verifiable citations.
 
-**Status:** The first implementation is undergoing verification. Ingestion, snapshots, imports, comparisons, scans, and the main interface are implemented. The Apertus adapter needs a real endpoint for acceptance. See [verification evidence](docs/VERIFICATION.md); implemented code does not automatically complete an acceptance item. Stable `RW-xxx` identifiers remain the task reference.
+**Status:** The source-to-diff workflow is implemented and verified through the browser, real HTTP requests, PostgreSQL, and service restarts. A persisted Settings page now configures Apertus without restarting. The adapter and cited-answer interface still need a real Apertus endpoint for model acceptance. See [verification evidence](docs/VERIFICATION.md). Stable `RW-xxx` identifiers remain the task reference.
 
 ## Scope and priorities
 
@@ -12,7 +12,7 @@ This backlog implements the product described in [README.md](README.md): user-co
 - **P1 — required to complete the MVP.** Complete website discovery, the dashboard, cited questions, verification, and the repeatable demonstration. P1 items are not optional.
 - **P2 — optional after the MVP is accepted.** Impact matrix and retrieval with pgvector, only when justified.
 
-There are **22 required items** and **2 optional items**. Follow dependencies and the release checkpoints below; priority alone is not a complete execution order. No calendar estimates are assumed until team capacity, source compatibility, and model access are known.
+There are **23 required items** and **2 optional items**, including the subsequently requested Settings page (RW-025). Follow dependencies and the release checkpoints below; priority alone is not a complete execution order. No calendar estimates are assumed until team capacity, source compatibility, and model access are known.
 
 Keep the agreed stack: **Next.js, Tailwind CSS/shadcn/ui, FastAPI, PostgreSQL, BeautifulSoup, PyMuPDF, and `difflib`**. **Apertus v1.5 8B** is the proposed model target; confirm the actual model identifier and endpoint in RW-017. **pgvector is optional.**
 
@@ -24,7 +24,7 @@ Keep the agreed stack: **Next.js, Tailwind CSS/shadcn/ui, FastAPI, PostgreSQL, B
 | M1 — Real sources and laws | RW-004–RW-008 | A user connects a supported site, discovers documents, or adds a law directly; real extracted content is saved. |
 | M2 — Historical comparisons | RW-009–RW-013 | A user imports an earlier version, selects two versions, and inspects exact changes and saved evidence. |
 | M3 — Live monitoring | RW-014–RW-016 | Scans fetch current content, report actual progress, preserve history, and show useful results on the dashboard. |
-| M4 — Apertus explanations | RW-017–RW-019 | Impact analysis and questions work against real saved passages with working citations. |
+| M4 — Apertus explanations | RW-017–RW-019, RW-025 | Model settings persist; impact analysis and questions work against real saved passages with working citations. |
 | M5 — Accepted MVP | RW-020–RW-022 | Regression checks, product acceptance, and a repeatable live demonstration pass. |
 
 Start RW-017 as soon as RW-002 and RW-003 are available so model access is checked early. Source fetching, imports, and visual comparisons must remain developable while model access is being resolved. RW-011 can start once snapshots exist; it need not wait for website discovery. Implement regression checks alongside the relevant feature work, then use RW-020 as the completion gate.
@@ -38,25 +38,26 @@ Start RW-017 as soon as RW-002 and RW-003 are available so model access is check
 | [RW-003](#rw-003) | P0 | DONE | RW-002 | Persistent domain model and migrations |
 | [RW-004](#rw-004) | P0 | DONE | RW-001, RW-002 | Real HTML/PDF fetching and extraction |
 | [RW-005](#rw-005) | P0 | DONE | RW-003, RW-004 | Immutable snapshots and saved evidence |
-| [RW-006](#rw-006) | P0 | VERIFYING | RW-003, RW-004 | Website connection management |
-| [RW-007](#rw-007) | P0 | VERIFYING | RW-005, RW-006 | Tracked laws and direct document URLs |
-| [RW-008](#rw-008) | P1 | PARTIAL | RW-004, RW-006, RW-007 | Bounded discovery and document search |
-| [RW-009](#rw-009) | P0 | VERIFYING | RW-005, RW-007 | Previous-version import |
-| [RW-010](#rw-010) | P0 | VERIFYING | RW-007, RW-009 | Version history and baseline selection |
+| [RW-006](#rw-006) | P0 | DONE | RW-003, RW-004 | Website connection management |
+| [RW-007](#rw-007) | P0 | DONE | RW-005, RW-006 | Tracked laws and direct document URLs |
+| [RW-008](#rw-008) | P1 | DONE | RW-004, RW-006, RW-007 | Bounded discovery and document search |
+| [RW-009](#rw-009) | P0 | DONE | RW-005, RW-007 | Previous-version import |
+| [RW-010](#rw-010) | P0 | DONE | RW-007, RW-009 | Version history and baseline selection |
 | [RW-011](#rw-011) | P0 | DONE | RW-005 | Shared passage and word comparison engine |
-| [RW-012](#rw-012) | P0 | VERIFYING | RW-010, RW-011 | Visual diff with change navigation |
-| [RW-013](#rw-013) | P0 | VERIFYING | RW-005, RW-012 | Version-specific evidence viewer |
+| [RW-012](#rw-012) | P0 | DONE | RW-010, RW-011 | Visual diff with change navigation |
+| [RW-013](#rw-013) | P0 | DONE | RW-005, RW-012 | Version-specific evidence viewer |
 | [RW-014](#rw-014) | P0 | DONE | RW-007, RW-010, RW-011 | Live scans and historical comparisons |
 | [RW-015](#rw-015) | P0 | DONE | RW-014 | Actual progress, partial failures, and recovery |
-| [RW-016](#rw-016) | P1 | VERIFYING | RW-006, RW-008, RW-012, RW-015 | Dashboard and scan controls |
+| [RW-016](#rw-016) | P1 | DONE | RW-006, RW-008, RW-012, RW-015 | Dashboard and scan controls |
 | [RW-017](#rw-017) | P0 | BLOCKED | RW-002, RW-003 | Verified Apertus adapter and company context |
 | [RW-018](#rw-018) | P0 | LIVE CHECK PENDING | RW-011, RW-013, RW-017 | Cited impact analysis and actions |
 | [RW-019](#rw-019) | P1 | LIVE CHECK PENDING | RW-013, RW-017, RW-018 | Ask Apertus with version-specific citations |
 | [RW-020](#rw-020) | P1 | DONE | RW-009, RW-014, RW-015, RW-018, RW-019 | Regression checks for state and evidence |
-| [RW-021](#rw-021) | P1 | VERIFYING | RW-008, RW-012, RW-013, RW-016, RW-019, RW-020 | End-to-end product acceptance |
-| [RW-022](#rw-022) | P1 | VERIFYING | RW-001, RW-021 | Setup documentation and repeatable demo |
+| [RW-021](#rw-021) | P1 | CORE VERIFIED; LIVE MODEL PENDING | RW-008, RW-012, RW-013, RW-016, RW-019, RW-020, RW-025 | End-to-end product acceptance |
+| [RW-022](#rw-022) | P1 | CORE VERIFIED; LIVE MODEL PENDING | RW-001, RW-021 | Setup documentation and repeatable demo |
 | [RW-023](#rw-023) | P2 | DEFERRED | RW-018, RW-022 | Optional business impact matrix |
 | [RW-024](#rw-024) | P2 | DEFERRED | RW-019, RW-022 | Optional pgvector retrieval |
+| [RW-025](#rw-025) | P0 | DONE | RW-002, RW-003, RW-017 adapter code | Settings page with persisted Apertus parameters |
 
 ## M0 — Ready to build
 
@@ -289,6 +290,8 @@ Acceptance criteria:
 
 Connect to a real Apertus deployment and supply one company profile.
 
+Current blocker: a request to Public AI's documented API base URL and served model ID returned HTTP 401. Valid provider authentication and successful cited inference are still required; the adapter, Settings form, provider preset, and company profile are implemented.
+
 Acceptance criteria:
 
 - Confirm the reachable endpoint, actual model identifier, authentication method, supported context budget, and a successful real request. Treat **Apertus v1.5 8B** as a proposed target until verified; document any mismatch instead of silently substituting a model.
@@ -325,6 +328,22 @@ Acceptance criteria:
 - When the supplied evidence does not support an answer, explicitly state that limitation. Reject invalid citations instead of displaying fabricated links or silently using the latest live version.
 - Follow-up questions retain the selected comparison context. Loading, timeout, and model-unavailable states are visible and leave the diff usable.
 - Verify at least one question about changed wording, one about the earlier version, and one that cannot be answered from the supplied documents.
+
+<a id="rw-025"></a>
+### RW-025 — Configure Apertus through a Settings page
+
+Added at the user's request after implementation began. Model access remains a separate live acceptance gate in RW-017.
+
+Acceptance criteria:
+
+- Provide a Settings page reachable from desktop and mobile navigation, with endpoint, model ID, key handling, timeout, evidence budget, maximum output tokens, temperature, and JSON-mode controls.
+- Test the current form with an actual adapter request without implicitly saving it; make unavailable, invalid, and successful connection states explicit.
+- Offer the documented Public AI address/model as draft defaults, preserving the key and other parameters. Explain authentication, access, route/model, and quota failures separately.
+- Save valid settings in the workspace database and apply them to new requests immediately. Preserve them across service restarts.
+- Keep an existing key when editing other fields; allow explicit replacement, removal, and environment inheritance. Never return keys through the API, including validation errors.
+- Retain environment defaults and offer an explicit reset without affecting documents, versions, or scans. Document that saved keys are held server-side in the local database and its backups.
+- Mark previous analyses as stale after relevant model/context/generation changes. In-flight work retains the configuration it started with.
+- Expose the existing company profile editor from the Settings page. Do not add account administration or a model-hosting platform.
 
 ## M5 — Verification and demonstration
 
