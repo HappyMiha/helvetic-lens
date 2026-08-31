@@ -1,0 +1,491 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Check, FileUp, Globe2, Loader2, Search, Upload } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { api, errorText, refreshWorkspace, useResource } from "@/lib/api";
+import type { Health, Law, Preview, Source, Version } from "@/lib/types";
+import { ErrorNote } from "./common";
+
+function PreviewBox({ preview }: { preview: Preview }) {
+  return (
+    <div className="extraction-preview">
+      <div className="flex items-center gap-2 mb-2 font-semibold text-sm">
+        <Check size={15} />
+        {preview.title}
+      </div>
+      <div className="text-xs muted mb-3">
+        {preview.content_type} · {preview.characters.toLocaleString()}{" "}
+        characters · {preview.passage_count} passages
+        {preview.page_count ? " · " + preview.page_count + " pages" : ""}
+      </div>
+      <div className="preview-text">{preview.excerpt}</div>
+    </div>
+  );
+}
+
+export function AddDocumentDialog({
+  open,
+  onOpenChange,
+  mode,
+  initialUrl = "",
+  initialName = "",
+  sourceId,
+  source,
+  provider: initialProvider = "native",
+  onCreated,
+}: {
+  open: boolean;
+  onOpenChange: (value: boolean) => void;
+  mode: "source" | "law";
+  initialUrl?: string;
+  initialName?: string;
+  sourceId?: string;
+  source?: Source | null;
+  provider?: string;
+  onCreated?: (record: Law | Source) => void;
+}) {
+  const { data: health } = useResource<Health>(open ? "/health" : null);
+  const [url, setUrl] = useState(""),
+    [name, setName] = useState(""),
+    [section, setSection] = useState("/");
+  const [provider, setProvider] = useState("native"),
+    [synthetic, setSynthetic] = useState(false);
+  const [preview, setPreview] = useState<Preview | null>(null),
+    [busy, setBusy] = useState(""),
+    [error, setError] = useState("");
+  useEffect(() => {
+    if (open) {
+      setUrl(source?.url || initialUrl);
+      setName(source?.name || initialName);
+      setSection(source?.section || "/");
+      setProvider(source?.provider || initialProvider);
+      setPreview(null);
+      setError("");
+      setBusy("");
+      setSynthetic(false);
+    }
+  }, [
+    open,
+    initialUrl,
+    initialName,
+    initialProvider,
+    source?.id,
+    source?.name,
+    source?.provider,
+    source?.section,
+    source?.url,
+  ]);
+  async function test() {
+    setBusy("preview");
+    setError("");
+    setPreview(null);
+    try {
+      const data = await api<Preview>("/preview", {
+        method: "POST",
+        body: JSON.stringify({ url, provider }),
+      });
+      setPreview(data);
+      if (!name.trim())
+        setName(data.title.slice(0, mode === "source" ? 250 : 300));
+    } catch (cause) {
+      setError(errorText(cause));
+    } finally {
+      setBusy("");
+    }
+  }
+  async function save(event: React.FormEvent) {
+    event.preventDefault();
+    if (!preview) {
+      await test();
+      return;
+    }
+    setBusy("save");
+    setError("");
+    try {
+      const payload =
+        mode === "source"
+          ? { url, name, section, provider }
+          : { url, name, provider, source_id: sourceId || null, synthetic };
+      const path =
+        mode === "source"
+          ? "/sources" + (source ? "/" + source.id : "")
+          : "/laws";
+      const result = await api<Law | Source>(path, {
+        method: source && mode === "source" ? "PATCH" : "POST",
+        body: JSON.stringify(payload),
+      });
+      refreshWorkspace();
+      onOpenChange(false);
+      onCreated?.(result);
+    } catch (cause) {
+      setError(errorText(cause));
+    } finally {
+      setBusy("");
+    }
+  }
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-2xl max-h-[92vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            {mode === "source"
+              ? source
+                ? "Edit website connection"
+                : "Connect a website"
+              : "Add a law or document"}
+          </DialogTitle>
+          <DialogDescription>
+            {mode === "source"
+              ? "Connect a public regulatory site or listing page. You choose which documents to monitor after discovery."
+              : "Paste the current document URL. A real fetch creates the first saved baseline; an earlier version can be imported next."}
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={save} className="form-stack">
+          <label>
+            {mode === "source"
+              ? "Website or listing URL"
+              : "Current document URL"}
+            <Input
+              type="url"
+              value={url}
+              onChange={(e) => {
+                setUrl(e.target.value);
+                setPreview(null);
+              }}
+              placeholder="https://…"
+              required
+              maxLength={3000}
+            />
+          </label>
+          <label>
+            Display name <span className="muted font-normal">(optional)</span>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Use the document title"
+              maxLength={mode === "source" ? 250 : 300}
+            />
+          </label>
+          {mode === "source" && (
+            <label>
+              Discovery section
+              <Input
+                value={section}
+                onChange={(e) => setSection(e.target.value)}
+                placeholder="/"
+              />
+              <span className="field-help">
+                Use / for the whole host, or a path such as /en/documentation.
+                Discovery lists at most 50 direct links.
+              </span>
+            </label>
+          )}
+          <details className="text-xs muted">
+            <summary className="cursor-pointer mb-3">
+              Extraction options
+            </summary>
+            <label className="!text-xs">
+              Provider
+              <select
+                value={provider}
+                onChange={(e) => {
+                  setProvider(e.target.value);
+                  setPreview(null);
+                }}
+              >
+                <option value="native">Native · HTML / PDF, no API key</option>
+                <option
+                  value="firecrawl"
+                  disabled={!health?.firecrawl.configured}
+                >
+                  Firecrawl · rendered HTML{" "}
+                  {health?.firecrawl.configured ? "" : "(server key required)"}
+                </option>
+              </select>
+            </label>
+            <p className="field-help">
+              No silent provider fallback. Native extraction does not render
+              JavaScript or read scanned PDFs.
+            </p>
+          </details>
+          {mode === "law" && (
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={synthetic}
+                onChange={(e) => setSynthetic(e.target.checked)}
+              />
+              This source contains synthetic demo content
+            </label>
+          )}
+          <ErrorNote message={error} />
+          {preview && <PreviewBox preview={preview} />}
+          <div className="form-actions">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={test}
+              disabled={!!busy || !url.trim()}
+            >
+              {busy === "preview" ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                <Search />
+              )}
+              {mode === "source" ? "Test connection" : "Preview document"}
+            </Button>
+            <Button type="submit" disabled={!!busy || !preview}>
+              {busy === "save" ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                <Globe2 />
+              )}
+              {mode === "source"
+                ? source
+                  ? "Save connection"
+                  : "Connect website"
+                : "Add to watchlist"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export function ImportDialog({
+  open,
+  onOpenChange,
+  law,
+  onImported,
+}: {
+  open: boolean;
+  onOpenChange: (value: boolean) => void;
+  law: Law;
+  onImported: (version: Version) => void;
+}) {
+  const [mode, setMode] = useState<"file" | "text" | "url">("file");
+  const [file, setFile] = useState<File | null>(null),
+    [text, setText] = useState(""),
+    [url, setUrl] = useState("");
+  const [date, setDate] = useState(""),
+    [synthetic, setSynthetic] = useState(false),
+    [confirmed, setConfirmed] = useState(false);
+  const [preview, setPreview] = useState<Preview | null>(null),
+    [busy, setBusy] = useState(""),
+    [error, setError] = useState("");
+  useEffect(() => {
+    if (open) {
+      setMode("file");
+      setFile(null);
+      setText("");
+      setUrl("");
+      setDate("");
+      setSynthetic(false);
+      setConfirmed(false);
+      setPreview(null);
+      setError("");
+    }
+  }, [open]);
+  function payload() {
+    const data = new FormData();
+    if (mode === "file" && file) data.append("file", file);
+    if (mode === "text") data.append("text", text);
+    if (mode === "url") data.append("url", url);
+    data.append("declared_date", date);
+    data.append("synthetic", String(synthetic));
+    return data;
+  }
+  async function test() {
+    setBusy("preview");
+    setError("");
+    try {
+      if (file && mode === "file" && file.size > 8388608)
+        throw new Error("Choose a file under 8 MB.");
+      setPreview(
+        await api<Preview>("/laws/" + law.id + "/import?preview=true", {
+          method: "POST",
+          body: payload(),
+        }),
+      );
+    } catch (cause) {
+      setError(errorText(cause));
+    } finally {
+      setBusy("");
+    }
+  }
+  async function save(event: React.FormEvent) {
+    event.preventDefault();
+    if (!preview || !confirmed) return;
+    setBusy("save");
+    setError("");
+    try {
+      const result = await api<{ version: Version; reused: boolean }>(
+        "/laws/" + law.id + "/import",
+        { method: "POST", body: payload() },
+      );
+      refreshWorkspace();
+      onOpenChange(false);
+      onImported(result.version);
+    } catch (cause) {
+      setError(errorText(cause));
+    } finally {
+      setBusy("");
+    }
+  }
+  const hasInput =
+    mode === "file" ? !!file : mode === "text" ? !!text.trim() : !!url.trim();
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-2xl max-h-[92vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Import previous version</DialogTitle>
+          <DialogDescription>
+            {law.name}. The import is saved separately and will not replace the
+            current live baseline.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={save} className="form-stack">
+          <div className="segmented">
+            {(["file", "text", "url"] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                className={mode === value ? "selected" : ""}
+                onClick={() => {
+                  setMode(value);
+                  setPreview(null);
+                  setError("");
+                }}
+              >
+                {value === "file"
+                  ? "Upload file"
+                  : value === "text"
+                    ? "Paste text"
+                    : "Historical URL"}
+              </button>
+            ))}
+          </div>
+          {mode === "file" && (
+            <label className="file-drop">
+              <FileUp size={28} />
+              <strong>{file?.name || "Choose an earlier document"}</strong>
+              <span className="text-xs muted">
+                PDF, HTML or TXT · up to 8 MB · text-based PDFs only
+              </span>
+              <Input
+                type="file"
+                accept=".pdf,.html,.htm,.txt"
+                onChange={(e) => {
+                  setFile(e.target.files?.[0] || null);
+                  setPreview(null);
+                }}
+              />
+            </label>
+          )}
+          {mode === "text" && (
+            <label>
+              Previous document text
+              <Textarea
+                rows={7}
+                value={text}
+                onChange={(e) => {
+                  setText(e.target.value);
+                  setPreview(null);
+                }}
+                maxLength={1200000}
+                placeholder="Paste the previous wording here…"
+              />
+            </label>
+          )}
+          {mode === "url" && (
+            <label>
+              Direct URL to the older copy
+              <Input
+                type="url"
+                value={url}
+                onChange={(e) => {
+                  setUrl(e.target.value);
+                  setPreview(null);
+                }}
+                placeholder="https://…"
+              />
+            </label>
+          )}
+          <label>
+            Stated version date{" "}
+            <span className="muted font-normal">(optional)</span>
+            <Input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+            <span className="field-help">
+              This date is supplied by you. It is separate from the actual
+              import time.
+            </span>
+          </label>
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={synthetic}
+              onChange={(e) => setSynthetic(e.target.checked)}
+            />
+            This version was edited or created for a synthetic demo
+          </label>
+          <ErrorNote message={error} />
+          {preview && (
+            <>
+              <PreviewBox preview={preview} />
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={confirmed}
+                  onChange={(e) => setConfirmed(e.target.checked)}
+                />
+                I confirm that this is the version I want to attach to this law.
+              </label>
+            </>
+          )}
+          <p className="text-xs muted m-0">
+            Imported content is not automatically verified as an official
+            historical version.
+          </p>
+          <div className="form-actions">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={test}
+              disabled={!!busy || !hasInput}
+            >
+              {busy === "preview" ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                <Search />
+              )}
+              Preview extraction
+            </Button>
+            <Button type="submit" disabled={!!busy || !preview || !confirmed}>
+              {busy === "save" ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                <Upload />
+              )}
+              Import & select baseline
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -1,0 +1,140 @@
+from datetime import datetime
+from uuid import uuid4
+
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column
+
+from .db import Base, utcnow
+
+
+def new_id() -> str:
+    return str(uuid4())
+
+
+class Source(Base):
+    __tablename__ = "sources"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    name: Mapped[str] = mapped_column(String(250))
+    url: Mapped[str] = mapped_column(Text)
+    section: Mapped[str] = mapped_column(Text, default="/")
+    provider: Mapped[str] = mapped_column(String(30), default="native")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    last_checked: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    error: Mapped[str | None] = mapped_column(Text)
+    discovery: Mapped[dict] = mapped_column(JSON, default=dict)
+
+
+class Law(Base):
+    __tablename__ = "laws"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    source_id: Mapped[str | None] = mapped_column(ForeignKey("sources.id"))
+    name: Mapped[str] = mapped_column(String(300))
+    url: Mapped[str] = mapped_column(Text, unique=True)
+    provider: Mapped[str] = mapped_column(String(30), default="native")
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Updated only by validated live observations; avoids a cyclic insert dependency.
+    current_version_id: Mapped[str | None] = mapped_column(String(36))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    last_checked: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_result: Mapped[str] = mapped_column(String(40), default="baseline_created")
+    last_error: Mapped[str | None] = mapped_column(Text)
+
+
+class Version(Base):
+    __tablename__ = "versions"
+    __table_args__ = (UniqueConstraint("law_id", "content_hash", "extractor", name="uq_law_content"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    law_id: Mapped[str] = mapped_column(ForeignKey("laws.id"), index=True)
+    title: Mapped[str] = mapped_column(Text)
+    content_hash: Mapped[str] = mapped_column(String(64))
+    extractor: Mapped[str] = mapped_column(String(40))
+    text: Mapped[str] = mapped_column(Text)
+    passages: Mapped[list] = mapped_column(JSON)
+    content_type: Mapped[str] = mapped_column(String(100))
+    artifact_key: Mapped[str] = mapped_column(String(80))
+    filename: Mapped[str] = mapped_column(Text)
+    source_url: Mapped[str | None] = mapped_column(Text)
+    origin: Mapped[str] = mapped_column(String(30))
+    declared_date: Mapped[str | None] = mapped_column(String(10))
+    date_provenance: Mapped[str | None] = mapped_column(String(30))
+    synthetic: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Observation(Base):
+    __tablename__ = "observations"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    law_id: Mapped[str] = mapped_column(ForeignKey("laws.id"), index=True)
+    version_id: Mapped[str] = mapped_column(ForeignKey("versions.id"), index=True)
+    origin: Mapped[str] = mapped_column(String(30))
+    source_url: Mapped[str | None] = mapped_column(Text)
+    filename: Mapped[str] = mapped_column(Text)
+    artifact_key: Mapped[str] = mapped_column(String(80))
+    declared_date: Mapped[str | None] = mapped_column(String(10))
+    synthetic: Mapped[bool] = mapped_column(Boolean, default=False)
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Comparison(Base):
+    __tablename__ = "comparisons"
+    __table_args__ = (
+        UniqueConstraint("old_version_id", "new_version_id", "mode", name="uq_comparison_pair"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    law_id: Mapped[str] = mapped_column(ForeignKey("laws.id"), index=True)
+    old_version_id: Mapped[str] = mapped_column(ForeignKey("versions.id"))
+    new_version_id: Mapped[str] = mapped_column(ForeignKey("versions.id"))
+    mode: Mapped[str] = mapped_column(String(30))
+    diff: Mapped[dict] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Scan(Base):
+    __tablename__ = "scans"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    status: Mapped[str] = mapped_column(String(30), default="queued")
+    total: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ScanItem(Base):
+    __tablename__ = "scan_items"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    scan_id: Mapped[str] = mapped_column(ForeignKey("scans.id"), index=True)
+    law_id: Mapped[str] = mapped_column(ForeignKey("laws.id"), index=True)
+    baseline_version_id: Mapped[str | None] = mapped_column(ForeignKey("versions.id"))
+    new_version_id: Mapped[str | None] = mapped_column(ForeignKey("versions.id"))
+    comparison_id: Mapped[str | None] = mapped_column(ForeignKey("comparisons.id"))
+    monitoring_comparison_id: Mapped[str | None] = mapped_column(ForeignKey("comparisons.id"))
+    mode: Mapped[str] = mapped_column(String(30), default="monitoring")
+    stage: Mapped[str] = mapped_column(String(30), default="queued")
+    result: Mapped[str | None] = mapped_column(String(40))
+    live_result: Mapped[str | None] = mapped_column(String(40))
+    error: Mapped[str | None] = mapped_column(Text)
+    analysis_status: Mapped[str] = mapped_column(String(30), default="pending")
+    events: Mapped[list] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Profile(Base):
+    __tablename__ = "profiles"
+    id: Mapped[str] = mapped_column(String(30), primary_key=True, default="default")
+    name: Mapped[str] = mapped_column(String(200), default="My company")
+    description: Mapped[str] = mapped_column(Text, default="")
+    business_areas: Mapped[list] = mapped_column(JSON, default=lambda: ["Legal", "IT", "Operations"])
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+
+
+class Analysis(Base):
+    __tablename__ = "analyses"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    comparison_id: Mapped[str] = mapped_column(ForeignKey("comparisons.id"), index=True)
+    cache_key: Mapped[str] = mapped_column(String(64), index=True)
+    status: Mapped[str] = mapped_column(String(30), default="pending")
+    result: Mapped[dict | None] = mapped_column(JSON)
+    coverage: Mapped[dict] = mapped_column(JSON, default=dict)
+    error: Mapped[str | None] = mapped_column(Text)
+    model: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

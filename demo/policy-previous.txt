@@ -1,0 +1,19 @@
+Synthetic records policy
+
+DEMO ONLY. This fictional text demonstrates document comparison and is not a legal requirement.
+
+1. Retention
+
+Demo records must be deleted within 30 days after an account is closed.
+
+2. Ownership
+
+The operations team reviews deletion requests.
+
+3. Reporting
+
+Send a quarterly spreadsheet report to the demo manager.
+
+4. Validity
+
+This synthetic policy is used only to demonstrate version comparisons.

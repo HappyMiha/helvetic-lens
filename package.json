@@ -1,0 +1,27 @@
+{
+  "name": "apertus-regwatch",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n api,web \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:web": "npm run dev --workspace apps/web",
+    "dev:api": "uv run --project services/api uvicorn regwatch.main:app --app-dir services/api --host 127.0.0.1 --port 8000",
+    "build": "npm run build --workspace apps/web",
+    "typecheck": "npm run typecheck --workspace apps/web",
+    "format:web": "prettier --write apps/web",
+    "format:check": "prettier --check apps/web",
+    "test:api": "uv run --project services/api pytest services/api/tests -q",
+    "lint:api": "uv run --project services/api ruff check services/api",
+    "demo:source": "python scripts/demo_source.py"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0",
+    "prettier": "^3.9.6"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

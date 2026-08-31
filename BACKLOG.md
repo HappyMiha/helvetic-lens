@@ -4,7 +4,7 @@
 
 This backlog implements the product described in [README.md](README.md): user-configured websites, tracked laws, imported previous versions, real scans, visual comparisons, and Apertus analysis with verifiable citations.
 
-**Status:** All items are **TODO**. This document is a development plan, not evidence that the application already exists. Stable `RW-xxx` identifiers can also be used in commits, pull requests, or future issues.
+**Status:** The first implementation is undergoing verification. Ingestion, snapshots, imports, comparisons, scans, and the main interface are implemented. The Apertus adapter needs a real endpoint for acceptance. See [verification evidence](docs/VERIFICATION.md); implemented code does not automatically complete an acceptance item. Stable `RW-xxx` identifiers remain the task reference.
 
 ## Scope and priorities
 
@@ -33,30 +33,30 @@ Start RW-017 as soon as RW-002 and RW-003 are available so model access is check
 
 | ID | Priority | Status | Dependencies | Deliverable |
 | --- | --- | --- | --- | --- |
-| [RW-001](#rw-001) | P0 | TODO | None | Verified source examples and historical inputs |
-| [RW-002](#rw-002) | P0 | TODO | None | Runnable app, API, and database |
-| [RW-003](#rw-003) | P0 | TODO | RW-002 | Persistent domain model and migrations |
-| [RW-004](#rw-004) | P0 | TODO | RW-001, RW-002 | Real HTML/PDF fetching and extraction |
-| [RW-005](#rw-005) | P0 | TODO | RW-003, RW-004 | Immutable snapshots and saved evidence |
-| [RW-006](#rw-006) | P0 | TODO | RW-003, RW-004 | Website connection management |
-| [RW-007](#rw-007) | P0 | TODO | RW-005, RW-006 | Tracked laws and direct document URLs |
-| [RW-008](#rw-008) | P1 | TODO | RW-004, RW-006, RW-007 | Bounded discovery and document search |
-| [RW-009](#rw-009) | P0 | TODO | RW-005, RW-007 | Previous-version import |
-| [RW-010](#rw-010) | P0 | TODO | RW-007, RW-009 | Version history and baseline selection |
-| [RW-011](#rw-011) | P0 | TODO | RW-005 | Shared passage and word comparison engine |
-| [RW-012](#rw-012) | P0 | TODO | RW-010, RW-011 | Visual diff with change navigation |
-| [RW-013](#rw-013) | P0 | TODO | RW-005, RW-012 | Version-specific evidence viewer |
-| [RW-014](#rw-014) | P0 | TODO | RW-007, RW-010, RW-011 | Live scans and historical comparisons |
-| [RW-015](#rw-015) | P0 | TODO | RW-014 | Actual progress, partial failures, and recovery |
-| [RW-016](#rw-016) | P1 | TODO | RW-006, RW-008, RW-012, RW-015 | Dashboard and scan controls |
-| [RW-017](#rw-017) | P0 | TODO | RW-002, RW-003 | Verified Apertus adapter and company context |
-| [RW-018](#rw-018) | P0 | TODO | RW-011, RW-013, RW-017 | Cited impact analysis and actions |
-| [RW-019](#rw-019) | P1 | TODO | RW-013, RW-017, RW-018 | Ask Apertus with version-specific citations |
-| [RW-020](#rw-020) | P1 | TODO | RW-009, RW-014, RW-015, RW-018, RW-019 | Regression checks for state and evidence |
-| [RW-021](#rw-021) | P1 | TODO | RW-008, RW-012, RW-013, RW-016, RW-019, RW-020 | End-to-end product acceptance |
-| [RW-022](#rw-022) | P1 | TODO | RW-001, RW-021 | Setup documentation and repeatable demo |
-| [RW-023](#rw-023) | P2 | TODO | RW-018, RW-022 | Optional business impact matrix |
-| [RW-024](#rw-024) | P2 | TODO | RW-019, RW-022 | Optional pgvector retrieval |
+| [RW-001](#rw-001) | P0 | DONE | None | Verified source examples and historical inputs |
+| [RW-002](#rw-002) | P0 | DONE | None | Runnable app, API, and database |
+| [RW-003](#rw-003) | P0 | DONE | RW-002 | Persistent domain model and migrations |
+| [RW-004](#rw-004) | P0 | DONE | RW-001, RW-002 | Real HTML/PDF fetching and extraction |
+| [RW-005](#rw-005) | P0 | DONE | RW-003, RW-004 | Immutable snapshots and saved evidence |
+| [RW-006](#rw-006) | P0 | VERIFYING | RW-003, RW-004 | Website connection management |
+| [RW-007](#rw-007) | P0 | VERIFYING | RW-005, RW-006 | Tracked laws and direct document URLs |
+| [RW-008](#rw-008) | P1 | PARTIAL | RW-004, RW-006, RW-007 | Bounded discovery and document search |
+| [RW-009](#rw-009) | P0 | VERIFYING | RW-005, RW-007 | Previous-version import |
+| [RW-010](#rw-010) | P0 | VERIFYING | RW-007, RW-009 | Version history and baseline selection |
+| [RW-011](#rw-011) | P0 | DONE | RW-005 | Shared passage and word comparison engine |
+| [RW-012](#rw-012) | P0 | VERIFYING | RW-010, RW-011 | Visual diff with change navigation |
+| [RW-013](#rw-013) | P0 | VERIFYING | RW-005, RW-012 | Version-specific evidence viewer |
+| [RW-014](#rw-014) | P0 | DONE | RW-007, RW-010, RW-011 | Live scans and historical comparisons |
+| [RW-015](#rw-015) | P0 | DONE | RW-014 | Actual progress, partial failures, and recovery |
+| [RW-016](#rw-016) | P1 | VERIFYING | RW-006, RW-008, RW-012, RW-015 | Dashboard and scan controls |
+| [RW-017](#rw-017) | P0 | BLOCKED | RW-002, RW-003 | Verified Apertus adapter and company context |
+| [RW-018](#rw-018) | P0 | LIVE CHECK PENDING | RW-011, RW-013, RW-017 | Cited impact analysis and actions |
+| [RW-019](#rw-019) | P1 | LIVE CHECK PENDING | RW-013, RW-017, RW-018 | Ask Apertus with version-specific citations |
+| [RW-020](#rw-020) | P1 | DONE | RW-009, RW-014, RW-015, RW-018, RW-019 | Regression checks for state and evidence |
+| [RW-021](#rw-021) | P1 | VERIFYING | RW-008, RW-012, RW-013, RW-016, RW-019, RW-020 | End-to-end product acceptance |
+| [RW-022](#rw-022) | P1 | VERIFYING | RW-001, RW-021 | Setup documentation and repeatable demo |
+| [RW-023](#rw-023) | P2 | DEFERRED | RW-018, RW-022 | Optional business impact matrix |
+| [RW-024](#rw-024) | P2 | DEFERRED | RW-019, RW-022 | Optional pgvector retrieval |
 
 ## M0 — Ready to build
 

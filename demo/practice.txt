@@ -1,0 +1,7 @@
+Synthetic document handling practice
+
+DEMO ONLY. This fictional text is not legislation or regulatory guidance.
+
+The example team keeps a list of documents and checks their current wording before a review meeting.
+
+Documents that have not changed keep the same saved content snapshot while each check is recorded separately.

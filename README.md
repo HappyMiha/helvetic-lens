@@ -6,9 +6,62 @@ Apertus RegWatch lets users connect regulatory websites, add specific laws or do
 
 The MVP must be a functional product with a narrow scope. Sources are configured through the interface, data persists between sessions, and the demonstration uses the same fetching, comparison, and analysis pipeline as everyday use.
 
-> **Project status:** This repository currently contains the MVP plan. The application and the features described below are not implemented yet.
+> **Project status:** A first working implementation is available: source connections, direct URLs, imports, immutable history, live scans, saved comparisons, and visual evidence. The Apertus adapter and cited-answer interface are implemented, but a real inference endpoint has not yet been supplied or validated. This is not the fully accepted model-enabled MVP. See [verification notes](docs/VERIFICATION.md).
 
 Development tasks, priorities, dependencies, and acceptance criteria are tracked in [BACKLOG.md](BACKLOG.md).
+
+## Run locally
+
+Use Docker Desktop with Compose for the complete PostgreSQL stack:
+
+~~~sh
+git clone https://github.com/HappyMiha/apertus-regwatch.git
+cd apertus-regwatch
+docker compose up --build -d
+~~~
+
+Open [RegWatch](http://127.0.0.1:3000) and the [API reference](http://127.0.0.1:8000/docs). PostgreSQL and saved artifacts use persistent volumes. Migrations run on API startup. Default ports are 3000 (web), 8000 (API), and 54329 (database); stop development processes using those ports before starting Compose.
+
+No model or paid extraction service is required for source monitoring and visual comparisons. To configure Apertus, copy [.env.example](.env.example) to .env and supply your endpoint. Never commit .env or credentials.
+
+For development, install Node.js 22+ (tested with 24), Python 3.11+, and uv. Create .env from the example and set DATABASE_URL to the following before starting:
+
+~~~text
+postgresql+psycopg://regwatch:regwatch@127.0.0.1:54329/regwatch
+~~~
+
+~~~sh
+npm ci
+uv sync --project services/api --frozen
+docker compose up -d db
+npm run dev
+~~~
+
+The development API stores artifacts under data/. If DATABASE_URL is deliberately left empty, it uses local SQLite for a lightweight trial; Compose always uses PostgreSQL. Do not run both API variants against the same database with different artifact directories.
+
+~~~sh
+npm run typecheck
+npm run format:check
+npm run build
+npm run lint:api
+npm run test:api
+~~~
+
+[Follow the demo guide](docs/DEMO.md) to connect a site, import an older version, fetch current content, and inspect the exact **30 → 60** wording change.
+
+## Connect a real Apertus deployment
+
+The intended model ID is [swiss-ai/Apertus-v1.5-8B](https://huggingface.co/swiss-ai/Apertus-v1.5-8B). Model weights are not bundled and no alternate model is silently substituted.
+
+Set APERTUS_BASE_URL to your OpenAI-compatible inference API base, including /v1, APERTUS_MODEL to the actual served ID, and APERTUS_API_KEY if required. The adapter calls /chat/completions. The default timeout is 90 seconds; APERTUS_CONTEXT_CHARS bounds selected evidence, not the model's token limit. Confirm the endpoint's supported context budget. APERTUS_JSON_MODE is optional and off by default.
+
+Restart the development API after changes, or recreate the Compose API:
+
+~~~sh
+docker compose up -d --force-recreate api
+~~~
+
+Open **Company profile → Test real connection**. Configuration alone does not prove connectivity. Impact analysis and Ask Apertus need actual responses with working evidence links for acceptance. When disconnected or unavailable, the UI says so and keeps the diff usable.
 
 ## The value proposition
 
@@ -49,11 +102,17 @@ Impact labels and suggested actions are AI-generated aids for review, not author
 
 ## Connecting real sources
 
-The first implementation supports public HTML pages and text-based PDFs. For website discovery, start from a user-selected listing page and inspect a bounded set of links within the configured site or section, for example one link level and at most 50 candidate pages per run. Allow direct document URLs to bypass discovery.
+The first implementation supports public HTML pages, text-based PDFs, and plain text. Discovery fetches one listing page and returns at most 50 distinct direct links within the configured host/path boundary. It does not fetch all candidates automatically. Direct document URLs bypass discovery.
 
-Show the discovered title, URL, content type, and an extraction preview before a document is added. Users choose which results to monitor; discovering a new link does not itself mean a law was amended. Search covers the inspected documents, and the interface must show the inspection limit rather than imply exhaustive coverage of the website.
+A result has a link title, URL, and unverified format hint. **Preview & add** fetches that candidate, confirms its format, and shows extracted text before saving. Filtering covers only the returned links. This is a narrower first iteration of RW-008; automatic candidate inspection and per-candidate errors remain on the backlog. A new link is not evidence of a legal amendment.
+
+See [source compatibility notes](docs/SOURCES.md) for real examples. Native extraction does not render JavaScript. FINMA's circulars page returns static text, but its dynamic list is not fully available. Fedlex landing pages may require a direct PDF URL. A successful HTML response does not establish complete legal coverage.
 
 Use reasonable fetch timeouts and download limits. If a page requires unsupported JavaScript rendering, authentication, or OCR, show a clear limitation and allow a direct PDF URL or a manual import where appropriate. An imported snapshot alone does not provide live monitoring: a reachable current document URL is still needed. Never report an empty or failed extraction as a successful check.
+
+Current defaults: 8 MB per document, 25 seconds per source request, 250 PDF pages, 1.2 million extracted characters, 6,000 passages, and 25 documents per scan. Whitespace is normalised; changed words, numbers, and dates remain visible. Complex layouts and page headers can create extraction noise, so inspect previews. Optional Firecrawl requires your own server-side key and usable quota; its live path is not validated in this environment.
+
+The API uses one process and one worker. Do not add multiple API replicas or workers: coordination and restart recovery are local to that service. The app binds to loopback and has no user authentication. It is for a local hackathon workspace, not unattended public hosting.
 
 ## Previous versions and a reproducible demo
 
