@@ -57,7 +57,7 @@ Open [Settings](http://127.0.0.1:3000/settings) from the sidebar or mobile navig
 
 1. Enter the OpenAI-compatible **API base URL**, including /v1 if required, and the exact **Model ID** served there. Do not append /chat/completions; RegWatch adds it.
 2. Keep the existing key, replace it, use no key for an unauthenticated local server, or inherit the server environment key. A stored key is never returned to the browser, including in validation errors.
-3. Adjust the request timeout, evidence budget, maximum answer length, temperature, and optional JSON mode. Defaults are 90 seconds, 24,000 evidence characters, 1,600 answer tokens, temperature 0.1, and JSON mode off.
+3. Adjust the request timeout, evidence warning threshold, maximum answer length, temperature, and optional JSON mode. Defaults are 90 seconds, a 24,000-character warning threshold, 1,600 answer tokens, temperature 0.1, and JSON mode off.
 4. Choose **Test connection** to make an actual request with the form's current values, without saving. Choose **Save settings** to apply them immediately to new requests.
 
 For **Public AI**, choose **Use Public AI defaults** to fill `https://api.publicai.co/v1` and `swiss-ai/apertus-v1.5-8b`. This changes only those two draft fields, not the key or other parameters, and does not save automatically. Use an API key created in the provider's developer portal, rather than a chat login credential. RegWatch includes the required User-Agent header. These connection values follow the [Public AI quick start](https://platform.publicai.co/docs).
@@ -66,11 +66,11 @@ For **Hugging Face Inference Providers**, choose **Use Hugging Face** to fill `h
 
 Connection errors distinguish a rejected key (401), denied model access (403), an incorrect route/model (404), rate limit or quota (429), an unreachable server, and a timeout. Provider response bodies and credentials are not echoed to the browser.
 
-The evidence budget measures selected source characters, not the endpoint's token window. Confirm your server's input/output limits and JSON-mode support. Connection success is only a connectivity check; a real cited analysis must still pass acceptance. For Docker, the endpoint must be reachable from the API container; its localhost is not the host machine.
+The evidence warning threshold measures the complete changed-passage payload, not the endpoint's token window. Exceeding it is disclosed but does not truncate the saved deterministic diff. Confirm your server's input/output limits and JSON-mode support. Connection success is only a connectivity check; a real cited analysis must still pass acceptance. For Docker, the endpoint must be reachable from the API container; its localhost is not the host machine.
 
 Settings persist in PostgreSQL (or the explicitly selected SQLite trial database) and take precedence over APERTUS_* environment defaults. Keys saved through the app are stored server-side in this local workspace database, so protect its volumes and backups. Nothing is written to Git or browser storage. **Use environment defaults** removes the saved overrides, including a saved key, without changing document history.
 
-Changing settings through the interface needs no restart. Changes made directly to .env require an API restart, and saved overrides must be removed if those defaults should take effect. Changes to the endpoint, model, evidence budget, or generation parameters mark previous analyses as stale; in-flight requests retain their original settings.
+Changing settings through the interface needs no restart. Changes made directly to .env require an API restart, and saved overrides must be removed if those defaults should take effect. Changes to the endpoint, model, evidence warning threshold, or generation parameters mark previous analyses as stale; in-flight requests retain their original settings.
 
 Edit **Company profile** from Settings to supply business context. Impact analysis and Ask Apertus need actual model responses with working evidence links for acceptance. When disconnected or unavailable, the UI says so and keeps the diff usable.
 
@@ -105,9 +105,9 @@ Connecting a website and monitoring a law are separate actions: a **source** is 
 | **Scan now** | Check one law or the watchlist, with per-document progress and a final summary. A first fetch without a prior version establishes a baseline. A background scheduler is not required. |
 | **Version detection and history** | Extract and normalize text, compare a content hash, and preserve version history. Choose an earlier snapshot for comparison without replacing the latest successfully observed version. |
 | **Visual diff** | Choose old and new versions and see added, removed, and modified passages. Show side-by-side text, inline word highlights, a list of changes, and links to the saved evidence and original source. |
-| **Apertus impact analysis** | Generate a concise summary, why it matters, affected business areas, an indicative high/medium/low impact, and 1-3 suggested actions. Keep supporting passages visible. |
-| **Settings** | Configure the Apertus endpoint, model, key handling, timeout, evidence budget, answer length, temperature, and JSON mode. Test unsaved values, save without restarting, restore environment defaults, and edit the company profile. |
-| **Ask Apertus with citations** | Ask questions about the selected document or comparison. Cite the version and an identifiable passage, with the source URL or imported file provenance and a PDF page where available. Say when the supplied text does not support an answer. |
+| **Apertus impact analysis** | Analyse every changed passage in the complete saved comparison; generate a concise summary, why it matters, affected business areas, an indicative high/medium/low impact, and 1-3 suggested actions. Keep supporting passages visible. |
+| **Settings** | Configure the Apertus endpoint, model, key handling, timeout, evidence warning threshold, answer length, temperature, and JSON mode. Test unsaved values, save without restarting, restore environment defaults, and edit the company profile. |
+| **Ask Apertus with citations** | Ask questions about the selected comparison using every changed passage. Questions about what changed use the complete deterministic diff; unrelated questions can remain unsupported. Cite the exact saved version and passage, including a PDF page where available. |
 | **Optional: impact matrix** | Show changes against business areas such as HR, IT, Legal, and Operations, with an indicative priority and a short reason. Add only if the core demo is complete. |
 
 Impact labels and suggested actions are AI-generated aids for review, not authoritative legal conclusions. Users can check the linked source before acting.
@@ -172,7 +172,7 @@ For example, a clearly synthetic demo could replace **"within 30 days"** with **
 | Language model | **Apertus v1.5 8B** | Proposed target for impact analysis and cited answers, through one configurable inference endpoint. |
 | Content extraction | **BeautifulSoup + PyMuPDF** | Extract text from HTML and text-based PDFs. |
 | Diff engine | **Python `difflib`** | Compare normalized passages and produce word highlights for the visual comparison. |
-| Optional retrieval | **pgvector** | Add passage retrieval only if the corpus outgrows direct context selection. Not needed for the first demo. |
+| Optional retrieval | **pgvector** | Consider retrieval only for future corpus-wide questions. It must never replace the complete deterministic diff for a selected comparison. |
 
 The model adapter and settings interface are implemented; access to a real served Apertus endpoint is still required for model acceptance. Hosting a model server is a separate setup choice, not another product feature.
 
@@ -199,7 +199,7 @@ Selected baseline + current snapshot
 - Store source URLs or file provenance, fetch/import times, extracted text, content hashes, and paragraph/page references. Preserve imported artifacts and enough snapshot content to reopen cited evidence after a live page changes; local persistent file storage is sufficient for a single deployment.
 - Normalize whitespace and remove obvious navigation boilerplate while preserving substantive dates, headings, article numbers, and legal wording. Show an extraction preview so users can spot unsuitable input.
 - A failed fetch or extraction must not replace the last good version. A failed analysis must not hide a valid diff or be reported as a completed analysis.
-- Pass changed passages and nearby context to Apertus. For questions, use relevant passages from the selected versions and state any context limits; start without embeddings or a separate vector database.
+- Persist a versioned deterministic article/passage diff that covers every passage in both saved versions. Pass every changed old/new passage to Apertus without retrieval ranking or truncation. Validate structured output and citations, then allow one constrained repair request for invalid JSON/schema/citations before rejecting it.
 - Attach stable passage references during extraction so displayed citations map to saved evidence. Distinguish source-stated dates from dates supplied by users.
 - Save analysis results for each version pair so opening the same change does not regenerate the summary every time.
 - Process small scan batches in the FastAPI service and expose actual per-stage status to the interface. Record interruptions as incomplete runs. A separate worker fleet, distributed queue, or orchestration framework is not needed for this scope.

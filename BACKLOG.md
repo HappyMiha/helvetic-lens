@@ -308,10 +308,10 @@ Explain a selected comparison using the saved source text and company profile.
 
 Acceptance criteria:
 
-- Supply changed passages and necessary surrounding context with explicit version/passage identifiers. Treat document content as evidence, not instructions to the assistant.
+- Persist a complete deterministic article/passage diff for the two saved versions and supply every changed old/new passage with explicit change, version, passage, and position identifiers. Treat document content as evidence, not instructions to the assistant.
 - Return a concise summary, why it matters, affected business areas, indicative high/medium/low impact with a reason, and 1–3 suggested actions. Attach supporting references to factual conclusions.
-- Validate the output shape and evidence references against the supplied passages before displaying citations. Quoted evidence must match the referenced saved text.
-- If a document exceeds the available context, disclose which sections were analysed and the resulting coverage limit; do not silently claim a whole-law assessment.
+- Validate the output shape and evidence references against the supplied passages before displaying citations. Quoted evidence must match the referenced saved text. Invalid JSON/schema/citations receive one constrained repair attempt and are rejected if that also fails.
+- Never truncate or retrieval-rank the changed-passage set. Disclose when its size exceeds the configured warning threshold; an upstream context-window failure leaves the complete visual diff available and must not be presented as a successful assessment.
 - Save results against the version pair, company-profile revision, model ID, and analysis/prompt version so changed context does not reuse a stale explanation.
 - Connect actual analysis status to the scan/dashboard. On model failure, leave the diff available and offer analysis retry without refetching the document or creating another version.
 - Show the source evidence and indicate that impact and actions are review aids rather than authoritative legal conclusions.
@@ -324,9 +324,9 @@ Answer questions about the selected law or comparison using inspectable evidence
 Acceptance criteria:
 
 - Provide a question input and answer panel scoped to the selected law/version or old/new comparison. Keep cross-law search and a large chat platform out of scope.
-- Start with direct passage selection and surrounding context, without embeddings. Display any selection/context limitation that affects the answer.
+- Use every changed passage from the complete persisted comparison, without embeddings or retrieval ranking. Preserve the deterministic old/new pairing in the model context.
 - Answers cite valid version and passage identifiers; citations open the matching saved passage or PDF page through RW-013.
-- When the supplied evidence does not support an answer, explicitly state that limitation. Reject invalid citations instead of displaying fabricated links or silently using the latest live version.
+- When changed passages do not support an unrelated answer, explicitly state that limitation. A “what changed?” question must not claim insufficient context when the complete comparison is available. Reject invalid citations instead of displaying fabricated links or silently using the latest live version.
 - Follow-up questions retain the selected comparison context. Loading, timeout, and model-unavailable states are visible and leave the diff usable.
 - Verify at least one question about changed wording, one about the earlier version, and one that cannot be answered from the supplied documents.
 
@@ -337,7 +337,7 @@ Added at the user's request after implementation began. Model access remains a s
 
 Acceptance criteria:
 
-- Provide a Settings page reachable from desktop and mobile navigation, with endpoint, model ID, key handling, timeout, evidence budget, maximum output tokens, temperature, and JSON-mode controls.
+- Provide a Settings page reachable from desktop and mobile navigation, with endpoint, model ID, key handling, timeout, evidence warning threshold, maximum output tokens, temperature, and JSON-mode controls.
 - Test the current form with an actual adapter request without implicitly saving it; make unavailable, invalid, and successful connection states explicit.
 - Offer the documented direct Public AI and Hugging Face router address/model as draft defaults, preserving the key and other parameters. Explain which provider credential each route needs, and authentication, access, route/model, and quota failures separately.
 - Save valid settings in the workspace database and apply them to new requests immediately. Preserve them across service restarts.

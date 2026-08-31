@@ -59,11 +59,16 @@ class ScriptedModel:
     fail: bool = False
     invalid: bool = False
     unsupported: bool = False
+    invalid_json_responses: int = 0
+    unsupported_responses: int = 0
 
     async def complete(self, system, user):
         self.calls.append((system, user))
         if self.fail:
             raise DomainError("Test model timed out.", 504, "model_timeout")
+        if self.invalid_json_responses:
+            self.invalid_json_responses -= 1
+            return "{not valid JSON"
         data = json.loads(user)
         passage = next((p for p in data["evidence"] if p["side"] == "new"), data["evidence"][0])
         citation = {
@@ -72,13 +77,16 @@ class ScriptedModel:
             "quote": passage["text"][:80],
         }
         if "question" in data:
+            unsupported = self.unsupported or self.unsupported_responses > 0
+            if self.unsupported_responses:
+                self.unsupported_responses -= 1
             return json.dumps(
                 {
-                    "supported": not self.unsupported,
+                    "supported": not unsupported,
                     "answer": "Test-only answer."
-                    if not self.unsupported
+                    if not unsupported
                     else "Not supported by this evidence.",
-                    "citations": [] if self.unsupported else [citation],
+                    "citations": [] if unsupported else [citation],
                 }
             )
         return json.dumps(

@@ -4,11 +4,11 @@ The source-to-diff workflow and the Settings page are verified. Model acceptance
 
 ## Completed checks
 
-- 67 Python regression cases pass using isolated SQLite databases and actual API/service/migration code.
+- 74 Python regression cases pass using isolated SQLite databases and actual API/service/migration code.
 - State checks cover initial baselines, unchanged scans, 30 → 60 changes, A → B → A reuse, duplicate imports, repeated historical comparisons, and saved comparisons without source requests.
 - Failure checks cover unavailable/empty sources, partial batches, overlapping scans, paused laws, invalid/cross-law input, and interrupted-run recovery.
-- Evidence checks cover artifacts, PDF pages, missing records, old/new citations, exact quotes, and whitespace-only bogus quotes.
-- Test-only model doubles cover timeout with an intact diff, analysis-only retry, cache reuse, profile invalidation, unsupported questions, and rejected fabricated citations. They do not establish that Apertus works.
+- Evidence checks cover complete article/passage alignment, every saved passage exactly once, all changed passages despite a smaller warning threshold, legacy persisted-diff upgrades, artifacts, PDF pages, missing records, old/new citations, exact quotes, and whitespace-only bogus quotes.
+- Test-only model doubles cover timeout with an intact diff, analysis-only retry, cache reuse, profile invalidation, unsupported unrelated questions, rejection of insufficient-context answers for complete change questions, rejected fabricated citations, invalid JSON repair, and failure after exactly one unsuccessful repair. They do not establish that Apertus works.
 - Settings checks cover immediate application, restart persistence, key preservation/removal/environment inheritance, invalid-input handling without secret echoing, and configuration changes while an analysis is in progress.
 - HTTP transport doubles exercise the actual model adapter's endpoint, credential and User-Agent headers, generation options, JSON mode, timeout, and connection failures. They verify separate authentication, access, missing-route/model, and quota errors without exposing provider bodies. They are test-only protocol checks, not a live Apertus deployment.
 - TypeScript checking, formatting, Python linting, and a Next.js production build pass, including the Settings route.

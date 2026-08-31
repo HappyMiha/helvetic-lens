@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from . import analysis as ai
 from .config import DomainError, Settings
 from .db import Database, utcnow
-from .diffing import compare_passages
+from .diffing import DIFF_SCHEMA_VERSION, compare_passages
 from .extraction import Extracted, Fetcher, canonical_url, discover_links, extract
 from .model_settings import ApertusSettingsInput, public_settings, resolve_key, resolved_settings
 from .models import (
@@ -236,6 +236,7 @@ class RegWatch:
             )
         )
         if existing:
+            self.ensure_complete_diff(session, existing, old, new)
             return existing
         comparison = Comparison(
             law_id=old.law_id,
@@ -247,6 +248,23 @@ class RegWatch:
         session.add(comparison)
         session.flush()
         return comparison
+
+    @staticmethod
+    def ensure_complete_diff(
+        session: Session, comparison: Comparison, old: Version, new: Version
+    ) -> bool:
+        current = comparison.diff or {}
+        complete = (
+            current.get("schema_version") == DIFF_SCHEMA_VERSION
+            and current.get("complete") is True
+            and current.get("old_passage_count") == len(old.passages)
+            and current.get("new_passage_count") == len(new.passages)
+        )
+        if complete:
+            return False
+        comparison.diff = compare_passages(old.passages, new.passages)
+        session.flush()
+        return True
 
     async def add_source(self, data: dict):
         url = canonical_url(data["url"])
@@ -517,12 +535,14 @@ class RegWatch:
         }
 
     def comparison_detail(self, comparison_id: str):
-        with self.db.session() as session:
+        with self.write_guard, self.db.session() as session:
             comparison = get(session, Comparison, comparison_id)
             old, new = (
                 get(session, Version, comparison.old_version_id),
                 get(session, Version, comparison.new_version_id),
             )
+            if self.ensure_complete_diff(session, comparison, old, new):
+                session.commit()
             law = get(session, Law, comparison.law_id)
             return {
                 **as_dict(comparison),
@@ -704,17 +724,19 @@ class RegWatch:
         lock = self.analysis_locks.setdefault(comparison_id, asyncio.Lock())
         async with lock:
             settings, model_client = self.settings, self.model_client
-            with self.db.session() as session:
+            with self.write_guard, self.db.session() as session:
                 comparison = get(session, Comparison, comparison_id)
+                old, new = (
+                    get(session, Version, comparison.old_version_id),
+                    get(session, Version, comparison.new_version_id),
+                )
+                if self.ensure_complete_diff(session, comparison, old, new):
+                    session.commit()
                 if not comparison.diff["changed"]:
                     raise DomainError(
                         "These versions have no text changes to analyse. You can still ask about their content."
                     )
                 profile = get(session, Profile, "default")
-                old, new = (
-                    get(session, Version, comparison.old_version_id),
-                    get(session, Version, comparison.new_version_id),
-                )
                 key = ai.cache_key(comparison, profile, settings)
                 cached = session.scalar(
                     select(Analysis)
@@ -760,12 +782,14 @@ class RegWatch:
 
     async def ask(self, comparison_id: str, question: str, history: list[dict]):
         settings, model_client = self.settings, self.model_client
-        with self.db.session() as session:
+        with self.write_guard, self.db.session() as session:
             comparison = get(session, Comparison, comparison_id)
             old, new = (
                 get(session, Version, comparison.old_version_id),
                 get(session, Version, comparison.new_version_id),
             )
+            if self.ensure_complete_diff(session, comparison, old, new):
+                session.commit()
             profile = get(session, Profile, "default")
         return await ai.answer_question(
             model_client, settings, comparison, old, new, profile, question, history

@@ -420,7 +420,7 @@ function ApertusForm({
                 </span>
               </label>
               <label>
-                Evidence budget (characters)
+                Evidence warning threshold (characters)
                 <Input
                   type="number"
                   min={1000}
@@ -433,8 +433,8 @@ function ApertusForm({
                   }
                 />
                 <span className="field-help">
-                  Selected source text sent to Apertus. This is not the
-                  model&apos;s token limit.
+                  Comparison analysis sends every changed passage. This value
+                  flags oversized context; it never truncates the saved diff.
                 </span>
               </label>
               <label>
@@ -526,8 +526,8 @@ function ApertusForm({
           </div>
           <p className="text-xs muted">
             Changes apply to new requests immediately. Changing the endpoint,
-            model, evidence budget, or generation settings marks previous
-            analyses as stale.
+            model, evidence warning threshold, or generation settings marks
+            previous analyses as stale.
           </p>
         </fieldset>
       </form>

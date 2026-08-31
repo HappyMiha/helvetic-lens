@@ -95,6 +95,10 @@ export type Coverage = {
   available_passages: number;
   included_characters: number;
   limited: boolean;
+  complete?: boolean;
+  changed_items?: number;
+  configured_context_characters?: number;
+  exceeds_configured_context?: boolean;
   scope: string;
 };
 export type Impact = {
@@ -164,6 +168,8 @@ export type Change = {
   kind: "added" | "removed" | "modified" | "unchanged";
   old: Passage | null;
   new: Passage | null;
+  old_position?: number | null;
+  new_position?: number | null;
   old_parts: { text: string; kind: string }[];
   new_parts: { text: string; kind: string }[];
 };
@@ -175,7 +181,17 @@ export type Comparison = {
   created_at: string;
   old_version: Version;
   new_version: Version;
-  diff: { items: Change[]; counts: Counts; changed: boolean };
+  diff: {
+    schema_version?: number;
+    algorithm?: string;
+    granularity?: string;
+    complete?: boolean;
+    old_passage_count?: number;
+    new_passage_count?: number;
+    items: Change[];
+    counts: Counts;
+    changed: boolean;
+  };
   analysis: Analysis | null;
 };
 export type ScanItem = {
