@@ -15,6 +15,17 @@ from bs4 import BeautifulSoup, UnicodeDammit
 from .config import DomainError, Settings
 
 EXTRACTOR_VERSION = "native-v1"
+FEDLEX_DATA_ORIGIN = "https://fedlex.data.admin.ch"
+FEDLEX_SPARQL_ENDPOINT = FEDLEX_DATA_ORIGIN + "/sparqlendpoint"
+FEDLEX_ELI_HOSTS = {"fedlex.admin.ch", "www.fedlex.admin.ch", "fedlex.data.admin.ch"}
+FEDLEX_ELI_PATH = re.compile(
+    r"^/eli/(?P<collection>cc|oc|fga)/(?P<year>[A-Za-z0-9._~%-]+)/"
+    r"(?P<identifier>[A-Za-z0-9._~%-]+)"
+    r"(?:/(?P<version>\d{8}))?/(?P<language>de|fr|it|rm|en)"
+    r"(?:/(?P<format>html|pdf-a|pdf-x))?/?$",
+    re.I,
+)
+FEDLEX_METADATA_LIMIT = 256 * 1024
 
 
 def normalize(text: str) -> str:
@@ -79,6 +90,43 @@ class Fetched:
     metadata: dict = field(default_factory=dict)
 
 
+@dataclass(frozen=True)
+class FedlexEliReference:
+    source_url: str
+    work_uri: str
+    collection: str
+    language: str
+    expression_uri: str | None = None
+    version_date: str | None = None
+    requested_format: str | None = None
+
+
+def fedlex_eli_reference(value: str) -> FedlexEliReference | None:
+    """Map a public Fedlex ELI page to its stable Linked Data identifiers."""
+
+    url = canonical_url(value)
+    parsed = urlsplit(url)
+    if parsed.hostname not in FEDLEX_ELI_HOSTS:
+        return None
+    match = FEDLEX_ELI_PATH.fullmatch(parsed.path)
+    if not match:
+        return None
+    values = match.groupdict()
+    collection = values["collection"].lower()
+    language = values["language"].lower()
+    work_uri = f"{FEDLEX_DATA_ORIGIN}/eli/{collection}/{values['year']}/{values['identifier']}"
+    version = values["version"]
+    return FedlexEliReference(
+        source_url=url,
+        work_uri=work_uri,
+        collection=collection,
+        language=language,
+        expression_uri=f"{work_uri}/{version}/{language}" if version else None,
+        version_date=(f"{version[:4]}-{version[4:6]}-{version[6:]}" if version else None),
+        requested_format=values["format"].lower() if values["format"] else None,
+    )
+
+
 @dataclass
 class Extracted:
     title: str
@@ -129,6 +177,11 @@ class Fetcher:
         if provider != "native":
             raise DomainError("Choose native extraction or Firecrawl.")
         try:
+            fedlex = fedlex_eli_reference(url)
+            fedlex_metadata = {}
+            fedlex_artifact_prefix = None
+            if fedlex:
+                url, fedlex_metadata, fedlex_artifact_prefix = await self._resolve_fedlex_eli(fedlex)
             async with httpx.AsyncClient(
                 timeout=self.settings.fetch_timeout_seconds,
                 follow_redirects=False,
@@ -136,7 +189,10 @@ class Fetcher:
                 headers={"User-Agent": "ApertusRegWatch/0.1 (+document monitoring)"},
             ) as client:
                 for _ in range(6):
-                    check_boundary(url)
+                    if fedlex_artifact_prefix:
+                        self._validate_fedlex_artifact(url, fedlex_artifact_prefix)
+                    else:
+                        check_boundary(url)
                     url = await validate_public_url(url, self.settings.allow_private_sources)
                     async with client.stream("GET", url) as response:
                         if response.status_code in {301, 302, 303, 307, 308}:
@@ -165,7 +221,7 @@ class Fetcher:
                             url,
                             b"".join(chunks),
                             response.headers.get("content-type", ""),
-                            {"provider": "native"},
+                            {"provider": "native", **fedlex_metadata},
                         )
         except httpx.TimeoutException as exc:
             raise DomainError(
@@ -178,6 +234,144 @@ class Fetcher:
                 "source_unavailable",
             ) from exc
         raise DomainError("The source exceeded the redirect limit.")
+
+    async def _resolve_fedlex_eli(self, reference: FedlexEliReference):
+        title_uri = f"{reference.work_uri}/{reference.language}"
+        formats = [reference.requested_format] if reference.requested_format else ["html", "pdf-a", "pdf-x"]
+        format_values = "\n".join(
+            f"    (<{FEDLEX_DATA_ORIGIN}/vocabulary/user-format/{name}> {priority})"
+            for priority, name in enumerate(formats)
+        )
+        if reference.expression_uri:
+            version_selection = (
+                f"BIND(<{reference.expression_uri}> AS ?expression)\n"
+                f'BIND("{reference.version_date}"^^xsd:date AS ?date)'
+            )
+        elif reference.collection == "cc":
+            version_selection = f"""
+  ?version jolux:isMemberOf <{reference.work_uri}> ;
+           jolux:dateApplicability ?date ;
+           jolux:isRealizedBy ?expression .
+  FILTER(STRENDS(STR(?expression), "/{reference.language}"))
+  FILTER(?date <= xsd:date(NOW()))
+"""
+        else:
+            version_selection = f"BIND(<{title_uri}> AS ?expression)"
+        query = f"""
+PREFIX jolux: <http://data.legilux.public.lu/resource/ontology/jolux#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT ?expression ?date ?manifestation ?file ?title ?priority WHERE {{
+  OPTIONAL {{ <{title_uri}> jolux:title ?title . }}
+  {version_selection}
+  ?expression jolux:isEmbodiedBy ?manifestation .
+  VALUES (?userFormat ?priority) {{
+{format_values}
+  }}
+  ?manifestation jolux:userFormat ?userFormat ;
+                 jolux:isExemplifiedBy ?file .
+}}
+ORDER BY DESC(?date) ?priority
+LIMIT 1
+"""
+        try:
+            async with httpx.AsyncClient(
+                timeout=min(self.settings.fetch_timeout_seconds, 30),
+                trust_env=False,
+                headers={"User-Agent": "ApertusRegWatch/0.1 (+document monitoring)"},
+            ) as client:
+                response = await client.get(
+                    FEDLEX_SPARQL_ENDPOINT,
+                    params={"query": query, "format": "application/sparql-results+json"},
+                    headers={"Accept": "application/sparql-results+json"},
+                )
+            if response.status_code >= 400:
+                raise DomainError(
+                    f"Fedlex metadata returned HTTP {response.status_code}. Retry the preview later.",
+                    502,
+                    "fedlex_metadata_error",
+                )
+            if len(response.content) > FEDLEX_METADATA_LIMIT:
+                raise DomainError(
+                    "Fedlex returned more metadata than the resolver accepts.",
+                    502,
+                    "fedlex_metadata_error",
+                )
+            rows = response.json()["results"]["bindings"]
+        except DomainError:
+            raise
+        except (httpx.HTTPError, KeyError, TypeError, ValueError) as exc:
+            raise DomainError(
+                "Fedlex metadata could not be read. Retry the preview later.",
+                502,
+                "fedlex_metadata_error",
+            ) from exc
+        if not rows:
+            raise DomainError(
+                f"Fedlex has no current {reference.language.upper()} HTML or PDF publication for this ELI law.",
+                422,
+                "fedlex_document_unavailable",
+            )
+        row = rows[0]
+        try:
+            expression = row["expression"]["value"]
+            manifestation = row["manifestation"]["value"]
+            artifact = canonical_url(row["file"]["value"])
+            version_date = row.get("date", {}).get("value") or reference.version_date
+            title = row.get("title", {}).get("value")
+        except (KeyError, TypeError, ValueError, DomainError) as exc:
+            raise DomainError(
+                "Fedlex returned incomplete document metadata.", 502, "fedlex_metadata_error"
+            ) from exc
+        expected_expression = (
+            reference.expression_uri
+            if reference.expression_uri
+            else f"{reference.work_uri}/{version_date.replace('-', '')}/{reference.language}"
+            if reference.collection == "cc" and version_date
+            else title_uri
+        )
+        if expression != expected_expression or not manifestation.startswith(expression + "/"):
+            raise DomainError(
+                "Fedlex returned document metadata outside the requested ELI law.",
+                502,
+                "fedlex_metadata_error",
+            )
+        format_name = manifestation.rsplit("/", 1)[-1]
+        if format_name not in formats:
+            raise DomainError(
+                "Fedlex returned a document format outside the requested ELI publication.",
+                502,
+                "fedlex_metadata_error",
+            )
+        artifact_prefix = f"/filestore/fedlex.data.admin.ch{urlsplit(manifestation).path}/"
+        self._validate_fedlex_artifact(artifact, artifact_prefix)
+        metadata = {
+            "fedlex_eli": True,
+            "eli_source_url": reference.source_url,
+            "eli_work_uri": reference.work_uri,
+            "eli_expression_uri": expression,
+            "eli_manifestation_uri": manifestation,
+            "eli_version_date": version_date,
+            "eli_format": format_name,
+        }
+        if title:
+            metadata["eli_title"] = title[:500]
+        return artifact, metadata, artifact_prefix
+
+    @staticmethod
+    def _validate_fedlex_artifact(value: str, path_prefix: str):
+        parsed = urlsplit(canonical_url(value))
+        if (
+            parsed.scheme != "https"
+            or parsed.hostname != "fedlex.data.admin.ch"
+            or parsed.port not in {None, 443}
+            or parsed.query
+            or not parsed.path.startswith(path_prefix)
+        ):
+            raise DomainError(
+                "Fedlex returned a document URL outside its official publication store.",
+                502,
+                "fedlex_metadata_error",
+            )
 
     async def _firecrawl(self, url: str) -> Fetched:
         key = self.settings.firecrawl_api_key.get_secret_value()

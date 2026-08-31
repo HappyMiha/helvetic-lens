@@ -7,8 +7,11 @@ These are configurable examples, not a built-in allowlist. Measurements were tak
 | [FINMA circulars listing](https://www.finma.ch/en/documentation/circulars/) | HTML; “FINMA’s supervisory practice”; English; 2,042 characters, 41 passages | Static introduction plus listing/navigation fragments. The circular list uses JavaScript, so native discovery is partial. Do not treat the introduction as a particular circular. |
 | [FDPIC data-protection FAQ](https://www.edoeb.admin.ch/en/faq-data-protection) | HTML; “Frequently asked questions on data protection concerns”; English; 87,127 characters, 176 passages | Main FAQ text is extractable. It is guidance, not the full text of an act. Long-document AI coverage is limited and disclosed. |
 | [FDPIC 30th report, 2022–2023](https://www.edoeb.admin.ch/dam/en/sd-web/SdN6dbrPrj9f/30_Report_2022-2023_EN.pdf) | Text PDF; filename used as title; English; 108 pages, 208,487 characters, 1,622 passages | Annual report for parser/page-reference verification, not a previous version of a law. PDF blocks may include running headers, footnotes, and layout artifacts. |
+| [Fedlex FADP ELI](https://www.fedlex.admin.ch/eli/cc/2022/491/en) | Native ELI resolution; current applicable English HTML; “Federal Act on Data Protection”; 39,543 characters, 331 passages | Resolved through official SPARQL metadata to the 7 July 2025 expression during the 1 September 2026 check. Counts may change with a new applicable consolidation. The stable ELI URL remains tracked. |
+| [Fedlex FADP, 1 September 2023](https://fedlex.data.admin.ch/eli/cc/2022/491/20230901/en/html) | Explicit English HTML expression; 38,851 characters, 328 passages | The version and format are pinned by the ELI URL and are not advanced to the current consolidation. Useful as authentic historical input for the same act. |
+| [Fedlex FADP revision message](https://www.fedlex.admin.ch/eli/fga/2017/2057/fr) | Native ELI PDF fallback; French; 238 pages, 694,033 characters, 2,435 passages | This is a Federal Gazette message, not the consolidated FADP. PDF layout and metadata can contain encoding or block-order noise. |
 
-The [FDPIC legal-basis page](https://www.edoeb.admin.ch/en/legal-basis-data-protection) links to statutes and reports. Links to [Fedlex's FADP landing page](https://www.fedlex.admin.ch/eli/cc/2022/491/en) lead to a JavaScript application. Use a direct downloadable PDF for native monitoring if the landing page cannot yield the legal text.
+The [FDPIC legal-basis page](https://www.edoeb.admin.ch/en/legal-basis-data-protection) links to statutes and reports. Supported Fedlex ELI law URLs may point at the JavaScript application: the native fetcher detects those URLs and resolves the official HTML/PDF file through Fedlex metadata. Fedlex search pages and unrelated JavaScript routes are not resolved.
 
 ## Historical inputs
 
@@ -18,7 +21,7 @@ Do not attach an annual report or synthetic policy to an unrelated real act as i
 
 ## Boundaries
 
-- Native HTML selects main/article content when possible and removes common navigation, scripts, forms, headers, and footers. It does not execute JavaScript. Unusual structure and template fragments can require a better direct URL.
+- Native HTML selects main/article content when possible and removes common navigation, scripts, forms, headers, and footers. It does not execute JavaScript. Supported Fedlex ELI law URLs use the fixed official SPARQL endpoint and validated official publication-store URLs; this is a narrow resolver, not a general browser. Unusual structure and template fragments can require a better direct URL.
 - Discovery inspects at most 50 direct candidates within the selected host/path, prioritising PDF/TXT links and excluding common navigation. It follows no links inside those candidates. Native redirects outside the boundary are rejected; returned rendered-provider URLs are also checked. Previews and individual errors are persisted, with a 120-second inspection budget and explicit coverage counts.
 - PyMuPDF extracts text and page numbers. Image-only and password-protected PDFs are rejected; no OCR is included.
 - Login-gated sources are unsupported.

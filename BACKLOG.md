@@ -114,6 +114,7 @@ Acceptance criteria:
 - Extract meaningful HTML text with BeautifulSoup and text-based PDF content with PyMuPDF. Keep headings, article numbers, substantive dates, and paragraph/page boundaries.
 - Normalize whitespace and obvious navigation boilerplate consistently without erasing legal wording, numbers, or punctuation that may carry meaning.
 - Return a preview containing title, content type, text excerpt, extraction result, and any limitation before the user saves a document.
+- Resolve supported Fedlex ELI law URLs through the official Linked Data metadata into their current or explicitly dated HTML/PDF publication, while retaining the stable ELI URL for later scans and recording resolved provenance.
 - Apply practical time, redirect, and download limits; validate public URL targets, including redirects. Report network failures, empty extraction, scanned PDFs, login pages, and unsupported JavaScript pages as distinct failures or unsupported inputs.
 
 <a id="rw-005"></a>
