@@ -172,6 +172,7 @@ async def test_discovery_download_stops_before_a_redirect_outside_the_selected_s
     ("url", "collection", "language", "version", "requested_format", "language_defaulted"),
     [
         ("https://www.fedlex.admin.ch/eli/cc/2022/491/en", "cc", "en", None, None, False),
+        ("https://fedlex.data.admin.ch/eli/cc/2022/491", "cc", "de", None, None, True),
         (
             "https://fedlex.data.admin.ch/eli/cc/2022/491/20230901/fr/html",
             "cc",
@@ -190,6 +191,7 @@ async def test_discovery_download_stops_before_a_redirect_outside_the_selected_s
             None,
             False,
         ),
+        ("https://fedlex.data.admin.ch/eli/oc/VII/342_337_325", "oc", "de", None, None, True),
     ],
 )
 def test_fedlex_eli_reference_recognises_stable_law_urls(
@@ -205,6 +207,8 @@ def test_fedlex_eli_reference_recognises_stable_law_urls(
         assert "/VII/" in reference.work_uri
     assert fedlex_eli_reference("https://example.com/eli/cc/2022/491/en") is None
     assert fedlex_eli_reference("https://fedlex.admin.ch/eli/cc/2022/>/en") is None
+    assert fedlex_eli_reference("https://fedlex.admin.ch/search") is None
+    assert fedlex_eli_reference("https://fedlex.admin.ch/eli/cc/2022/491/de/print") is None
     assert (
         fedlex_eli_reference("https://fedlex.data.admin.ch/filestore/fedlex.data.admin.ch/eli/cc/law.html")
         is None
