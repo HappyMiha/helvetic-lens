@@ -7,7 +7,7 @@ from datetime import UTC, date, datetime
 from pathlib import PurePosixPath
 from urllib.parse import urlsplit
 
-from sqlalchemy import inspect, select
+from sqlalchemy import delete, func, inspect, select
 from sqlalchemy.orm import Session
 
 from . import analysis as ai
@@ -15,11 +15,13 @@ from .config import DomainError, Settings
 from .db import Database, utcnow
 from .diffing import DIFF_SCHEMA_VERSION, compare_passages
 from .extraction import Extracted, Fetcher, canonical_url, discover_links, extract
+from .integration_logs import IntegrationLogger
 from .model_settings import ApertusSettingsInput, public_settings, resolve_key, resolved_settings
 from .models import (
     Analysis,
     ApertusConfiguration,
     Comparison,
+    IntegrationLog,
     Law,
     Observation,
     Profile,
@@ -69,8 +71,9 @@ class RegWatch:
         self.settings = settings
         self.environment_settings = settings.model_copy(deep=True)
         self.db = Database(settings)
-        self.fetcher = fetcher or Fetcher(settings)
-        self.model_client = model_client or ai.ModelClient(settings)
+        self.integration_logger = IntegrationLogger(self.db.session)
+        self.fetcher = fetcher or Fetcher(settings, self.integration_logger)
+        self.model_client = model_client or ai.ModelClient(settings, self.integration_logger)
         self.write_guard = threading.RLock()
         self.analysis_locks: dict[str, asyncio.Lock] = {}
 
@@ -102,7 +105,7 @@ class RegWatch:
     def apply_model_settings(self, settings: Settings):
         self.settings = settings
         if isinstance(self.model_client, ai.ModelClient):
-            self.model_client = ai.ModelClient(settings)
+            self.model_client = ai.ModelClient(settings, self.integration_logger)
 
     def apertus_configuration(self):
         with self.db.session() as session:
@@ -138,7 +141,7 @@ class RegWatch:
             with self.db.session() as session:
                 saved = session.get(ApertusConfiguration, "default")
                 settings = resolved_settings(self.environment_settings, saved, data)
-            model_client = ai.ModelClient(settings)
+            model_client = ai.ModelClient(settings, self.integration_logger)
         else:
             settings, model_client = self.settings, self.model_client
         start = time.monotonic()
@@ -158,7 +161,7 @@ class RegWatch:
         with self.db.session() as session:
             saved = session.get(ApertusConfiguration, "default")
             settings = resolved_settings(self.environment_settings, saved, data)
-        models = await ai.ModelClient(settings).models()
+        models = await ai.ModelClient(settings, self.integration_logger).models()
         return {
             "provider": settings.apertus_provider,
             "base_url": settings.apertus_base_url,
@@ -313,6 +316,17 @@ class RegWatch:
             source.discovery = {}
             session.commit()
             return {**as_dict(source), "preview": preview}
+
+    def delete_source(self, source_id: str):
+        with self.write_guard, self.db.session() as session:
+            source = get(session, Source, source_id)
+            detached = list(session.scalars(select(Law).where(Law.source_id == source_id)))
+            for law in detached:
+                law.source_id = None
+            name = source.name
+            session.delete(source)
+            session.commit()
+            return {"deleted": True, "name": name, "detached_documents": len(detached)}
 
     async def discover(self, source_id: str):
         with self.db.session() as session:
@@ -482,6 +496,88 @@ class RegWatch:
                     )
                 ],
             }
+
+    def delete_law(self, law_id: str):
+        artifact_keys: set[str] = set()
+        comparison_ids: list[str] = []
+        with self.write_guard, self.db.session() as session:
+            law = get(session, Law, law_id)
+            busy = session.scalar(
+                select(ScanItem.id)
+                .join(Scan)
+                .where(ScanItem.law_id == law_id, Scan.status.in_(["queued", "running"]))
+                .limit(1)
+            )
+            if busy:
+                raise DomainError(
+                    "This document has a scan in progress. Wait for it to finish before deleting it.",
+                    409,
+                    "scan_in_progress",
+                )
+            versions = list(session.scalars(select(Version).where(Version.law_id == law_id)))
+            observations = list(
+                session.scalars(select(Observation).where(Observation.law_id == law_id))
+            )
+            comparisons = list(
+                session.scalars(select(Comparison).where(Comparison.law_id == law_id))
+            )
+            scan_items = list(session.scalars(select(ScanItem).where(ScanItem.law_id == law_id)))
+            artifact_keys.update(version.artifact_key for version in versions)
+            artifact_keys.update(observation.artifact_key for observation in observations)
+            comparison_ids = [comparison.id for comparison in comparisons]
+            scan_ids = {item.scan_id for item in scan_items}
+            if comparison_ids:
+                session.execute(delete(Analysis).where(Analysis.comparison_id.in_(comparison_ids)))
+            session.execute(delete(ScanItem).where(ScanItem.law_id == law_id))
+            session.execute(delete(Comparison).where(Comparison.law_id == law_id))
+            session.execute(delete(Observation).where(Observation.law_id == law_id))
+            session.execute(delete(Version).where(Version.law_id == law_id))
+            name = law.name
+            session.delete(law)
+            for scan_id in scan_ids:
+                scan = session.get(Scan, scan_id)
+                if not scan:
+                    continue
+                remaining = session.scalar(
+                    select(func.count()).select_from(ScanItem).where(ScanItem.scan_id == scan_id)
+                )
+                if remaining:
+                    scan.total = remaining
+                else:
+                    session.delete(scan)
+            session.commit()
+        for comparison_id in comparison_ids:
+            self.analysis_locks.pop(comparison_id, None)
+        with self.db.session() as session:
+            referenced = set(
+                session.scalars(
+                    select(Version.artifact_key).where(Version.artifact_key.in_(artifact_keys))
+                )
+            )
+            referenced.update(
+                session.scalars(
+                    select(Observation.artifact_key).where(
+                        Observation.artifact_key.in_(artifact_keys)
+                    )
+                )
+            )
+        removed_artifacts = 0
+        for artifact_key in artifact_keys - referenced:
+            try:
+                artifact = self.settings.storage_path / "artifacts" / artifact_key
+                if artifact.is_file():
+                    artifact.unlink()
+                    removed_artifacts += 1
+            except OSError:
+                logger.warning("Could not remove an unreferenced artifact: %s", artifact_key)
+        return {
+            "deleted": True,
+            "name": name,
+            "versions": len(versions),
+            "comparisons": len(comparisons),
+            "scan_entries": len(scan_items),
+            "artifacts": removed_artifacts,
+        }
 
     async def import_version(
         self,
@@ -732,6 +828,68 @@ class RegWatch:
                 "completed": sum(i["stage"] in {"complete", "failed", "interrupted"} for i in items),
                 "items": items,
             }
+
+    def integration_logs(
+        self,
+        *,
+        provider: str = "",
+        status: str = "",
+        sort_by: str = "created_at",
+        sort_dir: str = "desc",
+        limit: int = 100,
+        offset: int = 0,
+    ):
+        columns = {
+            "created_at": IntegrationLog.created_at,
+            "provider": IntegrationLog.provider,
+            "operation": IntegrationLog.operation,
+            "status": IntegrationLog.status,
+            "duration_ms": IntegrationLog.duration_ms,
+            "response_status": IntegrationLog.response_status,
+        }
+        conditions = []
+        if provider:
+            conditions.append(IntegrationLog.provider == provider)
+        if status:
+            conditions.append(IntegrationLog.status == status)
+        column = columns.get(sort_by, IntegrationLog.created_at)
+        ordering = column.asc() if sort_dir == "asc" else column.desc()
+        with self.db.session() as session:
+            total = session.scalar(
+                select(func.count()).select_from(IntegrationLog).where(*conditions)
+            )
+            records = list(
+                session.scalars(
+                    select(IntegrationLog)
+                    .where(*conditions)
+                    .order_by(ordering, IntegrationLog.created_at.desc(), IntegrationLog.id)
+                    .offset(offset)
+                    .limit(limit)
+                )
+            )
+            providers = list(
+                session.scalars(
+                    select(IntegrationLog.provider).distinct().order_by(IntegrationLog.provider)
+                )
+            )
+        omitted = {"request_headers", "request_body", "response_headers", "response_body"}
+        return {
+            "items": [as_dict(record, omitted) for record in records],
+            "total": total or 0,
+            "limit": limit,
+            "offset": offset,
+            "providers": providers,
+        }
+
+    def integration_log_detail(self, log_id: str):
+        with self.db.session() as session:
+            return as_dict(get(session, IntegrationLog, log_id))
+
+    def clear_integration_logs(self):
+        with self.write_guard, self.db.session() as session:
+            result = session.execute(delete(IntegrationLog))
+            session.commit()
+            return {"deleted": result.rowcount or 0}
 
     async def analyse(self, comparison_id: str):
         lock = self.analysis_locks.setdefault(comparison_id, asyncio.Lock())

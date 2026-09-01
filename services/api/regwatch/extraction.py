@@ -3,6 +3,7 @@ import hashlib
 import ipaddress
 import re
 import socket
+import time
 import unicodedata
 from dataclasses import dataclass, field
 from pathlib import PurePosixPath
@@ -13,6 +14,7 @@ import pymupdf
 from bs4 import BeautifulSoup, UnicodeDammit
 
 from .config import DomainError, Settings
+from .integration_logs import IntegrationLogger, response_snapshot
 
 EXTRACTOR_VERSION = "native-v2"
 FEDLEX_DATA_ORIGIN = "https://fedlex.data.admin.ch"
@@ -159,8 +161,48 @@ class Extracted:
 
 
 class Fetcher:
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: Settings, integration_logger: IntegrationLogger | None = None):
         self.settings = settings
+        self.integration_logger = integration_logger
+
+    def log_exchange(
+        self,
+        *,
+        provider: str,
+        operation: str,
+        method: str,
+        url: str,
+        started: float,
+        status: str,
+        request_headers=None,
+        request_body=None,
+        response: httpx.Response | None = None,
+        response_body=None,
+        error: str | None = None,
+    ) -> None:
+        if not self.integration_logger:
+            return
+        if response_body is None and response is not None:
+            try:
+                response_body = response_snapshot(
+                    response.content, response.headers.get("content-type", "")
+                )
+            except httpx.ResponseNotRead:
+                response_body = None
+        self.integration_logger.record(
+            provider=provider,
+            operation=operation,
+            method=method,
+            url=url,
+            status=status,
+            duration_ms=(time.monotonic() - started) * 1000,
+            request_headers=request_headers,
+            request_body=request_body,
+            response_status=response.status_code if response is not None else None,
+            response_headers=response.headers if response is not None else None,
+            response_body=response_body,
+            error=error,
+        )
 
     async def fetch(
         self, url: str, provider: str = "native", *, boundary: tuple[str, str] | None = None
@@ -198,35 +240,80 @@ class Fetcher:
                     else:
                         check_boundary(url)
                     url = await validate_public_url(url, self.settings.allow_private_sources)
-                    async with client.stream("GET", url) as response:
-                        if response.status_code in {301, 302, 303, 307, 308}:
-                            location = response.headers.get("location")
-                            if not location:
-                                raise DomainError("The source returned a redirect without a destination.")
-                            url = urljoin(url, location)
-                            continue
-                        if response.status_code >= 400:
-                            raise DomainError(
-                                f"The source returned HTTP {response.status_code}. Try a direct public document URL.",
-                                422,
-                                "source_http_error",
+                    started, response, logged = time.monotonic(), None, False
+                    chunks: list[bytes] = []
+
+                    def log(status: str, error: str | None = None, body=None):
+                        nonlocal logged
+                        if not logged:
+                            self.log_exchange(
+                                provider="website",
+                                operation="fetch_document",
+                                method="GET",
+                                url=url,
+                                started=started,
+                                status=status,
+                                request_headers=client.headers,
+                                response=response,
+                                response_body=body,
+                                error=error,
                             )
-                        chunks, size = [], 0
-                        async for chunk in response.aiter_bytes():
-                            size += len(chunk)
-                            if size > self.settings.max_document_bytes:
-                                raise DomainError(
-                                    "The document exceeds the configured download limit.",
-                                    413,
-                                    "document_too_large",
+                            logged = True
+
+                    try:
+                        async with client.stream("GET", url) as response:
+                            if response.status_code in {301, 302, 303, 307, 308}:
+                                location = response.headers.get("location")
+                                if not location:
+                                    message = "The source returned a redirect without a destination."
+                                    log("error", message)
+                                    raise DomainError(message)
+                                log("success", body={"redirect_to": location})
+                                url = urljoin(url, location)
+                                continue
+                            if response.status_code >= 400:
+                                message = (
+                                    f"The source returned HTTP {response.status_code}. "
+                                    "Try a direct public document URL."
                                 )
-                            chunks.append(chunk)
-                        return Fetched(
-                            url,
-                            b"".join(chunks),
-                            response.headers.get("content-type", ""),
-                            {"provider": "native", **fedlex_metadata},
+                                log("error", message)
+                                raise DomainError(message, 422, "source_http_error")
+                            size = 0
+                            async for chunk in response.aiter_bytes():
+                                size += len(chunk)
+                                if size > self.settings.max_document_bytes:
+                                    message = "The document exceeds the configured download limit."
+                                    log(
+                                        "error",
+                                        message,
+                                        response_snapshot(
+                                            b"".join(chunks),
+                                            response.headers.get("content-type", ""),
+                                        ),
+                                    )
+                                    raise DomainError(message, 413, "document_too_large")
+                                chunks.append(chunk)
+                            body = b"".join(chunks)
+                            content_type = response.headers.get("content-type", "")
+                            log("success", body=response_snapshot(body, content_type))
+                            return Fetched(
+                                url,
+                                body,
+                                content_type,
+                                {"provider": "native", **fedlex_metadata},
+                            )
+                    except DomainError:
+                        raise
+                    except httpx.HTTPError:
+                        log(
+                            "error",
+                            "The website request failed before a complete response was received.",
+                            response_snapshot(
+                                b"".join(chunks),
+                                response.headers.get("content-type", "") if response else "",
+                            ),
                         )
+                        raise
         except httpx.TimeoutException as exc:
             raise DomainError(
                 "The source timed out. The previous good version is unchanged.", 422, "source_timeout"
@@ -277,33 +364,56 @@ SELECT ?expression ?date ?manifestation ?file ?title ?priority WHERE {{
 ORDER BY DESC(?date) ?priority
 LIMIT 1
 """
+        headers = {
+            "User-Agent": "ApertusRegWatch/0.1 (+document monitoring)",
+            "Accept": "application/sparql-results+json",
+        }
+        request_body = {"query": query, "format": "application/sparql-results+json"}
+        started, response, logged = time.monotonic(), None, False
+
+        def log(status: str, error: str | None = None):
+            nonlocal logged
+            if not logged:
+                self.log_exchange(
+                    provider="fedlex",
+                    operation="resolve_eli",
+                    method="GET",
+                    url=FEDLEX_SPARQL_ENDPOINT,
+                    started=started,
+                    status=status,
+                    request_headers=headers,
+                    request_body=request_body,
+                    response=response,
+                    error=error,
+                )
+                logged = True
+
         try:
             async with httpx.AsyncClient(
                 timeout=min(self.settings.fetch_timeout_seconds, 30),
                 trust_env=False,
-                headers={"User-Agent": "ApertusRegWatch/0.1 (+document monitoring)"},
+                headers=headers,
             ) as client:
                 response = await client.get(
                     FEDLEX_SPARQL_ENDPOINT,
-                    params={"query": query, "format": "application/sparql-results+json"},
+                    params=request_body,
                     headers={"Accept": "application/sparql-results+json"},
                 )
             if response.status_code >= 400:
-                raise DomainError(
-                    f"Fedlex metadata returned HTTP {response.status_code}. Retry the preview later.",
-                    502,
-                    "fedlex_metadata_error",
-                )
+                message = f"Fedlex metadata returned HTTP {response.status_code}. Retry the preview later."
+                log("error", message)
+                raise DomainError(message, 502, "fedlex_metadata_error")
             if len(response.content) > FEDLEX_METADATA_LIMIT:
-                raise DomainError(
-                    "Fedlex returned more metadata than the resolver accepts.",
-                    502,
-                    "fedlex_metadata_error",
-                )
+                message = "Fedlex returned more metadata than the resolver accepts."
+                log("error", message)
+                raise DomainError(message, 502, "fedlex_metadata_error")
             rows = response.json()["results"]["bindings"]
-        except DomainError:
+            log("success")
+        except DomainError as exc:
+            log("error", exc.message)
             raise
         except (httpx.HTTPError, KeyError, TypeError, ValueError) as exc:
+            log("error", "Fedlex metadata could not be read.")
             raise DomainError(
                 "Fedlex metadata could not be read. Retry the preview later.",
                 502,
@@ -388,25 +498,48 @@ LIMIT 1
                 "provider_not_configured",
             )
         url = await validate_public_url(url, self.settings.allow_private_sources)
+        endpoint = self.settings.firecrawl_api_url.rstrip("/") + "/v2/scrape"
+        headers = {"Authorization": f"Bearer {key}"}
+        payload = {
+            "url": url,
+            "formats": ["html"],
+            "onlyMainContent": True,
+            "maxAge": 0,
+            "timeout": 60000,
+        }
+        started, response, logged = time.monotonic(), None, False
+
+        def log(status: str, error: str | None = None):
+            nonlocal logged
+            if not logged:
+                self.log_exchange(
+                    provider="firecrawl",
+                    operation="scrape_document",
+                    method="POST",
+                    url=endpoint,
+                    started=started,
+                    status=status,
+                    request_headers=headers,
+                    request_body=payload,
+                    response=response,
+                    error=error,
+                )
+                logged = True
+
         try:
             async with httpx.AsyncClient(timeout=90, trust_env=False) as client:
                 response = await client.post(
-                    self.settings.firecrawl_api_url.rstrip("/") + "/v2/scrape",
-                    headers={"Authorization": f"Bearer {key}"},
-                    json={
-                        "url": url,
-                        "formats": ["html"],
-                        "onlyMainContent": True,
-                        "maxAge": 0,
-                        "timeout": 60000,
-                    },
+                    endpoint,
+                    headers=headers,
+                    json=payload,
                 )
             if response.status_code >= 400:
-                raise DomainError(
-                    f"Firecrawl returned HTTP {response.status_code}. Check its credentials and usage limit.",
-                    502,
-                    "provider_error",
+                message = (
+                    f"Firecrawl returned HTTP {response.status_code}. "
+                    "Check its credentials and usage limit."
                 )
+                log("error", message)
+                raise DomainError(message, 502, "provider_error")
             result = response.json()
             if not result.get("success") or not result.get("data", {}).get("html"):
                 raise DomainError("Firecrawl did not return usable HTML.", 502, "provider_error")
@@ -418,6 +551,7 @@ LIMIT 1
             body = data["html"].encode("utf-8")
             if len(body) > self.settings.max_document_bytes:
                 raise DomainError("The extracted page exceeds the document limit.", 413)
+            log("success")
             return Fetched(
                 final_url,
                 body,
@@ -428,7 +562,11 @@ LIMIT 1
                     "cached_at": metadata.get("cachedAt"),
                 },
             )
+        except DomainError as exc:
+            log("error", exc.message)
+            raise
         except (httpx.HTTPError, ValueError) as exc:
+            log("error", "Firecrawl could not complete the request.")
             raise DomainError("Firecrawl could not complete the request.", 502, "provider_error") from exc
 
 

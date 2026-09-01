@@ -32,11 +32,14 @@ export function Status({ value }: { value: string | null }) {
     "changed",
     "high",
     "failed",
+    "error",
     "interrupted",
     "partial",
   ].includes(value || "")
     ? "status-warm"
-    : ["unchanged", "complete", "succeeded", "low"].includes(value || "")
+    : ["unchanged", "complete", "succeeded", "success", "low"].includes(
+          value || "",
+        )
       ? "status-green"
       : [
             "historical_comparison",

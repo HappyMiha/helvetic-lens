@@ -13,6 +13,7 @@ import {
   Globe2,
   History,
   Loader2,
+  ScrollText,
   Settings2,
   ShieldCheck,
   Sparkles,
@@ -92,6 +93,13 @@ export function Shell({
             <History size={17} />
             Scan activity
           </Link>
+          <Link
+            className={"nav-item " + (pathname === "/logs" ? "active" : "")}
+            href="/logs"
+          >
+            <ScrollText size={17} />
+            Integration logs
+          </Link>
           <button className="nav-item" onClick={() => setProfileOpen(true)}>
             <Building2 size={17} />
             Company profile
@@ -155,6 +163,7 @@ export function Shell({
           <Link href="/">Overview</Link>
           <Link href="/sources">Sources</Link>
           <Link href="/activity">Activity</Link>
+          <Link href="/logs">Logs</Link>
           <Link href="/settings">Settings</Link>
         </nav>
         <div className={"content " + (wide ? "content-wide" : "")}>

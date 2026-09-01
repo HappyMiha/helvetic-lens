@@ -233,6 +233,33 @@ export type Scan = {
   finished_at: string | null;
   items: ScanItem[];
 };
+export type IntegrationLogSummary = {
+  id: string;
+  provider: string;
+  operation: string;
+  method: string;
+  url: string;
+  status: "success" | "error";
+  response_status: number | null;
+  duration_ms: number;
+  request_size: number;
+  response_size: number;
+  error: string | null;
+  created_at: string;
+};
+export type IntegrationLogDetail = IntegrationLogSummary & {
+  request_headers: Record<string, unknown>;
+  request_body: unknown;
+  response_headers: Record<string, unknown>;
+  response_body: unknown;
+};
+export type IntegrationLogPage = {
+  items: IntegrationLogSummary[];
+  total: number;
+  limit: number;
+  offset: number;
+  providers: string[];
+};
 export type Profile = {
   name: string;
   description: string;

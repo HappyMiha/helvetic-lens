@@ -3,7 +3,7 @@ import re
 from contextlib import asynccontextmanager
 from typing import Annotated, Literal
 
-from fastapi import BackgroundTasks, FastAPI, File, Form, UploadFile
+from fastapi import BackgroundTasks, FastAPI, File, Form, Query, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -80,7 +80,7 @@ def create_app(settings: Settings | None = None, fetcher=None, model_client=None
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["http://127.0.0.1:3000", "http://localhost:3000"],
-        allow_methods=["GET", "POST", "PATCH"],
+        allow_methods=["GET", "POST", "PATCH", "DELETE"],
         allow_headers=["Content-Type"],
     )
 
@@ -154,6 +154,10 @@ def create_app(settings: Settings | None = None, fetcher=None, model_client=None
     async def update_source(source_id: str, data: SourceInput):
         return await service.update_source(source_id, data.model_dump())
 
+    @app.delete("/api/sources/{source_id}")
+    def delete_source(source_id: str):
+        return service.delete_source(source_id)
+
     @app.post("/api/sources/{source_id}/discover")
     async def discover(source_id: str):
         return await service.discover(source_id)
@@ -182,6 +186,10 @@ def create_app(settings: Settings | None = None, fetcher=None, model_client=None
                 setattr(law, key, value)
             session.commit()
             return service.law_summary(session, law)
+
+    @app.delete("/api/laws/{law_id}")
+    def delete_law(law_id: str):
+        return service.delete_law(law_id)
 
     @app.post("/api/laws/{law_id}/import")
     async def import_version(
@@ -266,6 +274,34 @@ def create_app(settings: Settings | None = None, fetcher=None, model_client=None
     @app.get("/api/scans/{scan_id}")
     def scan_detail(scan_id: str):
         return service.scan_detail(scan_id)
+
+    @app.get("/api/integration-logs")
+    def integration_logs(
+        provider: str = Query(default="", max_length=40),
+        status: Literal["", "success", "error"] = "",
+        sort_by: Literal[
+            "created_at", "provider", "operation", "status", "duration_ms", "response_status"
+        ] = "created_at",
+        sort_dir: Literal["asc", "desc"] = "desc",
+        limit: int = Query(default=100, ge=1, le=500),
+        offset: int = Query(default=0, ge=0),
+    ):
+        return service.integration_logs(
+            provider=provider,
+            status=status,
+            sort_by=sort_by,
+            sort_dir=sort_dir,
+            limit=limit,
+            offset=offset,
+        )
+
+    @app.get("/api/integration-logs/{log_id}")
+    def integration_log_detail(log_id: str):
+        return service.integration_log_detail(log_id)
+
+    @app.delete("/api/integration-logs")
+    def clear_integration_logs():
+        return service.clear_integration_logs()
 
     @app.get("/api/profile")
     def profile():

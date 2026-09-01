@@ -2,6 +2,7 @@ import asyncio
 import hashlib
 import json
 import re
+import time
 from typing import Annotated, Literal
 
 import httpx
@@ -9,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from .config import DomainError, Settings
 from .extraction import normalize
+from .integration_logs import IntegrationLogger, response_snapshot
 from .models import Comparison, Profile, Version
 
 PROMPT_VERSION = "regwatch-v3-batched-complete-diff"
@@ -83,8 +85,9 @@ class AnswerSynthesis(StructuredOutput):
 
 
 class ModelClient:
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: Settings, integration_logger: IntegrationLogger | None = None):
         self.settings = settings
+        self.integration_logger = integration_logger
 
     @property
     def provider_name(self) -> str:
@@ -99,6 +102,44 @@ class ModelClient:
 
     def endpoint(self, path: str) -> str:
         return self.settings.apertus_base_url.rstrip("/") + "/" + path.lstrip("/")
+
+    def log_exchange(
+        self,
+        *,
+        operation: str,
+        method: str,
+        url: str,
+        request_headers: dict,
+        request_body,
+        response: httpx.Response | None,
+        started: float,
+        status: str,
+        error: str | None = None,
+    ) -> None:
+        if not self.integration_logger:
+            return
+        try:
+            response_body = (
+                response_snapshot(response.content, response.headers.get("content-type", ""))
+                if response is not None
+                else None
+            )
+        except httpx.ResponseNotRead:
+            response_body = None
+        self.integration_logger.record(
+            provider=self.settings.apertus_provider,
+            operation=operation,
+            method=method,
+            url=url,
+            status=status,
+            duration_ms=(time.monotonic() - started) * 1000,
+            request_headers=request_headers,
+            request_body=request_body,
+            response_status=response.status_code if response is not None else None,
+            response_headers=response.headers if response is not None else None,
+            response_body=response_body,
+            error=error,
+        )
 
     def raise_for_provider_error(self, response: httpx.Response, *, operation: str) -> None:
         provider = self.provider_name
@@ -142,11 +183,31 @@ class ModelClient:
                 503,
                 "model_not_configured",
             )
+        url, headers, started = self.endpoint("models"), self.headers(), time.monotonic()
+        response: httpx.Response | None = None
+        logged = False
+
+        def log(status: str, error: str | None = None):
+            nonlocal logged
+            if not logged:
+                self.log_exchange(
+                    operation="list_models",
+                    method="GET",
+                    url=url,
+                    request_headers=headers,
+                    request_body=None,
+                    response=response,
+                    started=started,
+                    status=status,
+                    error=error,
+                )
+                logged = True
+
         try:
             async with httpx.AsyncClient(
                 timeout=self.settings.apertus_timeout_seconds, trust_env=False
             ) as client:
-                response = await client.get(self.endpoint("models"), headers=self.headers())
+                response = await client.get(url, headers=headers)
             self.raise_for_provider_error(response, operation="models")
             payload = response.json()
             data = payload.get("data") if isinstance(payload, dict) else None
@@ -174,18 +235,25 @@ class ModelClient:
                     502,
                     "model_list_empty",
                 )
+            log("success")
             return models
+        except DomainError as exc:
+            log("error", exc.message)
+            raise
         except httpx.TimeoutException as exc:
+            log("error", "The model list request timed out.")
             raise DomainError(
                 f"{self.provider_name} timed out while loading models.", 504, "model_timeout"
             ) from exc
         except httpx.ConnectError as exc:
+            log("error", "The model provider could not be reached.")
             raise DomainError(
                 f"Cannot reach {self.provider_name}. Check the integration address and network connection.",
                 503,
                 "model_unreachable",
             ) from exc
         except (httpx.HTTPError, KeyError, ValueError, TypeError) as exc:
+            log("error", "The provider returned an unusable model list.")
             raise DomainError(
                 f"{self.provider_name} did not return a usable OpenAI-compatible model list.",
                 502,
@@ -218,31 +286,58 @@ class ModelClient:
             payload["reasoning_effort"] = self.settings.apertus_reasoning_effort
         if self.settings.apertus_json_mode:
             payload["response_format"] = {"type": "json_object"}
+        url, headers, started = self.endpoint("chat/completions"), self.headers(), time.monotonic()
+        response: httpx.Response | None = None
+        logged = False
+
+        def log(status: str, error: str | None = None):
+            nonlocal logged
+            if not logged:
+                self.log_exchange(
+                    operation="chat_completion",
+                    method="POST",
+                    url=url,
+                    request_headers=headers,
+                    request_body=payload,
+                    response=response,
+                    started=started,
+                    status=status,
+                    error=error,
+                )
+                logged = True
+
         try:
             async with httpx.AsyncClient(
                 timeout=self.settings.apertus_timeout_seconds, trust_env=False
             ) as client:
                 response = await client.post(
-                    self.endpoint("chat/completions"),
-                    headers=self.headers(),
+                    url,
+                    headers=headers,
                     json=payload,
                 )
             self.raise_for_provider_error(response, operation="chat completions")
             content = response.json()["choices"][0]["message"]["content"]
             if not isinstance(content, str) or not content.strip():
                 raise ValueError("empty reply")
+            log("success")
             return content
+        except DomainError as exc:
+            log("error", exc.message)
+            raise
         except httpx.TimeoutException as exc:
+            log("error", "The chat completion request timed out.")
             raise DomainError(
                 "Apertus timed out. The saved comparison is still available.", 504, "model_timeout"
             ) from exc
         except httpx.ConnectError as exc:
+            log("error", "The model provider could not be reached.")
             raise DomainError(
                 "Cannot reach Apertus. Check that the model server is running and that its API address is reachable from the RegWatch API.",
                 503,
                 "model_unreachable",
             ) from exc
         except (httpx.HTTPError, KeyError, IndexError, ValueError, TypeError) as exc:
+            log("error", "The provider returned an unusable chat completion response.")
             raise DomainError(
                 "Apertus did not return a usable response. Check the server's OpenAI-compatible chat endpoint.",
                 502,

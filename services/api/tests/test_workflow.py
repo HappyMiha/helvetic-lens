@@ -1,8 +1,10 @@
 from conftest import LAW_URL, LIST_URL, add_law, import_old, policy, run_scan
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 
 from regwatch.config import DomainError
 from regwatch.main import create_app
+from regwatch.models import Version
 
 
 def test_connect_discover_preview_and_add_without_code_changes(harness):
@@ -279,6 +281,50 @@ def test_source_edits_are_persisted_and_conflicts_leave_original_configuration(h
     sources = {item["id"]: item for item in client.get("/api/sources").json()}
     assert sources[other["id"]]["url"] == other_url
     assert sources[source["id"]]["name"] == "Selected regulations"
+
+
+def test_sources_and_monitored_documents_can_be_deleted_with_their_history(harness):
+    client, _, service, _ = harness
+    source = client.post("/api/sources", json={"url": LIST_URL}).json()
+    law = add_law(client, source_id=source["id"])
+    old = import_old(client, law["id"])["version"]
+    comparison = client.post(
+        "/api/comparisons",
+        json={"old_version_id": old["id"], "new_version_id": law["current_version_id"]},
+    ).json()
+    scan = run_scan(client, [law["id"]])
+    with service.db.session() as session:
+        artifacts = [
+            service.settings.storage_path / "artifacts" / key
+            for key in session.scalars(
+                select(Version.artifact_key).where(Version.law_id == law["id"])
+            )
+        ]
+    assert artifacts and all(path.is_file() for path in artifacts)
+
+    removed_source = client.delete("/api/sources/" + source["id"])
+    assert removed_source.status_code == 200
+    assert removed_source.json()["detached_documents"] == 1
+    assert client.get("/api/laws/" + law["id"]).json()["source_id"] is None
+
+    removed_law = client.delete("/api/laws/" + law["id"])
+    assert removed_law.status_code == 200
+    assert removed_law.json()["versions"] == 2
+    assert client.get("/api/laws/" + law["id"]).status_code == 404
+    assert client.get("/api/versions/" + old["id"]).status_code == 404
+    assert client.get("/api/comparisons/" + comparison["id"]).status_code == 404
+    assert client.get("/api/scans/" + scan["id"]).status_code == 404
+    assert all(not path.exists() for path in artifacts)
+
+
+def test_document_deletion_waits_for_an_active_scan(harness):
+    client, _, service, _ = harness
+    law = add_law(client)
+    service.start_scan([law["id"]], None)
+    blocked = client.delete("/api/laws/" + law["id"])
+    assert blocked.status_code == 409 and blocked.json()["code"] == "scan_in_progress"
+    service.initialize()
+    assert client.delete("/api/laws/" + law["id"]).status_code == 200
 
 
 def test_discovery_inspects_at_most_fifty_pages_preserves_errors_and_never_crawls_deeper(harness):

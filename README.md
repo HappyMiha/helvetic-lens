@@ -6,7 +6,7 @@ Apertus RegWatch lets users connect regulatory websites, add specific laws or do
 
 The MVP must be a functional product with a narrow scope. Sources are configured through the interface, data persists between sessions, and the demonstration uses the same fetching, comparison, and analysis pipeline as everyday use.
 
-> **Project status:** The model-enabled MVP works end to end: source connections, direct URLs, imports, immutable history, live scans, saved comparisons, visual evidence, persisted Apertus settings, impact analysis, and cited questions. Live Apertus checks include a complete 1,406-passage comparison processed without truncation. See [verification notes](docs/VERIFICATION.md).
+> **Project status:** The model-enabled MVP works end to end: source connections, direct URLs, imports, immutable history, live scans, saved comparisons, visual evidence, persisted Apertus settings, impact analysis, cited questions, inspectable integration logs, and controlled removal of sources or monitored documents. Live Apertus checks include a complete 1,406-passage comparison processed without truncation. See [verification notes](docs/VERIFICATION.md).
 
 Development tasks, priorities, dependencies, and acceptance criteria are tracked in [BACKLOG.md](BACKLOG.md).
 
@@ -93,6 +93,7 @@ Start by validating 2-3 Swiss public sources and one company profile, but do not
 3. **Add an earlier version when needed.** Upload a previous PDF, HTML, or TXT file, paste its text, or provide a direct URL to an older copy. Preview it and attach it to the correct law.
 4. **Run a check.** Select one law or the watchlist, choose the comparison baseline, and click **Scan now**. The app fetches the current document and shows progress through extraction, comparison, and Apertus analysis.
 5. **Inspect what happened.** See which sources were checked, which documents changed, the exact old and new wording, and Apertus's explanation with supporting passages.
+6. **Inspect integrations when needed.** Open **Integration logs** to review the redacted request and response for website, Fedlex, Firecrawl, and model-provider calls, sort or filter the records, and clear the diagnostic history.
 
 Connecting a website and monitoring a law are separate actions: a **source** is a website or listing page; a **tracked law** is a specific document with a current URL; a **version** is a saved snapshot of that document.
 
@@ -100,8 +101,8 @@ Connecting a website and monitoring a law are separate actions: a **source** is 
 
 | Feature | What the user can see and do |
 | --- | --- |
-| **Website connections** | Add and edit a public source URL or listing page, test extraction, and preview discovered document links. Source configuration persists in the database. |
-| **Law discovery and watchlist** | Search discovered documents by title or keyword, add selected laws, or add a specific law directly by URL. Name, pause, and resume tracked documents through the interface. |
+| **Website connections** | Add, edit, or remove a public source URL or listing page, test extraction, and preview discovered document links. Removing a source detaches its tracked documents instead of deleting their evidence. |
+| **Law discovery and watchlist** | Search discovered documents by title or keyword, add selected laws, or add a specific law directly by URL. Name, pause, resume, or permanently delete a tracked document and its saved history through the interface. |
 | **Import previous version** | Upload a PDF, HTML, or TXT file, paste text, or fetch a historical copy by URL. Review the extracted text, attach it to a law, and optionally record its stated version date. |
 | **Dashboard** | See connected sources, tracked laws, last scan times, changes, and impact indicators. Distinguish newly discovered documents, changed documents, unchanged documents, and failures. |
 | **Scan now** | Check one law or the watchlist, with per-document progress and a final summary. A first fetch without a prior version establishes a baseline. A background scheduler is not required. |
@@ -109,10 +110,13 @@ Connecting a website and monitoring a law are separate actions: a **source** is 
 | **Visual diff** | Choose old and new versions and see added, removed, and modified passages. Show side-by-side text, inline word highlights, a list of changes, and links to the saved evidence and original source. |
 | **Apertus impact analysis** | Analyse every changed passage in the complete saved comparison; generate a concise summary, why it matters, affected business areas, an indicative high/medium/low impact, and 1-3 suggested actions. Keep supporting passages visible. |
 | **Settings** | Choose Infomaniak or another OpenAI-compatible provider; configure Product ID/endpoint, server-side credential handling, an API-loaded model dropdown, timeout, evidence threshold, completion length, temperature, Top P, presence penalty, reasoning effort, and JSON mode. Test unsaved values, save without restarting, restore environment defaults, and edit the company profile. |
+| **Integration logs** | Review outbound website, Fedlex, Firecrawl, and Apertus/Infomaniak requests and responses, including HTTP status, duration, payload sizes, and errors. Sort, filter, inspect details, and clear logs. Credentials, cookies, token fields, and matching secret values are redacted before persistence; large payloads are bounded and binary documents are represented by metadata and a hash. |
 | **Ask Apertus with citations** | Ask questions about the selected comparison using every changed passage. Questions about what changed use the complete deterministic diff; unrelated questions can remain unsupported. Cite the exact saved version and passage, including a PDF page where available. |
 | **Optional: impact matrix** | Show changes against business areas such as HR, IT, Legal, and Operations, with an indicative priority and a short reason. Add only if the core demo is complete. |
 
 Impact labels and suggested actions are AI-generated aids for review, not authoritative legal conclusions. Users can check the linked source before acting.
+
+Integration logs are local troubleshooting records, not an enterprise audit system. List responses omit heavy payloads; full redacted request/response details load only when opened. Clearing logs does not alter sources, documents, versions, scans, comparisons, or provider settings. Deleting a connected website leaves its documents monitored independently. Deleting a monitored document is permanent and removes its versions, observations, comparisons, analyses, scan entries, and unreferenced artifact files; an active scan must finish first.
 
 ## Connecting real sources
 

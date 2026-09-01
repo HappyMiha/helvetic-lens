@@ -16,6 +16,7 @@ import {
   RefreshCw,
   Search,
   Settings2,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,7 @@ import {
 } from "@/lib/api";
 import type { Candidate, Discovery, Law, Scan, Source } from "@/lib/types";
 import { ErrorNote, Loading, Status } from "./common";
+import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
 import { AddDocumentDialog } from "./document-forms";
 import { ScanPanel } from "./scan-panel";
 import { Shell } from "./shell";
@@ -67,6 +69,7 @@ export function Workspace({
     [busy, setBusy] = useState(""),
     [error, setError] = useState("");
   const [discoverySource, setDiscoverySource] = useState<Source | null>(null);
+  const [deletingSource, setDeletingSource] = useState<Source | null>(null);
   const records = laws.data || [],
     connected = sources.data || [];
   const running = scans.data?.find((scan) =>
@@ -102,6 +105,20 @@ export function Workspace({
       });
       refreshWorkspace();
       setSelected([]);
+    } catch (cause) {
+      setError(errorText(cause));
+    } finally {
+      setBusy("");
+    }
+  }
+  async function removeSource() {
+    if (!deletingSource) return;
+    setBusy("delete-source");
+    setError("");
+    try {
+      await api("/sources/" + deletingSource.id, { method: "DELETE" });
+      setDeletingSource(null);
+      refreshWorkspace();
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -506,14 +523,29 @@ export function Workspace({
                   </dl>
                   <ErrorNote message={source.error} />
                   <div className="source-actions">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setForm({ mode: "source", source })}
-                    >
-                      <Settings2 />
-                      Edit
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setForm({ mode: "source", source })}
+                      >
+                        <Settings2 />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className="text-destructive"
+                        aria-label={"Remove website " + source.name}
+                        title="Remove website"
+                        onClick={() => {
+                          setError("");
+                          setDeletingSource(source);
+                        }}
+                      >
+                        <Trash2 />
+                      </Button>
+                    </div>
                     <Button
                       size="sm"
                       onClick={() => setDiscoverySource(source)}
@@ -590,6 +622,22 @@ export function Workspace({
           }}
         />
       )}
+      <ConfirmDeleteDialog
+        open={!!deletingSource}
+        onOpenChange={(open) => {
+          if (!open) setDeletingSource(null);
+        }}
+        title="Remove this website?"
+        description={
+          deletingSource
+            ? `${deletingSource.name} will be removed from Sources. Its ${records.filter((law) => law.source_id === deletingSource.id).length} monitored document(s) will stay in the watchlist as independent documents.`
+            : ""
+        }
+        confirmLabel="Remove website"
+        busy={busy === "delete-source"}
+        error={deletingSource ? error : ""}
+        onConfirm={() => void removeSource()}
+      />
     </Shell>
   );
 }

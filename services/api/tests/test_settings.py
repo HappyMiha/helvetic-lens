@@ -171,6 +171,12 @@ def test_infomaniak_loads_models_from_product_api_without_exposing_token(harness
     assert str(requests[0].url) == "https://api.infomaniak.com/2/ai/111040/openai/v1/models"
     assert requests[0].headers["authorization"] == "Bearer test-infomaniak-token"
     assert client.get("/api/settings/apertus").json()["source"] == "environment"
+    logged = client.get("/api/integration-logs?provider=infomaniak").json()
+    assert logged["total"] == 1 and logged["items"][0]["operation"] == "list_models"
+    detail = client.get("/api/integration-logs/" + logged["items"][0]["id"])
+    assert detail.json()["request_headers"]["Authorization"] == "[REDACTED]"
+    assert detail.json()["response_body"]["object"] == "list"
+    assert "test-infomaniak-token" not in detail.text
 
 
 def test_infomaniak_completion_uses_provider_contract(harness, monkeypatch):

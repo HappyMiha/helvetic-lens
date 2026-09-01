@@ -347,6 +347,21 @@ Acceptance criteria:
 - Mark previous analyses as stale after relevant model/context/generation changes. In-flight work retains the configuration it started with.
 - Expose the existing company profile editor from the Settings page. Do not add account administration or a model-hosting platform.
 
+<a id="rw-026"></a>
+### RW-026 — Add integration diagnostics and controlled deletion
+
+Added at the user's request after the core monitoring and Infomaniak flows were working.
+
+Acceptance criteria:
+
+- Persist each outbound website, Fedlex, Firecrawl, and OpenAI-compatible model request with provider, operation, method, URL, outcome, HTTP status, duration, request/response sizes, headers, bodies, and an explicit error where applicable.
+- Redact authorization, cookies, token/key/password fields, and matching credential values before persistence. Bound large text/JSON payloads and represent binary documents with content type, byte count, and hash so diagnostics cannot make ordinary monitoring unbounded.
+- Provide an **Integration logs** page in desktop and mobile navigation. Load lightweight rows first; allow provider/outcome filters, text search, sortable columns, pagination, refresh, and full redacted request/response inspection on demand.
+- Allow clearing all diagnostic logs with explicit confirmation. Clearing logs must not change sources, documents, versions, scans, comparisons, analyses, profile, or provider settings.
+- Allow removing a website from Sources with confirmation while leaving its tracked documents available as independent monitored documents.
+- Allow permanently deleting a monitored document with confirmation. Remove its observations, versions, comparisons, analyses, scan entries, empty scans, and artifact files that are no longer referenced. Block deletion while that document has a queued or running scan.
+- Cover redaction, sorting, filtering, detail retrieval, clearing, source detachment, dependency cleanup, artifact cleanup, and active-scan blocking with deterministic API checks.
+
 ## M5 — Verification and demonstration
 
 <a id="rw-020"></a>

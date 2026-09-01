@@ -1305,6 +1305,169 @@ ins {
   border: 1px solid #e8d592;
   border-radius: 8px;
 }
+.log-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.log-stats .stat-card {
+  min-height: 132px;
+}
+.log-filter-bar {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(170px, 220px) minmax(
+      150px,
+      190px
+    );
+}
+.logs-table {
+  min-width: 1040px;
+}
+.sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+.sort-button:hover {
+  color: var(--foreground);
+}
+.log-request {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  max-width: 390px;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+.log-method {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: 42px;
+  padding: 3px 6px;
+  border-radius: 5px;
+  background: #edf2e8;
+  color: #53694b;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 700;
+}
+.log-url {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #4e5b53;
+}
+.log-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+}
+.log-detail-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.log-detail-summary > div {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fafbf7;
+}
+.log-detail-summary strong {
+  overflow-wrap: anywhere;
+}
+.log-endpoint {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.log-endpoint code {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #4e5b53;
+  font-size: 12px;
+}
+.log-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.payload-panel {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #fff;
+}
+.payload-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 13px 15px;
+  border-bottom: 1px solid var(--border);
+  background: #fafbf7;
+}
+.payload-heading span,
+.payload-panel summary,
+.payload-body-label,
+.payload-empty {
+  color: var(--muted-foreground);
+  font-size: 11px;
+}
+.payload-panel details {
+  padding: 11px 14px 0;
+}
+.payload-panel summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.payload-body-label {
+  padding: 12px 14px 7px;
+  font-weight: 600;
+}
+.log-payload {
+  max-height: 430px;
+  margin: 8px 0 0;
+  overflow: auto;
+  padding: 14px;
+  background: #202721;
+  color: #e7eee2;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.payload-panel > .log-payload,
+.payload-panel > .payload-empty {
+  margin: 0 14px 14px;
+  border-radius: 7px;
+}
+.payload-empty {
+  padding: 18px;
+  background: #f6f7f2;
+  font-style: italic;
+}
 @media (min-width: 901px) and (max-width: 1350px) {
   .content {
     padding-left: 25px;
@@ -1339,7 +1502,8 @@ ins {
   .mobile-nav {
     display: flex;
     justify-content: center;
-    gap: 24px;
+    gap: 18px;
+    overflow-x: auto;
     padding: 14px;
     background: #f9faf5;
     border-bottom: 1px solid var(--border);
@@ -1362,8 +1526,22 @@ ins {
   .sources-grid {
     grid-template-columns: 1fr 1fr;
   }
+  .log-detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 @media (max-width: 640px) {
+  .log-stats,
+  .log-detail-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .log-filter-bar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .log-pagination {
+    align-items: flex-start;
+    flex-direction: column;
+  }
   h1 {
     font-size: 26px;
   }

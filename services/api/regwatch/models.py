@@ -137,6 +137,26 @@ class ApertusConfiguration(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class IntegrationLog(Base):
+    __tablename__ = "integration_logs"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    provider: Mapped[str] = mapped_column(String(40), index=True)
+    operation: Mapped[str] = mapped_column(String(60), index=True)
+    method: Mapped[str] = mapped_column(String(10))
+    url: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(20), index=True)
+    response_status: Mapped[int | None] = mapped_column(Integer)
+    duration_ms: Mapped[int] = mapped_column(Integer, default=0)
+    request_headers: Mapped[dict] = mapped_column(JSON, default=dict)
+    request_body: Mapped[dict | list | str | None] = mapped_column(JSON)
+    response_headers: Mapped[dict] = mapped_column(JSON, default=dict)
+    response_body: Mapped[dict | list | str | None] = mapped_column(JSON)
+    request_size: Mapped[int] = mapped_column(Integer, default=0)
+    response_size: Mapped[int] = mapped_column(Integer, default=0)
+    error: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
 class Analysis(Base):
     __tablename__ = "analyses"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)

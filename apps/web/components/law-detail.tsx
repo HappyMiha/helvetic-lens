@@ -16,6 +16,7 @@ import {
   Pencil,
   Play,
   RefreshCw,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +36,7 @@ import type {
   Version,
 } from "@/lib/types";
 import { ErrorNote, Loading, Status, SuccessNote } from "./common";
+import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
 import { ImportDialog } from "./document-forms";
 import { ScanPanel } from "./scan-panel";
 import { Shell } from "./shell";
@@ -69,6 +71,7 @@ export function LawDetail({ id }: { id: string }) {
     [note, setNote] = useState("");
   const [editing, setEditing] = useState(false),
     [name, setName] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const latestScan = scans.data?.find((scan) =>
     scan.items.some((item) => item.law_id === id),
   );
@@ -132,6 +135,20 @@ export function LawDetail({ id }: { id: string }) {
         }),
       });
       router.push("/compare/" + comparison.id);
+    } catch (cause) {
+      setError(errorText(cause));
+    } finally {
+      setBusy("");
+    }
+  }
+  async function removeDocument() {
+    setBusy("delete");
+    setError("");
+    try {
+      await api("/laws/" + id, { method: "DELETE" });
+      setDeleteOpen(false);
+      refreshWorkspace();
+      router.push("/");
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -205,14 +222,27 @@ export function LawDetail({ id }: { id: string }) {
                   <ArrowUpRight size={13} />
                 </a>
               </div>
-              <Button
-                variant="outline"
-                onClick={() => update({ active: !law.active })}
-                disabled={!!busy || !!running}
-              >
-                {law.active ? <Pause /> : <Play />}
-                {law.active ? "Pause monitoring" : "Resume monitoring"}
-              </Button>
+              <div className="heading-actions">
+                <Button
+                  variant="outline"
+                  onClick={() => update({ active: !law.active })}
+                  disabled={!!busy || !!running}
+                >
+                  {law.active ? <Pause /> : <Play />}
+                  {law.active ? "Pause monitoring" : "Resume monitoring"}
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    setError("");
+                    setDeleteOpen(true);
+                  }}
+                  disabled={!!busy || !!running}
+                >
+                  <Trash2 />
+                  Delete document
+                </Button>
+              </div>
             </div>
             {!law.active && (
               <div className="info-note mb-5">
@@ -568,6 +598,16 @@ export function LawDetail({ id }: { id: string }) {
                     : "Previous version saved and selected. Run Fetch & compare with history to compare it with the live source.",
                 );
               }}
+            />
+            <ConfirmDeleteDialog
+              open={deleteOpen}
+              onOpenChange={setDeleteOpen}
+              title="Delete this monitored document?"
+              description={`This permanently deletes ${law.name}, all ${law.versions.length} saved version(s), observations, comparisons, analyses, and its scan entries. This cannot be undone.`}
+              confirmLabel="Delete document and history"
+              busy={busy === "delete"}
+              error={deleteOpen ? error : ""}
+              onConfirm={() => void removeDocument()}
             />
           </>
         )
