@@ -51,6 +51,18 @@ def test_pdf_text_and_page_references_with_scanned_pdf_error():
     assert error.value.code == "ocr_required"
 
 
+def test_pdf_above_the_old_mvp_page_limit_is_supported():
+    with pymupdf.open() as document:
+        for page_number in range(1, 252):
+            document.new_page().insert_text(
+                (72, 72), f"Official report page {page_number}: extractable regulatory text."
+            )
+        content = document.tobytes()
+    result = extract(content, "application/pdf", "long-report.pdf")
+    assert result.preview()["page_count"] == 251
+    assert result.passages[-1]["page"] == 251
+
+
 @pytest.mark.parametrize(
     "body,mime,name",
     [
@@ -157,26 +169,36 @@ async def test_discovery_download_stops_before_a_redirect_outside_the_selected_s
 
 
 @pytest.mark.parametrize(
-    ("url", "collection", "language", "version", "requested_format"),
+    ("url", "collection", "language", "version", "requested_format", "language_defaulted"),
     [
-        ("https://www.fedlex.admin.ch/eli/cc/2022/491/en", "cc", "en", None, None),
+        ("https://www.fedlex.admin.ch/eli/cc/2022/491/en", "cc", "en", None, None, False),
         (
             "https://fedlex.data.admin.ch/eli/cc/2022/491/20230901/fr/html",
             "cc",
             "fr",
             "2023-09-01",
             "html",
+            False,
         ),
-        ("https://fedlex.admin.ch/eli/fga/2017/2057/it", "fga", "it", None, None),
-        ("https://fedlex.data.admin.ch/eli/oc/VII/342_337_325/fr", "oc", "fr", None, None),
+        ("https://fedlex.admin.ch/eli/fga/2017/2057/it", "fga", "it", None, None, False),
+        ("https://fedlex.data.admin.ch/eli/fga/2002/316", "fga", "de", None, None, True),
+        (
+            "https://fedlex.data.admin.ch/eli/oc/VII/342_337_325/fr",
+            "oc",
+            "fr",
+            None,
+            None,
+            False,
+        ),
     ],
 )
 def test_fedlex_eli_reference_recognises_stable_law_urls(
-    url, collection, language, version, requested_format
+    url, collection, language, version, requested_format, language_defaulted
 ):
     reference = fedlex_eli_reference(url)
     assert reference is not None
     assert reference.collection == collection and reference.language == language
+    assert reference.language_defaulted is language_defaulted
     assert reference.version_date == version and reference.requested_format == requested_format
     assert reference.work_uri.startswith("https://fedlex.data.admin.ch/eli/" + collection + "/")
     if "/VII/" in url:
@@ -242,6 +264,8 @@ async def test_native_fedlex_eli_fetch_resolves_current_official_html_and_keeps_
         "eli_manifestation_uri": manifestation,
         "eli_version_date": "2025-07-07",
         "eli_format": "html",
+        "eli_language": "en",
+        "eli_language_defaulted": False,
         "eli_title": "Federal Act on Data Protection",
     }
     document = extract(fetched.body, fetched.content_type, "law.html")

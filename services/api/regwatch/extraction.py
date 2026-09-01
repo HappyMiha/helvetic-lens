@@ -14,18 +14,20 @@ from bs4 import BeautifulSoup, UnicodeDammit
 
 from .config import DomainError, Settings
 
-EXTRACTOR_VERSION = "native-v1"
+EXTRACTOR_VERSION = "native-v2"
 FEDLEX_DATA_ORIGIN = "https://fedlex.data.admin.ch"
 FEDLEX_SPARQL_ENDPOINT = FEDLEX_DATA_ORIGIN + "/sparqlendpoint"
 FEDLEX_ELI_HOSTS = {"fedlex.admin.ch", "www.fedlex.admin.ch", "fedlex.data.admin.ch"}
+FEDLEX_DEFAULT_LANGUAGE = "de"
 FEDLEX_ELI_PATH = re.compile(
     r"^/eli/(?P<collection>cc|oc|fga)/(?P<year>[A-Za-z0-9._~%-]+)/"
     r"(?P<identifier>[A-Za-z0-9._~%-]+)"
-    r"(?:/(?P<version>\d{8}))?/(?P<language>de|fr|it|rm|en)"
-    r"(?:/(?P<format>html|pdf-a|pdf-x))?/?$",
+    r"(?:(?:/(?P<version>\d{8}))?/(?P<language>de|fr|it|rm|en)"
+    r"(?:/(?P<format>html|pdf-a|pdf-x))?)?/?$",
     re.I,
 )
 FEDLEX_METADATA_LIMIT = 256 * 1024
+MAX_PDF_PAGES = 1000
 
 
 def normalize(text: str) -> str:
@@ -96,6 +98,7 @@ class FedlexEliReference:
     work_uri: str
     collection: str
     language: str
+    language_defaulted: bool = False
     expression_uri: str | None = None
     version_date: str | None = None
     requested_format: str | None = None
@@ -113,7 +116,7 @@ def fedlex_eli_reference(value: str) -> FedlexEliReference | None:
         return None
     values = match.groupdict()
     collection = values["collection"].lower()
-    language = values["language"].lower()
+    language = (values["language"] or FEDLEX_DEFAULT_LANGUAGE).lower()
     work_uri = f"{FEDLEX_DATA_ORIGIN}/eli/{collection}/{values['year']}/{values['identifier']}"
     version = values["version"]
     return FedlexEliReference(
@@ -121,6 +124,7 @@ def fedlex_eli_reference(value: str) -> FedlexEliReference | None:
         work_uri=work_uri,
         collection=collection,
         language=language,
+        language_defaulted=values["language"] is None,
         expression_uri=f"{work_uri}/{version}/{language}" if version else None,
         version_date=(f"{version[:4]}-{version[4:6]}-{version[6:]}" if version else None),
         requested_format=values["format"].lower() if values["format"] else None,
@@ -352,6 +356,8 @@ LIMIT 1
             "eli_manifestation_uri": manifestation,
             "eli_version_date": version_date,
             "eli_format": format_name,
+            "eli_language": reference.language,
+            "eli_language_defaulted": reference.language_defaulted,
         }
         if title:
             metadata["eli_title"] = title[:500]
@@ -441,8 +447,10 @@ def extract(
             with pymupdf.open(stream=body, filetype="pdf") as pdf:
                 if pdf.needs_pass:
                     raise DomainError("Password-protected PDFs are not supported.")
-                if pdf.page_count > 250:
-                    raise DomainError("This PDF exceeds the 250-page MVP limit.", 413)
+                if pdf.page_count > MAX_PDF_PAGES:
+                    raise DomainError(
+                        f"This PDF exceeds the {MAX_PDF_PAGES:,}-page extraction limit.", 413
+                    )
                 title = normalize((pdf.metadata or {}).get("title") or name)
                 for page_number, page in enumerate(pdf, 1):
                     for block in page.get_text("blocks", sort=True):

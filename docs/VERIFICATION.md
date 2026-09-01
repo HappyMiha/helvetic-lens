@@ -4,7 +4,7 @@ The source-to-diff workflow and the Settings page are verified. Model acceptance
 
 ## Completed checks
 
-- 75 Python regression cases pass using isolated SQLite databases and actual API/service/migration code.
+- 77 Python regression cases pass using isolated SQLite databases and actual API/service/migration code.
 - State checks cover initial baselines, unchanged scans, 30 → 60 changes, A → B → A reuse, duplicate imports, repeated historical comparisons, and saved comparisons without source requests.
 - Failure checks cover unavailable/empty sources, partial batches, overlapping scans, paused laws, invalid/cross-law input, and interrupted-run recovery.
 - Evidence checks cover complete article/passage alignment, every saved passage exactly once, all changed passages despite a smaller warning threshold, legacy persisted-diff upgrades, artifacts, PDF pages, missing records, old/new citations, exact quotes, and whitespace-only bogus quotes.
@@ -15,12 +15,13 @@ The source-to-diff workflow and the Settings page are verified. Model acceptance
 - Linux API/web container builds pass. An isolated Compose stack starts with healthy PostgreSQL and API services; an existing database upgrades through both migrations. In that stack, a stable Fedlex ELI URL created one baseline, a subsequent scan completed as unchanged, the official resolved file stayed attached to the version, and the observation count increased without duplicating the version.
 - A second app instance retains sources, paused state, versions, observations, comparisons, and completed scans in the same test database.
 - The native API extracted a FINMA introduction, FDPIC FAQ, 108-page FDPIC PDF, and Fedlex ELI publications. The FINMA source was previewed and saved through the browser UI. These are source-compatibility checks, not claims of full legal coverage. See [SOURCES.md](SOURCES.md).
-- Fedlex regression checks cover stable/current and explicitly dated ELI parsing, official HTML resolution and provenance, unavailable languages/formats, and rejection of out-of-scope file metadata before any download.
-- Live resolver checks selected the current applicable English FADP expression (7 July 2025; 39,543 characters and 331 passages), retained the explicit 1 September 2023 expression separately (38,851 characters and 328 passages), and used a 238-page PDF fallback for a French Federal Gazette ELI resource.
+- Fedlex regression checks cover stable/current, language-neutral, and explicitly dated ELI parsing; official HTML resolution and provenance; PDFs above the former 250-page limit; unavailable languages/formats; and rejection of out-of-scope file metadata before any download.
+- Live resolver checks selected the current applicable English FADP expression (7 July 2025; 39,543 characters and 331 passages), retained the explicit 1 September 2023 expression separately (38,851 characters and 328 passages), used a 238-page PDF fallback for a French Federal Gazette ELI resource, and resolved the bare `fga/2002/316` work URL to the official 269-page German PDF/A (674,707 characters and 3,042 passages).
 
 ## Browser and PostgreSQL checks
 
 - Used the unchanged **Add a law** dialog to preview the stable Fedlex FADP ELI URL. The browser displayed “Federal Act on Data Protection”, `text/html`, 39,543 characters, 331 passages, and enabled **Add to watchlist**; the preview was not saved to the user's watchlist.
+- Used the same dialog with the language-neutral Fedlex `fga/2002/316` URL. It displayed “BBl 2002 2291”, `application/pdf`, 674,707 characters, 3,042 passages, and 269 pages instead of the 239-character JavaScript fallback; the preview was not saved.
 - Connected and previewed a website, discovered the synthetic policy, added it to the watchlist, pasted its earlier text, and selected the historical baseline through the actual interface.
 - Fetched the current public GitHub fixture and inspected the actual diff: **2 added, 1 removed, 2 modified**, including deletion **30** and insertion **60**. Change filtering, jump navigation, and the saved old passage link were exercised.
 - Repeated the historical scan while the current source stayed unchanged. Two immutable snapshots remained; each real fetch added an observation. An ordinary check separately reported **Unchanged**.
