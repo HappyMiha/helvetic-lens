@@ -16,12 +16,17 @@ from regwatch.models import ApertusConfiguration
 
 def configuration(**changes):
     return {
+        "provider": "custom",
+        "product_id": "",
         "base_url": "https://inference.example/v1",
         "model": "test-apertus",
         "timeout_seconds": 30,
         "context_chars": 16000,
         "max_tokens": 1200,
         "temperature": 0.25,
+        "top_p": 0.9,
+        "presence_penalty": 0.2,
+        "reasoning_effort": "default",
         "json_mode": True,
         **changes,
     }
@@ -112,8 +117,92 @@ def test_draft_connection_uses_actual_adapter_parameters_without_saving(harness,
     body = json.loads(requests[0].content)
     assert body["model"] == "test-apertus" and body["temperature"] == 0.25
     assert body["max_tokens"] == 1200 and body["response_format"] == {"type": "json_object"}
+    assert body["top_p"] == 0.9 and body["presence_penalty"] == 0.2
+    assert body["stream"] is False and body["n"] == 1
+    assert "max_completion_tokens" not in body and "reasoning_effort" not in body
     assert client.get("/api/settings/apertus").json()["source"] == "environment"
     assert not client.get("/api/health").json()["apertus"]["configured"]
+
+
+def test_infomaniak_loads_models_from_product_api_without_exposing_token(harness, monkeypatch):
+    client, _, _, _ = harness
+    requests = []
+
+    def respond(request):
+        requests.append(request)
+        return httpx.Response(
+            200,
+            json={
+                "object": "list",
+                "data": [
+                    {
+                        "id": "swiss-ai/Apertus-v1.5-8B",
+                        "object": "model",
+                        "created": 1750000000,
+                        "owned_by": "swiss-ai",
+                    },
+                    {"id": "another-chat-model", "object": "model"},
+                ],
+            },
+        )
+
+    transport(monkeypatch, respond)
+    response = client.post(
+        "/api/settings/apertus/models",
+        json=configuration(
+            provider="infomaniak",
+            product_id="111040",
+            base_url="https://must-not-be-used.example/v1",
+            key_action="replace",
+            api_key="test-infomaniak-token",
+        ),
+    )
+    assert response.status_code == 200
+    assert response.json()["provider"] == "infomaniak" and response.json()["count"] == 2
+    assert response.json()["base_url"] == "https://api.infomaniak.com/2/ai/111040/openai/v1"
+    assert response.json()["models"][0] == {
+        "id": "swiss-ai/Apertus-v1.5-8B",
+        "owned_by": "swiss-ai",
+        "created": 1750000000,
+    }
+    assert "test-infomaniak-token" not in response.text and "api_key" not in response.text
+    assert len(requests) == 1
+    assert requests[0].method == "GET"
+    assert str(requests[0].url) == "https://api.infomaniak.com/2/ai/111040/openai/v1/models"
+    assert requests[0].headers["authorization"] == "Bearer test-infomaniak-token"
+    assert client.get("/api/settings/apertus").json()["source"] == "environment"
+
+
+def test_infomaniak_completion_uses_provider_contract(harness, monkeypatch):
+    client, _, _, _ = harness
+    requests = []
+
+    def respond(request):
+        requests.append(request)
+        return httpx.Response(200, json={"choices": [{"message": {"content": "ok"}}]})
+
+    transport(monkeypatch, respond)
+    response = client.post(
+        "/api/settings/apertus/test",
+        json=configuration(
+            provider="infomaniak",
+            product_id="111040",
+            key_action="replace",
+            api_key="test-infomaniak-token",
+            reasoning_effort="low",
+            json_mode=False,
+        ),
+    )
+    assert response.status_code == 200
+    assert response.json()["base_url"] == "https://api.infomaniak.com/2/ai/111040/openai/v1"
+    assert str(requests[0].url) == (
+        "https://api.infomaniak.com/2/ai/111040/openai/v1/chat/completions"
+    )
+    body = json.loads(requests[0].content)
+    assert body["max_completion_tokens"] == 1200 and "max_tokens" not in body
+    assert body["reasoning_effort"] == "low"
+    assert body["stream"] is False and body["n"] == 1
+    assert body["top_p"] == 0.9 and body["presence_penalty"] == 0.2
 
 
 @pytest.mark.parametrize(
@@ -187,6 +276,11 @@ def test_saved_settings_are_used_by_later_real_adapter_requests_and_failures_are
         {"context_chars": 0},
         {"max_tokens": 127},
         {"temperature": 3},
+        {"top_p": 1.1},
+        {"presence_penalty": -2},
+        {"reasoning_effort": "maximum"},
+        {"provider": "infomaniak", "product_id": ""},
+        {"provider": "infomaniak", "product_id": "not-a-number"},
     ],
 )
 def test_invalid_settings_do_not_echo_secrets_or_replace_working_configuration(harness, changes):

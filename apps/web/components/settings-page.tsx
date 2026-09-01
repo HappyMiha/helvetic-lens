@@ -21,21 +21,45 @@ import {
   refreshWorkspace,
   useResource,
 } from "@/lib/api";
-import type { ApertusSettings, Health, Profile } from "@/lib/types";
+import type {
+  ApertusModelList,
+  ApertusModelOption,
+  ApertusSettings,
+  Health,
+  Profile,
+} from "@/lib/types";
 import { ErrorNote, Loading, SuccessNote } from "./common";
 import { ProfileDialog, Shell } from "./shell";
 
 type KeyAction = "keep" | "replace" | "remove" | "environment";
-type ConnectionResult = { model: string; base_url: string; latency_ms: number };
+type Provider = "custom" | "infomaniak";
+type ConnectionResult = {
+  model: string;
+  base_url: string;
+  latency_ms: number;
+};
+
+const INFOMANIAK_API_ROOT = "https://api.infomaniak.com/2/ai";
+
+function infomaniakBaseUrl(productId: string) {
+  return productId.trim()
+    ? `${INFOMANIAK_API_ROOT}/${productId.trim()}/openai/v1`
+    : "";
+}
 
 function draftValues(settings: ApertusSettings) {
   return {
+    provider: settings.provider,
+    product_id: settings.product_id,
     base_url: settings.base_url,
     model: settings.model,
     timeout_seconds: String(settings.timeout_seconds),
     context_chars: String(settings.context_chars),
     max_tokens: String(settings.max_tokens),
     temperature: String(settings.temperature),
+    top_p: String(settings.top_p),
+    presence_penalty: String(settings.presence_penalty),
+    reasoning_effort: settings.reasoning_effort,
     json_mode: settings.json_mode,
   };
 }
@@ -53,7 +77,8 @@ export function SettingsPage() {
           <span className="eyebrow">WORKSPACE SETUP</span>
           <h1>Settings</h1>
           <p className="muted m-0">
-            Configure Apertus and the company context behind its answers.
+            Configure the Apertus provider, model, request parameters, and
+            company context.
           </p>
         </div>
         <SlidersHorizontal className="muted" size={28} />
@@ -85,20 +110,21 @@ export function SettingsPage() {
             <h2 className="mb-3">Your Apertus connection</h2>
             <p className="text-sm muted">
               {configuration.data?.configured
-                ? "An endpoint is configured. Use Test connection to verify that it answers."
+                ? `${configuration.data.provider === "infomaniak" ? "Infomaniak" : "An OpenAI-compatible endpoint"} is configured. Use Test connection to verify that it answers.`
                 : "No endpoint is configured yet. Monitoring and visual comparisons remain available."}
             </p>
             <p className="text-sm muted">
-              RegWatch calls an OpenAI-compatible chat API. It does not download
-              a model or provision a server.
+              Current model: {configuration.data?.model || "Not selected"}.
+              RegWatch calls an OpenAI-compatible chat API; it does not download
+              or host the model.
             </p>
             <a
-              href="https://huggingface.co/swiss-ai/Apertus-v1.5-8B"
+              href={`https://huggingface.co/${configuration.data?.model || "swiss-ai/Apertus-v1.5-8B"}`}
               target="_blank"
               rel="noreferrer"
               className="text-sm inline-flex gap-2 items-center"
             >
-              Apertus model card <ArrowUpRight size={14} />
+              Current model card <ArrowUpRight size={14} />
             </a>
           </section>
           <section className="panel p-6">
@@ -131,7 +157,7 @@ export function SettingsPage() {
             </p>
             <p className="text-xs muted">
               This is a local, single-user app. Keep the database and its
-              backups private, especially if you save a model key.
+              backups private, especially if you save a provider credential.
             </p>
           </section>
         </div>
@@ -161,6 +187,8 @@ function ApertusForm({
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [testResult, setTestResult] = useState<ConnectionResult | null>(null);
+  const [models, setModels] = useState<ApertusModelOption[]>([]);
+  const [modelsMessage, setModelsMessage] = useState("");
   const dirty =
     JSON.stringify(draft) !== JSON.stringify(draftValues(initial)) ||
     keyAction !== "keep";
@@ -176,13 +204,48 @@ function ApertusForm({
     changed();
     setDraft((current) => ({ ...current, [key]: value }));
   }
+  function chooseProvider(provider: Provider) {
+    changed();
+    setModels([]);
+    setModelsMessage("");
+    setDraft((current) => ({
+      ...current,
+      provider,
+      product_id: current.product_id,
+      base_url:
+        provider === "infomaniak"
+          ? infomaniakBaseUrl(current.product_id)
+          : current.provider === "infomaniak"
+            ? ""
+            : current.base_url,
+    }));
+  }
+  function customPreset(baseUrl: string, model: string) {
+    changed();
+    setModels([]);
+    setModelsMessage("");
+    setDraft((current) => ({
+      ...current,
+      provider: "custom",
+      product_id: current.product_id,
+      base_url: baseUrl,
+      model,
+    }));
+  }
   function body() {
+    const baseUrl =
+      draft.provider === "infomaniak"
+        ? infomaniakBaseUrl(draft.product_id)
+        : draft.base_url;
     return JSON.stringify({
       ...draft,
+      base_url: baseUrl,
       timeout_seconds: Number(draft.timeout_seconds),
       context_chars: Number(draft.context_chars),
       max_tokens: Number(draft.max_tokens),
       temperature: Number(draft.temperature),
+      top_p: Number(draft.top_p),
+      presence_penalty: Number(draft.presence_penalty),
       key_action: keyAction,
       api_key: keyAction === "replace" ? apiKey : "",
     });
@@ -199,7 +262,7 @@ function ApertusForm({
       setApiKey("");
       onSaved(
         result,
-        "Apertus settings saved and applied. No restart is needed.",
+        "Apertus integration settings saved and applied. No restart is needed.",
       );
     } catch (cause) {
       setError(errorText(cause));
@@ -218,6 +281,40 @@ function ApertusForm({
         body: body(),
       });
       setTestResult(result);
+    } catch (cause) {
+      setError(errorText(cause));
+    } finally {
+      setBusy("");
+    }
+  }
+  async function loadModels() {
+    if (!formRef.current?.reportValidity()) return;
+    setBusy("models");
+    setError("");
+    setModelsMessage("");
+    try {
+      const result = await api<ApertusModelList>("/settings/apertus/models", {
+        method: "POST",
+        body: body(),
+      });
+      setModels(result.models);
+      const currentAvailable = result.models.some(
+        (option) => option.id === draft.model,
+      );
+      if (!currentAvailable) {
+        const preferred =
+          result.models.find((option) =>
+            option.id.toLowerCase().includes("apertus-v1.5-8b"),
+          ) ||
+          result.models.find((option) =>
+            option.id.toLowerCase().includes("apertus"),
+          ) ||
+          result.models[0];
+        if (preferred) update("model", preferred.id);
+      }
+      setModelsMessage(
+        `${result.count.toLocaleString()} models loaded from the provider API.`,
+      );
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -258,104 +355,228 @@ function ApertusForm({
       </div>
       <form ref={formRef} onSubmit={save} className="p-6">
         <fieldset disabled={!!busy} className="form-stack min-w-0">
-          <div className="rounded-lg border p-4">
-            <div className="flex flex-wrap gap-3 items-center">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  changed();
-                  setDraft((current) => ({
-                    ...current,
-                    base_url: "https://router.huggingface.co/v1",
-                    model: "swiss-ai/Apertus-v1.5-8B:publicai",
-                  }));
-                }}
+          <div className="grid sm:grid-cols-2 gap-4">
+            <label>
+              Inference provider
+              <select
+                value={draft.provider}
+                onChange={(event) =>
+                  chooseProvider(event.target.value as Provider)
+                }
               >
-                Use Hugging Face
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  changed();
-                  setDraft((current) => ({
-                    ...current,
-                    base_url: "https://api.publicai.co/v1",
-                    model: "swiss-ai/apertus-v1.5-8b",
-                  }));
-                }}
-              >
-                Use Public AI defaults
-              </Button>
-              <a
-                href="https://platform.publicai.co/docs"
-                target="_blank"
-                rel="noreferrer"
-                className="text-xs inline-flex items-center gap-1"
-              >
-                Public AI setup <ArrowUpRight size={12} />
-              </a>
-              <a
-                href="https://huggingface.co/docs/inference-providers/providers/publicai"
-                target="_blank"
-                rel="noreferrer"
-                className="text-xs inline-flex items-center gap-1"
-              >
-                Hugging Face setup <ArrowUpRight size={12} />
-              </a>
+                <option value="infomaniak">Infomaniak AI</option>
+                <option value="custom">Other OpenAI-compatible API</option>
+              </select>
+              <span className="field-help">
+                Infomaniak uses its Product ID to build the API address and can
+                load the available models automatically.
+              </span>
+            </label>
+            <div className="rounded-lg border p-4 text-sm">
+              <strong>
+                {draft.provider === "infomaniak"
+                  ? "Infomaniak integration"
+                  : "Custom integration"}
+              </strong>
+              <p className="field-help !mb-0">
+                One active provider is used for connection checks, impact
+                analysis, and Ask Apertus.
+              </p>
             </div>
-            <p className="field-help !mb-0">
-              Fills the API address and model ID only. Your key and other
-              parameters stay unchanged. Test before saving.
-            </p>
-            <p className="field-help !mb-0">
-              Hugging Face needs a Hugging Face token with Inference Providers
-              permission. Direct Public AI needs a Public AI API key. These
-              credentials are not interchangeable.
-            </p>
           </div>
-          <label>
-            API base URL
-            <Input
-              type="url"
-              autoComplete="url"
-              placeholder="http://localhost:8080/v1"
-              value={draft.base_url}
-              onChange={(event) => update("base_url", event.target.value)}
-              maxLength={2000}
-            />
-            <span className="field-help">
-              Include /v1 if your server uses it. RegWatch adds
-              /chat/completions. A Hugging Face model page is not an API base
-              URL. Leave empty to disconnect.
-            </span>
-          </label>
-          <label>
-            Model ID
-            <Input
-              value={draft.model}
-              onChange={(event) => update("model", event.target.value)}
-              required
-              maxLength={300}
-            />
-            <span className="field-help">
-              Use the exact, case-sensitive name served by your endpoint.
-              Provider IDs can differ from the Hugging Face model name.
-            </span>
-          </label>
+          {draft.provider === "infomaniak" ? (
+            <div className="rounded-lg border p-4 form-stack min-w-0">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold mb-1">Infomaniak AI</h3>
+                  <p className="field-help !m-0">
+                    The endpoint is generated from the Product ID, so there is
+                    no URL to edit by hand.
+                  </p>
+                </div>
+                <a
+                  href="https://developer.infomaniak.com/docs/api/post/2/ai/%7Bproduct_id%7D/openai/v1/chat/completions"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs inline-flex items-center gap-1"
+                >
+                  Infomaniak API docs <ArrowUpRight size={12} />
+                </a>
+              </div>
+              <label>
+                AI Product ID
+                <Input
+                  inputMode="numeric"
+                  pattern="[0-9]+"
+                  placeholder="123456"
+                  value={draft.product_id}
+                  onChange={(event) => {
+                    const productId = event.target.value;
+                    changed();
+                    setModels([]);
+                    setModelsMessage("");
+                    setDraft((current) => ({
+                      ...current,
+                      product_id: productId,
+                      base_url: infomaniakBaseUrl(productId),
+                    }));
+                  }}
+                  required
+                  maxLength={30}
+                />
+                <span className="field-help">
+                  Use the numeric Product ID shown in the Infomaniak Manager.
+                </span>
+              </label>
+              <label>
+                API base URL
+                <Input
+                  value={infomaniakBaseUrl(draft.product_id)}
+                  readOnly
+                  aria-readonly="true"
+                  placeholder="Generated after entering a Product ID"
+                />
+                <span className="field-help">
+                  RegWatch controls this address and adds /models or
+                  /chat/completions for each request.
+                </span>
+              </label>
+              <label>
+                Model
+                <select
+                  value={draft.model}
+                  onChange={(event) => update("model", event.target.value)}
+                  required
+                >
+                  {!models.some((option) => option.id === draft.model) && (
+                    <option value={draft.model}>{draft.model}</option>
+                  )}
+                  {models.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.id}
+                      {option.owned_by ? ` · ${option.owned_by}` : ""}
+                    </option>
+                  ))}
+                </select>
+                <span className="field-help">
+                  Load the current list from this Product ID, then choose the
+                  exact model served by Infomaniak.
+                </span>
+              </label>
+              <div className="flex flex-wrap gap-3 items-center">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={loadModels}
+                  disabled={!draft.product_id.trim()}
+                >
+                  {busy === "models" ? (
+                    <Loader2 className="animate-spin" />
+                  ) : (
+                    <RotateCcw size={14} />
+                  )}
+                  {models.length ? "Refresh model list" : "Load models"}
+                </Button>
+                {modelsMessage && (
+                  <span role="status" className="text-xs text-primary">
+                    {modelsMessage}
+                  </span>
+                )}
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="rounded-lg border p-4">
+                <div className="flex flex-wrap gap-3 items-center">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      customPreset(
+                        "https://router.huggingface.co/v1",
+                        "swiss-ai/Apertus-v1.5-8B:publicai",
+                      )
+                    }
+                  >
+                    Use Hugging Face
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      customPreset(
+                        "https://api.publicai.co/v1",
+                        "swiss-ai/apertus-v1.5-8b",
+                      )
+                    }
+                  >
+                    Use Public AI defaults
+                  </Button>
+                  <a
+                    href="https://platform.publicai.co/docs"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs inline-flex items-center gap-1"
+                  >
+                    Public AI setup <ArrowUpRight size={12} />
+                  </a>
+                  <a
+                    href="https://huggingface.co/docs/inference-providers/providers/publicai"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs inline-flex items-center gap-1"
+                  >
+                    Hugging Face setup <ArrowUpRight size={12} />
+                  </a>
+                </div>
+                <p className="field-help !mb-0">
+                  Presets fill the API address and model only. Credentials and
+                  generation parameters stay unchanged.
+                </p>
+              </div>
+              <label>
+                API base URL
+                <Input
+                  type="url"
+                  autoComplete="url"
+                  placeholder="http://localhost:8080/v1"
+                  value={draft.base_url}
+                  onChange={(event) => update("base_url", event.target.value)}
+                  maxLength={2000}
+                />
+                <span className="field-help">
+                  Include /v1 if required. RegWatch adds /chat/completions.
+                  Leave empty to disconnect.
+                </span>
+              </label>
+              <label>
+                Model ID
+                <Input
+                  value={draft.model}
+                  onChange={(event) => update("model", event.target.value)}
+                  required
+                  maxLength={300}
+                />
+                <span className="field-help">
+                  Use the exact, case-sensitive ID served by the endpoint.
+                </span>
+              </label>
+            </>
+          )}
           <div className="rounded-lg border p-4 min-w-0">
             <div className="flex items-center gap-2 text-sm font-semibold mb-2">
-              <KeyRound size={15} /> API key
+              <KeyRound size={15} />
+              {draft.provider === "infomaniak" ? "API token" : "API key"}
             </div>
             <p className="text-xs muted">
               {initial.api_key_configured
-                ? "A key is configured (" +
+                ? "A credential is configured (" +
                   initial.key_source +
                   "). Its value is never sent back to your browser."
-                : "No key is configured. Some local inference servers do not need one."}
+                : "No credential is configured. Some local inference servers do not need one."}
             </p>
             <label>
               Key handling
@@ -367,21 +588,27 @@ function ApertusForm({
                   setApiKey("");
                 }}
               >
-                <option value="keep">Keep existing key</option>
-                <option value="replace">Replace with a new key</option>
-                <option value="remove">Use no key</option>
+                <option value="keep">Keep existing credential</option>
+                <option value="replace">Replace with a new credential</option>
+                <option value="remove">Use no credential</option>
                 <option value="environment">
-                  Use the server environment key
+                  Use the server environment credential
                 </option>
               </select>
             </label>
             {keyAction === "replace" && (
               <label className="mt-3 block">
-                New API key
+                {draft.provider === "infomaniak"
+                  ? "New API token"
+                  : "New API key"}
                 <Input
                   type="password"
                   autoComplete="new-password"
-                  placeholder="Paste your inference API key"
+                  placeholder={
+                    draft.provider === "infomaniak"
+                      ? "Paste your Infomaniak API token"
+                      : "Paste your inference API key"
+                  }
                   value={apiKey}
                   onChange={(event) => {
                     changed();
@@ -393,8 +620,8 @@ function ApertusForm({
               </label>
             )}
             <p className="field-help">
-              Saved keys stay in the server database, outside Git. Leave the
-              existing key unchanged when editing other parameters.
+              Saved credentials stay in the server database, outside Git. Leave
+              the existing credential unchanged when editing other parameters.
             </p>
           </div>
           <div className="pt-2">
@@ -438,7 +665,7 @@ function ApertusForm({
                 </span>
               </label>
               <label>
-                Maximum answer length (tokens)
+                Maximum completion length (tokens)
                 <Input
                   type="number"
                   min={128}
@@ -449,7 +676,8 @@ function ApertusForm({
                   onChange={(event) => update("max_tokens", event.target.value)}
                 />
                 <span className="field-help">
-                  Allow enough space for the answer and its citations.
+                  Sent as max_completion_tokens to Infomaniak and max_tokens to
+                  other compatible endpoints.
                 </span>
               </label>
               <label>
@@ -466,7 +694,61 @@ function ApertusForm({
                   }
                 />
                 <span className="field-help">
-                  Default 0.1. Use a value supported by your inference server.
+                  0–2. Lower values keep regulatory answers consistent.
+                </span>
+              </label>
+              <label>
+                Top P
+                <Input
+                  type="number"
+                  min={0}
+                  max={1}
+                  step="any"
+                  required
+                  value={draft.top_p}
+                  onChange={(event) => update("top_p", event.target.value)}
+                />
+                <span className="field-help">
+                  0–1. Default 1 keeps nucleus sampling unrestricted.
+                </span>
+              </label>
+              <label>
+                Presence penalty
+                <Input
+                  type="number"
+                  min={-1.99}
+                  max={1.99}
+                  step="any"
+                  required
+                  value={draft.presence_penalty}
+                  onChange={(event) =>
+                    update("presence_penalty", event.target.value)
+                  }
+                />
+                <span className="field-help">
+                  Greater than −2 and less than 2. Default 0 adds no penalty.
+                </span>
+              </label>
+              <label>
+                Reasoning effort
+                <select
+                  value={draft.reasoning_effort}
+                  onChange={(event) =>
+                    update(
+                      "reasoning_effort",
+                      event.target.value as typeof draft.reasoning_effort,
+                    )
+                  }
+                >
+                  <option value="default">Provider / model default</option>
+                  <option value="none">None</option>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+                <span className="field-help">
+                  Leave at default for Apertus models that do not support this
+                  parameter.
                 </span>
               </label>
             </div>
@@ -483,6 +765,11 @@ function ApertusForm({
             Enable only if your endpoint supports response_format: json_object.
             Answers and citations are validated with either setting.
           </p>
+          <div className="info-note text-xs">
+            RegWatch always requests one non-streaming response. These fixed
+            values keep structured parsing and citation validation
+            deterministic.
+          </div>
           <ErrorNote message={error} />
           {testResult && (
             <div role="status" className="info-note break-words">
@@ -503,7 +790,12 @@ function ApertusForm({
               type="button"
               variant="outline"
               onClick={test}
-              disabled={!!busy || !draft.base_url.trim()}
+              disabled={
+                !!busy ||
+                (draft.provider === "infomaniak"
+                  ? !draft.product_id.trim()
+                  : !draft.base_url.trim())
+              }
             >
               {busy === "test" ? (
                 <Loader2 className="animate-spin" />
@@ -552,9 +844,9 @@ function ApertusForm({
           Use environment defaults
         </Button>
         <p className="text-xs muted basis-full !mb-0">
-          Restoring defaults removes saved overrides, including a saved key, and
-          uses the server&apos;s current environment. Your document history is
-          unchanged.
+          Restoring defaults removes saved overrides, including a saved
+          credential, and uses the server&apos;s current environment. Your
+          document history is unchanged.
         </p>
       </div>
     </section>

@@ -4,29 +4,38 @@ from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
 
-from .config import DomainError, Settings
+from .config import DomainError, Settings, infomaniak_base_url
 from .extraction import canonical_url
 from .models import ApertusConfiguration
 
 PUBLIC_FIELDS = (
+    "provider",
+    "product_id",
     "base_url",
     "model",
     "timeout_seconds",
     "context_chars",
     "max_tokens",
     "temperature",
+    "top_p",
+    "presence_penalty",
+    "reasoning_effort",
     "json_mode",
 )
 
-
 class ApertusSettingsInput(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
-    base_url: str = Field(max_length=2000)
+    provider: Literal["custom", "infomaniak"] = "custom"
+    product_id: str = Field(default="", max_length=30, pattern=r"^\d*$")
+    base_url: str = Field(default="", max_length=2000)
     model: str = Field(min_length=1, max_length=300)
     timeout_seconds: int = Field(default=90, ge=5, le=300)
     context_chars: int = Field(default=24000, ge=1000, le=100000)
     max_tokens: int = Field(default=1600, ge=128, le=8192)
     temperature: float = Field(default=0.1, ge=0, le=2)
+    top_p: float = Field(default=1.0, ge=0, le=1)
+    presence_penalty: float = Field(default=0.0, gt=-2, lt=2)
+    reasoning_effort: Literal["default", "none", "low", "medium", "high"] = "default"
     json_mode: bool = False
     key_action: Literal["keep", "replace", "remove", "environment"] = "keep"
     api_key: SecretStr = SecretStr("")
@@ -50,7 +59,13 @@ class ApertusSettingsInput(BaseModel):
         return value
 
     @model_validator(mode="after")
-    def valid_key(self):
+    def valid_configuration(self):
+        if self.provider == "infomaniak":
+            if not self.product_id:
+                raise ValueError("Enter the Infomaniak AI Product ID.")
+            self.base_url = infomaniak_base_url(self.product_id)
+        else:
+            self.product_id = ""
         key = self.api_key.get_secret_value().strip()
         if self.key_action == "replace" and not key:
             raise ValueError("Enter a new API key, or choose Keep existing key.")

@@ -331,15 +331,16 @@ Acceptance criteria:
 - Verify at least one question about changed wording, one about the earlier version, and one that cannot be answered from the supplied documents.
 
 <a id="rw-025"></a>
-### RW-025 — Configure Apertus through a Settings page
+### RW-025 — Configure Apertus providers through a Settings page
 
 Added at the user's request after implementation began and verified with the live adapter in RW-017.
 
 Acceptance criteria:
 
-- Provide a Settings page reachable from desktop and mobile navigation, with endpoint, model ID, key handling, timeout, evidence warning threshold, maximum output tokens, temperature, and JSON-mode controls.
+- Provide a Settings page reachable from desktop and mobile navigation, with provider, Product ID or endpoint, model, credential handling, timeout, evidence warning threshold, maximum output tokens, temperature, Top P, presence penalty, reasoning effort, and JSON-mode controls.
 - Test the current form with an actual adapter request without implicitly saving it; make unavailable, invalid, and successful connection states explicit.
 - Offer the documented direct Public AI and Hugging Face router address/model as draft defaults, preserving the key and other parameters. Explain which provider credential each route needs, and authentication, access, route/model, and quota failures separately.
+- Offer a native Infomaniak mode that derives its OpenAI-compatible URL from the numeric Product ID, loads the product's available models from `/models`, and presents them in a dropdown. Map completion length to `max_completion_tokens`, request one non-streaming response, and verify the live adapter with an actual available Apertus model.
 - Save valid settings in the workspace database and apply them to new requests immediately. Preserve them across service restarts.
 - Keep an existing key when editing other fields; allow explicit replacement, removal, and environment inheritance. Never return keys through the API, including validation errors.
 - Retain environment defaults and offer an explicit reset without affecting documents, versions, or scans. Document that saved keys are held server-side in the local database and its backups.

@@ -154,6 +154,19 @@ class RegWatch:
             "saved": data is None,
         }
 
+    async def list_model_settings(self, data: ApertusSettingsInput):
+        with self.db.session() as session:
+            saved = session.get(ApertusConfiguration, "default")
+            settings = resolved_settings(self.environment_settings, saved, data)
+        models = await ai.ModelClient(settings).models()
+        return {
+            "provider": settings.apertus_provider,
+            "base_url": settings.apertus_base_url,
+            "models": models,
+            "count": len(models),
+            "saved": False,
+        }
+
     async def preview(self, url: str, provider: str = "native", *, boundary: tuple[str, str] | None = None):
         fetched = await self.fetcher.fetch(canonical_url(url), provider, boundary=boundary)
         name = PurePosixPath(urlsplit(fetched.url).path).name or "document.html"

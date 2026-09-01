@@ -86,6 +86,112 @@ class ModelClient:
     def __init__(self, settings: Settings):
         self.settings = settings
 
+    @property
+    def provider_name(self) -> str:
+        return "Infomaniak" if self.settings.apertus_provider == "infomaniak" else "Apertus"
+
+    def headers(self) -> dict[str, str]:
+        headers = {"User-Agent": "ApertusRegWatch/0.1"}
+        key = self.settings.apertus_api_key.get_secret_value()
+        if key:
+            headers["Authorization"] = f"Bearer {key}"
+        return headers
+
+    def endpoint(self, path: str) -> str:
+        return self.settings.apertus_base_url.rstrip("/") + "/" + path.lstrip("/")
+
+    def raise_for_provider_error(self, response: httpx.Response, *, operation: str) -> None:
+        provider = self.provider_name
+        upstream_errors = {
+            401: (
+                f"{provider} rejected the API token (HTTP 401). Replace it with a valid token in Settings.",
+                "model_authentication_failed",
+            ),
+            403: (
+                f"{provider} denied access (HTTP 403). Check that the account, token, and product can use this model.",
+                "model_access_denied",
+            ),
+            404: (
+                f"The {provider} {operation} endpoint or model was not found (HTTP 404). Check the Product ID or API address and the exact model ID.",
+                "model_not_found",
+            ),
+            429: (
+                f"{provider} reached a rate limit or quota (HTTP 429). Retry later or check provider usage.",
+                "model_rate_limited",
+            ),
+            504: (
+                f"{provider} timed out while processing the request (HTTP 504). Retry if the provider is temporarily busy.",
+                "model_upstream_timeout",
+            ),
+        }
+        if response.status_code in upstream_errors:
+            message, code = upstream_errors[response.status_code]
+            api_status = 504 if response.status_code == 504 else 503 if response.status_code == 429 else 502
+            raise DomainError(message, api_status, code)
+        if response.status_code >= 400:
+            raise DomainError(
+                f"{provider} returned HTTP {response.status_code}. Check the integration settings and provider access.",
+                502,
+                "model_error",
+            )
+
+    async def models(self) -> list[dict]:
+        if not self.settings.apertus_base_url.strip():
+            raise DomainError(
+                "The model provider is not connected. Complete the integration settings first.",
+                503,
+                "model_not_configured",
+            )
+        try:
+            async with httpx.AsyncClient(
+                timeout=self.settings.apertus_timeout_seconds, trust_env=False
+            ) as client:
+                response = await client.get(self.endpoint("models"), headers=self.headers())
+            self.raise_for_provider_error(response, operation="models")
+            payload = response.json()
+            data = payload.get("data") if isinstance(payload, dict) else None
+            if isinstance(data, dict):
+                data = [data]
+            if not isinstance(data, list):
+                raise ValueError("missing model list")
+            models, seen = [], set()
+            for item in data:
+                if not isinstance(item, dict) or not isinstance(item.get("id"), str):
+                    continue
+                model_id = item["id"].strip()
+                if not model_id or model_id in seen:
+                    continue
+                seen.add(model_id)
+                model = {"id": model_id}
+                if isinstance(item.get("owned_by"), str):
+                    model["owned_by"] = item["owned_by"]
+                if isinstance(item.get("created"), int):
+                    model["created"] = item["created"]
+                models.append(model)
+            if not models:
+                raise DomainError(
+                    f"{self.provider_name} returned no usable models for this product.",
+                    502,
+                    "model_list_empty",
+                )
+            return models
+        except httpx.TimeoutException as exc:
+            raise DomainError(
+                f"{self.provider_name} timed out while loading models.", 504, "model_timeout"
+            ) from exc
+        except httpx.ConnectError as exc:
+            raise DomainError(
+                f"Cannot reach {self.provider_name}. Check the integration address and network connection.",
+                503,
+                "model_unreachable",
+            ) from exc
+        except (httpx.HTTPError, KeyError, ValueError, TypeError) as exc:
+            raise DomainError(
+                f"{self.provider_name} did not return a usable OpenAI-compatible model list.",
+                502,
+                "model_error",
+            ) from exc
+
     async def complete(self, system: str, user: str) -> str:
         if not self.settings.model_configured:
             raise DomainError(
@@ -93,16 +199,23 @@ class ModelClient:
                 503,
                 "model_not_configured",
             )
-        headers = {"User-Agent": "ApertusRegWatch/0.1"}
-        key = self.settings.apertus_api_key.get_secret_value()
-        if key:
-            headers["Authorization"] = f"Bearer {key}"
         payload = {
             "model": self.settings.apertus_model,
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
             "temperature": self.settings.apertus_temperature,
-            "max_tokens": self.settings.apertus_max_tokens,
+            "top_p": self.settings.apertus_top_p,
+            "presence_penalty": self.settings.apertus_presence_penalty,
+            "stream": False,
+            "n": 1,
         }
+        token_field = (
+            "max_completion_tokens"
+            if self.settings.apertus_provider == "infomaniak"
+            else "max_tokens"
+        )
+        payload[token_field] = self.settings.apertus_max_tokens
+        if self.settings.apertus_reasoning_effort != "default":
+            payload["reasoning_effort"] = self.settings.apertus_reasoning_effort
         if self.settings.apertus_json_mode:
             payload["response_format"] = {"type": "json_object"}
         try:
@@ -110,42 +223,11 @@ class ModelClient:
                 timeout=self.settings.apertus_timeout_seconds, trust_env=False
             ) as client:
                 response = await client.post(
-                    self.settings.apertus_base_url.rstrip("/") + "/chat/completions",
-                    headers=headers,
+                    self.endpoint("chat/completions"),
+                    headers=self.headers(),
                     json=payload,
                 )
-            upstream_errors = {
-                401: (
-                    "Apertus rejected the API key (HTTP 401). Replace it with a valid key for this provider in Settings.",
-                    "model_authentication_failed",
-                ),
-                403: (
-                    "Apertus denied access (HTTP 403). Check that your provider account and key can use this model.",
-                    "model_access_denied",
-                ),
-                404: (
-                    "The Apertus API endpoint or model was not found (HTTP 404). Check the API base URL, including /v1 if required, and the provider's exact model ID.",
-                    "model_not_found",
-                ),
-                429: (
-                    "Apertus reached a rate limit or quota (HTTP 429). Retry later or check usage with your provider.",
-                    "model_rate_limited",
-                ),
-                504: (
-                    "Apertus timed out while processing the request (HTTP 504). RegWatch will use bounded batches for large comparisons; retry if the provider is temporarily busy.",
-                    "model_upstream_timeout",
-                ),
-            }
-            if response.status_code in upstream_errors:
-                message, code = upstream_errors[response.status_code]
-                api_status = 504 if response.status_code == 504 else 503 if response.status_code == 429 else 502
-                raise DomainError(message, api_status, code)
-            if response.status_code >= 400:
-                raise DomainError(
-                    f"Apertus returned HTTP {response.status_code}. Check the endpoint, model ID, request parameters, and server credentials.",
-                    502,
-                    "model_error",
-                )
+            self.raise_for_provider_error(response, operation="chat completions")
             content = response.json()["choices"][0]["message"]["content"]
             if not isinstance(content, str) or not content.strip():
                 raise ValueError("empty reply")
@@ -174,10 +256,15 @@ def cache_key(comparison: Comparison, profile: Profile, settings: Settings) -> s
         "profile_revision": profile.revision,
         "model": settings.apertus_model,
         "endpoint": settings.apertus_base_url,
+        "provider": settings.apertus_provider,
+        "product_id": settings.apertus_product_id,
         "prompt": PROMPT_VERSION,
         "context_chars": settings.apertus_context_chars,
         "max_tokens": settings.apertus_max_tokens,
         "temperature": settings.apertus_temperature,
+        "top_p": settings.apertus_top_p,
+        "presence_penalty": settings.apertus_presence_penalty,
+        "reasoning_effort": settings.apertus_reasoning_effort,
         "json_mode": settings.apertus_json_mode,
     }
     return hashlib.sha256(json.dumps(context, sort_keys=True).encode()).hexdigest()

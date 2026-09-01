@@ -303,6 +303,10 @@ def create_app(settings: Settings | None = None, fetcher=None, model_client=None
     async def test_model_draft(data: ApertusSettingsInput):
         return await service.test_model_settings(data)
 
+    @app.post("/api/settings/apertus/models")
+    async def model_options(data: ApertusSettingsInput):
+        return await service.list_model_settings(data)
+
     @app.post("/api/settings/apertus/reset")
     def reset_model_settings():
         return service.reset_model_settings()

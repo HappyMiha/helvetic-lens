@@ -6,18 +6,35 @@ export type Health = {
   private_sources_enabled: boolean;
 };
 export type ApertusSettings = {
+  provider: "custom" | "infomaniak";
+  product_id: string;
   base_url: string;
   model: string;
   timeout_seconds: number;
   context_chars: number;
   max_tokens: number;
   temperature: number;
+  top_p: number;
+  presence_penalty: number;
+  reasoning_effort: "default" | "none" | "low" | "medium" | "high";
   json_mode: boolean;
   configured: boolean;
   api_key_configured: boolean;
   key_source: "environment" | "saved" | "none";
   source: "environment" | "workspace";
   updated_at: string | null;
+};
+export type ApertusModelOption = {
+  id: string;
+  owned_by?: string;
+  created?: number;
+};
+export type ApertusModelList = {
+  provider: "custom" | "infomaniak";
+  base_url: string;
+  models: ApertusModelOption[];
+  count: number;
+  saved: boolean;
 };
 export type Preview = {
   title: string;
