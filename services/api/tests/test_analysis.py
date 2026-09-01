@@ -3,10 +3,25 @@ import json
 import pytest
 from conftest import LAW_URL, add_law, import_old, policy, run_scan
 
-from regwatch.analysis import Answer, ModelClient, no_change_answer, parse_response, select_evidence
+from regwatch.analysis import (
+    Answer,
+    AnswerDigest,
+    Impact,
+    ModelClient,
+    answer_question,
+    batch_diff_evidence,
+    diff_evidence,
+    impact_analysis,
+    materialize_digest_citations,
+    no_change_answer,
+    numbered_selection,
+    parse_response,
+    select_evidence,
+    structured_completion,
+)
 from regwatch.config import DomainError
 from regwatch.diffing import DIFF_SCHEMA_VERSION, compare_passages
-from regwatch.models import Comparison, Version
+from regwatch.models import Comparison, Profile, Version
 
 
 def test_timeout_keeps_diff_retry_only_analysis_and_profile_invalidates_cache(harness):
@@ -148,6 +163,159 @@ def test_both_versions_cite_their_own_saved_page():
         parse_response("A plain sentence is not the agreed structure.", Answer, evidence)
 
 
+def test_validated_json_object_survives_schema_echo_and_trailing_noise_without_a_repair():
+    evidence = [
+        {"version_id": "new", "passage_id": "p1", "text": "Retention is 60 days.", "page": 3}
+    ]
+    raw = json.dumps(
+        {
+            "supported": True,
+            "answer": "The period is 60 days.",
+            "citations": [
+                {"version_id": "new", "passage_id": "p1", "quote": "Retention is 60 days."}
+            ],
+        }
+    )
+    result = parse_response(
+        json.dumps(Answer.model_json_schema()) + "\n" + raw + "}\nExplanation omitted.",
+        Answer,
+        evidence,
+    )
+    assert result["supported"] is True
+    assert result["citations"][0]["url"] == "/evidence/new?passage=p1"
+
+
+def test_impact_overflow_is_clamped_before_retained_citations_are_validated():
+    evidence = [
+        {"version_id": "new", "passage_id": "p1", "text": "Retention is 60 days.", "page": 3}
+    ]
+    citation = {"version_id": "new", "passage_id": "p1", "quote": "Retention is 60 days."}
+    raw = json.dumps(
+        {
+            "summary": "The retention rule changed.",
+            "impact": "medium",
+            "reason": "The operating procedure may need review.",
+            "business_areas": [f"Area {index}" for index in range(15)],
+            "actions": [
+                {"text": f"Review action {index}.", "citations": [citation]}
+                for index in range(4)
+            ],
+            "citations": [citation] * 12,
+        }
+    )
+    result = parse_response(raw, Impact, evidence)
+    assert len(result["actions"]) == 3
+    assert len(result["business_areas"]) == 12
+    assert len(result["citations"]) == 10
+    assert all(action["citations"][0]["url"] == "/evidence/new?passage=p1" for action in result["actions"])
+
+
+def test_compact_batch_side_alias_is_resolved_to_the_exact_saved_version():
+    evidence = [
+        {
+            "version_id": "saved-old-version",
+            "passage_id": "p1",
+            "side": "old",
+            "text": "The earlier requirement was removed.",
+            "page": 2,
+        }
+    ]
+    raw = json.dumps(
+        {
+            "supported": True,
+            "answer": "The requirement was removed.",
+            "citations": [
+                {
+                    "version_id": "old",
+                    "passage_id": "p1",
+                    "quote": "The earlier requirement was removed.",
+                }
+            ],
+        }
+    )
+    result = parse_response(raw, Answer, evidence)
+    assert result["citations"][0]["version_id"] == "saved-old-version"
+    assert result["citations"][0]["url"] == "/evidence/saved-old-version?passage=p1"
+
+
+def test_numeric_model_references_are_range_checked_and_materialized_by_the_server():
+    evidence = [
+        {
+            "version_id": "saved-old-version",
+            "passage_id": "old-1",
+            "text": "The earlier requirement was removed.",
+            "page": 2,
+        },
+        {
+            "version_id": "saved-new-version",
+            "passage_id": "new-1",
+            "text": "A replacement requirement was added.",
+            "page": 3,
+        },
+    ]
+    digest = AnswerDigest.model_validate(
+        {
+            "supported": True,
+            "answer": "A replacement requirement was added.",
+            "citation_rows": [2, *range(1, 55), 999, 2],
+        }
+    ).model_dump()
+    result = materialize_digest_citations(
+        digest,
+        evidence,
+    )
+    assert result["citations"] == [
+        {
+            "version_id": "saved-new-version",
+            "passage_id": "new-1",
+            "quote": "A replacement requirement was added.",
+            "url": "/evidence/saved-new-version?passage=new-1",
+            "page": 3,
+        },
+        {
+            "version_id": "saved-old-version",
+            "passage_id": "old-1",
+            "quote": "The earlier requirement was removed.",
+            "url": "/evidence/saved-old-version?passage=old-1",
+            "page": 2,
+        },
+    ]
+    with pytest.raises(DomainError) as error:
+        numbered_selection([999], result["citations"], 10, required=True)
+    assert error.value.code == "invalid_citation"
+
+
+@pytest.mark.asyncio
+async def test_out_of_range_numeric_citation_gets_one_repair_attempt():
+    class NumericRepairModel:
+        def __init__(self):
+            self.calls = 0
+
+        async def complete(self, system, user):
+            self.calls += 1
+            return json.dumps(
+                {
+                    "supported": True,
+                    "answer": "The requirement changed.",
+                    "citation_rows": [999 if self.calls == 1 else 1],
+                }
+            )
+
+    model = NumericRepairModel()
+    result = await structured_completion(
+        model,
+        "Return the requested JSON.",
+        {"evidence": [["saved passage"]]},
+        AnswerDigest,
+        [],
+        require_supported=True,
+        validate_citations=False,
+        numeric_reference_count=1,
+    )
+    assert result["citation_rows"] == [1]
+    assert model.calls == 2
+
+
 def test_complete_diff_aligns_articles_and_covers_every_saved_passage_once():
     old = [
         {"id": "old-1", "text": "Art. 1 Purpose", "page": 1},
@@ -188,6 +356,30 @@ def test_large_replacement_fallback_still_covers_both_saved_versions():
     assert diff["complete"] is True
     assert sum(item["old"] is not None for item in diff["items"]) == len(old)
     assert sum(item["new"] is not None for item in diff["items"]) == len(new)
+
+
+def test_1406_changed_passages_are_partitioned_without_omission_or_truncation():
+    old = Version(
+        id="old",
+        origin="live",
+        synthetic=False,
+        passages=[
+            {"id": f"p{index:05d}", "text": f"Repealed provision {index}.", "page": index // 40 + 1}
+            for index in range(1406)
+        ],
+    )
+    new = Version(id="new", origin="live", synthetic=False, passages=[])
+    comparison = Comparison(diff=compare_passages(old.passages, new.passages))
+    evidence, deterministic_diff, _ = diff_evidence(old, new, comparison)
+    batches = batch_diff_evidence(evidence, deterministic_diff, 24000)
+    processed = [
+        (passage["version_id"], passage["passage_id"])
+        for batch in batches
+        for passage in batch["evidence"]
+    ]
+    assert len(batches) > 1 and len(processed) == 1406
+    assert len(processed) == len(set(processed))
+    assert max(batch["estimated_input_characters"] for batch in batches) <= 24000
 
 
 def test_legacy_persisted_comparison_is_upgraded_before_it_is_returned(harness):
@@ -252,6 +444,119 @@ def test_changed_evidence_is_complete_and_ignores_retrieval_budget():
         ("new", "p2"),
     }
     assert all(p["synthetic"] is True for p in evidence)
+
+
+@pytest.mark.asyncio
+async def test_large_complete_diff_is_processed_once_in_bounded_batches_for_ask_and_impact(harness):
+    _, _, service, model = harness
+    settings = service.settings.model_copy(
+        update={
+            "apertus_base_url": "https://model.example/v1",
+            "apertus_context_chars": 2000,
+        }
+    )
+    old = Version(
+        id="large-old",
+        origin="uploaded",
+        synthetic=True,
+        passages=[
+            {
+                "id": f"old-{index:04d}",
+                "text": (
+                    f"Article {index}. Records must be retained for 30 days. "
+                    "The operations team documents every review decision."
+                ),
+                "page": index + 1,
+            }
+            for index in range(80)
+        ],
+    )
+    new = Version(
+        id="large-new",
+        origin="live",
+        synthetic=True,
+        passages=[
+            {
+                "id": f"new-{index:04d}",
+                "text": (
+                    f"Article {index}. Records must be retained for 60 days. "
+                    "The data protection lead documents every review decision."
+                ),
+                "page": index + 1,
+            }
+            for index in range(80)
+        ],
+    )
+    comparison = Comparison(
+        id="large-comparison",
+        mode="saved_versions",
+        diff=compare_passages(old.passages, new.passages),
+    )
+    profile = Profile(
+        id="default",
+        name="Test company",
+        description="Synthetic test profile",
+        business_areas=["Operations"],
+        revision=1,
+    )
+    complete_evidence, _, _ = diff_evidence(old, new, comparison)
+    expected_references = {
+        (passage["version_id"], passage["passage_id"]) for passage in complete_evidence
+    }
+
+    def supplied_references(payload):
+        supplied = payload["evidence"]
+        columns = supplied["columns"]
+        side_index, passage_index = columns.index("side"), columns.index("passage_id")
+        return [
+            (supplied["version_ids"][row[side_index]], row[passage_index])
+            for row in supplied["rows"]
+        ]
+
+    answer = await answer_question(
+        model,
+        settings,
+        comparison,
+        old,
+        new,
+        profile,
+        "What changed?",
+        [],
+    )
+    answer_payloads = [json.loads(call[1]) for call in model.calls]
+    answer_batches = [payload for payload in answer_payloads if payload.get("task") == "answer_batch"]
+    processed_answer_references = [
+        reference for payload in answer_batches for reference in supplied_references(payload)
+    ]
+    assert answer["supported"] is True and answer["coverage"]["complete"] is True
+    assert answer["coverage"]["batched"] is True
+    assert answer["coverage"]["batch_count"] == len(answer_batches) > 1
+    assert len(processed_answer_references) == len(set(processed_answer_references))
+    assert set(processed_answer_references) == expected_references
+    assert answer_payloads[-1]["task"] == "answer_synthesis"
+    assert all(
+        set(citation) == {"version_id", "passage_id", "quote"}
+        for batch in answer_payloads[-1]["batch_answers"]
+        for citation in batch["citations"]
+    )
+
+    model.calls.clear()
+    result, coverage = await impact_analysis(model, settings, comparison, old, new, profile)
+    impact_payloads = [json.loads(call[1]) for call in model.calls]
+    impact_batches = [payload for payload in impact_payloads if payload.get("task") == "impact_batch"]
+    processed_impact_references = [
+        reference for payload in impact_batches for reference in supplied_references(payload)
+    ]
+    assert result["impact"] == "medium" and coverage["complete"] is True
+    assert coverage["batch_count"] == len(impact_batches) > 1
+    assert len(processed_impact_references) == len(set(processed_impact_references))
+    assert set(processed_impact_references) == expected_references
+    assert impact_payloads[-1]["task"] == "impact_synthesis"
+    assert all(
+        set(citation) == {"version_id", "passage_id", "quote"}
+        for batch in impact_payloads[-1]["batch_reviews"]
+        for citation in batch["citations"]
+    )
 
 
 def test_invalid_json_is_validated_and_repaired_once_for_impact_and_ask(harness):

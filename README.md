@@ -6,7 +6,7 @@ Apertus RegWatch lets users connect regulatory websites, add specific laws or do
 
 The MVP must be a functional product with a narrow scope. Sources are configured through the interface, data persists between sessions, and the demonstration uses the same fetching, comparison, and analysis pipeline as everyday use.
 
-> **Project status:** A first working implementation is available: source connections, direct URLs, imports, immutable history, live scans, saved comparisons, visual evidence, and persisted Apertus settings. The model adapter and cited-answer interface are implemented, but successful real inference has not yet been validated. This is not the fully accepted model-enabled MVP. See [verification notes](docs/VERIFICATION.md).
+> **Project status:** The model-enabled MVP works end to end: source connections, direct URLs, imports, immutable history, live scans, saved comparisons, visual evidence, persisted Apertus settings, impact analysis, and cited questions. Live Apertus checks include a complete 1,406-passage comparison processed without truncation. See [verification notes](docs/VERIFICATION.md).
 
 Development tasks, priorities, dependencies, and acceptance criteria are tracked in [BACKLOG.md](BACKLOG.md).
 
@@ -66,7 +66,7 @@ For **Hugging Face Inference Providers**, choose **Use Hugging Face** to fill `h
 
 Connection errors distinguish a rejected key (401), denied model access (403), an incorrect route/model (404), rate limit or quota (429), an unreachable server, and a timeout. Provider response bodies and credentials are not echoed to the browser.
 
-The evidence warning threshold measures the complete changed-passage payload, not the endpoint's token window. Exceeding it is disclosed but does not truncate the saved deterministic diff. Confirm your server's input/output limits and JSON-mode support. Connection success is only a connectivity check; a real cited analysis must still pass acceptance. For Docker, the endpoint must be reachable from the API container; its localhost is not the host machine.
+The evidence threshold is a character-based batch target, not the endpoint's exact token window. Large complete diffs are divided on change boundaries and every changed passage is processed exactly once; no passage is retrieval-ranked or truncated. The UI reports the batch count and full coverage. Confirm your server's input/output limits and JSON-mode support. Connection success is only a connectivity check; a real cited analysis must still pass acceptance. For Docker, the endpoint must be reachable from the API container; its localhost is not the host machine.
 
 Settings persist in PostgreSQL (or the explicitly selected SQLite trial database) and take precedence over APERTUS_* environment defaults. Keys saved through the app are stored server-side in this local workspace database, so protect its volumes and backups. Nothing is written to Git or browser storage. **Use environment defaults** removes the saved overrides, including a saved key, without changing document history.
 
@@ -176,7 +176,7 @@ For example, a clearly synthetic demo could replace **"within 30 days"** with **
 | Diff engine | **Python `difflib`** | Compare normalized passages and produce word highlights for the visual comparison. |
 | Optional retrieval | **pgvector** | Consider retrieval only for future corpus-wide questions. It must never replace the complete deterministic diff for a selected comparison. |
 
-The model adapter and settings interface are implemented; access to a real served Apertus endpoint is still required for model acceptance. Hosting a model server is a separate setup choice, not another product feature.
+The adapter, settings interface, cited analysis, and large-diff batching have been verified against a served Apertus endpoint. Hosting or choosing a model provider remains a separate setup choice, not another product feature.
 
 ## Keep the implementation small
 
@@ -214,9 +214,9 @@ Selected baseline + current snapshot
 - [x] Implement live scanning with real progress, version detection, and repeatable historical comparisons.
 - [x] Render the version history and visual diff with passage navigation and word highlights.
 - [x] Add persisted Apertus settings, a real connection check, and company context in the interface.
-- [ ] Connect Apertus and display an impact summary with suggested actions and evidence.
-- [ ] Add Ask Apertus with working citations.
-- [ ] Verify the complete workflow with real supported sources and an imported previous version, then rehearse the demo through that same workflow.
+- [x] Connect Apertus and display an impact summary with suggested actions and evidence.
+- [x] Add Ask Apertus with working citations.
+- [x] Verify the complete workflow with real supported sources and an imported previous version, then rehearse the demo through that same workflow.
 - [ ] If time remains, add the impact matrix and assess whether pgvector is actually needed.
 
 ## Definition of done

@@ -4,7 +4,7 @@
 
 This backlog implements the product described in [README.md](README.md): user-configured websites, tracked laws, imported previous versions, real scans, visual comparisons, and Apertus analysis with verifiable citations.
 
-**Status:** The source-to-diff workflow is implemented and verified through the browser, real HTTP requests, PostgreSQL, and service restarts. A persisted Settings page now configures Apertus without restarting. The adapter and cited-answer interface still need a real Apertus endpoint for model acceptance. See [verification evidence](docs/VERIFICATION.md). Stable `RW-xxx` identifiers remain the task reference.
+**Status:** The required MVP workflow is implemented and verified through the browser, real HTTP requests, PostgreSQL, service restarts, and live Apertus inference. Large complete diffs use bounded model requests while retaining every changed passage. See [verification evidence](docs/VERIFICATION.md). Stable `RW-xxx` identifiers remain the task reference.
 
 ## Scope and priorities
 
@@ -49,12 +49,12 @@ Start RW-017 as soon as RW-002 and RW-003 are available so model access is check
 | [RW-014](#rw-014) | P0 | DONE | RW-007, RW-010, RW-011 | Live scans and historical comparisons |
 | [RW-015](#rw-015) | P0 | DONE | RW-014 | Actual progress, partial failures, and recovery |
 | [RW-016](#rw-016) | P1 | DONE | RW-006, RW-008, RW-012, RW-015 | Dashboard and scan controls |
-| [RW-017](#rw-017) | P0 | BLOCKED | RW-002, RW-003 | Verified Apertus adapter and company context |
-| [RW-018](#rw-018) | P0 | LIVE CHECK PENDING | RW-011, RW-013, RW-017 | Cited impact analysis and actions |
-| [RW-019](#rw-019) | P1 | LIVE CHECK PENDING | RW-013, RW-017, RW-018 | Ask Apertus with version-specific citations |
+| [RW-017](#rw-017) | P0 | DONE | RW-002, RW-003 | Verified Apertus adapter and company context |
+| [RW-018](#rw-018) | P0 | DONE | RW-011, RW-013, RW-017 | Cited impact analysis and actions |
+| [RW-019](#rw-019) | P1 | DONE | RW-013, RW-017, RW-018 | Ask Apertus with version-specific citations |
 | [RW-020](#rw-020) | P1 | DONE | RW-009, RW-014, RW-015, RW-018, RW-019 | Regression checks for state and evidence |
-| [RW-021](#rw-021) | P1 | CORE VERIFIED; LIVE MODEL PENDING | RW-008, RW-012, RW-013, RW-016, RW-019, RW-020, RW-025 | End-to-end product acceptance |
-| [RW-022](#rw-022) | P1 | CORE VERIFIED; LIVE MODEL PENDING | RW-001, RW-021 | Setup documentation and repeatable demo |
+| [RW-021](#rw-021) | P1 | DONE | RW-008, RW-012, RW-013, RW-016, RW-019, RW-020, RW-025 | End-to-end product acceptance |
+| [RW-022](#rw-022) | P1 | DONE | RW-001, RW-021 | Setup documentation and repeatable demo |
 | [RW-023](#rw-023) | P2 | DEFERRED | RW-018, RW-022 | Optional business impact matrix |
 | [RW-024](#rw-024) | P2 | DEFERRED | RW-019, RW-022 | Optional pgvector retrieval |
 | [RW-025](#rw-025) | P0 | DONE | RW-002, RW-003, RW-017 adapter code | Settings page with persisted Apertus parameters |
@@ -291,7 +291,7 @@ Acceptance criteria:
 
 Connect to a real Apertus deployment and supply one company profile.
 
-Current blocker: a request to Public AI's documented API base URL and served model ID returned HTTP 401. Valid provider authentication and successful cited inference are still required; the adapter, Settings form, provider preset, and company profile are implemented.
+Live verification: the saved Public AI configuration reached `swiss-ai/apertus-v1.5-8b`, returned cited answers and impact analysis, and completed a synthetic 1,406-passage comparison through bounded requests without truncation or HTTP 504.
 
 Acceptance criteria:
 
@@ -333,7 +333,7 @@ Acceptance criteria:
 <a id="rw-025"></a>
 ### RW-025 — Configure Apertus through a Settings page
 
-Added at the user's request after implementation began. Model access remains a separate live acceptance gate in RW-017.
+Added at the user's request after implementation began and verified with the live adapter in RW-017.
 
 Acceptance criteria:
 

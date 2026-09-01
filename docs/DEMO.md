@@ -54,7 +54,7 @@ Try:
 - “What did the earlier version say, and which passage supports that?”
 - “Who signed this policy?” — the fixtures do not contain a signatory; a supported answer must not invent one.
 
-Citations must resolve to the correct before/after version. A failed, malformed, or unsupported response is shown explicitly. Until a real endpoint passes these checks, the full Apertus MVP remains unaccepted.
+Citations must resolve to the correct before/after version. A failed, malformed, or unsupported response is shown explicitly. The verified Public AI setup passes these checks; another endpoint still needs its own connection and cited-analysis check.
 
 ## 5. Honest fallback and persistence checks
 

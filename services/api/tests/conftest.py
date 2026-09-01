@@ -70,12 +70,73 @@ class ScriptedModel:
             self.invalid_json_responses -= 1
             return "{not valid JSON"
         data = json.loads(user)
-        passage = next((p for p in data["evidence"] if p["side"] == "new"), data["evidence"][0])
+        task = data.get("task")
+        if task == "impact_synthesis":
+            return json.dumps(
+                {
+                    "summary": "Test-only summary.",
+                    "impact": "medium",
+                    "reason": "Test-only reason.",
+                    "business_areas": ["Operations"],
+                    "actions": [
+                        {
+                            "text": "Review the changed passage.",
+                            "citation_numbers": [1],
+                        }
+                    ],
+                    "citation_numbers": [1],
+                }
+            )
+        if task == "answer_synthesis":
+            unsupported = self.unsupported or self.unsupported_responses > 0
+            if self.unsupported_responses:
+                self.unsupported_responses -= 1
+            return json.dumps(
+                {
+                    "supported": not unsupported,
+                    "answer": "Test-only answer."
+                    if not unsupported
+                    else "Not supported by this evidence.",
+                    "citation_numbers": [] if unsupported else [1],
+                }
+            )
+        supplied_evidence = data["evidence"]
+        if isinstance(supplied_evidence, dict):
+            columns = supplied_evidence["columns"]
+            passages = [dict(zip(columns, row, strict=True)) for row in supplied_evidence["rows"]]
+            for passage_item in passages:
+                passage_item["version_id"] = supplied_evidence["version_ids"][passage_item["side"]]
+        else:
+            passages = supplied_evidence
+        passage = next((p for p in passages if p["side"] == "new"), passages[0])
         citation = {
             "version_id": passage["version_id"],
             "passage_id": "invented" if self.invalid else passage["passage_id"],
             "quote": passage["text"][:80],
         }
+        if task == "impact_batch":
+            return json.dumps(
+                {
+                    "summary": "Test-only batch summary.",
+                    "impact": "medium",
+                    "reason": "Test-only batch reason.",
+                    "business_areas": ["Operations"],
+                    "citation_rows": [1],
+                }
+            )
+        if task == "answer_batch":
+            unsupported = self.unsupported or self.unsupported_responses > 0
+            if self.unsupported_responses:
+                self.unsupported_responses -= 1
+            return json.dumps(
+                {
+                    "supported": not unsupported,
+                    "answer": "Test-only batch answer."
+                    if not unsupported
+                    else "Not supported by this evidence.",
+                    "citation_rows": [] if unsupported else [1],
+                }
+            )
         if "question" in data:
             unsupported = self.unsupported or self.unsupported_responses > 0
             if self.unsupported_responses:

@@ -123,6 +123,7 @@ def test_draft_connection_uses_actual_adapter_parameters_without_saving(harness,
         (403, "model_access_denied", 502),
         (404, "model_not_found", 502),
         (429, "model_rate_limited", 503),
+        (504, "model_upstream_timeout", 504),
     ],
 )
 def test_provider_failure_explains_next_step_without_echoing_provider_body(
