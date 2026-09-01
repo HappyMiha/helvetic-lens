@@ -388,14 +388,19 @@ def no_change_answer(question: str) -> str:
     value = question.casefold()
     if any(stem in value for stem in ("змін", "відмінност", "додал", "видал")):
         return "Повне порівняння збережених версій не виявило текстових змін на рівні статей або уривків."
-    if any(stem in value for stem in ("änder", "unterschied")):
-        return "Der vollständige Vergleich der gespeicherten Versionen enthält keine Textänderungen auf Artikel- oder Passageebene."
     if any(stem in value for stem in ("chang", "différence")) and any(
         marker in value for marker in ("quel", "quoi", "qu'", "différence")
     ):
         return "La comparaison complète des versions enregistrées ne contient aucune modification de texte au niveau des articles ou passages."
-    if any(stem in value for stem in ("camb", "modific", "differenz")):
+    if re.search(r"\bdifferenze\b", value) or (
+        any(stem in value for stem in ("camb", "modific"))
+        and any(marker in value for marker in ("cosa", "quali", "modific", "stato", "cambiato"))
+    ):
         return "Il confronto completo delle versioni salvate non contiene modifiche testuali a livello di articoli o passaggi."
+    if any(stem in value for stem in ("änder", "unterschied")) or re.search(
+        r"\bdifferenz(?:en)?\b", value
+    ):
+        return "Der vollständige Vergleich der gespeicherten Versionen enthält keine Textänderungen auf Artikel- oder Passageebene."
     return "The complete comparison of the saved versions contains no article- or passage-level text changes."
 
 

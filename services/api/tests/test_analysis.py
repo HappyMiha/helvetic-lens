@@ -3,7 +3,7 @@ import json
 import pytest
 from conftest import LAW_URL, add_law, import_old, policy, run_scan
 
-from regwatch.analysis import Answer, ModelClient, parse_response, select_evidence
+from regwatch.analysis import Answer, ModelClient, no_change_answer, parse_response, select_evidence
 from regwatch.config import DomainError
 from regwatch.diffing import DIFF_SCHEMA_VERSION, compare_passages
 from regwatch.models import Comparison, Version
@@ -328,6 +328,11 @@ def test_unchanged_saved_comparison_answers_change_question_deterministically(ha
     assert answer.status_code == 200 and answer.json()["supported"] is True
     assert "no article- or passage-level text changes" in answer.json()["answer"]
     assert answer.json()["citations"] == [] and model.calls == []
+
+
+def test_no_change_answer_distinguishes_german_and_italian():
+    assert no_change_answer("Was ist die Differenz?").startswith("Der vollständige Vergleich")
+    assert no_change_answer("Quali sono le differenze?").startswith("Il confronto completo")
 
 
 @pytest.mark.asyncio

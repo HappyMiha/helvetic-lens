@@ -36,6 +36,10 @@ export function useResource<T>(path: string | null, interval = 0) {
   const [revision, setRevision] = useState(0);
   const reload = useCallback(() => setRevision((value) => value + 1), []);
   useEffect(() => {
+    setData(null);
+    setError("");
+  }, [path]);
+  useEffect(() => {
     if (!path) {
       setLoading(false);
       return;

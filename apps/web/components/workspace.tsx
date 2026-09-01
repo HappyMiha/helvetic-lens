@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  AlertCircle,
   ArrowRight,
   ArrowUpRight,
   BookOpen,
@@ -192,7 +193,7 @@ export function Workspace({
               }
               title="NEED ATTENTION"
               note="Failed document checks"
-              icon={<History size={17} />}
+              icon={<AlertCircle size={17} />}
             />
           </div>
           {running && <ScanPanel scan={running} compact />}

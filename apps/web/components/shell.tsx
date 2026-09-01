@@ -7,6 +7,7 @@ import {
   Activity,
   ArrowUpRight,
   BookOpen,
+  Building2,
   ChevronDown,
   CircleHelp,
   Globe2,
@@ -92,7 +93,7 @@ export function Shell({
             Scan activity
           </Link>
           <button className="nav-item" onClick={() => setProfileOpen(true)}>
-            <Settings2 size={17} />
+            <Building2 size={17} />
             Company profile
           </button>
           <Link

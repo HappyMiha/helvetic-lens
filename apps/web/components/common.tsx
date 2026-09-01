@@ -60,6 +60,7 @@ export function Citations({ values }: { values: Citation[] }) {
           href={citation.url}
           key={citation.version_id + citation.passage_id + index}
           target="_blank"
+          aria-label={`Citation ${index + 1}: ${citation.quote.slice(0, 80)}`}
           title={citation.quote}
         >
           [{index + 1}]<ArrowUpRight size={10} />

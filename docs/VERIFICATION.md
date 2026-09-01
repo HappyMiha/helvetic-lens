@@ -4,7 +4,7 @@ The source-to-diff workflow and the Settings page are verified. Model acceptance
 
 ## Completed checks
 
-- 74 Python regression cases pass using isolated SQLite databases and actual API/service/migration code.
+- 75 Python regression cases pass using isolated SQLite databases and actual API/service/migration code.
 - State checks cover initial baselines, unchanged scans, 30 → 60 changes, A → B → A reuse, duplicate imports, repeated historical comparisons, and saved comparisons without source requests.
 - Failure checks cover unavailable/empty sources, partial batches, overlapping scans, paused laws, invalid/cross-law input, and interrupted-run recovery.
 - Evidence checks cover complete article/passage alignment, every saved passage exactly once, all changed passages despite a smaller warning threshold, legacy persisted-diff upgrades, artifacts, PDF pages, missing records, old/new citations, exact quotes, and whitespace-only bogus quotes.
