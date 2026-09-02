@@ -2,6 +2,19 @@
 
 The source-to-diff workflow, Settings page, and live Apertus path are verified.
 
+## Current bounded-triage regression — 3 September 2026
+
+The earlier large-comparison checks below are retained as historical evidence of the failure mode: they proved complete passage coverage, but also showed why passage-volume-driven inference is not a useful product contract. The current pipeline supersedes that strategy while preserving the complete exact diff for inspection.
+
+- 135 API regressions pass. New coverage verifies document-identity conflicts, multilingual titles under one ELI work, conservative numeric/date/punctuation handling, PDF line-wrap dehyphenation, unchanged passage moves, exact old/new coverage on 1,000 randomized comparisons, and stable large-input alignment.
+- Impact has a hard budget of five provider HTTP attempts and Ask has a hard budget of three. Batches, retries, one structured-output repair, and any synthesis share the same counter and 180-second deadline; configuration cannot multiply these limits into one request per passage.
+- A 3,600-plus-evidence comparison produces a bounded material-change dossier of at most three Impact batches or one Ask batch. The UI reports reviewed material units and limited coverage while the full deterministic audit remains available.
+- A single evidence unit larger than the model window is sent as an exact contiguous excerpt tied to the full saved passage, so it cannot bypass the context budget and its citation is still server-validated.
+- Vague conversational input returns localized clarification choices with zero model calls. A targeted general question with no matching saved passage also returns a useful narrowing prompt without arbitrary document excerpts.
+- Formatting and structural noise stays out of the default AI dossier. Numbers, decimals, table values, punctuation, and uncertain differences remain reviewable and are never normalized away as layout noise.
+- Impact permits zero suggested actions and removes exact duplicates. The UI explains when no evidence-backed action was found instead of generating repeated generic review instructions.
+- TypeScript checking, frontend formatting, Python linting, the full API suite, `git diff --check`, and a Next.js production build pass.
+
 ## Completed checks
 
 - 107 Python regression cases pass using isolated SQLite databases and actual API/service/migration code.

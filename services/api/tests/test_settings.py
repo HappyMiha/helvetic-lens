@@ -8,7 +8,8 @@ from conftest import add_law, import_old
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
-from helvetic_lens.analysis import ModelClient
+from helvetic_lens.analysis import InferenceBudget, ModelClient
+from helvetic_lens.config import DomainError
 from helvetic_lens.main import create_app
 from helvetic_lens.model_settings import ApertusSettingsInput
 from helvetic_lens.models import ApertusConfiguration
@@ -424,6 +425,36 @@ def test_context_limit_failure_is_actionable_and_is_not_retried(harness, monkeyp
     logs = client.get("/api/integration-logs?provider=docker").json()
     assert logs["total"] == 1
     assert logs["items"][0]["status"] == "error"
+
+
+@pytest.mark.asyncio
+async def test_shared_inference_budget_caps_transport_retries(harness, monkeypatch):
+    _, _, service, _ = harness
+    requests = []
+
+    def respond(request):
+        requests.append(request)
+        return httpx.Response(503, text="Test-only transient upstream failure")
+
+    async def no_wait(*_args, **_kwargs):
+        return None
+
+    transport(monkeypatch, respond)
+    monkeypatch.setattr("helvetic_lens.analysis.asyncio.sleep", no_wait)
+    settings = service.settings.model_copy(
+        update={
+            "apertus_base_url": "https://inference.example/v1",
+            "apertus_model": "test-apertus",
+            "apertus_request_retries": 5,
+        }
+    )
+    budget = InferenceBudget(max_requests=2, max_seconds=30)
+
+    with pytest.raises(DomainError) as error:
+        await ModelClient(settings).complete("system", "user", budget=budget)
+
+    assert error.value.code == "model_budget_exhausted"
+    assert budget.used == len(requests) == 2
 
 
 @pytest.mark.parametrize(

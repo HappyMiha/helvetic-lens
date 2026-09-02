@@ -10,12 +10,39 @@ from helvetic_lens.diffing import compare_passages
 from helvetic_lens.extraction import (
     Fetched,
     Fetcher,
+    _normalize_pdf_block,
     canonical_url,
     discover_links,
     extract,
     fedlex_eli_reference,
     validate_public_url,
 )
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("Die Personengesell-\nschaft reicht ein.", "Die Personengesellschaft reicht ein."),
+        ("Klein-\nund Mittelunternehmen", "Klein- und Mittelunternehmen"),
+        ("Stamm-\noder Zweigniederlassung", "Stamm- oder Zweigniederlassung"),
+        ("Risiko-\nManagement", "Risiko-Management"),
+        ("Personengesell- schaft", "Personengesell- schaft"),
+    ],
+)
+def test_pdf_dehyphenation_only_repairs_explicit_safe_line_breaks(raw, expected):
+    assert _normalize_pdf_block(raw) == expected
+
+
+def test_pdf_extraction_keeps_raw_multiline_evidence_when_repairing_soft_wraps():
+    raw = "Die Personengesell-\nschaft reicht ein.\nKlein-\nund Mittelunternehmen"
+    with pymupdf.open() as document:
+        document.new_page().insert_text((72, 72), raw)
+        result = extract(document.tobytes(), "application/pdf", "wrapped.pdf")
+
+    assert result.passages[0]["text"] == (
+        "Die Personengesellschaft reicht ein. Klein- und Mittelunternehmen"
+    )
+    assert result.passages[0]["raw_text"] == raw
 
 
 def test_normalisation_removes_layout_noise_but_keeps_changed_numbers():

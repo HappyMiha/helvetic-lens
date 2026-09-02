@@ -118,8 +118,9 @@ export function SettingsPage() {
             </p>
             <p className="text-sm muted">
               Current model: {configuration.data?.model || "Not selected"}.
-              Helvetic Lens calls an OpenAI-compatible chat API; it does not
-              download or host the model.
+              Helvetic Lens calls an OpenAI-compatible chat API. The local
+              Docker provider hosts Apertus beside the app; cloud providers
+              remain optional.
             </p>
             <a
               href={`https://huggingface.co/${configuration.data?.model || "swiss-ai/Apertus-v1.5-8B"}`}
@@ -566,10 +567,10 @@ function ApertusForm({
                   ))}
                 </select>
                 <span className="field-help">
-                  The 1.5B model is a lightweight local diagnostic fallback. Its
-                  single 4,096-token slot queues overlapping requests so each
-                  analysis keeps the complete local context. Keep Infomaniak for
-                  higher-quality legal analysis.
+                  The 1.5B model is the lightweight local development profile.
+                  Its 4,096-token slot receives a bounded meaningful-change
+                  dossier or targeted question evidence; larger local Apertus
+                  profiles can be selected when the host has enough memory.
                 </span>
               </label>
               <div className="flex flex-wrap gap-3 items-center">
@@ -787,7 +788,7 @@ function ApertusForm({
                 </span>
               </label>
               <label>
-                Concurrent analysis batches
+                Concurrent model requests
                 <Input
                   type="number"
                   min={1}
@@ -800,12 +801,13 @@ function ApertusForm({
                   }
                 />
                 <span className="field-help">
-                  Use 1 for large Infomaniak models to avoid overlapping long
-                  requests. Higher values are faster but less resilient.
+                  Controls how many requests from one bounded analysis plan may
+                  run together. Use 1 for memory-constrained local models or
+                  large hosted models.
                 </span>
               </label>
               <label>
-                Evidence warning threshold (characters)
+                Evidence target per model request (characters)
                 <Input
                   type="number"
                   min={1000}
@@ -818,9 +820,10 @@ function ApertusForm({
                   }
                 />
                 <span className="field-help">
-                  Comparison analysis sends every changed passage. This value
-                  sets the evidence batch target; it never truncates the saved
-                  diff.
+                  Groups the meaningful-change dossier or targeted question
+                  evidence into requests of about this size. It never truncates
+                  the saved exact diff or original artifacts; limited AI
+                  coverage is reported explicitly.
                   {draft.provider === "docker"
                     ? " The 6,000-character local preset is calibrated for the 4,096-token runner."
                     : ""}

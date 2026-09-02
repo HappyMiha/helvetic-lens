@@ -15,6 +15,7 @@ from .config import DomainError, Settings
 from .db import Database, utcnow
 from .diffing import DIFF_SCHEMA_VERSION, compare_passages
 from .extraction import Extracted, Fetcher, canonical_url, discover_links, extract
+from .identity import assess_comparison_identity, assess_document_identity
 from .integration_logs import IntegrationLogger
 from .model_settings import ApertusSettingsInput, public_settings, resolve_key, resolved_settings
 from .models import (
@@ -651,9 +652,11 @@ class HelveticLens:
         declared_date: str | None,
         synthetic: bool,
         preview: bool,
+        allow_identity_mismatch: bool = False,
     ):
         with self.db.session() as session:
-            get(session, Law, law_id)
+            law = get(session, Law, law_id)
+            law_identity = {"name": law.name, "url": law.url}
         count = int(body is not None) + int(bool(text.strip())) + int(bool(url.strip()))
         if count != 1:
             raise DomainError("Provide exactly one input: file, pasted text, or historical URL.")
@@ -675,8 +678,21 @@ class HelveticLens:
         if body is None or len(body) > self.settings.max_document_bytes:
             raise DomainError("The import exceeds the configured document limit.", 413)
         document = await asyncio.to_thread(extract, body, mime, filename)
+        identity = assess_document_identity(
+            law_name=law_identity["name"],
+            law_url=law_identity["url"],
+            title=document.title,
+            source_url=source_url,
+            passages=document.passages,
+        )
         if preview:
-            return document.preview()
+            return {**document.preview(), "identity": identity}
+        if identity["status"] == "mismatch" and not allow_identity_mismatch:
+            raise DomainError(
+                "This file appears to be a different legal document. You may save it for inspection, but AI comparison and analysis will remain blocked until the correct version is attached.",
+                409,
+                "document_identity_mismatch",
+            )
         with self.write_guard, self.db.session() as session:
             law = get(session, Law, law_id)
             version, reused = self.save_snapshot(
@@ -687,6 +703,7 @@ class HelveticLens:
                 "version": version_summary(version),
                 "reused": reused,
                 "current_version_id": law.current_version_id,
+                "identity": identity,
             }
 
     def latest_analysis(self, session: Session, comparison: Comparison):
@@ -720,6 +737,7 @@ class HelveticLens:
                 "old_version": version_summary(old),
                 "new_version": version_summary(new),
                 "law": as_dict(law),
+                "identity": assess_comparison_identity(law, old, new),
                 "analysis": self.latest_analysis(session, comparison),
             }
 
@@ -972,6 +990,14 @@ class HelveticLens:
                         "These versions have no text changes to analyse. You can still ask about their content."
                     )
                 profile = get(session, Profile, "default")
+                law = get(session, Law, comparison.law_id)
+                identity = assess_comparison_identity(law, old, new)
+                if identity["status"] == "mismatch":
+                    raise DomainError(
+                        "AI analysis is blocked because the saved files appear to belong to a different legal document. Attach the correct version before analysing impact.",
+                        409,
+                        "document_identity_mismatch",
+                    )
                 key = ai.cache_key(comparison, profile, settings, prompts)
                 cached = session.scalar(
                     select(Analysis)
@@ -1043,6 +1069,17 @@ class HelveticLens:
             if self.ensure_complete_diff(session, comparison, old, new):
                 session.commit()
             profile = get(session, Profile, "default")
+            law = get(session, Law, comparison.law_id)
+            identity = assess_comparison_identity(law, old, new)
+            clarification_only = not ai.is_change_question(question) and ai.needs_question_clarification(
+                question
+            )
+            if identity["status"] == "mismatch" and not clarification_only:
+                raise DomainError(
+                    "Ask is blocked because the saved files appear to belong to a different legal document. Attach the correct version first.",
+                    409,
+                    "document_identity_mismatch",
+                )
             key = ai.ask_cache_key(
                 comparison, profile, settings, prompts, question, history
             )

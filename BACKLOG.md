@@ -4,7 +4,7 @@
 
 This backlog implements the product described in [README.md](README.md): a local-AI-first Swiss regulatory monitor with immutable evidence, a time-based legal registry, official-source connectors, cross-document impact analysis, and organization workspaces.
 
-**Status:** The hackathon MVP (`HL-001`–`HL-028`) is implemented and verified through the browser, real HTTP requests, PostgreSQL, service restarts, and live Apertus inference. The public-beta/local-AI-first roadmap (`HL-029` onward) is planned, not implemented. See the [target architecture](docs/ARCHITECTURE.md) and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
+**Status:** The hackathon MVP (`HL-001`–`HL-028`) is implemented and verified through the browser, real HTTP requests, PostgreSQL, service restarts, and live Apertus inference. The public-beta/local-AI-first roadmap (`HL-029` onward) is planned, not implemented. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
 
 ## Scope and priorities
 
@@ -13,92 +13,101 @@ This backlog implements the product described in [README.md](README.md): a local
 - **P2 — valuable follow-up after public beta.** Add after the core three sources, registry, and impact inbox are reliable.
 - **P3 — evidence-driven expansion.** Implement only when real use demonstrates the need.
 
-The completed baseline contains 28 items, including two deliberately deferred optional items. The public-beta roadmap contains **22 required items (`HL-029`–`HL-049` plus `HL-057`)** and **7 after-beta items (`HL-050`–`HL-056`)**. Follow dependencies and checkpoints; priority alone is not an execution order. No calendar estimates are assumed until the dual-GTX-1080 benchmark and connector contract spikes are complete.
+The completed baseline contains 28 items, including two deliberately deferred optional items. The public-beta roadmap contains **29 required items (`HL-029`–`HL-049` plus `HL-057`–`HL-064`)** and **7 after-beta items (`HL-050`–`HL-056`)**. Follow dependencies and checkpoints; priority alone is not an execution order. No calendar estimates are assumed until the dual-GTX-1080 benchmark and connector contract spikes are complete.
 
 Keep the proven stack and add only the infrastructure now justified by public use: **Next.js, Tailwind CSS/shadcn/ui, FastAPI, PostgreSQL, Redis, Celery, Caddy, BeautifulSoup, PyMuPDF, `difflib`, and a private llama.cpp-based local inference runtime**. A quantized **Apertus 8B** profile is the intended production default only after it passes the target-hardware gate; the smaller verified profile remains valid for development. Cloud model adapters are optional and disabled by default. **pgvector remains conditional on a measured recall gap.**
 
 ## Release checkpoints
 
-| Checkpoint | Required items | Observable result |
-| --- | --- | --- |
-| M0 — Ready to build | HL-001–HL-003 | Known test sources and historical inputs; web app, API, and persistent database run locally. |
-| M1 — Real sources and laws | HL-004–HL-008 | A user connects a supported site, discovers documents, or adds a law directly; real extracted content is saved. |
-| M2 — Historical comparisons | HL-009–HL-013 | A user imports an earlier version, selects two versions, and inspects exact changes and saved evidence. |
-| M3 — Live monitoring | HL-014–HL-016 | Scans fetch current content, report actual progress, preserve history, and show useful results on the dashboard. |
-| M4 — Apertus explanations | HL-017–HL-019, HL-025 | Model settings persist; impact analysis and questions work against real saved passages with working citations. |
-| M5 — Accepted MVP | HL-020–HL-022 | Regression checks, product acceptance, and a repeatable live demonstration pass. |
-| M6 — Local-first foundation | HL-029–HL-035 | One server has durable queues, managed local models, organization data, login, and enforced read-only users. |
-| M7 — Swiss legal registry | HL-036–HL-043 | Normalized events from Fedlex, Parliament, the Federal Supreme Court, and their official notices appear in a time-grouped registry. |
-| M8 — Impact intelligence | HL-044–HL-046 | Evidence-backed relations connect new events to monitored laws and appear in an actionable organization inbox. |
-| M9 — Public beta | HL-047–HL-049, HL-057 | Five-language UI/AI/history, admin/operations UI, Internet-facing single-host deployment, recovery, and the reproducible 100-user gate pass. |
+| Checkpoint                      | Required items        | Observable result                                                                                                                                               |
+| ------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M0 — Ready to build             | HL-001–HL-003         | Known test sources and historical inputs; web app, API, and persistent database run locally.                                                                    |
+| M1 — Real sources and laws      | HL-004–HL-008         | A user connects a supported site, discovers documents, or adds a law directly; real extracted content is saved.                                                 |
+| M2 — Historical comparisons     | HL-009–HL-013         | A user imports an earlier version, selects two versions, and inspects exact changes and saved evidence.                                                         |
+| M3 — Live monitoring            | HL-014–HL-016         | Scans fetch current content, report actual progress, preserve history, and show useful results on the dashboard.                                                |
+| M4 — Apertus explanations       | HL-017–HL-019, HL-025 | Model settings persist; impact analysis and questions work against real saved passages with working citations.                                                  |
+| M5 — Accepted MVP               | HL-020–HL-022         | Regression checks, product acceptance, and a repeatable live demonstration pass.                                                                                |
+| M6 — Local-first foundation     | HL-029–HL-035         | One server has durable queues, managed local models, organization data, login, and enforced read-only users.                                                    |
+| M7 — Swiss legal registry       | HL-036–HL-043         | Normalized events from Fedlex, Parliament, the Federal Supreme Court, and their official notices appear in a time-grouped registry.                             |
+| M7A — Decision-ready comparison | HL-058–HL-064         | Verified document identity, legal-unit changes, bounded local inference, useful actions, and an evidence-first review experience replace noisy passage batches. |
+| M8 — Impact intelligence        | HL-044–HL-046         | Evidence-backed relations connect new events to monitored laws and appear in an actionable organization inbox.                                                  |
+| M9 — Public beta                | HL-047–HL-049, HL-057 | Five-language UI/AI/history, admin/operations UI, Internet-facing single-host deployment, recovery, and the reproducible 100-user gate pass.                    |
 
-Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, implement `HL-029` first, establish the `HL-057` internationalization conventions immediately, then run durable-job, local-model, organization, and translation work in parallel where their dependencies allow. Complete tenancy and the shared-corpus split before adding broad connectors; otherwise source records would need a second migration. Localize each screen as it is built instead of translating the finished product at the end. Finish operations and the measured capacity gate before exposing registration publicly.
+Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, implement `HL-029` first, establish the `HL-057` internationalization conventions immediately, then run durable-job, local-model, organization, and translation work in parallel where their dependencies allow. Complete tenancy and the shared-corpus split before adding broad connectors; otherwise source records would need a second migration. Complete `HL-058`–`HL-064` before treating AI output as a product decision aid: the exact diff stays available for audit, while the default flow must identify material legal-unit changes and produce bounded, validated results. Localize each screen as it is built instead of translating the finished product at the end. Finish operations and the measured capacity gate before exposing registration publicly.
 
 ## Task index
 
-| ID | Priority | Status | Dependencies | Deliverable |
-| --- | --- | --- | --- | --- |
-| [HL-001](#hl-001) | P0 | DONE | None | Verified source examples and historical inputs |
-| [HL-002](#hl-002) | P0 | DONE | None | Runnable app, API, and database |
-| [HL-003](#hl-003) | P0 | DONE | HL-002 | Persistent domain model and migrations |
-| [HL-004](#hl-004) | P0 | DONE | HL-001, HL-002 | Real HTML/PDF fetching and extraction |
-| [HL-005](#hl-005) | P0 | DONE | HL-003, HL-004 | Immutable snapshots and saved evidence |
-| [HL-006](#hl-006) | P0 | DONE | HL-003, HL-004 | Website connection management |
-| [HL-007](#hl-007) | P0 | DONE | HL-005, HL-006 | Tracked laws and direct document URLs |
-| [HL-008](#hl-008) | P1 | DONE | HL-004, HL-006, HL-007 | Bounded discovery and document search |
-| [HL-009](#hl-009) | P0 | DONE | HL-005, HL-007 | Previous-version import |
-| [HL-010](#hl-010) | P0 | DONE | HL-007, HL-009 | Version history and baseline selection |
-| [HL-011](#hl-011) | P0 | DONE | HL-005 | Shared passage and word comparison engine |
-| [HL-012](#hl-012) | P0 | DONE | HL-010, HL-011 | Visual diff with change navigation |
-| [HL-013](#hl-013) | P0 | DONE | HL-005, HL-012 | Version-specific evidence viewer |
-| [HL-014](#hl-014) | P0 | DONE | HL-007, HL-010, HL-011 | Live scans and historical comparisons |
-| [HL-015](#hl-015) | P0 | DONE | HL-014 | Actual progress, partial failures, and recovery |
-| [HL-016](#hl-016) | P1 | DONE | HL-006, HL-008, HL-012, HL-015 | Dashboard and scan controls |
-| [HL-017](#hl-017) | P0 | DONE | HL-002, HL-003 | Verified Apertus adapter and company context |
-| [HL-018](#hl-018) | P0 | DONE | HL-011, HL-013, HL-017 | Cited impact analysis and actions |
-| [HL-019](#hl-019) | P1 | DONE | HL-013, HL-017, HL-018 | Ask Apertus with version-specific citations |
-| [HL-020](#hl-020) | P1 | DONE | HL-009, HL-014, HL-015, HL-018, HL-019 | Regression checks for state and evidence |
-| [HL-021](#hl-021) | P1 | DONE | HL-008, HL-012, HL-013, HL-016, HL-019, HL-020, HL-025 | End-to-end product acceptance |
-| [HL-022](#hl-022) | P1 | DONE | HL-001, HL-021 | Setup documentation and repeatable demo |
-| [HL-023](#hl-023) | P2 | DEFERRED | HL-018, HL-022 | Optional business impact matrix |
-| [HL-024](#hl-024) | P2 | DEFERRED | HL-019, HL-022 | Optional pgvector retrieval |
-| [HL-025](#hl-025) | P0 | DONE | HL-002, HL-003, HL-017 adapter code | Settings page with persisted Apertus parameters |
-| [HL-026](#hl-026) | P1 | DONE | HL-006, HL-007, HL-017 | Integration diagnostics and controlled deletion |
-| [HL-027](#hl-027) | P1 | DONE | HL-018, HL-019, HL-025, HL-026 | Resilient AI calls, saved history, and prompt controls |
-| [HL-028](#hl-028) | P1 | DONE | HL-017, HL-027 | Robust citation-row handling and local Docker Apertus fallback |
-| [HL-029](#hl-029) | P0 | PLANNED | HL-028 | Single-host local-first architecture and capacity contract |
-| [HL-030](#hl-030) | P0 | PLANNED | HL-029 | Durable PostgreSQL jobs with Redis/Celery execution |
-| [HL-031](#hl-031) | P0 | PLANNED | HL-029, HL-030 | Local model library, downloads, and runtime manager |
-| [HL-032](#hl-032) | P0 | PLANNED | HL-030, HL-031 | Local-first inference routing, GPU fairness, and hardware benchmark |
-| [HL-033](#hl-033) | P0 | PLANNED | HL-003, HL-029 | Shared public corpus and organization-aware migration |
-| [HL-034](#hl-034) | P0 | PLANNED | HL-033 | Registration, login, sessions, and onboarding |
-| [HL-035](#hl-035) | P0 | PLANNED | HL-034 | Organization membership and enforced admin/viewer access |
-| [HL-036](#hl-036) | P0 | PLANNED | HL-005, HL-011, HL-033 | Normalized regulatory documents, dates, and events |
-| [HL-037](#hl-037) | P1 | PLANNED | HL-035, HL-036 | Time-grouped monitoring registry and document timeline |
-| [HL-038](#hl-038) | P0 | PLANNED | HL-030, HL-036 | Versioned incremental connector contract |
-| [HL-039](#hl-039) | P1 | PLANNED | HL-038, existing ELI resolver | Fedlex federal-law catalogue connector |
-| [HL-040](#hl-040) | P1 | PLANNED | HL-038 | Swiss Parliament initiatives and bills connector |
-| [HL-041](#hl-041) | P1 | PLANNED | HL-038 | Swiss Federal Supreme Court decisions connector |
-| [HL-042](#hl-042) | P1 | PLANNED | HL-030, HL-039–HL-041 | Scheduled synchronization, deduplication, and watch fan-out |
-| [HL-043](#hl-043) | P1 | PLANNED | HL-038, HL-042 | Official notices and source-linked news events |
-| [HL-044](#hl-044) | P1 | PLANNED | HL-036, HL-039–HL-043 | Evidence-backed relation graph and candidate generation |
-| [HL-045](#hl-045) | P1 | PLANNED | HL-032, HL-044 | Local-AI potential-impact analysis |
-| [HL-046](#hl-046) | P1 | PLANNED | HL-037, HL-045 | Impact inbox and monitored-law cross-links |
-| [HL-047](#hl-047) | P1 | PLANNED | HL-031, HL-035, HL-042 | Platform and organization admin console |
-| [HL-048](#hl-048) | P0 | PLANNED | HL-029–HL-035, HL-038 | Public single-server deployment and operations baseline |
-| [HL-049](#hl-049) | P0 | PLANNED | HL-037–HL-048, HL-057 | Reproducible recovery and 100-user capacity gate |
-| [HL-057](#hl-057) | P1 | PLANNED | HL-032, HL-034–HL-037, HL-045–HL-047 | Complete German, French, Italian, Romansh, and English localization |
-| [HL-050](#hl-050) | P2 | PLANNED | HL-038, HL-042 | Broader official regulatory news connectors |
-| [HL-051](#hl-051) | P2 | PLANNED | HL-044, HL-050 | Measured semantic candidate recall with pgvector if justified |
-| [HL-052](#hl-052) | P2 | PLANNED | HL-034, HL-046, HL-057 | Opt-in email and web digests |
-| [HL-053](#hl-053) | P3 | PLANNED | HL-044–HL-046 | Relation review workflow and visual graph |
-| [HL-054](#hl-054) | P3 | PLANNED | HL-034, HL-035 | Account recovery, verification, 2FA, and SSO refinements |
-| [HL-055](#hl-055) | P2 | PLANNED | HL-038, HL-041 | Broader federal and cantonal court coverage |
-| [HL-056](#hl-056) | P3 | PLANNED | HL-049 | Multi-host or high-availability deployment after measured need |
+| ID                | Priority | Status   | Dependencies                                           | Deliverable                                                         |
+| ----------------- | -------- | -------- | ------------------------------------------------------ | ------------------------------------------------------------------- |
+| [HL-001](#hl-001) | P0       | DONE     | None                                                   | Verified source examples and historical inputs                      |
+| [HL-002](#hl-002) | P0       | DONE     | None                                                   | Runnable app, API, and database                                     |
+| [HL-003](#hl-003) | P0       | DONE     | HL-002                                                 | Persistent domain model and migrations                              |
+| [HL-004](#hl-004) | P0       | DONE     | HL-001, HL-002                                         | Real HTML/PDF fetching and extraction                               |
+| [HL-005](#hl-005) | P0       | DONE     | HL-003, HL-004                                         | Immutable snapshots and saved evidence                              |
+| [HL-006](#hl-006) | P0       | DONE     | HL-003, HL-004                                         | Website connection management                                       |
+| [HL-007](#hl-007) | P0       | DONE     | HL-005, HL-006                                         | Tracked laws and direct document URLs                               |
+| [HL-008](#hl-008) | P1       | DONE     | HL-004, HL-006, HL-007                                 | Bounded discovery and document search                               |
+| [HL-009](#hl-009) | P0       | DONE     | HL-005, HL-007                                         | Previous-version import                                             |
+| [HL-010](#hl-010) | P0       | DONE     | HL-007, HL-009                                         | Version history and baseline selection                              |
+| [HL-011](#hl-011) | P0       | DONE     | HL-005                                                 | Shared passage and word comparison engine                           |
+| [HL-012](#hl-012) | P0       | DONE     | HL-010, HL-011                                         | Visual diff with change navigation                                  |
+| [HL-013](#hl-013) | P0       | DONE     | HL-005, HL-012                                         | Version-specific evidence viewer                                    |
+| [HL-014](#hl-014) | P0       | DONE     | HL-007, HL-010, HL-011                                 | Live scans and historical comparisons                               |
+| [HL-015](#hl-015) | P0       | DONE     | HL-014                                                 | Actual progress, partial failures, and recovery                     |
+| [HL-016](#hl-016) | P1       | DONE     | HL-006, HL-008, HL-012, HL-015                         | Dashboard and scan controls                                         |
+| [HL-017](#hl-017) | P0       | DONE     | HL-002, HL-003                                         | Verified Apertus adapter and company context                        |
+| [HL-018](#hl-018) | P0       | DONE     | HL-011, HL-013, HL-017                                 | Cited impact analysis and actions                                   |
+| [HL-019](#hl-019) | P1       | DONE     | HL-013, HL-017, HL-018                                 | Ask Apertus with version-specific citations                         |
+| [HL-020](#hl-020) | P1       | DONE     | HL-009, HL-014, HL-015, HL-018, HL-019                 | Regression checks for state and evidence                            |
+| [HL-021](#hl-021) | P1       | DONE     | HL-008, HL-012, HL-013, HL-016, HL-019, HL-020, HL-025 | End-to-end product acceptance                                       |
+| [HL-022](#hl-022) | P1       | DONE     | HL-001, HL-021                                         | Setup documentation and repeatable demo                             |
+| [HL-023](#hl-023) | P2       | DEFERRED | HL-018, HL-022                                         | Optional business impact matrix                                     |
+| [HL-024](#hl-024) | P2       | DEFERRED | HL-019, HL-022                                         | Optional pgvector retrieval                                         |
+| [HL-025](#hl-025) | P0       | DONE     | HL-002, HL-003, HL-017 adapter code                    | Settings page with persisted Apertus parameters                     |
+| [HL-026](#hl-026) | P1       | DONE     | HL-006, HL-007, HL-017                                 | Integration diagnostics and controlled deletion                     |
+| [HL-027](#hl-027) | P1       | DONE     | HL-018, HL-019, HL-025, HL-026                         | Resilient AI calls, saved history, and prompt controls              |
+| [HL-028](#hl-028) | P1       | DONE     | HL-017, HL-027                                         | Robust citation-row handling and local Docker Apertus fallback      |
+| [HL-029](#hl-029) | P0       | PLANNED  | HL-028                                                 | Single-host local-first architecture and capacity contract          |
+| [HL-030](#hl-030) | P0       | PLANNED  | HL-029                                                 | Durable PostgreSQL jobs with Redis/Celery execution                 |
+| [HL-031](#hl-031) | P0       | PLANNED  | HL-029, HL-030                                         | Local model library, downloads, and runtime manager                 |
+| [HL-032](#hl-032) | P0       | PLANNED  | HL-030, HL-031                                         | Local-first inference routing, GPU fairness, and hardware benchmark |
+| [HL-033](#hl-033) | P0       | PLANNED  | HL-003, HL-029                                         | Shared public corpus and organization-aware migration               |
+| [HL-034](#hl-034) | P0       | PLANNED  | HL-033                                                 | Registration, login, sessions, and onboarding                       |
+| [HL-035](#hl-035) | P0       | PLANNED  | HL-034                                                 | Organization membership and enforced admin/viewer access            |
+| [HL-036](#hl-036) | P0       | PLANNED  | HL-005, HL-011, HL-033                                 | Normalized regulatory documents, dates, and events                  |
+| [HL-037](#hl-037) | P1       | PLANNED  | HL-035, HL-036                                         | Time-grouped monitoring registry and document timeline              |
+| [HL-038](#hl-038) | P0       | PLANNED  | HL-030, HL-036                                         | Versioned incremental connector contract                            |
+| [HL-039](#hl-039) | P1       | PLANNED  | HL-038, existing ELI resolver                          | Fedlex federal-law catalogue connector                              |
+| [HL-040](#hl-040) | P1       | PLANNED  | HL-038                                                 | Swiss Parliament initiatives and bills connector                    |
+| [HL-041](#hl-041) | P1       | PLANNED  | HL-038                                                 | Swiss Federal Supreme Court decisions connector                     |
+| [HL-042](#hl-042) | P1       | PLANNED  | HL-030, HL-039–HL-041                                  | Scheduled synchronization, deduplication, and watch fan-out         |
+| [HL-043](#hl-043) | P1       | PLANNED  | HL-038, HL-042                                         | Official notices and source-linked news events                      |
+| [HL-044](#hl-044) | P1       | PLANNED  | HL-036, HL-039–HL-043                                  | Evidence-backed relation graph and candidate generation             |
+| [HL-045](#hl-045) | P1       | PLANNED  | HL-032, HL-044, HL-060, HL-061                         | Local-AI potential-impact analysis                                  |
+| [HL-046](#hl-046) | P1       | PLANNED  | HL-037, HL-045, HL-063                                 | Impact inbox and monitored-law cross-links                          |
+| [HL-047](#hl-047) | P1       | PLANNED  | HL-031, HL-035, HL-042                                 | Platform and organization admin console                             |
+| [HL-048](#hl-048) | P0       | PLANNED  | HL-029–HL-035, HL-038                                  | Public single-server deployment and operations baseline             |
+| [HL-049](#hl-049) | P0       | PLANNED  | HL-037–HL-048, HL-057–HL-064                           | Reproducible recovery and 100-user capacity gate                    |
+| [HL-057](#hl-057) | P1       | PLANNED  | HL-032, HL-034–HL-037, HL-045–HL-047                   | Complete German, French, Italian, Romansh, and English localization |
+| [HL-058](#hl-058) | P0       | PLANNED  | HL-005, HL-036, HL-038                                 | Document-identity gate before comparison or AI                      |
+| [HL-059](#hl-059) | P0       | PLANNED  | HL-011, HL-036, HL-058                                 | Legal-unit semantic diff with noise classification                  |
+| [HL-060](#hl-060) | P0       | PLANNED  | HL-030–HL-032, HL-059                                  | Fixed-budget local-AI analysis planner                              |
+| [HL-061](#hl-061) | P1       | PLANNED  | HL-033, HL-060                                         | Actionable, deduplicated impact-report contract                     |
+| [HL-062](#hl-062) | P1       | PLANNED  | HL-060, HL-061                                         | Intent-routed Ask experience and safe context selection             |
+| [HL-063](#hl-063) | P1       | PLANNED  | HL-030, HL-037, HL-059–HL-062                          | Decision-ready comparison UX and background progress                |
+| [HL-064](#hl-064) | P0       | PLANNED  | HL-057–HL-063                                          | AI-triage regression, evidence, latency, and usability gate         |
+| [HL-050](#hl-050) | P2       | PLANNED  | HL-038, HL-042                                         | Broader official regulatory news connectors                         |
+| [HL-051](#hl-051) | P2       | PLANNED  | HL-044, HL-050                                         | Measured semantic candidate recall with pgvector if justified       |
+| [HL-052](#hl-052) | P2       | PLANNED  | HL-034, HL-046, HL-057                                 | Opt-in email and web digests                                        |
+| [HL-053](#hl-053) | P3       | PLANNED  | HL-044–HL-046                                          | Relation review workflow and visual graph                           |
+| [HL-054](#hl-054) | P3       | PLANNED  | HL-034, HL-035                                         | Account recovery, verification, 2FA, and SSO refinements            |
+| [HL-055](#hl-055) | P2       | PLANNED  | HL-038, HL-041                                         | Broader federal and cantonal court coverage                         |
+| [HL-056](#hl-056) | P3       | PLANNED  | HL-049                                                 | Multi-host or high-availability deployment after measured need      |
 
 ## M0 — Ready to build
 
 <a id="hl-001"></a>
+
 ### HL-001 — Verify initial sources and historical inputs
 
 Select a small, realistic validation set without restricting users to a hard-coded source list.
@@ -112,6 +121,7 @@ Acceptance criteria:
 - Keep source and fixture documentation in the repository; do not commit credentials or material without permission to redistribute it. Link to originals when redistribution is unclear.
 
 <a id="hl-002"></a>
+
 ### HL-002 — Create the runnable application foundation
 
 Provide one Next.js web app, one FastAPI service, and one PostgreSQL database.
@@ -125,6 +135,7 @@ Acceptance criteria:
 - Provide basic formatting, lint/type-check, and verification commands appropriate to the code that exists. Keep environment files, downloads, and generated runtime data out of Git.
 
 <a id="hl-003"></a>
+
 ### HL-003 — Add the domain model and migrations
 
 Persist the state required to explain what was observed and which versions were compared.
@@ -141,6 +152,7 @@ Acceptance criteria:
 ## M1 — Real sources and laws
 
 <a id="hl-004"></a>
+
 ### HL-004 — Fetch public documents and extract usable text
 
 Implement one extraction path shared by current documents and imported versions.
@@ -155,6 +167,7 @@ Acceptance criteria:
 - Apply practical time, redirect, and download limits; validate public URL targets, including redirects. Report network failures, empty extraction, scanned PDFs, login pages, and unsupported JavaScript pages as distinct failures or unsupported inputs.
 
 <a id="hl-005"></a>
+
 ### HL-005 — Save immutable snapshots and evidence
 
 Keep enough original evidence to reproduce a comparison after the live website changes.
@@ -169,6 +182,7 @@ Acceptance criteria:
 - Reopen a saved PDF page or text passage successfully after the source changes or the service restarts.
 
 <a id="hl-006"></a>
+
 ### HL-006 — Build website connection management
 
 Let the user configure supported websites through the interface.
@@ -182,6 +196,7 @@ Acceptance criteria:
 - Explain the difference between connecting a website and selecting individual laws to monitor.
 
 <a id="hl-007"></a>
+
 ### HL-007 — Add and manage tracked laws by URL
 
 Make direct document entry the shortest usable path into the product.
@@ -196,6 +211,7 @@ Acceptance criteria:
 - Show clear loading, empty, and error states; a failed preview must not create a misleading successful baseline.
 
 <a id="hl-008"></a>
+
 ### HL-008 — Discover and search documents within a source
 
 Find candidate laws in a bounded site section and let the user choose what to track.
@@ -212,6 +228,7 @@ Acceptance criteria:
 ## M2 — Historical comparisons
 
 <a id="hl-009"></a>
+
 ### HL-009 — Import a previous version
 
 Allow the user to provide an earlier document without waiting for a future live update.
@@ -226,6 +243,7 @@ Acceptance criteria:
 - Do not change the current live pointer, prior scan results, or stored evidence when importing an older version. A snapshot import alone does not activate live monitoring without a current URL.
 
 <a id="hl-010"></a>
+
 ### HL-010 — Show version history and select a baseline
 
 Make it explicit which documents are being compared.
@@ -239,6 +257,7 @@ Acceptance criteria:
 - Allow repeating a historical comparison without resetting the law or deleting history.
 
 <a id="hl-011"></a>
+
 ### HL-011 — Implement the shared comparison engine
 
 Produce deterministic text differences before asking a model to explain them.
@@ -252,6 +271,7 @@ Acceptance criteria:
 - Keep the deterministic diff independent of model availability. Do not treat a model opinion as proof that text changed.
 
 <a id="hl-012"></a>
+
 ### HL-012 — Build the visual diff and change navigation
 
 Let the user see the exact wording that changed.
@@ -265,6 +285,7 @@ Acceptance criteria:
 - A controlled change from **30** to **60** is highlighted at the exact location, not represented only by a summary card. Identical versions have a clear unchanged state.
 
 <a id="hl-013"></a>
+
 ### HL-013 — Open saved evidence for a specific version
 
 Provide the shared evidence destination used by the diff, impact analysis, and questions.
@@ -280,6 +301,7 @@ Acceptance criteria:
 ## M3 — Live monitoring
 
 <a id="hl-014"></a>
+
 ### HL-014 — Run live scans and explicit historical comparisons
 
 Fetch actual current content, compare the right versions, and preserve monitoring history.
@@ -295,6 +317,7 @@ Acceptance criteria:
 - Persist successful comparisons even if later analysis fails. Failed fetching/extraction must not overwrite the last good version. Prevent concurrent scans of the same law from racing its baseline update, using a simple single-service mechanism.
 
 <a id="hl-015"></a>
+
 ### HL-015 — Expose real progress and recover incomplete scans
 
 Make actual work, partial success, and failures visible.
@@ -309,6 +332,7 @@ Acceptance criteria:
 - Offer safe retry of a failed document or failed analysis. Reuse completed work where possible and avoid adding a distributed queue for this scope.
 
 <a id="hl-016"></a>
+
 ### HL-016 — Build the dashboard and scan controls
 
 Bring source management, the watchlist, and scan results into one usable interface.
@@ -324,6 +348,7 @@ Acceptance criteria:
 ## M4 — Apertus explanations
 
 <a id="hl-017"></a>
+
 ### HL-017 — Verify Apertus access and add a small model adapter
 
 Connect to a real Apertus deployment and supply one company profile.
@@ -339,6 +364,7 @@ Acceptance criteria:
 - Document setup prerequisites and any access blocker early. Real source fetching and visual comparison continue to work without Apertus; the full model-enabled MVP is not accepted until a real inference call succeeds.
 
 <a id="hl-018"></a>
+
 ### HL-018 — Generate impact analysis, actions, and supporting evidence
 
 Explain a selected comparison using the saved source text and company profile.
@@ -354,6 +380,7 @@ Acceptance criteria:
 - Show the source evidence and indicate that impact and actions are review aids rather than authoritative legal conclusions.
 
 <a id="hl-019"></a>
+
 ### HL-019 — Add Ask Apertus with version-specific citations
 
 Answer questions about the selected law or comparison using inspectable evidence.
@@ -368,6 +395,7 @@ Acceptance criteria:
 - Verify at least one question about changed wording, one about the earlier version, and one that cannot be answered from the supplied documents.
 
 <a id="hl-025"></a>
+
 ### HL-025 — Configure Apertus providers through a Settings page
 
 Added at the user's request after implementation began and verified with the live adapter in HL-017.
@@ -385,6 +413,7 @@ Acceptance criteria:
 - Expose the existing company profile editor from the Settings page. Do not add account administration or a model-hosting platform.
 
 <a id="hl-026"></a>
+
 ### HL-026 — Add integration diagnostics and controlled deletion
 
 Added at the user's request after the core monitoring and Infomaniak flows were working.
@@ -400,6 +429,7 @@ Acceptance criteria:
 - Cover redaction, sorting, filtering, detail retrieval, clearing, source detachment, dependency cleanup, artifact cleanup, and active-scan blocking with deterministic API checks.
 
 <a id="hl-027"></a>
+
 ### HL-027 — Make AI results resilient, persistent, and configurable
 
 Added after live Infomaniak runs exposed intermittent transport failures and inconsistent structured response envelopes.
@@ -416,6 +446,7 @@ Acceptance criteria:
 - Cover retries, wrapped/double-encoded output, full-version context, cache reuse, failed-request history, prompt cache boundaries, history cascade deletion, browser rendering, and a live Infomaniak Ask/Impact run.
 
 <a id="hl-028"></a>
+
 ### HL-028 — Recover real provider citations and add local Docker inference
 
 Added after a large Infomaniak comparison returned successful HTTP responses but sometimes used passage positions instead of the requested batch-row numbers, while separate provider connections occasionally closed mid-response.
@@ -432,6 +463,7 @@ Acceptance criteria:
 ## M5 — Verification and demonstration
 
 <a id="hl-020"></a>
+
 ### HL-020 — Cover state transitions and evidence with regression checks
 
 Protect the behavior that makes the product reliable. Implement these checks alongside the corresponding tasks, not only at the end.
@@ -446,6 +478,7 @@ Acceptance criteria:
 - Use deterministic model test doubles only in automated checks and label them as such. They do not replace the real Apertus check required by HL-017/HL-021.
 
 <a id="hl-021"></a>
+
 ### HL-021 — Verify the complete product workflow
 
 Exercise the product from the browser through persistence, extraction, comparison, and model output.
@@ -461,6 +494,7 @@ Acceptance criteria:
 - Automate the deterministic browser path against a controlled local source where practical, then record a manual smoke check against the actual selected public sources and the actual Apertus endpoint. Record limitations honestly; do not mark the full MVP complete on mock-only evidence.
 
 <a id="hl-022"></a>
+
 ### HL-022 — Document setup and rehearse a repeatable demonstration
 
 Make the completed workflow usable by another developer or hackathon presenter.
@@ -477,6 +511,7 @@ Acceptance criteria:
 ## Optional work after acceptance
 
 <a id="hl-023"></a>
+
 ### HL-023 — Add the business impact matrix
 
 Provide an additional view over existing evidence-backed analyses.
@@ -489,6 +524,7 @@ Acceptance criteria:
 - Keep the underlying scan and analysis workflow unchanged. Defer this item if required work is incomplete.
 
 <a id="hl-024"></a>
+
 ### HL-024 — Add pgvector only when direct context is insufficient
 
 Improve passage selection only after measuring a real retrieval need.
@@ -504,6 +540,7 @@ Acceptance criteria:
 ## M6 — Local-first public foundation
 
 <a id="hl-029"></a>
+
 ### HL-029 — Ratify the single-host local-first architecture and capacity contract
 
 Turn the public-server assumptions into an implementation contract before changing the runtime or data model.
@@ -518,6 +555,7 @@ Acceptance criteria:
 - Record the accepted single-host risks: one server is a failure domain, maintenance causes downtime, and Redis/PostgreSQL persistence does not provide high availability.
 
 <a id="hl-030"></a>
+
 ### HL-030 — Replace process-local background work with durable PostgreSQL jobs and Redis/Celery execution
 
 Make scans, connector synchronization, parsing, comparisons, AI work, and maintenance survive service restarts.
@@ -533,6 +571,7 @@ Acceptance criteria:
 - Demonstrate recovery after restarting API, worker, scheduler, and Redis; PostgreSQL reconstructs eligible work even when the broker loses its transient queue state.
 
 <a id="hl-031"></a>
+
 ### HL-031 — Add a local model library, verified downloads, and a private runtime manager
 
 Let a platform administrator choose, download, validate, start, stop, and inspect local models without editing Compose files.
@@ -548,6 +587,7 @@ Acceptance criteria:
 - After a cached download, prove that version comparison, Impact, and Ask work without Internet access; deterministic registry and diff features remain usable before a model is installed.
 
 <a id="hl-032"></a>
+
 ### HL-032 — Make local inference primary and validate GPU routing on the target hardware
 
 Give the application one stable inference interface while the runtime chooses a measured safe GPU layout.
@@ -563,6 +603,7 @@ Acceptance criteria:
 - Benchmark at least 20 representative structured calls and two concurrent calls in replicated mode. Record tokens/second, load time, peak VRAM/RAM, maximum stable context, accepted slot count, schema validity, citation validity, and OOM/timeout results.
 
 <a id="hl-033"></a>
+
 ### HL-033 — Split the shared public corpus from organization-owned monitoring data
 
 Fetch each official Swiss document once while keeping watchlists, profiles, prompts, private inputs, and AI history inside one organization.
@@ -578,6 +619,7 @@ Acceptance criteria:
 - Add isolation checks proving that guessed cross-organization IDs, search, exports, integration logs, jobs, and evidence routes disclose nothing and return `404` or the authorized shared-public representation.
 
 <a id="hl-034"></a>
+
 ### HL-034 — Add simple registration, login, sessions, and first-run onboarding
 
 Make the public instance easy to enter without introducing an external identity platform.
@@ -593,6 +635,7 @@ Acceptance criteria:
 - Record only the minimum login/security events needed for support and abuse control, without putting passwords, cookies, or credentials into integration logs.
 
 <a id="hl-035"></a>
+
 ### HL-035 — Enforce organization invitations, membership, and administrator/viewer roles
 
 Let an organization share one workspace while making non-admin members read-only.
@@ -610,6 +653,7 @@ Acceptance criteria:
 ## M7 — Swiss legal registry and official connectors
 
 <a id="hl-036"></a>
+
 ### HL-036 — Normalize Swiss regulatory documents, expressions, versions, dates, events, and relations
 
 Create a common corpus model before importing whole official catalogues.
@@ -625,6 +669,7 @@ Acceptance criteria:
 - Keep all existing direct-URL laws and comparisons readable throughout the migration; provide an explicit mapping for records that cannot yet be matched to an official identity.
 
 <a id="hl-037"></a>
+
 ### HL-037 — Build the time-grouped monitoring registry and document timeline
 
 Make recent Swiss legal activity understandable before a user opens a comparison.
@@ -640,6 +685,7 @@ Acceptance criteria:
 - Keep registry reads responsive while synchronization and AI work are queued; do not require a live connector or model request to render saved data.
 
 <a id="hl-038"></a>
+
 ### HL-038 — Introduce a versioned, incremental, observable connector contract
 
 Share ingestion, deduplication, recovery, and diagnostics across every official source instead of adding URL-specific patches.
@@ -655,6 +701,7 @@ Acceptance criteria:
 - Attribute and date reused source data as required by the authority and retain its canonical official link on every imported record.
 
 <a id="hl-039"></a>
+
 ### HL-039 — Expand native Fedlex ELI support into a federal-law catalogue connector
 
 Discover and monitor federal acts and their official lifecycle without requiring one manually pasted law URL at a time.
@@ -672,6 +719,7 @@ Acceptance criteria:
 - Verify several `cc`, `oc`, and `fga` identities, more than one language, a dated version, one JOLux relation, one feed item recovered by reconciliation, and at least one lifecycle case against saved official provenance.
 
 <a id="hl-040"></a>
+
 ### HL-040 — Add a Swiss Parliament initiatives and bills connector
 
 Track parliamentary business before it becomes enacted law.
@@ -688,6 +736,7 @@ Acceptance criteria:
 - Verify a new/updated business, a state change, a related official document, multiple pages, more than one language, a partial-item failure, and an idempotent rerun.
 
 <a id="hl-041"></a>
+
 ### HL-041 — Add a Swiss Federal Supreme Court decisions connector
 
 Surface new court decisions that cite or interpret monitored federal law.
@@ -705,6 +754,7 @@ Acceptance criteria:
 - Verify at least one newly listed decision, repeated overlap, multilingual metadata where available, a cited norm, original artifact reopening, and idempotent rerun.
 
 <a id="hl-042"></a>
+
 ### HL-042 — Schedule incremental synchronization, deduplicate official work, and fan out watch events
 
 Run the core connectors continuously without fetching the same public evidence once per organization.
@@ -720,6 +770,7 @@ Acceptance criteria:
 - Prove that two organizations watching the same Fedlex act receive their own event/feed state while the official artifact and deterministic comparison are stored once.
 
 <a id="hl-043"></a>
+
 ### HL-043 — Ingest official notices and source-linked news from the three core authorities
 
 Capture relevant official context around laws, parliamentary business, and decisions without claiming broad web-news coverage yet.
@@ -734,9 +785,129 @@ Acceptance criteria:
 - If a core authority has no stable official notice interface, document that limitation and keep its connector healthy for supported legal records rather than adding a fragile unbounded crawl.
 - Defer broader Federal Council, department, regulator, consultation, and general news monitoring to HL-050.
 
+## M7A — Decision-ready comparison and AI triage
+
+This checkpoint replaces passage-volume-driven AI work with the product contract in [docs/AI_TRIAGE.md](docs/AI_TRIAGE.md). Exact saved evidence remains the audit layer. The default experience identifies material legal-unit changes, explains why they may matter, and produces a small review plan within a fixed inference budget.
+
+<a id="hl-058"></a>
+
+### HL-058 — Verify document identity before comparison, monitoring, or AI
+
+Prevent a plausible-looking analysis of two artifacts that are not versions of the same legal work.
+
+Acceptance criteria:
+
+- Persist detected authority, canonical work identifier such as ELI/SR/RS or docket, document kind, title, language, version/publication date, source URL, extraction method, and identity evidence for every artifact.
+- Resolve identity through connector metadata and official identifiers first; title/content fingerprints may support an `unknown` or `probable` result but cannot override a contradictory official identifier.
+- Classify a proposed pair as `verified`, `probable`, `unknown`, or `mismatch`. Block automatic comparison and AI for `mismatch`; require an explicit, audited user decision for `unknown` without relabelling either saved artifact.
+- Explain a failed gate in product language and offer concrete recovery: attach the artifact to the correct document, select another version, inspect both originals, or remove the mistaken import.
+- Recheck identity when extraction rules, connector metadata, or artifact assignment changes. A previous AI result remains historical and is visibly invalidated rather than silently reused.
+- Add a regression where the monitored record names a naturalization decree while an artifact identifies itself as SR 910.13; no comparison, Impact report, or Ask job may start.
+- Keep identity validation independent of the model. AI may help propose a match for review but cannot mark a legal-work identity as verified.
+
+<a id="hl-059"></a>
+
+### HL-059 — Build a legal-unit semantic diff above the exact audit diff
+
+Show changes to legal meaning without turning one insertion, renumbering, page wrap, or moved section into hundreds of apparent amendments.
+
+Acceptance criteria:
+
+- Parse a version into a hierarchy such as title/chapter/section/article/paragraph/littera/number while preserving the original page, passage, text, artifact, and exact diff references.
+- Normalize comparison-only noise including Unicode variants, whitespace, line/page breaks, repeated headers/footers, and safe end-of-line hyphenation. Never mutate stored source evidence or normalize away legally meaningful punctuation, numbers, or wording.
+- Match units by official/stable identifiers first, then bounded label, content, neighbour, and parent-context signals. Record the algorithm/version, match reason, score components, and ambiguity.
+- Classify each result as `substantive`, `added`, `removed`, `moved`, `renumbered`, `formatting_only`, or `uncertain`; keep severity/applicability out of the deterministic classifier.
+- Group a coherent amendment into one stable change cluster with old/new units and surrounding context. A moved or renumbered unchanged unit does not become a substantive change.
+- Make **Material changes** the default data set for AI while keeping uncertain units visible and separately reviewable. **All exact changes** remains complete, immutable, and reopenable for audit.
+- Add fixtures for a single inserted article that renumbers every following article, line-wrap and split-word changes, a moved unchanged section, a real obligation/deadline edit, and a complete replacement. Assert both material-change recall and noise classification.
+
+<a id="hl-060"></a>
+
+### HL-060 — Plan every local-AI analysis within a fixed call and context budget
+
+Use the model for semantic explanation and triage, not as a slow passage-by-passage diff engine.
+
+Acceptance criteria:
+
+- Persist an `AnalysisPlan` with task/intent, selected change IDs, context fingerprint, model/context limits, estimated input/output tokens, call budget, coverage, and reason for each included or excluded unit before inference begins.
+- A comparison with no material or uncertain change returns a deterministic `no substantive change detected` result with zero model calls. A small complete change set uses one model call when it fits the verified runtime context.
+- For larger sets, cluster related legal units and use at most **five total generation calls for an Impact report**, including synthesis and any repair. Platform configuration may lower this bound but cannot silently raise it per document.
+- Sending both complete saved versions in one request is allowed only when the actual serialized prompt plus reserved output fits the benchmarked model context. Otherwise use the complete semantic change set; never create one generation request per passage or page.
+- If all material/uncertain units cannot be reviewed within the budget, preserve the complete deterministic result, mark AI coverage as limited with reviewed/total units, and offer targeted follow-up. Never claim a complete AI assessment.
+- Reuse a shared general change explanation before organization-specific applicability. Local inference remains the default; a budget failure never causes silent cloud fallback.
+- Run through HL-030 durable jobs and expose the plan, call count, queue wait, inference time, tokens when available, validation/repair outcome, and result link in bounded diagnostics.
+
+<a id="hl-061"></a>
+
+### HL-061 — Return an actionable, deduplicated regulatory impact report
+
+Turn evidence into a review plan that helps an organization decide what to inspect next.
+
+Acceptance criteria:
+
+- Return a validated report with headline, materiality, material changes, organization applicability, affected business areas, important dates/obligations, uncertainties, evidence coverage, and zero to five suggested review actions.
+- Every change explanation identifies the old/new legal units and cites exact saved evidence. Unknown applicability, effective date, deadline, or responsibility remains explicitly unknown rather than being invented.
+- Separate potential severity from evidence strength. Present `confirmed`, `supported`, `possible`, and `needs_review` evidence grades using deterministic provenance and citation validation rather than an unqualified model confidence number.
+- Structure each action with action type, verb/object title, rationale, proposed owner role, affected area, priority, due basis/date or `not_found`, applicability condition, related change IDs, and citations. Label it as a review suggestion, not a confirmed legal obligation.
+- Permit zero actions. Do not require filler text when a change is editorial, outside the profile, or lacks enough evidence for a concrete recommendation.
+- Generate a stable normalized `action_key`; merge duplicate actions across batches/changes, combine their citations, and reject a final result containing duplicate keys. Three copies of the same generic review instruction can never be displayed.
+- Cache only on matching comparison, semantic-diff fingerprint, organization/profile revision, prompt/schema revision, model/runtime fingerprint, and output locale. Keep all successful and failed attempts; a new valid report supersedes but never overwrites history.
+
+<a id="hl-062"></a>
+
+### HL-062 — Route Ask by user intent and select only the context the intent needs
+
+Make free-form questions a useful drill-down after the report instead of an invitation to read two entire documents for every sentence.
+
+Acceptance criteria:
+
+- Classify input before document-context assembly as `explain_changes`, `organization_impact`, `actions`, `specific_unit`, `whole_document`, `vague`, or `off_topic`; the router receives no raw document body and has a separately bounded cost.
+- Canonical intents reuse the current validated report where possible. Offer localized prompts such as **Explain the changes simply**, **Does this affect us?**, **Show new obligations or deadlines**, and **Create a review checklist**.
+- A vague conversational phrase such as `Ничего не понятно но очень интересно` returns a useful clarification and intent choices, optionally with the saved TL;DR, in under one second and with zero full-document/batch inference calls.
+- Every change-related question uses the complete semantic change set and its uncertainty records, never passage retrieval. Specific-unit questions use the selected unit plus bounded parent/neighbour context.
+- A whole-document question may use both complete versions only when they fit the measured context; otherwise use explicit targeted retrieval over saved originals and state its scope. This exception must not weaken complete-diff handling for change questions.
+- Set a fixed **three-call maximum per Ask job**, including repair/synthesis. If the answer cannot be supported within that scope, explain what evidence is missing and offer a narrower question rather than scanning indefinitely.
+- Either pass prior validated answers and citations needed for a follow-up or present each saved question as independent. Do not render a chat metaphor whose backend remembers only prior question text.
+- Persist intent, scope, selected evidence/change IDs, coverage, latency, model/runtime, locale, answer, citations, and cache use with the exact comparison.
+
+<a id="hl-063"></a>
+
+### HL-063 — Redesign comparison review around material changes, meaning, and action
+
+Let a user understand a new version without scrolling through thousands of red/green passage rows.
+
+Acceptance criteria:
+
+- Lead with counts for **Material**, **Added/removed**, **Moved/renumbered**, **Formatting only**, and **Needs review**. Default to material/uncertain clusters; place the complete current passage/word diff behind **All exact changes**.
+- Each material-change card shows what changed in plain language, before/after legal units, possible organization relevance, important dates/obligations, evidence grade, assumptions, and a one-click exact-evidence view.
+- Present one current **What changed / Why it may matter / Review plan** report with generated date, versions, profile/model/prompt/locale provenance, coverage, and a compact link to prior reports.
+- Let authorized users accept, assign, schedule, dismiss, or mark a suggested action not applicable without changing shared legal evidence. Preserve actor, time, rationale, and organization scope.
+- Submit inference as an HL-030 background job and keep the screen usable. Show `queued`, queue position/estimate when known, `preparing changes`, `analysing n/N groups`, `validating evidence`, `ready`, `limited`, `failed`, and `cancelled` from real persisted state.
+- Navigation or refresh does not lose the job. Notify the user when it finishes and reopen the saved result; stream status or individually validated cards, never unverified legal prose.
+- Render a deterministic change overview immediately while AI is offline, queued, or failed. Avoid a ten-minute blocking spinner as the only value on the screen.
+- Apply HL-057 localization and accessible non-colour labels to every classification, state, evidence grade, action, and error.
+
+<a id="hl-064"></a>
+
+### HL-064 — Pass the AI-triage regression, evidence, latency, and usability gate
+
+Prove that the redesigned flow saves review time and cannot regress to thousands of low-value requests.
+
+Acceptance criteria:
+
+- Check in a labelled multilingual corpus covering identity mismatch, formatting-only revisions, split-word/page-wrap noise, insertion plus mass renumbering, moved text, one true obligation/deadline change, repeal/replacement, and a large rewritten document.
+- For the insertion fixture, report the intended material change while grouping consequent renumbering separately; retain the complete exact audit diff and do not show hundreds of material changes.
+- For a 1,400-plus-passage or equivalent 3,600-plus-evidence comparison, an automatic Impact report respects the five-call cap. An Ask job respects the three-call cap. No path creates one inference call per passage.
+- The vague-question fixture completes clarification under one second without document inference. Repeating an identical valid request returns the saved result without a provider call; changed dependencies produce a new version and mark the old result stale.
+- Validate 100% of displayed legal quotations against saved evidence and reject out-of-range references. A failed or partial analysis cannot replace the last valid current report.
+- Assert zero duplicate normalized action keys, allow zero justified actions, and human-review action specificity, owner/due-state honesty, evidence links, and separation of severity from evidence strength.
+- Measure time to deterministic overview, queue wait, AI completion, total calls/tokens, cache reuse, citation acceptance, limited/failed rate, action accept/dismiss rate, and time to first useful insight on the target local hardware.
+- In moderated testing across the five supported locales, a user can identify the main material change, possible organizational relevance, evidence, and next review step within two minutes without opening **All exact changes**. Record failures and revise the gate before public beta.
+
 ## M8 — Evidence-backed impact intelligence
 
 <a id="hl-044"></a>
+
 ### HL-044 — Generate an explainable relation candidate set for every new regulatory event
 
 Find which monitored laws could be affected without comparing every new item with every law.
@@ -752,6 +923,7 @@ Acceptance criteria:
 - Add embeddings/pgvector only through HL-051 if the labelled benchmark proves a material recall gap that deterministic and full-text methods cannot close.
 
 <a id="hl-045"></a>
+
 ### HL-045 — Analyse candidate effects with local Apertus and exact saved evidence
 
 Turn a candidate relation into a useful, reviewable potential-impact conclusion for each affected organization.
@@ -760,13 +932,14 @@ Acceptance criteria:
 
 - Queue background relation analysis on the local backend by default and let higher-priority interactive Ask jobs pre-empt new background batches without cancelling completed work.
 - Supply the exact new event/version evidence, relevant monitored-law passages/current lifecycle, deterministic relation facts, and organization profile; treat all source text as evidence rather than instructions.
-- Return a small validated structure with supported/unsupported, proposed relation type, potential impact, confidence band, concise explanation, affected business areas, actions, and evidence-row numbers.
+- Reuse the HL-061 report/action contract with supported/unsupported, proposed relation type, potential severity, evidence grade, concise explanation, affected business areas, zero to five deduplicated review actions, and evidence-row numbers.
 - Materialize citations from supplied rows on the server, allow one constrained repair, and reject invalid JSON/schema/out-of-range citations. Never display an unsupported AI relation as fact.
 - Keep official repeal/replacement/amendment metadata authoritative and visually distinct from AI-proposed potential effects; a model cannot overwrite a confirmed relation.
 - Cache only when event/target versions, evidence, organization profile, prompt, model/runtime fingerprint, and analysis schema all match. Preserve successful and failed history.
-- Batch within the measured local context and GPU limits, expose queued/running/coverage states, and leave registry/evidence usable when the model is offline or backlogged.
+- Use the HL-060 fixed-budget planner within measured local context and GPU limits, expose queued/running/limited/coverage states, and leave registry/evidence usable when the model is offline or backlogged.
 
 <a id="hl-046"></a>
+
 ### HL-046 — Add an organization impact inbox and cross-links on monitored laws
 
 Give users one place to understand why a new law, proposal, decision, or notice matters to what they monitor.
@@ -784,6 +957,7 @@ Acceptance criteria:
 ## M9 — Public beta operations and acceptance
 
 <a id="hl-047"></a>
+
 ### HL-047 — Build separate platform and organization administration surfaces
 
 Expose the controls needed to operate one public installation while keeping organization administrators inside their own workspace.
@@ -799,6 +973,7 @@ Acceptance criteria:
 - The CLI remains the bootstrap/recovery path for platform-admin assignment when the web admin surface is unavailable.
 
 <a id="hl-048"></a>
+
 ### HL-048 — Ship a reproducible public single-server deployment and operations baseline
 
 Make the i7/32 GB/two-GTX-1080 server safe and recoverable enough for a public beta.
@@ -814,6 +989,7 @@ Acceptance criteria:
 - Rehearse install, upgrade with pre-migration backup, certificate renewal, model re-download, database/artifact restore, and rollback limits from the runbook.
 
 <a id="hl-049"></a>
+
 ### HL-049 — Pass recovery, fairness, and the reproducible 100-user capacity gate
 
 Measure the public claim on the actual target host and tune shipped limits to what it can sustain.
@@ -829,6 +1005,7 @@ Acceptance criteria:
 - If the desired Apertus 8B profile fails, ship one split runner or a smaller verified model and update the capacity contract. The measured result overrides the desired model name.
 
 <a id="hl-057"></a>
+
 ### HL-057 — Internationalize the complete product in five Swiss-market languages
 
 Make German, French, Italian, Romansh, and English first-class product languages without changing or silently translating official evidence.
@@ -854,6 +1031,7 @@ Acceptance criteria:
 ## Work after public-beta acceptance
 
 <a id="hl-050"></a>
+
 ### HL-050 — Add broader official regulatory news and consultation connectors
 
 Extend beyond source-linked notices only after the core Fedlex, Parliament, and court connectors are reliable.
@@ -866,6 +1044,7 @@ Acceptance criteria:
 - Add a connector only after its incremental behavior, deduplication, drift detection, and bounded live verification pass.
 
 <a id="hl-051"></a>
+
 ### HL-051 — Add pgvector only if a labelled candidate-recall benchmark justifies it
 
 Improve multilingual relation discovery without weakening exact evidence requirements.
@@ -879,6 +1058,7 @@ Acceptance criteria:
 - Leave the feature disabled and close the task with evidence if it provides no material benefit.
 
 <a id="hl-052"></a>
+
 ### HL-052 — Add opt-in email and web digests
 
 Summarize the existing impact inbox without turning notification delivery into a second source of truth.
@@ -891,6 +1071,7 @@ Acceptance criteria:
 - Keep in-app notifications fully usable when email is not configured.
 
 <a id="hl-053"></a>
+
 ### HL-053 — Add relation review workflow and a visual graph only after list/inbox validation
 
 Help administrators curate proposed relations when real usage proves that a graph adds value.
@@ -903,6 +1084,7 @@ Acceptance criteria:
 - Measure whether the graph improves review time or correctness before making it a primary navigation surface.
 
 <a id="hl-054"></a>
+
 ### HL-054 — Add account recovery, verification, 2FA, or SSO only as public-use needs mature
 
 Strengthen identity workflows without blocking the deliberately small first registration experience.
@@ -915,6 +1097,7 @@ Acceptance criteria:
 - Update privacy/retention and recovery runbooks before enabling any new identity data or provider.
 
 <a id="hl-055"></a>
+
 ### HL-055 — Expand court coverage after the Federal Supreme Court connector is stable
 
 Add further federal or cantonal courts source by source rather than implying universal Swiss coverage.
@@ -927,6 +1110,7 @@ Acceptance criteria:
 - Pass fixture/live smoke, incremental overlap, deduplication, drift detection, provenance, and evidence reopening before declaring support.
 
 <a id="hl-056"></a>
+
 ### HL-056 — Split services across hosts or add high availability only after measured need
 
 Keep a documented scale-out path without paying its operational cost in the first public deployment.
@@ -942,6 +1126,6 @@ Acceptance criteria:
 
 An item is done only when its acceptance criteria are demonstrated through the actual UI/API/persistence path where applicable, meaningful checks pass for its state or evidence logic, and user-visible error states are handled. Completing this backlog document does not complete any development item.
 
-Minimum MVP evidence remains: a verified public source; a saved current version; an imported earlier version with provenance; a real comparison; an inspectable diff; a successful real Apertus analysis; a question with a working citation; and successful repeat/restart/failure checks. The public beta additionally requires every P0/P1 item in `HL-029`–`HL-049` plus `HL-057`, source-contract evidence for all three core connectors, complete five-locale smoke/catalogue checks, local-model and recovery benchmarks on the target host, organization-isolation checks, and the reproducible capacity scenario.
+Minimum MVP evidence remains: a verified public source; a saved current version; an imported earlier version with provenance; a real comparison; an inspectable diff; a successful real Apertus analysis; a question with a working citation; and successful repeat/restart/failure checks. The public beta additionally requires every P0/P1 item in `HL-029`–`HL-049` plus `HL-057`–`HL-064`, source-contract evidence for all three core connectors, complete five-locale smoke/catalogue checks, the decision-ready AI-triage regression and usability gate, local-model and recovery benchmarks on the target host, organization-isolation checks, and the reproducible capacity scenario.
 
 Still excluded from the public-beta release: Kubernetes, multi-host workers, database/broker high availability, enterprise SSO/SCIM, arbitrary custom roles, unbounded crawling, universal Swiss court coverage, an ornamental graph UI, OCR, login-gated ingestion, model training/fine-tuning, and automatic legal decisions. They remain future work only where an item above names a measurable entry condition. Ordinary validation, bounded fetching, safe rendering, authorization, secret handling, backups, and recovery are implementation requirements rather than optional enterprise decoration.

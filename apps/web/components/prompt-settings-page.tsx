@@ -42,13 +42,13 @@ const editors: {
     key: "impact_instructions",
     title: "Impact analysis",
     description:
-      "Applied when Apertus reviews changed passages and proposes business actions.",
+      "Applied when Apertus reviews a bounded dossier of substantive or uncertain changes and proposes grounded review actions.",
   },
   {
     key: "impact_synthesis_instructions",
     title: "Impact synthesis",
     description:
-      "Combines validated batch reviews into the saved final assessment.",
+      "Combines validated bounded reviews into one saved assessment when the dossier needs more than one model call.",
   },
   {
     key: "ask_instructions",
@@ -59,7 +59,8 @@ const editors: {
   {
     key: "answer_synthesis_instructions",
     title: "Answer synthesis",
-    description: "Combines answers from complete multi-batch document context.",
+    description:
+      "Combines validated answers from bounded change groups or targeted saved-version evidence.",
   },
   {
     key: "repair_instructions",
@@ -207,11 +208,12 @@ function PromptForm({
                   checked={draft.ask_context_mode === "automatic"}
                   onChange={() => update("ask_context_mode", "automatic")}
                 />
-                <strong>Automatic complete context</strong>
+                <strong>Automatic targeted context</strong>
                 <span>
-                  Uses the complete deterministic diff for change questions and
-                  the full extracted text of both originals for other document
-                  questions.
+                  Uses the meaningful-change dossier for change questions. For
+                  other questions, it uses both versions only when they fit;
+                  otherwise it selects relevant saved passages with nearby
+                  context.
                 </span>
               </label>
               <label
@@ -226,10 +228,11 @@ function PromptForm({
                   checked={draft.ask_context_mode === "changes_only"}
                   onChange={() => update("ask_context_mode", "changes_only")}
                 />
-                <strong>Changed passages only</strong>
+                <strong>Meaningful changes only</strong>
                 <span>
-                  Costs fewer tokens, but questions unrelated to the changes may
-                  be marked unsupported.
+                  Uses the bounded substantive and uncertain change dossier.
+                  Questions unrelated to those changes may be marked
+                  unsupported.
                 </span>
               </label>
             </div>
@@ -286,18 +289,20 @@ function PromptForm({
             <h2>Fixed validation contract</h2>
             <p className="text-sm muted">
               The editable instructions are combined with server-controlled JSON
-              schemas, complete-evidence rules, exact citation checks, and one
-              repair attempt. These checks remain active even when you change
-              the wording above.
+              schemas, complete deterministic-change coverage, bounded model
+              context, exact citation checks, and one repair attempt. These
+              checks remain active even when you change the wording above.
             </p>
           </section>
           <section className="panel p-6">
             <h2>Original document files</h2>
             <p className="text-sm muted">
-              Helvetic Lens keeps every original artifact. For general questions
-              it sends the complete extracted text in bounded batches because
-              the selected Apertus chat endpoint does not expose a documented
-              PDF attachment contract.
+              Helvetic Lens keeps every original artifact. It sends the evidence
+              needed for the selected intent: a bounded meaningful-change
+              dossier or targeted passages from the saved versions. Both
+              complete versions are sent only when they fit one measured model
+              request; the chat endpoint does not expose a documented PDF
+              attachment contract.
             </p>
             <a
               className="text-link text-sm"

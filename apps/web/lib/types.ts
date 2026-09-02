@@ -46,6 +46,23 @@ export type Preview = {
   page_count: number;
   excerpt: string;
   url?: string;
+  identity?: DocumentIdentity;
+};
+export type DocumentIdentity = {
+  status: "match" | "mismatch" | "uncertain";
+  reason: string;
+  score?: number;
+  tracked_title?: string;
+  detected_title?: string;
+  tracked_identifier?: string | null;
+  detected_identifier?: string | null;
+};
+export type ComparisonIdentity = {
+  status: "match" | "mismatch" | "uncertain";
+  reason: string;
+  old: DocumentIdentity;
+  new: DocumentIdentity;
+  pair_score: number;
 };
 export type Candidate = {
   title: string;
@@ -119,6 +136,11 @@ export type Coverage = {
   configured_context_characters?: number;
   exceeds_configured_context?: boolean;
   scope: string;
+  provider_calls?: number;
+  material_items?: number;
+  reviewed_material_items?: number;
+  suppressed_non_material_items?: number;
+  analysis_call_budget?: number;
 };
 export type Impact = {
   summary: string;
@@ -188,6 +210,10 @@ export type LawDetail = Law & {
 export type Change = {
   id: string;
   kind: "added" | "removed" | "modified" | "unchanged";
+  significance?:
+    "substantive" | "structural" | "formatting" | "uncertain" | "unchanged";
+  change_type?: string;
+  material?: boolean;
   old: Passage | null;
   new: Passage | null;
   old_position?: number | null;
@@ -212,8 +238,17 @@ export type Comparison = {
     new_passage_count?: number;
     items: Change[];
     counts: Counts;
+    classification_counts?: {
+      substantive: number;
+      structural: number;
+      formatting: number;
+      uncertain: number;
+    };
+    material_count?: number;
+    material_changed?: boolean;
     changed: boolean;
   };
+  identity?: ComparisonIdentity;
   analysis: Analysis | null;
 };
 export type ScanItem = {
@@ -277,7 +312,12 @@ export type Answer = {
   citations: Citation[];
   coverage: Coverage;
   model: string;
-  context_mode: "deterministic_diff" | "full_saved_versions";
+  context_mode:
+    | "deterministic_diff"
+    | "full_saved_versions"
+    | "targeted_passages"
+    | "clarification";
+  suggestions?: string[];
   record_id: string;
   cached: boolean;
   created_at: string;

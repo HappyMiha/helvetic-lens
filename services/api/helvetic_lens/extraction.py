@@ -16,7 +16,7 @@ from bs4 import BeautifulSoup, UnicodeDammit
 from .config import DomainError, Settings
 from .integration_logs import IntegrationLogger, response_snapshot
 
-EXTRACTOR_VERSION = "native-v2"
+EXTRACTOR_VERSION = "native-v3"
 FEDLEX_DATA_ORIGIN = "https://fedlex.data.admin.ch"
 FEDLEX_SPARQL_ENDPOINT = FEDLEX_DATA_ORIGIN + "/sparqlendpoint"
 FEDLEX_ELI_HOSTS = {"fedlex.admin.ch", "www.fedlex.admin.ch", "fedlex.data.admin.ch"}
@@ -30,10 +30,34 @@ FEDLEX_ELI_PATH = re.compile(
 )
 FEDLEX_METADATA_LIMIT = 256 * 1024
 MAX_PDF_PAGES = 1000
+_PDF_LINE_BREAK_HYPHEN = re.compile(
+    r"(?P<head>[^\W\d_])(?P<hyphen>[-\u2010\u2011])[\t ]*\r?\n[\t ]*"
+    r"(?P<continuation>[^\W\d_]+)",
+    re.UNICODE,
+)
+_HYPHENATED_CONJUNCTIONS = frozenset(
+    {"and", "e", "ed", "et", "ni", "o", "or", "ou", "oder", "u", "ubain", "und"}
+)
 
 
 def normalize(text: str) -> str:
     return re.sub(r"\s+", " ", unicodedata.normalize("NFC", text)).strip()
+
+
+def _normalize_pdf_block(text: str) -> str:
+    """Repair only soft wraps that are still explicit in PDF extractor output."""
+
+    text = unicodedata.normalize("NFC", text).replace("\u00ad", "")
+
+    def repair(match: re.Match) -> str:
+        continuation = match.group("continuation")
+        if continuation.casefold() in _HYPHENATED_CONJUNCTIONS:
+            return f"{match.group('head')}{match.group('hyphen')} {continuation}"
+        if continuation[0].isupper():
+            return f"{match.group('head')}{match.group('hyphen')}{continuation}"
+        return f"{match.group('head')}{continuation}"
+
+    return normalize(_PDF_LINE_BREAK_HYPHEN.sub(repair, text))
 
 
 def canonical_url(value: str) -> str:
@@ -594,9 +618,13 @@ def extract(
                     for block in page.get_text("blocks", sort=True):
                         if len(block) > 6 and block[6] != 0:
                             continue
-                        text = normalize(block[4])
+                        raw_text = unicodedata.normalize("NFC", block[4]).strip()
+                        text = _normalize_pdf_block(block[4])
                         if text:
-                            passages.append({"text": text, "page": page_number})
+                            passage = {"text": text, "page": page_number}
+                            if normalize(raw_text) != text:
+                                passage["raw_text"] = raw_text
+                            passages.append(passage)
         except (pymupdf.FileDataError, RuntimeError, ValueError) as exc:
             raise DomainError(
                 "This PDF could not be read. It may be damaged or unsupported.", 422, "invalid_pdf"
@@ -676,7 +704,7 @@ def extract(
         raise DomainError("The extracted document exceeds the MVP text limit.", 413, "document_too_large")
     for number, passage in enumerate(passages, 1):
         passage["id"] = f"p{number:05d}"
-    return Extracted(title[:500], text, passages, mime, name, body, f"{provider}-v1")
+    return Extracted(title[:500], text, passages, mime, name, body, f"{provider}-v3")
 
 
 def discover_links(fetched: Fetched, section: str = "/", limit: int = 50) -> dict:

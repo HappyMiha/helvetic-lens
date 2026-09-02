@@ -6,7 +6,7 @@ Helvetic Lens lets users connect regulatory websites, add specific laws or docum
 
 The MVP must be a functional product with a narrow scope. Sources are configured through the interface, data persists between sessions, and the demonstration uses the same fetching, comparison, and analysis pipeline as everyday use.
 
-> **Project status:** The model-enabled MVP works end to end: source connections, direct URLs, imports, immutable history, live scans, saved comparisons, visual evidence, persisted Apertus settings, impact analysis, cited questions, saved AI history, editable prompts, inspectable integration logs, and controlled removal of sources or monitored documents. Live Apertus checks include a large complete comparison processed without truncation. See [verification notes](docs/VERIFICATION.md).
+> **Project status:** The model-enabled MVP works end to end: source connections, direct URLs, imports, immutable history, live scans, saved comparisons, visual evidence, persisted Apertus settings, impact analysis, cited questions, saved AI history, editable prompts, inspectable integration logs, and controlled removal of sources or monitored documents. The current triage layer keeps the complete exact comparison for inspection, separates likely material wording from formatting and renumbering noise, blocks obvious document mismatches, and gives AI a fixed-size evidence dossier instead of starting one request per passage. See [verification notes](docs/VERIFICATION.md) and the [AI triage contract](docs/AI_TRIAGE.md).
 
 > **Public-beta direction:** Local AI becomes the default and cloud providers become explicit optional adapters. The target remains one physical i7/32 GB/two-GTX-1080 server and one Compose deployment, with durable PostgreSQL jobs, Redis/Celery queues, managed quantized models, organization workspaces, login, complete German/French/Italian/Romansh/English localization, three official-source connectors, a time-grouped registry, and an impact inbox. These capabilities are planned, not yet implemented. See the [architecture decision](docs/ARCHITECTURE.md) and `HL-029`–`HL-049` plus `HL-057` in [BACKLOG.md](BACKLOG.md).
 
@@ -16,11 +16,11 @@ Development tasks, priorities, dependencies, and acceptance criteria are tracked
 
 Use Docker Desktop with Compose for the complete PostgreSQL stack:
 
-~~~sh
+```sh
 git clone https://github.com/HappyMiha/helvetic-lens.git
 cd helvetic-lens
 docker compose up --build -d
-~~~
+```
 
 Open [Helvetic Lens](http://127.0.0.1:3000) and the [API reference](http://127.0.0.1:8000/docs). PostgreSQL and saved artifacts use persistent volumes. Migrations run on API startup. Default ports are 3000 (web), 8000 (API), and 54329 (database); stop development processes using those ports before starting Compose.
 
@@ -30,26 +30,26 @@ No model or paid extraction service is required for source monitoring and visual
 
 For development, install Node.js 22+ (tested with 24), Python 3.11+, and uv. Create .env from the example and set DATABASE_URL to the following before starting:
 
-~~~text
+```text
 postgresql+psycopg://helvetic_lens:helvetic_lens@127.0.0.1:54329/helvetic_lens
-~~~
+```
 
-~~~sh
+```sh
 npm ci
 uv sync --project services/api --frozen
 docker compose up -d db
 npm run dev
-~~~
+```
 
 The development API stores artifacts under data/. If DATABASE_URL is deliberately left empty, it uses local SQLite for a lightweight trial; Compose always uses PostgreSQL. Do not run both API variants against the same database with different artifact directories.
 
-~~~sh
+```sh
 npm run typecheck
 npm run format:check
 npm run build
 npm run lint:api
 npm run test:api
-~~~
+```
 
 [Follow the demo guide](docs/DEMO.md) to connect a site, import an older version, fetch current content, and inspect the exact **30 → 60** wording change.
 
@@ -74,7 +74,11 @@ For the current local diagnostic profile on Docker Desktop, run `./scripts/local
 
 Connection errors distinguish a rejected key (401), denied model access (403), an incorrect route/model (404), rate limit or quota (429), an unreachable server, a timeout, and a request that exceeds the model context window. Context-limit failures are not retried unchanged. Every useful retry is visible as a separate redacted integration-log entry. Provider response bodies and credentials are not echoed to the browser.
 
-The evidence threshold is a character-based batch target, not the endpoint's exact token window. Large complete diffs are divided on change boundaries and every changed passage is processed exactly once; no passage is retrieval-ranked or truncated. Change-related questions and Impact use this complete deterministic diff. Other questions use the complete extracted text of both saved originals in bounded batches. The original PDF/HTML/TXT artifacts remain downloadable, but Helvetic Lens does not claim to attach raw PDFs to an Apertus chat model: Infomaniak's documented [chat completion contract](https://developer.infomaniak.com/docs/api/post/2/ai/%7Bproduct_id%7D/openai/v1/chat/completions) exposes text and model-dependent image content rather than a PDF-file upload field. The UI reports the batch count and full coverage. Confirm your server's input/output limits and JSON-mode support. Connection success is only a connectivity check; a real cited analysis must still pass acceptance. For Docker, the endpoint must be reachable from the API container; its localhost is not the host machine.
+The evidence threshold is a character-based request target, not the endpoint's exact token window. Helvetic Lens always preserves the complete deterministic comparison as the inspectable audit layer. Interactive AI receives a bounded dossier that prioritizes likely material or uncertain changes and excludes detected formatting and renumbering noise. Small documents may fit in one request; large comparisons use a small fixed number of coherent batches and report limited AI coverage honestly. General document questions use both complete saved versions only when they fit, otherwise they use question-matched passages with adjacent context. Vague comments return immediate clarification choices without sending the document to the model.
+
+Existing snapshots stay immutable. A comparison created from an older extractor can be re-diffed with the new classifier, but it cannot recover PDF line breaks that were not retained in that snapshot. Re-import the historical artifact and run a fresh scan to receive the v3 PDF line-wrap repair on both sides.
+
+The original PDF/HTML/TXT artifacts remain downloadable, but Helvetic Lens does not claim to attach raw PDFs to an Apertus chat model: Infomaniak's documented [chat completion contract](https://developer.infomaniak.com/docs/api/post/2/ai/%7Bproduct_id%7D/openai/v1/chat/completions) exposes text and model-dependent image content rather than a PDF-file upload field. Sending the extracted structure also keeps citations tied to exact saved evidence. The UI reports which material items entered the dossier, what was suppressed as technical noise, and how many planned model calls were used. Confirm your server's input/output limits and JSON-mode support. Connection success is only a connectivity check; a real cited analysis must still pass acceptance. For Docker, the endpoint must be reachable from the API container; its localhost is not the host machine.
 
 Settings persist in PostgreSQL (or the explicitly selected SQLite trial database) and take precedence over APERTUS_* environment defaults. Keys saved through the app are stored server-side in this local workspace database, so protect its volumes and backups. Nothing is written to Git or browser storage. **Use environment defaults** removes the saved overrides, including a saved key, without changing document history.
 
@@ -92,6 +96,10 @@ Teams should not have to reread every regulatory document to find out whether an
 - **What does it mean?** Ask Apertus to explain the change and its possible impact on a simple company profile.
 - **What should we do?** Get a short, prioritized action list grounded in the source text.
 
+AI is used as a regulatory triage assistant, not as a more expensive line-diff renderer. Deterministic code establishes which saved documents are being compared, preserves every exact difference, and removes changes that are clearly page layout or numbering. Apertus then explains the compact set of meaningful changes, tests their possible relevance against the organization profile, and proposes a review action only when the evidence supports one. Free-form questions are a drill-down after this report; unclear input is turned into useful choices instead of triggering a full-document run.
+
+For a very small law, placing both extracted versions in one request is reasonable. A large Swiss act can exceed the local model's context by orders of magnitude, so attaching two PDFs does not make the analysis complete or reliable. The scalable unit is a cited article or change cluster, with the two original files always one click away for verification.
+
 Start by validating 2-3 Swiss public sources and one company profile, but do not hard-code the source list. Users must be able to add another supported website or document without changing application code.
 
 ## The main workflow
@@ -108,22 +116,22 @@ Connecting a website and monitoring a law are separate actions: a **source** is 
 
 ## MVP scope
 
-| Feature | What the user can see and do |
-| --- | --- |
-| **Website connections** | Add, edit, or remove a public source URL or listing page, test extraction, and preview discovered document links. Removing a source detaches its tracked documents instead of deleting their evidence. |
-| **Law discovery and watchlist** | Search discovered documents by title or keyword, add selected laws, or add a specific law directly by URL. Name, pause, resume, or permanently delete a tracked document and its saved history through the interface. |
-| **Import previous version** | Upload a PDF, HTML, or TXT file, paste text, or fetch a historical copy by URL. Review the extracted text, attach it to a law, and optionally record its stated version date. |
-| **Dashboard** | See connected sources, tracked laws, last scan times, changes, and impact indicators. Distinguish newly discovered documents, changed documents, unchanged documents, and failures. |
-| **Scan now** | Check one law or the watchlist, with per-document progress and a final summary. A first fetch without a prior version establishes a baseline. A background scheduler is not required. |
-| **Version detection and history** | Extract and normalize text, compare a content hash, and preserve version history. Choose an earlier snapshot for comparison without replacing the latest successfully observed version. |
-| **Visual diff** | Choose old and new versions and see added, removed, and modified passages. Show side-by-side text, inline word highlights, a list of changes, and links to the saved evidence and original source. |
-| **Apertus impact analysis** | Analyse every changed passage in the complete saved comparison; generate a concise summary, why it matters, affected business areas, an indicative high/medium/low impact, and 1-3 suggested actions. Keep supporting passages visible. |
-| **Settings** | Choose Infomaniak, the local Docker Apertus service, or another OpenAI-compatible provider; configure Product ID/endpoint, server-side credential handling, an API-loaded model dropdown, timeout, automatic retries, concurrent batch limit, evidence threshold, completion length, temperature, Top P, presence penalty, reasoning effort, and JSON mode. Test unsaved values, save without restarting, restore environment defaults, and edit the company profile. |
-| **Prompt settings** | Edit Impact, Ask, synthesis, and repair instructions from the interface. Choose automatic full-document context or changed passages only for general questions. Save revisions without weakening the server-owned JSON schemas, evidence rules, or citation validation. |
-| **Integration logs** | Review outbound website, Fedlex, Firecrawl, and Apertus/Infomaniak requests and responses, including HTTP status, duration, payload sizes, and errors. Sort, filter, inspect details, and clear logs. Credentials, cookies, token fields, and matching secret values are redacted before persistence; large payloads are bounded and binary documents are represented by metadata and a hash. |
-| **Ask Apertus with citations** | Ask questions about the selected comparison. Questions about what changed use the complete deterministic diff; other questions use every extracted passage from both saved original versions by default. Cite the exact saved version and passage, including a PDF page where available. |
-| **AI history and cache** | Keep successful and failed Impact runs, questions, answers, timestamps, model IDs, prompt revisions, coverage, and exact comparison attributes. Reopen citations and original artifacts; reuse an identical successful request without spending more provider tokens. |
-| **Optional: impact matrix** | Show changes against business areas such as HR, IT, Legal, and Operations, with an indicative priority and a short reason. Add only if the core demo is complete. |
+| Feature                           | What the user can see and do                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Website connections**           | Add, edit, or remove a public source URL or listing page, test extraction, and preview discovered document links. Removing a source detaches its tracked documents instead of deleting their evidence.                                                                                                                                                                                                                                                                |
+| **Law discovery and watchlist**   | Search discovered documents by title or keyword, add selected laws, or add a specific law directly by URL. Name, pause, resume, or permanently delete a tracked document and its saved history through the interface.                                                                                                                                                                                                                                                 |
+| **Import previous version**       | Upload a PDF, HTML, or TXT file, paste text, or fetch a historical copy by URL. Review the extracted text, attach it to a law, and optionally record its stated version date.                                                                                                                                                                                                                                                                                         |
+| **Dashboard**                     | See connected sources, tracked laws, last scan times, changes, and impact indicators. Distinguish newly discovered documents, changed documents, unchanged documents, and failures.                                                                                                                                                                                                                                                                                   |
+| **Scan now**                      | Check one law or the watchlist, with per-document progress and a final summary. A first fetch without a prior version establishes a baseline. A background scheduler is not required.                                                                                                                                                                                                                                                                                 |
+| **Version detection and history** | Extract and normalize text, compare a content hash, and preserve version history. Choose an earlier snapshot for comparison without replacing the latest successfully observed version.                                                                                                                                                                                                                                                                               |
+| **Visual diff**                   | Choose old and new versions and see added, removed, and modified passages. Show side-by-side text, inline word highlights, a list of changes, and links to the saved evidence and original source.                                                                                                                                                                                                                                                                    |
+| **Apertus impact analysis**       | Preserve the complete exact comparison, exclude detected layout/renumbering noise from inference, and analyse a fixed-budget dossier of likely material changes. Generate a concise summary, possible relevance, affected business areas, an indicative high/medium/low impact, and up to five distinct evidence-backed review actions. Zero actions is a valid result.                                                                                               |
+| **Settings**                      | Choose Infomaniak, the local Docker Apertus service, or another OpenAI-compatible provider; configure Product ID/endpoint, server-side credential handling, an API-loaded model dropdown, timeout, automatic retries, concurrent batch limit, evidence threshold, completion length, temperature, Top P, presence penalty, reasoning effort, and JSON mode. Test unsaved values, save without restarting, restore environment defaults, and edit the company profile. |
+| **Prompt settings**               | Edit Impact, Ask, synthesis, and repair instructions from the interface. Choose automatic full-document context or changed passages only for general questions. Save revisions without weakening the server-owned JSON schemas, evidence rules, or citation validation.                                                                                                                                                                                               |
+| **Integration logs**              | Review outbound website, Fedlex, Firecrawl, and Apertus/Infomaniak requests and responses, including HTTP status, duration, payload sizes, and errors. Sort, filter, inspect details, and clear logs. Credentials, cookies, token fields, and matching secret values are redacted before persistence; large payloads are bounded and binary documents are represented by metadata and a hash.                                                                         |
+| **Ask Apertus with citations**    | Ask questions about the selected comparison. Change questions use the deterministic material-change dossier; small general questions can use both complete versions, while large ones use a bounded relevant passage set with neighbours. Vague input returns suggested intents with zero model calls. Cite the exact saved version and passage, including a PDF page where available.                                                                                |
+| **AI history and cache**          | Keep successful and failed Impact runs, questions, answers, timestamps, model IDs, prompt revisions, coverage, and exact comparison attributes. Reopen citations and original artifacts; reuse an identical successful request without spending more provider tokens.                                                                                                                                                                                                 |
+| **Optional: impact matrix**       | Show changes against business areas such as HR, IT, Legal, and Operations, with an indicative priority and a short reason. Add only if the core demo is complete.                                                                                                                                                                                                                                                                                                     |
 
 Impact labels and suggested actions are AI-generated aids for review, not authoritative legal conclusions. Users can check the linked source before acting.
 
@@ -149,11 +157,11 @@ The current MVP uses one API process and process-local background work, binds to
 
 Public beta adds three bounded official connectors rather than patches for individual URLs:
 
-| Coverage | Planned machine path | Important boundary |
-| --- | --- | --- |
-| Swiss federal law | Fedlex RSS for prompt discovery plus ELI/SPARQL/JOLux reconciliation and official cross-law impacts | RSS is only a recent window; reconciliation is mandatory, and SR/RS number is an identifier rather than immutable identity. |
-| Parliament | Official Parliament web service for affairs, status, documents, committees, sessions, and votes | Older affairs can change, so active-item polling is combined with a complete `(id, updated)` reconciliation and required attribution. |
-| Court decisions | Swiss Federal Supreme Court latest/date index and yearly sitemaps, followed by official decision HTML | The first release does not claim all Swiss courts; it respects the published two-second crawl delay and separates decision date from publication/insertion date. |
+| Coverage          | Planned machine path                                                                                  | Important boundary                                                                                                                                               |
+| ----------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Swiss federal law | Fedlex RSS for prompt discovery plus ELI/SPARQL/JOLux reconciliation and official cross-law impacts   | RSS is only a recent window; reconciliation is mandatory, and SR/RS number is an identifier rather than immutable identity.                                      |
+| Parliament        | Official Parliament web service for affairs, status, documents, committees, sessions, and votes       | Older affairs can change, so active-item polling is combined with a complete `(id, updated)` reconciliation and required attribution.                            |
+| Court decisions   | Swiss Federal Supreme Court latest/date index and yearly sitemaps, followed by official decision HTML | The first release does not claim all Swiss courts; it respects the published two-second crawl delay and separates decision date from publication/insertion date. |
 
 Fedlex official lifecycle/impact metadata and exact citations are evaluated before any model proposal. Parliamentary initiatives and judgments are labelled by their actual status: a proposal is not enacted law, and a judgment may cite or interpret an act without rewriting its statutory text.
 
@@ -192,18 +200,18 @@ For example, a clearly synthetic demo could replace **"within 30 days"** with **
 
 ## Stack: current baseline and planned public beta
 
-| Layer | Choice | Status and role |
-| --- | --- | --- |
-| Web app | **Next.js** | Implemented; adds five-language registry, impact inbox, login, organization, and administration views for public beta. |
-| Styling and components | **Tailwind CSS + shadcn/ui** | Implemented; keeps the expanded interface consistent and accessible. |
-| Backend | **FastAPI** | Implemented; remains one modular codebase used by the API, scheduler, and worker processes. |
-| System of record | **PostgreSQL** | Implemented for MVP data; expands to durable jobs, shared corpus, regulatory events/relations, users, organizations, sessions, and feed state. |
-| Queue and scheduler | **Redis + Celery/Beat** | Planned; broker, short leases/rate counters, independent queues, scheduled connectors, progress, retries, and recovery. PostgreSQL retains durable job history. |
-| Public entry point | **Caddy** | Planned; TLS and routing on ports 80/443 while data, workers, and inference stay private. |
-| Local inference | **llama.cpp + quantized Apertus** | A compact fixed diagnostic profile is implemented. Managed model selection/downloads, hardware profiles, and local-first routing are planned; Apertus 8B becomes default only after the dual-GTX-1080 benchmark. |
-| Optional inference | **Infomaniak/OpenAI-compatible adapters** | Implemented; retained as explicit organization opt-ins, disabled on a clean public installation and never used as silent fallback. |
-| Content and comparison | **BeautifulSoup + PyMuPDF + Python `difflib`** | Implemented; immutable extraction/evidence and complete deterministic comparisons remain the foundation. |
-| Optional candidate retrieval | **pgvector** | Deferred until a labelled cross-document recall benchmark proves a material gap. It never replaces complete comparison evidence. |
+| Layer                        | Choice                                         | Status and role                                                                                                                                                                                                  |
+| ---------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web app                      | **Next.js**                                    | Implemented; adds five-language registry, impact inbox, login, organization, and administration views for public beta.                                                                                           |
+| Styling and components       | **Tailwind CSS + shadcn/ui**                   | Implemented; keeps the expanded interface consistent and accessible.                                                                                                                                             |
+| Backend                      | **FastAPI**                                    | Implemented; remains one modular codebase used by the API, scheduler, and worker processes.                                                                                                                      |
+| System of record             | **PostgreSQL**                                 | Implemented for MVP data; expands to durable jobs, shared corpus, regulatory events/relations, users, organizations, sessions, and feed state.                                                                   |
+| Queue and scheduler          | **Redis + Celery/Beat**                        | Planned; broker, short leases/rate counters, independent queues, scheduled connectors, progress, retries, and recovery. PostgreSQL retains durable job history.                                                  |
+| Public entry point           | **Caddy**                                      | Planned; TLS and routing on ports 80/443 while data, workers, and inference stay private.                                                                                                                        |
+| Local inference              | **llama.cpp + quantized Apertus**              | A compact fixed diagnostic profile is implemented. Managed model selection/downloads, hardware profiles, and local-first routing are planned; Apertus 8B becomes default only after the dual-GTX-1080 benchmark. |
+| Optional inference           | **Infomaniak/OpenAI-compatible adapters**      | Implemented; retained as explicit organization opt-ins, disabled on a clean public installation and never used as silent fallback.                                                                               |
+| Content and comparison       | **BeautifulSoup + PyMuPDF + Python `difflib`** | Implemented; immutable extraction/evidence and complete deterministic comparisons remain the foundation.                                                                                                         |
+| Optional candidate retrieval | **pgvector**                                   | Deferred until a labelled cross-document recall benchmark proves a material gap. It never replaces complete comparison evidence.                                                                                 |
 
 ## Keep one coherent deployment
 

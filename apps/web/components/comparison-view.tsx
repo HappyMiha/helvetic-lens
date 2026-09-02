@@ -50,13 +50,31 @@ export function ComparisonView({ id }: { id: string }) {
     polling ? 2000 : 0,
   );
   const { data: health } = useResource<Health>("/health", 15000);
-  const [filter, setFilter] = useState("all"),
+  const [filter, setFilter] = useState("substantive"),
     [context, setContext] = useState(false),
     [page, setPage] = useState(0);
   const [jumpTarget, setJumpTarget] = useState(""),
     [analysing, setAnalysing] = useState(false),
     [error, setError] = useState("");
-  const analysis = data?.analysis;
+  const identityBlocked = data?.identity?.status === "mismatch";
+  const analysis = identityBlocked ? null : data?.analysis;
+  const classificationAvailable = !!data?.diff.classification_counts;
+  const meaningfulChangeCount =
+    data?.diff.material_count ??
+    data?.diff.items.filter(
+      (item) =>
+        item.significance === "substantive" ||
+        item.significance === "uncertain",
+    ).length ??
+    0;
+  const hasMeaningfulChanges =
+    data?.diff.material_changed ?? meaningfulChangeCount > 0;
+  const canAnalyseMeaningfulChanges =
+    classificationAvailable && hasMeaningfulChanges;
+  const hiddenExactChangeCount = data?.diff.classification_counts
+    ? data.diff.classification_counts.structural +
+      data.diff.classification_counts.formatting
+    : 0;
   useEffect(() => {
     setPolling(analysing || analysis?.status === "pending");
   }, [analysing, analysis?.status]);
@@ -70,7 +88,11 @@ export function ComparisonView({ id }: { id: string }) {
     data?.diff.items.filter(
       (item) =>
         (context || item.kind !== "unchanged") &&
-        (filter === "all" || item.kind === filter),
+        (filter === "all" ||
+          (filter === "substantive"
+            ? item.significance === "substantive" ||
+              item.significance === "uncertain"
+            : item.kind === filter)),
     ) || [];
   const pages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
   const visible = items.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
@@ -84,7 +106,9 @@ export function ComparisonView({ id }: { id: string }) {
         method: "POST",
       });
       if (result.status === "failed")
-        setError(result.error || "Apertus could not analyse these passages.");
+        setError(
+          result.error || "Apertus could not analyse this change dossier.",
+        );
       refreshWorkspace();
     } catch (cause) {
       setError(errorText(cause));
@@ -136,11 +160,45 @@ export function ComparisonView({ id }: { id: string }) {
                 : "These are two saved versions. No source website was contacted and the live monitoring state was not changed."}
             </div>
           )}
+          {identityBlocked && data.identity && (
+            <div
+              className="identity-warning identity-mismatch mb-6"
+              role="alert"
+            >
+              <strong>
+                AI paused: these files appear to be another document
+              </strong>
+              <p>{data.identity.reason}</p>
+              <p>
+                Tracked: <b>{data.law.name}</b>
+                <br />
+                Detected before:{" "}
+                <b>
+                  {data.identity.old.detected_identifier ||
+                    data.identity.old.detected_title ||
+                    "Not identified"}
+                </b>
+                <br />
+                Detected after:{" "}
+                <b>
+                  {data.identity.new.detected_identifier ||
+                    data.identity.new.detected_title ||
+                    "Not identified"}
+                </b>
+              </p>
+              <span>
+                The exact files remain available. Attach the correct historical
+                version before asking for impact or answers. Saved AI results
+                for this pairing are hidden because they may describe the wrong
+                document.
+              </span>
+            </div>
+          )}
           <div className="comparison-layout">
             <div className="min-w-0">
               <section className="panel diff-panel">
                 <div className="panel-header">
-                  <h2>Exact text changes</h2>
+                  <h2>Meaningful changes</h2>
                   <div className="diff-counts">
                     <span className="count-added">
                       + {data.diff.counts.added} added
@@ -151,24 +209,68 @@ export function ComparisonView({ id }: { id: string }) {
                     <span>{data.diff.counts.modified} modified</span>
                   </div>
                 </div>
+                {data.diff.classification_counts && (
+                  <div className="triage-summary">
+                    <div>
+                      <span>Material</span>
+                      <strong>
+                        {data.diff.classification_counts.substantive}
+                      </strong>
+                      <small>Review first</small>
+                    </div>
+                    <div>
+                      <span>Renumbered / moved</span>
+                      <strong>
+                        {data.diff.classification_counts.structural}
+                      </strong>
+                      <small>Kept out of AI</small>
+                    </div>
+                    <div>
+                      <span>Formatting only</span>
+                      <strong>
+                        {data.diff.classification_counts.formatting}
+                      </strong>
+                      <small>Hidden by default</small>
+                    </div>
+                    <div>
+                      <span>Needs review</span>
+                      <strong>
+                        {data.diff.classification_counts.uncertain}
+                      </strong>
+                      <small>Uncertain match</small>
+                    </div>
+                  </div>
+                )}
                 <div className="version-pair">
                   <VersionCard version={data.old_version} side="BEFORE" />
                   <VersionCard version={data.new_version} side="AFTER" />
                 </div>
                 <div className="diff-toolbar">
-                  <div className="segmented">
-                    {["all", "added", "removed", "modified"].map((value) => (
-                      <button
-                        key={value}
-                        onClick={() => {
-                          setFilter(value);
-                          setPage(0);
-                        }}
-                        className={filter === value ? "selected" : ""}
-                      >
-                        {value === "all" ? "All changes" : label(value)}
-                      </button>
-                    ))}
+                  <div
+                    className="segmented"
+                    role="group"
+                    aria-label="Change filters"
+                  >
+                    {["substantive", "all", "added", "removed", "modified"].map(
+                      (value) => (
+                        <button
+                          key={value}
+                          type="button"
+                          aria-pressed={filter === value}
+                          onClick={() => {
+                            setFilter(value);
+                            setPage(0);
+                          }}
+                          className={filter === value ? "selected" : ""}
+                        >
+                          {value === "substantive"
+                            ? "Material first"
+                            : value === "all"
+                              ? "All exact changes"
+                              : label(value)}
+                        </button>
+                      ),
+                    )}
                   </div>
                   <label className="checkbox-label !text-xs">
                     <input
@@ -227,9 +329,23 @@ export function ComparisonView({ id }: { id: string }) {
                   </div>
                 )}
                 {data.diff.changed && items.length === 0 && (
-                  <p className="text-center muted py-10">
-                    No passages match this filter.
-                  </p>
+                  <div className="unchanged-state">
+                    <Check size={24} />
+                    <h2>
+                      {filter === "substantive" && !classificationAvailable
+                        ? "Meaningful-change classification unavailable"
+                        : filter === "substantive"
+                          ? "No substantive wording change detected"
+                          : "No passages match this filter"}
+                    </h2>
+                    <p>
+                      {filter === "substantive" && !classificationAvailable
+                        ? "This older saved comparison has not been classified. Review All exact changes or create a fresh comparison before using AI."
+                        : filter === "substantive"
+                          ? `${hiddenExactChangeCount} formatting or renumbering ${hiddenExactChangeCount === 1 ? "difference remains" : "differences remain"} available under All exact changes. No model request is needed.`
+                          : "Choose another filter to continue reviewing the exact comparison."}
+                    </p>
+                  </div>
                 )}
                 <div className="diff-rows">
                   {visible.map((item) => (
@@ -326,6 +442,12 @@ export function ComparisonView({ id }: { id: string }) {
                       </Button>
                     </div>
                   )}
+                  {identityBlocked && (
+                    <div className="historical-note">
+                      Impact analysis is unavailable until the document mismatch
+                      above is resolved.
+                    </div>
+                  )}
                   {analysis?.stale && (
                     <div className="historical-note">
                       This assessment used earlier profile or model settings.
@@ -333,7 +455,7 @@ export function ComparisonView({ id }: { id: string }) {
                     </div>
                   )}
                   {analysis?.status === "pending" || analysing ? (
-                    <Loading text="Apertus is reading the saved passages…" />
+                    <Loading text="Apertus is reviewing the meaningful-change dossier…" />
                   ) : analysis?.status === "succeeded" && analysis.result ? (
                     <>
                       <p className="impact-summary">
@@ -348,21 +470,35 @@ export function ComparisonView({ id }: { id: string }) {
                           <span key={area}>{area}</span>
                         ))}
                       </div>
-                      <div className="action-heading">
-                        <span className="eyebrow">KNOW WHAT TO DO</span>
-                        <h3>Suggested next steps</h3>
-                      </div>
-                      <ol className="action-list">
-                        {analysis.result.actions.map((action, index) => (
-                          <li key={index}>
-                            <span>{index + 1}</span>
-                            <div>
-                              {action.text}{" "}
-                              <Citations values={action.citations} />
-                            </div>
-                          </li>
-                        ))}
-                      </ol>
+                      {analysis.result.actions.length > 0 ? (
+                        <>
+                          <div className="action-heading">
+                            <span className="eyebrow">KNOW WHAT TO DO</span>
+                            <h3>Suggested next steps</h3>
+                          </div>
+                          <ol className="action-list">
+                            {analysis.result.actions.map((action, index) => (
+                              <li key={index}>
+                                <span>{index + 1}</span>
+                                <div>
+                                  {action.text}{" "}
+                                  <Citations values={action.citations} />
+                                </div>
+                              </li>
+                            ))}
+                          </ol>
+                        </>
+                      ) : (
+                        <div className="action-empty">
+                          <span className="eyebrow">KNOW WHAT TO DO</span>
+                          <strong>No concrete action established</strong>
+                          <p>
+                            The evidence did not support a specific task. Refine
+                            the company profile or ask about applicability
+                            before changing a process.
+                          </p>
+                        </div>
+                      )}
                       <CoverageNote coverage={analysis.coverage} />
                       <p className="text-xs muted">
                         Generated {dateTime(analysis.created_at)} ·{" "}
@@ -372,9 +508,13 @@ export function ComparisonView({ id }: { id: string }) {
                   ) : (
                     health?.apertus.configured && (
                       <p className="text-sm muted">
-                        {data.diff.changed
-                          ? "Analyse the changed passages against your company profile. The result will include evidence and suggested actions."
-                          : "There are no changes to assess. You can still ask questions about this document."}
+                        {!data.diff.changed
+                          ? "There are no changes to assess. You can still ask questions about this document."
+                          : !classificationAvailable
+                            ? "Create a fresh comparison to classify the exact changes before asking AI for impact."
+                            : hasMeaningfulChanges
+                              ? "Analyse the bounded dossier of substantive and uncertain changes against your company profile."
+                              : "The exact differences are formatting or renumbering only. No AI analysis is needed."}
                       </p>
                     )
                   )}
@@ -386,7 +526,8 @@ export function ComparisonView({ id }: { id: string }) {
                       analysing ||
                       analysis?.status === "pending" ||
                       !health?.apertus.configured ||
-                      !data.diff.changed
+                      identityBlocked ||
+                      !canAnalyseMeaningfulChanges
                     }
                     onClick={analyse}
                   >
@@ -407,11 +548,30 @@ export function ComparisonView({ id }: { id: string }) {
                   </p>
                 </div>
               </section>
-              <AskPanel
-                comparisonId={id}
-                configured={!!health?.apertus.configured}
-              />
-              <AIHistory comparisonId={id} compact />
+              {identityBlocked ? (
+                <section className="panel ask-panel">
+                  <div className="panel-header">
+                    <h2 className="flex items-center gap-2">
+                      <MessageSquare size={17} />
+                      Ask Apertus
+                    </h2>
+                  </div>
+                  <div className="panel-body">
+                    <div className="historical-note" role="status">
+                      Questions and saved AI history are hidden until the
+                      document mismatch is resolved.
+                    </div>
+                  </div>
+                </section>
+              ) : (
+                <>
+                  <AskPanel
+                    comparisonId={id}
+                    configured={!!health?.apertus.configured}
+                  />
+                  <AIHistory comparisonId={id} compact />
+                </>
+              )}
             </aside>
           </div>
         </>
@@ -460,7 +620,8 @@ function DiffSide({
     <div className={"diff-side diff-side-" + side}>
       <div className="passage-meta">
         <span>
-          {side === "old" ? "BEFORE" : "AFTER"} · {label(item.kind)}
+          {side === "old" ? "BEFORE" : "AFTER"} ·{" "}
+          {label(item.change_type || item.kind)}
         </span>
         {passage && (
           <Link
@@ -493,7 +654,26 @@ function DiffSide({
 }
 
 function CoverageNote({ coverage }: { coverage?: Partial<Coverage> }) {
-  if (!coverage?.available_passages) return null;
+  if (!coverage) return null;
+  if (coverage.material_items !== undefined) {
+    return (
+      <div
+        className={coverage.limited ? "coverage-note limited" : "coverage-note"}
+      >
+        {coverage.limited ? "Limited AI review: " : "AI review: "}
+        {coverage.reviewed_material_items ?? 0} of {coverage.material_items}{" "}
+        meaningful change units
+        {coverage.suppressed_non_material_items
+          ? ` · ${coverage.suppressed_non_material_items} formatting or structural differences kept out of model context`
+          : ""}
+        {coverage.provider_calls !== undefined
+          ? ` · ${coverage.provider_calls} model ${coverage.provider_calls === 1 ? "call" : "calls"}`
+          : ""}
+        . {coverage.scope}
+      </div>
+    );
+  }
+  if (!coverage.available_passages) return null;
   return (
     <div
       className={coverage.limited ? "coverage-note limited" : "coverage-note"}
@@ -501,7 +681,11 @@ function CoverageNote({ coverage }: { coverage?: Partial<Coverage> }) {
       {coverage.limited ? "Limited context: " : "Evidence reviewed: "}
       {coverage.included_passages ?? 0} of {coverage.available_passages}{" "}
       passages · {(coverage.included_characters ?? 0).toLocaleString()}{" "}
-      characters. {coverage.scope}
+      characters
+      {coverage.provider_calls !== undefined
+        ? ` · ${coverage.provider_calls} model ${coverage.provider_calls === 1 ? "call" : "calls"}`
+        : ""}
+      . {coverage.scope}
     </div>
   );
 }
@@ -509,9 +693,11 @@ function CoverageNote({ coverage }: { coverage?: Partial<Coverage> }) {
 function AskPanel({
   comparisonId,
   configured,
+  blockedReason,
 }: {
   comparisonId: string;
   configured: boolean;
+  blockedReason?: string;
 }) {
   const [question, setQuestion] = useState(""),
     [busy, setBusy] = useState(false),
@@ -530,6 +716,13 @@ function AskPanel({
     )
     .slice(0, 20)
     .reverse();
+  const ready = configured && !blockedReason;
+  const quickQuestions = [
+    "Explain the material changes simply",
+    "Does this affect our organization?",
+    "Show new obligations or deadlines",
+    "Create a review checklist",
+  ];
   async function ask(event: React.FormEvent) {
     event.preventDefault();
     if (!question.trim()) return;
@@ -582,27 +775,36 @@ function AskPanel({
         </p>
         <div className="chat-history" aria-live="polite">
           {history.map((item) => (
-            <SavedQuestionTurn item={item} key={item.id} />
+            <SavedQuestionTurn
+              item={item}
+              key={item.id}
+              onSuggestion={setQuestion}
+            />
           ))}
         </div>
         {savedHistory.loading && !savedHistory.data && (
           <Loading text="Loading saved questions…" />
         )}
         <ErrorNote message={savedHistory.error} />
-        {history.length === 0 && !savedHistory.loading && (
-          <button
-            disabled={!configured}
-            className="suggested-question"
-            onClick={() =>
-              setQuestion(
-                "What changed between the earlier version and the current wording?",
-              )
-            }
-          >
-            What changed in this document?
-            <ArrowRight size={13} />
-          </button>
-        )}
+        {blockedReason && <ErrorNote message={blockedReason} />}
+        <div
+          className="ask-intents"
+          role="group"
+          aria-label="Suggested questions"
+        >
+          {quickQuestions.map((value) => (
+            <button
+              type="button"
+              disabled={!ready}
+              className="suggested-question"
+              onClick={() => setQuestion(value)}
+              key={value}
+            >
+              {value}
+              <ArrowRight size={13} />
+            </button>
+          ))}
+        </div>
         <form onSubmit={ask}>
           <label className="sr-only" htmlFor="apertus-question">
             Question for Apertus
@@ -612,11 +814,11 @@ function AskPanel({
             value={question}
             onChange={(event) => setQuestion(event.target.value)}
             placeholder={
-              configured
+              ready
                 ? "Ask about these versions…"
-                : "Connect Apertus to ask a question"
+                : blockedReason || "Connect Apertus to ask a question"
             }
-            disabled={!configured || busy}
+            disabled={!ready || busy}
             maxLength={2000}
             rows={3}
           />
@@ -625,10 +827,10 @@ function AskPanel({
           <Button
             type="submit"
             className="mt-3 w-full"
-            disabled={!configured || busy || !question.trim()}
+            disabled={!ready || busy || !question.trim()}
           >
             {busy ? <Loader2 className="animate-spin" /> : <Send />}
-            {busy ? "Reading the evidence…" : "Ask with citations"}
+            {busy ? "Reviewing targeted evidence…" : "Ask with citations"}
           </Button>
         </form>
       </div>
@@ -636,10 +838,16 @@ function AskPanel({
   );
 }
 
-function SavedQuestionTurn({ item }: { item: AIHistoryItem }) {
+function SavedQuestionTurn({
+  item,
+  onSuggestion,
+}: {
+  item: AIHistoryItem;
+  onSuggestion: (value: string) => void;
+}) {
   const answer = item.result as Pick<
     Answer,
-    "supported" | "answer" | "citations"
+    "supported" | "answer" | "citations" | "suggestions"
   > | null;
   return (
     <div className="chat-turn">
@@ -656,6 +864,19 @@ function SavedQuestionTurn({ item }: { item: AIHistoryItem }) {
             )}
             <p>{answer.answer}</p>
             <Citations values={answer.citations} />
+            {!!answer.suggestions?.length && (
+              <div className="answer-suggestions">
+                {answer.suggestions.map((suggestion) => (
+                  <button
+                    type="button"
+                    key={suggestion}
+                    onClick={() => onSuggestion(suggestion)}
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            )}
             <CoverageNote coverage={item.coverage} />
             <p className="saved-answer-meta">
               {dateTime(item.created_at)} · {item.model}

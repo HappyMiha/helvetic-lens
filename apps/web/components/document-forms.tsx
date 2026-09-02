@@ -338,6 +338,10 @@ export function ImportDialog({
     if (mode === "url") data.append("url", url);
     data.append("declared_date", date);
     data.append("synthetic", String(synthetic));
+    data.append(
+      "allow_identity_mismatch",
+      String(confirmed && preview?.identity?.status === "mismatch"),
+    );
     return data;
   }
   async function test() {
@@ -489,13 +493,36 @@ export function ImportDialog({
           {preview && (
             <>
               <PreviewBox preview={preview} />
+              {preview.identity && preview.identity.status !== "match" && (
+                <div
+                  className={
+                    preview.identity.status === "mismatch"
+                      ? "identity-warning identity-mismatch"
+                      : "identity-warning"
+                  }
+                >
+                  <strong>
+                    {preview.identity.status === "mismatch"
+                      ? "This may be a different document"
+                      : "Document identity could not be verified"}
+                  </strong>
+                  <p>{preview.identity.reason}</p>
+                  {preview.identity.detected_title && (
+                    <p>
+                      Detected: <b>{preview.identity.detected_title}</b>
+                    </p>
+                  )}
+                </div>
+              )}
               <label className="checkbox-label">
                 <input
                   type="checkbox"
                   checked={confirmed}
                   onChange={(e) => setConfirmed(e.target.checked)}
                 />
-                I confirm that this is the version I want to attach to this law.
+                {preview.identity?.status === "mismatch"
+                  ? "Save this file for inspection anyway. AI comparison and analysis will stay paused until the correct version is attached."
+                  : "I confirm that this is the version I want to attach to this law."}
               </label>
             </>
           )}
@@ -523,7 +550,9 @@ export function ImportDialog({
               ) : (
                 <Upload />
               )}
-              Import & select baseline
+              {preview?.identity?.status === "mismatch"
+                ? "Save for inspection"
+                : "Import & select baseline"}
             </Button>
           </div>
         </form>

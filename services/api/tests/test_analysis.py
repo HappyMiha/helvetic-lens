@@ -18,6 +18,7 @@ from helvetic_lens.analysis import (
     no_change_answer,
     numbered_selection,
     parse_response,
+    planned_diff_evidence,
     select_evidence,
     structured_completion,
 )
@@ -246,13 +247,13 @@ def test_impact_overflow_is_clamped_before_retained_citations_are_validated():
             "business_areas": [f"Area {index}" for index in range(15)],
             "actions": [
                 {"text": f"Review action {index}.", "citations": [citation]}
-                for index in range(4)
+                for index in range(7)
             ],
             "citations": [citation] * 12,
         }
     )
     result = parse_response(raw, Impact, evidence)
-    assert len(result["actions"]) == 3
+    assert len(result["actions"]) == 5
     assert len(result["business_areas"]) == 12
     assert len(result["citations"]) == 10
     assert all(action["citations"][0]["url"] == "/evidence/new?passage=p1" for action in result["actions"])
@@ -467,7 +468,7 @@ def test_local_synthesis_uses_only_validated_batch_text_and_citations():
             for review in reviews
         ]
     )
-    assert impact["impact"] == "high" and len(impact["actions"]) == 2
+    assert impact["impact"] == "high" and impact["actions"] == []
     assert impact["citations"][0]["url"].startswith("/evidence/version-1")
     assert "reporting duty" in answer["answer"]
     assert answer["supported"] is True and len(answer["citations"]) == 2
@@ -610,7 +611,7 @@ def test_changed_evidence_is_complete_and_ignores_retrieval_budget():
 
 
 @pytest.mark.asyncio
-async def test_large_complete_diff_is_processed_once_in_bounded_batches_for_ask_and_impact(harness):
+async def test_large_diff_uses_a_bounded_ai_dossier_for_ask_and_impact(harness):
     _, _, service, model = harness
     settings = service.settings.model_copy(
         update={
@@ -688,20 +689,17 @@ async def test_large_complete_diff_is_processed_once_in_bounded_batches_for_ask_
     )
     answer_payloads = [json.loads(call[1]) for call in model.calls]
     answer_batches = [payload for payload in answer_payloads if payload.get("task") == "answer_batch"]
-    processed_answer_references = [
-        reference for payload in answer_batches for reference in supplied_references(payload)
-    ]
-    assert answer["supported"] is True and answer["coverage"]["complete"] is True
-    assert answer["coverage"]["batched"] is True
-    assert answer["coverage"]["batch_count"] == len(answer_batches) > 1
+    processed_answer_references = {
+        (passage["version_id"], passage["passage_id"])
+        for passage in answer_payloads[0]["evidence"]
+    }
+    assert answer["supported"] is True and answer["coverage"]["complete"] is False
+    assert answer["coverage"]["batch_count"] == 1
     assert len(processed_answer_references) == len(set(processed_answer_references))
-    assert set(processed_answer_references) == expected_references
-    assert answer_payloads[-1]["task"] == "answer_synthesis"
-    assert all(
-        set(citation) == {"version_id", "passage_id", "quote"}
-        for batch in answer_payloads[-1]["batch_answers"]
-        for citation in batch["citations"]
-    )
+    assert set(processed_answer_references) < expected_references
+    assert answer["coverage"]["limited"] is True
+    assert answer["coverage"]["provider_calls"] <= 3
+    assert answer_batches == []
 
     model.calls.clear()
     result, coverage = await impact_analysis(model, settings, comparison, old, new, profile)
@@ -710,10 +708,12 @@ async def test_large_complete_diff_is_processed_once_in_bounded_batches_for_ask_
     processed_impact_references = [
         reference for payload in impact_batches for reference in supplied_references(payload)
     ]
-    assert result["impact"] == "medium" and coverage["complete"] is True
+    assert result["impact"] == "medium" and coverage["complete"] is False
     assert coverage["batch_count"] == len(impact_batches) > 1
     assert len(processed_impact_references) == len(set(processed_impact_references))
-    assert set(processed_impact_references) == expected_references
+    assert set(processed_impact_references) < expected_references
+    assert coverage["limited"] is True
+    assert coverage["provider_calls"] <= 5
     assert impact_payloads[-1]["task"] == "impact_synthesis"
     assert all(
         set(citation) == {"version_id", "passage_id", "quote"}
@@ -803,9 +803,61 @@ def test_no_change_answer_distinguishes_german_and_italian():
     assert no_change_answer("Quali sono le differenze?").startswith("Il confronto completo")
 
 
+def test_oversized_single_change_uses_exact_bounded_windows():
+    common = "Stable legal wording " * 500
+    old = Version(
+        id="window-old",
+        origin="uploaded",
+        synthetic=False,
+        passages=[{"id": "old-1", "text": common + "30 days", "page": 1}],
+    )
+    new = Version(
+        id="window-new",
+        origin="live",
+        synthetic=False,
+        passages=[{"id": "new-1", "text": common + "60 days", "page": 1}],
+    )
+    comparison = Comparison(
+        id="window-comparison",
+        mode="saved_versions",
+        diff=compare_passages(old.passages, new.passages),
+    )
+
+    _, dossier, coverage, batches = planned_diff_evidence(
+        old, new, comparison, max_chars=3000, max_batches=1
+    )
+
+    assert len(batches) == 1
+    assert batches[0]["estimated_input_characters"] <= 3000
+    assert batches[0]["excerpted_passages"] == 2
+    assert coverage["limited"] is True and coverage["complete"] is False
+    assert dossier["audit_complete"] is True and dossier["complete"] is False
+
+
 @pytest.mark.asyncio
 async def test_actual_adapter_reports_no_endpoint(harness):
     _, _, service, _ = harness
     with pytest.raises(DomainError) as error:
         await ModelClient(service.settings).complete("Test", "Test")
     assert error.value.code == "model_not_configured"
+
+
+def test_vague_comment_and_numeric_gibberish_do_not_call_the_model(harness):
+    client, _, _, model = harness
+    law = add_law(client)
+    old = import_old(client, law["id"])["version"]
+    comparison = client.post(
+        "/api/comparisons",
+        json={"old_version_id": old["id"], "new_version_id": law["current_version_id"]},
+    ).json()
+    route = f"/api/comparisons/{comparison['id']}/ask"
+    model.calls.clear()
+
+    vague = client.post(route, json={"question": "Ничего не понятно но очень интересно"})
+    numeric = client.post(route, json={"question": "111"})
+
+    assert vague.status_code == numeric.status_code == 200
+    assert vague.json()["context_mode"] == numeric.json()["context_mode"] == "clarification"
+    assert vague.json()["coverage"]["provider_calls"] == 0
+    assert len(vague.json()["suggestions"]) == 4
+    assert model.calls == []

@@ -204,6 +204,7 @@ def create_app(settings: Settings | None = None, fetcher=None, model_client=None
         url: Annotated[str, Form(max_length=3000)] = "",
         declared_date: Annotated[str, Form(max_length=10)] = "",
         synthetic: Annotated[bool, Form()] = False,
+        allow_identity_mismatch: Annotated[bool, Form()] = False,
         preview: bool = False,
     ):
         body = await file.read(settings.max_document_bytes + 1) if file else None
@@ -219,6 +220,7 @@ def create_app(settings: Settings | None = None, fetcher=None, model_client=None
             declared_date=declared_date or None,
             synthetic=synthetic,
             preview=preview,
+            allow_identity_mismatch=allow_identity_mismatch,
         )
 
     @app.get("/api/versions/{version_id}")
