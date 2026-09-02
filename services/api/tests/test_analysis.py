@@ -12,6 +12,8 @@ from helvetic_lens.analysis import (
     batch_diff_evidence,
     diff_evidence,
     impact_analysis,
+    local_answer_synthesis,
+    local_impact_synthesis,
     materialize_digest_citations,
     no_change_answer,
     numbered_selection,
@@ -81,6 +83,36 @@ def test_invalid_citations_never_appear_as_success_and_retry_works(harness):
     assert (
         client.post("/api/comparisons/" + item["comparison_id"] + "/analyse").json()["status"] == "succeeded"
     )
+
+
+def test_local_docker_finishes_with_validated_batch_results_without_synthesis_call(harness):
+    client, _, service, model = harness
+    service.settings.apertus_provider = "docker"
+    service.settings.apertus_base_url = "http://127.0.0.1:12435/v1"
+    model.settings = service.settings
+    law = add_law(client)
+    old = import_old(client, law["id"])["version"]
+    comparison = client.post(
+        "/api/comparisons",
+        json={"old_version_id": old["id"], "new_version_id": law["current_version_id"]},
+    ).json()
+
+    model.calls.clear()
+    impact = client.post(f"/api/comparisons/{comparison['id']}/analyse").json()
+    impact_tasks = [json.loads(user).get("task") for _, user in model.calls]
+    assert impact["status"] == "succeeded"
+    assert impact_tasks == ["impact_batch"]
+    assert impact["result"]["citations"][0]["url"].startswith("/evidence/")
+
+    model.calls.clear()
+    answer = client.post(
+        f"/api/comparisons/{comparison['id']}/ask",
+        json={"question": "What changed?"},
+    ).json()
+    answer_tasks = [json.loads(user).get("task") for _, user in model.calls]
+    assert answer["supported"] is True
+    assert answer_tasks == ["answer_batch"]
+    assert answer["citations"][0]["url"].startswith("/evidence/")
 
 
 def test_questions_use_selected_pair_and_explicit_unsupported_answer(harness):
@@ -404,6 +436,41 @@ async def test_out_of_range_numeric_citation_gets_one_repair_attempt():
         response_schema["properties"]["citation_rows"]["maxItems"] == 1
         for response_schema in model.response_schemas
     )
+def test_local_synthesis_uses_only_validated_batch_text_and_citations():
+    citation = {
+        "version_id": "version-1",
+        "passage_id": "p00001",
+        "quote": "Records must be retained for 60 days.",
+    }
+    reviews = [
+        {
+            "batch_index": 1,
+            "summary": "The retention period increased.",
+            "impact": "medium",
+            "reason": "The operating schedule may need review.",
+            "business_areas": ["Legal", "IT"],
+            "citations": [citation],
+        },
+        {
+            "batch_index": 2,
+            "summary": "A new reporting duty was added.",
+            "impact": "high",
+            "reason": "A new filing workflow may be required.",
+            "business_areas": ["Legal", "Operations"],
+            "citations": [{**citation, "passage_id": "p00002"}],
+        },
+    ]
+    impact = local_impact_synthesis(reviews)
+    answer = local_answer_synthesis(
+        [
+            {"answer": review["summary"], "citations": review["citations"]}
+            for review in reviews
+        ]
+    )
+    assert impact["impact"] == "high" and len(impact["actions"]) == 2
+    assert impact["citations"][0]["url"].startswith("/evidence/version-1")
+    assert "reporting duty" in answer["answer"]
+    assert answer["supported"] is True and len(answer["citations"]) == 2
 
 
 def test_complete_diff_aligns_articles_and_covers_every_saved_passage_once():

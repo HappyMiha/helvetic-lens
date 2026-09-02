@@ -14,7 +14,7 @@ from .integration_logs import IntegrationLogger, response_snapshot
 from .models import Comparison, Profile, Version
 from .prompt_settings import PromptSettings, default_prompt_settings, prompt_fingerprint
 
-PROMPT_VERSION = "helvetic-lens-v7-schema-constrained-local-docker"
+PROMPT_VERSION = "helvetic-lens-v8-flattened-schema-local-docker"
 
 
 class StructuredOutput(BaseModel):
@@ -62,6 +62,16 @@ class AnswerDigest(StructuredOutput):
     supported: bool
     answer: str = Field(min_length=1, max_length=1000)
     citation_rows: list[CitationNumber] = Field(default_factory=list)
+
+
+class LocalImpactSignal(StructuredOutput):
+    citation_rows: list[CitationNumber] = Field(min_length=1, max_length=10)
+    impact: Literal["high", "medium", "low"]
+
+
+class LocalAnswerSignal(StructuredOutput):
+    citation_rows: list[CitationNumber] = Field(default_factory=list, max_length=10)
+    supported: bool
 
 
 class SynthesisAction(StructuredOutput):
@@ -992,6 +1002,115 @@ def prompt_safe_result(result: dict) -> dict:
     return cleaned
 
 
+def displayed_citations(results: list[dict], limit: int = 10) -> list[dict]:
+    """Return a balanced set of already validated citations with usable local links."""
+
+    return [
+        {
+            **citation,
+            "url": f"/evidence/{citation['version_id']}?passage={citation['passage_id']}",
+        }
+        for citation in citation_catalog(results, limit=limit)
+    ]
+
+
+def distinct_texts(results: list[dict], field: str, limit: int, max_chars: int) -> list[str]:
+    selected = []
+    seen = set()
+    length = 0
+    for result in results:
+        value = normalize(str(result.get(field, "")))
+        marker = value.casefold()
+        if not value or marker in seen:
+            continue
+        remaining = max_chars - length
+        if remaining <= 0:
+            break
+        selected.append(value[:remaining])
+        seen.add(marker)
+        length += len(selected[-1]) + 1
+        if len(selected) == limit:
+            break
+    return selected
+
+
+def local_impact_synthesis(reviews: list[dict]) -> dict:
+    """Aggregate validated local-model batch reviews without another oversized LLM call."""
+
+    priority = {"high": 3, "medium": 2, "low": 1}
+    ranked = sorted(
+        reviews,
+        key=lambda review: (-priority.get(review.get("impact"), 0), review.get("batch_index", 0)),
+    )
+    selected = []
+    seen_summaries = set()
+    for review in ranked:
+        marker = normalize(str(review.get("summary", ""))).casefold()
+        if marker and marker not in seen_summaries:
+            selected.append(review)
+            seen_summaries.add(marker)
+        if len(selected) == 3:
+            break
+    if not selected:
+        selected = ranked[:1]
+
+    summaries = distinct_texts(selected, "summary", 3, 2600)
+    reasons = distinct_texts(selected, "reason", 3, 1800)
+    business_areas = []
+    for review in ranked:
+        for area in review.get("business_areas", []):
+            area = normalize(str(area))
+            if area and area not in business_areas:
+                business_areas.append(area)
+            if len(business_areas) == 12:
+                break
+        if len(business_areas) == 12:
+            break
+
+    actions = []
+    for review in selected:
+        citations = displayed_citations([review], limit=6)
+        if not citations:
+            continue
+        owners = ", ".join(review.get("business_areas", [])[:3]) or "responsible"
+        actions.append(
+            {
+                "text": (
+                    f"Review the cited {review.get('impact', 'potential')} impact with the {owners} "
+                    "owner and confirm whether procedures, controls, or documentation need an update."
+                )[:2000],
+                "citations": citations,
+            }
+        )
+
+    return {
+        "summary": " ".join(summaries)[:3000],
+        "impact": max(reviews, key=lambda review: priority.get(review.get("impact"), 0))["impact"],
+        "reason": " ".join(reasons)[:2000],
+        "business_areas": business_areas,
+        "actions": actions[:3],
+        "citations": displayed_citations(selected, limit=10),
+    }
+
+
+def local_answer_synthesis(answers: list[dict]) -> dict:
+    """Combine validated local-model batch answers without exceeding the runner context."""
+
+    if len(answers) <= 8:
+        selected = answers
+    else:
+        selected = [
+            answers[round(index * (len(answers) - 1) / 7)]
+            for index in range(8)
+        ]
+    snippets = distinct_texts(selected, "answer", 8, 5800)
+    return {
+        "supported": True,
+        "answer": "\n\n".join(snippets)[:6000],
+        "citations": displayed_citations(selected, limit=10),
+    }
+
+
 def select_evidence(
     old: Version,
     new: Version,
@@ -1223,29 +1342,110 @@ async def structured_completion(
 ) -> dict:
     """Validate structured output and make one constrained repair attempt when it is invalid."""
 
-    response_schema = schema.model_json_schema()
-    if numeric_reference_count is not None and numeric_reference_count > 0:
-        stack = [response_schema]
-        while stack:
-            node = stack.pop()
-            if isinstance(node, dict):
+    local_docker = (
+        getattr(getattr(client, "settings", None), "apertus_provider", None) == "docker"
+    )
+    if local_docker and schema is ImpactDigest:
+        wire_schema = LocalImpactSignal
+    elif local_docker and schema is AnswerDigest:
+        wire_schema = LocalAnswerSignal
+    else:
+        wire_schema = schema
+    response_schema = wire_schema.model_json_schema()
+    stack = [response_schema]
+    while stack:
+        node = stack.pop()
+        if isinstance(node, dict):
+            if numeric_reference_count is not None and numeric_reference_count > 0:
                 for field_name, field_schema in node.get("properties", {}).items():
-                    if field_name in {"citation_rows", "citation_numbers"} and isinstance(
-                        field_schema, dict
-                    ):
+                    if (
+                        field_name in {"citation_rows", "citation_numbers"}
+                    ) and isinstance(field_schema, dict):
                         items = field_schema.get("items")
                         if isinstance(items, dict):
                             items["maximum"] = numeric_reference_count
                         field_schema["maxItems"] = min(10, numeric_reference_count)
-                stack.extend(node.values())
-            elif isinstance(node, list):
-                stack.extend(node)
+                    if require_supported and field_name == "supported" and isinstance(
+                        field_schema, dict
+                    ):
+                        field_schema["const"] = True
+            stack.extend(node.values())
+        elif isinstance(node, list):
+            stack.extend(node)
+
+    if wire_schema is LocalImpactSignal:
+        system += (
+            " For the local runner, return only citation_rows and impact. The server will build extractive "
+            "summary text from those validated saved rows."
+        )
+    elif wire_schema is LocalAnswerSignal:
+        system += (
+            " For the local runner, return only citation_rows and supported. Select the saved rows that "
+            "answer the question; the server will render their exact text."
+        )
+
+    def evidence_snippets(numbers: list[int], max_chars: int) -> str:
+        supplied = payload.get("evidence", {})
+        columns = supplied.get("columns", []) if isinstance(supplied, dict) else []
+        rows = supplied.get("rows", []) if isinstance(supplied, dict) else []
+        records = [dict(zip(columns, row, strict=True)) for row in rows]
+        selected = []
+        for number in numbers:
+            record = next(
+                (item for item in records if item.get("row_number") == number),
+                None,
+            )
+            if not record:
+                continue
+            label = " ".join(
+                str(record.get(key, "")).strip()
+                for key in ("change_kind", "side")
+                if record.get(key)
+            )
+            text = normalize(str(record.get("text", "")))
+            snippet = f"{label}: {text}" if label else text
+            if snippet:
+                selected.append(snippet[:260])
+        return " | ".join(selected)[:max_chars]
+
+    def normalize_wire_response(value: str) -> str:
+        if wire_schema is LocalImpactSignal:
+            signal = parse_response(value, LocalImpactSignal, [], validate_citations=False)
+            counts = payload.get("deterministic_diff", {}).get("batch_counts", {})
+            count_summary = ", ".join(
+                f"{counts.get(kind, 0)} {kind}" for kind in ("added", "removed", "modified")
+            )
+            snippets = evidence_snippets(signal["citation_rows"], 620)
+            summary = f"This batch contains {count_summary}."
+            if snippets:
+                summary += f" Cited changes: {snippets}"
+            normalized = {
+                "summary": summary[:800],
+                "impact": signal["impact"],
+                "reason": (
+                    f"Local Apertus rated the cited changed passages as {signal['impact']} impact; "
+                    "the selected saved rows require human review."
+                )[:800],
+                "business_areas": payload.get("company", {}).get("business_areas", [])[:6],
+                "citation_rows": signal["citation_rows"],
+            }
+            return json.dumps(normalized, ensure_ascii=False)
+        if wire_schema is LocalAnswerSignal:
+            signal = parse_response(value, LocalAnswerSignal, [], validate_citations=False)
+            answer = evidence_snippets(signal["citation_rows"], 1000)
+            normalized = {
+                "supported": signal["supported"],
+                "answer": answer or "The cited batch does not support an answer to this question.",
+                "citation_rows": signal["citation_rows"],
+            }
+            return json.dumps(normalized, ensure_ascii=False)
+        return value
 
     user = json.dumps(payload, ensure_ascii=False)
     raw = await client.complete(system, user, response_schema=response_schema)
     try:
         return parse_response(
-            raw,
+            normalize_wire_response(raw),
             schema,
             evidence,
             require_supported=require_supported,
@@ -1282,7 +1482,7 @@ async def structured_completion(
             response_schema=response_schema,
         )
         return parse_response(
-            repaired,
+            normalize_wire_response(repaired),
             schema,
             evidence,
             require_supported=require_supported,
@@ -1328,7 +1528,7 @@ async def impact_analysis(
         "comparison_mode": comparison.mode,
         "coverage": coverage,
     }
-    if len(batches) <= 1:
+    if len(batches) <= 1 and settings.apertus_provider != "docker":
         result = await structured_completion(
             client,
             final_system,
@@ -1379,6 +1579,9 @@ async def impact_analysis(
         return {"batch_index": index, **prompt_safe_result(result)}
 
     reviews = await bounded_batch_map(batches, review_batch, settings.apertus_batch_concurrency)
+    if settings.apertus_provider == "docker":
+        return local_impact_synthesis(reviews), coverage
+
     catalog = citation_catalog(reviews)
     synthesis_system = (
         prompts.impact_synthesis_instructions
@@ -1578,7 +1781,7 @@ async def answer_question(
         "comparison_mode": comparison.mode,
         "coverage": coverage,
     }
-    if len(batches) <= 1:
+    if len(batches) <= 1 and settings.apertus_provider != "docker":
         result = await structured_completion(
             client,
             final_system,
@@ -1644,6 +1847,15 @@ async def answer_question(
             "supported": False,
             "answer": unsupported_evidence_answer(question),
             "citations": [],
+            "coverage": coverage,
+            "model": settings.apertus_model,
+            "context_mode": context_mode,
+        }
+
+    if settings.apertus_provider == "docker":
+        result = local_answer_synthesis(supported_answers)
+        return {
+            **result,
             "coverage": coverage,
             "model": settings.apertus_model,
             "context_mode": context_mode,

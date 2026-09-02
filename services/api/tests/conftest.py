@@ -115,6 +115,8 @@ class ScriptedModel:
             "quote": passage["text"][:80],
         }
         if task == "impact_batch":
+            if kwargs.get("response_schema", {}).get("title") == "LocalImpactSignal":
+                return json.dumps({"citation_rows": [1], "impact": "medium"})
             return json.dumps(
                 {
                     "summary": "Test-only batch summary.",
@@ -128,6 +130,13 @@ class ScriptedModel:
             unsupported = self.unsupported or self.unsupported_responses > 0
             if self.unsupported_responses:
                 self.unsupported_responses -= 1
+            if kwargs.get("response_schema", {}).get("title") == "LocalAnswerSignal":
+                return json.dumps(
+                    {
+                        "citation_rows": [] if unsupported else [1],
+                        "supported": not unsupported,
+                    }
+                )
             return json.dumps(
                 {
                     "supported": not unsupported,
