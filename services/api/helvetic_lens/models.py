@@ -58,6 +58,7 @@ class Version(Base):
     declared_date: Mapped[str | None] = mapped_column(String(10))
     date_provenance: Mapped[str | None] = mapped_column(String(30))
     synthetic: Mapped[bool] = mapped_column(Boolean, default=False)
+    identity_json: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
@@ -87,6 +88,19 @@ class Comparison(Base):
     new_version_id: Mapped[str] = mapped_column(ForeignKey("versions.id"))
     mode: Mapped[str] = mapped_column(String(30))
     diff: Mapped[dict] = mapped_column(JSON)
+    identity_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class IdentityDecision(Base):
+    __tablename__ = "identity_decisions"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    law_id: Mapped[str] = mapped_column(ForeignKey("laws.id"), index=True)
+    version_id: Mapped[str] = mapped_column(ForeignKey("versions.id"), index=True)
+    action: Mapped[str] = mapped_column(String(40))
+    identity_fingerprint: Mapped[str] = mapped_column(String(64), index=True)
+    actor: Mapped[str] = mapped_column(String(120), default="workspace_user")
+    note: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 

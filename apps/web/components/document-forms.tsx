@@ -342,6 +342,10 @@ export function ImportDialog({
       "allow_identity_mismatch",
       String(confirmed && preview?.identity?.status === "mismatch"),
     );
+    data.append(
+      "confirm_identity",
+      String(confirmed && preview?.identity?.status === "unknown"),
+    );
     return data;
   }
   async function test() {
@@ -493,27 +497,28 @@ export function ImportDialog({
           {preview && (
             <>
               <PreviewBox preview={preview} />
-              {preview.identity && preview.identity.status !== "match" && (
-                <div
-                  className={
-                    preview.identity.status === "mismatch"
-                      ? "identity-warning identity-mismatch"
-                      : "identity-warning"
-                  }
-                >
-                  <strong>
-                    {preview.identity.status === "mismatch"
-                      ? "This may be a different document"
-                      : "Document identity could not be verified"}
-                  </strong>
-                  <p>{preview.identity.reason}</p>
-                  {preview.identity.detected_title && (
-                    <p>
-                      Detected: <b>{preview.identity.detected_title}</b>
-                    </p>
-                  )}
-                </div>
-              )}
+              {preview.identity &&
+                ["unknown", "mismatch"].includes(preview.identity.status) && (
+                  <div
+                    className={
+                      preview.identity.status === "mismatch"
+                        ? "identity-warning identity-mismatch"
+                        : "identity-warning"
+                    }
+                  >
+                    <strong>
+                      {preview.identity.status === "mismatch"
+                        ? "This may be a different document"
+                        : "Confirm this unknown document assignment"}
+                    </strong>
+                    <p>{preview.identity.reason}</p>
+                    {preview.identity.detected_title && (
+                      <p>
+                        Detected: <b>{preview.identity.detected_title}</b>
+                      </p>
+                    )}
+                  </div>
+                )}
               <label className="checkbox-label">
                 <input
                   type="checkbox"

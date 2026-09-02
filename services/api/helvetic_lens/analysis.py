@@ -551,6 +551,8 @@ def cache_key(
     }
     context = {
         "comparison": comparison.id,
+        "identity_fingerprint": (comparison.identity_json or {}).get("fingerprint"),
+        "identity_effective_status": (comparison.identity_json or {}).get("effective_status"),
         "profile_revision": profile.revision,
         "model": settings.apertus_model,
         "endpoint": settings.apertus_base_url,

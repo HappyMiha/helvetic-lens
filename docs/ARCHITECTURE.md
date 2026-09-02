@@ -259,6 +259,10 @@ Search indexes titles from every available official expression plus language-neu
 
 ## Connector architecture
 
+Before connector output enters comparison or inference, each immutable version receives a revisioned identity passport. It records the authority, official ELI/SR/RS or docket where available, legal-work kind, detected title and language, version/publication dates, source and extraction provenance, bounded evidence, and a deterministic fingerprint. Pair classification is deterministic: connector metadata and official identifiers can verify or contradict identity; title similarity can only make a pair probable or unknown.
+
+An official conflict quarantines the artifact and cannot be overridden. An unknown assignment requires a separate audited user decision, while the artifact itself remains labelled unknown. Comparison identity is persisted with its own fingerprint and participates in AI cache keys, so connector metadata, extraction, or assignment changes invalidate reuse without deleting historical output.
+
 Every official source implements one versioned adapter contract:
 
 ```text

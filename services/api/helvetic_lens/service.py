@@ -15,7 +15,12 @@ from .config import DomainError, Settings
 from .db import Database, utcnow
 from .diffing import DIFF_SCHEMA_VERSION, compare_passages
 from .extraction import Extracted, Fetcher, canonical_url, discover_links, extract
-from .identity import assess_comparison_identity, assess_document_identity
+from .identity import (
+    IDENTITY_REVISION,
+    assess_comparison_identity,
+    assess_document_identity,
+    build_artifact_identity,
+)
 from .integration_logs import IntegrationLogger
 from .model_settings import ApertusSettingsInput, public_settings, resolve_key, resolved_settings
 from .models import (
@@ -23,6 +28,7 @@ from .models import (
     ApertusConfiguration,
     AskRecord,
     Comparison,
+    IdentityDecision,
     IntegrationLog,
     Law,
     Observation,
@@ -121,6 +127,13 @@ class HelveticLens:
             prompt_record = session.get(PromptConfiguration, "default")
             self.prompt_settings = resolved_prompt_settings(prompt_record)
             self.prompt_revision = prompt_record.revision if prompt_record else 1
+            for version in session.scalars(select(Version)):
+                law = session.get(Law, version.law_id)
+                if law:
+                    self.refresh_version_identity(session, law, version)
+            for comparison in session.scalars(select(Comparison)):
+                self.refresh_comparison_identity(session, comparison)
+            session.commit()
 
     def apply_model_settings(self, settings: Settings):
         self.settings = settings
@@ -283,6 +296,17 @@ class HelveticLens:
             )
             session.add(version)
             session.flush()
+        if not reused or (version.identity_json or {}).get("revision") != IDENTITY_REVISION:
+            version.identity_json = build_artifact_identity(
+                title=document.title,
+                source_url=source_url,
+                passages=document.passages,
+                extractor=document.extractor,
+                content_type=document.content_type,
+                filename=document.filename,
+                declared_date=declared_date,
+                metadata=metadata,
+            )
         session.add(
             Observation(
                 law_id=law.id,
@@ -298,9 +322,207 @@ class HelveticLens:
         )
         return version, reused
 
+    def refresh_version_identity(self, session: Session, law: Law, version: Version) -> dict:
+        identity = version.identity_json or {}
+        if identity.get("revision") != IDENTITY_REVISION:
+            observation = session.scalar(
+                select(Observation)
+                .where(Observation.version_id == version.id)
+                .order_by(Observation.created_at.desc())
+                .limit(1)
+            )
+            identity = build_artifact_identity(
+                title=version.title,
+                source_url=(observation.source_url if observation else version.source_url),
+                passages=version.passages,
+                extractor=version.extractor,
+                content_type=version.content_type,
+                filename=version.filename,
+                declared_date=(observation.declared_date if observation else version.declared_date),
+                metadata=(observation.metadata_json if observation else {}),
+            )
+            version.identity_json = identity
+            session.flush()
+        return assess_document_identity(
+            law_name=law.name,
+            law_url=law.url,
+            title=version.title,
+            source_url=version.source_url,
+            passages=version.passages,
+            artifact_identity=identity,
+        )
+
+    @staticmethod
+    def identity_confirmed(session: Session, version: Version, report: dict) -> bool:
+        return bool(
+            report["status"] == "unknown"
+            and session.scalar(
+                select(IdentityDecision.id).where(
+                    IdentityDecision.version_id == version.id,
+                    IdentityDecision.action == "confirm_assignment",
+                    IdentityDecision.identity_fingerprint == report["fingerprint"],
+                ).limit(1)
+            )
+        )
+
+    def refresh_comparison_identity(self, session: Session, comparison: Comparison) -> dict:
+        law = get(session, Law, comparison.law_id)
+        old = get(session, Version, comparison.old_version_id)
+        new = get(session, Version, comparison.new_version_id)
+        self.refresh_version_identity(session, law, old)
+        self.refresh_version_identity(session, law, new)
+        report = assess_comparison_identity(law, old, new)
+        confirmed = []
+        for side, version in (("old", old), ("new", new)):
+            if self.identity_confirmed(session, version, report[side]):
+                report[side]["user_confirmed"] = True
+                confirmed.append(side)
+        if report["status"] == "unknown" and all(
+            item["status"] != "unknown" or item.get("user_confirmed")
+            for item in (report["old"], report["new"])
+        ):
+            report["effective_status"] = "probable"
+            report["reason"] = "Unknown artifact assignments were explicitly confirmed and recorded for review."
+        else:
+            report["effective_status"] = report["status"]
+        report["confirmed_sides"] = confirmed
+        comparison.identity_json = report
+        session.flush()
+        return report
+
+    def record_identity_decision(
+        self, session: Session, law: Law, version: Version, report: dict, action: str, note: str | None = None
+    ) -> IdentityDecision:
+        if action == "confirm_assignment" and report["status"] != "unknown":
+            raise DomainError(
+                "Only an unknown assignment can be confirmed. A contradictory official identifier must be corrected.",
+                409,
+                "identity_decision_not_allowed",
+            )
+        existing = session.scalar(
+            select(IdentityDecision).where(
+                IdentityDecision.version_id == version.id,
+                IdentityDecision.action == action,
+                IdentityDecision.identity_fingerprint == report["fingerprint"],
+            ).limit(1)
+        )
+        if existing:
+            return existing
+        decision = IdentityDecision(
+            law_id=law.id,
+            version_id=version.id,
+            action=action,
+            identity_fingerprint=report["fingerprint"],
+            note=(note or "")[:1000] or None,
+        )
+        session.add(decision)
+        session.flush()
+        return decision
+
+    def confirm_version_identity(self, version_id: str, note: str | None = None):
+        with self.write_guard, self.db.session() as session:
+            version = get(session, Version, version_id)
+            law = get(session, Law, version.law_id)
+            report = self.refresh_version_identity(session, law, version)
+            decision = self.record_identity_decision(
+                session, law, version, report, "confirm_assignment", note
+            )
+            for comparison in session.scalars(
+                select(Comparison).where(
+                    (Comparison.old_version_id == version.id)
+                    | (Comparison.new_version_id == version.id)
+                )
+            ):
+                self.refresh_comparison_identity(session, comparison)
+            session.commit()
+            return {"decision": as_dict(decision), "identity": report}
+
+    def delete_version(self, version_id: str):
+        with self.write_guard, self.db.session() as session:
+            version = get(session, Version, version_id)
+            law = get(session, Law, version.law_id)
+            if law.current_version_id == version.id:
+                raise DomainError(
+                    "The current live snapshot cannot be removed. Fetch or select a correct live version first.",
+                    409,
+                    "current_version_delete_blocked",
+                )
+            comparisons = list(
+                session.scalars(
+                    select(Comparison).where(
+                        (Comparison.old_version_id == version.id)
+                        | (Comparison.new_version_id == version.id)
+                    )
+                )
+            )
+            comparison_ids = [comparison.id for comparison in comparisons]
+            if comparison_ids:
+                session.execute(delete(AskRecord).where(AskRecord.comparison_id.in_(comparison_ids)))
+                session.execute(delete(Analysis).where(Analysis.comparison_id.in_(comparison_ids)))
+                for item in session.scalars(
+                    select(ScanItem).where(
+                        (ScanItem.comparison_id.in_(comparison_ids))
+                        | (ScanItem.monitoring_comparison_id.in_(comparison_ids))
+                    )
+                ):
+                    if item.comparison_id in comparison_ids:
+                        item.comparison_id = None
+                    if item.monitoring_comparison_id in comparison_ids:
+                        item.monitoring_comparison_id = None
+                session.execute(delete(Comparison).where(Comparison.id.in_(comparison_ids)))
+            for item in session.scalars(
+                select(ScanItem).where(
+                    (ScanItem.baseline_version_id == version.id) | (ScanItem.new_version_id == version.id)
+                )
+            ):
+                if item.baseline_version_id == version.id:
+                    item.baseline_version_id = None
+                if item.new_version_id == version.id:
+                    item.new_version_id = None
+            session.execute(delete(IdentityDecision).where(IdentityDecision.version_id == version.id))
+            session.execute(delete(Observation).where(Observation.version_id == version.id))
+            artifact_key = version.artifact_key
+            session.delete(version)
+            session.commit()
+            referenced = session.scalar(
+                select(Version.id).where(Version.artifact_key == artifact_key).limit(1)
+            ) or session.scalar(
+                select(Observation.id).where(Observation.artifact_key == artifact_key).limit(1)
+            )
+        if not referenced:
+            artifact = self.settings.storage_path / "artifacts" / artifact_key
+            try:
+                if artifact.is_file():
+                    artifact.unlink()
+            except OSError:
+                logger.warning("Could not remove an unreferenced artifact: %s", artifact_key)
+        return {"deleted": True, "version_id": version_id, "comparisons": len(comparison_ids)}
+
     def ensure_comparison(self, session: Session, old: Version, new: Version, mode: str) -> Comparison:
         if old.law_id != new.law_id:
             raise DomainError("Both versions must belong to the same law.")
+        law = get(session, Law, old.law_id)
+        self.refresh_version_identity(session, law, old)
+        self.refresh_version_identity(session, law, new)
+        pair = assess_comparison_identity(law, old, new)
+        if pair["status"] == "mismatch":
+            raise DomainError(
+                "These artifacts identify different legal works. Choose the correct version or inspect the saved originals.",
+                409,
+                "document_identity_mismatch",
+            )
+        unresolved = [
+            (version, pair[side])
+            for side, version in (("old", old), ("new", new))
+            if pair[side]["status"] == "unknown"
+            and not self.identity_confirmed(session, version, pair[side])
+        ]
+        if unresolved:
+            raise DomainError(
+                "Document identity is not clear enough to compare automatically. Confirm the unknown artifact assignment or select another version.",
+                409,
+                "document_identity_unknown",
+            )
         existing = session.scalar(
             select(Comparison).where(
                 Comparison.old_version_id == old.id,
@@ -310,6 +532,7 @@ class HelveticLens:
         )
         if existing:
             self.ensure_complete_diff(session, existing, old, new)
+            self.refresh_comparison_identity(session, existing)
             return existing
         comparison = Comparison(
             law_id=old.law_id,
@@ -317,6 +540,7 @@ class HelveticLens:
             new_version_id=new.id,
             mode=mode,
             diff=compare_passages(old.passages, new.passages),
+            identity_json=pair,
         )
         session.add(comparison)
         session.flush()
@@ -589,6 +813,7 @@ class HelveticLens:
                 )
                 session.execute(delete(Analysis).where(Analysis.comparison_id.in_(comparison_ids)))
             session.execute(delete(ScanItem).where(ScanItem.law_id == law_id))
+            session.execute(delete(IdentityDecision).where(IdentityDecision.law_id == law_id))
             session.execute(delete(Comparison).where(Comparison.law_id == law_id))
             session.execute(delete(Observation).where(Observation.law_id == law_id))
             session.execute(delete(Version).where(Version.law_id == law_id))
@@ -653,6 +878,7 @@ class HelveticLens:
         synthetic: bool,
         preview: bool,
         allow_identity_mismatch: bool = False,
+        confirm_identity: bool = False,
     ):
         with self.db.session() as session:
             law = get(session, Law, law_id)
@@ -684,6 +910,11 @@ class HelveticLens:
             title=document.title,
             source_url=source_url,
             passages=document.passages,
+            metadata=metadata,
+            extractor=document.extractor,
+            content_type=document.content_type,
+            filename=document.filename,
+            declared_date=declared_date,
         )
         if preview:
             return {**document.preview(), "identity": identity}
@@ -693,11 +924,26 @@ class HelveticLens:
                 409,
                 "document_identity_mismatch",
             )
+        if identity["status"] == "unknown" and not confirm_identity:
+            raise DomainError(
+                "This artifact has no stable official identity. Review the preview and explicitly confirm its assignment before saving it.",
+                409,
+                "document_identity_unknown",
+            )
         with self.write_guard, self.db.session() as session:
             law = get(session, Law, law_id)
             version, reused = self.save_snapshot(
                 session, law, document, origin, source_url, declared_date or None, synthetic, metadata
             )
+            identity = self.refresh_version_identity(session, law, version)
+            if identity["status"] == "unknown" and confirm_identity:
+                self.record_identity_decision(
+                    session, law, version, identity, "confirm_assignment", "Confirmed during import"
+                )
+            elif identity["status"] == "mismatch":
+                self.record_identity_decision(
+                    session, law, version, identity, "saved_for_inspection", "Saved during import"
+                )
             session.commit()
             return {
                 "version": version_summary(version),
@@ -729,15 +975,16 @@ class HelveticLens:
                 get(session, Version, comparison.old_version_id),
                 get(session, Version, comparison.new_version_id),
             )
-            if self.ensure_complete_diff(session, comparison, old, new):
-                session.commit()
+            self.ensure_complete_diff(session, comparison, old, new)
             law = get(session, Law, comparison.law_id)
+            identity = self.refresh_comparison_identity(session, comparison)
+            session.commit()
             return {
                 **as_dict(comparison),
                 "old_version": version_summary(old),
                 "new_version": version_summary(new),
                 "law": as_dict(law),
-                "identity": assess_comparison_identity(law, old, new),
+                "identity": identity,
                 "analysis": self.latest_analysis(session, comparison),
             }
 
@@ -856,6 +1103,19 @@ class HelveticLens:
                 session, law, document, "live", fetched.url, synthetic=synthetic, metadata=fetched.metadata
             )
             item.new_version_id = version.id
+            identity = self.refresh_version_identity(session, law, version)
+            identity_block = identity["status"] in {"mismatch", "unknown"} and not self.identity_confirmed(
+                session, version, identity
+            )
+            if identity_block:
+                item.live_result = f"identity_{identity['status']}"
+                law.last_checked = utcnow()
+                session.commit()
+                raise DomainError(
+                    "The newly fetched artifact was saved for inspection but was not made current because its legal-work identity could not be accepted. Inspect the original, attach it to the correct document, or confirm an unknown assignment.",
+                    409,
+                    f"document_identity_{identity['status']}",
+                )
             live_comparison = (
                 self.ensure_comparison(
                     session, get(session, Version, live_baseline_id), version, "monitoring"
@@ -990,13 +1250,12 @@ class HelveticLens:
                         "These versions have no text changes to analyse. You can still ask about their content."
                     )
                 profile = get(session, Profile, "default")
-                law = get(session, Law, comparison.law_id)
-                identity = assess_comparison_identity(law, old, new)
-                if identity["status"] == "mismatch":
+                identity = self.refresh_comparison_identity(session, comparison)
+                if identity["effective_status"] in {"mismatch", "unknown"}:
                     raise DomainError(
-                        "AI analysis is blocked because the saved files appear to belong to a different legal document. Attach the correct version before analysing impact.",
+                        "AI analysis is paused until both artifacts are assigned to the same legal work. Attach the correct version or confirm an unknown assignment first.",
                         409,
-                        "document_identity_mismatch",
+                        f"document_identity_{identity['effective_status']}",
                     )
                 key = ai.cache_key(comparison, profile, settings, prompts)
                 cached = session.scalar(
@@ -1069,16 +1328,12 @@ class HelveticLens:
             if self.ensure_complete_diff(session, comparison, old, new):
                 session.commit()
             profile = get(session, Profile, "default")
-            law = get(session, Law, comparison.law_id)
-            identity = assess_comparison_identity(law, old, new)
-            clarification_only = not ai.is_change_question(question) and ai.needs_question_clarification(
-                question
-            )
-            if identity["status"] == "mismatch" and not clarification_only:
+            identity = self.refresh_comparison_identity(session, comparison)
+            if identity["effective_status"] in {"mismatch", "unknown"}:
                 raise DomainError(
-                    "Ask is blocked because the saved files appear to belong to a different legal document. Attach the correct version first.",
+                    "Ask is paused until both artifacts are assigned to the same legal work. Attach the correct version or confirm an unknown assignment first.",
                     409,
-                    "document_identity_mismatch",
+                    f"document_identity_{identity['effective_status']}",
                 )
             key = ai.ask_cache_key(
                 comparison, profile, settings, prompts, question, history

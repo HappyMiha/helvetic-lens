@@ -102,7 +102,10 @@ def test_duplicate_import_preview_pasted_text_and_historical_url(harness):
     preview = client.post("/api/laws/" + law["id"] + "/import?preview=true", data={"text": text})
     assert preview.status_code == 200
     assert len(client.get("/api/laws/" + law["id"]).json()["versions"]) == 2
-    pasted = client.post("/api/laws/" + law["id"] + "/import", data={"text": text}).json()["version"]
+    pasted = client.post(
+        "/api/laws/" + law["id"] + "/import",
+        data={"text": text, "confirm_identity": "true"},
+    ).json()["version"]
     assert pasted["origin"] == "pasted" and pasted["declared_date"] is None
     archive_url = "https://regulator.example/archive/retention.html"
     fetcher.values[archive_url] = policy(5)
@@ -254,7 +257,7 @@ def test_first_fetch_without_a_live_pointer_creates_baseline(harness):
 
     client, _, service, _ = harness
     with service.db.session() as session:
-        law = Law(name="Deferred first baseline", url=LAW_URL)
+        law = Law(name="Synthetic retention policy", url=LAW_URL)
         session.add(law)
         session.commit()
         law_id = law.id

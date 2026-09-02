@@ -4,7 +4,7 @@
 
 This backlog implements the product described in [README.md](README.md): a local-AI-first Swiss regulatory monitor with immutable evidence, a time-based legal registry, official-source connectors, cross-document impact analysis, and organization workspaces.
 
-**Status:** The hackathon MVP (`HL-001`–`HL-028`) is implemented and verified through the browser, real HTTP requests, PostgreSQL, service restarts, and live Apertus inference. The public-beta/local-AI-first roadmap (`HL-029` onward) is planned, not implemented. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
+**Status:** The hackathon MVP (`HL-001`–`HL-028`) and document-identity gate (`HL-058`) are implemented and verified through the API, browser build, migrations, and regression tests. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
 
 ## Scope and priorities
 
@@ -89,7 +89,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-048](#hl-048) | P0       | PLANNED  | HL-029–HL-035, HL-038                                  | Public single-server deployment and operations baseline             |
 | [HL-049](#hl-049) | P0       | PLANNED  | HL-037–HL-048, HL-057–HL-064                           | Reproducible recovery and 100-user capacity gate                    |
 | [HL-057](#hl-057) | P1       | PLANNED  | HL-032, HL-034–HL-037, HL-045–HL-047                   | Complete German, French, Italian, Romansh, and English localization |
-| [HL-058](#hl-058) | P0       | PLANNED  | HL-005, HL-036, HL-038                                 | Document-identity gate before comparison or AI                      |
+| [HL-058](#hl-058) | P0       | DONE     | HL-005, HL-036, HL-038                                 | Document-identity gate before comparison or AI                      |
 | [HL-059](#hl-059) | P0       | PLANNED  | HL-011, HL-036, HL-058                                 | Legal-unit semantic diff with noise classification                  |
 | [HL-060](#hl-060) | P0       | PLANNED  | HL-030–HL-032, HL-059                                  | Fixed-budget local-AI analysis planner                              |
 | [HL-061](#hl-061) | P1       | PLANNED  | HL-033, HL-060                                         | Actionable, deduplicated impact-report contract                     |
@@ -794,6 +794,8 @@ This checkpoint replaces passage-volume-driven AI work with the product contract
 ### HL-058 — Verify document identity before comparison, monitoring, or AI
 
 Prevent a plausible-looking analysis of two artifacts that are not versions of the same legal work.
+
+**Status: DONE.** Artifact identity and evidence are persisted, pair decisions are cached with an identity fingerprint, unknown assignments require an audited confirmation, official conflicts cannot be overridden, and mismatches are quarantined before comparison or AI. The recovery flow exposes both originals, version selection/import, and safe removal of a mistaken non-current import.
 
 Acceptance criteria:
 

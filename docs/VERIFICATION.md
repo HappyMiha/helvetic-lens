@@ -2,6 +2,16 @@
 
 The source-to-diff workflow, Settings page, and live Apertus path are verified.
 
+## Document-identity gate — 3 September 2026
+
+- 142 API regressions pass. Seven identity-specific cases cover persisted authority/ELI/language/extraction evidence, audited confirmation of unknown assignments, immutable rejection of an official mismatch, scan quarantine, AI cache invalidation after reassignment, and deletion of a mistaken non-current import.
+- The tracked naturalization-decree regression imports an artifact that identifies itself as SR 910.13. Preview identifies the mismatch; a normal save is rejected; an inspection-only save remains available; saved-version comparison, Impact, and Ask are all blocked before any AI history record or provider request is created.
+- A scan that fetches an artifact for another work saves it for inspection without moving the current live pointer or creating a comparison. Existing good evidence remains current.
+- Every version stores a revisioned identity passport with authority, canonical work identifier, kind, title, language, dates, source URL, extractor, content type, filename, bounded evidence, and fingerprint. Every comparison stores its pair decision and fingerprint.
+- An `unknown` artifact remains labelled unknown after a user confirms its assignment. The separate audit record permits the pair as probable; a contradictory official identifier cannot be confirmed.
+- Re-evaluation changes the comparison identity fingerprint, so previous AI output is returned as historical and visibly stale instead of being reused.
+- Python linting, the full API suite, TypeScript checking, frontend formatting, and the Next.js production build pass.
+
 ## Current bounded-triage regression — 3 September 2026
 
 The earlier large-comparison checks below are retained as historical evidence of the failure mode: they proved complete passage coverage, but also showed why passage-volume-driven inference is not a useful product contract. The current pipeline supersedes that strategy while preserving the complete exact diff for inspection.

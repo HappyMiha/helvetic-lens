@@ -156,6 +156,28 @@ export function LawDetail({ id }: { id: string }) {
       setBusy("");
     }
   }
+  async function removeVersion(version: Version) {
+    if (
+      !window.confirm(
+        `Remove saved version ${version.id.slice(0, 8)} and every comparison that uses it?`,
+      )
+    )
+      return;
+    setBusy("delete-version-" + version.id);
+    setError("");
+    try {
+      await api("/versions/" + version.id, { method: "DELETE" });
+      if (baseline === version.id) setBaseline("");
+      if (oldId === version.id) setOldId("");
+      if (newId === version.id) setNewId("");
+      setNote("The mistaken import and its comparisons were removed.");
+      refreshWorkspace();
+    } catch (cause) {
+      setError(errorText(cause));
+    } finally {
+      setBusy("");
+    }
+  }
   return (
     <Shell section="Document & versions">
       <Link href="/" className="back-link">
@@ -438,6 +460,11 @@ export function LawDetail({ id }: { id: string }) {
                           </span>
                         )}
                         <Status value={version.origin} />
+                        {version.identity_json?.canonical_work_id && (
+                          <span className="current-label">
+                            {version.identity_json.canonical_work_id}
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs muted mb-0 mt-2">
                         {version.declared_date
@@ -484,6 +511,25 @@ export function LawDetail({ id }: { id: string }) {
                           <ArrowUpRight />
                         </Link>
                       </Button>
+                      {version.id !== law.current_version_id &&
+                        version.origin !== "live" && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            aria-label={
+                              "Remove saved import " + version.id.slice(0, 8)
+                            }
+                            title="Remove mistaken import"
+                            disabled={!!busy || !!running}
+                            onClick={() => void removeVersion(version)}
+                          >
+                            {busy === "delete-version-" + version.id ? (
+                              <Loader2 className="animate-spin" />
+                            ) : (
+                              <Trash2 />
+                            )}
+                          </Button>
+                        )}
                     </div>
                   </div>
                 ))}

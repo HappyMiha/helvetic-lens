@@ -55,8 +55,11 @@ export function ComparisonView({ id }: { id: string }) {
     [page, setPage] = useState(0);
   const [jumpTarget, setJumpTarget] = useState(""),
     [analysing, setAnalysing] = useState(false),
+    [confirmingIdentity, setConfirmingIdentity] = useState(""),
     [error, setError] = useState("");
-  const identityBlocked = data?.identity?.status === "mismatch";
+  const identityBlocked = ["mismatch", "unknown"].includes(
+    data?.identity?.effective_status || data?.identity?.status || "",
+  );
   const analysis = identityBlocked ? null : data?.analysis;
   const classificationAvailable = !!data?.diff.classification_counts;
   const meaningfulChangeCount =
@@ -116,6 +119,41 @@ export function ComparisonView({ id }: { id: string }) {
       setAnalysing(false);
     }
   }
+  async function confirmIdentity(versionId: string) {
+    setConfirmingIdentity(versionId);
+    setError("");
+    try {
+      await api("/versions/" + versionId + "/identity-decision", {
+        method: "POST",
+        body: JSON.stringify({
+          note: "Confirmed from the saved comparison identity review",
+        }),
+      });
+      refreshWorkspace();
+    } catch (cause) {
+      setError(errorText(cause));
+    } finally {
+      setConfirmingIdentity("");
+    }
+  }
+  async function removeMistakenImport(versionId: string) {
+    if (
+      !window.confirm(
+        "Remove this saved import and every comparison that uses it?",
+      )
+    )
+      return;
+    setConfirmingIdentity(versionId);
+    setError("");
+    try {
+      await api("/versions/" + versionId, { method: "DELETE" });
+      refreshWorkspace();
+      window.location.href = "/laws/" + data?.law_id;
+    } catch (cause) {
+      setError(errorText(cause));
+      setConfirmingIdentity("");
+    }
+  }
   function jump(value: string) {
     setFilter("all");
     setContext(false);
@@ -166,7 +204,9 @@ export function ComparisonView({ id }: { id: string }) {
               role="alert"
             >
               <strong>
-                AI paused: these files appear to be another document
+                {data.identity.effective_status === "mismatch"
+                  ? "Comparison paused: these files identify different legal works"
+                  : "Comparison paused: confirm the unknown document assignment"}
               </strong>
               <p>{data.identity.reason}</p>
               <p>
@@ -187,11 +227,71 @@ export function ComparisonView({ id }: { id: string }) {
                 </b>
               </p>
               <span>
-                The exact files remain available. Attach the correct historical
-                version before asking for impact or answers. Saved AI results
-                for this pairing are hidden because they may describe the wrong
-                document.
+                No new comparison or AI request can start while this gate is
+                unresolved. Existing exact evidence remains available for
+                inspection.
               </span>
+              <div className="flex flex-wrap gap-2 mt-3">
+                <Button asChild variant="outline" size="sm">
+                  <a href={data.old_version.artifact_url} target="_blank">
+                    Inspect before original <ArrowUpRight />
+                  </a>
+                </Button>
+                <Button asChild variant="outline" size="sm">
+                  <a href={data.new_version.artifact_url} target="_blank">
+                    Inspect after original <ArrowUpRight />
+                  </a>
+                </Button>
+                <Button asChild variant="outline" size="sm">
+                  <Link href={"/laws/" + data.law_id}>
+                    Select or attach another version
+                  </Link>
+                </Button>
+                {[data.old_version, data.new_version]
+                  .filter(
+                    (version) =>
+                      version.id !== data.law.current_version_id &&
+                      version.origin !== "live",
+                  )
+                  .map((version) => (
+                    <Button
+                      key={"remove-" + version.id}
+                      variant="destructive"
+                      size="sm"
+                      disabled={!!confirmingIdentity}
+                      onClick={() => removeMistakenImport(version.id)}
+                    >
+                      Remove mistaken import {version.id.slice(0, 8)}
+                    </Button>
+                  ))}
+              </div>
+              {data.identity.status === "unknown" && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {[
+                    { side: data.identity.old, version: data.old_version },
+                    { side: data.identity.new, version: data.new_version },
+                  ]
+                    .filter(
+                      ({ side }) =>
+                        side.status === "unknown" && !side.user_confirmed,
+                    )
+                    .map(({ version }, index) => (
+                      <Button
+                        key={version.id}
+                        variant="outline"
+                        size="sm"
+                        disabled={!!confirmingIdentity}
+                        onClick={() => confirmIdentity(version.id)}
+                      >
+                        {confirmingIdentity === version.id && (
+                          <Loader2 className="animate-spin" />
+                        )}
+                        Confirm {index === 0 ? "this" : "other"} unknown
+                        assignment
+                      </Button>
+                    ))}
+                </div>
+              )}
             </div>
           )}
           <div className="comparison-layout">

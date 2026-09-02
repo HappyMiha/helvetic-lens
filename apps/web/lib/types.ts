@@ -49,20 +49,43 @@ export type Preview = {
   identity?: DocumentIdentity;
 };
 export type DocumentIdentity = {
-  status: "match" | "mismatch" | "uncertain";
+  revision: string;
+  status: "verified" | "probable" | "unknown" | "mismatch";
   reason: string;
   score?: number;
   tracked_title?: string;
   detected_title?: string;
   tracked_identifier?: string | null;
   detected_identifier?: string | null;
+  fingerprint?: string;
+  user_confirmed?: boolean;
+  artifact?: {
+    authority: string;
+    canonical_work_id: string | null;
+    official_identifiers: { scheme: string; value: string }[];
+    document_kind: string;
+    title: string;
+    language: string;
+    version_date: string | null;
+    publication_date: string | null;
+    source_url: string | null;
+    extractor: string;
+    content_type: string;
+    filename: string;
+    evidence: { type: string; source: string; value: string }[];
+    fingerprint: string;
+  };
 };
 export type ComparisonIdentity = {
-  status: "match" | "mismatch" | "uncertain";
+  revision: string;
+  status: "verified" | "probable" | "unknown" | "mismatch";
+  effective_status: "verified" | "probable" | "unknown" | "mismatch";
   reason: string;
   old: DocumentIdentity;
   new: DocumentIdentity;
   pair_score: number;
+  fingerprint: string;
+  confirmed_sides: ("old" | "new")[];
 };
 export type Candidate = {
   title: string;
@@ -118,6 +141,7 @@ export type Version = {
   page_count: number;
   content_hash: string;
   artifact_url: string;
+  identity_json?: DocumentIdentity["artifact"];
 };
 export type Citation = {
   version_id: string;

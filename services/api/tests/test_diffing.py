@@ -161,7 +161,7 @@ def test_matching_eli_identifier_wins_over_multilingual_title_difference():
         passages=[],
     )
 
-    assert assess_comparison_identity(law, old, new)["status"] == "match"
+    assert assess_comparison_identity(law, old, new)["status"] == "verified"
 
 
 def test_one_conflicting_eli_identifier_blocks_the_comparison():
