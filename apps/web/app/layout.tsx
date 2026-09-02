@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Apertus RegWatch",
+  title: "Helvetic Lens",
   description:
-    "Know what changed. Know what it means. Know what to do. Monitor regulatory sources and compare saved evidence.",
+    "See what changed. Understand what matters. Monitor regulatory sources and compare saved evidence.",
 };
 export default function RootLayout({
   children,

@@ -1,7 +1,7 @@
 from conftest import add_law, import_old
 from fastapi.testclient import TestClient
 
-from regwatch.main import create_app
+from helvetic_lens.main import create_app
 
 
 def saved_comparison(client, law):

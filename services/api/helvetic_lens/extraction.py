@@ -232,7 +232,7 @@ class Fetcher:
                 timeout=self.settings.fetch_timeout_seconds,
                 follow_redirects=False,
                 trust_env=False,
-                headers={"User-Agent": "ApertusRegWatch/0.1 (+document monitoring)"},
+                headers={"User-Agent": "HelveticLens/0.1 (+document monitoring)"},
             ) as client:
                 for _ in range(6):
                     if fedlex_artifact_prefix:
@@ -365,7 +365,7 @@ ORDER BY DESC(?date) ?priority
 LIMIT 1
 """
         headers = {
-            "User-Agent": "ApertusRegWatch/0.1 (+document monitoring)",
+            "User-Agent": "HelveticLens/0.1 (+document monitoring)",
             "Accept": "application/sparql-results+json",
         }
         request_body = {"query": query, "format": "application/sparql-results+json"}

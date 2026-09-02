@@ -1,9 +1,9 @@
 from sqlalchemy import create_engine
 
 from alembic import context
-from regwatch import models  # noqa: F401
-from regwatch.config import Settings
-from regwatch.db import Base
+from helvetic_lens import models  # noqa: F401
+from helvetic_lens.config import Settings
+from helvetic_lens.db import Base
 
 config = context.config
 target_metadata = Base.metadata

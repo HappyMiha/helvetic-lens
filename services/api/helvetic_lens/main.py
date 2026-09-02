@@ -14,7 +14,7 @@ from .config import DomainError, Settings
 from .model_settings import ApertusSettingsInput
 from .models import Law, Profile, Scan, Source, Version
 from .prompt_settings import PromptSettingsInput
-from .service import RegWatch, as_dict, get, version_summary
+from .service import HelveticLens, as_dict, get, version_summary
 
 
 class Input(BaseModel):
@@ -68,7 +68,7 @@ class ProfileInput(Input):
 
 def create_app(settings: Settings | None = None, fetcher=None, model_client=None) -> FastAPI:
     settings = settings or Settings()
-    service = RegWatch(settings, fetcher, model_client)
+    service = HelveticLens(settings, fetcher, model_client)
 
     @asynccontextmanager
     async def lifespan(app):
@@ -76,7 +76,7 @@ def create_app(settings: Settings | None = None, fetcher=None, model_client=None
         yield
         service.db.engine.dispose()
 
-    app = FastAPI(title="Apertus RegWatch", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="Helvetic Lens", version="0.1.0", lifespan=lifespan)
     app.state.service = service
     app.add_middleware(
         CORSMiddleware,

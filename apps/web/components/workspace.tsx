@@ -153,7 +153,7 @@ export function Workspace({
           <h1>{title}</h1>
           <p className="muted m-0">
             {view === "overview"
-              ? "Know what changed. Know what it means. Know what to do."
+              ? "See what changed. Understand what matters."
               : view === "sources"
                 ? "Connect a website, discover documents, and choose what matters."
                 : "Real processing stages, saved comparisons, and clear outcomes."}

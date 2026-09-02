@@ -118,8 +118,8 @@ export function SettingsPage() {
             </p>
             <p className="text-sm muted">
               Current model: {configuration.data?.model || "Not selected"}.
-              RegWatch calls an OpenAI-compatible chat API; it does not download
-              or host the model.
+              Helvetic Lens calls an OpenAI-compatible chat API; it does not
+              download or host the model.
             </p>
             <a
               href={`https://huggingface.co/${configuration.data?.model || "swiss-ai/Apertus-v1.5-8B"}`}
@@ -467,7 +467,7 @@ function ApertusForm({
                   placeholder="Generated after entering a Product ID"
                 />
                 <span className="field-help">
-                  RegWatch controls this address and adds /models or
+                  Helvetic Lens controls this address and adds /models or
                   /chat/completions for each request.
                 </span>
               </label>
@@ -523,9 +523,9 @@ function ApertusForm({
                     Local Docker Apertus
                   </h3>
                   <p className="field-help !m-0">
-                    Uses a dedicated llama.cpp container beside RegWatch. The
-                    API service selects the correct host or container address
-                    automatically.
+                    Uses a dedicated llama.cpp container beside Helvetic Lens.
+                    The API service selects the correct host or container
+                    address automatically.
                   </p>
                 </div>
                 <a
@@ -654,7 +654,7 @@ function ApertusForm({
                   maxLength={2000}
                 />
                 <span className="field-help">
-                  Include /v1 if required. RegWatch adds /chat/completions.
+                  Include /v1 if required. Helvetic Lens adds /chat/completions.
                   Leave empty to disconnect.
                 </span>
               </label>
@@ -678,9 +678,9 @@ function ApertusForm({
                 <KeyRound size={15} /> No local credential required
               </div>
               <p className="field-help !mb-0">
-                RegWatch never sends the saved Infomaniak token to the local
-                container. The remote credential remains preserved when you test
-                or save this local provider.
+                Helvetic Lens never sends the saved Infomaniak token to the
+                local container. The remote credential remains preserved when
+                you test or save this local provider.
               </p>
             </div>
           ) : (
@@ -922,8 +922,8 @@ function ApertusForm({
             Answers and citations are validated with either setting.
           </p>
           <div className="info-note text-xs">
-            RegWatch always requests one non-streaming response. These fixed
-            values keep structured parsing and citation validation
+            Helvetic Lens always requests one non-streaming response. These
+            fixed values keep structured parsing and citation validation
             deterministic.
           </div>
           <ErrorNote message={error} />

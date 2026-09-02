@@ -8,9 +8,9 @@ Open the app and choose **Connect website**. For an actual regulator, start with
 
 Under **Sources → Discover documents**, run the search. The app inspects at most 50 direct documents and shows actual extraction previews, verified types, individual errors, and the coverage limits. Filter titles, URLs, or preview text, then choose **Preview & add**. Some portals render their content with JavaScript; use a direct PDF or another supported public page when native extraction cannot read it.
 
-For a repeatable, clearly synthetic before/after example, connect this repository's [demo listing](https://raw.githubusercontent.com/HappyMiha/apertus-regwatch/main/demo/index.html), keeping section /. Choose **Synthetic records policy — current version**, preview it, select **This source contains synthetic demo content**, and add it.
+For a repeatable, clearly synthetic before/after example, connect this repository's [demo listing](https://raw.githubusercontent.com/HappyMiha/helvetic-lens/main/demo/index.html), keeping section /. Choose **Synthetic records policy — current version**, preview it, select **This source contains synthetic demo content**, and add it.
 
-You can separately use **Add a law** to add a specific document URL without connecting a website first. For the second synthetic document use [document handling practice](https://raw.githubusercontent.com/HappyMiha/apertus-regwatch/main/demo/practice.txt).
+You can separately use **Add a law** to add a specific document URL without connecting a website first. For the second synthetic document use [document handling practice](https://raw.githubusercontent.com/HappyMiha/helvetic-lens/main/demo/practice.txt).
 
 ## 2. Import the earlier copy
 

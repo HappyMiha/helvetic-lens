@@ -14,7 +14,7 @@ from .integration_logs import IntegrationLogger, response_snapshot
 from .models import Comparison, Profile, Version
 from .prompt_settings import PromptSettings, default_prompt_settings, prompt_fingerprint
 
-PROMPT_VERSION = "regwatch-v5-explicit-citation-rows-local-docker"
+PROMPT_VERSION = "helvetic-lens-v6-explicit-citation-rows-local-docker"
 
 
 class StructuredOutput(BaseModel):
@@ -98,7 +98,7 @@ class ModelClient:
         return "Apertus"
 
     def headers(self) -> dict[str, str]:
-        headers = {"User-Agent": "ApertusRegWatch/0.1"}
+        headers = {"User-Agent": "HelveticLens/0.1"}
         key = (
             ""
             if self.settings.apertus_provider == "docker"

@@ -3,7 +3,7 @@ import json
 import pytest
 from conftest import LAW_URL, add_law, import_old, policy, run_scan
 
-from regwatch.analysis import (
+from helvetic_lens.analysis import (
     Answer,
     AnswerDigest,
     Impact,
@@ -19,9 +19,9 @@ from regwatch.analysis import (
     select_evidence,
     structured_completion,
 )
-from regwatch.config import DomainError
-from regwatch.diffing import DIFF_SCHEMA_VERSION, compare_passages
-from regwatch.models import Comparison, Profile, Version
+from helvetic_lens.config import DomainError
+from helvetic_lens.diffing import DIFF_SCHEMA_VERSION, compare_passages
+from helvetic_lens.models import Comparison, Profile, Version
 
 
 def test_timeout_keeps_diff_retry_only_analysis_and_profile_invalidates_cache(harness):

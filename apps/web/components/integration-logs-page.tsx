@@ -180,7 +180,7 @@ export function IntegrationLogsPage() {
           <span className="eyebrow">INTEGRATION DIAGNOSTICS</span>
           <h1>See every external request.</h1>
           <p className="muted m-0">
-            Inspect what RegWatch sent and received from websites, Fedlex,
+            Inspect what Helvetic Lens sent and received from websites, Fedlex,
             Firecrawl, and Apertus providers. Credentials are always redacted.
           </p>
         </div>

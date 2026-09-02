@@ -48,7 +48,7 @@ wheels = [
 ]
 
 [[package]]
-name = "apertus-regwatch-api"
+name = "helvetic-lens-api"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

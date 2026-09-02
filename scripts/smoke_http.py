@@ -11,7 +11,7 @@ from pathlib import Path
 
 import httpx
 
-FIXTURES = "https://raw.githubusercontent.com/HappyMiha/apertus-regwatch/main/demo/"
+FIXTURES = "https://raw.githubusercontent.com/HappyMiha/helvetic-lens/main/demo/"
 
 
 def main():

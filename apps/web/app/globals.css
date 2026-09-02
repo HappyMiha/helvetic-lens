@@ -107,7 +107,9 @@ a:focus-visible {
   border-radius: 8px;
   display: grid;
   place-items: center;
-  font-size: 24px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
   line-height: 1;
 }
 .brand small {
@@ -117,6 +119,7 @@ a:focus-visible {
   font-weight: 500;
   color: var(--muted-foreground);
   margin-top: 3px;
+  line-height: 1.35;
 }
 .workspace {
   border: 1px solid var(--border);

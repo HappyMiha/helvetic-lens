@@ -26,7 +26,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 export function refreshWorkspace() {
-  window.dispatchEvent(new Event("regwatch:refresh"));
+  window.dispatchEvent(new Event("helvetic-lens:refresh"));
 }
 
 export function useResource<T>(path: string | null, interval = 0) {
@@ -67,12 +67,12 @@ export function useResource<T>(path: string | null, interval = 0) {
     setLoading(true);
     void load();
     const timer = interval ? window.setInterval(load, interval) : null;
-    window.addEventListener("regwatch:refresh", reload);
+    window.addEventListener("helvetic-lens:refresh", reload);
     return () => {
       live = false;
       controller.abort();
       if (timer) window.clearInterval(timer);
-      window.removeEventListener("regwatch:refresh", reload);
+      window.removeEventListener("helvetic-lens:refresh", reload);
     };
   }, [path, interval, revision, reload]);
   return { data, error, loading, reload, setData };

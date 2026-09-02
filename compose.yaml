@@ -1,17 +1,21 @@
-name: apertus-regwatch
+name: helvetic-lens
 services:
   db:
     image: postgres:17-alpine
     environment:
-      POSTGRES_USER: regwatch
-      POSTGRES_PASSWORD: regwatch
-      POSTGRES_DB: regwatch
+      POSTGRES_USER: ${HELVETIC_LENS_DB_USER:-helvetic_lens}
+      POSTGRES_PASSWORD: ${HELVETIC_LENS_DB_PASSWORD:-helvetic_lens}
+      POSTGRES_DB: ${HELVETIC_LENS_DB_NAME:-helvetic_lens}
     ports:
-      - "127.0.0.1:${REGWATCH_DB_PORT:-54329}:5432"
+      - "127.0.0.1:${HELVETIC_LENS_DB_PORT:-${REGWATCH_DB_PORT:-54329}}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U regwatch"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${HELVETIC_LENS_DB_USER:-helvetic_lens} -d ${HELVETIC_LENS_DB_NAME:-helvetic_lens}",
+        ]
       interval: 5s
       timeout: 3s
       retries: 15
@@ -22,10 +26,10 @@ services:
       - path: .env
         required: false
     environment:
-      DATABASE_URL: postgresql+psycopg://regwatch:regwatch@db:5432/regwatch
-      REGWATCH_DATA_DIR: /data
+      DATABASE_URL: postgresql+psycopg://${HELVETIC_LENS_DB_USER:-helvetic_lens}:${HELVETIC_LENS_DB_PASSWORD:-helvetic_lens}@db:5432/${HELVETIC_LENS_DB_NAME:-helvetic_lens}
+      HELVETIC_LENS_DATA_DIR: /data
     ports:
-      - "127.0.0.1:${REGWATCH_API_PORT:-8000}:8000"
+      - "127.0.0.1:${HELVETIC_LENS_API_PORT:-${REGWATCH_API_PORT:-8000}}:8000"
     volumes:
       - document_data:/data
     depends_on:
@@ -41,12 +45,12 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        REGWATCH_API_URL: http://api:8000
+        HELVETIC_LENS_API_URL: http://api:8000
     environment:
       HOSTNAME: 0.0.0.0
       PORT: 3000
     ports:
-      - "127.0.0.1:${REGWATCH_WEB_PORT:-3000}:3000"
+      - "127.0.0.1:${HELVETIC_LENS_WEB_PORT:-${REGWATCH_WEB_PORT:-3000}}:3000"
     depends_on:
       api:
         condition: service_healthy
@@ -78,5 +82,8 @@ services:
       - "99"
 volumes:
   postgres_data:
+    name: ${HELVETIC_LENS_POSTGRES_VOLUME:-helvetic-lens_postgres_data}
   document_data:
+    name: ${HELVETIC_LENS_DOCUMENT_VOLUME:-helvetic-lens_document_data}
   local_apertus_cache:
+    name: ${HELVETIC_LENS_APERTUS_VOLUME:-helvetic-lens_local_apertus_cache}

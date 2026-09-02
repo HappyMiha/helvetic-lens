@@ -6,9 +6,9 @@ from dataclasses import dataclass, field
 import pytest
 from fastapi.testclient import TestClient
 
-from regwatch.config import DomainError, Settings
-from regwatch.extraction import Fetched, within_section
-from regwatch.main import create_app
+from helvetic_lens.config import DomainError, Settings
+from helvetic_lens.extraction import Fetched, within_section
+from helvetic_lens.main import create_app
 
 LAW_URL = "https://regulator.example/laws/retention.html"
 LIST_URL = "https://regulator.example/laws/"

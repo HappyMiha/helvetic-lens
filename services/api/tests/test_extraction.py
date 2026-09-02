@@ -5,9 +5,9 @@ import pymupdf
 import pytest
 from conftest import policy
 
-from regwatch.config import DomainError, Settings
-from regwatch.diffing import compare_passages
-from regwatch.extraction import (
+from helvetic_lens.config import DomainError, Settings
+from helvetic_lens.diffing import compare_passages
+from helvetic_lens.extraction import (
     Fetched,
     Fetcher,
     canonical_url,

@@ -2,9 +2,9 @@ from conftest import LAW_URL, LIST_URL, add_law, import_old, policy, run_scan
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
-from regwatch.config import DomainError
-from regwatch.main import create_app
-from regwatch.models import Version
+from helvetic_lens.config import DomainError
+from helvetic_lens.main import create_app
+from helvetic_lens.models import Version
 
 
 def test_connect_discover_preview_and_add_without_code_changes(harness):
@@ -214,7 +214,7 @@ def test_sources_versions_paused_state_and_results_survive_new_app(harness):
 
 
 def test_import_validation_and_model_unavailable_are_explicit(harness):
-    from regwatch.analysis import ModelClient
+    from helvetic_lens.analysis import ModelClient
 
     client, _, service, _ = harness
     service.model_client = ModelClient(service.settings)
@@ -250,7 +250,7 @@ def test_import_validation_and_model_unavailable_are_explicit(harness):
 
 
 def test_first_fetch_without_a_live_pointer_creates_baseline(harness):
-    from regwatch.models import Law
+    from helvetic_lens.models import Law
 
     client, _, service, _ = harness
     with service.db.session() as session:
@@ -362,7 +362,7 @@ def test_discovery_inspects_at_most_fifty_pages_preserves_errors_and_never_crawl
 def test_discovery_time_budget_returns_partial_results_instead_of_hanging(harness, monkeypatch):
     import asyncio
 
-    import regwatch.service
+    import helvetic_lens.service
 
     client, fetcher, _, _ = harness
     fetcher.values[LIST_URL] = (
@@ -378,7 +378,7 @@ def test_discovery_time_budget_returns_partial_results_instead_of_hanging(harnes
         return await original_fetch(url, provider, boundary=boundary)
 
     monkeypatch.setattr(fetcher, "fetch", delayed_fetch)
-    monkeypatch.setattr(regwatch.service, "DISCOVERY_TIMEOUT_SECONDS", 0.03)
+    monkeypatch.setattr(helvetic_lens.service, "DISCOVERY_TIMEOUT_SECONDS", 0.03)
     source = client.post("/api/sources", json={"url": LIST_URL, "section": "/laws"}).json()
     response = client.post("/api/sources/" + source["id"] + "/discover")
     assert response.status_code == 200

@@ -4,8 +4,8 @@ COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/package.json
 RUN npm ci
 COPY apps/web apps/web
-ARG REGWATCH_API_URL=http://api:8000
-ENV REGWATCH_API_URL=$REGWATCH_API_URL
+ARG HELVETIC_LENS_API_URL=http://api:8000
+ENV HELVETIC_LENS_API_URL=$HELVETIC_LENS_API_URL
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 

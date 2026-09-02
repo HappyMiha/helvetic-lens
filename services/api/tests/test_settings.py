@@ -8,10 +8,10 @@ from conftest import add_law, import_old
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
-from regwatch.analysis import ModelClient
-from regwatch.main import create_app
-from regwatch.model_settings import ApertusSettingsInput
-from regwatch.models import ApertusConfiguration
+from helvetic_lens.analysis import ModelClient
+from helvetic_lens.main import create_app
+from helvetic_lens.model_settings import ApertusSettingsInput
+from helvetic_lens.models import ApertusConfiguration
 
 
 def configuration(**changes):
@@ -115,7 +115,7 @@ def test_draft_connection_uses_actual_adapter_parameters_without_saving(harness,
     assert reply.json()["saved"] is False and "test-draft-key" not in reply.text
     assert len(requests) == 1 and str(requests[0].url) == "https://inference.example/v1/chat/completions"
     assert requests[0].headers["authorization"] == "Bearer test-draft-key"
-    assert requests[0].headers["user-agent"] == "ApertusRegWatch/0.1"
+    assert requests[0].headers["user-agent"] == "HelveticLens/0.1"
     body = json.loads(requests[0].content)
     assert body["model"] == "test-apertus" and body["temperature"] == 0.25
     assert body["max_tokens"] == 1200 and body["response_format"] == {"type": "json_object"}

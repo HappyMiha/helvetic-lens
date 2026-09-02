@@ -294,10 +294,10 @@ function PromptForm({
           <section className="panel p-6">
             <h2>Original document files</h2>
             <p className="text-sm muted">
-              RegWatch keeps every original artifact. For general questions it
-              sends the complete extracted text in bounded batches because the
-              selected Apertus chat endpoint does not expose a documented PDF
-              attachment contract.
+              Helvetic Lens keeps every original artifact. For general questions
+              it sends the complete extracted text in bounded batches because
+              the selected Apertus chat endpoint does not expose a documented
+              PDF attachment contract.
             </p>
             <a
               className="text-link text-sm"

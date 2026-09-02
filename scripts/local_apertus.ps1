@@ -70,5 +70,5 @@ if ($parsed.status -ne "ok") {
     throw "Local Apertus returned unexpected structured JSON: $content"
 }
 
-Write-Output "RegWatch local Apertus returned valid structured JSON."
-Write-Output "Open RegWatch Settings and choose Local Docker Apertus to use this model."
+Write-Output "Helvetic Lens local Apertus returned valid structured JSON."
+Write-Output "Open Helvetic Lens Settings and choose Local Docker Apertus to use this model."

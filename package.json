@@ -1,5 +1,5 @@
 {
-  "name": "apertus-regwatch",
+  "name": "helvetic-lens",
   "version": "0.1.0",
   "private": true,
   "workspaces": [
@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "concurrently -k -n api,web \"npm:dev:api\" \"npm:dev:web\"",
     "dev:web": "npm run dev --workspace apps/web",
-    "dev:api": "uv run --project services/api uvicorn regwatch.main:app --app-dir services/api --host 127.0.0.1 --port 8000",
+    "dev:api": "uv run --project services/api uvicorn helvetic_lens.main:app --app-dir services/api --host 127.0.0.1 --port 8000",
     "build": "npm run build --workspace apps/web",
     "typecheck": "npm run typecheck --workspace apps/web",
     "format:web": "prettier --write apps/web",

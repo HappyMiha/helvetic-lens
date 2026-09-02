@@ -8,7 +8,9 @@ const config: NextConfig = {
   outputFileTracingRoot: path.join(process.cwd(), "../.."),
   async rewrites() {
     const api = (
-      process.env.REGWATCH_API_URL || "http://127.0.0.1:8000"
+      process.env.HELVETIC_LENS_API_URL ||
+      process.env.REGWATCH_API_URL ||
+      "http://127.0.0.1:8000"
     ).replace(/\/$/, "");
     return [{ source: "/api/:path*", destination: `${api}/api/:path*` }];
   },

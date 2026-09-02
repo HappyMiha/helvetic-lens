@@ -74,7 +74,7 @@ def version_summary(version: Version) -> dict:
     }
 
 
-class RegWatch:
+class HelveticLens:
     def __init__(self, settings: Settings, fetcher=None, model_client=None):
         self.settings = settings
         self.environment_settings = settings.model_copy(deep=True)
@@ -195,7 +195,7 @@ class RegWatch:
             settings, model_client = self.settings, self.model_client
         start = time.monotonic()
         reply = await model_client.complete(
-            "Return only a JSON object with a status field equal to ok.", "Test the RegWatch connection."
+            "Return only a JSON object with a status field equal to ok.", "Test the Helvetic Lens connection."
         )
         return {
             "status": "connected",

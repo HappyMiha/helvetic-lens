@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, SecretStr, model_validator
+from pydantic import AliasChoices, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # The source checkout and the API container have different directory depths.
@@ -31,7 +31,10 @@ def local_docker_base_url() -> str:
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ROOT / ".env", extra="ignore", populate_by_name=True)
     database_url: str = ""
-    data_dir: Path = Field(default=ROOT / "data", alias="REGWATCH_DATA_DIR")
+    data_dir: Path = Field(
+        default=ROOT / "data",
+        validation_alias=AliasChoices("HELVETIC_LENS_DATA_DIR", "REGWATCH_DATA_DIR"),
+    )
     apertus_provider: Literal["custom", "docker", "infomaniak"] = "custom"
     apertus_product_id: str = Field(default="", pattern=r"^\d*$")
     apertus_base_url: str = ""
@@ -72,7 +75,12 @@ class Settings(BaseSettings):
 
     @property
     def db_url(self) -> str:
-        return self.database_url or f"sqlite:///{(self.storage_path / 'regwatch.db').as_posix()}"
+        if self.database_url:
+            return self.database_url
+        current = self.storage_path / "helvetic_lens.db"
+        legacy = self.storage_path / "regwatch.db"
+        database = legacy if legacy.exists() and not current.exists() else current
+        return f"sqlite:///{database.as_posix()}"
 
     @property
     def model_configured(self) -> bool:

@@ -49,9 +49,16 @@ export function Shell({
     <div className="shell">
       <aside className="sidebar">
         <Link href="/" className="brand">
-          <span className="brand-mark">+</span>
+          <span className="brand-mark" aria-hidden="true">
+            HL
+          </span>
           <span>
-            RegWatch<small>POWERED BY APERTUS</small>
+            Helvetic Lens
+            <small>
+              See what changed.
+              <br />
+              Understand what matters.
+            </small>
           </span>
         </Link>
         <button
@@ -138,7 +145,7 @@ export function Shell({
             Evidence you can inspect.
           </p>
           <a
-            href="https://github.com/HappyMiha/apertus-regwatch"
+            href="https://github.com/HappyMiha/helvetic-lens"
             target="_blank"
             rel="noreferrer"
             className="text-xs flex items-center gap-2 muted mt-4"
@@ -164,7 +171,7 @@ export function Shell({
                   ? "Connected · " + health.database
                   : "Connecting…"}
             </span>
-            <span className="avatar">RW</span>
+            <span className="avatar">HL</span>
           </div>
         </header>
         <nav className="mobile-nav">
