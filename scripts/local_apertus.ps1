@@ -31,6 +31,11 @@ if (-not $ready) {
     throw "Local Apertus did not become ready. Inspect: docker compose logs local-apertus"
 }
 
+$properties = Invoke-RestMethod -Uri "http://127.0.0.1:12435/props" -TimeoutSec 5
+if ($properties.total_slots -ne 1 -or $properties.default_generation_settings.n_ctx -lt 4096) {
+    throw "Local Apertus is running with an unsafe context allocation. Recreate it with: docker compose --profile local-ai up -d --force-recreate local-apertus"
+}
+
 $request = @{
     model = "local-apertus"
     messages = @(
@@ -71,4 +76,5 @@ if ($parsed.status -ne "ok") {
 }
 
 Write-Output "Helvetic Lens local Apertus returned valid structured JSON."
+Write-Output "The local runner has one 4,096-token slot, so a full request keeps the complete KV cache."
 Write-Output "Open Helvetic Lens Settings and choose Local Docker Apertus to use this model."

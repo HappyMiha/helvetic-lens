@@ -566,8 +566,10 @@ function ApertusForm({
                   ))}
                 </select>
                 <span className="field-help">
-                  The 1.5B model is a lightweight local diagnostic fallback.
-                  Keep Infomaniak for higher-quality legal analysis.
+                  The 1.5B model is a lightweight local diagnostic fallback. Its
+                  single 4,096-token slot queues overlapping requests so each
+                  analysis keeps the complete local context. Keep Infomaniak for
+                  higher-quality legal analysis.
                 </span>
               </label>
               <div className="flex flex-wrap gap-3 items-center">
@@ -817,7 +819,11 @@ function ApertusForm({
                 />
                 <span className="field-help">
                   Comparison analysis sends every changed passage. This value
-                  flags oversized context; it never truncates the saved diff.
+                  sets the evidence batch target; it never truncates the saved
+                  diff.
+                  {draft.provider === "docker"
+                    ? " The 6,000-character local preset is calibrated for the 4,096-token runner."
+                    : ""}
                 </span>
               </label>
               <label>

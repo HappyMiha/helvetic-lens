@@ -76,6 +76,12 @@ services:
       - "8080"
       - --ctx-size
       - "4096"
+      # The app deliberately sends one evidence batch at a time. A single server
+      # slot keeps the full 4K KV cache available to that request; llama.cpp's
+      # automatic four-slot mode can exhaust the shared cache with overlapping
+      # retries even when every individual prompt fits.
+      - --parallel
+      - "1"
       - --n-predict
       - "700"
       - --n-gpu-layers

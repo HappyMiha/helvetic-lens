@@ -151,6 +151,20 @@ class ModelClient:
 
     def raise_for_provider_error(self, response: httpx.Response, *, operation: str) -> None:
         provider = self.provider_name
+        if self.is_context_limit_error(response):
+            if self.settings.apertus_provider == "docker":
+                message = (
+                    "Local Docker Apertus could not fit this request in its context window. "
+                    "Restart the local runner with scripts/local_apertus.ps1 so it uses the "
+                    "single-slot configuration, or reduce the evidence characters or maximum "
+                    "completion length in Settings."
+                )
+            else:
+                message = (
+                    f"{provider} could not fit this request in the model context window. "
+                    "Reduce the evidence characters or maximum completion length in Settings."
+                )
+            raise DomainError(message, 422, "model_context_exceeded")
         upstream_errors = {
             401: (
                 f"{provider} rejected the API token (HTTP 401). Replace it with a valid token in Settings.",
@@ -183,6 +197,28 @@ class ModelClient:
                 502,
                 "model_error",
             )
+
+    @staticmethod
+    def is_context_limit_error(response: httpx.Response) -> bool:
+        try:
+            payload = response.json()
+        except (ValueError, TypeError):
+            return False
+        try:
+            text = json.dumps(payload, ensure_ascii=False).casefold()[:8000]
+        except (TypeError, ValueError):
+            return False
+        return any(
+            marker in text
+            for marker in (
+                "context size has been exceeded",
+                "context length exceeded",
+                "context_length_exceeded",
+                "maximum context length",
+                "prompt is too long",
+                "too many tokens",
+            )
+        )
 
     async def models(self) -> list[dict]:
         if not self.settings.apertus_base_url.strip():
@@ -347,6 +383,11 @@ class ModelClient:
 
                 try:
                     response = await client.post(url, headers=headers, json=payload)
+                    # Retrying an unchanged oversized prompt can never succeed and can
+                    # occupy every local llama.cpp slot. Surface the actionable error
+                    # immediately while keeping transient 5xx retries intact.
+                    if self.is_context_limit_error(response):
+                        self.raise_for_provider_error(response, operation="chat completions")
                     if response.status_code in retryable_statuses and attempt < total_attempts:
                         log(
                             "error",

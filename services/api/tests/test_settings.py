@@ -370,6 +370,42 @@ def test_transient_completion_failures_are_retried_and_each_attempt_is_logged(ha
     assert [item["status"] for item in logs["items"]] == ["error", "error", "success"]
 
 
+def test_context_limit_failure_is_actionable_and_is_not_retried(harness, monkeypatch):
+    client, _, _, _ = harness
+    requests = []
+
+    def respond(request):
+        requests.append(request)
+        return httpx.Response(
+            500,
+            json={
+                "error": {
+                    "code": 500,
+                    "message": "Context size has been exceeded.",
+                    "type": "server_error",
+                }
+            },
+        )
+
+    transport(monkeypatch, respond)
+    response = client.post(
+        "/api/settings/apertus/test",
+        json=configuration(
+            provider="docker",
+            key_action="keep",
+            request_retries=5,
+        ),
+    )
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "model_context_exceeded"
+    assert "single-slot" in response.json()["detail"]
+    assert len(requests) == 1
+    logs = client.get("/api/integration-logs?provider=docker").json()
+    assert logs["total"] == 1
+    assert logs["items"][0]["status"] == "error"
+
+
 @pytest.mark.parametrize(
     "changes",
     [
