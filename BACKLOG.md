@@ -2,19 +2,20 @@
 
 **See what changed. Understand what matters.**
 
-This backlog implements the product described in [README.md](README.md): user-configured websites, tracked laws, imported previous versions, real scans, visual comparisons, and Apertus analysis with verifiable citations.
+This backlog implements the product described in [README.md](README.md): a local-AI-first Swiss regulatory monitor with immutable evidence, a time-based legal registry, official-source connectors, cross-document impact analysis, and organization workspaces.
 
-**Status:** The required MVP workflow is implemented and verified through the browser, real HTTP requests, PostgreSQL, service restarts, and live Apertus inference. Large complete diffs use bounded model requests while retaining every changed passage. See [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
+**Status:** The hackathon MVP (`HL-001`–`HL-028`) is implemented and verified through the browser, real HTTP requests, PostgreSQL, service restarts, and live Apertus inference. The public-beta/local-AI-first roadmap (`HL-029` onward) is planned, not implemented. See the [target architecture](docs/ARCHITECTURE.md) and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
 
 ## Scope and priorities
 
-- **P0 — first working workflow.** Build the real path from a document URL and a previous version to a live comparison and impact analysis.
-- **P1 — required to complete the MVP.** Complete website discovery, the dashboard, cited questions, verification, and the repeatable demonstration. P1 items are not optional.
-- **P2 — optional after the MVP is accepted.** Impact matrix and retrieval with pgvector, only when justified.
+- **P0 — release foundation or safety/capacity gate.** The public beta cannot open without it.
+- **P1 — required public-beta product capability.** P1 is required for the agreed local-AI-first product, even when it can follow the P0 foundation.
+- **P2 — valuable follow-up after public beta.** Add after the core three sources, registry, and impact inbox are reliable.
+- **P3 — evidence-driven expansion.** Implement only when real use demonstrates the need.
 
-There are **26 required items** and **2 optional items**, including the subsequently requested provider, diagnostics, history, prompt, and local-model work. Follow dependencies and the release checkpoints below; priority alone is not a complete execution order. No calendar estimates are assumed until team capacity, source compatibility, and model access are known.
+The completed baseline contains 28 items, including two deliberately deferred optional items. The public-beta roadmap contains **21 required items (`HL-029`–`HL-049`)** and **7 after-beta items (`HL-050`–`HL-056`)**. Follow dependencies and checkpoints; priority alone is not an execution order. No calendar estimates are assumed until the dual-GTX-1080 benchmark and connector contract spikes are complete.
 
-Keep the agreed stack: **Next.js, Tailwind CSS/shadcn/ui, FastAPI, PostgreSQL, BeautifulSoup, PyMuPDF, and `difflib`**. **Apertus v1.5 8B** is the proposed model target; confirm the actual model identifier and endpoint in HL-017. **pgvector is optional.**
+Keep the proven stack and add only the infrastructure now justified by public use: **Next.js, Tailwind CSS/shadcn/ui, FastAPI, PostgreSQL, Redis, Celery, Caddy, BeautifulSoup, PyMuPDF, `difflib`, and a private llama.cpp-based local inference runtime**. A quantized **Apertus 8B** profile is the intended production default only after it passes the target-hardware gate; the smaller verified profile remains valid for development. Cloud model adapters are optional and disabled by default. **pgvector remains conditional on a measured recall gap.**
 
 ## Release checkpoints
 
@@ -26,8 +27,12 @@ Keep the agreed stack: **Next.js, Tailwind CSS/shadcn/ui, FastAPI, PostgreSQL, B
 | M3 — Live monitoring | HL-014–HL-016 | Scans fetch current content, report actual progress, preserve history, and show useful results on the dashboard. |
 | M4 — Apertus explanations | HL-017–HL-019, HL-025 | Model settings persist; impact analysis and questions work against real saved passages with working citations. |
 | M5 — Accepted MVP | HL-020–HL-022 | Regression checks, product acceptance, and a repeatable live demonstration pass. |
+| M6 — Local-first foundation | HL-029–HL-035 | One server has durable queues, managed local models, organization data, login, and enforced read-only users. |
+| M7 — Swiss legal registry | HL-036–HL-043 | Normalized events from Fedlex, Parliament, the Federal Supreme Court, and their official notices appear in a time-grouped registry. |
+| M8 — Impact intelligence | HL-044–HL-046 | Evidence-backed relations connect new events to monitored laws and appear in an actionable organization inbox. |
+| M9 — Public beta | HL-047–HL-049 | Admin/operations UI, Internet-facing single-host deployment, recovery, and the reproducible 100-user gate pass. |
 
-Start HL-017 as soon as HL-002 and HL-003 are available so model access is checked early. Source fetching, imports, and visual comparisons must remain developable while model access is being resolved. HL-011 can start once snapshots exist; it need not wait for website discovery. Implement regression checks alongside the relevant feature work, then use HL-020 as the completion gate.
+Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, implement `HL-029` first, then run durable-job, local-model, and organization foundations in parallel where their dependencies allow. Complete tenancy and the shared-corpus split before adding broad connectors; otherwise source records would need a second migration. Finish operations and the measured capacity gate before exposing registration publicly.
 
 ## Task index
 
@@ -61,6 +66,34 @@ Start HL-017 as soon as HL-002 and HL-003 are available so model access is check
 | [HL-026](#hl-026) | P1 | DONE | HL-006, HL-007, HL-017 | Integration diagnostics and controlled deletion |
 | [HL-027](#hl-027) | P1 | DONE | HL-018, HL-019, HL-025, HL-026 | Resilient AI calls, saved history, and prompt controls |
 | [HL-028](#hl-028) | P1 | DONE | HL-017, HL-027 | Robust citation-row handling and local Docker Apertus fallback |
+| [HL-029](#hl-029) | P0 | PLANNED | HL-028 | Single-host local-first architecture and capacity contract |
+| [HL-030](#hl-030) | P0 | PLANNED | HL-029 | Durable PostgreSQL jobs with Redis/Celery execution |
+| [HL-031](#hl-031) | P0 | PLANNED | HL-029, HL-030 | Local model library, downloads, and runtime manager |
+| [HL-032](#hl-032) | P0 | PLANNED | HL-030, HL-031 | Local-first inference routing, GPU fairness, and hardware benchmark |
+| [HL-033](#hl-033) | P0 | PLANNED | HL-003, HL-029 | Shared public corpus and organization-aware migration |
+| [HL-034](#hl-034) | P0 | PLANNED | HL-033 | Registration, login, sessions, and onboarding |
+| [HL-035](#hl-035) | P0 | PLANNED | HL-034 | Organization membership and enforced admin/viewer access |
+| [HL-036](#hl-036) | P0 | PLANNED | HL-005, HL-011, HL-033 | Normalized regulatory documents, dates, and events |
+| [HL-037](#hl-037) | P1 | PLANNED | HL-035, HL-036 | Time-grouped monitoring registry and document timeline |
+| [HL-038](#hl-038) | P0 | PLANNED | HL-030, HL-036 | Versioned incremental connector contract |
+| [HL-039](#hl-039) | P1 | PLANNED | HL-038, existing ELI resolver | Fedlex federal-law catalogue connector |
+| [HL-040](#hl-040) | P1 | PLANNED | HL-038 | Swiss Parliament initiatives and bills connector |
+| [HL-041](#hl-041) | P1 | PLANNED | HL-038 | Swiss Federal Supreme Court decisions connector |
+| [HL-042](#hl-042) | P1 | PLANNED | HL-030, HL-039–HL-041 | Scheduled synchronization, deduplication, and watch fan-out |
+| [HL-043](#hl-043) | P1 | PLANNED | HL-038, HL-042 | Official notices and source-linked news events |
+| [HL-044](#hl-044) | P1 | PLANNED | HL-036, HL-039–HL-043 | Evidence-backed relation graph and candidate generation |
+| [HL-045](#hl-045) | P1 | PLANNED | HL-032, HL-044 | Local-AI potential-impact analysis |
+| [HL-046](#hl-046) | P1 | PLANNED | HL-037, HL-045 | Impact inbox and monitored-law cross-links |
+| [HL-047](#hl-047) | P1 | PLANNED | HL-031, HL-035, HL-042 | Platform and organization admin console |
+| [HL-048](#hl-048) | P0 | PLANNED | HL-029–HL-035, HL-038 | Public single-server deployment and operations baseline |
+| [HL-049](#hl-049) | P0 | PLANNED | HL-037–HL-048 | Reproducible recovery and 100-user capacity gate |
+| [HL-050](#hl-050) | P2 | PLANNED | HL-038, HL-042 | Broader official regulatory news connectors |
+| [HL-051](#hl-051) | P2 | PLANNED | HL-044, HL-050 | Measured semantic candidate recall with pgvector if justified |
+| [HL-052](#hl-052) | P2 | PLANNED | HL-034, HL-046 | Opt-in email and web digests |
+| [HL-053](#hl-053) | P3 | PLANNED | HL-044–HL-046 | Relation review workflow and visual graph |
+| [HL-054](#hl-054) | P3 | PLANNED | HL-034, HL-035 | Account recovery, verification, 2FA, and SSO refinements |
+| [HL-055](#hl-055) | P2 | PLANNED | HL-038, HL-041 | Broader federal and cantonal court coverage |
+| [HL-056](#hl-056) | P3 | PLANNED | HL-049 | Multi-host or high-availability deployment after measured need |
 
 ## M0 — Ready to build
 
@@ -467,10 +500,424 @@ Acceptance criteria:
 - Compare answer support, citation correctness, latency, and operational cost against the direct-context baseline before enabling retrieval by default.
 - Keep direct context as a usable fallback and do not add a separate vector-database platform.
 
+## M6 — Local-first public foundation
+
+<a id="hl-029"></a>
+### HL-029 — Ratify the single-host local-first architecture and capacity contract
+
+Turn the public-server assumptions into an implementation contract before changing the runtime or data model.
+
+Acceptance criteria:
+
+- Adopt [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) as the target: one physical Linux host and one repository/Compose deployment, with separate web, API, worker, scheduler, PostgreSQL, Redis, model-manager, and llama.cpp processes.
+- Keep only Caddy ports 80/443 public. PostgreSQL, Redis, workers, model management, and inference endpoints remain on private Docker networks; development access binds to loopback.
+- Define `local_only` as the clean-install inference policy. A missing or stopped model yields `waiting_for_model`; it never triggers a hidden cloud request.
+- Publish hardware profiles for one 8 GB GTX 1070 and two 8 GB GTX 1080 cards. State clearly that the public target is 100 ordinary users through queues, not 100 simultaneous generations.
+- Define measurable public-beta objectives for API latency, queue admission, GPU slots, memory, recovery, and connector freshness. Do not select model size, context, or concurrency by name alone.
+- Record the accepted single-host risks: one server is a failure domain, maintenance causes downtime, and Redis/PostgreSQL persistence does not provide high availability.
+
+<a id="hl-030"></a>
+### HL-030 — Replace process-local background work with durable PostgreSQL jobs and Redis/Celery execution
+
+Make scans, connector synchronization, parsing, comparisons, AI work, and maintenance survive service restarts.
+
+Acceptance criteria:
+
+- Add PostgreSQL `Job` and `JobStep` records with organization, type, target, priority, idempotency key, state, progress, attempts, lease/heartbeat, bounded error details, and result links.
+- Use a transactional outbox or equivalent durable dispatcher so creating a domain command and making it eligible for Redis delivery cannot diverge.
+- Add Redis and Celery workers/Beat in the same Compose deployment with separate `interactive`, `ingest`, `parse_diff`, `ai_interactive`, `ai_background`, and `maintenance` queues.
+- Make every worker task idempotent. At-least-once delivery, retry, a stale lease, or a worker restart cannot duplicate versions, events, comparisons, or analyses.
+- Return a job ID quickly from long-running commands. The UI shows real stage, position or wait state, progress, retry, cancellation, and a link to the persisted result.
+- Keep completed immutable evidence after cancellation. Move exhausted jobs to an inspectable failed/dead-letter state and allow an administrator to retry them safely.
+- Demonstrate recovery after restarting API, worker, scheduler, and Redis; PostgreSQL reconstructs eligible work even when the broker loses its transient queue state.
+
+<a id="hl-031"></a>
+### HL-031 — Add a local model library, verified downloads, and a private runtime manager
+
+Let a platform administrator choose, download, validate, start, stop, and inspect local models without editing Compose files.
+
+Acceptance criteria:
+
+- Store a versioned allowlist of model entries with family, upstream repository, immutable revision, GGUF file, quantization, SHA-256, size, license/acceptance state, chat template, resource requirements, and verified hardware profiles.
+- Probe CUDA devices, VRAM, RAM, disk, and runtime support. Mark a model/profile `compatible`, `unverified`, or `incompatible` with a plain-language reason before download or activation.
+- Download into a `.part` file with progress, pause/cancel, safe resume, available-disk checks, checksum verification, and atomic activation. A failed verification never replaces a valid artifact.
+- Expose `available`, `downloading`, `verifying`, `starting`, `ready`, `stopped`, `degraded`, `incompatible`, and `error` states in a platform-admin model screen.
+- Run llama.cpp behind a narrow private model-manager API. The public web/API containers do not receive the Docker socket and cannot execute arbitrary model URLs or commands.
+- Pin the llama.cpp runtime image/binary and record it with every deployment. Prevent removal of an active model or of an artifact referenced by retained analysis provenance.
+- After a cached download, prove that version comparison, Impact, and Ask work without Internet access; deterministic registry and diff features remain usable before a model is installed.
+
+<a id="hl-032"></a>
+### HL-032 — Make local inference primary and validate GPU routing on the target hardware
+
+Give the application one stable inference interface while the runtime chooses a measured safe GPU layout.
+
+Acceptance criteria:
+
+- Route application calls through one private OpenAI-compatible local gateway. Local inference is selected by default; Infomaniak and custom compatible providers remain explicit per-organization options.
+- Implement `dev-1070`, `dual-1080-replicated`, `dual-1080-split`, and `cpu-degraded` profiles. GPU use is enabled by default; a CPU-only path is a diagnostic/degraded option.
+- Try one quantized Apertus replica per GTX 1080 when model weights, KV cache, and safety headroom fit on one 8 GB card; otherwise use one layer-split runner across both cards and reduce concurrency to one.
+- Never advertise full BF16 Apertus 8B or Apertus 70B as defaults for this host. Promote a quantized Apertus 8B profile only after it passes; keep a smaller verified Apertus profile available when it does not.
+- Add warm-up, health, slot ownership, fair per-organization admission, interactive-over-background priority without starvation, timeout, retry, and degraded-single-GPU behavior.
+- Persist backend, model revision/hash/quantization, runtime version, hardware profile, context, generation settings, queue wait, inference duration, token counts when available, and validation/repair outcome with each result.
+- Benchmark at least 20 representative structured calls and two concurrent calls in replicated mode. Record tokens/second, load time, peak VRAM/RAM, maximum stable context, accepted slot count, schema validity, citation validity, and OOM/timeout results.
+
+<a id="hl-033"></a>
+### HL-033 — Split the shared public corpus from organization-owned monitoring data
+
+Fetch each official Swiss document once while keeping watchlists, profiles, prompts, private inputs, and AI history inside one organization.
+
+Acceptance criteria:
+
+- Add organizations and organization ownership where appropriate; separate canonical public documents/versions from an organization's `DocumentWatch` and selected baseline.
+- Reuse one immutable official artifact, extraction, deterministic diff, and general relation result across organizations. Do not duplicate a Fedlex version because ten organizations monitor it.
+- Keep company profiles, prompt revisions, provider credentials, quotas, questions, company-specific impact conclusions, feed state, and custom sources scoped to the active organization.
+- Mark uploaded, pasted, or otherwise private documents with `owner_organization_id`; never expose them through the shared public corpus.
+- Migrate every existing record into a default legacy organization without changing evidence IDs, artifact keys, comparison pairs, or AI-history links.
+- Replace global URL uniqueness with canonical-document identity plus organization watch uniqueness, so several organizations can monitor the same official document.
+- Add isolation checks proving that guessed cross-organization IDs, search, exports, integration logs, jobs, and evidence routes disclose nothing and return `404` or the authorized shared-public representation.
+
+<a id="hl-034"></a>
+### HL-034 — Add simple registration, login, sessions, and first-run onboarding
+
+Make the public instance easy to enter without introducing an external identity platform.
+
+Acceptance criteria:
+
+- Registration asks for email, password, person name, and optional organization name; an empty organization name creates a personal organization.
+- Normalize email safely, hash passwords with Argon2id, and use random revocable PostgreSQL-backed sessions in `Secure`, `HttpOnly`, `SameSite` cookies. Do not store bearer tokens in browser storage.
+- Protect cookie-based mutations against CSRF and apply Redis-backed limits to registration, login, fetch, scan, invitation, and AI-submission paths.
+- The first user of a newly created organization becomes its organization administrator. Typing an existing organization name never grants membership.
+- Provide login, logout, expired/revoked-session handling, and a short onboarding path that leads to the registry or first monitored law.
+- Preserve the present local developer flow behind an explicit development-only setting; public deployment refuses to start with anonymous mutation enabled.
+- Record only the minimum login/security events needed for support and abuse control, without putting passwords, cookies, or credentials into integration logs.
+
+<a id="hl-035"></a>
+### HL-035 — Enforce organization invitations, membership, and administrator/viewer roles
+
+Let an organization share one workspace while making non-admin members read-only.
+
+Acceptance criteria:
+
+- Support two organization roles for public beta: `organization_admin` and `viewer`, plus a separate deployment-wide `platform_admin` flag/role.
+- An organization administrator can create a single-use expiring email invitation, list pending invitations, revoke one, and remove another member. Joining requires the invitation token.
+- Every organization member sees the same watchlist, sources, registry items, versions, comparisons, AI history, prompts, profile, and organization feed.
+- A viewer can inspect all organization data and manage only personal read/dismiss state. Add/edit/delete, scan, Ask, reanalyse, prompt, provider, profile, invitation, and membership controls are absent.
+- Enforce the same rules in FastAPI; a viewer's direct mutation call returns `403`. A platform administrator does not gain organization data access unless explicitly added to that organization.
+- Refuse to remove or demote the last organization administrator and support an explicit handover before that administrator leaves.
+- Provide an idempotent CLI command to list/promote/demote platform administrators, log the change, and refuse to remove the last one. Do not require manual database edits or expose public self-promotion.
+
+## M7 — Swiss legal registry and official connectors
+
+<a id="hl-036"></a>
+### HL-036 — Normalize Swiss regulatory documents, expressions, versions, dates, events, and relations
+
+Create a common corpus model before importing whole official catalogues.
+
+Acceptance criteria:
+
+- Represent canonical acts, ordinances, parliamentary business, initiatives, bills, court decisions, and official notices separately from language expressions and immutable document versions.
+- Store authority-scoped identifiers such as ELI URI, SR/RS number, parliamentary business ID, court docket, and stable official URL without treating a mutable URL as the sole identity.
+- Keep `detected_at`, `published_at`, `version_date`, `effective_from`, `effective_to`, decision date, and fetch time as distinct optional fields with provenance and precision.
+- Model `created`, `new_version`, `amended`, `repealed`, `replaced`, `status_changed`, `decided`, and `notice_published` events without inventing lifecycle facts from disappearance or fetch failure.
+- Store versioned evidence-backed relations including `amends`, `repeals`, `replaces`, `implements`, `cites`, `interprets`, and `potentially_impacts`, with provenance method and confirmed/proposed/rejected state.
+- Add database constraints and merge rules so a connector retry or a second language expression does not create a duplicate canonical work or event.
+- Keep all existing direct-URL laws and comparisons readable throughout the migration; provide an explicit mapping for records that cannot yet be matched to an official identity.
+
+<a id="hl-037"></a>
+### HL-037 — Build the time-grouped monitoring registry and document timeline
+
+Make recent Swiss legal activity understandable before a user opens a comparison.
+
+Acceptance criteria:
+
+- Provide `My monitored documents` and `All discovered events` views with server-side search, cursor pagination, stable sort, loading/empty/error states, and saved filters in the URL.
+- Group by Europe/Zurich `detected_at` into non-overlapping Today, Yesterday, Last 7 days, Last 30 days, Older, and Custom range sections; test midnight and daylight-saving boundaries.
+- Display detection time separately from official publication, version, decision, and effective dates, including `unknown` rather than copying the fetch time into a legal-date field.
+- Filter by authority, connector, document kind, language, lifecycle state, impact, watched/unwatched, read state, and connector health.
+- Each row states what happened, the document and authority, why it appears, which monitored laws are linked, analysis state, and the next evidence/timeline/comparison action.
+- Document detail shows identifiers, current lifecycle, immutable versions, events, comparisons, incoming/outgoing relations, monitoring state, and source provenance in one timeline.
+- Keep registry reads responsive while synchronization and AI work are queued; do not require a live connector or model request to render saved data.
+
+<a id="hl-038"></a>
+### HL-038 — Introduce a versioned, incremental, observable connector contract
+
+Share ingestion, deduplication, recovery, and diagnostics across every official source instead of adding URL-specific patches.
+
+Acceptance criteria:
+
+- Define connector operations for `discover_since`, metadata, expressions/versions, official artifact fetch, explicit relation extraction, and health/source-contract status.
+- Normalize every result to a stable external identity, authority, document type, language, known dates/status, canonical URL, artifact hash, raw provenance reference, and connector/schema version.
+- Store connector cursors and page checkpoints in PostgreSQL. Advance only after the page or safe partial boundary is persisted; repeating the same cursor is harmless.
+- Apply common URL/redirect validation, content limits, artifact storage, extraction, hashing, retries with jitter, rate limits, per-item errors, and redacted integration diagnostics.
+- Detect source-contract drift such as a missing field, HTML template change, or implausible empty result and surface `degraded` instead of silently marking all documents unchanged or repealed.
+- Include a fixture-backed contract test and one bounded live smoke test for each connector. Fixtures never replace the official-source smoke check.
+- Attribute and date reused source data as required by the authority and retain its canonical official link on every imported record.
+
+<a id="hl-039"></a>
+### HL-039 — Expand native Fedlex ELI support into a federal-law catalogue connector
+
+Discover and monitor federal acts and their official lifecycle without requiring one manually pasted law URL at a time.
+
+Acceptance criteria:
+
+- Build on the working direct-URL resolver; use the bounded DE/FR/IT official RSS feeds for fast discovery and the Fedlex Linked Data/SPARQL service for authoritative backfill/reconciliation of Classified Compilation, Official Compilation, and Federal Gazette collections.
+- Preserve ELI work → language expression → dated/format manifestation identity, including available languages, official files, consolidation/version date, and source metadata.
+- Treat SR/RS number as a searchable identifier rather than the primary key; canonical identity follows ELI because an SR number can be reused after a total revision.
+- Bootstrap in bounded pages, then use RSS/watermarks with overlap plus mandatory scheduled SPARQL reconciliation because the feeds retain only a recent window; if a collection has no reliable update field, run an honest bounded sweep.
+- Import JOLux citations and legal-resource impacts before model proposals, combining the official business-status, mutation, and consolidation history needed to interpret them. Detect lifecycle and cross-reference events only when supported by official metadata/artifacts.
+- A missing row, timeout, or SPARQL error never proves repeal. Keep the last good version and cursor, mark the run partial/degraded, and retry from a safe checkpoint.
+- Maintain Add law → Preview → Monitor for individual ELI URLs and deduplicate those records with catalogue discovery without changing the UI flow.
+- Respect the official robots policy by dereferencing ELI/content-negotiated resources instead of directly crawling blocked `/filestore/*` paths; use low concurrency and backoff because no public numeric limit is documented.
+- Verify several `cc`, `oc`, and `fga` identities, more than one language, a dated version, one JOLux relation, one feed item recovered by reconciliation, and at least one lifecycle case against saved official provenance.
+
+<a id="hl-040"></a>
+### HL-040 — Add a Swiss Parliament initiatives and bills connector
+
+Track parliamentary business before it becomes enacted law.
+
+Acceptance criteria:
+
+- Use the official Parliament web service for affairs and related summaries, types, states, descriptors, committees, people, documents, sessions, and votes needed by the product; retain actual DE/FR/IT/EN availability because substantive English fields can be incomplete.
+- Retain stable and short business identifiers, title/summary per available language, type, state/stage, authors, committees, updated/publication dates, official URL, and official artifacts.
+- Complete a source-contract spike for 50-row paging, ID ordering, and update filters. Since older affairs can change and the list is not ordered by `updated`, perform a complete lightweight bootstrap, frequently revisit new/current-year and known non-final affairs, and periodically reconcile every `(id, updated)` page.
+- Create a status-change event without manufacturing a new text version when only metadata changes; create an immutable version when an official draft/message/report artifact changes.
+- Extract exact SR/RS, ELI, Fedlex, article, and parliamentary references as deterministic relation candidates. Title similarity alone remains proposed and requires evidence.
+- Preserve the required source attribution `Parlamentsdienste der Bundesversammlung, Bern`, a visible retrieval date, and the unmodified official record wherever reused data is displayed or exported; keep Helvetic Lens summaries separately labelled.
+- Isolate the adapter contract because the authority says the current older API remains available until further notice while a replacement is planned.
+- Verify a new/updated business, a state change, a related official document, multiple pages, more than one language, a partial-item failure, and an idempotent rerun.
+
+<a id="hl-041"></a>
+### HL-041 — Add a Swiss Federal Supreme Court decisions connector
+
+Surface new court decisions that cite or interpret monitored federal law.
+
+Acceptance criteria:
+
+- Limit the first release to the Swiss Federal Supreme Court official latest/date index, yearly sitemaps, databases, and official decision HTML; broader courts are HL-055.
+- Complete a source-contract, terms, and robots review; enforce the published two-second crawl delay. No undocumented third-party aggregator may be the authority of record.
+- Store stable Aza/docket identity, court/chamber, decision date and insertion/publication date separately, language, descriptors/norms when exposed, official JumpCGI/source URL, artifact hash, and immutable extracted HTML.
+- Poll the latest/date index with an overlap and reconcile current/previous yearly sitemaps by stable identity and `lastmod`. Avoid repeatedly downloading the giant all-decisions RSS snapshot.
+- Do not fabricate a source PDF: free official decisions are generally HTML, so store/reopen the authoritative representation that actually exists.
+- Template drift, challenge pages, a crawl-delay violation, or an implausible empty interval sets connector health to degraded without advancing past uncertain coverage.
+- Extract cited acts/articles and official identifiers as evidence-backed `cites`/`interprets` candidates. Never describe a judgment as amending the wording of a statute.
+- Isolate per-decision failures so one bad PDF does not lose the rest of a page; retain a retryable item error and safe checkpoint.
+- Verify at least one newly listed decision, repeated overlap, multilingual metadata where available, a cited norm, original artifact reopening, and idempotent rerun.
+
+<a id="hl-042"></a>
+### HL-042 — Schedule incremental synchronization, deduplicate official work, and fan out watch events
+
+Run the core connectors continuously without fetching the same public evidence once per organization.
+
+Acceptance criteria:
+
+- Use the durable scheduler to enqueue each connector according to a persisted schedule, per-source rate limits, overlap policy, jitter, maintenance window, and manual `Sync now` control.
+- Lock one connector/checkpoint safely across workers while allowing bounded per-document processing; a scheduler restart cannot enqueue an unbounded duplicate run.
+- Deduplicate canonical documents, artifacts, versions, and regulatory events before creating organization feed work. Store one shared ingestion result and fan it out to matching watches.
+- Show last success, current cursor/watermark, next run, duration, new/changed/failed counts, freshness lag, partial coverage, and health in the admin UI.
+- Allow pause/resume and retry from the last safe checkpoint without deleting saved corpus data or organization history.
+- Apply backpressure when parsing, disk, or AI queues are saturated; ingestion does not exhaust RAM or starve interactive registry reads.
+- Prove that two organizations watching the same Fedlex act receive their own event/feed state while the official artifact and deterministic comparison are stored once.
+
+<a id="hl-043"></a>
+### HL-043 — Ingest official notices and source-linked news from the three core authorities
+
+Capture relevant official context around laws, parliamentary business, and decisions without claiming broad web-news coverage yet.
+
+Acceptance criteria:
+
+- Discover stable official notices, press items, or publication feeds exposed by Fedlex/federal authorities, Parliament, and the Federal Supreme Court when their source contract permits reliable incremental ingestion.
+- Normalize an item as `official_notice` with authority, title, dates, language, official URL, immutable body/artifact when available, and precise provenance.
+- Extract direct document identifiers and citations into deterministic candidates; send only bounded unsupported candidates to later impact analysis.
+- Deduplicate syndicated or multilingual manifestations without merging substantively distinct notices; preserve each official language expression.
+- Make clear in the registry that a notice is contextual information, not a statute, enacted amendment, or court holding.
+- If a core authority has no stable official notice interface, document that limitation and keep its connector healthy for supported legal records rather than adding a fragile unbounded crawl.
+- Defer broader Federal Council, department, regulator, consultation, and general news monitoring to HL-050.
+
+## M8 — Evidence-backed impact intelligence
+
+<a id="hl-044"></a>
+### HL-044 — Generate an explainable relation candidate set for every new regulatory event
+
+Find which monitored laws could be affected without comparing every new item with every law.
+
+Acceptance criteria:
+
+- Create confirmed relations directly from official metadata and exact identifiers/citations, preserving the supporting metadata field, passage, page, or artifact.
+- Generate a bounded second-stage candidate set with normalized titles, authority/type metadata, article/norm references, and PostgreSQL multilingual full-text search.
+- Store why each watched law became a candidate, the rules/index revision, source and target versions, score components, and candidate expiry/status.
+- Enforce per-event and per-organization limits and reuse the same general candidate relation for all watching organizations before personalizing impact.
+- Evaluate recall and noise on a labelled set containing enactment/repeal, parliamentary proposals, decisions, notices, exact references, and unrelated controls.
+- Do not use similarity as evidence or show a relation as confirmed merely because it ranked highly. Keep unsupported/title-only matches proposed.
+- Add embeddings/pgvector only through HL-051 if the labelled benchmark proves a material recall gap that deterministic and full-text methods cannot close.
+
+<a id="hl-045"></a>
+### HL-045 — Analyse candidate effects with local Apertus and exact saved evidence
+
+Turn a candidate relation into a useful, reviewable potential-impact conclusion for each affected organization.
+
+Acceptance criteria:
+
+- Queue background relation analysis on the local backend by default and let higher-priority interactive Ask jobs pre-empt new background batches without cancelling completed work.
+- Supply the exact new event/version evidence, relevant monitored-law passages/current lifecycle, deterministic relation facts, and organization profile; treat all source text as evidence rather than instructions.
+- Return a small validated structure with supported/unsupported, proposed relation type, potential impact, confidence band, concise explanation, affected business areas, actions, and evidence-row numbers.
+- Materialize citations from supplied rows on the server, allow one constrained repair, and reject invalid JSON/schema/out-of-range citations. Never display an unsupported AI relation as fact.
+- Keep official repeal/replacement/amendment metadata authoritative and visually distinct from AI-proposed potential effects; a model cannot overwrite a confirmed relation.
+- Cache only when event/target versions, evidence, organization profile, prompt, model/runtime fingerprint, and analysis schema all match. Preserve successful and failed history.
+- Batch within the measured local context and GPU limits, expose queued/running/coverage states, and leave registry/evidence usable when the model is offline or backlogged.
+
+<a id="hl-046"></a>
+### HL-046 — Add an organization impact inbox and cross-links on monitored laws
+
+Give users one place to understand why a new law, proposal, decision, or notice matters to what they monitor.
+
+Acceptance criteria:
+
+- Create one organization feed item per source event and group every affected monitored law beneath it, rather than producing duplicate cards for the same event.
+- Distinguish `Confirmed relation`, `Possible impact`, `Awaiting analysis`, `Analysis failed`, and `No supported impact` with source, date, severity, and evidence coverage.
+- Explain why the item appears, show the potential effect and suggested next step per watched law, and open the source artifact, relation evidence, document timeline, and comparison.
+- When an official act replaces a monitored act, show reciprocal successor/predecessor links and let an organization administrator add the successor to monitoring without losing the predecessor's history.
+- Support source/severity/type/watched-law/read-state filters plus per-user unread, read, dismissed, and muted state; these actions never delete the shared event or another user's state.
+- Reanalysis creates a new history record and updates the current presentation only after a valid result. Existing evidence and prior conclusions remain inspectable.
+- A viewer can read and manage personal read state but cannot confirm/reject a proposed relation, run analysis, change monitoring, or edit shared data.
+
+## M9 — Public beta operations and acceptance
+
+<a id="hl-047"></a>
+### HL-047 — Build separate platform and organization administration surfaces
+
+Expose the controls needed to operate one public installation while keeping organization administrators inside their own workspace.
+
+Acceptance criteria:
+
+- Platform admin pages cover local model catalogue/downloads/deployments, GPU/runtime health and benchmark, global connectors/schedules, queues/jobs/dead letters, disk/retention, backup status, global prompt defaults, and service health.
+- Organization admin pages cover membership/invitations, watchlists/custom sources, company profile, organization prompt overrides, quotas/usage, and optional cloud-provider opt-in/credentials.
+- Keep credentials write-only and encrypted with a deployment key; show replacement/removal/test status without returning secret values to the browser or logs.
+- Every sensitive action has API authorization, validation, an actor/time/result record, and a confirmation step only where the action is destructive or sends data to a newly enabled cloud destination.
+- Clearly label global versus organization scope and local versus cloud execution. No organization administrator can start arbitrary binaries, edit another organization, or access the Docker socket.
+- Provide a compact system-status view with queue age, connector freshness, model slots, GPU/RAM/disk, recent failures, and backup age, with links to bounded diagnostics.
+- The CLI remains the bootstrap/recovery path for platform-admin assignment when the web admin surface is unavailable.
+
+<a id="hl-048"></a>
+### HL-048 — Ship a reproducible public single-server deployment and operations baseline
+
+Make the i7/32 GB/two-GTX-1080 server safe and recoverable enough for a public beta.
+
+Acceptance criteria:
+
+- Provide one documented production Compose/override command with Caddy TLS, fixed image versions/digests, startup migrations, health/readiness checks, restart policies, private networks, and named volumes.
+- Publish only ports 80/443. Refuse insecure production defaults such as anonymous mutation, placeholder session/deployment keys, public databases/Redis/llama.cpp, or unbounded uploads.
+- Configure PostgreSQL backups plus document/evidence/configuration backup to a separate destination; treat downloaded models as reproducible artifacts unless explicitly retained.
+- Configure Redis AOF `everysec` and `noeviction`, while proving PostgreSQL job recovery after Redis loss. Document the single-host outage and data-loss boundaries honestly.
+- Add bounded retention/cleanup for integration diagnostics, job attempts, temporary downloads, and orphan artifacts without deleting immutable evidence or user-selected AI history unexpectedly.
+- Add structured correlation across request, job, connector run, document/event, comparison/analysis, and organization; expose metrics for API, DB, Redis, queues, connectors, model/GPU, disk, and backup age without high-cardinality secret labels.
+- Rehearse install, upgrade with pre-migration backup, certificate renewal, model re-download, database/artifact restore, and rollback limits from the runbook.
+
+<a id="hl-049"></a>
+### HL-049 — Pass recovery, fairness, and the reproducible 100-user capacity gate
+
+Measure the public claim on the actual target host and tune shipped limits to what it can sustain.
+
+Acceptance criteria:
+
+- Check in a reproducible scenario with 100 accounts across several organizations, 10–20 concurrent registry/evidence readers, concurrent filters, scans, connector work, and 20 accepted AI submissions.
+- Meet registry/detail read p95 below 500 ms, command validation/job enqueue p95 below 1 second, and HTTP error rate below 1%, excluding intentional validation/rate-limit responses.
+- Keep database connections, API/worker memory, CPU parse concurrency, queue size, and disk growth bounded; the host does not thrash swap and the GPUs do not OOM.
+- Apply fair organization admission so one large comparison cannot indefinitely block another organization's short interactive request. Report active GPU slots and honest estimated/waiting state.
+- Kill/restart API, CPU worker, AI worker, Redis, model runner, and scheduler during the scenario; queued work recovers without duplicate versions/events/comparisons/analyses or false success.
+- Record CPU, RAM, VRAM, disk/network, model load time, context, input/output throughput, queue wait/drain, connector duration, failure/retry counts, and backup/restore duration.
+- If the desired Apertus 8B profile fails, ship one split runner or a smaller verified model and update the capacity contract. The measured result overrides the desired model name.
+
+## Work after public-beta acceptance
+
+<a id="hl-050"></a>
+### HL-050 — Add broader official regulatory news and consultation connectors
+
+Extend beyond source-linked notices only after the core Fedlex, Parliament, and court connectors are reliable.
+
+Acceptance criteria:
+
+- Prioritize official Federal Council, department, regulator, and consultation APIs/feeds/publication lists; document source contract, attribution, cadence, and coverage for each.
+- Reuse HL-038 ingestion and HL-044 candidate generation; do not introduce a parallel crawler, evidence model, or notification store.
+- Label news/consultation status precisely and preserve official artifacts; never present commentary or a proposal as enacted law.
+- Add a connector only after its incremental behavior, deduplication, drift detection, and bounded live verification pass.
+
+<a id="hl-051"></a>
+### HL-051 — Add pgvector only if a labelled candidate-recall benchmark justifies it
+
+Improve multilingual relation discovery without weakening exact evidence requirements.
+
+Acceptance criteria:
+
+- Compare deterministic identifiers plus PostgreSQL full-text candidates against a labelled relation set and document the specific missed cases and required recall gain.
+- If justified, store versioned embeddings in the existing PostgreSQL database, record the embedding model/revision/language behavior, and bound indexing/reindexing work through the queues.
+- Measure recall, precision/noise, latency, disk/RAM, and downstream citation correctness before enabling semantic candidates by default.
+- Keep embeddings as candidate-generation signals only; every displayed relation still needs official metadata, exact saved passages, or a validated local-AI evidence result.
+- Leave the feature disabled and close the task with evidence if it provides no material benefit.
+
+<a id="hl-052"></a>
+### HL-052 — Add opt-in email and web digests
+
+Summarize the existing impact inbox without turning notification delivery into a second source of truth.
+
+Acceptance criteria:
+
+- Let each user opt into daily/weekly digests, choose organization/severity/source filters, and unsubscribe directly.
+- Generate digests from persisted feed items and evidence links; delivery failure never alters read state or legal-event history.
+- Deduplicate sends with durable jobs, apply rate limits/retries, and store bounded delivery status without logging mail credentials or document bodies unnecessarily.
+- Keep in-app notifications fully usable when email is not configured.
+
+<a id="hl-053"></a>
+### HL-053 — Add relation review workflow and a visual graph only after list/inbox validation
+
+Help administrators curate proposed relations when real usage proves that a graph adds value.
+
+Acceptance criteria:
+
+- Provide evidence-first confirm/reject/annotate actions with reviewer, timestamp, reason, and versioned history; never erase the original model/rule proposal.
+- Show graph nodes/edges only for the user's authorized corpus and make confidence/provenance/status accessible without relying on color.
+- Keep the timeline/list/inbox as complete alternatives; no essential action requires manipulating a graph.
+- Measure whether the graph improves review time or correctness before making it a primary navigation surface.
+
+<a id="hl-054"></a>
+### HL-054 — Add account recovery, verification, 2FA, or SSO only as public-use needs mature
+
+Strengthen identity workflows without blocking the deliberately small first registration experience.
+
+Acceptance criteria:
+
+- Prioritize verified-email and expiring password-reset flows with non-enumerating responses, hashed one-time tokens, rate limits, and session revocation.
+- Add TOTP 2FA or an external identity provider only after a documented user/operations need; never create a custom SSO protocol.
+- Preserve organization invitations, last-admin protection, CLI platform-admin recovery, and API authorization in every new flow.
+- Update privacy/retention and recovery runbooks before enabling any new identity data or provider.
+
+<a id="hl-055"></a>
+### HL-055 — Expand court coverage after the Federal Supreme Court connector is stable
+
+Add further federal or cantonal courts source by source rather than implying universal Swiss coverage.
+
+Acceptance criteria:
+
+- Select each court from demonstrated user value and a maintainable official source contract, not from scrape convenience alone.
+- Map its identifiers, hierarchy, dates, languages, artifacts, cited norms, coverage limits, and reuse terms into HL-036/HL-038.
+- Keep source-specific health and coverage visible; absence from one database never means absence of a decision.
+- Pass fixture/live smoke, incremental overlap, deduplication, drift detection, provenance, and evidence reopening before declaring support.
+
+<a id="hl-056"></a>
+### HL-056 — Split services across hosts or add high availability only after measured need
+
+Keep a documented scale-out path without paying its operational cost in the first public deployment.
+
+Acceptance criteria:
+
+- Use HL-049 measurements and outage history to identify the actual bottleneck or availability requirement before changing topology.
+- Preserve the same PostgreSQL job contract, connector cursors, artifact identities, model fingerprints, and authorization boundaries across hosts.
+- Add shared/object artifact storage, externalized PostgreSQL/Redis, remote GPU routing, or replicas only with explicit consistency, backup, TLS, and failure-recovery tests.
+- Do not call a multi-host deployment highly available until database, broker, artifacts, ingress, and model routing all have tested failure behavior.
+
 ## Shared completion rule
 
 An item is done only when its acceptance criteria are demonstrated through the actual UI/API/persistence path where applicable, meaningful checks pass for its state or evidence logic, and user-visible error states are handled. Completing this backlog document does not complete any development item.
 
-Minimum release evidence is: a verified public source; a saved current version; an imported earlier version with provenance; a real comparison; an inspectable diff; a successful real Apertus analysis; a question with a working citation; and successful repeat/restart/failure checks. Both **P0 and P1** items are required for the agreed MVP.
+Minimum MVP evidence remains: a verified public source; a saved current version; an imported earlier version with provenance; a real comparison; an inspectable diff; a successful real Apertus analysis; a question with a working citation; and successful repeat/restart/failure checks. The public beta additionally requires every P0/P1 item in `HL-029`–`HL-049`, source-contract evidence for all three core connectors, local-model and recovery benchmarks on the target host, organization-isolation checks, and the reproducible capacity scenario.
 
-Excluded from this backlog: enterprise SSO, multi-tenancy, granular role systems, audit platforms, broad web crawling, scheduled worker fleets, knowledge graphs, autonomous agent orchestration, OCR, login-gated ingestion, model training, and automatic legal decisions. Ordinary input validation, bounded fetching, safe text rendering, and keeping credentials out of Git are basic implementation hygiene, not separate enterprise projects.
+Still excluded from the public-beta release: Kubernetes, multi-host workers, database/broker high availability, enterprise SSO/SCIM, arbitrary custom roles, unbounded crawling, universal Swiss court coverage, an ornamental graph UI, OCR, login-gated ingestion, model training/fine-tuning, and automatic legal decisions. They remain future work only where an item above names a measurable entry condition. Ordinary validation, bounded fetching, safe rendering, authorization, secret handling, backups, and recovery are implementation requirements rather than optional enterprise decoration.

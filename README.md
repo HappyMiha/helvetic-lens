@@ -2,11 +2,13 @@
 
 **See what changed. Understand what matters.**
 
-Helvetic Lens lets users connect regulatory websites, add specific laws or documents to a watchlist, import earlier versions, and run real checks against current source content. It turns detected differences into visual comparisons, plain-language impact summaries, and practical next steps with links back to the evidence.
+Helvetic Lens lets users connect regulatory websites, add specific laws or documents to a watchlist, import earlier versions, and run real checks against current source content. It turns detected differences into visual comparisons, plain-language impact summaries, and practical next steps with links back to the evidence. The next public release expands that proven workflow into a Swiss legal registry that discovers official laws, parliamentary business, court decisions, and their evidence-backed possible effects on monitored documents.
 
 The MVP must be a functional product with a narrow scope. Sources are configured through the interface, data persists between sessions, and the demonstration uses the same fetching, comparison, and analysis pipeline as everyday use.
 
 > **Project status:** The model-enabled MVP works end to end: source connections, direct URLs, imports, immutable history, live scans, saved comparisons, visual evidence, persisted Apertus settings, impact analysis, cited questions, saved AI history, editable prompts, inspectable integration logs, and controlled removal of sources or monitored documents. Live Apertus checks include a large complete comparison processed without truncation. See [verification notes](docs/VERIFICATION.md).
+
+> **Public-beta direction:** Local AI becomes the default and cloud providers become explicit optional adapters. The target remains one physical i7/32 GB/two-GTX-1080 server and one Compose deployment, with durable PostgreSQL jobs, Redis/Celery queues, managed quantized models, organization workspaces, login, three official-source connectors, a time-grouped registry, and an impact inbox. These capabilities are planned, not yet implemented. See the [architecture decision](docs/ARCHITECTURE.md) and `HL-029`–`HL-049` in [BACKLOG.md](BACKLOG.md).
 
 Development tasks, priorities, dependencies, and acceptance criteria are tracked in [BACKLOG.md](BACKLOG.md).
 
@@ -51,9 +53,9 @@ npm run test:api
 
 [Follow the demo guide](docs/DEMO.md) to connect a site, import an older version, fetch current content, and inspect the exact **30 → 60** wording change.
 
-## Connect a real Apertus deployment
+## Current MVP inference options
 
-The intended model is [Apertus v1.5 8B](https://huggingface.co/swiss-ai/Apertus-v1.5-8B). The served ID depends on your provider. Model weights are not bundled and no alternate model is silently substituted.
+The current MVP can use local Docker, Infomaniak, or another compatible endpoint. The public-beta target makes a managed local quantized Apertus deployment the normal path; cloud use remains an explicit organization-level opt-in and is never a silent fallback. The intended larger model is [Apertus v1.5 8B](https://huggingface.co/swiss-ai/Apertus-v1.5-8B), subject to the measured GTX 1080 compatibility gate. The served ID depends on the runtime/provider. Model weights are not bundled and no alternate model is silently substituted.
 
 Open [Settings](http://127.0.0.1:3000/settings) from the sidebar or mobile navigation:
 
@@ -68,7 +70,7 @@ For **Hugging Face Inference Providers**, choose **Use Hugging Face** to fill `h
 
 For **Infomaniak AI**, choose **Infomaniak AI**, enter the numeric Product ID and a product-authorized API token, then choose **Load models**. Helvetic Lens derives `https://api.infomaniak.com/2/ai/{product_id}/openai/v1`, calls the provider's [`/models` endpoint](https://developer.infomaniak.com/docs/api/get/2/ai/%7Bproduct_id%7D/openai/v1/models), and fills the model dropdown with the IDs actually available to that product. Completion requests follow Infomaniak's [OpenAI-compatible chat endpoint](https://developer.infomaniak.com/docs/api/post/2/ai/%7Bproduct_id%7D/openai/v1/chat/completions) and use `max_completion_tokens`. The generated endpoint is read-only in the interface, preventing small URL edits from producing a broken route.
 
-For a local diagnostic fallback on Docker Desktop, run `./scripts/local_apertus.ps1`. It starts the optional `local-ai` Compose profile with the official [`llama.cpp` server image](https://github.com/ggml-org/llama.cpp/blob/master/docs/docker.md), downloads a roughly 3 GB [BF16 GGUF conversion](https://huggingface.co/MrMeOrYou/Apertus-v1.1-1.5B-Instruct-GGUF) of the official [`swiss-ai/Apertus-v1.1-1.5B-Instruct`](https://huggingface.co/swiss-ai/Apertus-v1.1-1.5B-Instruct) checkpoint into a persistent volume, applies the canonical Apertus chat format, and makes a real structured chat-completion request. The runner exposes one 4,096-token inference slot: overlapping calls wait instead of competing for the shared KV cache and failing with a context-size error. For each bounded batch, Helvetic Lens asks the compact model only for a schema-constrained impact/support signal and valid citation-row numbers. It then renders extractive text from those validated saved rows and aggregates all batches locally, avoiding echoed evidence, unfinished prose, and a final synthesis request that would exceed the local context window. Rerun the script after pulling a Compose change so the container is recreated with the current command. Then choose **Local Docker Apertus** and **Load local models** in Settings. Helvetic Lens uses `http://127.0.0.1:12435/v1` when its API runs on the host and `http://local-apertus:8080/v1` from Compose. No remote-provider credential is sent to this local endpoint, and an already saved Infomaniak token is preserved. The compact 1.5B model is useful for connectivity and pipeline tests; use the selected larger hosted model for stronger regulatory analysis.
+For the current local diagnostic profile on Docker Desktop, run `./scripts/local_apertus.ps1`. It starts the optional `local-ai` Compose profile with the official [`llama.cpp` server image](https://github.com/ggml-org/llama.cpp/blob/master/docs/docker.md), downloads a roughly 3 GB [BF16 GGUF conversion](https://huggingface.co/MrMeOrYou/Apertus-v1.1-1.5B-Instruct-GGUF) of the official [`swiss-ai/Apertus-v1.1-1.5B-Instruct`](https://huggingface.co/swiss-ai/Apertus-v1.1-1.5B-Instruct) checkpoint into a persistent volume, applies the canonical Apertus chat format, and makes a real structured chat-completion request. The runner exposes one 4,096-token inference slot: overlapping calls wait instead of competing for the shared KV cache and failing with a context-size error. For each bounded batch, Helvetic Lens asks the compact model only for a schema-constrained impact/support signal and valid citation-row numbers. It then renders extractive text from those validated saved rows and aggregates all batches locally, avoiding echoed evidence, unfinished prose, and a final synthesis request that would exceed the local context window. Rerun the script after pulling a Compose change so the container is recreated with the current command. Then choose **Local Docker Apertus** and **Load local models** in Settings. Helvetic Lens uses `http://127.0.0.1:12435/v1` when its API runs on the host and `http://local-apertus:8080/v1` from Compose. No remote-provider credential is sent to this local endpoint, and an already saved Infomaniak token is preserved. The compact 1.5B model is useful for connectivity and pipeline tests. `HL-031`/`HL-032` replace this fixed diagnostic profile with model selection, verified resumable downloads, compatibility checks, GPU profiles, health/benchmark controls, and local-first routing.
 
 Connection errors distinguish a rejected key (401), denied model access (403), an incorrect route/model (404), rate limit or quota (429), an unreachable server, a timeout, and a request that exceeds the model context window. Context-limit failures are not retried unchanged. Every useful retry is visible as a separate redacted integration-log entry. Provider response bodies and credentials are not echoed to the browser.
 
@@ -143,7 +145,17 @@ Use reasonable fetch timeouts and download limits. If a page requires unsupporte
 
 Current defaults: 8 MB per document, 25 seconds per source request, 1,000 PDF pages, 1.2 million extracted characters, 6,000 passages, and 25 documents per scan. Whitespace is normalised; changed words, numbers, and dates remain visible. Complex layouts and page headers can create extraction noise, so inspect previews. Optional Firecrawl requires your own server-side key and usable quota; its live path is not validated in this environment.
 
-The API uses one process and one worker. Do not add multiple API replicas or workers: coordination and restart recovery are local to that service. The app binds to loopback and has no user authentication. It is for a local hackathon workspace, not unattended public hosting.
+The current MVP uses one API process and process-local background work, binds to loopback, and has no user authentication. Do not expose that configuration publicly. The planned public-beta architecture replaces this limitation with PostgreSQL-backed durable jobs, Redis/Celery workers, Caddy/TLS, organization sessions and roles, private inference endpoints, backups, and measured queue capacity on one server; see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+Public beta adds three bounded official connectors rather than patches for individual URLs:
+
+| Coverage | Planned machine path | Important boundary |
+| --- | --- | --- |
+| Swiss federal law | Fedlex RSS for prompt discovery plus ELI/SPARQL/JOLux reconciliation and official cross-law impacts | RSS is only a recent window; reconciliation is mandatory, and SR/RS number is an identifier rather than immutable identity. |
+| Parliament | Official Parliament web service for affairs, status, documents, committees, sessions, and votes | Older affairs can change, so active-item polling is combined with a complete `(id, updated)` reconciliation and required attribution. |
+| Court decisions | Swiss Federal Supreme Court latest/date index and yearly sitemaps, followed by official decision HTML | The first release does not claim all Swiss courts; it respects the published two-second crawl delay and separates decision date from publication/insertion date. |
+
+Fedlex official lifecycle/impact metadata and exact citations are evaluated before any model proposal. Parliamentary initiatives and judgments are labelled by their actual status: a proposal is not enacted law, and a judgment may cite or interpret an act without rewriting its statutory text.
 
 ## Previous versions and a reproducible demo
 
@@ -178,48 +190,42 @@ This can be repeated without changing the external website or resetting history.
 
 For example, a clearly synthetic demo could replace **"within 30 days"** with **"within 60 days"**. The interface should highlight **30 -> 60** in the actual document comparison, not merely display a card saying that something changed.
 
-## Proposed stack
+## Stack: current baseline and planned public beta
 
-| Layer | Choice | Role in the MVP |
+| Layer | Choice | Status and role |
 | --- | --- | --- |
-| Web app | **Next.js** | Source setup, law watchlist, scan activity, version history, diff view, and question interface. |
-| Styling and components | **Tailwind CSS + shadcn/ui** | Build a polished, consistent interface quickly. |
-| Backend | **FastAPI** | Discover document links, fetch sources, import versions, expose scan progress, compare text, and serve analysis and questions. |
-| Database | **PostgreSQL** | Persist sources, tracked laws, immutable document snapshots, scans, comparisons, and saved analyses. |
-| Language model | **Apertus v1.5 8B** | Proposed target for impact analysis and cited answers, through one configurable inference endpoint. |
-| Content extraction | **BeautifulSoup + PyMuPDF** | Extract text from HTML and text-based PDFs. |
-| Diff engine | **Python `difflib`** | Compare normalized passages and produce word highlights for the visual comparison. |
-| Optional retrieval | **pgvector** | Consider retrieval only for future corpus-wide questions. It must never replace the complete deterministic diff for a selected comparison. |
+| Web app | **Next.js** | Implemented; adds registry, impact inbox, login, organization, and administration views for public beta. |
+| Styling and components | **Tailwind CSS + shadcn/ui** | Implemented; keeps the expanded interface consistent and accessible. |
+| Backend | **FastAPI** | Implemented; remains one modular codebase used by the API, scheduler, and worker processes. |
+| System of record | **PostgreSQL** | Implemented for MVP data; expands to durable jobs, shared corpus, regulatory events/relations, users, organizations, sessions, and feed state. |
+| Queue and scheduler | **Redis + Celery/Beat** | Planned; broker, short leases/rate counters, independent queues, scheduled connectors, progress, retries, and recovery. PostgreSQL retains durable job history. |
+| Public entry point | **Caddy** | Planned; TLS and routing on ports 80/443 while data, workers, and inference stay private. |
+| Local inference | **llama.cpp + quantized Apertus** | A compact fixed diagnostic profile is implemented. Managed model selection/downloads, hardware profiles, and local-first routing are planned; Apertus 8B becomes default only after the dual-GTX-1080 benchmark. |
+| Optional inference | **Infomaniak/OpenAI-compatible adapters** | Implemented; retained as explicit organization opt-ins, disabled on a clean public installation and never used as silent fallback. |
+| Content and comparison | **BeautifulSoup + PyMuPDF + Python `difflib`** | Implemented; immutable extraction/evidence and complete deterministic comparisons remain the foundation. |
+| Optional candidate retrieval | **pgvector** | Deferred until a labelled cross-document recall benchmark proves a material gap. It never replaces complete comparison evidence. |
 
-The adapter, settings interface, cited analysis, and large-diff batching have been verified against a served Apertus endpoint. Hosting or choosing a model provider remains a separate setup choice, not another product feature.
+## Keep one coherent deployment
 
-## Keep the implementation small
+Public beta stays in one repository and on one physical server. API, workers, scheduler, model manager, and inference runners are separate processes from the same deployment because their workloads and restart behavior differ; they are not independently operated product services.
 
-Use one Next.js app, one FastAPI service, one PostgreSQL database, and one Apertus endpoint.
-
-The core pipeline is:
+The two evidence pipelines share the same corpus and rules:
 
 ```text
-User-configured website -> discover documents -> user selects tracked law
-Direct law URL --------------------------------------> tracked law
+Direct URL / earlier artifact
+  -> fetch -> immutable version -> deterministic comparison -> local Apertus -> cited result
 
-Tracked law -> fetch current HTML/PDF -> extract text -> current snapshot
-Earlier file/text/URL ----------------> extract text -> imported snapshot
-
-Selected baseline + current snapshot
-  -> compute passage and word differences
-  -> show the visual diff
-  -> ask Apertus for impact, actions, and cited answers
+Fedlex / Parliament / Federal Supreme Court
+  -> incremental connector -> regulatory event -> exact identifier/full-text candidates
+  -> local Apertus potential-impact review -> organization impact inbox -> cited evidence
 ```
 
-- Keep the initial data model small: **Source, TrackedLaw, DocumentVersion, Scan, Comparison**, and saved analysis attached to a comparison. A comparison explicitly references its old and new version IDs.
-- Store source URLs or file provenance, fetch/import times, extracted text, content hashes, and paragraph/page references. Preserve imported artifacts and enough snapshot content to reopen cited evidence after a live page changes; local persistent file storage is sufficient for a single deployment.
-- Normalize whitespace and remove obvious navigation boilerplate while preserving substantive dates, headings, article numbers, and legal wording. Show an extraction preview so users can spot unsuitable input.
-- A failed fetch or extraction must not replace the last good version. A failed analysis must not hide a valid diff or be reported as a completed analysis.
-- Persist a versioned deterministic article/passage diff that covers every passage in both saved versions. Pass every changed old/new passage to Apertus without retrieval ranking or truncation. Validate structured output and citations, then allow one constrained repair request for invalid JSON/schema/citations before rejecting it.
-- Attach stable passage references during extraction so displayed citations map to saved evidence. Distinguish source-stated dates from dates supplied by users.
-- Save analysis results for each version pair so opening the same change does not regenerate the summary every time.
-- Process small scan batches in the FastAPI service and expose actual per-stage status to the interface. Record interruptions as incomplete runs. A separate worker fleet, distributed queue, or orchestration framework is not needed for this scope.
+- Preserve source URLs, official identifiers, raw artifacts, hashes, dates with provenance, stable passages/pages, and complete deterministic diffs. A failed source or model never overwrites the last valid evidence.
+- Fetch and parse an official public version once, then attach organization watch state and company-specific analysis separately. Private uploads remain inside their organization.
+- Persist every long command before queueing it. Redis may redeliver; database constraints and idempotency keys prevent duplicate legal records or conclusions.
+- Keep local inference as the clean-install policy. If no model is ready, registry, evidence, timelines, and diffs still work and AI jobs wait visibly.
+- Treat official lifecycle/link metadata as facts and model-generated relations as labelled proposals with validated citations.
+- Tune connector concurrency, CPU extraction, model context, and GPU slots from measured results on the target host.
 
 ## Build order
 
@@ -232,7 +238,11 @@ Selected baseline + current snapshot
 - [x] Connect Apertus and display an impact summary with suggested actions and evidence.
 - [x] Add Ask Apertus with working citations.
 - [x] Verify the complete workflow with real supported sources and an imported previous version, then rehearse the demo through that same workflow.
-- [ ] If time remains, add the impact matrix and assess whether pgvector is actually needed.
+- [ ] **M6:** durable jobs, managed local models/GPU profiles, shared-corpus migration, login, organizations, and enforced roles (`HL-029`–`HL-035`).
+- [ ] **M7:** normalized registry plus incremental Fedlex, Parliament, Federal Supreme Court, scheduling, and official notices (`HL-036`–`HL-043`).
+- [ ] **M8:** explainable relation candidates, local impact analysis, and organization impact inbox (`HL-044`–`HL-046`).
+- [ ] **M9:** administration, public single-server operations, recovery rehearsal, and measured 100-user gate (`HL-047`–`HL-049`).
+- [ ] Add broader news, pgvector, digests, graph review, identity refinements, more courts, or multi-host deployment only after their entry conditions (`HL-050`–`HL-056`).
 
 ## Definition of done
 
@@ -246,11 +256,14 @@ Selected baseline + current snapshot
 
 A dashboard with preset change cards or a scan button that only plays an animation does not meet this definition.
 
-## Not in this MVP
+Public-beta acceptance additionally requires local-only clean-install behavior, model download/benchmark/recovery on the target GPUs, organization isolation and viewer authorization, restart-safe jobs, live contract checks for all three official connectors, correct time-grouped registry events, evidence-backed cross-links, and the checked-in 100-user scenario from `HL-049`.
 
-- Enterprise SSO, multi-tenancy, granular roles, audit-log platforms, or compliance certification infrastructure.
-- Exhaustive website crawling, universal site compatibility, complex schedules, distributed workers, or a large ingestion platform.
-- Knowledge graphs, autonomous agent frameworks, or training/fine-tuning a model.
-- OCR for scanned PDFs, login-gated sources, exhaustive jurisdiction coverage, or automatic legal decisions.
+## Product boundaries
 
-Keep website connections, law management, previous-version import, real scanning, and visible comparisons in the core scope. Add infrastructure only when a demonstrated need justifies it.
+- The current MVP remains a local single-workspace product until `HL-029`–`HL-049` are implemented; its loopback Compose file is not a public deployment.
+- Public beta adds two organization roles and a deployment administrator, not enterprise SSO, SCIM, arbitrary custom roles, or compliance certification.
+- It adds bounded official connectors and scheduled workers, not an exhaustive crawler or a claim of universal Swiss legal coverage.
+- It stores an evidence-backed relation graph as a data model, but a visual graph and pgvector wait for measured value.
+- Kubernetes, multi-host workers, database/broker high availability, OCR, login-gated ingestion, model training/fine-tuning, and automatic legal decisions remain outside the public-beta release.
+
+The complete task definitions, dependencies, acceptance gates, and explicitly deferred work live in [BACKLOG.md](BACKLOG.md).
