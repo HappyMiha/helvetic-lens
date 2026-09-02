@@ -237,6 +237,21 @@ export type Change = {
   significance?:
     "substantive" | "structural" | "formatting" | "uncertain" | "unchanged";
   change_type?: string;
+  classification?:
+    | "substantive"
+    | "added"
+    | "removed"
+    | "moved"
+    | "renumbered"
+    | "formatting_only"
+    | "uncertain"
+    | "unchanged";
+  match?: {
+    reason: string;
+    score: number;
+    components: Record<string, number>;
+    ambiguous: boolean;
+  };
   material?: boolean;
   old: Passage | null;
   new: Passage | null;
@@ -268,6 +283,30 @@ export type Comparison = {
       formatting: number;
       uncertain: number;
     };
+    semantic_counts?: Record<string, number>;
+    semantic_changes?: {
+      id: string;
+      kind: Change["kind"];
+      classification: NonNullable<Change["classification"]>;
+      significance?: Change["significance"];
+      change_type?: string;
+      material: boolean;
+      match?: Change["match"];
+      old_unit_id?: string | null;
+      new_unit_id?: string | null;
+      old_position?: number | null;
+      new_position?: number | null;
+    }[];
+    change_clusters?: {
+      id: string;
+      classifications: string[];
+      change_ids: string[];
+      old_unit_ids: string[];
+      new_unit_ids: string[];
+      context_before_unit_id?: string | null;
+      context_after_unit_id?: string | null;
+      ambiguous: boolean;
+    }[];
     material_count?: number;
     material_changed?: boolean;
     changed: boolean;

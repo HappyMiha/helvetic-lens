@@ -2,6 +2,15 @@
 
 The source-to-diff workflow, Settings page, and live Apertus path are verified.
 
+## Legal-unit semantic diff — 3 September 2026
+
+- 148 API regressions pass with diff schema v6. The stored result contains both complete exact passage/word evidence and a legal-unit projection with title, chapter, section, article, paragraph, littera, and number paths.
+- Each paired unit records why it matched, a bounded score broken into stable label, content, neighbour, and parent-context signals, plus an ambiguity flag. Stable article labels can retain a real full-text replacement that low lexical similarity would otherwise split into unrelated add/remove rows.
+- One inserted article remains one material cluster while following unchanged articles are classified as renumbered. A moved unchanged section is classified as moved with zero material items.
+- A real 30-to-60-day obligation change remains substantive. A true end-of-line split word and repeated page headers are formatting-only, while an ordinary hyphen-space edit, punctuation, decimals, table values, and numbers remain material.
+- Complete-replacement coverage asserts every old and new unit remains in the exact audit and in the material add/remove set. Existing randomized and 1,000-passage coverage tests still pass.
+- AI cache fingerprints include semantic class and match metadata. The default dossier includes only substantive, added, removed, and uncertain units; complete exact differences remain reopenable in the UI.
+
 ## Document-identity gate — 3 September 2026
 
 - 142 API regressions pass. Seven identity-specific cases cover persisted authority/ELI/language/extraction evidence, audited confirmation of unknown assignments, immutable rejection of an official mismatch, scan quarantine, AI cache invalidation after reassignment, and deletion of a mistaken non-current import.

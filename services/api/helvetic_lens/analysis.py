@@ -531,7 +531,11 @@ def cache_key(
                 item.get("kind"),
                 item.get("significance"),
                 item.get("change_type"),
+                item.get("classification"),
                 item.get("material"),
+                item.get("match", {}).get("reason"),
+                item.get("match", {}).get("score"),
+                item.get("match", {}).get("ambiguous"),
                 item.get("old_position"),
                 item.get("new_position"),
                 item.get("old", {}).get("id") if item.get("old") else None,
@@ -659,6 +663,14 @@ def diff_evidence(
         "counts": counts,
         "classification_counts": comparison.diff.get("classification_counts", {}),
         "material_count": comparison.diff.get("material_count"),
+        "semantic_counts": comparison.diff.get("semantic_counts", {}),
+        "change_clusters": [
+            {
+                key: cluster.get(key)
+                for key in ("id", "classifications", "change_ids", "ambiguous")
+            }
+            for cluster in comparison.diff.get("change_clusters", [])
+        ],
         "old_passage_count": comparison.diff.get("old_passage_count", len(old.passages)),
         "new_passage_count": comparison.diff.get("new_passage_count", len(new.passages)),
         "items": change_items,
@@ -1225,6 +1237,7 @@ def global_diff_summary(deterministic_diff: dict) -> dict:
             "complete",
             "counts",
             "classification_counts",
+            "semantic_counts",
             "material_count",
             "material_items_available",
             "material_items_in_dossier",

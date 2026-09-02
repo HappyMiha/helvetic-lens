@@ -22,7 +22,7 @@ The observed comparison flow exposed four connected failures:
 
 These are contract problems rather than prompt wording problems. A larger model may produce smoother prose while preserving the same bad work plan.
 
-The current implementation now supplies the first protective slice: deterministic identity mismatch blocking, conservative v4 passage alignment, material/structural/formatting classification, a bounded material-change dossier, hard five-request Impact and three-request Ask budgets that include retries and repair, zero-call clarification for vague input, and server-side action deduplication with zero actions allowed. The legal-unit hierarchy, durable jobs, richer action workflow, and the full multilingual acceptance corpus remain roadmap work in HL-058–HL-064.
+The current implementation now supplies the first two protective slices: a persisted and audited document-identity gate plus diff schema v6. The latter keeps a complete exact passage audit under a legal-unit hierarchy, deterministic semantic classifications, recorded match evidence, and stable amendment clusters. A bounded material-change dossier, hard five-request Impact and three-request Ask budgets that include retries and repair, zero-call clarification for vague input, and server-side action deduplication with zero actions allowed are also active. Durable jobs, richer action workflow, intent routing, the redesigned comparison workspace, and the full multilingual acceptance corpus remain roadmap work in HL-060–HL-064.
 
 ## Product contract
 

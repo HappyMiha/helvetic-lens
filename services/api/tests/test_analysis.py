@@ -488,7 +488,7 @@ def test_complete_diff_aligns_articles_and_covers_every_saved_passage_once():
     ]
     diff = compare_passages(old, new)
     assert diff["schema_version"] == DIFF_SCHEMA_VERSION and diff["complete"] is True
-    assert diff["granularity"] == "article_or_passage"
+    assert diff["granularity"] == "legal_unit"
     assert diff["counts"] == {"added": 1, "removed": 0, "modified": 1, "unchanged": 2}
     assert [item["old"]["id"] for item in diff["items"] if item["old"]] == [
         passage["id"] for passage in old

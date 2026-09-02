@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from helvetic_lens.diffing import DIFF_SCHEMA_VERSION, compare_passages
+from helvetic_lens.diffing import DIFF_SCHEMA_VERSION, compare_passages, parse_legal_units
 from helvetic_lens.identity import assess_comparison_identity
 
 
@@ -109,6 +109,8 @@ def test_unique_exact_passage_reorder_is_reported_as_a_move():
     assert len(moved) == 1
     assert moved[0]["old_position"] == 3 and moved[0]["new_position"] == 1
     assert diff["classification_counts"]["structural"] == 1
+    assert diff["semantic_counts"]["moved"] == 1
+    assert diff["material_count"] == 0
 
 
 def test_large_unrelated_replacement_is_not_paired_by_position():
@@ -181,3 +183,113 @@ def test_one_conflicting_eli_identifier_blocks_the_comparison():
     )
 
     assert assess_comparison_identity(law, correct, wrong)["status"] == "mismatch"
+
+
+def test_legal_unit_hierarchy_preserves_exact_passage_references():
+    passages = [
+        passage("p1", "Titel 1 Allgemeine Bestimmungen", page=1),
+        passage("p2", "Kapitel 2 Pflichten", page=1),
+        passage("p3", "Art. 5 Aufbewahrung", page=2),
+        passage("p4", "Abs. 1 Die Unterlagen sind aufzubewahren.", page=2),
+        passage("p5", "lit. a während zehn Jahren", page=2),
+    ]
+    units = parse_legal_units(passages)
+
+    assert [unit["type"] for unit in units] == [
+        "title",
+        "chapter",
+        "article",
+        "paragraph",
+        "littera",
+    ]
+    assert units[-1]["parent_path"] == [
+        "title:1",
+        "chapter:2",
+        "article:5",
+        "paragraph:1",
+    ]
+    assert units[-1]["passage_ids"] == ["p5"] and units[-1]["page"] == 2
+    assert units[-1]["text"] == passages[-1]["text"]
+
+
+def test_safe_real_line_wrap_dehyphenation_is_formatting_only():
+    diff = compare_passages(
+        [passage("old", "Die Personengesell-\nschaft reicht den Bericht ein.")],
+        [passage("new", "Die Personengesellschaft reicht den Bericht ein.")],
+    )
+    assert diff["semantic_counts"]["formatting_only"] == 1
+    assert diff["material_count"] == 0
+    assert diff["items"][0]["classification"] == "formatting_only"
+
+
+def test_repeated_page_header_is_noise_without_hiding_body_changes():
+    old = [
+        passage("h1", "Federal Gazette 2026", page=1, layout_role="header"),
+        passage("o1", "Records must be kept for 30 days.", page=1),
+        passage("h2", "Federal Gazette 2026", page=2, layout_role="header"),
+        passage("o2", "The controller records each request.", page=2),
+        passage("h3", "Federal Gazette 2026", page=3, layout_role="header"),
+    ]
+    new = [
+        passage("n1", "Records must be kept for 60 days.", page=1),
+        passage("n2", "The controller records each request.", page=2),
+    ]
+    diff = compare_passages(old, new)
+    assert diff["semantic_counts"]["formatting_only"] == 3
+    assert diff["semantic_counts"]["substantive"] == 1
+    assert diff["material_count"] == 1
+
+
+def test_stable_article_label_matches_a_real_replacement_before_content_similarity():
+    diff = compare_passages(
+        [passage("old", "Art. 7 Applications are optional.")],
+        [passage("new", "Art. 7 Controllers shall notify the authority within 48 hours.")],
+    )
+    item = diff["semantic_changes"][0]
+    assert item["kind"] == "modified" and item["classification"] == "substantive"
+    assert item["match"]["reason"] == "stable_legal_label"
+    assert item["match"]["components"]["stable_label"] == 1.0
+    assert set(item["match"]["components"]) == {
+        "stable_label",
+        "content",
+        "neighbour",
+        "parent_context",
+    }
+
+
+def test_semantic_clusters_exclude_renumbering_after_one_inserted_article():
+    old = [
+        passage("o1", "Art. 1 Purpose"),
+        passage("o2", "Art. 2 Scope"),
+        passage("o3", "Art. 3 Procedure"),
+    ]
+    new = [
+        passage("n1", "Art. 1 Purpose"),
+        passage("n2", "Art. 2 New reporting duty"),
+        passage("n3", "Art. 3 Scope"),
+        passage("n4", "Art. 4 Procedure"),
+    ]
+    diff = compare_passages(old, new)
+    assert diff["semantic_counts"]["added"] == 1
+    assert diff["semantic_counts"]["renumbered"] == 2
+    assert len(diff["semantic_changes"]) == 1
+    assert len(diff["change_clusters"]) == 1
+    cluster = diff["change_clusters"][0]
+    assert cluster["classifications"] == ["added"]
+    inserted_unit = next(
+        unit for unit in diff["legal_units"]["new"] if unit["id"] in cluster["new_unit_ids"]
+    )
+    assert inserted_unit["passage_ids"] == ["n2"]
+
+
+def test_complete_replacement_recalls_every_unit_as_material():
+    old = [passage(f"o{i}", f"Legacy alpha provision {i}.") for i in range(8)]
+    new = [passage(f"n{i}", f"Replacement zeta rule {i}.") for i in range(6)]
+    diff = compare_passages(old, new)
+    assert diff["granularity"] == "legal_unit"
+    assert diff["complete"] is True
+    assert diff["material_count"] == 14
+    assert diff["semantic_counts"]["removed"] == 8
+    assert diff["semantic_counts"]["added"] == 6
+    assert sum(item["old"] is not None for item in diff["items"]) == 8
+    assert sum(item["new"] is not None for item in diff["items"]) == 6

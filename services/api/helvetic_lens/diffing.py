@@ -1,8 +1,9 @@
+import hashlib
 import re
 import unicodedata
 from difflib import SequenceMatcher
 
-DIFF_SCHEMA_VERSION = 4
+DIFF_SCHEMA_VERSION = 6
 MIN_MODIFIED_SIMILARITY = 0.58
 ALIGNMENT_BAND = 12
 
@@ -14,13 +15,80 @@ _EXPLICIT_ARTICLE_LABEL = re.compile(
 )
 _LAYOUT_ROLES = frozenset({"footer", "header", "page_counter", "page_number"})
 _NUMBER_TOKEN = re.compile(r"(?<!\w)[+-]?\d+(?:[.,]\d+)*(?:%|‰)?", re.UNICODE)
+_LINE_WRAP_HYPHEN = re.compile(
+    r"(?<=[^\W\d_])[-\u2010\u2011][ \t]*\r?\n[ \t]*(?=[a-zà-ž])",
+    re.UNICODE,
+)
+_UNIT_PATTERNS = (
+    ("title", re.compile(r"^(?:titel|titre|titolo|title|titel)\s+([\w.-]+)", re.I)),
+    ("chapter", re.compile(r"^(?:kapitel|chapitre|capitolo|chapter|chapitel)\s+([\w.-]+)", re.I)),
+    ("section", re.compile(r"^(?:abschnitt|section|sezione|secziun)\s+([\w.-]+)", re.I)),
+    ("article", re.compile(r"^(?:art(?:icle|ikel|icolo)?|стаття)\.?\s*([0-9]+[a-zà-ž]*(?:\s*(?:bis|ter|quater))?)\b", re.I)),
+    ("paragraph", re.compile(r"^(?:abs\.?|al\.?|cpv\.?|paragraph|paragraphe)\s*([0-9]+[a-z]?)\b", re.I)),
+    ("littera", re.compile(r"^(?:lit\.?|lett\.?|let\.)\s*([a-z])\b", re.I)),
+    ("number", re.compile(r"^(?:ziff\.?|ch\.?|n\.?|cifra|number)\s*([0-9]+[a-z]?)\b", re.I)),
+)
 
 
 def canonical_text(value: str) -> str:
     """Return comparison text while leaving the saved evidence untouched."""
 
     value = unicodedata.normalize("NFC", value or "").replace("\u00ad", "")
+    value = _LINE_WRAP_HYPHEN.sub("", value)
     return re.sub(r"\s+", " ", value).casefold().strip()
+
+
+def parse_legal_units(passages: list[dict]) -> list[dict]:
+    """Project immutable passages into a deterministic legal hierarchy."""
+
+    context: dict[str, str] = {}
+    occurrences: dict[str, int] = {}
+    order = {name: index for index, (name, _) in enumerate(_UNIT_PATTERNS)}
+    units = []
+    for position, passage in enumerate(passages, 1):
+        canonical = canonical_text(passage.get("text", ""))
+        unit_type, label = "passage", None
+        for candidate, pattern in _UNIT_PATTERNS:
+            match = pattern.match(canonical)
+            if match:
+                unit_type, label = candidate, match.group(1).strip().casefold()
+                for child in list(context):
+                    if order.get(child, 99) >= order[candidate]:
+                        context.pop(child, None)
+                context[candidate] = label
+                break
+        parent_path = [f"{name}:{value}" for name, value in context.items() if name != unit_type]
+        path = [*parent_path, f"{unit_type}:{label or position}"]
+        stable_source = "|".join(path) + "|" + canonical
+        occurrences[stable_source] = occurrences.get(stable_source, 0) + 1
+        units.append(
+            {
+                "id": "u-"
+                + hashlib.sha1(
+                    f"{stable_source}|occurrence:{occurrences[stable_source]}".encode()
+                ).hexdigest()[:16],
+                "type": unit_type,
+                "label": label,
+                "path": path,
+                "parent_path": parent_path,
+                "position": position,
+                "page": passage.get("page"),
+                "passage_ids": [passage.get("id")],
+                "text": passage.get("text", ""),
+                "canonical_text": canonical,
+            }
+        )
+    return units
+
+
+def _repeated_layout_keys(passages: list[dict]) -> set[str]:
+    occurrences: dict[str, set[int]] = {}
+    for passage in passages:
+        text = canonical_text(passage.get("text", ""))
+        page = passage.get("page")
+        if page and text and len(text) <= 120:
+            occurrences.setdefault(text, set()).add(int(page))
+    return {text for text, pages in occurrences.items() if len(pages) >= 3}
 
 
 def _legal_label_and_body(value: str) -> tuple[str | None, str]:
@@ -142,9 +210,17 @@ def _align_replacement(
                 similarity = _prepared_similarity(
                     old_prepared[row - 1], new_prepared[column - 1]
                 )
-                if similarity >= MIN_MODIFIED_SIMILARITY:
+                old_label = _legal_label_and_body(old[row - 1]["text"])[0]
+                new_label = _legal_label_and_body(new[column - 1]["text"])[0]
+                stable_label = bool(old_label and old_label == new_label)
+                if similarity >= MIN_MODIFIED_SIMILARITY or stable_label:
                     candidates.append(
-                        (costs[row - 1][column - 1] + (1 - similarity), 0, "modified")
+                        (
+                            costs[row - 1][column - 1]
+                            + (min(0.45, 1 - similarity) if stable_label else 1 - similarity),
+                            0,
+                            "modified",
+                        )
                     )
             if candidates:
                 choice = min(candidates)
@@ -212,13 +288,19 @@ def _pair_exact_moves(
 
 
 def _classification(
-    left: dict | None, right: dict | None, kind: str, moved: bool = False
+    left: dict | None,
+    right: dict | None,
+    kind: str,
+    moved: bool = False,
+    repeated_layout: set[str] | None = None,
 ) -> tuple[str, str]:
     if moved:
         return "structural", "moved"
     if kind == "unchanged":
         return "unchanged", "unchanged"
     if left is None or right is None:
+        if canonical_text((left or right or {}).get("text", "")) in (repeated_layout or set()):
+            return "formatting", "repeated_header_or_footer"
         if _evidentiary_numbers((left or right or {}).get("text", "")):
             return "substantive", kind
         if _layout_noise(left or right or {}):
@@ -237,14 +319,101 @@ def _classification(
     return "substantive", "modified"
 
 
+def _match_metadata(
+    left: dict | None,
+    right: dict | None,
+    kind: str,
+    change_type: str,
+    old_index: int | None,
+    new_index: int | None,
+    old_keys: list[str],
+    new_keys: list[str],
+    old_unit: dict | None = None,
+    new_unit: dict | None = None,
+) -> dict:
+    if left is None or right is None:
+        return {
+            "reason": "unmatched_new_unit" if left is None else "unmatched_old_unit",
+            "score": 0.0,
+            "components": {
+                "stable_label": 0.0,
+                "content": 0.0,
+                "neighbour": 0.0,
+                "parent_context": 0.0,
+            },
+            "ambiguous": False,
+        }
+    old_label = _legal_label_and_body(left["text"])[0]
+    new_label = _legal_label_and_body(right["text"])[0]
+    stable_label = 1.0 if old_label and old_label == new_label else 0.0
+    content = round(_passage_similarity(left, right), 3)
+    neighbour = 1.0 if old_index == new_index else max(0.0, 1 - abs((old_index or 0) - (new_index or 0)) / 12)
+    parent_context = (
+        1.0
+        if old_unit
+        and new_unit
+        and old_unit.get("parent_path") == new_unit.get("parent_path")
+        else 0.0
+    )
+    key = _match_key(left)
+    ambiguous = bool(key and (old_keys.count(key) > 1 or new_keys.count(key) > 1))
+    if change_type == "moved":
+        reason = "unique_normalized_content"
+    elif change_type == "renumbered":
+        reason = "unchanged_body_with_new_label"
+    elif stable_label:
+        reason = "stable_legal_label"
+    elif kind == "unchanged":
+        reason = "normalized_content"
+    else:
+        reason = "bounded_content_and_neighbour_alignment"
+    score = round(
+        0.45 * stable_label + 0.4 * content + 0.05 * neighbour + 0.1 * parent_context,
+        3,
+    )
+    return {
+        "reason": reason,
+        "score": score,
+        "components": {
+            "stable_label": stable_label,
+            "content": content,
+            "neighbour": round(neighbour, 3),
+            "parent_context": parent_context,
+        },
+        "ambiguous": ambiguous,
+    }
+
+
+def _semantic_classification(significance: str, change_type: str, kind: str, ambiguous: bool) -> str:
+    if ambiguous and significance == "substantive":
+        return "uncertain"
+    if change_type == "moved":
+        return "moved"
+    if change_type == "renumbered":
+        return "renumbered"
+    if significance == "formatting":
+        return "formatting_only"
+    if significance == "uncertain":
+        return "uncertain"
+    if kind == "added":
+        return "added"
+    if kind == "removed":
+        return "removed"
+    return "substantive" if kind != "unchanged" else "unchanged"
+
+
 def compare_passages(old: list[dict], new: list[dict]) -> dict:
     """Return a complete raw evidence diff plus deterministic significance labels."""
 
+    old_units, new_units = parse_legal_units(old), parse_legal_units(new)
+    old_keys = [_match_key(passage) for passage in old]
+    new_keys = [_match_key(passage) for passage in new]
+    repeated_layout = _repeated_layout_keys(old) | _repeated_layout_keys(new)
     pairs: list[tuple[int | None, int | None]] = []
     matcher = SequenceMatcher(
         None,
-        [_match_key(passage) for passage in old],
-        [_match_key(passage) for passage in new],
+        old_keys,
+        new_keys,
         autojunk=max(len(old), len(new)) > 200,
     )
     for operation, old_start, old_end, new_start, new_end in matcher.get_opcodes():
@@ -289,7 +458,26 @@ def compare_passages(old: list[dict], new: list[dict]) -> dict:
         )
         if moved:
             kind = "modified"
-        significance, change_type = _classification(left, right, kind, moved)
+        significance, change_type = _classification(
+            left, right, kind, moved, repeated_layout
+        )
+        match = _match_metadata(
+            left,
+            right,
+            kind,
+            change_type,
+            old_index,
+            new_index,
+            old_keys,
+            new_keys,
+            old_units[old_index] if old_index is not None else None,
+            new_units[new_index] if new_index is not None else None,
+        )
+        classification = _semantic_classification(
+            significance, change_type, kind, match["ambiguous"]
+        )
+        if classification == "uncertain":
+            significance, change_type = "uncertain", "uncertain"
         old_parts, new_parts = word_parts(left["text"] if left else "", right["text"] if right else "")
         items.append(
             {
@@ -297,9 +485,13 @@ def compare_passages(old: list[dict], new: list[dict]) -> dict:
                 "kind": kind,
                 "significance": significance,
                 "change_type": change_type,
-                "material": significance == "substantive",
+                "classification": classification,
+                "material": significance in {"substantive", "uncertain"},
+                "match": match,
                 "old": left,
                 "new": right,
+                "old_unit_id": old_units[old_index]["id"] if old_index is not None else None,
+                "new_unit_id": new_units[new_index]["id"] if new_index is not None else None,
                 "old_position": old_index + 1 if old_index is not None else None,
                 "new_position": new_index + 1 if new_index is not None else None,
                 "old_parts": old_parts,
@@ -316,17 +508,115 @@ def compare_passages(old: list[dict], new: list[dict]) -> dict:
         range(1, len(new) + 1)
     ):
         raise RuntimeError("The deterministic comparison did not cover every saved passage.")
-    material_count = classification_counts["substantive"] + classification_counts["uncertain"]
+    semantic_counts = {
+        name: sum(item["classification"] == name for item in items)
+        for name in (
+            "substantive",
+            "added",
+            "removed",
+            "moved",
+            "renumbered",
+            "formatting_only",
+            "uncertain",
+        )
+    }
+    semantic_items = [
+        item
+        for item in items
+        if item["classification"] in {"substantive", "added", "removed", "uncertain"}
+    ]
+    semantic_changes = [
+        {
+            key: item.get(key)
+            for key in (
+                "id",
+                "kind",
+                "classification",
+                "significance",
+                "change_type",
+                "material",
+                "match",
+                "old_unit_id",
+                "new_unit_id",
+                "old_position",
+                "new_position",
+            )
+        }
+        for item in semantic_items
+    ]
+    old_units_by_id = {unit["id"]: unit for unit in old_units}
+    new_units_by_id = {unit["id"]: unit for unit in new_units}
+
+    def unit_for(item: dict) -> dict:
+        return (
+            new_units_by_id.get(item.get("new_unit_id"))
+            or old_units_by_id.get(item.get("old_unit_id"))
+            or {}
+        )
+
+    item_indexes = {item["id"]: index for index, item in enumerate(items)}
+    clusters = []
+    grouped: list[list[dict]] = []
+    for item in semantic_items:
+        original_index = item_indexes[item["id"]]
+        parent = unit_for(item).get("parent_path", [])
+        if grouped:
+            previous = grouped[-1][-1]
+            previous_index = item_indexes[previous["id"]]
+            previous_parent = unit_for(previous).get("parent_path", [])
+            if original_index > previous_index + 1 or parent != previous_parent:
+                grouped.append([])
+        else:
+            grouped.append([])
+        grouped[-1].append(item)
+    for group in grouped:
+        if not group:
+            continue
+        group_indexes = [item_indexes[item["id"]] for item in group]
+        signature = "|".join(
+            str(item.get("old_unit_id") or "")
+            + ">"
+            + str(item.get("new_unit_id") or "")
+            for item in group
+        )
+        before_index, after_index = min(group_indexes) - 1, max(group_indexes) + 1
+        clusters.append(
+            {
+                "id": "sc-" + hashlib.sha1(signature.encode()).hexdigest()[:16],
+                "classifications": list(dict.fromkeys(item["classification"] for item in group)),
+                "change_ids": [item["id"] for item in group],
+                "old_unit_ids": [item["old_unit_id"] for item in group if item.get("old_unit_id")],
+                "new_unit_ids": [item["new_unit_id"] for item in group if item.get("new_unit_id")],
+                "context_before_unit_id": (
+                    items[before_index].get("new_unit_id")
+                    or items[before_index].get("old_unit_id")
+                    if before_index >= 0
+                    else None
+                ),
+                "context_after_unit_id": (
+                    items[after_index].get("new_unit_id")
+                    or items[after_index].get("old_unit_id")
+                    if after_index < len(items)
+                    else None
+                ),
+                "ambiguous": any(item["match"]["ambiguous"] for item in group),
+            }
+        )
+    material_count = len(semantic_changes)
     return {
         "schema_version": DIFF_SCHEMA_VERSION,
-        "algorithm": "bounded-canonical-passage-sequence-v4",
-        "granularity": "article_or_passage",
+        "algorithm": "legal-unit-hierarchy-and-exact-audit-v6",
+        "granularity": "legal_unit",
         "complete": True,
         "old_passage_count": len(old),
         "new_passage_count": len(new),
         "items": items,
         "counts": counts,
         "classification_counts": classification_counts,
+        "semantic_counts": semantic_counts,
+        "legal_units": {"old": old_units, "new": new_units},
+        "semantic_changes": semantic_changes,
+        "change_clusters": clusters,
         "material_count": material_count,
         "changed": bool(counts["added"] + counts["removed"] + counts["modified"]),
         "material_changed": bool(material_count),

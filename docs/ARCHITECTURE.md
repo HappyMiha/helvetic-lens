@@ -34,7 +34,7 @@ The current application is a sound local MVP, but several deliberate MVP choices
 - The stack binds to loopback and has no login, TLS entry point, scheduler, queue, retention policy, or recovery workflow.
 - The existing watchlist is a flat list. It cannot represent newly discovered bills, lifecycle events, court decisions, official notices, or evidence-backed relations between documents.
 
-The existing strengths remain unchanged: immutable snapshots, separate observations, deterministic passage-level diffs, original artifacts, exact evidence links, saved AI history, prompt revisions, citation validation, and explicit failure states.
+The existing strengths remain unchanged: immutable snapshots, separate observations, a complete exact passage audit beneath the legal-unit semantic diff, original artifacts, exact evidence links, saved AI history, prompt revisions, citation validation, and explicit failure states.
 
 ## Design principles
 

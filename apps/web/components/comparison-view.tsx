@@ -721,7 +721,7 @@ function DiffSide({
       <div className="passage-meta">
         <span>
           {side === "old" ? "BEFORE" : "AFTER"} ·{" "}
-          {label(item.change_type || item.kind)}
+          {label(item.classification || item.change_type || item.kind)}
         </span>
         {passage && (
           <Link
