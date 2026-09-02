@@ -54,6 +54,8 @@ function draftValues(settings: ApertusSettings) {
     base_url: settings.base_url,
     model: settings.model,
     timeout_seconds: String(settings.timeout_seconds),
+    request_retries: String(settings.request_retries),
+    batch_concurrency: String(settings.batch_concurrency),
     context_chars: String(settings.context_chars),
     max_tokens: String(settings.max_tokens),
     temperature: String(settings.temperature),
@@ -241,6 +243,8 @@ function ApertusForm({
       ...draft,
       base_url: baseUrl,
       timeout_seconds: Number(draft.timeout_seconds),
+      request_retries: Number(draft.request_retries),
+      batch_concurrency: Number(draft.batch_concurrency),
       context_chars: Number(draft.context_chars),
       max_tokens: Number(draft.max_tokens),
       temperature: Number(draft.temperature),
@@ -644,6 +648,42 @@ function ApertusForm({
                 />
                 <span className="field-help">
                   5–300 seconds. A timeout keeps the saved diff available.
+                </span>
+              </label>
+              <label>
+                Automatic retries
+                <Input
+                  type="number"
+                  min={0}
+                  max={5}
+                  step={1}
+                  required
+                  value={draft.request_retries}
+                  onChange={(event) =>
+                    update("request_retries", event.target.value)
+                  }
+                />
+                <span className="field-help">
+                  Retry interrupted, rate-limited, and temporary provider
+                  failures. Two retries means at most three attempts.
+                </span>
+              </label>
+              <label>
+                Concurrent analysis batches
+                <Input
+                  type="number"
+                  min={1}
+                  max={4}
+                  step={1}
+                  required
+                  value={draft.batch_concurrency}
+                  onChange={(event) =>
+                    update("batch_concurrency", event.target.value)
+                  }
+                />
+                <span className="field-help">
+                  Use 1 for large Infomaniak models to avoid overlapping long
+                  requests. Higher values are faster but less resilient.
                 </span>
               </label>
               <label>

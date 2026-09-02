@@ -95,20 +95,19 @@ def test_questions_use_selected_pair_and_explicit_unsupported_answer(harness):
     reply = client.post(route, json={"question": "What changed?"})
     assert reply.status_code == 200 and reply.json()["supported"] is True
     prior_question = {"question": "What changed?"}
-    assert (
-        client.post(
-            route, json={"question": "What did the older version say?", "history": [prior_question]}
-        ).status_code
-        == 200
+    older_reply = client.post(
+        route, json={"question": "What did the older version say?", "history": [prior_question]}
     )
+    assert older_reply.status_code == 200
+    assert older_reply.json()["context_mode"] == "full_saved_versions"
     model_input = json.loads(model.calls[-1][1])
     assert model_input["previous_questions"] == [prior_question]
     assert {p["version_id"] for p in model_input["evidence"]} == {old["id"], law["current_version_id"]}
-    assert len(model_input["evidence"]) == 2
+    assert len(model_input["evidence"]) == 6
     assert model_input["coverage"]["complete"] is True
     assert model_input["coverage"]["limited"] is False
-    assert model_input["deterministic_diff"]["complete"] is True
-    assert len(model_input["deterministic_diff"]["items"]) == 1
+    assert model_input["document_context"]["complete"] is True
+    assert model_input["document_context"]["kind"] == "complete_saved_version_text"
     model.unsupported = True
     unsupported = client.post(route, json={"question": "Who signed the law?"}).json()
     assert unsupported["supported"] is False and unsupported["citations"] == []
@@ -182,6 +181,23 @@ def test_validated_json_object_survives_schema_echo_and_trailing_noise_without_a
         evidence,
     )
     assert result["supported"] is True
+    assert result["citations"][0]["url"] == "/evidence/new?passage=p1"
+
+
+def test_validated_json_object_is_found_inside_provider_wrappers_and_encoded_strings():
+    evidence = [
+        {"version_id": "new", "passage_id": "p1", "text": "Retention is 60 days.", "page": 3}
+    ]
+    answer = {
+        "supported": True,
+        "answer": "The period is 60 days.",
+        "citations": [
+            {"version_id": "new", "passage_id": "p1", "quote": "Retention is 60 days."}
+        ],
+    }
+    wrapped = json.dumps({"answerResult": json.dumps(answer)})
+    result = parse_response(wrapped, Answer, evidence)
+    assert result["answer"] == "The period is 60 days."
     assert result["citations"][0]["url"] == "/evidence/new?passage=p1"
 
 

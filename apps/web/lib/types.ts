@@ -11,6 +11,8 @@ export type ApertusSettings = {
   base_url: string;
   model: string;
   timeout_seconds: number;
+  request_retries: number;
+  batch_concurrency: number;
   context_chars: number;
   max_tokens: number;
   temperature: number;
@@ -134,6 +136,9 @@ export type Analysis = {
   result: Impact | null;
   coverage: Coverage;
   model: string;
+  prompt_revision: number;
+  use_count: number;
+  last_used_at: string | null;
   created_at: string;
 };
 export type Counts = {
@@ -272,4 +277,70 @@ export type Answer = {
   citations: Citation[];
   coverage: Coverage;
   model: string;
+  context_mode: "deterministic_diff" | "full_saved_versions";
+  record_id: string;
+  cached: boolean;
+  created_at: string;
+  last_used_at: string | null;
+  use_count: number;
+  prompt_revision: number;
+};
+
+export type PromptSettings = {
+  impact_instructions: string;
+  impact_synthesis_instructions: string;
+  ask_instructions: string;
+  answer_synthesis_instructions: string;
+  repair_instructions: string;
+  ask_context_mode: "automatic" | "changes_only";
+  source: "defaults" | "workspace";
+  revision: number;
+  fingerprint: string;
+  updated_at: string | null;
+};
+
+export type AIHistoryComparison = {
+  id: string;
+  mode: string;
+  created_at: string;
+  before: Pick<
+    Version,
+    "id" | "title" | "declared_date" | "origin" | "created_at"
+  > & {
+    artifact_url: string;
+  };
+  after: Pick<
+    Version,
+    "id" | "title" | "declared_date" | "origin" | "created_at"
+  > & {
+    artifact_url: string;
+  };
+  counts: Partial<Counts>;
+};
+
+export type AIHistoryItem = {
+  id: string;
+  type: "impact" | "question";
+  comparison_id: string;
+  comparison: AIHistoryComparison;
+  status: "pending" | "succeeded" | "failed";
+  model: string;
+  prompt_revision: number;
+  use_count: number;
+  last_used_at: string | null;
+  created_at: string;
+  error: string | null;
+  coverage: Partial<Coverage>;
+  result:
+    | Impact
+    | (Omit<Answer, "coverage" | "model"> & { context_mode?: string })
+    | null;
+  question?: string;
+  history?: { question: string }[];
+  context_mode?: string;
+};
+
+export type AIHistoryPage = {
+  items: AIHistoryItem[];
+  total: number;
 };

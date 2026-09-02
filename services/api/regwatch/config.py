@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     apertus_model: str = "swiss-ai/Apertus-v1.5-8B"
     apertus_api_key: SecretStr = SecretStr("")
     apertus_timeout_seconds: int = Field(default=90, ge=5, le=300)
+    apertus_request_retries: int = Field(default=2, ge=0, le=5)
+    apertus_batch_concurrency: int = Field(default=1, ge=1, le=4)
     apertus_context_chars: int = Field(default=24000, ge=1000, le=100000)
     apertus_max_tokens: int = Field(default=1600, ge=128, le=8192)
     apertus_temperature: float = Field(default=0.1, ge=0, le=2)

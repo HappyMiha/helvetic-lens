@@ -44,7 +44,9 @@ Repeat the historical scan without editing the source or deleting anything. The 
 
 ## 4. Review Apertus output when a real endpoint is connected
 
-Open **Settings → Apertus**, enter the endpoint and served model ID, and choose key handling. Adjust limits if needed. **Test connection** checks the current form without saving; **Save settings** applies it immediately and persists it across restarts. Open **Edit company profile** and write a short business description.
+Open **Settings → Apertus**, enter the endpoint and served model ID, and choose key handling. Adjust the timeout, automatic retries, sequential/concurrent batch limit, and generation parameters if needed. **Test connection** checks the current form without saving; **Save settings** applies it immediately and persists it across restarts. Open **Edit company profile** and write a short business description.
+
+Open **Prompt settings** to review the separate Impact, Ask, synthesis, and repair instructions. Keep **Automatic complete context** for the demo: change questions use the complete saved deterministic diff, while other document questions process the complete extracted text of both saved original artifacts in bounded batches.
 
 Generate an impact analysis or let the scan request it. Review the summary, impact reason, suggested actions, and passage citations.
 
@@ -54,6 +56,8 @@ Try:
 - “What did the earlier version say, and which passage supports that?”
 - “Who signed this policy?” — the fixtures do not contain a signatory; a supported answer must not invent one.
 
+Reload the comparison after asking. The question and answer remain visible in Ask Apertus and in **AI history**, together with their date, model, evidence coverage, citations, prompt revision, and exact before/after versions. Submit the exact same question with the same conversation context to demonstrate that the saved answer is reused without a new integration-log call.
+
 Citations must resolve to the correct before/after version. A failed, malformed, or unsupported response is shown explicitly. The verified Public AI setup passes these checks; another endpoint still needs its own connection and cited-analysis check.
 
 ## 5. Honest fallback and persistence checks
@@ -61,7 +65,7 @@ Citations must resolve to the correct before/after version. A failed, malformed,
 - Without a model endpoint, the app shows **Connect Apertus**, with no generated answer or impact rating.
 - Without network access to the source, use **Compare saved versions**. This does not claim a live check or change monitoring state.
 - Pause and resume a document. A paused law stays available in history and is excluded from ordinary scans.
-- Restart the API and PostgreSQL without deleting their data. Sources, snapshots, scans, comparisons, and profile should remain. Running scans become interrupted and can be retried.
+- Restart the API and PostgreSQL without deleting their data. Sources, snapshots, scans, comparisons, AI history, prompt settings, and profile should remain. Running scans and in-flight AI requests become interrupted and can be retried.
 - Do not remove database volumes when rehearsing a normal repeat run.
 
 ## Repeat the core HTTP check

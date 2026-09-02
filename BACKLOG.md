@@ -58,6 +58,8 @@ Start RW-017 as soon as RW-002 and RW-003 are available so model access is check
 | [RW-023](#rw-023) | P2 | DEFERRED | RW-018, RW-022 | Optional business impact matrix |
 | [RW-024](#rw-024) | P2 | DEFERRED | RW-019, RW-022 | Optional pgvector retrieval |
 | [RW-025](#rw-025) | P0 | DONE | RW-002, RW-003, RW-017 adapter code | Settings page with persisted Apertus parameters |
+| [RW-026](#rw-026) | P1 | DONE | RW-006, RW-007, RW-017 | Integration diagnostics and controlled deletion |
+| [RW-027](#rw-027) | P1 | DONE | RW-018, RW-019, RW-025, RW-026 | Resilient AI calls, saved history, and prompt controls |
 
 ## M0 — Ready to build
 
@@ -361,6 +363,22 @@ Acceptance criteria:
 - Allow removing a website from Sources with confirmation while leaving its tracked documents available as independent monitored documents.
 - Allow permanently deleting a monitored document with confirmation. Remove its observations, versions, comparisons, analyses, scan entries, empty scans, and artifact files that are no longer referenced. Block deletion while that document has a queued or running scan.
 - Cover redaction, sorting, filtering, detail retrieval, clearing, source detachment, dependency cleanup, artifact cleanup, and active-scan blocking with deterministic API checks.
+
+<a id="rw-027"></a>
+### RW-027 — Make AI results resilient, persistent, and configurable
+
+Added after live Infomaniak runs exposed intermittent transport failures and inconsistent structured response envelopes.
+
+Acceptance criteria:
+
+- Retry interrupted connections, timeouts, rate limits, and temporary 5xx responses with a configurable bounded attempt count. Log every attempt separately and process large-model batches sequentially by default.
+- Accept a valid structured answer inside common provider wrappers or encoded JSON strings, validate it against the fixed schema and exact saved citations, and make at most one explicit repair request when validation fails.
+- Persist every Impact run and Ask request with its date, model, prompt revision, evidence coverage, selected comparison, status, error, question, conversation context, answer, and citations. Display the unified history on the comparison and monitored-document pages.
+- Reuse a successful result only when its comparison, company profile, provider/model settings, prompt text, question, and supplied question history match. Show reuse counts and make zero provider requests on a cache hit.
+- Use the complete deterministic diff for change questions and Impact. For other questions, process every extracted passage from both saved original versions in bounded batches by default; keep changed-passages-only as an explicit lower-cost option.
+- Keep original version artifacts available for inspection and download. Do not claim raw PDF upload support when the configured OpenAI-compatible chat endpoint does not document a PDF attachment contract.
+- Provide a **Prompt settings** page for Impact, Ask, synthesis, repair, and question-context instructions. Preserve server-controlled schemas, evidence separation, exact citation checks, and one-repair limits regardless of editable wording.
+- Cover retries, wrapped/double-encoded output, full-version context, cache reuse, failed-request history, prompt cache boundaries, history cascade deletion, browser rendering, and a live Infomaniak Ask/Impact run.
 
 ## M5 — Verification and demonstration
 

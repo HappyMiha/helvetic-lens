@@ -20,15 +20,23 @@ from .model_settings import ApertusSettingsInput, public_settings, resolve_key, 
 from .models import (
     Analysis,
     ApertusConfiguration,
+    AskRecord,
     Comparison,
     IntegrationLog,
     Law,
     Observation,
     Profile,
+    PromptConfiguration,
     Scan,
     ScanItem,
     Source,
     Version,
+)
+from .prompt_settings import (
+    PromptSettingsInput,
+    default_prompt_settings,
+    public_prompt_settings,
+    resolved_prompt_settings,
 )
 
 logger = logging.getLogger(__name__)
@@ -74,8 +82,11 @@ class RegWatch:
         self.integration_logger = IntegrationLogger(self.db.session)
         self.fetcher = fetcher or Fetcher(settings, self.integration_logger)
         self.model_client = model_client or ai.ModelClient(settings, self.integration_logger)
+        self.prompt_settings = default_prompt_settings()
+        self.prompt_revision = 1
         self.write_guard = threading.RLock()
         self.analysis_locks: dict[str, asyncio.Lock] = {}
+        self.ask_locks: dict[str, asyncio.Lock] = {}
 
     def initialize(self):
         self.db.migrate()
@@ -97,10 +108,18 @@ class RegWatch:
                     "failed",
                     "Analysis was interrupted by a service restart. Retry it.",
                 )
+            for record in session.scalars(select(AskRecord).where(AskRecord.status == "pending")):
+                record.status, record.error = (
+                    "failed",
+                    "The question was interrupted by a service restart. Ask it again to retry.",
+                )
             session.commit()
             saved = session.get(ApertusConfiguration, "default")
             if saved:
                 self.apply_model_settings(resolved_settings(self.environment_settings, saved))
+            prompt_record = session.get(PromptConfiguration, "default")
+            self.prompt_settings = resolved_prompt_settings(prompt_record)
+            self.prompt_revision = prompt_record.revision if prompt_record else 1
 
     def apply_model_settings(self, settings: Settings):
         self.settings = settings
@@ -135,6 +154,36 @@ class RegWatch:
                 session.commit()
             self.apply_model_settings(self.environment_settings.model_copy(deep=True))
             return public_settings(self.settings, None)
+
+    def prompt_configuration(self):
+        with self.db.session() as session:
+            record = session.get(PromptConfiguration, "default")
+            return public_prompt_settings(self.prompt_settings, record)
+
+    def save_prompt_settings(self, data: PromptSettingsInput):
+        with self.write_guard, self.db.session() as session:
+            record = session.get(PromptConfiguration, "default")
+            if record is None:
+                record = PromptConfiguration(id="default", revision=1)
+                session.add(record)
+            else:
+                record.revision += 1
+            record.values = data.model_dump()
+            record.updated_at = utcnow()
+            session.commit()
+            self.prompt_settings = data.model_copy(deep=True)
+            self.prompt_revision = record.revision
+            return public_prompt_settings(self.prompt_settings, record)
+
+    def reset_prompt_settings(self):
+        with self.write_guard, self.db.session() as session:
+            record = session.get(PromptConfiguration, "default")
+            if record:
+                session.delete(record)
+                session.commit()
+            self.prompt_settings = default_prompt_settings()
+            self.prompt_revision = 1
+            return public_prompt_settings(self.prompt_settings, None)
 
     async def test_model_settings(self, data: ApertusSettingsInput | None = None):
         if data is not None:
@@ -527,6 +576,9 @@ class RegWatch:
             comparison_ids = [comparison.id for comparison in comparisons]
             scan_ids = {item.scan_id for item in scan_items}
             if comparison_ids:
+                session.execute(
+                    delete(AskRecord).where(AskRecord.comparison_id.in_(comparison_ids))
+                )
                 session.execute(delete(Analysis).where(Analysis.comparison_id.in_(comparison_ids)))
             session.execute(delete(ScanItem).where(ScanItem.law_id == law_id))
             session.execute(delete(Comparison).where(Comparison.law_id == law_id))
@@ -548,6 +600,8 @@ class RegWatch:
             session.commit()
         for comparison_id in comparison_ids:
             self.analysis_locks.pop(comparison_id, None)
+            for lock_key in [key for key in self.ask_locks if key.startswith(comparison_id + ":")]:
+                self.ask_locks.pop(lock_key, None)
         with self.db.session() as session:
             referenced = set(
                 session.scalars(
@@ -632,7 +686,7 @@ class RegWatch:
         analysis = session.scalar(
             select(Analysis)
             .where(Analysis.comparison_id == comparison.id)
-            .order_by(Analysis.created_at.desc())
+            .order_by(Analysis.last_used_at.desc().nullslast(), Analysis.created_at.desc())
             .limit(1)
         )
         if not analysis:
@@ -640,7 +694,8 @@ class RegWatch:
         profile = get(session, Profile, "default")
         return {
             **as_dict(analysis),
-            "stale": analysis.cache_key != ai.cache_key(comparison, profile, self.settings),
+            "stale": analysis.cache_key
+            != ai.cache_key(comparison, profile, self.settings, self.prompt_settings),
         }
 
     def comparison_detail(self, comparison_id: str):
@@ -895,6 +950,8 @@ class RegWatch:
         lock = self.analysis_locks.setdefault(comparison_id, asyncio.Lock())
         async with lock:
             settings, model_client = self.settings, self.model_client
+            prompts = self.prompt_settings.model_copy(deep=True)
+            prompt_revision = self.prompt_revision
             with self.write_guard, self.db.session() as session:
                 comparison = get(session, Comparison, comparison_id)
                 old, new = (
@@ -908,7 +965,7 @@ class RegWatch:
                         "These versions have no text changes to analyse. You can still ask about their content."
                     )
                 profile = get(session, Profile, "default")
-                key = ai.cache_key(comparison, profile, settings)
+                key = ai.cache_key(comparison, profile, settings, prompts)
                 cached = session.scalar(
                     select(Analysis)
                     .where(Analysis.cache_key == key, Analysis.status == "succeeded")
@@ -916,6 +973,9 @@ class RegWatch:
                     .limit(1)
                 )
                 if cached:
+                    cached.use_count += 1
+                    cached.last_used_at = utcnow()
+                    session.commit()
                     return {**as_dict(cached), "cached": True, "stale": False}
                 if not settings.model_configured:
                     raise DomainError(
@@ -923,13 +983,19 @@ class RegWatch:
                         503,
                         "model_not_configured",
                     )
-                record = Analysis(comparison_id=comparison.id, cache_key=key, model=settings.apertus_model)
+                record = Analysis(
+                    comparison_id=comparison.id,
+                    cache_key=key,
+                    model=settings.apertus_model,
+                    prompt_revision=prompt_revision,
+                    last_used_at=utcnow(),
+                )
                 session.add(record)
                 session.commit()
                 record_id = record.id
             try:
                 result, coverage = await ai.impact_analysis(
-                    model_client, settings, comparison, old, new, profile
+                    model_client, settings, comparison, old, new, profile, prompts
                 )
                 status, error = "succeeded", None
             except Exception as exc:
@@ -948,11 +1014,19 @@ class RegWatch:
                 return {
                     **as_dict(record),
                     "cached": False,
-                    "stale": key != ai.cache_key(comparison, get(session, Profile, "default"), self.settings),
+                    "stale": key
+                    != ai.cache_key(
+                        comparison,
+                        get(session, Profile, "default"),
+                        self.settings,
+                        self.prompt_settings,
+                    ),
                 }
 
     async def ask(self, comparison_id: str, question: str, history: list[dict]):
         settings, model_client = self.settings, self.model_client
+        prompts = self.prompt_settings.model_copy(deep=True)
+        prompt_revision = self.prompt_revision
         with self.write_guard, self.db.session() as session:
             comparison = get(session, Comparison, comparison_id)
             old, new = (
@@ -962,6 +1036,197 @@ class RegWatch:
             if self.ensure_complete_diff(session, comparison, old, new):
                 session.commit()
             profile = get(session, Profile, "default")
-        return await ai.answer_question(
-            model_client, settings, comparison, old, new, profile, question, history
-        )
+            key = ai.ask_cache_key(
+                comparison, profile, settings, prompts, question, history
+            )
+        lock_key = comparison_id + ":" + key
+        lock = self.ask_locks.setdefault(lock_key, asyncio.Lock())
+        async with lock:
+            with self.write_guard, self.db.session() as session:
+                cached = session.scalar(
+                    select(AskRecord)
+                    .where(AskRecord.cache_key == key, AskRecord.status == "succeeded")
+                    .order_by(AskRecord.created_at.desc())
+                    .limit(1)
+                )
+                if cached:
+                    cached.use_count += 1
+                    cached.last_used_at = utcnow()
+                    session.commit()
+                    return self.ask_result(cached, cached=True)
+                record = AskRecord(
+                    comparison_id=comparison_id,
+                    cache_key=key,
+                    question=question.strip(),
+                    history=history[-4:],
+                    model=settings.apertus_model,
+                    prompt_revision=prompt_revision,
+                    context_mode=prompts.ask_context_mode,
+                    last_used_at=utcnow(),
+                )
+                session.add(record)
+                session.commit()
+                record_id = record.id
+            try:
+                result = await ai.answer_question(
+                    model_client,
+                    settings,
+                    comparison,
+                    old,
+                    new,
+                    profile,
+                    question,
+                    history,
+                    prompts,
+                )
+            except Exception as exc:
+                message = (
+                    exc.message
+                    if isinstance(exc, DomainError)
+                    else "Apertus could not answer this question. The question was saved for review."
+                )
+                with self.write_guard, self.db.session() as session:
+                    record = get(session, AskRecord, record_id)
+                    record.status, record.error = "failed", message
+                    session.commit()
+                if isinstance(exc, DomainError):
+                    raise
+                logger.exception("Model question failed")
+                raise DomainError(message, 502, "model_error") from exc
+            coverage = result.get("coverage") or {}
+            stored_result = {
+                key: value
+                for key, value in result.items()
+                if key not in {"coverage", "model"}
+            }
+            with self.write_guard, self.db.session() as session:
+                record = get(session, AskRecord, record_id)
+                record.status = "succeeded"
+                record.result = stored_result
+                record.coverage = coverage
+                record.context_mode = result.get("context_mode", prompts.ask_context_mode)
+                record.error = None
+                session.commit()
+                return self.ask_result(record, cached=False)
+
+    @staticmethod
+    def ask_result(record: AskRecord, *, cached: bool) -> dict:
+        return {
+            **(record.result or {}),
+            "coverage": record.coverage or {},
+            "model": record.model,
+            "record_id": record.id,
+            "cached": cached,
+            "created_at": (
+                record.created_at.replace(tzinfo=UTC).isoformat()
+                if record.created_at.tzinfo is None
+                else record.created_at.isoformat()
+            ),
+            "last_used_at": (
+                record.last_used_at.replace(tzinfo=UTC).isoformat()
+                if record.last_used_at and record.last_used_at.tzinfo is None
+                else record.last_used_at.isoformat()
+                if record.last_used_at
+                else None
+            ),
+            "use_count": record.use_count,
+            "prompt_revision": record.prompt_revision,
+        }
+
+    def ai_history(
+        self,
+        *,
+        law_id: str | None = None,
+        comparison_id: str | None = None,
+        limit: int = 100,
+    ):
+        with self.db.session() as session:
+            if comparison_id:
+                comparison = get(session, Comparison, comparison_id)
+                if law_id and comparison.law_id != law_id:
+                    raise DomainError("The comparison does not belong to this document.")
+                comparisons = [comparison]
+            else:
+                if not law_id:
+                    raise DomainError("Choose a document or comparison for AI history.")
+                get(session, Law, law_id)
+                comparisons = list(
+                    session.scalars(
+                        select(Comparison)
+                        .where(Comparison.law_id == law_id)
+                        .order_by(Comparison.created_at.desc())
+                    )
+                )
+            comparison_ids = [comparison.id for comparison in comparisons]
+            if not comparison_ids:
+                return {"items": [], "total": 0}
+            comparison_map = {comparison.id: comparison for comparison in comparisons}
+            version_ids = {
+                version_id
+                for comparison in comparisons
+                for version_id in (comparison.old_version_id, comparison.new_version_id)
+            }
+            versions = {
+                version.id: version
+                for version in session.scalars(select(Version).where(Version.id.in_(version_ids)))
+            }
+
+            def comparison_summary(item_id: str):
+                comparison = comparison_map[item_id]
+                old, new = versions[comparison.old_version_id], versions[comparison.new_version_id]
+
+                def side(version: Version):
+                    return {
+                        "id": version.id,
+                        "title": version.title,
+                        "declared_date": version.declared_date,
+                        "origin": version.origin,
+                        "created_at": (
+                            version.created_at.replace(tzinfo=UTC).isoformat()
+                            if version.created_at.tzinfo is None
+                            else version.created_at.isoformat()
+                        ),
+                        "artifact_url": f"/api/versions/{version.id}/artifact",
+                    }
+
+                return {
+                    "id": comparison.id,
+                    "mode": comparison.mode,
+                    "created_at": (
+                        comparison.created_at.replace(tzinfo=UTC).isoformat()
+                        if comparison.created_at.tzinfo is None
+                        else comparison.created_at.isoformat()
+                    ),
+                    "before": side(old),
+                    "after": side(new),
+                    "counts": comparison.diff.get("counts", {}),
+                }
+
+            analyses = list(
+                session.scalars(
+                    select(Analysis).where(Analysis.comparison_id.in_(comparison_ids))
+                )
+            )
+            questions = list(
+                session.scalars(
+                    select(AskRecord).where(AskRecord.comparison_id.in_(comparison_ids))
+                )
+            )
+            items = [
+                {
+                    "type": "impact",
+                    **as_dict(record, {"cache_key"}),
+                    "comparison": comparison_summary(record.comparison_id),
+                }
+                for record in analyses
+            ]
+            items.extend(
+                {
+                    "type": "question",
+                    **as_dict(record, {"cache_key"}),
+                    "comparison": comparison_summary(record.comparison_id),
+                }
+                for record in questions
+            )
+            items.sort(key=lambda item: item["created_at"], reverse=True)
+            return {"items": items[:limit], "total": len(items)}

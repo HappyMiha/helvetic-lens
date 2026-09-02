@@ -13,6 +13,7 @@ from sqlalchemy import select, text
 from .config import DomainError, Settings
 from .model_settings import ApertusSettingsInput
 from .models import Law, Profile, Scan, Source, Version
+from .prompt_settings import PromptSettingsInput
 from .service import RegWatch, as_dict, get, version_summary
 
 
@@ -187,6 +188,10 @@ def create_app(settings: Settings | None = None, fetcher=None, model_client=None
             session.commit()
             return service.law_summary(session, law)
 
+    @app.get("/api/laws/{law_id}/ai-history")
+    def law_ai_history(law_id: str, limit: int = Query(default=100, ge=1, le=500)):
+        return service.ai_history(law_id=law_id, limit=limit)
+
     @app.delete("/api/laws/{law_id}")
     def delete_law(law_id: str):
         return service.delete_law(law_id)
@@ -250,6 +255,12 @@ def create_app(settings: Settings | None = None, fetcher=None, model_client=None
     @app.get("/api/comparisons/{comparison_id}")
     def comparison_detail(comparison_id: str):
         return service.comparison_detail(comparison_id)
+
+    @app.get("/api/comparisons/{comparison_id}/ai-history")
+    def comparison_ai_history(
+        comparison_id: str, limit: int = Query(default=100, ge=1, le=500)
+    ):
+        return service.ai_history(comparison_id=comparison_id, limit=limit)
 
     @app.post("/api/comparisons/{comparison_id}/analyse")
     async def analyse(comparison_id: str):
@@ -346,6 +357,18 @@ def create_app(settings: Settings | None = None, fetcher=None, model_client=None
     @app.post("/api/settings/apertus/reset")
     def reset_model_settings():
         return service.reset_model_settings()
+
+    @app.get("/api/settings/prompts")
+    def prompt_settings():
+        return service.prompt_configuration()
+
+    @app.patch("/api/settings/prompts")
+    def save_prompt_settings(data: PromptSettingsInput):
+        return service.save_prompt_settings(data)
+
+    @app.post("/api/settings/prompts/reset")
+    def reset_prompt_settings():
+        return service.reset_prompt_settings()
 
     return app
 

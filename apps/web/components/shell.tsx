@@ -10,6 +10,7 @@ import {
   Building2,
   ChevronDown,
   CircleHelp,
+  FileText,
   Globe2,
   History,
   Loader2,
@@ -105,6 +106,13 @@ export function Shell({
             Company profile
           </button>
           <Link
+            className={"nav-item " + (pathname === "/prompts" ? "active" : "")}
+            href="/prompts"
+          >
+            <FileText size={17} />
+            Prompt settings
+          </Link>
+          <Link
             className={"nav-item " + (pathname === "/settings" ? "active" : "")}
             href="/settings"
           >
@@ -164,6 +172,7 @@ export function Shell({
           <Link href="/sources">Sources</Link>
           <Link href="/activity">Activity</Link>
           <Link href="/logs">Logs</Link>
+          <Link href="/prompts">Prompts</Link>
           <Link href="/settings">Settings</Link>
         </nav>
         <div className={"content " + (wide ? "content-wide" : "")}>

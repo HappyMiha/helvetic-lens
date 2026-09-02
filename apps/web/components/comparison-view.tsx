@@ -27,6 +27,8 @@ import {
   useResource,
 } from "@/lib/api";
 import type {
+  AIHistoryItem,
+  AIHistoryPage,
   Analysis,
   Answer,
   Change,
@@ -36,6 +38,7 @@ import type {
   Version,
 } from "@/lib/types";
 import { Citations, ErrorNote, Loading, Status } from "./common";
+import { AIHistory } from "./ai-history";
 import { Shell } from "./shell";
 
 const PAGE_SIZE = 40;
@@ -408,6 +411,7 @@ export function ComparisonView({ id }: { id: string }) {
                 comparisonId={id}
                 configured={!!health?.apertus.configured}
               />
+              <AIHistory comparisonId={id} compact />
             </aside>
           </div>
         </>
@@ -488,16 +492,16 @@ function DiffSide({
   );
 }
 
-function CoverageNote({ coverage }: { coverage?: Coverage }) {
+function CoverageNote({ coverage }: { coverage?: Partial<Coverage> }) {
   if (!coverage?.available_passages) return null;
   return (
     <div
       className={coverage.limited ? "coverage-note limited" : "coverage-note"}
     >
       {coverage.limited ? "Limited context: " : "Evidence reviewed: "}
-      {coverage.included_passages} of {coverage.available_passages} passages ·{" "}
-      {coverage.included_characters.toLocaleString()} characters.{" "}
-      {coverage.scope}
+      {coverage.included_passages ?? 0} of {coverage.available_passages}{" "}
+      passages · {(coverage.included_characters ?? 0).toLocaleString()}{" "}
+      characters. {coverage.scope}
     </div>
   );
 }
@@ -511,32 +515,53 @@ function AskPanel({
 }) {
   const [question, setQuestion] = useState(""),
     [busy, setBusy] = useState(false),
-    [error, setError] = useState("");
-  const [history, setHistory] = useState<
-    { question: string; answer: Answer }[]
-  >([]);
+    [error, setError] = useState(""),
+    [notice, setNotice] = useState("");
+  const savedHistory = useResource<AIHistoryPage>(
+    `/comparisons/${comparisonId}/ai-history`,
+    5000,
+  );
+  const history = (savedHistory.data?.items || [])
+    .filter((item) => item.type === "question")
+    .sort(
+      (left, right) =>
+        new Date(right.last_used_at || right.created_at).getTime() -
+        new Date(left.last_used_at || left.created_at).getTime(),
+    )
+    .slice(0, 20)
+    .reverse();
   async function ask(event: React.FormEvent) {
     event.preventDefault();
     if (!question.trim()) return;
     setBusy(true);
     setError("");
+    setNotice("");
     try {
+      const submittedQuestion = question.trim();
       const answer = await api<Answer>(
         "/comparisons/" + comparisonId + "/ask",
         {
           method: "POST",
           body: JSON.stringify({
-            question,
+            question: submittedQuestion,
             history: history
+              .filter((item) => item.status === "succeeded")
               .slice(-4)
               .map((item) => ({ question: item.question })),
           }),
         },
       );
-      setHistory((values) => [...values, { question, answer }]);
       setQuestion("");
+      setNotice(
+        answer.cached
+          ? "Loaded the saved answer. No new provider request was made."
+          : "Answer saved to this comparison's AI history.",
+      );
+      savedHistory.reload();
+      refreshWorkspace();
     } catch (cause) {
       setError(errorText(cause));
+      savedHistory.reload();
     } finally {
       setBusy(false);
     }
@@ -556,23 +581,15 @@ function AskPanel({
           Answers link to the exact saved evidence.
         </p>
         <div className="chat-history" aria-live="polite">
-          {history.map((item, index) => (
-            <div key={index} className="chat-turn">
-              <p className="question-bubble">{item.question}</p>
-              <div className="answer-bubble">
-                {!item.answer.supported && (
-                  <strong className="block mb-2">
-                    Not supported by the supplied evidence
-                  </strong>
-                )}
-                <p>{item.answer.answer}</p>
-                <Citations values={item.answer.citations} />
-                <CoverageNote coverage={item.answer.coverage} />
-              </div>
-            </div>
+          {history.map((item) => (
+            <SavedQuestionTurn item={item} key={item.id} />
           ))}
         </div>
-        {history.length === 0 && (
+        {savedHistory.loading && !savedHistory.data && (
+          <Loading text="Loading saved questions…" />
+        )}
+        <ErrorNote message={savedHistory.error} />
+        {history.length === 0 && !savedHistory.loading && (
           <button
             disabled={!configured}
             className="suggested-question"
@@ -604,6 +621,7 @@ function AskPanel({
             rows={3}
           />
           <ErrorNote message={error} />
+          {notice && <p className="saved-answer-note">{notice}</p>}
           <Button
             type="submit"
             className="mt-3 w-full"
@@ -615,5 +633,41 @@ function AskPanel({
         </form>
       </div>
     </section>
+  );
+}
+
+function SavedQuestionTurn({ item }: { item: AIHistoryItem }) {
+  const answer = item.result as Pick<
+    Answer,
+    "supported" | "answer" | "citations"
+  > | null;
+  return (
+    <div className="chat-turn">
+      <p className="question-bubble">{item.question}</p>
+      <div className="answer-bubble">
+        {item.status === "failed" ? (
+          <ErrorNote message={item.error || "This saved request failed."} />
+        ) : answer ? (
+          <>
+            {!answer.supported && (
+              <strong className="block mb-2">
+                Not supported by the supplied evidence
+              </strong>
+            )}
+            <p>{answer.answer}</p>
+            <Citations values={answer.citations} />
+            <CoverageNote coverage={item.coverage} />
+            <p className="saved-answer-meta">
+              {dateTime(item.created_at)} · {item.model}
+              {item.use_count > 1
+                ? ` · reused ${item.use_count - 1} ${item.use_count === 2 ? "time" : "times"}`
+                : ""}
+            </p>
+          </>
+        ) : (
+          <Loading text="Apertus is answering…" />
+        )}
+      </div>
+    </div>
   );
 }

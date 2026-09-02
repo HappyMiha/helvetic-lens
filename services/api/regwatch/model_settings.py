@@ -14,6 +14,8 @@ PUBLIC_FIELDS = (
     "base_url",
     "model",
     "timeout_seconds",
+    "request_retries",
+    "batch_concurrency",
     "context_chars",
     "max_tokens",
     "temperature",
@@ -30,6 +32,8 @@ class ApertusSettingsInput(BaseModel):
     base_url: str = Field(default="", max_length=2000)
     model: str = Field(min_length=1, max_length=300)
     timeout_seconds: int = Field(default=90, ge=5, le=300)
+    request_retries: int = Field(default=2, ge=0, le=5)
+    batch_concurrency: int = Field(default=1, ge=1, le=4)
     context_chars: int = Field(default=24000, ge=1000, le=100000)
     max_tokens: int = Field(default=1600, ge=128, le=8192)
     temperature: float = Field(default=0.1, ge=0, le=2)

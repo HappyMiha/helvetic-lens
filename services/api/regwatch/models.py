@@ -137,6 +137,14 @@ class ApertusConfiguration(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class PromptConfiguration(Base):
+    __tablename__ = "prompt_configuration"
+    id: Mapped[str] = mapped_column(String(30), primary_key=True, default="default")
+    values: Mapped[dict] = mapped_column(JSON, default=dict)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class IntegrationLog(Base):
     __tablename__ = "integration_logs"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
@@ -167,4 +175,26 @@ class Analysis(Base):
     coverage: Mapped[dict] = mapped_column(JSON, default=dict)
     error: Mapped[str | None] = mapped_column(Text)
     model: Mapped[str] = mapped_column(Text)
+    prompt_revision: Mapped[int] = mapped_column(Integer, default=1)
+    use_count: Mapped[int] = mapped_column(Integer, default=1)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class AskRecord(Base):
+    __tablename__ = "ask_records"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    comparison_id: Mapped[str] = mapped_column(ForeignKey("comparisons.id"), index=True)
+    cache_key: Mapped[str] = mapped_column(String(64), index=True)
+    question: Mapped[str] = mapped_column(Text)
+    history: Mapped[list] = mapped_column(JSON, default=list)
+    status: Mapped[str] = mapped_column(String(30), default="pending", index=True)
+    result: Mapped[dict | None] = mapped_column(JSON)
+    coverage: Mapped[dict] = mapped_column(JSON, default=dict)
+    error: Mapped[str | None] = mapped_column(Text)
+    model: Mapped[str] = mapped_column(Text)
+    prompt_revision: Mapped[int] = mapped_column(Integer, default=1)
+    context_mode: Mapped[str] = mapped_column(String(30), default="automatic")
+    use_count: Mapped[int] = mapped_column(Integer, default=1)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)

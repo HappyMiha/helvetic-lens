@@ -28,6 +28,8 @@ def configuration(**changes):
         "presence_penalty": 0.2,
         "reasoning_effort": "default",
         "json_mode": True,
+        "request_retries": 2,
+        "batch_concurrency": 1,
         **changes,
     }
 
@@ -257,7 +259,12 @@ def test_saved_settings_are_used_by_later_real_adapter_requests_and_failures_are
     transport(monkeypatch, respond)
     client.patch(
         "/api/settings/apertus",
-        json=configuration(key_action="replace", api_key="test-saved-key", json_mode=False),
+        json=configuration(
+            key_action="replace",
+            api_key="test-saved-key",
+            json_mode=False,
+            request_retries=0,
+        ),
     )
     reply = client.post("/api/model/test")
     assert reply.status_code == 200 and reply.json()["saved"]
@@ -269,6 +276,35 @@ def test_saved_settings_are_used_by_later_real_adapter_requests_and_failures_are
     unreachable = client.post("/api/model/test")
     assert unreachable.status_code == 503 and unreachable.json()["code"] == "model_unreachable"
     assert client.get("/api/settings/apertus").json()["api_key_configured"]
+
+
+def test_transient_completion_failures_are_retried_and_each_attempt_is_logged(harness, monkeypatch):
+    client, _, _, _ = harness
+    requests = []
+
+    def respond(request):
+        requests.append(request)
+        if len(requests) == 1:
+            raise httpx.ReadTimeout("Test-only timeout", request=request)
+        if len(requests) == 2:
+            return httpx.Response(503, text="Test-only transient upstream failure")
+        return httpx.Response(200, json={"choices": [{"message": {"content": "ok"}}]})
+
+    transport(monkeypatch, respond)
+    response = client.post(
+        "/api/settings/apertus/test",
+        json=configuration(
+            key_action="replace",
+            api_key="test-retry-key",
+            json_mode=False,
+            request_retries=2,
+        ),
+    )
+    assert response.status_code == 200 and response.json()["received_reply"]
+    assert len(requests) == 3
+    logs = client.get("/api/integration-logs?provider=custom&sort_dir=asc").json()
+    assert logs["total"] == 3
+    assert [item["status"] for item in logs["items"]] == ["error", "error", "success"]
 
 
 @pytest.mark.parametrize(

@@ -36,6 +36,7 @@ import type {
   Version,
 } from "@/lib/types";
 import { ErrorNote, Loading, Status, SuccessNote } from "./common";
+import { AIHistory } from "./ai-history";
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
 import { ImportDialog } from "./document-forms";
 import { ScanPanel } from "./scan-panel";
@@ -553,6 +554,7 @@ export function LawDetail({ id }: { id: string }) {
                 </div>
               </details>
             </section>
+            <AIHistory lawId={id} />
             {law.comparisons.length > 0 && (
               <section className="panel mt-6">
                 <div className="panel-header">
@@ -603,7 +605,7 @@ export function LawDetail({ id }: { id: string }) {
               open={deleteOpen}
               onOpenChange={setDeleteOpen}
               title="Delete this monitored document?"
-              description={`This permanently deletes ${law.name}, all ${law.versions.length} saved version(s), observations, comparisons, analyses, and its scan entries. This cannot be undone.`}
+              description={`This permanently deletes ${law.name}, all ${law.versions.length} saved version(s), observations, comparisons, AI conclusions, question history, and its scan entries. This cannot be undone.`}
               confirmLabel="Delete document and history"
               busy={busy === "delete"}
               error={deleteOpen ? error : ""}
