@@ -4,7 +4,7 @@
 
 This backlog implements the product described in [README.md](README.md): a local-AI-first Swiss regulatory monitor with immutable evidence, a time-based legal registry, official-source connectors, cross-document impact analysis, and organization workspaces.
 
-**Status:** The hackathon MVP (`HL-001`–`HL-028`), document-identity gate (`HL-058`), and legal-unit semantic diff (`HL-059`) are implemented and verified through the API, browser build, migrations, and regression tests. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
+**Status:** The hackathon MVP (`HL-001`–`HL-029`), document-identity gate (`HL-058`), and legal-unit semantic diff (`HL-059`) are implemented and verified through the API, browser build, migrations, and regression tests. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
 
 ## Scope and priorities
 
@@ -67,7 +67,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-026](#hl-026) | P1       | DONE     | HL-006, HL-007, HL-017                                 | Integration diagnostics and controlled deletion                     |
 | [HL-027](#hl-027) | P1       | DONE     | HL-018, HL-019, HL-025, HL-026                         | Resilient AI calls, saved history, and prompt controls              |
 | [HL-028](#hl-028) | P1       | DONE     | HL-017, HL-027                                         | Robust citation-row handling and local Docker Apertus fallback      |
-| [HL-029](#hl-029) | P0       | PLANNED  | HL-028                                                 | Single-host local-first architecture and capacity contract          |
+| [HL-029](#hl-029) | P0       | DONE     | HL-028                                                 | Single-host local-first architecture and capacity contract          |
 | [HL-030](#hl-030) | P0       | PLANNED  | HL-029                                                 | Durable PostgreSQL jobs with Redis/Celery execution                 |
 | [HL-031](#hl-031) | P0       | PLANNED  | HL-029, HL-030                                         | Local model library, downloads, and runtime manager                 |
 | [HL-032](#hl-032) | P0       | PLANNED  | HL-030, HL-031                                         | Local-first inference routing, GPU fairness, and hardware benchmark |
@@ -544,6 +544,8 @@ Acceptance criteria:
 ### HL-029 — Ratify the single-host local-first architecture and capacity contract
 
 Turn the public-server assumptions into an implementation contract before changing the runtime or data model.
+
+**Status: DONE.** [The accepted architecture contract](docs/ARCHITECTURE.md) fixes one physical host and one Compose deployment, private service boundaries, `local_only`/`waiting_for_model` behavior, measured GTX 1070 and dual-GTX-1080 profiles, explicit 100-user queue semantics, release objectives, and the accepted availability limits of a single server.
 
 Acceptance criteria:
 

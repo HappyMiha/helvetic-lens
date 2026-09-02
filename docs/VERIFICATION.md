@@ -2,6 +2,13 @@
 
 The source-to-diff workflow, Settings page, and live Apertus path are verified.
 
+## Single-host local-first contract — 3 September 2026
+
+- `docs/ARCHITECTURE.md` is ratified as the HL-029 implementation contract for one i7/32 GB/two-GTX-1080 Linux host and one repository/Compose deployment.
+- Only Caddy ports 80/443 are public in the target. Database, Redis, workers, scheduler, model management, API, and inference stay private; development endpoints remain loopback-only.
+- Clean install is `local_only`: unavailable inference creates `waiting_for_model` work and cannot silently call a configured cloud integration.
+- The release gate now defines measurable API, queue-admission, GPU-slot, memory, recovery, connector-freshness, and queued-AI behavior. It explicitly accepts one-server downtime and the absence of high availability.
+
 ## Legal-unit semantic diff — 3 September 2026
 
 - 148 API regressions pass with diff schema v6. The stored result contains both complete exact passage/word evidence and a legal-unit projection with title, chapter, section, article, paragraph, littera, and number paths.

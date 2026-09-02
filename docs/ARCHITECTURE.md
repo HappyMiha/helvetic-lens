@@ -1,8 +1,10 @@
 # Helvetic Lens public beta architecture
 
-**Status:** proposed target architecture
+**Status:** accepted implementation contract (HL-029)
 
 **Decision date:** 2 September 2026
+
+**Ratified:** 3 September 2026
 
 **Deployment target:** one Linux server with an Intel i7, 32 GB RAM, and two NVIDIA GTX 1080 GPUs
 
@@ -21,6 +23,24 @@ The public corpus is shared, because ten organizations watching the same officia
 The complete public product is localized in `de-CH`, `fr-CH`, `it-CH`, `rm-CH`, and `en-CH`. Interface locale, official document-expression language, and AI output language are independent values: changing the navigation language never relabels or replaces original legal evidence.
 
 The target supports roughly 100 registered users and ordinary concurrent use through bounded work queues. It does not promise 100 simultaneous model generations. The actual GPU slot count, context size, and model profile must be measured on the two GTX 1080 cards before the public-beta claim is accepted.
+
+If the selected local model is missing, stopped, or still loading, AI jobs enter `waiting_for_model`. The dispatcher retains them in PostgreSQL and does not substitute a cloud provider. `local_only` is the clean-install and deployment default; choosing a remote provider is a separate, visible organization-admin action.
+
+## Ratified capacity contract
+
+The following objectives are release gates for the single-host public beta. They are measured on the stated i7/32 GB/two-GTX-1080 host with the representative 100-account workload described below, not inferred from a model name or vendor specification.
+
+| Concern             | Public-beta objective                                                                                                                                                                                         |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| API reads           | Registry and document-detail p95 below 500 ms with 10–20 concurrent readers.                                                                                                                                  |
+| Queue admission     | Validate and persist a command, including its durable job, in under 1 second p95; return an explicit quota/rate-limit result instead of waiting in the HTTP request.                                          |
+| GPU slots           | Ship two generation slots only after the replicated profile passes concurrent load without OOM; otherwise ship one split-runner slot. `dev-1070` always starts with one slot.                                 |
+| Memory              | Stay below 85% sustained host RAM, avoid host swap thrashing, bound each worker class, and complete the agreed load without GPU OOM.                                                                          |
+| Recovery            | API readiness returns within 2 minutes of restart; eligible leased/queued work is redispatched from PostgreSQL within 60 seconds after workers/Redis recover, with no duplicate evidence or analysis records. |
+| Connector freshness | Dispatch a due high-frequency discovery run within 5 minutes and a daily reconciliation within 30 minutes of its persisted schedule; expose misses and source lag.                                            |
+| AI wait honesty     | Return the durable job immediately, expose `waiting_for_model`/queue state, and keep evidence pages responsive while all measured GPU slots are occupied.                                                     |
+
+The accepted single-host risks are explicit: the server is one failure domain; host maintenance causes downtime; and PostgreSQL durability, Redis AOF, restart policies, and off-host backups improve recovery but do not provide high availability. Multi-host failover remains out of scope for this release.
 
 ## Why the current MVP must change
 
