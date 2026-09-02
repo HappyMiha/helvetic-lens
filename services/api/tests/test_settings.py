@@ -224,6 +224,11 @@ def test_local_docker_provider_derives_endpoint_lists_models_and_never_sends_rem
 
     def respond(request):
         requests.append(request)
+        if request.url.path.endswith("/chat/completions"):
+            return httpx.Response(
+                200,
+                json={"choices": [{"message": {"content": '{"status":"ok"}'}}]},
+            )
         return httpx.Response(
             200,
             json={
@@ -252,6 +257,21 @@ def test_local_docker_provider_derives_endpoint_lists_models_and_never_sends_rem
     assert str(requests[0].url) == response.json()["base_url"] + "/models"
     assert "authorization" not in requests[0].headers
     assert "test-remote-token-must-stay-local" not in response.text
+
+    test_reply = client.post(
+        "/api/settings/apertus/test",
+        json=configuration(provider="docker", key_action="keep"),
+    )
+    assert test_reply.status_code == 200 and test_reply.json()["received_reply"]
+    completion = json.loads(requests[-1].content)
+    assert completion["response_format"]["type"] == "json_object"
+    assert completion["response_format"]["schema"] == {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {"status": {"type": "string", "const": "ok"}},
+        "required": ["status"],
+    }
+    assert "authorization" not in requests[-1].headers
 
     saved_local = client.patch(
         "/api/settings/apertus",
@@ -456,11 +476,11 @@ def test_parameter_change_during_analysis_preserves_original_model_and_marks_res
     ).json()
     original = model.complete
 
-    async def change_configuration_during_request(system, user):
+    async def change_configuration_during_request(system, user, **kwargs):
         service.save_model_settings(
             ApertusSettingsInput(**configuration(model="test-after-change", max_tokens=2000))
         )
-        return await original(system, user)
+        return await original(system, user, **kwargs)
 
     model.complete = change_configuration_during_request
     response = client.post("/api/comparisons/" + comparison["id"] + "/analyse")

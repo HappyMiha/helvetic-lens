@@ -919,13 +919,15 @@ function ApertusForm({
             <input
               type="checkbox"
               checked={draft.json_mode}
+              disabled={draft.provider === "docker"}
               onChange={(event) => update("json_mode", event.target.checked)}
             />
             Request structured JSON mode
           </label>
           <p className="field-help !mt-0">
-            Enable only if your endpoint supports response_format: json_object.
-            Answers and citations are validated with either setting.
+            {draft.provider === "docker"
+              ? "Local Docker analysis always uses the exact validation schema so the compact model cannot return free-form prose."
+              : "Enable only if your endpoint supports response_format: json_object. Answers and citations are validated with either setting."}
           </p>
           <div className="info-note text-xs">
             Helvetic Lens always requests one non-streaming response. These

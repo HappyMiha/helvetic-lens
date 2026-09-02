@@ -195,7 +195,14 @@ class HelveticLens:
             settings, model_client = self.settings, self.model_client
         start = time.monotonic()
         reply = await model_client.complete(
-            "Return only a JSON object with a status field equal to ok.", "Test the Helvetic Lens connection."
+            "Return only a JSON object with a status field equal to ok.",
+            "Test the Helvetic Lens connection.",
+            response_schema={
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {"status": {"type": "string", "const": "ok"}},
+                "required": ["status"],
+            },
         )
         return {
             "status": "connected",

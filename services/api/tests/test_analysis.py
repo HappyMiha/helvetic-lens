@@ -370,9 +370,11 @@ async def test_out_of_range_numeric_citation_gets_one_repair_attempt():
     class NumericRepairModel:
         def __init__(self):
             self.calls = 0
+            self.response_schemas = []
 
-        async def complete(self, system, user):
+        async def complete(self, system, user, **kwargs):
             self.calls += 1
+            self.response_schemas.append(kwargs.get("response_schema"))
             return json.dumps(
                 {
                     "supported": True,
@@ -394,6 +396,14 @@ async def test_out_of_range_numeric_citation_gets_one_repair_attempt():
     )
     assert result["citation_rows"] == [1]
     assert model.calls == 2
+    assert all(
+        response_schema["properties"]["citation_rows"]["items"]["maximum"] == 1
+        for response_schema in model.response_schemas
+    )
+    assert all(
+        response_schema["properties"]["citation_rows"]["maxItems"] == 1
+        for response_schema in model.response_schemas
+    )
 
 
 def test_complete_diff_aligns_articles_and_covers_every_saved_passage_once():

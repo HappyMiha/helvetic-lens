@@ -62,7 +62,7 @@ class ScriptedModel:
     invalid_json_responses: int = 0
     unsupported_responses: int = 0
 
-    async def complete(self, system, user):
+    async def complete(self, system, user, **kwargs):
         self.calls.append((system, user))
         if self.fail:
             raise DomainError("Test model timed out.", 504, "model_timeout")

@@ -14,7 +14,7 @@ from .integration_logs import IntegrationLogger, response_snapshot
 from .models import Comparison, Profile, Version
 from .prompt_settings import PromptSettings, default_prompt_settings, prompt_fingerprint
 
-PROMPT_VERSION = "helvetic-lens-v6-explicit-citation-rows-local-docker"
+PROMPT_VERSION = "helvetic-lens-v7-schema-constrained-local-docker"
 
 
 class StructuredOutput(BaseModel):
@@ -319,7 +319,13 @@ class ModelClient:
                 return text
         raise ValueError("empty reply")
 
-    async def complete(self, system: str, user: str) -> str:
+    async def complete(
+        self,
+        system: str,
+        user: str,
+        *,
+        response_schema: dict | None = None,
+    ) -> str:
         if not self.settings.model_configured:
             raise DomainError(
                 "Apertus is not connected. Open Settings to add the API base URL and model ID; source monitoring and diffs remain available.",
@@ -343,7 +349,15 @@ class ModelClient:
         payload[token_field] = self.settings.apertus_max_tokens
         if self.settings.apertus_reasoning_effort != "default":
             payload["reasoning_effort"] = self.settings.apertus_reasoning_effort
-        if self.settings.apertus_json_mode:
+        if self.settings.apertus_provider == "docker" and response_schema is not None:
+            # llama.cpp accepts a JSON Schema directly beside type=json_object.
+            # Grammar-constrained decoding is essential for the compact local
+            # model, which can otherwise return prose or echo the input object.
+            payload["response_format"] = {
+                "type": "json_object",
+                "schema": response_schema,
+            }
+        elif self.settings.apertus_json_mode:
             payload["response_format"] = {"type": "json_object"}
         url, headers = self.endpoint("chat/completions"), self.headers()
         total_attempts = self.settings.apertus_request_retries + 1
@@ -1209,8 +1223,26 @@ async def structured_completion(
 ) -> dict:
     """Validate structured output and make one constrained repair attempt when it is invalid."""
 
+    response_schema = schema.model_json_schema()
+    if numeric_reference_count is not None and numeric_reference_count > 0:
+        stack = [response_schema]
+        while stack:
+            node = stack.pop()
+            if isinstance(node, dict):
+                for field_name, field_schema in node.get("properties", {}).items():
+                    if field_name in {"citation_rows", "citation_numbers"} and isinstance(
+                        field_schema, dict
+                    ):
+                        items = field_schema.get("items")
+                        if isinstance(items, dict):
+                            items["maximum"] = numeric_reference_count
+                        field_schema["maxItems"] = min(10, numeric_reference_count)
+                stack.extend(node.values())
+            elif isinstance(node, list):
+                stack.extend(node)
+
     user = json.dumps(payload, ensure_ascii=False)
-    raw = await client.complete(system, user)
+    raw = await client.complete(system, user, response_schema=response_schema)
     try:
         return parse_response(
             raw,
@@ -1228,7 +1260,9 @@ async def structured_completion(
             **payload,
             "repair": {
                 "validation_error": error.message,
-                "invalid_response": raw[:12000],
+                # Enough for the model to recognize its mistake without
+                # duplicating a long answer into an already bounded context.
+                "invalid_response": raw[:2000],
                 "valid_numeric_reference_range": (
                     [1, numeric_reference_count] if numeric_reference_count is not None else None
                 ),
@@ -1245,6 +1279,7 @@ async def structured_completion(
         repaired = await client.complete(
             repair_system,
             json.dumps(repair_payload, ensure_ascii=False),
+            response_schema=response_schema,
         )
         return parse_response(
             repaired,
