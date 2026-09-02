@@ -1,0 +1,32 @@
+{# String-message subset of the canonical Apertus 1 template used by RegWatch.
+   Source: https://github.com/swiss-ai/apertus-omni-tokenizer/blob/main/chat_templates/Apertus_1/chat_template.jinja #}
+{{ bos_token }}
+{# This GGUF conversion retains the canonical token IDs under placeholder names. #}
+{%- set system_start = '<SPECIAL_61>' -%}
+{%- set system_end = '<SPECIAL_62>' -%}
+{%- set developer_start = '<SPECIAL_63>' -%}
+{%- set developer_end = '<SPECIAL_64>' -%}
+{%- set user_start = '<SPECIAL_65>' -%}
+{%- set user_end = '<SPECIAL_66>' -%}
+{%- set assistant_start = '<SPECIAL_67>' -%}
+{%- set assistant_end = eos_token -%}
+{%- if messages and messages[0].role == 'system' -%}
+{{ system_start + messages[0].content + system_end }}
+{%- set loop_messages = messages[1:] -%}
+{%- else -%}
+{{ system_start + 'You are Apertus, a helpful assistant created by the Swiss AI Initiative.' + system_end }}
+{%- set loop_messages = messages -%}
+{%- endif -%}
+{{ developer_start + 'Deliberation: disabled\nTool Capabilities: disabled' + developer_end }}
+{%- for message in loop_messages -%}
+{%- if message.role == 'user' -%}
+{{ user_start + message.content + user_end }}
+{%- elif message.role == 'assistant' -%}
+{{ assistant_start + message.content + assistant_end }}
+{%- else -%}
+{{ raise_exception('The local Apertus template accepts system, user, and assistant messages only.') }}
+{%- endif -%}
+{%- endfor -%}
+{%- if add_generation_prompt -%}
+{{ assistant_start }}
+{%- endif -%}

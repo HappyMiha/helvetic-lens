@@ -55,6 +55,7 @@ const providerNames: Record<string, string> = {
   fedlex: "Fedlex ELI",
   firecrawl: "Firecrawl",
   infomaniak: "Infomaniak AI",
+  docker: "Local Docker Apertus",
   custom: "Custom Apertus endpoint",
 };
 

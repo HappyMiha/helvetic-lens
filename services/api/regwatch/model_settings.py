@@ -4,7 +4,7 @@ from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
 
-from .config import DomainError, Settings, infomaniak_base_url
+from .config import DomainError, Settings, infomaniak_base_url, local_docker_base_url
 from .extraction import canonical_url
 from .models import ApertusConfiguration
 
@@ -27,7 +27,7 @@ PUBLIC_FIELDS = (
 
 class ApertusSettingsInput(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
-    provider: Literal["custom", "infomaniak"] = "custom"
+    provider: Literal["custom", "docker", "infomaniak"] = "custom"
     product_id: str = Field(default="", max_length=30, pattern=r"^\d*$")
     base_url: str = Field(default="", max_length=2000)
     model: str = Field(min_length=1, max_length=300)
@@ -68,6 +68,9 @@ class ApertusSettingsInput(BaseModel):
             if not self.product_id:
                 raise ValueError("Enter the Infomaniak AI Product ID.")
             self.base_url = infomaniak_base_url(self.product_id)
+        elif self.provider == "docker":
+            self.product_id = ""
+            self.base_url = local_docker_base_url()
         else:
             self.product_id = ""
         key = self.api_key.get_secret_value().strip()
@@ -106,6 +109,13 @@ def resolved_settings(
 ) -> Settings:
     values = data.public_values() if data else record.values if record else {}
     _, _, key = resolve_key(environment, record, data)
+    provider = values.get("provider", environment.apertus_provider)
+    if provider == "docker":
+        # The reachable address changes when the API moves between the host and Compose.
+        # Derive it at runtime instead of trusting the address persisted by the other mode.
+        values = {**values, "base_url": local_docker_base_url(), "product_id": ""}
+        # Preserve a saved remote-provider token while never sending it to the local runner.
+        key = SecretStr("")
     return environment.model_copy(
         update={
             **{f"apertus_{name}": values[name] for name in PUBLIC_FIELDS if name in values},

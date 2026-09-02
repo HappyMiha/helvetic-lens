@@ -226,6 +226,35 @@ def test_impact_overflow_is_clamped_before_retained_citations_are_validated():
     assert all(action["citations"][0]["url"] == "/evidence/new?passage=p1" for action in result["actions"])
 
 
+def test_batch_digest_text_and_citations_are_bounded_before_validation():
+    evidence = [
+        {
+            "version_id": "new",
+            "passage_id": f"p{index}",
+            "position": index,
+            "text": f"Changed passage {index}.",
+            "page": 1,
+        }
+        for index in range(1, 31)
+    ]
+    result = parse_response(
+        json.dumps(
+            {
+                "supported": True,
+                "answer": "A" * 1364,
+                "citation_rows": list(range(1, 31)),
+            }
+        ),
+        AnswerDigest,
+        evidence,
+        validate_citations=False,
+        numeric_reference_count=len(evidence),
+        numeric_reference_evidence=evidence,
+    )
+    assert len(result["answer"]) == 1000
+    assert result["citation_rows"] == list(range(1, 11))
+
+
 def test_compact_batch_side_alias_is_resolved_to_the_exact_saved_version():
     evidence = [
         {
@@ -299,6 +328,41 @@ def test_numeric_model_references_are_range_checked_and_materialized_by_the_serv
     with pytest.raises(DomainError) as error:
         numbered_selection([999], result["citations"], 10, required=True)
     assert error.value.code == "invalid_citation"
+
+
+def test_numeric_citations_accept_explicit_rows_and_legacy_passage_positions():
+    evidence = [
+        {
+            "version_id": "saved-old-version",
+            "passage_id": "p01126",
+            "position": 1126,
+            "text": "The earlier requirement applied.",
+            "page": 28,
+        },
+        {
+            "version_id": "saved-new-version",
+            "passage_id": "p01127",
+            "position": 1127,
+            "text": "The replacement requirement applies.",
+            "page": 29,
+        },
+    ]
+    result = parse_response(
+        json.dumps(
+            {
+                "supported": True,
+                "answer": "The requirement changed.",
+                # Some providers copy the visible passage position instead of the batch row.
+                "citation_rows": [1126, 1127],
+            }
+        ),
+        AnswerDigest,
+        evidence,
+        validate_citations=False,
+        numeric_reference_count=len(evidence),
+        numeric_reference_evidence=evidence,
+    )
+    assert result["citation_rows"] == [1, 2]
 
 
 @pytest.mark.asyncio
@@ -388,6 +452,12 @@ def test_1406_changed_passages_are_partitioned_without_omission_or_truncation():
     comparison = Comparison(diff=compare_passages(old.passages, new.passages))
     evidence, deterministic_diff, _ = diff_evidence(old, new, comparison)
     batches = batch_diff_evidence(evidence, deterministic_diff, 24000)
+    assert all(batch["model_evidence"]["columns"][0] == "row_number" for batch in batches)
+    assert all(
+        [row[0] for row in batch["model_evidence"]["rows"]]
+        == list(range(1, len(batch["model_evidence"]["rows"]) + 1))
+        for batch in batches
+    )
     processed = [
         (passage["version_id"], passage["passage_id"])
         for batch in batches

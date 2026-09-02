@@ -213,6 +213,69 @@ def test_infomaniak_completion_uses_provider_contract(harness, monkeypatch):
     assert body["top_p"] == 0.9 and body["presence_penalty"] == 0.2
 
 
+def test_local_docker_provider_derives_endpoint_lists_models_and_never_sends_remote_key(harness, monkeypatch):
+    client, _, service, _ = harness
+    requests = []
+
+    client.patch(
+        "/api/settings/apertus",
+        json=configuration(key_action="replace", api_key="test-remote-token-must-stay-local"),
+    )
+
+    def respond(request):
+        requests.append(request)
+        return httpx.Response(
+            200,
+            json={
+                "object": "list",
+                "data": [{"id": "hf.co/example/apertus-local:Q4_K_M", "owned_by": "local"}],
+            },
+        )
+
+    transport(monkeypatch, respond)
+    response = client.post(
+        "/api/settings/apertus/models",
+        json=configuration(
+            provider="docker",
+            base_url="https://must-not-be-used.example/v1",
+            key_action="keep",
+        ),
+    )
+    assert response.status_code == 200
+    assert response.json()["provider"] == "docker"
+    assert response.json()["base_url"] in {
+        "http://127.0.0.1:12435/v1",
+        "http://local-apertus:8080/v1",
+    }
+    assert response.json()["models"][0]["id"] == "hf.co/example/apertus-local:Q4_K_M"
+    assert len(requests) == 1
+    assert str(requests[0].url) == response.json()["base_url"] + "/models"
+    assert "authorization" not in requests[0].headers
+    assert "test-remote-token-must-stay-local" not in response.text
+
+    saved_local = client.patch(
+        "/api/settings/apertus",
+        json=configuration(provider="docker", key_action="keep"),
+    )
+    assert saved_local.status_code == 200
+    assert saved_local.json()["provider"] == "docker"
+    assert saved_local.json()["api_key_configured"] is False
+    assert service.settings.apertus_api_key.get_secret_value() == ""
+    with service.db.session() as session:
+        assert session.get(ApertusConfiguration, "default").api_key == "test-remote-token-must-stay-local"
+
+    saved_remote = client.patch(
+        "/api/settings/apertus",
+        json=configuration(
+            provider="infomaniak",
+            product_id="111040",
+            key_action="keep",
+        ),
+    )
+    assert saved_remote.status_code == 200 and saved_remote.json()["api_key_configured"]
+    assert service.settings.apertus_api_key.get_secret_value() == "test-remote-token-must-stay-local"
+
+
 @pytest.mark.parametrize(
     ("upstream_status", "code", "api_status"),
     [

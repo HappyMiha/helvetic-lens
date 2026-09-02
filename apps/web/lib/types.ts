@@ -6,7 +6,7 @@ export type Health = {
   private_sources_enabled: boolean;
 };
 export type ApertusSettings = {
-  provider: "custom" | "infomaniak";
+  provider: "custom" | "docker" | "infomaniak";
   product_id: string;
   base_url: string;
   model: string;
@@ -32,7 +32,7 @@ export type ApertusModelOption = {
   created?: number;
 };
 export type ApertusModelList = {
-  provider: "custom" | "infomaniak";
+  provider: "custom" | "docker" | "infomaniak";
   base_url: string;
   models: ApertusModelOption[];
   count: number;

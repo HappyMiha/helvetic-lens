@@ -14,7 +14,7 @@ from .integration_logs import IntegrationLogger, response_snapshot
 from .models import Comparison, Profile, Version
 from .prompt_settings import PromptSettings, default_prompt_settings, prompt_fingerprint
 
-PROMPT_VERSION = "regwatch-v4-history-retry-full-context"
+PROMPT_VERSION = "regwatch-v5-explicit-citation-rows-local-docker"
 
 
 class StructuredOutput(BaseModel):
@@ -91,11 +91,19 @@ class ModelClient:
 
     @property
     def provider_name(self) -> str:
-        return "Infomaniak" if self.settings.apertus_provider == "infomaniak" else "Apertus"
+        if self.settings.apertus_provider == "infomaniak":
+            return "Infomaniak"
+        if self.settings.apertus_provider == "docker":
+            return "Local Docker Apertus"
+        return "Apertus"
 
     def headers(self) -> dict[str, str]:
         headers = {"User-Agent": "ApertusRegWatch/0.1"}
-        key = self.settings.apertus_api_key.get_secret_value()
+        key = (
+            ""
+            if self.settings.apertus_provider == "docker"
+            else self.settings.apertus_api_key.get_secret_value()
+        )
         if key:
             headers["Authorization"] = f"Bearer {key}"
         return headers
@@ -305,8 +313,13 @@ class ModelClient:
         total_attempts = self.settings.apertus_request_retries + 1
         retryable_statuses = {408, 425, 429, 500, 502, 503, 504}
 
-        async def pause(attempt: int):
-            await asyncio.sleep(min(2.0, 0.35 * (2 ** (attempt - 1))))
+        async def pause(attempt: int, response: httpx.Response | None = None):
+            retry_after = response.headers.get("retry-after", "") if response is not None else ""
+            try:
+                delay = float(retry_after)
+            except ValueError:
+                delay = 0.0
+            await asyncio.sleep(max(min(delay, 30.0), min(8.0, 1.0 * (2 ** (attempt - 1)))))
 
         async with httpx.AsyncClient(
             timeout=self.settings.apertus_timeout_seconds, trust_env=False
@@ -339,7 +352,7 @@ class ModelClient:
                             "error",
                             f"Transient HTTP {response.status_code}; the request will be retried.",
                         )
-                        await pause(attempt)
+                        await pause(attempt, response)
                         continue
                     self.raise_for_provider_error(response, operation="chat completions")
                     content = self.message_content(response.json())
@@ -547,6 +560,7 @@ def batch_diff_evidence(evidence: list[dict], deterministic_diff: dict, max_char
         model_evidence = {
             "version_ids": version_ids,
             "columns": [
+                "row_number",
                 "change_id",
                 "change_kind",
                 "side",
@@ -557,6 +571,7 @@ def batch_diff_evidence(evidence: list[dict], deterministic_diff: dict, max_char
             ],
             "rows": [
                 [
+                    row_number,
                     passage["change_id"],
                     passage["change_kind"],
                     passage["side"],
@@ -565,7 +580,7 @@ def batch_diff_evidence(evidence: list[dict], deterministic_diff: dict, max_char
                     passage["page"],
                     passage["text"],
                 ]
-                for passage in current_evidence
+                for row_number, passage in enumerate(current_evidence, 1)
             ],
         }
         batch_diff = {
@@ -602,6 +617,7 @@ def batch_diff_evidence(evidence: list[dict], deterministic_diff: dict, max_char
         unit_evidence = by_change.get(item["id"], [])
         compact_rows = [
             [
+                row_number,
                 passage["change_id"],
                 passage["change_kind"],
                 passage["side"],
@@ -610,7 +626,7 @@ def batch_diff_evidence(evidence: list[dict], deterministic_diff: dict, max_char
                 passage["page"],
                 passage["text"],
             ]
-            for passage in unit_evidence
+            for row_number, passage in enumerate(unit_evidence, 1)
         ]
         unit_size = len(json.dumps(compact_rows, ensure_ascii=False)) + 80
         if current_items and current_size + unit_size > limit:
@@ -708,16 +724,17 @@ def batch_version_evidence(evidence: list[dict], context: dict, max_chars: int) 
         version_ids = {passage["side"]: passage["version_id"] for passage in current}
         model_evidence = {
             "version_ids": version_ids,
-            "columns": ["side", "position", "passage_id", "page", "text"],
+            "columns": ["row_number", "side", "position", "passage_id", "page", "text"],
             "rows": [
                 [
+                    row_number,
                     passage["side"],
                     passage["position"],
                     passage["passage_id"],
                     passage["page"],
                     passage["text"],
                 ]
-                for passage in current
+                for row_number, passage in enumerate(current, 1)
             ],
         }
         batch_context = {
@@ -955,8 +972,20 @@ def bounded_structured_lists(candidate, schema: type[BaseModel]):
                     for action in actions
                 ]
             result["actions"] = actions
-    elif schema is ImpactDigest and isinstance(result.get("business_areas"), list):
-        result["business_areas"] = result["business_areas"][:6]
+    elif schema is ImpactDigest:
+        if isinstance(result.get("summary"), str):
+            result["summary"] = result["summary"][:800]
+        if isinstance(result.get("reason"), str):
+            result["reason"] = result["reason"][:800]
+        if isinstance(result.get("business_areas"), list):
+            result["business_areas"] = result["business_areas"][:6]
+        if isinstance(result.get("citation_rows"), list):
+            result["citation_rows"] = result["citation_rows"][:10]
+    elif schema is AnswerDigest:
+        if isinstance(result.get("answer"), str):
+            result["answer"] = result["answer"][:1000]
+        if isinstance(result.get("citation_rows"), list):
+            result["citation_rows"] = result["citation_rows"][:10]
     if schema is Impact and isinstance(result.get("citations"), list):
         result["citations"] = result["citations"][:10]
     elif schema is Answer and isinstance(result.get("citations"), list):
@@ -964,17 +993,32 @@ def bounded_structured_lists(candidate, schema: type[BaseModel]):
     return result
 
 
-def validate_numeric_references(result: dict, schema: type[BaseModel], reference_count: int):
+def validate_numeric_references(
+    result: dict,
+    schema: type[BaseModel],
+    reference_count: int,
+    reference_evidence: list[dict] | None = None,
+):
     """Range-check and deduplicate model-selected evidence numbers before materialization."""
 
     def checked(numbers, required: bool):
         selected = []
         for number in numbers:
-            if 1 <= number <= reference_count and number not in selected:
-                selected.append(number)
+            resolved = [number] if 1 <= number <= reference_count else []
+            if not resolved and reference_evidence:
+                for row_number, passage in enumerate(reference_evidence, 1):
+                    passage_number = re.search(r"(\d+)$", str(passage.get("passage_id", "")))
+                    if passage.get("position") == number or (
+                        passage_number and int(passage_number.group(1)) == number
+                    ):
+                        resolved.append(row_number)
+            for row_number in resolved:
+                if row_number not in selected:
+                    selected.append(row_number)
         if required and not selected:
             raise DomainError(
-                "Apertus selected a citation outside the supplied evidence. The answer was not accepted.",
+                "Apertus selected a citation outside the supplied evidence. Valid citation row numbers "
+                f"are 1 through {reference_count}; the answer was not accepted.",
                 502,
                 "invalid_citation",
             )
@@ -1003,6 +1047,7 @@ def parse_response(
     require_supported: bool = False,
     validate_citations: bool = True,
     numeric_reference_count: int | None = None,
+    numeric_reference_evidence: list[dict] | None = None,
 ) -> dict:
     fence = chr(96) * 3
     raw = re.sub(r"^" + fence + r"(?:json)?\s*|\s*" + fence + r"$", "", raw.strip())
@@ -1067,7 +1112,12 @@ def parse_response(
             "invalid_model_output",
         )
     if numeric_reference_count is not None:
-        result = validate_numeric_references(result, schema, numeric_reference_count)
+        result = validate_numeric_references(
+            result,
+            schema,
+            numeric_reference_count,
+            numeric_reference_evidence,
+        )
     if validate_citations:
         allowed = {(p["version_id"], p["passage_id"]): p for p in evidence}
         side_aliases: dict[str, set[str]] = {}
@@ -1113,6 +1163,7 @@ async def structured_completion(
     require_supported: bool = False,
     validate_citations: bool = True,
     numeric_reference_count: int | None = None,
+    numeric_reference_evidence: list[dict] | None = None,
     repair_instructions: str | None = None,
 ) -> dict:
     """Validate structured output and make one constrained repair attempt when it is invalid."""
@@ -1127,6 +1178,7 @@ async def structured_completion(
             require_supported=require_supported,
             validate_citations=validate_citations,
             numeric_reference_count=numeric_reference_count,
+            numeric_reference_evidence=numeric_reference_evidence,
         )
     except DomainError as error:
         if error.code not in {"invalid_model_output", "invalid_citation"}:
@@ -1136,6 +1188,9 @@ async def structured_completion(
             "repair": {
                 "validation_error": error.message,
                 "invalid_response": raw[:12000],
+                "valid_numeric_reference_range": (
+                    [1, numeric_reference_count] if numeric_reference_count is not None else None
+                ),
             },
         }
         repair_system = (
@@ -1157,6 +1212,7 @@ async def structured_completion(
             require_supported=require_supported,
             validate_citations=validate_citations,
             numeric_reference_count=numeric_reference_count,
+            numeric_reference_evidence=numeric_reference_evidence,
         )
 
 
@@ -1218,7 +1274,10 @@ async def impact_analysis(
         "later synthesis. Use only this batch's changed passages, distinguish old and new wording, and avoid "
         "legal conclusions. The evidence object supplies a columns list, a side-to-version_id map, and rows in "
         "that exact column order. Rows are numbered from 1. Select supporting rows by their 1-based numbers; "
-        "the server will create exact citations. Return only JSON matching this schema. Schema: "
+        "the server will create exact citations. The first value of every row is its explicit row_number; "
+        "return only those row_number values in citation_rows, never passage positions or passage IDs. "
+        "Select at most 10 supporting rows. Keep summary and reason within 800 characters each. "
+        "Return only JSON matching this schema. Schema: "
         + json.dumps(ImpactDigest.model_json_schema())
     )
 
@@ -1237,6 +1296,7 @@ async def impact_analysis(
             batch["evidence"],
             validate_citations=False,
             numeric_reference_count=len(batch["evidence"]),
+            numeric_reference_evidence=batch["evidence"],
             repair_instructions=prompts.repair_instructions,
         )
         result = materialize_digest_citations(result, batch["evidence"])
@@ -1471,7 +1531,9 @@ async def answer_question(
         "insufficient context. For any other question, set supported=false when this batch has no evidence. "
         "The evidence object supplies a columns list, a side-to-version_id map, and rows in that exact column "
         "order. Rows are numbered from 1. Select supporting rows by their 1-based numbers; the server will "
-        "create exact citations. Return only JSON matching this schema: "
+        "create exact citations. The first value of every row is its explicit row_number; return only those "
+        "row_number values in citation_rows, never passage positions or passage IDs. Return only JSON "
+        "matching this schema. Select at most 10 supporting rows and keep answer within 1000 characters: "
         + json.dumps(AnswerDigest.model_json_schema())
     )
 
@@ -1491,6 +1553,7 @@ async def answer_question(
             require_supported=change_question and deterministic_context["complete"],
             validate_citations=False,
             numeric_reference_count=len(batch["evidence"]),
+            numeric_reference_evidence=batch["evidence"],
             repair_instructions=prompts.repair_instructions,
         )
         result = materialize_digest_citations(result, batch["evidence"])

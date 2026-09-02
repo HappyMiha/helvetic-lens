@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Literal
 
@@ -10,17 +11,28 @@ ROOT = next(
     Path.cwd(),
 )
 INFOMANIAK_API_ROOT = "https://api.infomaniak.com"
+LOCAL_DOCKER_HOST_URL = "http://127.0.0.1:12435/v1"
+LOCAL_DOCKER_CONTAINER_URL = "http://local-apertus:8080/v1"
 
 
 def infomaniak_base_url(product_id: str) -> str:
     return f"{INFOMANIAK_API_ROOT}/2/ai/{product_id}/openai/v1"
 
 
+def local_docker_base_url() -> str:
+    override = os.getenv("LOCAL_APERTUS_BASE_URL", "").strip()
+    if override:
+        return override.rstrip("/")
+    if Path("/.dockerenv").exists():
+        return LOCAL_DOCKER_CONTAINER_URL
+    return LOCAL_DOCKER_HOST_URL
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ROOT / ".env", extra="ignore", populate_by_name=True)
     database_url: str = ""
     data_dir: Path = Field(default=ROOT / "data", alias="REGWATCH_DATA_DIR")
-    apertus_provider: Literal["custom", "infomaniak"] = "custom"
+    apertus_provider: Literal["custom", "docker", "infomaniak"] = "custom"
     apertus_product_id: str = Field(default="", pattern=r"^\d*$")
     apertus_base_url: str = ""
     apertus_model: str = "swiss-ai/Apertus-v1.5-8B"
@@ -49,6 +61,9 @@ class Settings(BaseSettings):
                 raise ValueError("APERTUS_PRODUCT_ID is required for the Infomaniak provider.")
             self.apertus_product_id = product_id
             self.apertus_base_url = infomaniak_base_url(product_id)
+        elif self.apertus_provider == "docker":
+            self.apertus_product_id = ""
+            self.apertus_base_url = local_docker_base_url()
         return self
 
     @property

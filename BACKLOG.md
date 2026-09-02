@@ -12,7 +12,7 @@ This backlog implements the product described in [README.md](README.md): user-co
 - **P1 — required to complete the MVP.** Complete website discovery, the dashboard, cited questions, verification, and the repeatable demonstration. P1 items are not optional.
 - **P2 — optional after the MVP is accepted.** Impact matrix and retrieval with pgvector, only when justified.
 
-There are **23 required items** and **2 optional items**, including the subsequently requested Settings page (RW-025). Follow dependencies and the release checkpoints below; priority alone is not a complete execution order. No calendar estimates are assumed until team capacity, source compatibility, and model access are known.
+There are **26 required items** and **2 optional items**, including the subsequently requested provider, diagnostics, history, prompt, and local-model work. Follow dependencies and the release checkpoints below; priority alone is not a complete execution order. No calendar estimates are assumed until team capacity, source compatibility, and model access are known.
 
 Keep the agreed stack: **Next.js, Tailwind CSS/shadcn/ui, FastAPI, PostgreSQL, BeautifulSoup, PyMuPDF, and `difflib`**. **Apertus v1.5 8B** is the proposed model target; confirm the actual model identifier and endpoint in RW-017. **pgvector is optional.**
 
@@ -60,6 +60,7 @@ Start RW-017 as soon as RW-002 and RW-003 are available so model access is check
 | [RW-025](#rw-025) | P0 | DONE | RW-002, RW-003, RW-017 adapter code | Settings page with persisted Apertus parameters |
 | [RW-026](#rw-026) | P1 | DONE | RW-006, RW-007, RW-017 | Integration diagnostics and controlled deletion |
 | [RW-027](#rw-027) | P1 | DONE | RW-018, RW-019, RW-025, RW-026 | Resilient AI calls, saved history, and prompt controls |
+| [RW-028](#rw-028) | P1 | DONE | RW-017, RW-027 | Robust citation-row handling and local Docker Apertus fallback |
 
 ## M0 — Ready to build
 
@@ -379,6 +380,20 @@ Acceptance criteria:
 - Keep original version artifacts available for inspection and download. Do not claim raw PDF upload support when the configured OpenAI-compatible chat endpoint does not document a PDF attachment contract.
 - Provide a **Prompt settings** page for Impact, Ask, synthesis, repair, and question-context instructions. Preserve server-controlled schemas, evidence separation, exact citation checks, and one-repair limits regardless of editable wording.
 - Cover retries, wrapped/double-encoded output, full-version context, cache reuse, failed-request history, prompt cache boundaries, history cascade deletion, browser rendering, and a live Infomaniak Ask/Impact run.
+
+<a id="rw-028"></a>
+### RW-028 — Recover real provider citations and add local Docker inference
+
+Added after a large Infomaniak comparison returned successful HTTP responses but sometimes used passage positions instead of the requested batch-row numbers, while separate provider connections occasionally closed mid-response.
+
+Acceptance criteria:
+
+- Include an explicit `row_number` as the first column in every batched evidence row and tell the model to cite only that value.
+- Accept an out-of-range model reference only when it maps to actual supplied passage positions or numeric passage identifiers; continue rejecting invented citations.
+- Include the allowed numeric range in the single repair request and keep exact server-materialized version, passage, quote, page, and evidence links.
+- Respect numeric `Retry-After` responses and use bounded exponential delays between interrupted transport attempts.
+- Add Local Docker Apertus as a selectable provider whose host/Compose endpoint is derived by the API, whose models load through the OpenAI-compatible `/models` route, and which never receives a saved remote-provider credential.
+- Provide and verify a repeatable optional Compose service using the official llama.cpp server image and a compact Apertus instruction checkpoint suitable for local pipeline diagnostics.
 
 ## M5 — Verification and demonstration
 

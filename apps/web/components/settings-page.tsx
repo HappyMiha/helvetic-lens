@@ -32,7 +32,7 @@ import { ErrorNote, Loading, SuccessNote } from "./common";
 import { ProfileDialog, Shell } from "./shell";
 
 type KeyAction = "keep" | "replace" | "remove" | "environment";
-type Provider = "custom" | "infomaniak";
+type Provider = "custom" | "docker" | "infomaniak";
 type ConnectionResult = {
   model: string;
   base_url: string;
@@ -40,6 +40,7 @@ type ConnectionResult = {
 };
 
 const INFOMANIAK_API_ROOT = "https://api.infomaniak.com/2/ai";
+const LOCAL_DOCKER_MODEL = "local-apertus";
 
 function infomaniakBaseUrl(productId: string) {
   return productId.trim()
@@ -112,7 +113,7 @@ export function SettingsPage() {
             <h2 className="mb-3">Your Apertus connection</h2>
             <p className="text-sm muted">
               {configuration.data?.configured
-                ? `${configuration.data.provider === "infomaniak" ? "Infomaniak" : "An OpenAI-compatible endpoint"} is configured. Use Test connection to verify that it answers.`
+                ? `${configuration.data.provider === "infomaniak" ? "Infomaniak" : configuration.data.provider === "docker" ? "Local Docker Apertus" : "An OpenAI-compatible endpoint"} is configured. Use Test connection to verify that it answers.`
                 : "No endpoint is configured yet. Monitoring and visual comparisons remain available."}
             </p>
             <p className="text-sm muted">
@@ -210,17 +211,31 @@ function ApertusForm({
     changed();
     setModels([]);
     setModelsMessage("");
-    setDraft((current) => ({
-      ...current,
-      provider,
-      product_id: current.product_id,
-      base_url:
-        provider === "infomaniak"
-          ? infomaniakBaseUrl(current.product_id)
-          : current.provider === "infomaniak"
-            ? ""
-            : current.base_url,
-    }));
+    setDraft((current) => {
+      if (provider === "docker") {
+        return {
+          ...current,
+          provider,
+          base_url: "",
+          model: LOCAL_DOCKER_MODEL,
+          context_chars: "6000",
+          max_tokens: "700",
+          batch_concurrency: "1",
+          json_mode: true,
+        };
+      }
+      return {
+        ...current,
+        provider,
+        product_id: current.product_id,
+        base_url:
+          provider === "infomaniak"
+            ? infomaniakBaseUrl(current.product_id)
+            : current.provider === "infomaniak" || current.provider === "docker"
+              ? ""
+              : current.base_url,
+      };
+    });
   }
   function customPreset(baseUrl: string, model: string) {
     changed();
@@ -238,7 +253,9 @@ function ApertusForm({
     const baseUrl =
       draft.provider === "infomaniak"
         ? infomaniakBaseUrl(draft.product_id)
-        : draft.base_url;
+        : draft.provider === "docker"
+          ? ""
+          : draft.base_url;
     return JSON.stringify({
       ...draft,
       base_url: baseUrl,
@@ -302,11 +319,17 @@ function ApertusForm({
         body: body(),
       });
       setModels(result.models);
+      if (draft.provider === "docker") {
+        setDraft((current) => ({ ...current, base_url: result.base_url }));
+      }
       const currentAvailable = result.models.some(
         (option) => option.id === draft.model,
       );
       if (!currentAvailable) {
         const preferred =
+          result.models.find((option) =>
+            option.id.toLowerCase().includes("apertus-v1.1-1.5b-instruct"),
+          ) ||
           result.models.find((option) =>
             option.id.toLowerCase().includes("apertus-v1.5-8b"),
           ) ||
@@ -369,18 +392,21 @@ function ApertusForm({
                 }
               >
                 <option value="infomaniak">Infomaniak AI</option>
+                <option value="docker">Local Docker Apertus</option>
                 <option value="custom">Other OpenAI-compatible API</option>
               </select>
               <span className="field-help">
-                Infomaniak uses its Product ID to build the API address and can
-                load the available models automatically.
+                Infomaniak and the local Docker service build their API
+                addresses automatically and can load their available models.
               </span>
             </label>
             <div className="rounded-lg border p-4 text-sm">
               <strong>
                 {draft.provider === "infomaniak"
                   ? "Infomaniak integration"
-                  : "Custom integration"}
+                  : draft.provider === "docker"
+                    ? "Local Docker integration"
+                    : "Custom integration"}
               </strong>
               <p className="field-help !mb-0">
                 One active provider is used for connection checks, impact
@@ -489,6 +515,82 @@ function ApertusForm({
                 )}
               </div>
             </div>
+          ) : draft.provider === "docker" ? (
+            <div className="rounded-lg border p-4 form-stack min-w-0">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold mb-1">
+                    Local Docker Apertus
+                  </h3>
+                  <p className="field-help !m-0">
+                    Uses a dedicated llama.cpp container beside RegWatch. The
+                    API service selects the correct host or container address
+                    automatically.
+                  </p>
+                </div>
+                <a
+                  href="https://github.com/ggml-org/llama.cpp/blob/master/docs/docker.md"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs inline-flex items-center gap-1"
+                >
+                  llama.cpp Docker docs <ArrowUpRight size={12} />
+                </a>
+              </div>
+              <label>
+                API base URL
+                <Input
+                  value={draft.base_url || "Selected automatically when tested"}
+                  readOnly
+                  aria-readonly="true"
+                />
+                <span className="field-help">
+                  Local host processes use port 12435; the Compose API reaches
+                  the local-apertus service on the internal network.
+                </span>
+              </label>
+              <label>
+                Local model
+                <select
+                  value={draft.model}
+                  onChange={(event) => update("model", event.target.value)}
+                  required
+                >
+                  {!models.some((option) => option.id === draft.model) && (
+                    <option value={draft.model}>{draft.model}</option>
+                  )}
+                  {models.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.id}
+                    </option>
+                  ))}
+                </select>
+                <span className="field-help">
+                  The 1.5B model is a lightweight local diagnostic fallback.
+                  Keep Infomaniak for higher-quality legal analysis.
+                </span>
+              </label>
+              <div className="flex flex-wrap gap-3 items-center">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={loadModels}
+                >
+                  {busy === "models" ? (
+                    <Loader2 className="animate-spin" />
+                  ) : (
+                    <RotateCcw size={14} />
+                  )}
+                  {models.length ? "Refresh local models" : "Load local models"}
+                </Button>
+                {modelsMessage && (
+                  <span role="status" className="text-xs text-primary">
+                    {modelsMessage}
+                  </span>
+                )}
+              </div>
+            </div>
           ) : (
             <>
               <div className="rounded-lg border p-4">
@@ -570,64 +672,78 @@ function ApertusForm({
               </label>
             </>
           )}
-          <div className="rounded-lg border p-4 min-w-0">
-            <div className="flex items-center gap-2 text-sm font-semibold mb-2">
-              <KeyRound size={15} />
-              {draft.provider === "infomaniak" ? "API token" : "API key"}
+          {draft.provider === "docker" ? (
+            <div className="rounded-lg border p-4 min-w-0 text-sm">
+              <div className="flex items-center gap-2 font-semibold mb-2">
+                <KeyRound size={15} /> No local credential required
+              </div>
+              <p className="field-help !mb-0">
+                RegWatch never sends the saved Infomaniak token to the local
+                container. The remote credential remains preserved when you test
+                or save this local provider.
+              </p>
             </div>
-            <p className="text-xs muted">
-              {initial.api_key_configured
-                ? "A credential is configured (" +
-                  initial.key_source +
-                  "). Its value is never sent back to your browser."
-                : "No credential is configured. Some local inference servers do not need one."}
-            </p>
-            <label>
-              Key handling
-              <select
-                value={keyAction}
-                onChange={(event) => {
-                  changed();
-                  setKeyAction(event.target.value as KeyAction);
-                  setApiKey("");
-                }}
-              >
-                <option value="keep">Keep existing credential</option>
-                <option value="replace">Replace with a new credential</option>
-                <option value="remove">Use no credential</option>
-                <option value="environment">
-                  Use the server environment credential
-                </option>
-              </select>
-            </label>
-            {keyAction === "replace" && (
-              <label className="mt-3 block">
-                {draft.provider === "infomaniak"
-                  ? "New API token"
-                  : "New API key"}
-                <Input
-                  type="password"
-                  autoComplete="new-password"
-                  placeholder={
-                    draft.provider === "infomaniak"
-                      ? "Paste your Infomaniak API token"
-                      : "Paste your inference API key"
-                  }
-                  value={apiKey}
+          ) : (
+            <div className="rounded-lg border p-4 min-w-0">
+              <div className="flex items-center gap-2 text-sm font-semibold mb-2">
+                <KeyRound size={15} />
+                {draft.provider === "infomaniak" ? "API token" : "API key"}
+              </div>
+              <p className="text-xs muted">
+                {initial.api_key_configured
+                  ? "A credential is configured (" +
+                    initial.key_source +
+                    "). Its value is never sent back to your browser."
+                  : "No credential is configured. Some local inference servers do not need one."}
+              </p>
+              <label>
+                Key handling
+                <select
+                  value={keyAction}
                   onChange={(event) => {
                     changed();
-                    setApiKey(event.target.value);
+                    setKeyAction(event.target.value as KeyAction);
+                    setApiKey("");
                   }}
-                  required
-                  maxLength={4000}
-                />
+                >
+                  <option value="keep">Keep existing credential</option>
+                  <option value="replace">Replace with a new credential</option>
+                  <option value="remove">Use no credential</option>
+                  <option value="environment">
+                    Use the server environment credential
+                  </option>
+                </select>
               </label>
-            )}
-            <p className="field-help">
-              Saved credentials stay in the server database, outside Git. Leave
-              the existing credential unchanged when editing other parameters.
-            </p>
-          </div>
+              {keyAction === "replace" && (
+                <label className="mt-3 block">
+                  {draft.provider === "infomaniak"
+                    ? "New API token"
+                    : "New API key"}
+                  <Input
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder={
+                      draft.provider === "infomaniak"
+                        ? "Paste your Infomaniak API token"
+                        : "Paste your inference API key"
+                    }
+                    value={apiKey}
+                    onChange={(event) => {
+                      changed();
+                      setApiKey(event.target.value);
+                    }}
+                    required
+                    maxLength={4000}
+                  />
+                </label>
+              )}
+              <p className="field-help">
+                Saved credentials stay in the server database, outside Git.
+                Leave the existing credential unchanged when editing other
+                parameters.
+              </p>
+            </div>
+          )}
           <div className="pt-2">
             <h3 className="text-sm font-semibold mb-4">
               Requests and generation
@@ -834,7 +950,9 @@ function ApertusForm({
                 !!busy ||
                 (draft.provider === "infomaniak"
                   ? !draft.product_id.trim()
-                  : !draft.base_url.trim())
+                  : draft.provider === "custom"
+                    ? !draft.base_url.trim()
+                    : false)
               }
             >
               {busy === "test" ? (

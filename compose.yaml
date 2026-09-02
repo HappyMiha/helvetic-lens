@@ -50,6 +50,33 @@ services:
     depends_on:
       api:
         condition: service_healthy
+  local-apertus:
+    profiles: ["local-ai"]
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda
+    gpus: all
+    ports:
+      - "127.0.0.1:${LOCAL_APERTUS_PORT:-12435}:8080"
+    volumes:
+      - local_apertus_cache:/root/.cache
+      - ./deploy/apertus-v1-chat-template.jinja:/templates/apertus-v1-chat-template.jinja:ro
+    command:
+      - -hf
+      - MrMeOrYou/Apertus-v1.1-1.5B-Instruct-GGUF:BF16
+      - --alias
+      - local-apertus
+      - --chat-template-file
+      - /templates/apertus-v1-chat-template.jinja
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --ctx-size
+      - "4096"
+      - --n-predict
+      - "700"
+      - --n-gpu-layers
+      - "99"
 volumes:
   postgres_data:
   document_data:
+  local_apertus_cache:
