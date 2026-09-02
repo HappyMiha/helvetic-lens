@@ -1,9 +1,14 @@
 # Helvetic Lens public beta architecture
 
-**Status:** proposed target architecture  
-**Decision date:** 2 September 2026  
-**Deployment target:** one Linux server with an Intel i7, 32 GB RAM, and two NVIDIA GTX 1080 GPUs  
+**Status:** proposed target architecture
+
+**Decision date:** 2 September 2026
+
+**Deployment target:** one Linux server with an Intel i7, 32 GB RAM, and two NVIDIA GTX 1080 GPUs
+
 **Product default:** local Apertus inference; cloud providers are explicit optional integrations
+
+**Product locales:** German, French, Italian, Romansh, and English
 
 This document defines the architecture behind the public-beta backlog in [BACKLOG.md](../BACKLOG.md). It deliberately keeps Helvetic Lens on one physical server. The API, workers, database, queue, and inference runtime use separate processes or containers so a long PDF extraction or model request cannot block the website, but they remain one deployment, one repository, and one operational unit.
 
@@ -12,6 +17,8 @@ This document defines the architecture behind the public-beta backlog in [BACKLO
 Helvetic Lens will remain a **modular monolith on one host**. PostgreSQL is the durable source of truth. Redis and Celery move scans, connector synchronization, document processing, and AI work out of the web request. A private local inference runtime manages downloaded GGUF models and the available GPUs. The clean-install policy is `local_only`; Infomaniak and custom OpenAI-compatible endpoints remain available only after an organization administrator explicitly enables one.
 
 The public corpus is shared, because ten organizations watching the same official act should not download and parse it ten times. Watchlists, company profiles, prompts, AI conclusions, cloud credentials, and user state belong to an organization. Official evidence remains immutable and every inferred impact links back to the exact saved passage, page, metadata record, or deterministic comparison that supports it.
+
+The complete public product is localized in `de-CH`, `fr-CH`, `it-CH`, `rm-CH`, and `en-CH`. Interface locale, official document-expression language, and AI output language are independent values: changing the navigation language never relabels or replaces original legal evidence.
 
 The target supports roughly 100 registered users and ordinary concurrent use through bounded work queues. It does not promise 100 simultaneous model generations. The actual GPU slot count, context size, and model profile must be measured on the two GTX 1080 cards before the public-beta claim is accepted.
 
@@ -39,6 +46,7 @@ The existing strengths remain unchanged: immutable snapshots, separate observati
 6. **One host is an accepted constraint.** Separate processes improve isolation and restart behavior, but this release does not claim high availability.
 7. **Measure old GPUs instead of guessing.** Model size, quantization, context, parallelism, and GPU split are enabled only after a repeatable benchmark.
 8. **Keep the product usable without AI.** Registry, timelines, source evidence, versions, and deterministic diffs remain available when inference is queued or offline.
+9. **Localize the interface, preserve the source.** Controls and explanations follow the user locale; official titles, passages, artifacts, identifiers, dates, and citations retain their actual language and provenance.
 
 ## Single-host topology
 
@@ -235,6 +243,20 @@ Viewer mutation controls are absent from the UI, and the API independently retur
 
 The first platform administrator is assigned with an idempotent CLI command before the server is exposed, for example `helvetic-lens admin promote --email ...`. The CLI lists, promotes, and demotes platform administrators, records the action, and refuses to remove the last one. Direct database editing and a public “become admin” page are not supported.
 
+## Localization and source-language architecture
+
+The supported interface locales are `de-CH`, `fr-CH`, `it-CH`, `rm-CH`, and `en-CH`. Locale resolution uses authenticated user preference first, then a pre-login cookie, a supported browser `Accept-Language`, and finally the documented deployment default. Locale is personal presentation state; it does not fork organization records or change the language of an official artifact.
+
+Next.js uses namespaced, repository-owned catalogues with ICU-style parameters and plurals. Pages do not build sentences from translated fragments. Stable API error codes, enum values, identifiers, and job states remain language-neutral; FastAPI returns typed parameters and the presentation layer renders the message. Missing/unused keys and placeholder/plural mismatches fail CI. A pseudo-locale or equivalent long-text pass catches clipped controls before human review in all five languages.
+
+Dates and numbers use CLDR/`Intl` formatting for the selected Swiss locale. Stored instants remain UTC, while registry grouping uses Europe/Zurich unless a later user-timezone feature explicitly changes it. Source-stated publication, version, effective, and decision dates retain their precision and provenance; the interface never turns a fetch timestamp into a legal date.
+
+Every official expression carries a BCP 47 language tag. Fedlex may expose several expressions, Parliament's English fields may be incomplete, and a Federal Supreme Court judgment normally exists only in its judgment language. The interface shows the languages that actually exist and says when the selected one is unavailable. Machine-generated translations are labelled, link to the unchanged original evidence, and never become official `DocumentVersion` records. Citation quotes always come from the exact saved source-language passage.
+
+Impact and Ask requests include an explicit output locale. `output_locale` is persisted in AI history and participates in the cache/idempotency fingerprint, so a German answer cannot satisfy an otherwise identical French request. Changing UI locale does not rewrite an earlier answer; history shows its language and may offer an authorized regeneration. Fixed schemas, row selection, and citation validation remain language-neutral. A local-model language failure is visible and retryable; it never causes a silent cloud fallback.
+
+Search indexes titles from every available official expression plus language-neutral identifiers. Query processing is Unicode-aware and safe for German umlauts, French/Italian accents, and Romansh text. Results identify the matched expression/language and never imply that a machine-translated corpus is official source text. Invitations and later digests render in the recipient's stored locale with a documented fallback.
+
 ## Connector architecture
 
 Every official source implements one versioned adapter contract:
@@ -332,7 +354,7 @@ Metrics cover API latency/5xx, database pool, Redis health, queue depth and olde
 
 ## Capacity envelope and acceptance
 
-“Supports 100 users” means a measured usage profile on the target host, not 100 simultaneous generations. The public-beta gate defines the scenario before testing, for example 100 accounts across several organizations, 10–20 concurrent readers, concurrent registry filters and evidence views, several scan submissions, scheduled connector traffic, and 20 AI jobs accepted into a fair queue.
+“Supports 100 users” means a measured usage profile on the target host, not 100 simultaneous generations. The public-beta gate defines the scenario before testing, for example 100 accounts across several organizations and all five locales, 10–20 concurrent readers, concurrent registry filters and evidence views, several scan submissions, scheduled connector traffic, and 20 AI jobs accepted into a fair queue.
 
 Initial non-AI service objectives on the target host:
 
@@ -352,11 +374,13 @@ If replicated Apertus 8B does not fit reliably on each GTX 1080, the shipped pro
 The safe sequence is:
 
 1. Add durable jobs, model management, local-first routing, and hardware benchmarks.
-2. Add organizations and authentication, then migrate the current workspace into a default organization.
+2. Establish the five-locale catalogue/error/date conventions, add organizations and authentication, then migrate the current workspace into a default organization.
 3. Separate the shared regulatory corpus from organization watchlists and introduce normalized events.
 4. Implement the connector contract, Fedlex catalogue, Parliament, court, and scheduled fan-out.
 5. Add deterministic candidate generation, evidence relations, local impact analysis, and the inbox.
 6. Add the public reverse proxy, operations/admin surfaces, backups, observability, and the 100-user gate.
+
+Localization ships alongside every screen rather than as a final translation pass. Public-beta acceptance includes one complete browser path and one real local-Apertus cited response in each supported locale.
 
 New broad connectors must not land before the organization/corpus migration, otherwise tenant scoping and deduplication would need to be retrofitted into the same records a second time.
 

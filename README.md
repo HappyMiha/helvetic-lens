@@ -8,7 +8,7 @@ The MVP must be a functional product with a narrow scope. Sources are configured
 
 > **Project status:** The model-enabled MVP works end to end: source connections, direct URLs, imports, immutable history, live scans, saved comparisons, visual evidence, persisted Apertus settings, impact analysis, cited questions, saved AI history, editable prompts, inspectable integration logs, and controlled removal of sources or monitored documents. Live Apertus checks include a large complete comparison processed without truncation. See [verification notes](docs/VERIFICATION.md).
 
-> **Public-beta direction:** Local AI becomes the default and cloud providers become explicit optional adapters. The target remains one physical i7/32 GB/two-GTX-1080 server and one Compose deployment, with durable PostgreSQL jobs, Redis/Celery queues, managed quantized models, organization workspaces, login, three official-source connectors, a time-grouped registry, and an impact inbox. These capabilities are planned, not yet implemented. See the [architecture decision](docs/ARCHITECTURE.md) and `HL-029`–`HL-049` in [BACKLOG.md](BACKLOG.md).
+> **Public-beta direction:** Local AI becomes the default and cloud providers become explicit optional adapters. The target remains one physical i7/32 GB/two-GTX-1080 server and one Compose deployment, with durable PostgreSQL jobs, Redis/Celery queues, managed quantized models, organization workspaces, login, complete German/French/Italian/Romansh/English localization, three official-source connectors, a time-grouped registry, and an impact inbox. These capabilities are planned, not yet implemented. See the [architecture decision](docs/ARCHITECTURE.md) and `HL-029`–`HL-049` plus `HL-057` in [BACKLOG.md](BACKLOG.md).
 
 Development tasks, priorities, dependencies, and acceptance criteria are tracked in [BACKLOG.md](BACKLOG.md).
 
@@ -194,7 +194,7 @@ For example, a clearly synthetic demo could replace **"within 30 days"** with **
 
 | Layer | Choice | Status and role |
 | --- | --- | --- |
-| Web app | **Next.js** | Implemented; adds registry, impact inbox, login, organization, and administration views for public beta. |
+| Web app | **Next.js** | Implemented; adds five-language registry, impact inbox, login, organization, and administration views for public beta. |
 | Styling and components | **Tailwind CSS + shadcn/ui** | Implemented; keeps the expanded interface consistent and accessible. |
 | Backend | **FastAPI** | Implemented; remains one modular codebase used by the API, scheduler, and worker processes. |
 | System of record | **PostgreSQL** | Implemented for MVP data; expands to durable jobs, shared corpus, regulatory events/relations, users, organizations, sessions, and feed state. |
@@ -238,10 +238,10 @@ Fedlex / Parliament / Federal Supreme Court
 - [x] Connect Apertus and display an impact summary with suggested actions and evidence.
 - [x] Add Ask Apertus with working citations.
 - [x] Verify the complete workflow with real supported sources and an imported previous version, then rehearse the demo through that same workflow.
-- [ ] **M6:** durable jobs, managed local models/GPU profiles, shared-corpus migration, login, organizations, and enforced roles (`HL-029`–`HL-035`).
+- [ ] **M6:** durable jobs, managed local models/GPU profiles, shared-corpus migration, login, organizations, enforced roles, and the five-locale catalogue/error/date foundation (`HL-029`–`HL-035`, start `HL-057`).
 - [ ] **M7:** normalized registry plus incremental Fedlex, Parliament, Federal Supreme Court, scheduling, and official notices (`HL-036`–`HL-043`).
 - [ ] **M8:** explainable relation candidates, local impact analysis, and organization impact inbox (`HL-044`–`HL-046`).
-- [ ] **M9:** administration, public single-server operations, recovery rehearsal, and measured 100-user gate (`HL-047`–`HL-049`).
+- [ ] **M9:** complete five-language UI/AI/history, administration, public single-server operations, recovery rehearsal, and measured 100-user gate (`HL-047`–`HL-049`, `HL-057`).
 - [ ] Add broader news, pgvector, digests, graph review, identity refinements, more courts, or multi-host deployment only after their entry conditions (`HL-050`–`HL-056`).
 
 ## Definition of done
@@ -256,11 +256,11 @@ Fedlex / Parliament / Federal Supreme Court
 
 A dashboard with preset change cards or a scan button that only plays an animation does not meet this definition.
 
-Public-beta acceptance additionally requires local-only clean-install behavior, model download/benchmark/recovery on the target GPUs, organization isolation and viewer authorization, restart-safe jobs, live contract checks for all three official connectors, correct time-grouped registry events, evidence-backed cross-links, and the checked-in 100-user scenario from `HL-049`.
+Public-beta acceptance additionally requires local-only clean-install behavior, model download/benchmark/recovery on the target GPUs, organization isolation and viewer authorization, restart-safe jobs, live contract checks for all three official connectors, correct time-grouped registry events, evidence-backed cross-links, complete `de-CH`/`fr-CH`/`it-CH`/`rm-CH`/`en-CH` browser and local-AI checks, and the checked-in 100-user scenario from `HL-049`.
 
 ## Product boundaries
 
-- The current MVP remains a local single-workspace product until `HL-029`–`HL-049` are implemented; its loopback Compose file is not a public deployment.
+- The current MVP remains a local single-workspace product until `HL-029`–`HL-049` and `HL-057` are implemented; its loopback Compose file is not a public deployment.
 - Public beta adds two organization roles and a deployment administrator, not enterprise SSO, SCIM, arbitrary custom roles, or compliance certification.
 - It adds bounded official connectors and scheduled workers, not an exhaustive crawler or a claim of universal Swiss legal coverage.
 - It stores an evidence-backed relation graph as a data model, but a visual graph and pgvector wait for measured value.

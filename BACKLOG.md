@@ -13,7 +13,7 @@ This backlog implements the product described in [README.md](README.md): a local
 - **P2 — valuable follow-up after public beta.** Add after the core three sources, registry, and impact inbox are reliable.
 - **P3 — evidence-driven expansion.** Implement only when real use demonstrates the need.
 
-The completed baseline contains 28 items, including two deliberately deferred optional items. The public-beta roadmap contains **21 required items (`HL-029`–`HL-049`)** and **7 after-beta items (`HL-050`–`HL-056`)**. Follow dependencies and checkpoints; priority alone is not an execution order. No calendar estimates are assumed until the dual-GTX-1080 benchmark and connector contract spikes are complete.
+The completed baseline contains 28 items, including two deliberately deferred optional items. The public-beta roadmap contains **22 required items (`HL-029`–`HL-049` plus `HL-057`)** and **7 after-beta items (`HL-050`–`HL-056`)**. Follow dependencies and checkpoints; priority alone is not an execution order. No calendar estimates are assumed until the dual-GTX-1080 benchmark and connector contract spikes are complete.
 
 Keep the proven stack and add only the infrastructure now justified by public use: **Next.js, Tailwind CSS/shadcn/ui, FastAPI, PostgreSQL, Redis, Celery, Caddy, BeautifulSoup, PyMuPDF, `difflib`, and a private llama.cpp-based local inference runtime**. A quantized **Apertus 8B** profile is the intended production default only after it passes the target-hardware gate; the smaller verified profile remains valid for development. Cloud model adapters are optional and disabled by default. **pgvector remains conditional on a measured recall gap.**
 
@@ -30,9 +30,9 @@ Keep the proven stack and add only the infrastructure now justified by public us
 | M6 — Local-first foundation | HL-029–HL-035 | One server has durable queues, managed local models, organization data, login, and enforced read-only users. |
 | M7 — Swiss legal registry | HL-036–HL-043 | Normalized events from Fedlex, Parliament, the Federal Supreme Court, and their official notices appear in a time-grouped registry. |
 | M8 — Impact intelligence | HL-044–HL-046 | Evidence-backed relations connect new events to monitored laws and appear in an actionable organization inbox. |
-| M9 — Public beta | HL-047–HL-049 | Admin/operations UI, Internet-facing single-host deployment, recovery, and the reproducible 100-user gate pass. |
+| M9 — Public beta | HL-047–HL-049, HL-057 | Five-language UI/AI/history, admin/operations UI, Internet-facing single-host deployment, recovery, and the reproducible 100-user gate pass. |
 
-Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, implement `HL-029` first, then run durable-job, local-model, and organization foundations in parallel where their dependencies allow. Complete tenancy and the shared-corpus split before adding broad connectors; otherwise source records would need a second migration. Finish operations and the measured capacity gate before exposing registration publicly.
+Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, implement `HL-029` first, establish the `HL-057` internationalization conventions immediately, then run durable-job, local-model, organization, and translation work in parallel where their dependencies allow. Complete tenancy and the shared-corpus split before adding broad connectors; otherwise source records would need a second migration. Localize each screen as it is built instead of translating the finished product at the end. Finish operations and the measured capacity gate before exposing registration publicly.
 
 ## Task index
 
@@ -86,10 +86,11 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-046](#hl-046) | P1 | PLANNED | HL-037, HL-045 | Impact inbox and monitored-law cross-links |
 | [HL-047](#hl-047) | P1 | PLANNED | HL-031, HL-035, HL-042 | Platform and organization admin console |
 | [HL-048](#hl-048) | P0 | PLANNED | HL-029–HL-035, HL-038 | Public single-server deployment and operations baseline |
-| [HL-049](#hl-049) | P0 | PLANNED | HL-037–HL-048 | Reproducible recovery and 100-user capacity gate |
+| [HL-049](#hl-049) | P0 | PLANNED | HL-037–HL-048, HL-057 | Reproducible recovery and 100-user capacity gate |
+| [HL-057](#hl-057) | P1 | PLANNED | HL-032, HL-034–HL-037, HL-045–HL-047 | Complete German, French, Italian, Romansh, and English localization |
 | [HL-050](#hl-050) | P2 | PLANNED | HL-038, HL-042 | Broader official regulatory news connectors |
 | [HL-051](#hl-051) | P2 | PLANNED | HL-044, HL-050 | Measured semantic candidate recall with pgvector if justified |
-| [HL-052](#hl-052) | P2 | PLANNED | HL-034, HL-046 | Opt-in email and web digests |
+| [HL-052](#hl-052) | P2 | PLANNED | HL-034, HL-046, HL-057 | Opt-in email and web digests |
 | [HL-053](#hl-053) | P3 | PLANNED | HL-044–HL-046 | Relation review workflow and visual graph |
 | [HL-054](#hl-054) | P3 | PLANNED | HL-034, HL-035 | Account recovery, verification, 2FA, and SSO refinements |
 | [HL-055](#hl-055) | P2 | PLANNED | HL-038, HL-041 | Broader federal and cantonal court coverage |
@@ -827,6 +828,29 @@ Acceptance criteria:
 - Record CPU, RAM, VRAM, disk/network, model load time, context, input/output throughput, queue wait/drain, connector duration, failure/retry counts, and backup/restore duration.
 - If the desired Apertus 8B profile fails, ship one split runner or a smaller verified model and update the capacity contract. The measured result overrides the desired model name.
 
+<a id="hl-057"></a>
+### HL-057 — Internationalize the complete product in five Swiss-market languages
+
+Make German, French, Italian, Romansh, and English first-class product languages without changing or silently translating official evidence.
+
+Acceptance criteria:
+
+- Support the explicit locale set `de-CH`, `fr-CH`, `it-CH`, `rm-CH`, and `en-CH`, with their native language names in a keyboard-accessible language selector on public, authenticated, mobile, and desktop screens.
+- Select locale in this order: authenticated user preference, pre-login cookie, supported browser `Accept-Language`, then a documented deployment default. Switching language applies immediately and persists per user without changing the organization's shared data.
+- Use one maintained, namespaced translation catalogue and ICU-style parameter/plural formatting for every user-visible string. Do not concatenate translated sentence fragments or translate stable API fields, enum values, database identifiers, evidence IDs, or URLs.
+- Localize registration/login, onboarding, navigation, registry/timeline, sources, comparisons, Impact/Ask, AI history, notifications, organization/admin/model/connector screens, loading/empty/error states, validation, destructive confirmations, and transactional email/digests when those features exist.
+- Return stable machine-readable error codes plus typed parameters from FastAPI and translate them at the presentation boundary. Do not persist a rendered English error as the only explanation of a failed job.
+- Format dates, times, relative groups, numbers, file sizes, and plural counts with locale-aware CLDR/`Intl` rules while keeping Europe/Zurich grouping semantics. Avoid ambiguous numeric legal dates and preserve the source's exact stated date/provenance.
+- Treat product locale and document language as separate fields. Model official DE/FR/IT/RM/EN expressions explicitly, show which languages actually exist, and never imply that a missing Romansh or English source version is available.
+- Keep official passages and citations in their original language. Any machine-generated translation or explanation is separately labelled, links to the unchanged source evidence, and never becomes an official `DocumentVersion`.
+- Ask local Apertus for analysis in the user's selected/requested language, store `output_locale` with the result, and include it in cache/idempotency fingerprints. Reusing a German answer for an otherwise identical French request is forbidden; prior answers remain visible with their language label. A language failure is retryable and never silently falls back to cloud or another output language.
+- Make search Unicode- and diacritic-safe for German umlauts, French/Italian accents, and Romansh text; retain an explicit document-language filter and do not silently search a machine-translated corpus as if it were source text.
+- Store recipient locale for invitations and later digests. Use it for localized subjects/plain-text/HTML and locale-preserving links, with a documented organization/deployment fallback. Organization-shared content remains one record while each user sees localized controls and personal notification text.
+- Set the page `lang` attribute and the language of quoted source blocks correctly. Verify keyboard/focus behavior and both 390 px and desktop layouts with the longest translations; no essential control may clip or depend on translated text length.
+- Add a catalogue-completeness check that fails CI on missing/unused production keys, placeholder/plural mismatches, or unapproved hard-coded user-facing English, plus a pseudo-locale or equivalent layout stress check. No release screen may fall back silently to a mixed-language interface or expose a raw translation key.
+- Run one browser smoke path per locale covering login, registry/filter/search, comparison/citation, local-AI history, an error state, and admin/viewer authorization. Record one real local-Apertus cited answer per language and human-review its language and source/evidence labels.
+- Keep translation files in the repository and document the contributor workflow, terminology glossary, reviewer status, and fallback behavior; no external translation-management platform is required for public beta.
+
 ## Work after public-beta acceptance
 
 <a id="hl-050"></a>
@@ -918,6 +942,6 @@ Acceptance criteria:
 
 An item is done only when its acceptance criteria are demonstrated through the actual UI/API/persistence path where applicable, meaningful checks pass for its state or evidence logic, and user-visible error states are handled. Completing this backlog document does not complete any development item.
 
-Minimum MVP evidence remains: a verified public source; a saved current version; an imported earlier version with provenance; a real comparison; an inspectable diff; a successful real Apertus analysis; a question with a working citation; and successful repeat/restart/failure checks. The public beta additionally requires every P0/P1 item in `HL-029`–`HL-049`, source-contract evidence for all three core connectors, local-model and recovery benchmarks on the target host, organization-isolation checks, and the reproducible capacity scenario.
+Minimum MVP evidence remains: a verified public source; a saved current version; an imported earlier version with provenance; a real comparison; an inspectable diff; a successful real Apertus analysis; a question with a working citation; and successful repeat/restart/failure checks. The public beta additionally requires every P0/P1 item in `HL-029`–`HL-049` plus `HL-057`, source-contract evidence for all three core connectors, complete five-locale smoke/catalogue checks, local-model and recovery benchmarks on the target host, organization-isolation checks, and the reproducible capacity scenario.
 
 Still excluded from the public-beta release: Kubernetes, multi-host workers, database/broker high availability, enterprise SSO/SCIM, arbitrary custom roles, unbounded crawling, universal Swiss court coverage, an ornamental graph UI, OCR, login-gated ingestion, model training/fine-tuning, and automatic legal decisions. They remain future work only where an item above names a measurable entry condition. Ordinary validation, bounded fetching, safe rendering, authorization, secret handling, backups, and recovery are implementation requirements rather than optional enterprise decoration.
