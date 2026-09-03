@@ -24,7 +24,7 @@ For a UI change:
 3. use ICU-style `{count, plural, one {...} other {...}}` for counts;
 4. run `npm run check:i18n`, type checking, and the production build;
 5. inspect the longest translation at 390 px and desktop widths, using `pseudoTranslate` when a length stress case is useful;
-6. have a fluent reviewer update the status table below.
+6. have a fluent reviewer complete the review contract below before updating the status table.
 
 The catalogue check parses the TypeScript/TSX syntax tree and rejects missing or unused literal keys plus unapproved hard-coded JSX text, accessible labels/placeholders/titles, dialog text, and rendered conditional strings. This catches multiline copy that a line-based expression misses. Stable units and product names are explicitly allowlisted. The value audit evaluates the assembled catalogue, rejects unapproved English inheritance, and verifies that pseudo-locale expansion preserves named parameters. Runtime validation rejects missing locale entries and parameter/plural mismatches. Missing messages are a release error: production code does not silently fall back to English.
 
@@ -58,4 +58,16 @@ Use language that distinguishes a possible impact from an official legal relatio
 | `rm-CH` | complete production catalogue; automated inheritance check passes | pending native review |
 | `en-CH` | source catalogue | reviewed in automated product flows |
 
-The executable five-locale browser, authorization, responsive-layout, error, citation, and real local-Apertus checks are recorded in [the verification report](LOCALIZATION_VERIFICATION.md). HL-057 remains in progress until fluent reviewers approve German, French, Italian, and Romansh and any findings are corrected. This document records current capability without presenting automated review as native-language approval.
+The executable five-locale browser, authorization, responsive-layout, error, citation, and real local-Apertus checks are recorded in [the verification report](LOCALIZATION_VERIFICATION.md). HL-057 remains in progress until different fluent reviewers approve German, French, and Italian, a native reviewer approves Romansh, and every finding is corrected. This document records current capability without presenting automated review as native-language approval.
+
+Copy `demo/localization-review.template.json` outside Git for the review round. Use pseudonymous reviewer IDs. Each reviewer must inspect the complete catalogue, critical login/registry/comparison/Impact/Ask/admin flows, stable legal-status language, one real local-model answer, and preservation of original source evidence. Record every finding by catalogue key and its resolution commit; approval cannot pass with an unresolved finding.
+
+After applying findings, commit the final catalogue and run from a clean checkout:
+
+```powershell
+$result = Get-FileHash apps/web/lib/i18n.tsx -Algorithm SHA256
+# Put $result.Hash.ToLowerInvariant(), the full Git commit, and review metadata in the external copy.
+python scripts/check_localization_review.py path/to/localization-review-results.json --results
+```
+
+The validator rejects duplicate reviewers, a non-native Romansh reviewer, missing or vague observations, unchecked review areas, invalid timestamps, unresolved findings, catalogue drift, a different Git revision, and uncommitted release changes. Its output contains only aggregate approval state; keep raw reviewer notes outside the repository.

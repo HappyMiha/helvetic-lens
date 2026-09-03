@@ -1,0 +1,13 @@
+{
+  "schema_version": "hl057.language-review.v1",
+  "review_round_id": null,
+  "build_commit": null,
+  "catalogue_sha256": null,
+  "instructions": "Copy outside Git. Use a different fluent reviewer per locale and a native Romansh reviewer. Record and resolve every finding before approval.",
+  "reviews": [
+    {"locale": "de-CH", "reviewer_id": null, "proficiency": null, "reviewed_at": null, "catalogue_complete": null, "critical_flows_clear": null, "legal_status_language_clear": null, "local_model_sample_reviewed": null, "local_model_language_natural": null, "source_evidence_unchanged": null, "approved": null, "notes": null, "findings": []},
+    {"locale": "fr-CH", "reviewer_id": null, "proficiency": null, "reviewed_at": null, "catalogue_complete": null, "critical_flows_clear": null, "legal_status_language_clear": null, "local_model_sample_reviewed": null, "local_model_language_natural": null, "source_evidence_unchanged": null, "approved": null, "notes": null, "findings": []},
+    {"locale": "it-CH", "reviewer_id": null, "proficiency": null, "reviewed_at": null, "catalogue_complete": null, "critical_flows_clear": null, "legal_status_language_clear": null, "local_model_sample_reviewed": null, "local_model_language_natural": null, "source_evidence_unchanged": null, "approved": null, "notes": null, "findings": []},
+    {"locale": "rm-CH", "reviewer_id": null, "proficiency": null, "reviewed_at": null, "catalogue_complete": null, "critical_flows_clear": null, "legal_status_language_clear": null, "local_model_sample_reviewed": null, "local_model_language_natural": null, "source_evidence_unchanged": null, "approved": null, "notes": null, "findings": []}
+  ]
+}
