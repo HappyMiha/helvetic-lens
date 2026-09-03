@@ -216,6 +216,13 @@ The Windows agent's default pytest temporary directory had a permission conflict
 - Validate optional Firecrawl with a key and available credit.
 - JavaScript-only portals, OCR, authentication-gated pages, and exhaustive multi-page discovery remain outside this narrow implementation.
 
+## Fail-closed local-inference promotion gate — 3 September 2026
+
+- The v2 benchmark cannot report success solely because 22 requests returned usable JSON. It also verifies the explicitly requested hardware profile, minimum CUDA inventory, optional GPU-name constraint, manager slot count, and runner-slot identities returned by the concurrent pair.
+- Replicated acceptance requires two visible CUDA devices, at least two accepted slots, and two distinct runner slots. Split fallback requires two visible CUDA devices, exactly one accepted slot, and one observed runner slot; its report is explicitly non-equivalent to replicated acceptance.
+- A mismatched profile, wrong GPU, missing replica, failed representative call, or failed concurrent call still produces a diagnostic JSON report but exits nonzero so automation cannot promote the model.
+- Deterministic regressions cover valid replicated, valid split, valid GTX 1070 development, repeated-slot, wrong-profile, wrong-GPU, and failed-call cases. Physical dual-GTX-1080 execution remains required to close HL-032.
+
 ## Public single-server boundary — 3 September 2026
 
 - The dedicated production Compose plan renders with PostgreSQL, Redis, one migration job, API, CPU/AI workers, scheduler, web, private model manager, and Caddy. Inspection of the rendered port bindings shows only TCP 80, TCP 443, and UDP 443; data, API, and inference services have no host binding.

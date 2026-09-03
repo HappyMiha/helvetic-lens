@@ -21,4 +21,20 @@ Starting is complete only after llama.cpp health succeeds and a schema-constrain
 
 Every saved Impact and Ask record carries backend, model ID, immutable revision, artifact SHA-256, quantization, pinned runtime image, hardware profile and devices, configured/runtime context, generation settings, aggregate gateway queue wait, inference duration, token usage when returned, individual attempts, and structured validation/repair events.
 
-The repeatable benchmark is `scripts/benchmark_local_inference.py`. Its checked-in GTX 1070 result is in `docs/benchmarks/dev-1070-apertus-1.5b-q4km.json`. It records 20 schema-constrained calls, a concurrent pair, load time, throughput, peak GPU/runner memory, stable prompt size, slots, citation/schema validity, timeouts, and OOMs. The same command must be run on the two-GTX-1080 host; only a report whose `concurrent_pair.profile_matched` is true may promote the 8B Q4 candidate.
+The repeatable benchmark is `scripts/benchmark_local_inference.py`. Its checked-in GTX 1070 result is in `docs/benchmarks/dev-1070-apertus-1.5b-q4km.json`. It records 20 schema-constrained calls, a concurrent pair, load time, throughput, peak GPU/runner memory, stable prompt size, slots, citation/schema validity, timeouts, and OOMs.
+
+The v2 promotion gate fails closed: it writes the diagnostic report and exits nonzero unless all 20 representative calls and both concurrent calls succeed, the requested runtime profile and GPU inventory match, the manager exposes the expected slot count, and the concurrent responses prove the expected number of distinct runner slots. Selecting a dual-GPU profile implicitly requires two visible CUDA devices, even when the device-count argument is omitted.
+
+Run the target replicated acceptance check from the repository root on the two-GTX-1080 server:
+
+```powershell
+python scripts/benchmark_local_inference.py --base-url http://127.0.0.1:12436 --required-profile dual-1080-replicated --required-cuda-devices 2 --require-gpu-substring "GTX 1080" --output docs/benchmarks/target-dual-1080-replicated.json
+```
+
+If inventory legitimately selects the smaller one-runner fallback because an independent replica does not fit, record that separately:
+
+```powershell
+python scripts/benchmark_local_inference.py --base-url http://127.0.0.1:12436 --required-profile dual-1080-split --required-cuda-devices 2 --require-gpu-substring "GTX 1080" --output docs/benchmarks/target-dual-1080-split.json
+```
+
+The split report proves one layer-split runner over both visible cards. It does not satisfy the replicated-mode acceptance criterion and cannot by itself promote the 8B Q4 candidate.

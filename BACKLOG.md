@@ -596,7 +596,7 @@ Acceptance criteria:
 
 ### HL-032 — Make local inference primary and validate GPU routing on the target hardware
 
-**Status: IN PROGRESS.** The stable private gateway, local-first clean-install policy, automatic four-profile routing, warm-up/health, fair slot admission, visible model waits, complete result provenance, benchmark harness, and live GTX 1070 report are implemented. The 1.5B Q4 development profile passed 20/20 structured calls plus the serialized concurrent pair without schema/citation errors, OOM, or timeout. The checked-in report deliberately records `profile_matched: false`: final closure and any 8B promotion require rerunning the same benchmark on the planned dual-GTX-1080 server and observing two distinct replica slots.
+**Status: IN PROGRESS.** The stable private gateway, local-first clean-install policy, automatic four-profile routing, warm-up/health, fair slot admission, visible model waits, complete result provenance, benchmark harness, and live GTX 1070 report are implemented. The 1.5B Q4 development profile passed 20/20 structured calls plus the serialized concurrent pair without schema/citation errors, OOM, or timeout. The v2 benchmark now fails closed when the requested hardware profile, GPU inventory, accepted slots, distinct runner slots, or any required call does not match. The checked-in development report remains deliberately non-promotable: final closure and any 8B promotion require running the target command on the planned dual-GTX-1080 server and observing two distinct replica slots.
 
 Give the application one stable inference interface while the runtime chooses a measured safe GPU layout.
 

@@ -13,6 +13,13 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from pathlib import Path
 
+SUPPORTED_PROFILES = (
+    "dev-1070",
+    "dual-1080-replicated",
+    "dual-1080-split",
+    "cpu-degraded",
+)
+
 
 def request_json(url: str, payload: dict | None = None, headers: dict | None = None):
     body = json.dumps(payload).encode() if payload is not None else None
@@ -122,10 +129,87 @@ def gpu_sample():
         return []
 
 
+def evaluate_gate(
+    deployment: dict,
+    hardware: dict,
+    representative: list[dict],
+    concurrent: list[dict],
+    *,
+    required_profile: str = "",
+    required_cuda_devices: int = 0,
+    required_gpu_substring: str = "",
+) -> dict:
+    """Evaluate the release gate without trusting a report label or expected topology."""
+
+    devices = hardware.get("cuda_devices") or []
+    profile_cuda_devices = {
+        "dev-1070": 1,
+        "dual-1080-replicated": 2,
+        "dual-1080-split": 2,
+        "cpu-degraded": 0,
+    }.get(required_profile, 0)
+    effective_required_cuda_devices = max(required_cuda_devices, profile_cuda_devices)
+    distinct_slots = sorted({sample["slot"] for sample in concurrent if sample.get("slot")})
+    profile_matched = not required_profile or deployment.get("hardware_profile") == required_profile
+    device_count_matched = len(devices) >= effective_required_cuda_devices
+    named_device_count = max(effective_required_cuda_devices, 1)
+    gpu_names_matched = not required_gpu_substring or (
+        len(devices) >= named_device_count
+        and all(
+            required_gpu_substring.casefold() in str(device.get("name", "")).casefold()
+            for device in devices[:named_device_count]
+        )
+    )
+    required_slots = 2 if required_profile == "dual-1080-replicated" else 1
+    accepted_slots = int(deployment.get("accepted_slots") or 0)
+    accepted_slots_matched = (
+        accepted_slots >= required_slots
+        if required_profile != "dual-1080-split"
+        else accepted_slots == 1
+    )
+    distinct_slots_matched = len(distinct_slots) >= required_slots
+    representative_matched = len(representative) >= 20 and all(
+        sample.get("ok") for sample in representative
+    )
+    concurrent_matched = len(concurrent) == 2 and all(
+        sample.get("ok") for sample in concurrent
+    )
+    checks = {
+        "representative_calls": representative_matched,
+        "concurrent_calls": concurrent_matched,
+        "hardware_profile": profile_matched,
+        "cuda_device_count": device_count_matched,
+        "gpu_names": gpu_names_matched,
+        "accepted_slots": accepted_slots_matched,
+        "distinct_runner_slots": distinct_slots_matched,
+    }
+    return {
+        "passed": all(checks.values()),
+        "checks": checks,
+        "requirements": {
+            "profile": required_profile or None,
+            "cuda_devices": effective_required_cuda_devices,
+            "gpu_name_contains": required_gpu_substring or None,
+            "accepted_slots": required_slots,
+            "distinct_runner_slots": required_slots,
+        },
+        "observed": {
+            "profile": deployment.get("hardware_profile"),
+            "cuda_devices": len(devices),
+            "gpu_names": [device.get("name") for device in devices],
+            "accepted_slots": accepted_slots,
+            "distinct_runner_slots": distinct_slots,
+        },
+    }
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", default="http://127.0.0.1:12436")
     parser.add_argument("--output", required=True)
+    parser.add_argument("--required-profile", choices=SUPPORTED_PROFILES, default="")
+    parser.add_argument("--required-cuda-devices", type=int, choices=range(9), default=0)
+    parser.add_argument("--require-gpu-substring", default="")
     args = parser.parse_args()
     inventory, _, _ = request_json(args.base_url + "/v1/inventory")
     deployment = inventory.get("deployment") or {}
@@ -165,11 +249,21 @@ def main():
     successful = [sample for sample in samples if sample["ok"]]
     tps = [sample["tokens_per_second"] for sample in successful if sample["tokens_per_second"]]
     latencies = [sample["latency_ms"] for sample in successful]
+    hardware = inventory.get("hardware") or {}
+    gate = evaluate_gate(
+        deployment,
+        hardware,
+        samples,
+        concurrent,
+        required_profile=args.required_profile,
+        required_cuda_devices=args.required_cuda_devices,
+        required_gpu_substring=args.require_gpu_substring,
+    )
     report = {
-        "benchmark": "HL-032-local-structured-v1",
+        "benchmark": "HL-032-local-structured-v2",
         "created_at": datetime.now(UTC).isoformat(),
         "deployment": deployment,
-        "hardware": inventory.get("hardware"),
+        "hardware": hardware,
         "runtime_image": inventory.get("runtime_image"),
         "representative_calls": {
             "total": len(samples),
@@ -186,10 +280,11 @@ def main():
             "samples": samples,
         },
         "concurrent_pair": {
-            "required_profile": "dual-1080-replicated",
-            "profile_matched": deployment.get("hardware_profile") == "dual-1080-replicated",
+            "required_profile": args.required_profile or None,
+            "profile_matched": gate["checks"]["hardware_profile"],
             "successful": sum(sample["ok"] for sample in concurrent),
             "distinct_slots": sorted({sample["slot"] for sample in concurrent if sample["slot"]}),
+            "distinct_slots_matched": gate["checks"]["distinct_runner_slots"],
             "samples": concurrent,
         },
         "peak_gpu_memory_mib": peak_vram,
@@ -207,12 +302,25 @@ def main():
             else None
         ),
         "accepted_slots": deployment.get("accepted_slots"),
-        "result": "pass" if len(successful) == 20 and all(sample["ok"] for sample in concurrent) else "fail",
+        "promotion_gate": gate,
+        "result": "pass" if gate["passed"] else "fail",
     }
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps({k: report[k] for k in ("representative_calls", "concurrent_pair", "result")}, indent=2))
+    print(
+        json.dumps(
+            {
+                "representative_calls": report["representative_calls"],
+                "concurrent_pair": report["concurrent_pair"],
+                "promotion_gate": report["promotion_gate"],
+                "result": report["result"],
+            },
+            indent=2,
+        )
+    )
+    if not gate["passed"]:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
