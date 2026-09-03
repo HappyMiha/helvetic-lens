@@ -1,0 +1,13 @@
+{
+  "schema_version": "hl064.usability.v1",
+  "corpus_revision": "hl064.v1",
+  "comparison_fixture": "insertion-and-renumbering",
+  "instructions": "Create a copy, add one independent fluent participant per locale, and complete every null field from a moderated session.",
+  "sessions": [
+    {"locale": "de-CH", "participant_id": null, "started_at": null, "seconds_to_first_useful_insight": null, "identified_main_material_change": null, "identified_possible_organization_relevance": null, "opened_exact_evidence": null, "identified_next_review_step": null, "opened_all_exact_changes": null, "action_specificity": null, "action_owner_honest": null, "action_due_state_honest": null, "moderator_notes": null},
+    {"locale": "fr-CH", "participant_id": null, "started_at": null, "seconds_to_first_useful_insight": null, "identified_main_material_change": null, "identified_possible_organization_relevance": null, "opened_exact_evidence": null, "identified_next_review_step": null, "opened_all_exact_changes": null, "action_specificity": null, "action_owner_honest": null, "action_due_state_honest": null, "moderator_notes": null},
+    {"locale": "it-CH", "participant_id": null, "started_at": null, "seconds_to_first_useful_insight": null, "identified_main_material_change": null, "identified_possible_organization_relevance": null, "opened_exact_evidence": null, "identified_next_review_step": null, "opened_all_exact_changes": null, "action_specificity": null, "action_owner_honest": null, "action_due_state_honest": null, "moderator_notes": null},
+    {"locale": "rm-CH", "participant_id": null, "started_at": null, "seconds_to_first_useful_insight": null, "identified_main_material_change": null, "identified_possible_organization_relevance": null, "opened_exact_evidence": null, "identified_next_review_step": null, "opened_all_exact_changes": null, "action_specificity": null, "action_owner_honest": null, "action_due_state_honest": null, "moderator_notes": null},
+    {"locale": "en-CH", "participant_id": null, "started_at": null, "seconds_to_first_useful_insight": null, "identified_main_material_change": null, "identified_possible_organization_relevance": null, "opened_exact_evidence": null, "identified_next_review_step": null, "opened_all_exact_changes": null, "action_specificity": null, "action_owner_honest": null, "action_due_state_honest": null, "moderator_notes": null}
+  ]
+}
