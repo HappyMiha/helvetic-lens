@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { api, errorText, refreshWorkspace, useResource } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
 import type { Health, Law, Preview, Source, Version } from "@/lib/types";
 import { ErrorNote } from "./common";
 
@@ -28,6 +29,8 @@ function documentUrl(value: string) {
 }
 
 function PreviewBox({ preview }: { preview: Preview }) {
+  const { t, number } = useI18n();
+  const pages = preview.page_count ? t("form.pages", { count: number(preview.page_count) }) : "";
   return (
     <div className="extraction-preview">
       <div className="flex items-center gap-2 mb-2 font-semibold text-sm">
@@ -35,9 +38,7 @@ function PreviewBox({ preview }: { preview: Preview }) {
         {preview.title}
       </div>
       <div className="text-xs muted mb-3">
-        {preview.content_type} · {preview.characters.toLocaleString()}{" "}
-        characters · {preview.passage_count} passages
-        {preview.page_count ? " · " + preview.page_count + " pages" : ""}
+        {t("form.previewMeta", { type: preview.content_type, characters: number(preview.characters), passages: number(preview.passage_count), pages })}
       </div>
       <div className="preview-text">{preview.excerpt}</div>
     </div>
@@ -65,6 +66,7 @@ export function AddDocumentDialog({
   provider?: string;
   onCreated?: (record: Law | Source) => void;
 }) {
+  const { t } = useI18n();
   const { data: health } = useResource<Health>(open ? "/health" : null);
   const { data: trackedLaws } = useResource<Law[]>(
     open && mode === "law" ? "/laws" : null,
@@ -158,21 +160,21 @@ export function AddDocumentDialog({
           <DialogTitle>
             {mode === "source"
               ? source
-                ? "Edit website connection"
-                : "Connect a website"
-              : "Add a law or document"}
+                ? t("form.editWebsite")
+                : t("form.connectWebsite")
+              : t("form.addDocument")}
           </DialogTitle>
           <DialogDescription>
             {mode === "source"
-              ? "Connect a public regulatory site or listing page. You choose which documents to monitor after discovery."
-              : "Paste the current document URL. A real fetch creates the first saved baseline; an earlier version can be imported next."}
+              ? t("form.sourceDescription")
+              : t("form.lawDescription")}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={save} className="form-stack">
           <label>
             {mode === "source"
-              ? "Website or listing URL"
-              : "Current document URL"}
+              ? t("form.websiteUrl")
+              : t("form.currentUrl")}
             <Input
               type="url"
               value={url}
@@ -186,34 +188,33 @@ export function AddDocumentDialog({
             />
           </label>
           <label>
-            Display name <span className="muted font-normal">(optional)</span>
+            {t("form.displayName")} <span className="muted font-normal">({t("common.optional")})</span>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Use the document title"
+              placeholder={t("form.titlePlaceholder")}
               maxLength={mode === "source" ? 250 : 300}
             />
           </label>
           {mode === "source" && (
             <label>
-              Discovery section
+              {t("form.discoverySection")}
               <Input
                 value={section}
                 onChange={(e) => setSection(e.target.value)}
                 placeholder="/"
               />
               <span className="field-help">
-                Use / for the whole host, or a path such as /en/documentation.
-                Discovery inspects at most 50 direct documents.
+                {t("form.sectionHelp")}
               </span>
             </label>
           )}
           <details className="text-xs muted">
             <summary className="cursor-pointer mb-3">
-              Extraction options
+              {t("form.extraction")}
             </summary>
             <label className="!text-xs">
-              Provider
+              {t("form.provider")}
               <select
                 value={provider}
                 onChange={(e) => {
@@ -221,19 +222,18 @@ export function AddDocumentDialog({
                   setPreview(null);
                 }}
               >
-                <option value="native">Native · HTML / PDF, no API key</option>
+                <option value="native">{t("form.native")}</option>
                 <option
                   value="firecrawl"
                   disabled={!health?.firecrawl.configured}
                 >
-                  Firecrawl · rendered HTML{" "}
-                  {health?.firecrawl.configured ? "" : "(server key required)"}
+                  {t("form.firecrawl")}{" "}
+                  {health?.firecrawl.configured ? "" : t("form.serverKey")}
                 </option>
               </select>
             </label>
             <p className="field-help">
-              No silent provider fallback. Native extraction does not render
-              JavaScript or read scanned PDFs.
+              {t("form.providerHelp")}
             </p>
           </details>
           {mode === "law" && (
@@ -243,19 +243,19 @@ export function AddDocumentDialog({
                 checked={synthetic}
                 onChange={(e) => setSynthetic(e.target.checked)}
               />
-              This source contains synthetic demo content
+              {t("form.syntheticSource")}
             </label>
           )}
           <ErrorNote message={error} />
           {existingLaw && (
             <div className="info-note">
-              <p>This document is already tracked as {existingLaw.name}.</p>
+              <p>{t("form.alreadyTracked", { name: existingLaw.name })}</p>
               <Button asChild variant="outline" size="sm">
                 <Link
                   href={"/laws/" + existingLaw.id}
                   onClick={() => onOpenChange(false)}
                 >
-                  Open existing document
+                  {t("form.openExisting")}
                 </Link>
               </Button>
             </div>
@@ -273,7 +273,7 @@ export function AddDocumentDialog({
               ) : (
                 <Search />
               )}
-              {mode === "source" ? "Test connection" : "Preview document"}
+              {mode === "source" ? t("form.testConnection") : t("form.previewDocument")}
             </Button>
             <Button
               type="submit"
@@ -286,9 +286,9 @@ export function AddDocumentDialog({
               )}
               {mode === "source"
                 ? source
-                  ? "Save connection"
-                  : "Connect website"
-                : "Add to watchlist"}
+                  ? t("form.saveConnection")
+                  : t("form.connectWebsite")
+                : t("form.addWatchlist")}
             </Button>
           </div>
         </form>
@@ -308,6 +308,7 @@ export function ImportDialog({
   law: Law;
   onImported: (version: Version, reused: boolean) => void;
 }) {
+  const { t } = useI18n();
   const [mode, setMode] = useState<"file" | "text" | "url">("file");
   const [file, setFile] = useState<File | null>(null),
     [text, setText] = useState(""),
@@ -353,7 +354,7 @@ export function ImportDialog({
     setError("");
     try {
       if (file && mode === "file" && file.size > 8388608)
-        throw new Error("Choose a file under 8 MB.");
+        throw new Error(t("error.fileTooLarge"));
       setPreview(
         await api<Preview>("/laws/" + law.id + "/import?preview=true", {
           method: "POST",
@@ -391,10 +392,9 @@ export function ImportDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Import previous version</DialogTitle>
+          <DialogTitle>{t("form.importTitle")}</DialogTitle>
           <DialogDescription>
-            {law.name}. The import is saved separately and will not replace the
-            current live baseline.
+            {t("form.importDescription", { name: law.name })}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={save} className="form-stack">
@@ -412,19 +412,19 @@ export function ImportDialog({
                 }}
               >
                 {value === "file"
-                  ? "Upload file"
+                  ? t("form.uploadFile")
                   : value === "text"
-                    ? "Paste text"
-                    : "Historical URL"}
+                    ? t("form.pasteText")
+                    : t("form.historicalUrl")}
               </button>
             ))}
           </div>
           {mode === "file" && (
             <label className="file-drop">
               <FileUp size={28} />
-              <strong>{file?.name || "Choose an earlier document"}</strong>
+              <strong>{file?.name || t("form.chooseEarlier")}</strong>
               <span className="text-xs muted">
-                PDF, HTML or TXT · up to 8 MB · text-based PDFs only
+                {t("form.fileHelp")}
               </span>
               <Input
                 type="file"
@@ -439,7 +439,7 @@ export function ImportDialog({
           )}
           {mode === "text" && (
             <label>
-              Previous document text
+              {t("form.previousText")}
               <Textarea
                 rows={7}
                 value={text}
@@ -449,13 +449,13 @@ export function ImportDialog({
                   setConfirmed(false);
                 }}
                 maxLength={1200000}
-                placeholder="Paste the previous wording here…"
+                placeholder={t("form.pastePlaceholder")}
               />
             </label>
           )}
           {mode === "url" && (
             <label>
-              Direct URL to the older copy
+              {t("form.olderUrl")}
               <Input
                 type="url"
                 value={url}
@@ -469,11 +469,11 @@ export function ImportDialog({
             </label>
           )}
           <label>
-            Stated version date{" "}
-            <span className="muted font-normal">(optional)</span>
+            {t("form.versionDate")}{" "}
+            <span className="muted font-normal">({t("common.optional")})</span>
             <Input
               type="text"
-              aria-label="Stated version date"
+              aria-label={t("form.versionDate")}
               placeholder="YYYY-MM-DD"
               pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}"
               maxLength={10}
@@ -481,8 +481,7 @@ export function ImportDialog({
               onChange={(e) => setDate(e.target.value)}
             />
             <span className="field-help">
-              This date is supplied by you. It is separate from the actual
-              import time.
+              {t("form.versionDateHelp")}
             </span>
           </label>
           <label className="checkbox-label">
@@ -491,7 +490,7 @@ export function ImportDialog({
               checked={synthetic}
               onChange={(e) => setSynthetic(e.target.checked)}
             />
-            This version was edited or created for a synthetic demo
+            {t("form.syntheticVersion")}
           </label>
           <ErrorNote message={error} />
           {preview && (
@@ -508,13 +507,13 @@ export function ImportDialog({
                   >
                     <strong>
                       {preview.identity.status === "mismatch"
-                        ? "This may be a different document"
-                        : "Confirm this unknown document assignment"}
+                        ? t("form.differentDocument")
+                        : t("form.unknownAssignment")}
                     </strong>
                     <p>{preview.identity.reason}</p>
                     {preview.identity.detected_title && (
                       <p>
-                        Detected: <b>{preview.identity.detected_title}</b>
+                        {t("form.detected", { title: preview.identity.detected_title })}
                       </p>
                     )}
                   </div>
@@ -526,14 +525,13 @@ export function ImportDialog({
                   onChange={(e) => setConfirmed(e.target.checked)}
                 />
                 {preview.identity?.status === "mismatch"
-                  ? "Save this file for inspection anyway. AI comparison and analysis will stay paused until the correct version is attached."
-                  : "I confirm that this is the version I want to attach to this law."}
+                  ? t("form.confirmMismatch")
+                  : t("form.confirmVersion")}
               </label>
             </>
           )}
           <p className="text-xs muted m-0">
-            Imported content is not automatically verified as an official
-            historical version.
+            {t("form.unverifiedHistory")}
           </p>
           <div className="form-actions">
             <Button
@@ -547,7 +545,7 @@ export function ImportDialog({
               ) : (
                 <Search />
               )}
-              Preview extraction
+              {t("form.previewExtraction")}
             </Button>
             <Button type="submit" disabled={!!busy || !preview || !confirmed}>
               {busy === "save" ? (
@@ -556,8 +554,8 @@ export function ImportDialog({
                 <Upload />
               )}
               {preview?.identity?.status === "mismatch"
-                ? "Save for inspection"
-                : "Import & select baseline"}
+                ? t("form.saveInspection")
+                : t("form.importBaseline")}
             </Button>
           </div>
         </form>
