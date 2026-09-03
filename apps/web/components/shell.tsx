@@ -13,6 +13,7 @@ import {
   FileText,
   Globe2,
   History,
+  Inbox,
   Landmark,
   Loader2,
   PackageOpen,
@@ -102,6 +103,13 @@ export function Shell({
           >
             <Landmark size={17} />
             Registry
+          </Link>
+          <Link
+            className={"nav-item " + (pathname === "/impact" ? "active" : "")}
+            href="/impact"
+          >
+            <Inbox size={17} />
+            Impact inbox
           </Link>
           {session?.authenticated && (
             <Link
@@ -248,6 +256,8 @@ export function Shell({
         </header>
         <nav className="mobile-nav">
           <Link href="/">Overview</Link>
+          <Link href="/registry">Registry</Link>
+          <Link href="/impact">Impact</Link>
           <Link href="/sources">Sources</Link>
           <Link href="/activity">Activity</Link>
           {isPlatformAdmin && <Link href="/admin">Admin</Link>}

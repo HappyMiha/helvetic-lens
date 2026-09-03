@@ -21,7 +21,7 @@ from .models import (
     RegulatoryDate,
     RegulatoryDocumentVersion,
     RegulatoryEvent,
-    RegulatoryEventState,
+    RegulatoryEventUserState,
     RegulatoryExpression,
     RegulatoryIdentifier,
     RegulatoryRelation,
@@ -110,8 +110,20 @@ class RegistryFilters:
 
 
 class RegistryReader:
-    def __init__(self, organization_id: str):
+    def __init__(self, organization_id: str, user_id: str | None = None):
         self.organization_id = organization_id
+        self.user_id = user_id
+        self.principal_key = f"user:{user_id}" if user_id else "anonymous-development"
+
+    def _states(self, session: Session) -> dict[str, RegulatoryEventUserState]:
+        return {
+            item.event_id: item
+            for item in session.scalars(
+                select(RegulatoryEventUserState).where(
+                    RegulatoryEventUserState.principal_key == self.principal_key
+                )
+            )
+        }
 
     @staticmethod
     def _dates(session: Session, entity_ids: list[str]) -> dict[str, list[dict]]:
@@ -161,7 +173,7 @@ class RegistryReader:
         ]
 
     def _event_rows(self, session: Session) -> list[dict]:
-        states = {item.event_id: item for item in session.scalars(select(RegulatoryEventState)).all()}
+        states = self._states(session)
         rows = []
         for event, work in session.execute(
             select(RegulatoryEvent, RegulatoryWork).join(
@@ -200,7 +212,7 @@ class RegistryReader:
                     "lifecycle": work.lifecycle_status or "unknown",
                     "impact": event.impact,
                     "analysis_state": event.analysis_state,
-                    "read": bool(state and state.read_at),
+                    "read": bool(state and state.state == "read"),
                     "watched": bool(linked),
                     "why": f"{event.event_type.replace('_', ' ').title()} reported by {event.provenance_method.replace('_', ' ')}.",
                     "linked_laws": linked,
@@ -247,11 +259,7 @@ class RegistryReader:
                 .order_by(Comparison.created_at.desc())
                 .limit(1)
             )
-            state = (
-                session.scalar(select(RegulatoryEventState).where(RegulatoryEventState.event_id == event.id))
-                if event
-                else None
-            )
+            state = self._states(session).get(event.id) if event else None
             entity_ids = [work.id, *(item.id for item in expressions)] if work else []
             if event:
                 entity_ids.append(event.id)
@@ -273,7 +281,7 @@ class RegistryReader:
                     "lifecycle": (work.lifecycle_status if work else None) or "unknown",
                     "impact": event.impact if event else "unknown",
                     "analysis_state": event.analysis_state if event else "not_required",
-                    "read": bool(state and state.read_at),
+                    "read": bool(state and state.state == "read"),
                     "watched": True,
                     "why": "Latest saved activity for a document in this organization's watchlist.",
                     "linked_laws": [
@@ -369,13 +377,23 @@ class RegistryReader:
         event = session.get(RegulatoryEvent, event_id)
         if not event:
             raise DomainError("The requested event was not found.", 404, "not_found")
-        state = session.scalar(select(RegulatoryEventState).where(RegulatoryEventState.event_id == event_id))
+        state = session.scalar(
+            select(RegulatoryEventUserState).where(
+                RegulatoryEventUserState.event_id == event_id,
+                RegulatoryEventUserState.principal_key == self.principal_key,
+            )
+        )
         if not state:
-            state = RegulatoryEventState(event_id=event_id)
+            state = RegulatoryEventUserState(
+                event_id=event_id,
+                user_id=self.user_id,
+                principal_key=self.principal_key,
+            )
             session.add(state)
-        state.read_at = datetime.now(UTC) if read else None
+        state.state = "read" if read else "unread"
+        state.updated_at = datetime.now(UTC)
         session.commit()
-        return {"event_id": event_id, "read": read, "read_at": _iso(state.read_at)}
+        return {"event_id": event_id, "read": read, "read_at": _iso(state.updated_at) if read else None}
 
     def timeline(self, session: Session, law_id: str) -> dict:
         law = session.get(Law, law_id)
@@ -435,6 +453,37 @@ class RegistryReader:
         observations = session.scalars(
             select(Observation).where(Observation.law_id == law_id).order_by(Observation.created_at.desc())
         ).all()
+        relation_rows = []
+        for item in relations:
+            outgoing = item.subject_work_id == (work.id if work else None)
+            other_work_id = item.object_work_id if outgoing else item.subject_work_id
+            other_work = session.get(RegulatoryWork, other_work_id)
+            other_mapping = session.scalar(
+                select(LegacyDocumentMapping).where(
+                    LegacyDocumentMapping.work_id == other_work_id
+                )
+            )
+            other_law = session.get(Law, other_mapping.law_id) if other_mapping else None
+            relation_rows.append(
+                {
+                    "id": item.id,
+                    "direction": "outgoing" if outgoing else "incoming",
+                    "type": item.relation_type,
+                    "state": item.state,
+                    "other_work_id": other_work_id,
+                    "other_title": other_work.title if other_work else "Unknown regulatory work",
+                    "other_law_id": other_law.id if other_law else None,
+                    "other_timeline_url": f"/laws/{other_law.id}" if other_law else None,
+                    "provenance": item.provenance_method,
+                    "reciprocal_label": (
+                        "successor"
+                        if item.relation_type == "replaces" and not outgoing
+                        else "predecessor"
+                        if item.relation_type == "replaces"
+                        else None
+                    ),
+                }
+            )
         timeline = [
             {
                 "id": f"event:{item.id}",
@@ -491,21 +540,7 @@ class RegistryReader:
                 for item in expressions
             ],
             "normalized_versions": len(normalized_versions),
-            "relations": [
-                {
-                    "id": item.id,
-                    "direction": "outgoing"
-                    if item.subject_work_id == (work.id if work else None)
-                    else "incoming",
-                    "type": item.relation_type,
-                    "state": item.state,
-                    "other_work_id": item.object_work_id
-                    if item.subject_work_id == (work.id if work else None)
-                    else item.subject_work_id,
-                    "provenance": item.provenance_method,
-                }
-                for item in relations
-            ],
+            "relations": relation_rows,
             "source_provenance": [
                 {"origin": item.origin, "source_url": item.source_url, "observed_at": _iso(item.created_at)}
                 for item in observations[:100]

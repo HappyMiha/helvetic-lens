@@ -986,6 +986,8 @@ Acceptance criteria:
 
 Give users one place to understand why a new law, proposal, decision, or notice matters to what they monitor.
 
+**Status: DONE.** `/impact` now groups all affected monitored laws under one saved source event, shows the five explicit analysis/relation states, severity and coverage, and links to source, evidence, timeline, comparison, and preserved analysis history. Read/dismiss/mute state is private per user. Forced reanalysis always adds history while the last valid result remains current. Official replacements expose reciprocal predecessor/successor links and administrators can monitor the successor without removing predecessor history. Organization review decisions are separate from immutable official metadata, and viewer permissions allow only personal inbox state changes. See [the impact inbox contract](docs/IMPACT_INBOX.md).
+
 Acceptance criteria:
 
 - Create one organization feed item per source event and group every affected monitored law beneath it, rather than producing duplicate cards for the same event.

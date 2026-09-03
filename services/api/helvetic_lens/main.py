@@ -15,6 +15,7 @@ from .analysis import classify_question_intent
 from .auth import CSRF_COOKIE, SESSION_COOKIE, AuthService, RateLimiter
 from .auth_mail import AuthMailer
 from .config import DomainError, Settings
+from .impact_inbox import ImpactInboxFilters
 from .model_settings import ApertusSettingsInput
 from .models import AdministrativeAudit, DocumentWatch, Law, Profile, Scan, Source, Version
 from .prompt_settings import PromptSettingsInput
@@ -136,6 +137,15 @@ class MemberRoleInput(Input):
 
 class RegistryReadInput(Input):
     read: bool = True
+
+
+class ImpactInboxStateInput(Input):
+    state: Literal["unread", "read", "dismissed", "muted"]
+
+
+class RelationReviewInput(Input):
+    decision: Literal["confirmed", "rejected"]
+    note: str = Field(default="", max_length=2000)
 
 
 class OrganizationSwitchInput(Input):
@@ -277,11 +287,15 @@ def create_app(
             "/api/invitations/accept",
             "/api/auth/session/organization",
         }
+        viewer_personal_state = (
+            path.startswith("/api/impact-inbox/events/") and path.endswith("/state")
+        ) or (path.startswith("/api/registry/events/") and path.endswith("/read"))
         if (
             identity
             and identity.role == "viewer"
             and request.method in {"POST", "PUT", "PATCH", "DELETE"}
             and path not in viewer_allowed_mutations
+            and not viewer_personal_state
         ):
             return JSONResponse(
                 status_code=403,
@@ -655,12 +669,46 @@ def create_app(
             return await service.execute_job(job["id"])
         return job
 
+    @app.post(
+        "/api/relation-candidates/{organization_candidate_id}/reanalyse-jobs",
+        status_code=202,
+    )
+    async def relation_candidate_reanalysis_job(organization_candidate_id: str):
+        job = await service.enqueue_relation_analysis(organization_candidate_id, force=True)
+        if settings.job_execution_mode == "inline":
+            return await service.execute_job(job["id"])
+        return job
+
     @app.get("/api/relation-analyses/{analysis_id}/evidence/{evidence_id}")
     def relation_analysis_evidence(analysis_id: str, evidence_id: str):
         return service.relation_analysis_evidence(analysis_id, evidence_id)
 
+    @app.get("/api/relations/{relation_id}")
+    def regulatory_relation_detail(relation_id: str):
+        return service.regulatory_relation_detail(relation_id)
+
+    @app.post(
+        "/api/relation-candidates/{organization_candidate_id}/monitor-successor",
+        status_code=201,
+    )
+    async def monitor_relation_successor(organization_candidate_id: str):
+        return await service.monitor_relation_successor(organization_candidate_id)
+
+    @app.post("/api/relation-candidates/{organization_candidate_id}/reviews", status_code=201)
+    def review_relation_candidate(
+        organization_candidate_id: str, data: RelationReviewInput, request: Request
+    ):
+        identity = request.state.identity
+        return service.review_relation_candidate(
+            organization_candidate_id,
+            data.decision,
+            data.note,
+            identity.user_id if identity else None,
+        )
+
     @app.get("/api/registry")
     def registry(
+        request: Request,
         view: Literal["monitored", "events"] = "monitored",
         q: str = Query(default="", max_length=300),
         cursor: str = Query(default="", max_length=1000),
@@ -677,6 +725,7 @@ def create_app(
         start: str = Query(default="", max_length=10),
         end: str = Query(default="", max_length=10),
     ):
+        identity = request.state.identity
         return service.registry(
             RegistryFilters(
                 view=view,
@@ -694,12 +743,48 @@ def create_app(
                 health=health,
                 start=start,
                 end=end,
-            )
+            ),
+            identity.user_id if identity else None,
+        )
+
+    @app.get("/api/impact-inbox")
+    def impact_inbox(
+        request: Request,
+        source: str = Query(default="", max_length=80),
+        severity: str = Query(default="", max_length=20),
+        item_type: str = Query(default="", max_length=40),
+        watched_law: str = Query(default="", max_length=36),
+        state: str = Query(default="", max_length=20),
+    ):
+        identity = request.state.identity
+        return service.impact_inbox(
+            ImpactInboxFilters(
+                source=source,
+                severity=severity,
+                item_type=item_type,
+                watched_law=watched_law,
+                state=state,
+            ),
+            identity.user_id if identity else None,
+        )
+
+    @app.patch("/api/impact-inbox/events/{event_id}/state")
+    def set_impact_inbox_state(
+        event_id: str, data: ImpactInboxStateInput, request: Request
+    ):
+        identity = request.state.identity
+        return service.set_impact_inbox_state(
+            event_id, data.state, identity.user_id if identity else None
         )
 
     @app.patch("/api/registry/events/{event_id}/read")
-    def mark_registry_event_read(event_id: str, data: RegistryReadInput):
-        return service.mark_registry_event_read(event_id, data.read)
+    def mark_registry_event_read(
+        event_id: str, data: RegistryReadInput, request: Request
+    ):
+        identity = request.state.identity
+        return service.mark_registry_event_read(
+            event_id, data.read, identity.user_id if identity else None
+        )
 
     @app.get("/api/laws/{law_id}/timeline")
     def regulatory_timeline(law_id: str):

@@ -23,7 +23,7 @@ from helvetic_lens.regulatory_corpus import (
 from helvetic_lens.relation_candidates import generate_for_events
 
 
-def relation_delivery(harness, *, confirmed: bool = False):
+def relation_delivery(harness, *, confirmed: bool = False, relation_type: str = "amends"):
     client, _, service, _ = harness
     law = add_law(client, name="Federal Data Protection Retention Act")
     with service.db.session(include_all_organizations=True) as session:
@@ -83,7 +83,7 @@ def relation_delivery(harness, *, confirmed: bool = False):
                     subject_work_id=source.work.id,
                     object_work_id=target.id,
                     authority="swiss_parliament",
-                    relation_type="amends",
+                    relation_type=relation_type,
                     state="confirmed",
                     provenance_method="exact_identifier",
                     evidence={"field": "official affected act", "identifier": "SR 235.1"},

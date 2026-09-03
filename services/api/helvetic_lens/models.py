@@ -424,6 +424,32 @@ class RegulatoryEventState(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class RegulatoryEventUserState(Base):
+    """A user's private inbox state; it never changes the shared regulatory event."""
+
+    __tablename__ = "regulatory_event_user_states"
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id",
+            "event_id",
+            "principal_key",
+            name="uq_regulatory_event_user_state_principal",
+        ),
+        CheckConstraint(
+            "state IN ('unread', 'read', 'dismissed', 'muted')",
+            name="ck_regulatory_event_user_state_value",
+        ),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    event_id: Mapped[str] = mapped_column(ForeignKey("regulatory_events.id"), index=True)
+    user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    principal_key: Mapped[str] = mapped_column(String(80), index=True)
+    state: Mapped[str] = mapped_column(String(20), default="unread", index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class RegulatoryRelation(Base):
     __tablename__ = "regulatory_relations"
     __table_args__ = (
@@ -502,6 +528,25 @@ class OrganizationRelationCandidate(Base):
     status: Mapped[str] = mapped_column(String(20), index=True, default="pending")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class OrganizationRelationReview(Base):
+    __tablename__ = "organization_relation_reviews"
+    __table_args__ = (
+        CheckConstraint(
+            "decision IN ('confirmed', 'rejected')",
+            name="ck_organization_relation_review_decision",
+        ),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    organization_candidate_id: Mapped[str] = mapped_column(
+        ForeignKey("organization_relation_candidates.id", ondelete="CASCADE"), index=True
+    )
+    decision: Mapped[str] = mapped_column(String(20), index=True)
+    note: Mapped[str] = mapped_column(Text, default="")
+    actor_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
 
 
 class LegacyDocumentMapping(Base):
@@ -1016,7 +1061,9 @@ ORGANIZATION_SCOPED_MODELS = (
     OrganizationQuota,
     FeedState,
     RegulatoryEventState,
+    RegulatoryEventUserState,
     OrganizationRelationCandidate,
+    OrganizationRelationReview,
     IntegrationLog,
     Analysis,
     ActionDecision,

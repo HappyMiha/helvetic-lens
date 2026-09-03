@@ -3,6 +3,7 @@ import hashlib
 import json
 import logging
 import re
+import secrets
 import shutil
 import threading
 import time
@@ -44,6 +45,7 @@ from .identity import (
     assess_document_identity,
     build_artifact_identity,
 )
+from .impact_inbox import ImpactInboxFilters, ImpactInboxReader
 from .integration_logs import IntegrationLogger
 from .model_manager_client import ModelManagerClient
 from .model_settings import ApertusSettingsInput, public_settings, resolve_key, resolved_settings
@@ -69,6 +71,7 @@ from .models import (
     OrganizationMembership,
     OrganizationQuota,
     OrganizationRelationCandidate,
+    OrganizationRelationReview,
     OutboxMessage,
     PlatformPromptConfiguration,
     Profile,
@@ -1026,13 +1029,136 @@ class HelveticLens:
                 )
             return result
 
-    def registry(self, filters: RegistryFilters) -> dict:
+    def registry(self, filters: RegistryFilters, user_id: str | None = None) -> dict:
         with self.db.session() as session:
-            return RegistryReader(self.organization_id).page(session, filters)
+            return RegistryReader(self.organization_id, user_id).page(session, filters)
 
-    def mark_registry_event_read(self, event_id: str, read: bool) -> dict:
+    def impact_inbox(self, filters: ImpactInboxFilters, user_id: str | None) -> dict:
+        with self.db.session() as session:
+            return ImpactInboxReader(self.organization_id, user_id).page(session, filters)
+
+    def set_impact_inbox_state(
+        self, event_id: str, state: str, user_id: str | None
+    ) -> dict:
         with self.write_guard, self.db.session() as session:
-            return RegistryReader(self.organization_id).mark_read(session, event_id, read)
+            return ImpactInboxReader(self.organization_id, user_id).set_state(
+                session, event_id, state
+            )
+
+    def regulatory_relation_detail(self, relation_id: str) -> dict:
+        with self.db.session() as session:
+            relation = get(session, RegulatoryRelation, relation_id)
+            visible = session.scalar(
+                select(OrganizationRelationCandidate.id)
+                .join(
+                    RelationCandidate,
+                    RelationCandidate.id == OrganizationRelationCandidate.candidate_id,
+                )
+                .where(RelationCandidate.relation_id == relation_id)
+                .limit(1)
+            )
+            if not visible:
+                raise DomainError("The requested relation was not found.", 404, "not_found")
+            subject = get(session, RegulatoryWork, relation.subject_work_id)
+            object_work = get(session, RegulatoryWork, relation.object_work_id)
+            return {
+                **as_dict(relation),
+                "subject": {"id": subject.id, "title": subject.title},
+                "object": {"id": object_work.id, "title": object_work.title},
+            }
+
+    def review_relation_candidate(
+        self,
+        organization_candidate_id: str,
+        decision: str,
+        note: str,
+        actor_user_id: str | None,
+    ) -> dict:
+        if decision not in {"confirmed", "rejected"}:
+            raise DomainError("Choose confirmed or rejected.", 422, "invalid_relation_review")
+        with self.write_guard, self.db.session() as session:
+            delivery = get(session, OrganizationRelationCandidate, organization_candidate_id)
+            candidate = get(session, RelationCandidate, delivery.candidate_id)
+            official = (
+                session.get(RegulatoryRelation, candidate.relation_id)
+                if candidate.relation_id
+                else None
+            )
+            if official and official.state == "confirmed":
+                raise DomainError(
+                    "Confirmed official metadata cannot be replaced by an organization review.",
+                    409,
+                    "official_relation_authoritative",
+                )
+            review = OrganizationRelationReview(
+                organization_candidate_id=delivery.id,
+                decision=decision,
+                note=note,
+                actor_user_id=actor_user_id,
+            )
+            session.add(review)
+            session.commit()
+            return as_dict(review)
+
+    async def monitor_relation_successor(self, organization_candidate_id: str) -> dict:
+        with self.db.session() as session:
+            delivery = get(session, OrganizationRelationCandidate, organization_candidate_id)
+            candidate = get(session, RelationCandidate, delivery.candidate_id)
+            relation = (
+                session.get(RegulatoryRelation, candidate.relation_id)
+                if candidate.relation_id
+                else None
+            )
+            if not relation or relation.state != "confirmed" or relation.relation_type != "replaces":
+                raise DomainError(
+                    "Only a confirmed official replacement can add a successor.",
+                    409,
+                    "successor_not_confirmed",
+                )
+            successor = get(session, RegulatoryWork, relation.subject_work_id)
+            mapping = session.scalar(
+                select(LegacyDocumentMapping).where(
+                    LegacyDocumentMapping.work_id == successor.id
+                )
+            )
+            law = session.get(Law, mapping.law_id) if mapping else None
+            existing_watch = (
+                session.scalar(select(DocumentWatch).where(DocumentWatch.law_id == law.id))
+                if law
+                else None
+            )
+            if existing_watch:
+                existing_watch.active = True
+                existing_watch.display_name = successor.title or existing_watch.display_name
+                session.commit()
+                return self.law_summary(session, law, existing_watch)
+            if law:
+                watch = DocumentWatch(
+                    law_id=law.id,
+                    display_name=successor.title or law.name,
+                    active=True,
+                    last_result="successor_added",
+                )
+                session.add(watch)
+                session.commit()
+                return self.law_summary(session, law, watch)
+            url = successor.stable_official_url
+            title = successor.title
+        if not url:
+            raise DomainError(
+                "The confirmed successor has no official URL to monitor.",
+                409,
+                "successor_url_missing",
+            )
+        return await self.add_law({"url": url, "name": title, "provider": "native"})
+
+    def mark_registry_event_read(
+        self, event_id: str, read: bool, user_id: str | None = None
+    ) -> dict:
+        with self.write_guard, self.db.session() as session:
+            return RegistryReader(self.organization_id, user_id).mark_read(
+                session, event_id, read
+            )
 
     def regulatory_timeline(self, law_id: str) -> dict:
         with self.db.session() as session:
@@ -2866,6 +2992,7 @@ class HelveticLens:
                 result_json = await self.analyse_relation_candidate(
                     target_id,
                     payload.get("runtime_fingerprint"),
+                    force=bool(payload.get("force")),
                 )
                 if result_json.get("status") != "succeeded":
                     raise DomainError(
@@ -3236,6 +3363,8 @@ class HelveticLens:
         self,
         organization_candidate_id: str,
         runtime_fingerprint: str | None = None,
+        *,
+        force: bool = False,
     ) -> dict:
         runtime_fingerprint = runtime_fingerprint or await self.relation_runtime_fingerprint()
         with self.write_guard, self.db.session() as session:
@@ -3248,16 +3377,22 @@ class HelveticLens:
                     503,
                     "model_not_configured",
                 )
+            request_key = (
+                f"relation-impact:{context['cache_key']}:{secrets.token_hex(8)}"
+                if force
+                else f"relation-impact:{context['cache_key']}"
+            )
             job, reused = durable_jobs.enqueue(
                 session,
                 job_type="relation_impact_analysis",
                 target_type="organization_relation_candidate",
                 target_id=organization_candidate_id,
                 queue="ai_background",
-                idempotency_key=f"relation-impact:{context['cache_key']}",
+                idempotency_key=request_key,
                 payload={
                     "organization_candidate_id": organization_candidate_id,
                     "runtime_fingerprint": runtime_fingerprint,
+                    "force": force,
                 },
                 progress_total=3,
                 max_attempts=self.settings.job_max_attempts,
@@ -3320,7 +3455,11 @@ class HelveticLens:
         }
 
     async def analyse_relation_candidate(
-        self, organization_candidate_id: str, runtime_fingerprint: str | None = None
+        self,
+        organization_candidate_id: str,
+        runtime_fingerprint: str | None = None,
+        *,
+        force: bool = False,
     ) -> dict:
         runtime_fingerprint = runtime_fingerprint or await self.relation_runtime_fingerprint()
         lock = self.analysis_locks.setdefault(f"relation:{organization_candidate_id}", asyncio.Lock())
@@ -3331,14 +3470,18 @@ class HelveticLens:
                 context = self._relation_analysis_context(
                     session, organization_candidate_id, runtime_fingerprint
                 )
-                cached = session.scalar(
-                    select(RelationImpactAnalysis)
-                    .where(
-                        RelationImpactAnalysis.cache_key == context["cache_key"],
-                        RelationImpactAnalysis.status == "succeeded",
+                cached = (
+                    session.scalar(
+                        select(RelationImpactAnalysis)
+                        .where(
+                            RelationImpactAnalysis.cache_key == context["cache_key"],
+                            RelationImpactAnalysis.status == "succeeded",
+                        )
+                        .order_by(RelationImpactAnalysis.created_at.desc())
+                        .limit(1)
                     )
-                    .order_by(RelationImpactAnalysis.created_at.desc())
-                    .limit(1)
+                    if not force
+                    else None
                 )
                 if cached:
                     cached.use_count += 1

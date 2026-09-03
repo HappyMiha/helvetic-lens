@@ -73,6 +73,28 @@ def test_invited_viewer_sees_shared_workspace_but_cannot_mutate(tmp_path):
         assert rejected.status_code == 403
         assert rejected.json()["code"] == "viewer_read_only"
         assert viewer.post("/api/scans", json={}, headers=csrf(viewer)).status_code == 403
+        personal_state = viewer.patch(
+            "/api/impact-inbox/events/00000000-0000-0000-0000-000000000000/state",
+            json={"state": "read"},
+            headers=csrf(viewer),
+        )
+        assert personal_state.status_code == 404
+        assert personal_state.json()["code"] == "not_found"
+        assert (
+            viewer.post(
+                "/api/relation-candidates/00000000-0000-0000-0000-000000000000/reanalyse-jobs",
+                headers=csrf(viewer),
+            ).status_code
+            == 403
+        )
+        assert (
+            viewer.post(
+                "/api/relation-candidates/00000000-0000-0000-0000-000000000000/reviews",
+                json={"decision": "confirmed"},
+                headers=csrf(viewer),
+            ).status_code
+            == 403
+        )
 
         members = owner.get("/api/organization/members").json()
         assert {member["role"] for member in members} == {"organization_admin", "viewer"}

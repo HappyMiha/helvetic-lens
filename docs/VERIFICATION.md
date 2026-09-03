@@ -202,6 +202,15 @@ The Windows agent's default pytest temporary directory had a permission conflict
 - The rebuilt Compose stack upgraded PostgreSQL to `a63e1c92b7f4 (head)`. A real existing candidate ran through the managed Apertus 1.5B Q4 model on the GTX 1070 in one background attempt and one provider call. It retained seven exact evidence rows, downgraded the model's unsupported `confirmed` evidence claim to `possible`, removed a generic filler action, produced a cited review-lead explanation, and persisted the `relation-impact-v2` result without changing the proposed corpus relation.
 - All 265 API tests pass, including legacy-to-head migration and organization isolation. Ruff, TypeScript, and the Next.js production build pass; the final Compose stack is healthy with the API, both workers, scheduler, PostgreSQL, Redis, web app, and private model manager running.
 
+## Organization impact inbox — 3 September 2026
+
+- The inbox groups every delivered regulatory event once and nests all affected monitored laws beneath it, with source, severity, event type, personal state, and watched-law filters.
+- Each law card separates why it appeared, the potential effect, the next review step, exact saved evidence, analysis history, and official-source/timeline/comparison links. Confirmed corpus relations remain distinct from organization review decisions.
+- Read, dismissed, and muted state is isolated per user. Organization administrators can reanalyse, confirm or reject a lead, and add a confirmed successor to monitoring while retaining the predecessor and its full history.
+- Forced reanalysis bypasses the cache, records a new immutable attempt, and leaves the last valid report visible if the new attempt fails.
+- All 269 API tests pass, including grouping, filters, user-state isolation, review separation, reanalysis history, replacement monitoring, authorization, and legacy-to-head migration. Ruff and the Next.js production build pass.
+- The rebuilt Compose stack is healthy at `c84d2e19a6f1 (head)`. Live API checks returned four grouped source events and four law impacts. Browser QA verified the complete inbox at desktop and mobile width, including Registry and Impact mobile navigation, with no console errors or horizontal overflow.
+
 ## Remaining gates
 
 - Validate optional Firecrawl with a key and available credit.

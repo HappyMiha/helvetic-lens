@@ -687,12 +687,18 @@ def _aware(value):
 class RateLimiter:
     def __init__(self, settings: Settings):
         self.production = settings.app_environment == "production"
+        self.test_mode = settings.app_environment == "test"
         self.redis = Redis.from_url(settings.redis_url, decode_responses=True, socket_timeout=0.25)
         self._memory: dict[str, tuple[int, float]] = {}
         self._lock = threading.Lock()
 
     def check(self, bucket: str, subject: str, *, limit: int, window_seconds: int):
         key = f"helvetic-lens:limit:{bucket}:{token_hash(subject)}"
+        if self.test_mode:
+            count = self._memory_increment(key, window_seconds)
+            if count > limit:
+                raise DomainError("Too many requests. Wait a moment and try again.", 429, "rate_limited")
+            return
         try:
             with self.redis.pipeline() as pipeline:
                 pipeline.incr(key)
