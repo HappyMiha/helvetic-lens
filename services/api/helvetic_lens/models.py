@@ -1,7 +1,18 @@
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    text,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .db import Base, utcnow
@@ -11,9 +22,38 @@ def new_id() -> str:
     return str(uuid4())
 
 
+LEGACY_ORGANIZATION_ID = "00000000-0000-0000-0000-000000000001"
+
+
+class Organization(Base):
+    __tablename__ = "organizations"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    name: Mapped[str] = mapped_column(String(200))
+    slug: Mapped[str] = mapped_column(String(120), unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class DocumentWatch(Base):
+    __tablename__ = "document_watches"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "law_id", name="uq_document_watch_organization_law"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    law_id: Mapped[str] = mapped_column(ForeignKey("laws.id"), index=True)
+    display_name: Mapped[str] = mapped_column(String(300))
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    selected_baseline_version_id: Mapped[str | None] = mapped_column(ForeignKey("versions.id"))
+    last_checked: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_result: Mapped[str] = mapped_column(String(40), default="baseline_created")
+    last_error: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class Source(Base):
     __tablename__ = "sources"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
     name: Mapped[str] = mapped_column(String(250))
     url: Mapped[str] = mapped_column(Text)
     section: Mapped[str] = mapped_column(Text, default="/")
@@ -26,10 +66,29 @@ class Source(Base):
 
 class Law(Base):
     __tablename__ = "laws"
+    __table_args__ = (
+        Index(
+            "uq_public_law_canonical_identity",
+            "canonical_identity",
+            unique=True,
+            postgresql_where=text("owner_organization_id IS NULL"),
+            sqlite_where=text("owner_organization_id IS NULL"),
+        ),
+        Index(
+            "uq_private_law_canonical_identity",
+            "owner_organization_id",
+            "canonical_identity",
+            unique=True,
+            postgresql_where=text("owner_organization_id IS NOT NULL"),
+            sqlite_where=text("owner_organization_id IS NOT NULL"),
+        ),
+    )
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    owner_organization_id: Mapped[str | None] = mapped_column(ForeignKey("organizations.id"), index=True)
+    canonical_identity: Mapped[str] = mapped_column(String(500))
     source_id: Mapped[str | None] = mapped_column(ForeignKey("sources.id"))
     name: Mapped[str] = mapped_column(String(300))
-    url: Mapped[str] = mapped_column(Text, unique=True)
+    url: Mapped[str] = mapped_column(Text)
     provider: Mapped[str] = mapped_column(String(30), default="native")
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     # Updated only by validated live observations; avoids a cyclic insert dependency.
@@ -42,8 +101,29 @@ class Law(Base):
 
 class Version(Base):
     __tablename__ = "versions"
-    __table_args__ = (UniqueConstraint("law_id", "content_hash", "extractor", name="uq_law_content"),)
+    __table_args__ = (
+        Index(
+            "uq_public_version_content",
+            "law_id",
+            "content_hash",
+            "extractor",
+            unique=True,
+            postgresql_where=text("owner_organization_id IS NULL"),
+            sqlite_where=text("owner_organization_id IS NULL"),
+        ),
+        Index(
+            "uq_private_version_content",
+            "owner_organization_id",
+            "law_id",
+            "content_hash",
+            "extractor",
+            unique=True,
+            postgresql_where=text("owner_organization_id IS NOT NULL"),
+            sqlite_where=text("owner_organization_id IS NOT NULL"),
+        ),
+    )
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    owner_organization_id: Mapped[str | None] = mapped_column(ForeignKey("organizations.id"), index=True)
     law_id: Mapped[str] = mapped_column(ForeignKey("laws.id"), index=True)
     title: Mapped[str] = mapped_column(Text)
     content_hash: Mapped[str] = mapped_column(String(64))
@@ -65,6 +145,7 @@ class Version(Base):
 class Observation(Base):
     __tablename__ = "observations"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
     law_id: Mapped[str] = mapped_column(ForeignKey("laws.id"), index=True)
     version_id: Mapped[str] = mapped_column(ForeignKey("versions.id"), index=True)
     origin: Mapped[str] = mapped_column(String(30))
@@ -83,6 +164,7 @@ class Comparison(Base):
         UniqueConstraint("old_version_id", "new_version_id", "mode", name="uq_comparison_pair"),
     )
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    owner_organization_id: Mapped[str | None] = mapped_column(ForeignKey("organizations.id"), index=True)
     law_id: Mapped[str] = mapped_column(ForeignKey("laws.id"), index=True)
     old_version_id: Mapped[str] = mapped_column(ForeignKey("versions.id"))
     new_version_id: Mapped[str] = mapped_column(ForeignKey("versions.id"))
@@ -95,6 +177,7 @@ class Comparison(Base):
 class IdentityDecision(Base):
     __tablename__ = "identity_decisions"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
     law_id: Mapped[str] = mapped_column(ForeignKey("laws.id"), index=True)
     version_id: Mapped[str] = mapped_column(ForeignKey("versions.id"), index=True)
     action: Mapped[str] = mapped_column(String(40))
@@ -107,6 +190,7 @@ class IdentityDecision(Base):
 class Scan(Base):
     __tablename__ = "scans"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
     status: Mapped[str] = mapped_column(String(30), default="queued")
     total: Mapped[int] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
@@ -116,6 +200,7 @@ class Scan(Base):
 class ScanItem(Base):
     __tablename__ = "scan_items"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
     scan_id: Mapped[str] = mapped_column(ForeignKey("scans.id"), index=True)
     law_id: Mapped[str] = mapped_column(ForeignKey("laws.id"), index=True)
     baseline_version_id: Mapped[str | None] = mapped_column(ForeignKey("versions.id"))
@@ -134,7 +219,8 @@ class ScanItem(Base):
 
 class Profile(Base):
     __tablename__ = "profiles"
-    id: Mapped[str] = mapped_column(String(30), primary_key=True, default="default")
+    id: Mapped[str] = mapped_column(String(80), primary_key=True, default="default")
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), unique=True, index=True)
     name: Mapped[str] = mapped_column(String(200), default="My company")
     description: Mapped[str] = mapped_column(Text, default="")
     business_areas: Mapped[list] = mapped_column(JSON, default=lambda: ["Legal", "IT", "Operations"])
@@ -143,7 +229,8 @@ class Profile(Base):
 
 class ApertusConfiguration(Base):
     __tablename__ = "apertus_configuration"
-    id: Mapped[str] = mapped_column(String(30), primary_key=True, default="default")
+    id: Mapped[str] = mapped_column(String(80), primary_key=True, default="default")
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), unique=True, index=True)
     values: Mapped[dict] = mapped_column(JSON, default=dict)
     # A workspace credential stays on the server and is never serialized to clients.
     api_key: Mapped[str | None] = mapped_column(Text)
@@ -153,15 +240,53 @@ class ApertusConfiguration(Base):
 
 class PromptConfiguration(Base):
     __tablename__ = "prompt_configuration"
-    id: Mapped[str] = mapped_column(String(30), primary_key=True, default="default")
+    id: Mapped[str] = mapped_column(String(80), primary_key=True, default="default")
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), unique=True, index=True)
     values: Mapped[dict] = mapped_column(JSON, default=dict)
     revision: Mapped[int] = mapped_column(Integer, default=1)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class PromptRevision(Base):
+    __tablename__ = "prompt_revisions"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "revision", name="uq_prompt_revision_organization"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    revision: Mapped[int] = mapped_column(Integer)
+    values: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class OrganizationQuota(Base):
+    __tablename__ = "organization_quotas"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), unique=True, index=True)
+    values: Mapped[dict] = mapped_column(JSON, default=dict)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class FeedState(Base):
+    __tablename__ = "feed_states"
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id", "connector", "stream", name="uq_feed_state_organization_stream"
+        ),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    connector: Mapped[str] = mapped_column(String(80))
+    stream: Mapped[str] = mapped_column(String(200))
+    cursor: Mapped[str | None] = mapped_column(Text)
+    values: Mapped[dict] = mapped_column(JSON, default=dict)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 class IntegrationLog(Base):
     __tablename__ = "integration_logs"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
     provider: Mapped[str] = mapped_column(String(40), index=True)
     operation: Mapped[str] = mapped_column(String(60), index=True)
     method: Mapped[str] = mapped_column(String(10))
@@ -182,6 +307,7 @@ class IntegrationLog(Base):
 class Analysis(Base):
     __tablename__ = "analyses"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
     comparison_id: Mapped[str] = mapped_column(ForeignKey("comparisons.id"), index=True)
     cache_key: Mapped[str] = mapped_column(String(64), index=True)
     status: Mapped[str] = mapped_column(String(30), default="pending")
@@ -199,6 +325,7 @@ class Analysis(Base):
 class AskRecord(Base):
     __tablename__ = "ask_records"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
     comparison_id: Mapped[str] = mapped_column(ForeignKey("comparisons.id"), index=True)
     cache_key: Mapped[str] = mapped_column(String(64), index=True)
     question: Mapped[str] = mapped_column(Text)
@@ -222,7 +349,7 @@ class Job(Base):
         UniqueConstraint("organization_id", "idempotency_key", name="uq_job_organization_idempotency"),
     )
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
-    organization_id: Mapped[str] = mapped_column(String(36), default="default", index=True)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
     type: Mapped[str] = mapped_column(String(60), index=True)
     target_type: Mapped[str] = mapped_column(String(40))
     target_id: Mapped[str] = mapped_column(String(36), index=True)
@@ -257,6 +384,7 @@ class JobStep(Base):
     __tablename__ = "job_steps"
     __table_args__ = (UniqueConstraint("job_id", "position", name="uq_job_step_position"),)
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
     job_id: Mapped[str] = mapped_column(ForeignKey("jobs.id"), index=True)
     position: Mapped[int] = mapped_column(Integer)
     name: Mapped[str] = mapped_column(String(100))
@@ -272,6 +400,7 @@ class JobStep(Base):
 class OutboxMessage(Base):
     __tablename__ = "outbox_messages"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
     job_id: Mapped[str] = mapped_column(ForeignKey("jobs.id"), index=True)
     topic: Mapped[str] = mapped_column(String(80), default="helvetic_lens.run_job")
     queue: Mapped[str] = mapped_column(String(40))
@@ -282,3 +411,28 @@ class OutboxMessage(Base):
     dispatched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     error_detail: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+# Central policy used by the session boundary. Keeping this list beside the
+# models makes a newly persisted tenant-owned record difficult to forget.
+ORGANIZATION_SCOPED_MODELS = (
+    DocumentWatch,
+    Source,
+    Observation,
+    IdentityDecision,
+    Scan,
+    ScanItem,
+    Profile,
+    ApertusConfiguration,
+    PromptConfiguration,
+    PromptRevision,
+    OrganizationQuota,
+    FeedState,
+    IntegrationLog,
+    Analysis,
+    AskRecord,
+    Job,
+    JobStep,
+    OutboxMessage,
+)
+SHARED_CORPUS_MODELS = (Law, Version, Comparison)

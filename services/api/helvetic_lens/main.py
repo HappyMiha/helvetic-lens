@@ -74,9 +74,22 @@ class ModelLicenseInput(Input):
     accepted: bool
 
 
-def create_app(settings: Settings | None = None, fetcher=None, model_client=None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    fetcher=None,
+    model_client=None,
+    *,
+    organization_id: str | None = None,
+    organization_name: str = "Legacy workspace",
+) -> FastAPI:
     settings = settings or Settings()
-    service = HelveticLens(settings, fetcher, model_client)
+    service = HelveticLens(
+        settings,
+        fetcher,
+        model_client,
+        organization_id=organization_id or "00000000-0000-0000-0000-000000000001",
+        organization_name=organization_name,
+    )
 
     @asynccontextmanager
     async def lifespan(app):
@@ -173,11 +186,7 @@ def create_app(settings: Settings | None = None, fetcher=None, model_client=None
 
     @app.get("/api/laws")
     def laws():
-        with service.db.session() as session:
-            return [
-                service.law_summary(session, law)
-                for law in session.scalars(select(Law).order_by(Law.created_at.desc()))
-            ]
+        return service.list_laws()
 
     @app.post("/api/laws", status_code=201)
     async def add_law(data: LawInput):
@@ -191,10 +200,16 @@ def create_app(settings: Settings | None = None, fetcher=None, model_client=None
     def update_law(law_id: str, data: LawUpdate):
         with service.write_guard, service.db.session() as session:
             law = get(session, Law, law_id)
+            watch = service.watch(session, law_id)
             for key, value in data.model_dump(exclude_none=True).items():
-                setattr(law, key, value)
+                if key == "name":
+                    watch.display_name = value
+                    if law.owner_organization_id is not None:
+                        law.name = value
+                elif key == "active":
+                    watch.active = value
             session.commit()
-            return service.law_summary(session, law)
+            return service.law_summary(session, law, watch)
 
     @app.get("/api/laws/{law_id}/ai-history")
     def law_ai_history(law_id: str, limit: int = Query(default=100, ge=1, le=500)):
@@ -398,12 +413,12 @@ def create_app(settings: Settings | None = None, fetcher=None, model_client=None
     @app.get("/api/profile")
     def profile():
         with service.db.session() as session:
-            return as_dict(get(session, Profile, "default"))
+            return as_dict(get(session, Profile, service.tenant_record_id))
 
     @app.patch("/api/profile")
     def update_profile(data: ProfileInput):
         with service.write_guard, service.db.session() as session:
-            profile = get(session, Profile, "default")
+            profile = get(session, Profile, service.tenant_record_id)
             changed = False
             for key, value in data.model_dump().items():
                 if key == "business_areas":

@@ -15,7 +15,14 @@ from . import jobs as durable_jobs
 from .config import DomainError, Settings
 from .db import Database, utcnow
 from .diffing import DIFF_SCHEMA_VERSION, compare_passages
-from .extraction import Extracted, Fetcher, canonical_url, discover_links, extract
+from .extraction import (
+    Extracted,
+    Fetcher,
+    canonical_url,
+    discover_links,
+    extract,
+    fedlex_eli_reference,
+)
 from .identity import (
     IDENTITY_REVISION,
     assess_comparison_identity,
@@ -26,19 +33,24 @@ from .integration_logs import IntegrationLogger
 from .model_manager_client import ModelManagerClient
 from .model_settings import ApertusSettingsInput, public_settings, resolve_key, resolved_settings
 from .models import (
+    LEGACY_ORGANIZATION_ID,
     Analysis,
     ApertusConfiguration,
     AskRecord,
     Comparison,
+    DocumentWatch,
     IdentityDecision,
     IntegrationLog,
     Job,
     JobStep,
     Law,
     Observation,
+    Organization,
+    OrganizationQuota,
     OutboxMessage,
     Profile,
     PromptConfiguration,
+    PromptRevision,
     Scan,
     ScanItem,
     Source,
@@ -87,10 +99,20 @@ def version_summary(version: Version) -> dict:
 
 
 class HelveticLens:
-    def __init__(self, settings: Settings, fetcher=None, model_client=None, model_manager_client=None):
+    def __init__(
+        self,
+        settings: Settings,
+        fetcher=None,
+        model_client=None,
+        model_manager_client=None,
+        organization_id: str = LEGACY_ORGANIZATION_ID,
+        organization_name: str = "Legacy workspace",
+    ):
         self.settings = settings
         self.environment_settings = settings.model_copy(deep=True)
-        self.db = Database(settings)
+        self.organization_id = organization_id
+        self.organization_name = organization_name
+        self.db = Database(settings, organization_id)
         self.integration_logger = IntegrationLogger(self.db.session)
         self.fetcher = fetcher or Fetcher(settings, self.integration_logger)
         self.model_client = model_client or ai.ModelClient(settings, self.integration_logger)
@@ -101,11 +123,41 @@ class HelveticLens:
         self.analysis_locks: dict[str, asyncio.Lock] = {}
         self.ask_locks: dict[str, asyncio.Lock] = {}
 
+    @property
+    def tenant_record_id(self) -> str:
+        return "default" if self.organization_id == LEGACY_ORGANIZATION_ID else self.organization_id
+
+    @staticmethod
+    def is_shared_official_url(url: str) -> bool:
+        return fedlex_eli_reference(url) is not None
+
+    @staticmethod
+    def canonical_document_identity(url: str) -> str:
+        reference = fedlex_eli_reference(url)
+        return reference.work_uri if reference else url.lower()
+
+    def watch(self, session: Session, law_id: str, *, required: bool = True) -> DocumentWatch | None:
+        record = session.scalar(select(DocumentWatch).where(DocumentWatch.law_id == law_id))
+        if record is None and required:
+            raise DomainError("The requested record was not found.", 404, "not_found")
+        return record
+
     def initialize(self):
         self.db.migrate()
         with self.db.session() as session:
-            if not session.get(Profile, "default"):
-                session.add(Profile(id="default"))
+            if not session.get(Organization, self.organization_id):
+                session.add(
+                    Organization(
+                        id=self.organization_id,
+                        name=self.organization_name,
+                        slug=f"organization-{self.organization_id}",
+                    )
+                )
+                session.flush()
+            if not session.get(Profile, self.tenant_record_id):
+                session.add(Profile(id=self.tenant_record_id))
+            if not session.scalar(select(OrganizationQuota)):
+                session.add(OrganizationQuota(values={}))
             active_job_states = ["queued", "dispatched", "running", "retrying", "waiting_for_model"]
             for scan in session.scalars(select(Scan).where(Scan.status.in_(["queued", "running"]))):
                 durable_job = session.scalar(
@@ -161,10 +213,10 @@ class HelveticLens:
                 )
             durable_jobs.reconcile(session, self.settings.job_lease_seconds)
             session.commit()
-            saved = session.get(ApertusConfiguration, "default")
+            saved = session.get(ApertusConfiguration, self.tenant_record_id)
             if saved:
                 self.apply_model_settings(resolved_settings(self.environment_settings, saved))
-            prompt_record = session.get(PromptConfiguration, "default")
+            prompt_record = session.get(PromptConfiguration, self.tenant_record_id)
             self.prompt_settings = resolved_prompt_settings(prompt_record)
             self.prompt_revision = prompt_record.revision if prompt_record else 1
             for version in session.scalars(select(Version)):
@@ -233,16 +285,16 @@ class HelveticLens:
 
     def apertus_configuration(self):
         with self.db.session() as session:
-            saved = session.get(ApertusConfiguration, "default")
+            saved = session.get(ApertusConfiguration, self.tenant_record_id)
             return public_settings(self.settings, saved)
 
     def save_model_settings(self, data: ApertusSettingsInput):
         with self.write_guard, self.db.session() as session:
-            saved = session.get(ApertusConfiguration, "default")
+            saved = session.get(ApertusConfiguration, self.tenant_record_id)
             next_settings = resolved_settings(self.environment_settings, saved, data)
             key_source, stored_key, _ = resolve_key(self.environment_settings, saved, data)
             if saved is None:
-                saved = ApertusConfiguration(id="default")
+                saved = ApertusConfiguration(id=self.tenant_record_id)
                 session.add(saved)
             saved.values = data.public_values()
             saved.key_source, saved.api_key = key_source, stored_key
@@ -253,7 +305,7 @@ class HelveticLens:
 
     def reset_model_settings(self):
         with self.write_guard, self.db.session() as session:
-            saved = session.get(ApertusConfiguration, "default")
+            saved = session.get(ApertusConfiguration, self.tenant_record_id)
             if saved:
                 session.delete(saved)
                 session.commit()
@@ -262,19 +314,20 @@ class HelveticLens:
 
     def prompt_configuration(self):
         with self.db.session() as session:
-            record = session.get(PromptConfiguration, "default")
+            record = session.get(PromptConfiguration, self.tenant_record_id)
             return public_prompt_settings(self.prompt_settings, record)
 
     def save_prompt_settings(self, data: PromptSettingsInput):
         with self.write_guard, self.db.session() as session:
-            record = session.get(PromptConfiguration, "default")
+            record = session.get(PromptConfiguration, self.tenant_record_id)
             if record is None:
-                record = PromptConfiguration(id="default", revision=1)
+                record = PromptConfiguration(id=self.tenant_record_id, revision=1)
                 session.add(record)
             else:
                 record.revision += 1
             record.values = data.model_dump()
             record.updated_at = utcnow()
+            session.add(PromptRevision(revision=record.revision, values=record.values))
             session.commit()
             self.prompt_settings = data.model_copy(deep=True)
             self.prompt_revision = record.revision
@@ -282,7 +335,7 @@ class HelveticLens:
 
     def reset_prompt_settings(self):
         with self.write_guard, self.db.session() as session:
-            record = session.get(PromptConfiguration, "default")
+            record = session.get(PromptConfiguration, self.tenant_record_id)
             if record:
                 session.delete(record)
                 session.commit()
@@ -293,7 +346,7 @@ class HelveticLens:
     async def test_model_settings(self, data: ApertusSettingsInput | None = None):
         if data is not None:
             with self.db.session() as session:
-                saved = session.get(ApertusConfiguration, "default")
+                saved = session.get(ApertusConfiguration, self.tenant_record_id)
                 settings = resolved_settings(self.environment_settings, saved, data)
             model_client = ai.ModelClient(settings, self.integration_logger)
         else:
@@ -320,7 +373,7 @@ class HelveticLens:
 
     async def list_model_settings(self, data: ApertusSettingsInput):
         with self.db.session() as session:
-            saved = session.get(ApertusConfiguration, "default")
+            saved = session.get(ApertusConfiguration, self.tenant_record_id)
             settings = resolved_settings(self.environment_settings, saved, data)
         models = await ai.ModelClient(settings, self.integration_logger).models()
         return {
@@ -360,16 +413,26 @@ class HelveticLens:
         artifact = folder / artifact_key
         if not artifact.exists():
             artifact.write_bytes(document.body)
+        owner_organization_id = (
+            None if law.owner_organization_id is None and origin == "live" else self.organization_id
+        )
+        owner_match = (
+            Version.owner_organization_id.is_(None)
+            if owner_organization_id is None
+            else Version.owner_organization_id == owner_organization_id
+        )
         version = session.scalar(
             select(Version).where(
                 Version.law_id == law.id,
                 Version.content_hash == document.content_hash,
                 Version.extractor == document.extractor,
+                owner_match,
             )
         )
         reused = version is not None
         if version is None:
             version = Version(
+                owner_organization_id=owner_organization_id,
                 law_id=law.id,
                 title=document.title,
                 content_hash=document.content_hash,
@@ -538,6 +601,10 @@ class HelveticLens:
                     409,
                     "current_version_delete_blocked",
                 )
+            for watch in session.scalars(
+                select(DocumentWatch).where(DocumentWatch.selected_baseline_version_id == version.id)
+            ):
+                watch.selected_baseline_version_id = None
             comparisons = list(
                 session.scalars(
                     select(Comparison).where(
@@ -626,6 +693,11 @@ class HelveticLens:
             self.refresh_comparison_identity(session, existing)
             return existing
         comparison = Comparison(
+            owner_organization_id=(
+                None
+                if old.owner_organization_id is None and new.owner_organization_id is None
+                else self.organization_id
+            ),
             law_id=old.law_id,
             old_version_id=old.id,
             new_version_id=new.id,
@@ -761,7 +833,11 @@ class HelveticLens:
             raise
         with self.write_guard, self.db.session() as session:
             source = get(session, Source, source_id)
-            tracked = set(session.scalars(select(Law.url)))
+            tracked = set(
+                session.scalars(
+                    select(Law.url).join(DocumentWatch, DocumentWatch.law_id == Law.id)
+                )
+            )
             for candidate in result["candidates"]:
                 candidate["tracked"] = candidate["url"] in tracked
             source.discovery, source.last_checked, source.error = result, utcnow(), None
@@ -771,24 +847,52 @@ class HelveticLens:
     async def add_law(self, data: dict):
         url = canonical_url(data["url"])
         provider = data.get("provider", "native")
+        shared_official = self.is_shared_official_url(url) and not data.get("synthetic", False)
+        canonical_identity = self.canonical_document_identity(url)
         with self.db.session() as session:
-            existing = session.scalar(select(Law).where(Law.url == url))
-            if existing:
+            existing = session.scalar(
+                select(Law).where(
+                    Law.canonical_identity == canonical_identity,
+                    Law.owner_organization_id.is_(None)
+                    if shared_official
+                    else Law.owner_organization_id == self.organization_id,
+                )
+            )
+            if existing and self.watch(session, existing.id, required=False):
                 raise DomainError(
                     f"This document is already tracked as '{existing.name}'.", 409, "duplicate_law"
                 )
             if data.get("source_id"):
                 get(session, Source, data["source_id"])
+            if existing:
+                watch = DocumentWatch(
+                    law_id=existing.id,
+                    display_name=data.get("name") or existing.name,
+                    active=True,
+                    last_result="baseline_reused",
+                )
+                session.add(watch)
+                session.commit()
+                return self.law_summary(session, existing, watch)
         fetched = await self.fetcher.fetch(url, provider)
         name = PurePosixPath(urlsplit(fetched.url).path).name or "document.html"
         document = await asyncio.to_thread(extract, fetched.body, fetched.content_type, name, provider)
         with self.write_guard, self.db.session() as session:
-            if session.scalar(select(Law.id).where(Law.url == url)):
+            if session.scalar(
+                select(Law.id).where(
+                    Law.canonical_identity == canonical_identity,
+                    Law.owner_organization_id.is_(None)
+                    if shared_official
+                    else Law.owner_organization_id == self.organization_id,
+                )
+            ):
                 raise DomainError("This document was already added.", 409, "duplicate_law")
             law = Law(
+                owner_organization_id=None if shared_official else self.organization_id,
+                canonical_identity=canonical_identity,
                 name=data.get("name") or document.title[:300],
                 url=url,
-                source_id=data.get("source_id"),
+                source_id=None if shared_official else data.get("source_id"),
                 provider=provider,
                 last_checked=utcnow(),
             )
@@ -804,10 +908,25 @@ class HelveticLens:
                 metadata=fetched.metadata,
             )
             law.current_version_id = version.id
+            watch = DocumentWatch(
+                law_id=law.id,
+                display_name=data.get("name") or law.name,
+                active=True,
+                last_checked=utcnow(),
+            )
+            session.add(watch)
             session.commit()
-            return self.law_summary(session, law)
+            return self.law_summary(session, law, watch)
 
-    def law_summary(self, session: Session, law: Law):
+    def list_laws(self):
+        with self.db.session() as session:
+            watches = list(
+                session.scalars(select(DocumentWatch).order_by(DocumentWatch.created_at.desc()))
+            )
+            return [self.law_summary(session, get(session, Law, watch.law_id), watch) for watch in watches]
+
+    def law_summary(self, session: Session, law: Law, watch: DocumentWatch | None = None):
+        watch = watch or self.watch(session, law.id)
         current = session.get(Version, law.current_version_id) if law.current_version_id else None
         last_item = session.scalar(
             select(ScanItem)
@@ -830,7 +949,15 @@ class HelveticLens:
         )
         analysis = self.latest_analysis(session, comparison) if comparison else None
         return {
-            **as_dict(law),
+            **as_dict(law, {"owner_organization_id"}),
+            "name": watch.display_name,
+            "active": watch.active,
+            "last_checked": as_dict(watch)["last_checked"],
+            "last_result": watch.last_result,
+            "last_error": watch.last_error,
+            "watch_id": watch.id,
+            "selected_baseline_version_id": watch.selected_baseline_version_id,
+            "corpus_scope": "shared_public" if law.owner_organization_id is None else "organization_private",
             "current_version": version_summary(current) if current else None,
             "comparison_id": comparison.id if comparison else None,
             "comparison_mode": comparison.mode if comparison else None,
@@ -841,8 +968,11 @@ class HelveticLens:
     def law_detail(self, law_id: str):
         with self.db.session() as session:
             law = get(session, Law, law_id)
+            watch = self.watch(session, law_id, required=False)
+            if watch is None:
+                raise DomainError("The requested record was not found.", 404, "not_found")
             return {
-                **self.law_summary(session, law),
+                **self.law_summary(session, law, watch),
                 "versions": [
                     version_summary(v)
                     for v in session.scalars(
@@ -874,6 +1004,7 @@ class HelveticLens:
         comparison_ids: list[str] = []
         with self.write_guard, self.db.session() as session:
             law = get(session, Law, law_id)
+            watch = self.watch(session, law_id)
             busy = session.scalar(
                 select(ScanItem.id)
                 .join(Scan)
@@ -886,6 +1017,20 @@ class HelveticLens:
                     409,
                     "scan_in_progress",
                 )
+            if law.owner_organization_id is None:
+                name = watch.display_name
+                session.delete(watch)
+                session.commit()
+                return {
+                    "deleted": True,
+                    "name": name,
+                    "watch_removed": True,
+                    "shared_corpus_retained": True,
+                    "versions": 0,
+                    "comparisons": 0,
+                    "scan_entries": 0,
+                    "artifacts": 0,
+                }
             versions = list(session.scalars(select(Version).where(Version.law_id == law_id)))
             observations = list(
                 session.scalars(select(Observation).where(Observation.law_id == law_id))
@@ -940,6 +1085,7 @@ class HelveticLens:
             session.execute(delete(Observation).where(Observation.law_id == law_id))
             session.execute(delete(Version).where(Version.law_id == law_id))
             name = law.name
+            session.delete(watch)
             session.delete(law)
             for scan_id in scan_ids:
                 scan = session.get(Scan, scan_id)
@@ -1083,7 +1229,7 @@ class HelveticLens:
         )
         if not analysis:
             return None
-        profile = get(session, Profile, "default")
+        profile = get(session, Profile, self.tenant_record_id)
         return {
             **as_dict(analysis),
             "stale": analysis.cache_key
@@ -1120,18 +1266,28 @@ class HelveticLens:
 
     def start_scan(self, law_ids: list[str] | None, baseline_id: str | None):
         with self.write_guard, self.db.session() as session:
-            laws = (
-                list(session.scalars(select(Law).where(Law.active.is_(True))))
-                if law_ids is None
-                else [get(session, Law, law_id) for law_id in dict.fromkeys(law_ids)]
-            )
+            if law_ids is None:
+                watches = list(
+                    session.scalars(select(DocumentWatch).where(DocumentWatch.active.is_(True)))
+                )
+                laws = [get(session, Law, watch.law_id) for watch in watches]
+            else:
+                laws = [get(session, Law, law_id) for law_id in dict.fromkeys(law_ids)]
+                watches = []
+                for law in laws:
+                    watch = self.watch(session, law.id, required=False)
+                    if watch is None:
+                        watch = DocumentWatch(law_id=law.id, display_name=law.name, active=True)
+                        session.add(watch)
+                    watches.append(watch)
+                session.flush()
             if not laws:
                 raise DomainError("Add or select an active law before scanning.")
             if len(laws) > 25:
                 raise DomainError("The MVP supports at most 25 documents per scan. Select a smaller batch.")
             if baseline_id and len(laws) != 1:
                 raise DomainError("Choose a historical baseline for one law at a time.")
-            if any(not law.active for law in laws):
+            if any(not watch.active for watch in watches):
                 raise DomainError("Resume paused laws before scanning them.")
             if baseline_id and get(session, Version, baseline_id).law_id != laws[0].id:
                 raise DomainError("The baseline must belong to the selected law.")
@@ -1149,12 +1305,15 @@ class HelveticLens:
             scan = Scan(total=len(laws))
             session.add(scan)
             session.flush()
-            for law in laws:
+            for law, watch in zip(laws, watches, strict=True):
+                selected_baseline = baseline_id or watch.selected_baseline_version_id or law.current_version_id
+                if baseline_id:
+                    watch.selected_baseline_version_id = baseline_id
                 session.add(
                     ScanItem(
                         scan_id=scan.id,
                         law_id=law.id,
-                        baseline_version_id=baseline_id or law.current_version_id,
+                        baseline_version_id=selected_baseline,
                         mode="historical" if baseline_id else "monitoring",
                         events=[{"stage": "queued", "at": utcnow().isoformat()}],
                     )
@@ -1236,8 +1395,8 @@ class HelveticLens:
                 self.stage(item_id, "failed", result="failed", error=message, analysis_status="not_run")
                 with self.write_guard, self.db.session() as session:
                     item = get(session, ScanItem, item_id)
-                    law = get(session, Law, item.law_id)
-                    law.last_result, law.last_error, law.last_checked = "failed", message, utcnow()
+                    watch = self.watch(session, item.law_id)
+                    watch.last_result, watch.last_error, watch.last_checked = "failed", message, utcnow()
                     session.commit()
                 step_state, step_error = "failed", message
             completed += 1
@@ -1291,7 +1450,7 @@ class HelveticLens:
             )
             if identity_block:
                 item.live_result = f"identity_{identity['status']}"
-                law.last_checked = utcnow()
+                self.watch(session, law.id).last_checked = utcnow()
                 session.commit()
                 raise DomainError(
                     "The newly fetched artifact was saved for inspection but was not made current because its legal-work identity could not be accepted. Inspect the original, attach it to the correct document, or confirm an unknown assignment.",
@@ -1321,8 +1480,10 @@ class HelveticLens:
             else:
                 comparison, item.result = live_comparison, item.live_result
             item.comparison_id = comparison.id if comparison else None
-            law.current_version_id, law.last_checked = version.id, utcnow()
-            law.last_result, law.last_error = item.live_result, None
+            law.current_version_id = version.id
+            watch = self.watch(session, law.id)
+            watch.last_checked = utcnow()
+            watch.last_result, watch.last_error = item.live_result, None
             comparison_id = item.comparison_id
             changed = comparison.diff["changed"] if comparison else False
             session.commit()
@@ -1757,7 +1918,11 @@ class HelveticLens:
 
     def clear_integration_logs(self):
         with self.write_guard, self.db.session() as session:
-            result = session.execute(delete(IntegrationLog))
+            result = session.execute(
+                delete(IntegrationLog).where(
+                    IntegrationLog.organization_id == self.organization_id
+                )
+            )
             session.commit()
             return {"deleted": result.rowcount or 0}
 
@@ -1769,7 +1934,7 @@ class HelveticLens:
                 get(session, Version, comparison.new_version_id),
             )
             self.ensure_complete_diff(session, comparison, old, new)
-            profile = get(session, Profile, "default")
+            profile = get(session, Profile, self.tenant_record_id)
             key = ai.cache_key(comparison, profile, self.settings, self.prompt_settings)
             job, _ = durable_jobs.enqueue(
                 session,
@@ -1798,7 +1963,7 @@ class HelveticLens:
                 get(session, Version, comparison.new_version_id),
             )
             self.ensure_complete_diff(session, comparison, old, new)
-            profile = get(session, Profile, "default")
+            profile = get(session, Profile, self.tenant_record_id)
             key = ai.ask_cache_key(
                 comparison,
                 profile,
@@ -1849,7 +2014,7 @@ class HelveticLens:
                     raise DomainError(
                         "These versions have no text changes to analyse. You can still ask about their content."
                     )
-                profile = get(session, Profile, "default")
+                profile = get(session, Profile, self.tenant_record_id)
                 identity = self.refresh_comparison_identity(session, comparison)
                 if identity["effective_status"] in {"mismatch", "unknown"}:
                     raise DomainError(
@@ -1921,7 +2086,7 @@ class HelveticLens:
                     "stale": key
                     != ai.cache_key(
                         comparison,
-                        get(session, Profile, "default"),
+                        get(session, Profile, self.tenant_record_id),
                         self.settings,
                         self.prompt_settings,
                     ),
@@ -1939,7 +2104,7 @@ class HelveticLens:
             )
             if self.ensure_complete_diff(session, comparison, old, new):
                 session.commit()
-            profile = get(session, Profile, "default")
+            profile = get(session, Profile, self.tenant_record_id)
             identity = self.refresh_comparison_identity(session, comparison)
             if identity["effective_status"] in {"mismatch", "unknown"}:
                 raise DomainError(

@@ -71,7 +71,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-030](#hl-030) | P0       | DONE     | HL-029                                                 | Durable PostgreSQL jobs with Redis/Celery execution                 |
 | [HL-031](#hl-031) | P0       | DONE     | HL-029, HL-030                                         | Local model library, downloads, and runtime manager                 |
 | [HL-032](#hl-032) | P0       | IN PROGRESS | HL-030, HL-031                                      | Local-first inference routing, GPU fairness, and hardware benchmark |
-| [HL-033](#hl-033) | P0       | PLANNED  | HL-003, HL-029                                         | Shared public corpus and organization-aware migration               |
+| [HL-033](#hl-033) | P0       | DONE     | HL-003, HL-029                                         | Shared public corpus and organization-aware migration               |
 | [HL-034](#hl-034) | P0       | PLANNED  | HL-033                                                 | Registration, login, sessions, and onboarding                       |
 | [HL-035](#hl-035) | P0       | PLANNED  | HL-034                                                 | Organization membership and enforced admin/viewer access            |
 | [HL-036](#hl-036) | P0       | PLANNED  | HL-005, HL-011, HL-033                                 | Normalized regulatory documents, dates, and events                  |
@@ -625,6 +625,8 @@ Acceptance criteria:
 - Migrate every existing record into a default legacy organization without changing evidence IDs, artifact keys, comparison pairs, or AI-history links.
 - Replace global URL uniqueness with canonical-document identity plus organization watch uniqueness, so several organizations can monitor the same official document.
 - Add isolation checks proving that guessed cross-organization IDs, search, exports, integration logs, jobs, and evidence routes disclose nothing and return `404` or the authorized shared-public representation.
+
+Delivered: canonical public documents, extracted live versions, and deterministic public comparisons now use nullable corpus ownership, while `DocumentWatch` owns each organization's display name, active state, selected baseline, and scan outcome. Fedlex URLs reuse one canonical row and one live artifact across organizations; uploaded, pasted, historical, synthetic, and custom-source material remains private. Session-level query criteria enforce the boundary for evidence, comparisons, scans, jobs, logs, AI history, profiles, prompts, and provider settings. Prompt revisions, quota records, and connector cursor state have organization-owned tables ready for the following features. The migration creates a legacy organization and preserves existing law/version/comparison/history identifiers and artifact keys. Cross-organization regression tests cover guessed IDs, logs, jobs, profiles, private baselines, public reuse, and safe removal of a watch without deleting the shared corpus.
 
 <a id="hl-034"></a>
 

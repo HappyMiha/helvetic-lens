@@ -64,10 +64,11 @@ def enqueue(
     progress_total: int = 1,
     max_attempts: int = 3,
     steps: list[tuple[str, dict]] | None = None,
-    organization_id: str = "default",
+    organization_id: str | None = None,
 ) -> tuple[Job, bool]:
     if queue not in QUEUES:
         raise ValueError(f"Unknown durable queue: {queue}")
+    organization_id = organization_id or session.info["organization_id"]
     existing = session.scalar(
         select(Job).where(
             Job.organization_id == organization_id,
