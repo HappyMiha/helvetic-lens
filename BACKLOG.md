@@ -4,7 +4,7 @@
 
 This backlog implements the product described in [README.md](README.md): a local-AI-first Swiss regulatory monitor with immutable evidence, a time-based legal registry, official-source connectors, cross-document impact analysis, and organization workspaces.
 
-**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-040`), document-identity gate (`HL-058`), and legal-unit semantic diff (`HL-059`) are implemented and verified through the API, browser build, migrations, and regression tests. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
+**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-041`), document-identity gate (`HL-058`), and legal-unit semantic diff (`HL-059`) are implemented and verified through the API, browser build, migrations, and regression tests. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
 
 ## Scope and priorities
 
@@ -79,7 +79,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-038](#hl-038) | P0       | DONE     | HL-030, HL-036                                         | Versioned incremental connector contract                            |
 | [HL-039](#hl-039) | P1       | DONE     | HL-038, existing ELI resolver                          | Fedlex federal-law catalogue connector                              |
 | [HL-040](#hl-040) | P1       | DONE     | HL-038                                                 | Swiss Parliament initiatives and bills connector                    |
-| [HL-041](#hl-041) | P1       | PLANNED  | HL-038                                                 | Swiss Federal Supreme Court decisions connector                     |
+| [HL-041](#hl-041) | P1       | DONE     | HL-038                                                 | Swiss Federal Supreme Court decisions connector                     |
 | [HL-042](#hl-042) | P1       | PLANNED  | HL-030, HL-039–HL-041                                  | Scheduled synchronization, deduplication, and watch fan-out         |
 | [HL-043](#hl-043) | P1       | PLANNED  | HL-038, HL-042                                         | Official notices and source-linked news events                      |
 | [HL-044](#hl-044) | P1       | PLANNED  | HL-036, HL-039–HL-043                                  | Evidence-backed relation graph and candidate generation             |
@@ -765,16 +765,18 @@ Acceptance criteria:
 
 Surface new court decisions that cite or interpret monitored federal law.
 
+**Status: DONE.** The connector uses the official latest/date index with a five-date overlap and a bounded current/previous-year insertion-date reconciliation stream. Source review corrected the earlier sitemap assumption: the sitemap declared by the court covers website pages, not decision records, so no invented `lastmod` feed is used. Exact Aza/docket identity, distinct decision and insertion dates, actual-language HTML, descriptors, immutable artifacts, exact citation candidates, two-second pacing, source-contract health, safe partial recovery, and idempotent corpus writes are implemented. See [the connector contract](docs/FEDERAL_COURT_CONNECTOR.md).
+
 Acceptance criteria:
 
-- Limit the first release to the Swiss Federal Supreme Court official latest/date index, yearly sitemaps, databases, and official decision HTML; broader courts are HL-055.
+- Limit the first release to the Swiss Federal Supreme Court official latest/date index, databases, and official decision HTML; broader courts are HL-055. Treat the declared website sitemap only according to its observed contents.
 - Complete a source-contract, terms, and robots review; enforce the published two-second crawl delay. No undocumented third-party aggregator may be the authority of record.
 - Store stable Aza/docket identity, court/chamber, decision date and insertion/publication date separately, language, descriptors/norms when exposed, official JumpCGI/source URL, artifact hash, and immutable extracted HTML.
-- Poll the latest/date index with an overlap and reconcile current/previous yearly sitemaps by stable identity and `lastmod`. Avoid repeatedly downloading the giant all-decisions RSS snapshot.
+- Poll the latest/date index with an overlap and reconcile the current and previous years through bounded official insertion-date pages by stable identity. Avoid repeatedly downloading the giant all-decisions RSS snapshot.
 - Do not fabricate a source PDF: free official decisions are generally HTML, so store/reopen the authoritative representation that actually exists.
 - Template drift, challenge pages, a crawl-delay violation, or an implausible empty interval sets connector health to degraded without advancing past uncertain coverage.
 - Extract cited acts/articles and official identifiers as evidence-backed `cites`/`interprets` candidates. Never describe a judgment as amending the wording of a statute.
-- Isolate per-decision failures so one bad PDF does not lose the rest of a page; retain a retryable item error and safe checkpoint.
+- Isolate per-decision failures so one bad decision does not lose the rest of a page; retain a retryable item error and safe checkpoint.
 - Verify at least one newly listed decision, repeated overlap, multilingual metadata where available, a cited norm, original artifact reopening, and idempotent rerun.
 
 <a id="hl-042"></a>

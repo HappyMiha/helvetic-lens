@@ -471,6 +471,10 @@ def create_app(
     async def sync_parliament(stream: str):
         return await service.sync_parliament(stream)
 
+    @app.post("/api/connectors/federal-court/{stream}/sync")
+    async def sync_federal_court(stream: str):
+        return await service.sync_federal_court(stream)
+
     @app.get("/api/corpus/works/{work_id}")
     def regulatory_work_detail(work_id: str):
         return service.regulatory_work_detail(work_id)

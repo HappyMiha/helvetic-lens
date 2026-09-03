@@ -26,6 +26,7 @@ from .extraction import (
     extract,
     fedlex_eli_reference,
 )
+from .federal_court_connector import federal_court_connectors
 from .fedlex_connector import fedlex_connectors
 from .identity import (
     IDENTITY_REVISION,
@@ -1027,6 +1028,36 @@ class HelveticLens:
                 "Choose a supported Swiss Parliament stream.",
                 422,
                 "parliament_stream_invalid",
+            )
+        result = await self.connector_runner.run_page(connector, stream=stream)
+        return {
+            "connector": result.connector,
+            "stream": result.stream,
+            "status": result.status,
+            "page_id": result.page_id,
+            "persisted": result.persisted,
+            "total": result.total,
+            "next_cursor": result.next_cursor,
+            "error": result.error,
+        }
+
+    async def sync_federal_court(self, stream: str) -> dict:
+        connector = next(
+            (
+                item
+                for item in federal_court_connectors(
+                    self.settings,
+                    self.integration_logger,
+                )
+                if item.mode == stream
+            ),
+            None,
+        )
+        if connector is None:
+            raise DomainError(
+                "Choose a supported Swiss Federal Supreme Court stream.",
+                422,
+                "federal_court_stream_invalid",
             )
         result = await self.connector_runner.run_page(connector, stream=stream)
         return {

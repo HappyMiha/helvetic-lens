@@ -865,7 +865,7 @@ class ConnectorRunner:
         try:
             health = await connector.health()
             health.validate()
-            if health.status == "error":
+            if health.status != "healthy":
                 raise DomainError(health.message, 502, "connector_unavailable")
             page = await connector.discover_since(cursor, checkpoint)
             self._validate_page(manifest, page, cursor)

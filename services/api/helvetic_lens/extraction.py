@@ -690,15 +690,22 @@ def extract(
                 "script, style, noscript, svg, nav, header, footer, aside, form, template"
             ):
                 node.decompose()
+            court_root = soup.select_one("#highlight_content .content")
             root = (
-                soup.find("main")
+                court_root
+                or soup.find("main")
                 or soup.find("article")
                 or soup.find(attrs={"role": "main"})
                 or soup.body
                 or soup
             )
             tags = {"h1", "h2", "h3", "h4", "h5", "h6", "p", "li", "tr", "pre", "blockquote"}
-            for node in root.find_all(list(tags)):
+            nodes = (
+                root.select(":scope > .para")
+                if court_root is not None
+                else root.find_all(list(tags))
+            )
+            for node in nodes:
                 if any(parent.name in tags for parent in node.parents if parent is not root):
                     continue
                 text = normalize(node.get_text(" ", strip=True))

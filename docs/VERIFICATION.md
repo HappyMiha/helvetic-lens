@@ -99,6 +99,15 @@ The earlier large-comparison checks below are retained as historical evidence of
 - The first live attempt exposed a double-decompression defect in the common bounded HTTP transport: `httpx` had already decoded the Parliament gzip body before the response was reconstructed with the original encoding header. The transport now removes stale encoding/length headers and has a compressed-response regression.
 - The complete API suite passes with 199 tests, Ruff passes, and the Next.js production build passes. The rebuilt Compose stack reports healthy API, PostgreSQL, Redis, and model-manager services; both workers and the scheduler are running at migration `c27f8d91a6e4 (head)`, and the deployed OpenAPI contract exposes the Parliament synchronization route.
 
+## Swiss Federal Supreme Court connector — 3 September 2026
+
+- Fixture regressions cover bounded latest-index overlap, day-by-day current/previous-year reconciliation, exact Aza/docket identity, separate decision and insertion dates, actual German and French metadata, authoritative HTML reopening and extraction, exact SR/RS and article/act citations, two-second request pacing, safe partial-item recovery, idempotent reruns, challenge detection, and robots-policy drift.
+- Source review confirmed the official latest/date index and decision HTML contract. It also corrected the earlier roadmap assumption: the sitemap declared in the court's `robots.txt` lists website content rather than yearly decision records, so reconciliation walks bounded official insertion-date pages and never fabricates `lastmod` coverage.
+- The bounded read-only live smoke observed the newest insertion date, fetched one official decision, retained its stable Aza/docket metadata and German language, reopened the immutable HTML, and extracted 65,231 characters. It wrote no corpus data and respected the published two-second crawl delay.
+- Degraded health now prevents discovery for every official connector, so a challenge page, changed template, or crawl-policy mismatch cannot advance a cursor. The per-decision safe checkpoint still allows a later item to retry without losing earlier committed decisions.
+- `scripts/check_federal_court_connector.py` performs the live check. `POST /api/connectors/federal-court/{latest|reconcile}/sync` runs one persisted page; connector status remains available through `GET /api/connectors/status`.
+- The complete API suite passes with 206 tests, Ruff passes, and the Next.js production build passes.
+
 ## Browser and PostgreSQL checks
 
 - HL-031 adds a three-entry immutable Apertus catalogue, private model-manager API, dedicated model volume, hardware/compatibility probe, license acceptance, resumable `.part` downloads, free-space and SHA-256 checks, atomic activation, pinned llama.cpp runtime, retained-analysis removal guard, and durable download/start jobs. Four manager lifecycle regressions and an end-to-end admin API regression pass.

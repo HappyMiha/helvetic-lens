@@ -85,14 +85,23 @@ FEDERAL_COURT_CONTRACT = OfficialSourceContract(
     manifest=ConnectorManifest(
         name="federal-supreme-court",
         authority="federal_supreme_court",
-        connector_version="1.0.0",
-        schema_version="federal-court-html-v1",
+        connector_version="1.1.0",
+        schema_version="federal-court-html-v2",
         allowed_hosts=frozenset({"search.bger.ch", "relevancy.bger.ch", "www.bger.ch", "bger.ch"}),
         attribution="Swiss Federal Supreme Court, with the canonical official decision link retained.",
         source_contract={
-            "discovery": "latest-decision date index plus yearly sitemap reconciliation",
-            "required_identity": "court docket",
+            "discovery": (
+                "overlapping latest/date index plus bounded current-and-previous-year "
+                "insertion-date reconciliation"
+            ),
+            "required_identity": "Aza identity and court docket",
+            "languages": ["de", "fr", "it"],
             "crawl_delay_seconds": 2,
+            "decision_representation": "official HTML",
+            "yearly_sitemap_note": (
+                "The sitemap declared by robots.txt covers the public website, not the "
+                "decision database; yearly coverage therefore uses the official date index."
+            ),
         },
         minimum_interval_seconds=2.0,
     ),
