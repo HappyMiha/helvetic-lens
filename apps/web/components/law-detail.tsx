@@ -22,13 +22,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   api,
-  dateOnly,
-  dateTime,
   errorText,
   label,
   refreshWorkspace,
   useResource,
 } from "@/lib/api";
+import { translate, useI18n, type Locale } from "@/lib/i18n";
 import type {
   Comparison,
   LawDetail as Detail,
@@ -43,21 +42,26 @@ import { ScanPanel } from "./scan-panel";
 import { Shell } from "./shell";
 import { useAuth } from "./auth-gate";
 
-export function versionLabel(version: Version) {
+export function versionLabel(
+  version: Version,
+  t: (key: string, values?: Record<string, string | number>) => string,
+  locale: Locale,
+) {
   return (
     (version.declared_date
-      ? version.declared_date + " (stated)"
-      : "Date unknown") +
+      ? t("law.versionStated", { date: version.declared_date })
+      : t("law.dateUnknown")) +
     " · " +
-    label(version.origin) +
+    (translate(locale, `status.${version.origin}`) || label(version.origin)) +
     " · " +
     version.id.slice(0, 8) +
-    (version.synthetic ? " · SYNTHETIC" : "")
+    (version.synthetic ? ` · ${t("law.syntheticUpper")}` : "")
   );
 }
 
 export function LawDetail({ id }: { id: string }) {
   const router = useRouter();
+  const { t, locale, dateTime, number } = useI18n();
   const { canManage } = useAuth();
   const {
     data: law,
@@ -161,7 +165,7 @@ export function LawDetail({ id }: { id: string }) {
   async function removeVersion(version: Version) {
     if (
       !window.confirm(
-        `Remove saved version ${version.id.slice(0, 8)} and every comparison that uses it?`,
+        t("law.removeVersionConfirm", { version: version.id.slice(0, 8) }),
       )
     )
       return;
@@ -172,7 +176,7 @@ export function LawDetail({ id }: { id: string }) {
       if (baseline === version.id) setBaseline("");
       if (oldId === version.id) setOldId("");
       if (newId === version.id) setNewId("");
-      setNote("The mistaken import and its comparisons were removed.");
+      setNote(t("law.importRemoved"));
       refreshWorkspace();
     } catch (cause) {
       setError(errorText(cause));
@@ -181,10 +185,10 @@ export function LawDetail({ id }: { id: string }) {
     }
   }
   return (
-    <Shell section="Document & versions">
+    <Shell section={t("law.section")}>
       <Link href="/" className="back-link">
         <ArrowLeft size={14} />
-        Back to watchlist
+        {t("law.back")}
       </Link>
       <ErrorNote message={loadError || error} />
       {loading && !law ? (
@@ -194,7 +198,7 @@ export function LawDetail({ id }: { id: string }) {
           <>
             <div className="page-heading">
               <div className="min-w-0">
-                <span className="eyebrow">MONITORED DOCUMENT</span>
+                <span className="eyebrow">{t("law.eyebrow")}</span>
                 {editing && canManage ? (
                   <form
                     className="flex items-center gap-2 my-3"
@@ -204,14 +208,14 @@ export function LawDetail({ id }: { id: string }) {
                     }}
                   >
                     <Input
-                      aria-label="Document name"
+                      aria-label={t("law.documentName")}
                       value={name}
                       onChange={(event) => setName(event.target.value)}
                       required
                       maxLength={300}
                     />
                     <Button size="sm" disabled={!!busy}>
-                      Save
+                      {t("common.save")}
                     </Button>
                     <Button
                       size="sm"
@@ -219,7 +223,7 @@ export function LawDetail({ id }: { id: string }) {
                       variant="ghost"
                       onClick={() => setEditing(false)}
                     >
-                      Cancel
+                      {t("scan.cancel")}
                     </Button>
                   </form>
                 ) : (
@@ -227,7 +231,7 @@ export function LawDetail({ id }: { id: string }) {
                     {law.name}
                     {canManage && <button
                       className="icon-button mt-1 shrink-0"
-                      aria-label="Rename document"
+                      aria-label={t("law.rename")}
                       onClick={() => {
                         setName(law.name);
                         setEditing(true);
@@ -254,7 +258,7 @@ export function LawDetail({ id }: { id: string }) {
                   disabled={!!busy || !!running}
                 >
                   {law.active ? <Pause /> : <Play />}
-                  {law.active ? "Pause monitoring" : "Resume monitoring"}
+                  {law.active ? t("law.pause") : t("law.resume")}
                 </Button>
                 <Button
                   variant="destructive"
@@ -265,80 +269,75 @@ export function LawDetail({ id }: { id: string }) {
                   disabled={!!busy || !!running}
                 >
                   <Trash2 />
-                  Delete document
+                  {t("law.delete")}
                 </Button>
               </div>}
             </div>
             {!law.active && (
               <div className="info-note mb-5">
-                Monitoring is paused. Saved versions and comparisons remain
-                available. Resume to run a live check.
+                {t("law.pausedNotice")}
               </div>
             )}
             {note && <SuccessNote>{note}</SuccessNote>}
             <div className="detail-overview">
               <div>
-                <span className="eyebrow">LAST LIVE RESULT</span>
+                <span className="eyebrow">{t("law.lastResult")}</span>
                 <Status value={law.last_result} />
               </div>
               <div>
-                <span className="eyebrow">LAST CHECKED</span>
+                <span className="eyebrow">{t("law.lastChecked")}</span>
                 <strong>{dateTime(law.last_checked)}</strong>
               </div>
               <div>
-                <span className="eyebrow">SAVED VERSIONS</span>
-                <strong>{law.versions.length}</strong>
+                <span className="eyebrow">{t("law.savedVersions")}</span>
+                <strong>{number(law.versions.length)}</strong>
               </div>
               <div>
-                <span className="eyebrow">MONITORING</span>
-                <strong>{law.active ? "Active" : "Paused"}</strong>
+                <span className="eyebrow">{t("law.monitoring")}</span>
+                <strong>{law.active ? t("status.active") : t("status.paused")}</strong>
               </div>
             </div>
             <ErrorNote message={law.last_error} />
             <div className="law-grid">
               <section className="panel">
                 <div className="panel-header">
-                  <h2>Check the current document</h2>
+                  <h2>{t("law.checkCurrent")}</h2>
                   <RefreshCw size={18} className="muted" />
                 </div>
                 <div className="panel-body">
                   <p className="muted text-sm mt-0">
-                    Fetch the URL above and compare its text with the baseline
-                    you choose.
+                    {t("law.checkBody")}
                   </p>
                   <label className="field-label">
-                    Comparison baseline
+                    {t("law.baseline")}
                     <select
                       value={baseline}
                       onChange={(event) => setBaseline(event.target.value)}
                       disabled={!!running}
                     >
                       <option value="">
-                        Last live version · ordinary monitoring
+                        {t("law.lastLiveBaseline")}
                       </option>
                       {law.versions.map((version) => (
                         <option value={version.id} key={version.id}>
-                          {versionLabel(version)}
+                          {versionLabel(version, t, locale)}
                         </option>
                       ))}
                     </select>
                   </label>
                   {selectedBaseline ? (
                     <div className="historical-note">
-                      <strong>Historical comparison</strong>
+                      <strong>{t("law.historicalComparison")}</strong>
                       <p className="m-0 mt-1">
-                        Your selected copy is compared with freshly fetched
-                        content. A separate live check still compares against
-                        the last live version.
+                        {t("law.historicalBody")}
                         {selectedBaseline.synthetic
-                          ? " The selected baseline is synthetic."
+                          ? ` ${t("law.syntheticBaseline")}`
                           : ""}
                       </p>
                     </div>
                   ) : (
                     <p className="field-help">
-                      The last successfully fetched version remains the baseline
-                      until a new fetch succeeds.
+                      {t("law.baselineHelp")}
                     </p>
                   )}
                   {canManage && <div className="flex flex-wrap gap-3 mt-5">
@@ -351,7 +350,7 @@ export function LawDetail({ id }: { id: string }) {
                       ) : (
                         <RefreshCw />
                       )}
-                      {baseline ? "Fetch & compare with history" : "Scan now"}
+                      {baseline ? t("law.fetchCompare") : t("monitor.scanNow")}
                     </Button>
                     <Button
                       variant="outline"
@@ -359,47 +358,46 @@ export function LawDetail({ id }: { id: string }) {
                       disabled={!!busy}
                     >
                       <FileUp />
-                      Import previous version
+                      {t("form.importTitle")}
                     </Button>
                   </div>}
                 </div>
               </section>
               <section className="panel">
                 <div className="panel-header">
-                  <h2>Compare saved versions</h2>
+                  <h2>{t("law.compareSaved")}</h2>
                   <GitCompareArrows size={18} className="muted" />
                 </div>
                 {canManage && <div className="panel-body">
                   <p className="muted text-sm mt-0">
-                    Use existing evidence without contacting the source website.
-                    You choose the direction of comparison.
+                    {t("law.compareSavedBody")}
                   </p>
                   <div className="saved-selectors">
                     <label className="field-label">
-                      Before
+                      {t("law.before")}
                       <select
-                        aria-label="Saved version before"
+                        aria-label={t("law.savedBefore")}
                         value={savedOld}
                         onChange={(event) => setOldId(event.target.value)}
                       >
                         {law.versions.map((version) => (
                           <option key={version.id} value={version.id}>
-                            {versionLabel(version)}
+                            {versionLabel(version, t, locale)}
                           </option>
                         ))}
                       </select>
                     </label>
                     <ArrowRight size={15} />
                     <label className="field-label">
-                      After
+                      {t("law.after")}
                       <select
-                        aria-label="Saved version after"
+                        aria-label={t("law.savedAfter")}
                         value={savedNew}
                         onChange={(event) => setNewId(event.target.value)}
                       >
                         {law.versions.map((version) => (
                           <option key={version.id} value={version.id}>
-                            {versionLabel(version)}
+                            {versionLabel(version, t, locale)}
                           </option>
                         ))}
                       </select>
@@ -416,7 +414,7 @@ export function LawDetail({ id }: { id: string }) {
                     ) : (
                       <GitCompareArrows />
                     )}
-                    Open saved comparison
+                    {t("law.openComparison")}
                   </Button>
                 </div>}
               </section>
@@ -430,11 +428,11 @@ export function LawDetail({ id }: { id: string }) {
               <div className="panel-header">
                 <div className="flex items-center gap-3">
                   <History size={18} />
-                  <h2>Version history</h2>
+                   <h2>{t("law.versionHistory")}</h2>
                   <span className="count-pill">{law.versions.length}</span>
                 </div>
                 <span className="text-xs muted">
-                  Content is saved once. Every observation is retained.
+                  {t("law.versionHistoryBody")}
                 </span>
               </div>
               <div className="version-list">
@@ -453,12 +451,12 @@ export function LawDetail({ id }: { id: string }) {
                         </Link>
                         {version.id === law.current_version_id && (
                           <span className="current-label">
-                            Current live snapshot
+                            {t("law.currentSnapshot")}
                           </span>
                         )}
                         {version.synthetic && (
                           <span className="synthetic-label">
-                            Synthetic demo
+                            {t("law.syntheticDemo")}
                           </span>
                         )}
                         <Status value={version.origin} />
@@ -470,18 +468,16 @@ export function LawDetail({ id }: { id: string }) {
                       </div>
                       <p className="text-xs muted mb-0 mt-2">
                         {version.declared_date
-                          ? "Stated date: " +
-                            dateOnly(version.declared_date) +
-                            " · supplied by user"
-                          : "Version date unknown"}{" "}
-                        · First saved {dateTime(version.created_at)}
+                          ? t("law.statedDateUser", { date: version.declared_date })
+                          : t("law.versionDateUnknown")}{" "}
+                        · {t("law.firstSaved", { date: dateTime(version.created_at) })}
                       </p>
                       <p className="text-xs muted m-0 mt-1">
                         {version.content_type} ·{" "}
-                        {version.characters.toLocaleString()} characters ·{" "}
-                        {version.passage_count} passages
+                        {t("law.characters", { count: number(version.characters) })} ·{" "}
+                        {t("law.passages", { count: number(version.passage_count) })}
                         {version.page_count
-                          ? " · " + version.page_count + " pages"
+                          ? ` · ${t("law.pages", { count: number(version.page_count) })}`
                           : ""}{" "}
                         · {version.id.slice(0, 8)}
                       </p>
@@ -497,16 +493,16 @@ export function LawDetail({ id }: { id: string }) {
                           setBaseline(version.id);
                           setOldId(version.id);
                           setNote(
-                            "Baseline selected. Fetch the current document to run this historical comparison.",
+                            t("law.baselineSelected"),
                           );
                         }}
                       >
-                        Use as baseline
+                        {t("law.useBaseline")}
                       </Button>}
                       <Button size="icon" variant="ghost" asChild>
                         <Link
                           aria-label={
-                            "Read saved version " + version.id.slice(0, 8)
+                            t("law.readVersion", { version: version.id.slice(0, 8) })
                           }
                           href={"/evidence/" + version.id}
                         >
@@ -519,9 +515,9 @@ export function LawDetail({ id }: { id: string }) {
                             size="icon"
                             variant="ghost"
                             aria-label={
-                              "Remove saved import " + version.id.slice(0, 8)
+                              t("law.removeImport", { version: version.id.slice(0, 8) })
                             }
-                            title="Remove mistaken import"
+                            title={t("law.removeMistaken")}
                             disabled={!!busy || !!running}
                             onClick={() => void removeVersion(version)}
                           >
@@ -538,25 +534,21 @@ export function LawDetail({ id }: { id: string }) {
               </div>
               <details className="observations">
                 <summary>
-                  Fetch & import observations ({law.observations.length}
+                  {t("law.observations")} ({number(law.observations.length)}
                   {law.observations.length === 100 ? "+" : ""})
                 </summary>
                 <p className="field-help">
-                  An unchanged check or duplicate import reuses the saved
-                  content and adds an observation. Each import retains its
-                  supplied date here; it does not rewrite the snapshot's first
-                  provenance. Importing does not prove official historical
-                  status.
+                  {t("law.observationsBody")}
                 </p>
                 <div className="table-scroll">
                   <table className="watch-table">
                     <thead>
                       <tr>
-                        <th>WHEN</th>
-                        <th>ORIGIN</th>
-                        <th>STATED DATE</th>
-                        <th>VERSION</th>
-                        <th>FILE</th>
+                        <th>{t("common.when")}</th>
+                        <th>{t("law.origin")}</th>
+                        <th>{t("law.statedDate")}</th>
+                        <th>{t("law.version")}</th>
+                        <th>{t("law.file")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -565,12 +557,12 @@ export function LawDetail({ id }: { id: string }) {
                           <td>{dateTime(observation.created_at)}</td>
                           <td>
                             {label(observation.origin)}
-                            {observation.synthetic && " · synthetic"}
+                            {observation.synthetic && ` · ${t("law.syntheticLower")}`}
                           </td>
                           <td>
                             {observation.declared_date
-                              ? observation.declared_date + " · user supplied"
-                              : "Unknown"}
+                              ? t("law.dateUserSupplied", { date: observation.declared_date })
+                              : t("status.unknown")}
                           </td>
                           <td>
                             <Link
@@ -605,8 +597,8 @@ export function LawDetail({ id }: { id: string }) {
             <section className="panel mt-6">
               <div className="panel-header">
                 <div>
-                  <span className="eyebrow">LEGAL RECORD</span>
-                  <h2>Document timeline</h2>
+                  <span className="eyebrow">{t("law.legalRecord")}</span>
+                  <h2>{t("law.timeline")}</h2>
                 </div>
                 <div className="flex gap-2">
                   <Status value={law.regulatory_timeline.work.lifecycle} />
@@ -615,12 +607,12 @@ export function LawDetail({ id }: { id: string }) {
               </div>
               <div className="p-5 grid lg:grid-cols-3 gap-4 border-b">
                 <div>
-                  <span className="eyebrow">AUTHORITY & KIND</span>
+                  <span className="eyebrow">{t("law.authorityKind")}</span>
                   <strong className="block mt-2">{law.regulatory_timeline.work.authority}</strong>
                   <span className="muted text-sm">{label(law.regulatory_timeline.work.kind)}</span>
                 </div>
                 <div>
-                  <span className="eyebrow">IDENTIFIERS</span>
+                  <span className="eyebrow">{t("law.identifiers")}</span>
                   <div className="mt-2 text-sm">
                     {law.regulatory_timeline.identifiers.length
                       ? law.regulatory_timeline.identifiers.map((item) => (
@@ -628,26 +620,26 @@ export function LawDetail({ id }: { id: string }) {
                             <span className="muted">{label(item.scheme)}:</span> {item.value}
                           </div>
                         ))
-                      : <span className="muted">No official identifier confirmed yet.</span>}
+                      : <span className="muted">{t("law.noIdentifier")}</span>}
                   </div>
                 </div>
                 <div>
-                  <span className="eyebrow">AVAILABLE EXPRESSIONS</span>
+                  <span className="eyebrow">{t("law.expressions")}</span>
                   <div className="mt-2 text-sm">
                     {law.regulatory_timeline.expressions.map((item) => (
                       <span className="status-badge status-neutral mr-1" key={item.id}>{item.language}</span>
                     ))}
-                    <div className="muted mt-2">{law.regulatory_timeline.normalized_versions} immutable version descriptor(s)</div>
+                    <div className="muted mt-2">{t("law.immutableVersions", { count: number(law.regulatory_timeline.normalized_versions) })}</div>
                   </div>
                 </div>
               </div>
               {law.regulatory_timeline.relations.length > 0 && (
                 <div className="p-5 border-b">
-                  <span className="eyebrow">INCOMING & OUTGOING RELATIONS</span>
+                  <span className="eyebrow">{t("law.relations")}</span>
                   <div className="comparison-list mt-3">
                     {law.regulatory_timeline.relations.map((relation) => (
                       <div className="flex items-center justify-between gap-3" key={relation.id}>
-                        <span>{relation.direction} · {label(relation.type)} · work {relation.other_work_id.slice(0, 8)}</span>
+                        <span>{translate(locale, `status.${relation.direction}`) || label(relation.direction)} · {translate(locale, `status.${relation.type}`) || label(relation.type)} · {t("law.work", { id: relation.other_work_id.slice(0, 8) })}</span>
                         <span className="flex gap-2"><Status value={relation.state} /><span className="muted text-xs">{label(relation.provenance)}</span></span>
                       </div>
                     ))}
@@ -656,8 +648,8 @@ export function LawDetail({ id }: { id: string }) {
               )}
               <div className="p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="eyebrow">SAVED EVENTS, VERSIONS & COMPARISONS</span>
-                  <Link href="/registry" className="text-link text-sm">Open registry <ArrowRight size={13} /></Link>
+                  <span className="eyebrow">{t("law.savedTimeline")}</span>
+                  <Link href="/registry" className="text-link text-sm">{t("law.openRegistry")} <ArrowRight size={13} /></Link>
                 </div>
                 <div className="space-y-3">
                   {law.regulatory_timeline.timeline.map((item) => (
@@ -668,10 +660,10 @@ export function LawDetail({ id }: { id: string }) {
                         <div className="text-sm muted">{dateTime(item.at)} · {label(item.detail)}</div>
                       </div>
                       {item.url && item.url.startsWith("/") && (
-                        <Button asChild size="sm" variant="ghost"><Link href={item.url}>Inspect <ArrowUpRight size={13} /></Link></Button>
+                        <Button asChild size="sm" variant="ghost"><Link href={item.url}>{t("law.inspect")} <ArrowUpRight size={13} /></Link></Button>
                       )}
                       {item.url && !item.url.startsWith("/") && (
-                        <Button asChild size="sm" variant="ghost"><a href={item.url} target="_blank" rel="noreferrer">Source <ArrowUpRight size={13} /></a></Button>
+                        <Button asChild size="sm" variant="ghost"><a href={item.url} target="_blank" rel="noreferrer">{t("law.source")} <ArrowUpRight size={13} /></a></Button>
                       )}
                     </div>
                   ))}
@@ -682,8 +674,8 @@ export function LawDetail({ id }: { id: string }) {
             {law.comparisons.length > 0 && (
               <section className="panel mt-6">
                 <div className="panel-header">
-                  <h2>Saved comparisons</h2>
-                  <span className="text-xs muted">Most recent 50 pairs</span>
+                  <h2>{t("law.savedComparisons")}</h2>
+                  <span className="text-xs muted">{t("law.recentPairs")}</span>
                 </div>
                 <div className="comparison-list">
                   {law.comparisons.map((comparison) => (
@@ -703,7 +695,7 @@ export function LawDetail({ id }: { id: string }) {
                         {comparison.counts.added +
                           comparison.counts.removed +
                           comparison.counts.modified}{" "}
-                        changed passages
+                        {t("law.changedPassages")}
                       </span>
                       <ArrowUpRight size={15} />
                     </Link>
@@ -720,17 +712,17 @@ export function LawDetail({ id }: { id: string }) {
                 setOldId(version.id);
                 setNote(
                   reused
-                    ? "Existing content reused and selected. The new import date and provenance are recorded under Fetch & import observations."
-                    : "Previous version saved and selected. Run Fetch & compare with history to compare it with the live source.",
+                    ? t("law.importReused")
+                    : t("law.importSaved"),
                 );
               }}
             />}
             {canManage && <ConfirmDeleteDialog
               open={deleteOpen}
               onOpenChange={setDeleteOpen}
-              title="Delete this monitored document?"
-              description={`This permanently deletes ${law.name}, all ${law.versions.length} saved version(s), observations, comparisons, AI conclusions, question history, and its scan entries. This cannot be undone.`}
-              confirmLabel="Delete document and history"
+               title={t("law.deleteTitle")}
+               description={t("law.deleteDescription", { name: law.name, count: number(law.versions.length) })}
+               confirmLabel={t("law.deleteConfirm")}
               busy={busy === "delete"}
               error={deleteOpen ? error : ""}
               onConfirm={() => void removeDocument()}

@@ -11,7 +11,8 @@ import {
   Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { dateTime, label, useResource } from "@/lib/api";
+import { label, useResource } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
 import type { Passage, Version } from "@/lib/types";
 import { ErrorNote, Loading, Status } from "./common";
 import { Shell } from "./shell";
@@ -26,6 +27,7 @@ export function EvidenceView({
   id: string;
   passageId: string;
 }) {
+  const { t, dateTime, number } = useI18n();
   const { data, error } = useResource<Evidence>("/versions/" + id);
   const [page, setPage] = useState(0);
   const targetIndex =
@@ -46,25 +48,24 @@ export function EvidenceView({
   );
   const sourceLanguage = data?.identity_json?.language || undefined;
   return (
-    <Shell section="Saved source evidence">
+    <Shell section={t("evidence.section")}>
       <Link className="back-link" href={data ? "/laws/" + data.law_id : "/"}>
         <ArrowLeft size={14} />
-        Back to document
+        {t("evidence.back")}
       </Link>
       <ErrorNote message={error} />
       {!data ? (
-        !error && <Loading text="Opening saved evidence…" />
+        !error && <Loading text={t("evidence.opening")} />
       ) : (
         <>
           <div className="page-heading">
             <div>
               <span className="eyebrow">
-                SAVED EVIDENCE · {data.id.slice(0, 8)}
+                {t("evidence.eyebrow")} · {data.id.slice(0, 8)}
               </span>
               <h1 lang={sourceLanguage}>{data.law_name}</h1>
               <p className="muted m-0">
-                This is a stored snapshot. The live website may now contain
-                different wording.
+                {t("evidence.snapshotNotice")}
               </p>
             </div>
             <Button asChild variant="outline">
@@ -82,8 +83,8 @@ export function EvidenceView({
               >
                 <Download />
                 {data.content_type === "application/pdf"
-                  ? "Open saved PDF"
-                  : "Download original file"}
+                  ? t("evidence.openPdf")
+                  : t("evidence.downloadOriginal")}
               </a>
             </Button>
           </div>
@@ -91,22 +92,21 @@ export function EvidenceView({
             <div className="evidence-metadata">
               <Status value={data.origin} />
               {data.synthetic && (
-                <span className="synthetic-label">Synthetic demo content</span>
+                <span className="synthetic-label">{t("evidence.synthetic")}</span>
               )}
               <span>
                 {data.declared_date
-                  ? "Stated date: " + data.declared_date + " · user supplied"
-                  : "Version date unknown"}
+                  ? t("evidence.statedDate", { date: data.declared_date })
+                  : t("evidence.unknownDate")}
               </span>
-              <span>First saved {dateTime(data.created_at)}</span>
+              <span>{t("evidence.firstSaved", { date: dateTime(data.created_at) })}</span>
               <span>
-                {data.content_type} · {data.passage_count} passages
+                {t("evidence.contentMeta", { type: data.content_type, passages: number(data.passage_count) })}
               </span>
             </div>
             {data.origin !== "live" && (
               <div className="info-note m-5">
-                This imported snapshot is not automatically verified as an
-                official historical version.
+                {t("evidence.importNotice")}
               </div>
             )}
             {data.source_url && (
@@ -116,7 +116,7 @@ export function EvidenceView({
                 target="_blank"
                 rel="noreferrer"
               >
-                Open original source URL
+                {t("evidence.openSource")}
                 <ArrowUpRight size={13} />
               </a>
             )}
@@ -124,14 +124,12 @@ export function EvidenceView({
               <div className="p-6">
                 <ErrorNote
                   message={
-                    "Passage " +
-                    passageId +
-                    " does not exist in this saved version. No substitute passage has been selected."
+                    t("evidence.missingPassage", { passage: passageId })
                   }
                 />
                 <Button asChild variant="outline" className="mt-3">
                   <Link href={"/evidence/" + id}>
-                    Read the complete saved version
+                    {t("evidence.readComplete")}
                   </Link>
                 </Button>
               </div>
@@ -157,7 +155,7 @@ export function EvidenceView({
                             <BookOpen size={12} />
                             {passage.id}
                             {passage.id === passageId
-                              ? " · referenced passage"
+                              ? ` · ${t("evidence.referenced")}`
                               : ""}
                           </Link>
                           {passage.page ? (
@@ -166,7 +164,7 @@ export function EvidenceView({
                               target="_blank"
                               rel="noreferrer"
                             >
-                              Saved PDF · page {passage.page}
+                              {t("evidence.pdfPage", { page: passage.page })}
                               <ArrowUpRight size={11} />
                             </a>
                           ) : (
@@ -179,15 +177,17 @@ export function EvidenceView({
                 </div>
                 <div className="pagination">
                   <span>
-                    Passages {page * PAGE_SIZE + 1}–
-                    {Math.min((page + 1) * PAGE_SIZE, data.passages.length)} of{" "}
-                    {data.passages.length}
+                    {t("evidence.range", {
+                      start: number(page * PAGE_SIZE + 1),
+                      end: number(Math.min((page + 1) * PAGE_SIZE, data.passages.length)),
+                      total: number(data.passages.length),
+                    })}
                   </span>
                   <div className="flex gap-2 items-center">
                     <Button
                       size="icon-sm"
                       variant="outline"
-                      aria-label="Previous evidence passages"
+                      aria-label={t("evidence.previous")}
                       disabled={page === 0}
                       onClick={() => setPage((value) => value - 1)}
                     >
@@ -199,7 +199,7 @@ export function EvidenceView({
                     <Button
                       size="icon-sm"
                       variant="outline"
-                      aria-label="Next evidence passages"
+                      aria-label={t("evidence.next")}
                       disabled={page >= pages - 1}
                       onClick={() => setPage((value) => value + 1)}
                     >
