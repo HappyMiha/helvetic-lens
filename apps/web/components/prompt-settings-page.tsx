@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
   api,
-  dateTime,
   errorText,
   refreshWorkspace,
   useResource,
@@ -23,6 +22,7 @@ import { ErrorNote, Loading, SuccessNote } from "./common";
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
 import { Shell } from "./shell";
 import { useAuth } from "./auth-gate";
+import { useI18n } from "@/lib/i18n";
 
 type EditablePrompt = Pick<
   PromptSettings,
@@ -36,38 +36,28 @@ type EditablePrompt = Pick<
 
 const editors: {
   key: Exclude<keyof EditablePrompt, "ask_context_mode">;
-  title: string;
-  description: string;
+  titleKey: string;
+  descriptionKey: string;
 }[] = [
   {
     key: "impact_instructions",
-    title: "Impact analysis",
-    description:
-      "Applied when Apertus reviews a bounded dossier of substantive or uncertain changes and proposes grounded review actions.",
+    titleKey: "prompts.impact", descriptionKey: "prompts.impactBody",
   },
   {
     key: "impact_synthesis_instructions",
-    title: "Impact synthesis",
-    description:
-      "Combines validated bounded reviews into one saved assessment when the dossier needs more than one model call.",
+    titleKey: "prompts.impactSynthesis", descriptionKey: "prompts.impactSynthesisBody",
   },
   {
     key: "ask_instructions",
-    title: "Ask Apertus",
-    description:
-      "Controls tone and reasoning when answering questions about saved versions.",
+    titleKey: "prompts.ask", descriptionKey: "prompts.askBody",
   },
   {
     key: "answer_synthesis_instructions",
-    title: "Answer synthesis",
-    description:
-      "Combines validated answers from bounded change groups or targeted saved-version evidence.",
+    titleKey: "prompts.answerSynthesis", descriptionKey: "prompts.answerSynthesisBody",
   },
   {
     key: "repair_instructions",
-    title: "Structured-output repair",
-    description:
-      "Used once when a provider returns invalid JSON or unsupported citations.",
+    titleKey: "prompts.repair", descriptionKey: "prompts.repairBody",
   },
 ];
 
@@ -83,21 +73,22 @@ function editable(settings: PromptSettings): EditablePrompt {
 }
 
 export function PromptSettingsPage({ platformScope = false }: { platformScope?: boolean }) {
+  const { t } = useI18n();
   const { canManage, isPlatformAdmin } = useAuth();
   const allowed = platformScope ? isPlatformAdmin : canManage;
   const endpoint = platformScope ? "/admin/prompts" : "/settings/prompts";
   const configuration = useResource<PromptSettings>(endpoint);
   return (
-    <Shell section="Prompt settings" wide>
+    <Shell section={t("nav.prompts")} wide>
       <div className="page-heading">
         <div>
-          <span className="eyebrow">{platformScope ? "PLATFORM DEFAULT · LOCAL SERVER" : "ORGANIZATION OVERRIDE"}</span>
-          <h1>{platformScope ? "Global prompt defaults" : "Organization prompt settings"}</h1>
+          <span className="eyebrow">{platformScope ? t("prompts.platformEyebrow") : t("prompts.orgEyebrow")}</span>
+          <h1>{platformScope ? t("prompts.globalTitle") : t("prompts.orgTitle")}</h1>
           <p className="muted m-0">
-            Change how impact assessments and document answers are written.
+            {t("prompts.body")} {" "}
             {platformScope
-              ? "Organizations without their own override inherit these defaults. Existing organization overrides remain unchanged."
-              : "Every saved revision creates a new AI cache boundary while older conclusions remain in history."}
+              ? t("prompts.platformBody")
+              : t("prompts.orgBody")}
           </p>
         </div>
         <FileText className="muted" size={29} />
@@ -114,7 +105,7 @@ export function PromptSettingsPage({ platformScope = false }: { platformScope?: 
       ) : (
         !configuration.error && (
           <section className="panel p-6">
-            <Loading text="Loading saved prompts…" />
+            <Loading text={t("prompts.loading")} />
           </section>
         )
       )}
@@ -133,6 +124,7 @@ function PromptForm({
   endpoint: string;
   platformScope: boolean;
 }) {
+  const { t, dateTime, number } = useI18n();
   const [draft, setDraft] = useState<EditablePrompt>(() => editable(initial));
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
@@ -161,7 +153,7 @@ function PromptForm({
       onSaved(value);
       setDraft(editable(value));
       setNotice(
-        `Prompt revision ${value.revision} saved. Existing AI history was kept.`,
+        t("prompts.savedNotice", { revision: value.revision }),
       );
       refreshWorkspace();
     } catch (cause) {
@@ -183,8 +175,8 @@ function PromptForm({
       setResetOpen(false);
       setNotice(
         platformScope
-          ? "Built-in platform defaults restored. Existing AI history was kept."
-          : "Platform defaults restored for this organization. Existing AI history was kept.",
+          ? t("prompts.platformRestored")
+          : t("prompts.orgRestored"),
       );
       refreshWorkspace();
     } catch (cause) {
@@ -204,9 +196,9 @@ function PromptForm({
           <section className="panel p-6">
             <div className="panel-header !p-0 !pb-5 !border-0">
               <div>
-                <h2>Document context for questions</h2>
+                <h2>{t("prompts.contextTitle")}</h2>
                 <p className="text-sm muted mb-0">
-                  Choose what Ask Apertus receives before it answers.
+                  {t("prompts.contextBody")}
                 </p>
               </div>
             </div>
@@ -223,12 +215,9 @@ function PromptForm({
                   checked={draft.ask_context_mode === "automatic"}
                   onChange={() => update("ask_context_mode", "automatic")}
                 />
-                <strong>Automatic targeted context</strong>
+                <strong>{t("prompts.automatic")}</strong>
                 <span>
-                  Uses the meaningful-change dossier for change questions. For
-                  other questions, it uses both versions only when they fit;
-                  otherwise it selects relevant saved passages with nearby
-                  context.
+                  {t("prompts.automaticBody")}
                 </span>
               </label>
               <label
@@ -243,11 +232,9 @@ function PromptForm({
                   checked={draft.ask_context_mode === "changes_only"}
                   onChange={() => update("ask_context_mode", "changes_only")}
                 />
-                <strong>Meaningful changes only</strong>
+                <strong>{t("prompts.changes")}</strong>
                 <span>
-                  Uses the bounded substantive and uncertain change dossier.
-                  Questions unrelated to those changes may be marked
-                  unsupported.
+                  {t("prompts.changesBody")}
                 </span>
               </label>
             </div>
@@ -257,14 +244,14 @@ function PromptForm({
             <section className="panel prompt-editor" key={editor.key}>
               <div className="panel-header">
                 <div>
-                  <h2>{editor.title}</h2>
-                  <p className="text-sm muted mb-0">{editor.description}</p>
+                  <h2>{t(editor.titleKey)}</h2>
+                  <p className="text-sm muted mb-0">{t(editor.descriptionKey)}</p>
                 </div>
                 <span className="count-pill">{index + 1}</span>
               </div>
               <div className="panel-body">
                 <label className="sr-only" htmlFor={editor.key}>
-                  {editor.title} prompt
+                  {t("prompts.promptLabel", { title: t(editor.titleKey) })}
                 </label>
                 <Textarea
                   id={editor.key}
@@ -276,8 +263,7 @@ function PromptForm({
                   onChange={(event) => update(editor.key, event.target.value)}
                 />
                 <p className="field-help">
-                  {draft[editor.key].length.toLocaleString()} / 12,000
-                  characters
+                  {t("prompts.characters", { count: number(draft[editor.key].length) })}
                 </p>
               </div>
             </section>
@@ -287,37 +273,24 @@ function PromptForm({
         <aside className="grid gap-5 xl:sticky xl:top-6">
           <section className="panel p-6">
             <Sparkles size={22} className="text-primary mb-4" />
-            <h2>Saved prompt revision</h2>
+            <h2>{t("prompts.saved")}</h2>
             <p className="text-sm muted">
-              Revision {initial.revision} · {initial.source}
-              {initial.updated_at
-                ? ` · updated ${dateTime(initial.updated_at)}`
-                : ""}
+              {t("prompts.revision", { revision: initial.revision, source: initial.source, updated: initial.updated_at ? t("prompts.updated", { date: dateTime(initial.updated_at) }) : "" })}
             </p>
             <p className="text-sm muted">
-              Repeating an identical question with the same comparison,
-              settings, and prompt revision reuses the saved answer instead of
-              calling the provider again.
+              {t("prompts.cache")}
             </p>
           </section>
           <section className="panel p-6">
-            <h2>Fixed validation contract</h2>
+            <h2>{t("prompts.contract")}</h2>
             <p className="text-sm muted">
-              The editable instructions are combined with server-controlled JSON
-              schemas, complete deterministic-change coverage, bounded model
-              context, exact citation checks, and one repair attempt. These
-              checks remain active even when you change the wording above.
+              {t("prompts.contractBody")}
             </p>
           </section>
           <section className="panel p-6">
-            <h2>Original document files</h2>
+            <h2>{t("prompts.files")}</h2>
             <p className="text-sm muted">
-              Helvetic Lens keeps every original artifact. It sends the evidence
-              needed for the selected intent: a bounded meaningful-change
-              dossier or targeted passages from the saved versions. Both
-              complete versions are sent only when they fit one measured model
-              request; the chat endpoint does not expose a documented PDF
-              attachment contract.
+              {t("prompts.filesBody")}
             </p>
             <a
               className="text-link text-sm"
@@ -325,7 +298,7 @@ function PromptForm({
               target="_blank"
               rel="noreferrer"
             >
-              Infomaniak chat API reference <ArrowUpRight size={13} />
+              {t("prompts.apiReference")} <ArrowUpRight size={13} />
             </a>
           </section>
           <ErrorNote message={error} />
@@ -337,7 +310,7 @@ function PromptForm({
               ) : (
                 <Save />
               )}
-              Save prompt revision
+              {t("prompts.save")}
             </Button>
             <Button
               type="button"
@@ -346,7 +319,7 @@ function PromptForm({
               onClick={() => setResetOpen(true)}
             >
               <RotateCcw />
-              Restore defaults
+              {t("prompts.restore")}
             </Button>
           </div>
         </aside>
@@ -354,9 +327,9 @@ function PromptForm({
       <ConfirmDeleteDialog
         open={resetOpen}
         onOpenChange={setResetOpen}
-        title="Restore all default prompts?"
-        description="Your custom prompt text will be removed. Saved documents, comparisons, AI conclusions, and question history will not be deleted."
-        confirmLabel="Restore defaults"
+        title={t("prompts.restoreTitle")}
+        description={t("prompts.restoreBody")}
+        confirmLabel={t("prompts.restore")}
         busy={busy === "reset"}
         error={resetOpen ? error : ""}
         onConfirm={() => void reset()}
