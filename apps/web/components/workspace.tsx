@@ -29,7 +29,6 @@ import {
 } from "@/components/ui/dialog";
 import {
   api,
-  dateTime,
   errorText,
   host,
   label,
@@ -44,6 +43,7 @@ import { DurableJobsPanel } from "./durable-jobs-panel";
 import { ScanPanel } from "./scan-panel";
 import { Shell } from "./shell";
 import { useAuth } from "./auth-gate";
+import { useI18n } from "@/lib/i18n";
 
 type DocumentForm = {
   mode: "law" | "source";
@@ -61,6 +61,7 @@ export function Workspace({
 }) {
   const router = useRouter();
   const { canManage } = useAuth();
+  const { t, dateTime } = useI18n();
   const laws = useResource<Law[]>("/laws", 5000);
   const sources = useResource<Source[]>("/sources", 8000);
   const scans = useResource<Scan[]>("/scans", 2000);
@@ -131,46 +132,46 @@ export function Workspace({
   }
   const title =
     view === "sources"
-      ? "Start with trusted sources."
+      ? t("monitor.sourcesTitle")
       : view === "activity"
-        ? "Every check, accounted for."
-        : "Keep up with what changes.";
+        ? t("monitor.activityTitle")
+        : t("monitor.overviewTitle");
   return (
     <Shell
       section={
         view === "overview"
-          ? "Overview"
+          ? t("nav.overview")
           : view === "sources"
-            ? "Sources"
-            : "Scan activity"
+            ? t("nav.sources")
+            : t("nav.activity")
       }
     >
       <div className="page-heading">
         <div>
           <span className="eyebrow">
             {view === "overview"
-              ? "REGULATORY INTELLIGENCE"
+              ? t("monitor.overviewEyebrow")
               : view === "sources"
-                ? "YOUR CONNECTIONS"
-                : "MONITORING HISTORY"}
+                ? t("monitor.sourcesEyebrow")
+                : t("monitor.activityEyebrow")}
           </span>
           <h1>{title}</h1>
           <p className="muted m-0">
             {view === "overview"
-              ? "See what changed. Understand what matters."
+              ? t("monitor.overviewBody")
               : view === "sources"
-                ? "Connect a website, discover documents, and choose what matters."
-                : "Real processing stages, saved comparisons, and clear outcomes."}
+                ? t("monitor.sourcesBody")
+                : t("monitor.activityBody")}
           </p>
         </div>
         {canManage && <div className="heading-actions">
           <Button variant="outline" onClick={() => setForm({ mode: "source" })}>
             <Globe2 />
-            Connect website
+            {t("monitor.connectWebsite")}
           </Button>
           <Button onClick={() => setForm({ mode: "law" })}>
             <Plus />
-            Add a law
+            {t("monitor.addLaw")}
           </Button>
         </div>}
       </div>
@@ -184,14 +185,14 @@ export function Workspace({
               value={
                 laws.data ? records.filter((law) => law.active).length : null
               }
-              title="MONITORED DOCUMENTS"
-              note={records.filter((law) => !law.active).length + " paused"}
+              title={t("monitor.monitored")}
+              note={t("monitor.pausedCount", { count: records.filter((law) => !law.active).length })}
               icon={<BookOpen size={17} />}
             />
             <Stat
               value={sources.data ? connected.length : null}
-              title="CONNECTED WEBSITES"
-              note="Sources you selected"
+              title={t("monitor.connected")}
+              note={t("monitor.selectedSources")}
               icon={<Globe2 size={17} />}
             />
             <Stat
@@ -201,8 +202,8 @@ export function Workspace({
                       .length
                   : null
               }
-              title="LATEST LIVE CHANGES"
-              note="Excludes historical comparisons"
+              title={t("monitor.liveChanges")}
+              note={t("monitor.excludesHistory")}
               warm
               icon={<RefreshCw size={17} />}
             />
@@ -212,8 +213,8 @@ export function Workspace({
                   ? records.filter((law) => law.last_result === "failed").length
                   : null
               }
-              title="NEED ATTENTION"
-              note="Failed document checks"
+              title={t("monitor.attention")}
+              note={t("monitor.failedChecks")}
               icon={<AlertCircle size={17} />}
             />
           </div>
@@ -221,7 +222,7 @@ export function Workspace({
           <section className="panel">
             <div className="panel-header">
               <div className="flex items-center gap-3">
-                <h2>Your watchlist</h2>
+                <h2>{t("monitor.watchlist")}</h2>
                 <span className="count-pill">{records.length}</span>
               </div>
               {canManage && <div className="flex items-center gap-2">
@@ -232,7 +233,7 @@ export function Workspace({
                     onClick={() => scan(selectedActive)}
                     disabled={!!busy || !!running}
                   >
-                    Scan selected ({selectedActive.length})
+                    {t("monitor.scanSelected", { count: selectedActive.length })}
                   </Button>
                 )}
                 <Button
@@ -247,7 +248,7 @@ export function Workspace({
                   ) : (
                     <RefreshCw />
                   )}
-                  Scan all active
+                  {t("monitor.scanAll")}
                 </Button>
               </div>}
             </div>
@@ -258,21 +259,19 @@ export function Workspace({
                 <div className="empty-icon">
                   <BookOpen size={28} />
                 </div>
-                <h2>Your first source is the starting point.</h2>
+                <h2>{t("monitor.emptyTitle")}</h2>
                 <p className="muted">
-                  Add a current law or public document. Then import an earlier
-                  copy and see exactly what changed, without waiting for the
-                  website to update.
+                  {t("monitor.emptyBody")}
                 </p>
                 {canManage && <><Button onClick={() => setForm({ mode: "law" })}>
                   <Plus />
-                  Add your first document
+                  {t("monitor.addFirst")}
                 </Button>
                 <button
                   className="text-link block mx-auto mt-4"
                   onClick={() => setForm({ mode: "source" })}
                 >
-                  Or connect a regulatory website <ArrowRight size={14} />
+                  {t("monitor.orConnect")} <ArrowRight size={14} />
                 </button></>}
               </div>
             ) : (
@@ -283,16 +282,16 @@ export function Workspace({
                     <Input
                       value={query}
                       onChange={(event) => setQuery(event.target.value)}
-                      placeholder="Search documents…"
-                      aria-label="Search documents"
+                      placeholder={t("monitor.search")}
+                      aria-label={t("monitor.search")}
                     />
                   </label>
                   <select
-                    aria-label="Filter by source"
+                    aria-label={t("monitor.filterSource")}
                     value={sourceFilter}
                     onChange={(event) => setSourceFilter(event.target.value)}
                   >
-                    <option value="">All sources</option>
+                    <option value="">{t("monitor.allSources")}</option>
                     {connected.map((source) => (
                       <option key={source.id} value={source.id}>
                         {source.name}
@@ -300,11 +299,11 @@ export function Workspace({
                     ))}
                   </select>
                   <select
-                    aria-label="Filter by result"
+                    aria-label={t("monitor.filterResult")}
                     value={resultFilter}
                     onChange={(event) => setResultFilter(event.target.value)}
                   >
-                    <option value="">All results</option>
+                    <option value="">{t("monitor.allResults")}</option>
                     {[
                       "changed",
                       "unchanged",
@@ -325,7 +324,7 @@ export function Workspace({
                         {canManage && <th className="checkbox-cell">
                           <input
                             type="checkbox"
-                            aria-label="Select all visible active documents"
+                            aria-label={t("monitor.selectAll")}
                             checked={
                               eligible.length > 0 &&
                               eligible.every((law) => selected.includes(law.id))
@@ -347,10 +346,10 @@ export function Workspace({
                             }
                           />
                         </th>}
-                        <th>DOCUMENT</th>
-                        <th>LAST LIVE CHECK</th>
-                        <th>APERTUS IMPACT</th>
-                        <th>LAST CHECKED</th>
+                        <th>{t("monitor.document")}</th>
+                        <th>{t("monitor.lastCheck")}</th>
+                        <th>{t("monitor.impact")}</th>
+                        <th>{t("monitor.lastChecked")}</th>
                         <th />
                       </tr>
                     </thead>
@@ -362,7 +361,7 @@ export function Workspace({
                               type="checkbox"
                               disabled={!law.active}
                               checked={selected.includes(law.id)}
-                              aria-label={"Select " + law.name}
+                              aria-label={t("monitor.select", { name: law.name })}
                               onChange={() => toggle(law.id)}
                             />
                           </td>}
@@ -375,10 +374,10 @@ export function Workspace({
                             </Link>
                             <div className="document-meta">
                               <span>{host(law.url)}</span>
-                              {!law.active && <span>Paused</span>}
+                              {!law.active && <span>{t("monitor.paused")}</span>}
                               {law.current_version?.synthetic && (
                                 <span className="synthetic-label">
-                                  Synthetic
+                                  {t("monitor.synthetic")}
                                 </span>
                               )}
                             </div>
@@ -387,7 +386,7 @@ export function Workspace({
                             <Status value={law.last_result} />
                             {law.comparison_mode === "historical" && (
                               <div className="text-xs muted mt-1">
-                                Historical comparison available
+                                {t("monitor.historicalAvailable")}
                               </div>
                             )}
                             {law.last_error && (
@@ -404,10 +403,10 @@ export function Workspace({
                             ) : (
                               <span className="text-xs muted">
                                 {law.analysis?.stale
-                                  ? "Profile changed · rerun"
+                                  ? t("monitor.profileRerun")
                                   : law.analysis
                                     ? label(law.analysis.status)
-                                    : "Not analysed"}
+                                    : t("monitor.notAnalysed")}
                               </span>
                             )}
                           </td>
@@ -417,7 +416,7 @@ export function Workspace({
                           <td>
                             <Link
                               className="row-open"
-                              aria-label={"Open " + law.name}
+                              aria-label={t("monitor.open", { name: law.name })}
                               href={"/laws/" + law.id}
                             >
                               <ArrowUpRight size={17} />
@@ -429,13 +428,12 @@ export function Workspace({
                   </table>
                   {filtered.length === 0 && (
                     <p className="text-center muted py-8">
-                      No documents match these filters.
+                      {t("monitor.noMatch")}
                     </p>
                   )}
                 </div>
                 <div className="panel-footnote">
-                  {filtered.length} of {records.length} documents · Imported
-                  history never replaces the live baseline.
+                  {t("monitor.resultCount", { shown: filtered.length, total: records.length })}
                 </div>
               </>
             )}
@@ -446,24 +444,21 @@ export function Workspace({
             </div>
           )}
           <div className="workflow-note">
-            <span className="eyebrow">HOW IT WORKS</span>
-            <span>Connect a source</span>
+            <span className="eyebrow">{t("monitor.how")}</span>
+            <span>{t("monitor.connect")}</span>
             <ArrowRight size={13} />
-            <span>Save a baseline</span>
+            <span>{t("monitor.baseline")}</span>
             <ArrowRight size={13} />
-            <span>Scan & compare</span>
+            <span>{t("monitor.compare")}</span>
             <ArrowRight size={13} />
-            <span>Review the evidence</span>
+            <span>{t("monitor.review")}</span>
           </div>
         </>
       )}
       {view === "sources" && (
         <>
           <div className="info-note mb-6">
-            Discovery reads one listing page and inspects up to 50 direct
-            documents within your selected website section. Review real
-            extraction previews and individual errors before choosing what to
-            monitor. Discovery does not imply a legal amendment.
+            {t("sources.discoveryNote")}
           </div>
           {sources.loading && !sources.data ? (
             <Loading />
@@ -473,15 +468,13 @@ export function Workspace({
                 <div className="empty-icon">
                   <Globe2 size={28} />
                 </div>
-                <h2>Choose the websites you rely on.</h2>
+                <h2>{t("sources.emptyTitle")}</h2>
                 <p className="muted">
-                  Connect a regulator’s document listing or a public legal
-                  portal. You stay in control of which documents enter the
-                  watchlist.
+                  {t("sources.emptyBody")}
                 </p>
                 {canManage && <Button onClick={() => setForm({ mode: "source" })}>
                   <Plus />
-                  Connect your first website
+                  {t("sources.connectFirst")}
                 </Button>}
               </div>
             </section>
@@ -504,15 +497,15 @@ export function Workspace({
                   </a>
                   <dl className="source-facts">
                     <div>
-                      <dt>Section</dt>
+                      <dt>{t("sources.section")}</dt>
                       <dd>{source.section}</dd>
                     </div>
                     <div>
-                      <dt>Provider</dt>
+                      <dt>{t("sources.provider")}</dt>
                       <dd>{source.provider}</dd>
                     </div>
                     <div>
-                      <dt>Tracked documents</dt>
+                      <dt>{t("sources.tracked")}</dt>
                       <dd>
                         {
                           records.filter((law) => law.source_id === source.id)
@@ -521,7 +514,7 @@ export function Workspace({
                       </dd>
                     </div>
                     <div>
-                      <dt>Last connection check</dt>
+                      <dt>{t("sources.lastConnection")}</dt>
                       <dd>{dateTime(source.last_checked)}</dd>
                     </div>
                   </dl>
@@ -534,14 +527,14 @@ export function Workspace({
                         onClick={() => setForm({ mode: "source", source })}
                       >
                         <Settings2 />
-                        Edit
+                        {t("sources.edit")}
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon-sm"
                         className="text-destructive"
-                        aria-label={"Remove website " + source.name}
-                        title="Remove website"
+                        aria-label={t("sources.remove") + " " + source.name}
+                        title={t("sources.remove")}
                         onClick={() => {
                           setError("");
                           setDeletingSource(source);
@@ -555,7 +548,7 @@ export function Workspace({
                       onClick={() => setDiscoverySource(source)}
                     >
                       <Search />
-                      Discover documents
+                      {t("sources.discover")}
                     </Button>
                   </div>}
                 </section>
@@ -578,14 +571,13 @@ export function Workspace({
                 <div className="empty-icon">
                   <History size={28} />
                 </div>
-                <h2>No scans yet.</h2>
+                <h2>{t("activity.emptyTitle")}</h2>
                 <p className="muted">
-                  After adding a document, choose Scan now. Every real check and
-                  its outcome will appear here.
+                  {t("activity.emptyBody")}
                 </p>
                 <Button asChild variant="outline">
                   <Link href="/">
-                    Open watchlist
+                    {t("activity.openWatchlist")}
                     <ArrowRight />
                   </Link>
                 </Button>
@@ -633,13 +625,13 @@ export function Workspace({
         onOpenChange={(open) => {
           if (!open) setDeletingSource(null);
         }}
-        title="Remove this website?"
+        title={t("sources.removeTitle")}
         description={
           deletingSource
-            ? `${deletingSource.name} will be removed from Sources. Its ${records.filter((law) => law.source_id === deletingSource.id).length} monitored document(s) will stay in the watchlist as independent documents.`
+            ? t("sources.removeDescription", { name: deletingSource.name, count: records.filter((law) => law.source_id === deletingSource.id).length })
             : ""
         }
-        confirmLabel="Remove website"
+        confirmLabel={t("sources.remove")}
         busy={busy === "delete-source"}
         error={deletingSource ? error : ""}
         onConfirm={() => void removeSource()}
@@ -684,6 +676,7 @@ function DiscoveryDialog({
   onClose: () => void;
   onSelect: (candidate: Candidate) => void;
 }) {
+  const { t, number } = useI18n();
   const [discovery, setDiscovery] = useState<Partial<Discovery>>(
     source.discovery,
   );
@@ -726,54 +719,49 @@ function DiscoveryDialog({
     >
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Discover documents</DialogTitle>
+          <DialogTitle>{t("discover.title")}</DialogTitle>
           <DialogDescription>
-            {source.name} · {source.section}. Inspect at most 50 linked
-            documents, then choose which ones to monitor.
+            {t("discover.description", { name: source.name, section: source.section })}
           </DialogDescription>
         </DialogHeader>
         <div className="flex gap-3">
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Filter titles, URLs, or preview text…"
-            aria-label="Filter discovered links"
+            placeholder={t("discover.filter")}
+            aria-label={t("discover.filterLabel")}
           />
           <Button onClick={discover} disabled={busy}>
             {busy ? <Loader2 className="animate-spin" /> : <Search />}
-            {discovery.candidates ? "Search again" : "Search website"}
+            {discovery.candidates ? t("discover.again") : t("discover.website")}
           </Button>
         </div>
         {busy && (
           <p role="status" className="text-sm muted">
-            Fetching the listing and inspecting linked documents. Up to three
-            requests run at once; results return within the two-minute
-            inspection limit. No monitoring versions are created during
-            discovery.
+            {t("discover.loading")}
           </p>
         )}
         {source.provider === "firecrawl" && (
           <p className="text-xs muted">
-            This source uses Firecrawl. A search can make one listing request
-            and up to 50 document requests against your configured account.
+            {t("discover.firecrawl")}
           </p>
         )}
         <ErrorNote message={error} />
         {discovery.candidates ? (
           <>
             <div className="text-xs muted">
-              {discovery.inspected_count ?? 0} inspected ·{" "}
-              {discovery.verified_count ?? 0} verified ·{" "}
-              {discovery.error_count ?? 0} failed ·{" "}
-              {discovery.uninspected_count ?? discovery.returned_count} not
-              inspected. {discovery.returned_count} of{" "}
-              {discovery.candidate_count} links selected · limit{" "}
-              {discovery.limit}
-              {discovery.limit_reached ? " reached" : ""}.
-              {discovery.time_limit_reached
-                ? " Inspection time limit reached."
-                : ""}{" "}
-              {discovery.note}
+              {t("discover.summary", {
+                inspected: discovery.inspected_count ?? 0,
+                verified: discovery.verified_count ?? 0,
+                failed: discovery.error_count ?? 0,
+                uninspected: discovery.uninspected_count ?? discovery.returned_count ?? 0,
+                returned: discovery.returned_count ?? 0,
+                candidates: discovery.candidate_count ?? 0,
+                limit: discovery.limit ?? 0,
+                reached: discovery.limit_reached ? t("discover.limitReached") : "",
+              })}{" "}
+              {discovery.time_limit_reached ? t("discover.timeReached") : ""}{" "}
+              {discovery.note || ""}
             </div>
             <div className="candidate-list">
               {candidates.map((candidate) => {
@@ -785,9 +773,8 @@ function DiscoveryDialog({
                       <p>{candidate.url}</p>
                       <span className="text-xs muted">
                         {candidate.verified
-                          ? candidate.content_type + " · extraction verified"
-                          : candidate.format_hint +
-                            " hint · extraction not verified"}
+                          ? t("discover.verified", { type: candidate.content_type || "document" })
+                          : t("discover.unverified", { type: candidate.format_hint || "document" })}
                       </span>
                       {candidate.error && (
                         <p className="text-sm text-red-700">
@@ -797,9 +784,7 @@ function DiscoveryDialog({
                       {candidate.preview && (
                         <details className="mt-2 text-sm">
                           <summary className="cursor-pointer">
-                            Extracted preview ·{" "}
-                            {candidate.preview.characters.toLocaleString()}{" "}
-                            characters
+                            {t("discover.preview", { count: number(candidate.preview.characters) })}
                           </summary>
                           <p className="whitespace-pre-wrap max-h-48 overflow-y-auto">
                             {candidate.preview.excerpt}
@@ -811,7 +796,7 @@ function DiscoveryDialog({
                       <Button asChild variant="ghost" size="sm">
                         <Link href={"/laws/" + tracked.id} onClick={onClose}>
                           <Check />
-                          Tracked · Open
+                          {t("discover.tracked")}
                         </Link>
                       </Button>
                     ) : (
@@ -822,7 +807,7 @@ function DiscoveryDialog({
                         onClick={() => onSelect(candidate)}
                       >
                         <Plus />
-                        {candidate.error ? "Retry preview" : "Preview & add"}
+                        {candidate.error ? t("discover.retryPreview") : t("discover.previewAdd")}
                       </Button>
                     )}
                   </div>
@@ -830,17 +815,14 @@ function DiscoveryDialog({
               })}
               {candidates.length === 0 && (
                 <p className="text-center muted py-6">
-                  No matching direct links. Try a different listing URL or
-                  section.
+                  {t("discover.noMatch")}
                 </p>
               )}
             </div>
           </>
         ) : (
           <div className="py-8 text-center muted">
-            Start a bounded discovery request. Only direct links from this
-            listing are inspected; links found inside those documents are not
-            followed. Search and previews do not add laws automatically.
+            {t("discover.start")}
           </div>
         )}
       </DialogContent>

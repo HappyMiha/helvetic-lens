@@ -4,7 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Check, Loader2, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { api, dateTime, errorText, label, refreshWorkspace } from "@/lib/api";
+import { api, errorText, label, refreshWorkspace } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
 import type { Scan } from "@/lib/types";
 import { ErrorNote, Status } from "./common";
 import { AdminOnly } from "./auth-gate";
@@ -16,6 +17,7 @@ export function ScanPanel({
   scan: Scan;
   compact?: boolean;
 }) {
+  const { t, dateTime } = useI18n();
   const [jobBusy, setJobBusy] = useState("");
   const [jobError, setJobError] = useState("");
   const running = ["queued", "running"].includes(scan.status);
@@ -36,7 +38,7 @@ export function ScanPanel({
   return (
     <section
       className="panel scan-panel"
-      aria-label="Scan progress"
+      aria-label={t("scan.progress")}
       aria-live="polite"
     >
       <div className="panel-header">
@@ -47,10 +49,9 @@ export function ScanPanel({
             <Check size={18} />
           )}
           <div>
-            <h2>{running ? "Checking your sources" : "Scan result"}</h2>
+            <h2>{running ? t("scan.checking") : t("scan.result")}</h2>
             <p className="text-xs muted m-0 mt-1">
-              {dateTime(scan.created_at)} · {scan.completed} of {scan.total}{" "}
-              documents finished
+              {dateTime(scan.created_at)} · {t("scan.finished", { completed: scan.completed, total: scan.total })}
             </p>
           </div>
         </div>
@@ -60,16 +61,16 @@ export function ScanPanel({
         className="scan-progress"
         value={scan.completed}
         max={scan.total || 1}
-        aria-label="Documents finished"
+        aria-label={t("scan.documentsFinished")}
       />
       {job && (
         <div className="px-5 py-3 border-b text-xs muted">
           <div className="flex flex-wrap items-center gap-2">
             <Status value={job.state} />
-            <span>{label(job.queue)} queue</span>
-            {job.queue_position && <span>· position {job.queue_position}</span>}
+            <span>{t("scan.queue", { name: label(job.queue) })}</span>
+            {job.queue_position && <span>· {t("scan.position", { position: job.queue_position })}</span>}
             <span>
-              · attempt {job.attempts}/{job.max_attempts}
+              · {t("scan.attempt", { attempts: job.attempts, maximum: job.max_attempts })}
             </span>
             <AdminOnly>{!["succeeded", "failed", "cancelled"].includes(job.state) && (
               <Button
@@ -84,7 +85,7 @@ export function ScanPanel({
                 ) : (
                   <X />
                 )}
-                Cancel
+                {t("scan.cancel")}
               </Button>
             )}</AdminOnly>
             <AdminOnly>{["failed", "cancelled"].includes(job.state) && (
@@ -100,7 +101,7 @@ export function ScanPanel({
                 ) : (
                   <RotateCcw />
                 )}
-                Retry safely
+                {t("scan.retry")}
               </Button>
             )}</AdminOnly>
           </div>
@@ -129,25 +130,23 @@ export function ScanPanel({
                 </Link>
                 <p className="text-xs muted m-0 mt-1">
                   {["complete", "failed", "interrupted"].includes(item.stage)
-                    ? "Finished"
+                    ? t("scan.finishedStage")
                     : label(item.stage)}{" "}
-                  · Apertus: {label(item.analysis_status)}
+                  · {t("scan.apertus", { status: label(item.analysis_status) })}
                 </p>
               </div>
               <Status value={item.result || item.stage} />
             </div>
             {item.mode === "historical" && (
               <p className="text-xs historical-note">
-                Historical comparison · the current live check was{" "}
-                {label(item.live_result)}. This is not a newly observed
-                amendment.
+                {t("scan.historical", { result: label(item.live_result) })}
               </p>
             )}
             <ErrorNote message={item.error} />
             <div className="flex items-center justify-between gap-3 mt-2">
               {!compact && (
                 <details className="text-xs muted">
-                  <summary>Actual processing stages</summary>
+                  <summary>{t("scan.stages")}</summary>
                   <ol className="event-list">
                     {item.events.map((event, index) => (
                       <li key={index}>
@@ -162,7 +161,7 @@ export function ScanPanel({
                   className="text-primary text-xs flex items-center gap-1 ml-auto"
                   href={"/compare/" + item.comparison_id}
                 >
-                  Open comparison
+                  {t("scan.openComparison")}
                   <ArrowUpRight size={13} />
                 </Link>
               )}
