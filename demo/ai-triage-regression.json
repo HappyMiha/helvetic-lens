@@ -1,0 +1,119 @@
+{
+  "schema_version": "hl064.v1",
+  "supported_locales": ["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"],
+  "cases": [
+    {
+      "id": "different-law-identity",
+      "label": "A saved version from another law must block comparison and AI",
+      "locale": "de-CH",
+      "kind": "identity_mismatch",
+      "law": {
+        "name": "Bundesgesetz über den Datenschutz",
+        "url": "https://fedlex.data.admin.ch/eli/cc/2022/491/de"
+      },
+      "before": {
+        "title": "Bundesgesetz über den Datenschutz",
+        "source_url": "https://fedlex.data.admin.ch/eli/cc/2022/491/20230901/de/html"
+      },
+      "after": {
+        "title": "Bundesverfassung",
+        "source_url": "https://fedlex.data.admin.ch/eli/cc/1999/404/20240101/de/html"
+      },
+      "expected": {"status": "mismatch", "reason_code": "artifact_mismatch"}
+    },
+    {
+      "id": "page-wrap-noise",
+      "label": "A real line-wrap hyphen must not become a material amendment",
+      "locale": "fr-CH",
+      "kind": "diff",
+      "before": [
+        {"id": "fr-old-1", "page": 1, "text": "L’obliga-\ntion de notifier reste applicable."}
+      ],
+      "after": [
+        {"id": "fr-new-1", "page": 1, "text": "L’obligation de notifier reste applicable."}
+      ],
+      "expected": {"material_count": 0, "semantic_counts": {"formatting_only": 1}}
+    },
+    {
+      "id": "insertion-and-renumbering",
+      "label": "One inserted provision stays material while consequent renumbering stays structural",
+      "locale": "it-CH",
+      "kind": "diff",
+      "before": [
+        {"id": "it-old-1", "page": 1, "text": "Art. 1 Scopo"},
+        {"id": "it-old-2", "page": 1, "text": "Art. 2 Campo d’applicazione"},
+        {"id": "it-old-3", "page": 1, "text": "Art. 3 Procedura"}
+      ],
+      "after": [
+        {"id": "it-new-1", "page": 1, "text": "Art. 1 Scopo"},
+        {"id": "it-new-2", "page": 1, "text": "Art. 2 Nuovo obbligo di notifica"},
+        {"id": "it-new-3", "page": 1, "text": "Art. 3 Campo d’applicazione"},
+        {"id": "it-new-4", "page": 1, "text": "Art. 4 Procedura"}
+      ],
+      "expected": {
+        "material_count": 1,
+        "semantic_counts": {"added": 1, "renumbered": 2},
+        "change_clusters": 1
+      }
+    },
+    {
+      "id": "moved-unchanged-section",
+      "label": "An unchanged section moved elsewhere is structural rather than material",
+      "locale": "rm-CH",
+      "kind": "diff",
+      "before": [
+        {"id": "rm-old-1", "page": 1, "text": "Art. 1 Intent da la lescha"},
+        {"id": "rm-old-2", "page": 1, "text": "Art. 2 Champ d’applicaziun"},
+        {"id": "rm-old-3", "page": 1, "text": "Art. 3 Procedura da controlla"}
+      ],
+      "after": [
+        {"id": "rm-new-1", "page": 1, "text": "Art. 3 Procedura da controlla"},
+        {"id": "rm-new-2", "page": 1, "text": "Art. 1 Intent da la lescha"},
+        {"id": "rm-new-3", "page": 1, "text": "Art. 2 Champ d’applicaziun"}
+      ],
+      "expected": {"material_count": 0, "semantic_counts": {"moved": 1}}
+    },
+    {
+      "id": "true-deadline-change",
+      "label": "A changed retention deadline is one substantive legal change",
+      "locale": "en-CH",
+      "kind": "diff",
+      "before": [
+        {"id": "en-old-1", "page": 2, "text": "Art. 8 Records must be retained for 30 days."}
+      ],
+      "after": [
+        {"id": "en-new-1", "page": 2, "text": "Art. 8 Records must be retained for 60 days."}
+      ],
+      "expected": {"material_count": 1, "semantic_counts": {"substantive": 1}}
+    },
+    {
+      "id": "official-repeal-replacement",
+      "label": "Official replacement metadata stays authoritative and evidence-backed",
+      "locale": "de-CH",
+      "kind": "official_relation",
+      "relation": {
+        "state": "confirmed",
+        "relation_type": "replaces",
+        "provenance_method": "official_metadata",
+        "subject_identifier": "eli:cc:2026:900",
+        "object_identifier": "eli:cc:1998:101",
+        "source_url": "https://fedlex.data.admin.ch/eli/cc/2026/900",
+        "evidence": {"metadata_field": "replaces", "declared_target": "eli:cc:1998:101"}
+      },
+      "expected": {"authoritative": true}
+    },
+    {
+      "id": "large-complete-rewrite",
+      "label": "A 1,401-passage rewrite remains complete and enters bounded AI planning",
+      "locale": "fr-CH",
+      "kind": "generated_rewrite",
+      "generator": {
+        "full_passages_per_side": 1401,
+        "quick_passages_per_side": 220,
+        "before_template": "Ancienne disposition alpha {number}: la procédure antérieure s’applique.",
+        "after_template": "Nouvelle règle zêta {number}: une procédure entièrement révisée s’applique."
+      },
+      "expected": {"complete": true, "all_units_material": true}
+    }
+  ]
+}

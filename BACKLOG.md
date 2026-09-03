@@ -931,6 +931,8 @@ Acceptance criteria:
 
 Prove that the redesigned flow saves review time and cannot regress to thousands of low-value requests.
 
+**Status: IN PROGRESS.** The versioned five-locale corpus and deterministic quick/full gate now cover identity mismatch, line-wrap noise, insertion plus consequent renumbering, moved text, a real deadline change, official replacement metadata, and a complete 1,401-passage-per-side rewrite. The full gate preserves every exact unit without reclassifying rewrite content as formatting or structural noise. Provider budgets/cache/citation/last-valid-result assertions, operational measurements, action-quality review, and moderated two-minute usability remain. See [the regression gate](docs/AI_TRIAGE_REGRESSION.md).
+
 Acceptance criteria:
 
 - Check in a labelled multilingual corpus covering identity mismatch, formatting-only revisions, split-word/page-wrap noise, insertion plus mass renumbering, moved text, one true obligation/deadline change, repeal/replacement, and a large rewritten document.
