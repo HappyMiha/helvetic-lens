@@ -12,6 +12,7 @@ from helvetic_lens.analysis import (
     batch_diff_evidence,
     build_impact_plan,
     diff_evidence,
+    finalize_impact_report,
     impact_analysis,
     local_answer_synthesis,
     local_impact_synthesis,
@@ -48,6 +49,17 @@ def test_timeout_keeps_diff_retry_only_analysis_and_profile_invalidates_cache(ha
     route = "/api/comparisons/" + comparison_id + "/analyse"
     result = client.post(route).json()
     assert result["status"] == "succeeded" and result["cached"] is False
+    report = result["result"]
+    assert report["schema_version"] == "impact-report-v2"
+    assert report["headline"] and report["materiality"] == report["impact"]
+    assert report["material_changes"][0]["old_unit"]["passage_id"]
+    assert report["material_changes"][0]["new_unit"]["passage_id"]
+    assert report["material_changes"][0]["evidence_grade"] in {
+        "confirmed",
+        "needs_review",
+    }
+    assert {item["status"] for item in report["important_dates"]} == {"not_found"}
+    assert len({action["action_key"] for action in report["actions"]}) == len(report["actions"])
     assert result["provenance"]["backend"] == "custom"
     assert result["provenance"]["generation"]["max_tokens"] == service.settings.apertus_max_tokens
     assert len(fetcher.calls) == fetch_count
@@ -69,6 +81,9 @@ def test_timeout_keeps_diff_retry_only_analysis_and_profile_invalidates_cache(ha
     assert client.post(route).json()["cached"] is False
     assert len(model.calls) == previous_calls + 1
     assert client.get("/api/comparisons/" + comparison_id).json()["analysis"]["stale"] is False
+    service.settings.apertus_temperature += 0.1
+    assert client.post(route).json()["cached"] is False
+    assert len(model.calls) == previous_calls + 2
 
 
 def test_invalid_citations_never_appear_as_success_and_retry_works(harness):
@@ -476,6 +491,67 @@ def test_local_synthesis_uses_only_validated_batch_text_and_citations():
     assert impact["citations"][0]["url"].startswith("/evidence/version-1")
     assert "reporting duty" in answer["answer"]
     assert answer["supported"] is True and len(answer["citations"]) == 2
+
+
+def test_impact_report_merges_duplicate_actions_and_combines_exact_changes():
+    old = Version(
+        id="old",
+        origin="uploaded",
+        synthetic=True,
+        passages=[
+            {"id": "p1", "text": "Art. 1 Retain records for 30 days.", "page": 1},
+            {"id": "p2", "text": "Art. 2 Notify within 10 days.", "page": 2},
+        ],
+    )
+    new = Version(
+        id="new",
+        origin="live",
+        synthetic=True,
+        passages=[
+            {"id": "p1", "text": "Art. 1 Retain records for 60 days.", "page": 1},
+            {"id": "p2", "text": "Art. 2 Notify within 5 days.", "page": 2},
+        ],
+    )
+    comparison = Comparison(
+        id="comparison",
+        mode="saved_versions",
+        diff=compare_passages(old.passages, new.passages),
+    )
+    evidence, _, coverage = diff_evidence(old, new, comparison)
+    citations = [
+        {
+            "version_id": row["version_id"],
+            "passage_id": row["passage_id"],
+            "quote": row["text"],
+            "url": f"/evidence/{row['version_id']}?passage={row['passage_id']}",
+            "page": row["page"],
+        }
+        for row in evidence
+        if row["side"] == "new"
+    ]
+    result = {
+        "summary": "Two deadlines changed.",
+        "impact": "high",
+        "reason": "Operating timelines may need review.",
+        "business_areas": ["Operations"],
+        "actions": [
+            {"text": "Review the operating timetable.", "citations": [citation]}
+            for citation in citations
+        ],
+        "citations": citations,
+    }
+
+    report = finalize_impact_report(result, comparison, evidence, coverage)
+
+    assert len(report["material_changes"]) == 2
+    assert len(report["actions"]) == 1
+    assert len(report["actions"][0]["related_change_ids"]) == 2
+    assert len(report["actions"][0]["citations"]) == 2
+    assert report["actions"][0]["due_basis"] == "not_found"
+    assert report["actions"][0]["due_date"] is None
+    assert report["actions"][0]["review_suggestion"] is True
+    assert report["organization_applicability"]["evidence_grade"] == "possible"
+    assert report["evidence_grade"] in {"supported", "needs_review"}
 
 
 def test_complete_diff_aligns_articles_and_covers_every_saved_passage_once():

@@ -4,7 +4,7 @@
 
 This backlog implements the product described in [README.md](README.md): a local-AI-first Swiss regulatory monitor with immutable evidence, a time-based legal registry, official-source connectors, cross-document impact analysis, and organization workspaces.
 
-**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-044`, `HL-047`, `HL-050`–`HL-051`), document-identity gate (`HL-058`), and legal-unit semantic diff (`HL-059`) are implemented and verified through the API, browser build, migrations, and regression tests. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
+**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-044`, `HL-047`, `HL-050`–`HL-051`), document-identity gate (`HL-058`), legal-unit semantic diff (`HL-059`), fixed-budget analysis planner (`HL-060`), and actionable impact-report contract (`HL-061`) are implemented and verified through the API, browser build, migrations, and regression tests. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), [impact-report contract](docs/IMPACT_REPORT.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
 
 ## Scope and priorities
 
@@ -92,7 +92,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-058](#hl-058) | P0       | DONE     | HL-005, HL-036, HL-038                                 | Document-identity gate before comparison or AI                      |
 | [HL-059](#hl-059) | P0       | DONE     | HL-011, HL-036, HL-058                                 | Legal-unit semantic diff with noise classification                  |
 | [HL-060](#hl-060) | P0       | DONE     | HL-030–HL-032, HL-059                                  | Fixed-budget local-AI analysis planner                              |
-| [HL-061](#hl-061) | P1       | PLANNED  | HL-033, HL-060                                         | Actionable, deduplicated impact-report contract                     |
+| [HL-061](#hl-061) | P1       | DONE     | HL-033, HL-060                                         | Actionable, deduplicated impact-report contract                     |
 | [HL-062](#hl-062) | P1       | PLANNED  | HL-060, HL-061                                         | Intent-routed Ask experience and safe context selection             |
 | [HL-063](#hl-063) | P1       | PLANNED  | HL-030, HL-037, HL-059–HL-062                          | Decision-ready comparison UX and background progress                |
 | [HL-064](#hl-064) | P0       | PLANNED  | HL-057–HL-063                                          | AI-triage regression, evidence, latency, and usability gate         |

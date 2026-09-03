@@ -214,7 +214,69 @@ export type Impact = {
   impact: "high" | "medium" | "low";
   reason: string;
   business_areas: string[];
-  actions: { text: string; citations: Citation[] }[];
+  schema_version?: "impact-report-v2";
+  output_locale?: string;
+  headline?: string;
+  materiality?: "high" | "medium" | "low";
+  evidence_grade?: "confirmed" | "supported" | "possible" | "needs_review";
+  material_changes?: {
+    change_id: string;
+    change_type: "added" | "removed" | "modified";
+    title: string;
+    explanation: string;
+    old_unit: {
+      unit_id: string | null;
+      passage_id: string | null;
+      page: number | null;
+      label: string;
+    } | null;
+    new_unit: {
+      unit_id: string | null;
+      passage_id: string | null;
+      page: number | null;
+      label: string;
+    } | null;
+    evidence_grade: "confirmed" | "supported" | "possible" | "needs_review";
+    citations: Citation[];
+  }[];
+  organization_applicability?: {
+    status: "applies" | "may_apply" | "unlikely" | "unknown";
+    explanation: string;
+    evidence_grade: "confirmed" | "supported" | "possible" | "needs_review";
+    citations: Citation[];
+  };
+  important_dates?: {
+    kind: "effective_date" | "deadline" | "transition" | "other";
+    label: string;
+    date: string | null;
+    status: "found" | "not_found" | "uncertain";
+    evidence_grade: "confirmed" | "supported" | "possible" | "needs_review";
+    citations: Citation[];
+  }[];
+  uncertainties?: string[];
+  evidence_coverage?: {
+    reviewed_material_items: number;
+    material_items: number;
+    limited: boolean;
+    scope: string;
+  };
+  actions: {
+    text: string;
+    citations: Citation[];
+    action_key?: string;
+    action_type?: string;
+    title?: string;
+    rationale?: string;
+    owner_role?: string;
+    affected_area?: string;
+    priority?: "high" | "medium" | "low";
+    due_basis?: string;
+    due_date?: string | null;
+    applicability_condition?: string;
+    related_change_ids?: string[];
+    evidence_grade?: "confirmed" | "supported" | "possible" | "needs_review";
+    review_suggestion?: true;
+  }[];
   citations: Citation[];
 };
 export type Analysis = {
@@ -231,6 +293,12 @@ export type Analysis = {
   use_count: number;
   last_used_at: string | null;
   created_at: string;
+  latest_attempt?: {
+    id: string;
+    status: string;
+    error: string | null;
+    created_at: string;
+  };
 };
 export type Counts = {
   added: number;

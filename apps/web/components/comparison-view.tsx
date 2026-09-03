@@ -580,22 +580,119 @@ export function ComparisonView({ id }: { id: string }) {
                       Rerun it before relying on its impact rating.
                     </div>
                   )}
+                  {analysis?.latest_attempt?.status === "failed" && (
+                    <div className="historical-note">
+                      The latest rerun failed, so this last valid report remains
+                      visible. Open AI history for the failed attempt.
+                    </div>
+                  )}
                   {analysis?.status === "pending" || analysing ? (
                     <Loading text="Apertus is reviewing the meaningful-change dossier…" />
                   ) : analysis?.status === "succeeded" && analysis.result ? (
                     <>
                       <p className="impact-summary">
-                        {analysis.result.summary}
+                        {analysis.result.headline || analysis.result.summary}
                       </p>
                       <p className="text-sm muted">
                         {analysis.result.reason}{" "}
                         <Citations values={analysis.result.citations} />
                       </p>
+                      {analysis.result.evidence_grade && (
+                        <div className="impact-grade-line">
+                          <span>
+                            Potential severity:{" "}
+                            {analysis.result.materiality ||
+                              analysis.result.impact}
+                          </span>
+                          <span>
+                            Evidence: {label(analysis.result.evidence_grade)}
+                          </span>
+                        </div>
+                      )}
                       <div className="area-tags">
                         {analysis.result.business_areas.map((area) => (
                           <span key={area}>{area}</span>
                         ))}
                       </div>
+                      {!!analysis.result.material_changes?.length && (
+                        <div className="impact-report-section">
+                          <span className="eyebrow">MATERIAL CHANGES</span>
+                          <div className="impact-change-list">
+                            {analysis.result.material_changes.map((change) => (
+                              <article key={change.change_id}>
+                                <div className="impact-change-title">
+                                  <strong>{change.title}</strong>
+                                  <span>{label(change.evidence_grade)}</span>
+                                </div>
+                                <p>
+                                  {change.old_unit?.label || "No earlier unit"}{" "}
+                                  →{" "}
+                                  {change.new_unit?.label || "No current unit"}
+                                </p>
+                                <p>{change.explanation}</p>
+                                <Citations values={change.citations} />
+                              </article>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {analysis.result.organization_applicability && (
+                        <div className="impact-report-section">
+                          <span className="eyebrow">
+                            ORGANIZATION APPLICABILITY
+                          </span>
+                          <div className="impact-applicability">
+                            <strong>
+                              {label(
+                                analysis.result.organization_applicability
+                                  .status,
+                              )}
+                            </strong>
+                            <span>
+                              Evidence:{" "}
+                              {label(
+                                analysis.result.organization_applicability
+                                  .evidence_grade,
+                              )}
+                            </span>
+                            <p>
+                              {
+                                analysis.result.organization_applicability
+                                  .explanation
+                              }{" "}
+                              <Citations
+                                values={
+                                  analysis.result.organization_applicability
+                                    .citations
+                                }
+                              />
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      {!!analysis.result.important_dates?.length && (
+                        <div className="impact-report-section">
+                          <span className="eyebrow">DATES & DEADLINES</span>
+                          <div className="impact-date-list">
+                            {analysis.result.important_dates.map((item) => (
+                              <div key={item.kind + item.label}>
+                                <strong>{item.label}</strong>
+                                <span>{item.date || label(item.status)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {!!analysis.result.uncertainties?.length && (
+                        <details className="impact-uncertainties">
+                          <summary>Assumptions and unknowns</summary>
+                          <ul>
+                            {analysis.result.uncertainties.map((item) => (
+                              <li key={item}>{item}</li>
+                            ))}
+                          </ul>
+                        </details>
+                      )}
                       {analysis.result.actions.length > 0 ? (
                         <>
                           <div className="action-heading">
@@ -607,7 +704,24 @@ export function ComparisonView({ id }: { id: string }) {
                               <li key={index}>
                                 <span>{index + 1}</span>
                                 <div>
-                                  {action.text}{" "}
+                                  <strong>{action.title || action.text}</strong>
+                                  {action.rationale && (
+                                    <p>{action.rationale}</p>
+                                  )}
+                                  {action.owner_role && (
+                                    <p className="action-meta">
+                                      Owner: {action.owner_role} · Area:{" "}
+                                      {action.affected_area} · Priority:{" "}
+                                      {action.priority} · Due:{" "}
+                                      {action.due_date || action.due_basis}
+                                    </p>
+                                  )}
+                                  {action.applicability_condition && (
+                                    <p className="action-condition">
+                                      Apply when:{" "}
+                                      {action.applicability_condition}
+                                    </p>
+                                  )}
                                   <Citations values={action.citations} />
                                 </div>
                               </li>

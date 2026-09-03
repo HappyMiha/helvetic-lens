@@ -1830,20 +1830,35 @@ class HelveticLens:
             }
 
     def latest_analysis(self, session: Session, comparison: Comparison):
-        analysis = session.scalar(
-            select(Analysis)
-            .where(Analysis.comparison_id == comparison.id)
-            .order_by(Analysis.last_used_at.desc().nullslast(), Analysis.created_at.desc())
-            .limit(1)
+        attempts = list(
+            session.scalars(
+                select(Analysis)
+                .where(Analysis.comparison_id == comparison.id)
+                .order_by(Analysis.created_at.desc())
+                .limit(50)
+            )
         )
-        if not analysis:
+        if not attempts:
             return None
+        latest_attempt = attempts[0]
         profile = get(session, Profile, self.tenant_record_id)
-        return {
+        current_key = ai.cache_key(comparison, profile, self.settings, self.prompt_settings)
+        analysis = next(
+            (item for item in attempts if item.status == "succeeded" and item.cache_key == current_key),
+            next((item for item in attempts if item.status == "succeeded"), latest_attempt),
+        )
+        response = {
             **as_dict(analysis),
-            "stale": analysis.cache_key
-            != ai.cache_key(comparison, profile, self.settings, self.prompt_settings),
+            "stale": analysis.cache_key != current_key,
         }
+        if latest_attempt.id != analysis.id:
+            response["latest_attempt"] = {
+                "id": latest_attempt.id,
+                "status": latest_attempt.status,
+                "error": latest_attempt.error,
+                "created_at": latest_attempt.created_at.isoformat(),
+            }
+        return response
 
     def comparison_detail(self, comparison_id: str):
         with self.write_guard, self.db.session() as session:

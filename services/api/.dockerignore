@@ -3,6 +3,8 @@ __pycache__
 .pytest_cache
 .pytest-temp-*
 .test-temp-*
+.test-cache-*
+.hl*-*
 pytest-cache-*
 .ruff_cache
 tests

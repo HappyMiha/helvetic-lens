@@ -91,7 +91,7 @@ function HistoryItem({ item }: { item: AIHistoryItem }) {
   const title =
     item.type === "question"
       ? item.question || "Saved question"
-      : impact?.summary || "Impact assessment";
+      : impact?.headline || impact?.summary || "Impact assessment";
   const plan = item.analysis_plan;
   const actual = plan?.actual;
   const tokenTotal = Object.values(actual?.token_counts || {}).reduce(
@@ -181,13 +181,36 @@ function HistoryItem({ item }: { item: AIHistoryItem }) {
           <div className="ai-history-result">
             <div className="flex items-center gap-2 mb-2">
               <Status value={impact.impact} />
-              <strong>{impact.summary}</strong>
+              <strong>{impact.headline || impact.summary}</strong>
             </div>
             <p>{impact.reason}</p>
+            {impact.organization_applicability && (
+              <p>
+                <strong>
+                  Applicability:{" "}
+                  {label(impact.organization_applicability.status)}
+                </strong>{" "}
+                · evidence{" "}
+                {label(impact.organization_applicability.evidence_grade)} ·{" "}
+                {impact.organization_applicability.explanation}
+              </p>
+            )}
+            {!!impact.material_changes?.length && (
+              <p>
+                {impact.material_changes.length} material{" "}
+                {impact.material_changes.length === 1 ? "change" : "changes"} ·{" "}
+                evidence {label(impact.evidence_grade || "needs_review")}
+              </p>
+            )}
             {impact.actions?.length > 0 && (
               <ol>
                 {impact.actions.map((action, index) => (
-                  <li key={index}>{action.text}</li>
+                  <li key={action.action_key || index}>
+                    {action.title || action.text}
+                    {action.owner_role
+                      ? ` · ${action.owner_role} · ${action.due_date || action.due_basis}`
+                      : ""}
+                  </li>
                 ))}
               </ol>
             )}

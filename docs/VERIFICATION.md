@@ -166,6 +166,15 @@ The Windows agent's default pytest temporary directory had a permission conflict
 - All 245 API tests pass, including legacy-to-head migration coverage; Ruff, TypeScript, and the Next.js production build pass. The rebuilt Compose stack is healthy at `e31b8f6a2c90 (head)` with the plan columns present on both AI-history tables.
 - Browser QA submitted a fresh cited question through the managed local Apertus runtime. It completed in one provider call and displayed `1 expected / 1 actual / limit 3`, 759 ms inference time, 2,158 reported tokens, zero validation repairs, and complete planned coverage in the saved comparison history.
 
+## Actionable impact-report contract — 3 September 2026
+
+- The validated `impact-report-v2` contract covers headline, potential materiality, old/new legal-unit changes, organization applicability, business areas, dates and deadlines, uncertainties, evidence strength, coverage, and zero to five structured review suggestions.
+- Server-side finalization verifies exact saved citations, materializes their URLs/pages, explicitly records dates that were not found, separates evidence grade from severity, and rejects duplicate final action keys.
+- Duplicate suggestions from different changes merge under one stable action key while retaining all related change IDs and distinct citations. A formatting-only comparison still yields zero actions and zero model calls.
+- The cache boundary includes semantic diff, profile and prompt revisions, report/prompt schema, model runtime and generation parameters, and output locale. A failed rerun remains in history without replacing the last valid visible report.
+- All 247 API tests pass, including legacy-to-head migration coverage; Ruff, TypeScript, and the Next.js production build pass.
+- The rebuilt Compose stack is healthy at `e31b8f6a2c90 (head)`. Browser QA created a fresh local-Apertus report in one model call and displayed potential severity separately from supported evidence, the cited old/new passage, possible organization applicability, explicit `not found` date/deadline states, zero filler actions, full 1-of-1 coverage, and no desktop horizontal overflow.
+
 ## Remaining gates
 
 - Validate optional Firecrawl with a key and available credit.

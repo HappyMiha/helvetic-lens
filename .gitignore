@@ -11,6 +11,8 @@ pytest-cache-*/
 **/.pytest-temp-*/
 **/.test-temp-*/
 **/pytest-cache-*/
+**/.test-cache-*/
+**/.hl*-*/
 .ruff_cache/
 .coverage
 htmlcov/

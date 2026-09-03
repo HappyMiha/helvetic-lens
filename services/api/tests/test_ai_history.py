@@ -136,6 +136,32 @@ def test_general_questions_use_all_saved_passages_and_failed_attempts_remain_vis
     assert failed_record["error"] == "Test model timed out."
 
 
+def test_failed_impact_rerun_keeps_last_valid_report_current(harness):
+    client, _, service, model = harness
+    service.settings.apertus_base_url = "https://model.example/v1"
+    law = add_law(client)
+    _, comparison = saved_comparison(client, law)
+    route = f"/api/comparisons/{comparison['id']}/analyse"
+    first = client.post(route).json()
+    assert first["status"] == "succeeded"
+
+    current = client.get("/api/settings/prompts").json()
+    changed = editable_prompts(current)
+    changed["impact_instructions"] += " Use a fresh report revision."
+    assert client.patch("/api/settings/prompts", json=changed).status_code == 200
+    model.fail = True
+    failed = client.post(route).json()
+    assert failed["status"] == "failed"
+
+    visible = client.get(f"/api/comparisons/{comparison['id']}").json()["analysis"]
+    assert visible["id"] == first["id"]
+    assert visible["result"]["schema_version"] == "impact-report-v2"
+    assert visible["latest_attempt"]["id"] == failed["id"]
+    assert visible["latest_attempt"]["status"] == "failed"
+    history = client.get(f"/api/comparisons/{comparison['id']}/ai-history").json()
+    assert len([item for item in history["items"] if item["type"] == "impact"]) == 2
+
+
 def test_prompt_revisions_change_cache_boundary_without_deleting_old_history(harness):
     client, _, service, model = harness
     service.settings.apertus_base_url = "https://model.example/v1"
