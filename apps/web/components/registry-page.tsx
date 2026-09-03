@@ -207,7 +207,7 @@ export function RegistryPage() {
                         <Status value={row.event_type} />
                         <Status value={row.impact} />
                         <Status value={row.analysis_state} />
-                        {row.read && <span className="status-badge status-green"><CheckCircle2 size={12} /> read</span>}
+                        {row.read && <span className="status-badge status-green"><CheckCircle2 size={12} /> {t("status.read")}</span>}
                       </div>
                       <h3 className="text-lg m-0 mb-1">{row.title}</h3>
                       <p className="muted m-0 text-sm">{row.authority} · {label(row.kind)} · {row.languages.join(", ")} · {label(row.lifecycle)}</p>

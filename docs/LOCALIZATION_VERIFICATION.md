@@ -53,7 +53,7 @@ npm run typecheck
 npm run build
 ```
 
-The catalogue check rejects missing and unused production keys, parameter/plural mismatches, unapproved hard-coded English, and accidental cross-locale English inheritance. API regression tests cover locale-separated cache fingerprints, supported change-question recognition in all five languages, evidence validation, identity reason codes, and localized small-model answer rendering.
+The catalogue check parses TSX and rejects missing and unused production keys, parameter/plural mismatches, unapproved hard-coded JSX/attribute/dialog/conditional text, and accidental cross-locale English inheritance. Its strengthened pass found and removed the remaining English `read` badge plus multiline local-model, credential, generation, connection-test, and reset guidance from Settings; 1,195 production keys and 1,075 literal calls now pass. API regression tests cover locale-separated cache fingerprints, supported change-question recognition in all five languages, evidence validation, identity reason codes, and localized small-model answer rendering.
 
 ## Remaining release gate
 
@@ -62,4 +62,3 @@ The catalogue check rejects missing and unused production keys, parameter/plural
 - A fluent Italian reviewer must approve the Italian catalogue and local-model wording.
 - A native Romansh reviewer must approve the Romansh catalogue and local-model wording.
 - Findings must be corrected and this record updated before HL-057 is marked done.
-

@@ -439,11 +439,8 @@ function ApertusForm({
             <div className="rounded-lg border p-4 form-stack min-w-0">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-sm font-semibold mb-1">Infomaniak AI</h3>
-                  <p className="field-help !m-0">
-                    The endpoint is generated from the Product ID, so there is
-                    no URL to edit by hand.
-                  </p>
+                  <h3 className="text-sm font-semibold mb-1">{t("settings.infomaniak")}</h3>
+                  <p className="field-help !m-0">{t("settings.infomaniakEndpointManaged")}</p>
                 </div>
                 <a
                   href="https://developer.infomaniak.com/docs/api/post/2/ai/%7Bproduct_id%7D/openai/v1/chat/completions"
@@ -508,10 +505,7 @@ function ApertusForm({
                     </option>
                   ))}
                 </select>
-                <span className="field-help">
-                  Load the current list from this Product ID, then choose the
-                  exact model served by Infomaniak.
-                </span>
+                <span className="field-help">{t("settings.infomaniakModelHelp")}</span>
               </label>
               <div className="flex flex-wrap gap-3 items-center">
                 <Button
@@ -539,14 +533,8 @@ function ApertusForm({
             <div className="rounded-lg border p-4 form-stack min-w-0">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-sm font-semibold mb-1">
-                    Local Docker Apertus
-                  </h3>
-                  <p className="field-help !m-0">
-                    Uses a dedicated llama.cpp container beside Helvetic Lens.
-                    The API service selects the correct host or container
-                    address automatically.
-                  </p>
+                  <h3 className="text-sm font-semibold mb-1">{t("settings.local")}</h3>
+                  <p className="field-help !m-0">{t("settings.localProviderBody")}</p>
                 </div>
                 <a
                   href="https://github.com/ggml-org/llama.cpp/blob/master/docs/docker.md"
@@ -554,20 +542,17 @@ function ApertusForm({
                   rel="noreferrer"
                   className="text-xs inline-flex items-center gap-1"
                 >
-                  llama.cpp Docker docs <ArrowUpRight size={12} />
+                  {t("settings.localDocs")} <ArrowUpRight size={12} />
                 </a>
               </div>
               <label>
                 {t("settings.baseUrl")}
                 <Input
-                  value={draft.base_url || "Selected automatically when tested"}
+                  value={draft.base_url || t("settings.localBaseUrlAuto")}
                   readOnly
                   aria-readonly="true"
                 />
-                <span className="field-help">
-                  Local host processes use port 12435; the Compose API reaches
-                  the local-apertus service on the internal network.
-                </span>
+                <span className="field-help">{t("settings.localBaseUrlHelp")}</span>
               </label>
               <label>
                 {t("settings.model")}
@@ -585,12 +570,7 @@ function ApertusForm({
                     </option>
                   ))}
                 </select>
-                <span className="field-help">
-                  The 1.5B model is the lightweight local development profile.
-                  Its 4,096-token slot receives a bounded meaningful-change
-                  dossier or targeted question evidence; larger local Apertus
-                  profiles can be selected when the host has enough memory.
-                </span>
+                <span className="field-help">{t("settings.localModelHelp")}</span>
               </label>
               <div className="flex flex-wrap gap-3 items-center">
                 <Button
@@ -697,11 +677,7 @@ function ApertusForm({
               <div className="flex items-center gap-2 font-semibold mb-2">
                 <KeyRound size={15} /> {t("settings.noLocalCredential")}
               </div>
-              <p className="field-help !mb-0">
-                Helvetic Lens never sends the saved Infomaniak token to the
-                local container. The remote credential remains preserved when
-                you test or save this local provider.
-              </p>
+              <p className="field-help !mb-0">{t("settings.localCredentialBoundary")}</p>
             </div>
           ) : (
             <div className="rounded-lg border p-4 min-w-0">
@@ -711,10 +687,8 @@ function ApertusForm({
               </div>
               <p className="text-xs muted">
                 {initial.api_key_configured
-                  ? "A credential is configured (" +
-                    initial.key_source +
-                    "). Its value is never sent back to your browser."
-                  : "No credential is configured. Some local inference servers do not need one."}
+                  ? t("settings.credentialConfigured", { source: initial.key_source })
+                  : t("settings.credentialMissing")}
               </p>
               <label>
                 {t("settings.keyHandling")}
@@ -744,8 +718,8 @@ function ApertusForm({
                     autoComplete="new-password"
                     placeholder={
                       draft.provider === "infomaniak"
-                        ? "Paste your Infomaniak API token"
-                        : "Paste your inference API key"
+                        ? t("settings.tokenPlaceholder")
+                        : t("settings.keyPlaceholder")
                     }
                     value={apiKey}
                     onChange={(event) => {
@@ -757,11 +731,7 @@ function ApertusForm({
                   />
                 </label>
               )}
-              <p className="field-help">
-                Saved credentials stay in the server database, outside Git.
-                Leave the existing credential unchanged when editing other
-                parameters.
-              </p>
+              <p className="field-help">{t("settings.credentialStorage")}</p>
             </div>
           )}
           <div className="pt-2">
@@ -782,9 +752,7 @@ function ApertusForm({
                     update("timeout_seconds", event.target.value)
                   }
                 />
-                <span className="field-help">
-                  5–300 seconds. A timeout keeps the saved diff available.
-                </span>
+                <span className="field-help">{t("settings.timeoutHelp")}</span>
               </label>
               <label>
                 {t("settings.retries")}
@@ -799,10 +767,7 @@ function ApertusForm({
                     update("request_retries", event.target.value)
                   }
                 />
-                <span className="field-help">
-                  Retry interrupted, rate-limited, and temporary provider
-                  failures. Two retries means at most three attempts.
-                </span>
+                <span className="field-help">{t("settings.retriesHelp")}</span>
               </label>
               <label>
                 {t("settings.concurrency")}
@@ -817,11 +782,7 @@ function ApertusForm({
                     update("batch_concurrency", event.target.value)
                   }
                 />
-                <span className="field-help">
-                  Controls how many requests from one bounded analysis plan may
-                  run together. Use 1 for memory-constrained local models or
-                  large hosted models.
-                </span>
+                <span className="field-help">{t("settings.concurrencyHelp")}</span>
               </label>
               <label>
                 {t("settings.context")}
@@ -837,13 +798,8 @@ function ApertusForm({
                   }
                 />
                 <span className="field-help">
-                  Groups the meaningful-change dossier or targeted question
-                  evidence into requests of about this size. It never truncates
-                  the saved exact diff or original artifacts; limited AI
-                  coverage is reported explicitly.
-                  {draft.provider === "docker"
-                    ? " The 6,000-character local preset is calibrated for the 4,096-token runner."
-                    : ""}
+                  {t("settings.contextHelp")}
+                  {draft.provider === "docker" ? ` ${t("settings.localContextPreset")}` : ""}
                 </span>
               </label>
               <label>
@@ -857,10 +813,7 @@ function ApertusForm({
                   value={draft.max_tokens}
                   onChange={(event) => update("max_tokens", event.target.value)}
                 />
-                <span className="field-help">
-                  Sent as max_completion_tokens to Infomaniak and max_tokens to
-                  other compatible endpoints.
-                </span>
+                <span className="field-help">{t("settings.maxTokensHelp")}</span>
               </label>
               <label>
                 {t("settings.temperature")}
@@ -875,9 +828,7 @@ function ApertusForm({
                     update("temperature", event.target.value)
                   }
                 />
-                <span className="field-help">
-                  0–2. Lower values keep regulatory answers consistent.
-                </span>
+                <span className="field-help">{t("settings.temperatureHelp")}</span>
               </label>
               <label>
                 {t("settings.topP")}
@@ -890,9 +841,7 @@ function ApertusForm({
                   value={draft.top_p}
                   onChange={(event) => update("top_p", event.target.value)}
                 />
-                <span className="field-help">
-                  0–1. Default 1 keeps nucleus sampling unrestricted.
-                </span>
+                <span className="field-help">{t("settings.topPHelp")}</span>
               </label>
               <label>
                 {t("settings.presence")}
@@ -928,10 +877,7 @@ function ApertusForm({
                   <option value="medium">{t("settings.medium")}</option>
                   <option value="high">{t("settings.high")}</option>
                 </select>
-                <span className="field-help">
-                  Leave at default for Apertus models that do not support this
-                  parameter.
-                </span>
+                <span className="field-help">{t("settings.reasoningHelp")}</span>
               </label>
             </div>
           </div>
@@ -946,14 +892,10 @@ function ApertusForm({
           </label>
           <p className="field-help !mt-0">
             {draft.provider === "docker"
-              ? "Local Docker analysis always uses the exact validation schema so the compact model cannot return free-form prose."
-              : "Enable only if your endpoint supports response_format: json_object. Answers and citations are validated with either setting."}
+              ? t("settings.localJsonHelp")
+              : t("settings.remoteJsonHelp")}
           </p>
-          <div className="info-note text-xs">
-            Helvetic Lens always requests one non-streaming response. These
-            fixed values keep structured parsing and citation validation
-            deterministic.
-          </div>
+          <div className="info-note text-xs">{t("settings.fixedRequestHelp")}</div>
           <ErrorNote message={error} />
           {testResult && (
             <div role="status" className="info-note break-words">
@@ -961,11 +903,7 @@ function ApertusForm({
                 {t("settings.verified", { latency: number(testResult.latency_ms) })}
               </strong>
               <p>{t("settings.received", { model: testResult.model })}</p>
-              <p className="text-xs">
-                This checked the values in this form without saving them. A
-                connection check does not yet verify an evidence-backed
-                analysis.
-              </p>
+              <p className="text-xs">{t("settings.testOnlyHelp")}</p>
             </div>
           )}
           <div className="form-actions flex-wrap gap-3">
@@ -1001,11 +939,7 @@ function ApertusForm({
               {t("settings.save")}
             </Button>
           </div>
-          <p className="text-xs muted">
-            Changes apply to new requests immediately. Changing the endpoint,
-            model, evidence warning threshold, or generation settings marks
-            previous analyses as stale.
-          </p>
+          <p className="text-xs muted">{t("settings.staleHelp")}</p>
         </fieldset>
       </form>
       <div className="border-t px-6 py-4 flex gap-4 flex-wrap items-center justify-between">
@@ -1029,9 +963,7 @@ function ApertusForm({
           {t("settings.useDefaults")}
         </Button>
         <p className="text-xs muted basis-full !mb-0">
-          Restoring defaults removes saved overrides, including a saved
-          credential, and uses the server&apos;s current environment. Your
-          document history is unchanged.
+          {t("settings.restoreDefaultsHelp")}
         </p>
       </div>
     </section>

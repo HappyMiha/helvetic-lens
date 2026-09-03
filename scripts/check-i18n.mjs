@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import ts from "typescript";
 
 const root = process.cwd();
 const catalogPath = path.join(root, "apps", "web", "lib", "i18n.tsx");
@@ -37,6 +38,7 @@ const unused = [...keys].filter(
 );
 const approvedUiLiterals = new Set([
   "GPU",
+  "GB",
   "HL",
   "Infomaniak AI",
   "Infomaniak API docs",
@@ -46,28 +48,65 @@ const approvedUiLiterals = new Set([
   "Public AI setup",
   "Hugging Face setup",
   "SHA-256:",
+  "ms",
   "Runtime:",
   "YYYY-MM-DD",
   "https://…",
   "http://localhost:8080/v1",
 ]);
 const hardcoded = [];
-const uiPatterns = [
-  />\s*([A-Z][A-Za-z0-9][^<>{}\r\n]{1,120}?)\s*</g,
-  /(?:aria-label|placeholder|title)=["']([A-Z][^"']{1,160})["']/g,
-  /(?:window\.(?:confirm|prompt)|new Error)\(\s*["']([A-Z][^"']{2,200})["']/g,
-];
+function recordLiteral(file, sourceFile, node, rawValue) {
+  const value = rawValue.replace(/\s+/g, " ").trim();
+  if (!/[A-Za-zÀ-ÿ]/.test(value) || approvedUiLiterals.has(value)) return;
+  const line = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1;
+  hardcoded.push(`${path.relative(root, file)}:${line}: ${value}`);
+}
+function inspectRenderedExpression(file, sourceFile, node) {
+  if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
+    recordLiteral(file, sourceFile, node, node.text);
+  } else if (ts.isConditionalExpression(node)) {
+    inspectRenderedExpression(file, sourceFile, node.whenTrue);
+    inspectRenderedExpression(file, sourceFile, node.whenFalse);
+  } else if (ts.isParenthesizedExpression(node)) {
+    inspectRenderedExpression(file, sourceFile, node.expression);
+  } else if (
+    ts.isBinaryExpression(node) &&
+    [ts.SyntaxKind.AmpersandAmpersandToken, ts.SyntaxKind.QuestionQuestionToken].includes(node.operatorToken.kind)
+  ) {
+    inspectRenderedExpression(file, sourceFile, node.right);
+  }
+}
 for (const file of sourceFiles) {
   const source = fs.readFileSync(file, "utf8");
-  for (const pattern of uiPatterns) {
-    for (const match of source.matchAll(pattern)) {
-      const value = match[1].replace(/\s+/g, " ").trim();
-      if (!approvedUiLiterals.has(value) && !/^(?:React\.|Promise\b)/.test(value)) {
-        const line = source.slice(0, match.index).split("\n").length;
-        hardcoded.push(`${path.relative(root, file)}:${line}: ${value}`);
+  const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  function visit(node) {
+    if (ts.isJsxText(node)) {
+      recordLiteral(file, sourceFile, node, node.getText(sourceFile));
+    } else if (
+      ts.isJsxExpression(node) &&
+      node.expression &&
+      (ts.isJsxElement(node.parent) || ts.isJsxFragment(node.parent))
+    ) {
+      inspectRenderedExpression(file, sourceFile, node.expression);
+    } else if (
+      ts.isJsxAttribute(node) &&
+      ["aria-label", "placeholder", "title"].includes(node.name.getText(sourceFile)) &&
+      node.initializer && ts.isStringLiteral(node.initializer)
+    ) {
+      recordLiteral(file, sourceFile, node, node.initializer.text);
+    } else if (ts.isCallExpression(node) && node.arguments.length) {
+      const callee = node.expression.getText(sourceFile);
+      const argument = node.arguments[0];
+      if (["window.confirm", "window.prompt"].includes(callee) && ts.isStringLiteral(argument)) {
+        recordLiteral(file, sourceFile, argument, argument.text);
       }
+    } else if (ts.isNewExpression(node) && node.expression.getText(sourceFile) === "Error") {
+      const argument = node.arguments?.[0];
+      if (argument && ts.isStringLiteral(argument)) recordLiteral(file, sourceFile, argument, argument.text);
     }
+    ts.forEachChild(node, visit);
   }
+  visit(sourceFile);
 }
 if (missing.length || unused.length || hardcoded.length) {
   if (missing.length) console.error("Missing catalogue keys:\n" + missing.sort().join("\n"));

@@ -264,3 +264,9 @@ The Windows agent's default pytest temporary directory had a permission conflict
 - Celery Beat discovers due preferences hourly and creates one durable idempotent job per user, organization, and period. Empty periods and disabled mail are stored as skipped; SMTP/development delivery failures remain retryable.
 - Delivery summaries are capped at 50 events and five impacts per event, the UI returns only the latest 20 attempts, and terminal delivery records have a separate 180-day default retention. Cleanup leaves user preferences, legal evidence, and impact history intact.
 - Focused API regressions cover saved-data delivery, explicit SMTP failure/read-state preservation, scheduler idempotency, direct unsubscribe, viewer opt-in, and bounded cleanup. The full 304-test API suite, Ruff, the five-locale catalogue audit, TypeScript, and the Next.js production build pass. The rebuilt development stack is healthy and PostgreSQL reports `a1d8f63c2b74 (head)`.
+
+## Hard-coded localization gate — 3 September 2026
+
+- The catalogue check now parses TypeScript/TSX rather than relying on same-line regular expressions. It inspects JSX text, accessible string attributes, confirmation/prompt/error text, and rendered conditional string branches while explicitly allowing stable units and product names.
+- The stronger gate found the English `read` badge and 27 user-facing settings strings that were previously hidden by multiline markup or conditional expressions. Local-AI, credential-boundary, generation, connection-test, and reset guidance now has distinct DE/FR/IT/RM/EN catalogue entries; the local model-manager hint also names its actual port 12436.
+- The 1,195-key catalogue, inheritance/placeholder audit, TypeScript, and Next.js production build pass. HL-057 remains open only for the documented fluent German/French/Italian and native Romansh review; this automated work is not presented as human language approval.
