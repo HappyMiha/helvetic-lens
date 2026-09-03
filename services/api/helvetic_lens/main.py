@@ -1,6 +1,7 @@
 import asyncio
 import re
 from contextlib import asynccontextmanager
+from datetime import datetime
 from typing import Annotated, Literal
 
 from fastapi import FastAPI, File, Form, Query, Request, UploadFile
@@ -76,6 +77,13 @@ class HistoryQuestion(Input):
 
 class QuestionInput(HistoryQuestion):
     history: list[HistoryQuestion] = Field(default_factory=list, max_length=4)
+
+
+class ActionDecisionInput(Input):
+    decision: Literal["accepted", "assigned", "scheduled", "dismissed", "not_applicable"]
+    assigned_to: str | None = Field(default=None, max_length=200)
+    scheduled_for: datetime | None = None
+    rationale: str | None = Field(default=None, max_length=2000)
 
 
 class ProfileInput(Input):
@@ -785,6 +793,29 @@ def create_app(
     @app.get("/api/comparisons/{comparison_id}/ai-history")
     def comparison_ai_history(comparison_id: str, limit: int = Query(default=100, ge=1, le=500)):
         return service.ai_history(comparison_id=comparison_id, limit=limit)
+
+    @app.post(
+        "/api/comparisons/{comparison_id}/analyses/{analysis_id}/actions/{action_key}/decisions"
+    )
+    def decide_analysis_action(
+        comparison_id: str,
+        analysis_id: str,
+        action_key: str,
+        data: ActionDecisionInput,
+        request: Request,
+    ):
+        identity = request.state.identity
+        return service.decide_action(
+            comparison_id,
+            analysis_id,
+            action_key,
+            data.decision,
+            assigned_to=data.assigned_to,
+            scheduled_for=data.scheduled_for,
+            rationale=data.rationale,
+            actor_user_id=identity.user_id if identity else None,
+            actor_label=(identity.name if identity else "Local administrator"),
+        )
 
     @app.post("/api/comparisons/{comparison_id}/analyse")
     async def analyse(comparison_id: str):

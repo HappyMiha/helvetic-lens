@@ -46,6 +46,7 @@ from .model_manager_client import ModelManagerClient
 from .model_settings import ApertusSettingsInput, public_settings, resolve_key, resolved_settings
 from .models import (
     LEGACY_ORGANIZATION_ID,
+    ActionDecision,
     AdministrativeAudit,
     Analysis,
     ApertusConfiguration,
@@ -1850,6 +1851,7 @@ class HelveticLens:
         response = {
             **as_dict(analysis),
             "stale": analysis.cache_key != current_key,
+            "action_decisions": self.action_decisions_for_analysis(session, analysis.id),
         }
         if latest_attempt.id != analysis.id:
             response["latest_attempt"] = {
@@ -1859,6 +1861,75 @@ class HelveticLens:
                 "created_at": latest_attempt.created_at.isoformat(),
             }
         return response
+
+    @staticmethod
+    def action_decisions_for_analysis(session: Session, analysis_id: str) -> dict:
+        records = list(
+            session.scalars(
+                select(ActionDecision)
+                .where(ActionDecision.analysis_id == analysis_id)
+                .order_by(ActionDecision.created_at.desc())
+            )
+        )
+        history = [as_dict(record) for record in records]
+        current: dict[str, dict] = {}
+        for item in history:
+            current.setdefault(item["action_key"], item)
+        return {"current": current, "history": history}
+
+    def decide_action(
+        self,
+        comparison_id: str,
+        analysis_id: str,
+        action_key: str,
+        decision: str,
+        *,
+        assigned_to: str | None,
+        scheduled_for: datetime | None,
+        rationale: str | None,
+        actor_user_id: str | None,
+        actor_label: str,
+    ) -> dict:
+        if decision == "assigned" and not assigned_to:
+            raise DomainError("Choose who should own this review action.", 422, "assignee_required")
+        if decision == "scheduled" and scheduled_for is None:
+            raise DomainError("Choose when this review action is due.", 422, "schedule_required")
+        if decision in {"dismissed", "not_applicable"} and not rationale:
+            raise DomainError(
+                "Record a short reason so the organization can understand this decision.",
+                422,
+                "rationale_required",
+            )
+        with self.write_guard, self.db.session() as session:
+            comparison = get(session, Comparison, comparison_id)
+            analysis = get(session, Analysis, analysis_id)
+            if analysis.comparison_id != comparison.id or analysis.status != "succeeded":
+                raise DomainError(
+                    "The selected report is not a completed report for this comparison.",
+                    409,
+                    "analysis_not_current",
+                )
+            actions = (analysis.result or {}).get("actions") or []
+            if not any(item.get("action_key") == action_key for item in actions):
+                raise DomainError(
+                    "The selected review action is not part of this saved report.",
+                    404,
+                    "action_not_found",
+                )
+            record = ActionDecision(
+                comparison_id=comparison.id,
+                analysis_id=analysis.id,
+                action_key=action_key,
+                decision=decision,
+                assigned_to=assigned_to or None,
+                scheduled_for=scheduled_for,
+                rationale=rationale or None,
+                actor_user_id=actor_user_id,
+                actor_label=actor_label[:200] or "Workspace administrator",
+            )
+            session.add(record)
+            session.commit()
+            return self.action_decisions_for_analysis(session, analysis.id)
 
     def comparison_detail(self, comparison_id: str):
         with self.write_guard, self.db.session() as session:
@@ -1870,6 +1941,20 @@ class HelveticLens:
             self.ensure_complete_diff(session, comparison, old, new)
             law = get(session, Law, comparison.law_id)
             identity = self.refresh_comparison_identity(session, comparison)
+            profile = get(session, Profile, self.tenant_record_id)
+            current_key = ai.cache_key(
+                comparison, profile, self.settings, self.prompt_settings
+            )
+            analysis_job = session.scalar(
+                select(Job)
+                .where(
+                    Job.type == "impact_analysis",
+                    Job.target_id == comparison.id,
+                    Job.idempotency_key == f"impact:{current_key}",
+                )
+                .order_by(Job.created_at.desc())
+                .limit(1)
+            )
             session.commit()
             return {
                 **as_dict(comparison),
@@ -1878,6 +1963,9 @@ class HelveticLens:
                 "law": as_dict(law),
                 "identity": identity,
                 "analysis": self.latest_analysis(session, comparison),
+                "analysis_job": (
+                    durable_jobs.serialize(session, analysis_job) if analysis_job else None
+                ),
             }
 
     def create_comparison(self, old_id: str, new_id: str):
@@ -2673,15 +2761,75 @@ class HelveticLens:
                 result_json = {"scan_id": target_id}
             elif job_type == "impact_analysis":
                 mark(1, 1, "succeeded")
-                mark(1, 2, "running")
-                result_json = await self.analyse(target_id)
+                with self.db.session() as session:
+                    comparison = get(session, Comparison, target_id)
+                    old, new = (
+                        get(session, Version, comparison.old_version_id),
+                        get(session, Version, comparison.new_version_id),
+                    )
+                    profile = get(session, Profile, self.tenant_record_id)
+                    plan, _ = ai.build_impact_plan(
+                        self.settings, comparison, old, new, profile
+                    )
+                    group_total = max(1, int(plan["execution"]["batch_count"]))
+
+                async def report_group_progress(current: int, total: int):
+                    with self.write_guard, self.db.session() as progress_session:
+                        if not durable_jobs.heartbeat(progress_session, job_id, worker):
+                            progress_session.commit()
+                            raise durable_jobs.JobCancelled()
+                        durable_jobs.progress(
+                            progress_session,
+                            job_id,
+                            current=1,
+                            step_position=2,
+                            step_state="running",
+                            step_details={"stage": "analysing", "group_total": total},
+                            step_current=current,
+                            step_total=total,
+                        )
+                        progress_session.commit()
+
+                with self.write_guard, self.db.session() as progress_session:
+                    durable_jobs.progress(
+                        progress_session,
+                        job_id,
+                        current=1,
+                        step_position=2,
+                        step_state="running",
+                        step_details={"stage": "analysing", "group_total": group_total},
+                        step_current=0,
+                        step_total=group_total,
+                    )
+                    progress_session.commit()
+                result_json = await self.analyse(
+                    target_id, progress_callback=report_group_progress
+                )
                 if result_json.get("status") != "succeeded":
                     raise DomainError(
                         result_json.get("error") or "The impact analysis failed.",
                         502,
                         "analysis_failed",
                     )
-                mark(2, 2, "succeeded")
+                with self.write_guard, self.db.session() as progress_session:
+                    durable_jobs.progress(
+                        progress_session,
+                        job_id,
+                        current=2,
+                        step_position=2,
+                        step_state="succeeded",
+                        step_current=group_total,
+                        step_total=group_total,
+                    )
+                    durable_jobs.progress(
+                        progress_session,
+                        job_id,
+                        current=2,
+                        step_position=3,
+                        step_state="running",
+                        step_details={"stage": "validating"},
+                    )
+                    progress_session.commit()
                 mark(3, 3, "succeeded")
                 result_type = "analysis"
                 result_id = result_json["id"]
@@ -2823,7 +2971,11 @@ class HelveticLens:
             self.ensure_complete_diff(session, comparison, old, new)
             profile = get(session, Profile, self.tenant_record_id)
             key = ai.cache_key(comparison, profile, self.settings, self.prompt_settings)
-            job, _ = durable_jobs.enqueue(
+            plan, _ = ai.build_impact_plan(
+                self.settings, comparison, old, new, profile
+            )
+            group_total = max(1, int(plan["execution"]["batch_count"]))
+            job, reused = durable_jobs.enqueue(
                 session,
                 job_type="impact_analysis",
                 target_type="comparison",
@@ -2835,10 +2987,20 @@ class HelveticLens:
                 max_attempts=self.settings.job_max_attempts,
                 steps=[
                     ("Prepare material changes", {"comparison_id": comparison_id}),
-                    ("Run local inference", {}),
-                    ("Validate and save result", {}),
+                    (
+                        "Analyse evidence groups",
+                        {"stage": "analysing", "group_total": group_total},
+                    ),
+                    ("Validate evidence and save report", {"stage": "validating"}),
                 ],
             )
+            if reused and job.state in {"failed", "cancelled"}:
+                job = durable_jobs.retry(session, job.id)
+            inference_step = session.scalar(
+                select(JobStep).where(JobStep.job_id == job.id, JobStep.position == 2)
+            )
+            if inference_step and inference_step.state == "pending":
+                inference_step.progress_total = group_total
             session.commit()
             return durable_jobs.serialize(session, job)
 
@@ -2910,7 +3072,7 @@ class HelveticLens:
             return None
         return {"id": record.id, "result": record.result}
 
-    async def analyse(self, comparison_id: str):
+    async def analyse(self, comparison_id: str, progress_callback=None):
         lock = self.analysis_locks.setdefault(comparison_id, asyncio.Lock())
         async with lock:
             settings, model_client = self.settings, self.model_client
@@ -2986,6 +3148,7 @@ class HelveticLens:
                     profile,
                     prompts,
                     prepared,
+                    progress_callback,
                 )
                 status, error = "succeeded", None
             except Exception as exc:

@@ -199,6 +199,11 @@ def test_impact_and_ask_use_durable_ai_queues_and_return_saved_results(harness):
     assert impact_job["queue"] == "ai_background" and impact_job["state"] == "succeeded"
     assert impact_job["result"]["type"] == "analysis"
     assert impact_job["result"]["data"]["status"] == "succeeded"
+    assert impact_job["steps"][1]["name"] == "Analyse evidence groups"
+    assert impact_job["steps"][1]["progress"]["current"] == impact_job["steps"][1]["progress"]["total"]
+    assert impact_job["steps"][2]["details"]["stage"] == "validating"
+    reopened = client.get(f"/api/comparisons/{comparison['id']}").json()["analysis_job"]
+    assert reopened["id"] == impact_job["id"] and reopened["state"] == "succeeded"
 
     answer = client.post(
         f"/api/comparisons/{comparison['id']}/ask-jobs",
@@ -212,6 +217,25 @@ def test_impact_and_ask_use_durable_ai_queues_and_return_saved_results(harness):
     assert answer_job["result"]["data"]["context_mode"] == "impact_report"
     assert answer_job["result"]["data"]["coverage"]["provider_calls"] == 0
     assert len(model.calls) == 1
+
+
+def test_resubmitting_cancelled_impact_job_requeues_same_persisted_work(harness):
+    client, _, service, _ = harness
+    law = add_law(client)
+    old = import_old(client, law["id"])["version"]
+    comparison = client.post(
+        "/api/comparisons",
+        json={"old_version_id": old["id"], "new_version_id": law["current_version_id"]},
+    ).json()
+    service.settings.apertus_base_url = "https://model.example/v1"
+    service.settings.job_execution_mode = "celery"
+
+    first = client.post(f"/api/comparisons/{comparison['id']}/analyse-jobs").json()
+    assert first["state"] == "queued"
+    assert client.post(f"/api/jobs/{first['id']}/cancel").json()["state"] == "cancelled"
+    retried = client.post(f"/api/comparisons/{comparison['id']}/analyse-jobs").json()
+    assert retried["id"] == first["id"] and retried["state"] == "queued"
+    assert client.get(f"/api/comparisons/{comparison['id']}").json()["analysis_job"]["id"] == first["id"]
 
 
 def test_waiting_for_local_model_does_not_consume_job_attempt(harness):

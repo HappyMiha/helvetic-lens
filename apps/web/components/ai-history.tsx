@@ -36,6 +36,7 @@ export function AIHistory({
   const history = useResource<AIHistoryPage>(path, 5000);
   return (
     <section
+      id={comparisonId ? "ai-history" : undefined}
       className={compact ? "panel ai-history compact" : "panel ai-history mt-6"}
     >
       <div className="panel-header">

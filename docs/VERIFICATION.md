@@ -185,6 +185,13 @@ The Windows agent's default pytest temporary directory had a permission conflict
 - All 256 API tests pass, including legacy-to-head migration coverage; Ruff, TypeScript, and the Next.js production build pass.
 - The rebuilt Compose stack remains healthy at `e31b8f6a2c90 (head)`. Browser QA reused the fresh Impact report for **Explain the material changes simply**, displayed two exact citations and a zero-call fixed plan, then answered `Ничего не понятно но очень интересно` with a Russian clarification and four choices, also with zero calls. The comparison retained no desktop horizontal overflow.
 
+## Decision-ready comparison review — 3 September 2026
+
+- All 258 API tests pass. Coverage includes append-only action decisions, required dismissal/not-applicable rationale, actor/organization/report/action linkage, current-state reconstruction, durable job recovery from the comparison resource, real evidence-group progress, validation stage details, and safe resubmission of cancelled Impact jobs.
+- Ruff, TypeScript, the Next.js production build, and the Compose image builds pass. The running stack reports healthy API, PostgreSQL, Redis, and model-manager services with both workers and the scheduler up at migration `f42c9d71a805 (head)`.
+- Live browser QA on a saved local-Apertus comparison showed the five deterministic category counts before AI content, one compact material cluster instead of raw rows, a saved `Ready` job outcome, the current **What changed / Why it may matter / Review plan** report, exact before/after units, organization relevance, explicit not-found dates, assumptions, evidence grades, full report provenance, and a compact prior-reports link.
+- Selecting **View exact evidence** switched from **Material first** to **All exact changes**, focused the correct saved passage pair, and retained the validated report alongside it. The live report legitimately contained zero suggested actions; the action workflow itself is covered through the real API, database, migration, and authorization boundary in the automated suite.
+
 ## Remaining gates
 
 - Validate optional Firecrawl with a key and available credit.

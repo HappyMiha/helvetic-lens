@@ -149,6 +149,8 @@ def progress(
     step_state: str | None = None,
     step_details: dict | None = None,
     step_error: str | None = None,
+    step_current: int | None = None,
+    step_total: int | None = None,
 ) -> Job:
     job = session.get(Job, job_id)
     if not job:
@@ -175,7 +177,14 @@ def progress(
             if step_details is not None:
                 step.details = {**(step.details or {}), **step_details}
             step.error_detail = _bounded_error(step_error)
-            step.progress_current = 1 if step.state == "succeeded" else 0
+            if step_total is not None:
+                step.progress_total = max(1, step_total)
+            if step_current is not None:
+                step.progress_current = max(0, min(step_current, step.progress_total))
+            elif step.state == "succeeded":
+                step.progress_current = step.progress_total
+            elif step.state != "running":
+                step.progress_current = 0
     return job
 
 

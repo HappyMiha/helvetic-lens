@@ -2703,6 +2703,7 @@ async def impact_analysis(
     profile: Profile,
     prompts: PromptSettings | None = None,
     prepared: tuple | None = None,
+    progress_callback=None,
 ):
     prompts = prompts or default_prompt_settings()
     request_budget = InferenceBudget(MAX_IMPACT_HTTP_REQUESTS)
@@ -2744,6 +2745,8 @@ async def impact_analysis(
         "coverage": coverage,
     }
     if len(batches) <= 1 and settings.apertus_provider != "docker":
+        if progress_callback:
+            await progress_callback(0, 1)
         result = await structured_completion(
             client,
             final_system,
@@ -2759,6 +2762,8 @@ async def impact_analysis(
         )
         result["actions"] = deduplicated_actions([result])
         coverage["provider_calls"] = request_budget.used
+        if progress_callback:
+            await progress_callback(1, 1)
         return finalize_impact_report(result, comparison, evidence, coverage), coverage
 
     batch_system = (
@@ -2775,7 +2780,11 @@ async def impact_analysis(
         "Return only JSON matching this schema. Schema: " + json.dumps(ImpactDigest.model_json_schema())
     )
 
+    progress_lock = asyncio.Lock()
+    completed_batches = 0
+
     async def review_batch(index: int, batch: dict):
+        nonlocal completed_batches
         result = await structured_completion(
             client,
             batch_system,
@@ -2795,6 +2804,10 @@ async def impact_analysis(
             budget=request_budget,
         )
         result = materialize_digest_citations(result, batch["evidence"])
+        if progress_callback:
+            async with progress_lock:
+                completed_batches += 1
+                await progress_callback(completed_batches, len(batches))
         return {"batch_index": index, **prompt_safe_result(result)}
 
     reviews = await bounded_batch_map(batches, review_batch, settings.apertus_batch_concurrency)

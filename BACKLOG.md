@@ -94,7 +94,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-060](#hl-060) | P0       | DONE     | HL-030–HL-032, HL-059                                  | Fixed-budget local-AI analysis planner                              |
 | [HL-061](#hl-061) | P1       | DONE     | HL-033, HL-060                                         | Actionable, deduplicated impact-report contract                     |
 | [HL-062](#hl-062) | P1       | DONE     | HL-060, HL-061                                         | Intent-routed Ask experience and safe context selection             |
-| [HL-063](#hl-063) | P1       | PLANNED  | HL-030, HL-037, HL-059–HL-062                          | Decision-ready comparison UX and background progress                |
+| [HL-063](#hl-063) | P1       | DONE     | HL-030, HL-037, HL-059–HL-062                          | Decision-ready comparison UX and background progress                |
 | [HL-064](#hl-064) | P0       | PLANNED  | HL-057–HL-063                                          | AI-triage regression, evidence, latency, and usability gate         |
 | [HL-050](#hl-050) | P2       | DONE     | HL-038, HL-042                                         | Broader official regulatory news connectors                         |
 | [HL-051](#hl-051) | P2       | DONE     | HL-044, HL-050                                         | Measured semantic candidate recall with pgvector if justified       |
@@ -911,6 +911,8 @@ Acceptance criteria:
 ### HL-063 — Redesign comparison review around material changes, meaning, and action
 
 Let a user understand a new version without scrolling through thousands of red/green passage rows.
+
+**Status: DONE.** The comparison now opens on deterministic semantic clusters and five plain-language counts while retaining every exact passage/word change behind **All exact changes**. One validated current report presents what changed, why it may matter, a review plan, exact evidence jumps, coverage and complete profile/model/runtime/prompt/locale provenance. PostgreSQL-backed inference survives navigation and exposes real queue, group-analysis, validation and terminal states without blocking the diff. Organization administrators can append accept/assign/schedule/dismiss/not-applicable decisions with actor, time, rationale and organization scope; legal evidence and prior reports stay immutable. Stable classification, evidence, job and decision states have non-colour labels and the comparison-specific five-language mappings ready for the HL-057 product-wide catalogue. See [the comparison review contract](docs/COMPARISON_REVIEW.md).
 
 Acceptance criteria:
 

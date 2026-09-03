@@ -299,6 +299,25 @@ export type Analysis = {
     error: string | null;
     created_at: string;
   };
+  action_decisions?: ActionDecisionPage;
+};
+export type ActionDecision = {
+  id: string;
+  organization_id: string;
+  comparison_id: string;
+  analysis_id: string;
+  action_key: string;
+  decision: "accepted" | "assigned" | "scheduled" | "dismissed" | "not_applicable";
+  assigned_to: string | null;
+  scheduled_for: string | null;
+  rationale: string | null;
+  actor_user_id: string | null;
+  actor_label: string;
+  created_at: string;
+};
+export type ActionDecisionPage = {
+  current: Record<string, ActionDecision>;
+  history: ActionDecision[];
 };
 export type Counts = {
   added: number;
@@ -424,6 +443,7 @@ export type Comparison = {
   created_at: string;
   old_version: Version;
   new_version: Version;
+  analysis_job?: Job | null;
   diff: {
     schema_version?: number;
     algorithm?: string;

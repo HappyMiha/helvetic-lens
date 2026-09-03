@@ -853,6 +853,28 @@ class Analysis(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class ActionDecision(Base):
+    __tablename__ = "action_decisions"
+    __table_args__ = (
+        CheckConstraint(
+            "decision IN ('accepted', 'assigned', 'scheduled', 'dismissed', 'not_applicable')",
+            name="ck_action_decision_value",
+        ),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    comparison_id: Mapped[str] = mapped_column(ForeignKey("comparisons.id"), index=True)
+    analysis_id: Mapped[str] = mapped_column(ForeignKey("analyses.id"), index=True)
+    action_key: Mapped[str] = mapped_column(String(64), index=True)
+    decision: Mapped[str] = mapped_column(String(30), index=True)
+    assigned_to: Mapped[str | None] = mapped_column(String(200))
+    scheduled_for: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    rationale: Mapped[str | None] = mapped_column(Text)
+    actor_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), index=True)
+    actor_label: Mapped[str] = mapped_column(String(200), default="Workspace administrator")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
 class AskRecord(Base):
     __tablename__ = "ask_records"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
@@ -965,6 +987,7 @@ ORGANIZATION_SCOPED_MODELS = (
     RegulatoryEventState,
     IntegrationLog,
     Analysis,
+    ActionDecision,
     AskRecord,
     Job,
     JobStep,

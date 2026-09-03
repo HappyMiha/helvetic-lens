@@ -88,6 +88,51 @@ def test_timeout_keeps_diff_retry_only_analysis_and_profile_invalidates_cache(ha
     assert len(model.calls) == previous_calls + 2
 
 
+def test_review_action_decisions_are_append_only_and_scoped_to_saved_report(harness):
+    client, _, service, _ = harness
+    service.settings.apertus_base_url = "https://model.example/v1"
+    law = add_law(client)
+    old = import_old(client, law["id"])["version"]
+    comparison = client.post(
+        "/api/comparisons",
+        json={"old_version_id": old["id"], "new_version_id": law["current_version_id"]},
+    ).json()
+    report = client.post(f"/api/comparisons/{comparison['id']}/analyse").json()
+    analysis_id = report["id"]
+    action_key = report["result"]["actions"][0]["action_key"]
+    route = (
+        f"/api/comparisons/{comparison['id']}/analyses/{analysis_id}"
+        f"/actions/{action_key}/decisions"
+    )
+
+    accepted = client.post(route, json={"decision": "accepted"})
+    assert accepted.status_code == 200
+    assert accepted.json()["current"][action_key]["decision"] == "accepted"
+    assigned = client.post(
+        route,
+        json={"decision": "assigned", "assigned_to": "Legal operations"},
+    )
+    assert assigned.status_code == 200
+    assert assigned.json()["current"][action_key]["assigned_to"] == "Legal operations"
+    scheduled = client.post(
+        route,
+        json={"decision": "scheduled", "scheduled_for": "2027-02-01T09:00:00+01:00"},
+    )
+    assert scheduled.status_code == 200
+    assert len(scheduled.json()["history"]) == 3
+    rejected = client.post(route, json={"decision": "not_applicable"})
+    assert rejected.status_code == 422 and rejected.json()["code"] == "rationale_required"
+    dismissed = client.post(
+        route,
+        json={"decision": "not_applicable", "rationale": "No covered activity in this workspace."},
+    )
+    assert dismissed.status_code == 200
+    current = client.get(f"/api/comparisons/{comparison['id']}").json()["analysis"]
+    assert current["action_decisions"]["current"][action_key]["decision"] == "not_applicable"
+    assert len(current["action_decisions"]["history"]) == 4
+    assert current["result"]["actions"][0]["action_key"] == action_key
+
+
 def test_invalid_citations_never_appear_as_success_and_retry_works(harness):
     client, fetcher, service, model = harness
     service.settings.apertus_base_url = "https://model.example/v1"

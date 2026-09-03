@@ -6,15 +6,20 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUpRight,
+  Bell,
+  CalendarClock,
   Check,
   ChevronLeft,
   ChevronRight,
   FileText,
   GitCompareArrows,
   Loader2,
+  ListChecks,
   MessageSquare,
   Send,
   Sparkles,
+  UserRound,
+  XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,6 +32,7 @@ import {
   useResource,
 } from "@/lib/api";
 import type {
+  ActionDecision,
   AIHistoryItem,
   AIHistoryPage,
   Analysis,
@@ -36,6 +42,7 @@ import type {
   Comparison,
   Coverage,
   Health,
+  Impact,
   Job,
   Version,
 } from "@/lib/types";
@@ -46,6 +53,36 @@ import { useAuth } from "./auth-gate";
 
 const PAGE_SIZE = 40;
 const JOB_TERMINAL_STATES = new Set(["succeeded", "failed", "cancelled"]);
+type ComparisonLocale = "de" | "fr" | "it" | "rm" | "en";
+const comparisonCopy = {
+  en: { overview: "Deterministic change overview", material: "Material", reviewFirst: "Review first", addedRemoved: "Added / removed", newDeleted: "New or deleted units", movedRenumbered: "Moved / renumbered", structural: "Structural, kept out of AI", formatting: "Formatting only", hidden: "Hidden by default", needsReview: "Needs review", uncertain: "Uncertain match" },
+  de: { overview: "Deterministische Änderungsübersicht", material: "Wesentlich", reviewFirst: "Zuerst prüfen", addedRemoved: "Hinzugefügt / entfernt", newDeleted: "Neue oder gelöschte Einheiten", movedRenumbered: "Verschoben / neu nummeriert", structural: "Strukturell, nicht an KI gesendet", formatting: "Nur Formatierung", hidden: "Standardmässig ausgeblendet", needsReview: "Prüfung nötig", uncertain: "Unsichere Zuordnung" },
+  fr: { overview: "Aperçu déterministe des changements", material: "Essentiel", reviewFirst: "À examiner d’abord", addedRemoved: "Ajouté / supprimé", newDeleted: "Unités nouvelles ou supprimées", movedRenumbered: "Déplacé / renuméroté", structural: "Structurel, exclu de l’IA", formatting: "Mise en forme seulement", hidden: "Masqué par défaut", needsReview: "À vérifier", uncertain: "Correspondance incertaine" },
+  it: { overview: "Panoramica deterministica delle modifiche", material: "Sostanziale", reviewFirst: "Da esaminare prima", addedRemoved: "Aggiunto / rimosso", newDeleted: "Unità nuove o eliminate", movedRenumbered: "Spostato / rinumerato", structural: "Strutturale, escluso dall’IA", formatting: "Solo formattazione", hidden: "Nascosto per impostazione predefinita", needsReview: "Da verificare", uncertain: "Corrispondenza incerta" },
+  rm: { overview: "Survista deterministica da las midadas", material: "Essenzial", reviewFirst: "Examinar l’emprim", addedRemoved: "Agiuntà / eliminà", newDeleted: "Unitads novas u eliminadas", movedRenumbered: "Spustà / renumerà", structural: "Structural, exclus da l’IA", formatting: "Mo furmataziun", hidden: "Zuppentà tenor standard", needsReview: "Da verifitgar", uncertain: "Attribuziun intscherta" },
+} satisfies Record<ComparisonLocale, Record<string, string>>;
+
+function useComparisonLocale(): ComparisonLocale {
+  const [locale, setLocale] = useState<ComparisonLocale>("en");
+  useEffect(() => {
+    const language = navigator.language.toLowerCase().split("-")[0];
+    if (["de", "fr", "it", "rm", "en"].includes(language))
+      setLocale(language as ComparisonLocale);
+  }, []);
+  return locale;
+}
+
+const localizedValues: Record<ComparisonLocale, Record<string, string>> = {
+  en: { confirmed: "Confirmed", supported: "Supported", possible: "Possible", needs_review: "Needs review", accepted: "Accepted", assigned: "Assigned", scheduled: "Scheduled", dismissed: "Dismissed", not_applicable: "Not applicable", ready: "Ready", limited: "Limited", failed: "Failed", cancelled: "Cancelled" },
+  de: { confirmed: "Bestätigt", supported: "Belegt", possible: "Möglich", needs_review: "Prüfung nötig", accepted: "Angenommen", assigned: "Zugewiesen", scheduled: "Terminiert", dismissed: "Verworfen", not_applicable: "Nicht anwendbar", ready: "Bereit", limited: "Begrenzt", failed: "Fehlgeschlagen", cancelled: "Abgebrochen" },
+  fr: { confirmed: "Confirmé", supported: "Étayé", possible: "Possible", needs_review: "À vérifier", accepted: "Accepté", assigned: "Attribué", scheduled: "Planifié", dismissed: "Écarté", not_applicable: "Non applicable", ready: "Prêt", limited: "Limité", failed: "Échec", cancelled: "Annulé" },
+  it: { confirmed: "Confermato", supported: "Supportato", possible: "Possibile", needs_review: "Da verificare", accepted: "Accettato", assigned: "Assegnato", scheduled: "Pianificato", dismissed: "Scartato", not_applicable: "Non applicabile", ready: "Pronto", limited: "Limitato", failed: "Non riuscito", cancelled: "Annullato" },
+  rm: { confirmed: "Confermà", supported: "Cumprovà", possible: "Pussaivel", needs_review: "Da verifitgar", accepted: "Acceptà", assigned: "Attribuì", scheduled: "Planisà", dismissed: "Refusà", not_applicable: "Betg applitgabel", ready: "Pront", limited: "Limità", failed: "Betg reussì", cancelled: "Interrut" },
+};
+
+function localLabel(value: string, locale: ComparisonLocale) {
+  return localizedValues[locale][value] || label(value);
+}
 
 async function waitForJob(initial: Job): Promise<Job> {
   let current = initial;
@@ -63,6 +100,8 @@ async function waitForJob(initial: Job): Promise<Job> {
 
 export function ComparisonView({ id }: { id: string }) {
   const { canManage } = useAuth();
+  const uiLocale = useComparisonLocale();
+  const ui = comparisonCopy[uiLocale];
   const [polling, setPolling] = useState(true);
   const { data, error: loadError } = useResource<Comparison>(
     "/comparisons/" + id,
@@ -74,6 +113,8 @@ export function ComparisonView({ id }: { id: string }) {
     [page, setPage] = useState(0);
   const [jumpTarget, setJumpTarget] = useState(""),
     [analysing, setAnalysing] = useState(false),
+    [analysisJob, setAnalysisJob] = useState<Job | null>(null),
+    [analysisNotice, setAnalysisNotice] = useState(""),
     [confirmingIdentity, setConfirmingIdentity] = useState(""),
     [error, setError] = useState("");
   const identityBlocked = ["mismatch", "unknown"].includes(
@@ -97,9 +138,44 @@ export function ComparisonView({ id }: { id: string }) {
     ? data.diff.classification_counts.structural +
       data.diff.classification_counts.formatting
     : 0;
+  const effectiveAnalysisJob = analysisJob || data?.analysis_job || null;
+  const analysisJobActive =
+    !!effectiveAnalysisJob &&
+    !JOB_TERMINAL_STATES.has(effectiveAnalysisJob.state);
   useEffect(() => {
-    setPolling(analysing || analysis?.status === "pending");
-  }, [analysing, analysis?.status]);
+    setPolling(analysisJobActive || analysing || analysis?.status === "pending");
+  }, [analysisJobActive, analysing, analysis?.status]);
+  useEffect(() => {
+    if (!data?.analysis_job) return;
+    setAnalysisJob((current) =>
+      !current || current.id === data.analysis_job?.id ? data.analysis_job! : current,
+    );
+  }, [data?.analysis_job]);
+  useEffect(() => {
+    if (!analysisJobActive || !effectiveAnalysisJob) return;
+    const jobId = effectiveAnalysisJob.id;
+    const timer = window.setInterval(async () => {
+      try {
+        const next = await api<Job>("/jobs/" + jobId);
+        setAnalysisJob(next);
+        if (JOB_TERMINAL_STATES.has(next.state)) {
+          window.clearInterval(timer);
+          setAnalysing(false);
+          if (next.state === "succeeded") {
+            setAnalysisNotice("Impact report ready. The saved result is open below.");
+            if (document.hidden && "Notification" in window && Notification.permission === "granted")
+              new Notification("Helvetic Lens", { body: "Impact report ready." });
+          } else {
+            setAnalysisNotice(`Impact analysis ${next.state}. The exact comparison remains available.`);
+          }
+          refreshWorkspace();
+        }
+      } catch (cause) {
+        setError(errorText(cause));
+      }
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [analysisJobActive, effectiveAnalysisJob?.id]);
   useEffect(() => {
     if (jumpTarget)
       document
@@ -127,21 +203,33 @@ export function ComparisonView({ id }: { id: string }) {
       const queued = await api<Job>("/comparisons/" + id + "/analyse-jobs", {
         method: "POST",
       });
-      const job = await waitForJob(queued);
-      const result = job.result?.data as Analysis | undefined;
-      if (job.state !== "succeeded")
-        setError(
-          job.error?.detail || "Apertus could not analyse this change dossier.",
-        );
-      else if (result?.status === "failed")
-        setError(
-          result.error || "Apertus could not analyse this change dossier.",
-        );
+      setAnalysisJob(queued);
+      setAnalysisNotice(
+        JOB_TERMINAL_STATES.has(queued.state)
+          ? "Impact report finished. Opening the saved result."
+          : "Impact analysis was submitted. You can keep reviewing the exact changes or leave this page.",
+      );
+      if (queued.state === "failed")
+        setError(queued.error?.detail || "Apertus could not analyse this change dossier.");
       refreshWorkspace();
     } catch (cause) {
       setError(errorText(cause));
     } finally {
+      if (!analysisJobActive) setAnalysing(false);
+    }
+  }
+  async function cancelAnalysis() {
+    if (!effectiveAnalysisJob) return;
+    try {
+      const cancelled = await api<Job>(`/jobs/${effectiveAnalysisJob.id}/cancel`, {
+        method: "POST",
+      });
+      setAnalysisJob(cancelled);
       setAnalysing(false);
+      setAnalysisNotice("Impact analysis cancelled. The exact comparison remains available.");
+      refreshWorkspace();
+    } catch (cause) {
+      setError(errorText(cause));
     }
   }
   async function confirmIdentity(versionId: string) {
@@ -336,34 +424,43 @@ export function ComparisonView({ id }: { id: string }) {
                   </div>
                 </div>
                 {data.diff.classification_counts && (
-                  <div className="triage-summary">
+                  <div className="triage-summary" aria-label={ui.overview}>
                     <div>
-                      <span>Material</span>
+                      <span>{ui.material}</span>
                       <strong>
                         {data.diff.classification_counts.substantive}
                       </strong>
-                      <small>Review first</small>
+                      <small>{ui.reviewFirst}</small>
                     </div>
                     <div>
-                      <span>Renumbered / moved</span>
+                      <span>{ui.addedRemoved}</span>
                       <strong>
-                        {data.diff.classification_counts.structural}
+                        {(data.diff.semantic_counts?.added || 0) +
+                          (data.diff.semantic_counts?.removed || 0)}
                       </strong>
-                      <small>Kept out of AI</small>
+                      <small>{ui.newDeleted}</small>
                     </div>
                     <div>
-                      <span>Formatting only</span>
+                      <span>{ui.movedRenumbered}</span>
+                      <strong>
+                        {(data.diff.semantic_counts?.moved || 0) +
+                          (data.diff.semantic_counts?.renumbered || 0)}
+                      </strong>
+                      <small>{ui.structural}</small>
+                    </div>
+                    <div>
+                      <span>{ui.formatting}</span>
                       <strong>
                         {data.diff.classification_counts.formatting}
                       </strong>
-                      <small>Hidden by default</small>
+                      <small>{ui.hidden}</small>
                     </div>
                     <div>
-                      <span>Needs review</span>
+                      <span>{ui.needsReview}</span>
                       <strong>
                         {data.diff.classification_counts.uncertain}
                       </strong>
-                      <small>Uncertain match</small>
+                      <small>{ui.uncertain}</small>
                     </div>
                   </div>
                 )}
@@ -473,31 +570,53 @@ export function ComparisonView({ id }: { id: string }) {
                     </p>
                   </div>
                 )}
-                <div className="diff-rows">
-                  {visible.map((item) => (
-                    <div
-                      id={item.id}
-                      className={
-                        "diff-row diff-" +
-                        item.kind +
-                        (jumpTarget === item.id ? " diff-focused" : "")
-                      }
-                      key={item.id}
-                    >
-                      <DiffSide
-                        item={item}
-                        side="old"
-                        version={data.old_version}
-                      />
-                      <DiffSide
-                        item={item}
-                        side="new"
-                        version={data.new_version}
-                      />
-                    </div>
-                  ))}
-                </div>
-                {items.length > 0 && (
+                {filter === "substantive" && data.diff.change_clusters?.length ? (
+                  <div className="semantic-clusters">
+                    {data.diff.change_clusters.map((cluster, index) => {
+                      const clusterItems = cluster.change_ids
+                        .map((changeId) => changes.find((item) => item.id === changeId))
+                        .filter((item): item is Change => !!item);
+                      const first = clusterItems[0];
+                      return (
+                        <article key={cluster.id}>
+                          <div className="semantic-cluster-heading">
+                            <span>Change group {index + 1}</span>
+                            <strong>{cluster.change_ids.length} exact change{cluster.change_ids.length === 1 ? "" : "s"}</strong>
+                          </div>
+                          <p>{cluster.classifications.map(label).join(" · ")}</p>
+                          <p className="semantic-cluster-units">
+                            Before: {cluster.old_unit_ids[0] || "no earlier unit"} · After: {cluster.new_unit_ids[0] || "no current unit"}
+                          </p>
+                          <p>{(first?.new?.text || first?.old?.text || "Saved legal-unit change").slice(0, 260)}</p>
+                          {cluster.ambiguous && <span className="needs-review-label">Needs review · uncertain match</span>}
+                          {first && (
+                            <Button size="sm" variant="outline" onClick={() => jump(first.id)}>
+                              <FileText size={13} /> View exact evidence
+                            </Button>
+                          )}
+                        </article>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="diff-rows">
+                    {visible.map((item) => (
+                      <div
+                        id={item.id}
+                        className={
+                          "diff-row diff-" +
+                          item.kind +
+                          (jumpTarget === item.id ? " diff-focused" : "")
+                        }
+                        key={item.id}
+                      >
+                        <DiffSide item={item} side="old" version={data.old_version} />
+                        <DiffSide item={item} side="new" version={data.new_version} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {filter !== "substantive" && items.length > 0 && (
                   <div className="pagination">
                     <span>
                       {page * PAGE_SIZE + 1}–
@@ -540,14 +659,19 @@ export function ComparisonView({ id }: { id: string }) {
                 <div className="panel-header">
                   <div className="flex items-center gap-2">
                     <Sparkles size={18} className="text-primary" />
-                    <h2>Apertus impact</h2>
+                    <h2>Current impact report</h2>
                   </div>
                   {analysis?.result && (
                     <Status value={analysis.result.impact} />
                   )}
                 </div>
                 <div className="panel-body">
-                  <span className="eyebrow">KNOW WHAT IT MEANS</span>
+                  <span className="eyebrow">WHAT CHANGED · WHY IT MAY MATTER · REVIEW PLAN</span>
+                  {analysisNotice && (
+                    <div className="analysis-notice" role="status" aria-live="polite">
+                      <Bell size={15} /> {analysisNotice}
+                    </div>
+                  )}
                   {!health?.apertus.configured && (
                     <div className="model-unavailable">
                       <Sparkles size={25} />
@@ -586,12 +710,20 @@ export function ComparisonView({ id }: { id: string }) {
                       visible. Open AI history for the failed attempt.
                     </div>
                   )}
-                  {analysis?.status === "pending" || analysing ? (
-                    <Loading text="Apertus is reviewing the meaningful-change dossier…" />
-                  ) : analysis?.status === "succeeded" && analysis.result ? (
+                  {analysisJobActive && effectiveAnalysisJob && (
+                    <AnalysisJobProgress job={effectiveAnalysisJob} onCancel={cancelAnalysis} />
+                  )}
+                  {!analysisJobActive && effectiveAnalysisJob && (
+                    <AnalysisJobOutcome job={effectiveAnalysisJob} />
+                  )}
+                  {analysis?.status === "succeeded" && analysis.result ? (
                     <>
+                      <div className="impact-report-heading">
+                        <span className="eyebrow">WHAT CHANGED</span>
+                        <h3>{analysis.result.headline || analysis.result.summary}</h3>
+                      </div>
                       <p className="impact-summary">
-                        {analysis.result.headline || analysis.result.summary}
+                        {analysis.result.summary}
                       </p>
                       <p className="text-sm muted">
                         {analysis.result.reason}{" "}
@@ -601,11 +733,13 @@ export function ComparisonView({ id }: { id: string }) {
                         <div className="impact-grade-line">
                           <span>
                             Potential severity:{" "}
-                            {analysis.result.materiality ||
-                              analysis.result.impact}
+                            {localLabel(
+                              analysis.result.materiality || analysis.result.impact,
+                              uiLocale,
+                            )}
                           </span>
                           <span>
-                            Evidence: {label(analysis.result.evidence_grade)}
+                            Evidence: {localLabel(analysis.result.evidence_grade, uiLocale)}
                           </span>
                         </div>
                       )}
@@ -616,13 +750,13 @@ export function ComparisonView({ id }: { id: string }) {
                       </div>
                       {!!analysis.result.material_changes?.length && (
                         <div className="impact-report-section">
-                          <span className="eyebrow">MATERIAL CHANGES</span>
+                          <span className="eyebrow">MATERIAL CHANGE CARDS</span>
                           <div className="impact-change-list">
                             {analysis.result.material_changes.map((change) => (
                               <article key={change.change_id}>
                                 <div className="impact-change-title">
                                   <strong>{change.title}</strong>
-                                  <span>{label(change.evidence_grade)}</span>
+                                  <span>{localLabel(change.evidence_grade, uiLocale)}</span>
                                 </div>
                                 <p>
                                   {change.old_unit?.label || "No earlier unit"}{" "}
@@ -630,7 +764,37 @@ export function ComparisonView({ id }: { id: string }) {
                                   {change.new_unit?.label || "No current unit"}
                                 </p>
                                 <p>{change.explanation}</p>
+                                <p className="material-card-meta">
+                                  Organization relevance: {localLabel(
+                                    analysis.result!.organization_applicability?.status || "unknown",
+                                    uiLocale,
+                                  )}
+                                  {analysis.result!.important_dates?.length
+                                    ? ` · ${analysis.result!.important_dates.length} date or obligation finding${analysis.result!.important_dates.length === 1 ? "" : "s"}`
+                                    : " · No supported date or obligation found"}
+                                </p>
+                                <p className="material-card-meta">
+                                  Dates / obligations: {analysis.result!.important_dates?.length
+                                    ? analysis.result!.important_dates
+                                        .map((item) => `${item.label}: ${item.date || label(item.status)}`)
+                                        .join("; ")
+                                    : "None supported by the saved evidence"}
+                                </p>
+                                <p className="material-card-meta">
+                                  Assumptions: {analysis.result!.uncertainties?.length
+                                    ? analysis.result!.uncertainties.join("; ")
+                                    : "None recorded"}
+                                </p>
                                 <Citations values={change.citations} />
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="mt-2"
+                                  onClick={() => jump(change.change_id)}
+                                >
+                                  <FileText size={13} /> View exact evidence
+                                </Button>
                               </article>
                             ))}
                           </div>
@@ -638,21 +802,21 @@ export function ComparisonView({ id }: { id: string }) {
                       )}
                       {analysis.result.organization_applicability && (
                         <div className="impact-report-section">
-                          <span className="eyebrow">
-                            ORGANIZATION APPLICABILITY
-                          </span>
+                          <span className="eyebrow">WHY IT MAY MATTER</span>
                           <div className="impact-applicability">
                             <strong>
-                              {label(
+                              {localLabel(
                                 analysis.result.organization_applicability
                                   .status,
+                                uiLocale,
                               )}
                             </strong>
                             <span>
                               Evidence:{" "}
-                              {label(
+                              {localLabel(
                                 analysis.result.organization_applicability
                                   .evidence_grade,
+                                uiLocale,
                               )}
                             </span>
                             <p>
@@ -696,12 +860,12 @@ export function ComparisonView({ id }: { id: string }) {
                       {analysis.result.actions.length > 0 ? (
                         <>
                           <div className="action-heading">
-                            <span className="eyebrow">KNOW WHAT TO DO</span>
-                            <h3>Suggested next steps</h3>
+                            <span className="eyebrow">REVIEW PLAN</span>
+                            <h3>Suggested review actions</h3>
                           </div>
                           <ol className="action-list">
                             {analysis.result.actions.map((action, index) => (
-                              <li key={index}>
+                              <li key={action.action_key || index}>
                                 <span>{index + 1}</span>
                                 <div>
                                   <strong>{action.title || action.text}</strong>
@@ -723,6 +887,18 @@ export function ComparisonView({ id }: { id: string }) {
                                     </p>
                                   )}
                                   <Citations values={action.citations} />
+                                  {action.action_key && (
+                                    <ReviewActionControls
+                                      comparisonId={id}
+                                      analysisId={analysis.id}
+                                      action={action}
+                                      current={analysis.action_decisions?.current?.[action.action_key]}
+                                      history={analysis.action_decisions?.history?.filter(
+                                        (item) => item.action_key === action.action_key,
+                                      ) || []}
+                                      canManage={canManage}
+                                    />
+                                  )}
                                 </div>
                               </li>
                             ))}
@@ -739,15 +915,10 @@ export function ComparisonView({ id }: { id: string }) {
                           </p>
                         </div>
                       )}
-                      <CoverageNote coverage={analysis.coverage} />
-                      <PlanNote plan={analysis.analysis_plan} />
-                      <p className="text-xs muted">
-                        Generated {dateTime(analysis.created_at)} ·{" "}
-                        {analysis.model}
-                      </p>
+                      <ReportProvenance analysis={analysis} comparison={data} />
                     </>
                   ) : (
-                    health?.apertus.configured && (
+                    !analysisJobActive && health?.apertus.configured && (
                       <p className="text-sm muted">
                         {!data.diff.changed
                           ? "There are no changes to assess. You can still ask questions about this document."
@@ -765,23 +936,23 @@ export function ComparisonView({ id }: { id: string }) {
                       className="w-full mt-3"
                       variant="outline"
                       disabled={
-                        analysing ||
-                        analysis?.status === "pending" ||
+                        analysisJobActive ||
+                        (analysis?.status === "succeeded" && !analysis.stale && effectiveAnalysisJob?.state === "succeeded") ||
                         !health?.apertus.configured ||
                         identityBlocked ||
                         !canAnalyseMeaningfulChanges
                       }
                       onClick={analyse}
                     >
-                      {analysing ? (
+                      {analysisJobActive ? (
                         <Loader2 className="animate-spin" />
                       ) : (
                         <Sparkles />
                       )}
-                      {analysis?.stale || analysis?.status === "failed"
+                      {analysis?.stale || analysis?.status === "failed" || effectiveAnalysisJob?.state === "failed"
                         ? "Retry impact analysis"
                         : analysis?.status === "succeeded"
-                          ? "Load saved assessment"
+                          ? "Current report saved"
                           : "Analyse with Apertus"}
                     </Button>
                   )}
@@ -894,6 +1065,213 @@ function DiffSide({
       ) : (
         <p className="no-passage">No passage on this side</p>
       )}
+    </div>
+  );
+}
+
+function AnalysisJobProgress({ job, onCancel }: { job: Job; onCancel: () => void }) {
+  const locale = useComparisonLocale();
+  const activeStep = job.steps.find((step) => step.state === "running") ||
+    job.steps.find((step) => step.state === "pending");
+  const state = (() => {
+    if (["queued", "dispatched", "retrying", "waiting_for_model"].includes(job.state))
+      return job.queue_position
+        ? `Queued · position ${job.queue_position}; start estimate is not yet available`
+        : "Queued · waiting for an available local AI slot";
+    if (activeStep?.position === 1) return "Preparing changes";
+    if (activeStep?.position === 2)
+      return `Analysing ${activeStep.progress.current}/${activeStep.progress.total} evidence groups`;
+    if (activeStep?.position === 3) return "Validating evidence";
+    return localLabel(job.state, locale);
+  })();
+  const percent = Math.round(
+    (Math.max(0, job.progress.current) / Math.max(1, job.progress.total)) * 100,
+  );
+  return (
+    <div className="analysis-job" role="status" aria-live="polite">
+      <div className="analysis-job-title">
+        <Loader2 className="animate-spin" size={17} />
+        <div>
+          <strong>{state}</strong>
+          <span>Saved background job · attempt {job.attempts}/{job.max_attempts}</span>
+        </div>
+      </div>
+      <div
+        className="analysis-job-track"
+        role="progressbar"
+        aria-label={state}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={percent}
+      >
+        <span style={{ width: `${percent}%` }} />
+      </div>
+      <p>
+        The deterministic overview and exact evidence remain usable. Refreshing or leaving
+        this page will not cancel the job.
+      </p>
+      <Button type="button" size="sm" variant="outline" onClick={onCancel}>
+        <XCircle size={14} /> Cancel analysis
+      </Button>
+    </div>
+  );
+}
+
+function AnalysisJobOutcome({ job }: { job: Job }) {
+  const locale = useComparisonLocale();
+  const result = job.result?.data as Analysis | undefined;
+  const state =
+    job.state === "succeeded"
+      ? result?.coverage?.limited
+        ? "limited"
+        : "ready"
+      : job.state;
+  return (
+    <div className={`analysis-job-outcome ${state}`} role="status">
+      <strong>{localLabel(state, locale)}</strong>
+      <span>
+        {job.finished_at ? dateTime(job.finished_at) : dateTime(job.updated_at)}
+        {job.error?.detail ? ` · ${job.error.detail}` : " · saved background job"}
+      </span>
+    </div>
+  );
+}
+
+function ReviewActionControls({
+  comparisonId,
+  analysisId,
+  action,
+  current,
+  history,
+  canManage,
+}: {
+  comparisonId: string;
+  analysisId: string;
+  action: Impact["actions"][number];
+  current?: ActionDecision;
+  history: ActionDecision[];
+  canManage: boolean;
+}) {
+  const locale = useComparisonLocale();
+  const [saved, setSaved] = useState<ActionDecision | undefined>(current);
+  const [events, setEvents] = useState(history);
+  const [busy, setBusy] = useState("");
+  const [error, setError] = useState("");
+  useEffect(() => {
+    setSaved(current);
+    setEvents(history);
+  }, [current, history]);
+  async function decide(decision: ActionDecision["decision"]) {
+    let assigned_to: string | null = null;
+    let scheduled_for: string | null = null;
+    let rationale: string | null = null;
+    if (decision === "assigned") {
+      assigned_to = window.prompt("Assign this review action to", action.owner_role || "")?.trim() || null;
+      if (!assigned_to) return;
+    }
+    if (decision === "scheduled") {
+      const date = window.prompt("Schedule review for (YYYY-MM-DD)", action.due_date || "")?.trim();
+      if (!date) return;
+      const localDate = new Date(`${date}T09:00:00`);
+      if (Number.isNaN(localDate.getTime())) {
+        setError("Use a valid date in YYYY-MM-DD format.");
+        return;
+      }
+      scheduled_for = localDate.toISOString();
+    }
+    if (["dismissed", "not_applicable"].includes(decision)) {
+      rationale = window.prompt("Record the reason for your organization")?.trim() || null;
+      if (!rationale) return;
+    }
+    setBusy(decision);
+    setError("");
+    try {
+      const page = await api<{ current: Record<string, ActionDecision>; history: ActionDecision[] }>(
+        `/comparisons/${comparisonId}/analyses/${analysisId}/actions/${encodeURIComponent(action.action_key || "")}/decisions`,
+        {
+          method: "POST",
+          body: JSON.stringify({ decision, assigned_to, scheduled_for, rationale }),
+        },
+      );
+      setSaved(page.current[action.action_key || ""]);
+      setEvents(page.history.filter((item) => item.action_key === action.action_key));
+      refreshWorkspace();
+    } catch (cause) {
+      setError(errorText(cause));
+    } finally {
+      setBusy("");
+    }
+  }
+  return (
+    <div className="review-action-controls">
+      {saved && (
+        <div className="action-decision-current" role="status">
+          <strong>{localLabel(saved.decision, locale)}</strong>
+          <span>
+            {saved.assigned_to ? ` · ${saved.assigned_to}` : ""}
+            {saved.scheduled_for ? ` · ${dateTime(saved.scheduled_for)}` : ""}
+            {` · ${saved.actor_label}, ${dateTime(saved.created_at)}`}
+          </span>
+          {saved.rationale && <p>{saved.rationale}</p>}
+        </div>
+      )}
+      {canManage && (
+        <div className="action-decision-buttons" aria-label="Review action decision">
+          <Button size="sm" variant="outline" disabled={!!busy} onClick={() => decide("accepted")}>
+            <Check size={13} /> Accept
+          </Button>
+          <Button size="sm" variant="outline" disabled={!!busy} onClick={() => decide("assigned")}>
+            <UserRound size={13} /> Assign
+          </Button>
+          <Button size="sm" variant="outline" disabled={!!busy} onClick={() => decide("scheduled")}>
+            <CalendarClock size={13} /> Schedule
+          </Button>
+          <Button size="sm" variant="ghost" disabled={!!busy} onClick={() => decide("dismissed")}>
+            Dismiss
+          </Button>
+          <Button size="sm" variant="ghost" disabled={!!busy} onClick={() => decide("not_applicable")}>
+            Not applicable
+          </Button>
+        </div>
+      )}
+      {error && <ErrorNote message={error} />}
+      {events.length > 1 && (
+        <details className="action-decision-history">
+          <summary>{events.length} recorded decisions</summary>
+          <ol>
+            {events.map((item) => (
+              <li key={item.id}>
+                {localLabel(item.decision, locale)} · {item.actor_label} · {dateTime(item.created_at)}
+                {item.rationale ? ` — ${item.rationale}` : ""}
+              </li>
+            ))}
+          </ol>
+        </details>
+      )}
+    </div>
+  );
+}
+
+function ReportProvenance({ analysis, comparison }: { analysis: Analysis; comparison: Comparison }) {
+  const provenance = analysis.provenance || {};
+  const execution = analysis.analysis_plan?.execution;
+  const outputLocale = analysis.result?.output_locale || "not recorded";
+  return (
+    <div className="report-provenance">
+      <div className="report-provenance-title">
+        <ListChecks size={15} />
+        <strong>Report provenance</strong>
+        <a href="#ai-history">Prior reports</a>
+      </div>
+      <dl>
+        <div><dt>Generated</dt><dd>{dateTime(analysis.created_at)}</dd></div>
+        <div><dt>Versions</dt><dd>{comparison.old_version.id.slice(0, 8)} → {comparison.new_version.id.slice(0, 8)}</dd></div>
+        <div><dt>Profile</dt><dd>revision {execution?.profile_revision ?? "not recorded"}</dd></div>
+        <div><dt>Model/runtime</dt><dd>{analysis.model} · {String(provenance.runtime_version || provenance.backend || "not recorded")}</dd></div>
+        <div><dt>Prompt / locale</dt><dd>revision {analysis.prompt_revision} · {outputLocale}</dd></div>
+      </dl>
+      <CoverageNote coverage={analysis.coverage} />
+      <PlanNote plan={analysis.analysis_plan} />
     </div>
   );
 }
