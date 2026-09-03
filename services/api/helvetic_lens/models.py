@@ -40,18 +40,31 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(Text)
     name: Mapped[str] = mapped_column(String(200))
     active: Mapped[bool] = mapped_column(Boolean, default=True)
+    platform_admin: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 class OrganizationMembership(Base):
     __tablename__ = "organization_memberships"
-    __table_args__ = (
-        UniqueConstraint("organization_id", "user_id", name="uq_membership_organization_user"),
-    )
+    __table_args__ = (UniqueConstraint("organization_id", "user_id", name="uq_membership_organization_user"),)
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
     role: Mapped[str] = mapped_column(String(40), default="organization_admin")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class OrganizationInvitation(Base):
+    __tablename__ = "organization_invitations"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    email: Mapped[str] = mapped_column(String(320), index=True)
+    role: Mapped[str] = mapped_column(String(40), default="viewer")
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    invited_by_user_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
@@ -315,9 +328,7 @@ class OrganizationQuota(Base):
 class FeedState(Base):
     __tablename__ = "feed_states"
     __table_args__ = (
-        UniqueConstraint(
-            "organization_id", "connector", "stream", name="uq_feed_state_organization_stream"
-        ),
+        UniqueConstraint("organization_id", "connector", "stream", name="uq_feed_state_organization_stream"),
     )
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
@@ -462,6 +473,7 @@ class OutboxMessage(Base):
 # models makes a newly persisted tenant-owned record difficult to forget.
 ORGANIZATION_SCOPED_MODELS = (
     OrganizationMembership,
+    OrganizationInvitation,
     DocumentWatch,
     Source,
     Observation,

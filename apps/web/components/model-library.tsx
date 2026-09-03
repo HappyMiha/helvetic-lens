@@ -29,6 +29,7 @@ import {
 } from "@/lib/api";
 import type { Job, LocalModel, LocalModelInventory } from "@/lib/types";
 import { ErrorNote, Loading, SuccessNote } from "./common";
+import { useAuth } from "./auth-gate";
 
 function bytes(value: number) {
   if (!value) return "0 GB";
@@ -176,6 +177,7 @@ function ModelCard({
   busy: string;
   command: (model: LocalModel, action: string) => Promise<void>;
 }) {
+  const { isPlatformAdmin } = useAuth();
   const action = modelAction(model);
   const progress = model.download.total_bytes
     ? (model.download.downloaded_bytes / model.download.total_bytes) * 100
@@ -239,7 +241,7 @@ function ModelCard({
           </p>
         </details>
         <ErrorNote message={model.error} />
-        {!model.license_accepted ? (
+        {isPlatformAdmin && (!model.license_accepted ? (
           <div className="license-box">
             <p className="m-0 text-sm">
               Review{" "}
@@ -295,7 +297,7 @@ function ModelCard({
               </Button>
             )}
           </div>
-        )}
+        ))}
       </div>
     </article>
   );

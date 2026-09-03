@@ -30,6 +30,7 @@ import type {
 } from "@/lib/types";
 import { ErrorNote, Loading, SuccessNote } from "./common";
 import { ProfileDialog, Shell } from "./shell";
+import { useAuth } from "./auth-gate";
 
 type KeyAction = "keep" | "replace" | "remove" | "environment";
 type Provider = "custom" | "docker" | "infomaniak";
@@ -68,6 +69,7 @@ function draftValues(settings: ApertusSettings) {
 }
 
 export function SettingsPage() {
+  const { canManage } = useAuth();
   const configuration = useResource<ApertusSettings>("/settings/apertus");
   const { data: health } = useResource<Health>("/health");
   const { data: profile } = useResource<Profile>("/profile");
@@ -88,9 +90,9 @@ export function SettingsPage() {
       </div>
       <ErrorNote message={configuration.error} />
       {notice && <SuccessNote>{notice}</SuccessNote>}
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px] items-start">
+      <div className={`grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px] items-start ${canManage ? "" : "viewer-settings"}`}>
         {configuration.data ? (
-          <ApertusForm
+          <fieldset disabled={!canManage} className="border-0 p-0 m-0 min-w-0"><ApertusForm
             key={
               configuration.data.source + (configuration.data.updated_at || "")
             }
@@ -101,7 +103,7 @@ export function SettingsPage() {
               refreshWorkspace();
             }}
             onEdit={() => setNotice("")}
-          />
+          /></fieldset>
         ) : (
           <div className="panel p-6">
             <Loading />
@@ -141,13 +143,13 @@ export function SettingsPage() {
               {profile?.business_areas.join(" · ") ||
                 "Choose the business areas you want Apertus to consider."}
             </p>
-            <Button
+            {canManage && <Button
               variant="outline"
               size="sm"
               onClick={() => setProfileOpen(true)}
             >
               Edit company profile
-            </Button>
+            </Button>}
           </section>
           <section className="panel p-6">
             <h2 className="mb-3">Workspace</h2>
@@ -160,17 +162,17 @@ export function SettingsPage() {
               kept.
             </p>
             <p className="text-xs muted">
-              This is a local, single-user app. Keep the database and its
-              backups private, especially if you save a provider credential.
+              Workspace data is shared with organization members. Keep the database
+              and its backups private, especially if you save a provider credential.
             </p>
           </section>
         </div>
       </div>
-      <ProfileDialog
+      {canManage && <ProfileDialog
         open={profileOpen}
         onOpenChange={setProfileOpen}
         health={health}
-      />
+      />}
     </Shell>
   );
 }

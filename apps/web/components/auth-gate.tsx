@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { createContext, useContext, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useResource } from "@/lib/api";
@@ -13,7 +13,24 @@ export type AuthSession = {
   user?: { id: string; email: string; name: string };
   organization?: { id: string; name: string };
   role?: string;
+  platform_admin?: boolean;
+  organizations?: Array<{ id: string; name: string; role: string; current: boolean }>;
 };
+
+const AuthContext = createContext<AuthSession | null>(null);
+
+export function useAuth() {
+  const session = useContext(AuthContext);
+  return {
+    session,
+    canManage: !session?.authenticated || session.role === "organization_admin",
+    isPlatformAdmin: !session?.authenticated || !!session.platform_admin,
+  };
+}
+
+export function AdminOnly({ children }: { children: React.ReactNode }) {
+  return useAuth().canManage ? <>{children}</> : null;
+}
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -26,7 +43,14 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     if (data.authentication_required && !authenticationPage) {
       router.replace(`/login?next=${encodeURIComponent(pathname)}`);
     } else if (data.authenticated && authenticationPage) {
-      router.replace(data.onboarding_required ? "/onboarding" : "/");
+      const invitation = new URLSearchParams(window.location.search).get("invite");
+      router.replace(
+        invitation
+          ? `/organization?invite=${encodeURIComponent(invitation)}`
+          : data.onboarding_required
+            ? "/onboarding"
+            : "/",
+      );
     }
   }, [authenticationPage, data, pathname, router]);
 
@@ -41,5 +65,5 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   }
   if (error && !authenticationPage) return <>{children}</>;
   if (data?.authentication_required && !authenticationPage) return null;
-  return <>{children}</>;
+  return <AuthContext.Provider value={data}>{children}</AuthContext.Provider>;
 }

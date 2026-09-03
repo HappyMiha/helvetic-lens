@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { api, dateTime, errorText, label, refreshWorkspace } from "@/lib/api";
 import type { Job } from "@/lib/types";
 import { ErrorNote, Status } from "./common";
+import { AdminOnly } from "./auth-gate";
 
 export function DurableJobsPanel({ jobs }: { jobs: Job[] }) {
   const [busy, setBusy] = useState("");
@@ -83,7 +84,7 @@ export function DurableJobsPanel({ jobs }: { jobs: Job[] }) {
                     </Link>
                   </Button>
                 )}
-                {active && (
+                <AdminOnly>{active && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -97,8 +98,8 @@ export function DurableJobsPanel({ jobs }: { jobs: Job[] }) {
                     )}
                     Cancel
                   </Button>
-                )}
-                {!active && ["failed", "cancelled"].includes(job.state) && (
+                )}</AdminOnly>
+                <AdminOnly>{!active && ["failed", "cancelled"].includes(job.state) && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -112,7 +113,7 @@ export function DurableJobsPanel({ jobs }: { jobs: Job[] }) {
                     )}
                     Retry safely
                   </Button>
-                )}
+                )}</AdminOnly>
               </div>
             </div>
           );

@@ -41,6 +41,7 @@ import type {
 import { Citations, ErrorNote, Loading, Status } from "./common";
 import { AIHistory } from "./ai-history";
 import { Shell } from "./shell";
+import { useAuth } from "./auth-gate";
 
 const PAGE_SIZE = 40;
 const JOB_TERMINAL_STATES = new Set(["succeeded", "failed", "cancelled"]);
@@ -60,6 +61,7 @@ async function waitForJob(initial: Job): Promise<Job> {
 }
 
 export function ComparisonView({ id }: { id: string }) {
+  const { canManage } = useAuth();
   const [polling, setPolling] = useState(true);
   const { data, error: loadError } = useResource<Comparison>(
     "/comparisons/" + id,
@@ -269,7 +271,7 @@ export function ComparisonView({ id }: { id: string }) {
                     Select or attach another version
                   </Link>
                 </Button>
-                {[data.old_version, data.new_version]
+                {canManage && [data.old_version, data.new_version]
                   .filter(
                     (version) =>
                       version.id !== data.law.current_version_id &&
@@ -287,7 +289,7 @@ export function ComparisonView({ id }: { id: string }) {
                     </Button>
                   ))}
               </div>
-              {data.identity.status === "unknown" && (
+              {canManage && data.identity.status === "unknown" && (
                 <div className="flex flex-wrap gap-2 mt-3">
                   {[
                     { side: data.identity.old, version: data.old_version },
@@ -641,7 +643,7 @@ export function ComparisonView({ id }: { id: string }) {
                     )
                   )}
                   <ErrorNote message={error || analysis?.error} />
-                  <Button
+                  {canManage && <Button
                     className="w-full mt-3"
                     variant="outline"
                     disabled={
@@ -663,7 +665,7 @@ export function ComparisonView({ id }: { id: string }) {
                       : analysis?.status === "succeeded"
                         ? "Load saved assessment"
                         : "Analyse with Apertus"}
-                  </Button>
+                  </Button>}
                   <p className="review-note">
                     Indicative impact and actions support your review. Check the
                     evidence before making a legal or business decision.
@@ -687,10 +689,10 @@ export function ComparisonView({ id }: { id: string }) {
                 </section>
               ) : (
                 <>
-                  <AskPanel
+                  {canManage && <AskPanel
                     comparisonId={id}
                     configured={!!health?.apertus.configured}
-                  />
+                  />}
                   <AIHistory comparisonId={id} compact />
                 </>
               )}

@@ -43,6 +43,7 @@ import { AddDocumentDialog } from "./document-forms";
 import { DurableJobsPanel } from "./durable-jobs-panel";
 import { ScanPanel } from "./scan-panel";
 import { Shell } from "./shell";
+import { useAuth } from "./auth-gate";
 
 type DocumentForm = {
   mode: "law" | "source";
@@ -59,6 +60,7 @@ export function Workspace({
   view?: "overview" | "sources" | "activity";
 }) {
   const router = useRouter();
+  const { canManage } = useAuth();
   const laws = useResource<Law[]>("/laws", 5000);
   const sources = useResource<Source[]>("/sources", 8000);
   const scans = useResource<Scan[]>("/scans", 2000);
@@ -161,7 +163,7 @@ export function Workspace({
                 : "Real processing stages, saved comparisons, and clear outcomes."}
           </p>
         </div>
-        <div className="heading-actions">
+        {canManage && <div className="heading-actions">
           <Button variant="outline" onClick={() => setForm({ mode: "source" })}>
             <Globe2 />
             Connect website
@@ -170,7 +172,7 @@ export function Workspace({
             <Plus />
             Add a law
           </Button>
-        </div>
+        </div>}
       </div>
       <ErrorNote
         message={error || laws.error || sources.error || scans.error}
@@ -222,7 +224,7 @@ export function Workspace({
                 <h2>Your watchlist</h2>
                 <span className="count-pill">{records.length}</span>
               </div>
-              <div className="flex items-center gap-2">
+              {canManage && <div className="flex items-center gap-2">
                 {selectedActive.length > 0 && (
                   <Button
                     size="sm"
@@ -247,7 +249,7 @@ export function Workspace({
                   )}
                   Scan all active
                 </Button>
-              </div>
+              </div>}
             </div>
             {laws.loading && !laws.data ? (
               <Loading />
@@ -262,7 +264,7 @@ export function Workspace({
                   copy and see exactly what changed, without waiting for the
                   website to update.
                 </p>
-                <Button onClick={() => setForm({ mode: "law" })}>
+                {canManage && <><Button onClick={() => setForm({ mode: "law" })}>
                   <Plus />
                   Add your first document
                 </Button>
@@ -271,7 +273,7 @@ export function Workspace({
                   onClick={() => setForm({ mode: "source" })}
                 >
                   Or connect a regulatory website <ArrowRight size={14} />
-                </button>
+                </button></>}
               </div>
             ) : (
               <>
@@ -320,7 +322,7 @@ export function Workspace({
                   <table className="watch-table">
                     <thead>
                       <tr>
-                        <th className="checkbox-cell">
+                        {canManage && <th className="checkbox-cell">
                           <input
                             type="checkbox"
                             aria-label="Select all visible active documents"
@@ -344,7 +346,7 @@ export function Workspace({
                               )
                             }
                           />
-                        </th>
+                        </th>}
                         <th>DOCUMENT</th>
                         <th>LAST LIVE CHECK</th>
                         <th>APERTUS IMPACT</th>
@@ -355,7 +357,7 @@ export function Workspace({
                     <tbody>
                       {filtered.map((law) => (
                         <tr key={law.id}>
-                          <td className="checkbox-cell">
+                          {canManage && <td className="checkbox-cell">
                             <input
                               type="checkbox"
                               disabled={!law.active}
@@ -363,7 +365,7 @@ export function Workspace({
                               aria-label={"Select " + law.name}
                               onChange={() => toggle(law.id)}
                             />
-                          </td>
+                          </td>}
                           <td>
                             <Link
                               className="document-title"
@@ -477,10 +479,10 @@ export function Workspace({
                   portal. You stay in control of which documents enter the
                   watchlist.
                 </p>
-                <Button onClick={() => setForm({ mode: "source" })}>
+                {canManage && <Button onClick={() => setForm({ mode: "source" })}>
                   <Plus />
                   Connect your first website
-                </Button>
+                </Button>}
               </div>
             </section>
           ) : (
@@ -524,7 +526,7 @@ export function Workspace({
                     </div>
                   </dl>
                   <ErrorNote message={source.error} />
-                  <div className="source-actions">
+                  {canManage && <div className="source-actions">
                     <div className="flex items-center gap-1">
                       <Button
                         variant="outline"
@@ -555,7 +557,7 @@ export function Workspace({
                       <Search />
                       Discover documents
                     </Button>
-                  </div>
+                  </div>}
                 </section>
               ))}
             </div>
@@ -592,7 +594,7 @@ export function Workspace({
           )}
         </div>
       )}
-      {form && (
+      {canManage && form && (
         <AddDocumentDialog
           open
           onOpenChange={(open) => {
@@ -609,7 +611,7 @@ export function Workspace({
           }}
         />
       )}
-      {discoverySource && (
+      {canManage && discoverySource && (
         <DiscoveryDialog
           source={discoverySource}
           laws={records}
@@ -626,7 +628,7 @@ export function Workspace({
           }}
         />
       )}
-      <ConfirmDeleteDialog
+      {canManage && <ConfirmDeleteDialog
         open={!!deletingSource}
         onOpenChange={(open) => {
           if (!open) setDeletingSource(null);
@@ -641,7 +643,7 @@ export function Workspace({
         busy={busy === "delete-source"}
         error={deletingSource ? error : ""}
         onConfirm={() => void removeSource()}
-      />
+      />}
     </Shell>
   );
 }

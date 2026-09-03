@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { api, dateTime, errorText, label, refreshWorkspace } from "@/lib/api";
 import type { Scan } from "@/lib/types";
 import { ErrorNote, Status } from "./common";
+import { AdminOnly } from "./auth-gate";
 
 export function ScanPanel({
   scan,
@@ -70,7 +71,7 @@ export function ScanPanel({
             <span>
               · attempt {job.attempts}/{job.max_attempts}
             </span>
-            {!["succeeded", "failed", "cancelled"].includes(job.state) && (
+            <AdminOnly>{!["succeeded", "failed", "cancelled"].includes(job.state) && (
               <Button
                 variant="outline"
                 size="sm"
@@ -85,8 +86,8 @@ export function ScanPanel({
                 )}
                 Cancel
               </Button>
-            )}
-            {["failed", "cancelled"].includes(job.state) && (
+            )}</AdminOnly>
+            <AdminOnly>{["failed", "cancelled"].includes(job.state) && (
               <Button
                 variant="outline"
                 size="sm"
@@ -101,7 +102,7 @@ export function ScanPanel({
                 )}
                 Retry safely
               </Button>
-            )}
+            )}</AdminOnly>
           </div>
           {!compact && job.steps.length > 0 && (
             <ol className="event-list mt-2">

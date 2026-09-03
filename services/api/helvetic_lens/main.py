@@ -80,11 +80,33 @@ class RegisterInput(Input):
     password: str = Field(min_length=10, max_length=1024)
     name: str = Field(min_length=1, max_length=200)
     organization_name: str = Field(default="", max_length=200)
+    invitation_token: str = Field(default="", max_length=200)
 
 
 class LoginInput(Input):
     email: str = Field(min_length=3, max_length=320)
     password: str = Field(min_length=1, max_length=1024)
+
+
+class InvitationInput(Input):
+    email: str = Field(min_length=3, max_length=320)
+    role: Literal["organization_admin", "viewer"] = "viewer"
+
+
+class InvitationAcceptInput(Input):
+    token: str = Field(min_length=20, max_length=200)
+
+
+class MemberRoleInput(Input):
+    role: Literal["organization_admin", "viewer"]
+
+
+class OrganizationSwitchInput(Input):
+    organization_id: str
+
+
+class HandoverInput(Input):
+    membership_id: str
 
 
 def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
@@ -179,10 +201,15 @@ def create_app(
                 status_code=401,
                 content={"detail": "Sign in to continue.", "code": "authentication_required"},
             )
-        if identity and request.method in {"POST", "PUT", "PATCH", "DELETE"} and path not in {
-            "/api/auth/register",
-            "/api/auth/login",
-        }:
+        if (
+            identity
+            and request.method in {"POST", "PUT", "PATCH", "DELETE"}
+            and path
+            not in {
+                "/api/auth/register",
+                "/api/auth/login",
+            }
+        ):
             try:
                 auth.verify_csrf(
                     identity,
@@ -194,6 +221,37 @@ def create_app(
                     status_code=error.status,
                     content={"detail": error.message, "code": error.code},
                 )
+        viewer_allowed_mutations = {
+            "/api/auth/logout",
+            "/api/invitations/accept",
+            "/api/auth/session/organization",
+        }
+        if (
+            identity
+            and identity.role == "viewer"
+            and request.method in {"POST", "PUT", "PATCH", "DELETE"}
+            and path not in viewer_allowed_mutations
+        ):
+            return JSONResponse(
+                status_code=403,
+                content={
+                    "detail": "This workspace is read-only for your account.",
+                    "code": "viewer_read_only",
+                },
+            )
+        if (
+            identity
+            and path.startswith("/api/admin/")
+            and request.method in {"POST", "PUT", "PATCH", "DELETE"}
+            and not identity.platform_admin
+        ):
+            return JSONResponse(
+                status_code=403,
+                content={
+                    "detail": "A platform administrator must perform this action.",
+                    "code": "platform_admin_required",
+                },
+            )
         client = request.client.host if request.client else "unknown"
         rate = _rate_policy(path, request.method)
         if rate:
@@ -240,19 +298,20 @@ def create_app(
     @app.post("/api/auth/register", status_code=201)
     async def register(data: RegisterInput, request: Request):
         subject = (request.client.host if request.client else "unknown") + ":" + data.email.casefold()
-        await asyncio.to_thread(
-            limiter.check, "registration", subject, limit=5, window_seconds=3600
-        )
+        await asyncio.to_thread(limiter.check, "registration", subject, limit=5, window_seconds=3600)
         identity, session_token, csrf_token = await asyncio.to_thread(
             auth.register,
             email=data.email,
             password=data.password,
             name=data.name,
             organization_name=data.organization_name,
+            invitation_token=data.invitation_token,
         )
+        with service.db.organization_context(identity.organization_id), service.db.session() as session:
+            onboarding_required = not bool(session.scalar(select(DocumentWatch.id).limit(1)))
         response = JSONResponse(
             status_code=201,
-            content={**identity.public(), "onboarding_required": True},
+            content={**identity.public(), "onboarding_required": onboarding_required},
         )
         set_auth_cookies(response, session_token, csrf_token)
         return response
@@ -266,9 +325,7 @@ def create_app(
         )
         with service.db.organization_context(identity.organization_id), service.db.session() as session:
             onboarding_required = not bool(session.scalar(select(DocumentWatch.id).limit(1)))
-        response = JSONResponse(
-            content={**identity.public(), "onboarding_required": onboarding_required}
-        )
+        response = JSONResponse(content={**identity.public(), "onboarding_required": onboarding_required})
         set_auth_cookies(response, session_token, csrf_token)
         return response
 
@@ -283,7 +340,16 @@ def create_app(
             }
         with service.db.session() as session:
             onboarding_required = not bool(session.scalar(select(DocumentWatch.id).limit(1)))
-        return {**identity.public(), "onboarding_required": onboarding_required}
+        return {
+            **identity.public(),
+            "organizations": auth.organizations(identity),
+            "onboarding_required": onboarding_required,
+        }
+
+    @app.post("/api/auth/session/organization")
+    def switch_organization(data: OrganizationSwitchInput, request: Request):
+        identity = auth.switch_organization(request.state.identity, data.organization_id)
+        return {**identity.public(), "organizations": auth.organizations(identity)}
 
     @app.post("/api/auth/logout")
     def logout(request: Request):
@@ -294,6 +360,39 @@ def create_app(
         response.delete_cookie(SESSION_COOKIE, path="/")
         response.delete_cookie(CSRF_COOKIE, path="/")
         return response
+
+    @app.get("/api/organization/members")
+    def organization_members(request: Request):
+        return auth.members(request.state.identity)
+
+    @app.get("/api/organization/invitations")
+    def organization_invitations(request: Request):
+        return auth.list_invitations(request.state.identity)
+
+    @app.post("/api/organization/invitations", status_code=201)
+    def create_organization_invitation(data: InvitationInput, request: Request):
+        return auth.create_invitation(request.state.identity, email=data.email, role=data.role)
+
+    @app.delete("/api/organization/invitations/{invitation_id}")
+    def revoke_organization_invitation(invitation_id: str, request: Request):
+        return auth.revoke_invitation(request.state.identity, invitation_id)
+
+    @app.post("/api/invitations/accept")
+    def accept_organization_invitation(data: InvitationAcceptInput, request: Request):
+        identity = auth.accept_invitation(request.state.identity, data.token)
+        return {**identity.public(), "organizations": auth.organizations(identity)}
+
+    @app.patch("/api/organization/members/{membership_id}")
+    def update_organization_member(membership_id: str, data: MemberRoleInput, request: Request):
+        return auth.update_member(request.state.identity, membership_id, data.role)
+
+    @app.delete("/api/organization/members/{membership_id}")
+    def delete_organization_member(membership_id: str, request: Request):
+        return auth.remove_member(request.state.identity, membership_id)
+
+    @app.post("/api/organization/handover")
+    def handover_organization(data: HandoverInput, request: Request):
+        return auth.handover(request.state.identity, data.membership_id)
 
     @app.get("/api/health")
     def health():
@@ -451,9 +550,7 @@ def create_app(
         return service.comparison_detail(comparison_id)
 
     @app.get("/api/comparisons/{comparison_id}/ai-history")
-    def comparison_ai_history(
-        comparison_id: str, limit: int = Query(default=100, ge=1, le=500)
-    ):
+    def comparison_ai_history(comparison_id: str, limit: int = Query(default=100, ge=1, le=500)):
         return service.ai_history(comparison_id=comparison_id, limit=limit)
 
     @app.post("/api/comparisons/{comparison_id}/analyse")

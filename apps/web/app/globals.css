@@ -26,6 +26,16 @@
   --radius-lg: 12px;
   --radius-xl: 16px;
 }
+
+.viewer-settings button {
+  display: none;
+}
+
+.viewer-settings input,
+.viewer-settings textarea,
+.viewer-settings select {
+  pointer-events: none;
+}
 :root {
   --background: #f6f6f3;
   --foreground: #222b2b;

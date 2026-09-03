@@ -19,6 +19,7 @@ import {
   Settings2,
   ShieldCheck,
   Sparkles,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,7 +32,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { api, errorText, refreshWorkspace, useResource } from "@/lib/api";
-import type { AuthSession } from "./auth-gate";
+import { AdminOnly, useAuth } from "./auth-gate";
 import type { Health, Profile } from "@/lib/types";
 import { ErrorNote, SuccessNote } from "./common";
 
@@ -46,7 +47,7 @@ export function Shell({
 }) {
   const pathname = usePathname();
   const { data: health, error } = useResource<Health>("/health", 15000);
-  const { data: session } = useResource<AuthSession>("/auth/session");
+  const { session, canManage } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
   return (
     <div className="shell">
@@ -66,7 +67,9 @@ export function Shell({
         </Link>
         <button
           className="workspace text-left"
-          onClick={() => setProfileOpen(true)}
+          onClick={() => {
+            if (canManage) setProfileOpen(true);
+          }}
         >
           <span className="eyebrow">WORKSPACE</span>
           <span className="flex items-center justify-between mt-2 font-semibold">
@@ -90,6 +93,15 @@ export function Shell({
             <Activity size={17} />
             Overview
           </Link>
+          {session?.authenticated && (
+            <Link
+              className={"nav-item " + (pathname === "/organization" ? "active" : "")}
+              href="/organization"
+            >
+              <Users size={17} />
+              Organization
+            </Link>
+          )}
           <Link
             className={"nav-item " + (pathname === "/sources" ? "active" : "")}
             href="/sources"
@@ -118,10 +130,12 @@ export function Shell({
             <PackageOpen size={17} />
             Local models
           </Link>
-          <button className="nav-item" onClick={() => setProfileOpen(true)}>
-            <Building2 size={17} />
-            Company profile
-          </button>
+          <AdminOnly>
+            <button className="nav-item" onClick={() => setProfileOpen(true)}>
+              <Building2 size={17} />
+              Company profile
+            </button>
+          </AdminOnly>
           <Link
             className={"nav-item " + (pathname === "/prompts" ? "active" : "")}
             href="/prompts"
@@ -214,6 +228,11 @@ export function Shell({
         <div className={"content " + (wide ? "content-wide" : "")}>
           {error && (
             <ErrorNote message="The API is unavailable. Displayed records may be stale; start the backend to resume monitoring." />
+          )}
+          {session?.authenticated && session.role === "viewer" && (
+            <div className="mb-5 rounded-xl border border-[#d6decf] bg-[#f3f6ef] px-4 py-3 text-sm text-[#50604c]">
+              <strong>Read-only workspace.</strong> You can inspect all saved evidence and history. An organization administrator manages documents, scans, AI requests, and settings.
+            </div>
           )}
           {children}
           <footer className="workspace-footer">

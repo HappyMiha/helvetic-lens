@@ -4,7 +4,7 @@
 
 This backlog implements the product described in [README.md](README.md): a local-AI-first Swiss regulatory monitor with immutable evidence, a time-based legal registry, official-source connectors, cross-document impact analysis, and organization workspaces.
 
-**Status:** The hackathon MVP (`HL-001`–`HL-029`), document-identity gate (`HL-058`), and legal-unit semantic diff (`HL-059`) are implemented and verified through the API, browser build, migrations, and regression tests. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
+**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-035`), document-identity gate (`HL-058`), and legal-unit semantic diff (`HL-059`) are implemented and verified through the API, browser build, migrations, and regression tests. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
 
 ## Scope and priorities
 
@@ -73,7 +73,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-032](#hl-032) | P0       | IN PROGRESS | HL-030, HL-031                                      | Local-first inference routing, GPU fairness, and hardware benchmark |
 | [HL-033](#hl-033) | P0       | DONE     | HL-003, HL-029                                         | Shared public corpus and organization-aware migration               |
 | [HL-034](#hl-034) | P0       | DONE     | HL-033                                                 | Registration, login, sessions, and onboarding                       |
-| [HL-035](#hl-035) | P0       | PLANNED  | HL-034                                                 | Organization membership and enforced admin/viewer access            |
+| [HL-035](#hl-035) | P0       | DONE     | HL-034                                                 | Organization membership and enforced admin/viewer access            |
 | [HL-036](#hl-036) | P0       | PLANNED  | HL-005, HL-011, HL-033                                 | Normalized regulatory documents, dates, and events                  |
 | [HL-037](#hl-037) | P1       | PLANNED  | HL-035, HL-036                                         | Time-grouped monitoring registry and document timeline              |
 | [HL-038](#hl-038) | P0       | PLANNED  | HL-030, HL-036                                         | Versioned incremental connector contract                            |
@@ -649,6 +649,8 @@ Acceptance criteria:
 <a id="hl-035"></a>
 
 ### HL-035 — Enforce organization invitations, membership, and administrator/viewer roles
+
+**Status: DONE.** Organization administrators can issue, list, revoke, and copy seven-day single-use email-bound invitation links; new or existing accounts can join and switch workspaces. Membership lists, role changes, explicit handover, last-administrator protection, removal with session revocation, API-wide viewer read-only enforcement, and matching hidden UI controls are implemented. A separate idempotent CLI manages and audits platform administrators without granting implicit organization access.
 
 Let an organization share one workspace while making non-admin members read-only.
 

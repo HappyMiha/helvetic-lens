@@ -38,6 +38,7 @@ import type {
 import { ErrorNote, Loading, Status, SuccessNote } from "./common";
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
 import { Shell } from "./shell";
+import { AdminOnly } from "./auth-gate";
 
 type SortBy =
   | "created_at"
@@ -193,7 +194,7 @@ export function IntegrationLogsPage() {
             <RefreshCw className={logs.loading ? "animate-spin" : ""} />
             Refresh
           </Button>
-          <Button
+          <AdminOnly><Button
             variant="destructive"
             onClick={() => {
               setError("");
@@ -203,7 +204,7 @@ export function IntegrationLogsPage() {
           >
             <Trash2 />
             Clear logs
-          </Button>
+          </Button></AdminOnly>
         </div>
       </div>
 
@@ -405,7 +406,7 @@ export function IntegrationLogsPage() {
         </DialogContent>
       </Dialog>
 
-      <ConfirmDeleteDialog
+      <AdminOnly><ConfirmDeleteDialog
         open={clearOpen}
         onOpenChange={setClearOpen}
         title="Clear all integration logs?"
@@ -414,7 +415,7 @@ export function IntegrationLogsPage() {
         busy={busy}
         error={clearOpen ? error : ""}
         onConfirm={() => void clearLogs()}
-      />
+      /></AdminOnly>
     </Shell>
   );
 }

@@ -41,6 +41,7 @@ import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
 import { ImportDialog } from "./document-forms";
 import { ScanPanel } from "./scan-panel";
 import { Shell } from "./shell";
+import { useAuth } from "./auth-gate";
 
 export function versionLabel(version: Version) {
   return (
@@ -57,6 +58,7 @@ export function versionLabel(version: Version) {
 
 export function LawDetail({ id }: { id: string }) {
   const router = useRouter();
+  const { canManage } = useAuth();
   const {
     data: law,
     error: loadError,
@@ -193,7 +195,7 @@ export function LawDetail({ id }: { id: string }) {
             <div className="page-heading">
               <div className="min-w-0">
                 <span className="eyebrow">MONITORED DOCUMENT</span>
-                {editing ? (
+                {editing && canManage ? (
                   <form
                     className="flex items-center gap-2 my-3"
                     onSubmit={(event) => {
@@ -223,7 +225,7 @@ export function LawDetail({ id }: { id: string }) {
                 ) : (
                   <h1 className="flex items-start gap-3">
                     {law.name}
-                    <button
+                    {canManage && <button
                       className="icon-button mt-1 shrink-0"
                       aria-label="Rename document"
                       onClick={() => {
@@ -232,7 +234,7 @@ export function LawDetail({ id }: { id: string }) {
                       }}
                     >
                       <Pencil size={15} />
-                    </button>
+                    </button>}
                   </h1>
                 )}
                 <a
@@ -245,7 +247,7 @@ export function LawDetail({ id }: { id: string }) {
                   <ArrowUpRight size={13} />
                 </a>
               </div>
-              <div className="heading-actions">
+              {canManage && <div className="heading-actions">
                 <Button
                   variant="outline"
                   onClick={() => update({ active: !law.active })}
@@ -265,7 +267,7 @@ export function LawDetail({ id }: { id: string }) {
                   <Trash2 />
                   Delete document
                 </Button>
-              </div>
+              </div>}
             </div>
             {!law.active && (
               <div className="info-note mb-5">
@@ -339,7 +341,7 @@ export function LawDetail({ id }: { id: string }) {
                       until a new fetch succeeds.
                     </p>
                   )}
-                  <div className="flex flex-wrap gap-3 mt-5">
+                  {canManage && <div className="flex flex-wrap gap-3 mt-5">
                     <Button
                       onClick={scan}
                       disabled={!!busy || !!running || !law.active}
@@ -359,7 +361,7 @@ export function LawDetail({ id }: { id: string }) {
                       <FileUp />
                       Import previous version
                     </Button>
-                  </div>
+                  </div>}
                 </div>
               </section>
               <section className="panel">
@@ -367,7 +369,7 @@ export function LawDetail({ id }: { id: string }) {
                   <h2>Compare saved versions</h2>
                   <GitCompareArrows size={18} className="muted" />
                 </div>
-                <div className="panel-body">
+                {canManage && <div className="panel-body">
                   <p className="muted text-sm mt-0">
                     Use existing evidence without contacting the source website.
                     You choose the direction of comparison.
@@ -416,7 +418,7 @@ export function LawDetail({ id }: { id: string }) {
                     )}
                     Open saved comparison
                   </Button>
-                </div>
+                </div>}
               </section>
             </div>
             {latestScan && (
@@ -485,7 +487,7 @@ export function LawDetail({ id }: { id: string }) {
                       </p>
                     </div>
                     <div className="flex gap-2 flex-wrap">
-                      <Button
+                      {canManage && <Button
                         size="sm"
                         variant={
                           baseline === version.id ? "secondary" : "outline"
@@ -500,7 +502,7 @@ export function LawDetail({ id }: { id: string }) {
                         }}
                       >
                         Use as baseline
-                      </Button>
+                      </Button>}
                       <Button size="icon" variant="ghost" asChild>
                         <Link
                           aria-label={
@@ -511,7 +513,7 @@ export function LawDetail({ id }: { id: string }) {
                           <ArrowUpRight />
                         </Link>
                       </Button>
-                      {version.id !== law.current_version_id &&
+                      {canManage && version.id !== law.current_version_id &&
                         version.origin !== "live" && (
                           <Button
                             size="icon"
@@ -633,7 +635,7 @@ export function LawDetail({ id }: { id: string }) {
                 </div>
               </section>
             )}
-            <ImportDialog
+            {canManage && <ImportDialog
               open={importOpen}
               onOpenChange={setImportOpen}
               law={law}
@@ -646,8 +648,8 @@ export function LawDetail({ id }: { id: string }) {
                     : "Previous version saved and selected. Run Fetch & compare with history to compare it with the live source.",
                 );
               }}
-            />
-            <ConfirmDeleteDialog
+            />}
+            {canManage && <ConfirmDeleteDialog
               open={deleteOpen}
               onOpenChange={setDeleteOpen}
               title="Delete this monitored document?"
@@ -656,7 +658,7 @@ export function LawDetail({ id }: { id: string }) {
               busy={busy === "delete"}
               error={deleteOpen ? error : ""}
               onConfirm={() => void removeDocument()}
-            />
+            />}
           </>
         )
       )}

@@ -18,6 +18,9 @@ dependencies = [
   "argon2-cffi>=23.1,<26",
 ]
 
+[project.scripts]
+helvetic-lens-admin = "helvetic_lens.admin_cli:main"
+
 [dependency-groups]
 dev = ["pytest>=8.3,<10", "pytest-asyncio>=0.25,<2", "ruff>=0.11,<1"]
 

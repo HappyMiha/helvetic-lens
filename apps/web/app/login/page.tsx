@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowRight, Eye, FileSearch, Loader2, ShieldCheck } from "lucide-react";
 import { api, errorText } from "@/lib/api";
 import type { AuthSession } from "@/components/auth-gate";
@@ -11,8 +11,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [organization, setOrganization] = useState("");
+  const [invitationToken, setInvitationToken] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const token = new URLSearchParams(window.location.search).get("invite") || "";
+    setInvitationToken(token);
+  }, []);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -23,11 +29,25 @@ export default function LoginPage() {
         method: "POST",
         body: JSON.stringify(
           mode === "register"
-            ? { email, password, name, organization_name: organization }
+            ? {
+                email,
+                password,
+                name,
+                organization_name: organization,
+                invitation_token: invitationToken,
+              }
             : { email, password },
         ),
       });
-      window.location.assign(result.onboarding_required ? "/onboarding" : "/");
+      if (mode === "login" && invitationToken) {
+        await api("/invitations/accept", {
+          method: "POST",
+          body: JSON.stringify({ token: invitationToken }),
+        });
+        window.location.assign("/organization");
+      } else {
+        window.location.assign(result.onboarding_required ? "/onboarding" : "/");
+      }
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -77,7 +97,9 @@ export default function LoginPage() {
             {mode === "register" ? "Start monitoring" : "Welcome back"}
           </h2>
           <p className="mt-2 mb-8 text-sm text-[#69746c]">
-            {mode === "register"
+            {invitationToken
+              ? "This invitation is bound to the invited email and can be used once."
+              : mode === "register"
               ? "A personal workspace is created when organization is left empty."
               : "Use the email and password for your workspace."}
           </p>
@@ -88,10 +110,12 @@ export default function LoginPage() {
                   Your name
                   <input className="input" value={name} onChange={(e) => setName(e.target.value)} required maxLength={200} autoComplete="name" />
                 </label>
-                <label className="grid gap-2 text-sm font-medium text-[#27342f]">
-                  Organization <span className="font-normal text-[#7b857e]">(optional)</span>
-                  <input className="input" value={organization} onChange={(e) => setOrganization(e.target.value)} maxLength={200} autoComplete="organization" />
-                </label>
+                {!invitationToken && (
+                  <label className="grid gap-2 text-sm font-medium text-[#27342f]">
+                    Organization <span className="font-normal text-[#7b857e]">(optional)</span>
+                    <input className="input" value={organization} onChange={(e) => setOrganization(e.target.value)} maxLength={200} autoComplete="organization" />
+                  </label>
+                )}
               </>
             )}
             <label className="grid gap-2 text-sm font-medium text-[#27342f]">
@@ -106,7 +130,13 @@ export default function LoginPage() {
             {error && <div className="rounded-xl border border-[#efc2b9] bg-[#fff3f0] px-4 py-3 text-sm text-[#a63b2b]">{error}</div>}
             <button disabled={busy} className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-[#cf4936] px-5 py-3.5 font-medium text-white transition hover:bg-[#b93d2c] disabled:opacity-60">
               {busy ? <Loader2 className="animate-spin" size={18} /> : <ArrowRight size={18} />}
-              {mode === "register" ? "Create my workspace" : "Sign in"}
+              {invitationToken
+                ? mode === "register"
+                  ? "Create account and join"
+                  : "Sign in and join"
+                : mode === "register"
+                  ? "Create my workspace"
+                  : "Sign in"}
             </button>
           </form>
         </section>

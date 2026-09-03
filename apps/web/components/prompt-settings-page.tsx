@@ -22,6 +22,7 @@ import type { PromptSettings } from "@/lib/types";
 import { ErrorNote, Loading, SuccessNote } from "./common";
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
 import { Shell } from "./shell";
+import { useAuth } from "./auth-gate";
 
 type EditablePrompt = Pick<
   PromptSettings,
@@ -82,6 +83,7 @@ function editable(settings: PromptSettings): EditablePrompt {
 }
 
 export function PromptSettingsPage() {
+  const { canManage } = useAuth();
   const configuration = useResource<PromptSettings>("/settings/prompts");
   return (
     <Shell section="Prompt settings" wide>
@@ -99,11 +101,11 @@ export function PromptSettingsPage() {
       </div>
       <ErrorNote message={configuration.error} />
       {configuration.data ? (
-        <PromptForm
+        <fieldset disabled={!canManage} className={canManage ? "border-0 p-0 m-0" : "border-0 p-0 m-0 viewer-settings"}><PromptForm
           key={configuration.data.fingerprint}
           initial={configuration.data}
           onSaved={configuration.setData}
-        />
+        /></fieldset>
       ) : (
         !configuration.error && (
           <section className="panel p-6">
