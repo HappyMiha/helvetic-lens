@@ -43,8 +43,10 @@ def passing_gate():
         backup_report=None,
         read_concurrency=20,
         read_requests=300,
+        compose_project_directory=ROOT,
     )
     gate = capacity.CapacityGate(arguments, valid_manifest(), "test-password")
+    gate.git = {"commit": "a" * 40, "clean": True}
     for index in range(300):
         gate.observations.append(
             capacity.Observation(

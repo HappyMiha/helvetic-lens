@@ -104,6 +104,7 @@ The scenario logs in only the 30 accounts it needs, while validating all 100 uni
 
 The command exits zero only if all criteria pass:
 
+- the runner started from a clean checkout and recorded its full Git commit;
 - registry/evidence/comparison read p95 is below 500 ms;
 - scan/connector/AI validation and enqueue p95 is below 1 second;
 - unexpected HTTP outcomes are below 1%; this scenario sends no deliberate invalid or rate-limited request, so any `422` or `429` is unexpected here;

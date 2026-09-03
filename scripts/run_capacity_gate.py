@@ -73,6 +73,37 @@ def command_json(command: list[str]) -> Any:
         return rows or output
 
 
+def git_provenance(project_directory: Path) -> dict:
+    try:
+        commit = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=project_directory,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        ).stdout.strip()
+        status = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=project_directory,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        ).stdout.strip()
+    except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        return {"commit": None, "clean": False}
+    return {"commit": commit, "clean": not status}
+
+
+def is_git_commit(value: object) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 40
+        and all(character in "0123456789abcdef" for character in value.lower())
+    )
+
+
 def resource_snapshot() -> dict:
     disk = shutil.disk_usage(Path.cwd())
     snapshot: dict[str, Any] = {
@@ -275,6 +306,7 @@ class CapacityGate:
         self.recovery_result: dict = {"exercised": False, "services": []}
         self.inference_report = self._load_optional_report(arguments.inference_report)
         self.backup_report = self._load_optional_report(arguments.backup_report)
+        self.git = git_provenance(arguments.compose_project_directory)
         self.consistency_before: dict[str, dict] = {}
         self.consistency_after: dict[str, dict] = {}
 
@@ -873,6 +905,10 @@ class CapacityGate:
                 and manifest["organizations_complete"]
             ),
             "reader_concurrency_10_to_20": 10 <= self.arguments.read_concurrency <= 20,
+            "release_commit_recorded_from_clean_checkout": bool(
+                is_git_commit(self.git.get("commit"))
+                and self.git.get("clean") is True
+            ),
             "complete_read_workload_executed": (
                 self.arguments.read_requests >= MIN_READ_REQUESTS
                 and reads["requests"] == self.arguments.read_requests
@@ -982,6 +1018,7 @@ class CapacityGate:
                 "host": platform.node(),
                 "platform": platform.platform(),
                 "python": platform.python_version(),
+                "git": self.git,
             },
             "scenario": {
                 "account_count": self.manifest.get("account_count"),
