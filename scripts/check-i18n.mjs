@@ -24,6 +24,7 @@ const missing = [...calls].filter((key) => !keys.has(key));
 const dynamicPrefixes = [
   "count.",
   "error.",
+  "connectors.name.",
   "language.",
   "logs.operation.",
   "logs.provider.",
