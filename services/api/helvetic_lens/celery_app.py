@@ -10,6 +10,7 @@ from celery import Celery
 from . import jobs
 from .config import Settings
 from .db import Database
+from .models import Job
 
 settings = Settings()
 _worker_service = None
@@ -44,7 +45,7 @@ def _send(topic: str, queue: str, payload: dict, priority: int):
 @celery_app.task(name="helvetic_lens.dispatch_outbox")
 def dispatch_outbox():
     database = Database(settings)
-    with database.session() as session:
+    with database.session(include_all_organizations=True) as session:
         result = jobs.dispatch(session, _send)
         session.commit()
     database.engine.dispose()
@@ -54,7 +55,7 @@ def dispatch_outbox():
 @celery_app.task(name="helvetic_lens.recover_jobs")
 def recover_jobs():
     database = Database(settings)
-    with database.session() as session:
+    with database.session(include_all_organizations=True) as session:
         result = jobs.reconcile(session, settings.job_lease_seconds)
         session.commit()
     database.engine.dispose()
@@ -70,4 +71,10 @@ def run_job(job_id: str):
     if _worker_service is None:
         _worker_service = HelveticLens(settings)
         _worker_service.initialize()
-    return asyncio.run(_worker_service.execute_job(job_id, worker=socket.gethostname()))
+    with _worker_service.db.session(include_all_organizations=True) as session:
+        job = session.get(Job, job_id)
+        if job is None:
+            return {"state": "missing", "job_id": job_id}
+        organization_id = job.organization_id
+    with _worker_service.db.organization_context(organization_id), _worker_service.organization_runtime():
+        return asyncio.run(_worker_service.execute_job(job_id, worker=socket.gethostname()))

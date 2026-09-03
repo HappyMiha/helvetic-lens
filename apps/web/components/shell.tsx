@@ -31,6 +31,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { api, errorText, refreshWorkspace, useResource } from "@/lib/api";
+import type { AuthSession } from "./auth-gate";
 import type { Health, Profile } from "@/lib/types";
 import { ErrorNote, SuccessNote } from "./common";
 
@@ -45,6 +46,7 @@ export function Shell({
 }) {
   const pathname = usePathname();
   const { data: health, error } = useResource<Health>("/health", 15000);
+  const { data: session } = useResource<AuthSession>("/auth/session");
   const [profileOpen, setProfileOpen] = useState(false);
   return (
     <div className="shell">
@@ -68,7 +70,7 @@ export function Shell({
         >
           <span className="eyebrow">WORKSPACE</span>
           <span className="flex items-center justify-between mt-2 font-semibold">
-            Swiss regulatory watch
+            {session?.organization?.name || "Swiss regulatory watch"}
             <ChevronDown size={14} />
           </span>
         </button>
@@ -179,7 +181,25 @@ export function Shell({
                   ? "Connected · " + health.database
                   : "Connecting…"}
             </span>
-            <span className="avatar">HL</span>
+            {session?.authenticated ? (
+              <button
+                className="avatar"
+                title={`Sign out ${session.user?.name || ""}`}
+                onClick={async () => {
+                  await api("/auth/logout", { method: "POST" });
+                  window.location.assign("/login");
+                }}
+              >
+                {(session.user?.name || "HL")
+                  .split(" ")
+                  .map((part) => part[0])
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase()}
+              </button>
+            ) : (
+              <span className="avatar">HL</span>
+            )}
           </div>
         </header>
         <nav className="mobile-nav">

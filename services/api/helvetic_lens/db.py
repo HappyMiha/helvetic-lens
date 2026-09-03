@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -40,26 +42,28 @@ class Database:
                 connection.execute("PRAGMA busy_timeout=10000")
 
         self.organization_id = organization_id
-        self.session = sessionmaker(
+        self._organization_id = ContextVar(
+            f"helvetic_lens_organization_{id(self)}", default=organization_id
+        )
+        self._session_factory = sessionmaker(
             self.engine,
             expire_on_commit=False,
-            info={"organization_id": organization_id},
         )
 
         # Until authentication supplies the active organization in HL-034, each app
         # instance has one immutable tenant context. Tests can create two instances
         # over the same database to prove isolation without trusting a request header.
-        @event.listens_for(self.session, "after_begin")
+        @event.listens_for(self._session_factory, "after_begin")
         def remember_organization(session: Session, _transaction, _connection):
-            session.info.setdefault("organization_id", self.organization_id)
+            session.info.setdefault("organization_id", self.current_organization_id)
 
-        @event.listens_for(self.session, "before_flush")
+        @event.listens_for(self._session_factory, "before_flush")
         def assign_organization(session: Session, _flush_context, _instances):
             from urllib.parse import urlsplit
 
             from .models import ORGANIZATION_SCOPED_MODELS, Law
 
-            organization_id = session.info.setdefault("organization_id", self.organization_id)
+            organization_id = session.info.setdefault("organization_id", self.current_organization_id)
             for record in session.new:
                 if isinstance(record, ORGANIZATION_SCOPED_MODELS) and not record.organization_id:
                     record.organization_id = organization_id
@@ -70,14 +74,18 @@ class Database:
                     ).lower() not in {"fedlex.admin.ch", "fedlex.data.admin.ch"}:
                         record.owner_organization_id = organization_id
 
-        @event.listens_for(self.session, "do_orm_execute")
+        @event.listens_for(self._session_factory, "do_orm_execute")
         def restrict_organization(execute_state):
-            if not execute_state.is_select or execute_state.execution_options.get("include_all_organizations"):
+            if (
+                not execute_state.is_select
+                or execute_state.execution_options.get("include_all_organizations")
+                or execute_state.session.info.get("include_all_organizations")
+            ):
                 return
             from .models import ORGANIZATION_SCOPED_MODELS, SHARED_CORPUS_MODELS
 
             organization_id = execute_state.session.info.setdefault(
-                "organization_id", self.organization_id
+                "organization_id", self.current_organization_id
             )
             statement = execute_state.statement
             for model in ORGANIZATION_SCOPED_MODELS:
@@ -98,6 +106,26 @@ class Database:
                     )
                 )
             execute_state.statement = statement
+
+    @property
+    def current_organization_id(self) -> str:
+        return self._organization_id.get()
+
+    @contextmanager
+    def organization_context(self, organization_id: str):
+        token = self._organization_id.set(organization_id)
+        try:
+            yield
+        finally:
+            self._organization_id.reset(token)
+
+    def session(self, *, include_all_organizations: bool = False) -> Session:
+        return self._session_factory(
+            info={
+                "organization_id": self.current_organization_id,
+                "include_all_organizations": include_all_organizations,
+            }
+        )
 
     def migrate(self):
         directory = Path(__file__).resolve().parent.parent

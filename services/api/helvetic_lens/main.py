@@ -3,16 +3,17 @@ import re
 from contextlib import asynccontextmanager
 from typing import Annotated, Literal
 
-from fastapi import FastAPI, File, Form, Query, UploadFile
+from fastapi import FastAPI, File, Form, Query, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select, text
 
+from .auth import CSRF_COOKIE, SESSION_COOKIE, AuthService, RateLimiter
 from .config import DomainError, Settings
 from .model_settings import ApertusSettingsInput
-from .models import Law, Profile, Scan, Source, Version
+from .models import DocumentWatch, Law, Profile, Scan, Source, Version
 from .prompt_settings import PromptSettingsInput
 from .service import HelveticLens, as_dict, get, version_summary
 
@@ -74,6 +75,38 @@ class ModelLicenseInput(Input):
     accepted: bool
 
 
+class RegisterInput(Input):
+    email: str = Field(min_length=3, max_length=320)
+    password: str = Field(min_length=10, max_length=1024)
+    name: str = Field(min_length=1, max_length=200)
+    organization_name: str = Field(default="", max_length=200)
+
+
+class LoginInput(Input):
+    email: str = Field(min_length=3, max_length=320)
+    password: str = Field(min_length=1, max_length=1024)
+
+
+def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
+    if method not in {"POST", "PUT", "PATCH", "DELETE"}:
+        return None
+    if path in {"/api/auth/register", "/api/auth/login"}:
+        return None  # These use an email-and-address key inside their handlers.
+    if path == "/api/preview" or (path.startswith("/api/sources/") and path.endswith("/discover")):
+        return "fetch", 30, 300
+    if path == "/api/laws" or (path.startswith("/api/laws/") and path.endswith("/import")):
+        return "fetch", 30, 300
+    if path == "/api/scans":
+        return "scan", 20, 300
+    if path.endswith("/ask") or path.endswith("/ask-jobs"):
+        return "ai", 30, 300
+    if path.endswith("/analyse") or path.endswith("/analyse-jobs"):
+        return "ai", 20, 300
+    if "/invitations" in path:
+        return "invitation", 20, 3600
+    return None
+
+
 def create_app(
     settings: Settings | None = None,
     fetcher=None,
@@ -90,6 +123,8 @@ def create_app(
         organization_id=organization_id or "00000000-0000-0000-0000-000000000001",
         organization_name=organization_name,
     )
+    auth = AuthService(service.db, settings)
+    limiter = RateLimiter(settings)
 
     @asynccontextmanager
     async def lifespan(app):
@@ -103,7 +138,8 @@ def create_app(
         CORSMiddleware,
         allow_origins=["http://127.0.0.1:3000", "http://localhost:3000"],
         allow_methods=["GET", "POST", "PATCH", "DELETE"],
-        allow_headers=["Content-Type"],
+        allow_headers=["Content-Type", "X-CSRF-Token"],
+        allow_credentials=True,
     )
 
     @app.exception_handler(DomainError)
@@ -132,8 +168,131 @@ def create_app(
                 status_code=413,
                 content={"detail": "The request exceeds the upload limit.", "code": "request_too_large"},
             )
-        response = await call_next(request)
+        path = request.url.path
+        session_token = request.cookies.get(SESSION_COOKIE, "")
+        identity = await asyncio.to_thread(auth.resolve, session_token) if session_token else None
+        request.state.identity = identity
+        public_path = path in {"/api/health", "/api/auth/register", "/api/auth/login", "/api/auth/session"}
+        public_path = public_path or path in {"/docs", "/openapi.json", "/redoc"}
+        if path.startswith("/api/") and not public_path and not identity and not settings.allow_anonymous_dev:
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "Sign in to continue.", "code": "authentication_required"},
+            )
+        if identity and request.method in {"POST", "PUT", "PATCH", "DELETE"} and path not in {
+            "/api/auth/register",
+            "/api/auth/login",
+        }:
+            try:
+                auth.verify_csrf(
+                    identity,
+                    request.cookies.get(CSRF_COOKIE, ""),
+                    request.headers.get("x-csrf-token", ""),
+                )
+            except DomainError as error:
+                return JSONResponse(
+                    status_code=error.status,
+                    content={"detail": error.message, "code": error.code},
+                )
+        client = request.client.host if request.client else "unknown"
+        rate = _rate_policy(path, request.method)
+        if rate:
+            try:
+                await asyncio.to_thread(
+                    limiter.check,
+                    rate[0],
+                    f"{identity.user_id if identity else client}:{path}",
+                    limit=rate[1],
+                    window_seconds=rate[2],
+                )
+            except DomainError as error:
+                return JSONResponse(
+                    status_code=error.status,
+                    content={"detail": error.message, "code": error.code},
+                )
+        organization_id = identity.organization_id if identity else service.default_organization_id
+        with service.db.organization_context(organization_id), service.organization_runtime():
+            response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
+        return response
+
+    def set_auth_cookies(response: JSONResponse, session_token: str, csrf_token: str):
+        max_age = settings.session_ttl_days * 86400
+        response.set_cookie(
+            SESSION_COOKIE,
+            session_token,
+            max_age=max_age,
+            secure=settings.session_cookie_secure,
+            httponly=True,
+            samesite="lax",
+            path="/",
+        )
+        response.set_cookie(
+            CSRF_COOKIE,
+            csrf_token,
+            max_age=max_age,
+            secure=settings.session_cookie_secure,
+            httponly=False,
+            samesite="lax",
+            path="/",
+        )
+
+    @app.post("/api/auth/register", status_code=201)
+    async def register(data: RegisterInput, request: Request):
+        subject = (request.client.host if request.client else "unknown") + ":" + data.email.casefold()
+        await asyncio.to_thread(
+            limiter.check, "registration", subject, limit=5, window_seconds=3600
+        )
+        identity, session_token, csrf_token = await asyncio.to_thread(
+            auth.register,
+            email=data.email,
+            password=data.password,
+            name=data.name,
+            organization_name=data.organization_name,
+        )
+        response = JSONResponse(
+            status_code=201,
+            content={**identity.public(), "onboarding_required": True},
+        )
+        set_auth_cookies(response, session_token, csrf_token)
+        return response
+
+    @app.post("/api/auth/login")
+    async def login(data: LoginInput, request: Request):
+        subject = (request.client.host if request.client else "unknown") + ":" + data.email.casefold()
+        await asyncio.to_thread(limiter.check, "login", subject, limit=10, window_seconds=900)
+        identity, session_token, csrf_token = await asyncio.to_thread(
+            auth.login, email=data.email, password=data.password
+        )
+        with service.db.organization_context(identity.organization_id), service.db.session() as session:
+            onboarding_required = not bool(session.scalar(select(DocumentWatch.id).limit(1)))
+        response = JSONResponse(
+            content={**identity.public(), "onboarding_required": onboarding_required}
+        )
+        set_auth_cookies(response, session_token, csrf_token)
+        return response
+
+    @app.get("/api/auth/session")
+    def auth_session(request: Request):
+        identity = request.state.identity
+        if identity is None:
+            return {
+                "authenticated": False,
+                "anonymous_development": settings.allow_anonymous_dev,
+                "authentication_required": not settings.allow_anonymous_dev,
+            }
+        with service.db.session() as session:
+            onboarding_required = not bool(session.scalar(select(DocumentWatch.id).limit(1)))
+        return {**identity.public(), "onboarding_required": onboarding_required}
+
+    @app.post("/api/auth/logout")
+    def logout(request: Request):
+        identity = request.state.identity
+        if identity:
+            auth.logout(identity)
+        response = JSONResponse(content={"authenticated": False})
+        response.delete_cookie(SESSION_COOKIE, path="/")
+        response.delete_cookie(CSRF_COOKIE, path="/")
         return response
 
     @app.get("/api/health")

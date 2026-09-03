@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthGate } from "@/components/auth-gate";
 
 export const metadata: Metadata = {
   title: "Helvetic Lens",
@@ -11,7 +12,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AuthGate>{children}</AuthGate>
+      </body>
     </html>
   );
 }

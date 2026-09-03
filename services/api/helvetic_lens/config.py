@@ -31,6 +31,10 @@ def local_docker_base_url() -> str:
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ROOT / ".env", extra="ignore", populate_by_name=True)
     database_url: str = ""
+    app_environment: Literal["development", "production", "test"] = "development"
+    allow_anonymous_dev: bool = True
+    session_cookie_secure: bool = False
+    session_ttl_days: int = Field(default=14, ge=1, le=90)
     redis_url: str = "redis://127.0.0.1:6379/0"
     model_manager_url: str = "http://127.0.0.1:12436"
     job_execution_mode: Literal["celery", "inline"] = "celery"
@@ -63,6 +67,11 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def infomaniak_endpoint(self):
+        if self.app_environment == "production":
+            if self.allow_anonymous_dev:
+                raise ValueError("Production refuses to start while anonymous development access is enabled.")
+            if not self.session_cookie_secure:
+                raise ValueError("Production requires Secure session cookies.")
         product_id = self.apertus_product_id.strip()
         if self.apertus_provider == "infomaniak":
             if not product_id:

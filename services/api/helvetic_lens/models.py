@@ -33,6 +33,51 @@ class Organization(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class User(Base):
+    __tablename__ = "users"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    email: Mapped[str] = mapped_column(String(320), unique=True, index=True)
+    password_hash: Mapped[str] = mapped_column(Text)
+    name: Mapped[str] = mapped_column(String(200))
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class OrganizationMembership(Base):
+    __tablename__ = "organization_memberships"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "user_id", name="uq_membership_organization_user"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    role: Mapped[str] = mapped_column(String(40), default="organization_admin")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class UserSession(Base):
+    __tablename__ = "user_sessions"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    csrf_hash: Mapped[str] = mapped_column(String(64))
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class SecurityEvent(Base):
+    __tablename__ = "security_events"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str | None] = mapped_column(ForeignKey("organizations.id"), index=True)
+    user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(60), index=True)
+    subject_hash: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
 class DocumentWatch(Base):
     __tablename__ = "document_watches"
     __table_args__ = (
@@ -416,6 +461,7 @@ class OutboxMessage(Base):
 # Central policy used by the session boundary. Keeping this list beside the
 # models makes a newly persisted tenant-owned record difficult to forget.
 ORGANIZATION_SCOPED_MODELS = (
+    OrganizationMembership,
     DocumentWatch,
     Source,
     Observation,

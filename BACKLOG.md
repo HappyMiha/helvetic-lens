@@ -72,7 +72,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-031](#hl-031) | P0       | DONE     | HL-029, HL-030                                         | Local model library, downloads, and runtime manager                 |
 | [HL-032](#hl-032) | P0       | IN PROGRESS | HL-030, HL-031                                      | Local-first inference routing, GPU fairness, and hardware benchmark |
 | [HL-033](#hl-033) | P0       | DONE     | HL-003, HL-029                                         | Shared public corpus and organization-aware migration               |
-| [HL-034](#hl-034) | P0       | PLANNED  | HL-033                                                 | Registration, login, sessions, and onboarding                       |
+| [HL-034](#hl-034) | P0       | DONE     | HL-033                                                 | Registration, login, sessions, and onboarding                       |
 | [HL-035](#hl-035) | P0       | PLANNED  | HL-034                                                 | Organization membership and enforced admin/viewer access            |
 | [HL-036](#hl-036) | P0       | PLANNED  | HL-005, HL-011, HL-033                                 | Normalized regulatory documents, dates, and events                  |
 | [HL-037](#hl-037) | P1       | PLANNED  | HL-035, HL-036                                         | Time-grouped monitoring registry and document timeline              |
@@ -631,6 +631,8 @@ Delivered: canonical public documents, extracted live versions, and deterministi
 <a id="hl-034"></a>
 
 ### HL-034 — Add simple registration, login, sessions, and first-run onboarding
+
+**Status: DONE.** Registration and login now create Argon2id-backed accounts, isolated personal or named organizations, random revocable PostgreSQL sessions, CSRF-protected cookie mutations, Redis-backed abuse limits, minimal security events, and a short first-run path. Production configuration fails closed when anonymous mutation or insecure cookies are enabled; the explicit local-development mode preserves the existing demo workspace.
 
 Make the public instance easy to enter without introducing an external identity platform.
 

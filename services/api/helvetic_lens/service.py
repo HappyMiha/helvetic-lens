@@ -3,6 +3,8 @@ import hashlib
 import logging
 import threading
 import time
+from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import UTC, date, datetime
 from pathlib import PurePosixPath
 from urllib.parse import urlsplit
@@ -108,20 +110,113 @@ class HelveticLens:
         organization_id: str = LEGACY_ORGANIZATION_ID,
         organization_name: str = "Legacy workspace",
     ):
-        self.settings = settings
+        self._runtime_active = ContextVar(f"helvetic_lens_runtime_{id(self)}", default=False)
+        self._settings_context = ContextVar(f"helvetic_lens_settings_{id(self)}", default=None)
+        self._model_client_context = ContextVar(f"helvetic_lens_model_{id(self)}", default=None)
+        self._prompt_context = ContextVar(f"helvetic_lens_prompts_{id(self)}", default=None)
+        self._prompt_revision_context = ContextVar(
+            f"helvetic_lens_prompt_revision_{id(self)}", default=None
+        )
+        self._fallback_settings = settings
         self.environment_settings = settings.model_copy(deep=True)
-        self.organization_id = organization_id
+        self.default_organization_id = organization_id
         self.organization_name = organization_name
         self.db = Database(settings, organization_id)
         self.integration_logger = IntegrationLogger(self.db.session)
         self.fetcher = fetcher or Fetcher(settings, self.integration_logger)
-        self.model_client = model_client or ai.ModelClient(settings, self.integration_logger)
+        self._provided_model_client = model_client is not None
+        self._fallback_model_client = model_client or ai.ModelClient(settings, self.integration_logger)
         self.model_manager = model_manager_client or ModelManagerClient(settings)
-        self.prompt_settings = default_prompt_settings()
-        self.prompt_revision = 1
+        self._fallback_prompt_settings = default_prompt_settings()
+        self._fallback_prompt_revision = 1
         self.write_guard = threading.RLock()
         self.analysis_locks: dict[str, asyncio.Lock] = {}
         self.ask_locks: dict[str, asyncio.Lock] = {}
+
+    @property
+    def organization_id(self) -> str:
+        return self.db.current_organization_id
+
+    @property
+    def settings(self) -> Settings:
+        return self._settings_context.get() or self._fallback_settings
+
+    @settings.setter
+    def settings(self, value: Settings):
+        if self._runtime_active.get():
+            self._settings_context.set(value)
+        else:
+            self._fallback_settings = value
+
+    @property
+    def model_client(self):
+        return self._model_client_context.get() or self._fallback_model_client
+
+    @model_client.setter
+    def model_client(self, value):
+        if self._runtime_active.get():
+            self._model_client_context.set(value)
+        else:
+            self._fallback_model_client = value
+
+    @property
+    def prompt_settings(self):
+        return self._prompt_context.get() or self._fallback_prompt_settings
+
+    @prompt_settings.setter
+    def prompt_settings(self, value):
+        if self._runtime_active.get():
+            self._prompt_context.set(value)
+        else:
+            self._fallback_prompt_settings = value
+
+    @property
+    def prompt_revision(self) -> int:
+        return self._prompt_revision_context.get() or self._fallback_prompt_revision
+
+    @prompt_revision.setter
+    def prompt_revision(self, value: int):
+        if self._runtime_active.get():
+            self._prompt_revision_context.set(value)
+        else:
+            self._fallback_prompt_revision = value
+
+    @contextmanager
+    def organization_runtime(self):
+        with self.db.session() as session:
+            model_record = session.get(ApertusConfiguration, self.tenant_record_id)
+            prompt_record = session.get(PromptConfiguration, self.tenant_record_id)
+            settings = resolved_settings(self.environment_settings, model_record)
+            # A caller-supplied model client (tests and embedded deployments) may
+            # also adjust its matching fallback settings at runtime. Preserve that
+            # pair for the legacy developer workspace when no persisted provider
+            # configuration exists.
+            if (
+                self._provided_model_client
+                and self.organization_id == self.default_organization_id
+                and model_record is None
+            ):
+                settings = self._fallback_settings
+            prompts = resolved_prompt_settings(prompt_record)
+            revision = prompt_record.revision if prompt_record else 1
+        client = (
+            self._fallback_model_client
+            if self._provided_model_client
+            else ai.ModelClient(settings, self.integration_logger)
+        )
+        active_token = self._runtime_active.set(True)
+        setting_token = self._settings_context.set(settings)
+        model_token = self._model_client_context.set(client)
+        prompt_token = self._prompt_context.set(prompts)
+        revision_token = self._prompt_revision_context.set(revision)
+        try:
+            yield
+        finally:
+            self._prompt_revision_context.reset(revision_token)
+            self._prompt_context.reset(prompt_token)
+            self._model_client_context.reset(model_token)
+            self._settings_context.reset(setting_token)
+            self._runtime_active.reset(active_token)
 
     @property
     def tenant_record_id(self) -> str:
@@ -228,9 +323,18 @@ class HelveticLens:
             session.commit()
 
     def apply_model_settings(self, settings: Settings):
-        self.settings = settings
-        if isinstance(self.model_client, ai.ModelClient):
-            self.model_client = ai.ModelClient(settings, self.integration_logger)
+        current_client = self.model_client
+        next_client = (
+            ai.ModelClient(settings, self.integration_logger)
+            if isinstance(current_client, ai.ModelClient)
+            else current_client
+        )
+        if self.organization_id == self.default_organization_id:
+            self._fallback_settings = settings
+            self._fallback_model_client = next_client
+        if self._runtime_active.get():
+            self._settings_context.set(settings)
+            self._model_client_context.set(next_client)
 
     async def inference_provenance(self, settings: Settings, trace: list[dict]) -> dict:
         deployment, hardware = {}, {}
@@ -331,6 +435,9 @@ class HelveticLens:
             session.commit()
             self.prompt_settings = data.model_copy(deep=True)
             self.prompt_revision = record.revision
+            if self.organization_id == self.default_organization_id:
+                self._fallback_prompt_settings = data.model_copy(deep=True)
+                self._fallback_prompt_revision = record.revision
             return public_prompt_settings(self.prompt_settings, record)
 
     def reset_prompt_settings(self):
@@ -341,6 +448,9 @@ class HelveticLens:
                 session.commit()
             self.prompt_settings = default_prompt_settings()
             self.prompt_revision = 1
+            if self.organization_id == self.default_organization_id:
+                self._fallback_prompt_settings = default_prompt_settings()
+                self._fallback_prompt_revision = 1
             return public_prompt_settings(self.prompt_settings, None)
 
     async def test_model_settings(self, data: ApertusSettingsInput | None = None):
