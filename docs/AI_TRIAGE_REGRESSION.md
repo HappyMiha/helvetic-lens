@@ -28,4 +28,4 @@ The quick mode evaluates 220 passages per side for the rewrite case. Full mode e
 
 `npm run test:ai-triage:acceptance` exercises the API and analysis boundary. Its 1,401-passage comparison asserts a three-call Ask ceiling and five-call Impact ceiling. It also verifies zero-call clarification in under one second, identical-answer cache reuse, prompt-revision invalidation, exact quotation lookup in persisted passages, rejection of invented citations, preservation of the last valid report after a failed rerun, unique action keys, and a valid zero-action/zero-call formatting-only result.
 
-Operational measurements, human action-specificity review, and moderated two-minute usability remain separate acceptance checks.
+The platform now records and aggregates deterministic-overview latency, provider queue/inference latency, calls/tokens, cache reuse, citation acceptance, limited/failed results, and action accept/dismiss outcomes as described in [the operational metrics contract](AI_TRIAGE_METRICS.md). A measured target-host baseline, human action-specificity review, and moderated two-minute usability remain separate acceptance checks.

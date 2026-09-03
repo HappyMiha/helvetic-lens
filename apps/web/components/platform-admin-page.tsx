@@ -67,9 +67,13 @@ export function PlatformAdminPage() {
 }
 
 function Dashboard({ data }: { data: PlatformStatus }) {
-  const { t, dateTime } = useI18n();
+  const { t, dateTime, number } = useI18n();
   const active = Object.values(data.jobs.queues).reduce((sum, value) => sum + value, 0);
   const unhealthy = data.connectors.filter((item) => item.health !== "healthy").length;
+  const ai = data.ai_triage;
+  const totalTokens = Object.values(ai.usage.token_counts).reduce((sum, value) => sum + value, 0);
+  const milliseconds = (value: number | null) => value === null ? t("admin.noSamples") : `${number(Math.round(value))} ms`;
+  const percent = (value: number | null) => value === null ? t("admin.noSamples") : number(value, { style: "percent", maximumFractionDigits: 1 });
   return (
     <div className="grid gap-5">
       <section className="stats-grid">
@@ -85,6 +89,29 @@ function Dashboard({ data }: { data: PlatformStatus }) {
             <Icon size={20} className="mb-3 text-primary" /><strong className="block mb-1">{t(title)}</strong><span className="text-xs muted">{t(description)}</span>
           </Link>
         ))}
+      </section>
+
+      <section className="panel">
+        <div className="panel-header">
+          <div><h2>{t("admin.aiTriage")}</h2><p className="text-sm muted mb-0">{t("admin.aiTriageBody")}</p></div>
+          <Gauge />
+        </div>
+        <div className="panel-body grid gap-4">
+          <div className="stats-grid">
+            <div className="stat-card"><span className="eyebrow">{t("admin.overviewP95")}</span><strong>{milliseconds(ai.latency.deterministic_overview.p95_ms)}</strong><small>{t("admin.samples", { count: ai.latency.deterministic_overview.samples })}</small></div>
+            <div className="stat-card"><span className="eyebrow">{t("admin.inferenceP95")}</span><strong>{milliseconds(ai.latency.inference.p95_ms)}</strong><small>{t("admin.samples", { count: ai.latency.inference.samples })}</small></div>
+            <div className="stat-card"><span className="eyebrow">{t("admin.cacheHitRate")}</span><strong>{percent(ai.usage.cache_hit_rate)}</strong><small>{t("admin.cacheReuse", { hits: ai.usage.cache_hits, requests: ai.usage.requests_including_reuse })}</small></div>
+            <div className="stat-card"><span className="eyebrow">{t("admin.citationAcceptance")}</span><strong>{percent(ai.evidence.acceptance_rate)}</strong><small>{t("admin.validationSamples", { count: ai.evidence.validation_samples })}</small></div>
+          </div>
+          <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm muted">
+            <span>{t("admin.aiRecords", { count: ai.records.total })}</span>
+            <span>{t("admin.providerCalls", { count: ai.usage.provider_calls })}</span>
+            <span>{t("admin.totalTokens", { count: number(totalTokens) })}</span>
+            <span>{t("admin.failedRate", { value: percent(ai.records.failed_rate) })}</span>
+            <span>{t("admin.limitedRate", { value: percent(ai.records.limited_rate) })}</span>
+            <span>{t("admin.actionOutcomes", { accepted: ai.actions.accepted, dismissed: ai.actions.dismissed_or_not_applicable })}</span>
+          </div>
+        </div>
       </section>
 
       <section className="grid lg:grid-cols-3 gap-5">

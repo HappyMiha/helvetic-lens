@@ -64,6 +64,8 @@ def test_platform_reads_are_isolated_and_status_is_bounded(tmp_path):
         assert payload["services"]["api"] == "healthy"
         assert payload["resources"]["organizations"] == 2  # legacy bootstrap plus registered org
         assert "dead_letters" in payload["jobs"]
+        assert payload["ai_triage"]["records"]["total"] == 0
+        assert payload["ai_triage"]["latency"]["deterministic_overview"]["samples"] == 0
         assert "retention" in payload["storage"]
         assert payload["backup"]["status"] == "not_configured"
 

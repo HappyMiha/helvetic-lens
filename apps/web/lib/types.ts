@@ -641,6 +641,42 @@ export type PlatformStatus = {
     active_watches: number;
     custom_sources: number;
   };
+  ai_triage: {
+    records: {
+      total: number;
+      impact: number;
+      ask: number;
+      succeeded: number;
+      failed: number;
+      limited: number;
+      failed_rate: number;
+      limited_rate: number;
+    };
+    latency: Record<
+      "deterministic_overview" | "time_to_first_useful_insight" | "provider_queue" | "inference",
+      { samples: number; p50_ms: number | null; p95_ms: number | null; max_ms: number | null; source?: string }
+    >;
+    usage: {
+      provider_calls: number;
+      token_counts: Record<string, number>;
+      cache_hits: number;
+      requests_including_reuse: number;
+      cache_hit_rate: number;
+    };
+    evidence: {
+      validation_samples: number;
+      accepted: number;
+      rejected: number;
+      acceptance_rate: number | null;
+    };
+    actions: {
+      decision_events: number;
+      accepted: number;
+      dismissed_or_not_applicable: number;
+      accept_rate: number | null;
+      dismiss_rate: number | null;
+    };
+  };
   jobs: {
     states: Record<string, number>;
     queues: Record<string, number>;

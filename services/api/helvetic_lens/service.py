@@ -22,6 +22,7 @@ from . import analysis as ai
 from . import jobs as durable_jobs
 from . import relation_analysis as relation_ai
 from . import synchronization
+from .ai_metrics import summarize_ai_triage_metrics
 from .broad_official_connector import federal_news_connectors, finma_news_connectors
 from .config import DomainError, Settings
 from .connectors import CONNECTOR_CONTRACT_VERSION, ConnectorRunner
@@ -931,6 +932,12 @@ class HelveticLens:
             self.ensure_complete_diff(session, existing, old, new)
             self.refresh_comparison_identity(session, existing)
             return existing
+        overview_started = time.perf_counter()
+        diff = compare_passages(old.passages, new.passages)
+        diff["metrics"] = {
+            "overview_ms": round((time.perf_counter() - overview_started) * 1000, 2),
+            "measured_at": utcnow().isoformat(),
+        }
         comparison = Comparison(
             owner_organization_id=(
                 None
@@ -941,7 +948,7 @@ class HelveticLens:
             old_version_id=old.id,
             new_version_id=new.id,
             mode=mode,
-            diff=compare_passages(old.passages, new.passages),
+            diff=diff,
             identity_json=pair,
         )
         session.add(comparison)
@@ -961,7 +968,12 @@ class HelveticLens:
         )
         if complete:
             return False
+        overview_started = time.perf_counter()
         comparison.diff = compare_passages(old.passages, new.passages)
+        comparison.diff["metrics"] = {
+            "overview_ms": round((time.perf_counter() - overview_started) * 1000, 2),
+            "measured_at": utcnow().isoformat(),
+        }
         session.flush()
         return True
 
@@ -2470,6 +2482,16 @@ class HelveticLens:
                 or 0,
                 "custom_sources": session.scalar(select(func.count()).select_from(Source)) or 0,
             }
+            ai_triage = summarize_ai_triage_metrics(
+                session.scalars(select(Analysis).order_by(Analysis.created_at.desc()).limit(1000)),
+                session.scalars(select(AskRecord).order_by(AskRecord.created_at.desc()).limit(1000)),
+                session.scalars(
+                    select(Comparison).order_by(Comparison.created_at.desc()).limit(1000)
+                ),
+                session.scalars(
+                    select(ActionDecision).order_by(ActionDecision.created_at.desc()).limit(2000)
+                ),
+            )
 
         disk = shutil.disk_usage(self.environment_settings.storage_path)
         backup_path = self.environment_settings.storage_path / "backups"
@@ -2528,6 +2550,7 @@ class HelveticLens:
                 "model_manager": "healthy" if model["available"] else "unavailable",
             },
             "resources": resources,
+            "ai_triage": ai_triage,
             "jobs": {
                 "states": job_counts,
                 "queues": queue_counts,
