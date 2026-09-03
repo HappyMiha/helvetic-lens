@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ErrorNote } from "./common";
+import { useI18n } from "@/lib/i18n";
 
 export function ConfirmDeleteDialog({
   open,
@@ -31,6 +32,7 @@ export function ConfirmDeleteDialog({
   error?: string;
   onConfirm: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <Dialog open={open} onOpenChange={busy ? undefined : onOpenChange}>
       <DialogContent>
@@ -45,7 +47,7 @@ export function ConfirmDeleteDialog({
             onClick={() => onOpenChange(false)}
             disabled={busy}
           >
-            Cancel
+            {t("scan.cancel")}
           </Button>
           <Button variant="destructive" onClick={onConfirm} disabled={busy}>
             {busy ? <Loader2 className="animate-spin" /> : <Trash2 />}

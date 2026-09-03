@@ -21,7 +21,14 @@ const calls = new Set(
   [...productSource.matchAll(/\bt\(\s*["']([^"']+)["']/g)].map((match) => match[1]),
 );
 const missing = [...calls].filter((key) => !keys.has(key));
-const dynamicPrefixes = ["count.", "error.", "language.", "status."];
+const dynamicPrefixes = [
+  "count.",
+  "error.",
+  "language.",
+  "logs.operation.",
+  "logs.provider.",
+  "status.",
+];
 const unused = [...keys].filter(
   (key) => !productSource.includes(`"${key}"`) && !productSource.includes(`'${key}'`) &&
     !dynamicPrefixes.some((prefix) => key.startsWith(prefix)),
