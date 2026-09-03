@@ -373,6 +373,79 @@ export type Job = {
   started_at: string | null;
   finished_at: string | null;
 };
+export type LocalModel = {
+  id: string;
+  display_name: string;
+  family: string;
+  upstream_repository: string;
+  base_repository: string;
+  immutable_revision: string;
+  quantization: string;
+  sha256: string;
+  size_bytes: number;
+  license: string;
+  license_url: string;
+  served_model_id: string;
+  state:
+    | "available"
+    | "downloading"
+    | "paused"
+    | "verifying"
+    | "starting"
+    | "ready"
+    | "stopped"
+    | "degraded"
+    | "incompatible"
+    | "error";
+  installed: boolean;
+  active: boolean;
+  license_accepted: boolean;
+  error: string | null;
+  compatibility: {
+    status: "compatible" | "unverified" | "incompatible";
+    reason: string;
+  };
+  download: {
+    downloaded_bytes: number;
+    total_bytes: number;
+    resumable: boolean;
+    cached_copy_available: boolean;
+  };
+  artifact: { sha256: string; verified_at: string } | null;
+  requirements: {
+    min_ram_bytes: number;
+    min_disk_bytes: number;
+    min_vram_bytes: number;
+    recommended_context: number;
+    gpu_layers: number;
+    slots: number;
+  };
+};
+export type LocalModelInventory = {
+  catalog_version: number;
+  runtime_image: string;
+  hardware: {
+    probed_at: string;
+    ram_bytes: number;
+    disk_total_bytes: number;
+    disk_free_bytes: number;
+    cuda_devices: {
+      index: number;
+      name: string;
+      vram_bytes: number;
+      compute_capability: string;
+    }[];
+    cuda_error: string | null;
+    runtime_supported: boolean;
+  };
+  deployment: {
+    model_id: string;
+    state: string;
+    started_at?: string;
+    ready_at?: string;
+  } | null;
+  models: LocalModel[];
+};
 export type IntegrationLogSummary = {
   id: string;
   provider: string;

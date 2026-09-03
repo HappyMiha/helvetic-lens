@@ -43,10 +43,14 @@ services:
       REDIS_URL: redis://redis:6379/0
       JOB_EXECUTION_MODE: celery
       HELVETIC_LENS_DATA_DIR: /data
+      MODEL_MANAGER_URL: http://model-manager:8090
     ports:
       - "127.0.0.1:${HELVETIC_LENS_API_PORT:-${REGWATCH_API_PORT:-8000}}:8000"
     volumes:
       - document_data:/data
+    networks:
+      - default
+      - model-control
     depends_on:
       db:
         condition: service_healthy
@@ -68,9 +72,13 @@ services:
       REDIS_URL: redis://redis:6379/0
       JOB_EXECUTION_MODE: celery
       HELVETIC_LENS_DATA_DIR: /data
+      MODEL_MANAGER_URL: http://model-manager:8090
     command: ["celery", "-A", "helvetic_lens.celery_app:celery_app", "worker", "--loglevel=INFO", "-Q", "interactive,ingest,parse_diff,maintenance", "--concurrency=2"]
     volumes:
       - document_data:/data
+    networks:
+      - default
+      - model-control
     depends_on:
       api:
         condition: service_healthy
@@ -91,6 +99,9 @@ services:
     command: ["celery", "-A", "helvetic_lens.celery_app:celery_app", "worker", "--loglevel=INFO", "-Q", "ai_interactive,ai_background", "--concurrency=1"]
     volumes:
       - document_data:/data
+    networks:
+      - default
+      - model-control
     depends_on:
       api:
         condition: service_healthy
@@ -129,38 +140,31 @@ services:
     depends_on:
       api:
         condition: service_healthy
-  local-apertus:
-    profiles: ["local-ai"]
-    image: ghcr.io/ggml-org/llama.cpp:server-cuda
+  model-manager:
+    build:
+      context: .
+      dockerfile: services/model-manager/Dockerfile
     gpus: all
+    environment:
+      MODEL_MANAGER_CATALOG: /manager/catalog.json
+      MODEL_MANAGER_LIBRARY: /models
+      MODEL_MANAGER_LLAMA_SERVER: /app/llama-server
+      MODEL_MANAGER_RUNTIME_IMAGE: ghcr.io/ggml-org/llama.cpp@sha256:031c0058432ab0769057273cdfda45848d00fef11e993448eef98c7ebb45a8c6
     ports:
       - "127.0.0.1:${LOCAL_APERTUS_PORT:-12435}:8080"
+      - "127.0.0.1:${MODEL_MANAGER_PORT:-12436}:8090"
     volumes:
-      - local_apertus_cache:/root/.cache
-      - ./deploy/apertus-v1-chat-template.jinja:/templates/apertus-v1-chat-template.jinja:ro
-    command:
-      - -hf
-      - MrMeOrYou/Apertus-v1.1-1.5B-Instruct-GGUF:BF16
-      - --alias
-      - local-apertus
-      - --chat-template-file
-      - /templates/apertus-v1-chat-template.jinja
-      - --host
-      - 0.0.0.0
-      - --port
-      - "8080"
-      - --ctx-size
-      - "4096"
-      # The app deliberately sends one evidence batch at a time. A single server
-      # slot keeps the full 4K KV cache available to that request; llama.cpp's
-      # automatic four-slot mode can exhaust the shared cache with overlapping
-      # retries even when every individual prompt fits.
-      - --parallel
-      - "1"
-      - --n-predict
-      - "700"
-      - --n-gpu-layers
-      - "99"
+      - model_library:/models
+      - local_apertus_cache:/legacy-cache:ro
+    networks:
+      - default
+      - model-control
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8090/health', timeout=3)"]
+      interval: 5s
+      timeout: 4s
+      retries: 20
 volumes:
   postgres_data:
     name: ${HELVETIC_LENS_POSTGRES_VOLUME:-helvetic-lens_postgres_data}
@@ -168,5 +172,10 @@ volumes:
     name: ${HELVETIC_LENS_DOCUMENT_VOLUME:-helvetic-lens_document_data}
   local_apertus_cache:
     name: ${HELVETIC_LENS_APERTUS_VOLUME:-helvetic-lens_local_apertus_cache}
+  model_library:
+    name: ${HELVETIC_LENS_MODEL_LIBRARY_VOLUME:-helvetic-lens_model_library}
   redis_data:
     name: ${HELVETIC_LENS_REDIS_VOLUME:-helvetic-lens_redis_data}
+networks:
+  model-control:
+    internal: true

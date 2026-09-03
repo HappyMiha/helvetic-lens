@@ -23,6 +23,7 @@ from .identity import (
     build_artifact_identity,
 )
 from .integration_logs import IntegrationLogger
+from .model_manager_client import ModelManagerClient
 from .model_settings import ApertusSettingsInput, public_settings, resolve_key, resolved_settings
 from .models import (
     Analysis,
@@ -86,13 +87,14 @@ def version_summary(version: Version) -> dict:
 
 
 class HelveticLens:
-    def __init__(self, settings: Settings, fetcher=None, model_client=None):
+    def __init__(self, settings: Settings, fetcher=None, model_client=None, model_manager_client=None):
         self.settings = settings
         self.environment_settings = settings.model_copy(deep=True)
         self.db = Database(settings)
         self.integration_logger = IntegrationLogger(self.db.session)
         self.fetcher = fetcher or Fetcher(settings, self.integration_logger)
         self.model_client = model_client or ai.ModelClient(settings, self.integration_logger)
+        self.model_manager = model_manager_client or ModelManagerClient(settings)
         self.prompt_settings = default_prompt_settings()
         self.prompt_revision = 1
         self.write_guard = threading.RLock()
@@ -1329,6 +1331,188 @@ class HelveticLens:
             session.commit()
             return durable_jobs.serialize(session, job)
 
+    async def model_inventory(self, refresh_hardware: bool = False):
+        if refresh_hardware:
+            await self.model_manager.probe()
+        return await self.model_manager.inventory()
+
+    async def accept_model_license(self, model_id: str, accepted: bool):
+        return await self.model_manager.accept_license(model_id, accepted)
+
+    async def model_command(self, model_id: str, action: str):
+        if action in {"download", "start"}:
+            inventory = await self.model_manager.inventory()
+            model = next((item for item in inventory["models"] if item["id"] == model_id), None)
+            if not model:
+                raise DomainError("This model is not in the versioned allowlist.", 404, "model_not_allowed")
+            if action == "start":
+                current = self.apertus_configuration()
+                self.save_model_settings(
+                    ApertusSettingsInput(
+                        provider="docker",
+                        model=model["served_model_id"],
+                        timeout_seconds=current["timeout_seconds"],
+                        request_retries=current["request_retries"],
+                        batch_concurrency=1,
+                        context_chars=min(
+                            current["context_chars"],
+                            model["requirements"]["recommended_context"] * 4,
+                        ),
+                        max_tokens=min(current["max_tokens"], 700),
+                        temperature=current["temperature"],
+                        top_p=current["top_p"],
+                        presence_penalty=current["presence_penalty"],
+                        reasoning_effort="none",
+                        json_mode=current["json_mode"],
+                        key_action="keep",
+                    )
+                )
+            with self.write_guard, self.db.session() as session:
+                existing = session.scalar(
+                    select(Job)
+                    .where(
+                        Job.type == f"model_{action}",
+                        Job.target_id == model_id,
+                        Job.state.in_(["queued", "dispatched", "running", "retrying"]),
+                    )
+                    .order_by(Job.created_at.desc())
+                    .limit(1)
+                )
+                if existing:
+                    existing_result = durable_jobs.serialize(session, existing)
+                else:
+                    existing_result = None
+                if existing_result is None:
+                    steps = (
+                        [
+                            ("Transfer resumable artifact", {"model_id": model_id}),
+                            ("Verify SHA-256", {"sha256": model["sha256"]}),
+                            ("Activate model artifact", {}),
+                        ]
+                        if action == "download"
+                        else [
+                            ("Validate hardware profile", {"model_id": model_id}),
+                            ("Start pinned llama.cpp runtime", {}),
+                            ("Wait for inference health", {}),
+                        ]
+                    )
+                    job, _ = durable_jobs.enqueue(
+                        session,
+                        job_type=f"model_{action}",
+                        target_type="local_model",
+                        target_id=model_id,
+                        queue="maintenance",
+                        priority=7,
+                        idempotency_key=f"model:{action}:{model_id}:{time.time_ns()}",
+                        payload={"cached": bool(model["download"].get("cached_copy_available"))},
+                        progress_total=model["size_bytes"] if action == "download" else 3,
+                        max_attempts=self.settings.job_max_attempts,
+                        steps=steps,
+                    )
+                    session.commit()
+                    existing_result = durable_jobs.serialize(session, job)
+            if action == "download" and model["state"] == "paused":
+                await self.model_manager.command(
+                    model_id,
+                    "download",
+                    cached=bool(model["download"].get("cached_copy_available")),
+                )
+            return existing_result
+        if action == "remove":
+            inventory = await self.model_manager.inventory()
+            model = next((item for item in inventory["models"] if item["id"] == model_id), None)
+            if not model:
+                raise DomainError("This model is not in the versioned allowlist.", 404, "model_not_allowed")
+            served_ids = {model_id, model["served_model_id"]}
+            with self.db.session() as session:
+                referenced = bool(
+                    session.scalar(select(Analysis.id).where(Analysis.model.in_(served_ids)).limit(1))
+                    or session.scalar(select(AskRecord.id).where(AskRecord.model.in_(served_ids)).limit(1))
+                )
+            return await self.model_manager.command(model_id, action, referenced=referenced)
+        result = await self.model_manager.command(model_id, action)
+        if action == "cancel":
+            with self.write_guard, self.db.session() as session:
+                job = session.scalar(
+                    select(Job)
+                    .where(
+                        Job.type == "model_download",
+                        Job.target_id == model_id,
+                        Job.state.in_(["queued", "dispatched", "running", "retrying"]),
+                    )
+                    .order_by(Job.created_at.desc())
+                    .limit(1)
+                )
+                if job:
+                    durable_jobs.request_cancel(session, job.id)
+                    session.commit()
+        return result
+
+    @staticmethod
+    def _inventory_model(inventory: dict, model_id: str) -> dict:
+        model = next((item for item in inventory.get("models", []) if item.get("id") == model_id), None)
+        if not model:
+            raise DomainError("The model disappeared from the local allowlist.", 404, "model_not_allowed")
+        return model
+
+    async def _run_model_job(self, job_id: str, model_id: str, action: str, payload: dict, worker: str):
+        await self.model_manager.command(model_id, action, cached=payload.get("cached", False))
+        while True:
+            await asyncio.sleep(1)
+            with self.write_guard, self.db.session() as session:
+                if not durable_jobs.heartbeat(session, job_id, worker):
+                    session.commit()
+                    if action == "download":
+                        await self.model_manager.command(model_id, "cancel")
+                    raise durable_jobs.JobCancelled()
+                session.commit()
+            inventory = await self.model_manager.inventory()
+            model = self._inventory_model(inventory, model_id)
+            state = model["state"]
+            if action == "download":
+                downloaded = int(model["download"]["downloaded_bytes"])
+                total = int(model["download"]["total_bytes"])
+                position = 2 if state == "verifying" else 3 if model["installed"] else 1
+                with self.write_guard, self.db.session() as session:
+                    durable_jobs.progress(
+                        session,
+                        job_id,
+                        current=downloaded,
+                        total=total,
+                        step_position=position,
+                        step_state="running" if not model["installed"] else "succeeded",
+                        step_details={"state": state, "downloaded_bytes": downloaded},
+                    )
+                    if position > 1:
+                        durable_jobs.progress(session, job_id, current=downloaded, step_position=1, step_state="succeeded")
+                    if position > 2:
+                        durable_jobs.progress(session, job_id, current=downloaded, step_position=2, step_state="succeeded")
+                    session.commit()
+                if model["installed"]:
+                    return {"model": model, "runtime_image": inventory["runtime_image"]}
+            else:
+                position = 1 if state in {"available", "stopped"} else 2 if state == "starting" else 3
+                with self.write_guard, self.db.session() as session:
+                    durable_jobs.progress(session, job_id, current=position - 1, total=3, step_position=position, step_state="running")
+                    if position > 1:
+                        durable_jobs.progress(session, job_id, current=position - 1, step_position=1, step_state="succeeded")
+                    if position > 2:
+                        durable_jobs.progress(session, job_id, current=position - 1, step_position=2, step_state="succeeded")
+                    session.commit()
+                if state == "ready":
+                    with self.write_guard, self.db.session() as session:
+                        durable_jobs.progress(session, job_id, current=3, step_position=3, step_state="succeeded")
+                        session.commit()
+                    return {"model": model, "deployment": inventory.get("deployment")}
+            if state == "paused" and action == "download":
+                continue
+            if state in {"error", "incompatible", "degraded", "paused"}:
+                raise DomainError(
+                    model.get("error") or f"The local model entered the {state} state.",
+                    422,
+                    f"model_{state}",
+                )
+
     def retry_job(self, job_id: str):
         with self.write_guard, self.db.session() as session:
             try:
@@ -1400,6 +1584,10 @@ class HelveticLens:
                 result_type = "answer"
                 result_id = result_json["record_id"]
                 result_url = f"/compare/{target_id}#ask"
+            elif job_type in {"model_download", "model_start"}:
+                action = job_type.removeprefix("model_")
+                result_json = await self._run_model_job(job_id, target_id, action, payload, worker)
+                result_type, result_id, result_url = "local_model", target_id, "/models"
             else:
                 raise DomainError("This durable job type is not supported by the worker.", 422, "job_type_unknown")
         except durable_jobs.JobCancelled:

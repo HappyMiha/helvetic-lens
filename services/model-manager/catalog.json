@@ -1,0 +1,103 @@
+{
+  "catalog_version": 1,
+  "entries": [
+    {
+      "id": "apertus-8b-q4km",
+      "display_name": "Apertus 8B Instruct · Q4_K_M",
+      "family": "Apertus",
+      "upstream_repository": "giladgd/Apertus-8B-Instruct-2509-GGUF",
+      "base_repository": "swiss-ai/Apertus-8B-Instruct-2509",
+      "immutable_revision": "d7156f6e61af2308f8871e18d03bee340ae6e3a5",
+      "gguf_file": "Apertus-8B-Instruct-2509.Q4_K_M.gguf",
+      "quantization": "Q4_K_M",
+      "sha256": "5812702c2477fa33452e2145a0c8e4fcac42ac150dc25ffe437b65e102a3535b",
+      "size_bytes": 5057871392,
+      "download_url": "https://huggingface.co/giladgd/Apertus-8B-Instruct-2509-GGUF/resolve/d7156f6e61af2308f8871e18d03bee340ae6e3a5/Apertus-8B-Instruct-2509.Q4_K_M.gguf?download=true",
+      "license": "Apache-2.0 with Apertus usage policy",
+      "license_url": "https://huggingface.co/swiss-ai/Apertus-8B-Instruct-2509",
+      "license_acceptance": "required",
+      "chat_template": "/templates/apertus-v1-chat-template.jinja",
+      "structured_output": true,
+      "served_model_id": "apertus-8b-q4km",
+      "requirements": {
+        "min_ram_bytes": 12884901888,
+        "min_disk_bytes": 6442450944,
+        "min_vram_bytes": 7516192768,
+        "recommended_context": 4096,
+        "gpu_layers": 99,
+        "slots": 1
+      },
+      "hardware_profiles": {
+        "dev-1070": {"status": "unverified", "reason": "Run the on-device stability benchmark before relying on this profile."},
+        "dual-1080-replicated": {"status": "unverified", "reason": "Replication needs a measured VRAM and KV-cache headroom check."},
+        "dual-1080-split": {"status": "unverified", "reason": "Layer split is enabled only after the single-card profile is measured."}
+      }
+    },
+    {
+      "id": "apertus-1.5b-q4km",
+      "display_name": "Apertus 1.5B Instruct · Q4_K_M",
+      "family": "Apertus",
+      "upstream_repository": "NonMiFrega/Apertus-v1.1-1.5B-Instruct-Q4_K_M-GGUF",
+      "base_repository": "swiss-ai/Apertus-v1.1-1.5B-Instruct",
+      "immutable_revision": "4710d82a69fc29837c2b1e18b5d2cffeeaa385e4",
+      "gguf_file": "apertus-v1.1-1.5b-instruct-q4_k_m.gguf",
+      "quantization": "Q4_K_M",
+      "sha256": "b03762d07f711220498174b970a927bb2e49798397289daaa2cc9c628a737ed3",
+      "size_bytes": 980768224,
+      "download_url": "https://huggingface.co/NonMiFrega/Apertus-v1.1-1.5B-Instruct-Q4_K_M-GGUF/resolve/4710d82a69fc29837c2b1e18b5d2cffeeaa385e4/apertus-v1.1-1.5b-instruct-q4_k_m.gguf?download=true",
+      "legacy_cache_blob": "/legacy-cache/huggingface/hub/models--NonMiFrega--Apertus-v1.1-1.5B-Instruct-Q4_K_M-GGUF/blobs/b03762d07f711220498174b970a927bb2e49798397289daaa2cc9c628a737ed3",
+      "license": "Apache-2.0 with Apertus usage policy",
+      "license_url": "https://huggingface.co/swiss-ai/Apertus-v1.1-1.5B-Instruct",
+      "license_acceptance": "required",
+      "chat_template": "/templates/apertus-v1-chat-template.jinja",
+      "structured_output": true,
+      "served_model_id": "apertus-1.5b-q4km",
+      "requirements": {
+        "min_ram_bytes": 4294967296,
+        "min_disk_bytes": 1342177280,
+        "min_vram_bytes": 2147483648,
+        "recommended_context": 4096,
+        "gpu_layers": 99,
+        "slots": 1
+      },
+      "hardware_profiles": {
+        "dev-1070": {"status": "compatible", "reason": "The smaller quantized diagnostic profile fits comfortably on an 8 GB card."},
+        "dual-1080-replicated": {"status": "compatible", "reason": "One independent diagnostic runner fits on either card."},
+        "dual-1080-split": {"status": "compatible", "reason": "Compatible, although splitting this small model is unnecessary."}
+      }
+    },
+    {
+      "id": "apertus-1.5b-bf16",
+      "display_name": "Apertus 1.5B Instruct · BF16 diagnostic",
+      "family": "Apertus",
+      "upstream_repository": "MrMeOrYou/Apertus-v1.1-1.5B-Instruct-GGUF",
+      "base_repository": "swiss-ai/Apertus-v1.1-1.5B-Instruct",
+      "immutable_revision": "88c75ad49566d3c2157d03709bf772262c3241ed",
+      "gguf_file": "Apertus-v1.1-1.5B-Instruct-BF16.gguf",
+      "quantization": "BF16",
+      "sha256": "f9ec154d0ec29dad1f6465b458b7f27bd25ad7b9a3899233ae98ca6d358501c2",
+      "size_bytes": 3028052608,
+      "download_url": "https://huggingface.co/MrMeOrYou/Apertus-v1.1-1.5B-Instruct-GGUF/resolve/88c75ad49566d3c2157d03709bf772262c3241ed/Apertus-v1.1-1.5B-Instruct-BF16.gguf?download=true",
+      "legacy_cache_blob": "/legacy-cache/huggingface/hub/models--MrMeOrYou--Apertus-v1.1-1.5B-Instruct-GGUF/blobs/f9ec154d0ec29dad1f6465b458b7f27bd25ad7b9a3899233ae98ca6d358501c2",
+      "license": "Apache-2.0 with Apertus usage policy",
+      "license_url": "https://huggingface.co/swiss-ai/Apertus-v1.1-1.5B-Instruct",
+      "license_acceptance": "required",
+      "chat_template": "/templates/apertus-v1-chat-template.jinja",
+      "structured_output": true,
+      "served_model_id": "apertus-1.5b-bf16",
+      "requirements": {
+        "min_ram_bytes": 8589934592,
+        "min_disk_bytes": 3758096384,
+        "min_vram_bytes": 4294967296,
+        "recommended_context": 4096,
+        "gpu_layers": 99,
+        "slots": 1
+      },
+      "hardware_profiles": {
+        "dev-1070": {"status": "compatible", "reason": "A live structured-output check passed on the development GTX 1070."},
+        "dual-1080-replicated": {"status": "unverified", "reason": "Single-card fit is expected; replication still needs the target-host benchmark."},
+        "dual-1080-split": {"status": "compatible", "reason": "Compatible, although splitting this diagnostic model is unnecessary."}
+      }
+    }
+  ]
+}

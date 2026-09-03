@@ -70,6 +70,10 @@ class ProfileInput(Input):
     business_areas: list[str] = Field(default_factory=list, max_length=12)
 
 
+class ModelLicenseInput(Input):
+    accepted: bool
+
+
 def create_app(settings: Settings | None = None, fetcher=None, model_client=None) -> FastAPI:
     settings = settings or Settings()
     service = HelveticLens(settings, fetcher, model_client)
@@ -340,6 +344,28 @@ def create_app(settings: Settings | None = None, fetcher=None, model_client=None
         if settings.job_execution_mode == "inline":
             return await service.execute_job(job_id)
         return result
+
+    @app.get("/api/admin/models")
+    async def local_models(refresh_hardware: bool = False):
+        return await service.model_inventory(refresh_hardware)
+
+    @app.post("/api/admin/models/{model_id}/license")
+    async def accept_model_license(model_id: str, data: ModelLicenseInput):
+        return await service.accept_model_license(model_id, data.accepted)
+
+    @app.post("/api/admin/models/{model_id}/{action}", status_code=202)
+    async def local_model_command(
+        model_id: str,
+        action: Literal["download", "pause", "cancel", "start", "stop"],
+    ):
+        result = await service.model_command(model_id, action)
+        if action in {"download", "start"} and settings.job_execution_mode == "inline":
+            return await service.execute_job(result["id"])
+        return result
+
+    @app.delete("/api/admin/models/{model_id}")
+    async def remove_local_model(model_id: str):
+        return await service.model_command(model_id, "remove")
 
     @app.get("/api/integration-logs")
     def integration_logs(

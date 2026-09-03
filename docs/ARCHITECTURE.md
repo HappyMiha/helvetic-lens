@@ -50,7 +50,7 @@ The original application was a sound local MVP, but several deliberate MVP choic
 - Analysis locks live in process memory, so multiple API processes cannot coordinate safely.
 - Sources, laws, prompts, provider settings, and the company profile belong to one global workspace.
 - `Law` combines an official legal document with the user's decision to monitor it. That would duplicate the same public source for every organization.
-- Local Apertus is an optional Compose profile with one fixed test model and one inference slot. There is no model library, download progress, compatibility check, or GPU benchmark.
+- Local Apertus is managed by the private model-manager container and a versioned model catalogue. Verified downloads, lifecycle state, host compatibility, and one active inference process are implemented; fair multi-GPU routing and target-host benchmarking remain in HL-032.
 - The stack binds to loopback and has no login, TLS entry point, scheduler, queue, retention policy, or recovery workflow.
 - The existing watchlist is a flat list. It cannot represent newly discovered bills, lifecycle events, court decisions, official notices, or evidence-backed relations between documents.
 
@@ -180,6 +180,8 @@ An advanced manual GGUF import may be added later, but it must be treated as unv
 The runtime controller owns llama.cpp child processes and exposes a narrow private management API for inventory, activate, stop, warm up, benchmark, and health. Neither the public web container nor FastAPI receives the Docker socket. The controller starts only pinned binaries/images and catalogue model files; it cannot execute an arbitrary command supplied by a browser request.
 
 The inference gateway gives the application one stable endpoint. It records the selected runner and forwards only to healthy slots. If one runner fails, its leased job returns to the durable queue and the deployment becomes `degraded`; a result is never silently rerouted to cloud.
+
+The implemented HL-031 manager is bound privately inside Compose, with loopback ports only for local diagnostics. Its catalogue fixes the upstream revision, file size, SHA-256, license, chat template, runtime image digest, and hardware declaration. The manager adopts known legacy cache blobs without Internet access, keeps resumable partial downloads in a dedicated volume, and exposes only catalogue IDs plus fixed lifecycle verbs. Starting a verified model also selects its unique served model ID in the workspace's local Docker provider settings. HL-032 adds a stable multi-runner gateway, admission fairness, benchmark-derived profiles, and complete per-result deployment provenance.
 
 ### Hardware profiles
 

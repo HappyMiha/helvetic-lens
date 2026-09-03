@@ -14,6 +14,7 @@ import {
   Globe2,
   History,
   Loader2,
+  PackageOpen,
   ScrollText,
   Settings2,
   ShieldCheck,
@@ -108,6 +109,13 @@ export function Shell({
             <ScrollText size={17} />
             Integration logs
           </Link>
+          <Link
+            className={"nav-item " + (pathname === "/models" ? "active" : "")}
+            href="/models"
+          >
+            <PackageOpen size={17} />
+            Local models
+          </Link>
           <button className="nav-item" onClick={() => setProfileOpen(true)}>
             <Building2 size={17} />
             Company profile
@@ -128,7 +136,7 @@ export function Shell({
           </Link>
         </nav>
         <div className="sidebar-bottom">
-          <Link className="model-card" href="/settings">
+          <Link className="model-card" href="/models">
             <Sparkles size={17} />
             <div>
               <strong>Apertus settings</strong>
@@ -178,6 +186,7 @@ export function Shell({
           <Link href="/">Overview</Link>
           <Link href="/sources">Sources</Link>
           <Link href="/activity">Activity</Link>
+          <Link href="/models">Models</Link>
           <Link href="/logs">Logs</Link>
           <Link href="/prompts">Prompts</Link>
           <Link href="/settings">Settings</Link>

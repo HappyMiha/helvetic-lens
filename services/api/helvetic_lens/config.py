@@ -12,7 +12,7 @@ ROOT = next(
 )
 INFOMANIAK_API_ROOT = "https://api.infomaniak.com"
 LOCAL_DOCKER_HOST_URL = "http://127.0.0.1:12435/v1"
-LOCAL_DOCKER_CONTAINER_URL = "http://local-apertus:8080/v1"
+LOCAL_DOCKER_CONTAINER_URL = "http://model-manager:8080/v1"
 
 
 def infomaniak_base_url(product_id: str) -> str:
@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ROOT / ".env", extra="ignore", populate_by_name=True)
     database_url: str = ""
     redis_url: str = "redis://127.0.0.1:6379/0"
+    model_manager_url: str = "http://127.0.0.1:12436"
     job_execution_mode: Literal["celery", "inline"] = "celery"
     job_lease_seconds: int = Field(default=300, ge=30, le=3600)
     job_max_attempts: int = Field(default=3, ge=1, le=10)

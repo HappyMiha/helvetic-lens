@@ -69,7 +69,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-028](#hl-028) | P1       | DONE     | HL-017, HL-027                                         | Robust citation-row handling and local Docker Apertus fallback      |
 | [HL-029](#hl-029) | P0       | DONE     | HL-028                                                 | Single-host local-first architecture and capacity contract          |
 | [HL-030](#hl-030) | P0       | DONE     | HL-029                                                 | Durable PostgreSQL jobs with Redis/Celery execution                 |
-| [HL-031](#hl-031) | P0       | PLANNED  | HL-029, HL-030                                         | Local model library, downloads, and runtime manager                 |
+| [HL-031](#hl-031) | P0       | DONE     | HL-029, HL-030                                         | Local model library, downloads, and runtime manager                 |
 | [HL-032](#hl-032) | P0       | PLANNED  | HL-030, HL-031                                         | Local-first inference routing, GPU fairness, and hardware benchmark |
 | [HL-033](#hl-033) | P0       | PLANNED  | HL-003, HL-029                                         | Shared public corpus and organization-aware migration               |
 | [HL-034](#hl-034) | P0       | PLANNED  | HL-033                                                 | Registration, login, sessions, and onboarding                       |
@@ -577,6 +577,8 @@ Acceptance criteria:
 <a id="hl-031"></a>
 
 ### HL-031 — Add a local model library, verified downloads, and a private runtime manager
+
+**Status: DONE.** Implemented as a private allowlist-based model-manager container, dedicated model volume, durable maintenance jobs, and the Local models platform screen. The GTX 1070 live check adopted the cached 1.5B Q4 artifact, verified its pinned SHA-256, started the pinned CUDA llama.cpp runtime, and returned valid structured JSON. Replicated/split dual-1080 benchmarking and the stable fair inference gateway remain explicitly in HL-032.
 
 Let a platform administrator choose, download, validate, start, stop, and inspect local models without editing Compose files.
 

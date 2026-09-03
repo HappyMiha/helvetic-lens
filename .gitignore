@@ -17,5 +17,6 @@ data/
 playwright-report/
 test-results/
 .tmp/
+.tmp-tests/
 *.log
 .DS_Store
