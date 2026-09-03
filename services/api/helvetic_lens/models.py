@@ -104,6 +104,51 @@ class UserSession(Base):
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class DigestPreference(Base):
+    __tablename__ = "digest_preferences"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "user_id", name="uq_digest_preference_org_user"),
+        CheckConstraint("frequency IN ('daily', 'weekly')", name="ck_digest_frequency"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    frequency: Mapped[str] = mapped_column(String(20), default="weekly")
+    severities: Mapped[list] = mapped_column(JSON, default=list)
+    sources: Mapped[list] = mapped_column(JSON, default=list)
+    next_delivery_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    last_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class DigestDelivery(Base):
+    __tablename__ = "digest_deliveries"
+    __table_args__ = (
+        UniqueConstraint(
+            "preference_id", "period_end", name="uq_digest_delivery_preference_period"
+        ),
+        CheckConstraint(
+            "status IN ('queued', 'succeeded', 'failed', 'skipped')",
+            name="ck_digest_delivery_status",
+        ),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    preference_id: Mapped[str] = mapped_column(ForeignKey("digest_preferences.id"), index=True)
+    frequency: Mapped[str] = mapped_column(String(20))
+    period_start: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    period_end: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    status: Mapped[str] = mapped_column(String(20), default="queued", index=True)
+    item_count: Mapped[int] = mapped_column(Integer, default=0)
+    summary: Mapped[dict] = mapped_column(JSON, default=dict)
+    error: Mapped[str | None] = mapped_column(Text)
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class SecurityEvent(Base):
     __tablename__ = "security_events"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
@@ -1054,6 +1099,8 @@ class OutboxMessage(Base):
 ORGANIZATION_SCOPED_MODELS = (
     OrganizationMembership,
     OrganizationInvitation,
+    DigestPreference,
+    DigestDelivery,
     DocumentWatch,
     Source,
     Observation,

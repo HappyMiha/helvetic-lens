@@ -7,7 +7,16 @@ from sqlalchemy import select
 from helvetic_lens import jobs
 from helvetic_lens.db import utcnow
 from helvetic_lens.maintenance import cleanup_operational_data
-from helvetic_lens.models import IntegrationLog, Job, JobStep, OutboxMessage, Version
+from helvetic_lens.models import (
+    DigestDelivery,
+    DigestPreference,
+    IntegrationLog,
+    Job,
+    JobStep,
+    OutboxMessage,
+    User,
+    Version,
+)
 
 
 def test_cleanup_bounds_operational_data_without_deleting_evidence_or_active_work(harness):
@@ -15,6 +24,7 @@ def test_cleanup_bounds_operational_data_without_deleting_evidence_or_active_wor
     law = add_law(client)
     now = utcnow()
     old = now - timedelta(days=120)
+    digest_old = now - timedelta(days=service.settings.digest_delivery_retention_days + 1)
 
     with service.db.session() as session:
         old_log = IntegrationLog(
@@ -58,11 +68,43 @@ def test_cleanup_bounds_operational_data_without_deleting_evidence_or_active_wor
             idempotency_key="active-maintenance-job",
         )
         active_job.updated_at = old
+
+        user = User(
+            email="retention@example.ch",
+            password_hash="not-used",
+            name="Retention test",
+        )
+        session.add(user)
+        session.flush()
+        preference = DigestPreference(user_id=user.id)
+        session.add(preference)
+        session.flush()
+        expired_digest = DigestDelivery(
+            user_id=user.id,
+            preference_id=preference.id,
+            frequency="weekly",
+            period_start=old - timedelta(days=7),
+            period_end=old,
+            status="succeeded",
+        )
+        current_digest = DigestDelivery(
+            user_id=user.id,
+            preference_id=preference.id,
+            frequency="weekly",
+            period_start=now - timedelta(days=7),
+            period_end=now,
+            status="succeeded",
+        )
+        session.add_all([expired_digest, current_digest])
+        session.flush()
+        expired_digest.created_at = digest_old
         session.commit()
         old_log_id = old_log.id
         current_log_id = current_log.id
         expired_job_id = expired_job.id
         active_job_id = active_job.id
+        expired_digest_id = expired_digest.id
+        current_digest_id = current_digest.id
 
         version = session.get(Version, law["current_version_id"])
         referenced_artifact = service.settings.storage_path / "artifacts" / version.artifact_key
@@ -86,6 +128,7 @@ def test_cleanup_bounds_operational_data_without_deleting_evidence_or_active_wor
     assert result == {
         "integration_logs": 1,
         "terminal_jobs": 1,
+        "digest_deliveries": 1,
         "orphan_artifacts": 1,
         "temporary_files": 0,
         "auth_messages": 1,
@@ -101,5 +144,7 @@ def test_cleanup_bounds_operational_data_without_deleting_evidence_or_active_wor
         assert session.get(IntegrationLog, current_log_id) is not None
         assert session.get(Job, expired_job_id) is None
         assert session.get(Job, active_job_id) is not None
+        assert session.get(DigestDelivery, expired_digest_id) is None
+        assert session.get(DigestDelivery, current_digest_id) is not None
         assert session.scalar(select(JobStep).where(JobStep.job_id == expired_job_id)) is None
         assert session.scalar(select(OutboxMessage).where(OutboxMessage.job_id == expired_job_id)) is None

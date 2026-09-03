@@ -16,6 +16,7 @@ import {
   Inbox,
   Landmark,
   Loader2,
+  Mail,
   PackageOpen,
   RefreshCw,
   ScrollText,
@@ -64,9 +65,7 @@ export function Shell({
           </span>
           <span>
             Helvetic Lens
-            <small>
-              {t("brand.tagline")}
-            </small>
+            <small>{t("brand.tagline")}</small>
           </span>
         </Link>
         <button
@@ -113,7 +112,20 @@ export function Shell({
           </Link>
           {session?.authenticated && (
             <Link
-              className={"nav-item " + (pathname === "/organization" ? "active" : "")}
+              className={
+                "nav-item " + (pathname === "/digests" ? "active" : "")
+              }
+              href="/digests"
+            >
+              <Mail size={17} />
+              {t("nav.digests")}
+            </Link>
+          )}
+          {session?.authenticated && (
+            <Link
+              className={
+                "nav-item " + (pathname === "/organization" ? "active" : "")
+              }
               href="/organization"
             >
               <Users size={17} />
@@ -152,7 +164,9 @@ export function Shell({
           )}
           {isPlatformAdmin && (
             <Link
-              className={"nav-item " + (pathname === "/connectors" ? "active" : "")}
+              className={
+                "nav-item " + (pathname === "/connectors" ? "active" : "")
+              }
               href="/connectors"
             >
               <RefreshCw size={17} />
@@ -190,7 +204,10 @@ export function Shell({
           </Link>
         </nav>
         <div className="sidebar-bottom">
-          <Link className="model-card" href={isPlatformAdmin ? "/models" : "/settings"}>
+          <Link
+            className="model-card"
+            href={isPlatformAdmin ? "/models" : "/settings"}
+          >
             <Sparkles size={17} />
             <div>
               <strong>{t("shell.apertusSettings")}</strong>
@@ -257,6 +274,9 @@ export function Shell({
           <Link href="/">{t("nav.overview")}</Link>
           <Link href="/registry">{t("nav.registry")}</Link>
           <Link href="/impact">{t("nav.impact")}</Link>
+          {session?.authenticated && (
+            <Link href="/digests">{t("nav.digests")}</Link>
+          )}
           <Link href="/sources">{t("nav.sources")}</Link>
           <Link href="/activity">{t("nav.activity")}</Link>
           {isPlatformAdmin && <Link href="/admin">{t("nav.admin")}</Link>}
@@ -266,12 +286,11 @@ export function Shell({
           <Link href="/settings">{t("nav.settings")}</Link>
         </nav>
         <div className={"content " + (wide ? "content-wide" : "")}>
-          {error && (
-            <ErrorNote message={t("shell.apiError")} />
-          )}
+          {error && <ErrorNote message={t("shell.apiError")} />}
           {session?.authenticated && session.role === "viewer" && (
             <div className="mb-5 rounded-xl border border-[#d6decf] bg-[#f3f6ef] px-4 py-3 text-sm text-[#50604c]">
-              <strong>{t("shell.readOnlyTitle")}</strong> {t("shell.readOnlyBody")}
+              <strong>{t("shell.readOnlyTitle")}</strong>{" "}
+              {t("shell.readOnlyBody")}
             </div>
           )}
           {children}
@@ -338,9 +357,7 @@ export function ProfileDialog({
         }),
       });
       refreshWorkspace();
-      setSuccess(
-        t("profile.saved"),
-      );
+      setSuccess(t("profile.saved"));
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -355,7 +372,9 @@ export function ProfileDialog({
       const value = await api<{ latency_ms: number }>("/model/test", {
         method: "POST",
       });
-      setSuccess(t("profile.testSuccess", { duration: number(value.latency_ms) }));
+      setSuccess(
+        t("profile.testSuccess", { duration: number(value.latency_ms) }),
+      );
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -367,9 +386,7 @@ export function ProfileDialog({
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{t("profile.title")}</DialogTitle>
-          <DialogDescription>
-            {t("profile.body")}
-          </DialogDescription>
+          <DialogDescription>{t("profile.body")}</DialogDescription>
         </DialogHeader>
         <form onSubmit={save} className="form-stack">
           <label>
@@ -402,7 +419,8 @@ export function ProfileDialog({
           <ErrorNote message={error} />
           {success && <SuccessNote>{success}</SuccessNote>}
           <Button type="submit" disabled={!!busy || !name.trim()}>
-            {busy === "save" && <Loader2 className="animate-spin" />}{t("profile.save")}
+            {busy === "save" && <Loader2 className="animate-spin" />}
+            {t("profile.save")}
           </Button>
         </form>
         <div className="border-t pt-5 mt-2">
@@ -413,9 +431,7 @@ export function ProfileDialog({
           <p className="text-xs muted break-all">
             {health?.apertus.model || "swiss-ai/Apertus-v1.5-8B"}
           </p>
-          <p className="text-xs muted">
-            {t("profile.connectionBody")}
-          </p>
+          <p className="text-xs muted">{t("profile.connectionBody")}</p>
           <Button asChild variant="outline" size="sm" className="mr-2 mb-2">
             <Link href="/settings" onClick={() => onOpenChange(false)}>
               {t("shell.apertusSettings")}

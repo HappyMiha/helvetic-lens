@@ -4,7 +4,7 @@
 
 This backlog implements the product described in [README.md](README.md): a local-AI-first Swiss regulatory monitor with immutable evidence, a time-based legal registry, official-source connectors, cross-document impact analysis, and organization workspaces.
 
-**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-047`, `HL-050`–`HL-051`) and decision-ready comparison work (`HL-058`–`HL-063`) are implemented and verified through the API, browser build, migrations, and regression tests. Five-language product localization (`HL-057`) is in progress. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), [impact-report contract](docs/IMPACT_REPORT.md), [Ask routing](docs/ASK_ROUTING.md), [localization contract](docs/LOCALIZATION.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
+**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-047`, `HL-050`–`HL-052`) and decision-ready comparison work (`HL-058`–`HL-063`) are implemented and verified through the API, browser build, migrations, and regression tests. Five-language product localization (`HL-057`) is in progress. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), [impact-report contract](docs/IMPACT_REPORT.md), [Ask routing](docs/ASK_ROUTING.md), [localization contract](docs/LOCALIZATION.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
 
 ## Scope and priorities
 
@@ -98,7 +98,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-064](#hl-064) | P0       | PLANNED  | HL-057–HL-063                                          | AI-triage regression, evidence, latency, and usability gate         |
 | [HL-050](#hl-050) | P2       | DONE     | HL-038, HL-042                                         | Broader official regulatory news connectors                         |
 | [HL-051](#hl-051) | P2       | DONE     | HL-044, HL-050                                         | Measured semantic candidate recall with pgvector if justified       |
-| [HL-052](#hl-052) | P2       | PLANNED  | HL-034, HL-046, HL-057                                 | Opt-in email and web digests                                        |
+| [HL-052](#hl-052) | P2       | DONE     | HL-034, HL-046, HL-057                                 | Opt-in email and web digests                                        |
 | [HL-053](#hl-053) | P3       | PLANNED  | HL-044–HL-046                                          | Relation review workflow and visual graph                           |
 | [HL-054](#hl-054) | P3       | DONE     | HL-034, HL-035                                         | Account recovery, verification, 2FA, and SSO refinements            |
 | [HL-055](#hl-055) | P2       | DONE     | HL-038, HL-041                                         | Broader federal and cantonal court coverage                         |
@@ -1120,6 +1120,8 @@ Acceptance criteria:
 ### HL-052 — Add opt-in email and web digests
 
 Summarize the existing impact inbox without turning notification delivery into a second source of truth.
+
+**Status: DONE.** Every signed-in user now has organization-scoped daily or weekly preferences, severity/source filters, a saved-data web preview, manual rate-limited delivery, direct signed unsubscribe links, and bounded delivery history. Celery Beat schedules idempotent durable delivery jobs; email uses the existing development/SMTP transport and includes links back to persisted comparison evidence. Empty or disabled-email deliveries are recorded honestly, and neither delivery nor failure changes personal read state or legal history. The complete interface and transactional copy are available in DE/FR/IT/RM/EN. See [the digest contract](docs/DIGESTS.md).
 
 Acceptance criteria:
 

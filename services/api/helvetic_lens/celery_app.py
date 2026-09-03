@@ -7,7 +7,7 @@ import socket
 
 from celery import Celery
 
-from . import jobs, synchronization
+from . import digests, jobs, synchronization
 from .config import Settings
 from .db import Database
 from .maintenance import cleanup_operational_data
@@ -43,6 +43,10 @@ celery_app.conf.update(
         "cleanup-operational-data": {
             "task": "helvetic_lens.cleanup_operational_data",
             "schedule": 86400.0,
+        },
+        "schedule-user-digests": {
+            "task": "helvetic_lens.schedule_digests",
+            "schedule": 3600.0,
         },
     },
 )
@@ -80,6 +84,15 @@ def schedule_connectors():
         session.commit()
     database.engine.dispose()
     return result
+
+
+@celery_app.task(name="helvetic_lens.schedule_digests")
+def schedule_digests():
+    database = Database(settings)
+    try:
+        return digests.enqueue_due(database, settings)
+    finally:
+        database.engine.dispose()
 
 
 @celery_app.task(name="helvetic_lens.cleanup_operational_data")

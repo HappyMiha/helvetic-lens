@@ -19,9 +19,9 @@ from sqlalchemy import delete, func, inspect, or_, select
 from sqlalchemy.orm import Session
 
 from . import analysis as ai
+from . import digests, synchronization
 from . import jobs as durable_jobs
 from . import relation_analysis as relation_ai
-from . import synchronization
 from .ai_metrics import summarize_ai_triage_metrics
 from .broad_official_connector import federal_news_connectors, finma_news_connectors
 from .config import DomainError, Settings
@@ -59,6 +59,8 @@ from .models import (
     AskRecord,
     Comparison,
     ConnectorState,
+    DigestDelivery,
+    DigestPreference,
     DocumentWatch,
     IdentityDecision,
     IntegrationLog,
@@ -1051,6 +1053,136 @@ class HelveticLens:
     def impact_inbox(self, filters: ImpactInboxFilters, user_id: str | None) -> dict:
         with self.db.session() as session:
             return ImpactInboxReader(self.organization_id, user_id).page(session, filters)
+
+    def digest_overview(self, user_id: str | None) -> dict:
+        if not user_id:
+            raise DomainError("Sign in to configure digests.", 401, "authentication_required")
+        with self.db.session() as session:
+            preference = session.scalar(
+                select(DigestPreference).where(DigestPreference.user_id == user_id)
+            )
+            effective = preference or DigestPreference(
+                organization_id=self.organization_id,
+                user_id=user_id,
+                enabled=False,
+                frequency="weekly",
+                severities=[],
+                sources=[],
+            )
+            period_start = utcnow() - digests.FREQUENCIES[effective.frequency]
+            inbox = ImpactInboxReader(self.organization_id, user_id).page(
+                session, ImpactInboxFilters()
+            )
+            deliveries = list(
+                session.scalars(
+                    select(DigestDelivery)
+                    .where(DigestDelivery.user_id == user_id)
+                    .order_by(DigestDelivery.created_at.desc())
+                    .limit(20)
+                )
+            )
+            source_options = sorted(
+                {
+                    value
+                    for item in inbox.get("items", [])
+                    for value in (item.get("source"), item.get("authority"))
+                    if value
+                }
+            )
+            return {
+                "preference": digests.serialize_preference(preference),
+                "preview": digests.filtered_summary(inbox, effective, period_start),
+                "source_options": source_options,
+                "delivery_mode": self.environment_settings.auth_email_mode,
+                "deliveries": [digests.serialize_delivery(item) for item in deliveries],
+            }
+
+    def save_digest_preference(
+        self,
+        user_id: str | None,
+        *,
+        enabled: bool,
+        frequency: str,
+        severities: list[str],
+        sources: list[str],
+    ) -> dict:
+        if not user_id:
+            raise DomainError("Sign in to configure digests.", 401, "authentication_required")
+        if frequency not in digests.FREQUENCIES:
+            raise DomainError("Choose a daily or weekly digest.", 422, "digest_frequency_invalid")
+        if any(value not in digests.SEVERITIES for value in severities):
+            raise DomainError("Choose supported severity filters.", 422, "digest_severity_invalid")
+        clean_sources = list(dict.fromkeys(value.strip()[:120] for value in sources if value.strip()))
+        with self.write_guard, self.db.session() as session:
+            preference = session.scalar(
+                select(DigestPreference).where(DigestPreference.user_id == user_id)
+            )
+            now = utcnow()
+            if not preference:
+                preference = DigestPreference(user_id=user_id)
+                session.add(preference)
+            schedule_changed = preference.frequency != frequency or not preference.enabled
+            preference.enabled = enabled
+            preference.frequency = frequency
+            preference.severities = list(dict.fromkeys(severities))
+            preference.sources = clean_sources[:20]
+            preference.next_delivery_at = (
+                digests.next_delivery(now, frequency)
+                if enabled and (schedule_changed or preference.next_delivery_at is None)
+                else preference.next_delivery_at if enabled else None
+            )
+            preference.updated_at = now
+            session.commit()
+        return self.digest_overview(user_id)
+
+    def enqueue_digest_now(self, user_id: str | None) -> dict:
+        if not user_id:
+            raise DomainError("Sign in to send a digest.", 401, "authentication_required")
+        with self.write_guard, self.db.session() as session:
+            preference = session.scalar(
+                select(DigestPreference).where(DigestPreference.user_id == user_id)
+            )
+            if not preference or not preference.enabled:
+                raise DomainError("Enable the digest before sending it.", 409, "digest_not_enabled")
+            period_end = utcnow()
+            period_start = preference.last_sent_at or (
+                period_end - digests.FREQUENCIES[preference.frequency]
+            )
+            delivery = DigestDelivery(
+                user_id=user_id,
+                preference_id=preference.id,
+                frequency=preference.frequency,
+                period_start=period_start,
+                period_end=period_end,
+            )
+            session.add(delivery)
+            session.flush()
+            job, _ = durable_jobs.enqueue(
+                session,
+                job_type="digest_delivery",
+                target_type="digest_delivery",
+                target_id=delivery.id,
+                queue="maintenance",
+                priority=2,
+                idempotency_key=f"digest:{preference.id}:{period_end.isoformat()}",
+                payload={"delivery_id": delivery.id},
+                max_attempts=self.settings.job_max_attempts,
+                steps=[("Build saved impact summary", {}), ("Deliver opted-in email", {})],
+            )
+            session.commit()
+            return durable_jobs.serialize(session, job)
+
+    def unsubscribe_digest(self, token: str) -> dict:
+        preference_id = digests.preference_id_from_token(self.environment_settings, token)
+        with self.write_guard, self.db.session(include_all_organizations=True) as session:
+            preference = session.get(DigestPreference, preference_id)
+            if not preference:
+                raise DomainError("This unsubscribe link is invalid.", 422, "digest_token_invalid")
+            preference.enabled = False
+            preference.next_delivery_at = None
+            preference.updated_at = utcnow()
+            session.commit()
+            return {"unsubscribed": True}
 
     def set_impact_inbox_state(
         self, event_id: str, state: str, user_id: str | None
@@ -3080,6 +3212,17 @@ class HelveticLens:
                 result_type = "relation_impact_analysis"
                 result_id = result_json["id"]
                 result_url = f"/impact?candidate={target_id}"
+            elif job_type == "digest_delivery":
+                mark(0, 1, "running")
+                result_json = await asyncio.to_thread(
+                    digests.deliver, self.db, self.environment_settings, target_id
+                )
+                mark(1, 1, "succeeded")
+                mark(1, 2, "running")
+                mark(2, 2, "succeeded")
+                result_type = "digest_delivery"
+                result_id = target_id
+                result_url = "/digests"
             elif job_type in {"model_download", "model_start"}:
                 action = job_type.removeprefix("model_")
                 result_json = await self._run_model_job(job_id, target_id, action, payload, worker)

@@ -5,6 +5,48 @@ export type Health = {
   firecrawl: { configured: boolean };
   private_sources_enabled: boolean;
 };
+export type DigestPreference = {
+  id?: string;
+  enabled: boolean;
+  frequency: "daily" | "weekly";
+  severities: string[];
+  sources: string[];
+  next_delivery_at: string | null;
+  last_sent_at: string | null;
+};
+export type DigestEvent = {
+  event_id: string;
+  title: string;
+  source: string;
+  severity: string;
+  detected_at: string;
+  source_url: string | null;
+  impacts: Array<{
+    law_id: string;
+    law_title: string;
+    potential_effect: string;
+    next_step: string;
+    comparison: string | null;
+    evidence: string | null;
+  }>;
+};
+export type DigestOverview = {
+  preference: DigestPreference;
+  preview: { events: DigestEvent[]; truncated: boolean };
+  source_options: string[];
+  delivery_mode: "disabled" | "development" | "smtp";
+  deliveries: Array<{
+    id: string;
+    frequency: string;
+    period_start: string;
+    period_end: string;
+    status: string;
+    item_count: number;
+    error: string | null;
+    sent_at: string | null;
+    created_at: string;
+  }>;
+};
 export type ApertusSettings = {
   provider: "custom" | "docker" | "infomaniak";
   product_id: string;
@@ -310,7 +352,8 @@ export type ActionDecision = {
   comparison_id: string;
   analysis_id: string;
   action_key: string;
-  decision: "accepted" | "assigned" | "scheduled" | "dismissed" | "not_applicable";
+  decision:
+    "accepted" | "assigned" | "scheduled" | "dismissed" | "not_applicable";
   assigned_to: string | null;
   scheduled_for: string | null;
   rationale: string | null;
@@ -666,8 +709,17 @@ export type PlatformStatus = {
       limited_rate: number;
     };
     latency: Record<
-      "deterministic_overview" | "time_to_first_useful_insight" | "provider_queue" | "inference",
-      { samples: number; p50_ms: number | null; p95_ms: number | null; max_ms: number | null; source?: string }
+      | "deterministic_overview"
+      | "time_to_first_useful_insight"
+      | "provider_queue"
+      | "inference",
+      {
+        samples: number;
+        p50_ms: number | null;
+        p95_ms: number | null;
+        max_ms: number | null;
+        source?: string;
+      }
     >;
     usage: {
       provider_calls: number;

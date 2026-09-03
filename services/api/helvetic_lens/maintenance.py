@@ -13,6 +13,7 @@ from .config import Settings
 from .db import Database, utcnow
 from .models import (
     ConnectorRun,
+    DigestDelivery,
     IntegrationLog,
     Job,
     JobStep,
@@ -51,6 +52,7 @@ def cleanup_operational_data(
     now = now or utcnow()
     log_cutoff = now - timedelta(days=settings.integration_log_retention_days)
     job_cutoff = now - timedelta(days=settings.job_history_retention_days)
+    digest_cutoff = now - timedelta(days=settings.digest_delivery_retention_days)
     artifact_cutoff = now - timedelta(hours=settings.orphan_artifact_retention_hours)
     mailbox_cutoff = now - timedelta(hours=settings.auth_mail_retention_hours)
 
@@ -75,6 +77,17 @@ def cleanup_operational_data(
             session.execute(delete(OutboxMessage).where(OutboxMessage.job_id.in_(old_job_ids)))
             session.execute(delete(JobStep).where(JobStep.job_id.in_(old_job_ids)))
             session.execute(delete(Job).where(Job.id.in_(old_job_ids)))
+
+        old_digest_ids = list(
+            session.scalars(
+                select(DigestDelivery.id).where(
+                    DigestDelivery.status.in_(TERMINAL_JOB_STATES + ("skipped",)),
+                    DigestDelivery.created_at < digest_cutoff,
+                )
+            )
+        )
+        if old_digest_ids:
+            session.execute(delete(DigestDelivery).where(DigestDelivery.id.in_(old_digest_ids)))
 
         referenced_artifacts = set(
             session.scalars(select(Version.artifact_key).where(Version.artifact_key != ""))
@@ -104,6 +117,7 @@ def cleanup_operational_data(
     result: dict[str, int | str] = {
         "integration_logs": len(old_log_ids),
         "terminal_jobs": len(old_job_ids),
+        "digest_deliveries": len(old_digest_ids),
         "orphan_artifacts": orphan_artifacts,
         "temporary_files": temporary_files,
         "auth_messages": auth_messages,

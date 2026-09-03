@@ -161,6 +161,19 @@ class ImpactInboxStateInput(Input):
     state: Literal["unread", "read", "dismissed", "muted"]
 
 
+class DigestPreferenceInput(Input):
+    enabled: bool
+    frequency: Literal["daily", "weekly"]
+    severities: list[Literal["high", "medium", "low", "none", "unknown"]] = Field(
+        default_factory=list, max_length=5
+    )
+    sources: list[str] = Field(default_factory=list, max_length=20)
+
+
+class DigestUnsubscribeInput(Input):
+    token: str = Field(min_length=40, max_length=200)
+
+
 class RelationReviewInput(Input):
     decision: Literal["confirmed", "rejected"]
     note: str = Field(default="", max_length=2000)
@@ -197,6 +210,8 @@ def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
         return "ai", 30, 300
     if path.endswith("/analyse") or path.endswith("/analyse-jobs"):
         return "ai", 20, 300
+    if path == "/api/digests/send":
+        return "digest", 3, 3600
     if "/invitations" in path:
         return "invitation", 20, 3600
     return None
@@ -286,6 +301,7 @@ def create_app(
             "/api/auth/email-verification/complete",
             "/api/auth/password-reset/request",
             "/api/auth/password-reset/complete",
+            "/api/digests/unsubscribe",
         }
         public_path = path in {"/api/health", "/api/ready"} or path in public_auth_paths
         public_path = public_path or path in {"/docs", "/openapi.json", "/redoc"}
@@ -315,6 +331,9 @@ def create_app(
             "/api/invitations/accept",
             "/api/auth/session/organization",
             "/api/auth/locale",
+            "/api/digests/preferences",
+            "/api/digests/unsubscribe",
+            "/api/digests/send",
         }
         viewer_personal_state = (
             path.startswith("/api/impact-inbox/events/") and path.endswith("/state")
@@ -900,6 +919,31 @@ def create_app(
         return service.set_impact_inbox_state(
             event_id, data.state, identity.user_id if identity else None
         )
+
+    @app.get("/api/digests")
+    def digest_overview(request: Request):
+        identity = request.state.identity
+        return service.digest_overview(identity.user_id if identity else None)
+
+    @app.put("/api/digests/preferences")
+    def save_digest_preference(data: DigestPreferenceInput, request: Request):
+        identity = request.state.identity
+        return service.save_digest_preference(
+            identity.user_id if identity else None,
+            **data.model_dump(),
+        )
+
+    @app.post("/api/digests/send", status_code=202)
+    async def send_digest_now(request: Request):
+        identity = request.state.identity
+        job = service.enqueue_digest_now(identity.user_id if identity else None)
+        if settings.job_execution_mode == "inline":
+            return await service.execute_job(job["id"])
+        return job
+
+    @app.post("/api/digests/unsubscribe")
+    def unsubscribe_digest(data: DigestUnsubscribeInput):
+        return service.unsubscribe_digest(data.token)
 
     @app.patch("/api/registry/events/{event_id}/read")
     def mark_registry_event_read(

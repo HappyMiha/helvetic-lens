@@ -60,6 +60,7 @@ class Settings(BaseSettings):
     connector_min_free_megabytes: int = Field(default=512, ge=32, le=1_000_000)
     integration_log_retention_days: int = Field(default=30, ge=1, le=365)
     job_history_retention_days: int = Field(default=90, ge=7, le=730)
+    digest_delivery_retention_days: int = Field(default=180, ge=7, le=3650)
     orphan_artifact_retention_hours: int = Field(default=24, ge=1, le=720)
     auth_mail_retention_hours: int = Field(default=48, ge=1, le=168)
     relation_candidates_per_event: int = Field(default=20, ge=1, le=100)

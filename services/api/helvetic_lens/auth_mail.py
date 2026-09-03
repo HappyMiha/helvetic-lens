@@ -61,12 +61,24 @@ class AuthMailer:
             f'<html lang="{selected}"><body><p><a href="{link}">{action}</a></p>'
             f"<p>{messages['note']}</p></body></html>"
         )
+        return self.send_message(email, subject, body, html, selected)
+
+    def send_message(
+        self,
+        email: str,
+        subject: str,
+        body: str,
+        html: str,
+        locale: str = "en-CH",
+        *,
+        message_id: str | None = None,
+    ) -> str:
         if self.settings.auth_email_mode == "disabled":
             return "disabled"
         if self.settings.auth_email_mode == "development":
-            self._write_development_message(email, subject, body, html, selected)
+            self._write_development_message(email, subject, body, html, locale)
             return "development"
-        self._send_smtp(email, subject, body, html)
+        self._send_smtp(email, subject, body, html, message_id=message_id)
         return "smtp"
 
     def _write_development_message(
@@ -99,11 +111,21 @@ class AuthMailer:
             encoding="utf-8",
         )
 
-    def _send_smtp(self, email: str, subject: str, body: str, html: str) -> None:
+    def _send_smtp(
+        self,
+        email: str,
+        subject: str,
+        body: str,
+        html: str,
+        *,
+        message_id: str | None = None,
+    ) -> None:
         message = EmailMessage()
         message["From"] = self.settings.auth_email_from
         message["To"] = email
         message["Subject"] = subject
+        if message_id:
+            message["Message-ID"] = message_id
         message.set_content(body)
         message.add_alternative(html, subtype="html")
         try:

@@ -11,7 +11,13 @@ export type AuthSession = {
   anonymous_development?: boolean;
   authentication_required?: boolean;
   onboarding_required?: boolean;
-  user?: { id: string; email: string; name: string; email_verified?: boolean; locale?: string };
+  user?: {
+    id: string;
+    email: string;
+    name: string;
+    email_verified?: boolean;
+    locale?: string;
+  };
   organization?: { id: string; name: string };
   role?: string;
   platform_admin?: boolean;
@@ -44,6 +50,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const { data, loading, error } = useResource<AuthSession>("/auth/session");
   const { syncUserLocale, t } = useI18n();
   const authenticationPage = pathname === "/login";
+  const publicPage = authenticationPage || pathname === "/unsubscribe";
 
   useEffect(() => {
     syncUserLocale(data?.authenticated ? data.user?.locale : undefined);
@@ -51,7 +58,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!data) return;
-    if (data.authentication_required && !authenticationPage) {
+    if (data.authentication_required && !publicPage) {
       router.replace(`/login?next=${encodeURIComponent(pathname)}`);
     } else if (data.authenticated && authenticationPage) {
       const parameters = new URLSearchParams(window.location.search);
@@ -65,9 +72,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
             : "/",
       );
     }
-  }, [authenticationPage, data, pathname, router]);
+  }, [authenticationPage, data, pathname, publicPage, router]);
 
-  if (loading && !authenticationPage) {
+  if (loading && !publicPage) {
     return (
       <main className="min-h-screen grid place-items-center bg-[#f7f7f3]">
         <div className="flex items-center gap-3 text-sm text-[#657064]">
@@ -76,7 +83,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       </main>
     );
   }
-  if (error && !authenticationPage) return <>{children}</>;
-  if (data?.authentication_required && !authenticationPage) return null;
+  if (error && !publicPage) return <>{children}</>;
+  if (data?.authentication_required && !publicPage) return null;
   return <AuthContext.Provider value={data}>{children}</AuthContext.Provider>;
 }
