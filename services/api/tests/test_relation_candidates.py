@@ -9,6 +9,7 @@ from helvetic_lens.models import (
     LegacyDocumentMapping,
     Organization,
     OrganizationRelationCandidate,
+    RegulatoryIdentifier,
     RegulatoryRelation,
     RegulatoryWork,
     RelationCandidate,
@@ -181,3 +182,57 @@ def test_confirmed_exact_relation_is_reused_as_the_candidate_evidence(harness):
         assert candidate.score == 1.0
         assert candidate.evidence_json["relation_state"] == "confirmed"
         assert candidate.evidence_json["similarity_is_not_evidence"] is False
+
+
+def test_cross_language_exact_norm_reference_seeds_candidate_retrieval(harness):
+    client, _, service, _ = harness
+    law = add_law(client, name="Bundesgesetz über den Datenschutz")
+    with service.db.session(include_all_organizations=True) as session:
+        mapping = session.scalar(
+            select(LegacyDocumentMapping).where(LegacyDocumentMapping.law_id == law["id"])
+        )
+        target = session.get(RegulatoryWork, mapping.work_id)
+        target.title = "Bundesgesetz über den Datenschutz"
+        target.metadata_json = {"systematic_number": "SR 235.1"}
+        session.add(
+            RegulatoryIdentifier(
+                work_id=target.id,
+                authority=target.authority,
+                scheme="sr_rs",
+                value="235.1",
+                normalized_value="235.1",
+                source_url="https://fedlex.data.admin.ch/eli/cc/2022/491",
+            )
+        )
+        source = service.regulatory_corpus.merge_document(
+            session,
+            DocumentInput(
+                kind="bill",
+                authority="swiss_parliament",
+                identifiers=(IdentifierInput("parliament_affair_id", "20260123"),),
+                title="Révision des obligations numériques",
+                expression=ExpressionInput("fr", "affair:20260123"),
+                metadata={"affected_norm": "RS 235.1"},
+            ),
+        )
+        event = service.regulatory_corpus.record_event(
+            session,
+            EventInput(
+                work_id=source.work.id,
+                authority="swiss_parliament",
+                event_type="created",
+                detected_at=datetime.now(UTC),
+                provenance_method="official_metadata",
+                evidence={"affected_norm": "RS 235.1"},
+                connector="swiss-parliament",
+                source_url="https://www.parlament.ch/fr/20260123",
+            ),
+        )
+        result = generate_for_events(session, [event], service.regulatory_corpus, service.settings)
+        session.commit()
+        candidate = session.scalar(
+            select(RelationCandidate).where(RelationCandidate.event_id == event.id)
+        )
+        assert result["candidates"] == 1
+        assert candidate.target_work_id == target.id
+        assert candidate.score_components_json["norm_reference"] > 0

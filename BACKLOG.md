@@ -4,7 +4,7 @@
 
 This backlog implements the product described in [README.md](README.md): a local-AI-first Swiss regulatory monitor with immutable evidence, a time-based legal registry, official-source connectors, cross-document impact analysis, and organization workspaces.
 
-**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-044`, `HL-047`, `HL-050`), document-identity gate (`HL-058`), and legal-unit semantic diff (`HL-059`) are implemented and verified through the API, browser build, migrations, and regression tests. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
+**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-044`, `HL-047`, `HL-050`–`HL-051`), document-identity gate (`HL-058`), and legal-unit semantic diff (`HL-059`) are implemented and verified through the API, browser build, migrations, and regression tests. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
 
 ## Scope and priorities
 
@@ -97,7 +97,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-063](#hl-063) | P1       | PLANNED  | HL-030, HL-037, HL-059–HL-062                          | Decision-ready comparison UX and background progress                |
 | [HL-064](#hl-064) | P0       | PLANNED  | HL-057–HL-063                                          | AI-triage regression, evidence, latency, and usability gate         |
 | [HL-050](#hl-050) | P2       | DONE     | HL-038, HL-042                                         | Broader official regulatory news connectors                         |
-| [HL-051](#hl-051) | P2       | PLANNED  | HL-044, HL-050                                         | Measured semantic candidate recall with pgvector if justified       |
+| [HL-051](#hl-051) | P2       | DONE     | HL-044, HL-050                                         | Measured semantic candidate recall with pgvector if justified       |
 | [HL-052](#hl-052) | P2       | PLANNED  | HL-034, HL-046, HL-057                                 | Opt-in email and web digests                                        |
 | [HL-053](#hl-053) | P3       | PLANNED  | HL-044–HL-046                                          | Relation review workflow and visual graph                           |
 | [HL-054](#hl-054) | P3       | PLANNED  | HL-034, HL-035                                         | Account recovery, verification, 2FA, and SSO refinements            |
@@ -1088,6 +1088,8 @@ Acceptance criteria:
 ### HL-051 — Add pgvector only if a labelled candidate-recall benchmark justifies it
 
 Improve multilingual relation discovery without weakening exact evidence requirements.
+
+**Status: DONE — pgvector remains disabled.** The checked-in multilingual gate measures deterministic identifiers plus the production full-text/scoring path at 100% recall and 100% precision on 15 labelled pairs, with zero additional disk or embedding calls. It fixed exact cross-language SR/RS retrieval and safe German legal-title suffix matching. Similarity remains candidate-only evidence. See [the benchmark, measurements, and reopen threshold](docs/RELATION_CANDIDATE_BENCHMARK.md).
 
 Acceptance criteria:
 

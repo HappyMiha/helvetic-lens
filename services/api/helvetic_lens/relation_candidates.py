@@ -19,6 +19,7 @@ from .models import (
     RegulatoryDocumentVersion,
     RegulatoryEvent,
     RegulatoryExpression,
+    RegulatoryIdentifier,
     RegulatoryRelation,
     RegulatoryWork,
     RelationCandidate,
@@ -39,7 +40,15 @@ _STOP = {
 def normalized_title_tokens(value: str) -> set[str]:
     value = unicodedata.normalize("NFKD", value.casefold())
     ascii_value = "".join(character for character in value if not unicodedata.combining(character))
-    return {token for token in _WORD.findall(ascii_value) if token not in _STOP}
+    tokens = {token for token in _WORD.findall(ascii_value) if token not in _STOP}
+    # German official titles often concatenate the regulated subject with the
+    # instrument type (Datenschutzgesetz). Keep the original token and add the
+    # transparent legal suffix split so a proposal title can match the act.
+    for token in tuple(tokens):
+        for suffix in ("gesetzes", "gesetz", "verordnung"):
+            if token.endswith(suffix) and len(token) >= len(suffix) + 4:
+                tokens.add(token[: -len(suffix)])
+    return tokens
 
 
 def _flatten_strings(value) -> list[str]:
@@ -80,7 +89,7 @@ def score_candidate(
     overlap = source_tokens & target_tokens
     union = source_tokens | target_tokens
     title_score = len(overlap) / len(union) if union else 0.0
-    norm_score = min(1.0, shared_norms / 2) if shared_norms else 0.0
+    norm_score = 1.0 if shared_norms else 0.0
     article_score = min(1.0, shared_articles / 3) if shared_articles else 0.0
     authority_score = 1.0 if source_authority == target_authority else 0.0
     compatible = {
@@ -198,6 +207,18 @@ def generate_for_events(
 
         source_norms, source_articles = _references(source.title, source.metadata_json, event.evidence_json)
         target_ids = _fts_work_ids(session, watched_ids - {source.id}, normalized_title_tokens(source.title))
+        # Exact official norm references must seed retrieval even when titles are
+        # in different national languages and therefore share no search token.
+        if source_norms:
+            target_ids.update(
+                session.scalars(
+                    select(RegulatoryIdentifier.work_id).where(
+                        RegulatoryIdentifier.work_id.in_(watched_ids - {source.id}),
+                        RegulatoryIdentifier.scheme == "sr_rs",
+                        RegulatoryIdentifier.normalized_value.in_(source_norms),
+                    )
+                )
+            )
         target_ids.update(exact_by_target)
         ranked = []
         source_version = session.get(RegulatoryDocumentVersion, event.document_version_id) if event.document_version_id else _latest_version(session, source.id)
