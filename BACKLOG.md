@@ -81,7 +81,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-040](#hl-040) | P1       | DONE     | HL-038                                                 | Swiss Parliament initiatives and bills connector                    |
 | [HL-041](#hl-041) | P1       | DONE     | HL-038                                                 | Swiss Federal Supreme Court decisions connector                     |
 | [HL-042](#hl-042) | P1       | DONE     | HL-030, HL-039–HL-041                                  | Scheduled synchronization, deduplication, and watch fan-out         |
-| [HL-043](#hl-043) | P1       | PLANNED  | HL-038, HL-042                                         | Official notices and source-linked news events                      |
+| [HL-043](#hl-043) | P1       | DONE     | HL-038, HL-042                                         | Official notices and source-linked news events                      |
 | [HL-044](#hl-044) | P1       | PLANNED  | HL-036, HL-039–HL-043                                  | Evidence-backed relation graph and candidate generation             |
 | [HL-045](#hl-045) | P1       | PLANNED  | HL-032, HL-044, HL-060, HL-061                         | Local-AI potential-impact analysis                                  |
 | [HL-046](#hl-046) | P1       | PLANNED  | HL-037, HL-045, HL-063                                 | Impact inbox and monitored-law cross-links                          |
@@ -802,6 +802,8 @@ Acceptance criteria:
 ### HL-043 — Ingest official notices and source-linked news from the three core authorities
 
 Capture relevant official context around laws, parliamentary business, and decisions without claiming broad web-news coverage yet.
+
+**Status: DONE.** The stable Parliament press-page OData feed now runs as an incremental scheduled stream, persists five official language expressions and immutable extracted bodies, emits one contextual `notice_published` event per source revision, and derives only exact ELI, SR/RS, and affair relations. Fedlex Federal Gazette coverage remains in its legal connector to avoid duplicate manifestations; the Federal Supreme Court press area is documented as lacking a reliable machine watermark, so its healthy decision connector was not widened into a fragile crawl. See [docs/OFFICIAL_NOTICES.md](docs/OFFICIAL_NOTICES.md).
 
 Acceptance criteria:
 

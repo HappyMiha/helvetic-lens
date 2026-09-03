@@ -727,7 +727,29 @@ class ConnectorRunner:
                     "expression_key": expression_key,
                     "reference": reference.raw_provenance_ref,
                 }
-                if merged.created_work:
+                if document.kind == "official_notice" and (
+                    merged.created_work or merged.created_version
+                ):
+                    self.corpus.record_event(
+                        session,
+                        EventInput(
+                            work_id=merged.work.id,
+                            expression_id=merged.expression.id,
+                            document_version_id=merged.version.id if merged.version else None,
+                            authority=manifest.authority,
+                            event_type="notice_published",
+                            detected_at=utcnow(),
+                            provenance_method="official_metadata",
+                            source_url=metadata.canonical_url,
+                            evidence=event_evidence,
+                            external_key=(
+                                f"{manifest.name}:{stream}:{metadata.external_identity}:"
+                                f"{metadata.source_revision}:notice_published"
+                            ),
+                            connector=manifest.name,
+                        ),
+                    )
+                elif merged.created_work:
                     self.corpus.record_event(
                         session,
                         EventInput(
@@ -746,7 +768,11 @@ class ConnectorRunner:
                             connector=manifest.name,
                         ),
                     )
-                if merged.created_version and merged.version:
+                if (
+                    merged.created_version
+                    and merged.version
+                    and document.kind != "official_notice"
+                ):
                     self.corpus.record_event(
                         session,
                         EventInput(

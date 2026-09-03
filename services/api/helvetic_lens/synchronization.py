@@ -55,6 +55,14 @@ DEFAULT_SCHEDULES = (
     ScheduleDefinition("fedlex", "reconcile-oc", 86_400, 900, "bounded keyset cycle", 0.2),
     ScheduleDefinition("fedlex", "reconcile-fga", 86_400, 900, "bounded keyset cycle", 0.2),
     ScheduleDefinition("swiss-parliament", "recent", 3_600, 300, "recent-tail overlap", 0.2),
+    ScheduleDefinition(
+        "swiss-parliament",
+        "notices",
+        1_800,
+        180,
+        "official Modified/ID watermark",
+        0.2,
+    ),
     ScheduleDefinition("swiss-parliament", "active", 21_600, 900, "known-active reconciliation", 0.2),
     ScheduleDefinition("swiss-parliament", "catalogue", 86_400, 900, "complete ID keyset cycle", 0.2),
     ScheduleDefinition(
@@ -556,8 +564,8 @@ def finish_run(
     if not run:
         raise DomainError("The connector run was not found.", 404, "not_found")
     events = _events_for_run(session, run)
-    run.new_count = sum(event.event_type == "created" for event in events)
-    run.changed_count = sum(event.event_type != "created" for event in events)
+    run.new_count = sum(event.event_type in {"created", "notice_published"} for event in events)
+    run.changed_count = sum(event.event_type not in {"created", "notice_published"} for event in events)
     run.output_cursor_json = result.get("next_cursor")
     run.status = result.get("status") or "failed"
     run.error_detail = (result.get("error") or "")[:2000] or None

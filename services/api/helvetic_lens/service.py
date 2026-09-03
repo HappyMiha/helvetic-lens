@@ -70,6 +70,7 @@ from .models import (
     Source,
     Version,
 )
+from .official_notices_connector import ParliamentNoticeConnector
 from .official_source_contracts import OFFICIAL_SOURCE_CONTRACTS
 from .parliament_connector import parliament_connectors
 from .prompt_settings import (
@@ -1013,17 +1014,21 @@ class HelveticLens:
                     for item in identifiers
                     if item.normalized_value.isdigit()
                 )
-        connector = next(
-            (
-                item
-                for item in parliament_connectors(
-                    self.settings,
-                    self.integration_logger,
-                    active_ids=active_ids,
-                )
-                if item.stream == stream
-            ),
-            None,
+        connector = (
+            ParliamentNoticeConnector(self.settings, self.integration_logger)
+            if stream == "notices"
+            else next(
+                (
+                    item
+                    for item in parliament_connectors(
+                        self.settings,
+                        self.integration_logger,
+                        active_ids=active_ids,
+                    )
+                    if item.stream == stream
+                ),
+                None,
+            )
         )
         if connector is None:
             raise DomainError(

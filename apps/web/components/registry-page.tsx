@@ -204,6 +204,11 @@ export function RegistryPage() {
                       </div>
                       <h3 className="text-lg m-0 mb-1">{row.title}</h3>
                       <p className="muted m-0 text-sm">{row.authority} · {label(row.kind)} · {row.languages.join(", ")} · {label(row.lifecycle)}</p>
+                      {row.kind === "official_notice" && (
+                        <p className="muted m-0 mt-2 text-xs">
+                          Context from the publishing authority. This is not a statute, enacted amendment, or court holding.
+                        </p>
+                      )}
                     </div>
                     <div className="text-right text-sm shrink-0">
                       <strong>Detected {dateTime(row.detected_at)}</strong>

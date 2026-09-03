@@ -50,8 +50,8 @@ PARLIAMENT_CONTRACT = OfficialSourceContract(
     manifest=ConnectorManifest(
         name="swiss-parliament",
         authority="swiss_parliament",
-        connector_version="1.1.0",
-        schema_version="parliament-webservice-v2",
+        connector_version="1.2.0",
+        schema_version="parliament-webservice-v3",
         allowed_hosts=frozenset(
             {
                 "ws-old.parlament.ch",
@@ -75,6 +75,9 @@ PARLIAMENT_CONTRACT = OfficialSourceContract(
             "required_identity": "affair id",
             "languages": ["de", "fr", "it", "en"],
             "rows_per_official_page": 50,
+            "official_notices": (
+                "incremental SharePoint/OData Pages feed with immutable source-page snapshots"
+            ),
         },
     ),
     smoke_url="https://ws-old.parlament.ch/affairs?format=json&lang=de",
