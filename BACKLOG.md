@@ -4,7 +4,7 @@
 
 This backlog implements the product described in [README.md](README.md): a local-AI-first Swiss regulatory monitor with immutable evidence, a time-based legal registry, official-source connectors, cross-document impact analysis, and organization workspaces.
 
-**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-038`), document-identity gate (`HL-058`), and legal-unit semantic diff (`HL-059`) are implemented and verified through the API, browser build, migrations, and regression tests. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
+**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-039`), document-identity gate (`HL-058`), and legal-unit semantic diff (`HL-059`) are implemented and verified through the API, browser build, migrations, and regression tests. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
 
 ## Scope and priorities
 
@@ -77,7 +77,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-036](#hl-036) | P0       | DONE     | HL-005, HL-011, HL-033                                 | Normalized regulatory documents, dates, and events                  |
 | [HL-037](#hl-037) | P1       | DONE     | HL-035, HL-036                                         | Time-grouped monitoring registry and document timeline              |
 | [HL-038](#hl-038) | P0       | DONE     | HL-030, HL-036                                         | Versioned incremental connector contract                            |
-| [HL-039](#hl-039) | P1       | PLANNED  | HL-038, existing ELI resolver                          | Fedlex federal-law catalogue connector                              |
+| [HL-039](#hl-039) | P1       | DONE     | HL-038, existing ELI resolver                          | Fedlex federal-law catalogue connector                              |
 | [HL-040](#hl-040) | P1       | PLANNED  | HL-038                                                 | Swiss Parliament initiatives and bills connector                    |
 | [HL-041](#hl-041) | P1       | PLANNED  | HL-038                                                 | Swiss Federal Supreme Court decisions connector                     |
 | [HL-042](#hl-042) | P1       | PLANNED  | HL-030, HL-039–HL-041                                  | Scheduled synchronization, deduplication, and watch fan-out         |
@@ -725,6 +725,8 @@ Acceptance criteria:
 ### HL-039 — Expand native Fedlex ELI support into a federal-law catalogue connector
 
 Discover and monitor federal acts and their official lifecycle without requiring one manually pasted law URL at a time.
+
+**Status: DONE.** The native adapter now exposes DE/FR/IT RSS discovery with a two-day overlap and bounded keyset SPARQL reconciliation for `cc`, `oc`, and `fga`. It preserves ELI work, dated language expression, manifestation/file metadata, the current applicable official artifact, SR/RS as a secondary identifier, official dates/status, basic-act, citation, and legal-resource-impact provenance. Direct Add law records bind to the same catalogue work. Missing metadata degrades the stream without inferring repeal. The read-only live smoke passed against RSS and SPARQL on 3 September 2026. See [the Fedlex connector contract](docs/FEDLEX_CONNECTOR.md).
 
 Acceptance criteria:
 

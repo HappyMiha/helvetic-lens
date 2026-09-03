@@ -30,9 +30,11 @@ FEDLEX_CONTRACT = OfficialSourceContract(
     manifest=ConnectorManifest(
         name="fedlex",
         authority="fedlex",
-        connector_version="1.0.0",
-        schema_version="fedlex-jolux-v1",
-        allowed_hosts=frozenset({"fedlex.data.admin.ch", "www.fedlex.admin.ch"}),
+        connector_version="1.1.0",
+        schema_version="fedlex-jolux-v2",
+        allowed_hosts=frozenset(
+            {"fedlex.data.admin.ch", "www.fedlex.admin.ch", "fedlex.admin.ch"}
+        ),
         attribution="Swiss Confederation — Fedlex, retrieved from the linked official publication.",
         source_contract={
             "discovery": "RSS plus paginated JOLux/SPARQL reconciliation",

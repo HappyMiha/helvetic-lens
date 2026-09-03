@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from .config import DomainError
 from .db import utcnow
 from .models import (
+    Law,
     LegacyDocumentMapping,
     RegulatoryDate,
     RegulatoryDocumentVersion,
@@ -221,10 +222,65 @@ class MergeResult:
     created_work: bool
     created_expression: bool
     created_version: bool
+    previous_lifecycle_status: str | None = None
+    lifecycle_changed: bool = False
 
 
 class RegulatoryCorpus:
     """The only write boundary used by catalogue connectors and reconciliation jobs."""
+
+    @staticmethod
+    def bind_legacy_official_identity(
+        session: Session,
+        *,
+        authority: str,
+        scheme: str,
+        value: str,
+        kind: str,
+        stable_official_url: str,
+    ) -> None:
+        """Bind a previously added official URL to its catalogue identity before merge."""
+
+        normalized = normalize_identifier(scheme, value)
+        existing = session.scalar(
+            select(RegulatoryIdentifier).where(
+                RegulatoryIdentifier.authority == _clean(authority).lower(),
+                RegulatoryIdentifier.scheme == scheme,
+                RegulatoryIdentifier.normalized_value == normalized,
+            )
+        )
+        if existing:
+            return
+        mapping = session.scalar(
+            select(LegacyDocumentMapping)
+            .join(Law, Law.id == LegacyDocumentMapping.law_id)
+            .where(Law.canonical_identity == value)
+            .order_by(LegacyDocumentMapping.created_at)
+            .limit(1)
+        )
+        if not mapping:
+            return
+        work = session.get(RegulatoryWork, mapping.work_id)
+        if not work:
+            return
+        session.add(
+            RegulatoryIdentifier(
+                work_id=work.id,
+                authority=_clean(authority).lower(),
+                scheme=scheme,
+                value=_clean(value),
+                normalized_value=normalized,
+                source_url=normalize_url(stable_official_url),
+            )
+        )
+        work.authority = _clean(authority).lower()
+        if work.kind == "unclassified_document":
+            work.kind = kind
+        work.stable_official_url = normalize_url(stable_official_url)
+        mapping.mapping_status = "matched"
+        mapping.canonical_hint = f"{scheme}:{normalized}"
+        mapping.reason = "Matched to the catalogue by its stable official identity."
+        session.flush()
 
     def merge_document(self, session: Session, data: DocumentInput) -> MergeResult:
         authority = _clean(data.authority).lower()
@@ -275,6 +331,7 @@ class RegulatoryCorpus:
                 select(LegacyDocumentMapping).where(LegacyDocumentMapping.law_id == data.legacy_law_id)
             )
         work = session.get(RegulatoryWork, next(iter(matched_work_ids))) if matched_work_ids else None
+        previous_lifecycle_status = work.lifecycle_status if work else None
         created_work = work is None
         if work is None:
             canonical = min(
@@ -310,12 +367,22 @@ class RegulatoryCorpus:
         existing_by_value = {(item.scheme, item.normalized_value): item for item in matching_ids}
         for item, scheme, value in normalized:
             existing = existing_by_value.get((scheme, value))
+            if not existing:
+                existing = session.scalar(
+                    select(RegulatoryIdentifier).where(
+                        RegulatoryIdentifier.work_id == work.id,
+                        RegulatoryIdentifier.scheme == scheme,
+                        RegulatoryIdentifier.normalized_value == value,
+                    )
+                )
             if existing and existing.work_id != work.id:
                 raise DomainError(
                     "An identifier already belongs to another canonical work.",
                     409,
                     "regulatory_identifier_conflict",
                 )
+            if existing and existing.authority != authority and work.authority == authority:
+                existing.authority = authority
             if not existing:
                 session.add(
                     RegulatoryIdentifier(
@@ -447,6 +514,12 @@ class RegulatoryCorpus:
             created_work=created_work,
             created_expression=created_expression,
             created_version=created_version,
+            previous_lifecycle_status=previous_lifecycle_status,
+            lifecycle_changed=(
+                not created_work
+                and bool(data.lifecycle_status)
+                and previous_lifecycle_status != data.lifecycle_status
+            ),
         )
 
     def map_legacy_document(self, session: Session, law, version) -> MergeResult:

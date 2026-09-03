@@ -1,6 +1,9 @@
 .venv
 __pycache__
 .pytest_cache
+.pytest-temp-*
+.test-temp-*
+pytest-cache-*
 .ruff_cache
 tests
 data

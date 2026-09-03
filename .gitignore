@@ -5,6 +5,12 @@ dist/
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.pytest-temp-*/
+.test-temp-*/
+pytest-cache-*/
+**/.pytest-temp-*/
+**/.test-temp-*/
+**/pytest-cache-*/
 .ruff_cache/
 .coverage
 htmlcov/

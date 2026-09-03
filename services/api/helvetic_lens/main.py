@@ -463,6 +463,10 @@ def create_app(
     def connector_statuses():
         return service.connector_statuses()
 
+    @app.post("/api/connectors/fedlex/{stream}/sync")
+    async def sync_fedlex(stream: str):
+        return await service.sync_fedlex(stream)
+
     @app.get("/api/corpus/works/{work_id}")
     def regulatory_work_detail(work_id: str):
         return service.regulatory_work_detail(work_id)

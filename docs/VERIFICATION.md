@@ -84,6 +84,13 @@ The earlier large-comparison checks below are retained as historical evidence of
 - Shared HTTP checks cover allowlisted HTTPS URLs and redirects, streamed response limits, bounded retry with jitter, one redacted diagnostic per attempt, official artifact hashing, extraction, immutable storage, and contract-drift degradation.
 - Bounded live probes on 3 September 2026 passed the Fedlex RSS and Federal Supreme Court latest-index contracts. The Swiss Parliament JSON endpoint returned HTTP 403 from the development host; Helvetic Lens surfaced `degraded` and did not treat the page as empty or advance ingestion state. Re-run `scripts/check_official_source_contracts.py` from the deployment network before accepting HL-040.
 
+## Fedlex catalogue connector — 3 September 2026
+
+- Fifty-five focused tests cover RSS watermarks and overlap, stable ELI identity, `cc` keyset reconciliation, cycle reset, DE/FR expressions, dated and future versions, manifestation priority, ELI artifact redirects, SR/RS secondary identity, correctly directed JOLux basic-act/impact relations, registry events, contract drift, six stream definitions, invalid operational input, and idempotent merge with the unchanged Add law flow.
+- The bounded read-only live smoke passed against the current official German RSS and SPARQL services. The feed exposed 50 items; the sampled `oc/2026/448` work returned DE/FR/IT expressions, one version, and one official relation. A one-item `cc` reconciliation page returned a stable next key without writing to the corpus.
+- `scripts/check_fedlex_connector.py` performs this live check without downloading a document or advancing a database cursor. `POST /api/connectors/fedlex/{stream}/sync` runs one persisted page; status and recovery remain visible through `GET /api/connectors/status`.
+- The complete API suite passes with 193 tests, Ruff passes, the Next.js production build passes, and the rebuilt Compose stack reports healthy API, PostgreSQL, Redis, and model-manager services at migration `c27f8d91a6e4 (head)`.
+
 ## Browser and PostgreSQL checks
 
 - HL-031 adds a three-entry immutable Apertus catalogue, private model-manager API, dedicated model volume, hardware/compatibility probe, license acceptance, resumable `.part` downloads, free-space and SHA-256 checks, atomic activation, pinned llama.cpp runtime, retained-analysis removal guard, and durable download/start jobs. Four manager lifecycle regressions and an end-to-end admin API regression pass.

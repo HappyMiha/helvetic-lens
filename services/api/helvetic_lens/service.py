@@ -26,6 +26,7 @@ from .extraction import (
     extract,
     fedlex_eli_reference,
 )
+from .fedlex_connector import fedlex_connectors
 from .identity import (
     IDENTITY_REVISION,
     assess_comparison_identity,
@@ -951,6 +952,33 @@ class HelveticLens:
                 }
             )
         return sorted(saved, key=lambda item: (item["connector"], item["stream"]))
+
+    async def sync_fedlex(self, stream: str) -> dict:
+        connector = next(
+            (
+                item
+                for item in fedlex_connectors(self.settings, self.integration_logger)
+                if item.stream == stream
+            ),
+            None,
+        )
+        if connector is None:
+            raise DomainError(
+                "Choose a supported Fedlex stream.",
+                422,
+                "fedlex_stream_invalid",
+            )
+        result = await self.connector_runner.run_page(connector, stream=stream)
+        return {
+            "connector": result.connector,
+            "stream": result.stream,
+            "status": result.status,
+            "page_id": result.page_id,
+            "persisted": result.persisted,
+            "total": result.total,
+            "next_cursor": result.next_cursor,
+            "error": result.error,
+        }
 
     def regulatory_work_detail(self, work_id: str) -> dict:
         with self.db.session() as session:

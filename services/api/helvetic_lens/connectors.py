@@ -29,6 +29,7 @@ from .models import (
 from .regulatory_corpus import (
     DateInput,
     DocumentInput,
+    EventInput,
     ExpressionInput,
     IdentifierInput,
     RegulatoryCorpus,
@@ -169,6 +170,7 @@ class ConnectorRelation:
     evidence: dict
     confidence: float | None = None
     rule_revision: str | None = None
+    reverse: bool = False
 
 
 class OfficialConnector(ABC):
@@ -685,9 +687,98 @@ class ConnectorRunner:
                 )
                 if receipt:
                     continue
+                primary_identifier = next(
+                    (item for item in document.identifiers if item.scheme == "eli_uri"),
+                    None,
+                )
+                if primary_identifier:
+                    self.corpus.bind_legacy_official_identity(
+                        session,
+                        authority=document.authority,
+                        scheme=primary_identifier.scheme,
+                        value=primary_identifier.value,
+                        kind=document.kind,
+                        stable_official_url=document.stable_official_url
+                        or primary_identifier.source_url
+                        or primary_identifier.value,
+                    )
                 merged = self.corpus.merge_document(session, document)
                 source_result = source_result or merged
                 source_version_id = source_version_id or (merged.version.id if merged.version else None)
+                event_evidence = {
+                    "connector": manifest.name,
+                    "stream": stream,
+                    "external_identity": metadata.external_identity,
+                    "source_revision": metadata.source_revision,
+                    "expression_key": expression_key,
+                    "reference": reference.raw_provenance_ref,
+                }
+                if merged.created_work:
+                    self.corpus.record_event(
+                        session,
+                        EventInput(
+                            work_id=merged.work.id,
+                            expression_id=merged.expression.id,
+                            document_version_id=merged.version.id if merged.version else None,
+                            authority=manifest.authority,
+                            event_type="created",
+                            detected_at=utcnow(),
+                            provenance_method="official_metadata",
+                            source_url=metadata.canonical_url,
+                            evidence=event_evidence,
+                            external_key=(
+                                f"{manifest.name}:{stream}:{metadata.external_identity}:created"
+                            ),
+                            connector=manifest.name,
+                        ),
+                    )
+                if merged.created_version and merged.version:
+                    self.corpus.record_event(
+                        session,
+                        EventInput(
+                            work_id=merged.work.id,
+                            expression_id=merged.expression.id,
+                            document_version_id=merged.version.id,
+                            authority=manifest.authority,
+                            event_type="new_version",
+                            detected_at=utcnow(),
+                            provenance_method="official_metadata",
+                            source_url=metadata.canonical_url,
+                            evidence={
+                                **event_evidence,
+                                "version_key": merged.version.version_key,
+                            },
+                            external_key=(
+                                f"{manifest.name}:{stream}:{expression_key}:"
+                                f"{merged.version.version_key}:new_version"
+                            ),
+                            connector=manifest.name,
+                        ),
+                    )
+                if merged.lifecycle_changed:
+                    self.corpus.record_event(
+                        session,
+                        EventInput(
+                            work_id=merged.work.id,
+                            expression_id=merged.expression.id,
+                            document_version_id=merged.version.id if merged.version else None,
+                            authority=manifest.authority,
+                            event_type="status_changed",
+                            detected_at=utcnow(),
+                            provenance_method="official_metadata",
+                            source_url=metadata.canonical_url,
+                            evidence={
+                                **event_evidence,
+                                "previous_status": merged.previous_lifecycle_status,
+                                "current_status": document.lifecycle_status,
+                            },
+                            external_key=(
+                                f"{manifest.name}:{stream}:{metadata.external_identity}:"
+                                f"{metadata.source_revision}:status:{document.lifecycle_status}"
+                            ),
+                            connector=manifest.name,
+                        ),
+                    )
                 session.add(
                     ConnectorReceipt(
                         connector=manifest.name,
@@ -714,12 +805,18 @@ class ConnectorRunner:
             if source_result:
                 for relation in relations:
                     target = self.corpus.merge_document(session, relation.target)
+                    subject_work_id = (
+                        target.work.id if relation.reverse else source_result.work.id
+                    )
+                    object_work_id = (
+                        source_result.work.id if relation.reverse else target.work.id
+                    )
                     self.corpus.record_relation(
                         session,
                         RelationInput(
-                            subject_work_id=source_result.work.id,
-                            object_work_id=target.work.id,
-                            source_version_id=source_version_id,
+                            subject_work_id=subject_work_id,
+                            object_work_id=object_work_id,
+                            source_version_id=None if relation.reverse else source_version_id,
                             authority=manifest.authority,
                             relation_type=relation.relation_type,
                             state=relation.state,
