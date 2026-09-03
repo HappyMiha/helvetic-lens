@@ -16,7 +16,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   api,
-  dateTime,
   errorText,
   refreshWorkspace,
   useResource,
@@ -31,6 +30,7 @@ import type {
 import { ErrorNote, Loading, SuccessNote } from "./common";
 import { ProfileDialog, Shell } from "./shell";
 import { useAuth } from "./auth-gate";
+import { useI18n } from "@/lib/i18n";
 
 type KeyAction = "keep" | "replace" | "remove" | "environment";
 type Provider = "custom" | "docker" | "infomaniak";
@@ -69,6 +69,7 @@ function draftValues(settings: ApertusSettings) {
 }
 
 export function SettingsPage() {
+  const { t } = useI18n();
   const { canManage } = useAuth();
   const configuration = useResource<ApertusSettings>("/settings/apertus");
   const { data: health } = useResource<Health>("/health");
@@ -76,14 +77,13 @@ export function SettingsPage() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [notice, setNotice] = useState("");
   return (
-    <Shell section="Settings">
+    <Shell section={t("nav.settings")}>
       <div className="page-heading">
         <div>
-          <span className="eyebrow">WORKSPACE SETUP</span>
-          <h1>Settings</h1>
+          <span className="eyebrow">{t("settings.eyebrow")}</span>
+          <h1>{t("settings.title")}</h1>
           <p className="muted m-0">
-            Configure the Apertus provider, model, request parameters, and
-            company context.
+            {t("settings.body")}
           </p>
         </div>
         <SlidersHorizontal className="muted" size={28} />
@@ -112,17 +112,14 @@ export function SettingsPage() {
         <div className="grid gap-5">
           <section className="panel p-6">
             <Sparkles size={21} className="text-primary mb-4" />
-            <h2 className="mb-3">Your Apertus connection</h2>
+            <h2 className="mb-3">{t("settings.connection")}</h2>
             <p className="text-sm muted">
               {configuration.data?.configured
-                ? `${configuration.data.provider === "infomaniak" ? "Infomaniak" : configuration.data.provider === "docker" ? "Local Docker Apertus" : "An OpenAI-compatible endpoint"} is configured. Use Test connection to verify that it answers.`
-                : "No endpoint is configured yet. Monitoring and visual comparisons remain available."}
+                ? t("settings.configured", { provider: configuration.data.provider === "infomaniak" ? t("settings.infomaniak") : configuration.data.provider === "docker" ? t("settings.local") : t("settings.custom") })
+                : t("settings.notConfigured")}
             </p>
             <p className="text-sm muted">
-              Current model: {configuration.data?.model || "Not selected"}.
-              Helvetic Lens calls an OpenAI-compatible chat API. The local
-              Docker provider hosts Apertus beside the app; cloud providers
-              remain optional.
+              {t("settings.currentModel", { model: configuration.data?.model || t("settings.notSelected") })}
             </p>
             <a
               href={`https://huggingface.co/${configuration.data?.model || "swiss-ai/Apertus-v1.5-8B"}`}
@@ -130,40 +127,37 @@ export function SettingsPage() {
               rel="noreferrer"
               className="text-sm inline-flex gap-2 items-center"
             >
-              Current model card <ArrowUpRight size={14} />
+              {t("settings.modelCard")} <ArrowUpRight size={14} />
             </a>
           </section>
           <section className="panel p-6">
             <BookOpen size={21} className="muted mb-4" />
-            <h2 className="mb-2">Company profile</h2>
+            <h2 className="mb-2">{t("settings.company")}</h2>
             <p className="text-sm font-medium">
-              {profile?.name || "My company"}
+              {profile?.name || t("settings.myCompany")}
             </p>
             <p className="text-sm muted break-words">
               {profile?.business_areas.join(" · ") ||
-                "Choose the business areas you want Apertus to consider."}
+                t("settings.areas")}
             </p>
             {canManage && <Button
               variant="outline"
               size="sm"
               onClick={() => setProfileOpen(true)}
             >
-              Edit company profile
+              {t("settings.editCompany")}
             </Button>}
           </section>
           <section className="panel p-6">
-            <h2 className="mb-3">Workspace</h2>
+            <h2 className="mb-3">{t("settings.workspace")}</h2>
             <p className="text-sm muted">
-              Database: {health?.database || "Checking…"}
+              {t("settings.database", { database: health?.database || t("settings.checking") })}
             </p>
             <p className="text-sm muted">
-              Settings and document history persist in this workspace. Model
-              changes apply immediately; existing evidence and comparisons are
-              kept.
+              {t("settings.persistence")}
             </p>
             <p className="text-xs muted">
-              Workspace data is shared with organization members. Keep the database
-              and its backups private, especially if you save a provider credential.
+              {t("settings.privacy")}
             </p>
           </section>
         </div>
@@ -186,6 +180,7 @@ function ApertusForm({
   onSaved: (settings: ApertusSettings, message: string) => void;
   onEdit: () => void;
 }) {
+  const { t, dateTime, number } = useI18n();
   const formRef = useRef<HTMLFormElement>(null);
   const [draft, setDraft] = useState(() => draftValues(initial));
   const [keyAction, setKeyAction] = useState<KeyAction>("keep");
@@ -286,7 +281,7 @@ function ApertusForm({
     return (
       !newlySelected ||
       window.confirm(
-        `${action} will contact the newly selected cloud AI provider. The connection check sends only a small test prompt, not a monitored document. Continue?`,
+        t("settings.confirmContact", { action }),
       )
     );
   }
@@ -296,7 +291,7 @@ function ApertusForm({
       draft.provider !== "docker" &&
       (initial.provider === "docker" || initial.provider !== draft.provider) &&
       !window.confirm(
-        "Enable this cloud AI provider for the organization? Future impact analyses and questions may send bounded saved-document evidence to this destination.",
+        t("settings.confirmCloud"),
       )
     ) return;
     setBusy("save");
@@ -309,7 +304,7 @@ function ApertusForm({
       setApiKey("");
       onSaved(
         result,
-        "Apertus integration settings saved and applied. No restart is needed.",
+        t("settings.saveSuccess"),
       );
     } catch (cause) {
       setError(errorText(cause));
@@ -319,7 +314,7 @@ function ApertusForm({
   }
   async function test() {
     if (!formRef.current?.reportValidity()) return;
-    if (!confirmNewCloudDestination("Test connection")) return;
+    if (!confirmNewCloudDestination(t("settings.test"))) return;
     setBusy("test");
     setError("");
     setTestResult(null);
@@ -337,7 +332,7 @@ function ApertusForm({
   }
   async function loadModels() {
     if (!formRef.current?.reportValidity()) return;
-    if (!confirmNewCloudDestination("Load models")) return;
+    if (!confirmNewCloudDestination(t("settings.loadModels"))) return;
     setBusy("models");
     setError("");
     setModelsMessage("");
@@ -368,7 +363,7 @@ function ApertusForm({
         if (preferred) update("model", preferred.id);
       }
       setModelsMessage(
-        `${result.count.toLocaleString()} models loaded from the provider API.`,
+        t("settings.modelsLoaded", { count: number(result.count) }),
       );
     } catch (cause) {
       setError(errorText(cause));
@@ -386,7 +381,7 @@ function ApertusForm({
       setApiKey("");
       onSaved(
         result,
-        "Saved overrides removed. Apertus now uses the server environment defaults.",
+        t("settings.resetSuccess"),
       );
     } catch (cause) {
       setError(errorText(cause));
@@ -402,43 +397,41 @@ function ApertusForm({
         </h2>
         <span className="text-xs muted">
           {dirty
-            ? "Unsaved changes"
+            ? t("settings.unsaved")
             : initial.source === "workspace"
-              ? "Saved in this workspace"
-              : "Using environment defaults"}
+              ? t("settings.savedWorkspace")
+              : t("settings.environment")}
         </span>
       </div>
       <form ref={formRef} onSubmit={save} className="p-6">
         <fieldset disabled={!!busy} className="form-stack min-w-0">
           <div className="grid sm:grid-cols-2 gap-4">
             <label>
-              Inference provider
+              {t("settings.provider")}
               <select
                 value={draft.provider}
                 onChange={(event) =>
                   chooseProvider(event.target.value as Provider)
                 }
               >
-                <option value="infomaniak">Infomaniak AI</option>
-                <option value="docker">Local Docker Apertus</option>
-                <option value="custom">Other OpenAI-compatible API</option>
+                <option value="infomaniak">{t("settings.infomaniak")}</option>
+                <option value="docker">{t("settings.local")}</option>
+                <option value="custom">{t("settings.custom")}</option>
               </select>
               <span className="field-help">
-                Infomaniak and the local Docker service build their API
-                addresses automatically and can load their available models.
+                {t("settings.providerHelp")}
               </span>
             </label>
             <div className="rounded-lg border p-4 text-sm">
               <strong>
                 {draft.provider === "infomaniak"
-                  ? "Infomaniak integration"
+                  ? t("settings.infomaniak")
                   : draft.provider === "docker"
-                    ? "Local Docker integration"
-                    : "Custom integration"}
+                    ? t("settings.local")
+                    : t("settings.custom")}
               </strong>
               <p className="field-help !mb-0">
-                One active provider is used for connection checks, impact
-                analysis, and Ask Apertus.
+                {t("settings.activeProvider")}
               </p>
             </div>
           </div>
@@ -462,7 +455,7 @@ function ApertusForm({
                 </a>
               </div>
               <label>
-                AI Product ID
+                {t("settings.productId")}
                 <Input
                   inputMode="numeric"
                   pattern="[0-9]+"
@@ -487,7 +480,7 @@ function ApertusForm({
                 </span>
               </label>
               <label>
-                API base URL
+                {t("settings.baseUrl")}
                 <Input
                   value={infomaniakBaseUrl(draft.product_id)}
                   readOnly
@@ -500,7 +493,7 @@ function ApertusForm({
                 </span>
               </label>
               <label>
-                Model
+                {t("settings.model")}
                 <select
                   value={draft.model}
                   onChange={(event) => update("model", event.target.value)}
@@ -534,7 +527,7 @@ function ApertusForm({
                   ) : (
                     <RotateCcw size={14} />
                   )}
-                  {models.length ? "Refresh model list" : "Load models"}
+                  {models.length ? t("settings.refreshModels") : t("settings.loadModels")}
                 </Button>
                 {modelsMessage && (
                   <span role="status" className="text-xs text-primary">
@@ -566,7 +559,7 @@ function ApertusForm({
                 </a>
               </div>
               <label>
-                API base URL
+                {t("settings.baseUrl")}
                 <Input
                   value={draft.base_url || "Selected automatically when tested"}
                   readOnly
@@ -578,7 +571,7 @@ function ApertusForm({
                 </span>
               </label>
               <label>
-                Local model
+                {t("settings.model")}
                 <select
                   value={draft.model}
                   onChange={(event) => update("model", event.target.value)}
@@ -612,7 +605,7 @@ function ApertusForm({
                   ) : (
                     <RotateCcw size={14} />
                   )}
-                  {models.length ? "Refresh local models" : "Load local models"}
+                  {models.length ? t("settings.refreshLocal") : t("settings.loadLocal")}
                 </Button>
                 {modelsMessage && (
                   <span role="status" className="text-xs text-primary">
@@ -674,7 +667,7 @@ function ApertusForm({
                 </p>
               </div>
               <label>
-                API base URL
+                {t("settings.baseUrl")}
                 <Input
                   type="url"
                   autoComplete="url"
@@ -689,7 +682,7 @@ function ApertusForm({
                 </span>
               </label>
               <label>
-                Model ID
+                {t("settings.modelId")}
                 <Input
                   value={draft.model}
                   onChange={(event) => update("model", event.target.value)}
@@ -705,7 +698,7 @@ function ApertusForm({
           {draft.provider === "docker" ? (
             <div className="rounded-lg border p-4 min-w-0 text-sm">
               <div className="flex items-center gap-2 font-semibold mb-2">
-                <KeyRound size={15} /> No local credential required
+                <KeyRound size={15} /> {t("settings.noLocalCredential")}
               </div>
               <p className="field-help !mb-0">
                 Helvetic Lens never sends the saved Infomaniak token to the
@@ -717,7 +710,7 @@ function ApertusForm({
             <div className="rounded-lg border p-4 min-w-0">
               <div className="flex items-center gap-2 text-sm font-semibold mb-2">
                 <KeyRound size={15} />
-                {draft.provider === "infomaniak" ? "API token" : "API key"}
+                {draft.provider === "infomaniak" ? t("settings.apiToken") : t("settings.apiKey")}
               </div>
               <p className="text-xs muted">
                 {initial.api_key_configured
@@ -727,7 +720,7 @@ function ApertusForm({
                   : "No credential is configured. Some local inference servers do not need one."}
               </p>
               <label>
-                Key handling
+                {t("settings.keyHandling")}
                 <select
                   value={keyAction}
                   onChange={(event) => {
@@ -736,19 +729,19 @@ function ApertusForm({
                     setApiKey("");
                   }}
                 >
-                  <option value="keep">Keep existing credential</option>
-                  <option value="replace">Replace with a new credential</option>
-                  <option value="remove">Use no credential</option>
+                  <option value="keep">{t("settings.keepKey")}</option>
+                  <option value="replace">{t("settings.replaceKey")}</option>
+                  <option value="remove">{t("settings.removeKey")}</option>
                   <option value="environment">
-                    Use the server environment credential
+                    {t("settings.environmentKey")}
                   </option>
                 </select>
               </label>
               {keyAction === "replace" && (
                 <label className="mt-3 block">
                   {draft.provider === "infomaniak"
-                    ? "New API token"
-                    : "New API key"}
+                    ? t("settings.newToken")
+                    : t("settings.newKey")}
                   <Input
                     type="password"
                     autoComplete="new-password"
@@ -776,11 +769,11 @@ function ApertusForm({
           )}
           <div className="pt-2">
             <h3 className="text-sm font-semibold mb-4">
-              Requests and generation
+              {t("settings.requests")}
             </h3>
             <div className="grid sm:grid-cols-2 gap-4">
               <label>
-                Request timeout (seconds)
+                {t("settings.timeout")}
                 <Input
                   type="number"
                   min={5}
@@ -797,7 +790,7 @@ function ApertusForm({
                 </span>
               </label>
               <label>
-                Automatic retries
+                {t("settings.retries")}
                 <Input
                   type="number"
                   min={0}
@@ -815,7 +808,7 @@ function ApertusForm({
                 </span>
               </label>
               <label>
-                Concurrent model requests
+                {t("settings.concurrency")}
                 <Input
                   type="number"
                   min={1}
@@ -834,7 +827,7 @@ function ApertusForm({
                 </span>
               </label>
               <label>
-                Evidence target per model request (characters)
+                {t("settings.context")}
                 <Input
                   type="number"
                   min={1000}
@@ -857,7 +850,7 @@ function ApertusForm({
                 </span>
               </label>
               <label>
-                Maximum completion length (tokens)
+                {t("settings.maxTokens")}
                 <Input
                   type="number"
                   min={128}
@@ -873,7 +866,7 @@ function ApertusForm({
                 </span>
               </label>
               <label>
-                Temperature
+                {t("settings.temperature")}
                 <Input
                   type="number"
                   min={0}
@@ -890,7 +883,7 @@ function ApertusForm({
                 </span>
               </label>
               <label>
-                Top P
+                {t("settings.topP")}
                 <Input
                   type="number"
                   min={0}
@@ -905,7 +898,7 @@ function ApertusForm({
                 </span>
               </label>
               <label>
-                Presence penalty
+                {t("settings.presence")}
                 <Input
                   type="number"
                   min={-1.99}
@@ -922,7 +915,7 @@ function ApertusForm({
                 </span>
               </label>
               <label>
-                Reasoning effort
+                {t("settings.reasoning")}
                 <select
                   value={draft.reasoning_effort}
                   onChange={(event) =>
@@ -932,11 +925,11 @@ function ApertusForm({
                     )
                   }
                 >
-                  <option value="default">Provider / model default</option>
-                  <option value="none">None</option>
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
+                  <option value="default">{t("settings.default")}</option>
+                  <option value="none">{t("settings.none")}</option>
+                  <option value="low">{t("settings.low")}</option>
+                  <option value="medium">{t("settings.medium")}</option>
+                  <option value="high">{t("settings.high")}</option>
                 </select>
                 <span className="field-help">
                   Leave at default for Apertus models that do not support this
@@ -952,7 +945,7 @@ function ApertusForm({
               disabled={draft.provider === "docker"}
               onChange={(event) => update("json_mode", event.target.checked)}
             />
-            Request structured JSON mode
+            {t("settings.json")}
           </label>
           <p className="field-help !mt-0">
             {draft.provider === "docker"
@@ -968,10 +961,9 @@ function ApertusForm({
           {testResult && (
             <div role="status" className="info-note break-words">
               <strong>
-                Connection verified · {testResult.latency_ms.toLocaleString()}{" "}
-                ms
+                {t("settings.verified", { latency: number(testResult.latency_ms) })}
               </strong>
-              <p>Received a real response from {testResult.model}.</p>
+              <p>{t("settings.received", { model: testResult.model })}</p>
               <p className="text-xs">
                 This checked the values in this form without saving them. A
                 connection check does not yet verify an evidence-backed
@@ -998,7 +990,7 @@ function ApertusForm({
               ) : (
                 <Plug />
               )}
-              Test connection
+              {t("settings.test")}
             </Button>
             <Button
               type="submit"
@@ -1009,7 +1001,7 @@ function ApertusForm({
               ) : (
                 <Save />
               )}
-              Save settings
+              {t("settings.save")}
             </Button>
           </div>
           <p className="text-xs muted">
@@ -1022,8 +1014,8 @@ function ApertusForm({
       <div className="border-t px-6 py-4 flex gap-4 flex-wrap items-center justify-between">
         <span className="text-xs muted">
           {initial.updated_at
-            ? "Last saved " + dateTime(initial.updated_at)
-            : "No saved overrides."}
+            ? t("settings.lastSaved", { date: dateTime(initial.updated_at) })
+            : t("settings.noOverrides")}
         </span>
         <Button
           type="button"
@@ -1037,7 +1029,7 @@ function ApertusForm({
           ) : (
             <RotateCcw size={14} />
           )}
-          Use environment defaults
+          {t("settings.useDefaults")}
         </Button>
         <p className="text-xs muted basis-full !mb-0">
           Restoring defaults removes saved overrides, including a saved
