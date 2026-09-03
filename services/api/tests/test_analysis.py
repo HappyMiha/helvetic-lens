@@ -10,6 +10,7 @@ from helvetic_lens.analysis import (
     ModelClient,
     answer_question,
     batch_diff_evidence,
+    build_impact_plan,
     diff_evidence,
     impact_analysis,
     local_answer_synthesis,
@@ -21,6 +22,7 @@ from helvetic_lens.analysis import (
     planned_diff_evidence,
     select_evidence,
     structured_completion,
+    targeted_version_evidence,
 )
 from helvetic_lens.config import DomainError
 from helvetic_lens.diffing import DIFF_SCHEMA_VERSION, compare_passages
@@ -612,6 +614,38 @@ def test_changed_evidence_is_complete_and_ignores_retrieval_budget():
     assert all(p["synthetic"] is True for p in evidence)
 
 
+def test_complete_versions_require_serialized_prompt_and_output_reservation_to_fit():
+    old = Version(
+        id="fit-old",
+        origin="uploaded",
+        synthetic=True,
+        passages=[{"id": "p1", "text": "Retention obligation was 30 days. " * 8, "page": 1}],
+    )
+    new = Version(
+        id="fit-new",
+        origin="live",
+        synthetic=True,
+        passages=[{"id": "p1", "text": "Retention obligation is 60 days. " * 8, "page": 1}],
+    )
+
+    evidence, _, coverage, mode = targeted_version_evidence(
+        old,
+        new,
+        "What is the retention obligation?",
+        2600,
+        system_prompt="Follow the evidence. " * 20,
+        request_fields={"question": "What is the retention obligation?"},
+        reserved_output_tokens=500,
+    )
+
+    assert mode == "targeted_passages"
+    assert evidence
+    assert coverage["serialized_request_characters"] + coverage[
+        "reserved_output_characters"
+    ] + 512 > 2600
+    assert coverage["limited"] is True
+
+
 @pytest.mark.asyncio
 async def test_large_diff_uses_a_bounded_ai_dossier_for_ask_and_impact(harness):
     _, _, service, model = harness
@@ -722,6 +756,15 @@ async def test_large_diff_uses_a_bounded_ai_dossier_for_ask_and_impact(harness):
         for batch in impact_payloads[-1]["batch_reviews"]
         for citation in batch["citations"]
     )
+
+    plan, _ = build_impact_plan(settings, comparison, old, new, profile)
+    assert plan["state"] == "planned"
+    assert plan["limits"]["provider_call_budget"] == 5
+    assert plan["estimates"]["planned_generation_calls"] <= 4
+    assert plan["execution"]["profile_revision"] == profile.revision
+    assert plan["coverage"]["limited"] is True
+    assert plan["shared_general_change"]["fingerprint"]
+    assert "material or uncertain legal units" in plan["shared_general_change"]["summary"]
 
 
 def test_invalid_json_is_validated_and_repaired_once_for_impact_and_ask(harness):
@@ -834,6 +877,48 @@ def test_oversized_single_change_uses_exact_bounded_windows():
     assert batches[0]["excerpted_passages"] == 2
     assert coverage["limited"] is True and coverage["complete"] is False
     assert dossier["audit_complete"] is True and dossier["complete"] is False
+
+
+@pytest.mark.asyncio
+async def test_formatting_only_plan_and_impact_use_zero_model_calls(harness):
+    _, _, service, model = harness
+    settings = service.settings.model_copy(
+        update={"apertus_base_url": "https://model.example/v1"}
+    )
+    old = Version(
+        id="format-old",
+        origin="uploaded",
+        synthetic=True,
+        passages=[{"id": "p1", "text": "word-\nwrapped text", "page": 1}],
+    )
+    new = Version(
+        id="format-new",
+        origin="live",
+        synthetic=True,
+        passages=[{"id": "p1", "text": "wordwrapped text", "page": 1}],
+    )
+    comparison = Comparison(
+        id="format-comparison",
+        mode="saved_versions",
+        diff=compare_passages(old.passages, new.passages),
+    )
+    profile = Profile(
+        id="default",
+        name="Test company",
+        description="Synthetic test profile",
+        business_areas=["Operations"],
+        revision=1,
+    )
+
+    plan, prepared = build_impact_plan(settings, comparison, old, new, profile)
+    result, coverage = await impact_analysis(
+        model, settings, comparison, old, new, profile, prepared=prepared
+    )
+
+    assert plan["estimates"]["planned_generation_calls"] == 0
+    assert plan["execution"]["strategy"] == "deterministic_no_substantive_change"
+    assert result["impact"] == "low" and result["actions"] == []
+    assert coverage["provider_calls"] == 0 and model.calls == []
 
 
 @pytest.mark.asyncio

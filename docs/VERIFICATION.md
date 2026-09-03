@@ -157,6 +157,15 @@ The Windows agent's default pytest temporary directory had a permission conflict
 
 - Account recovery tests verify a hashed, expiring, single-use email-verification link; identical reset-request responses for registered and unknown addresses; reset expiry and rate limiting; Argon2id password replacement; revocation of all existing sessions; and the resulting security event. The production configuration rejects the development mailbox, while the browser build covers verification, resend, forgot-password, and reset screens.
 
+## Fixed-budget AI analysis planner — 3 September 2026
+
+- Focused regressions prove that a pending Impact record and its complete plan are committed before the first model request, then finalized without overwriting the planned inputs.
+- A large synthetic comparison retains the complete deterministic audit, selects a bounded semantic dossier, records limited reviewed/total coverage, and plans no more than four normal Impact requests under the hard five-call ceiling. Ask retains its independent three-call ceiling.
+- A formatting-only split-word fixture produces the deterministic low-impact result with zero model requests and no filler actions.
+- Saved Impact and Ask history expose expected/actual calls, hard limits, evidence groups, queue wait, inference time, reported tokens, repair count, context fingerprint, and the exact comparison result link. Cached repeats retain the same plan and make no new provider request.
+- All 245 API tests pass, including legacy-to-head migration coverage; Ruff, TypeScript, and the Next.js production build pass. The rebuilt Compose stack is healthy at `e31b8f6a2c90 (head)` with the plan columns present on both AI-history tables.
+- Browser QA submitted a fresh cited question through the managed local Apertus runtime. It completed in one provider call and displayed `1 expected / 1 actual / limit 3`, 759 ms inference time, 2,158 reported tokens, zero validation repairs, and complete planned coverage in the saved comparison history.
+
 ## Remaining gates
 
 - Validate optional Firecrawl with a key and available credit.

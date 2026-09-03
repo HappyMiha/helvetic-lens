@@ -92,6 +92,13 @@ function HistoryItem({ item }: { item: AIHistoryItem }) {
     item.type === "question"
       ? item.question || "Saved question"
       : impact?.summary || "Impact assessment";
+  const plan = item.analysis_plan;
+  const actual = plan?.actual;
+  const tokenTotal = Object.values(actual?.token_counts || {}).reduce(
+    (sum, value) => sum + value,
+    0,
+  );
+  const repairs = Number(actual?.validation?.repair_count || 0);
   return (
     <details className="ai-history-item">
       <summary>
@@ -149,6 +156,27 @@ function HistoryItem({ item }: { item: AIHistoryItem }) {
           )}
         </div>
         {item.error && <ErrorNote message={item.error} />}
+        {plan?.limits && (
+          <p className="coverage-note mb-0">
+            Plan: {plan.estimates.planned_generation_calls} expected ·{" "}
+            {actual?.provider_calls ?? 0} actual model calls · limit{" "}
+            {plan.limits.provider_call_budget} · {plan.execution.batch_count}{" "}
+            evidence {plan.execution.batch_count === 1 ? "group" : "groups"}
+            {plan.coverage.limited
+              ? " · limited coverage"
+              : " · complete planned coverage"}
+            {actual
+              ? ` · queue ${Math.round(actual.queue_wait_ms)} ms · inference ${Math.round(actual.inference_duration_ms)} ms`
+              : ""}
+            {tokenTotal
+              ? ` · ${tokenTotal.toLocaleString()} recorded tokens`
+              : ""}
+            {actual
+              ? ` · ${repairs} validation ${repairs === 1 ? "repair" : "repairs"}`
+              : ""}
+            .
+          </p>
+        )}
         {impact && (
           <div className="ai-history-result">
             <div className="flex items-center gap-2 mb-2">

@@ -2906,7 +2906,13 @@ class HelveticLens:
                     cached.last_used_at = utcnow()
                     session.commit()
                     return {**as_dict(cached), "cached": True, "stale": False}
-                if not settings.model_configured:
+                analysis_plan, prepared = ai.build_impact_plan(
+                    settings, comparison, old, new, profile
+                )
+                if (
+                    analysis_plan["estimates"]["planned_generation_calls"]
+                    and not settings.model_configured
+                ):
                     raise DomainError(
                         "Apertus is not connected. Open Settings to configure its endpoint and model.",
                         503,
@@ -2917,6 +2923,7 @@ class HelveticLens:
                     cache_key=key,
                     model=settings.apertus_model,
                     prompt_revision=prompt_revision,
+                    analysis_plan=analysis_plan,
                     last_used_at=utcnow(),
                 )
                 session.add(record)
@@ -2929,7 +2936,14 @@ class HelveticLens:
             )
             try:
                 result, coverage = await ai.impact_analysis(
-                    model_client, settings, comparison, old, new, profile, prompts
+                    model_client,
+                    settings,
+                    comparison,
+                    old,
+                    new,
+                    profile,
+                    prompts,
+                    prepared,
                 )
                 status, error = "succeeded", None
             except Exception as exc:
@@ -2951,6 +2965,13 @@ class HelveticLens:
                 record = get(session, Analysis, record_id)
                 record.result, record.coverage, record.status, record.error = result, coverage, status, error
                 record.provenance = provenance
+                record.analysis_plan = ai.complete_analysis_plan(
+                    analysis_plan,
+                    status=status,
+                    coverage=coverage,
+                    provenance=provenance,
+                    result_url=f"/compare/{comparison.id}",
+                )
                 session.commit()
                 return {
                     **as_dict(record),
@@ -2987,6 +3008,9 @@ class HelveticLens:
             key = ai.ask_cache_key(
                 comparison, profile, settings, prompts, question, history
             )
+            analysis_plan = ai.build_ask_plan(
+                settings, comparison, old, new, question, prompts, profile, history
+            )
         lock_key = comparison_id + ":" + key
         lock = self.ask_locks.setdefault(lock_key, asyncio.Lock())
         async with lock:
@@ -3010,6 +3034,7 @@ class HelveticLens:
                     model=settings.apertus_model,
                     prompt_revision=prompt_revision,
                     context_mode=prompts.ask_context_mode,
+                    analysis_plan=analysis_plan,
                     last_used_at=utcnow(),
                 )
                 session.add(record)
@@ -3048,6 +3073,13 @@ class HelveticLens:
                     record = get(session, AskRecord, record_id)
                     record.status, record.error = "failed", message
                     record.provenance = provenance
+                    record.analysis_plan = ai.complete_analysis_plan(
+                        analysis_plan,
+                        status="failed",
+                        coverage={},
+                        provenance=provenance,
+                        result_url=f"/compare/{comparison.id}",
+                    )
                     session.commit()
                 if isinstance(exc, DomainError):
                     raise
@@ -3071,6 +3103,13 @@ class HelveticLens:
                 record.result = stored_result
                 record.coverage = coverage
                 record.provenance = provenance
+                record.analysis_plan = ai.complete_analysis_plan(
+                    analysis_plan,
+                    status="succeeded",
+                    coverage=coverage,
+                    provenance=provenance,
+                    result_url=f"/compare/{comparison.id}",
+                )
                 record.context_mode = result.get("context_mode", prompts.ask_context_mode)
                 record.error = None
                 session.commit()
@@ -3082,6 +3121,7 @@ class HelveticLens:
             **(record.result or {}),
             "coverage": record.coverage or {},
             "provenance": record.provenance or {},
+            "analysis_plan": record.analysis_plan or {},
             "model": record.model,
             "record_id": record.id,
             "cached": cached,

@@ -30,6 +30,7 @@ import type {
   AIHistoryItem,
   AIHistoryPage,
   Analysis,
+  AnalysisPlan,
   Answer,
   Change,
   Comparison,
@@ -271,23 +272,24 @@ export function ComparisonView({ id }: { id: string }) {
                     Select or attach another version
                   </Link>
                 </Button>
-                {canManage && [data.old_version, data.new_version]
-                  .filter(
-                    (version) =>
-                      version.id !== data.law.current_version_id &&
-                      version.origin !== "live",
-                  )
-                  .map((version) => (
-                    <Button
-                      key={"remove-" + version.id}
-                      variant="destructive"
-                      size="sm"
-                      disabled={!!confirmingIdentity}
-                      onClick={() => removeMistakenImport(version.id)}
-                    >
-                      Remove mistaken import {version.id.slice(0, 8)}
-                    </Button>
-                  ))}
+                {canManage &&
+                  [data.old_version, data.new_version]
+                    .filter(
+                      (version) =>
+                        version.id !== data.law.current_version_id &&
+                        version.origin !== "live",
+                    )
+                    .map((version) => (
+                      <Button
+                        key={"remove-" + version.id}
+                        variant="destructive"
+                        size="sm"
+                        disabled={!!confirmingIdentity}
+                        onClick={() => removeMistakenImport(version.id)}
+                      >
+                        Remove mistaken import {version.id.slice(0, 8)}
+                      </Button>
+                    ))}
               </div>
               {canManage && data.identity.status === "unknown" && (
                 <div className="flex flex-wrap gap-2 mt-3">
@@ -624,6 +626,7 @@ export function ComparisonView({ id }: { id: string }) {
                         </div>
                       )}
                       <CoverageNote coverage={analysis.coverage} />
+                      <PlanNote plan={analysis.analysis_plan} />
                       <p className="text-xs muted">
                         Generated {dateTime(analysis.created_at)} ·{" "}
                         {analysis.model}
@@ -643,29 +646,31 @@ export function ComparisonView({ id }: { id: string }) {
                     )
                   )}
                   <ErrorNote message={error || analysis?.error} />
-                  {canManage && <Button
-                    className="w-full mt-3"
-                    variant="outline"
-                    disabled={
-                      analysing ||
-                      analysis?.status === "pending" ||
-                      !health?.apertus.configured ||
-                      identityBlocked ||
-                      !canAnalyseMeaningfulChanges
-                    }
-                    onClick={analyse}
-                  >
-                    {analysing ? (
-                      <Loader2 className="animate-spin" />
-                    ) : (
-                      <Sparkles />
-                    )}
-                    {analysis?.stale || analysis?.status === "failed"
-                      ? "Retry impact analysis"
-                      : analysis?.status === "succeeded"
-                        ? "Load saved assessment"
-                        : "Analyse with Apertus"}
-                  </Button>}
+                  {canManage && (
+                    <Button
+                      className="w-full mt-3"
+                      variant="outline"
+                      disabled={
+                        analysing ||
+                        analysis?.status === "pending" ||
+                        !health?.apertus.configured ||
+                        identityBlocked ||
+                        !canAnalyseMeaningfulChanges
+                      }
+                      onClick={analyse}
+                    >
+                      {analysing ? (
+                        <Loader2 className="animate-spin" />
+                      ) : (
+                        <Sparkles />
+                      )}
+                      {analysis?.stale || analysis?.status === "failed"
+                        ? "Retry impact analysis"
+                        : analysis?.status === "succeeded"
+                          ? "Load saved assessment"
+                          : "Analyse with Apertus"}
+                    </Button>
+                  )}
                   <p className="review-note">
                     Indicative impact and actions support your review. Check the
                     evidence before making a legal or business decision.
@@ -689,10 +694,12 @@ export function ComparisonView({ id }: { id: string }) {
                 </section>
               ) : (
                 <>
-                  {canManage && <AskPanel
-                    comparisonId={id}
-                    configured={!!health?.apertus.configured}
-                  />}
+                  {canManage && (
+                    <AskPanel
+                      comparisonId={id}
+                      configured={!!health?.apertus.configured}
+                    />
+                  )}
                   <AIHistory comparisonId={id} compact />
                 </>
               )}
@@ -811,6 +818,34 @@ function CoverageNote({ coverage }: { coverage?: Partial<Coverage> }) {
         : ""}
       . {coverage.scope}
     </div>
+  );
+}
+
+function PlanNote({ plan }: { plan?: AnalysisPlan }) {
+  if (!plan?.limits) return null;
+  const actual = plan.actual;
+  const usage = actual?.token_counts || {};
+  const tokenTotal = Object.values(usage).reduce(
+    (sum, value) => sum + value,
+    0,
+  );
+  const repairs = Number(actual?.validation?.repair_count || 0);
+  return (
+    <p className="coverage-note mb-0">
+      Fixed plan: {plan.estimates.planned_generation_calls} expected ·{" "}
+      {plan.actual?.provider_calls ?? 0} actual model calls · hard limit{" "}
+      {plan.limits.provider_call_budget}. {plan.execution.batch_count} evidence{" "}
+      {plan.execution.batch_count === 1 ? "group" : "groups"};{" "}
+      {plan.coverage.limited ? "limited" : "complete"} planned coverage
+      {actual
+        ? ` · queue ${Math.round(actual.queue_wait_ms)} ms · inference ${Math.round(actual.inference_duration_ms)} ms`
+        : ""}
+      {tokenTotal ? ` · ${tokenTotal.toLocaleString()} recorded tokens` : ""}
+      {actual
+        ? ` · ${repairs} validation ${repairs === 1 ? "repair" : "repairs"}`
+        : ""}
+      .
+    </p>
   );
 }
 
@@ -1009,6 +1044,7 @@ function SavedQuestionTurn({
               </div>
             )}
             <CoverageNote coverage={item.coverage} />
+            <PlanNote plan={item.analysis_plan} />
             <p className="saved-answer-meta">
               {dateTime(item.created_at)} · {item.model}
               {item.use_count > 1

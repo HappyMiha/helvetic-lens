@@ -1,7 +1,9 @@
 from conftest import add_law, import_old
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 
 from helvetic_lens.main import create_app
+from helvetic_lens.models import Analysis
 
 
 def saved_comparison(client, law):
@@ -43,6 +45,9 @@ def test_saved_questions_and_impact_are_reused_and_attached_to_exact_comparison(
     assert repeated.status_code == 200 and repeated.json()["cached"] is True
     assert repeated.json()["record_id"] == first.json()["record_id"]
     assert repeated.json()["use_count"] == 2 and len(model.calls) == calls_after_first
+    assert first.json()["analysis_plan"]["state"] == "completed"
+    assert first.json()["analysis_plan"]["limits"]["provider_call_budget"] == 3
+    assert first.json()["analysis_plan"]["actual"]["provider_calls"] <= 3
 
     impact_url = f"/api/comparisons/{comparison['id']}/analyse"
     impact = client.post(impact_url)
@@ -51,6 +56,9 @@ def test_saved_questions_and_impact_are_reused_and_attached_to_exact_comparison(
     repeated_impact = client.post(impact_url)
     assert repeated_impact.status_code == 200 and repeated_impact.json()["cached"] is True
     assert repeated_impact.json()["use_count"] == 2 and len(model.calls) == calls_after_impact
+    assert impact.json()["analysis_plan"]["state"] == "completed"
+    assert impact.json()["analysis_plan"]["limits"]["provider_call_budget"] == 5
+    assert impact.json()["analysis_plan"]["actual"]["provider_calls"] <= 5
 
     history = client.get(f"/api/comparisons/{comparison['id']}/ai-history")
     assert history.status_code == 200 and history.json()["total"] == 2
@@ -59,6 +67,8 @@ def test_saved_questions_and_impact_are_reused_and_attached_to_exact_comparison(
     assert question["question"] == "What changed?" and question["status"] == "succeeded"
     assert question["result"]["answer"] == "Test-only answer." and question["use_count"] == 2
     assert question["context_mode"] == "deterministic_diff"
+    assert question["analysis_plan"]["actual"]["result_url"] == f"/compare/{comparison['id']}"
+    assert analysis["analysis_plan"]["context_fingerprint"]
     assert analysis["result"]["summary"] == "Test-only summary." and analysis["use_count"] == 2
     assert question["comparison"] == analysis["comparison"]
     assert question["comparison"]["before"]["id"] == old["id"]
@@ -68,6 +78,36 @@ def test_saved_questions_and_impact_are_reused_and_attached_to_exact_comparison(
 
     document_history = client.get(f"/api/laws/{law['id']}/ai-history")
     assert document_history.status_code == 200 and document_history.json()["total"] == 2
+
+
+def test_impact_plan_is_committed_before_the_first_model_call(harness):
+    client, _, service, model = harness
+    service.settings.apertus_base_url = "https://model.example/v1"
+    law = add_law(client)
+    _, comparison = saved_comparison(client, law)
+    original_complete = model.complete
+    observed = []
+
+    async def inspect_plan(system, user, **kwargs):
+        with service.db.session() as session:
+            record = session.scalar(
+                select(Analysis)
+                .where(Analysis.comparison_id == comparison["id"])
+                .order_by(Analysis.created_at.desc())
+                .limit(1)
+            )
+            assert record is not None
+            observed.append(record.analysis_plan)
+            assert record.status == "pending"
+            assert record.analysis_plan["state"] == "planned"
+            assert record.analysis_plan["limits"]["provider_call_budget"] == 5
+        return await original_complete(system, user, **kwargs)
+
+    model.complete = inspect_plan
+    response = client.post(f"/api/comparisons/{comparison['id']}/analyse")
+
+    assert response.status_code == 200 and response.json()["status"] == "succeeded"
+    assert observed and observed[0]["selected_change_ids"]
 
 
 def test_general_questions_use_all_saved_passages_and_failed_attempts_remain_visible(harness):

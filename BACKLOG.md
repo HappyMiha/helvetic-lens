@@ -91,7 +91,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-057](#hl-057) | P1       | PLANNED  | HL-032, HL-034–HL-037, HL-045–HL-047                   | Complete German, French, Italian, Romansh, and English localization |
 | [HL-058](#hl-058) | P0       | DONE     | HL-005, HL-036, HL-038                                 | Document-identity gate before comparison or AI                      |
 | [HL-059](#hl-059) | P0       | DONE     | HL-011, HL-036, HL-058                                 | Legal-unit semantic diff with noise classification                  |
-| [HL-060](#hl-060) | P0       | PLANNED  | HL-030–HL-032, HL-059                                  | Fixed-budget local-AI analysis planner                              |
+| [HL-060](#hl-060) | P0       | DONE     | HL-030–HL-032, HL-059                                  | Fixed-budget local-AI analysis planner                              |
 | [HL-061](#hl-061) | P1       | PLANNED  | HL-033, HL-060                                         | Actionable, deduplicated impact-report contract                     |
 | [HL-062](#hl-062) | P1       | PLANNED  | HL-060, HL-061                                         | Intent-routed Ask experience and safe context selection             |
 | [HL-063](#hl-063) | P1       | PLANNED  | HL-030, HL-037, HL-059–HL-062                          | Decision-ready comparison UX and background progress                |
@@ -860,6 +860,8 @@ Acceptance criteria:
 ### HL-060 — Plan every local-AI analysis within a fixed call and context budget
 
 Use the model for semantic explanation and triage, not as a slow passage-by-passage diff engine.
+
+**Status: DONE.** Impact and Ask now save an explicit pre-inference `AnalysisPlan` with selection decisions, reusable semantic-change fingerprint, profile-aware context fingerprint, token estimates, fixed context/output limits, expected calls, and coverage. Impact is capped at five provider calls and Ask at three; formatting/structural-only comparisons use zero model calls. Completed and failed records retain actual calls, queue/inference timing, provider token counts, validation/repair results, and a result link, shown compactly in the comparison and AI-history interfaces. See [docs/AI_ANALYSIS_PLANNER.md](docs/AI_ANALYSIS_PLANNER.md).
 
 Acceptance criteria:
 

@@ -166,6 +166,49 @@ export type Coverage = {
   suppressed_non_material_items?: number;
   analysis_call_budget?: number;
 };
+export type AnalysisPlan = {
+  schema_version: string;
+  state: "planned" | "completed" | "failed";
+  task: "impact_report" | "ask";
+  intent: string;
+  selected_change_ids?: string[];
+  selected_evidence_ids?: string[];
+  context_fingerprint: string;
+  limits: {
+    provider_call_budget: number;
+    configured_context_characters: number;
+    reserved_output_tokens_per_call: number;
+  };
+  estimates: {
+    input_characters: number;
+    input_tokens: number;
+    output_tokens: number;
+    planned_generation_calls: number;
+  };
+  execution: {
+    strategy: string;
+    provider: string;
+    model: string;
+    batch_count: number;
+    local_first: boolean;
+    profile_revision?: number | null;
+  };
+  shared_general_change?: {
+    source: string;
+    summary: string;
+    fingerprint: string;
+  };
+  coverage: Partial<Coverage>;
+  actual?: {
+    provider_calls: number;
+    queue_wait_ms: number;
+    inference_duration_ms: number;
+    token_counts: Record<string, number>;
+    validation: Record<string, unknown>;
+    coverage_limited: boolean;
+    result_url: string;
+  };
+};
 export type Impact = {
   summary: string;
   impact: "high" | "medium" | "low";
@@ -181,6 +224,7 @@ export type Analysis = {
   error: string | null;
   result: Impact | null;
   coverage: Coverage;
+  analysis_plan: AnalysisPlan;
   provenance: Record<string, unknown>;
   model: string;
   prompt_revision: number;
@@ -226,7 +270,12 @@ export type LawDetail = Law & {
       stable_official_url: string | null;
     };
     identifiers: { scheme: string; value: string; source_url: string | null }[];
-    expressions: { id: string; language: string; title: string; url: string | null }[];
+    expressions: {
+      id: string;
+      language: string;
+      title: string;
+      url: string | null;
+    }[];
     normalized_versions: number;
     relations: {
       id: string;
@@ -236,7 +285,11 @@ export type LawDetail = Law & {
       other_work_id: string;
       provenance: string;
     }[];
-    source_provenance: { origin: string; source_url: string | null; observed_at: string }[];
+    source_provenance: {
+      origin: string;
+      source_url: string | null;
+      observed_at: string;
+    }[];
     timeline: {
       id: string;
       type: "event" | "version" | "comparison";
@@ -687,6 +740,7 @@ export type Answer = {
   last_used_at: string | null;
   use_count: number;
   prompt_revision: number;
+  analysis_plan?: AnalysisPlan;
 };
 
 export type PromptSettings = {
@@ -735,6 +789,7 @@ export type AIHistoryItem = {
   created_at: string;
   error: string | null;
   coverage: Partial<Coverage>;
+  analysis_plan?: AnalysisPlan;
   result:
     | Impact
     | (Omit<Answer, "coverage" | "model"> & { context_mode?: string })
