@@ -33,6 +33,8 @@ def valid_environment() -> dict[str, str]:
         "DEFAULT_LOCALE": "de-CH",
         "MAX_DOCUMENT_BYTES": "8388608",
         "HELVETIC_LENS_BACKUP_DIR": "/srv/helvetic-lens-backups",
+        "BACKUP_RETENTION_DAYS": "30",
+        "BACKUP_INTERVAL_SECONDS": "86400",
     }
 
 
@@ -62,6 +64,8 @@ def test_production_environment_rejects_public_data_paths_and_insecure_auth():
         JOB_EXECUTION_MODE="inline",
         MAX_DOCUMENT_BYTES=str(21 * 1024 * 1024),
         HELVETIC_LENS_BACKUP_DIR="./backups",
+        BACKUP_RETENTION_DAYS="2",
+        BACKUP_INTERVAL_SECONDS="60",
     )
 
     errors = validate(values)
@@ -76,6 +80,8 @@ def test_production_environment_rejects_public_data_paths_and_insecure_auth():
     assert "JOB_EXECUTION_MODE" in rejected
     assert "MAX_DOCUMENT_BYTES" in rejected
     assert "HELVETIC_LENS_BACKUP_DIR" in rejected
+    assert "BACKUP_RETENTION_DAYS" in rejected
+    assert "BACKUP_INTERVAL_SECONDS" in rejected
 
 
 def test_application_accepts_only_the_validated_production_security_boundary(tmp_path):

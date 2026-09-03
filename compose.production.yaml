@@ -42,6 +42,7 @@ x-api-service: &api-service
   environment: *api-environment
   volumes:
     - document_data:/data
+    - backup_status:/data/backups:ro
   networks:
     - app
     - data
@@ -91,6 +92,63 @@ services:
     logging:
       driver: json-file
       options: {max-size: 20m, max-file: "5"}
+
+  backup:
+    image: postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_USER: ${HELVETIC_LENS_DB_USER:-helvetic_lens}
+      POSTGRES_PASSWORD: ${HELVETIC_LENS_DB_PASSWORD:?Set a strong database password}
+      POSTGRES_DB: ${HELVETIC_LENS_DB_NAME:-helvetic_lens}
+      HELVETIC_LENS_RELEASE: ${HELVETIC_LENS_RELEASE:?Set an immutable release identifier}
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
+    entrypoint: ["/bin/sh", "/operations/backup.sh"]
+    command: ["schedule"]
+    volumes:
+      - document_data:/documents:ro
+      - backup_status:/status
+      - ${HELVETIC_LENS_BACKUP_DIR:?Set an absolute separate backup path}:/backups
+      - ${HELVETIC_LENS_CONFIG_FILE:-./.env.production}:/configuration/environment:ro
+      - ./deploy/Caddyfile:/configuration/Caddyfile:ro
+      - ./deploy/backup.sh:/operations/backup.sh:ro
+    networks:
+      - data
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "test", "-s", "/status/latest.json"]
+      interval: 5m
+      timeout: 5s
+      retries: 3
+      start_period: 2m
+    logging:
+      driver: json-file
+      options: {max-size: 20m, max-file: "5"}
+
+  restore:
+    profiles: ["restore"]
+    image: postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_USER: ${HELVETIC_LENS_DB_USER:-helvetic_lens}
+      POSTGRES_PASSWORD: ${HELVETIC_LENS_DB_PASSWORD:?Set a strong database password}
+      POSTGRES_DB: ${HELVETIC_LENS_DB_NAME:-helvetic_lens}
+      BACKUP_ID: ${BACKUP_ID:-}
+      CONFIRM_RESTORE: ${CONFIRM_RESTORE:-}
+    entrypoint: ["/bin/sh", "/operations/restore.sh"]
+    volumes:
+      - document_data:/documents
+      - ${HELVETIC_LENS_BACKUP_DIR:?Set an absolute separate backup path}:/backups:ro
+      - ./deploy/restore.sh:/operations/restore.sh:ro
+    networks:
+      - data
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
 
   migrate:
     <<: *api-service
@@ -227,6 +285,7 @@ volumes:
   model_library:
   caddy_data:
   caddy_config:
+  backup_status:
 
 networks:
   edge:

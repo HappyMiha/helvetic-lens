@@ -115,8 +115,21 @@ def validate(values: dict[str, str]) -> list[str]:
         errors.append("MAX_DOCUMENT_BYTES: must be an integer")
 
     backup_dir = require("HELVETIC_LENS_BACKUP_DIR")
-    if backup_dir and not PurePosixPath(backup_dir).is_absolute():
+    if backup_dir and (not PurePosixPath(backup_dir).is_absolute() or backup_dir in {"/", "/tmp"}):
         errors.append("HELVETIC_LENS_BACKUP_DIR: must be an absolute separate host path")
+    try:
+        retention_days = int(require("BACKUP_RETENTION_DAYS"))
+        if not 7 <= retention_days <= 365:
+            errors.append("BACKUP_RETENTION_DAYS: must be between 7 and 365")
+    except ValueError:
+        errors.append("BACKUP_RETENTION_DAYS: must be an integer")
+
+    try:
+        interval_seconds = int(require("BACKUP_INTERVAL_SECONDS"))
+        if not 3600 <= interval_seconds <= 604800:
+            errors.append("BACKUP_INTERVAL_SECONDS: must be between one hour and seven days")
+    except ValueError:
+        errors.append("BACKUP_INTERVAL_SECONDS: must be an integer")
 
     return sorted(set(errors))
 

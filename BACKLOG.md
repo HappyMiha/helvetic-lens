@@ -1026,7 +1026,7 @@ Acceptance criteria:
 
 Make the i7/32 GB/two-GTX-1080 server safe and recoverable enough for a public beta.
 
-**Status: IN PROGRESS.** A dedicated production Compose file now pins base/runtime images, runs migrations before readiness, exposes only Caddy on 80/443, keeps data and model paths on private networks, persists state, rotates logs, and restarts long-running services. A fail-closed validator and matching application checks reject insecure authentication, weak/placeholder secrets, HTTP origins, private-network fetching, inline jobs, cloud-first defaults, and oversized uploads. Backup/restore automation, bounded data retention, correlation/metrics completion, and a rehearsed upgrade/rollback remain.
+**Status: IN PROGRESS.** A dedicated production Compose file now pins base/runtime images, runs migrations before readiness, exposes only Caddy on 80/443, keeps data and model paths on private networks, persists state, rotates logs, and restarts long-running services. A fail-closed validator and matching application checks reject insecure authentication, weak/placeholder secrets, HTTP origins, private-network fetching, inline jobs, cloud-first defaults, and oversized uploads. Atomic scheduled PostgreSQL plus evidence/config backups use a separate destination, checksums, bounded retention, status-only application visibility, and a twice-confirmed restore path; an isolated real database/artifact restore rehearsal passes. Operational data retention, correlation/metrics completion, Redis-loss recovery, and the full target-host install/upgrade/rollback rehearsal remain.
 
 Acceptance criteria:
 

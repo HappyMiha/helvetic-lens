@@ -50,4 +50,40 @@ Open `https://<HELVETIC_LENS_DOMAIN>/api/health` for liveness and `https://<HELV
 
 The 1.5B quantized Apertus profile remains the production default until the checked-in benchmark passes on the actual dual-GTX-1080 host. Download and accept a model license from the platform administration UI after the stack is healthy. Never expose llama.cpp or the model manager directly.
 
-Backup, restore, retention, upgrade, and rollback rehearsal are added as the next HL-048 increments. Until that rehearsal passes against a separate destination, this deployment is not ready for public registration.
+## Backup and restore
+
+The `backup` service starts with the production stack, writes one backup immediately, and repeats every `BACKUP_INTERVAL_SECONDS` (daily by default). Each timestamped directory contains a PostgreSQL custom dump, the complete document/evidence volume, the exact deployment environment, the Caddy configuration, metadata, and SHA-256 checksums. A directory is moved into place only after every component succeeds. Completed backup directories expire after `BACKUP_RETENTION_DAYS`; partial directories and a failed run never replace `LATEST_SUCCESS`.
+
+The application can read only a small status marker in a separate named volume. It cannot read the off-host dumps or copied secrets. Confirm the platform administration page shows a recent backup. Run an extra backup before an upgrade:
+
+```sh
+docker compose --env-file .env.production -f compose.production.yaml run --rm backup once
+cat "$HELVETIC_LENS_BACKUP_DIR/LATEST_SUCCESS"
+```
+
+Copy or replicate `HELVETIC_LENS_BACKUP_DIR` off the server. A second directory on the same physical disk does not protect against disk or host loss.
+
+Restore is intentionally disruptive and requires the timestamp twice. First check out the intended application release and inspect the backup's `METADATA`, `environment`, and checksums. Stop every writer and public entry point while leaving PostgreSQL running:
+
+```sh
+docker compose --env-file .env.production -f compose.production.yaml stop caddy web scheduler worker-ai worker-cpu api backup model-manager
+export BACKUP_ID=20260903T155446Z
+export CONFIRM_RESTORE="$BACKUP_ID"
+docker compose --env-file .env.production -f compose.production.yaml --profile restore run --rm -e BACKUP_ID -e CONFIRM_RESTORE restore
+```
+
+The restore verifies every checksum before changing data, replaces the database objects from the dump, then replaces the document/evidence volume. It never overwrites the host's current environment automatically. Compare the backed-up `environment` and `Caddyfile` with the checked-out release; restore the backed-up credential key when restoring its database. Then run the normal validated startup command and verify `/api/ready`, sign-in, one evidence file, one comparison, and the model inventory.
+
+The development-host rehearsal created a PostgreSQL row and evidence file, backed them up, changed both, restored, and observed both original `before-backup` values. Repeat this rehearsal on the real backup mount before public registration and after material storage changes.
+
+## Upgrade and rollback boundary
+
+1. Record the current Git release and Compose image identifiers.
+2. Run and verify an extra backup as above.
+3. Pull the intended commit, set `HELVETIC_LENS_RELEASE` to that immutable identifier, validate, build, and start. The one-shot migration finishes before API readiness.
+4. Verify readiness, authentication, registry reads, one connector, one saved comparison, and one local-model request.
+5. If application verification fails before an irreversible migration, return to the recorded commit and release images. If a migration ran, restore the pre-upgrade database and evidence backup with the matching credential key; do not assume a code-only downgrade can reverse schema or data changes.
+
+Caddy stores certificates in its named volume and renews them automatically while ports 80/443 and DNS remain correct. Check Caddy logs and certificate expiry during the target-host rehearsal.
+
+Automated operational retention, cross-service correlation/metrics completion, Redis-loss recovery, and the full target-host install/upgrade/rollback exercise remain open HL-048 gates.
