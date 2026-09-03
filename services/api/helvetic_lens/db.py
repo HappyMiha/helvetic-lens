@@ -20,7 +20,11 @@ class Base(DeclarativeBase):
 
 
 class Database:
-    def __init__(self, settings: Settings, organization_id: str):
+    def __init__(
+        self,
+        settings: Settings,
+        organization_id: str = "00000000-0000-0000-0000-000000000001",
+    ):
         settings.storage_path.mkdir(parents=True, exist_ok=True)
         options = {"pool_pre_ping": True}
         if settings.db_url.startswith("sqlite"):
