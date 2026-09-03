@@ -467,6 +467,10 @@ def create_app(
     async def sync_fedlex(stream: str):
         return await service.sync_fedlex(stream)
 
+    @app.post("/api/connectors/parliament/{stream}/sync")
+    async def sync_parliament(stream: str):
+        return await service.sync_parliament(stream)
+
     @app.get("/api/corpus/works/{work_id}")
     def regulatory_work_detail(work_id: str):
         return service.regulatory_work_detail(work_id)

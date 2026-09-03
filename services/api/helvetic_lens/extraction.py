@@ -1,6 +1,7 @@
 import asyncio
 import hashlib
 import ipaddress
+import json
 import re
 import socket
 import time
@@ -641,12 +642,41 @@ def extract(
             raise DomainError(
                 "This file is not supported text, HTML, or a text-based PDF.", 422, "unsupported_input"
             )
-        is_html = (
+        is_json = mime in {"application/json", "text/json"} or name.lower().endswith(".json")
+        if is_json:
+            try:
+                payload = json.loads(decoded)
+            except json.JSONDecodeError as exc:
+                raise DomainError(
+                    "This JSON document could not be read.", 422, "invalid_json"
+                ) from exc
+
+            def collect_json(value, path="$"):
+                if isinstance(value, dict):
+                    for key, item in value.items():
+                        collect_json(item, f"{path}.{key}")
+                elif isinstance(value, list):
+                    for index, item in enumerate(value):
+                        collect_json(item, f"{path}[{index}]")
+                elif isinstance(value, (str, int, float)) and not isinstance(value, bool):
+                    raw_value = str(value)
+                    text_value = normalize(
+                        BeautifulSoup(raw_value, "html.parser").get_text(" ", strip=True)
+                        if re.search(r"<[^>]+>", raw_value)
+                        else raw_value
+                    )
+                    if text_value:
+                        passages.append({"text": text_value, "page": None, "json_path": path})
+
+            collect_json(payload)
+            if isinstance(payload, dict) and payload.get("title"):
+                title = normalize(str(payload["title"]))
+            mime = "application/json"
+        elif (
             mime in {"text/html", "application/xhtml+xml"}
             or name.lower().endswith((".html", ".htm"))
             or bool(re.search(r"<(?:html|body|article|main|p|h1)\b", decoded[:3000], re.I))
-        )
-        if is_html:
+        ):
             mime = "text/html"
             soup = BeautifulSoup(decoded, "html.parser")
             title_element = soup.find("h1") or soup.title

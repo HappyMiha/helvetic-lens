@@ -50,14 +50,31 @@ PARLIAMENT_CONTRACT = OfficialSourceContract(
     manifest=ConnectorManifest(
         name="swiss-parliament",
         authority="swiss_parliament",
-        connector_version="1.0.0",
-        schema_version="parliament-webservice-v1",
-        allowed_hosts=frozenset({"ws-old.parlament.ch", "www.parlament.ch"}),
-        attribution="The Federal Assembly — Swiss Parliament Open Data, with the official affair link retained.",
+        connector_version="1.1.0",
+        schema_version="parliament-webservice-v2",
+        allowed_hosts=frozenset(
+            {
+                "ws-old.parlament.ch",
+                "www.parlament.ch",
+                "parlament.ch",
+                "www.admin.ch",
+                "admin.ch",
+                "fedlex.data.admin.ch",
+                "www.fedlex.admin.ch",
+                "fedlex.admin.ch",
+            }
+        ),
+        attribution=(
+            "Parlamentsdienste der Bundesversammlung, Bern — retrieved on the recorded date; "
+            "Helvetic Lens is not an official publication."
+        ),
         source_contract={
-            "discovery": "50-row affair catalogue pages with periodic full reconciliation",
+            "discovery": (
+                "50-row ID-ordered catalogue, recent tail window, and known-active reconciliation"
+            ),
             "required_identity": "affair id",
             "languages": ["de", "fr", "it", "en"],
+            "rows_per_official_page": 50,
         },
     ),
     smoke_url="https://ws-old.parlament.ch/affairs?format=json&lang=de",

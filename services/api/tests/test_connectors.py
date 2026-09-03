@@ -1,4 +1,5 @@
 import asyncio
+import gzip
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
@@ -301,6 +302,25 @@ def test_shared_http_policy_retries_logs_and_rejects_cross_host_redirect(harness
         "discover_attempt_1",
         "discover_attempt_2",
     ]
+
+    compressed_body = gzip.compress(b'{"id":20260001,"title":"Official compressed record"}')
+    compressed = ConnectorHttpClient(
+        service.settings.model_copy(update={"allow_private_sources": True}),
+        MANIFEST,
+        transport=httpx.MockTransport(
+            lambda request: httpx.Response(
+                200,
+                request=request,
+                content=compressed_body,
+                headers={"content-type": "application/json", "content-encoding": "gzip"},
+            )
+        ),
+        sleep=no_sleep,
+    )
+    decoded = asyncio.run(
+        compressed.get("https://official.example/catalogue", operation="compressed")
+    )
+    assert decoded.body == b'{"id":20260001,"title":"Official compressed record"}'
 
     def redirect_handler(request):
         return httpx.Response(

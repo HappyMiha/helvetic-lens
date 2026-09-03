@@ -82,7 +82,7 @@ The earlier large-comparison checks below are retained as historical evidence of
 - Fixture-backed checks exercise discovery, metadata, language expressions, official artifact retrieval, explicit relation extraction, and health for the shared v1 contract. Replaying a committed page creates no duplicate works, versions, receipts, or relations.
 - A forced second-item failure commits the first safe boundary, leaves the source cursor unchanged, stores the exact item error and next index, and resumes from that index successfully on retry.
 - Shared HTTP checks cover allowlisted HTTPS URLs and redirects, streamed response limits, bounded retry with jitter, one redacted diagnostic per attempt, official artifact hashing, extraction, immutable storage, and contract-drift degradation.
-- Bounded live probes on 3 September 2026 passed the Fedlex RSS and Federal Supreme Court latest-index contracts. The Swiss Parliament JSON endpoint returned HTTP 403 from the development host; Helvetic Lens surfaced `degraded` and did not treat the page as empty or advance ingestion state. Re-run `scripts/check_official_source_contracts.py` from the deployment network before accepting HL-040.
+- Bounded live probes on 3 September 2026 passed the Fedlex RSS, Parliament catalogue, and Federal Supreme Court latest-index contracts. An initial denied Parliament response was surfaced as `degraded` without advancing ingestion state; after the contact user agent and compressed-response handling were corrected, the official catalogue probe passed.
 
 ## Fedlex catalogue connector — 3 September 2026
 
@@ -90,6 +90,14 @@ The earlier large-comparison checks below are retained as historical evidence of
 - The bounded read-only live smoke passed against the current official German RSS and SPARQL services. The feed exposed 50 items; the sampled `oc/2026/448` work returned DE/FR/IT expressions, one version, and one official relation. A one-item `cc` reconciliation page returned a stable next key without writing to the corpus.
 - `scripts/check_fedlex_connector.py` performs this live check without downloading a document or advancing a database cursor. `POST /api/connectors/fedlex/{stream}/sync` runs one persisted page; status and recovery remain visible through `GET /api/connectors/status`.
 - The complete API suite passes with 193 tests, Ruff passes, the Next.js production build passes, and the rebuilt Compose stack reports healthy API, PostgreSQL, Redis, and model-manager services at migration `c27f8d91a6e4 (head)`.
+
+## Swiss Parliament connector — 3 September 2026
+
+- Fixture regressions cover 50-row ID-ordered paging in smaller commit slices, complete/recent/known-active cursors, actual-language fallback, localized title and source text, stable/short identifiers, type/state, authors, committees, sessions, descriptors, official documents, exact ELI/SR/RS/related-affair candidates, status-only updates, immutable versions, partial-item recovery, and idempotent reruns.
+- The source-contract spike confirmed that the affair list is ordered by ID rather than `updated` and offers no reliable global update-only feed. Pages 1 and 2 each returned 50 ascending IDs while their `updated` values were not ordered. This is why complete reconciliation is retained alongside recent-tail and known-active streams.
+- The bounded read-only live smoke passed against API version 3.0.2. It observed 1,348 affair pages, 50 rows on page 1, actual DE/FR/IT records for a recent-tail affair, and 36 official artifact entries plus three unique downloadable document expressions for affair `20250069`. It wrote no corpus data and downloaded no linked document.
+- The first live attempt exposed a double-decompression defect in the common bounded HTTP transport: `httpx` had already decoded the Parliament gzip body before the response was reconstructed with the original encoding header. The transport now removes stale encoding/length headers and has a compressed-response regression.
+- The complete API suite passes with 199 tests, Ruff passes, and the Next.js production build passes. The rebuilt Compose stack reports healthy API, PostgreSQL, Redis, and model-manager services; both workers and the scheduler are running at migration `c27f8d91a6e4 (head)`, and the deployed OpenAPI contract exposes the Parliament synchronization route.
 
 ## Browser and PostgreSQL checks
 

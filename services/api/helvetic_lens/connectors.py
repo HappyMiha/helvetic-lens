@@ -159,6 +159,7 @@ class ConnectorArtifact:
     filename: str
     expected_sha256: str | None = None
     raw_provenance: dict = field(default_factory=dict)
+    status_code: int = 200
 
 
 @dataclass(frozen=True)
@@ -270,7 +271,7 @@ class ConnectorHttpClient:
             operation=f"{operation}_attempt_{attempt}",
             method="GET",
             url=url,
-            status="success" if response is not None and response.status_code < 400 else "error",
+            status="success" if response is not None and error is None else "error",
             duration_ms=(time.monotonic() - started) * 1000,
             request_headers={"Accept": "application/json, text/json, application/xml, text/html, */*"},
             response_status=response.status_code if response is not None else None,
@@ -286,6 +287,7 @@ class ConnectorHttpClient:
         operation: str,
         max_bytes: int | None = None,
         headers: dict | None = None,
+        accepted_statuses: frozenset[int] = frozenset(),
     ) -> ConnectorArtifact:
         current = validate_official_url(url, self.manifest.allowed_hosts)
         limit = max_bytes or self.settings.max_document_bytes
@@ -297,7 +299,7 @@ class ConnectorHttpClient:
             trust_env=False,
             transport=self.transport,
             headers={
-                "User-Agent": "HelveticLens/0.1 (+official regulatory monitoring)",
+                "User-Agent": "HelveticLens/0.1 (+https://github.com/HappyMiha/helvetic-lens)",
                 "Accept": "application/json, text/json, application/xml, text/html, */*",
                 **(headers or {}),
             },
@@ -325,9 +327,15 @@ class ConnectorHttpClient:
                                 "connector_content_too_large",
                             )
                         chunks.append(chunk)
+                    response_headers = dict(raw.headers)
+                    # aiter_bytes() has already decoded gzip/br content. Keeping the
+                    # original encoding header would make the reconstructed bounded
+                    # response decode the bytes a second time.
+                    response_headers.pop("content-encoding", None)
+                    response_headers.pop("content-length", None)
                     return httpx.Response(
                         raw.status_code,
-                        headers=raw.headers,
+                        headers=response_headers,
                         content=b"".join(chunks),
                         request=request,
                     )
@@ -362,7 +370,7 @@ class ConnectorHttpClient:
                             request=response.request,
                             response=response,
                         )
-                    if response.status_code >= 400:
+                    if response.status_code >= 400 and response.status_code not in accepted_statuses:
                         raise DomainError(
                             f"The official source returned HTTP {response.status_code}.",
                             502,
@@ -378,7 +386,13 @@ class ConnectorHttpClient:
                     )
                     content_type = response.headers.get("content-type", "application/octet-stream")
                     filename = PurePosixPath(urlsplit(current).path).name or "artifact"
-                    return ConnectorArtifact(current, response.content, content_type, filename)
+                    return ConnectorArtifact(
+                        current,
+                        response.content,
+                        content_type,
+                        filename,
+                        status_code=response.status_code,
+                    )
                 except DomainError as exc:
                     self._log(
                         operation=operation,

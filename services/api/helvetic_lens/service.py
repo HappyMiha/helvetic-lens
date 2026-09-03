@@ -69,6 +69,7 @@ from .models import (
     Version,
 )
 from .official_source_contracts import OFFICIAL_SOURCE_CONTRACTS
+from .parliament_connector import parliament_connectors
 from .prompt_settings import (
     PromptSettingsInput,
     default_prompt_settings,
@@ -967,6 +968,65 @@ class HelveticLens:
                 "Choose a supported Fedlex stream.",
                 422,
                 "fedlex_stream_invalid",
+            )
+        result = await self.connector_runner.run_page(connector, stream=stream)
+        return {
+            "connector": result.connector,
+            "stream": result.stream,
+            "status": result.status,
+            "page_id": result.page_id,
+            "persisted": result.persisted,
+            "total": result.total,
+            "next_cursor": result.next_cursor,
+            "error": result.error,
+        }
+
+    async def sync_parliament(self, stream: str) -> dict:
+        active_ids = ()
+        if stream == "active":
+            with self.db.session(include_all_organizations=True) as session:
+                works = session.scalars(
+                    select(RegulatoryWork).where(
+                        RegulatoryWork.authority == "swiss_parliament"
+                    )
+                ).all()
+                active_work_ids = {
+                    work.id
+                    for work in works
+                    if not bool((work.metadata_json or {}).get("is_final"))
+                }
+                identifiers = (
+                    session.scalars(
+                        select(RegulatoryIdentifier).where(
+                            RegulatoryIdentifier.work_id.in_(active_work_ids),
+                            RegulatoryIdentifier.scheme == "parliament_affair_id",
+                        )
+                    ).all()
+                    if active_work_ids
+                    else []
+                )
+                active_ids = tuple(
+                    item.normalized_value
+                    for item in identifiers
+                    if item.normalized_value.isdigit()
+                )
+        connector = next(
+            (
+                item
+                for item in parliament_connectors(
+                    self.settings,
+                    self.integration_logger,
+                    active_ids=active_ids,
+                )
+                if item.stream == stream
+            ),
+            None,
+        )
+        if connector is None:
+            raise DomainError(
+                "Choose a supported Swiss Parliament stream.",
+                422,
+                "parliament_stream_invalid",
             )
         result = await self.connector_runner.run_page(connector, stream=stream)
         return {

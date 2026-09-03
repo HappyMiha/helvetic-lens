@@ -4,7 +4,7 @@
 
 This backlog implements the product described in [README.md](README.md): a local-AI-first Swiss regulatory monitor with immutable evidence, a time-based legal registry, official-source connectors, cross-document impact analysis, and organization workspaces.
 
-**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-039`), document-identity gate (`HL-058`), and legal-unit semantic diff (`HL-059`) are implemented and verified through the API, browser build, migrations, and regression tests. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
+**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-040`), document-identity gate (`HL-058`), and legal-unit semantic diff (`HL-059`) are implemented and verified through the API, browser build, migrations, and regression tests. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
 
 ## Scope and priorities
 
@@ -78,7 +78,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-037](#hl-037) | P1       | DONE     | HL-035, HL-036                                         | Time-grouped monitoring registry and document timeline              |
 | [HL-038](#hl-038) | P0       | DONE     | HL-030, HL-036                                         | Versioned incremental connector contract                            |
 | [HL-039](#hl-039) | P1       | DONE     | HL-038, existing ELI resolver                          | Fedlex federal-law catalogue connector                              |
-| [HL-040](#hl-040) | P1       | PLANNED  | HL-038                                                 | Swiss Parliament initiatives and bills connector                    |
+| [HL-040](#hl-040) | P1       | DONE     | HL-038                                                 | Swiss Parliament initiatives and bills connector                    |
 | [HL-041](#hl-041) | P1       | PLANNED  | HL-038                                                 | Swiss Federal Supreme Court decisions connector                     |
 | [HL-042](#hl-042) | P1       | PLANNED  | HL-030, HL-039–HL-041                                  | Scheduled synchronization, deduplication, and watch fan-out         |
 | [HL-043](#hl-043) | P1       | PLANNED  | HL-038, HL-042                                         | Official notices and source-linked news events                      |
@@ -708,7 +708,7 @@ Acceptance criteria:
 
 Share ingestion, deduplication, recovery, and diagnostics across every official source instead of adding URL-specific patches.
 
-**Status: DONE.** All official adapters now share six versioned operations, a host-allowlisted bounded HTTP transport, normalized corpus writes, extracted artifact persistence, global cursor/page checkpoints, idempotent receipts, per-item recovery records, and observable contract health. Fixture probes cover Fedlex, Parliament, and the Federal Supreme Court. The 3 September 2026 live probes passed for Fedlex and the court; the Parliament endpoint returned HTTP 403 from this development network and was correctly reported as `degraded` without advancing a cursor. Concrete catalogue semantics follow in HL-039–HL-041. See [the connector contract](docs/CONNECTOR_CONTRACT.md).
+**Status: DONE.** All official adapters now share six versioned operations, a host-allowlisted bounded HTTP transport, normalized corpus writes, extracted artifact persistence, global cursor/page checkpoints, idempotent receipts, per-item recovery records, and observable contract health. Fixture probes cover Fedlex, Parliament, and the Federal Supreme Court. The 3 September 2026 live probes passed for all three contracts. An initial Parliament denial was correctly reported as `degraded` without advancing a cursor; its contact user agent and compressed-response handling were then corrected and covered by regression tests. Concrete catalogue semantics follow in HL-039–HL-041. See [the connector contract](docs/CONNECTOR_CONTRACT.md).
 
 Acceptance criteria:
 
@@ -745,6 +745,8 @@ Acceptance criteria:
 ### HL-040 — Add a Swiss Parliament initiatives and bills connector
 
 Track parliamentary business before it becomes enacted law.
+
+**Status: DONE.** The isolated `parliament-webservice-v2` adapter now provides complete catalogue, recent-tail, and known-active streams in bounded slices. It retains stable/short IDs, actual DE/FR/IT/EN availability, localized source text and summaries, type/state, authors, committees, sessions, descriptors, official artifacts, dates, retrieval provenance, and required attribution. Status-only updates emit a lifecycle event without a text version; substantive records and linked documents remain immutable. Exact official identifiers become evidence-backed relation candidates. Fixture and live checks passed on 3 September 2026. See [the Parliament connector contract](docs/PARLIAMENT_CONNECTOR.md).
 
 Acceptance criteria:
 

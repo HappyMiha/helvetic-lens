@@ -49,6 +49,6 @@ The repository includes fixture-backed probes for the three first source contrac
 services/api/.venv/Scripts/python.exe scripts/check_official_source_contracts.py
 ```
 
-On 3 September 2026, the bounded Fedlex RSS and Federal Supreme Court latest-index probes passed. The Swiss Parliament JSON endpoint returned HTTP 403 from this development network, so its live state was correctly reported as `degraded`. The official endpoint and JSON fixture remain part of the contract, but HL-040 cannot be accepted on a deployment network until its live probe succeeds. A fixture is regression evidence, never proof that an official source is currently reachable.
+On 3 September 2026, bounded live probes passed for Fedlex RSS, the Parliament catalogue, and the Federal Supreme Court latest index. The first Parliament probe exposed a transport defect: `httpx` had already decoded the gzip response before Helvetic Lens reconstructed it with stale encoding headers. The common transport now removes those headers and covers compressed responses with a regression test. A fixture remains regression evidence, never proof that an official source is currently reachable.
 
 Concrete discovery and reconciliation rules are implemented in HL-039 (Fedlex), HL-040 (Parliament), and HL-041 (Federal Supreme Court). Each uses this runner and must add its own fixture corpus and live smoke evidence without weakening these common guarantees.
