@@ -32,6 +32,7 @@ from helvetic_lens.models import (
 )
 from helvetic_lens.official_source_contracts import (
     FEDERAL_COURT_CONTRACT,
+    FEDERAL_CRIMINAL_COURT_CONTRACT,
     FEDERAL_NEWS_CONTRACT,
     FEDLEX_CONTRACT,
     FINMA_CONTRACT,
@@ -219,6 +220,7 @@ def test_connector_page_persists_normalized_artifacts_relations_and_replays(harn
         "fedlex",
         "swiss-parliament",
         "federal-supreme-court",
+        "federal-criminal-court",
     }
 
 
@@ -368,6 +370,11 @@ def test_shared_http_policy_retries_logs_and_rejects_cross_host_redirect(harness
         (
             FEDERAL_COURT_CONTRACT,
             b'<html><h1>Liste der neu aufgenommenen Entscheide</h1><a href="/decision">03.09.2026</a></html>',
+            "text/html",
+        ),
+        (
+            FEDERAL_CRIMINAL_COURT_CONTRACT,
+            b'<html><h1>Liste der neu aufgenommenen Entscheide</h1><a href="https://bstger.weblaw.ch/api/getDocumentContent/39fa0bc1-1f50-4f6b-85dd-dddad405a087">PDF</a></html>',
             "text/html",
         ),
         (

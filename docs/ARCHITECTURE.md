@@ -328,7 +328,11 @@ The initial court scope is the Swiss Federal Supreme Court, not every cantonal c
 
 The connector stores stable Aza/docket identity, court/chamber, decision date and insertion/publication date separately, language, official JumpCGI/source URL, descriptors/norms when exposed, and immutable HTML text. Free official decisions are generally served as HTML; the connector does not invent a downloadable source PDF when the authority did not publish one. It rereads the newest insertion dates with an overlap, reconciles every insertion-date page from the start of the previous year through today in bounded steps, and avoids repeatedly downloading the extremely large all-decisions RSS snapshot. A changed search template, challenge page, crawl-policy drift, or implausibly empty latest interval becomes a degraded connector without advancing uncertain coverage. A judgment may cite or interpret a law; it is never described as changing the statutory wording.
 
-Federal Administrative Court and Federal Criminal Court sources use separate future adapters because their Weblaw interfaces are undocumented implementation details. A non-official aggregator may be evaluated later for discovery coverage, but its metadata cannot replace an official artifact or be presented as the authority.
+### Swiss Federal Criminal Court
+
+The second court source is the Federal Criminal Court because its published decisions can directly affect criminal procedure, mutual assistance, sanctions, financial crime, and compliance monitoring. Its official website publishes a server-rendered latest-decision list with court dockets and PDF links. The connector rereads a bounded 50-item overlap, persists the document-service UUID and all listed dockets, validates the docket and date inside the PDF, and retains that original PDF as evidence. It maps the court level, chamber, actual DE/FR/IT language, decision date, discovery timestamp, and exact cited norms into the shared corpus.
+
+This source is intentionally labelled as a latest-list window rather than a complete historical database. Missing a decision in that window is never interpreted as evidence that it does not exist. Source health, observed item count, contract version, and the coverage statement remain visible. Federal Administrative Court and cantonal courts remain separate future adapters and must pass the same source-specific contract tests before support is claimed.
 
 ### Official news and notices
 

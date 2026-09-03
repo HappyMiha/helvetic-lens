@@ -101,7 +101,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-052](#hl-052) | P2       | PLANNED  | HL-034, HL-046, HL-057                                 | Opt-in email and web digests                                        |
 | [HL-053](#hl-053) | P3       | PLANNED  | HL-044–HL-046                                          | Relation review workflow and visual graph                           |
 | [HL-054](#hl-054) | P3       | PLANNED  | HL-034, HL-035                                         | Account recovery, verification, 2FA, and SSO refinements            |
-| [HL-055](#hl-055) | P2       | PLANNED  | HL-038, HL-041                                         | Broader federal and cantonal court coverage                         |
+| [HL-055](#hl-055) | P2       | DONE     | HL-038, HL-041                                         | Broader federal and cantonal court coverage                         |
 | [HL-056](#hl-056) | P3       | PLANNED  | HL-049                                                 | Multi-host or high-availability deployment after measured need      |
 
 ## M0 — Ready to build
@@ -1143,6 +1143,8 @@ Acceptance criteria:
 ### HL-055 — Expand court coverage after the Federal Supreme Court connector is stable
 
 Add further federal or cantonal courts source by source rather than implying universal Swiss coverage.
+
+**Status: DONE.** The Federal Criminal Court is now the second court source. Its bounded official latest-decision list feeds normalized dockets, hierarchy, decision dates, DE/FR/IT language, court-linked original PDFs, cited norms, source health, and an explicit latest-window coverage warning into the shared corpus. Fixture tests cover overlap, deduplication, drift, provenance, and evidence reopening; the bounded live check observed 50 decisions and successfully reopened one 217-page PDF. See [the connector contract](docs/FEDERAL_CRIMINAL_COURT_CONNECTOR.md).
 
 Acceptance criteria:
 

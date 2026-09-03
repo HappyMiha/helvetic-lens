@@ -112,6 +112,35 @@ FEDERAL_COURT_CONTRACT = OfficialSourceContract(
     response_kind="federal_court_html",
 )
 
+FEDERAL_CRIMINAL_COURT_CONTRACT = OfficialSourceContract(
+    manifest=ConnectorManifest(
+        name="federal-criminal-court",
+        authority="federal_criminal_court",
+        connector_version="1.0.0",
+        schema_version="federal-criminal-court-latest-v1",
+        allowed_hosts=frozenset({"www.bstger.ch", "bstger.ch", "bstger.weblaw.ch"}),
+        attribution=(
+            "Swiss Federal Criminal Court — official latest-decision listing and the "
+            "decision PDF linked by the court; Helvetic Lens is not an official publication."
+        ),
+        source_contract={
+            "discovery": "bounded overlap over the official latest-decision list",
+            "required_identity": "Federal Criminal Court document UUID and court docket",
+            "languages": ["de", "fr", "it"],
+            "decision_representation": "PDF linked from the court's official website",
+            "coverage": (
+                "Only decisions currently present in the official latest-decision list; "
+                "absence does not establish that no decision exists."
+            ),
+            "reuse": "public judicial decisions with court attribution and source link retained",
+            "citation_scan": "first 40 PDF pages; candidates remain evidence-backed",
+        },
+        minimum_interval_seconds=1.0,
+    ),
+    smoke_url="https://www.bstger.ch/de/home/index",
+    response_kind="federal_criminal_court_html",
+)
+
 FEDERAL_NEWS_CONTRACT = OfficialSourceContract(
     manifest=ConnectorManifest(
         name="federal-news",
@@ -159,6 +188,7 @@ OFFICIAL_SOURCE_CONTRACTS = (
     FEDLEX_CONTRACT,
     PARLIAMENT_CONTRACT,
     FEDERAL_COURT_CONTRACT,
+    FEDERAL_CRIMINAL_COURT_CONTRACT,
     FEDERAL_NEWS_CONTRACT,
     FINMA_CONTRACT,
 )
@@ -204,6 +234,17 @@ def _validate_payload(kind: str, body: bytes) -> dict:
             if not any(marker in text for marker in markers) or not links:
                 raise ValueError("latest-decision index markers are missing")
             return {"format": "html", "links_observed": len(links)}
+        if kind == "federal_criminal_court_html":
+            soup = BeautifulSoup(body, "html.parser")
+            text = " ".join(soup.stripped_strings).casefold()
+            links = [
+                link.get("href")
+                for link in soup.find_all("a")
+                if "getDocumentContent" in (link.get("href") or "")
+            ]
+            if "liste der neu aufgenommenen entscheide" not in text or not links:
+                raise ValueError("latest Federal Criminal Court decision markers are missing")
+            return {"format": "html", "decision_links_observed": len(set(links))}
     except (ElementTree.ParseError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
         raise DomainError(
             "The official source response no longer matches its expected contract.",

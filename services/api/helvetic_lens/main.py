@@ -499,6 +499,10 @@ def create_app(
     async def sync_federal_court(stream: str):
         return service.enqueue_connector_sync("federal-supreme-court", stream)
 
+    @app.post("/api/connectors/federal-criminal-court/{stream}/sync")
+    async def sync_federal_criminal_court(stream: str):
+        return service.enqueue_connector_sync("federal-criminal-court", stream)
+
     @app.get("/api/admin/connectors")
     def connector_schedules():
         return service.connector_schedule_status()

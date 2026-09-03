@@ -24,6 +24,7 @@ PostgreSQL is the source of truth. Redis may redeliver a message, and Beat may r
 | Fedlex                | `reconcile-cc`, `reconcile-oc`, `reconcile-fga` | daily bounded keyset reconciliation              |
 | Swiss Parliament      | `notices`, `recent`, `active`, `catalogue`      | every 30 minutes, hourly, every 6 hours, daily   |
 | Federal Supreme Court | `latest`, `reconcile`                           | hourly overlap and daily two-year reconciliation |
+| Federal Criminal Court | `latest`                                        | hourly overlap over 50 decisions                 |
 
 These are admission intervals, not promises that an upstream authority has published new material. Each connector retains its own overlap, source request pacing, cursor and partial-item checkpoint.
 

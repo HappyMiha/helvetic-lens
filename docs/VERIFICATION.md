@@ -108,6 +108,15 @@ The earlier large-comparison checks below are retained as historical evidence of
 - `scripts/check_federal_court_connector.py` performs the live check. `POST /api/connectors/federal-court/{latest|reconcile}/sync` runs one persisted page; connector status remains available through `GET /api/connectors/status`.
 - The complete API suite passes with 206 tests, Ruff passes, and the Next.js production build passes.
 
+## Swiss Federal Criminal Court connector — 3 September 2026
+
+- The court was selected for material relevance to criminal procedure, mutual assistance, sanctions, financial crime, and compliance monitoring, and because its official website exposes a maintainable server-rendered latest-decision list with stable dockets and direct PDF links.
+- Four focused fixture tests cover bounded overlap paging, corrected-listing revisions, stable UUID/docket identity, DE/FR language and dates, court hierarchy, exact cited norms, idempotent receipt deduplication, template drift, discovery provenance, and reopening the original persisted PDF.
+- The bounded read-only live smoke observed 50 unique latest decisions. It opened `SK.2025.29`, validated its French decision dated 24 November 2025, retained its 217-page PDF with SHA-256 provenance, extracted 614,405 characters, and produced 29 evidence-backed citation candidates.
+- Health and admin metadata state the source boundary: this covers the current official latest list, not a complete historical catalogue. Absence cannot be interpreted as proof that no decision exists.
+- `scripts/check_federal_criminal_court_connector.py` performs the bounded live check. The hourly `federal-criminal-court/latest` schedule uses the shared durable queue and one-second request floor.
+- The complete API suite passes with 238 tests, Ruff passes, and the Next.js production build passes.
+
 ## Scheduled official synchronization — 3 September 2026
 
 - Five focused synchronization regressions cover eleven idempotently seeded schedules, deterministic jitter, Swiss-time windows, pause/resume validation, manual active-run reuse, queue/disk backpressure, durable execution, safe retry boundaries, and two-organization event/feed fan-out over one shared official version and event.

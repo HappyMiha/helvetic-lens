@@ -93,6 +93,14 @@ DEFAULT_SCHEDULES = (
         "current/previous-year insertion-date cycle",
         2.0,
     ),
+    ScheduleDefinition(
+        "federal-criminal-court",
+        "latest",
+        3_600,
+        300,
+        "50-item official latest-list overlap",
+        1.0,
+    ),
 )
 
 
