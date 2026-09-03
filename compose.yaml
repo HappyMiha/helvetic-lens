@@ -19,6 +19,19 @@ services:
       interval: 5s
       timeout: 3s
       retries: 15
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec", "--maxmemory-policy", "noeviction"]
+    ports:
+      - "127.0.0.1:${HELVETIC_LENS_REDIS_PORT:-63799}:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
   api:
     build:
       context: services/api
@@ -27,6 +40,8 @@ services:
         required: false
     environment:
       DATABASE_URL: postgresql+psycopg://${HELVETIC_LENS_DB_USER:-helvetic_lens}:${HELVETIC_LENS_DB_PASSWORD:-helvetic_lens}@db:5432/${HELVETIC_LENS_DB_NAME:-helvetic_lens}
+      REDIS_URL: redis://redis:6379/0
+      JOB_EXECUTION_MODE: celery
       HELVETIC_LENS_DATA_DIR: /data
     ports:
       - "127.0.0.1:${HELVETIC_LENS_API_PORT:-${REGWATCH_API_PORT:-8000}}:8000"
@@ -35,11 +50,71 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"]
       interval: 5s
       timeout: 4s
       retries: 15
+  worker-cpu:
+    build:
+      context: services/api
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+psycopg://${HELVETIC_LENS_DB_USER:-helvetic_lens}:${HELVETIC_LENS_DB_PASSWORD:-helvetic_lens}@db:5432/${HELVETIC_LENS_DB_NAME:-helvetic_lens}
+      REDIS_URL: redis://redis:6379/0
+      JOB_EXECUTION_MODE: celery
+      HELVETIC_LENS_DATA_DIR: /data
+    command: ["celery", "-A", "helvetic_lens.celery_app:celery_app", "worker", "--loglevel=INFO", "-Q", "interactive,ingest,parse_diff,maintenance", "--concurrency=2"]
+    volumes:
+      - document_data:/data
+    depends_on:
+      api:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+  worker-ai:
+    build:
+      context: services/api
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+psycopg://${HELVETIC_LENS_DB_USER:-helvetic_lens}:${HELVETIC_LENS_DB_PASSWORD:-helvetic_lens}@db:5432/${HELVETIC_LENS_DB_NAME:-helvetic_lens}
+      REDIS_URL: redis://redis:6379/0
+      JOB_EXECUTION_MODE: celery
+      HELVETIC_LENS_DATA_DIR: /data
+    command: ["celery", "-A", "helvetic_lens.celery_app:celery_app", "worker", "--loglevel=INFO", "-Q", "ai_interactive,ai_background", "--concurrency=1"]
+    volumes:
+      - document_data:/data
+    depends_on:
+      api:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+  scheduler:
+    build:
+      context: services/api
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+psycopg://${HELVETIC_LENS_DB_USER:-helvetic_lens}:${HELVETIC_LENS_DB_PASSWORD:-helvetic_lens}@db:5432/${HELVETIC_LENS_DB_NAME:-helvetic_lens}
+      REDIS_URL: redis://redis:6379/0
+      JOB_EXECUTION_MODE: celery
+      HELVETIC_LENS_DATA_DIR: /data
+    command: ["celery", "-A", "helvetic_lens.celery_app:celery_app", "beat", "--loglevel=INFO"]
+    depends_on:
+      api:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
   web:
     build:
       context: .
@@ -93,3 +168,5 @@ volumes:
     name: ${HELVETIC_LENS_DOCUMENT_VOLUME:-helvetic-lens_document_data}
   local_apertus_cache:
     name: ${HELVETIC_LENS_APERTUS_VOLUME:-helvetic-lens_local_apertus_cache}
+  redis_data:
+    name: ${HELVETIC_LENS_REDIS_VOLUME:-helvetic-lens_redis_data}

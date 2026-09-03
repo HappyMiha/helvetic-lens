@@ -7,10 +7,11 @@ from datetime import UTC, date, datetime
 from pathlib import PurePosixPath
 from urllib.parse import urlsplit
 
-from sqlalchemy import delete, func, inspect, select
+from sqlalchemy import delete, func, inspect, or_, select
 from sqlalchemy.orm import Session
 
 from . import analysis as ai
+from . import jobs as durable_jobs
 from .config import DomainError, Settings
 from .db import Database, utcnow
 from .diffing import DIFF_SCHEMA_VERSION, compare_passages
@@ -30,8 +31,11 @@ from .models import (
     Comparison,
     IdentityDecision,
     IntegrationLog,
+    Job,
+    JobStep,
     Law,
     Observation,
+    OutboxMessage,
     Profile,
     PromptConfiguration,
     Scan,
@@ -100,7 +104,24 @@ class HelveticLens:
         with self.db.session() as session:
             if not session.get(Profile, "default"):
                 session.add(Profile(id="default"))
+            active_job_states = ["queued", "dispatched", "running", "retrying", "waiting_for_model"]
             for scan in session.scalars(select(Scan).where(Scan.status.in_(["queued", "running"]))):
+                durable_job = session.scalar(
+                    select(Job).where(
+                        Job.type == "scan",
+                        Job.target_type == "scan",
+                        Job.target_id == scan.id,
+                        Job.state.in_(active_job_states),
+                    )
+                )
+                if durable_job:
+                    if durable_job.state != "running":
+                        scan.status = "queued"
+                    for item in session.scalars(select(ScanItem).where(ScanItem.scan_id == scan.id)):
+                        if item.stage not in {"complete", "failed"}:
+                            item.stage = "queued"
+                            item.error = None
+                    continue
                 scan.status, scan.finished_at = "interrupted", utcnow()
                 for item in session.scalars(select(ScanItem).where(ScanItem.scan_id == scan.id)):
                     if item.stage not in {"complete", "failed"}:
@@ -110,16 +131,33 @@ class HelveticLens:
                         )
                         if item.analysis_status == "pending":
                             item.analysis_status = "interrupted"
-            for analysis in session.scalars(select(Analysis).where(Analysis.status == "pending")):
+            active_impact_targets = select(Job.target_id).where(
+                Job.type == "impact_analysis", Job.state.in_(active_job_states)
+            )
+            for analysis in session.scalars(
+                select(Analysis).where(
+                    Analysis.status == "pending",
+                    Analysis.comparison_id.not_in(active_impact_targets),
+                )
+            ):
                 analysis.status, analysis.error = (
                     "failed",
                     "Analysis was interrupted by a service restart. Retry it.",
                 )
-            for record in session.scalars(select(AskRecord).where(AskRecord.status == "pending")):
+            active_ask_targets = select(Job.target_id).where(
+                Job.type == "ask", Job.state.in_(active_job_states)
+            )
+            for record in session.scalars(
+                select(AskRecord).where(
+                    AskRecord.status == "pending",
+                    AskRecord.comparison_id.not_in(active_ask_targets),
+                )
+            ):
                 record.status, record.error = (
                     "failed",
                     "The question was interrupted by a service restart. Ask it again to retry.",
                 )
+            durable_jobs.reconcile(session, self.settings.job_lease_seconds)
             session.commit()
             saved = session.get(ApertusConfiguration, "default")
             if saved:
@@ -807,11 +845,42 @@ class HelveticLens:
             artifact_keys.update(observation.artifact_key for observation in observations)
             comparison_ids = [comparison.id for comparison in comparisons]
             scan_ids = {item.scan_id for item in scan_items}
+            job_conditions = []
+            if scan_ids:
+                job_conditions.append((Job.target_type == "scan") & Job.target_id.in_(scan_ids))
+            if comparison_ids:
+                job_conditions.append(
+                    (Job.target_type == "comparison") & Job.target_id.in_(comparison_ids)
+                )
+            job_ids = (
+                list(session.scalars(select(Job.id).where(or_(*job_conditions))))
+                if job_conditions
+                else []
+            )
+            if job_ids:
+                active_job = session.scalar(
+                    select(Job.id)
+                    .where(
+                        Job.id.in_(job_ids),
+                        Job.state.not_in(durable_jobs.TERMINAL_STATES),
+                    )
+                    .limit(1)
+                )
+                if active_job:
+                    raise DomainError(
+                        "This document still has background work in progress. Cancel it or wait for completion before deleting the document.",
+                        409,
+                        "job_in_progress",
+                    )
             if comparison_ids:
                 session.execute(
                     delete(AskRecord).where(AskRecord.comparison_id.in_(comparison_ids))
                 )
                 session.execute(delete(Analysis).where(Analysis.comparison_id.in_(comparison_ids)))
+            if job_ids:
+                session.execute(delete(OutboxMessage).where(OutboxMessage.job_id.in_(job_ids)))
+                session.execute(delete(JobStep).where(JobStep.job_id.in_(job_ids)))
+                session.execute(delete(Job).where(Job.id.in_(job_ids)))
             session.execute(delete(ScanItem).where(ScanItem.law_id == law_id))
             session.execute(delete(IdentityDecision).where(IdentityDecision.law_id == law_id))
             session.execute(delete(Comparison).where(Comparison.law_id == law_id))
@@ -1037,6 +1106,18 @@ class HelveticLens:
                         events=[{"stage": "queued", "at": utcnow().isoformat()}],
                     )
                 )
+            durable_jobs.enqueue(
+                session,
+                job_type="scan",
+                target_type="scan",
+                target_id=scan.id,
+                queue="ingest",
+                idempotency_key=f"scan:{scan.id}",
+                payload={"scan_id": scan.id},
+                progress_total=len(laws),
+                max_attempts=self.settings.job_max_attempts,
+                steps=[("Scan " + law.name, {"law_id": law.id}) for law in laws],
+            )
             session.commit()
             return scan.id
 
@@ -1049,15 +1130,48 @@ class HelveticLens:
                 setattr(item, key, value)
             session.commit()
 
-    async def run_scan(self, scan_id: str):
+    async def run_scan(self, scan_id: str, job_id: str | None = None, worker: str = "inline"):
         with self.db.session() as session:
             scan = get(session, Scan, scan_id)
             scan.status = "running"
             ids = list(session.scalars(select(ScanItem.id).where(ScanItem.scan_id == scan_id)))
             session.commit()
-        for item_id in ids:
+        completed = 0
+        for position, item_id in enumerate(ids, 1):
+            if job_id:
+                with self.write_guard, self.db.session() as session:
+                    if durable_jobs.cancellation_requested(session, job_id):
+                        scan = get(session, Scan, scan_id)
+                        scan.status, scan.finished_at = "cancelled", utcnow()
+                        for pending_id in ids[position - 1 :]:
+                            pending = get(session, ScanItem, pending_id)
+                            if pending.stage not in {"complete", "failed"}:
+                                pending.stage, pending.result = "interrupted", "cancelled"
+                        session.commit()
+                        raise durable_jobs.JobCancelled()
+                    durable_jobs.heartbeat(session, job_id, worker)
+                    session.commit()
+            with self.db.session() as session:
+                existing = get(session, ScanItem, item_id)
+                already_done = existing.stage == "complete"
+            if already_done:
+                completed += 1
+                if job_id:
+                    with self.write_guard, self.db.session() as session:
+                        durable_jobs.progress(
+                            session,
+                            job_id,
+                            current=completed,
+                            total=len(ids),
+                            step_position=position,
+                            step_state="succeeded",
+                            step_details={"scan_item_id": item_id, "resumed": True},
+                        )
+                        session.commit()
+                continue
             try:
                 await self.run_scan_item(item_id)
+                step_state, step_error = "succeeded", None
             except Exception as exc:
                 message = (
                     exc.message
@@ -1071,6 +1185,21 @@ class HelveticLens:
                     item = get(session, ScanItem, item_id)
                     law = get(session, Law, item.law_id)
                     law.last_result, law.last_error, law.last_checked = "failed", message, utcnow()
+                    session.commit()
+                step_state, step_error = "failed", message
+            completed += 1
+            if job_id:
+                with self.write_guard, self.db.session() as session:
+                    durable_jobs.progress(
+                        session,
+                        job_id,
+                        current=completed,
+                        total=len(ids),
+                        step_position=position,
+                        step_state=step_state,
+                        step_details={"scan_item_id": item_id},
+                        step_error=step_error,
+                    )
                     session.commit()
         with self.write_guard, self.db.session() as session:
             scan = get(session, Scan, scan_id)
@@ -1163,11 +1292,141 @@ class HelveticLens:
                     select(ScanItem).where(ScanItem.scan_id == scan_id).order_by(ScanItem.created_at)
                 )
             ]
+            job = session.scalar(
+                select(Job).where(Job.target_type == "scan", Job.target_id == scan_id).limit(1)
+            )
             return {
                 **as_dict(scan),
                 "completed": sum(i["stage"] in {"complete", "failed", "interrupted"} for i in items),
                 "items": items,
+                "job": durable_jobs.serialize(session, job) if job else None,
             }
+
+    def job_detail(self, job_id: str):
+        with self.db.session() as session:
+            return durable_jobs.serialize(session, get(session, Job, job_id))
+
+    def jobs(self, limit: int = 50):
+        with self.db.session() as session:
+            records = list(
+                session.scalars(select(Job).order_by(Job.created_at.desc()).limit(max(1, min(200, limit))))
+            )
+            return [durable_jobs.serialize(session, record) for record in records]
+
+    def cancel_job(self, job_id: str):
+        with self.write_guard, self.db.session() as session:
+            try:
+                job = durable_jobs.request_cancel(session, job_id)
+            except LookupError as exc:
+                raise DomainError("The requested job was not found.", 404, "not_found") from exc
+            if job.state == "cancelled" and job.type == "scan":
+                scan = session.get(Scan, job.target_id)
+                if scan and scan.status in {"queued", "running"}:
+                    scan.status, scan.finished_at = "cancelled", utcnow()
+                    for item in session.scalars(select(ScanItem).where(ScanItem.scan_id == scan.id)):
+                        if item.stage not in {"complete", "failed"}:
+                            item.stage, item.result = "interrupted", "cancelled"
+            session.commit()
+            return durable_jobs.serialize(session, job)
+
+    def retry_job(self, job_id: str):
+        with self.write_guard, self.db.session() as session:
+            try:
+                job = durable_jobs.retry(session, job_id)
+            except LookupError as exc:
+                raise DomainError("The requested job was not found.", 404, "not_found") from exc
+            if job.type == "scan" and job.state == "queued":
+                scan = session.get(Scan, job.target_id)
+                if scan:
+                    scan.status, scan.finished_at = "queued", None
+                    for item in session.scalars(select(ScanItem).where(ScanItem.scan_id == scan.id)):
+                        if item.stage in {"failed", "interrupted"}:
+                            item.stage, item.result, item.error = "queued", None, None
+            session.commit()
+            return durable_jobs.serialize(session, job)
+
+    async def execute_job(self, job_id: str, worker: str = "inline"):
+        with self.write_guard, self.db.session() as session:
+            job = durable_jobs.claim(session, job_id, worker)
+            session.commit()
+            if not job:
+                return self.job_detail(job_id)
+            job_type, target_id, payload = job.type, job.target_id, dict(job.payload or {})
+
+        def mark(current: int, position: int, state: str):
+            with self.write_guard, self.db.session() as session:
+                if not durable_jobs.heartbeat(session, job_id, worker):
+                    session.commit()
+                    raise durable_jobs.JobCancelled()
+                durable_jobs.progress(
+                    session,
+                    job_id,
+                    current=current,
+                    step_position=position,
+                    step_state=state,
+                )
+                session.commit()
+
+        try:
+            if job_type == "scan":
+                await self.run_scan(target_id, job_id=job_id, worker=worker)
+                result_type, result_id, result_url = "scan", target_id, f"/activity?scan={target_id}"
+                result_json = {"scan_id": target_id}
+            elif job_type == "impact_analysis":
+                mark(1, 1, "succeeded")
+                mark(1, 2, "running")
+                result_json = await self.analyse(target_id)
+                if result_json.get("status") != "succeeded":
+                    raise DomainError(
+                        result_json.get("error") or "The impact analysis failed.",
+                        502,
+                        "analysis_failed",
+                    )
+                mark(2, 2, "succeeded")
+                mark(3, 3, "succeeded")
+                result_type = "analysis"
+                result_id = result_json["id"]
+                result_url = f"/compare/{target_id}#impact"
+            elif job_type == "ask":
+                mark(1, 1, "succeeded")
+                mark(1, 2, "running")
+                result_json = await self.ask(
+                    target_id,
+                    payload.get("question", ""),
+                    payload.get("history", []),
+                )
+                mark(2, 2, "succeeded")
+                mark(3, 3, "succeeded")
+                result_type = "answer"
+                result_id = result_json["record_id"]
+                result_url = f"/compare/{target_id}#ask"
+            else:
+                raise DomainError("This durable job type is not supported by the worker.", 422, "job_type_unknown")
+        except durable_jobs.JobCancelled:
+            with self.write_guard, self.db.session() as session:
+                durable_jobs.cancel(session, job_id)
+                session.commit()
+            return self.job_detail(job_id)
+        except Exception as exc:
+            detail = exc.message if isinstance(exc, DomainError) else str(exc)
+            code = exc.code if isinstance(exc, DomainError) else "job_failed"
+            with self.write_guard, self.db.session() as session:
+                durable_jobs.fail(session, job_id, code=code, detail=detail)
+                session.commit()
+            if not isinstance(exc, DomainError):
+                logger.exception("Durable job failed: %s", job_id)
+            return self.job_detail(job_id)
+        with self.write_guard, self.db.session() as session:
+            durable_jobs.complete(
+                session,
+                job_id,
+                result_type=result_type,
+                result_id=result_id,
+                result_url=result_url,
+                result_json=result_json,
+            )
+            session.commit()
+        return self.job_detail(job_id)
 
     def integration_logs(
         self,
@@ -1230,6 +1489,76 @@ class HelveticLens:
             result = session.execute(delete(IntegrationLog))
             session.commit()
             return {"deleted": result.rowcount or 0}
+
+    def enqueue_analysis(self, comparison_id: str):
+        with self.write_guard, self.db.session() as session:
+            comparison = get(session, Comparison, comparison_id)
+            old, new = (
+                get(session, Version, comparison.old_version_id),
+                get(session, Version, comparison.new_version_id),
+            )
+            self.ensure_complete_diff(session, comparison, old, new)
+            profile = get(session, Profile, "default")
+            key = ai.cache_key(comparison, profile, self.settings, self.prompt_settings)
+            job, _ = durable_jobs.enqueue(
+                session,
+                job_type="impact_analysis",
+                target_type="comparison",
+                target_id=comparison_id,
+                queue="ai_background",
+                idempotency_key=f"impact:{key}",
+                payload={"comparison_id": comparison_id},
+                progress_total=3,
+                max_attempts=self.settings.job_max_attempts,
+                steps=[
+                    ("Prepare material changes", {"comparison_id": comparison_id}),
+                    ("Run local inference", {}),
+                    ("Validate and save result", {}),
+                ],
+            )
+            session.commit()
+            return durable_jobs.serialize(session, job)
+
+    def enqueue_ask(self, comparison_id: str, question: str, history: list[dict]):
+        with self.write_guard, self.db.session() as session:
+            comparison = get(session, Comparison, comparison_id)
+            old, new = (
+                get(session, Version, comparison.old_version_id),
+                get(session, Version, comparison.new_version_id),
+            )
+            self.ensure_complete_diff(session, comparison, old, new)
+            profile = get(session, Profile, "default")
+            key = ai.ask_cache_key(
+                comparison,
+                profile,
+                self.settings,
+                self.prompt_settings,
+                question,
+                history,
+            )
+            job, _ = durable_jobs.enqueue(
+                session,
+                job_type="ask",
+                target_type="comparison",
+                target_id=comparison_id,
+                queue="ai_interactive",
+                priority=8,
+                idempotency_key=f"ask:{key}",
+                payload={
+                    "comparison_id": comparison_id,
+                    "question": question.strip(),
+                    "history": history[-4:],
+                },
+                progress_total=3,
+                max_attempts=self.settings.job_max_attempts,
+                steps=[
+                    ("Prepare cited evidence", {"comparison_id": comparison_id}),
+                    ("Run local inference", {}),
+                    ("Validate and save answer", {}),
+                ],
+            )
+            session.commit()
+            return durable_jobs.serialize(session, job)
 
     async def analyse(self, comparison_id: str):
         lock = self.analysis_locks.setdefault(comparison_id, asyncio.Lock())

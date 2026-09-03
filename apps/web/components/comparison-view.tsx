@@ -35,6 +35,7 @@ import type {
   Comparison,
   Coverage,
   Health,
+  Job,
   Version,
 } from "@/lib/types";
 import { Citations, ErrorNote, Loading, Status } from "./common";
@@ -42,6 +43,21 @@ import { AIHistory } from "./ai-history";
 import { Shell } from "./shell";
 
 const PAGE_SIZE = 40;
+const JOB_TERMINAL_STATES = new Set(["succeeded", "failed", "cancelled"]);
+
+async function waitForJob(initial: Job): Promise<Job> {
+  let current = initial;
+  const deadline = Date.now() + 10 * 60 * 1000;
+  while (!JOB_TERMINAL_STATES.has(current.state)) {
+    if (Date.now() >= deadline)
+      throw new Error(
+        "The work is still queued. You can leave this page and follow it in Scan activity.",
+      );
+    await new Promise((resolve) => window.setTimeout(resolve, 1000));
+    current = await api<Job>("/jobs/" + current.id);
+  }
+  return current;
+}
 
 export function ComparisonView({ id }: { id: string }) {
   const [polling, setPolling] = useState(true);
@@ -105,10 +121,16 @@ export function ComparisonView({ id }: { id: string }) {
     setAnalysing(true);
     setError("");
     try {
-      const result = await api<Analysis>("/comparisons/" + id + "/analyse", {
+      const queued = await api<Job>("/comparisons/" + id + "/analyse-jobs", {
         method: "POST",
       });
-      if (result.status === "failed")
+      const job = await waitForJob(queued);
+      const result = job.result?.data as Analysis | undefined;
+      if (job.state !== "succeeded")
+        setError(
+          job.error?.detail || "Apertus could not analyse this change dossier.",
+        );
+      else if (result?.status === "failed")
         setError(
           result.error || "Apertus could not analyse this change dossier.",
         );
@@ -831,8 +853,8 @@ function AskPanel({
     setNotice("");
     try {
       const submittedQuestion = question.trim();
-      const answer = await api<Answer>(
-        "/comparisons/" + comparisonId + "/ask",
+      const queued = await api<Job>(
+        "/comparisons/" + comparisonId + "/ask-jobs",
         {
           method: "POST",
           body: JSON.stringify({
@@ -844,6 +866,13 @@ function AskPanel({
           }),
         },
       );
+      const job = await waitForJob(queued);
+      if (job.state !== "succeeded")
+        throw new Error(
+          job.error?.detail || "Apertus could not answer this question.",
+        );
+      const answer = job.result?.data as Answer | undefined;
+      if (!answer) throw new Error("The saved job did not include an answer.");
       setQuestion("");
       setNotice(
         answer.cached

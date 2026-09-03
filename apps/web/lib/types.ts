@@ -335,6 +335,43 @@ export type Scan = {
   created_at: string;
   finished_at: string | null;
   items: ScanItem[];
+  job?: Job | null;
+};
+export type Job = {
+  id: string;
+  type: string;
+  target_type: string;
+  target_id: string;
+  queue: string;
+  priority: number;
+  state: string;
+  progress: { current: number; total: number };
+  attempts: number;
+  max_attempts: number;
+  queue_position: number | null;
+  cancel_requested: boolean;
+  error: { code: string; detail: string } | null;
+  result: {
+    type: string | null;
+    id: string | null;
+    url: string | null;
+    data: unknown;
+  } | null;
+  steps: {
+    id: string;
+    position: number;
+    name: string;
+    state: string;
+    progress: { current: number; total: number };
+    details: Record<string, unknown>;
+    error: string | null;
+    started_at: string | null;
+    finished_at: string | null;
+  }[];
+  created_at: string;
+  updated_at: string;
+  started_at: string | null;
+  finished_at: string | null;
 };
 export type IntegrationLogSummary = {
   id: string;

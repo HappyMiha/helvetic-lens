@@ -36,10 +36,11 @@ import {
   refreshWorkspace,
   useResource,
 } from "@/lib/api";
-import type { Candidate, Discovery, Law, Scan, Source } from "@/lib/types";
+import type { Candidate, Discovery, Job, Law, Scan, Source } from "@/lib/types";
 import { ErrorNote, Loading, Status } from "./common";
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
 import { AddDocumentDialog } from "./document-forms";
+import { DurableJobsPanel } from "./durable-jobs-panel";
 import { ScanPanel } from "./scan-panel";
 import { Shell } from "./shell";
 
@@ -61,6 +62,7 @@ export function Workspace({
   const laws = useResource<Law[]>("/laws", 5000);
   const sources = useResource<Source[]>("/sources", 8000);
   const scans = useResource<Scan[]>("/scans", 2000);
+  const jobs = useResource<Job[]>("/jobs", 2000);
   const [form, setForm] = useState<DocumentForm | null>(null);
   const [query, setQuery] = useState(""),
     [sourceFilter, setSourceFilter] = useState(""),
@@ -562,6 +564,8 @@ export function Workspace({
       )}
       {view === "activity" && (
         <div className="activity-list">
+          {jobs.data?.length ? <DurableJobsPanel jobs={jobs.data} /> : null}
+          <ErrorNote message={jobs.error} />
           {scans.loading && !scans.data ? (
             <Loading />
           ) : scans.data?.length ? (

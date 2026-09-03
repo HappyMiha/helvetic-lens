@@ -31,6 +31,10 @@ def local_docker_base_url() -> str:
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ROOT / ".env", extra="ignore", populate_by_name=True)
     database_url: str = ""
+    redis_url: str = "redis://127.0.0.1:6379/0"
+    job_execution_mode: Literal["celery", "inline"] = "celery"
+    job_lease_seconds: int = Field(default=300, ge=30, le=3600)
+    job_max_attempts: int = Field(default=3, ge=1, le=10)
     data_dir: Path = Field(
         default=ROOT / "data",
         validation_alias=AliasChoices("HELVETIC_LENS_DATA_DIR", "REGWATCH_DATA_DIR"),

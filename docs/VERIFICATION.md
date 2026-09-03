@@ -2,6 +2,16 @@
 
 The source-to-diff workflow, Settings page, and live Apertus path are verified.
 
+## Durable PostgreSQL jobs and Redis/Celery execution — 3 September 2026
+
+- 155 API regressions pass. Job tests cover transactional outbox creation, duplicate idempotency keys, one-worker claims, broker failure, stale leases, bounded attempts, queued and running cancellation, safe retry, persisted scan steps, and saved Impact/Ask results.
+- Production commands create `Job`, `JobStep`, and `OutboxMessage` records before returning. Scan, Impact, and Ask return HTTP 202 with a durable job; only the isolated test/development mode executes inline.
+- Compose starts healthy PostgreSQL, Redis 7.4 with AOF/no-eviction, the API, separate CPU and AI Celery workers, Celery Beat, and the web app. Six queues are declared: `interactive`, `ingest`, `parse_diff`, `ai_interactive`, `ai_background`, and `maintenance`.
+- A live scan returned queued immediately, was claimed once by the ingestion worker, and finished with a persisted result link. Its Activity page displayed the queue, attempt, progress, persisted step, final state, and result.
+- With Redis stopped, a new scan stayed queued in PostgreSQL. Restarting Redis caused the outbox to be dispatched and the job to succeed. A second queued scan survived stopped workers/scheduler plus an API restart, remained queued with zero attempts, and completed once after the processes returned.
+- Restart initialization preserves job-backed scans and active AI records. A stale lease is reconstructed from PostgreSQL, while completed evidence stays immutable and exhausted jobs remain inspectable and safely retryable.
+- Python linting, all 155 API tests, Compose configuration validation, `git diff --check`, TypeScript checking, frontend formatting, and the Next.js production build pass.
+
 ## Single-host local-first contract — 3 September 2026
 
 - `docs/ARCHITECTURE.md` is ratified as the HL-029 implementation contract for one i7/32 GB/two-GTX-1080 Linux host and one repository/Compose deployment.

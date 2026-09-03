@@ -1,3 +1,5 @@
+import asyncio
+
 from conftest import LAW_URL, LIST_URL, add_law, import_old, policy, run_scan
 from fastapi.testclient import TestClient
 from sqlalchemy import select
@@ -193,8 +195,9 @@ def test_concurrent_scan_guard_and_restart_recovery(harness):
     assert conflict.status_code == 409 and conflict.json()["code"] == "scan_in_progress"
     service.initialize()
     recovered = client.get("/api/scans/" + scan_id).json()
-    assert recovered["status"] == "interrupted"
-    assert recovered["items"][0]["stage"] == "interrupted"
+    assert recovered["status"] == "queued"
+    assert recovered["items"][0]["stage"] == "queued"
+    asyncio.run(service.execute_job(recovered["job"]["id"], worker="restarted-worker"))
     assert client.get("/api/laws/" + law["id"]).json()["current_version_id"] == law["current_version_id"]
     assert run_scan(client, [law["id"]])["status"] == "complete"
 
@@ -323,10 +326,13 @@ def test_sources_and_monitored_documents_can_be_deleted_with_their_history(harne
 def test_document_deletion_waits_for_an_active_scan(harness):
     client, _, service, _ = harness
     law = add_law(client)
-    service.start_scan([law["id"]], None)
+    scan_id = service.start_scan([law["id"]], None)
     blocked = client.delete("/api/laws/" + law["id"])
     assert blocked.status_code == 409 and blocked.json()["code"] == "scan_in_progress"
     service.initialize()
+    recovered = client.get("/api/scans/" + scan_id).json()
+    assert recovered["status"] == "queued" and recovered["job"]["state"] == "queued"
+    assert client.post("/api/jobs/" + recovered["job"]["id"] + "/cancel").status_code == 200
     assert client.delete("/api/laws/" + law["id"]).status_code == 200
 
 

@@ -3,7 +3,7 @@ import re
 from contextlib import asynccontextmanager
 from typing import Annotated, Literal
 
-from fastapi import BackgroundTasks, FastAPI, File, Form, Query, UploadFile
+from fastapi import FastAPI, File, Form, Query, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -282,14 +282,34 @@ def create_app(settings: Settings | None = None, fetcher=None, model_client=None
     async def analyse(comparison_id: str):
         return await service.analyse(comparison_id)
 
+    @app.post("/api/comparisons/{comparison_id}/analyse-jobs", status_code=202)
+    async def analyse_job(comparison_id: str):
+        job = service.enqueue_analysis(comparison_id)
+        if settings.job_execution_mode == "inline":
+            return await service.execute_job(job["id"])
+        return job
+
     @app.post("/api/comparisons/{comparison_id}/ask")
     async def ask(comparison_id: str, data: QuestionInput):
         return await service.ask(comparison_id, data.question, [q.model_dump() for q in data.history])
 
+    @app.post("/api/comparisons/{comparison_id}/ask-jobs", status_code=202)
+    async def ask_job(comparison_id: str, data: QuestionInput):
+        job = service.enqueue_ask(
+            comparison_id,
+            data.question,
+            [q.model_dump() for q in data.history],
+        )
+        if settings.job_execution_mode == "inline":
+            return await service.execute_job(job["id"])
+        return job
+
     @app.post("/api/scans", status_code=202)
-    async def start_scan(data: ScanInput, tasks: BackgroundTasks):
+    async def start_scan(data: ScanInput):
         scan_id = service.start_scan(data.law_ids, data.baseline_version_id)
-        tasks.add_task(service.run_scan, scan_id)
+        detail = service.scan_detail(scan_id)
+        if settings.job_execution_mode == "inline" and detail.get("job"):
+            await service.execute_job(detail["job"]["id"])
         return service.scan_detail(scan_id)
 
     @app.get("/api/scans")
@@ -301,6 +321,25 @@ def create_app(settings: Settings | None = None, fetcher=None, model_client=None
     @app.get("/api/scans/{scan_id}")
     def scan_detail(scan_id: str):
         return service.scan_detail(scan_id)
+
+    @app.get("/api/jobs")
+    def jobs(limit: int = Query(default=50, ge=1, le=200)):
+        return service.jobs(limit)
+
+    @app.get("/api/jobs/{job_id}")
+    def job(job_id: str):
+        return service.job_detail(job_id)
+
+    @app.post("/api/jobs/{job_id}/cancel")
+    def cancel_job(job_id: str):
+        return service.cancel_job(job_id)
+
+    @app.post("/api/jobs/{job_id}/retry")
+    async def retry_job(job_id: str):
+        result = service.retry_job(job_id)
+        if settings.job_execution_mode == "inline":
+            return await service.execute_job(job_id)
+        return result
 
     @app.get("/api/integration-logs")
     def integration_logs(

@@ -179,6 +179,7 @@ def harness(tmp_path):
         _env_file=None,
         database_url="sqlite:///" + (tmp_path / "test.db").as_posix(),
         data_dir=tmp_path / "artifacts-data",
+        job_execution_mode="inline",
         apertus_base_url="",
         apertus_api_key="",
         firecrawl_api_key="",

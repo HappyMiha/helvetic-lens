@@ -42,11 +42,11 @@ The following objectives are release gates for the single-host public beta. They
 
 The accepted single-host risks are explicit: the server is one failure domain; host maintenance causes downtime; and PostgreSQL durability, Redis AOF, restart policies, and off-host backups improve recovery but do not provide high availability. Multi-host failover remains out of scope for this release.
 
-## Why the current MVP must change
+## Why the earlier MVP had to change
 
-The current application is a sound local MVP, but several deliberate MVP choices do not survive public hosting:
+The original application was a sound local MVP, but several deliberate MVP choices did not survive public hosting:
 
-- FastAPI `BackgroundTasks` runs scans in the API process. A restart interrupts the work.
+- FastAPI `BackgroundTasks` ran scans in the API process. HL-030 replaced this with durable PostgreSQL jobs and Redis/Celery execution.
 - Analysis locks live in process memory, so multiple API processes cannot coordinate safely.
 - Sources, laws, prompts, provider settings, and the company profile belong to one global workspace.
 - `Law` combines an official legal document with the user's decision to monitor it. That would duplicate the same public source for every organization.

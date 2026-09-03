@@ -212,3 +212,71 @@ class AskRecord(Base):
     use_count: Mapped[int] = mapped_column(Integer, default=1)
     last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
+class Job(Base):
+    __tablename__ = "jobs"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "idempotency_key", name="uq_job_organization_idempotency"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(String(36), default="default", index=True)
+    type: Mapped[str] = mapped_column(String(60), index=True)
+    target_type: Mapped[str] = mapped_column(String(40))
+    target_id: Mapped[str] = mapped_column(String(36), index=True)
+    queue: Mapped[str] = mapped_column(String(40), index=True)
+    priority: Mapped[int] = mapped_column(Integer, default=5)
+    idempotency_key: Mapped[str] = mapped_column(String(128))
+    state: Mapped[str] = mapped_column(String(30), default="queued", index=True)
+    progress_current: Mapped[int] = mapped_column(Integer, default=0)
+    progress_total: Mapped[int] = mapped_column(Integer, default=1)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    max_attempts: Mapped[int] = mapped_column(Integer, default=3)
+    payload: Mapped[dict] = mapped_column(JSON, default=dict)
+    lease_owner: Mapped[str | None] = mapped_column(String(120))
+    leased_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    dispatched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    available_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    cancel_requested: Mapped[bool] = mapped_column(Boolean, default=False)
+    error_code: Mapped[str | None] = mapped_column(String(80))
+    error_detail: Mapped[str | None] = mapped_column(Text)
+    result_type: Mapped[str | None] = mapped_column(String(40))
+    result_id: Mapped[str | None] = mapped_column(String(36))
+    result_url: Mapped[str | None] = mapped_column(Text)
+    result_json: Mapped[dict | None] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class JobStep(Base):
+    __tablename__ = "job_steps"
+    __table_args__ = (UniqueConstraint("job_id", "position", name="uq_job_step_position"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    job_id: Mapped[str] = mapped_column(ForeignKey("jobs.id"), index=True)
+    position: Mapped[int] = mapped_column(Integer)
+    name: Mapped[str] = mapped_column(String(100))
+    state: Mapped[str] = mapped_column(String(30), default="pending")
+    progress_current: Mapped[int] = mapped_column(Integer, default=0)
+    progress_total: Mapped[int] = mapped_column(Integer, default=1)
+    details: Mapped[dict] = mapped_column(JSON, default=dict)
+    error_detail: Mapped[str | None] = mapped_column(Text)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class OutboxMessage(Base):
+    __tablename__ = "outbox_messages"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    job_id: Mapped[str] = mapped_column(ForeignKey("jobs.id"), index=True)
+    topic: Mapped[str] = mapped_column(String(80), default="helvetic_lens.run_job")
+    queue: Mapped[str] = mapped_column(String(40))
+    payload: Mapped[dict] = mapped_column(JSON, default=dict)
+    state: Mapped[str] = mapped_column(String(30), default="pending", index=True)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    available_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    dispatched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    error_detail: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

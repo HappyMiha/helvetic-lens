@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Check, Loader2 } from "lucide-react";
-import { dateTime, label } from "@/lib/api";
+import { ArrowUpRight, Check, Loader2, RotateCcw, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { api, dateTime, errorText, label, refreshWorkspace } from "@/lib/api";
 import type { Scan } from "@/lib/types";
 import { ErrorNote, Status } from "./common";
 
@@ -13,7 +15,23 @@ export function ScanPanel({
   scan: Scan;
   compact?: boolean;
 }) {
+  const [jobBusy, setJobBusy] = useState("");
+  const [jobError, setJobError] = useState("");
   const running = ["queued", "running"].includes(scan.status);
+  const job = scan.job;
+  async function jobAction(action: "cancel" | "retry") {
+    if (!job) return;
+    setJobBusy(action);
+    setJobError("");
+    try {
+      await api(`/jobs/${job.id}/${action}`, { method: "POST" });
+      refreshWorkspace();
+    } catch (cause) {
+      setJobError(errorText(cause));
+    } finally {
+      setJobBusy("");
+    }
+  }
   return (
     <section
       className="panel scan-panel"
@@ -43,6 +61,60 @@ export function ScanPanel({
         max={scan.total || 1}
         aria-label="Documents finished"
       />
+      {job && (
+        <div className="px-5 py-3 border-b text-xs muted">
+          <div className="flex flex-wrap items-center gap-2">
+            <Status value={job.state} />
+            <span>{label(job.queue)} queue</span>
+            {job.queue_position && <span>· position {job.queue_position}</span>}
+            <span>
+              · attempt {job.attempts}/{job.max_attempts}
+            </span>
+            {!["succeeded", "failed", "cancelled"].includes(job.state) && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-auto"
+                disabled={!!jobBusy}
+                onClick={() => jobAction("cancel")}
+              >
+                {jobBusy === "cancel" ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <X />
+                )}
+                Cancel
+              </Button>
+            )}
+            {["failed", "cancelled"].includes(job.state) && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-auto"
+                disabled={!!jobBusy}
+                onClick={() => jobAction("retry")}
+              >
+                {jobBusy === "retry" ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <RotateCcw />
+                )}
+                Retry safely
+              </Button>
+            )}
+          </div>
+          {!compact && job.steps.length > 0 && (
+            <ol className="event-list mt-2">
+              {job.steps.map((step) => (
+                <li key={step.id}>
+                  {step.name} · {label(step.state)}
+                </li>
+              ))}
+            </ol>
+          )}
+          <ErrorNote message={job.error?.detail || jobError} />
+        </div>
+      )}
       <div className="scan-items">
         {scan.items.map((item) => (
           <div className="scan-item" key={item.id}>

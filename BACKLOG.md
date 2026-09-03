@@ -68,7 +68,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-027](#hl-027) | P1       | DONE     | HL-018, HL-019, HL-025, HL-026                         | Resilient AI calls, saved history, and prompt controls              |
 | [HL-028](#hl-028) | P1       | DONE     | HL-017, HL-027                                         | Robust citation-row handling and local Docker Apertus fallback      |
 | [HL-029](#hl-029) | P0       | DONE     | HL-028                                                 | Single-host local-first architecture and capacity contract          |
-| [HL-030](#hl-030) | P0       | PLANNED  | HL-029                                                 | Durable PostgreSQL jobs with Redis/Celery execution                 |
+| [HL-030](#hl-030) | P0       | DONE     | HL-029                                                 | Durable PostgreSQL jobs with Redis/Celery execution                 |
 | [HL-031](#hl-031) | P0       | PLANNED  | HL-029, HL-030                                         | Local model library, downloads, and runtime manager                 |
 | [HL-032](#hl-032) | P0       | PLANNED  | HL-030, HL-031                                         | Local-first inference routing, GPU fairness, and hardware benchmark |
 | [HL-033](#hl-033) | P0       | PLANNED  | HL-003, HL-029                                         | Shared public corpus and organization-aware migration               |
@@ -561,6 +561,8 @@ Acceptance criteria:
 ### HL-030 — Replace process-local background work with durable PostgreSQL jobs and Redis/Celery execution
 
 Make scans, connector synchronization, parsing, comparisons, AI work, and maintenance survive service restarts.
+
+**Status: DONE.** Long-running scans, Impact analysis, and Ask commands now enter PostgreSQL-backed jobs and steps through a transactional outbox. Redis/Celery runs six explicit queues with separate CPU and AI workers plus Beat; the Activity and comparison views expose persisted progress, queue position, cancellation, retry, errors, and result links. Automated and live Compose checks prove idempotent claims and recovery after API, worker, scheduler, and Redis restarts.
 
 Acceptance criteria:
 
