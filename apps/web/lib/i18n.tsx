@@ -1022,6 +1022,60 @@ Object.assign(rm, {
   "connectors.days": "avant {count} dis",
 });
 
+const identityMessages: Record<Locale, Messages> = {
+  "en-CH": {
+    "identity.reason.document_verified": "The official identifier matches this monitored document.",
+    "identity.reason.document_probable": "The title is consistent with this monitored document, but no matching official identifier was available.",
+    "identity.reason.document_unknown": "Stable official metadata is missing, so this document assignment needs confirmation.",
+    "identity.reason.document_mismatch": "The detected identifier or legal title belongs to a different document.",
+    "identity.reason.comparison_verified": "Both saved files carry the monitored legal work’s official identifier.",
+    "identity.reason.comparison_probable": "The saved files are consistently assigned by title or a recorded confirmation.",
+    "identity.reason.comparison_unknown": "One or both files lack stable official metadata and need confirmation.",
+    "identity.reason.comparison_mismatch": "At least one saved file belongs to a different legal work.",
+  },
+  "de-CH": {
+    "identity.reason.document_verified": "Die amtliche Kennung stimmt mit diesem überwachten Erlass überein.",
+    "identity.reason.document_probable": "Der Titel passt zu diesem überwachten Erlass, aber eine übereinstimmende amtliche Kennung fehlt.",
+    "identity.reason.document_unknown": "Stabile amtliche Metadaten fehlen; diese Zuordnung muss bestätigt werden.",
+    "identity.reason.document_mismatch": "Die erkannte Kennung oder der Rechtstitel gehört zu einem anderen Dokument.",
+    "identity.reason.comparison_verified": "Beide gespeicherten Dateien tragen die amtliche Kennung des überwachten Erlasses.",
+    "identity.reason.comparison_probable": "Die gespeicherten Dateien sind über Titel oder eine erfasste Bestätigung konsistent zugeordnet.",
+    "identity.reason.comparison_unknown": "Mindestens einer Datei fehlen stabile amtliche Metadaten; die Zuordnung muss bestätigt werden.",
+    "identity.reason.comparison_mismatch": "Mindestens eine gespeicherte Datei gehört zu einem anderen Erlass.",
+  },
+  "fr-CH": {
+    "identity.reason.document_verified": "L’identifiant officiel correspond à ce texte surveillé.",
+    "identity.reason.document_probable": "Le titre correspond à ce texte surveillé, mais aucun identifiant officiel concordant n’est disponible.",
+    "identity.reason.document_unknown": "Les métadonnées officielles stables manquent; cette attribution doit être confirmée.",
+    "identity.reason.document_mismatch": "L’identifiant ou le titre juridique détecté appartient à un autre document.",
+    "identity.reason.comparison_verified": "Les deux fichiers enregistrés portent l’identifiant officiel du texte surveillé.",
+    "identity.reason.comparison_probable": "Les fichiers enregistrés sont attribués de manière cohérente par leur titre ou une confirmation enregistrée.",
+    "identity.reason.comparison_unknown": "Au moins un fichier manque de métadonnées officielles stables et doit être confirmé.",
+    "identity.reason.comparison_mismatch": "Au moins un fichier enregistré appartient à un autre texte juridique.",
+  },
+  "it-CH": {
+    "identity.reason.document_verified": "L’identificatore ufficiale corrisponde a questa legge monitorata.",
+    "identity.reason.document_probable": "Il titolo corrisponde alla legge monitorata, ma manca un identificatore ufficiale coincidente.",
+    "identity.reason.document_unknown": "Mancano metadati ufficiali stabili; questa assegnazione deve essere confermata.",
+    "identity.reason.document_mismatch": "L’identificatore o il titolo giuridico rilevato appartiene a un altro documento.",
+    "identity.reason.comparison_verified": "Entrambi i file salvati riportano l’identificatore ufficiale della legge monitorata.",
+    "identity.reason.comparison_probable": "I file salvati sono assegnati in modo coerente tramite il titolo o una conferma registrata.",
+    "identity.reason.comparison_unknown": "Almeno un file non dispone di metadati ufficiali stabili e deve essere confermato.",
+    "identity.reason.comparison_mismatch": "Almeno un file salvato appartiene a un altro atto giuridico.",
+  },
+  "rm-CH": {
+    "identity.reason.document_verified": "L’identificatur uffizial correspunda a questa lescha survegliada.",
+    "identity.reason.document_probable": "Il titel correspunda a la lescha survegliada, ma in identificatur uffizial correspundent manca.",
+    "identity.reason.document_unknown": "Metadatas uffizialas stabilas mancan; questa attribuziun sto vegnir confermada.",
+    "identity.reason.document_mismatch": "L’identificatur u il titel giuridic identifitgà appartegna ad in auter document.",
+    "identity.reason.comparison_verified": "Domaduas datotecas memorisadas portan l’identificatur uffizial da la lescha survegliada.",
+    "identity.reason.comparison_probable": "Las datotecas memorisadas èn attribuidas coerentamain tenor il titel u ina conferma registrada.",
+    "identity.reason.comparison_unknown": "Almain ina datoteca n’ha naginas metadatas uffizialas stabilas e sto vegnir confermada.",
+    "identity.reason.comparison_mismatch": "Almain ina datoteca memorisada appartegna ad in auter act giuridic.",
+  },
+};
+for (const locale of locales) Object.assign(catalogTarget(locale), identityMessages[locale]);
+
 const catalog: Record<Locale, Messages> = { "de-CH": de, "fr-CH": fr, "it-CH": it, "rm-CH": rm, "en-CH": en };
 const localeCookie = "helvetic_lens_locale";
 

@@ -774,6 +774,7 @@ class HelveticLens:
             for item in (report["old"], report["new"])
         ):
             report["effective_status"] = "probable"
+            report["reason_code"] = "assignments_confirmed"
             report["reason"] = "Unknown artifact assignments were explicitly confirmed and recorded for review."
         else:
             report["effective_status"] = report["status"]

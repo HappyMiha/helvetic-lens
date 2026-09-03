@@ -510,7 +510,15 @@ export function ImportDialog({
                         ? t("form.differentDocument")
                         : t("form.unknownAssignment")}
                     </strong>
-                    <p>{preview.identity.reason}</p>
+                    <p>
+                      {preview.identity.status === "verified"
+                        ? t("identity.reason.document_verified")
+                        : preview.identity.status === "probable"
+                          ? t("identity.reason.document_probable")
+                          : preview.identity.status === "mismatch"
+                            ? t("identity.reason.document_mismatch")
+                            : t("identity.reason.document_unknown")}
+                    </p>
                     {preview.identity.detected_title && (
                       <p>
                         {t("form.detected", { title: preview.identity.detected_title })}

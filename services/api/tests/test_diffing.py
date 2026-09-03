@@ -144,7 +144,9 @@ def test_comparison_identity_detects_documents_attached_to_the_wrong_law():
             passages=[],
         ),
     ]
-    assert assess_comparison_identity(law, *versions)["status"] == "mismatch"
+    report = assess_comparison_identity(law, *versions)
+    assert report["status"] == "mismatch"
+    assert report["reason_code"] == "artifact_mismatch"
 
 
 def test_matching_eli_identifier_wins_over_multilingual_title_difference():

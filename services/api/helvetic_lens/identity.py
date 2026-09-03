@@ -133,22 +133,29 @@ def assess_document_identity(
     score = _title_score(law_name, artifact.get("title", ""))
     if tracked_eli and detected_eli:
         status = "verified" if tracked_eli == detected_eli else "mismatch"
+        reason_code = "official_eli_match" if status == "verified" else "official_eli_mismatch"
         reason = "The official Fedlex ELI work identifier matches the monitored document." if status == "verified" else "The official Fedlex ELI identifier belongs to a different legal work."
     elif tracked_sr and detected_sr:
         status = "verified" if tracked_sr == detected_sr else "mismatch"
+        reason_code = "official_sr_match" if status == "verified" else "official_sr_mismatch"
         reason = "The official SR/RS identifier matches the monitored document." if status == "verified" else "The extracted SR/RS identifier belongs to a different legal work."
     elif tracked_eli and detected_sr and score < 0.12:
+        reason_code = "sr_title_conflict"
         status, reason = "mismatch", "The artifact exposes a different SR/RS work and its legal title conflicts with the monitored document."
     elif score >= 0.45:
+        reason_code = "title_strong_probable"
         status, reason = "probable", "The extracted legal title is strongly consistent with the monitored document, but no matching official identifier was available."
     elif score >= 0.12:
+        reason_code = "title_partial_unknown"
         status, reason = "unknown", "The title is partly consistent, but stable official identity metadata is missing."
     elif detected_sr or _LEGAL_TITLE_WORDS.search(artifact.get("title", "")):
+        reason_code = "title_mismatch"
         status, reason = "mismatch", "The extracted legal title describes a different document."
     else:
+        reason_code = "metadata_insufficient"
         status, reason = "unknown", "The artifact does not expose enough stable identity metadata to verify it."
     return {
-        "revision": IDENTITY_REVISION, "status": status, "reason": reason, "score": score,
+        "revision": IDENTITY_REVISION, "status": status, "reason_code": reason_code, "reason": reason, "score": score,
         "tracked_title": law_name, "detected_title": artifact.get("title"),
         "tracked_identifier": tracked_eli or (f"sr:{tracked_sr}" if tracked_sr else None),
         "detected_identifier": artifact.get("canonical_work_id"), "artifact": artifact,
@@ -169,14 +176,18 @@ def assess_comparison_identity(law, old, new) -> dict:
     old_id, new_id = old_report["detected_identifier"], new_report["detected_identifier"]
     pair_score = _title_score(old_report.get("detected_title", ""), new_report.get("detected_title", ""))
     if "mismatch" in {old_report["status"], new_report["status"]} or (old_id and new_id and old_id != new_id):
+        reason_code = "artifact_mismatch"
         status, reason = "mismatch", "At least one saved artifact belongs to another legal work."
     elif old_report["status"] == new_report["status"] == "verified":
+        reason_code = "both_verified"
         status, reason = "verified", "Both saved artifacts carry the monitored legal work's official identifier."
     elif "unknown" in {old_report["status"], new_report["status"]}:
+        reason_code = "metadata_insufficient"
         status, reason = "unknown", "One or both artifacts lack enough stable metadata for automatic assignment."
     else:
+        reason_code = "probable_title_assignment"
         status, reason = "probable", "The saved artifacts are consistently assigned by title or partial metadata."
-    result = {"revision": IDENTITY_REVISION, "status": status, "reason": reason, "old": old_report, "new": new_report, "pair_score": pair_score}
+    result = {"revision": IDENTITY_REVISION, "status": status, "reason_code": reason_code, "reason": reason, "old": old_report, "new": new_report, "pair_score": pair_score}
     result["fingerprint"] = hashlib.sha256(json.dumps({
         "revision": IDENTITY_REVISION,
         "status": status,

@@ -51,6 +51,7 @@ export type Preview = {
 export type DocumentIdentity = {
   revision: string;
   status: "verified" | "probable" | "unknown" | "mismatch";
+  reason_code?: string;
   reason: string;
   score?: number;
   tracked_title?: string;
@@ -80,6 +81,7 @@ export type ComparisonIdentity = {
   revision: string;
   status: "verified" | "probable" | "unknown" | "mismatch";
   effective_status: "verified" | "probable" | "unknown" | "mismatch";
+  reason_code?: string;
   reason: string;
   old: DocumentIdentity;
   new: DocumentIdentity;

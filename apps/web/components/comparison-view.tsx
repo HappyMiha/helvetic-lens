@@ -311,7 +311,15 @@ export function ComparisonView({ id }: { id: string }) {
                   ? t("compare.identityMismatch")
                   : t("compare.identityUnknown")}
               </strong>
-              <p>{data.identity.reason}</p>
+              <p>
+                {data.identity.effective_status === "verified"
+                  ? t("identity.reason.comparison_verified")
+                  : data.identity.effective_status === "probable"
+                    ? t("identity.reason.comparison_probable")
+                    : data.identity.effective_status === "mismatch"
+                      ? t("identity.reason.comparison_mismatch")
+                      : t("identity.reason.comparison_unknown")}
+              </p>
               <p>
                 {t("compare.tracked")}: <b>{data.law.name}</b>
                 <br />
