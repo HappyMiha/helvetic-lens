@@ -634,6 +634,19 @@ export type PlatformStatus = {
   scope: "platform";
   generated_at: string;
   services: Record<string, string>;
+  api_metrics: {
+    window_samples: number;
+    in_flight: number;
+    server_errors: number;
+    server_error_rate: number;
+    latency_ms: { p50: number | null; p95: number | null; max: number | null };
+    status_classes: Record<string, number>;
+    top_routes: Array<{ route: string; requests: number }>;
+  };
+  dependency_metrics: {
+    database: { healthy: boolean; query_ms: number };
+    redis: { healthy: boolean; ping_ms: number };
+  };
   resources: {
     organizations: number;
     users: number;
@@ -763,6 +776,8 @@ export type OrganizationStatus = {
 };
 export type IntegrationLogSummary = {
   id: string;
+  request_id: string | null;
+  correlation: Record<string, string>;
   provider: string;
   operation: string;
   method: string;

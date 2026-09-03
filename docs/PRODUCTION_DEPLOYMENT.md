@@ -100,4 +100,10 @@ Redis is a disposable broker/cache, configured with AOF `everysec` and `noevicti
 
 Automated tests cover broker-send failure, pending outbox retention, stale-worker lease recovery, idempotent job creation/claim, and cleanup preservation of active work and immutable evidence. Kill/restart this stack on the target host during HL-049 to measure recovery time under load.
 
-Cross-service correlation/metrics completion and the full target-host install/upgrade/rollback exercise remain open HL-048 gates.
+## Correlation and bounded metrics
+
+Every API response includes a generated `X-Request-ID`. The same ID is persisted on any durable job created by that request and follows the job into its worker. Integration diagnostics retain an allowlisted correlation object containing only applicable organization, job, connector-run, document/event, comparison, analysis, and target IDs. Unknown fields are discarded, values are length-bounded, and credentials are never accepted as correlation fields. Use the request ID in **Integration logs** to connect a browser failure to its queue and provider calls without searching request bodies.
+
+The platform administration status exposes a bounded rolling API window with p50/p95/max latency, 5xx rate, in-flight requests, status classes, and twelve most frequent normalized route templates. UUID and numeric URL segments are replaced before aggregation. The same view reports database query and Redis ping latency, durable queue counts and age, connector freshness, model slots/GPU/RAM, disk capacity, backup age, and recent failures. Metrics are process-local operational signals for this single API instance; PostgreSQL remains the durable source for job and integration history.
+
+The full target-host install/upgrade/rollback exercise remains the only open HL-048 gate.

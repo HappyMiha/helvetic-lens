@@ -7,6 +7,7 @@ from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from .models import IntegrationLog
+from .observability import current_correlation
 
 logger = logging.getLogger(__name__)
 MAX_LOG_BODY_CHARS = 160_000
@@ -149,7 +150,10 @@ class IntegrationLogger:
             _collect_secrets(request_body, secrets)
             safe_request, request_size = _bounded(request_body, secrets)
             safe_response, response_size = _bounded(response_body, secrets)
+            correlation = current_correlation()
             record = IntegrationLog(
+                request_id=correlation.get("request_id"),
+                correlation=correlation,
                 provider=provider[:40],
                 operation=operation[:60],
                 method=method.upper()[:10],

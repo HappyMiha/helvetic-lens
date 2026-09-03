@@ -93,6 +93,7 @@ from .models import (
     User,
     Version,
 )
+from .observability import ApiMetrics, correlation_context, enrich_correlation
 from .official_notices_connector import ParliamentNoticeConnector
 from .official_source_contracts import OFFICIAL_SOURCE_CONTRACTS
 from .parliament_connector import parliament_connectors
@@ -164,6 +165,7 @@ class HelveticLens:
         self.db = Database(settings, organization_id)
         self.credential_cipher = CredentialCipher(settings)
         self.integration_logger = IntegrationLogger(self.db.session)
+        self.api_metrics = ApiMetrics()
         self.regulatory_corpus = RegulatoryCorpus()
         self.connector_runner = ConnectorRunner(self.db, self.regulatory_corpus, settings)
         self.fetcher = fetcher or Fetcher(settings, self.integration_logger)
@@ -1436,6 +1438,7 @@ class HelveticLens:
             }
 
     async def _run_connector_job(self, run_id: str, connector: str, stream: str) -> dict:
+        enrich_correlation(connector_run_id=run_id)
         with self.write_guard, self.db.session(include_all_organizations=True) as session:
             synchronization.start_run(session, run_id)
             session.commit()
@@ -2304,6 +2307,7 @@ class HelveticLens:
             url, provider, live_baseline_id = law.url, law.provider, law.current_version_id
             prior = session.get(Version, live_baseline_id) if live_baseline_id else None
             synthetic = prior.synthetic if prior else False
+        enrich_correlation(document_id=law.id)
         self.stage(item_id, "fetching")
         fetched = await self.fetcher.fetch(url, provider)
         self.stage(item_id, "extracting")
@@ -2410,6 +2414,7 @@ class HelveticLens:
     async def platform_status(self):
         now = utcnow()
         active_states = ("queued", "dispatched", "running", "retrying", "waiting_for_model")
+        database_started = time.perf_counter()
         with self.db.session(include_all_organizations=True) as session:
             job_counts = {
                 state: count
@@ -2492,6 +2497,7 @@ class HelveticLens:
                     select(ActionDecision).order_by(ActionDecision.created_at.desc()).limit(2000)
                 ),
             )
+        database_latency_ms = round((time.perf_counter() - database_started) * 1000)
 
         disk = shutil.disk_usage(self.environment_settings.storage_path)
         backup_path = self.environment_settings.storage_path / "backups"
@@ -2519,10 +2525,12 @@ class HelveticLens:
             finally:
                 client.close()
 
+        redis_started = time.perf_counter()
         try:
             redis_ok = await asyncio.to_thread(ping_redis)
         except RedisError:
             redis_ok = False
+        redis_latency_ms = round((time.perf_counter() - redis_started) * 1000)
         try:
             inventory = await self.model_manager.inventory()
             deployment = inventory.get("deployment") or {}
@@ -2553,6 +2561,11 @@ class HelveticLens:
                 "database": "healthy",
                 "redis": "healthy" if redis_ok else "unavailable",
                 "model_manager": "healthy" if model["available"] else "unavailable",
+            },
+            "api_metrics": self.api_metrics.snapshot(),
+            "dependency_metrics": {
+                "database": {"healthy": True, "query_ms": database_latency_ms},
+                "redis": {"healthy": bool(redis_ok), "ping_ms": redis_latency_ms},
             },
             "resources": resources,
             "ai_triage": ai_triage,
@@ -3105,6 +3118,7 @@ class HelveticLens:
     def integration_logs(
         self,
         *,
+        query: str = "",
         provider: str = "",
         status: str = "",
         sort_by: str = "created_at",
@@ -3121,6 +3135,17 @@ class HelveticLens:
             "response_status": IntegrationLog.response_status,
         }
         conditions = []
+        if query.strip():
+            escaped = query.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            pattern = f"%{escaped}%"
+            conditions.append(
+                or_(
+                    IntegrationLog.provider.ilike(pattern, escape="\\"),
+                    IntegrationLog.operation.ilike(pattern, escape="\\"),
+                    IntegrationLog.url.ilike(pattern, escape="\\"),
+                    IntegrationLog.request_id.ilike(pattern, escape="\\"),
+                )
+            )
         if provider:
             conditions.append(IntegrationLog.provider == provider)
         if status:
@@ -3443,6 +3468,7 @@ class HelveticLens:
                 idempotency_key=request_key,
                 payload={
                     "organization_candidate_id": organization_candidate_id,
+                    "event_id": context["event"].id,
                     "runtime_fingerprint": runtime_fingerprint,
                     "force": force,
                     "output_locale": output_locale,
@@ -3561,6 +3587,7 @@ class HelveticLens:
                 session.flush()
                 record_id = record.id
                 session.commit()
+            enrich_correlation(event_id=context["event"].id, analysis_id=record_id)
             trace_token = (
                 model_client.begin_trace("background")
                 if hasattr(model_client, "begin_trace")
@@ -3883,40 +3910,41 @@ class HelveticLens:
                 session.add(record)
                 session.commit()
                 record_id = record.id
-            trace_token = (
-                model_client.begin_trace("background")
-                if hasattr(model_client, "begin_trace")
-                else None
-            )
-            try:
-                result, coverage = await ai.impact_analysis(
-                    model_client,
-                    settings,
-                    comparison,
-                    old,
-                    new,
-                    profile,
-                    prompts,
-                    prepared,
-                    progress_callback,
-                    output_locale,
+            with correlation_context(comparison_id=comparison.id, analysis_id=record_id):
+                trace_token = (
+                    model_client.begin_trace("background")
+                    if hasattr(model_client, "begin_trace")
+                    else None
                 )
-                status, error = "succeeded", None
-            except Exception as exc:
-                result, coverage, status = None, {}, "failed"
-                error = (
-                    exc.message
-                    if isinstance(exc, DomainError)
-                    else "Apertus analysis failed. The saved comparison remains available."
+                try:
+                    result, coverage = await ai.impact_analysis(
+                        model_client,
+                        settings,
+                        comparison,
+                        old,
+                        new,
+                        profile,
+                        prompts,
+                        prepared,
+                        progress_callback,
+                        output_locale,
+                    )
+                    status, error = "succeeded", None
+                except Exception as exc:
+                    result, coverage, status = None, {}, "failed"
+                    error = (
+                        exc.message
+                        if isinstance(exc, DomainError)
+                        else "Apertus analysis failed. The saved comparison remains available."
+                    )
+                    if not isinstance(exc, DomainError):
+                        logger.exception("Model analysis failed")
+                trace = (
+                    model_client.end_trace(trace_token)
+                    if trace_token is not None and hasattr(model_client, "end_trace")
+                    else []
                 )
-                if not isinstance(exc, DomainError):
-                    logger.exception("Model analysis failed")
-            trace = (
-                model_client.end_trace(trace_token)
-                if trace_token is not None and hasattr(model_client, "end_trace")
-                else []
-            )
-            provenance = await self.inference_provenance(settings, trace)
+                provenance = await self.inference_provenance(settings, trace)
             with self.write_guard, self.db.session() as session:
                 record = get(session, Analysis, record_id)
                 record.result, record.coverage, record.status, record.error = result, coverage, status, error
@@ -4022,59 +4050,60 @@ class HelveticLens:
                 session.add(record)
                 session.commit()
                 record_id = record.id
-            trace_token = (
-                model_client.begin_trace("interactive")
-                if hasattr(model_client, "begin_trace")
-                else None
-            )
-            try:
-                result = await ai.answer_question(
-                    model_client,
-                    settings,
-                    comparison,
-                    old,
-                    new,
-                    profile,
-                    question,
-                    history,
-                    prompts,
-                    impact_report,
-                    output_locale,
+            with correlation_context(comparison_id=comparison.id, ask_record_id=record_id):
+                trace_token = (
+                    model_client.begin_trace("interactive")
+                    if hasattr(model_client, "begin_trace")
+                    else None
                 )
-            except Exception as exc:
+                try:
+                    result = await ai.answer_question(
+                        model_client,
+                        settings,
+                        comparison,
+                        old,
+                        new,
+                        profile,
+                        question,
+                        history,
+                        prompts,
+                        impact_report,
+                        output_locale,
+                    )
+                except Exception as exc:
+                    trace = (
+                        model_client.end_trace(trace_token)
+                        if trace_token is not None and hasattr(model_client, "end_trace")
+                        else []
+                    )
+                    provenance = await self.inference_provenance(settings, trace)
+                    message = (
+                        exc.message
+                        if isinstance(exc, DomainError)
+                        else "Apertus could not answer this question. The question was saved for review."
+                    )
+                    with self.write_guard, self.db.session() as session:
+                        record = get(session, AskRecord, record_id)
+                        record.status, record.error = "failed", message
+                        record.provenance = provenance
+                        record.analysis_plan = ai.complete_analysis_plan(
+                            analysis_plan,
+                            status="failed",
+                            coverage={},
+                            provenance=provenance,
+                            result_url=f"/compare/{comparison.id}",
+                        )
+                        session.commit()
+                    if isinstance(exc, DomainError):
+                        raise
+                    logger.exception("Model question failed")
+                    raise DomainError(message, 502, "model_error") from exc
                 trace = (
                     model_client.end_trace(trace_token)
                     if trace_token is not None and hasattr(model_client, "end_trace")
                     else []
                 )
                 provenance = await self.inference_provenance(settings, trace)
-                message = (
-                    exc.message
-                    if isinstance(exc, DomainError)
-                    else "Apertus could not answer this question. The question was saved for review."
-                )
-                with self.write_guard, self.db.session() as session:
-                    record = get(session, AskRecord, record_id)
-                    record.status, record.error = "failed", message
-                    record.provenance = provenance
-                    record.analysis_plan = ai.complete_analysis_plan(
-                        analysis_plan,
-                        status="failed",
-                        coverage={},
-                        provenance=provenance,
-                        result_url=f"/compare/{comparison.id}",
-                    )
-                    session.commit()
-                if isinstance(exc, DomainError):
-                    raise
-                logger.exception("Model question failed")
-                raise DomainError(message, 502, "model_error") from exc
-            trace = (
-                model_client.end_trace(trace_token)
-                if trace_token is not None and hasattr(model_client, "end_trace")
-                else []
-            )
-            provenance = await self.inference_provenance(settings, trace)
             coverage = result.get("coverage") or {}
             stored_result = {
                 key: value

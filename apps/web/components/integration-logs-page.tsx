@@ -96,17 +96,14 @@ export function IntegrationLogsPage() {
     });
     if (provider) params.set("provider", provider);
     if (status) params.set("status", status);
+    if (query.trim()) params.set("query", query.trim());
     return "/integration-logs?" + params.toString();
-  }, [offset, provider, sortBy, sortDirection, status]);
+  }, [offset, provider, query, sortBy, sortDirection, status]);
   const logs = useResource<IntegrationLogPage>(path, 5000);
   const detail = useResource<IntegrationLogDetail>(
     selectedId ? "/integration-logs/" + selectedId : null,
   );
-  const rows = (logs.data?.items || []).filter((item) =>
-    `${item.provider} ${item.operation} ${item.method} ${item.url}`
-      .toLowerCase()
-      .includes(query.toLowerCase()),
-  );
+  const rows = logs.data?.items || [];
   const errors = rows.filter((item) => item.status === "error").length;
   const page = Math.floor(offset / PAGE_SIZE) + 1;
   const pages = Math.max(1, Math.ceil((logs.data?.total || 0) / PAGE_SIZE));
@@ -206,7 +203,10 @@ export function IntegrationLogsPage() {
         <div className="filter-bar log-filter-bar">
           <Input
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setOffset(0);
+            }}
             placeholder={t("logs.search")}
             aria-label={t("logs.searchLabel")}
           />
@@ -493,6 +493,18 @@ function LogDetail({ value }: { value: IntegrationLogDetail }) {
         <span className="log-method">{value.method}</span>
         <code>{value.url}</code>
       </div>
+      {value.request_id && (
+        <div className="log-endpoint">
+          <span className="eyebrow">{t("logs.requestId")}</span>
+          <code>{value.request_id}</code>
+        </div>
+      )}
+      {Object.keys(value.correlation || {}).length > 0 && (
+        <details className="payload-panel">
+          <summary>{t("logs.correlation")}</summary>
+          <JsonBlock value={value.correlation} empty={t("logs.noCorrelation")} />
+        </details>
+      )}
       {value.error && <ErrorNote message={value.error} />}
       <div className="log-detail-grid">
         <PayloadPanel

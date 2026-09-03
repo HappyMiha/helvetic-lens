@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from .db import utcnow
 from .models import Job, JobStep, OutboxMessage
+from .observability import current_correlation
 
 TERMINAL_STATES = frozenset({"succeeded", "failed", "cancelled"})
 CLAIMABLE_STATES = frozenset({"queued", "dispatched", "retrying", "waiting_for_model"})
@@ -77,8 +78,11 @@ def enqueue(
     )
     if existing:
         return existing, True
+    correlation = current_correlation()
     job = Job(
         organization_id=organization_id,
+        request_id=correlation.get("request_id"),
+        correlation=correlation,
         type=job_type,
         target_type=target_type,
         target_id=target_id,
@@ -91,6 +95,29 @@ def enqueue(
     )
     session.add(job)
     session.flush()
+    correlation = {
+        **correlation,
+        "job_id": job.id,
+        "organization_id": organization_id,
+        "target_type": target_type[:40],
+        "target_id": target_id[:200],
+    }
+    if target_type == "comparison":
+        correlation["comparison_id"] = target_id[:200]
+    correlation_payload = payload or {}
+    payload_keys = {
+        "run_id": "connector_run_id",
+        "document_id": "document_id",
+        "event_id": "event_id",
+        "comparison_id": "comparison_id",
+        "analysis_id": "analysis_id",
+        "ask_record_id": "ask_record_id",
+    }
+    for payload_key, correlation_key in payload_keys.items():
+        value = correlation_payload.get(payload_key)
+        if value:
+            correlation[correlation_key] = str(value)[:200]
+    job.correlation = correlation
     for position, (name, details) in enumerate(steps or [], 1):
         session.add(
             JobStep(

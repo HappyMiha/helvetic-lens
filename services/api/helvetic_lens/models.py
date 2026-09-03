@@ -864,6 +864,8 @@ class IntegrationLog(Base):
     __tablename__ = "integration_logs"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    request_id: Mapped[str | None] = mapped_column(String(36), index=True)
+    correlation: Mapped[dict] = mapped_column(JSON, default=dict)
     provider: Mapped[str] = mapped_column(String(40), index=True)
     operation: Mapped[str] = mapped_column(String(60), index=True)
     method: Mapped[str] = mapped_column(String(10))
@@ -982,6 +984,8 @@ class Job(Base):
     )
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    request_id: Mapped[str | None] = mapped_column(String(36), index=True)
+    correlation: Mapped[dict] = mapped_column(JSON, default=dict)
     type: Mapped[str] = mapped_column(String(60), index=True)
     target_type: Mapped[str] = mapped_column(String(40))
     target_id: Mapped[str] = mapped_column(String(36), index=True)

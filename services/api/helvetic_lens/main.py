@@ -1,5 +1,7 @@
 import asyncio
 import re
+import time
+import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Annotated, Literal
@@ -22,6 +24,7 @@ from .impact_inbox import ImpactInboxFilters
 from .locales import locale_from_accept_language
 from .model_settings import ApertusSettingsInput
 from .models import AdministrativeAudit, DocumentWatch, Law, Profile, Scan, Source, Version
+from .observability import correlation_context
 from .prompt_settings import PromptSettingsInput
 from .registry import RegistryFilters
 from .service import HelveticLens, as_dict, get, version_summary
@@ -232,6 +235,7 @@ def create_app(
         allow_origins=["http://127.0.0.1:3000", "http://localhost:3000"],
         allow_methods=["GET", "POST", "PATCH", "DELETE"],
         allow_headers=["Content-Type", "X-CSRF-Token"],
+        expose_headers=["X-Request-ID"],
         allow_credentials=True,
     )
 
@@ -357,7 +361,11 @@ def create_app(
                     content={"detail": error.message, "code": error.code, "params": error.params},
                 )
         organization_id = identity.organization_id if identity else service.default_organization_id
-        with service.db.organization_context(organization_id), service.organization_runtime():
+        with (
+            correlation_context(organization_id=organization_id),
+            service.db.organization_context(organization_id),
+            service.organization_runtime(),
+        ):
             response = await call_next(request)
         if path.startswith("/api/") and request.method in {"POST", "PUT", "PATCH", "DELETE"}:
             excluded = {"/api/auth/login", "/api/auth/register"}
@@ -379,6 +387,28 @@ def create_app(
                     session.commit()
         response.headers["X-Content-Type-Options"] = "nosniff"
         return response
+
+    @app.middleware("http")
+    async def correlated_request_metrics(request, call_next):
+        request_id = str(uuid.uuid4())
+        request.state.request_id = request_id
+        service.api_metrics.started()
+        started = time.perf_counter()
+        status = 500
+        try:
+            with correlation_context(request_id=request_id):
+                response = await call_next(request)
+            status = response.status_code
+            response.headers["X-Request-ID"] = request_id
+            return response
+        finally:
+            route = getattr(request.scope.get("route"), "path", request.url.path)
+            service.api_metrics.finished(
+                request.method,
+                route,
+                status,
+                round((time.perf_counter() - started) * 1000),
+            )
 
     def set_auth_cookies(response: JSONResponse, session_token: str, csrf_token: str):
         max_age = settings.session_ttl_days * 86400
@@ -1114,6 +1144,7 @@ def create_app(
 
     @app.get("/api/integration-logs")
     def integration_logs(
+        query: str = Query(default="", max_length=200),
         provider: str = Query(default="", max_length=40),
         status: Literal["", "success", "error"] = "",
         sort_by: Literal[
@@ -1124,6 +1155,7 @@ def create_app(
         offset: int = Query(default=0, ge=0),
     ):
         return service.integration_logs(
+            query=query,
             provider=provider,
             status=status,
             sort_by=sort_by,

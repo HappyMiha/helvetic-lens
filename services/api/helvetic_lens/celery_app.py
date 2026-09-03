@@ -12,6 +12,7 @@ from .config import Settings
 from .db import Database
 from .maintenance import cleanup_operational_data
 from .models import Job
+from .observability import correlation_context
 
 settings = Settings()
 _worker_service = None
@@ -104,5 +105,12 @@ def run_job(job_id: str):
         if job is None:
             return {"state": "missing", "job_id": job_id}
         organization_id = job.organization_id
-    with _worker_service.db.organization_context(organization_id), _worker_service.organization_runtime():
+        correlation = dict(job.correlation or {})
+    with (
+        correlation_context(
+            **{**correlation, "job_id": job_id, "organization_id": organization_id}
+        ),
+        _worker_service.db.organization_context(organization_id),
+        _worker_service.organization_runtime(),
+    ):
         return asyncio.run(_worker_service.execute_job(job_id, worker=socket.gethostname()))

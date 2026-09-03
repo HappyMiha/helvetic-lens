@@ -129,6 +129,11 @@ function Dashboard({ data }: { data: PlatformStatus }) {
             <div className="flex justify-between"><span><Gauge className="inline mr-2" size={16} />{t("admin.benchmark")}</span><strong>{label(data.model.benchmark?.status || "unknown")}</strong></div>
             <div className="flex justify-between"><span><Database className="inline mr-2" size={16} />{t("admin.backup")}</span><strong>{label(data.backup.status)}</strong></div>
             <div className="flex justify-between"><span><ArchiveRestore className="inline mr-2" size={16} />{t("admin.retention")}</span><strong>{t("admin.retentionDays", { count: Number(data.storage.retention.integration_logs_days ?? 0) })}</strong></div>
+            <div className="flex justify-between"><span><Gauge className="inline mr-2" size={16} />{t("admin.apiP95")}</span><strong>{milliseconds(data.api_metrics.latency_ms.p95)}</strong></div>
+            <div className="flex justify-between"><span><Activity className="inline mr-2" size={16} />{t("admin.apiErrorRate")}</span><strong>{percent(data.api_metrics.server_error_rate)}</strong></div>
+            <div className="flex justify-between"><span><Server className="inline mr-2" size={16} />{t("admin.inFlight")}</span><strong>{data.api_metrics.in_flight}</strong></div>
+            <div className="flex justify-between"><span><Database className="inline mr-2" size={16} />{t("admin.databaseProbe")}</span><strong>{milliseconds(data.dependency_metrics.database.query_ms)}</strong></div>
+            <div className="flex justify-between"><span><Activity className="inline mr-2" size={16} />{t("admin.redisProbe")}</span><strong>{milliseconds(data.dependency_metrics.redis.ping_ms)}</strong></div>
             <div className="flex justify-between"><span><Users className="inline mr-2" size={16} />{t("admin.organizations")}</span><strong>{data.resources.organizations}</strong></div>
             <div className="flex justify-between"><span><ArchiveRestore className="inline mr-2" size={16} />{t("admin.failedJobs")}</span><strong>{data.jobs.dead_letters}</strong></div>
           </div>
