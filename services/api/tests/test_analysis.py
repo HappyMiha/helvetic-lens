@@ -18,6 +18,7 @@ from helvetic_lens.analysis import (
     impact_analysis,
     local_answer_synthesis,
     local_impact_synthesis,
+    localized_cited_change_answer,
     materialize_digest_citations,
     no_change_answer,
     numbered_selection,
@@ -978,6 +979,29 @@ def test_no_change_answer_distinguishes_german_and_italian():
     assert no_change_answer("Quali sono le differenze?").startswith("Il confronto completo")
 
 
+def test_small_local_model_change_evidence_is_rendered_in_the_selected_language():
+    citations = [
+        {"version_id": "old", "quote": "Die Frist beträgt 30 Tage."},
+        {"version_id": "new", "quote": "Die Frist beträgt 60 Tage."},
+    ]
+
+    assert localized_cited_change_answer(citations, "old", "new", "de-CH", "fallback").startswith(
+        "Der Wortlaut wurde"
+    )
+    assert localized_cited_change_answer(citations, "old", "new", "fr-CH", "fallback").startswith(
+        "Le libellé est passé"
+    )
+    assert localized_cited_change_answer(citations, "old", "new", "it-CH", "fallback").startswith(
+        "Il testo è stato modificato"
+    )
+    assert localized_cited_change_answer(citations, "old", "new", "rm-CH", "fallback").startswith(
+        "Il text è vegnì midà"
+    )
+    assert localized_cited_change_answer(citations, "old", "new", "en-CH", "fallback").startswith(
+        "The wording changed"
+    )
+
+
 def test_oversized_single_change_uses_exact_bounded_windows():
     common = "Stable legal wording " * 500
     old = Version(
@@ -1091,6 +1115,8 @@ def test_vague_comment_and_numeric_gibberish_do_not_call_the_model(harness):
     ("question", "intent"),
     [
         ("What changed in this document?", "explain_changes"),
+        ("Was hat sich inhaltlich in den Fassungen geändert?", "explain_changes"),
+        ("Quale modifica sostanziale esiste tra queste versioni?", "explain_changes"),
         ("Does this affect our organization?", "organization_impact"),
         ("Create a review checklist", "actions"),
         ("Explain Article 5", "specific_unit"),

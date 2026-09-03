@@ -1282,7 +1282,10 @@ function CoverageNote({ coverage }: { coverage?: Partial<Coverage> }) {
         {coverage.provider_calls !== undefined
           ? ` · ${t("compare.modelCalls", { count: number(coverage.provider_calls) })}`
           : ""}
-        . {coverage.scope}
+        . {t("compare.coverageMaterialScope", {
+          included: number(coverage.reviewed_material_items ?? 0),
+          suppressed: number(coverage.suppressed_non_material_items ?? 0),
+        })}
       </div>
     );
   }
@@ -1295,7 +1298,11 @@ function CoverageNote({ coverage }: { coverage?: Partial<Coverage> }) {
       {coverage.provider_calls !== undefined
         ? ` · ${t("compare.modelCalls", { count: number(coverage.provider_calls) })}`
         : ""}
-      . {coverage.scope}
+      . {coverage.included_passages === 0
+        ? t("compare.coverageNoMatch")
+        : coverage.limited
+          ? t("compare.coverageSelectedScope")
+          : t("compare.coverageCompleteScope")}
     </div>
   );
 }

@@ -1076,6 +1076,45 @@ const identityMessages: Record<Locale, Messages> = {
 };
 for (const locale of locales) Object.assign(catalogTarget(locale), identityMessages[locale]);
 
+const comparisonScopeMessages: Record<Locale, Messages> = {
+  "en-CH": {
+    "compare.coverageMaterialScope": "Apertus received {included} selected substantive units; {suppressed} formatting or renumbering units remain in the saved exact comparison.",
+    "compare.coverageNoMatch": "No saved passage matched the question terms, so no model call was made.",
+    "compare.coverageSelectedScope": "Apertus received selected saved evidence; the complete versions remain available for inspection.",
+    "compare.coverageCompleteScope": "The complete relevant saved evidence was available for this answer.",
+    "status.explain_changes": "Explain changes", "status.organization_impact": "Organization impact", "status.actions": "Review actions", "status.specific_unit": "Specific provision", "status.whole_document": "Whole document", "status.vague": "Clarification", "status.off_topic": "Outside document scope", "status.deterministic_diff": "Deterministic comparison", "status.impact_report": "Validated impact report", "status.targeted_passages": "Targeted passages", "status.full_saved_versions": "Complete saved versions", "status.clarification": "Clarification",
+  },
+  "de-CH": {
+    "compare.coverageMaterialScope": "Apertus erhielt {included} ausgewählte wesentliche Einheiten; {suppressed} Formatierungs- oder Nummerierungsunterschiede bleiben im gespeicherten exakten Vergleich.",
+    "compare.coverageNoMatch": "Keine gespeicherte Passage entsprach den Begriffen; das Modell wurde nicht aufgerufen.",
+    "compare.coverageSelectedScope": "Apertus erhielt ausgewählte gespeicherte Belege; die vollständigen Fassungen bleiben prüfbar.",
+    "compare.coverageCompleteScope": "Für diese Antwort waren alle relevanten gespeicherten Belege verfügbar.",
+    "status.explain_changes": "Änderungen erklären", "status.organization_impact": "Auswirkung auf die Organisation", "status.actions": "Prüfaktionen", "status.specific_unit": "Bestimmte Bestimmung", "status.whole_document": "Ganzes Dokument", "status.vague": "Klärung", "status.off_topic": "Ausserhalb des Dokuments", "status.deterministic_diff": "Deterministischer Vergleich", "status.impact_report": "Validierter Auswirkungsbericht", "status.targeted_passages": "Gezielte Passagen", "status.full_saved_versions": "Vollständige gespeicherte Fassungen", "status.clarification": "Klärung",
+  },
+  "fr-CH": {
+    "compare.coverageMaterialScope": "Apertus a reçu {included} unités substantielles sélectionnées; {suppressed} différences de forme ou de numérotation restent dans la comparaison exacte enregistrée.",
+    "compare.coverageNoMatch": "Aucun passage enregistré ne correspondait aux termes; le modèle n’a pas été appelé.",
+    "compare.coverageSelectedScope": "Apertus a reçu les preuves enregistrées sélectionnées; les versions complètes restent consultables.",
+    "compare.coverageCompleteScope": "Toutes les preuves enregistrées pertinentes étaient disponibles pour cette réponse.",
+    "status.explain_changes": "Expliquer les changements", "status.organization_impact": "Impact sur l’organisation", "status.actions": "Actions de vérification", "status.specific_unit": "Disposition précise", "status.whole_document": "Document complet", "status.vague": "Demande de précision", "status.off_topic": "Hors du document", "status.deterministic_diff": "Comparaison déterministe", "status.impact_report": "Rapport d’impact validé", "status.targeted_passages": "Passages ciblés", "status.full_saved_versions": "Versions enregistrées complètes", "status.clarification": "Demande de précision",
+  },
+  "it-CH": {
+    "compare.coverageMaterialScope": "Apertus ha ricevuto {included} unità sostanziali selezionate; {suppressed} differenze di formato o numerazione restano nel confronto esatto salvato.",
+    "compare.coverageNoMatch": "Nessun passaggio salvato corrispondeva ai termini; il modello non è stato chiamato.",
+    "compare.coverageSelectedScope": "Apertus ha ricevuto le prove salvate selezionate; le versioni complete restano consultabili.",
+    "compare.coverageCompleteScope": "Per questa risposta erano disponibili tutte le prove salvate pertinenti.",
+    "status.explain_changes": "Spiegare le modifiche", "status.organization_impact": "Impatto sull’organizzazione", "status.actions": "Azioni di verifica", "status.specific_unit": "Disposizione specifica", "status.whole_document": "Documento completo", "status.vague": "Chiarimento", "status.off_topic": "Fuori ambito", "status.deterministic_diff": "Confronto deterministico", "status.impact_report": "Rapporto d’impatto convalidato", "status.targeted_passages": "Passaggi mirati", "status.full_saved_versions": "Versioni salvate complete", "status.clarification": "Chiarimento",
+  },
+  "rm-CH": {
+    "compare.coverageMaterialScope": "Apertus ha survegnì {included} unitads essenzialas tschernidas; {suppressed} differenzas da furma u numeraziun restan en la cumparegliaziun exacta memorisada.",
+    "compare.coverageNoMatch": "Nagina passascha memorisada correspundeva als terms; il model n’è betg vegnì clamà.",
+    "compare.coverageSelectedScope": "Apertus ha survegnì cumprovas memorisadas tschernidas; las versiuns cumplettas restan consultablas.",
+    "compare.coverageCompleteScope": "Tut las cumprovas memorisadas relevantas eran disponiblas per questa resposta.",
+    "status.explain_changes": "Declerar las midadas", "status.organization_impact": "Effect sin l’organisaziun", "status.actions": "Acziuns da controlla", "status.specific_unit": "Disposiziun specifica", "status.whole_document": "Document cumplet", "status.vague": "Scleriment", "status.off_topic": "Ordaifer il document", "status.deterministic_diff": "Cumparegliaziun deterministica", "status.impact_report": "Rapport dals effects validà", "status.targeted_passages": "Passaschas cibladas", "status.full_saved_versions": "Versiuns memorisadas cumplettas", "status.clarification": "Scleriment",
+  },
+};
+for (const locale of locales) Object.assign(catalogTarget(locale), comparisonScopeMessages[locale]);
+
 const catalog: Record<Locale, Messages> = { "de-CH": de, "fr-CH": fr, "it-CH": it, "rm-CH": rm, "en-CH": en };
 const localeCookie = "helvetic_lens_locale";
 

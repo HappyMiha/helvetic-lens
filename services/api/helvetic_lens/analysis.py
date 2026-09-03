@@ -2321,6 +2321,56 @@ def local_answer_synthesis(answers: list[dict]) -> dict:
     }
 
 
+def localized_cited_change_answer(
+    citations: list[dict], old_version_id: str, new_version_id: str, output_locale: str, fallback: str
+) -> str:
+    """Render validated local-model evidence as concise prose when a small model echoes row labels."""
+
+    old_quotes = distinct_texts(
+        [item for item in citations if item.get("version_id") == old_version_id], "quote", 3, 1400
+    )
+    new_quotes = distinct_texts(
+        [item for item in citations if item.get("version_id") == new_version_id], "quote", 3, 1400
+    )
+    if not old_quotes and not new_quotes:
+        return fallback
+    templates = {
+        "de-CH": {
+            "changed": "Der Wortlaut wurde von „{old}“ zu „{new}“ geändert.",
+            "removed": "Der frühere Wortlaut „{old}“ wurde entfernt.",
+            "added": "Der neue Wortlaut „{new}“ wurde hinzugefügt.",
+        },
+        "fr-CH": {
+            "changed": "Le libellé est passé de « {old} » à « {new} ».",
+            "removed": "L’ancien libellé « {old} » a été supprimé.",
+            "added": "Le nouveau libellé « {new} » a été ajouté.",
+        },
+        "it-CH": {
+            "changed": "Il testo è stato modificato da « {old} » a « {new} ».",
+            "removed": "Il testo precedente « {old} » è stato eliminato.",
+            "added": "È stato aggiunto il nuovo testo « {new} ».",
+        },
+        "rm-CH": {
+            "changed": "Il text è vegnì midà da « {old} » a « {new} ».",
+            "removed": "Il text precedent « {old} » è vegnì eliminà.",
+            "added": "Il nov text « {new} » è vegnì agiuntà.",
+        },
+        "en-CH": {
+            "changed": "The wording changed from “{old}” to “{new}”.",
+            "removed": "The earlier wording “{old}” was removed.",
+            "added": "The new wording “{new}” was added.",
+        },
+    }
+    language = templates.get(output_locale, templates[DEFAULT_OUTPUT_LOCALE])
+    sentences = []
+    for index in range(max(len(old_quotes), len(new_quotes))):
+        old_quote = old_quotes[index][:440] if index < len(old_quotes) else ""
+        new_quote = new_quotes[index][:440] if index < len(new_quotes) else ""
+        kind = "changed" if old_quote and new_quote else "removed" if old_quote else "added"
+        sentences.append(language[kind].format(old=old_quote, new=new_quote))
+    return " ".join(sentences)[:6000]
+
+
 def select_evidence(
     old: Version,
     new: Version,
@@ -2913,13 +2963,13 @@ CHANGE_QUESTION_STEMS = (
     "додал",
     "видал",
     "was hat sich geändert",
-    "änderung",
+    "änder",
     "unterschied",
     "qu'est-ce qui a changé",
     "changements",
     "différence",
     "cosa è cambiato",
-    "modifiche",
+    "modific",
     "differenze",
     "midad",
 )
@@ -3602,6 +3652,10 @@ async def answer_question(
 
     if settings.apertus_provider == "docker":
         result = local_answer_synthesis(supported_answers)
+        if intent == "explain_changes":
+            result["answer"] = localized_cited_change_answer(
+                result["citations"], old.id, new.id, output_locale, result["answer"]
+            )
         coverage["provider_calls"] = request_budget.used
         return routed(
             result,
