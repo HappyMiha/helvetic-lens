@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Bot, Check, Copy, FileText, Globe2, Loader2, Shield, Trash2, UserRoundPlus, Users } from "lucide-react";
+import { Bot, Check, Copy, FileText, Globe2, Loader2, MailCheck, Shield, Trash2, UserRoundPlus, Users } from "lucide-react";
 import { Shell } from "./shell";
 import { useAuth } from "./auth-gate";
 import { ErrorNote, SuccessNote } from "./common";
@@ -113,6 +113,30 @@ export function OrganizationPage() {
       </div>
       <ErrorNote message={error} />
       {success && <SuccessNote>{success}</SuccessNote>}
+
+      {session.user && !session.user.email_verified && (
+        <section className="card p-5 mb-5 flex flex-wrap items-center justify-between gap-4 border-amber-200 bg-amber-50/60">
+          <div className="flex items-start gap-3">
+            <MailCheck className="mt-0.5 text-amber-700" size={20} />
+            <div>
+              <strong className="block">Verify your email</strong>
+              <p className="text-sm muted">Confirm {session.user.email} so you can recover access if you forget your password.</p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            disabled={!!busy}
+            onClick={() => act(
+              "verify-email",
+              () => api("/auth/email-verification/request", { method: "POST", body: JSON.stringify({ email: session.user?.email }) }),
+              "If this address can be verified, a fresh one-time link has been sent.",
+            )}
+          >
+            {busy === "verify-email" ? <Loader2 className="animate-spin" /> : <MailCheck />}
+            Send verification link
+          </Button>
+        </section>
+      )}
 
       {organizationStatus && (
         <>

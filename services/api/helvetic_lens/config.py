@@ -35,6 +35,14 @@ class Settings(BaseSettings):
     allow_anonymous_dev: bool = True
     session_cookie_secure: bool = False
     session_ttl_days: int = Field(default=14, ge=1, le=90)
+    public_base_url: str = "http://127.0.0.1:3000"
+    auth_email_mode: Literal["disabled", "development", "smtp"] = "development"
+    auth_email_from: str = ""
+    auth_smtp_host: str = ""
+    auth_smtp_port: int = Field(default=587, ge=1, le=65535)
+    auth_smtp_username: str = ""
+    auth_smtp_password: SecretStr = SecretStr("")
+    auth_smtp_starttls: bool = True
     redis_url: str = "redis://127.0.0.1:6379/0"
     model_manager_url: str = "http://127.0.0.1:12436"
     job_execution_mode: Literal["celery", "inline"] = "celery"
@@ -85,6 +93,11 @@ class Settings(BaseSettings):
                 raise ValueError("Production refuses to start while anonymous development access is enabled.")
             if not self.session_cookie_secure:
                 raise ValueError("Production requires Secure session cookies.")
+            if self.auth_email_mode == "development":
+                raise ValueError("Production cannot write authentication emails to the development mailbox.")
+        self.public_base_url = self.public_base_url.rstrip("/")
+        if self.auth_email_mode == "smtp" and (not self.auth_smtp_host or not self.auth_email_from):
+            raise ValueError("SMTP authentication email delivery requires host and from address.")
         product_id = self.apertus_product_id.strip()
         if self.apertus_provider == "infomaniak":
             if not product_id:

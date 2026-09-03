@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select, text
 
 from .auth import CSRF_COOKIE, SESSION_COOKIE, AuthService, RateLimiter
+from .auth_mail import AuthMailer
 from .config import DomainError, Settings
 from .model_settings import ApertusSettingsInput
 from .models import AdministrativeAudit, DocumentWatch, Law, Profile, Scan, Source, Version
@@ -89,6 +90,18 @@ class LoginInput(Input):
     password: str = Field(min_length=1, max_length=1024)
 
 
+class AccountEmailInput(Input):
+    email: str = Field(min_length=3, max_length=320)
+
+
+class AccountTokenInput(Input):
+    token: str = Field(min_length=20, max_length=200)
+
+
+class PasswordResetInput(AccountTokenInput):
+    password: str = Field(min_length=10, max_length=1024)
+
+
 class InvitationInput(Input):
     email: str = Field(min_length=3, max_length=320)
     role: Literal["organization_admin", "viewer"] = "viewer"
@@ -125,7 +138,7 @@ class ConnectorScheduleInput(Input):
 def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
     if method not in {"POST", "PUT", "PATCH", "DELETE"}:
         return None
-    if path in {"/api/auth/register", "/api/auth/login"}:
+    if path.startswith("/api/auth/"):
         return None  # These use an email-and-address key inside their handlers.
     if path == "/api/preview" or (path.startswith("/api/sources/") and path.endswith("/discover")):
         return "fetch", 30, 300
@@ -159,6 +172,7 @@ def create_app(
         organization_name=organization_name,
     )
     auth = AuthService(service.db, settings)
+    auth_mailer = AuthMailer(settings)
     limiter = RateLimiter(settings)
 
     @asynccontextmanager
@@ -207,7 +221,16 @@ def create_app(
         session_token = request.cookies.get(SESSION_COOKIE, "")
         identity = await asyncio.to_thread(auth.resolve, session_token) if session_token else None
         request.state.identity = identity
-        public_path = path in {"/api/health", "/api/auth/register", "/api/auth/login", "/api/auth/session"}
+        public_auth_paths = {
+            "/api/auth/register",
+            "/api/auth/login",
+            "/api/auth/session",
+            "/api/auth/email-verification/request",
+            "/api/auth/email-verification/complete",
+            "/api/auth/password-reset/request",
+            "/api/auth/password-reset/complete",
+        }
+        public_path = path == "/api/health" or path in public_auth_paths
         public_path = public_path or path in {"/docs", "/openapi.json", "/redoc"}
         if path.startswith("/api/") and not public_path and not identity and not settings.allow_anonymous_dev:
             return JSONResponse(
@@ -217,11 +240,7 @@ def create_app(
         if (
             identity
             and request.method in {"POST", "PUT", "PATCH", "DELETE"}
-            and path
-            not in {
-                "/api/auth/register",
-                "/api/auth/login",
-            }
+            and path not in public_auth_paths
         ):
             try:
                 auth.verify_csrf(
@@ -336,6 +355,16 @@ def create_app(
             organization_name=data.organization_name,
             invitation_token=data.invitation_token,
         )
+        normalized, verification_token = await asyncio.to_thread(
+            auth.request_email_verification, data.email
+        )
+        if verification_token:
+            try:
+                await asyncio.to_thread(
+                    auth_mailer.send, normalized, "verify_email", verification_token
+                )
+            except DomainError:
+                pass
         with service.db.organization_context(identity.organization_id), service.db.session() as session:
             onboarding_required = not bool(session.scalar(select(DocumentWatch.id).limit(1)))
         response = JSONResponse(
@@ -356,6 +385,52 @@ def create_app(
             onboarding_required = not bool(session.scalar(select(DocumentWatch.id).limit(1)))
         response = JSONResponse(content={**identity.public(), "onboarding_required": onboarding_required})
         set_auth_cookies(response, session_token, csrf_token)
+        return response
+
+    @app.post("/api/auth/email-verification/request")
+    async def request_email_verification(data: AccountEmailInput, request: Request):
+        subject = (request.client.host if request.client else "unknown") + ":" + data.email.casefold()
+        await asyncio.to_thread(limiter.check, "email_verification", subject, limit=5, window_seconds=3600)
+        normalized, raw_token = await asyncio.to_thread(auth.request_email_verification, data.email)
+        if raw_token:
+            try:
+                await asyncio.to_thread(auth_mailer.send, normalized, "verify_email", raw_token)
+            except DomainError:
+                pass
+        return {
+            "accepted": True,
+            "message": "If this address can be verified, a one-time link has been sent.",
+        }
+
+    @app.post("/api/auth/email-verification/complete")
+    async def complete_email_verification(data: AccountTokenInput, request: Request):
+        subject = request.client.host if request.client else "unknown"
+        await asyncio.to_thread(limiter.check, "email_verification_complete", subject, limit=10, window_seconds=3600)
+        return await asyncio.to_thread(auth.verify_email, data.token)
+
+    @app.post("/api/auth/password-reset/request")
+    async def request_password_reset(data: AccountEmailInput, request: Request):
+        subject = (request.client.host if request.client else "unknown") + ":" + data.email.casefold()
+        await asyncio.to_thread(limiter.check, "password_reset", subject, limit=5, window_seconds=3600)
+        normalized, raw_token = await asyncio.to_thread(auth.request_password_reset, data.email)
+        if raw_token:
+            try:
+                await asyncio.to_thread(auth_mailer.send, normalized, "reset_password", raw_token)
+            except DomainError:
+                pass
+        return {
+            "accepted": True,
+            "message": "If an active account uses this address, a one-time link has been sent.",
+        }
+
+    @app.post("/api/auth/password-reset/complete")
+    async def complete_password_reset(data: PasswordResetInput, request: Request):
+        subject = request.client.host if request.client else "unknown"
+        await asyncio.to_thread(limiter.check, "password_reset_complete", subject, limit=10, window_seconds=3600)
+        result = await asyncio.to_thread(auth.reset_password, data.token, data.password)
+        response = JSONResponse(content=result)
+        response.delete_cookie(SESSION_COOKIE, path="/")
+        response.delete_cookie(CSRF_COOKIE, path="/")
         return response
 
     @app.get("/api/auth/session")

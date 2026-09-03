@@ -10,11 +10,16 @@ export type AuthSession = {
   anonymous_development?: boolean;
   authentication_required?: boolean;
   onboarding_required?: boolean;
-  user?: { id: string; email: string; name: string };
+  user?: { id: string; email: string; name: string; email_verified?: boolean };
   organization?: { id: string; name: string };
   role?: string;
   platform_admin?: boolean;
-  organizations?: Array<{ id: string; name: string; role: string; current: boolean }>;
+  organizations?: Array<{
+    id: string;
+    name: string;
+    role: string;
+    current: boolean;
+  }>;
 };
 
 const AuthContext = createContext<AuthSession | null>(null);
@@ -43,7 +48,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     if (data.authentication_required && !authenticationPage) {
       router.replace(`/login?next=${encodeURIComponent(pathname)}`);
     } else if (data.authenticated && authenticationPage) {
-      const invitation = new URLSearchParams(window.location.search).get("invite");
+      const parameters = new URLSearchParams(window.location.search);
+      const invitation = parameters.get("invite");
+      if (parameters.get("verify") || parameters.get("reset")) return;
       router.replace(
         invitation
           ? `/organization?invite=${encodeURIComponent(invitation)}`

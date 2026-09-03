@@ -100,7 +100,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-051](#hl-051) | P2       | DONE     | HL-044, HL-050                                         | Measured semantic candidate recall with pgvector if justified       |
 | [HL-052](#hl-052) | P2       | PLANNED  | HL-034, HL-046, HL-057                                 | Opt-in email and web digests                                        |
 | [HL-053](#hl-053) | P3       | PLANNED  | HL-044–HL-046                                          | Relation review workflow and visual graph                           |
-| [HL-054](#hl-054) | P3       | PLANNED  | HL-034, HL-035                                         | Account recovery, verification, 2FA, and SSO refinements            |
+| [HL-054](#hl-054) | P3       | DONE     | HL-034, HL-035                                         | Account recovery, verification, 2FA, and SSO refinements            |
 | [HL-055](#hl-055) | P2       | DONE     | HL-038, HL-041                                         | Broader federal and cantonal court coverage                         |
 | [HL-056](#hl-056) | P3       | PLANNED  | HL-049                                                 | Multi-host or high-availability deployment after measured need      |
 
@@ -1130,6 +1130,8 @@ Acceptance criteria:
 ### HL-054 — Add account recovery, verification, 2FA, or SSO only as public-use needs mature
 
 Strengthen identity workflows without blocking the deliberately small first registration experience.
+
+**Status: DONE.** Registration now issues a 24-hour email-verification link, the Organization page shows verification status and resend action, and sign-in includes a non-enumerating 30-minute password-reset flow. Both links are random, hashed at rest, replace older pending links, expire, and work once. Resetting a password revokes every active session. Separate request/completion rate limits and minimal security events cover abuse and audit needs. Development delivery uses a private, self-pruning mailbox while production requires configured SMTP; the privacy and operator recovery boundaries are documented in [the account recovery runbook](docs/ACCOUNT_RECOVERY.md). TOTP and SSO remain deliberately deferred until measured need.
 
 Acceptance criteria:
 

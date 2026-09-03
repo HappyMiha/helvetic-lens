@@ -21,6 +21,7 @@ from sqlalchemy import select
 from .config import DomainError, Settings
 from .db import Database, utcnow
 from .models import (
+    AccountToken,
     Organization,
     OrganizationInvitation,
     OrganizationMembership,
@@ -83,11 +84,17 @@ class Identity:
     name: str
     organization_name: str
     platform_admin: bool = False
+    email_verified: bool = False
 
     def public(self) -> dict:
         return {
             "authenticated": True,
-            "user": {"id": self.user_id, "email": self.email, "name": self.name},
+            "user": {
+                "id": self.user_id,
+                "email": self.email,
+                "name": self.name,
+                "email_verified": self.email_verified,
+            },
             "organization": {"id": self.organization_id, "name": self.organization_name},
             "role": self.role,
             "platform_admin": self.platform_admin,
@@ -222,6 +229,131 @@ class AuthService:
             session.commit()
             return self._identity(session, record), session_token, csrf_token
 
+    @staticmethod
+    def _issue_account_token(session, user: User, purpose: str, ttl: timedelta) -> str:
+        now = utcnow()
+        for pending in session.scalars(
+            select(AccountToken).where(
+                AccountToken.user_id == user.id,
+                AccountToken.purpose == purpose,
+                AccountToken.consumed_at.is_(None),
+                AccountToken.revoked_at.is_(None),
+            )
+        ):
+            pending.revoked_at = now
+        raw_token = secrets.token_urlsafe(32)
+        session.add(
+            AccountToken(
+                user_id=user.id,
+                purpose=purpose,
+                token_hash=token_hash(raw_token),
+                expires_at=now + ttl,
+            )
+        )
+        return raw_token
+
+    def request_email_verification(self, email: str) -> tuple[str, str | None]:
+        normalized = normalize_email(email)
+        raw_token = None
+        with self.db.session(include_all_organizations=True) as session:
+            user = session.scalar(select(User).where(User.email == normalized))
+            if user and user.active and user.email_verified_at is None:
+                raw_token = self._issue_account_token(
+                    session, user, "verify_email", timedelta(hours=24)
+                )
+            self._event(
+                session,
+                "email_verification_requested",
+                user_id=user.id if user else None,
+                subject=normalized,
+            )
+            session.commit()
+        return normalized, raw_token
+
+    def request_password_reset(self, email: str) -> tuple[str, str | None]:
+        normalized = normalize_email(email)
+        raw_token = None
+        with self.db.session(include_all_organizations=True) as session:
+            user = session.scalar(select(User).where(User.email == normalized))
+            if user and user.active:
+                raw_token = self._issue_account_token(
+                    session, user, "reset_password", timedelta(minutes=30)
+                )
+            self._event(
+                session,
+                "password_reset_requested",
+                user_id=user.id if user else None,
+                subject=normalized,
+            )
+            session.commit()
+        return normalized, raw_token
+
+    @staticmethod
+    def _valid_account_token(session, raw_token: str, purpose: str) -> AccountToken:
+        record = session.scalar(
+            select(AccountToken).where(
+                AccountToken.token_hash == token_hash(raw_token),
+                AccountToken.purpose == purpose,
+            )
+        )
+        if (
+            not record
+            or record.consumed_at
+            or record.revoked_at
+            or _aware(record.expires_at) <= utcnow()
+        ):
+            raise DomainError(
+                "This one-time link is invalid or has expired.",
+                410,
+                "account_token_invalid",
+            )
+        return record
+
+    def verify_email(self, raw_token: str) -> dict:
+        with self.db.session(include_all_organizations=True) as session:
+            record = self._valid_account_token(session, raw_token, "verify_email")
+            user = session.get(User, record.user_id)
+            if not user or not user.active:
+                raise DomainError("This account is unavailable.", 410, "account_token_invalid")
+            now = utcnow()
+            user.email_verified_at = user.email_verified_at or now
+            record.consumed_at = now
+            self._event(session, "email_verified", user_id=user.id)
+            session.commit()
+            return {"verified": True}
+
+    def reset_password(self, raw_token: str, password: str) -> dict:
+        if len(password) < 10:
+            raise DomainError("Use at least 10 characters for the password.", 422, "weak_password")
+        with self.db.session(include_all_organizations=True) as session:
+            record = self._valid_account_token(session, raw_token, "reset_password")
+            user = session.get(User, record.user_id)
+            if not user or not user.active:
+                raise DomainError("This account is unavailable.", 410, "account_token_invalid")
+            now = utcnow()
+            user.password_hash = _PASSWORD_HASHER.hash(password)
+            record.consumed_at = now
+            for pending in session.scalars(
+                select(AccountToken).where(
+                    AccountToken.user_id == user.id,
+                    AccountToken.purpose == "reset_password",
+                    AccountToken.id != record.id,
+                    AccountToken.consumed_at.is_(None),
+                    AccountToken.revoked_at.is_(None),
+                )
+            ):
+                pending.revoked_at = now
+            for active_session in session.scalars(
+                select(UserSession).where(
+                    UserSession.user_id == user.id,
+                    UserSession.revoked_at.is_(None),
+                )
+            ):
+                active_session.revoked_at = now
+            self._event(session, "password_reset_completed", user_id=user.id)
+            session.commit()
+            return {"reset": True}
+
     def _identity(self, session, record: UserSession) -> Identity:
         user = session.get(User, record.user_id)
         organization = session.get(Organization, record.organization_id)
@@ -243,6 +375,7 @@ class AuthService:
             name=user.name,
             organization_name=organization.name,
             platform_admin=user.platform_admin,
+            email_verified=user.email_verified_at is not None,
         )
 
     @staticmethod

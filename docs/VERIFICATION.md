@@ -155,6 +155,8 @@ The earlier large-comparison checks below are retained as historical evidence of
 
 The Windows agent's default pytest temporary directory had a permission conflict when switching execution contexts. The documented test command was rerun with a fresh task-local temporary directory and cache; no global permissions or user data were changed.
 
+- Account recovery tests verify a hashed, expiring, single-use email-verification link; identical reset-request responses for registered and unknown addresses; reset expiry and rate limiting; Argon2id password replacement; revocation of all existing sessions; and the resulting security event. The production configuration rejects the development mailbox, while the browser build covers verification, resend, forgot-password, and reset screens.
+
 ## Remaining gates
 
 - Validate optional Firecrawl with a key and available credit.
