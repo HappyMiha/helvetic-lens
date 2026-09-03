@@ -486,6 +486,101 @@ export type LocalModelInventory = {
   } | null;
   models: LocalModel[];
 };
+export type PlatformStatus = {
+  scope: "platform";
+  generated_at: string;
+  services: Record<string, string>;
+  resources: {
+    organizations: number;
+    users: number;
+    memberships: number;
+    active_watches: number;
+    custom_sources: number;
+  };
+  jobs: {
+    states: Record<string, number>;
+    queues: Record<string, number>;
+    oldest_active_age_seconds: number | null;
+    dead_letters: number;
+    recent_failures: Array<{
+      id: string;
+      type: string;
+      queue: string;
+      error: string | null;
+      finished_at: string | null;
+    }>;
+  };
+  connectors: Array<{
+    connector: string;
+    stream: string;
+    health: string;
+    message: string | null;
+    last_success_at: string | null;
+    freshness_seconds: number | null;
+  }>;
+  model: {
+    available: boolean;
+    state: string;
+    model_id?: string | null;
+    available_slots?: number;
+    accepted_slots?: number;
+    cuda_devices?: Array<{ index: number; name: string; vram_bytes: number }>;
+    ram_bytes?: number;
+    disk_free_bytes?: number;
+    benchmark?: { status: string; message?: string };
+    error?: string;
+  };
+  storage: {
+    total_bytes: number;
+    free_bytes: number;
+    used_bytes: number;
+    retention: Record<string, string | number>;
+  };
+  backup: {
+    configured: boolean;
+    latest_at: string | null;
+    age_seconds: number | null;
+    file_count: number;
+    status: string;
+  };
+  recent_audit: Array<{
+    id: string;
+    scope: string;
+    action: string;
+    result: string;
+    response_status: number;
+    actor_kind: string;
+    created_at: string;
+  }>;
+};
+export type OrganizationStatus = {
+  scope: "organization";
+  generated_at: string;
+  workspace: {
+    members: number;
+    pending_invitations: number;
+    active_watches: number;
+    custom_sources: number;
+  };
+  profile: { name: string; revision: number; complete: boolean };
+  prompts: { source: string; revision: number };
+  ai: {
+    provider: string;
+    execution: "local" | "cloud";
+    cloud_opt_in: boolean;
+    credential_configured: boolean;
+    analyses: number;
+    questions: number;
+    token_counts: Record<string, number>;
+  };
+  quotas: Record<string, unknown>;
+  recent_audit: Array<{
+    action: string;
+    result: string;
+    response_status: number;
+    created_at: string;
+  }>;
+};
 export type IntegrationLogSummary = {
   id: string;
   provider: string;
@@ -601,7 +696,8 @@ export type PromptSettings = {
   answer_synthesis_instructions: string;
   repair_instructions: string;
   ask_context_mode: "automatic" | "changes_only";
-  source: "defaults" | "workspace";
+  source: "defaults" | "workspace" | "platform_default";
+  scope?: "platform_default" | "built_in_default";
   revision: number;
   fingerprint: string;
   updated_at: string | null;

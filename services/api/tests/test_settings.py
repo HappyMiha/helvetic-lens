@@ -54,6 +54,10 @@ def test_settings_save_apply_and_survive_restart_without_exposing_a_key(harness)
     assert saved.json()["source"] == "workspace" and saved.json()["api_key_configured"]
     assert service.model_client is not original_client
     assert service.model_client.settings.apertus_api_key.get_secret_value() == "test-only-secret"
+    with service.db.session() as session:
+        encrypted = session.get(ApertusConfiguration, "default").api_key
+        assert encrypted.startswith("enc:v1:")
+        assert "test-only-secret" not in encrypted
     assert client.get("/api/health").json()["apertus"] == {
         "configured": True,
         "model": "test-apertus",
@@ -283,7 +287,9 @@ def test_local_docker_provider_derives_endpoint_lists_models_and_never_sends_rem
     assert saved_local.json()["api_key_configured"] is False
     assert service.settings.apertus_api_key.get_secret_value() == ""
     with service.db.session() as session:
-        assert session.get(ApertusConfiguration, "default").api_key == "test-remote-token-must-stay-local"
+        encrypted = session.get(ApertusConfiguration, "default").api_key
+        assert encrypted.startswith("enc:v1:")
+        assert service.credential_cipher.decrypt(encrypted) == "test-remote-token-must-stay-local"
 
     saved_remote = client.patch(
         "/api/settings/apertus",

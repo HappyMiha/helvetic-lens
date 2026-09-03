@@ -13,7 +13,7 @@ from sqlalchemy import select, text
 from .auth import CSRF_COOKIE, SESSION_COOKIE, AuthService, RateLimiter
 from .config import DomainError, Settings
 from .model_settings import ApertusSettingsInput
-from .models import DocumentWatch, Law, Profile, Scan, Source, Version
+from .models import AdministrativeAudit, DocumentWatch, Law, Profile, Scan, Source, Version
 from .prompt_settings import PromptSettingsInput
 from .registry import RegistryFilters
 from .service import HelveticLens, as_dict, get, version_summary
@@ -252,15 +252,10 @@ def create_app(
                     "code": "viewer_read_only",
                 },
             )
-        if (
-            identity
-            and (
-                path.startswith("/api/admin/")
-                or (path.startswith("/api/connectors/") and path.endswith("/sync"))
-            )
-            and request.method in {"POST", "PUT", "PATCH", "DELETE"}
-            and not identity.platform_admin
-        ):
+        platform_path = path.startswith("/api/admin/") or (
+            path.startswith("/api/connectors/") and path.endswith("/sync")
+        )
+        if identity and platform_path and not identity.platform_admin:
             return JSONResponse(
                 status_code=403,
                 content={
@@ -287,6 +282,24 @@ def create_app(
         organization_id = identity.organization_id if identity else service.default_organization_id
         with service.db.organization_context(organization_id), service.organization_runtime():
             response = await call_next(request)
+        if path.startswith("/api/") and request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+            excluded = {"/api/auth/login", "/api/auth/register"}
+            if path not in excluded:
+                with service.db.session(include_all_organizations=True) as session:
+                    session.add(
+                        AdministrativeAudit(
+                            organization_id=organization_id,
+                            actor_user_id=identity.user_id if identity else None,
+                            actor_kind="authenticated_user" if identity else "anonymous_development",
+                            scope="platform" if platform_path else "organization",
+                            action=path.removeprefix("/api/")[:120],
+                            method=request.method,
+                            path=path[:2000],
+                            result="succeeded" if response.status_code < 400 else "failed",
+                            response_status=response.status_code,
+                        )
+                    )
+                    session.commit()
         response.headers["X-Content-Type-Options"] = "nosniff"
         return response
 
@@ -489,6 +502,26 @@ def create_app(
     @app.get("/api/admin/connectors")
     def connector_schedules():
         return service.connector_schedule_status()
+
+    @app.get("/api/admin/status")
+    async def platform_status():
+        return await service.platform_status()
+
+    @app.get("/api/admin/prompts")
+    def platform_prompts():
+        return service.platform_prompt_configuration()
+
+    @app.patch("/api/admin/prompts")
+    def update_platform_prompts(data: PromptSettingsInput):
+        return service.save_platform_prompt_settings(data)
+
+    @app.delete("/api/admin/prompts")
+    def reset_platform_prompts():
+        return service.reset_platform_prompt_settings()
+
+    @app.get("/api/organization/status")
+    def organization_status():
+        return service.organization_status()
 
     @app.put("/api/admin/connectors/{connector}/{stream}")
     def update_connector_schedule(

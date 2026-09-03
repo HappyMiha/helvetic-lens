@@ -20,6 +20,7 @@ import {
   ScrollText,
   Settings2,
   ShieldCheck,
+  SlidersHorizontal,
   Sparkles,
   Users,
 } from "lucide-react";
@@ -134,6 +135,15 @@ export function Shell({
           </Link>
           {isPlatformAdmin && (
             <Link
+              className={"nav-item " + (pathname === "/admin" ? "active" : "")}
+              href="/admin"
+            >
+              <SlidersHorizontal size={17} />
+              Platform admin
+            </Link>
+          )}
+          {isPlatformAdmin && (
+            <Link
               className={"nav-item " + (pathname === "/connectors" ? "active" : "")}
               href="/connectors"
             >
@@ -141,13 +151,15 @@ export function Shell({
               Source sync
             </Link>
           )}
-          <Link
-            className={"nav-item " + (pathname === "/models" ? "active" : "")}
-            href="/models"
-          >
-            <PackageOpen size={17} />
-            Local models
-          </Link>
+          {isPlatformAdmin && (
+            <Link
+              className={"nav-item " + (pathname === "/models" ? "active" : "")}
+              href="/models"
+            >
+              <PackageOpen size={17} />
+              Local models
+            </Link>
+          )}
           <AdminOnly>
             <button className="nav-item" onClick={() => setProfileOpen(true)}>
               <Building2 size={17} />
@@ -170,7 +182,7 @@ export function Shell({
           </Link>
         </nav>
         <div className="sidebar-bottom">
-          <Link className="model-card" href="/models">
+          <Link className="model-card" href={isPlatformAdmin ? "/models" : "/settings"}>
             <Sparkles size={17} />
             <div>
               <strong>Apertus settings</strong>
@@ -238,7 +250,8 @@ export function Shell({
           <Link href="/">Overview</Link>
           <Link href="/sources">Sources</Link>
           <Link href="/activity">Activity</Link>
-          <Link href="/models">Models</Link>
+          {isPlatformAdmin && <Link href="/admin">Admin</Link>}
+          {isPlatformAdmin && <Link href="/models">Models</Link>}
           <Link href="/logs">Logs</Link>
           <Link href="/prompts">Prompts</Link>
           <Link href="/settings">Settings</Link>

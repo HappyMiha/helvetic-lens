@@ -50,6 +50,13 @@ class Settings(BaseSettings):
         default=ROOT / "data",
         validation_alias=AliasChoices("HELVETIC_LENS_DATA_DIR", "REGWATCH_DATA_DIR"),
     )
+    credential_encryption_key: SecretStr = Field(
+        default=SecretStr(""),
+        validation_alias=AliasChoices(
+            "HELVETIC_LENS_CREDENTIAL_KEY",
+            "CREDENTIAL_ENCRYPTION_KEY",
+        ),
+    )
     apertus_provider: Literal["custom", "docker", "infomaniak"] = "docker"
     apertus_product_id: str = Field(default="", pattern=r"^\d*$")
     apertus_base_url: str = ""

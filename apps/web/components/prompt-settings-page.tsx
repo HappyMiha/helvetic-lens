@@ -82,29 +82,34 @@ function editable(settings: PromptSettings): EditablePrompt {
   };
 }
 
-export function PromptSettingsPage() {
-  const { canManage } = useAuth();
-  const configuration = useResource<PromptSettings>("/settings/prompts");
+export function PromptSettingsPage({ platformScope = false }: { platformScope?: boolean }) {
+  const { canManage, isPlatformAdmin } = useAuth();
+  const allowed = platformScope ? isPlatformAdmin : canManage;
+  const endpoint = platformScope ? "/admin/prompts" : "/settings/prompts";
+  const configuration = useResource<PromptSettings>(endpoint);
   return (
     <Shell section="Prompt settings" wide>
       <div className="page-heading">
         <div>
-          <span className="eyebrow">AI BEHAVIOUR</span>
-          <h1>Prompt settings</h1>
+          <span className="eyebrow">{platformScope ? "PLATFORM DEFAULT · LOCAL SERVER" : "ORGANIZATION OVERRIDE"}</span>
+          <h1>{platformScope ? "Global prompt defaults" : "Organization prompt settings"}</h1>
           <p className="muted m-0">
             Change how impact assessments and document answers are written.
-            Every saved revision creates a new AI cache boundary while older
-            conclusions remain in history.
+            {platformScope
+              ? "Organizations without their own override inherit these defaults. Existing organization overrides remain unchanged."
+              : "Every saved revision creates a new AI cache boundary while older conclusions remain in history."}
           </p>
         </div>
         <FileText className="muted" size={29} />
       </div>
       <ErrorNote message={configuration.error} />
       {configuration.data ? (
-        <fieldset disabled={!canManage} className={canManage ? "border-0 p-0 m-0" : "border-0 p-0 m-0 viewer-settings"}><PromptForm
+        <fieldset disabled={!allowed} className={allowed ? "border-0 p-0 m-0" : "border-0 p-0 m-0 viewer-settings"}><PromptForm
           key={configuration.data.fingerprint}
           initial={configuration.data}
           onSaved={configuration.setData}
+          endpoint={endpoint}
+          platformScope={platformScope}
         /></fieldset>
       ) : (
         !configuration.error && (
@@ -120,9 +125,13 @@ export function PromptSettingsPage() {
 function PromptForm({
   initial,
   onSaved,
+  endpoint,
+  platformScope,
 }: {
   initial: PromptSettings;
   onSaved: (value: PromptSettings) => void;
+  endpoint: string;
+  platformScope: boolean;
 }) {
   const [draft, setDraft] = useState<EditablePrompt>(() => editable(initial));
   const [busy, setBusy] = useState("");
@@ -145,7 +154,7 @@ function PromptForm({
     setBusy("save");
     setError("");
     try {
-      const value = await api<PromptSettings>("/settings/prompts", {
+      const value = await api<PromptSettings>(endpoint, {
         method: "PATCH",
         body: JSON.stringify(draft),
       });
@@ -166,13 +175,17 @@ function PromptForm({
     setBusy("reset");
     setError("");
     try {
-      const value = await api<PromptSettings>("/settings/prompts/reset", {
-        method: "POST",
+      const value = await api<PromptSettings>(platformScope ? endpoint : "/settings/prompts/reset", {
+        method: platformScope ? "DELETE" : "POST",
       });
       onSaved(value);
       setDraft(editable(value));
       setResetOpen(false);
-      setNotice("Default prompts restored. Existing AI history was kept.");
+      setNotice(
+        platformScope
+          ? "Built-in platform defaults restored. Existing AI history was kept."
+          : "Platform defaults restored for this organization. Existing AI history was kept.",
+      );
       refreshWorkspace();
     } catch (cause) {
       setError(errorText(cause));

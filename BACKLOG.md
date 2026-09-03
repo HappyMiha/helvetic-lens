@@ -85,7 +85,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-044](#hl-044) | P1       | DONE     | HL-036, HL-039–HL-043                                  | Evidence-backed relation graph and candidate generation             |
 | [HL-045](#hl-045) | P1       | PLANNED  | HL-032, HL-044, HL-060, HL-061                         | Local-AI potential-impact analysis                                  |
 | [HL-046](#hl-046) | P1       | PLANNED  | HL-037, HL-045, HL-063                                 | Impact inbox and monitored-law cross-links                          |
-| [HL-047](#hl-047) | P1       | PLANNED  | HL-031, HL-035, HL-042                                 | Platform and organization admin console                             |
+| [HL-047](#hl-047) | P1       | DONE     | HL-031, HL-035, HL-042                                 | Platform and organization admin console                             |
 | [HL-048](#hl-048) | P0       | PLANNED  | HL-029–HL-035, HL-038                                  | Public single-server deployment and operations baseline             |
 | [HL-049](#hl-049) | P0       | PLANNED  | HL-037–HL-048, HL-057–HL-064                           | Reproducible recovery and 100-user capacity gate                    |
 | [HL-057](#hl-057) | P1       | PLANNED  | HL-032, HL-034–HL-037, HL-045–HL-047                   | Complete German, French, Italian, Romansh, and English localization |
@@ -997,6 +997,8 @@ Acceptance criteria:
 ### HL-047 — Build separate platform and organization administration surfaces
 
 Expose the controls needed to operate one public installation while keeping organization administrators inside their own workspace.
+
+**Status: DONE.** `/admin` now provides a bounded installation control room for services, connectors, durable queues, failures, local-model/GPU slots, benchmark readiness, disk/retention, backup presence, resources, and administrative outcomes, with links to the existing detailed controls. `/organization` provides the active workspace's members/invitations, watchlists/sources, company profile, prompt override, local-or-cloud AI mode, saved AI usage, and quotas. All `/api/admin/*` reads and writes require platform-admin authority when authentication is enabled. Organization prompts inherit editable platform defaults until overridden. Provider tokens are write-only AES-256-GCM ciphertext keyed by `HELVETIC_LENS_CREDENTIAL_KEY` (or a persisted local-development volume key), and legacy plaintext is migrated at startup. Every non-auth API mutation records bounded actor/scope/time/result metadata without request bodies. See [docs/ADMINISTRATION.md](docs/ADMINISTRATION.md).
 
 Acceptance criteria:
 

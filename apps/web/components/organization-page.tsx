@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Copy, Loader2, Shield, Trash2, UserRoundPlus, Users } from "lucide-react";
+import Link from "next/link";
+import { Bot, Check, Copy, FileText, Globe2, Loader2, Shield, Trash2, UserRoundPlus, Users } from "lucide-react";
 import { Shell } from "./shell";
 import { useAuth } from "./auth-gate";
 import { ErrorNote, SuccessNote } from "./common";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { api, errorText, refreshWorkspace, useResource } from "@/lib/api";
+import type { OrganizationStatus } from "@/lib/types";
 
 type Member = {
   id: string;
@@ -32,6 +34,9 @@ export function OrganizationPage() {
   const { data: invitations, reload: reloadInvitations } = useResource<Invitation[]>(
     session?.authenticated && canManage ? "/organization/invitations" : null,
   );
+  const { data: organizationStatus, reload: reloadStatus } = useResource<OrganizationStatus>(
+    session?.authenticated ? "/organization/status" : null,
+  );
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"viewer" | "organization_admin">("viewer");
   const [inviteToken, setInviteToken] = useState("");
@@ -53,6 +58,7 @@ export function OrganizationPage() {
       setSuccess(message);
       reloadMembers();
       reloadInvitations();
+      reloadStatus();
       refreshWorkspace();
       return true;
     } catch (cause) {
@@ -107,6 +113,30 @@ export function OrganizationPage() {
       </div>
       <ErrorNote message={error} />
       {success && <SuccessNote>{success}</SuccessNote>}
+
+      {organizationStatus && (
+        <>
+          <section className="stats-grid mb-5">
+            <div className="stat-card"><span className="eyebrow">MONITORED</span><strong>{organizationStatus.workspace.active_watches}</strong><small>Active laws and documents</small></div>
+            <div className="stat-card"><span className="eyebrow">TEAM</span><strong>{organizationStatus.workspace.members}</strong><small>{organizationStatus.workspace.pending_invitations} pending invitations</small></div>
+            <div className="stat-card"><span className="eyebrow">AI EXECUTION</span><strong>{organizationStatus.ai.execution === "local" ? "Local" : "Cloud opt-in"}</strong><small>{organizationStatus.ai.provider} · credentials {organizationStatus.ai.credential_configured ? "configured" : "not required"}</small></div>
+            <div className="stat-card"><span className="eyebrow">PROMPTS</span><strong>Revision {organizationStatus.prompts.revision}</strong><small>{organizationStatus.prompts.source === "organization_override" ? "Organization override" : "Platform default"}</small></div>
+          </section>
+          {canManage && (
+            <section className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+              <Link href="/sources" className="card p-5 hover:border-primary"><Globe2 className="text-primary mb-3" size={20} /><strong className="block">Watchlist & sources</strong><small className="muted">Add, pause, edit or remove monitored sources.</small></Link>
+              <Link href="/prompts" className="card p-5 hover:border-primary"><FileText className="text-primary mb-3" size={20} /><strong className="block">Prompt override</strong><small className="muted">Change AI behaviour for this organization only.</small></Link>
+              <Link href="/settings" className="card p-5 hover:border-primary"><Bot className="text-primary mb-3" size={20} /><strong className="block">AI provider</strong><small className="muted">Local by default; cloud transfer requires explicit opt-in.</small></Link>
+              <button type="button" onClick={() => document.querySelector<HTMLButtonElement>(".workspace")?.click()} className="card p-5 text-left hover:border-primary"><Shield className="text-primary mb-3" size={20} /><strong className="block">Company profile</strong><small className="muted">Context used to personalize impact analysis.</small></button>
+            </section>
+          )}
+          <section className="card p-5 mb-5 grid sm:grid-cols-3 gap-4 text-sm">
+            <div><span className="eyebrow">SAVED AI WORK</span><strong className="block mt-2">{organizationStatus.ai.analyses} analyses · {organizationStatus.ai.questions} answers</strong></div>
+            <div><span className="eyebrow">RECORDED TOKENS</span><strong className="block mt-2">{Object.values(organizationStatus.ai.token_counts).reduce((sum, value) => sum + value, 0).toLocaleString()}</strong></div>
+            <div><span className="eyebrow">QUOTAS</span><strong className="block mt-2">{Object.keys(organizationStatus.quotas).length ? "Configured" : "Installation defaults"}</strong></div>
+          </section>
+        </>
+      )}
 
       {session?.organizations && session.organizations.length > 1 && (
         <section className="card p-6 mb-5">

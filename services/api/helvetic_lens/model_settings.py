@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from datetime import UTC
 from typing import Literal
 from urllib.parse import urlsplit
@@ -88,10 +89,15 @@ class ApertusSettingsInput(BaseModel):
 
 
 def resolve_key(
-    environment: Settings, record: ApertusConfiguration | None, data: ApertusSettingsInput | None
+    environment: Settings,
+    record: ApertusConfiguration | None,
+    data: ApertusSettingsInput | None,
+    decrypt_secret: Callable[[str | None], str] | None = None,
 ):
     source = record.key_source if record else "environment"
     stored_key = record.api_key if record else None
+    if source == "saved" and stored_key and decrypt_secret:
+        stored_key = decrypt_secret(stored_key)
     if data:
         if data.key_action == "replace":
             source, stored_key = "saved", data.api_key.get_secret_value()
@@ -105,10 +111,13 @@ def resolve_key(
 
 
 def resolved_settings(
-    environment: Settings, record: ApertusConfiguration | None, data: ApertusSettingsInput | None = None
+    environment: Settings,
+    record: ApertusConfiguration | None,
+    data: ApertusSettingsInput | None = None,
+    decrypt_secret: Callable[[str | None], str] | None = None,
 ) -> Settings:
     values = data.public_values() if data else record.values if record else {}
-    _, _, key = resolve_key(environment, record, data)
+    _, _, key = resolve_key(environment, record, data, decrypt_secret)
     provider = values.get("provider", environment.apertus_provider)
     if provider == "docker":
         # The reachable address changes when the API moves between the host and Compose.

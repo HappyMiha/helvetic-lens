@@ -274,8 +274,31 @@ function ApertusForm({
       api_key: keyAction === "replace" ? apiKey : "",
     });
   }
+  function confirmNewCloudDestination(action: string) {
+    if (draft.provider === "docker") return true;
+    const nextBase = draft.provider === "infomaniak"
+      ? infomaniakBaseUrl(draft.product_id)
+      : draft.base_url;
+    const newlySelected =
+      initial.provider === "docker" ||
+      initial.provider !== draft.provider ||
+      initial.base_url !== nextBase;
+    return (
+      !newlySelected ||
+      window.confirm(
+        `${action} will contact the newly selected cloud AI provider. The connection check sends only a small test prompt, not a monitored document. Continue?`,
+      )
+    );
+  }
   async function save(event: React.FormEvent) {
     event.preventDefault();
+    if (
+      draft.provider !== "docker" &&
+      (initial.provider === "docker" || initial.provider !== draft.provider) &&
+      !window.confirm(
+        "Enable this cloud AI provider for the organization? Future impact analyses and questions may send bounded saved-document evidence to this destination.",
+      )
+    ) return;
     setBusy("save");
     setError("");
     try {
@@ -296,6 +319,7 @@ function ApertusForm({
   }
   async function test() {
     if (!formRef.current?.reportValidity()) return;
+    if (!confirmNewCloudDestination("Test connection")) return;
     setBusy("test");
     setError("");
     setTestResult(null);
@@ -313,6 +337,7 @@ function ApertusForm({
   }
   async function loadModels() {
     if (!formRef.current?.reportValidity()) return;
+    if (!confirmNewCloudDestination("Load models")) return;
     setBusy("models");
     setError("");
     setModelsMessage("");

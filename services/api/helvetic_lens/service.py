@@ -1,6 +1,7 @@
 import asyncio
 import hashlib
 import logging
+import shutil
 import threading
 import time
 from contextlib import contextmanager
@@ -9,6 +10,8 @@ from datetime import UTC, date, datetime
 from pathlib import PurePosixPath
 from urllib.parse import urlsplit
 
+from redis import Redis
+from redis.exceptions import RedisError
 from sqlalchemy import delete, func, inspect, or_, select
 from sqlalchemy.orm import Session
 
@@ -17,6 +20,7 @@ from . import jobs as durable_jobs
 from . import synchronization
 from .config import DomainError, Settings
 from .connectors import CONNECTOR_CONTRACT_VERSION, ConnectorRunner
+from .credential_crypto import CredentialCipher
 from .db import Database, utcnow
 from .diffing import DIFF_SCHEMA_VERSION, compare_passages
 from .extraction import (
@@ -40,10 +44,12 @@ from .model_manager_client import ModelManagerClient
 from .model_settings import ApertusSettingsInput, public_settings, resolve_key, resolved_settings
 from .models import (
     LEGACY_ORGANIZATION_ID,
+    AdministrativeAudit,
     Analysis,
     ApertusConfiguration,
     AskRecord,
     Comparison,
+    ConnectorState,
     DocumentWatch,
     IdentityDecision,
     IntegrationLog,
@@ -53,8 +59,11 @@ from .models import (
     LegacyDocumentMapping,
     Observation,
     Organization,
+    OrganizationInvitation,
+    OrganizationMembership,
     OrganizationQuota,
     OutboxMessage,
+    PlatformPromptConfiguration,
     Profile,
     PromptConfiguration,
     PromptRevision,
@@ -68,6 +77,7 @@ from .models import (
     Scan,
     ScanItem,
     Source,
+    User,
     Version,
 )
 from .official_notices_connector import ParliamentNoticeConnector
@@ -139,6 +149,7 @@ class HelveticLens:
         self.default_organization_id = organization_id
         self.organization_name = organization_name
         self.db = Database(settings, organization_id)
+        self.credential_cipher = CredentialCipher(settings)
         self.integration_logger = IntegrationLogger(self.db.session)
         self.regulatory_corpus = RegulatoryCorpus()
         self.connector_runner = ConnectorRunner(self.db, self.regulatory_corpus, settings)
@@ -205,7 +216,12 @@ class HelveticLens:
         with self.db.session() as session:
             model_record = session.get(ApertusConfiguration, self.tenant_record_id)
             prompt_record = session.get(PromptConfiguration, self.tenant_record_id)
-            settings = resolved_settings(self.environment_settings, model_record)
+            platform_prompt = session.get(PlatformPromptConfiguration, "default")
+            settings = resolved_settings(
+                self.environment_settings,
+                model_record,
+                decrypt_secret=self.credential_cipher.decrypt,
+            )
             # A caller-supplied model client (tests and embedded deployments) may
             # also adjust its matching fallback settings at runtime. Preserve that
             # pair for the legacy developer workspace when no persisted provider
@@ -216,8 +232,9 @@ class HelveticLens:
                 and model_record is None
             ):
                 settings = self._fallback_settings
-            prompts = resolved_prompt_settings(prompt_record)
-            revision = prompt_record.revision if prompt_record else 1
+            effective_prompt = prompt_record or platform_prompt
+            prompts = resolved_prompt_settings(effective_prompt)
+            revision = effective_prompt.revision if effective_prompt else 1
         client = (
             self._fallback_model_client
             if self._provided_model_client
@@ -258,6 +275,19 @@ class HelveticLens:
 
     def initialize(self):
         self.db.migrate()
+        with self.db.session(include_all_organizations=True) as session:
+            changed = False
+            for record in session.scalars(select(ApertusConfiguration)):
+                if (
+                    record.key_source == "saved"
+                    and record.api_key
+                    and not self.credential_cipher.is_encrypted(record.api_key)
+                ):
+                    record.api_key = self.credential_cipher.encrypt(record.api_key)
+                    record.updated_at = utcnow()
+                    changed = True
+            if changed:
+                session.commit()
         with self.db.session() as session:
             if not session.get(Organization, self.organization_id):
                 session.add(
@@ -330,10 +360,18 @@ class HelveticLens:
             session.commit()
             saved = session.get(ApertusConfiguration, self.tenant_record_id)
             if saved:
-                self.apply_model_settings(resolved_settings(self.environment_settings, saved))
+                self.apply_model_settings(
+                    resolved_settings(
+                        self.environment_settings,
+                        saved,
+                        decrypt_secret=self.credential_cipher.decrypt,
+                    )
+                )
             prompt_record = session.get(PromptConfiguration, self.tenant_record_id)
-            self.prompt_settings = resolved_prompt_settings(prompt_record)
-            self.prompt_revision = prompt_record.revision if prompt_record else 1
+            platform_prompt = session.get(PlatformPromptConfiguration, "default")
+            effective_prompt = prompt_record or platform_prompt
+            self.prompt_settings = resolved_prompt_settings(effective_prompt)
+            self.prompt_revision = effective_prompt.revision if effective_prompt else 1
             for version in session.scalars(select(Version)):
                 law = session.get(Law, version.law_id)
                 if law:
@@ -415,13 +453,24 @@ class HelveticLens:
     def save_model_settings(self, data: ApertusSettingsInput):
         with self.write_guard, self.db.session() as session:
             saved = session.get(ApertusConfiguration, self.tenant_record_id)
-            next_settings = resolved_settings(self.environment_settings, saved, data)
-            key_source, stored_key, _ = resolve_key(self.environment_settings, saved, data)
+            next_settings = resolved_settings(
+                self.environment_settings,
+                saved,
+                data,
+                decrypt_secret=self.credential_cipher.decrypt,
+            )
+            key_source, stored_key, _ = resolve_key(
+                self.environment_settings,
+                saved,
+                data,
+                self.credential_cipher.decrypt,
+            )
             if saved is None:
                 saved = ApertusConfiguration(id=self.tenant_record_id)
                 session.add(saved)
             saved.values = data.public_values()
-            saved.key_source, saved.api_key = key_source, stored_key
+            saved.key_source = key_source
+            saved.api_key = self.credential_cipher.encrypt(stored_key) if key_source == "saved" else None
             saved.updated_at = utcnow()
             session.commit()
             self.apply_model_settings(next_settings)
@@ -439,7 +488,11 @@ class HelveticLens:
     def prompt_configuration(self):
         with self.db.session() as session:
             record = session.get(PromptConfiguration, self.tenant_record_id)
-            return public_prompt_settings(self.prompt_settings, record)
+            platform = session.get(PlatformPromptConfiguration, "default")
+            effective_record = record or platform
+            result = public_prompt_settings(self.prompt_settings, effective_record)
+            source = "workspace" if record else "platform_default" if platform else "defaults"
+            return {**result, "source": source}
 
     def save_prompt_settings(self, data: PromptSettingsInput):
         with self.write_guard, self.db.session() as session:
@@ -466,18 +519,56 @@ class HelveticLens:
             if record:
                 session.delete(record)
                 session.commit()
-            self.prompt_settings = default_prompt_settings()
-            self.prompt_revision = 1
+            platform = session.get(PlatformPromptConfiguration, "default")
+            effective = resolved_prompt_settings(platform)
+            revision = platform.revision if platform else 1
+            self.prompt_settings = effective
+            self.prompt_revision = revision
             if self.organization_id == self.default_organization_id:
-                self._fallback_prompt_settings = default_prompt_settings()
-                self._fallback_prompt_revision = 1
-            return public_prompt_settings(self.prompt_settings, None)
+                self._fallback_prompt_settings = effective
+                self._fallback_prompt_revision = revision
+            result = public_prompt_settings(effective, platform)
+            return {**result, "source": "platform_default" if platform else "defaults"}
+
+    def platform_prompt_configuration(self):
+        with self.db.session(include_all_organizations=True) as session:
+            record = session.get(PlatformPromptConfiguration, "default")
+            result = public_prompt_settings(resolved_prompt_settings(record), record)
+            return {**result, "scope": "platform_default"}
+
+    def save_platform_prompt_settings(self, data: PromptSettingsInput):
+        with self.write_guard, self.db.session(include_all_organizations=True) as session:
+            record = session.get(PlatformPromptConfiguration, "default")
+            if record is None:
+                record = PlatformPromptConfiguration(id="default", revision=1)
+                session.add(record)
+            else:
+                record.revision += 1
+            record.values = data.model_dump()
+            record.updated_at = utcnow()
+            session.commit()
+            result = public_prompt_settings(resolved_prompt_settings(record), record)
+            return {**result, "scope": "platform_default"}
+
+    def reset_platform_prompt_settings(self):
+        with self.write_guard, self.db.session(include_all_organizations=True) as session:
+            record = session.get(PlatformPromptConfiguration, "default")
+            if record:
+                session.delete(record)
+                session.commit()
+            result = public_prompt_settings(default_prompt_settings(), None)
+            return {**result, "scope": "built_in_default"}
 
     async def test_model_settings(self, data: ApertusSettingsInput | None = None):
         if data is not None:
             with self.db.session() as session:
                 saved = session.get(ApertusConfiguration, self.tenant_record_id)
-                settings = resolved_settings(self.environment_settings, saved, data)
+                settings = resolved_settings(
+                    self.environment_settings,
+                    saved,
+                    data,
+                    decrypt_secret=self.credential_cipher.decrypt,
+                )
             model_client = ai.ModelClient(settings, self.integration_logger)
         else:
             settings, model_client = self.settings, self.model_client
@@ -504,7 +595,12 @@ class HelveticLens:
     async def list_model_settings(self, data: ApertusSettingsInput):
         with self.db.session() as session:
             saved = session.get(ApertusConfiguration, self.tenant_record_id)
-            settings = resolved_settings(self.environment_settings, saved, data)
+            settings = resolved_settings(
+                self.environment_settings,
+                saved,
+                data,
+                decrypt_secret=self.credential_cipher.decrypt,
+            )
         models = await ai.ModelClient(settings, self.integration_logger).models()
         return {
             "provider": settings.apertus_provider,
@@ -1977,6 +2073,253 @@ class HelveticLens:
                 session.scalars(select(Job).order_by(Job.created_at.desc()).limit(max(1, min(200, limit))))
             )
             return [durable_jobs.serialize(session, record) for record in records]
+
+    @staticmethod
+    def _age_seconds(value: datetime | None, now: datetime) -> int | None:
+        if value is None:
+            return None
+        aware = value.replace(tzinfo=UTC) if value.tzinfo is None else value
+        return max(0, int((now - aware).total_seconds()))
+
+    async def platform_status(self):
+        now = utcnow()
+        active_states = ("queued", "dispatched", "running", "retrying", "waiting_for_model")
+        with self.db.session(include_all_organizations=True) as session:
+            job_counts = {
+                state: count
+                for state, count in session.execute(
+                    select(Job.state, func.count()).group_by(Job.state)
+                )
+            }
+            queue_counts = {
+                queue: count
+                for queue, count in session.execute(
+                    select(Job.queue, func.count())
+                    .where(Job.state.in_(active_states))
+                    .group_by(Job.queue)
+                )
+            }
+            oldest = session.scalar(
+                select(Job.created_at)
+                .where(Job.state.in_(active_states))
+                .order_by(Job.created_at)
+                .limit(1)
+            )
+            failures = [
+                {
+                    "id": record.id,
+                    "type": record.type,
+                    "queue": record.queue,
+                    "error": record.error_detail,
+                    "finished_at": record.finished_at.isoformat() if record.finished_at else None,
+                }
+                for record in session.scalars(
+                    select(Job).where(Job.state == "failed").order_by(Job.updated_at.desc()).limit(8)
+                )
+            ]
+            connectors = [
+                {
+                    "connector": item.connector,
+                    "stream": item.stream,
+                    "health": item.health,
+                    "message": item.health_message,
+                    "last_success_at": item.last_success_at.isoformat()
+                    if item.last_success_at
+                    else None,
+                    "freshness_seconds": self._age_seconds(item.last_success_at, now),
+                }
+                for item in session.scalars(
+                    select(ConnectorState).order_by(ConnectorState.connector, ConnectorState.stream)
+                )
+            ]
+            recent_audit = [
+                {
+                    "id": item.id,
+                    "scope": item.scope,
+                    "action": item.action,
+                    "result": item.result,
+                    "response_status": item.response_status,
+                    "actor_kind": item.actor_kind,
+                    "created_at": item.created_at.isoformat(),
+                }
+                for item in session.scalars(
+                    select(AdministrativeAudit).order_by(AdministrativeAudit.created_at.desc()).limit(12)
+                )
+            ]
+            resources = {
+                "organizations": session.scalar(select(func.count()).select_from(Organization)) or 0,
+                "users": session.scalar(select(func.count()).select_from(User)) or 0,
+                "memberships": session.scalar(select(func.count()).select_from(OrganizationMembership)) or 0,
+                "active_watches": session.scalar(
+                    select(func.count()).select_from(DocumentWatch).where(DocumentWatch.active.is_(True))
+                )
+                or 0,
+                "custom_sources": session.scalar(select(func.count()).select_from(Source)) or 0,
+            }
+
+        disk = shutil.disk_usage(self.environment_settings.storage_path)
+        backup_path = self.environment_settings.storage_path / "backups"
+        backup_files = sorted(
+            (path for path in backup_path.glob("*") if path.is_file()),
+            key=lambda path: path.stat().st_mtime,
+            reverse=True,
+        ) if backup_path.exists() else []
+        newest_backup = (
+            datetime.fromtimestamp(backup_files[0].stat().st_mtime, tz=UTC) if backup_files else None
+        )
+        def ping_redis():
+            client = Redis.from_url(
+                    self.environment_settings.redis_url,
+                    socket_connect_timeout=1,
+                    socket_timeout=1,
+                )
+            try:
+                return client.ping()
+            finally:
+                client.close()
+
+        try:
+            redis_ok = await asyncio.to_thread(ping_redis)
+        except RedisError:
+            redis_ok = False
+        try:
+            inventory = await self.model_manager.inventory()
+            deployment = inventory.get("deployment") or {}
+            hardware = inventory.get("hardware") or {}
+            model = {
+                "available": True,
+                "state": deployment.get("state", "stopped"),
+                "model_id": deployment.get("model_id"),
+                "available_slots": deployment.get("available_slots", 0),
+                "accepted_slots": deployment.get("accepted_slots", 0),
+                "cuda_devices": hardware.get("cuda_devices", []),
+                "ram_bytes": hardware.get("ram_bytes"),
+                "disk_free_bytes": hardware.get("disk_free_bytes"),
+                "probed_at": hardware.get("probed_at"),
+                "benchmark": deployment.get("benchmark")
+                or {
+                    "status": "required",
+                    "message": "Run the target-host stability benchmark before public use.",
+                },
+            }
+        except DomainError as exc:
+            model = {"available": False, "state": "unavailable", "error": exc.message}
+        return {
+            "scope": "platform",
+            "generated_at": now.isoformat(),
+            "services": {
+                "api": "healthy",
+                "database": "healthy",
+                "redis": "healthy" if redis_ok else "unavailable",
+                "model_manager": "healthy" if model["available"] else "unavailable",
+            },
+            "resources": resources,
+            "jobs": {
+                "states": job_counts,
+                "queues": queue_counts,
+                "oldest_active_age_seconds": self._age_seconds(oldest, now),
+                "dead_letters": job_counts.get("failed", 0),
+                "recent_failures": failures,
+            },
+            "connectors": connectors,
+            "model": model,
+            "storage": {
+                "total_bytes": disk.total,
+                "free_bytes": disk.free,
+                "used_bytes": disk.used,
+                "retention": {
+                    "document_evidence": "immutable",
+                    "integration_logs": "manual_cleanup",
+                    "candidate_ttl_days": self.environment_settings.relation_candidate_ttl_days,
+                },
+            },
+            "backup": {
+                "configured": backup_path.exists(),
+                "latest_at": newest_backup.isoformat() if newest_backup else None,
+                "age_seconds": self._age_seconds(newest_backup, now),
+                "file_count": len(backup_files),
+                "status": "available" if newest_backup else "not_configured",
+            },
+            "recent_audit": recent_audit,
+        }
+
+    def organization_status(self):
+        now = utcnow()
+        with self.db.session() as session:
+            quota = session.scalar(select(OrganizationQuota))
+            profile = session.scalar(select(Profile))
+            prompt = session.scalar(select(PromptConfiguration))
+            platform_prompt = session.get(PlatformPromptConfiguration, "default")
+            model_record = session.scalar(select(ApertusConfiguration))
+            analyses = list(session.scalars(select(Analysis).order_by(Analysis.created_at.desc()).limit(500)))
+            questions = list(session.scalars(select(AskRecord).order_by(AskRecord.created_at.desc()).limit(500)))
+            token_counts: dict[str, int] = {}
+            for record in [*analyses, *questions]:
+                for key, value in (record.provenance or {}).get("token_counts", {}).items():
+                    if isinstance(value, int):
+                        token_counts[key] = token_counts.get(key, 0) + value
+            recent_audit = [
+                {
+                    "action": item.action,
+                    "result": item.result,
+                    "response_status": item.response_status,
+                    "created_at": item.created_at.isoformat(),
+                }
+                for item in session.scalars(
+                    select(AdministrativeAudit)
+                    .where(AdministrativeAudit.organization_id == self.organization_id)
+                    .order_by(AdministrativeAudit.created_at.desc())
+                    .limit(8)
+                )
+            ]
+            settings = public_settings(self.settings, model_record)
+            return {
+                "scope": "organization",
+                "generated_at": now.isoformat(),
+                "workspace": {
+                    "members": session.scalar(
+                        select(func.count()).select_from(OrganizationMembership)
+                    )
+                    or 0,
+                    "pending_invitations": session.scalar(
+                        select(func.count())
+                        .select_from(OrganizationInvitation)
+                        .where(
+                            OrganizationInvitation.accepted_at.is_(None),
+                            OrganizationInvitation.revoked_at.is_(None),
+                            OrganizationInvitation.expires_at > now,
+                        )
+                    )
+                    or 0,
+                    "active_watches": session.scalar(
+                        select(func.count())
+                        .select_from(DocumentWatch)
+                        .where(DocumentWatch.active.is_(True))
+                    )
+                    or 0,
+                    "custom_sources": session.scalar(select(func.count()).select_from(Source)) or 0,
+                },
+                "profile": {
+                    "name": profile.name if profile else "",
+                    "revision": profile.revision if profile else 0,
+                    "complete": bool(profile and profile.description.strip()),
+                },
+                "prompts": {
+                    "source": "organization_override" if prompt else "platform_default",
+                    "revision": prompt.revision if prompt else platform_prompt.revision if platform_prompt else 1,
+                },
+                "ai": {
+                    "provider": settings["provider"],
+                    "execution": "local" if settings["provider"] == "docker" else "cloud",
+                    "cloud_opt_in": settings["provider"] != "docker",
+                    "credential_configured": settings["api_key_configured"],
+                    "analyses": len(analyses),
+                    "questions": len(questions),
+                    "token_counts": token_counts,
+                },
+                "quotas": quota.values if quota else {},
+                "recent_audit": recent_audit,
+            }
 
     def cancel_job(self, job_id: str):
         with self.write_guard, self.db.session() as session:

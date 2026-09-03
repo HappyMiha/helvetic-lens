@@ -93,6 +93,21 @@ class SecurityEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
 
 
+class AdministrativeAudit(Base):
+    __tablename__ = "administrative_audit"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str | None] = mapped_column(ForeignKey("organizations.id"), index=True)
+    actor_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), index=True)
+    actor_kind: Mapped[str] = mapped_column(String(40), default="authenticated_user")
+    scope: Mapped[str] = mapped_column(String(30), index=True)
+    action: Mapped[str] = mapped_column(String(120), index=True)
+    method: Mapped[str] = mapped_column(String(10))
+    path: Mapped[str] = mapped_column(Text)
+    result: Mapped[str] = mapped_column(String(20), index=True)
+    response_status: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
 class DocumentWatch(Base):
     __tablename__ = "document_watches"
     __table_args__ = (
@@ -573,7 +588,7 @@ class ApertusConfiguration(Base):
     id: Mapped[str] = mapped_column(String(80), primary_key=True, default="default")
     organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), unique=True, index=True)
     values: Mapped[dict] = mapped_column(JSON, default=dict)
-    # A workspace credential stays on the server and is never serialized to clients.
+    # AES-GCM ciphertext stays on the server and is never serialized to clients.
     api_key: Mapped[str | None] = mapped_column(Text)
     key_source: Mapped[str] = mapped_column(String(30), default="environment")
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
@@ -583,6 +598,14 @@ class PromptConfiguration(Base):
     __tablename__ = "prompt_configuration"
     id: Mapped[str] = mapped_column(String(80), primary_key=True, default="default")
     organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), unique=True, index=True)
+    values: Mapped[dict] = mapped_column(JSON, default=dict)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class PlatformPromptConfiguration(Base):
+    __tablename__ = "platform_prompt_configuration"
+    id: Mapped[str] = mapped_column(String(80), primary_key=True, default="default")
     values: Mapped[dict] = mapped_column(JSON, default=dict)
     revision: Mapped[int] = mapped_column(Integer, default=1)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

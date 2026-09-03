@@ -290,7 +290,11 @@ function ModelCard({
             {model.installed && !model.active && (
               <Button
                 variant="outline"
-                onClick={() => command(model, "remove")}
+                onClick={() =>
+                  window.confirm(
+                    `Remove the verified local artifact for ${model.display_name}? It must be downloaded and verified again before use.`,
+                  ) && command(model, "remove")
+                }
                 disabled={!!busy}
               >
                 <Trash2 /> Remove
