@@ -222,6 +222,7 @@ The Windows agent's default pytest temporary directory had a permission conflict
 - Replicated acceptance requires two visible CUDA devices, at least two accepted slots, and two distinct runner slots. Split fallback requires two visible CUDA devices, exactly one accepted slot, and one observed runner slot; its report is explicitly non-equivalent to replicated acceptance.
 - A mismatched profile, wrong GPU, missing replica, failed representative call, or failed concurrent call still produces a diagnostic JSON report but exits nonzero so automation cannot promote the model.
 - Deterministic regressions cover valid replicated, valid split, valid GTX 1070 development, repeated-slot, wrong-profile, wrong-GPU, and failed-call cases. Physical dual-GTX-1080 execution remains required to close HL-032.
+- A fresh live v2 control run on the attached GTX 1070 passed all seven gate checks: 20/20 representative and 2/2 serialized concurrent calls, 20/20 schema and citation validation, no timeout or OOM, 977 ms median latency, 64.25 tokens/second median throughput, and a 3,078-token maximum tested prompt. Its explicit `dev-1070` requirement prevents the report from being used as dual-GPU promotion evidence.
 
 ## Public single-server boundary — 3 September 2026
 

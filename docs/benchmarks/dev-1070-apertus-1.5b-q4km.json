@@ -1,6 +1,6 @@
 {
-  "benchmark": "HL-032-local-structured-v1",
-  "created_at": "2026-09-03T01:19:55.526892+00:00",
+  "benchmark": "HL-032-local-structured-v2",
+  "created_at": "2026-09-03T18:53:06.001648+00:00",
   "deployment": {
     "model_id": "apertus-1.5b-q4km",
     "served_model_id": "apertus-1.5b-q4km",
@@ -17,8 +17,8 @@
       "max_tokens": 700,
       "parallel_per_runner": 1
     },
-    "started_at": "2026-09-03T01:19:00.408670+00:00",
-    "ready_at": "2026-09-03T01:19:21.138635+00:00",
+    "started_at": "2026-09-03T18:43:15.998213+00:00",
+    "ready_at": "2026-09-03T18:43:18.165330+00:00",
     "runners": [
       {
         "slot": "gpu-0",
@@ -29,10 +29,10 @@
     ]
   },
   "hardware": {
-    "probed_at": "2026-09-03T01:18:38.768090+00:00",
+    "probed_at": "2026-09-03T16:56:45.757310+00:00",
     "ram_bytes": 16726544384,
     "disk_total_bytes": 1081101176832,
-    "disk_free_bytes": 1002706771968,
+    "disk_free_bytes": 993833947136,
     "cuda_devices": [
       {
         "index": 0,
@@ -52,8 +52,8 @@
     "citation_valid": 20,
     "timeouts": 0,
     "oom": 0,
-    "latency_ms_median": 976.0,
-    "tokens_per_second_median": 62.92,
+    "latency_ms_median": 977.0,
+    "tokens_per_second_median": 64.25,
     "maximum_stable_prompt_tokens": 3078,
     "samples": [
       {
@@ -61,12 +61,12 @@
         "ok": true,
         "schema_valid": true,
         "citation_valid": true,
-        "latency_ms": 640.0,
+        "latency_ms": 781.0,
         "queue_wait_ms": 0.03,
         "slot": "gpu-0",
         "prompt_tokens": 77,
         "completion_tokens": 42,
-        "tokens_per_second": 79.72481327865378,
+        "tokens_per_second": 72.48465004941333,
         "error": null
       },
       {
@@ -74,12 +74,12 @@
         "ok": true,
         "schema_valid": true,
         "citation_valid": true,
-        "latency_ms": 672.0,
+        "latency_ms": 625.0,
         "queue_wait_ms": 0.03,
         "slot": "gpu-0",
         "prompt_tokens": 277,
         "completion_tokens": 40,
-        "tokens_per_second": 72.35500705925132,
+        "tokens_per_second": 78.71711289850538,
         "error": null
       },
       {
@@ -87,12 +87,12 @@
         "ok": true,
         "schema_valid": true,
         "citation_valid": true,
-        "latency_ms": 1016.0,
-        "queue_wait_ms": 0.03,
+        "latency_ms": 969.0,
+        "queue_wait_ms": 0.02,
         "slot": "gpu-0",
         "prompt_tokens": 1077,
         "completion_tokens": 36,
-        "tokens_per_second": 62.63825156953562,
+        "tokens_per_second": 63.60398342661918,
         "error": null
       },
       {
@@ -100,12 +100,12 @@
         "ok": true,
         "schema_valid": true,
         "citation_valid": true,
-        "latency_ms": 1640.0,
+        "latency_ms": 1578.0,
         "queue_wait_ms": 0.02,
         "slot": "gpu-0",
         "prompt_tokens": 2077,
         "completion_tokens": 43,
-        "tokens_per_second": 52.75924574377346,
+        "tokens_per_second": 54.5604055137187,
         "error": null
       },
       {
@@ -118,7 +118,7 @@
         "slot": "gpu-0",
         "prompt_tokens": 3077,
         "completion_tokens": 61,
-        "tokens_per_second": 49.97409675984614,
+        "tokens_per_second": 50.673150577800605,
         "error": null
       },
       {
@@ -131,7 +131,7 @@
         "slot": "gpu-0",
         "prompt_tokens": 77,
         "completion_tokens": 40,
-        "tokens_per_second": 80.69555429569334,
+        "tokens_per_second": 85.66740399210101,
         "error": null
       },
       {
@@ -144,7 +144,7 @@
         "slot": "gpu-0",
         "prompt_tokens": 277,
         "completion_tokens": 36,
-        "tokens_per_second": 77.57848726382892,
+        "tokens_per_second": 78.69448104362372,
         "error": null
       },
       {
@@ -153,11 +153,11 @@
         "schema_valid": true,
         "citation_valid": true,
         "latency_ms": 968.0,
-        "queue_wait_ms": 0.05,
+        "queue_wait_ms": 0.03,
         "slot": "gpu-0",
         "prompt_tokens": 1077,
         "completion_tokens": 35,
-        "tokens_per_second": 63.20560224714506,
+        "tokens_per_second": 64.02229482266765,
         "error": null
       },
       {
@@ -165,12 +165,12 @@
         "ok": true,
         "schema_valid": true,
         "citation_valid": true,
-        "latency_ms": 1594.0,
+        "latency_ms": 1625.0,
         "queue_wait_ms": 0.03,
         "slot": "gpu-0",
         "prompt_tokens": 2077,
         "completion_tokens": 42,
-        "tokens_per_second": 54.24478687752454,
+        "tokens_per_second": 53.474471157044086,
         "error": null
       },
       {
@@ -178,12 +178,12 @@
         "ok": true,
         "schema_valid": true,
         "citation_valid": true,
-        "latency_ms": 2578.0,
-        "queue_wait_ms": 0.02,
+        "latency_ms": 2688.0,
+        "queue_wait_ms": 0.04,
         "slot": "gpu-0",
         "prompt_tokens": 3078,
         "completion_tokens": 61,
-        "tokens_per_second": 50.04683549688584,
+        "tokens_per_second": 51.30033524769084,
         "error": null
       },
       {
@@ -191,12 +191,12 @@
         "ok": true,
         "schema_valid": true,
         "citation_valid": true,
-        "latency_ms": 610.0,
+        "latency_ms": 1094.0,
         "queue_wait_ms": 0.02,
         "slot": "gpu-0",
         "prompt_tokens": 78,
         "completion_tokens": 42,
-        "tokens_per_second": 81.76777950620239,
+        "tokens_per_second": 80.69960654021104,
         "error": null
       },
       {
@@ -205,11 +205,11 @@
         "schema_valid": true,
         "citation_valid": true,
         "latency_ms": 625.0,
-        "queue_wait_ms": 0.02,
+        "queue_wait_ms": 0.04,
         "slot": "gpu-0",
         "prompt_tokens": 278,
         "completion_tokens": 42,
-        "tokens_per_second": 82.22925516339555,
+        "tokens_per_second": 83.38536444488736,
         "error": null
       },
       {
@@ -217,12 +217,12 @@
         "ok": true,
         "schema_valid": true,
         "citation_valid": true,
-        "latency_ms": 968.0,
-        "queue_wait_ms": 0.02,
+        "latency_ms": 953.0,
+        "queue_wait_ms": 0.03,
         "slot": "gpu-0",
         "prompt_tokens": 1078,
         "completion_tokens": 35,
-        "tokens_per_second": 65.72461386789354,
+        "tokens_per_second": 64.47013136737357,
         "error": null
       },
       {
@@ -230,12 +230,12 @@
         "ok": true,
         "schema_valid": true,
         "citation_valid": true,
-        "latency_ms": 1641.0,
+        "latency_ms": 1687.0,
         "queue_wait_ms": 0.03,
         "slot": "gpu-0",
         "prompt_tokens": 2078,
         "completion_tokens": 42,
-        "tokens_per_second": 51.719679337988104,
+        "tokens_per_second": 52.3384433525709,
         "error": null
       },
       {
@@ -243,12 +243,12 @@
         "ok": true,
         "schema_valid": true,
         "citation_valid": true,
-        "latency_ms": 2641.0,
-        "queue_wait_ms": 0.02,
+        "latency_ms": 2859.0,
+        "queue_wait_ms": 0.03,
         "slot": "gpu-0",
         "prompt_tokens": 3078,
         "completion_tokens": 61,
-        "tokens_per_second": 47.46317253337848,
+        "tokens_per_second": 48.59613855083075,
         "error": null
       },
       {
@@ -256,12 +256,12 @@
         "ok": true,
         "schema_valid": true,
         "citation_valid": true,
-        "latency_ms": 563.0,
+        "latency_ms": 985.0,
         "queue_wait_ms": 0.03,
         "slot": "gpu-0",
         "prompt_tokens": 78,
         "completion_tokens": 36,
-        "tokens_per_second": 79.58560910277458,
+        "tokens_per_second": 80.86614573465738,
         "error": null
       },
       {
@@ -269,12 +269,12 @@
         "ok": true,
         "schema_valid": true,
         "citation_valid": true,
-        "latency_ms": 578.0,
+        "latency_ms": 562.0,
         "queue_wait_ms": 0.02,
         "slot": "gpu-0",
         "prompt_tokens": 278,
         "completion_tokens": 38,
-        "tokens_per_second": 81.02112899658616,
+        "tokens_per_second": 84.0332317363991,
         "error": null
       },
       {
@@ -282,12 +282,12 @@
         "ok": true,
         "schema_valid": true,
         "citation_valid": true,
-        "latency_ms": 984.0,
+        "latency_ms": 953.0,
         "queue_wait_ms": 0.02,
         "slot": "gpu-0",
         "prompt_tokens": 1078,
         "completion_tokens": 35,
-        "tokens_per_second": 62.26798308508553,
+        "tokens_per_second": 64.87323959786222,
         "error": null
       },
       {
@@ -295,12 +295,12 @@
         "ok": true,
         "schema_valid": true,
         "citation_valid": true,
-        "latency_ms": 1625.0,
+        "latency_ms": 1766.0,
         "queue_wait_ms": 0.02,
         "slot": "gpu-0",
         "prompt_tokens": 2078,
         "completion_tokens": 42,
-        "tokens_per_second": 54.15701306901189,
+        "tokens_per_second": 52.256326201831776,
         "error": null
       },
       {
@@ -308,35 +308,36 @@
         "ok": true,
         "schema_valid": true,
         "citation_valid": true,
-        "latency_ms": 2547.0,
+        "latency_ms": 2969.0,
         "queue_wait_ms": 0.02,
         "slot": "gpu-0",
         "prompt_tokens": 3078,
         "completion_tokens": 61,
-        "tokens_per_second": 50.17838415567342,
+        "tokens_per_second": 47.934119346370345,
         "error": null
       }
     ]
   },
   "concurrent_pair": {
-    "required_profile": "dual-1080-replicated",
-    "profile_matched": false,
+    "required_profile": "dev-1070",
+    "profile_matched": true,
     "successful": 2,
     "distinct_slots": [
       "gpu-0"
     ],
+    "distinct_slots_matched": true,
     "samples": [
       {
         "index": 101,
         "ok": true,
         "schema_valid": true,
         "citation_valid": true,
-        "latency_ms": 1188.0,
-        "queue_wait_ms": 610.25,
+        "latency_ms": 1484.0,
+        "queue_wait_ms": 923.67,
         "slot": "gpu-0",
         "prompt_tokens": 119,
         "completion_tokens": 42,
-        "tokens_per_second": 82.26538814214656,
+        "tokens_per_second": 86.53988222133103,
         "error": null
       },
       {
@@ -344,21 +345,51 @@
         "ok": true,
         "schema_valid": true,
         "citation_valid": true,
-        "latency_ms": 625.0,
-        "queue_wait_ms": 0.02,
+        "latency_ms": 937.0,
+        "queue_wait_ms": 0.03,
         "slot": "gpu-0",
         "prompt_tokens": 119,
         "completion_tokens": 42,
-        "tokens_per_second": 84.3980872511543,
+        "tokens_per_second": 86.13572048328442,
         "error": null
       }
     ]
   },
   "peak_gpu_memory_mib": [
-    2080
+    2051
   ],
-  "peak_runner_ram_bytes": 1627176960,
-  "load_time_ms": 20729.97,
+  "peak_runner_ram_bytes": 1480429568,
+  "load_time_ms": 2167.12,
   "accepted_slots": 1,
+  "promotion_gate": {
+    "passed": true,
+    "checks": {
+      "representative_calls": true,
+      "concurrent_calls": true,
+      "hardware_profile": true,
+      "cuda_device_count": true,
+      "gpu_names": true,
+      "accepted_slots": true,
+      "distinct_runner_slots": true
+    },
+    "requirements": {
+      "profile": "dev-1070",
+      "cuda_devices": 1,
+      "gpu_name_contains": "GTX 1070",
+      "accepted_slots": 1,
+      "distinct_runner_slots": 1
+    },
+    "observed": {
+      "profile": "dev-1070",
+      "cuda_devices": 1,
+      "gpu_names": [
+        "NVIDIA GeForce GTX 1070"
+      ],
+      "accepted_slots": 1,
+      "distinct_runner_slots": [
+        "gpu-0"
+      ]
+    }
+  },
   "result": "pass"
 }
