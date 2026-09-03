@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import json
+import unicodedata
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from zoneinfo import ZoneInfo
@@ -30,6 +31,16 @@ from .models import (
 )
 
 ZURICH = ZoneInfo("Europe/Zurich")
+
+
+def search_text(value: str) -> str:
+    """Normalize canonically equivalent text and accents for multilingual UI search."""
+
+    return "".join(
+        character
+        for character in unicodedata.normalize("NFKD", value.casefold())
+        if not unicodedata.combining(character)
+    )
 
 
 def aware_utc(value: datetime) -> datetime:
@@ -304,15 +315,15 @@ class RegistryReader:
 
     @staticmethod
     def _matches(row: dict, filters: RegistryFilters) -> bool:
-        query = filters.query.casefold()
-        haystack = " ".join(
+        query = search_text(filters.query)
+        haystack = search_text(" ".join(
             [
                 row.get("title") or "",
                 row.get("authority") or "",
                 row.get("event_type") or "",
                 *(row.get("languages") or []),
             ]
-        ).casefold()
+        ))
         return (
             (not query or query in haystack)
             and (not filters.authority or row["authority"] == filters.authority)

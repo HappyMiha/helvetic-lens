@@ -1,12 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { storedLocale, translate } from "@/lib/i18n";
+
+export class ApiError extends Error {
+  constructor(message: string, public code = "request_failed", public params: Record<string, unknown> = {}) {
+    super(message);
+  }
+}
 
 export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   const method = (init.method || "GET").toUpperCase();
   if (init.body && !(init.body instanceof FormData))
     headers.set("Content-Type", "application/json");
+  headers.set("Accept-Language", storedLocale());
   if (!["GET", "HEAD", "OPTIONS"].includes(method)) {
     const csrf = document.cookie
       .split(";")
@@ -25,10 +33,12 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     let message = data?.detail;
     if (Array.isArray(message))
       message = message.map((item: { msg: string }) => item.msg).join("; ");
-    throw new Error(
-      typeof message === "string"
-        ? message
-        : "The API could not complete this request. Check that it is running.",
+    const locale = storedLocale();
+    const localized = typeof data?.code === "string" ? translate(locale, `error.${data.code}`, data?.params || {}) : null;
+    throw new ApiError(
+      localized || (typeof message === "string" ? message : translate(locale, "error.fallback") || "Request failed."),
+      typeof data?.code === "string" ? data.code : "request_failed",
+      data?.params || {},
     );
   }
   return data as T;
@@ -67,7 +77,7 @@ export function useResource<T>(path: string | null, interval = 0) {
           setError(
             cause instanceof Error
               ? cause.message
-              : "Could not load this data.",
+              : translate(storedLocale(), "error.fallback") || "Request failed.",
           );
       } finally {
         if (live) setLoading(false);
@@ -88,19 +98,22 @@ export function useResource<T>(path: string | null, interval = 0) {
 }
 
 export function dateTime(value: string | null | undefined) {
-  if (!value) return "Not checked yet";
-  return new Intl.DateTimeFormat("en-GB", {
+  const locale = storedLocale();
+  if (!value) return translate(locale, "format.notChecked") || "Not checked yet";
+  return new Intl.DateTimeFormat(locale, {
     day: "2-digit",
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "Europe/Zurich",
   }).format(new Date(value));
 }
 export function dateOnly(value: string) {
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat(storedLocale(), {
     day: "2-digit",
     month: "short",
     year: "numeric",
+    timeZone: "Europe/Zurich",
   }).format(new Date(value));
 }
 export function host(url: string) {
@@ -116,5 +129,5 @@ export function label(value: string | null) {
 export function errorText(cause: unknown) {
   return cause instanceof Error
     ? cause.message
-    : "Something went wrong. Please try again.";
+    : translate(storedLocale(), "error.fallback") || "Request failed.";
 }

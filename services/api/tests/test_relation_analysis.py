@@ -226,6 +226,30 @@ def test_relation_impact_cache_changes_with_profile_and_preserves_history(harnes
     assert history["current"]["id"] == second["result"]["data"]["id"]
 
 
+def test_relation_impact_cache_and_history_are_isolated_by_output_locale(harness):
+    client, _, service, model = harness
+    delivery_id, _ = relation_delivery(harness)
+    service.settings.apertus_base_url = "https://model.example/v1"
+
+    german = client.post(
+        f"/api/relation-candidates/{delivery_id}/analyse-jobs",
+        json={"output_locale": "de-CH"},
+    ).json()
+    french = client.post(
+        f"/api/relation-candidates/{delivery_id}/analyse-jobs",
+        json={"output_locale": "fr-CH"},
+    ).json()
+
+    assert german["id"] != french["id"]
+    assert german["result"]["data"]["result"]["output_locale"] == "de-CH"
+    assert french["result"]["data"]["result"]["output_locale"] == "fr-CH"
+    assert german["result"]["data"]["analysis_plan"]["output_locale"] == "de-CH"
+    assert french["result"]["data"]["analysis_plan"]["output_locale"] == "fr-CH"
+    assert len(model.calls) == 2
+    assert "de-CH" in model.calls[0][0]
+    assert "fr-CH" in model.calls[1][0]
+
+
 def test_relation_impact_keeps_confirmed_relation_separate_from_ai_proposal(harness):
     client, _, service, _ = harness
     delivery_id, relation_id = relation_delivery(harness, confirmed=True)

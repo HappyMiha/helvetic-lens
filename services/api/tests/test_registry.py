@@ -2,7 +2,7 @@ from datetime import UTC, date, datetime, timedelta
 
 from conftest import add_law
 
-from helvetic_lens.registry import ZURICH, detected_group
+from helvetic_lens.registry import ZURICH, detected_group, search_text
 from helvetic_lens.regulatory_corpus import (
     DocumentInput,
     EventInput,
@@ -28,6 +28,13 @@ def test_zurich_groups_are_non_overlapping_at_midnight_and_dst_boundaries():
         )
         == "Custom range"
     )
+
+
+def test_search_normalization_is_unicode_and_diacritic_safe():
+    assert search_text("Änderung für Bündner Bürger") == search_text(
+        "Anderung fur Bundner Burger"
+    )
+    assert search_text("révision intérêt public") == search_text("revision interet public")
 
 
 def _record_event(service, *, work_id, event_type, detected_at, key, impact="unknown"):

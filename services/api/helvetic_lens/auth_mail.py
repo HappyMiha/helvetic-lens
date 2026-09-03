@@ -10,37 +10,68 @@ from email.message import EmailMessage
 from urllib.parse import quote
 
 from .config import DomainError, Settings
+from .locales import normalize_locale
+
+_MESSAGES = {
+    "de-CH": {
+        "verify_email": ("E-Mail für Helvetic Lens bestätigen", "E-Mail bestätigen"),
+        "reset_password": ("Passwort für Helvetic Lens zurücksetzen", "Passwort zurücksetzen"),
+        "note": "Dieser einmalige Link läuft automatisch ab. Falls Sie ihn nicht angefordert haben, ignorieren Sie diese Nachricht.",
+    },
+    "fr-CH": {
+        "verify_email": ("Confirmez votre adresse Helvetic Lens", "Confirmer l’adresse"),
+        "reset_password": ("Réinitialisez votre mot de passe Helvetic Lens", "Réinitialiser le mot de passe"),
+        "note": "Ce lien à usage unique expire automatiquement. Si vous ne l’avez pas demandé, ignorez ce message.",
+    },
+    "it-CH": {
+        "verify_email": ("Conferma l’e-mail di Helvetic Lens", "Conferma e-mail"),
+        "reset_password": ("Reimposta la password di Helvetic Lens", "Reimposta password"),
+        "note": "Questo link monouso scade automaticamente. Se non lo hai richiesto, ignora questo messaggio.",
+    },
+    "rm-CH": {
+        "verify_email": ("Conferma tia adressa per Helvetic Lens", "Confermar l’adressa"),
+        "reset_password": ("Redefinescha tes pled-clav per Helvetic Lens", "Redefinir il pled-clav"),
+        "note": "Questa colliaziun d’in diever scada automaticamain. Sche ti n’has betg dumandà ella, ignorescha quest messadi.",
+    },
+    "en-CH": {
+        "verify_email": ("Verify your Helvetic Lens email", "Verify email"),
+        "reset_password": ("Reset your Helvetic Lens password", "Reset password"),
+        "note": "This one-time link expires automatically. If you did not request it, ignore this message.",
+    },
+}
 
 
 class AuthMailer:
     def __init__(self, settings: Settings):
         self.settings = settings
 
-    def send(self, email: str, purpose: str, token: str) -> str:
+    def send(self, email: str, purpose: str, token: str, locale: str = "en-CH") -> str:
+        selected = normalize_locale(locale, self.settings.default_locale)
+        messages = _MESSAGES[selected]
         if purpose == "verify_email":
-            subject = "Verify your Helvetic Lens email"
             path = f"/login?verify={quote(token, safe='')}"
-            action = "Verify email"
         elif purpose == "reset_password":
-            subject = "Reset your Helvetic Lens password"
             path = f"/login?reset={quote(token, safe='')}"
-            action = "Reset password"
         else:
             raise ValueError("unsupported authentication message")
-        link = self.settings.public_base_url + path
-        body = (
-            f"{action}: {link}\n\n"
-            "This one-time link expires automatically. If you did not request it, ignore this message."
+        subject, action = messages[purpose]
+        link = self.settings.public_base_url + path + f"&locale={quote(selected)}"
+        body = f"{action}: {link}\n\n{messages['note']}"
+        html = (
+            f'<html lang="{selected}"><body><p><a href="{link}">{action}</a></p>'
+            f"<p>{messages['note']}</p></body></html>"
         )
         if self.settings.auth_email_mode == "disabled":
             return "disabled"
         if self.settings.auth_email_mode == "development":
-            self._write_development_message(email, subject, body)
+            self._write_development_message(email, subject, body, html, selected)
             return "development"
-        self._send_smtp(email, subject, body)
+        self._send_smtp(email, subject, body, html)
         return "smtp"
 
-    def _write_development_message(self, email: str, subject: str, body: str) -> None:
+    def _write_development_message(
+        self, email: str, subject: str, body: str, html: str, locale: str
+    ) -> None:
         folder = self.settings.storage_path / "auth-mailbox"
         folder.mkdir(parents=True, exist_ok=True)
         cutoff = datetime.now(UTC) - timedelta(hours=48)
@@ -54,19 +85,27 @@ class AuthMailer:
         target = folder / f"{stamp.strftime('%Y%m%dT%H%M%S%fZ')}.json"
         target.write_text(
             json.dumps(
-                {"to": email, "subject": subject, "body": body, "created_at": stamp.isoformat()},
+                {
+                    "to": email,
+                    "subject": subject,
+                    "body": body,
+                    "html": html,
+                    "locale": locale,
+                    "created_at": stamp.isoformat(),
+                },
                 ensure_ascii=False,
                 indent=2,
             ),
             encoding="utf-8",
         )
 
-    def _send_smtp(self, email: str, subject: str, body: str) -> None:
+    def _send_smtp(self, email: str, subject: str, body: str, html: str) -> None:
         message = EmailMessage()
         message["From"] = self.settings.auth_email_from
         message["To"] = email
         message["Subject"] = subject
         message.set_content(body)
+        message.add_alternative(html, subtype="html")
         try:
             with smtplib.SMTP(
                 self.settings.auth_smtp_host,

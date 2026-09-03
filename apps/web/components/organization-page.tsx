@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Bot, Check, Copy, FileText, Globe2, Loader2, MailCheck, Shield, Trash2, UserRoundPlus, Users } from "lucide-react";
 import { Shell } from "./shell";
+import { localeNames, locales, type Locale, useI18n } from "@/lib/i18n";
 import { useAuth } from "./auth-gate";
 import { ErrorNote, SuccessNote } from "./common";
 import { Button } from "./ui/button";
@@ -24,10 +25,12 @@ type Invitation = {
   role: string;
   status: string;
   expires_at: string;
+  recipient_locale: Locale;
 };
 
 export function OrganizationPage() {
   const { session, canManage } = useAuth();
+  const { locale } = useI18n();
   const { data: members, reload: reloadMembers } = useResource<Member[]>(
     session?.authenticated ? "/organization/members" : null,
   );
@@ -39,6 +42,7 @@ export function OrganizationPage() {
   );
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"viewer" | "organization_admin">("viewer");
+  const [recipientLocale, setRecipientLocale] = useState<Locale>(locale);
   const [inviteToken, setInviteToken] = useState("");
   const [generatedLink, setGeneratedLink] = useState("");
   const [busy, setBusy] = useState("");
@@ -88,9 +92,9 @@ export function OrganizationPage() {
     try {
       const value = await api<Invitation & { token: string }>("/organization/invitations", {
         method: "POST",
-        body: JSON.stringify({ email, role }),
+        body: JSON.stringify({ email, role, recipient_locale: recipientLocale }),
       });
-      const link = `${window.location.origin}/login?invite=${encodeURIComponent(value.token)}`;
+      const link = `${window.location.origin}/login?invite=${encodeURIComponent(value.token)}&locale=${encodeURIComponent(value.recipient_locale)}`;
       setGeneratedLink(link);
       setEmail("");
       setSuccess("Invitation created. Copy the private link and send it to the invited person.");
@@ -280,13 +284,14 @@ export function OrganizationPage() {
             <UserRoundPlus size={20} />
             <div><h2 className="text-lg font-semibold">Invite a member</h2><p className="text-sm muted">Links expire after seven days and work once for the invited email.</p></div>
           </div>
-          <form onSubmit={invite} className="grid md:grid-cols-[1fr_190px_auto] gap-3 items-end">
+          <form onSubmit={invite} className="grid md:grid-cols-[1fr_170px_170px_auto] gap-3 items-end">
             <label>Email<Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
             <label>Role<select className="h-10 w-full rounded-md border bg-white px-3" value={role} onChange={(e) => setRole(e.target.value as typeof role)}><option value="viewer">Viewer</option><option value="organization_admin">Administrator</option></select></label>
+            <label>Invitation language<select className="h-10 w-full rounded-md border bg-white px-3" value={recipientLocale} onChange={(e) => setRecipientLocale(e.target.value as Locale)}>{locales.map((value) => <option value={value} key={value}>{localeNames[value]}</option>)}</select></label>
             <Button type="submit" disabled={!!busy}>{busy === "invite" ? <Loader2 className="animate-spin" /> : <UserRoundPlus />} Create invitation</Button>
           </form>
           {generatedLink && <div className="mt-4 flex gap-2"><Input readOnly value={generatedLink} /><Button variant="outline" onClick={() => navigator.clipboard.writeText(generatedLink)}><Copy /> Copy</Button></div>}
-          {!!invitations?.length && <div className="mt-6 divide-y">{invitations.map((invitation) => <div key={invitation.id} className="py-3 flex justify-between gap-3"><span><strong>{invitation.email}</strong><small className="block muted">{invitation.role.replace("organization_", "")} · {invitation.status}</small></span>{invitation.status === "pending" && <Button variant="ghost" size="sm" onClick={() => act(`revoke-${invitation.id}`, () => api(`/organization/invitations/${invitation.id}`, { method: "DELETE" }), "Invitation revoked.")}>Revoke</Button>}</div>)}</div>}
+          {!!invitations?.length && <div className="mt-6 divide-y">{invitations.map((invitation) => <div key={invitation.id} className="py-3 flex justify-between gap-3"><span><strong>{invitation.email}</strong><small className="block muted">{invitation.role.replace("organization_", "")} · {invitation.status} · {localeNames[invitation.recipient_locale] || invitation.recipient_locale}</small></span>{invitation.status === "pending" && <Button variant="ghost" size="sm" onClick={() => act(`revoke-${invitation.id}`, () => api(`/organization/invitations/${invitation.id}`, { method: "DELETE" }), "Invitation revoked.")}>Revoke</Button>}</div>)}</div>}
         </section>
       )}
 

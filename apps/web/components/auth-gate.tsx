@@ -4,13 +4,14 @@ import { createContext, useContext, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useResource } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
 
 export type AuthSession = {
   authenticated: boolean;
   anonymous_development?: boolean;
   authentication_required?: boolean;
   onboarding_required?: boolean;
-  user?: { id: string; email: string; name: string; email_verified?: boolean };
+  user?: { id: string; email: string; name: string; email_verified?: boolean; locale?: string };
   organization?: { id: string; name: string };
   role?: string;
   platform_admin?: boolean;
@@ -41,7 +42,12 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { data, loading, error } = useResource<AuthSession>("/auth/session");
+  const { syncUserLocale, t } = useI18n();
   const authenticationPage = pathname === "/login";
+
+  useEffect(() => {
+    syncUserLocale(data?.authenticated ? data.user?.locale : undefined);
+  }, [data?.authenticated, data?.user?.locale, syncUserLocale]);
 
   useEffect(() => {
     if (!data) return;
@@ -65,7 +71,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     return (
       <main className="min-h-screen grid place-items-center bg-[#f7f7f3]">
         <div className="flex items-center gap-3 text-sm text-[#657064]">
-          <Loader2 className="animate-spin" size={18} /> Opening your workspace…
+          <Loader2 className="animate-spin" size={18} /> {t("auth.opening")}
         </div>
       </main>
     );

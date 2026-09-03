@@ -44,6 +44,7 @@ export function EvidenceView({
     1,
     Math.ceil((data?.passages.length || 0) / PAGE_SIZE),
   );
+  const sourceLanguage = data?.identity_json?.language || undefined;
   return (
     <Shell section="Saved source evidence">
       <Link className="back-link" href={data ? "/laws/" + data.law_id : "/"}>
@@ -60,7 +61,7 @@ export function EvidenceView({
               <span className="eyebrow">
                 SAVED EVIDENCE · {data.id.slice(0, 8)}
               </span>
-              <h1>{data.law_name}</h1>
+              <h1 lang={sourceLanguage}>{data.law_name}</h1>
               <p className="muted m-0">
                 This is a stored snapshot. The live website may now contain
                 different wording.
@@ -141,6 +142,7 @@ export function EvidenceView({
                     .slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
                     .map((passage) => (
                       <article
+                        lang={sourceLanguage}
                         id={"passage-" + passage.id}
                         className={
                           "evidence-passage " +

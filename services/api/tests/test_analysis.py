@@ -178,7 +178,8 @@ def test_local_docker_finishes_with_validated_batch_results_without_synthesis_ca
     ).json()
     answer_tasks = [json.loads(user).get("task") for _, user in model.calls]
     assert answer["supported"] is True
-    assert answer_tasks == ["answer_batch"]
+    # The selected product locale is en-CH, so the matching validated impact report is reused.
+    assert answer_tasks == []
     assert answer["citations"][0]["url"].startswith("/evidence/")
 
 
@@ -913,7 +914,8 @@ def test_invalid_json_is_validated_and_repaired_once_for_impact_and_ask(harness)
     model.calls.clear()
     model.invalid_json_responses = 1
     answer = client.post(
-        "/api/comparisons/" + comparison["id"] + "/ask", json={"question": "Що змінилося?"}
+        "/api/comparisons/" + comparison["id"] + "/ask",
+        json={"question": "Explain Article 2"},
     )
     assert answer.status_code == 200 and answer.json()["supported"] is True
     assert len(model.calls) == 2 and "repair" in json.loads(model.calls[1][1])
@@ -1133,7 +1135,7 @@ def test_canonical_ask_reuses_current_validated_impact_report(harness):
     saved = client.get(f"/api/comparisons/{comparison['id']}/ai-history").json()
     saved_answer = next(item for item in saved["items"] if item["type"] == "question")
     assert saved_answer["result"]["intent"] == "explain_changes"
-    assert saved_answer["result"]["output_locale"] == "en"
+    assert saved_answer["result"]["output_locale"] == "en-CH"
     assert saved_answer["result"]["selected_change_ids"]
 
 
@@ -1159,4 +1161,4 @@ def test_specific_unit_ask_uses_only_target_and_neighbours(harness):
     assert "neighbours" in answer["scope"]
     supplied = json.loads(model.calls[0][1])
     assert supplied["intent"] == "specific_unit"
-    assert supplied["output_locale"] == "en"
+    assert supplied["output_locale"] == "en-CH"

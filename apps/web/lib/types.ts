@@ -169,7 +169,8 @@ export type Coverage = {
 export type AnalysisPlan = {
   schema_version: string;
   state: "planned" | "completed" | "failed";
-  task: "impact_report" | "ask";
+  task: "impact_report" | "ask" | "relation_impact";
+  output_locale?: string;
   intent: string;
   selected_change_ids?: string[];
   selected_evidence_ids?: string[];

@@ -5,6 +5,8 @@ from typing import Literal
 from pydantic import AliasChoices, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from .locales import normalize_locale
+
 # The source checkout and the API container have different directory depths.
 ROOT = next(
     (parent for parent in Path(__file__).resolve().parents if (parent / "compose.yaml").is_file()),
@@ -36,6 +38,7 @@ class Settings(BaseSettings):
     session_cookie_secure: bool = False
     session_ttl_days: int = Field(default=14, ge=1, le=90)
     public_base_url: str = "http://127.0.0.1:3000"
+    default_locale: str = "en-CH"
     auth_email_mode: Literal["disabled", "development", "smtp"] = "development"
     auth_email_from: str = ""
     auth_smtp_host: str = ""
@@ -96,6 +99,7 @@ class Settings(BaseSettings):
             if self.auth_email_mode == "development":
                 raise ValueError("Production cannot write authentication emails to the development mailbox.")
         self.public_base_url = self.public_base_url.rstrip("/")
+        self.default_locale = normalize_locale(self.default_locale)
         if self.auth_email_mode == "smtp" and (not self.auth_smtp_host or not self.auth_email_from):
             raise ValueError("SMTP authentication email delivery requires host and from address.")
         product_id = self.apertus_product_id.strip()
@@ -128,6 +132,12 @@ class Settings(BaseSettings):
 
 
 class DomainError(Exception):
-    def __init__(self, message: str, status: int = 422, code: str = "invalid_input"):
+    def __init__(
+        self,
+        message: str,
+        status: int = 422,
+        code: str = "invalid_input",
+        params: dict | None = None,
+    ):
         super().__init__(message)
-        self.message, self.status, self.code = message, status, code
+        self.message, self.status, self.code, self.params = message, status, code, params or {}

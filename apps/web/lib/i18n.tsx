@@ -1,0 +1,330 @@
+"use client";
+
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+
+export const locales = ["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"] as const;
+export type Locale = (typeof locales)[number];
+
+export const localeNames: Record<Locale, string> = {
+  "de-CH": "Deutsch",
+  "fr-CH": "Français",
+  "it-CH": "Italiano",
+  "rm-CH": "Rumantsch",
+  "en-CH": "English",
+};
+
+type Values = Record<string, string | number>;
+type Messages = Record<string, string>;
+
+const en = {
+  "brand.tagline": "See what changed. Understand what matters.",
+  "language.label": "Language",
+  "shell.workspace": "WORKSPACE",
+  "shell.defaultWorkspace": "Swiss regulatory watch",
+  "shell.monitor": "MONITOR",
+  "nav.overview": "Overview",
+  "nav.registry": "Registry",
+  "nav.impact": "Impact inbox",
+  "nav.organization": "Organization",
+  "nav.sources": "Sources",
+  "nav.activity": "Scan activity",
+  "nav.logs": "Integration logs",
+  "nav.admin": "Platform admin",
+  "nav.sync": "Source sync",
+  "nav.models": "Local models",
+  "nav.profile": "Company profile",
+  "nav.prompts": "Prompt settings",
+  "nav.settings": "Settings",
+  "shell.apertusSettings": "Apertus settings",
+  "shell.endpointConfigured": "Endpoint configured",
+  "shell.connectEndpoint": "Connect your model endpoint",
+  "shell.evidencePromise": "Your sources. Your versions. Evidence you can inspect.",
+  "shell.documentation": "Project & documentation",
+  "shell.apiUnavailable": "API unavailable",
+  "shell.connected": "Connected · {database}",
+  "shell.connecting": "Connecting…",
+  "shell.signOut": "Sign out {name}",
+  "shell.readOnlyTitle": "Read-only workspace.",
+  "shell.readOnlyBody": "You can inspect all saved evidence and history. An organization administrator manages documents, scans, AI requests, and settings.",
+  "shell.apiError": "The API is unavailable. Displayed records may be stale; start the backend to resume monitoring.",
+  "shell.footer": "Saved evidence, visible changes. AI outputs support human review.",
+  "auth.opening": "Opening your workspace…",
+  "login.createWorkspace": "Create workspace",
+  "login.signIn": "Sign in",
+  "login.startMonitoring": "Start monitoring",
+  "login.resetPassword": "Reset your password",
+  "login.choosePassword": "Choose a new password",
+  "login.verifyEmail": "Verify your email",
+  "login.welcomeBack": "Welcome back",
+  "login.inviteHelp": "This invitation is bound to the invited email and can be used once.",
+  "login.verifyHelp": "This one-time link confirms the address attached to your account.",
+  "login.resetHelp": "The link can be used once and expires after 30 minutes.",
+  "login.forgotHelp": "Enter your email. The response is the same whether an account exists or not.",
+  "login.registerHelp": "A personal workspace is created when organization is left empty.",
+  "login.signInHelp": "Use the email and password for your workspace.",
+  "login.productBody": "Monitor Swiss legal sources, keep every saved version, and review evidence-backed changes with local Apertus.",
+  "login.exactEvidence": "Exact saved evidence and visual changes",
+  "login.sharedWorkspace": "Your organization shares one private workspace",
+  "login.aiEvidence": "AI conclusions always link back to evidence",
+  "login.emailVerified": "Your email is verified. You can continue to your workspace.",
+  "login.verifying": "Verifying…",
+  "login.continue": "Continue to sign in",
+  "login.name": "Your name",
+  "login.organization": "Organization",
+  "common.optional": "optional",
+  "login.email": "Email",
+  "login.password": "Password",
+  "login.passwordHint": "At least 10 characters",
+  "login.sendReset": "Send reset link",
+  "login.changePassword": "Change password",
+  "login.createJoin": "Create account and join",
+  "login.signInJoin": "Sign in and join",
+  "login.createMine": "Create my workspace",
+  "login.forgot": "Forgot password?",
+  "login.resend": "Resend verification",
+  "login.back": "Back to sign in",
+  "login.passwordChanged": "Password changed. Sign in again on all devices.",
+  "onboarding.ready": "YOUR WORKSPACE IS READY",
+  "onboarding.title": "Start with one law you care about",
+  "onboarding.body": "Add an official document URL. Helvetic Lens saves the current version as evidence, then future scans show what changed and what may matter to your organization.",
+  "onboarding.connect": "Connect",
+  "onboarding.connectBody": "Add a Fedlex law or a source website.",
+  "onboarding.compare": "Compare",
+  "onboarding.compareBody": "Import an earlier version when you have one.",
+  "onboarding.understand": "Understand",
+  "onboarding.understandBody": "Use local Apertus only after exact changes exist.",
+  "onboarding.add": "Add my first law",
+  "onboarding.explore": "Explore the registry",
+  "format.notChecked": "Not checked yet",
+  "error.fallback": "Something went wrong. Please try again.",
+  "error.authentication_required": "Sign in to continue.",
+  "error.viewer_read_only": "Your account has read-only access to this workspace.",
+  "error.invalid_email": "Enter a valid email address.",
+  "error.invalid_credentials": "Email or password is incorrect.",
+  "error.weak_password": "Use at least 10 characters for the password.",
+  "error.email_exists": "An account with this email already exists.",
+  "error.unsupported_locale": "Choose a supported language.",
+  "count.events": "{count, plural, one {# event} other {# events}}",
+} satisfies Messages;
+
+const de: Messages = {
+  ...en,
+  "brand.tagline": "Sehen, was sich geändert hat. Verstehen, was zählt.", "language.label": "Sprache",
+  "shell.workspace": "ARBEITSBEREICH", "shell.defaultWorkspace": "Schweizer Rechtsmonitoring", "shell.monitor": "BEOBACHTEN",
+  "nav.overview": "Übersicht", "nav.registry": "Register", "nav.impact": "Auswirkungs-Postfach", "nav.organization": "Organisation", "nav.sources": "Quellen", "nav.activity": "Prüfverlauf", "nav.logs": "Integrationsprotokolle", "nav.admin": "Plattformverwaltung", "nav.sync": "Quellenabgleich", "nav.models": "Lokale Modelle", "nav.profile": "Unternehmensprofil", "nav.prompts": "Prompt-Einstellungen", "nav.settings": "Einstellungen",
+  "shell.apertusSettings": "Apertus-Einstellungen", "shell.endpointConfigured": "Endpunkt eingerichtet", "shell.connectEndpoint": "Modell-Endpunkt verbinden", "shell.evidencePromise": "Ihre Quellen. Ihre Versionen. Nachprüfbare Belege.", "shell.documentation": "Projekt und Dokumentation", "shell.apiUnavailable": "API nicht verfügbar", "shell.connected": "Verbunden · {database}", "shell.connecting": "Verbindung wird hergestellt…", "shell.signOut": "{name} abmelden", "shell.readOnlyTitle": "Arbeitsbereich mit Lesezugriff.", "shell.readOnlyBody": "Sie können alle gespeicherten Belege und Verläufe prüfen. Eine Organisationsadministratorin oder ein Organisationsadministrator verwaltet Dokumente, Prüfungen, KI-Anfragen und Einstellungen.", "shell.apiError": "Die API ist nicht verfügbar. Angezeigte Einträge können veraltet sein; starten Sie das Backend, um die Überwachung fortzusetzen.", "shell.footer": "Gespeicherte Belege, sichtbare Änderungen. KI-Ausgaben unterstützen die menschliche Prüfung.", "auth.opening": "Arbeitsbereich wird geöffnet…",
+  "login.createWorkspace": "Arbeitsbereich erstellen", "login.signIn": "Anmelden", "login.startMonitoring": "Überwachung starten", "login.resetPassword": "Passwort zurücksetzen", "login.choosePassword": "Neues Passwort wählen", "login.verifyEmail": "E-Mail bestätigen", "login.welcomeBack": "Willkommen zurück", "login.inviteHelp": "Diese Einladung ist an die eingeladene E-Mail-Adresse gebunden und einmal verwendbar.", "login.verifyHelp": "Dieser einmalige Link bestätigt die Adresse Ihres Kontos.", "login.resetHelp": "Der Link ist einmal verwendbar und läuft nach 30 Minuten ab.", "login.forgotHelp": "Geben Sie Ihre E-Mail-Adresse ein. Die Antwort ist unabhängig davon gleich, ob ein Konto besteht.", "login.registerHelp": "Wenn Organisation leer bleibt, wird ein persönlicher Arbeitsbereich erstellt.", "login.signInHelp": "Verwenden Sie E-Mail-Adresse und Passwort Ihres Arbeitsbereichs.", "login.productBody": "Beobachten Sie Schweizer Rechtsquellen, bewahren Sie jede Version auf und prüfen Sie belegte Änderungen mit lokalem Apertus.", "login.exactEvidence": "Exakte gespeicherte Belege und sichtbare Änderungen", "login.sharedWorkspace": "Ihre Organisation teilt einen privaten Arbeitsbereich", "login.aiEvidence": "KI-Schlussfolgerungen verweisen immer auf Belege", "login.emailVerified": "Ihre E-Mail-Adresse ist bestätigt. Sie können den Arbeitsbereich öffnen.", "login.verifying": "Wird bestätigt…", "login.continue": "Weiter zur Anmeldung", "login.name": "Ihr Name", "login.organization": "Organisation", "common.optional": "optional", "login.email": "E-Mail", "login.password": "Passwort", "login.passwordHint": "Mindestens 10 Zeichen", "login.sendReset": "Link senden", "login.changePassword": "Passwort ändern", "login.createJoin": "Konto erstellen und beitreten", "login.signInJoin": "Anmelden und beitreten", "login.createMine": "Meinen Arbeitsbereich erstellen", "login.forgot": "Passwort vergessen?", "login.resend": "Bestätigung erneut senden", "login.back": "Zurück zur Anmeldung", "login.passwordChanged": "Passwort geändert. Melden Sie sich auf allen Geräten erneut an.",
+  "onboarding.ready": "IHR ARBEITSBEREICH IST BEREIT", "onboarding.title": "Beginnen Sie mit einem relevanten Erlass", "onboarding.body": "Fügen Sie die URL eines amtlichen Dokuments hinzu. Helvetic Lens speichert die aktuelle Version als Beleg; spätere Prüfungen zeigen Änderungen und mögliche Auswirkungen auf Ihre Organisation.", "onboarding.connect": "Verbinden", "onboarding.connectBody": "Fedlex-Erlass oder Quellwebsite hinzufügen.", "onboarding.compare": "Vergleichen", "onboarding.compareBody": "Eine frühere Version importieren, sofern vorhanden.", "onboarding.understand": "Verstehen", "onboarding.understandBody": "Lokales Apertus erst nach Ermittlung exakter Änderungen verwenden.", "onboarding.add": "Ersten Erlass hinzufügen", "onboarding.explore": "Register ansehen", "format.notChecked": "Noch nicht geprüft", "error.fallback": "Etwas ist schiefgegangen. Bitte versuchen Sie es erneut.", "error.authentication_required": "Melden Sie sich an, um fortzufahren.", "error.viewer_read_only": "Ihr Konto hat nur Lesezugriff auf diesen Arbeitsbereich.", "error.invalid_email": "Geben Sie eine gültige E-Mail-Adresse ein.", "error.invalid_credentials": "E-Mail-Adresse oder Passwort ist falsch.", "error.weak_password": "Verwenden Sie mindestens 10 Zeichen.", "error.email_exists": "Für diese E-Mail-Adresse besteht bereits ein Konto.", "error.unsupported_locale": "Wählen Sie eine unterstützte Sprache.", "count.events": "{count, plural, one {# Ereignis} other {# Ereignisse}}",
+};
+
+const fr: Messages = {
+  ...en,
+  "brand.tagline": "Voyez ce qui a changé. Comprenez ce qui compte.", "language.label": "Langue", "shell.workspace": "ESPACE DE TRAVAIL", "shell.defaultWorkspace": "Veille juridique suisse", "shell.monitor": "SURVEILLER",
+  "nav.overview": "Vue d’ensemble", "nav.registry": "Registre", "nav.impact": "Boîte des impacts", "nav.organization": "Organisation", "nav.sources": "Sources", "nav.activity": "Historique des contrôles", "nav.logs": "Journaux d’intégration", "nav.admin": "Administration", "nav.sync": "Synchronisation", "nav.models": "Modèles locaux", "nav.profile": "Profil d’entreprise", "nav.prompts": "Réglages des prompts", "nav.settings": "Réglages",
+  "shell.apertusSettings": "Réglages Apertus", "shell.endpointConfigured": "Point d’accès configuré", "shell.connectEndpoint": "Connecter le modèle", "shell.evidencePromise": "Vos sources. Vos versions. Des preuves vérifiables.", "shell.documentation": "Projet et documentation", "shell.apiUnavailable": "API indisponible", "shell.connected": "Connecté · {database}", "shell.connecting": "Connexion…", "shell.signOut": "Déconnecter {name}", "shell.readOnlyTitle": "Espace en lecture seule.", "shell.readOnlyBody": "Vous pouvez consulter toutes les preuves et tous les historiques enregistrés. Un administrateur de l’organisation gère les documents, contrôles, demandes IA et réglages.", "shell.apiError": "L’API est indisponible. Les données affichées peuvent être anciennes; démarrez le serveur pour reprendre la veille.", "shell.footer": "Preuves enregistrées, changements visibles. Les résultats IA assistent la vérification humaine.", "auth.opening": "Ouverture de votre espace…",
+  "login.createWorkspace": "Créer un espace", "login.signIn": "Se connecter", "login.startMonitoring": "Commencer la veille", "login.resetPassword": "Réinitialiser votre mot de passe", "login.choosePassword": "Choisir un nouveau mot de passe", "login.verifyEmail": "Confirmer votre adresse", "login.welcomeBack": "Bon retour", "login.inviteHelp": "Cette invitation est liée à l’adresse invitée et ne peut servir qu’une fois.", "login.verifyHelp": "Ce lien unique confirme l’adresse associée à votre compte.", "login.resetHelp": "Le lien ne peut servir qu’une fois et expire après 30 minutes.", "login.forgotHelp": "Saisissez votre adresse. La réponse est identique qu’un compte existe ou non.", "login.registerHelp": "Un espace personnel est créé si le champ organisation reste vide.", "login.signInHelp": "Utilisez l’adresse et le mot de passe de votre espace.", "login.productBody": "Surveillez les sources juridiques suisses, conservez chaque version et examinez les changements étayés avec Apertus local.", "login.exactEvidence": "Preuves exactes enregistrées et changements visibles", "login.sharedWorkspace": "Votre organisation partage un espace privé", "login.aiEvidence": "Les conclusions IA renvoient toujours aux preuves", "login.emailVerified": "Votre adresse est confirmée. Vous pouvez ouvrir votre espace.", "login.verifying": "Confirmation…", "login.continue": "Continuer vers la connexion", "login.name": "Votre nom", "login.organization": "Organisation", "common.optional": "facultatif", "login.email": "E-mail", "login.password": "Mot de passe", "login.passwordHint": "Au moins 10 caractères", "login.sendReset": "Envoyer le lien", "login.changePassword": "Changer le mot de passe", "login.createJoin": "Créer le compte et rejoindre", "login.signInJoin": "Se connecter et rejoindre", "login.createMine": "Créer mon espace", "login.forgot": "Mot de passe oublié?", "login.resend": "Renvoyer la confirmation", "login.back": "Retour à la connexion", "login.passwordChanged": "Mot de passe modifié. Reconnectez-vous sur tous les appareils.",
+  "onboarding.ready": "VOTRE ESPACE EST PRÊT", "onboarding.title": "Commencez par un texte qui vous concerne", "onboarding.body": "Ajoutez l’URL d’un document officiel. Helvetic Lens enregistre la version actuelle comme preuve; les contrôles suivants montrent les changements et leur importance possible pour votre organisation.", "onboarding.connect": "Connecter", "onboarding.connectBody": "Ajouter un texte Fedlex ou un site source.", "onboarding.compare": "Comparer", "onboarding.compareBody": "Importer une version antérieure si elle existe.", "onboarding.understand": "Comprendre", "onboarding.understandBody": "Utiliser Apertus local après l’identification des changements exacts.", "onboarding.add": "Ajouter mon premier texte", "onboarding.explore": "Explorer le registre", "format.notChecked": "Pas encore contrôlé", "error.fallback": "Une erreur s’est produite. Veuillez réessayer.", "error.authentication_required": "Connectez-vous pour continuer.", "error.viewer_read_only": "Votre compte dispose d’un accès en lecture seule.", "error.invalid_email": "Saisissez une adresse e-mail valide.", "error.invalid_credentials": "L’adresse ou le mot de passe est incorrect.", "error.weak_password": "Utilisez au moins 10 caractères.", "error.email_exists": "Un compte existe déjà pour cette adresse.", "error.unsupported_locale": "Choisissez une langue prise en charge.", "count.events": "{count, plural, one {# événement} other {# événements}}",
+};
+
+const it: Messages = {
+  ...en,
+  "brand.tagline": "Scopri cosa è cambiato. Comprendi cosa conta.", "language.label": "Lingua", "shell.workspace": "SPAZIO DI LAVORO", "shell.defaultWorkspace": "Monitoraggio giuridico svizzero", "shell.monitor": "MONITORAGGIO",
+  "nav.overview": "Panoramica", "nav.registry": "Registro", "nav.impact": "Posta degli impatti", "nav.organization": "Organizzazione", "nav.sources": "Fonti", "nav.activity": "Attività di controllo", "nav.logs": "Log integrazioni", "nav.admin": "Amministrazione", "nav.sync": "Sincronizzazione", "nav.models": "Modelli locali", "nav.profile": "Profilo aziendale", "nav.prompts": "Impostazioni prompt", "nav.settings": "Impostazioni",
+  "shell.apertusSettings": "Impostazioni Apertus", "shell.endpointConfigured": "Endpoint configurato", "shell.connectEndpoint": "Collega l’endpoint del modello", "shell.evidencePromise": "Le tue fonti. Le tue versioni. Prove verificabili.", "shell.documentation": "Progetto e documentazione", "shell.apiUnavailable": "API non disponibile", "shell.connected": "Connesso · {database}", "shell.connecting": "Connessione…", "shell.signOut": "Disconnetti {name}", "shell.readOnlyTitle": "Spazio in sola lettura.", "shell.readOnlyBody": "Puoi consultare tutte le prove e le cronologie salvate. Un amministratore dell’organizzazione gestisce documenti, controlli, richieste IA e impostazioni.", "shell.apiError": "L’API non è disponibile. I dati mostrati potrebbero essere obsoleti; avvia il backend per riprendere il monitoraggio.", "shell.footer": "Prove salvate, cambiamenti visibili. I risultati IA supportano la verifica umana.", "auth.opening": "Apertura dello spazio…",
+  "login.createWorkspace": "Crea spazio", "login.signIn": "Accedi", "login.startMonitoring": "Inizia il monitoraggio", "login.resetPassword": "Reimposta la password", "login.choosePassword": "Scegli una nuova password", "login.verifyEmail": "Conferma l’e-mail", "login.welcomeBack": "Bentornato", "login.inviteHelp": "L’invito è legato all’e-mail invitata e può essere usato una sola volta.", "login.verifyHelp": "Questo link monouso conferma l’indirizzo del tuo account.", "login.resetHelp": "Il link è monouso e scade dopo 30 minuti.", "login.forgotHelp": "Inserisci l’e-mail. La risposta è identica che l’account esista o meno.", "login.registerHelp": "Se lasci vuota l’organizzazione viene creato uno spazio personale.", "login.signInHelp": "Usa e-mail e password del tuo spazio.", "login.productBody": "Monitora le fonti giuridiche svizzere, conserva ogni versione ed esamina i cambiamenti documentati con Apertus locale.", "login.exactEvidence": "Prove esatte salvate e cambiamenti visibili", "login.sharedWorkspace": "L’organizzazione condivide uno spazio privato", "login.aiEvidence": "Le conclusioni IA rimandano sempre alle prove", "login.emailVerified": "L’e-mail è confermata. Puoi aprire il tuo spazio.", "login.verifying": "Conferma…", "login.continue": "Continua all’accesso", "login.name": "Il tuo nome", "login.organization": "Organizzazione", "common.optional": "facoltativo", "login.email": "E-mail", "login.password": "Password", "login.passwordHint": "Almeno 10 caratteri", "login.sendReset": "Invia il link", "login.changePassword": "Cambia password", "login.createJoin": "Crea account e partecipa", "login.signInJoin": "Accedi e partecipa", "login.createMine": "Crea il mio spazio", "login.forgot": "Password dimenticata?", "login.resend": "Reinvia conferma", "login.back": "Torna all’accesso", "login.passwordChanged": "Password modificata. Accedi di nuovo su tutti i dispositivi.",
+  "onboarding.ready": "IL TUO SPAZIO È PRONTO", "onboarding.title": "Inizia con una legge che ti interessa", "onboarding.body": "Aggiungi l’URL di un documento ufficiale. Helvetic Lens salva la versione attuale come prova; i controlli futuri mostrano cosa cambia e cosa può contare per l’organizzazione.", "onboarding.connect": "Collega", "onboarding.connectBody": "Aggiungi una legge Fedlex o un sito fonte.", "onboarding.compare": "Confronta", "onboarding.compareBody": "Importa una versione precedente, se disponibile.", "onboarding.understand": "Comprendi", "onboarding.understandBody": "Usa Apertus locale dopo aver identificato i cambiamenti esatti.", "onboarding.add": "Aggiungi la prima legge", "onboarding.explore": "Esplora il registro", "format.notChecked": "Non ancora controllato", "error.fallback": "Si è verificato un errore. Riprova.", "error.authentication_required": "Accedi per continuare.", "error.viewer_read_only": "Il tuo account dispone dell’accesso in sola lettura.", "error.invalid_email": "Inserisci un indirizzo e-mail valido.", "error.invalid_credentials": "E-mail o password non corretti.", "error.weak_password": "Usa almeno 10 caratteri.", "error.email_exists": "Esiste già un account per questa e-mail.", "error.unsupported_locale": "Scegli una lingua supportata.", "count.events": "{count, plural, one {# evento} other {# eventi}}",
+};
+
+const rm: Messages = {
+  ...en,
+  "brand.tagline": "Vesair tge ch’è sa midà. Chapir tge che quinta.", "language.label": "Lingua", "shell.workspace": "SPAZI DA LAVUR", "shell.defaultWorkspace": "Surveglianza giuridica svizra", "shell.monitor": "SURVEGLIANZA",
+  "nav.overview": "Survista", "nav.registry": "Register", "nav.impact": "Posta dals effects", "nav.organization": "Organisaziun", "nav.sources": "Funtaunas", "nav.activity": "Activitad da controlla", "nav.logs": "Protocols d’integraziun", "nav.admin": "Administraziun", "nav.sync": "Sincronisaziun", "nav.models": "Models locals", "nav.profile": "Profil da l’interpresa", "nav.prompts": "Parameters dals prompts", "nav.settings": "Parameters",
+  "shell.apertusSettings": "Parameters dad Apertus", "shell.endpointConfigured": "Punct d’access configurà", "shell.connectEndpoint": "Colliar il model", "shell.evidencePromise": "Tias funtaunas. Tias versiuns. Cumprovas controllablas.", "shell.documentation": "Project e documentaziun", "shell.apiUnavailable": "API betg disponibla", "shell.connected": "Collià · {database}", "shell.connecting": "Colliaziun…", "shell.signOut": "Sortir sco {name}", "shell.readOnlyTitle": "Spazi mo per leger.", "shell.readOnlyBody": "Ti pos examinar tut las cumprovas e tut ils andaments memorisads. In administratur da l’organisaziun administrescha documents, controllas, dumondas IA e parameters.", "shell.apiError": "L’API n’è betg disponibla. Las datas mussadas pon esser antiquadas; avvia il backend per cuntinuar la surveglianza.", "shell.footer": "Cumprovas memorisadas, midadas visiblas. Resultats IA sustegnan la controlla umana.", "auth.opening": "Tes spazi vegn avert…",
+  "login.createWorkspace": "Crear in spazi", "login.signIn": "S’annunziar", "login.startMonitoring": "Cumenzar la surveglianza", "login.resetPassword": "Redefinir tes pled-clav", "login.choosePassword": "Tscherner in nov pled-clav", "login.verifyEmail": "Confermar l’adressa", "login.welcomeBack": "Bainvegni enavos", "login.inviteHelp": "Questa invitaziun è liada a l’adressa envidada e po vegnir duvrada ina giada.", "login.verifyHelp": "Questa colliaziun unica conferma l’adressa da tes conto.", "login.resetHelp": "La colliaziun è valaivla ina giada e scada suenter 30 minutas.", "login.forgotHelp": "Endatescha tia adressa. La resposta è la medema, independentamain sch’in conto exista.", "login.registerHelp": "In spazi persunal vegn creà sche l’organisaziun resta vida.", "login.signInHelp": "Dovra l’adressa ed il pled-clav da tes spazi.", "login.productBody": "Surveglia funtaunas giuridicas svizras, conserva mintga versiun ed examinescha midadas documentadas cun Apertus local.", "login.exactEvidence": "Cumprovas exactas e midadas visiblas", "login.sharedWorkspace": "Tia organisaziun parta in spazi privat", "login.aiEvidence": "Conclusiuns IA renvieschan adina a las cumprovas", "login.emailVerified": "Tia adressa è confermada. Ti pos cuntinuar en tes spazi.", "login.verifying": "Confermar…", "login.continue": "Vinavant a l’annunzia", "login.name": "Tes num", "login.organization": "Organisaziun", "common.optional": "facultativ", "login.email": "E-mail", "login.password": "Pled-clav", "login.passwordHint": "Almain 10 segns", "login.sendReset": "Trametter la colliaziun", "login.changePassword": "Midar il pled-clav", "login.createJoin": "Crear il conto e sa participar", "login.signInJoin": "S’annunziar e sa participar", "login.createMine": "Crear mes spazi", "login.forgot": "Emblidà il pled-clav?", "login.resend": "Trametter danovamain", "login.back": "Enavos a l’annunzia", "login.passwordChanged": "Pled-clav midà. S’annunzia danovamain sin tut ils apparats.",
+  "onboarding.ready": "TES SPAZI È PRONT", "onboarding.title": "Cumenza cun ina lescha impurtanta per tai", "onboarding.body": "Agiunta l’URL d’in document uffizial. Helvetic Lens memorisescha la versiun actuala sco cumprova; controllas futuras mussan las midadas ed ils effects pussaivels per tia organisaziun.", "onboarding.connect": "Colliar", "onboarding.connectBody": "Agiuntar ina lescha Fedlex u ina pagina da funtauna.", "onboarding.compare": "Cumparegliar", "onboarding.compareBody": "Importar ina versiun pli veglia, sche disponibla.", "onboarding.understand": "Chapir", "onboarding.understandBody": "Duvrar Apertus local suenter avair identifitgà las midadas exactas.", "onboarding.add": "Agiuntar l’emprima lescha", "onboarding.explore": "Explorar il register", "format.notChecked": "Betg anc controllà", "error.fallback": "Insatge n’ha betg funcziunà. Emprova anc ina giada.", "error.authentication_required": "S’annunzia per cuntinuar.", "error.viewer_read_only": "Tes conto ha mo access da lectura.", "error.invalid_email": "Endatescha ina adressa dad e-mail valaivla.", "error.invalid_credentials": "L’adressa u il pled-clav n’è betg correct.", "error.weak_password": "Dovra almain 10 segns.", "error.email_exists": "I dat gia in conto per questa adressa.", "error.unsupported_locale": "Tscherna ina lingua sustegnida.", "count.events": "{count, plural, one {# eveniment} other {# eveniments}}",
+};
+
+const registryEn: Messages = {
+  "registry.eyebrow": "SAVED REGULATORY ACTIVITY", "registry.title": "Know what happened, and when.", "registry.body": "Detection time and official legal dates stay separate. This page renders saved evidence without waiting for AI or a source.", "registry.views": "Registry view", "registry.monitored": "My monitored documents", "registry.events": "All discovered events", "registry.searchPlaceholder": "Search title, authority, event, or language…", "common.search": "Search", "common.clear": "Clear", "registry.from": "Custom range from", "registry.to": "Custom range to", "registry.loading": "Reading the saved registry…", "registry.empty": "No saved records match these filters.", "registry.emptyBody": "Adjust the date or metadata filters. A source failure never becomes a false legal event.", "registry.onPage": "{count} on this page", "registry.officialDatesUnknown": "Official dates: unknown", "registry.officialNotice": "Context from the publishing authority. This is not a statute, enacted amendment, or court holding.", "registry.detected": "Detected {date}", "registry.linked": "Linked monitored laws: {laws}", "registry.notLinked": "No monitored law is linked yet.", "common.timeline": "Timeline", "common.comparison": "Comparison", "common.evidence": "Evidence", "common.officialSource": "Official source", "registry.markRead": "Mark {state}", "registry.next": "Next page",
+  "filter.authority": "Authority", "filter.allAuthorities": "All authorities", "filter.connector": "Connector", "filter.allConnectors": "All connectors", "filter.kind": "Document kind", "filter.allKinds": "All kinds", "filter.language": "Language", "filter.allLanguages": "All languages", "filter.lifecycle": "Lifecycle", "filter.allLifecycle": "All lifecycle states", "filter.impact": "Impact", "filter.allImpacts": "All impacts", "filter.monitoring": "Monitoring", "filter.allMonitoring": "Watched and unwatched", "filter.readState": "Read state", "filter.allRead": "Read and unread", "filter.health": "Connector health", "filter.allHealth": "Any connector health", "filter.severity": "Severity", "filter.allSeverities": "All severities", "filter.type": "Type", "filter.allTypes": "All event types", "filter.myState": "My state", "filter.allStates": "All states", "filter.watchedLaw": "Watched law", "filter.allWatchedLaws": "All monitored laws",
+  "impact.eyebrow": "REGULATORY IMPACT INBOX", "impact.title": "See what may matter to your monitored laws.", "impact.body": "Each source event appears once. Affected monitored laws and their saved evidence are grouped beneath it.", "impact.sourceEvents": "source events", "impact.lawImpacts": "law impacts", "impact.unread": "unread", "impact.loading": "Reading saved impact evidence…", "impact.empty": "No impact items match these filters.", "impact.emptyBody": "Connector and registry evidence remain available even when local AI is offline.", "impact.lawsAnalysed": "{done}/{total} laws analysed", "impact.detected": "detected {date}", "impact.why": "WHY THIS APPEARS", "impact.effect": "POTENTIAL EFFECT", "impact.next": "NEXT REVIEW STEP", "impact.coverage": "Evidence coverage: {selected} / {total}", "impact.history": "Analysis history ({count})", "impact.historyLoading": "Reading saved conclusions…", "impact.noConclusion": "No valid conclusion was saved.", "impact.latestFailed": "The latest reanalysis failed. The last valid conclusion remains current.", "impact.officialReplacement": "Official replacement:", "impact.replacementMonitored": "Both records remain in monitoring history.", "impact.replacementAvailable": "The predecessor history will remain intact if the successor is added.", "impact.documentTimeline": "Document timeline", "impact.relationEvidence": "Relation evidence", "impact.reanalyse": "Reanalyse", "impact.confirm": "Confirm lead", "impact.reject": "Reject lead", "impact.monitorSuccessor": "Monitor successor", "impact.savedArtifact": "Saved source artifact", "impact.dismiss": "Dismiss", "impact.mute": "Mute", "impact.restore": "Restore to unread", "impact.officialMetadata": "official metadata", "impact.organizationReview": "organization {decision}", "impact.reasonFallback": "The source event and monitored law share saved identifiers or terms.",
+  "status.confirmed_relation": "Confirmed relation", "status.possible_impact": "Possible impact", "status.awaiting_analysis": "Awaiting analysis", "status.analysis_failed": "Analysis failed", "status.no_supported_impact": "No supported impact", "status.read": "read", "status.unread": "unread", "status.dismissed": "dismissed", "status.muted": "muted",
+};
+
+const registryDe: Messages = {
+  "registry.eyebrow": "GESPEICHERTE RECHTSAKTIVITÄT", "registry.title": "Was ist wann geschehen?", "registry.body": "Erkennungszeit und amtliche Rechtsdaten bleiben getrennt. Diese Seite zeigt gespeicherte Belege ohne auf KI oder eine Quelle zu warten.", "registry.views": "Registeransicht", "registry.monitored": "Meine beobachteten Dokumente", "registry.events": "Alle entdeckten Ereignisse", "registry.searchPlaceholder": "Titel, Behörde, Ereignis oder Sprache suchen…", "common.search": "Suchen", "common.clear": "Zurücksetzen", "registry.from": "Zeitraum ab", "registry.to": "Zeitraum bis", "registry.loading": "Gespeichertes Register wird geladen…", "registry.empty": "Keine gespeicherten Einträge entsprechen den Filtern.", "registry.emptyBody": "Passen Sie Datum oder Metadatenfilter an. Ein Quellenfehler wird nie als Rechtsereignis ausgegeben.", "registry.onPage": "{count} auf dieser Seite", "registry.officialDatesUnknown": "Amtliche Daten: unbekannt", "registry.officialNotice": "Kontext der veröffentlichenden Behörde. Dies ist weder Erlass noch beschlossene Änderung oder Gerichtsentscheid.", "registry.detected": "Erkannt {date}", "registry.linked": "Verknüpfte beobachtete Erlasse: {laws}", "registry.notLinked": "Noch kein beobachteter Erlass verknüpft.", "common.timeline": "Zeitverlauf", "common.comparison": "Vergleich", "common.evidence": "Belege", "common.officialSource": "Amtliche Quelle", "registry.markRead": "Als {state} markieren", "registry.next": "Nächste Seite",
+  "filter.authority": "Behörde", "filter.allAuthorities": "Alle Behörden", "filter.connector": "Konnektor", "filter.allConnectors": "Alle Konnektoren", "filter.kind": "Dokumentart", "filter.allKinds": "Alle Arten", "filter.language": "Sprache", "filter.allLanguages": "Alle Sprachen", "filter.lifecycle": "Rechtsstand", "filter.allLifecycle": "Alle Rechtsstände", "filter.impact": "Auswirkung", "filter.allImpacts": "Alle Auswirkungen", "filter.monitoring": "Beobachtung", "filter.allMonitoring": "Beobachtet und unbeobachtet", "filter.readState": "Lesestatus", "filter.allRead": "Gelesen und ungelesen", "filter.health": "Konnektorstatus", "filter.allHealth": "Jeder Konnektorstatus", "filter.severity": "Schweregrad", "filter.allSeverities": "Alle Schweregrade", "filter.type": "Typ", "filter.allTypes": "Alle Ereignistypen", "filter.myState": "Mein Status", "filter.allStates": "Alle Status", "filter.watchedLaw": "Beobachteter Erlass", "filter.allWatchedLaws": "Alle beobachteten Erlasse",
+  "impact.eyebrow": "POSTFACH FÜR RECHTSAUSWIRKUNGEN", "impact.title": "Was könnte für Ihre beobachteten Erlasse wichtig sein?", "impact.body": "Jedes Quellenereignis erscheint einmal. Betroffene Erlasse und ihre gespeicherten Belege sind darunter gruppiert.", "impact.sourceEvents": "Quellenereignisse", "impact.lawImpacts": "Erlassauswirkungen", "impact.unread": "ungelesen", "impact.loading": "Gespeicherte Auswirkungsbelege werden geladen…", "impact.empty": "Keine Auswirkungen entsprechen den Filtern.", "impact.emptyBody": "Konnektor- und Registerbelege bleiben auch bei offline geschalteter lokaler KI verfügbar.", "impact.lawsAnalysed": "{done}/{total} Erlasse analysiert", "impact.detected": "erkannt {date}", "impact.why": "WARUM DIES ERSCHEINT", "impact.effect": "MÖGLICHE AUSWIRKUNG", "impact.next": "NÄCHSTER PRÜFSCHRITT", "impact.coverage": "Belegabdeckung: {selected} / {total}", "impact.history": "Analyseverlauf ({count})", "impact.historyLoading": "Gespeicherte Schlussfolgerungen werden geladen…", "impact.noConclusion": "Keine gültige Schlussfolgerung gespeichert.", "impact.latestFailed": "Die letzte Neuanalyse ist fehlgeschlagen. Die letzte gültige Schlussfolgerung bleibt aktuell.", "impact.officialReplacement": "Amtlicher Ersatz:", "impact.replacementMonitored": "Beide Einträge bleiben im Beobachtungsverlauf.", "impact.replacementAvailable": "Der Verlauf des Vorgängers bleibt beim Hinzufügen des Nachfolgers erhalten.", "impact.documentTimeline": "Dokumentverlauf", "impact.relationEvidence": "Belege zur Beziehung", "impact.reanalyse": "Neu analysieren", "impact.confirm": "Hinweis bestätigen", "impact.reject": "Hinweis verwerfen", "impact.monitorSuccessor": "Nachfolger beobachten", "impact.savedArtifact": "Gespeichertes Quellenartefakt", "impact.dismiss": "Ausblenden", "impact.mute": "Stummschalten", "impact.restore": "Als ungelesen wiederherstellen", "impact.officialMetadata": "amtliche Metadaten", "impact.organizationReview": "Organisation: {decision}", "impact.reasonFallback": "Quellenereignis und beobachteter Erlass teilen gespeicherte Kennungen oder Begriffe.",
+  "status.confirmed_relation": "Bestätigte Beziehung", "status.possible_impact": "Mögliche Auswirkung", "status.awaiting_analysis": "Analyse ausstehend", "status.analysis_failed": "Analyse fehlgeschlagen", "status.no_supported_impact": "Keine belegte Auswirkung", "status.read": "gelesen", "status.unread": "ungelesen", "status.dismissed": "ausgeblendet", "status.muted": "stumm",
+};
+
+const registryFr: Messages = {
+  "registry.eyebrow": "ACTIVITÉ JURIDIQUE ENREGISTRÉE", "registry.title": "Sachez ce qui s’est passé et quand.", "registry.body": "L’heure de détection et les dates juridiques officielles restent distinctes. Cette page affiche les preuves enregistrées sans attendre l’IA ou la source.", "registry.views": "Vue du registre", "registry.monitored": "Mes documents surveillés", "registry.events": "Tous les événements découverts", "registry.searchPlaceholder": "Rechercher titre, autorité, événement ou langue…", "common.search": "Rechercher", "common.clear": "Effacer", "registry.from": "Période du", "registry.to": "Période au", "registry.loading": "Lecture du registre enregistré…", "registry.empty": "Aucun enregistrement ne correspond aux filtres.", "registry.emptyBody": "Modifiez les filtres de date ou de métadonnées. Une erreur de source ne devient jamais un faux événement juridique.", "registry.onPage": "{count} sur cette page", "registry.officialDatesUnknown": "Dates officielles: inconnues", "registry.officialNotice": "Contexte de l’autorité de publication. Il ne s’agit ni d’une loi, ni d’une modification adoptée, ni d’un arrêt.", "registry.detected": "Détecté {date}", "registry.linked": "Textes surveillés liés: {laws}", "registry.notLinked": "Aucun texte surveillé n’est encore lié.", "common.timeline": "Chronologie", "common.comparison": "Comparaison", "common.evidence": "Preuves", "common.officialSource": "Source officielle", "registry.markRead": "Marquer {state}", "registry.next": "Page suivante",
+  "filter.authority": "Autorité", "filter.allAuthorities": "Toutes les autorités", "filter.connector": "Connecteur", "filter.allConnectors": "Tous les connecteurs", "filter.kind": "Type de document", "filter.allKinds": "Tous les types", "filter.language": "Langue", "filter.allLanguages": "Toutes les langues", "filter.lifecycle": "État juridique", "filter.allLifecycle": "Tous les états", "filter.impact": "Impact", "filter.allImpacts": "Tous les impacts", "filter.monitoring": "Surveillance", "filter.allMonitoring": "Surveillé ou non", "filter.readState": "État de lecture", "filter.allRead": "Lu et non lu", "filter.health": "État du connecteur", "filter.allHealth": "Tous les états", "filter.severity": "Gravité", "filter.allSeverities": "Toutes les gravités", "filter.type": "Type", "filter.allTypes": "Tous les types d’événement", "filter.myState": "Mon état", "filter.allStates": "Tous les états", "filter.watchedLaw": "Texte surveillé", "filter.allWatchedLaws": "Tous les textes surveillés",
+  "impact.eyebrow": "BOÎTE DES IMPACTS JURIDIQUES", "impact.title": "Voyez ce qui peut concerner vos textes surveillés.", "impact.body": "Chaque événement source apparaît une fois. Les textes concernés et leurs preuves sont regroupés dessous.", "impact.sourceEvents": "événements source", "impact.lawImpacts": "impacts juridiques", "impact.unread": "non lus", "impact.loading": "Lecture des preuves d’impact…", "impact.empty": "Aucun impact ne correspond aux filtres.", "impact.emptyBody": "Les preuves des connecteurs et du registre restent accessibles même si l’IA locale est hors ligne.", "impact.lawsAnalysed": "{done}/{total} textes analysés", "impact.detected": "détecté {date}", "impact.why": "POURQUOI CET ÉLÉMENT", "impact.effect": "EFFET POSSIBLE", "impact.next": "PROCHAINE VÉRIFICATION", "impact.coverage": "Couverture des preuves: {selected} / {total}", "impact.history": "Historique des analyses ({count})", "impact.historyLoading": "Lecture des conclusions enregistrées…", "impact.noConclusion": "Aucune conclusion valide enregistrée.", "impact.latestFailed": "La dernière nouvelle analyse a échoué. La dernière conclusion valide reste active.", "impact.officialReplacement": "Remplacement officiel:", "impact.replacementMonitored": "Les deux entrées restent dans l’historique de surveillance.", "impact.replacementAvailable": "L’historique du prédécesseur restera intact si le successeur est ajouté.", "impact.documentTimeline": "Chronologie du document", "impact.relationEvidence": "Preuves de la relation", "impact.reanalyse": "Réanalyser", "impact.confirm": "Confirmer la piste", "impact.reject": "Rejeter la piste", "impact.monitorSuccessor": "Surveiller le successeur", "impact.savedArtifact": "Fichier source enregistré", "impact.dismiss": "Écarter", "impact.mute": "Masquer", "impact.restore": "Rétablir comme non lu", "impact.officialMetadata": "métadonnées officielles", "impact.organizationReview": "organisation: {decision}", "impact.reasonFallback": "L’événement source et le texte surveillé partagent des identifiants ou termes enregistrés.",
+  "status.confirmed_relation": "Relation confirmée", "status.possible_impact": "Impact possible", "status.awaiting_analysis": "Analyse en attente", "status.analysis_failed": "Échec de l’analyse", "status.no_supported_impact": "Aucun impact étayé", "status.read": "lu", "status.unread": "non lu", "status.dismissed": "écarté", "status.muted": "masqué",
+};
+
+const registryIt: Messages = { ...registryEn, ...Object.fromEntries(Object.entries(registryEn).map(([key, value]) => [key, value])) };
+Object.assign(registryIt, { "registry.eyebrow": "ATTIVITÀ GIURIDICA SALVATA", "registry.title": "Scopri cosa è successo e quando.", "registry.body": "L’ora di rilevamento e le date giuridiche ufficiali restano separate. Questa pagina mostra le prove salvate senza attendere l’IA o la fonte.", "registry.monitored": "I miei documenti monitorati", "registry.events": "Tutti gli eventi rilevati", "common.search": "Cerca", "common.clear": "Cancella", "registry.loading": "Lettura del registro salvato…", "registry.empty": "Nessun record corrisponde ai filtri.", "common.timeline": "Cronologia", "common.comparison": "Confronto", "common.evidence": "Prove", "common.officialSource": "Fonte ufficiale", "filter.language": "Lingua", "filter.severity": "Gravità", "filter.type": "Tipo", "filter.myState": "Il mio stato", "filter.watchedLaw": "Legge monitorata", "impact.eyebrow": "POSTA DEGLI IMPATTI GIURIDICI", "impact.title": "Scopri cosa può contare per le leggi monitorate.", "impact.body": "Ogni evento fonte appare una volta. Le leggi interessate e le relative prove sono raggruppate sotto.", "impact.why": "PERCHÉ APPARE", "impact.effect": "EFFETTO POTENZIALE", "impact.next": "PROSSIMA VERIFICA", "impact.history": "Cronologia analisi ({count})", "impact.reanalyse": "Rianalizza", "impact.confirm": "Conferma segnalazione", "impact.reject": "Rifiuta segnalazione", "impact.monitorSuccessor": "Monitora successore", "impact.dismiss": "Ignora", "impact.mute": "Silenzia", "impact.restore": "Ripristina come non letto", "status.confirmed_relation": "Relazione confermata", "status.possible_impact": "Impatto possibile", "status.awaiting_analysis": "Analisi in attesa", "status.analysis_failed": "Analisi non riuscita", "status.no_supported_impact": "Nessun impatto documentato" });
+const registryRm: Messages = { ...registryEn };
+Object.assign(registryRm, { "registry.eyebrow": "ACTIVITAD GIURIDICA MEMORISADA", "registry.title": "Vesair tge ch’è capità e cura.", "registry.body": "Il temp da detecziun e las datas giuridicas uffizialas restan separads. Questa pagina mussa cumprovas memorisadas senza spetgar sin l’IA u la funtauna.", "registry.monitored": "Mes documents survegliads", "registry.events": "Tut ils eveniments chattads", "common.search": "Tschertgar", "common.clear": "Stizzar", "registry.loading": "Leger il register memorisà…", "registry.empty": "Nagins records correspundan als filters.", "common.timeline": "Cronologia", "common.comparison": "Cumparegliaziun", "common.evidence": "Cumprovas", "common.officialSource": "Funtauna uffiziala", "filter.language": "Lingua", "filter.severity": "Gravitad", "filter.type": "Tip", "filter.myState": "Mes status", "filter.watchedLaw": "Lescha survegliada", "impact.eyebrow": "POSTA DALS EFFECTS GIURIDICS", "impact.title": "Vesair tge che po esser impurtant per tias leschas.", "impact.body": "Mintga eveniment da funtauna cumpara ina giada. Las leschas pertutgadas e lur cumprovas èn gruppadas sutvart.", "impact.why": "PERTGE CHE QUEST CUMPARA", "impact.effect": "EFFECT PUSSAIVEL", "impact.next": "PROXIM PASS DA CONTROLLA", "impact.history": "Istorgia da las analisas ({count})", "impact.reanalyse": "Analisar danovamain", "impact.confirm": "Confermar l’indicaziun", "impact.reject": "Refusar l’indicaziun", "impact.monitorSuccessor": "Survegliar il successur", "impact.dismiss": "Allontanar", "impact.mute": "Metter sin mut", "impact.restore": "Restabilir sco betg legì", "status.confirmed_relation": "Relaziun confermada", "status.possible_impact": "Effect pussaivel", "status.awaiting_analysis": "Analisa pendenta", "status.analysis_failed": "Analisa betg reussida", "status.no_supported_impact": "Nagin effect cumprovà" });
+
+Object.assign(en, registryEn);
+Object.assign(de, registryDe);
+Object.assign(fr, registryFr);
+Object.assign(it, registryIt);
+Object.assign(rm, registryRm);
+
+const historyMessages: Record<Locale, Messages> = {
+  "en-CH": {
+    "history.title": "AI history", "history.refresh": "Refresh AI history", "history.loading": "Loading saved AI conclusions…", "history.empty": "No saved AI conclusions yet.", "history.emptyBody": "Run Impact analysis or ask a question. Results and failed attempts remain attached to their exact comparison.", "history.savedQuestion": "Saved question", "history.assessment": "Impact assessment", "history.impact": "Impact", "history.question": "Question", "history.comparison": "{mode} comparison", "history.earlierOriginal": "Earlier original", "history.currentOriginal": "Current original", "history.prompt": "Prompt revision {revision}", "history.reuse": "{count, plural, one {reused # time} other {reused # times}}", "history.lastOpened": "Last opened {date}", "history.plan": "Analysis plan", "history.expectedCalls": "Expected calls: {count}", "history.actualCalls": "Actual calls: {count}", "history.callLimit": "Call limit: {count}", "history.evidenceGroups": "Evidence groups: {count}", "history.limitedCoverage": "Limited coverage", "history.completeCoverage": "Complete planned coverage", "history.queue": "Queue: {value} ms", "history.inference": "Inference: {value} ms", "history.tokens": "Recorded tokens: {count}", "history.repairs": "Validation repairs: {count}", "history.applicability": "Applicability: {value}", "history.evidenceGrade": "Evidence: {value}", "history.materialChanges": "{count, plural, one {# material change} other {# material changes}}", "history.notSupported": "Not supported by the saved evidence", "history.context": "Context: {value}", "history.reviewed": "Evidence reviewed: {included} of {available} passages · {characters} characters.", "history.evidence": "Evidence", "history.outputLanguage": "Output language: {language}", "impact.reanalysisQueued": "Reanalysis was queued. The current conclusion stays visible until a valid result is saved."
+  },
+  "de-CH": {
+    "history.title": "KI-Verlauf", "history.refresh": "KI-Verlauf aktualisieren", "history.loading": "Gespeicherte KI-Schlussfolgerungen werden geladen…", "history.empty": "Noch keine KI-Schlussfolgerungen gespeichert.", "history.emptyBody": "Führen Sie eine Auswirkungsanalyse aus oder stellen Sie eine Frage. Ergebnisse und fehlgeschlagene Versuche bleiben dem exakten Vergleich zugeordnet.", "history.savedQuestion": "Gespeicherte Frage", "history.assessment": "Auswirkungsbeurteilung", "history.impact": "Auswirkung", "history.question": "Frage", "history.comparison": "Vergleich: {mode}", "history.earlierOriginal": "Früheres Original", "history.currentOriginal": "Aktuelles Original", "history.prompt": "Prompt-Revision {revision}", "history.reuse": "{count, plural, one {#-mal wiederverwendet} other {#-mal wiederverwendet}}", "history.lastOpened": "Zuletzt geöffnet: {date}", "history.plan": "Analyseplan", "history.expectedCalls": "Erwartete Aufrufe: {count}", "history.actualCalls": "Tatsächliche Aufrufe: {count}", "history.callLimit": "Aufruflimit: {count}", "history.evidenceGroups": "Beleggruppen: {count}", "history.limitedCoverage": "Begrenzte Abdeckung", "history.completeCoverage": "Vollständige geplante Abdeckung", "history.queue": "Warteschlange: {value} ms", "history.inference": "Inferenz: {value} ms", "history.tokens": "Erfasste Token: {count}", "history.repairs": "Validierungsreparaturen: {count}", "history.applicability": "Anwendbarkeit: {value}", "history.evidenceGrade": "Belegstärke: {value}", "history.materialChanges": "{count, plural, one {# wesentliche Änderung} other {# wesentliche Änderungen}}", "history.notSupported": "Durch die gespeicherten Belege nicht gestützt", "history.context": "Kontext: {value}", "history.reviewed": "Geprüfte Belege: {included} von {available} Passagen · {characters} Zeichen.", "history.evidence": "Belege", "history.outputLanguage": "Ausgabesprache: {language}", "impact.reanalysisQueued": "Die Neuanalyse wurde eingereiht. Die aktuelle Schlussfolgerung bleibt sichtbar, bis ein gültiges Ergebnis gespeichert ist."
+  },
+  "fr-CH": {
+    "history.title": "Historique IA", "history.refresh": "Actualiser l’historique IA", "history.loading": "Chargement des conclusions IA enregistrées…", "history.empty": "Aucune conclusion IA enregistrée.", "history.emptyBody": "Lancez l’analyse d’impact ou posez une question. Les résultats et tentatives échouées restent liés à la comparaison exacte.", "history.savedQuestion": "Question enregistrée", "history.assessment": "Évaluation d’impact", "history.impact": "Impact", "history.question": "Question", "history.comparison": "Comparaison: {mode}", "history.earlierOriginal": "Original antérieur", "history.currentOriginal": "Original actuel", "history.prompt": "Révision du prompt {revision}", "history.reuse": "{count, plural, one {réutilisé # fois} other {réutilisé # fois}}", "history.lastOpened": "Dernière ouverture: {date}", "history.plan": "Plan d’analyse", "history.expectedCalls": "Appels prévus: {count}", "history.actualCalls": "Appels réels: {count}", "history.callLimit": "Limite d’appels: {count}", "history.evidenceGroups": "Groupes de preuves: {count}", "history.limitedCoverage": "Couverture limitée", "history.completeCoverage": "Couverture planifiée complète", "history.queue": "File d’attente: {value} ms", "history.inference": "Inférence: {value} ms", "history.tokens": "Jetons enregistrés: {count}", "history.repairs": "Réparations de validation: {count}", "history.applicability": "Applicabilité: {value}", "history.evidenceGrade": "Niveau de preuve: {value}", "history.materialChanges": "{count, plural, one {# changement substantiel} other {# changements substantiels}}", "history.notSupported": "Non étayé par les preuves enregistrées", "history.context": "Contexte: {value}", "history.reviewed": "Preuves examinées: {included} sur {available} passages · {characters} caractères.", "history.evidence": "Preuves", "history.outputLanguage": "Langue de sortie: {language}", "impact.reanalysisQueued": "La nouvelle analyse est en file d’attente. La conclusion actuelle reste visible jusqu’à l’enregistrement d’un résultat valide."
+  },
+  "it-CH": {
+    "history.title": "Cronologia IA", "history.refresh": "Aggiorna cronologia IA", "history.loading": "Caricamento delle conclusioni IA salvate…", "history.empty": "Nessuna conclusione IA salvata.", "history.emptyBody": "Avvia l’analisi d’impatto o poni una domanda. Risultati e tentativi falliti restano collegati al confronto esatto.", "history.savedQuestion": "Domanda salvata", "history.assessment": "Valutazione d’impatto", "history.impact": "Impatto", "history.question": "Domanda", "history.comparison": "Confronto: {mode}", "history.earlierOriginal": "Originale precedente", "history.currentOriginal": "Originale attuale", "history.prompt": "Revisione prompt {revision}", "history.reuse": "{count, plural, one {riutilizzato # volta} other {riutilizzato # volte}}", "history.lastOpened": "Ultima apertura: {date}", "history.plan": "Piano di analisi", "history.expectedCalls": "Chiamate previste: {count}", "history.actualCalls": "Chiamate effettive: {count}", "history.callLimit": "Limite chiamate: {count}", "history.evidenceGroups": "Gruppi di prove: {count}", "history.limitedCoverage": "Copertura limitata", "history.completeCoverage": "Copertura pianificata completa", "history.queue": "Coda: {value} ms", "history.inference": "Inferenza: {value} ms", "history.tokens": "Token registrati: {count}", "history.repairs": "Riparazioni di validazione: {count}", "history.applicability": "Applicabilità: {value}", "history.evidenceGrade": "Grado della prova: {value}", "history.materialChanges": "{count, plural, one {# modifica sostanziale} other {# modifiche sostanziali}}", "history.notSupported": "Non supportato dalle prove salvate", "history.context": "Contesto: {value}", "history.reviewed": "Prove esaminate: {included} di {available} passaggi · {characters} caratteri.", "history.evidence": "Prove", "history.outputLanguage": "Lingua di uscita: {language}", "impact.reanalysisQueued": "La nuova analisi è stata accodata. La conclusione attuale resta visibile finché non viene salvato un risultato valido."
+  },
+  "rm-CH": {
+    "history.title": "Istorgia IA", "history.refresh": "Actualisar l’istorgia IA", "history.loading": "Chargiar las conclusiuns IA memorisadas…", "history.empty": "Anc naginas conclusiuns IA memorisadas.", "history.emptyBody": "Lantschai l’analisa d’effect u dumandai insatge. Resultats ed emprovas betg reussidas restan colliads cun la cumparegliaziun exacta.", "history.savedQuestion": "Dumonda memorisada", "history.assessment": "Valitaziun da l’effect", "history.impact": "Effect", "history.question": "Dumonda", "history.comparison": "Cumparegliaziun: {mode}", "history.earlierOriginal": "Original precedent", "history.currentOriginal": "Original actual", "history.prompt": "Revisiun dal prompt {revision}", "history.reuse": "{count, plural, one {reutilisà # giada} other {reutilisà # giadas}}", "history.lastOpened": "Avert l’ultima giada: {date}", "history.plan": "Plan d’analisa", "history.expectedCalls": "Cloms spetgads: {count}", "history.actualCalls": "Cloms effectivs: {count}", "history.callLimit": "Limita da cloms: {count}", "history.evidenceGroups": "Gruppas da cumprovas: {count}", "history.limitedCoverage": "Cuverta limitada", "history.completeCoverage": "Cuverta planisada cumpletta", "history.queue": "Colonna: {value} ms", "history.inference": "Inferenza: {value} ms", "history.tokens": "Tokens registrads: {count}", "history.repairs": "Correcturas da validaziun: {count}", "history.applicability": "Applicabilitad: {value}", "history.evidenceGrade": "Grad da cumprova: {value}", "history.materialChanges": "{count, plural, one {# midada materiala} other {# midadas materialas}}", "history.notSupported": "Betg sustegnì da las cumprovas memorisadas", "history.context": "Context: {value}", "history.reviewed": "Cumprovas examinadas: {included} da {available} passaschas · {characters} caracters.", "history.evidence": "Cumprovas", "history.outputLanguage": "Lingua da sortida: {language}", "impact.reanalysisQueued": "La nova analisa è en colonna. La conclusiun actuala resta visibla fin ch’in resultat valid è memorisà."
+  },
+};
+for (const locale of locales) Object.assign(catalogTarget(locale), historyMessages[locale]);
+
+function catalogTarget(locale: Locale): Messages {
+  return locale === "de-CH" ? de : locale === "fr-CH" ? fr : locale === "it-CH" ? it : locale === "rm-CH" ? rm : en;
+}
+
+const catalog: Record<Locale, Messages> = { "de-CH": de, "fr-CH": fr, "it-CH": it, "rm-CH": rm, "en-CH": en };
+const localeCookie = "helvetic_lens_locale";
+
+function messageParameters(value: string): string[] {
+  return [...value.matchAll(/\{(\w+)(?:,|\})/g)].map((match) => match[1]).sort();
+}
+
+function validateCatalog() {
+  for (const key of Object.keys(en)) {
+    const expected = messageParameters((en as Messages)[key]).join("|");
+    for (const locale of locales) {
+      const message = catalog[locale][key];
+      if (!message) throw new Error(`Missing ${locale} translation: ${key}`);
+      if (messageParameters(message).join("|") !== expected) {
+        throw new Error(`Translation parameters differ for ${locale}: ${key}`);
+      }
+    }
+  }
+}
+validateCatalog();
+
+export function pseudoTranslate(key: string, values: Values = {}): string | null {
+  const source = translate("en-CH", key, values);
+  if (!source) return null;
+  return `⟦${source.replace(/[aeiouy]/gi, (letter) => `${letter}${letter.toLowerCase()}`)}⟧`;
+}
+
+function supported(value: string | null | undefined): Locale | null {
+  if (!value) return null;
+  const exact = locales.find((item) => item.toLowerCase() === value.replace("_", "-").toLowerCase());
+  if (exact) return exact;
+  const language = value.slice(0, 2).toLowerCase();
+  return locales.find((item) => item.slice(0, 2) === language) || null;
+}
+
+export function storedLocale(): Locale {
+  if (typeof document === "undefined") return "en-CH";
+  const query = supported(new URLSearchParams(window.location.search).get("locale"));
+  const cookie = document.cookie.split(";").map((v) => v.trim()).find((v) => v.startsWith(`${localeCookie}=`));
+  const saved = supported(cookie ? decodeURIComponent(cookie.split("=", 2)[1]) : null);
+  const browser = navigator.languages?.map(supported).find(Boolean) as Locale | undefined;
+  return query || saved || browser || "en-CH";
+}
+
+function formatMessage(message: string, locale: Locale, values: Values): string {
+  let result = message.replace(
+    /\{(\w+), plural, one \{([^{}]*)\} other \{([^{}]*)\}\}/g,
+    (_all, name: string, one: string, other: string) => {
+      const count = Number(values[name] || 0);
+      return (new Intl.PluralRules(locale).select(count) === "one" ? one : other).replaceAll("#", new Intl.NumberFormat(locale).format(count));
+    },
+  );
+  result = result.replace(/\{(\w+)\}/g, (_all, name: string) => String(values[name] ?? `{${name}}`));
+  return result;
+}
+
+export function translate(locale: Locale, key: string, values: Values = {}): string | null {
+  const message = catalog[locale][key] || (en as Messages)[key];
+  return message ? formatMessage(message, locale, values) : null;
+}
+
+type I18nValue = {
+  locale: Locale;
+  t: (key: string, values?: Values) => string;
+  setLocale: (locale: Locale, persistForUser?: boolean) => Promise<void>;
+  syncUserLocale: (locale?: string) => void;
+  dateTime: (value: string | Date, options?: Intl.DateTimeFormatOptions) => string;
+  number: (value: number, options?: Intl.NumberFormatOptions) => string;
+};
+
+const I18nContext = createContext<I18nValue | null>(null);
+
+export function I18nProvider({ children }: { children: React.ReactNode }) {
+  const [locale, updateLocale] = useState<Locale>("en-CH");
+  const [authenticated, setAuthenticated] = useState(false);
+
+  const apply = useCallback((next: Locale) => {
+    updateLocale(next);
+    document.documentElement.lang = next;
+    document.cookie = `${localeCookie}=${encodeURIComponent(next)}; Path=/; Max-Age=31536000; SameSite=Lax`;
+  }, []);
+
+  useEffect(() => apply(storedLocale()), [apply]);
+
+  const syncUserLocale = useCallback((value?: string) => {
+    setAuthenticated(Boolean(value));
+    const next = supported(value);
+    if (next) apply(next);
+  }, [apply]);
+
+  const setLocale = useCallback(async (next: Locale, persistForUser = true) => {
+    apply(next);
+    if (!authenticated || !persistForUser) return;
+    const csrf = document.cookie.split(";").map((v) => v.trim()).find((v) => v.startsWith("helvetic_lens_csrf="))?.split("=", 2)[1];
+    await fetch("/api/auth/locale", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(csrf ? { "X-CSRF-Token": decodeURIComponent(csrf) } : {}) },
+      body: JSON.stringify({ locale: next }),
+    }).catch(() => undefined);
+  }, [apply, authenticated]);
+
+  const value = useMemo<I18nValue>(() => ({
+    locale,
+    t: (key, values = {}) => translate(locale, key, values) || String(key),
+    setLocale,
+    syncUserLocale,
+    dateTime: (input, options = {}) => new Intl.DateTimeFormat(locale, { timeZone: "Europe/Zurich", ...options }).format(new Date(input)),
+    number: (input, options = {}) => new Intl.NumberFormat(locale, options).format(input),
+  }), [locale, setLocale, syncUserLocale]);
+  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
+}
+
+export function useI18n() {
+  const value = useContext(I18nContext);
+  if (!value) throw new Error("I18nProvider is missing");
+  return value;
+}
+
+export function LanguageSelector({ compact = false }: { compact?: boolean }) {
+  const { locale, setLocale, t } = useI18n();
+  return (
+    <label className={`language-selector ${compact ? "language-selector-compact" : ""}`}>
+      <span className="sr-only">{t("language.label")}</span>
+      <select aria-label={t("language.label")} value={locale} onChange={(event) => void setLocale(event.target.value as Locale)}>
+        {locales.map((value) => <option key={value} value={value}>{localeNames[value]}</option>)}
+      </select>
+    </label>
+  );
+}

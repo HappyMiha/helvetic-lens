@@ -16,6 +16,7 @@ from .auth import CSRF_COOKIE, SESSION_COOKIE, AuthService, RateLimiter
 from .auth_mail import AuthMailer
 from .config import DomainError, Settings
 from .impact_inbox import ImpactInboxFilters
+from .locales import locale_from_accept_language
 from .model_settings import ApertusSettingsInput
 from .models import AdministrativeAudit, DocumentWatch, Law, Profile, Scan, Source, Version
 from .prompt_settings import PromptSettingsInput
@@ -78,6 +79,11 @@ class HistoryQuestion(Input):
 
 class QuestionInput(HistoryQuestion):
     history: list[HistoryQuestion] = Field(default_factory=list, max_length=4)
+    output_locale: Literal["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"] | None = None
+
+
+class AnalysisInput(Input):
+    output_locale: Literal["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"] | None = None
 
 
 class ActionDecisionInput(Input):
@@ -103,6 +109,7 @@ class RegisterInput(Input):
     name: str = Field(min_length=1, max_length=200)
     organization_name: str = Field(default="", max_length=200)
     invitation_token: str = Field(default="", max_length=200)
+    locale: Literal["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"] | None = None
 
 
 class LoginInput(Input):
@@ -125,6 +132,11 @@ class PasswordResetInput(AccountTokenInput):
 class InvitationInput(Input):
     email: str = Field(min_length=3, max_length=320)
     role: Literal["organization_admin", "viewer"] = "viewer"
+    recipient_locale: Literal["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"] | None = None
+
+
+class LocaleInput(Input):
+    locale: Literal["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"]
 
 
 class InvitationAcceptInput(Input):
@@ -222,7 +234,10 @@ def create_app(
 
     @app.exception_handler(DomainError)
     async def domain_error(_request, error: DomainError):
-        return JSONResponse(status_code=error.status, content={"detail": error.message, "code": error.code})
+        return JSONResponse(
+            status_code=error.status,
+            content={"detail": error.message, "code": error.code, "params": error.params},
+        )
 
     @app.exception_handler(RequestValidationError)
     async def invalid_request(_request, error: RequestValidationError):
@@ -235,6 +250,12 @@ def create_app(
                     for item in error.errors()
                 ],
                 "code": "invalid_input",
+                "params": {
+                    "fields": [
+                        ".".join(str(part) for part in item["loc"] if part != "body")
+                        for item in error.errors()
+                    ]
+                },
             },
         )
 
@@ -280,12 +301,13 @@ def create_app(
             except DomainError as error:
                 return JSONResponse(
                     status_code=error.status,
-                    content={"detail": error.message, "code": error.code},
+                    content={"detail": error.message, "code": error.code, "params": error.params},
                 )
         viewer_allowed_mutations = {
             "/api/auth/logout",
             "/api/invitations/accept",
             "/api/auth/session/organization",
+            "/api/auth/locale",
         }
         viewer_personal_state = (
             path.startswith("/api/impact-inbox/events/") and path.endswith("/state")
@@ -329,7 +351,7 @@ def create_app(
             except DomainError as error:
                 return JSONResponse(
                     status_code=error.status,
-                    content={"detail": error.message, "code": error.code},
+                    content={"detail": error.message, "code": error.code, "params": error.params},
                 )
         organization_id = identity.organization_id if identity else service.default_organization_id
         with service.db.organization_context(organization_id), service.organization_runtime():
@@ -376,6 +398,12 @@ def create_app(
             path="/",
         )
 
+    def selected_locale(request: Request, requested: str | None = None) -> str:
+        identity = request.state.identity
+        return requested or (identity.locale if identity else None) or locale_from_accept_language(
+            request.headers.get("accept-language"), settings.default_locale
+        )
+
     @app.post("/api/auth/register", status_code=201)
     async def register(data: RegisterInput, request: Request):
         subject = (request.client.host if request.client else "unknown") + ":" + data.email.casefold()
@@ -387,6 +415,9 @@ def create_app(
             name=data.name,
             organization_name=data.organization_name,
             invitation_token=data.invitation_token,
+            locale=data.locale or locale_from_accept_language(
+                request.headers.get("accept-language"), settings.default_locale
+            ),
         )
         normalized, verification_token = await asyncio.to_thread(
             auth.request_email_verification, data.email
@@ -394,7 +425,11 @@ def create_app(
         if verification_token:
             try:
                 await asyncio.to_thread(
-                    auth_mailer.send, normalized, "verify_email", verification_token
+                    auth_mailer.send,
+                    normalized,
+                    "verify_email",
+                    verification_token,
+                    identity.locale,
                 )
             except DomainError:
                 pass
@@ -427,7 +462,13 @@ def create_app(
         normalized, raw_token = await asyncio.to_thread(auth.request_email_verification, data.email)
         if raw_token:
             try:
-                await asyncio.to_thread(auth_mailer.send, normalized, "verify_email", raw_token)
+                await asyncio.to_thread(
+                    auth_mailer.send,
+                    normalized,
+                    "verify_email",
+                    raw_token,
+                    auth.user_locale(normalized),
+                )
             except DomainError:
                 pass
         return {
@@ -448,7 +489,13 @@ def create_app(
         normalized, raw_token = await asyncio.to_thread(auth.request_password_reset, data.email)
         if raw_token:
             try:
-                await asyncio.to_thread(auth_mailer.send, normalized, "reset_password", raw_token)
+                await asyncio.to_thread(
+                    auth_mailer.send,
+                    normalized,
+                    "reset_password",
+                    raw_token,
+                    auth.user_locale(normalized),
+                )
             except DomainError:
                 pass
         return {
@@ -474,6 +521,9 @@ def create_app(
                 "authenticated": False,
                 "anonymous_development": settings.allow_anonymous_dev,
                 "authentication_required": not settings.allow_anonymous_dev,
+                "suggested_locale": locale_from_accept_language(
+                    request.headers.get("accept-language"), settings.default_locale
+                ),
             }
         with service.db.session() as session:
             onboarding_required = not bool(session.scalar(select(DocumentWatch.id).limit(1)))
@@ -482,6 +532,14 @@ def create_app(
             "organizations": auth.organizations(identity),
             "onboarding_required": onboarding_required,
         }
+
+    @app.patch("/api/auth/locale")
+    def set_user_locale(data: LocaleInput, request: Request):
+        identity = request.state.identity
+        if identity is None:
+            return {"authenticated": False, "locale": data.locale}
+        updated = auth.set_locale(identity, data.locale)
+        return updated.public()
 
     @app.post("/api/auth/session/organization")
     def switch_organization(data: OrganizationSwitchInput, request: Request):
@@ -508,7 +566,12 @@ def create_app(
 
     @app.post("/api/organization/invitations", status_code=201)
     def create_organization_invitation(data: InvitationInput, request: Request):
-        return auth.create_invitation(request.state.identity, email=data.email, role=data.role)
+        return auth.create_invitation(
+            request.state.identity,
+            email=data.email,
+            role=data.role,
+            recipient_locale=data.recipient_locale,
+        )
 
     @app.delete("/api/organization/invitations/{invitation_id}")
     def revoke_organization_invitation(invitation_id: str, request: Request):
@@ -663,8 +726,13 @@ def create_app(
         "/api/relation-candidates/{organization_candidate_id}/analyse-jobs",
         status_code=202,
     )
-    async def relation_candidate_analysis_job(organization_candidate_id: str):
-        job = await service.enqueue_relation_analysis(organization_candidate_id)
+    async def relation_candidate_analysis_job(
+        organization_candidate_id: str, request: Request, data: AnalysisInput | None = None
+    ):
+        job = await service.enqueue_relation_analysis(
+            organization_candidate_id,
+            output_locale=selected_locale(request, data.output_locale if data else None),
+        )
         if settings.job_execution_mode == "inline":
             return await service.execute_job(job["id"])
         return job
@@ -673,8 +741,14 @@ def create_app(
         "/api/relation-candidates/{organization_candidate_id}/reanalyse-jobs",
         status_code=202,
     )
-    async def relation_candidate_reanalysis_job(organization_candidate_id: str):
-        job = await service.enqueue_relation_analysis(organization_candidate_id, force=True)
+    async def relation_candidate_reanalysis_job(
+        organization_candidate_id: str, request: Request, data: AnalysisInput | None = None
+    ):
+        job = await service.enqueue_relation_analysis(
+            organization_candidate_id,
+            force=True,
+            output_locale=selected_locale(request, data.output_locale if data else None),
+        )
         if settings.job_execution_mode == "inline":
             return await service.execute_job(job["id"])
         return job
@@ -890,8 +964,8 @@ def create_app(
         return service.create_comparison(data.old_version_id, data.new_version_id)
 
     @app.get("/api/comparisons/{comparison_id}")
-    def comparison_detail(comparison_id: str):
-        return service.comparison_detail(comparison_id)
+    def comparison_detail(comparison_id: str, request: Request):
+        return service.comparison_detail(comparison_id, selected_locale(request))
 
     @app.get("/api/comparisons/{comparison_id}/ai-history")
     def comparison_ai_history(comparison_id: str, limit: int = Query(default=100, ge=1, le=500)):
@@ -921,26 +995,38 @@ def create_app(
         )
 
     @app.post("/api/comparisons/{comparison_id}/analyse")
-    async def analyse(comparison_id: str):
-        return await service.analyse(comparison_id)
+    async def analyse(comparison_id: str, request: Request, data: AnalysisInput | None = None):
+        return await service.analyse(
+            comparison_id, output_locale=selected_locale(request, data.output_locale if data else None)
+        )
 
     @app.post("/api/comparisons/{comparison_id}/analyse-jobs", status_code=202)
-    async def analyse_job(comparison_id: str):
-        job = service.enqueue_analysis(comparison_id)
+    async def analyse_job(
+        comparison_id: str, request: Request, data: AnalysisInput | None = None
+    ):
+        job = service.enqueue_analysis(
+            comparison_id, selected_locale(request, data.output_locale if data else None)
+        )
         if settings.job_execution_mode == "inline":
             return await service.execute_job(job["id"])
         return job
 
     @app.post("/api/comparisons/{comparison_id}/ask")
-    async def ask(comparison_id: str, data: QuestionInput):
-        return await service.ask(comparison_id, data.question, [q.model_dump() for q in data.history])
+    async def ask(comparison_id: str, data: QuestionInput, request: Request):
+        return await service.ask(
+            comparison_id,
+            data.question,
+            [q.model_dump() for q in data.history],
+            selected_locale(request, data.output_locale),
+        )
 
     @app.post("/api/comparisons/{comparison_id}/ask-jobs", status_code=202)
-    async def ask_job(comparison_id: str, data: QuestionInput):
+    async def ask_job(comparison_id: str, data: QuestionInput, request: Request):
         job = service.enqueue_ask(
             comparison_id,
             data.question,
             [q.model_dump() for q in data.history],
+            selected_locale(request, data.output_locale),
         )
         route = classify_question_intent(data.question)
         if settings.job_execution_mode == "inline" or route["intent"] in {"vague", "off_topic"}:

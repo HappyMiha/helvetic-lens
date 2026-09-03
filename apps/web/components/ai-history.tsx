@@ -18,6 +18,7 @@ import type {
   Impact,
 } from "@/lib/types";
 import { ErrorNote, Loading, Status } from "./common";
+import { localeNames, type Locale, useI18n } from "@/lib/i18n";
 
 export function AIHistory({
   lawId,
@@ -28,6 +29,7 @@ export function AIHistory({
   comparisonId?: string;
   compact?: boolean;
 }) {
+  const { t } = useI18n();
   const path = comparisonId
     ? `/comparisons/${comparisonId}/ai-history`
     : lawId
@@ -42,13 +44,13 @@ export function AIHistory({
       <div className="panel-header">
         <div className="flex items-center gap-3">
           <History size={18} />
-          <h2>AI history</h2>
+          <h2>{t("history.title")}</h2>
           <span className="count-pill">{history.data?.total ?? "—"}</span>
         </div>
         <Button
           size="icon-sm"
           variant="ghost"
-          aria-label="Refresh AI history"
+          aria-label={t("history.refresh")}
           onClick={history.reload}
           disabled={history.loading}
         >
@@ -57,7 +59,7 @@ export function AIHistory({
       </div>
       <ErrorNote message={history.error} />
       {history.loading && !history.data ? (
-        <Loading text="Loading saved AI conclusions…" />
+        <Loading text={t("history.loading")} />
       ) : history.data?.items.length ? (
         <div className="ai-history-list">
           {history.data.items.map((item) => (
@@ -67,11 +69,8 @@ export function AIHistory({
       ) : (
         <div className="empty-state !py-10">
           <Sparkles size={25} className="muted" />
-          <h3>No saved AI conclusions yet.</h3>
-          <p className="muted">
-            Run Impact analysis or ask a question. Results and failed attempts
-            will remain attached to their exact comparison.
-          </p>
+          <h3>{t("history.empty")}</h3>
+          <p className="muted">{t("history.emptyBody")}</p>
         </div>
       )}
     </section>
@@ -79,6 +78,7 @@ export function AIHistory({
 }
 
 function HistoryItem({ item }: { item: AIHistoryItem }) {
+  const { locale, t, number } = useI18n();
   const impact = item.type === "impact" ? (item.result as Impact | null) : null;
   const answer =
     item.type === "question"
@@ -91,8 +91,8 @@ function HistoryItem({ item }: { item: AIHistoryItem }) {
       : null;
   const title =
     item.type === "question"
-      ? item.question || "Saved question"
-      : impact?.headline || impact?.summary || "Impact assessment";
+      ? item.question || t("history.savedQuestion")
+      : impact?.headline || impact?.summary || t("history.assessment");
   const plan = item.analysis_plan;
   const actual = plan?.actual;
   const tokenTotal = Object.values(actual?.token_counts || {}).reduce(
@@ -100,6 +100,8 @@ function HistoryItem({ item }: { item: AIHistoryItem }) {
     0,
   );
   const repairs = Number(actual?.validation?.repair_count || 0);
+  const outputLocale = String((item.result as { output_locale?: string } | null)?.output_locale || plan?.output_locale || "");
+  const outputLanguage = localeNames[outputLocale as Locale] || outputLocale;
   return (
     <details className="ai-history-item">
       <summary>
@@ -113,8 +115,9 @@ function HistoryItem({ item }: { item: AIHistoryItem }) {
         <span className="min-w-0 flex-1">
           <span className="ai-history-title">{title}</span>
           <span className="ai-history-meta">
-            {item.type === "impact" ? "Impact" : "Question"} ·{" "}
+            {item.type === "impact" ? t("history.impact") : t("history.question")} ·{" "}
             {dateTime(item.created_at)} · {item.model}
+            {outputLanguage ? ` · ${t("history.outputLanguage", { language: outputLanguage })}` : ""}
           </span>
         </span>
         <Status value={item.status} />
@@ -122,7 +125,7 @@ function HistoryItem({ item }: { item: AIHistoryItem }) {
       <div className="ai-history-body">
         <div className="ai-history-facts">
           <Link href={`/compare/${item.comparison.id}`} className="text-link">
-            {label(item.comparison.mode)} comparison ·{" "}
+            {t("history.comparison", { mode: label(item.comparison.mode) })} ·{" "}
             {item.comparison.before.declared_date ||
               item.comparison.before.id.slice(0, 8)}{" "}
             →{" "}
@@ -136,7 +139,7 @@ function HistoryItem({ item }: { item: AIHistoryItem }) {
             rel="noreferrer"
             className="text-link"
           >
-            Earlier original <ArrowUpRight size={12} />
+            {t("history.earlierOriginal")} <ArrowUpRight size={12} />
           </a>
           <a
             href={item.comparison.after.artifact_url}
@@ -144,39 +147,30 @@ function HistoryItem({ item }: { item: AIHistoryItem }) {
             rel="noreferrer"
             className="text-link"
           >
-            Current original <ArrowUpRight size={12} />
+            {t("history.currentOriginal")} <ArrowUpRight size={12} />
           </a>
           <span>
-            Prompt revision {item.prompt_revision} · reused {item.use_count - 1}
-            {item.use_count - 1 === 1 ? " time" : " times"}
+            {t("history.prompt", { revision: item.prompt_revision })} · {t("history.reuse", { count: item.use_count - 1 })}
           </span>
           {item.last_used_at && (
             <span className="inline-flex items-center gap-1">
-              <Clock3 size={12} /> Last opened {dateTime(item.last_used_at)}
+              <Clock3 size={12} /> {t("history.lastOpened", { date: dateTime(item.last_used_at) })}
             </span>
           )}
         </div>
         {item.error && <ErrorNote message={item.error} />}
         {plan?.limits && (
-          <p className="coverage-note mb-0">
-            Plan: {plan.estimates.planned_generation_calls} expected ·{" "}
-            {actual?.provider_calls ?? 0} actual model calls · limit{" "}
-            {plan.limits.provider_call_budget} · {plan.execution.batch_count}{" "}
-            evidence {plan.execution.batch_count === 1 ? "group" : "groups"}
-            {plan.coverage.limited
-              ? " · limited coverage"
-              : " · complete planned coverage"}
-            {actual
-              ? ` · queue ${Math.round(actual.queue_wait_ms)} ms · inference ${Math.round(actual.inference_duration_ms)} ms`
-              : ""}
-            {tokenTotal
-              ? ` · ${tokenTotal.toLocaleString()} recorded tokens`
-              : ""}
-            {actual
-              ? ` · ${repairs} validation ${repairs === 1 ? "repair" : "repairs"}`
-              : ""}
-            .
-          </p>
+          <div className="coverage-note mb-0" aria-label={t("history.plan")}>
+            <strong>{t("history.plan")}</strong>
+            <span> · {t("history.expectedCalls", { count: plan.estimates.planned_generation_calls })}</span>
+            <span> · {t("history.actualCalls", { count: actual?.provider_calls ?? 0 })}</span>
+            <span> · {t("history.callLimit", { count: plan.limits.provider_call_budget })}</span>
+            <span> · {t("history.evidenceGroups", { count: plan.execution.batch_count })}</span>
+            <span> · {t(plan.coverage.limited ? "history.limitedCoverage" : "history.completeCoverage")}</span>
+            {actual && <><span> · {t("history.queue", { value: Math.round(actual.queue_wait_ms) })}</span><span> · {t("history.inference", { value: Math.round(actual.inference_duration_ms) })}</span></>}
+            {tokenTotal ? <span> · {t("history.tokens", { count: number(tokenTotal) })}</span> : null}
+            {actual ? <span> · {t("history.repairs", { count: repairs })}</span> : null}
+          </div>
         )}
         {impact && (
           <div className="ai-history-result">
@@ -188,19 +182,16 @@ function HistoryItem({ item }: { item: AIHistoryItem }) {
             {impact.organization_applicability && (
               <p>
                 <strong>
-                  Applicability:{" "}
-                  {label(impact.organization_applicability.status)}
+                  {t("history.applicability", { value: label(impact.organization_applicability.status) })}
                 </strong>{" "}
-                · evidence{" "}
-                {label(impact.organization_applicability.evidence_grade)} ·{" "}
+                · {t("history.evidenceGrade", { value: label(impact.organization_applicability.evidence_grade) })} ·{" "}
                 {impact.organization_applicability.explanation}
               </p>
             )}
             {!!impact.material_changes?.length && (
               <p>
-                {impact.material_changes.length} material{" "}
-                {impact.material_changes.length === 1 ? "change" : "changes"} ·{" "}
-                evidence {label(impact.evidence_grade || "needs_review")}
+                {t("history.materialChanges", { count: impact.material_changes.length })} ·{" "}
+                {t("history.evidenceGrade", { value: label(impact.evidence_grade || "needs_review") })}
               </p>
             )}
             {impact.actions?.length > 0 && (
@@ -220,24 +211,23 @@ function HistoryItem({ item }: { item: AIHistoryItem }) {
         )}
         {item.type === "question" && (
           <div className="ai-history-result">
-            <span className="eyebrow">QUESTION</span>
+            <span className="eyebrow">{t("history.question")}</span>
             <p className="font-semibold">{item.question}</p>
             {answer && (
               <>
                 {!answer.supported && (
                   <strong className="text-sm">
-                    Not supported by the saved evidence
+                    {t("history.notSupported")}
                   </strong>
                 )}
                 <p>{answer.answer}</p>
                 <HistoryCitations values={answer.citations || []} />
                 <p className="text-xs muted mb-0">
-                  Context:{" "}
-                  {label(
+                  {t("history.context", { value: label(
                     answer.context_mode ||
                       item.context_mode ||
                       "saved evidence",
-                  )}
+                  ) })}
                 </p>
               </>
             )}
@@ -245,9 +235,11 @@ function HistoryItem({ item }: { item: AIHistoryItem }) {
         )}
         {item.coverage?.available_passages ? (
           <p className="coverage-note mb-0">
-            Evidence reviewed: {item.coverage.included_passages} of{" "}
-            {item.coverage.available_passages} passages ·{" "}
-            {item.coverage.included_characters?.toLocaleString()} characters.
+            {t("history.reviewed", {
+              included: item.coverage.included_passages || 0,
+              available: item.coverage.available_passages,
+              characters: number(item.coverage.included_characters || 0),
+            })}
           </p>
         ) : null}
       </div>
@@ -256,10 +248,11 @@ function HistoryItem({ item }: { item: AIHistoryItem }) {
 }
 
 function HistoryCitations({ values }: { values: Citation[] }) {
+  const { t } = useI18n();
   if (!values?.length) return null;
   return (
     <span className="history-citations">
-      Evidence:{" "}
+      {t("history.evidence")}: {" "}
       {values.map((citation, index) => (
         <Link
           href={citation.url}

@@ -20,6 +20,7 @@ from sqlalchemy import select
 
 from .config import DomainError, Settings
 from .db import Database, utcnow
+from .locales import normalize_locale
 from .models import (
     AccountToken,
     Organization,
@@ -85,6 +86,7 @@ class Identity:
     organization_name: str
     platform_admin: bool = False
     email_verified: bool = False
+    locale: str = "en-CH"
 
     def public(self) -> dict:
         return {
@@ -94,6 +96,7 @@ class Identity:
                 "email": self.email,
                 "name": self.name,
                 "email_verified": self.email_verified,
+                "locale": self.locale,
             },
             "organization": {"id": self.organization_id, "name": self.organization_name},
             "role": self.role,
@@ -138,6 +141,7 @@ class AuthService:
         name: str,
         organization_name: str,
         invitation_token: str = "",
+        locale: str | None = None,
     ):
         normalized = normalize_email(email)
         person_name = name.strip()
@@ -163,6 +167,7 @@ class AuthService:
                 email=normalized,
                 password_hash=_PASSWORD_HASHER.hash(password),
                 name=person_name[:200],
+                locale=normalize_locale(locale, self.settings.default_locale),
             )
             session.add(user)
             if not invitation:
@@ -270,6 +275,12 @@ class AuthService:
             session.commit()
         return normalized, raw_token
 
+    def user_locale(self, email: str) -> str:
+        normalized = normalize_email(email)
+        with self.db.session(include_all_organizations=True) as session:
+            user = session.scalar(select(User).where(User.email == normalized))
+            return normalize_locale(user.locale if user else None, self.settings.default_locale)
+
     def request_password_reset(self, email: str) -> tuple[str, str | None]:
         normalized = normalize_email(email)
         raw_token = None
@@ -376,7 +387,21 @@ class AuthService:
             organization_name=organization.name,
             platform_admin=user.platform_admin,
             email_verified=user.email_verified_at is not None,
+            locale=normalize_locale(user.locale, self.settings.default_locale),
         )
+
+    def set_locale(self, identity: Identity, locale: str) -> Identity:
+        selected = normalize_locale(locale, "")
+        if not selected:
+            raise DomainError("Choose a supported language.", 422, "unsupported_locale", {"locale": locale})
+        with self.db.session(include_all_organizations=True) as session:
+            user = session.get(User, identity.user_id)
+            active_session = session.get(UserSession, identity.session_id)
+            if not user or not active_session:
+                raise DomainError("The session is no longer valid.", 401, "session_invalid")
+            user.locale = selected
+            session.commit()
+            return self._identity(session, active_session)
 
     @staticmethod
     def require_admin(identity: Identity):
@@ -403,7 +428,9 @@ class AuthService:
             )
         return invitation
 
-    def create_invitation(self, identity: Identity, *, email: str, role: str):
+    def create_invitation(
+        self, identity: Identity, *, email: str, role: str, recipient_locale: str | None = None
+    ):
         self.require_admin(identity)
         normalized = normalize_email(email)
         if role not in {"organization_admin", "viewer"}:
@@ -431,6 +458,7 @@ class AuthService:
                 organization_id=identity.organization_id,
                 email=normalized,
                 role=role,
+                recipient_locale=normalize_locale(recipient_locale, identity.locale),
                 token_hash=token_hash(raw_token),
                 invited_by_user_id=identity.user_id,
                 expires_at=utcnow() + timedelta(days=7),
@@ -466,6 +494,7 @@ class AuthService:
             "id": record.id,
             "email": record.email,
             "role": record.role,
+            "recipient_locale": record.recipient_locale,
             "status": status,
             "expires_at": record.expires_at,
             "created_at": record.created_at,

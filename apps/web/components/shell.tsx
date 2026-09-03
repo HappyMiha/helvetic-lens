@@ -39,6 +39,7 @@ import { api, errorText, refreshWorkspace, useResource } from "@/lib/api";
 import { AdminOnly, useAuth } from "./auth-gate";
 import type { Health, Profile } from "@/lib/types";
 import { ErrorNote, SuccessNote } from "./common";
+import { LanguageSelector, useI18n } from "@/lib/i18n";
 
 export function Shell({
   children,
@@ -52,6 +53,7 @@ export function Shell({
   const pathname = usePathname();
   const { data: health, error } = useResource<Health>("/health", 15000);
   const { session, canManage, isPlatformAdmin } = useAuth();
+  const { t } = useI18n();
   const [profileOpen, setProfileOpen] = useState(false);
   return (
     <div className="shell">
@@ -63,9 +65,7 @@ export function Shell({
           <span>
             Helvetic Lens
             <small>
-              See what changed.
-              <br />
-              Understand what matters.
+              {t("brand.tagline")}
             </small>
           </span>
         </Link>
@@ -75,14 +75,14 @@ export function Shell({
             if (canManage) setProfileOpen(true);
           }}
         >
-          <span className="eyebrow">WORKSPACE</span>
+          <span className="eyebrow">{t("shell.workspace")}</span>
           <span className="flex items-center justify-between mt-2 font-semibold">
-            {session?.organization?.name || "Swiss regulatory watch"}
+            {session?.organization?.name || t("shell.defaultWorkspace")}
             <ChevronDown size={14} />
           </span>
         </button>
         <nav className="nav-group">
-          <span className="eyebrow mb-2 ml-3">MONITOR</span>
+          <span className="eyebrow mb-2 ml-3">{t("shell.monitor")}</span>
           <Link
             className={
               "nav-item " +
@@ -95,21 +95,21 @@ export function Shell({
             href="/"
           >
             <Activity size={17} />
-            Overview
+            {t("nav.overview")}
           </Link>
           <Link
             className={"nav-item " + (pathname === "/registry" ? "active" : "")}
             href="/registry"
           >
             <Landmark size={17} />
-            Registry
+            {t("nav.registry")}
           </Link>
           <Link
             className={"nav-item " + (pathname === "/impact" ? "active" : "")}
             href="/impact"
           >
             <Inbox size={17} />
-            Impact inbox
+            {t("nav.impact")}
           </Link>
           {session?.authenticated && (
             <Link
@@ -117,7 +117,7 @@ export function Shell({
               href="/organization"
             >
               <Users size={17} />
-              Organization
+              {t("nav.organization")}
             </Link>
           )}
           <Link
@@ -125,21 +125,21 @@ export function Shell({
             href="/sources"
           >
             <Globe2 size={17} />
-            Sources
+            {t("nav.sources")}
           </Link>
           <Link
             className={"nav-item " + (pathname === "/activity" ? "active" : "")}
             href="/activity"
           >
             <History size={17} />
-            Scan activity
+            {t("nav.activity")}
           </Link>
           <Link
             className={"nav-item " + (pathname === "/logs" ? "active" : "")}
             href="/logs"
           >
             <ScrollText size={17} />
-            Integration logs
+            {t("nav.logs")}
           </Link>
           {isPlatformAdmin && (
             <Link
@@ -147,7 +147,7 @@ export function Shell({
               href="/admin"
             >
               <SlidersHorizontal size={17} />
-              Platform admin
+              {t("nav.admin")}
             </Link>
           )}
           {isPlatformAdmin && (
@@ -156,7 +156,7 @@ export function Shell({
               href="/connectors"
             >
               <RefreshCw size={17} />
-              Source sync
+              {t("nav.sync")}
             </Link>
           )}
           {isPlatformAdmin && (
@@ -165,13 +165,13 @@ export function Shell({
               href="/models"
             >
               <PackageOpen size={17} />
-              Local models
+              {t("nav.models")}
             </Link>
           )}
           <AdminOnly>
             <button className="nav-item" onClick={() => setProfileOpen(true)}>
               <Building2 size={17} />
-              Company profile
+              {t("nav.profile")}
             </button>
           </AdminOnly>
           <Link
@@ -179,32 +179,30 @@ export function Shell({
             href="/prompts"
           >
             <FileText size={17} />
-            Prompt settings
+            {t("nav.prompts")}
           </Link>
           <Link
             className={"nav-item " + (pathname === "/settings" ? "active" : "")}
             href="/settings"
           >
             <Settings2 size={17} />
-            Settings
+            {t("nav.settings")}
           </Link>
         </nav>
         <div className="sidebar-bottom">
           <Link className="model-card" href={isPlatformAdmin ? "/models" : "/settings"}>
             <Sparkles size={17} />
             <div>
-              <strong>Apertus settings</strong>
+              <strong>{t("shell.apertusSettings")}</strong>
               <span>
                 {health?.apertus.configured
-                  ? "Endpoint configured"
-                  : "Connect your model endpoint"}
+                  ? t("shell.endpointConfigured")
+                  : t("shell.connectEndpoint")}
               </span>
             </div>
           </Link>
           <p className="text-xs muted leading-relaxed">
-            Your sources. Your versions.
-            <br />
-            Evidence you can inspect.
+            {t("shell.evidencePromise")}
           </p>
           <a
             href="https://github.com/HappyMiha/helvetic-lens"
@@ -213,7 +211,7 @@ export function Shell({
             className="text-xs flex items-center gap-2 muted mt-4"
           >
             <CircleHelp size={14} />
-            Project & documentation
+            {t("shell.documentation")}
             <ArrowUpRight size={12} />
           </a>
         </div>
@@ -221,22 +219,23 @@ export function Shell({
       <main className="main">
         <header className="topbar">
           <span className="text-xs muted">
-            Workspace <span className="mx-3">/</span>
+            {t("shell.workspace")} <span className="mx-3">/</span>
             <span className="text-foreground">{section}</span>
           </span>
           <div className="flex items-center gap-5">
+            <LanguageSelector compact />
             <span className="hidden sm:inline text-xs">
               <span className={"status-dot " + (error ? "!bg-red-500" : "")} />
               {error
-                ? "API unavailable"
+                ? t("shell.apiUnavailable")
                 : health
-                  ? "Connected · " + health.database
-                  : "Connecting…"}
+                  ? t("shell.connected", { database: health.database })
+                  : t("shell.connecting")}
             </span>
             {session?.authenticated ? (
               <button
                 className="avatar"
-                title={`Sign out ${session.user?.name || ""}`}
+                title={t("shell.signOut", { name: session.user?.name || "" })}
                 onClick={async () => {
                   await api("/auth/logout", { method: "POST" });
                   window.location.assign("/login");
@@ -255,30 +254,30 @@ export function Shell({
           </div>
         </header>
         <nav className="mobile-nav">
-          <Link href="/">Overview</Link>
-          <Link href="/registry">Registry</Link>
-          <Link href="/impact">Impact</Link>
-          <Link href="/sources">Sources</Link>
-          <Link href="/activity">Activity</Link>
-          {isPlatformAdmin && <Link href="/admin">Admin</Link>}
-          {isPlatformAdmin && <Link href="/models">Models</Link>}
-          <Link href="/logs">Logs</Link>
-          <Link href="/prompts">Prompts</Link>
-          <Link href="/settings">Settings</Link>
+          <Link href="/">{t("nav.overview")}</Link>
+          <Link href="/registry">{t("nav.registry")}</Link>
+          <Link href="/impact">{t("nav.impact")}</Link>
+          <Link href="/sources">{t("nav.sources")}</Link>
+          <Link href="/activity">{t("nav.activity")}</Link>
+          {isPlatformAdmin && <Link href="/admin">{t("nav.admin")}</Link>}
+          {isPlatformAdmin && <Link href="/models">{t("nav.models")}</Link>}
+          <Link href="/logs">{t("nav.logs")}</Link>
+          <Link href="/prompts">{t("nav.prompts")}</Link>
+          <Link href="/settings">{t("nav.settings")}</Link>
         </nav>
         <div className={"content " + (wide ? "content-wide" : "")}>
           {error && (
-            <ErrorNote message="The API is unavailable. Displayed records may be stale; start the backend to resume monitoring." />
+            <ErrorNote message={t("shell.apiError")} />
           )}
           {session?.authenticated && session.role === "viewer" && (
             <div className="mb-5 rounded-xl border border-[#d6decf] bg-[#f3f6ef] px-4 py-3 text-sm text-[#50604c]">
-              <strong>Read-only workspace.</strong> You can inspect all saved evidence and history. An organization administrator manages documents, scans, AI requests, and settings.
+              <strong>{t("shell.readOnlyTitle")}</strong> {t("shell.readOnlyBody")}
             </div>
           )}
           {children}
           <footer className="workspace-footer">
             <ShieldCheck size={13} />
-            Saved evidence, visible changes. AI outputs support human review.
+            {t("shell.footer")}
           </footer>
         </div>
       </main>

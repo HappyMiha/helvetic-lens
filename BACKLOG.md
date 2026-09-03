@@ -4,7 +4,7 @@
 
 This backlog implements the product described in [README.md](README.md): a local-AI-first Swiss regulatory monitor with immutable evidence, a time-based legal registry, official-source connectors, cross-document impact analysis, and organization workspaces.
 
-**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-044`, `HL-047`, `HL-050`–`HL-051`), document-identity gate (`HL-058`), legal-unit semantic diff (`HL-059`), fixed-budget analysis planner (`HL-060`), actionable impact-report contract (`HL-061`), and intent-routed Ask (`HL-062`) are implemented and verified through the API, browser build, migrations, and regression tests. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), [impact-report contract](docs/IMPACT_REPORT.md), [Ask routing](docs/ASK_ROUTING.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
+**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-047`, `HL-050`–`HL-051`) and decision-ready comparison work (`HL-058`–`HL-063`) are implemented and verified through the API, browser build, migrations, and regression tests. Five-language product localization (`HL-057`) is in progress. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), [impact-report contract](docs/IMPACT_REPORT.md), [Ask routing](docs/ASK_ROUTING.md), [localization contract](docs/LOCALIZATION.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
 
 ## Scope and priorities
 
@@ -84,11 +84,11 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-043](#hl-043) | P1       | DONE     | HL-038, HL-042                                         | Official notices and source-linked news events                      |
 | [HL-044](#hl-044) | P1       | DONE     | HL-036, HL-039–HL-043                                  | Evidence-backed relation graph and candidate generation             |
 | [HL-045](#hl-045) | P1       | DONE     | HL-032, HL-044, HL-060, HL-061                         | Local-AI potential-impact analysis                                  |
-| [HL-046](#hl-046) | P1       | PLANNED  | HL-037, HL-045, HL-063                                 | Impact inbox and monitored-law cross-links                          |
+| [HL-046](#hl-046) | P1       | DONE     | HL-037, HL-045, HL-063                                 | Impact inbox and monitored-law cross-links                          |
 | [HL-047](#hl-047) | P1       | DONE     | HL-031, HL-035, HL-042                                 | Platform and organization admin console                             |
 | [HL-048](#hl-048) | P0       | PLANNED  | HL-029–HL-035, HL-038                                  | Public single-server deployment and operations baseline             |
 | [HL-049](#hl-049) | P0       | PLANNED  | HL-037–HL-048, HL-057–HL-064                           | Reproducible recovery and 100-user capacity gate                    |
-| [HL-057](#hl-057) | P1       | PLANNED  | HL-032, HL-034–HL-037, HL-045–HL-047                   | Complete German, French, Italian, Romansh, and English localization |
+| [HL-057](#hl-057) | P1       | IN PROGRESS | HL-032, HL-034–HL-037, HL-045–HL-047                | Complete German, French, Italian, Romansh, and English localization |
 | [HL-058](#hl-058) | P0       | DONE     | HL-005, HL-036, HL-038                                 | Document-identity gate before comparison or AI                      |
 | [HL-059](#hl-059) | P0       | DONE     | HL-011, HL-036, HL-058                                 | Legal-unit semantic diff with noise classification                  |
 | [HL-060](#hl-060) | P0       | DONE     | HL-030–HL-032, HL-059                                  | Fixed-budget local-AI analysis planner                              |
@@ -1055,6 +1055,8 @@ Acceptance criteria:
 ### HL-057 — Internationalize the complete product in five Swiss-market languages
 
 Make German, French, Italian, Romansh, and English first-class product languages without changing or silently translating official evidence.
+
+**Status: IN PROGRESS.** Locale resolution/persistence, the five-language selector, localized account mail, stable error translation, locale-aware formatting, Unicode search, source-language markup, and locale-isolated Impact/Ask/relation analysis history are implemented. The shared catalogue currently covers access, onboarding, navigation, registry, Impact, and AI history; remaining release screens, human language review, five complete browser paths, and five real local-Apertus samples remain before this item can be marked done. See [the localization contract and review matrix](docs/LOCALIZATION.md).
 
 Acceptance criteria:
 

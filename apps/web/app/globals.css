@@ -27,6 +27,24 @@
   --radius-xl: 16px;
 }
 
+.language-selector select {
+  min-height: 38px;
+  max-width: 150px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.94);
+  padding: 0 30px 0 10px;
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.language-selector-compact select {
+  min-height: 32px;
+  max-width: 118px;
+  font-size: 12px;
+}
+
 .viewer-settings button {
   display: none;
 }

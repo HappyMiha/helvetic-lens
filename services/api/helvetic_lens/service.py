@@ -1969,7 +1969,12 @@ class HelveticLens:
                 "identity": identity,
             }
 
-    def latest_analysis(self, session: Session, comparison: Comparison):
+    def latest_analysis(
+        self,
+        session: Session,
+        comparison: Comparison,
+        output_locale: str = ai.DEFAULT_OUTPUT_LOCALE,
+    ):
         attempts = list(
             session.scalars(
                 select(Analysis)
@@ -1982,7 +1987,9 @@ class HelveticLens:
             return None
         latest_attempt = attempts[0]
         profile = get(session, Profile, self.tenant_record_id)
-        current_key = ai.cache_key(comparison, profile, self.settings, self.prompt_settings)
+        current_key = ai.cache_key(
+            comparison, profile, self.settings, self.prompt_settings, output_locale
+        )
         analysis = next(
             (item for item in attempts if item.status == "succeeded" and item.cache_key == current_key),
             next((item for item in attempts if item.status == "succeeded"), latest_attempt),
@@ -2070,7 +2077,9 @@ class HelveticLens:
             session.commit()
             return self.action_decisions_for_analysis(session, analysis.id)
 
-    def comparison_detail(self, comparison_id: str):
+    def comparison_detail(
+        self, comparison_id: str, output_locale: str = ai.DEFAULT_OUTPUT_LOCALE
+    ):
         with self.write_guard, self.db.session() as session:
             comparison = get(session, Comparison, comparison_id)
             old, new = (
@@ -2082,7 +2091,7 @@ class HelveticLens:
             identity = self.refresh_comparison_identity(session, comparison)
             profile = get(session, Profile, self.tenant_record_id)
             current_key = ai.cache_key(
-                comparison, profile, self.settings, self.prompt_settings
+                comparison, profile, self.settings, self.prompt_settings, output_locale
             )
             analysis_job = session.scalar(
                 select(Job)
@@ -2101,7 +2110,7 @@ class HelveticLens:
                 "new_version": version_summary(new),
                 "law": as_dict(law),
                 "identity": identity,
-                "analysis": self.latest_analysis(session, comparison),
+                "analysis": self.latest_analysis(session, comparison, output_locale),
                 "analysis_job": (
                     durable_jobs.serialize(session, analysis_job) if analysis_job else None
                 ),
@@ -2942,7 +2951,9 @@ class HelveticLens:
                     )
                     progress_session.commit()
                 result_json = await self.analyse(
-                    target_id, progress_callback=report_group_progress
+                    target_id,
+                    progress_callback=report_group_progress,
+                    output_locale=payload.get("output_locale", ai.DEFAULT_OUTPUT_LOCALE),
                 )
                 if result_json.get("status") != "succeeded":
                     raise DomainError(
@@ -2980,6 +2991,7 @@ class HelveticLens:
                     target_id,
                     payload.get("question", ""),
                     payload.get("history", []),
+                    output_locale=payload.get("output_locale"),
                 )
                 mark(2, 2, "succeeded")
                 mark(3, 3, "succeeded")
@@ -2993,6 +3005,9 @@ class HelveticLens:
                     target_id,
                     payload.get("runtime_fingerprint"),
                     force=bool(payload.get("force")),
+                    output_locale=payload.get(
+                        "output_locale", relation_ai.DEFAULT_OUTPUT_LOCALE
+                    ),
                 )
                 if result_json.get("status") != "succeeded":
                     raise DomainError(
@@ -3153,6 +3168,7 @@ class HelveticLens:
         session: Session,
         organization_candidate_id: str,
         runtime_fingerprint: str,
+        output_locale: str = relation_ai.DEFAULT_OUTPUT_LOCALE,
     ) -> dict:
         delivery = get(session, OrganizationRelationCandidate, organization_candidate_id)
         candidate = get(session, RelationCandidate, delivery.candidate_id)
@@ -3322,6 +3338,7 @@ class HelveticLens:
             settings=self.settings,
             prompts=self.prompt_settings,
             runtime_fingerprint=runtime_fingerprint,
+            output_locale=output_locale,
         )
         plan = relation_ai.build_plan(
             organization_candidate_id=delivery.id,
@@ -3332,6 +3349,7 @@ class HelveticLens:
             coverage=coverage,
             profile_revision=profile.revision,
             settings=self.settings,
+            output_locale=output_locale,
         )
         plan["runtime_fingerprint"] = runtime_fingerprint
         return {
@@ -3365,11 +3383,12 @@ class HelveticLens:
         runtime_fingerprint: str | None = None,
         *,
         force: bool = False,
+        output_locale: str = relation_ai.DEFAULT_OUTPUT_LOCALE,
     ) -> dict:
         runtime_fingerprint = runtime_fingerprint or await self.relation_runtime_fingerprint()
         with self.write_guard, self.db.session() as session:
             context = self._relation_analysis_context(
-                session, organization_candidate_id, runtime_fingerprint
+                session, organization_candidate_id, runtime_fingerprint, output_locale
             )
             if not self.settings.model_configured:
                 raise DomainError(
@@ -3393,6 +3412,7 @@ class HelveticLens:
                     "organization_candidate_id": organization_candidate_id,
                     "runtime_fingerprint": runtime_fingerprint,
                     "force": force,
+                    "output_locale": output_locale,
                 },
                 progress_total=3,
                 max_attempts=self.settings.job_max_attempts,
@@ -3460,6 +3480,7 @@ class HelveticLens:
         runtime_fingerprint: str | None = None,
         *,
         force: bool = False,
+        output_locale: str = relation_ai.DEFAULT_OUTPUT_LOCALE,
     ) -> dict:
         runtime_fingerprint = runtime_fingerprint or await self.relation_runtime_fingerprint()
         lock = self.analysis_locks.setdefault(f"relation:{organization_candidate_id}", asyncio.Lock())
@@ -3468,7 +3489,7 @@ class HelveticLens:
             prompts = self.prompt_settings.model_copy(deep=True)
             with self.write_guard, self.db.session() as session:
                 context = self._relation_analysis_context(
-                    session, organization_candidate_id, runtime_fingerprint
+                    session, organization_candidate_id, runtime_fingerprint, output_locale
                 )
                 cached = (
                     session.scalar(
@@ -3551,6 +3572,7 @@ class HelveticLens:
                         "business_areas": context["profile"].business_areas,
                     },
                     official_relation=context["official_relation"],
+                    output_locale=output_locale,
                 )
                 status, error = "succeeded", None
             except Exception as exc:
@@ -3621,7 +3643,9 @@ class HelveticLens:
                 raise DomainError("The cited relation evidence was not found.", 404, "not_found")
             return row
 
-    def enqueue_analysis(self, comparison_id: str):
+    def enqueue_analysis(
+        self, comparison_id: str, output_locale: str = ai.DEFAULT_OUTPUT_LOCALE
+    ):
         with self.write_guard, self.db.session() as session:
             comparison = get(session, Comparison, comparison_id)
             old, new = (
@@ -3630,9 +3654,16 @@ class HelveticLens:
             )
             self.ensure_complete_diff(session, comparison, old, new)
             profile = get(session, Profile, self.tenant_record_id)
-            key = ai.cache_key(comparison, profile, self.settings, self.prompt_settings)
+            key = ai.cache_key(
+                comparison, profile, self.settings, self.prompt_settings, output_locale
+            )
             plan, _ = ai.build_impact_plan(
-                self.settings, comparison, old, new, profile
+                self.settings,
+                comparison,
+                old,
+                new,
+                profile,
+                output_locale=output_locale,
             )
             group_total = max(1, int(plan["execution"]["batch_count"]))
             job, reused = durable_jobs.enqueue(
@@ -3642,7 +3673,7 @@ class HelveticLens:
                 target_id=comparison_id,
                 queue="ai_background",
                 idempotency_key=f"impact:{key}",
-                payload={"comparison_id": comparison_id},
+                payload={"comparison_id": comparison_id, "output_locale": output_locale},
                 progress_total=3,
                 max_attempts=self.settings.job_max_attempts,
                 steps=[
@@ -3664,7 +3695,13 @@ class HelveticLens:
             session.commit()
             return durable_jobs.serialize(session, job)
 
-    def enqueue_ask(self, comparison_id: str, question: str, history: list[dict]):
+    def enqueue_ask(
+        self,
+        comparison_id: str,
+        question: str,
+        history: list[dict],
+        output_locale: str | None = None,
+    ):
         with self.write_guard, self.db.session() as session:
             comparison = get(session, Comparison, comparison_id)
             old, new = (
@@ -3674,7 +3711,12 @@ class HelveticLens:
             self.ensure_complete_diff(session, comparison, old, new)
             profile = get(session, Profile, self.tenant_record_id)
             impact_report = self.current_impact_report(
-                session, comparison, profile, self.settings, self.prompt_settings
+                session,
+                comparison,
+                profile,
+                self.settings,
+                self.prompt_settings,
+                output_locale,
             )
             key = ai.ask_cache_key(
                 comparison,
@@ -3684,6 +3726,7 @@ class HelveticLens:
                 question,
                 history,
                 impact_report,
+                output_locale,
             )
             job, _ = durable_jobs.enqueue(
                 session,
@@ -3697,6 +3740,7 @@ class HelveticLens:
                     "comparison_id": comparison_id,
                     "question": question.strip(),
                     "history": history[-4:],
+                    "output_locale": output_locale,
                 },
                 progress_total=3,
                 max_attempts=self.settings.job_max_attempts,
@@ -3716,8 +3760,11 @@ class HelveticLens:
         profile: Profile,
         settings,
         prompts,
+        output_locale: str | None = None,
     ) -> dict | None:
-        current_key = ai.cache_key(comparison, profile, settings, prompts)
+        current_key = ai.cache_key(
+            comparison, profile, settings, prompts, output_locale or ai.DEFAULT_OUTPUT_LOCALE
+        )
         record = session.scalar(
             select(Analysis)
             .where(
@@ -3732,7 +3779,12 @@ class HelveticLens:
             return None
         return {"id": record.id, "result": record.result}
 
-    async def analyse(self, comparison_id: str, progress_callback=None):
+    async def analyse(
+        self,
+        comparison_id: str,
+        progress_callback=None,
+        output_locale: str = ai.DEFAULT_OUTPUT_LOCALE,
+    ):
         lock = self.analysis_locks.setdefault(comparison_id, asyncio.Lock())
         async with lock:
             settings, model_client = self.settings, self.model_client
@@ -3758,7 +3810,7 @@ class HelveticLens:
                         409,
                         f"document_identity_{identity['effective_status']}",
                     )
-                key = ai.cache_key(comparison, profile, settings, prompts)
+                key = ai.cache_key(comparison, profile, settings, prompts, output_locale)
                 cached = session.scalar(
                     select(Analysis)
                     .where(Analysis.cache_key == key, Analysis.status == "succeeded")
@@ -3771,7 +3823,12 @@ class HelveticLens:
                     session.commit()
                     return {**as_dict(cached), "cached": True, "stale": False}
                 analysis_plan, prepared = ai.build_impact_plan(
-                    settings, comparison, old, new, profile
+                    settings,
+                    comparison,
+                    old,
+                    new,
+                    profile,
+                    output_locale=output_locale,
                 )
                 if (
                     analysis_plan["estimates"]["planned_generation_calls"]
@@ -3809,6 +3866,7 @@ class HelveticLens:
                     prompts,
                     prepared,
                     progress_callback,
+                    output_locale,
                 )
                 status, error = "succeeded", None
             except Exception as exc:
@@ -3847,10 +3905,17 @@ class HelveticLens:
                         get(session, Profile, self.tenant_record_id),
                         self.settings,
                         self.prompt_settings,
+                        output_locale,
                     ),
                 }
 
-    async def ask(self, comparison_id: str, question: str, history: list[dict]):
+    async def ask(
+        self,
+        comparison_id: str,
+        question: str,
+        history: list[dict],
+        output_locale: str | None = None,
+    ):
         settings, model_client = self.settings, self.model_client
         prompts = self.prompt_settings.model_copy(deep=True)
         prompt_revision = self.prompt_revision
@@ -3871,10 +3936,17 @@ class HelveticLens:
                     f"document_identity_{identity['effective_status']}",
                 )
             impact_report = self.current_impact_report(
-                session, comparison, profile, settings, prompts
+                session, comparison, profile, settings, prompts, output_locale
             )
             key = ai.ask_cache_key(
-                comparison, profile, settings, prompts, question, history, impact_report
+                comparison,
+                profile,
+                settings,
+                prompts,
+                question,
+                history,
+                impact_report,
+                output_locale,
             )
             analysis_plan = ai.build_ask_plan(
                 settings,
@@ -3886,6 +3958,7 @@ class HelveticLens:
                 profile,
                 history,
                 impact_report,
+                output_locale,
             )
         lock_key = comparison_id + ":" + key
         lock = self.ask_locks.setdefault(lock_key, asyncio.Lock())
@@ -3933,6 +4006,7 @@ class HelveticLens:
                     history,
                     prompts,
                     impact_report,
+                    output_locale,
                 )
             except Exception as exc:
                 trace = (

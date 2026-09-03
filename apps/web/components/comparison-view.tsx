@@ -50,6 +50,7 @@ import { Citations, ErrorNote, Loading, Status } from "./common";
 import { AIHistory } from "./ai-history";
 import { Shell } from "./shell";
 import { useAuth } from "./auth-gate";
+import { useI18n } from "@/lib/i18n";
 
 const PAGE_SIZE = 40;
 const JOB_TERMINAL_STATES = new Set(["succeeded", "failed", "cancelled"]);
@@ -61,16 +62,6 @@ const comparisonCopy = {
   it: { overview: "Panoramica deterministica delle modifiche", material: "Sostanziale", reviewFirst: "Da esaminare prima", addedRemoved: "Aggiunto / rimosso", newDeleted: "Unità nuove o eliminate", movedRenumbered: "Spostato / rinumerato", structural: "Strutturale, escluso dall’IA", formatting: "Solo formattazione", hidden: "Nascosto per impostazione predefinita", needsReview: "Da verificare", uncertain: "Corrispondenza incerta" },
   rm: { overview: "Survista deterministica da las midadas", material: "Essenzial", reviewFirst: "Examinar l’emprim", addedRemoved: "Agiuntà / eliminà", newDeleted: "Unitads novas u eliminadas", movedRenumbered: "Spustà / renumerà", structural: "Structural, exclus da l’IA", formatting: "Mo furmataziun", hidden: "Zuppentà tenor standard", needsReview: "Da verifitgar", uncertain: "Attribuziun intscherta" },
 } satisfies Record<ComparisonLocale, Record<string, string>>;
-
-function useComparisonLocale(): ComparisonLocale {
-  const [locale, setLocale] = useState<ComparisonLocale>("en");
-  useEffect(() => {
-    const language = navigator.language.toLowerCase().split("-")[0];
-    if (["de", "fr", "it", "rm", "en"].includes(language))
-      setLocale(language as ComparisonLocale);
-  }, []);
-  return locale;
-}
 
 const localizedValues: Record<ComparisonLocale, Record<string, string>> = {
   en: { confirmed: "Confirmed", supported: "Supported", possible: "Possible", needs_review: "Needs review", accepted: "Accepted", assigned: "Assigned", scheduled: "Scheduled", dismissed: "Dismissed", not_applicable: "Not applicable", ready: "Ready", limited: "Limited", failed: "Failed", cancelled: "Cancelled" },
@@ -100,7 +91,8 @@ async function waitForJob(initial: Job): Promise<Job> {
 
 export function ComparisonView({ id }: { id: string }) {
   const { canManage } = useAuth();
-  const uiLocale = useComparisonLocale();
+  const { locale } = useI18n();
+  const uiLocale = locale.slice(0, 2) as ComparisonLocale;
   const ui = comparisonCopy[uiLocale];
   const [polling, setPolling] = useState(true);
   const { data, error: loadError } = useResource<Comparison>(
@@ -202,6 +194,7 @@ export function ComparisonView({ id }: { id: string }) {
     try {
       const queued = await api<Job>("/comparisons/" + id + "/analyse-jobs", {
         method: "POST",
+        body: JSON.stringify({ output_locale: locale }),
       });
       setAnalysisJob(queued);
       setAnalysisNotice(
@@ -1033,7 +1026,10 @@ function DiffSide({
   const passage = side === "old" ? item.old : item.new;
   const parts = side === "old" ? item.old_parts : item.new_parts;
   return (
-    <div className={"diff-side diff-side-" + side}>
+    <div
+      className={"diff-side diff-side-" + side}
+      lang={version.identity_json?.language || undefined}
+    >
       <div className="passage-meta">
         <span>
           {side === "old" ? "BEFORE" : "AFTER"} ·{" "}
@@ -1070,7 +1066,8 @@ function DiffSide({
 }
 
 function AnalysisJobProgress({ job, onCancel }: { job: Job; onCancel: () => void }) {
-  const locale = useComparisonLocale();
+  const { locale: productLocale } = useI18n();
+  const locale = productLocale.slice(0, 2) as ComparisonLocale;
   const activeStep = job.steps.find((step) => step.state === "running") ||
     job.steps.find((step) => step.state === "pending");
   const state = (() => {
@@ -1118,7 +1115,8 @@ function AnalysisJobProgress({ job, onCancel }: { job: Job; onCancel: () => void
 }
 
 function AnalysisJobOutcome({ job }: { job: Job }) {
-  const locale = useComparisonLocale();
+  const { locale: productLocale } = useI18n();
+  const locale = productLocale.slice(0, 2) as ComparisonLocale;
   const result = job.result?.data as Analysis | undefined;
   const state =
     job.state === "succeeded"
@@ -1152,7 +1150,8 @@ function ReviewActionControls({
   history: ActionDecision[];
   canManage: boolean;
 }) {
-  const locale = useComparisonLocale();
+  const { locale: productLocale } = useI18n();
+  const locale = productLocale.slice(0, 2) as ComparisonLocale;
   const [saved, setSaved] = useState<ActionDecision | undefined>(current);
   const [events, setEvents] = useState(history);
   const [busy, setBusy] = useState("");
@@ -1383,15 +1382,12 @@ function AskPanel({
   configured: boolean;
   blockedReason?: string;
 }) {
+  const { locale } = useI18n();
   const [question, setQuestion] = useState(""),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
-    [notice, setNotice] = useState(""),
-    [promptLocale, setPromptLocale] = useState("en");
-  useEffect(() => {
-    const locale = navigator.language.toLowerCase().split("-")[0];
-    setPromptLocale(askPrompts[locale] ? locale : "en");
-  }, []);
+    [notice, setNotice] = useState("");
+  const promptLocale = askPrompts[locale.slice(0, 2)] ? locale.slice(0, 2) : "en";
   const savedHistory = useResource<AIHistoryPage>(
     `/comparisons/${comparisonId}/ai-history`,
     5000,
@@ -1421,6 +1417,7 @@ function AskPanel({
           method: "POST",
           body: JSON.stringify({
             question: submittedQuestion,
+            output_locale: locale,
             history: history
               .filter((item) => item.status === "succeeded")
               .slice(-4)
