@@ -4,7 +4,7 @@
 
 This backlog implements the product described in [README.md](README.md): a local-AI-first Swiss regulatory monitor with immutable evidence, a time-based legal registry, official-source connectors, cross-document impact analysis, and organization workspaces.
 
-**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-041`), document-identity gate (`HL-058`), and legal-unit semantic diff (`HL-059`) are implemented and verified through the API, browser build, migrations, and regression tests. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
+**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-042`), document-identity gate (`HL-058`), and legal-unit semantic diff (`HL-059`) are implemented and verified through the API, browser build, migrations, and regression tests. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
 
 ## Scope and priorities
 
@@ -80,7 +80,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-039](#hl-039) | P1       | DONE     | HL-038, existing ELI resolver                          | Fedlex federal-law catalogue connector                              |
 | [HL-040](#hl-040) | P1       | DONE     | HL-038                                                 | Swiss Parliament initiatives and bills connector                    |
 | [HL-041](#hl-041) | P1       | DONE     | HL-038                                                 | Swiss Federal Supreme Court decisions connector                     |
-| [HL-042](#hl-042) | P1       | PLANNED  | HL-030, HL-039–HL-041                                  | Scheduled synchronization, deduplication, and watch fan-out         |
+| [HL-042](#hl-042) | P1       | DONE     | HL-030, HL-039–HL-041                                  | Scheduled synchronization, deduplication, and watch fan-out         |
 | [HL-043](#hl-043) | P1       | PLANNED  | HL-038, HL-042                                         | Official notices and source-linked news events                      |
 | [HL-044](#hl-044) | P1       | PLANNED  | HL-036, HL-039–HL-043                                  | Evidence-backed relation graph and candidate generation             |
 | [HL-045](#hl-045) | P1       | PLANNED  | HL-032, HL-044, HL-060, HL-061                         | Local-AI potential-impact analysis                                  |
@@ -784,6 +784,8 @@ Acceptance criteria:
 ### HL-042 — Schedule incremental synchronization, deduplicate official work, and fan out watch events
 
 Run the core connectors continuously without fetching the same public evidence once per organization.
+
+**Status: DONE.** Eleven persisted streams now run through Celery Beat, the PostgreSQL outbox, and the bounded ingest worker. Platform administrators can inspect health and history, edit interval/jitter/Swiss-time windows, pause/resume, and run a stream immediately. Shared official events fan out idempotently to organization watches, including durable retry after a worker disappears between persistence and fan-out. See [synchronization operations](docs/SYNCHRONIZATION.md).
 
 Acceptance criteria:
 

@@ -121,6 +121,8 @@ services:
       JOB_EXECUTION_MODE: celery
       HELVETIC_LENS_DATA_DIR: /data
     command: ["celery", "-A", "helvetic_lens.celery_app:celery_app", "beat", "--loglevel=INFO"]
+    volumes:
+      - document_data:/data
     depends_on:
       api:
         condition: service_healthy

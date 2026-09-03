@@ -114,6 +114,14 @@ class HandoverInput(Input):
     membership_id: str
 
 
+class ConnectorScheduleInput(Input):
+    enabled: bool
+    interval_seconds: int = Field(ge=60, le=2_592_000)
+    jitter_seconds: int = Field(ge=0, le=86_400)
+    window_start: str | None = Field(default=None, max_length=5)
+    window_end: str | None = Field(default=None, max_length=5)
+
+
 def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
     if method not in {"POST", "PUT", "PATCH", "DELETE"}:
         return None
@@ -246,7 +254,10 @@ def create_app(
             )
         if (
             identity
-            and path.startswith("/api/admin/")
+            and (
+                path.startswith("/api/admin/")
+                or (path.startswith("/api/connectors/") and path.endswith("/sync"))
+            )
             and request.method in {"POST", "PUT", "PATCH", "DELETE"}
             and not identity.platform_admin
         ):
@@ -465,15 +476,35 @@ def create_app(
 
     @app.post("/api/connectors/fedlex/{stream}/sync")
     async def sync_fedlex(stream: str):
-        return await service.sync_fedlex(stream)
+        return service.enqueue_connector_sync("fedlex", stream)
 
     @app.post("/api/connectors/parliament/{stream}/sync")
     async def sync_parliament(stream: str):
-        return await service.sync_parliament(stream)
+        return service.enqueue_connector_sync("swiss-parliament", stream)
 
     @app.post("/api/connectors/federal-court/{stream}/sync")
     async def sync_federal_court(stream: str):
-        return await service.sync_federal_court(stream)
+        return service.enqueue_connector_sync("federal-supreme-court", stream)
+
+    @app.get("/api/admin/connectors")
+    def connector_schedules():
+        return service.connector_schedule_status()
+
+    @app.put("/api/admin/connectors/{connector}/{stream}")
+    def update_connector_schedule(
+        connector: str,
+        stream: str,
+        data: ConnectorScheduleInput,
+    ):
+        return service.update_connector_schedule(
+            connector,
+            stream,
+            **data.model_dump(),
+        )
+
+    @app.post("/api/admin/connectors/{connector}/{stream}/sync", status_code=202)
+    def enqueue_connector_sync(connector: str, stream: str):
+        return service.enqueue_connector_sync(connector, stream)
 
     @app.get("/api/corpus/works/{work_id}")
     def regulatory_work_detail(work_id: str):

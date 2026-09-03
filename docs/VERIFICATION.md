@@ -108,6 +108,14 @@ The earlier large-comparison checks below are retained as historical evidence of
 - `scripts/check_federal_court_connector.py` performs the live check. `POST /api/connectors/federal-court/{latest|reconcile}/sync` runs one persisted page; connector status remains available through `GET /api/connectors/status`.
 - The complete API suite passes with 206 tests, Ruff passes, and the Next.js production build passes.
 
+## Scheduled official synchronization — 3 September 2026
+
+- Five focused synchronization regressions cover eleven idempotently seeded schedules, deterministic jitter, Swiss-time windows, pause/resume validation, manual active-run reuse, queue/disk backpressure, durable execution, safe retry boundaries, and two-organization event/feed fan-out over one shared official version and event.
+- The full API suite passes with 211 tests, Ruff passes, and the Next.js production build exposes the new `/connectors` route.
+- The rebuilt Compose stack upgraded the existing PostgreSQL database to `d81e7a42bc10 (head)` and started healthy API, database, Redis, model-manager, web, CPU worker, AI worker, and Celery Beat services. The worker subscribed to `ingest`; Beat admitted a due Fedlex run, the outbox dispatched it once, and the durable three-step job completed in the worker.
+- The live Fedlex page encountered an individual current artifact that extracted too little text. The connector retained a partial/degraded run with one failed item and no cursor advance; the admin page showed that state instead of reporting a false successful watermark.
+- Browser QA showed all eleven streams grouped under Fedlex, Swiss Parliament, and the Federal Supreme Court, with intervals, jitter, windows, pause/resume, **Sync now**, health, next runs, counts, free disk, and backpressure. The deployed page had no console errors or horizontal overflow at desktop width.
+
 ## Browser and PostgreSQL checks
 
 - HL-031 adds a three-entry immutable Apertus catalogue, private model-manager API, dedicated model volume, hardware/compatibility probe, license acceptance, resumable `.part` downloads, free-space and SHA-256 checks, atomic activation, pinned llama.cpp runtime, retained-analysis removal guard, and durable download/start jobs. Four manager lifecycle regressions and an end-to-end admin API regression pass.

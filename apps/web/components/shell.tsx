@@ -16,6 +16,7 @@ import {
   Landmark,
   Loader2,
   PackageOpen,
+  RefreshCw,
   ScrollText,
   Settings2,
   ShieldCheck,
@@ -48,7 +49,7 @@ export function Shell({
 }) {
   const pathname = usePathname();
   const { data: health, error } = useResource<Health>("/health", 15000);
-  const { session, canManage } = useAuth();
+  const { session, canManage, isPlatformAdmin } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
   return (
     <div className="shell">
@@ -131,6 +132,15 @@ export function Shell({
             <ScrollText size={17} />
             Integration logs
           </Link>
+          {isPlatformAdmin && (
+            <Link
+              className={"nav-item " + (pathname === "/connectors" ? "active" : "")}
+              href="/connectors"
+            >
+              <RefreshCw size={17} />
+              Source sync
+            </Link>
+          )}
           <Link
             className={"nav-item " + (pathname === "/models" ? "active" : "")}
             href="/models"

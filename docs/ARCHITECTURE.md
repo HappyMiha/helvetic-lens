@@ -298,6 +298,14 @@ health() -> connectivity and source-contract state
 
 The common ingestion pipeline owns URL validation, artifact storage, hashes, extraction, deduplication, event creation, retry policy, cursor safety, and integration logs. A connector cannot bypass immutable evidence rules. Checkpoints advance only past a successfully persisted page or safe partial boundary. A rerun with the same cursor is harmless.
 
+### Persisted synchronization
+
+Celery Beat is only a clock: every fifteen seconds it admits due rows from `connector_schedules` under a PostgreSQL row lock and writes a durable `connector_sync` job plus outbox message in the same transaction. The ingest worker executes one bounded connector page. Restarting Beat or redelivering Redis messages cannot multiply an active stream run because schedule locks, active-job lookup, slot idempotency keys, and connector deduplication all converge on the same persisted work.
+
+Each run retains input/output cursor, status, duration, item failures, new/changed event counts, fan-out count, and its original start boundary. If a worker commits official data and disappears before organization fan-out, its retry searches from that original boundary and creates only missing `RegulatoryEventState` and `FeedState` rows. Public artifacts, versions, comparisons, and events remain shared; organization feed state remains isolated.
+
+Admission stops when the configured connector slot count or ingest outbox depth is reached, or when the shared artifact volume is below its free-space floor. Per-stream intervals, deterministic jitter, optional Europe/Zurich run windows, overlap policy, source request floor, health, cursor and safe checkpoint are visible in **Source sync**. Pausing a schedule never deletes its cursor or corpus, and a manual run resumes from the same safe state.
+
 ### Fedlex federal law
 
 The existing direct-URL ELI resolver remains in place. The new connector uses the small DE/FR/IT RSS feeds for low-latency discovery and adds catalogue-wide, paginated reconciliation through the official Fedlex Linked Data/SPARQL service. It preserves work → expression → manifestation identity and tracks supported Classified Compilation, Official Compilation, and Federal Gazette records, languages, version/consolidation dates, formats, and explicit lifecycle or relation metadata where available. The English feed is supplementary because its coverage is incomplete.

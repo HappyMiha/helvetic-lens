@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     job_execution_mode: Literal["celery", "inline"] = "celery"
     job_lease_seconds: int = Field(default=300, ge=30, le=3600)
     job_max_attempts: int = Field(default=3, ge=1, le=10)
+    connector_max_active_jobs: int = Field(default=2, ge=1, le=16)
+    connector_max_queue_depth: int = Field(default=20, ge=1, le=500)
+    connector_min_free_megabytes: int = Field(default=512, ge=32, le=1_000_000)
     data_dir: Path = Field(
         default=ROOT / "data",
         validation_alias=AliasChoices("HELVETIC_LENS_DATA_DIR", "REGWATCH_DATA_DIR"),

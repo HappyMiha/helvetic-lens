@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from . import analysis as ai
 from . import jobs as durable_jobs
+from . import synchronization
 from .config import DomainError, Settings
 from .connectors import CONNECTOR_CONTRACT_VERSION, ConnectorRunner
 from .db import Database, utcnow
@@ -270,6 +271,7 @@ class HelveticLens:
                 session.add(Profile(id=self.tenant_record_id))
             if not session.scalar(select(OrganizationQuota)):
                 session.add(OrganizationQuota(values={}))
+            synchronization.seed_schedules(session)
             active_job_states = ["queued", "dispatched", "running", "retrying", "waiting_for_model"]
             for scan in session.scalars(select(Scan).where(Scan.status.in_(["queued", "running"]))):
                 durable_job = session.scalar(
@@ -1070,6 +1072,84 @@ class HelveticLens:
             "next_cursor": result.next_cursor,
             "error": result.error,
         }
+
+    def connector_schedule_status(self) -> dict:
+        with self.db.session(include_all_organizations=True) as session:
+            result = synchronization.schedule_status(session, self.settings)
+            session.commit()
+            return result
+
+    def update_connector_schedule(
+        self,
+        connector: str,
+        stream: str,
+        *,
+        enabled: bool,
+        interval_seconds: int,
+        jitter_seconds: int,
+        window_start: str | None,
+        window_end: str | None,
+    ) -> dict:
+        with self.write_guard, self.db.session(include_all_organizations=True) as session:
+            schedule = synchronization.update_schedule(
+                session,
+                connector,
+                stream,
+                enabled=enabled,
+                interval_seconds=interval_seconds,
+                jitter_seconds=jitter_seconds,
+                window_start=window_start,
+                window_end=window_end,
+            )
+            session.commit()
+            return synchronization.serialize_schedule(session, schedule)
+
+    def enqueue_connector_sync(self, connector: str, stream: str) -> dict:
+        with self.write_guard, self.db.session(include_all_organizations=True) as session:
+            try:
+                job, run, reused = synchronization.enqueue_manual(
+                    session,
+                    self.settings,
+                    connector,
+                    stream,
+                    self.organization_id,
+                )
+            except DomainError as exc:
+                if exc.code != "connector_schedule_invalid":
+                    raise
+                codes = {
+                    "fedlex": "fedlex_stream_invalid",
+                    "swiss-parliament": "parliament_stream_invalid",
+                    "federal-supreme-court": "federal_court_stream_invalid",
+                }
+                raise DomainError(exc.message, exc.status, codes.get(connector, exc.code)) from exc
+            session.commit()
+            return {
+                "reused": reused,
+                "run": synchronization.serialize_run(run),
+                "job": durable_jobs.serialize(session, job),
+            }
+
+    async def _run_connector_job(self, run_id: str, connector: str, stream: str) -> dict:
+        with self.write_guard, self.db.session(include_all_organizations=True) as session:
+            synchronization.start_run(session, run_id)
+            session.commit()
+        if connector == "fedlex":
+            result = await self.sync_fedlex(stream)
+        elif connector == "swiss-parliament":
+            result = await self.sync_parliament(stream)
+        elif connector == "federal-supreme-court":
+            result = await self.sync_federal_court(stream)
+        else:
+            raise DomainError(
+                "This scheduled connector is not supported.",
+                422,
+                "connector_schedule_invalid",
+            )
+        with self.write_guard, self.db.session(include_all_organizations=True) as session:
+            run = synchronization.finish_run(session, run_id, result)
+            session.commit()
+            return {**result, "run": synchronization.serialize_run(run)}
 
     def regulatory_work_detail(self, work_id: str) -> dict:
         with self.db.session() as session:
@@ -2196,6 +2276,19 @@ class HelveticLens:
                 action = job_type.removeprefix("model_")
                 result_json = await self._run_model_job(job_id, target_id, action, payload, worker)
                 result_type, result_id, result_url = "local_model", target_id, "/models"
+            elif job_type == "connector_sync":
+                mark(0, 1, "running")
+                result_json = await self._run_connector_job(
+                    payload.get("run_id", ""),
+                    payload.get("connector", ""),
+                    payload.get("stream", ""),
+                )
+                mark(1, 1, "succeeded")
+                mark(2, 2, "succeeded")
+                mark(3, 3, "succeeded")
+                result_type = "connector_run"
+                result_id = payload.get("run_id")
+                result_url = "/connectors"
             else:
                 raise DomainError("This durable job type is not supported by the worker.", 422, "job_type_unknown")
         except durable_jobs.JobCancelled:
@@ -2207,7 +2300,10 @@ class HelveticLens:
             detail = exc.message if isinstance(exc, DomainError) else str(exc)
             code = exc.code if isinstance(exc, DomainError) else "job_failed"
             with self.write_guard, self.db.session() as session:
-                durable_jobs.fail(session, job_id, code=code, detail=detail)
+                failed_job = durable_jobs.fail(session, job_id, code=code, detail=detail)
+                if job_type == "connector_sync" and payload.get("run_id"):
+                    run = synchronization.fail_run(session, payload["run_id"], detail)
+                    run.status = failed_job.state
                 session.commit()
             if not isinstance(exc, DomainError):
                 logger.exception("Durable job failed: %s", job_id)

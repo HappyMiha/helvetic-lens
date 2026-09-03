@@ -659,6 +659,55 @@ class ConnectorItemError(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class ConnectorSchedule(Base):
+    __tablename__ = "connector_schedules"
+    __table_args__ = (
+        UniqueConstraint("connector", "stream", name="uq_connector_schedule_stream"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    connector: Mapped[str] = mapped_column(String(80), index=True)
+    stream: Mapped[str] = mapped_column(String(200))
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    interval_seconds: Mapped[int] = mapped_column(Integer)
+    jitter_seconds: Mapped[int] = mapped_column(Integer, default=0)
+    window_start: Mapped[str | None] = mapped_column(String(5))
+    window_end: Mapped[str | None] = mapped_column(String(5))
+    next_run_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    last_enqueued_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_job_id: Mapped[str | None] = mapped_column(String(36))
+    policy_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class ConnectorRun(Base):
+    __tablename__ = "connector_runs"
+    __table_args__ = (UniqueConstraint("job_id", name="uq_connector_run_job"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    schedule_id: Mapped[str] = mapped_column(
+        ForeignKey("connector_schedules.id", ondelete="CASCADE"), index=True
+    )
+    job_id: Mapped[str | None] = mapped_column(ForeignKey("jobs.id"), index=True)
+    requested_by_organization_id: Mapped[str | None] = mapped_column(
+        ForeignKey("organizations.id"), index=True
+    )
+    connector: Mapped[str] = mapped_column(String(80), index=True)
+    stream: Mapped[str] = mapped_column(String(200))
+    trigger: Mapped[str] = mapped_column(String(20), default="scheduled")
+    status: Mapped[str] = mapped_column(String(20), default="queued", index=True)
+    input_cursor_json: Mapped[dict | None] = mapped_column(JSON)
+    output_cursor_json: Mapped[dict | None] = mapped_column(JSON)
+    new_count: Mapped[int] = mapped_column(Integer, default=0)
+    changed_count: Mapped[int] = mapped_column(Integer, default=0)
+    failed_count: Mapped[int] = mapped_column(Integer, default=0)
+    fanout_count: Mapped[int] = mapped_column(Integer, default=0)
+    duration_ms: Mapped[int | None] = mapped_column(Integer)
+    error_detail: Mapped[str | None] = mapped_column(Text)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class FeedState(Base):
     __tablename__ = "feed_states"
     __table_args__ = (

@@ -513,6 +513,61 @@ export type IntegrationLogPage = {
   offset: number;
   providers: string[];
 };
+export type ConnectorRun = {
+  id: string;
+  job_id: string | null;
+  trigger: string;
+  status: string;
+  input_cursor: Record<string, unknown> | null;
+  output_cursor: Record<string, unknown> | null;
+  new: number;
+  changed: number;
+  failed: number;
+  fanout: number;
+  duration_ms: number | null;
+  error: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+};
+export type ConnectorSchedule = {
+  id: string;
+  connector: string;
+  stream: string;
+  enabled: boolean;
+  interval_seconds: number;
+  jitter_seconds: number;
+  window_start: string | null;
+  window_end: string | null;
+  timezone: string;
+  policy: {
+    overlap?: string;
+    minimum_request_interval_seconds?: number;
+    timezone?: string;
+  };
+  next_run_at: string;
+  last_enqueued_at: string | null;
+  health: string;
+  health_message: string | null;
+  cursor: Record<string, unknown> | null;
+  checkpoint: Record<string, unknown>;
+  last_success_at: string | null;
+  freshness_lag_seconds: number | null;
+  partial_coverage: boolean;
+  last_run: ConnectorRun | null;
+};
+export type ConnectorSchedulePage = {
+  items: ConnectorSchedule[];
+  pressure: {
+    blocked: boolean;
+    reasons: string[];
+    active: number;
+    active_limit: number;
+    pending: number;
+    pending_limit: number;
+    free_megabytes: number;
+    minimum_free_megabytes: number;
+  };
+};
 export type Profile = {
   name: string;
   description: string;

@@ -7,7 +7,7 @@ import socket
 
 from celery import Celery
 
-from . import jobs
+from . import jobs, synchronization
 from .config import Settings
 from .db import Database
 from .models import Job
@@ -34,6 +34,10 @@ celery_app.conf.update(
             "task": "helvetic_lens.recover_jobs",
             "schedule": 30.0,
         },
+        "schedule-official-connectors": {
+            "task": "helvetic_lens.schedule_connectors",
+            "schedule": 15.0,
+        },
     },
 )
 
@@ -57,6 +61,16 @@ def recover_jobs():
     database = Database(settings)
     with database.session(include_all_organizations=True) as session:
         result = jobs.reconcile(session, settings.job_lease_seconds)
+        session.commit()
+    database.engine.dispose()
+    return result
+
+
+@celery_app.task(name="helvetic_lens.schedule_connectors")
+def schedule_connectors():
+    database = Database(settings)
+    with database.session(include_all_organizations=True) as session:
+        result = synchronization.enqueue_due(session, settings)
         session.commit()
     database.engine.dispose()
     return result
