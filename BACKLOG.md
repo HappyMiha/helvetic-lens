@@ -82,7 +82,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-041](#hl-041) | P1       | DONE     | HL-038                                                 | Swiss Federal Supreme Court decisions connector                     |
 | [HL-042](#hl-042) | P1       | DONE     | HL-030, HL-039–HL-041                                  | Scheduled synchronization, deduplication, and watch fan-out         |
 | [HL-043](#hl-043) | P1       | DONE     | HL-038, HL-042                                         | Official notices and source-linked news events                      |
-| [HL-044](#hl-044) | P1       | PLANNED  | HL-036, HL-039–HL-043                                  | Evidence-backed relation graph and candidate generation             |
+| [HL-044](#hl-044) | P1       | DONE     | HL-036, HL-039–HL-043                                  | Evidence-backed relation graph and candidate generation             |
 | [HL-045](#hl-045) | P1       | PLANNED  | HL-032, HL-044, HL-060, HL-061                         | Local-AI potential-impact analysis                                  |
 | [HL-046](#hl-046) | P1       | PLANNED  | HL-037, HL-045, HL-063                                 | Impact inbox and monitored-law cross-links                          |
 | [HL-047](#hl-047) | P1       | PLANNED  | HL-031, HL-035, HL-042                                 | Platform and organization admin console                             |
@@ -945,6 +945,8 @@ Acceptance criteria:
 ### HL-044 — Generate an explainable relation candidate set for every new regulatory event
 
 Find which monitored laws could be affected without comparing every new item with every law.
+
+**Status: DONE.** Every committed connector run now reuses confirmed official relations and performs a bounded PostgreSQL full-text/deterministic second-stage search over watched works. Shared candidates retain source/target versions, score components, reasons, rule revision, status, expiry, and provenance; organization delivery rows enforce independent limits without duplicating the general relation. Similarity-only results remain explicitly proposed and candidate-only. The labelled regression fixture covers the required event classes and unrelated controls. See [docs/RELATION_CANDIDATES.md](docs/RELATION_CANDIDATES.md).
 
 Acceptance criteria:
 

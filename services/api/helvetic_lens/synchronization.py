@@ -29,6 +29,8 @@ from .models import (
     RegulatoryEvent,
     RegulatoryEventState,
 )
+from .regulatory_corpus import RegulatoryCorpus
+from .relation_candidates import generate_for_events
 
 ACTIVE_JOB_STATES = frozenset(
     {"queued", "dispatched", "running", "retrying", "waiting_for_model"}
@@ -559,6 +561,7 @@ def finish_run(
     result: dict,
     *,
     now: datetime | None = None,
+    settings: Settings | None = None,
 ) -> ConnectorRun:
     run = session.get(ConnectorRun, run_id)
     if not run:
@@ -585,6 +588,9 @@ def finish_run(
     # Fan-out inserts are idempotent. Keep the earlier count when a worker
     # retries after completing fan-out but before marking the durable job done.
     run.fanout_count = max(run.fanout_count, _fan_out(session, run, events))
+    result["relation_candidates"] = generate_for_events(
+        session, events, RegulatoryCorpus(), settings or Settings()
+    )
     finished = _aware(now or utcnow())
     run.finished_at = finished
     if run.started_at:

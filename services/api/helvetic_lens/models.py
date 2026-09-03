@@ -421,6 +421,55 @@ class RegulatoryRelation(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class RelationCandidate(Base):
+    __tablename__ = "relation_candidates"
+    __table_args__ = (
+        UniqueConstraint("event_id", "target_work_id", name="uq_relation_candidate_event_target"),
+        CheckConstraint(
+            "status IN ('active', 'expired', 'promoted', 'rejected')",
+            name="ck_relation_candidate_status",
+        ),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    event_id: Mapped[str] = mapped_column(ForeignKey("regulatory_events.id"), index=True)
+    source_work_id: Mapped[str] = mapped_column(ForeignKey("regulatory_works.id"), index=True)
+    target_work_id: Mapped[str] = mapped_column(ForeignKey("regulatory_works.id"), index=True)
+    relation_id: Mapped[str | None] = mapped_column(ForeignKey("regulatory_relations.id"), index=True)
+    source_version_id: Mapped[str | None] = mapped_column(ForeignKey("regulatory_document_versions.id"))
+    target_version_id: Mapped[str | None] = mapped_column(ForeignKey("regulatory_document_versions.id"))
+    status: Mapped[str] = mapped_column(String(20), index=True, default="active")
+    score: Mapped[float] = mapped_column(Float)
+    score_components_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    why_json: Mapped[list] = mapped_column(JSON, default=list)
+    evidence_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    rule_revision: Mapped[str] = mapped_column(String(100))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class OrganizationRelationCandidate(Base):
+    __tablename__ = "organization_relation_candidates"
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id", "candidate_id", name="uq_org_relation_candidate"
+        ),
+        CheckConstraint(
+            "status IN ('pending', 'queued', 'analysed', 'dismissed', 'expired')",
+            name="ck_org_relation_candidate_status",
+        ),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    candidate_id: Mapped[str] = mapped_column(
+        ForeignKey("relation_candidates.id", ondelete="CASCADE"), index=True
+    )
+    watch_id: Mapped[str] = mapped_column(ForeignKey("document_watches.id"), index=True)
+    status: Mapped[str] = mapped_column(String(20), index=True, default="pending")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class LegacyDocumentMapping(Base):
     __tablename__ = "legacy_document_mappings"
     __table_args__ = (UniqueConstraint("law_id", name="uq_legacy_document_mapping_law"),)

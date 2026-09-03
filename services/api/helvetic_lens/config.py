@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     connector_max_active_jobs: int = Field(default=2, ge=1, le=16)
     connector_max_queue_depth: int = Field(default=20, ge=1, le=500)
     connector_min_free_megabytes: int = Field(default=512, ge=32, le=1_000_000)
+    relation_candidates_per_event: int = Field(default=20, ge=1, le=100)
+    relation_candidates_per_organization: int = Field(default=10, ge=1, le=50)
+    relation_candidate_ttl_days: int = Field(default=30, ge=1, le=365)
     data_dir: Path = Field(
         default=ROOT / "data",
         validation_alias=AliasChoices("HELVETIC_LENS_DATA_DIR", "REGWATCH_DATA_DIR"),

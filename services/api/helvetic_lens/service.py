@@ -1152,7 +1152,9 @@ class HelveticLens:
                 "connector_schedule_invalid",
             )
         with self.write_guard, self.db.session(include_all_organizations=True) as session:
-            run = synchronization.finish_run(session, run_id, result)
+            run = synchronization.finish_run(
+                session, run_id, result, settings=self.settings
+            )
             session.commit()
             return {**result, "run": synchronization.serialize_run(run)}
 
