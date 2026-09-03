@@ -58,4 +58,4 @@ Use language that distinguishes a possible impact from an official legal relatio
 | `rm-CH` | complete production catalogue; automated inheritance check passes | pending native review |
 | `en-CH` | source catalogue | reviewed in automated product flows |
 
-HL-057 remains in progress until every release screen, transactional notification, five-locale browser path, and real local-Apertus cited answer has passed the acceptance gate. This document records current capability without implying that unfinished screens are release-ready.
+The executable five-locale browser, authorization, responsive-layout, error, citation, and real local-Apertus checks are recorded in [the verification report](LOCALIZATION_VERIFICATION.md). HL-057 remains in progress until fluent reviewers approve German, French, Italian, and Romansh and any findings are corrected. This document records current capability without presenting automated review as native-language approval.

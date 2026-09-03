@@ -1056,7 +1056,7 @@ Acceptance criteria:
 
 Make German, French, Italian, Romansh, and English first-class product languages without changing or silently translating official evidence.
 
-**Status: IN PROGRESS.** Locale resolution/persistence, the five-language selector, localized account mail, stable error translation, locale-aware formatting, Unicode search, source-language markup, and locale-isolated Impact/Ask/relation analysis history are implemented. The shared catalogue currently covers access, onboarding, navigation, registry, Impact, and AI history; remaining release screens, human language review, five complete browser paths, and five real local-Apertus samples remain before this item can be marked done. See [the localization contract and review matrix](docs/LOCALIZATION.md).
+**Status: IN PROGRESS — NATIVE REVIEW REMAINS.** Locale resolution/persistence, the five-language selector, localized account mail, stable error translation, locale-aware formatting, Unicode search, source-language markup, and locale-isolated Impact/Ask/relation analysis history are implemented. The production catalogue covers every release screen and the executable acceptance gate has passed five complete browser paths, admin/viewer authorization, desktop and 390 px layouts, error/citation flows, and one real local-Apertus cited answer per locale. Fluent German, French, Italian, and native Romansh review remains before this item can be marked done. See [the localization contract and review matrix](docs/LOCALIZATION.md) and [the five-locale verification record](docs/LOCALIZATION_VERIFICATION.md).
 
 Acceptance criteria:
 
