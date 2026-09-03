@@ -21,4 +21,10 @@ Viewers can read the review history but cannot create entries. Review records ar
 - `organization_relation_reviews` stores organization, candidate, decision, note, actor, and timestamp. Updates and deletes are deliberately absent.
 - The Impact Inbox exposes the latest decisive review, the latest entry, and the history count separately so an annotation cannot accidentally change the impact status.
 
+## Baseline measurement
+
+The same review row stores three bounded fields needed to decide whether a graph is worthwhile: `workflow_variant`, server-validated `review_duration_ms`, and `evidence_opened`. The browser starts the timer only when the administrator expands the review panel; after 30 minutes the value is capped. It records the evidence flag only when the evidence link inside that panel is used.
+
+The platform dashboard aggregates decision-time p95, sample count, and evidence-open rate without organization names, candidate IDs, notes, source text, or high-cardinality labels. Historical entries without these fields remain valid and are excluded from measured-rate denominators. The first variant is `inbox_list_v1`; a future graph experiment must use a separate allowlisted variant and compare both correctness and time before graph navigation can be promoted.
+
 The graph portion of HL-053 remains deferred until measured list/inbox use shows that a graph improves review time or correctness.

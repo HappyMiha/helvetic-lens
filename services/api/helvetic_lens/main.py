@@ -177,6 +177,9 @@ class DigestUnsubscribeInput(Input):
 class RelationReviewInput(Input):
     decision: Literal["confirmed", "rejected", "annotated"]
     note: str = Field(min_length=3, max_length=2000)
+    workflow_variant: Literal["inbox_list_v1"] = "inbox_list_v1"
+    review_duration_ms: int | None = Field(default=None, ge=0, le=1_800_000)
+    evidence_opened: bool = False
 
 
 class OrganizationSwitchInput(Input):
@@ -847,6 +850,9 @@ def create_app(
             data.decision,
             data.note,
             identity.user_id if identity else None,
+            workflow_variant=data.workflow_variant,
+            review_duration_ms=data.review_duration_ms,
+            evidence_opened=data.evidence_opened,
         )
 
     @app.get("/api/relation-candidates/{organization_candidate_id}/reviews")

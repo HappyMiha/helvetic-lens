@@ -149,6 +149,8 @@ function ReviewPanel({ item, onChanged }: { item: InboxLaw; onChanged: () => voi
   const [busy, setBusy] = useState("");
   const [message, setMessage] = useState("");
   const [failure, setFailure] = useState("");
+  const [reviewStartedAt, setReviewStartedAt] = useState<number | null>(null);
+  const [evidenceOpened, setEvidenceOpened] = useState(false);
   const history = useResource<ReviewHistoryResponse>(
     open ? `/relation-candidates/${item.organization_candidate_id}/reviews` : null,
   );
@@ -161,9 +163,19 @@ function ReviewPanel({ item, onChanged }: { item: InboxLaw; onChanged: () => voi
     try {
       await api(`/relation-candidates/${item.organization_candidate_id}/reviews`, {
         method: "POST",
-        body: JSON.stringify({ decision, note: note.trim() }),
+        body: JSON.stringify({
+          decision,
+          note: note.trim(),
+          workflow_variant: "inbox_list_v1",
+          review_duration_ms: reviewStartedAt === null
+            ? null
+            : Math.min(1_800_000, Math.max(0, Date.now() - reviewStartedAt)),
+          evidence_opened: evidenceOpened,
+        }),
       });
       setNote("");
+      setReviewStartedAt(Date.now());
+      setEvidenceOpened(false);
       setMessage(
         decision === "confirmed"
           ? t("impact.reviewSaved.confirmed")
@@ -184,7 +196,10 @@ function ReviewPanel({ item, onChanged }: { item: InboxLaw; onChanged: () => voi
     <div className="mt-4 rounded-md border bg-white p-3">
       <button
         className="flex w-full items-center justify-between gap-3 text-left text-sm font-medium"
-        onClick={() => setOpen(!open)}
+        onClick={() => {
+          if (!open && reviewStartedAt === null) setReviewStartedAt(Date.now());
+          setOpen(!open);
+        }}
         aria-expanded={open}
       >
         <span>{t("impact.reviewLead")}</span>
@@ -196,6 +211,18 @@ function ReviewPanel({ item, onChanged }: { item: InboxLaw; onChanged: () => voi
       {open && (
         <div className="mt-3 space-y-3 border-t pt-3">
           <p className="muted mb-0 text-sm">{t("impact.reviewHelp")}</p>
+          {item.links.relation_evidence && (
+            <Button asChild size="sm" variant="outline">
+              <a
+                href={item.links.relation_evidence}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setEvidenceOpened(true)}
+              >
+                {t("impact.inspectReviewEvidence")} <ArrowUpRight size={13} />
+              </a>
+            </Button>
+          )}
           <textarea
             className="min-h-24 w-full rounded-md border bg-white p-3 text-sm"
             value={note}

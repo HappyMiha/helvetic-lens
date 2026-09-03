@@ -1220,6 +1220,10 @@ class HelveticLens:
         decision: str,
         note: str,
         actor_user_id: str | None,
+        *,
+        workflow_variant: str = "inbox_list_v1",
+        review_duration_ms: int | None = None,
+        evidence_opened: bool = False,
     ) -> dict:
         if decision not in {"confirmed", "rejected", "annotated"}:
             raise DomainError(
@@ -1252,6 +1256,9 @@ class HelveticLens:
                 organization_candidate_id=delivery.id,
                 decision=decision,
                 note=note,
+                workflow_variant=workflow_variant,
+                review_duration_ms=review_duration_ms,
+                evidence_opened=evidence_opened,
                 actor_user_id=actor_user_id,
             )
             session.add(review)
@@ -2676,6 +2683,11 @@ class HelveticLens:
                 ),
                 session.scalars(
                     select(ActionDecision).order_by(ActionDecision.created_at.desc()).limit(2000)
+                ),
+                session.scalars(
+                    select(OrganizationRelationReview)
+                    .order_by(OrganizationRelationReview.created_at.desc())
+                    .limit(2000)
                 ),
             )
         database_latency_ms = round((time.perf_counter() - database_started) * 1000)

@@ -33,12 +33,14 @@ def summarize_ai_triage_metrics(
     questions: Iterable[Any],
     comparisons: Iterable[Any],
     decisions: Iterable[Any],
+    relation_reviews: Iterable[Any] = (),
 ) -> dict[str, Any]:
     impacts = list(analyses)
     asks = list(questions)
     records = [*impacts, *asks]
     comparison_records = list(comparisons)
     decision_records = list(decisions)
+    review_records = list(relation_reviews)
 
     queue_waits: list[float] = []
     inference_times: list[float] = []
@@ -86,6 +88,22 @@ def summarize_ai_triage_metrics(
     dismissed = sum(
         decision.decision in {"dismissed", "not_applicable"} for decision in decision_records
     )
+    decisive_reviews = [
+        review for review in review_records if review.decision in {"confirmed", "rejected"}
+    ]
+    review_durations = [
+        float(review.review_duration_ms)
+        for review in decisive_reviews
+        if review.review_duration_ms is not None
+    ]
+    measured_reviews = [
+        review for review in review_records if review.review_duration_ms is not None
+    ]
+    workflow_variants: dict[str, int] = {}
+    for review in measured_reviews:
+        variant = review.workflow_variant or "unknown"
+        workflow_variants[variant] = workflow_variants.get(variant, 0) + 1
+    evidence_opened = sum(bool(review.evidence_opened) for review in measured_reviews)
 
     return {
         "records": {
@@ -128,5 +146,19 @@ def summarize_ai_triage_metrics(
             "dismissed_or_not_applicable": dismissed,
             "accept_rate": round(accepted / len(decision_records), 4) if decision_records else None,
             "dismiss_rate": round(dismissed / len(decision_records), 4) if decision_records else None,
+        },
+        "relation_review": {
+            "entries": len(review_records),
+            "decisions": len(decisive_reviews),
+            "annotations": sum(review.decision == "annotated" for review in review_records),
+            "duration": _latency(review_durations),
+            "measured_entries": len(measured_reviews),
+            "evidence_opened": evidence_opened,
+            "evidence_open_rate": (
+                round(evidence_opened / len(measured_reviews), 4)
+                if measured_reviews
+                else None
+            ),
+            "workflow_variants": workflow_variants,
         },
     }

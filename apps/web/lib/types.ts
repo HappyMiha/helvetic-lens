@@ -741,6 +741,21 @@ export type PlatformStatus = {
       accept_rate: number | null;
       dismiss_rate: number | null;
     };
+    relation_review: {
+      entries: number;
+      decisions: number;
+      annotations: number;
+      duration: {
+        samples: number;
+        p50_ms: number | null;
+        p95_ms: number | null;
+        max_ms: number | null;
+      };
+      measured_entries: number;
+      evidence_opened: number;
+      evidence_open_rate: number | null;
+      workflow_variants: Record<string, number>;
+    };
   };
   jobs: {
     states: Record<string, number>;

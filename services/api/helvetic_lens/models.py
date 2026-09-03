@@ -592,6 +592,9 @@ class OrganizationRelationReview(Base):
     )
     decision: Mapped[str] = mapped_column(String(20), index=True)
     note: Mapped[str] = mapped_column(Text, default="")
+    workflow_variant: Mapped[str] = mapped_column(String(40), default="inbox_list_v1")
+    review_duration_ms: Mapped[int | None] = mapped_column(Integer)
+    evidence_opened: Mapped[bool] = mapped_column(Boolean, default=False)
     actor_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
 

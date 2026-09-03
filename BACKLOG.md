@@ -1136,7 +1136,7 @@ Acceptance criteria:
 
 Help administrators curate proposed relations when real usage proves that a graph adds value.
 
-**Status: IN PROGRESS — GRAPH VALIDATION REMAINS.** The Impact Inbox now provides an evidence-first, five-language review panel for proposed relations. Administrators must record a reason when confirming or rejecting a lead and can add a non-decisive annotation; every entry retains author and timestamp in an immutable organization-scoped history. Official confirmed metadata cannot be overridden, and viewers remain read-only. The graph is intentionally not implemented until real list/inbox use demonstrates an improvement in review time or correctness. See [the relation review contract](docs/RELATION_REVIEW.md).
+**Status: IN PROGRESS — GRAPH VALIDATION REMAINS.** The Impact Inbox now provides an evidence-first, five-language review panel for proposed relations. Administrators must record a reason when confirming or rejecting a lead and can add a non-decisive annotation; every entry retains author and timestamp in an immutable organization-scoped history. Official confirmed metadata cannot be overridden, and viewers remain read-only. Privacy-bounded baseline metrics record the allowlisted workflow variant, time to a saved decision, and whether the panel's evidence link was opened; the platform dashboard exposes aggregate p95 and evidence-open rate without note/source/identity labels. The graph is intentionally not implemented until real list/inbox use demonstrates an improvement in review time or correctness. See [the relation review contract](docs/RELATION_REVIEW.md).
 
 Acceptance criteria:
 

@@ -48,6 +48,26 @@ def test_ai_triage_metrics_report_latency_usage_validation_cache_and_decisions()
             SimpleNamespace(decision="dismissed"),
             SimpleNamespace(decision="assigned"),
         ],
+        [
+            SimpleNamespace(
+                decision="confirmed",
+                review_duration_ms=15_000,
+                evidence_opened=True,
+                workflow_variant="inbox_list_v1",
+            ),
+            SimpleNamespace(
+                decision="rejected",
+                review_duration_ms=45_000,
+                evidence_opened=False,
+                workflow_variant="inbox_list_v1",
+            ),
+            SimpleNamespace(
+                decision="annotated",
+                review_duration_ms=None,
+                evidence_opened=False,
+                workflow_variant="inbox_list_v1",
+            ),
+        ],
     )
 
     assert metrics["records"] == {
@@ -85,6 +105,21 @@ def test_ai_triage_metrics_report_latency_usage_validation_cache_and_decisions()
     assert metrics["actions"]["accepted"] == 1
     assert metrics["actions"]["dismissed_or_not_applicable"] == 1
     assert metrics["actions"]["accept_rate"] == 0.3333
+    assert metrics["relation_review"] == {
+        "entries": 3,
+        "decisions": 2,
+        "annotations": 1,
+        "duration": {
+            "samples": 2,
+            "p50_ms": 15_000.0,
+            "p95_ms": 45_000.0,
+            "max_ms": 45_000.0,
+        },
+        "measured_entries": 2,
+        "evidence_opened": 1,
+        "evidence_open_rate": 0.5,
+        "workflow_variants": {"inbox_list_v1": 2},
+    }
 
 
 def test_empty_ai_triage_metrics_are_explicit_and_division_safe():
@@ -95,6 +130,8 @@ def test_empty_ai_triage_metrics_are_explicit_and_division_safe():
     assert metrics["usage"]["cache_hit_rate"] == 0.0
     assert metrics["evidence"]["acceptance_rate"] is None
     assert metrics["actions"]["accept_rate"] is None
+    assert metrics["relation_review"]["duration"]["p95_ms"] is None
+    assert metrics["relation_review"]["evidence_open_rate"] is None
 
 
 def test_new_comparison_persists_time_to_deterministic_overview(harness):

@@ -102,6 +102,8 @@ function Dashboard({ data }: { data: PlatformStatus }) {
             <div className="stat-card"><span className="eyebrow">{t("admin.inferenceP95")}</span><strong>{milliseconds(ai.latency.inference.p95_ms)}</strong><small>{t("admin.samples", { count: ai.latency.inference.samples })}</small></div>
             <div className="stat-card"><span className="eyebrow">{t("admin.cacheHitRate")}</span><strong>{percent(ai.usage.cache_hit_rate)}</strong><small>{t("admin.cacheReuse", { hits: ai.usage.cache_hits, requests: ai.usage.requests_including_reuse })}</small></div>
             <div className="stat-card"><span className="eyebrow">{t("admin.citationAcceptance")}</span><strong>{percent(ai.evidence.acceptance_rate)}</strong><small>{t("admin.validationSamples", { count: ai.evidence.validation_samples })}</small></div>
+            <div className="stat-card"><span className="eyebrow">{t("admin.reviewP95")}</span><strong>{milliseconds(ai.relation_review.duration.p95_ms)}</strong><small>{t("admin.samples", { count: ai.relation_review.duration.samples })}</small></div>
+            <div className="stat-card"><span className="eyebrow">{t("admin.reviewEvidenceRate")}</span><strong>{percent(ai.relation_review.evidence_open_rate)}</strong><small>{t("admin.reviewEvidenceCount", { opened: ai.relation_review.evidence_opened, measured: ai.relation_review.measured_entries })}</small></div>
           </div>
           <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm muted">
             <span>{t("admin.aiRecords", { count: ai.records.total })}</span>
@@ -110,6 +112,7 @@ function Dashboard({ data }: { data: PlatformStatus }) {
             <span>{t("admin.failedRate", { value: percent(ai.records.failed_rate) })}</span>
             <span>{t("admin.limitedRate", { value: percent(ai.records.limited_rate) })}</span>
             <span>{t("admin.actionOutcomes", { accepted: ai.actions.accepted, dismissed: ai.actions.dismissed_or_not_applicable })}</span>
+            <span>{t("admin.relationReviewOutcomes", { decisions: ai.relation_review.decisions, annotations: ai.relation_review.annotations })}</span>
           </div>
         </div>
       </section>

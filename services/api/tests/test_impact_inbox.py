@@ -95,7 +95,12 @@ def test_relation_review_keeps_decisions_and_annotations_as_append_only_history(
 
     confirmed = client.post(
         f"/api/relation-candidates/{delivery_id}/reviews",
-        json={"decision": "confirmed", "note": "The cited SR identifier matches."},
+        json={
+            "decision": "confirmed",
+            "note": "The cited SR identifier matches.",
+            "review_duration_ms": 42_000,
+            "evidence_opened": True,
+        },
     )
     assert confirmed.status_code == 201
     annotated = client.post(
@@ -120,6 +125,9 @@ def test_relation_review_keeps_decisions_and_annotations_as_append_only_history(
         "confirmed",
     ]
     assert history.json()["items"][0]["note"] == "Legal should verify Article 7 next."
+    assert history.json()["items"][1]["review_duration_ms"] == 42_000
+    assert history.json()["items"][1]["evidence_opened"] is True
+    assert history.json()["items"][1]["workflow_variant"] == "inbox_list_v1"
 
 
 def test_inbox_personal_state_does_not_change_another_user(harness):
