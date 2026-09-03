@@ -164,6 +164,11 @@ def test_hardware_profiles_choose_gpu_cpu_replication_and_split(manager_factory,
     assert manager.select_profile(entry)["name"] == "cpu-degraded"
 
     manager.hardware["cuda_devices"] = [
+        {"index": 0, "name": "small GPU", "vram_bytes": 1024**3}
+    ]
+    assert manager.select_profile(entry)["name"] == "cpu-degraded"
+
+    manager.hardware["cuda_devices"] = [
         {"index": 0, "name": "GTX 1080", "vram_bytes": 8 * 1024**3},
         {"index": 1, "name": "GTX 1080", "vram_bytes": 8 * 1024**3},
     ]
@@ -174,6 +179,40 @@ def test_hardware_profiles_choose_gpu_cpu_replication_and_split(manager_factory,
     profile = manager.select_profile(entry)
     assert profile["name"] == "dual-1080-split"
     assert profile["slots"] == 1
+    assert profile["memory_plan"]["runtime_headroom_bytes"] == 2 * 1024**3
+
+    manager.hardware["cuda_devices"] = [
+        {"index": 0, "name": "small GPU", "vram_bytes": 4 * 1024**3},
+        {"index": 1, "name": "small GPU", "vram_bytes": 4 * 1024**3},
+    ]
+    assert manager.select_profile(entry)["name"] == "cpu-degraded"
+
+
+def test_explicit_gpu_profiles_cannot_bypass_memory_headroom(manager_factory):
+    manager, _ = manager_factory()
+    entry = manager.entries["apertus-test"]
+    entry["size_bytes"] = 7 * 1024**3
+    manager.hardware["cuda_devices"] = [
+        {"index": 0, "name": "GTX 1080", "vram_bytes": 8 * 1024**3},
+        {"index": 1, "name": "GTX 1080", "vram_bytes": 8 * 1024**3},
+    ]
+
+    with pytest.raises(ModelManagerError, match="independent model replica"):
+        manager.select_profile(entry, "dual-1080-replicated")
+    assert manager.select_profile(entry, "dual-1080-split")["name"] == "dual-1080-split"
+
+    manager.hardware["cuda_devices"] = [
+        {"index": 0, "name": "small GPU", "vram_bytes": 4 * 1024**3},
+        {"index": 1, "name": "small GPU", "vram_bytes": 4 * 1024**3},
+    ]
+    with pytest.raises(ModelManagerError, match="does not fit across"):
+        manager.select_profile(entry, "dual-1080-split")
+
+    manager.hardware["cuda_devices"] = [
+        {"index": 0, "name": "small GPU", "vram_bytes": 4 * 1024**3}
+    ]
+    with pytest.raises(ModelManagerError, match="does not fit on the visible GPU"):
+        manager.select_profile(entry, "dev-1070")
 
 
 def test_explicit_profile_rejects_unavailable_hardware(manager_factory):

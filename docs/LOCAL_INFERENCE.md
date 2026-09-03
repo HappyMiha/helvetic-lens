@@ -15,6 +15,8 @@ The clean installation selects `docker` and `apertus-1.5b-q4km`. Cloud adapters 
 
 Each child uses one llama.cpp parallel slot. The gateway assigns one owner to each runner, rotates fairly between organizations, gives interactive calls priority, and ages background calls every 15 seconds so they cannot starve. If one replicated runner exits, the remaining runner stays available and the deployment is marked degraded.
 
+The manager reserves 2 GiB beyond the immutable model artifact for runtime, KV cache, and operational headroom. Automatic and explicit choices use the same memory plan: replicated mode must fit that plan independently on each of the first two GPUs, split mode must fit it across both, and the development profile must fit on its one visible GPU. An unsafe automatic GPU plan degrades to CPU; an unsafe explicit plan is rejected with a profile-unavailable error. The selected byte-level plan and visible VRAM are stored with the deployment inventory.
+
 Starting is complete only after llama.cpp health succeeds and a schema-constrained warm-up call returns HTTP 200. Client timeouts and bounded retries remain active. Context-limit errors are returned immediately because retrying the same oversized evidence would occupy the slot without changing the result.
 
 ## Audit data

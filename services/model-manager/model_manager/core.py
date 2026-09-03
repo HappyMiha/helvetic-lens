@@ -12,6 +12,8 @@ import urllib.request
 from datetime import UTC, datetime
 from pathlib import Path
 
+GPU_RUNTIME_HEADROOM_BYTES = 2 * 1024**3
+
 
 def now_iso() -> str:
     return datetime.now(UTC).isoformat()
@@ -309,6 +311,11 @@ class ModelManager:
         """Choose a safe runtime layout from measured visible hardware."""
         devices = self.hardware.get("cuda_devices", [])
         allowed = {"dev-1070", "dual-1080-replicated", "dual-1080-split", "cpu-degraded"}
+        single_card_need = max(
+            int(entry["size_bytes"]) + GPU_RUNTIME_HEADROOM_BYTES,
+            int(entry["requirements"]["min_vram_bytes"]),
+        )
+        split_total_need = single_card_need
         if requested and requested not in allowed:
             raise ModelManagerError("Unknown hardware profile.", 422, "invalid_hardware_profile")
         if requested:
@@ -316,26 +323,65 @@ class ModelManager:
         elif not devices:
             name = "cpu-degraded"
         elif len(devices) == 1:
-            name = "dev-1070"
+            name = (
+                "dev-1070"
+                if int(devices[0]["vram_bytes"]) >= single_card_need
+                else "cpu-degraded"
+            )
         else:
             # Reserve 2 GiB for KV/cache/runtime. Replicate only when each card
             # can own an independent copy with headroom.
-            per_card_need = entry["size_bytes"] + 2 * 1024**3
-            name = (
-                "dual-1080-replicated"
-                if min(device["vram_bytes"] for device in devices[:2]) >= per_card_need
-                else "dual-1080-split"
-            )
+            first_two = devices[:2]
+            if min(int(device["vram_bytes"]) for device in first_two) >= single_card_need:
+                name = "dual-1080-replicated"
+            elif sum(int(device["vram_bytes"]) for device in first_two) >= split_total_need:
+                name = "dual-1080-split"
+            else:
+                name = "cpu-degraded"
         if name.startswith("dual-1080") and len(devices) < 2:
             raise ModelManagerError("This profile requires two visible CUDA devices.", 409, "profile_unavailable")
-        if name == "dev-1070" and not devices:
-            raise ModelManagerError("The GPU development profile requires one visible CUDA device.", 409, "profile_unavailable")
+        if name == "dual-1080-replicated" and min(
+            int(device["vram_bytes"]) for device in devices[:2]
+        ) < single_card_need:
+            raise ModelManagerError(
+                "An independent model replica plus runtime headroom does not fit on each GPU. Use the split profile.",
+                409,
+                "profile_unavailable",
+            )
+        if name == "dual-1080-split" and sum(
+            int(device["vram_bytes"]) for device in devices[:2]
+        ) < split_total_need:
+            raise ModelManagerError(
+                "The model plus runtime headroom does not fit across the two visible GPUs.",
+                409,
+                "profile_unavailable",
+            )
+        if name == "dev-1070":
+            if not devices:
+                raise ModelManagerError(
+                    "The GPU development profile requires one visible CUDA device.",
+                    409,
+                    "profile_unavailable",
+                )
+            if int(devices[0]["vram_bytes"]) < single_card_need:
+                raise ModelManagerError(
+                    "The model plus runtime headroom does not fit on the visible GPU.",
+                    409,
+                    "profile_unavailable",
+                )
         slots = 2 if name == "dual-1080-replicated" else 1
         return {
             "name": name,
             "slots": slots,
             "gpu_enabled": name != "cpu-degraded",
             "degraded": name == "cpu-degraded",
+            "memory_plan": {
+                "model_bytes": int(entry["size_bytes"]),
+                "runtime_headroom_bytes": GPU_RUNTIME_HEADROOM_BYTES,
+                "required_single_card_bytes": single_card_need,
+                "required_split_total_bytes": split_total_need,
+                "visible_vram_bytes": [int(device["vram_bytes"]) for device in devices],
+            },
         }
 
     def inference_targets(self) -> list[dict]:
@@ -547,6 +593,7 @@ class ModelManager:
                 "state": "starting",
                 "runtime_image": self.runtime_image,
                 "hardware_profile": profile["name"],
+                "memory_plan": profile["memory_plan"],
                 "accepted_slots": profile["slots"],
                 "available_slots": 0,
                 "context_size": requirements["recommended_context"],
