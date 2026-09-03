@@ -144,6 +144,11 @@ class VersionInput:
     key: str
     content_hash: str | None = None
     artifact_key: str | None = None
+    extractor: str | None = None
+    text: str | None = None
+    passages: tuple[dict, ...] = ()
+    content_type: str | None = None
+    filename: str | None = None
     source_url: str | None = None
     fetched_at: datetime | None = None
     legacy_version_id: str | None = None
@@ -377,12 +382,38 @@ class RegulatoryCorpus:
                     legacy_version_id=version_data.legacy_version_id,
                     content_hash=version_data.content_hash,
                     artifact_key=version_data.artifact_key,
+                    extractor=version_data.extractor,
+                    text=version_data.text,
+                    passages=list(version_data.passages),
+                    content_type=version_data.content_type,
+                    filename=version_data.filename,
                     source_url=normalize_url(version_data.source_url) if version_data.source_url else None,
                     fetched_at=version_data.fetched_at,
                     metadata_json=dict(version_data.metadata),
                 )
                 session.add(version)
                 session.flush()
+            else:
+                if version_data.content_hash and version.content_hash not in {
+                    None,
+                    version_data.content_hash,
+                }:
+                    raise DomainError(
+                        "The same official version key returned different content.",
+                        409,
+                        "regulatory_version_content_conflict",
+                    )
+                version.content_hash = version.content_hash or version_data.content_hash
+                version.artifact_key = version.artifact_key or version_data.artifact_key
+                version.extractor = version.extractor or version_data.extractor
+                version.text = version.text or version_data.text
+                version.passages = version.passages or list(version_data.passages)
+                version.content_type = version.content_type or version_data.content_type
+                version.filename = version.filename or version_data.filename
+                version.metadata_json = {
+                    **(version.metadata_json or {}),
+                    **version_data.metadata,
+                }
 
         targets = {"work": work.id, "expression": expression.id}
         if version:

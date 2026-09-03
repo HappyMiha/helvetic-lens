@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from . import analysis as ai
 from . import jobs as durable_jobs
 from .config import DomainError, Settings
+from .connectors import CONNECTOR_CONTRACT_VERSION, ConnectorRunner
 from .db import Database, utcnow
 from .diffing import DIFF_SCHEMA_VERSION, compare_passages
 from .extraction import (
@@ -66,6 +67,7 @@ from .models import (
     Source,
     Version,
 )
+from .official_source_contracts import OFFICIAL_SOURCE_CONTRACTS
 from .prompt_settings import (
     PromptSettingsInput,
     default_prompt_settings,
@@ -134,6 +136,7 @@ class HelveticLens:
         self.db = Database(settings, organization_id)
         self.integration_logger = IntegrationLogger(self.db.session)
         self.regulatory_corpus = RegulatoryCorpus()
+        self.connector_runner = ConnectorRunner(self.db, self.regulatory_corpus, settings)
         self.fetcher = fetcher or Fetcher(settings, self.integration_logger)
         self._provided_model_client = model_client is not None
         self._fallback_model_client = model_client or ai.ModelClient(settings, self.integration_logger)
@@ -923,6 +926,31 @@ class HelveticLens:
     def regulatory_timeline(self, law_id: str) -> dict:
         with self.db.session() as session:
             return RegistryReader(self.organization_id).timeline(session, law_id)
+
+    def connector_statuses(self) -> list[dict]:
+        saved = self.connector_runner.statuses()
+        known = {item["connector"] for item in saved}
+        for contract in OFFICIAL_SOURCE_CONTRACTS:
+            if contract.manifest.name in known:
+                continue
+            saved.append(
+                {
+                    "connector": contract.manifest.name,
+                    "stream": "default",
+                    "health": "unknown",
+                    "message": "No synchronization or source-contract probe has been persisted yet.",
+                    "contract_version": CONNECTOR_CONTRACT_VERSION,
+                    "connector_version": contract.manifest.connector_version,
+                    "schema_version": contract.manifest.schema_version,
+                    "cursor": None,
+                    "checkpoint": {},
+                    "source_contract": contract.manifest.source_contract,
+                    "last_started_at": None,
+                    "last_completed_at": None,
+                    "last_success_at": None,
+                }
+            )
+        return sorted(saved, key=lambda item: (item["connector"], item["stream"]))
 
     def regulatory_work_detail(self, work_id: str) -> dict:
         with self.db.session() as session:

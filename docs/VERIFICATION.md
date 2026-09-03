@@ -77,6 +77,13 @@ The earlier large-comparison checks below are retained as historical evidence of
 - After the resilience/history migration, a temporary small public-source comparison was exercised again with the saved Infomaniak configuration. Ask returned a supported answer with six validated citations, Impact succeeded with medium impact, and the unified history contained both records. Repeating the identical Ask and Impact requests produced zero new provider calls and returned their saved records. The temporary monitored document and its artifacts were deleted afterward.
 - A non-persistent synthetic live check sent a complete 1,406-passage comparison through Ask Apertus in 14 bounded batches. It completed in 79.9 seconds with full coverage, no truncation, no HTTP 504, and 10 server-materialized citations. A separate Impact check deliberately used a 2,000-character batch target: all 120 passages passed through 30 batches in 63.5 seconds and produced three actions with 10 validated citations.
 
+## Versioned official connector contract — 3 September 2026
+
+- Fixture-backed checks exercise discovery, metadata, language expressions, official artifact retrieval, explicit relation extraction, and health for the shared v1 contract. Replaying a committed page creates no duplicate works, versions, receipts, or relations.
+- A forced second-item failure commits the first safe boundary, leaves the source cursor unchanged, stores the exact item error and next index, and resumes from that index successfully on retry.
+- Shared HTTP checks cover allowlisted HTTPS URLs and redirects, streamed response limits, bounded retry with jitter, one redacted diagnostic per attempt, official artifact hashing, extraction, immutable storage, and contract-drift degradation.
+- Bounded live probes on 3 September 2026 passed the Fedlex RSS and Federal Supreme Court latest-index contracts. The Swiss Parliament JSON endpoint returned HTTP 403 from the development host; Helvetic Lens surfaced `degraded` and did not treat the page as empty or advance ingestion state. Re-run `scripts/check_official_source_contracts.py` from the deployment network before accepting HL-040.
+
 ## Browser and PostgreSQL checks
 
 - HL-031 adds a three-entry immutable Apertus catalogue, private model-manager API, dedicated model volume, hardware/compatibility probe, license acceptance, resumable `.part` downloads, free-space and SHA-256 checks, atomic activation, pinned llama.cpp runtime, retained-analysis removal guard, and durable download/start jobs. Four manager lifecycle regressions and an end-to-end admin API regression pass.

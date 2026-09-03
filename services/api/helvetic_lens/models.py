@@ -231,9 +231,7 @@ class RegulatoryWork(Base):
         ),
     )
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
-    owner_organization_id: Mapped[str | None] = mapped_column(
-        ForeignKey("organizations.id"), index=True
-    )
+    owner_organization_id: Mapped[str | None] = mapped_column(ForeignKey("organizations.id"), index=True)
     kind: Mapped[str] = mapped_column(String(40), index=True)
     authority: Mapped[str] = mapped_column(String(80), index=True)
     canonical_key: Mapped[str] = mapped_column(String(700))
@@ -286,11 +284,14 @@ class RegulatoryDocumentVersion(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     expression_id: Mapped[str] = mapped_column(ForeignKey("regulatory_expressions.id"), index=True)
     version_key: Mapped[str] = mapped_column(String(700))
-    legacy_version_id: Mapped[str | None] = mapped_column(
-        ForeignKey("versions.id", ondelete="SET NULL")
-    )
+    legacy_version_id: Mapped[str | None] = mapped_column(ForeignKey("versions.id", ondelete="SET NULL"))
     content_hash: Mapped[str | None] = mapped_column(String(64), index=True)
     artifact_key: Mapped[str | None] = mapped_column(String(80))
+    extractor: Mapped[str | None] = mapped_column(String(40))
+    text: Mapped[str | None] = mapped_column(Text)
+    passages: Mapped[list] = mapped_column(JSON, default=list)
+    content_type: Mapped[str | None] = mapped_column(String(100))
+    filename: Mapped[str | None] = mapped_column(Text)
     source_url: Mapped[str | None] = mapped_column(Text)
     fetched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
     metadata_json: Mapped[dict] = mapped_column(JSON, default=dict)
@@ -424,9 +425,7 @@ class LegacyDocumentMapping(Base):
     __tablename__ = "legacy_document_mappings"
     __table_args__ = (UniqueConstraint("law_id", name="uq_legacy_document_mapping_law"),)
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
-    owner_organization_id: Mapped[str | None] = mapped_column(
-        ForeignKey("organizations.id"), index=True
-    )
+    owner_organization_id: Mapped[str | None] = mapped_column(ForeignKey("organizations.id"), index=True)
     law_id: Mapped[str] = mapped_column(ForeignKey("laws.id", ondelete="CASCADE"), index=True)
     work_id: Mapped[str | None] = mapped_column(ForeignKey("regulatory_works.id"), index=True)
     mapping_status: Mapped[str] = mapped_column(String(30), index=True)
@@ -558,6 +557,106 @@ class OrganizationQuota(Base):
     organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), unique=True, index=True)
     values: Mapped[dict] = mapped_column(JSON, default=dict)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class ConnectorState(Base):
+    __tablename__ = "connector_states"
+    __table_args__ = (
+        UniqueConstraint("connector", "stream", name="uq_connector_state_stream"),
+        CheckConstraint(
+            "health IN ('healthy', 'degraded', 'error', 'unknown')",
+            name="ck_connector_state_health",
+        ),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    connector: Mapped[str] = mapped_column(String(80), index=True)
+    stream: Mapped[str] = mapped_column(String(200), default="default")
+    contract_version: Mapped[str] = mapped_column(String(80))
+    connector_version: Mapped[str] = mapped_column(String(80))
+    schema_version: Mapped[str] = mapped_column(String(80))
+    cursor_json: Mapped[dict | None] = mapped_column(JSON)
+    page_checkpoint_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    health: Mapped[str] = mapped_column(String(20), default="unknown", index=True)
+    health_message: Mapped[str | None] = mapped_column(Text)
+    source_contract_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    last_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_success_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class ConnectorPage(Base):
+    __tablename__ = "connector_pages"
+    __table_args__ = (
+        UniqueConstraint("connector", "stream", "page_key", name="uq_connector_page_key"),
+        CheckConstraint(
+            "status IN ('processing', 'partial', 'persisted', 'degraded', 'failed')",
+            name="ck_connector_page_status",
+        ),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    connector: Mapped[str] = mapped_column(String(80), index=True)
+    stream: Mapped[str] = mapped_column(String(200), default="default")
+    page_key: Mapped[str] = mapped_column(String(64))
+    input_cursor_json: Mapped[dict | None] = mapped_column(JSON)
+    output_cursor_json: Mapped[dict | None] = mapped_column(JSON)
+    safe_checkpoint_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    status: Mapped[str] = mapped_column(String(20), default="processing", index=True)
+    item_count: Mapped[int] = mapped_column(Integer, default=0)
+    persisted_count: Mapped[int] = mapped_column(Integer, default=0)
+    error_count: Mapped[int] = mapped_column(Integer, default=0)
+    raw_provenance_ref: Mapped[str] = mapped_column(Text)
+    attribution: Mapped[str] = mapped_column(Text)
+    error_detail: Mapped[str | None] = mapped_column(Text)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ConnectorReceipt(Base):
+    __tablename__ = "connector_receipts"
+    __table_args__ = (
+        UniqueConstraint(
+            "connector",
+            "stream",
+            "external_identity",
+            "expression_key",
+            "source_revision",
+            name="uq_connector_receipt_revision",
+        ),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    connector: Mapped[str] = mapped_column(String(80), index=True)
+    stream: Mapped[str] = mapped_column(String(200), default="default")
+    external_identity: Mapped[str] = mapped_column(String(700), index=True)
+    expression_key: Mapped[str] = mapped_column(String(700))
+    source_revision: Mapped[str] = mapped_column(String(200))
+    work_id: Mapped[str] = mapped_column(ForeignKey("regulatory_works.id"), index=True)
+    expression_id: Mapped[str] = mapped_column(ForeignKey("regulatory_expressions.id"))
+    document_version_id: Mapped[str | None] = mapped_column(ForeignKey("regulatory_document_versions.id"))
+    canonical_url: Mapped[str] = mapped_column(Text)
+    artifact_hash: Mapped[str | None] = mapped_column(String(64), index=True)
+    raw_provenance_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    contract_version: Mapped[str] = mapped_column(String(80))
+    connector_version: Mapped[str] = mapped_column(String(80))
+    schema_version: Mapped[str] = mapped_column(String(80))
+    persisted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class ConnectorItemError(Base):
+    __tablename__ = "connector_item_errors"
+    __table_args__ = (
+        UniqueConstraint("page_id", "item_index", "attempt", name="uq_connector_item_error_attempt"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    page_id: Mapped[str] = mapped_column(ForeignKey("connector_pages.id", ondelete="CASCADE"), index=True)
+    item_index: Mapped[int] = mapped_column(Integer)
+    external_identity: Mapped[str | None] = mapped_column(String(700))
+    attempt: Mapped[int] = mapped_column(Integer, default=1)
+    code: Mapped[str] = mapped_column(String(100))
+    detail: Mapped[str] = mapped_column(Text)
+    retryable: Mapped[bool] = mapped_column(Boolean, default=True)
+    raw_provenance_ref: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 class FeedState(Base):

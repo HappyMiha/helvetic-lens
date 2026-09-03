@@ -459,6 +459,10 @@ def create_app(
     ):
         return service.list_regulatory_works(kind=kind, authority=authority, limit=limit)
 
+    @app.get("/api/connectors/status")
+    def connector_statuses():
+        return service.connector_statuses()
+
     @app.get("/api/corpus/works/{work_id}")
     def regulatory_work_detail(work_id: str):
         return service.regulatory_work_detail(work_id)
