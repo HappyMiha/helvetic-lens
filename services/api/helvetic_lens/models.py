@@ -875,6 +875,37 @@ class ActionDecision(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
 
 
+class RelationImpactAnalysis(Base):
+    __tablename__ = "relation_impact_analyses"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('pending', 'succeeded', 'failed')",
+            name="ck_relation_impact_analysis_status",
+        ),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    organization_candidate_id: Mapped[str] = mapped_column(
+        ForeignKey("organization_relation_candidates.id", ondelete="CASCADE"), index=True
+    )
+    candidate_id: Mapped[str] = mapped_column(ForeignKey("relation_candidates.id"), index=True)
+    event_id: Mapped[str] = mapped_column(ForeignKey("regulatory_events.id"), index=True)
+    target_work_id: Mapped[str] = mapped_column(ForeignKey("regulatory_works.id"), index=True)
+    cache_key: Mapped[str] = mapped_column(String(64), index=True)
+    status: Mapped[str] = mapped_column(String(30), default="pending", index=True)
+    evidence_json: Mapped[list] = mapped_column(JSON, default=list)
+    result: Mapped[dict | None] = mapped_column(JSON)
+    coverage: Mapped[dict] = mapped_column(JSON, default=dict)
+    analysis_plan: Mapped[dict] = mapped_column(JSON, default=dict)
+    provenance: Mapped[dict] = mapped_column(JSON, default=dict)
+    error: Mapped[str | None] = mapped_column(Text)
+    model: Mapped[str] = mapped_column(Text)
+    prompt_revision: Mapped[int] = mapped_column(Integer, default=1)
+    use_count: Mapped[int] = mapped_column(Integer, default=1)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
 class AskRecord(Base):
     __tablename__ = "ask_records"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
@@ -985,9 +1016,11 @@ ORGANIZATION_SCOPED_MODELS = (
     OrganizationQuota,
     FeedState,
     RegulatoryEventState,
+    OrganizationRelationCandidate,
     IntegrationLog,
     Analysis,
     ActionDecision,
+    RelationImpactAnalysis,
     AskRecord,
     Job,
     JobStep,

@@ -641,6 +641,24 @@ def create_app(
     def regulatory_work_detail(work_id: str):
         return service.regulatory_work_detail(work_id)
 
+    @app.get("/api/relation-candidates/{organization_candidate_id}/analyses")
+    def relation_candidate_analyses(organization_candidate_id: str):
+        return service.relation_analysis_history(organization_candidate_id)
+
+    @app.post(
+        "/api/relation-candidates/{organization_candidate_id}/analyse-jobs",
+        status_code=202,
+    )
+    async def relation_candidate_analysis_job(organization_candidate_id: str):
+        job = await service.enqueue_relation_analysis(organization_candidate_id)
+        if settings.job_execution_mode == "inline":
+            return await service.execute_job(job["id"])
+        return job
+
+    @app.get("/api/relation-analyses/{analysis_id}/evidence/{evidence_id}")
+    def relation_analysis_evidence(analysis_id: str, evidence_id: str):
+        return service.relation_analysis_evidence(analysis_id, evidence_id)
+
     @app.get("/api/registry")
     def registry(
         view: Literal["monitored", "events"] = "monitored",

@@ -83,7 +83,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-042](#hl-042) | P1       | DONE     | HL-030, HL-039–HL-041                                  | Scheduled synchronization, deduplication, and watch fan-out         |
 | [HL-043](#hl-043) | P1       | DONE     | HL-038, HL-042                                         | Official notices and source-linked news events                      |
 | [HL-044](#hl-044) | P1       | DONE     | HL-036, HL-039–HL-043                                  | Evidence-backed relation graph and candidate generation             |
-| [HL-045](#hl-045) | P1       | PLANNED  | HL-032, HL-044, HL-060, HL-061                         | Local-AI potential-impact analysis                                  |
+| [HL-045](#hl-045) | P1       | DONE     | HL-032, HL-044, HL-060, HL-061                         | Local-AI potential-impact analysis                                  |
 | [HL-046](#hl-046) | P1       | PLANNED  | HL-037, HL-045, HL-063                                 | Impact inbox and monitored-law cross-links                          |
 | [HL-047](#hl-047) | P1       | DONE     | HL-031, HL-035, HL-042                                 | Platform and organization admin console                             |
 | [HL-048](#hl-048) | P0       | PLANNED  | HL-029–HL-035, HL-038                                  | Public single-server deployment and operations baseline             |
@@ -967,6 +967,8 @@ Acceptance criteria:
 ### HL-045 — Analyse candidate effects with local Apertus and exact saved evidence
 
 Turn a candidate relation into a useful, reviewable potential-impact conclusion for each affected organization.
+
+**Status: DONE.** Each organization relation candidate can now start a durable `ai_background` job with lower priority than interactive Ask work. One fixed-budget local-first dossier combines the exact event/version, monitored-law lifecycle and passages, deterministic retrieval facts, organization profile, and any confirmed official relation. Structured output is validated with at most one repair; citations are materialized from persisted rows, invalid references are rejected, actions are deduplicated and capped at five, and unsupported conclusions remain explicitly unsupported. Successful and failed attempts are retained, while cache reuse requires identical evidence/version, profile, prompt, model/runtime, and schema fingerprints. Confirmed official relations remain separate immutable facts. See [the relation-impact contract](docs/RELATION_IMPACT_ANALYSIS.md).
 
 Acceptance criteria:
 

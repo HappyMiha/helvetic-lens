@@ -192,6 +192,16 @@ The Windows agent's default pytest temporary directory had a permission conflict
 - Live browser QA on a saved local-Apertus comparison showed the five deterministic category counts before AI content, one compact material cluster instead of raw rows, a saved `Ready` job outcome, the current **What changed / Why it may matter / Review plan** report, exact before/after units, organization relevance, explicit not-found dates, assumptions, evidence grades, full report provenance, and a compact prior-reports link.
 - Selecting **View exact evidence** switched from **Material first** to **All exact changes**, focused the correct saved passage pair, and retained the validated report alongside it. The live report legitimately contained zero suggested actions; the action workflow itself is covered through the real API, database, migration, and authorization boundary in the automated suite.
 
+## Local-AI relation impact analysis — 3 September 2026
+
+- Focused regressions create a real organization delivery from a Parliament event and monitored Fedlex-style law, then execute the persisted three-stage `ai_background` job below interactive Ask priority.
+- One bounded dossier retains exact event/version evidence, monitored-law lifecycle and passages, deterministic retrieval reasons, the organization profile, and any confirmed official relation. The saved plan permits one normal generation plus one repair under the hard five-call ceiling and reports selected/available rows and characters.
+- Server-side finalization materializes exact evidence URLs and quotations, separates potential severity from evidence grade, caps and deduplicates structured review suggestions, accepts a justified unsupported result with zero actions, and rejects out-of-range evidence rows after one repair.
+- Cache regressions prove zero-call reuse when all dependencies match and a new analysis/history record when the organization profile revision changes. Failed attempts retain their evidence and cannot replace the latest successful report.
+- A confirmed official `amends` relation remains unchanged and separately visible while the model output stays a labelled `potentially_impacts` proposal.
+- The rebuilt Compose stack upgraded PostgreSQL to `a63e1c92b7f4 (head)`. A real existing candidate ran through the managed Apertus 1.5B Q4 model on the GTX 1070 in one background attempt and one provider call. It retained seven exact evidence rows, downgraded the model's unsupported `confirmed` evidence claim to `possible`, removed a generic filler action, produced a cited review-lead explanation, and persisted the `relation-impact-v2` result without changing the proposed corpus relation.
+- All 265 API tests pass, including legacy-to-head migration and organization isolation. Ruff, TypeScript, and the Next.js production build pass; the final Compose stack is healthy with the API, both workers, scheduler, PostgreSQL, Redis, web app, and private model manager running.
+
 ## Remaining gates
 
 - Validate optional Firecrawl with a key and available credit.

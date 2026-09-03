@@ -25,9 +25,11 @@ from .models import (
     Job,
     LegacyDocumentMapping,
     Organization,
+    OrganizationRelationCandidate,
     OutboxMessage,
     RegulatoryEvent,
     RegulatoryEventState,
+    RelationCandidate,
 )
 from .regulatory_corpus import RegulatoryCorpus
 from .relation_candidates import generate_for_events
@@ -501,6 +503,36 @@ def _events_for_run(session: Session, run: ConnectorRun) -> list[RegulatoryEvent
         for event in candidates
         if (event.evidence_json or {}).get("stream") == run.stream
     ]
+
+
+def relation_delivery_refs_for_run(
+    session: Session, run: ConnectorRun
+) -> list[tuple[str, str]]:
+    """Return organization/candidate deliveries created or reused for one connector run."""
+
+    event_ids = {event.id for event in _events_for_run(session, run)}
+    if not event_ids:
+        return []
+    rows = session.execute(
+        select(
+            OrganizationRelationCandidate.organization_id,
+            OrganizationRelationCandidate.id,
+        )
+        .join(
+            RelationCandidate,
+            RelationCandidate.id == OrganizationRelationCandidate.candidate_id,
+        )
+        .where(
+            RelationCandidate.event_id.in_(event_ids),
+            OrganizationRelationCandidate.status == "pending",
+        )
+        .order_by(
+            OrganizationRelationCandidate.organization_id,
+            OrganizationRelationCandidate.created_at,
+            OrganizationRelationCandidate.id,
+        )
+    ).all()
+    return [(organization_id, delivery_id) for organization_id, delivery_id in rows]
 
 
 def _fan_out(session: Session, run: ConnectorRun, events: list[RegulatoryEvent]) -> int:

@@ -59,6 +59,7 @@ class ScriptedModel:
     fail: bool = False
     invalid: bool = False
     unsupported: bool = False
+    relation_compact: bool = False
     invalid_json_responses: int = 0
     unsupported_responses: int = 0
 
@@ -73,6 +74,59 @@ class ScriptedModel:
             return "{not valid JSON"
         data = json.loads(user)
         task = data.get("task")
+        if task == "relation_impact":
+            if self.unsupported:
+                return json.dumps(
+                    {
+                        "supported": False,
+                        "proposed_relation_type": None,
+                        "potential_severity": "none",
+                        "evidence_grade": "needs_review",
+                        "explanation": "The supplied rows do not support an organizational effect.",
+                        "business_areas": [],
+                        "actions": [],
+                        "citation_rows": [],
+                    }
+                )
+            citation_row = 999 if self.invalid else 1
+            response = {
+                    "supported": True,
+                    "proposed_relation_type": "potentially_impacts",
+                    "potential_severity": "medium",
+                    "evidence_grade": "possible",
+                    "explanation": "The new event may affect the monitored work and requires human review.",
+                    "business_areas": ["Operations"],
+                    "actions": [
+                        {
+                            "title": "Review the monitored procedure against the new event",
+                            "rationale": "The cited event may change the applicable process.",
+                            "owner_role": "Legal operations",
+                            "affected_area": "Operations",
+                            "priority": "medium",
+                            "due_basis": "No source-stated deadline; review during the next policy cycle.",
+                            "due_date": None,
+                            "applicability_condition": "If the organization performs the activity described in the event.",
+                            "evidence_grade": "possible",
+                            "citation_rows": [citation_row],
+                        }
+                    ],
+                    "citation_rows": [citation_row],
+                }
+            if self.relation_compact:
+                response.pop("proposed_relation_type")
+                response.pop("citation_rows")
+                response["explanation"] = (
+                    "The evidence grade is high because it is not supported by any evidence."
+                )
+                response["actions"][0].update(
+                    {
+                        "title": "Actions",
+                        "rationale": "The explanation is clear and authoritative.",
+                        "owner_role": "The owner role is clear and authoritative.",
+                        "due_basis": "The due basis is clear and authoritative.",
+                    }
+                )
+            return json.dumps(response)
         if task == "impact_synthesis":
             return json.dumps(
                 {

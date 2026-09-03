@@ -1,6 +1,8 @@
 import asyncio
 import hashlib
+import json
 import logging
+import re
 import shutil
 import threading
 import time
@@ -17,6 +19,7 @@ from sqlalchemy.orm import Session
 
 from . import analysis as ai
 from . import jobs as durable_jobs
+from . import relation_analysis as relation_ai
 from . import synchronization
 from .broad_official_connector import federal_news_connectors, finma_news_connectors
 from .config import DomainError, Settings
@@ -65,6 +68,7 @@ from .models import (
     OrganizationInvitation,
     OrganizationMembership,
     OrganizationQuota,
+    OrganizationRelationCandidate,
     OutboxMessage,
     PlatformPromptConfiguration,
     Profile,
@@ -77,6 +81,8 @@ from .models import (
     RegulatoryIdentifier,
     RegulatoryRelation,
     RegulatoryWork,
+    RelationCandidate,
+    RelationImpactAnalysis,
     Scan,
     ScanItem,
     Source,
@@ -1314,8 +1320,15 @@ class HelveticLens:
             run = synchronization.finish_run(
                 session, run_id, result, settings=self.settings
             )
+            relation_deliveries = synchronization.relation_delivery_refs_for_run(session, run)
             session.commit()
-            return {**result, "run": synchronization.serialize_run(run)}
+            serialized_run = synchronization.serialize_run(run)
+        relation_jobs = await self.enqueue_pending_relation_analyses(relation_deliveries)
+        return {
+            **result,
+            "run": serialized_run,
+            "relation_analysis_jobs": relation_jobs,
+        }
 
     def regulatory_work_detail(self, work_id: str) -> dict:
         with self.db.session() as session:
@@ -2709,7 +2722,7 @@ class HelveticLens:
             job_type, target_id, payload = job.type, job.target_id, dict(job.payload or {})
 
         if (
-            job_type in {"impact_analysis", "ask"}
+            job_type in {"impact_analysis", "ask", "relation_impact_analysis"}
             and self.settings.apertus_provider == "docker"
             and isinstance(self.model_client, ai.ModelClient)
         ):
@@ -2847,6 +2860,25 @@ class HelveticLens:
                 result_type = "answer"
                 result_id = result_json["record_id"]
                 result_url = f"/compare/{target_id}#ask"
+            elif job_type == "relation_impact_analysis":
+                mark(1, 1, "succeeded")
+                mark(1, 2, "running")
+                result_json = await self.analyse_relation_candidate(
+                    target_id,
+                    payload.get("runtime_fingerprint"),
+                )
+                if result_json.get("status") != "succeeded":
+                    raise DomainError(
+                        result_json.get("error") or "The relation impact analysis failed.",
+                        502,
+                        "relation_analysis_failed",
+                    )
+                mark(2, 2, "succeeded")
+                mark(2, 3, "running")
+                mark(3, 3, "succeeded")
+                result_type = "relation_impact_analysis"
+                result_id = result_json["id"]
+                result_url = f"/impact?candidate={target_id}"
             elif job_type in {"model_download", "model_start"}:
                 action = job_type.removeprefix("model_")
                 result_json = await self._run_model_job(job_id, target_id, action, payload, worker)
@@ -2960,6 +2992,491 @@ class HelveticLens:
             )
             session.commit()
             return {"deleted": result.rowcount or 0}
+
+    async def relation_runtime_fingerprint(self) -> str:
+        runtime: dict = {
+            "provider": self.settings.apertus_provider,
+            "model": self.settings.apertus_model,
+            "endpoint": self.settings.apertus_base_url,
+        }
+        if self.settings.apertus_provider == "docker":
+            try:
+                inventory = await self.model_manager.inventory()
+                deployment = inventory.get("deployment") or {}
+                runtime.update(
+                    {
+                        "model_revision": deployment.get("model_revision"),
+                        "artifact_sha256": deployment.get("artifact_sha256"),
+                        "quantization": deployment.get("quantization"),
+                        "runtime_image": deployment.get("runtime_image"),
+                        "hardware_profile": deployment.get("hardware_profile"),
+                    }
+                )
+            except DomainError as exc:
+                runtime["inventory_error"] = exc.code
+        return hashlib.sha256(json.dumps(runtime, sort_keys=True).encode()).hexdigest()
+
+    @staticmethod
+    def _relation_text_tokens(*values: object) -> set[str]:
+        value = " ".join(str(item or "") for item in values).casefold()
+        return {item for item in re.findall(r"[\wà-ž]{4,}", value) if len(item) >= 4}
+
+    def _relation_analysis_context(
+        self,
+        session: Session,
+        organization_candidate_id: str,
+        runtime_fingerprint: str,
+    ) -> dict:
+        delivery = get(session, OrganizationRelationCandidate, organization_candidate_id)
+        candidate = get(session, RelationCandidate, delivery.candidate_id)
+        event = get(session, RegulatoryEvent, candidate.event_id)
+        source_work = get(session, RegulatoryWork, candidate.source_work_id)
+        target_work = get(session, RegulatoryWork, candidate.target_work_id)
+        relation = session.get(RegulatoryRelation, candidate.relation_id) if candidate.relation_id else None
+        source_version = (
+            session.get(RegulatoryDocumentVersion, candidate.source_version_id)
+            if candidate.source_version_id
+            else None
+        )
+        target_version = (
+            session.get(RegulatoryDocumentVersion, candidate.target_version_id)
+            if candidate.target_version_id
+            else None
+        )
+        profile = get(session, Profile, self.tenant_record_id)
+        official_relation = (
+            {
+                "id": relation.id,
+                "type": relation.relation_type,
+                "state": relation.state,
+                "authority": relation.authority,
+                "provenance_method": relation.provenance_method,
+                "evidence_fingerprint": relation.evidence_fingerprint,
+                "evidence": relation.evidence_json,
+            }
+            if relation and relation.state == "confirmed"
+            else None
+        )
+        rows = []
+        if official_relation:
+            rows.append(
+                relation_ai.evidence_row(
+                    source_kind="official_relation",
+                    label=f"Confirmed official {relation.relation_type} relation",
+                    text=json.dumps(relation.evidence_json, ensure_ascii=False, sort_keys=True),
+                    source_url=event.source_url or source_work.stable_official_url,
+                    work_id=source_work.id,
+                    version_id=candidate.source_version_id,
+                    authoritative=True,
+                    metadata={"relation_id": relation.id, "relation_type": relation.relation_type},
+                )
+            )
+        rows.extend(
+            [
+                relation_ai.evidence_row(
+                    source_kind="regulatory_event",
+                    label=f"{event.event_type.replace('_', ' ').title()} event",
+                    text=json.dumps(event.evidence_json, ensure_ascii=False, sort_keys=True),
+                    source_url=event.source_url,
+                    work_id=event.work_id,
+                    version_id=event.document_version_id,
+                    authoritative=event.provenance_method in {"official_metadata", "exact_identifier"},
+                    metadata={
+                        "event_id": event.id,
+                        "event_type": event.event_type,
+                        "provenance_method": event.provenance_method,
+                    },
+                ),
+                relation_ai.evidence_row(
+                    source_kind="candidate_fact",
+                    label="Deterministic candidate retrieval facts",
+                    text=json.dumps(
+                        {
+                            "why": candidate.why_json,
+                            "score_components": candidate.score_components_json,
+                            "similarity_is_not_legal_evidence": not bool(official_relation),
+                        },
+                        ensure_ascii=False,
+                        sort_keys=True,
+                    ),
+                    source_url=event.source_url,
+                    work_id=target_work.id,
+                    authoritative=False,
+                    metadata={"candidate_id": candidate.id, "rule_revision": candidate.rule_revision},
+                ),
+                relation_ai.evidence_row(
+                    source_kind="target_lifecycle",
+                    label="Current monitored-work lifecycle",
+                    text=json.dumps(
+                        {
+                            "title": target_work.title,
+                            "kind": target_work.kind,
+                            "authority": target_work.authority,
+                            "lifecycle_status": target_work.lifecycle_status or "unknown",
+                            "metadata": target_work.metadata_json,
+                        },
+                        ensure_ascii=False,
+                        sort_keys=True,
+                    ),
+                    source_url=target_work.stable_official_url,
+                    work_id=target_work.id,
+                    version_id=candidate.target_version_id,
+                    authoritative=True,
+                ),
+            ]
+        )
+        source_passages = list((source_version.passages if source_version else []) or [])
+        target_passages = list((target_version.passages if target_version else []) or [])
+        target_passage_version_id = target_version.id if target_version else None
+        target_passage_source_url = target_version.source_url if target_version else None
+        if target_version and target_version.legacy_version_id and not target_passages:
+            legacy_target_version = session.get(Version, target_version.legacy_version_id)
+            if legacy_target_version:
+                target_passages = list(legacy_target_version.passages or [])
+                target_passage_version_id = legacy_target_version.id
+                target_passage_source_url = legacy_target_version.source_url
+        query_tokens = self._relation_text_tokens(
+            source_work.title,
+            event.evidence_json,
+            candidate.why_json,
+            source_work.metadata_json,
+        )
+        target_passages.sort(
+            key=lambda passage: (
+                -len(query_tokens & self._relation_text_tokens(passage.get("text", ""))),
+                int(passage.get("position") or 0),
+                str(passage.get("id", "")),
+            )
+        )
+        passages = []
+        for index in range(max(len(source_passages), len(target_passages))):
+            if index < len(source_passages):
+                passages.append(
+                    (
+                        "event_source_passage",
+                        source_version.id,
+                        source_version.source_url,
+                        source_passages[index],
+                    )
+                )
+            if index < len(target_passages):
+                passages.append(
+                    (
+                        "monitored_work_passage",
+                        target_passage_version_id,
+                        target_passage_source_url,
+                        target_passages[index],
+                    )
+                )
+        for kind, version_id, source_url, passage in passages:
+            rows.append(
+                relation_ai.evidence_row(
+                    source_kind=kind,
+                    label=("New event evidence" if kind == "event_source_passage" else "Monitored law evidence"),
+                    text=str(passage.get("text", "")),
+                    source_url=source_url,
+                    work_id=source_work.id if kind == "event_source_passage" else target_work.id,
+                    version_id=version_id,
+                    passage_id=str(passage.get("id", "")) or None,
+                    authoritative=False,
+                    metadata={"page": passage.get("page"), "position": passage.get("position")},
+                )
+            )
+        evidence, coverage = relation_ai.select_evidence(rows, self.settings.apertus_context_chars)
+        relation_fingerprint = relation.evidence_fingerprint if relation else None
+        key = relation_ai.cache_key(
+            organization_candidate_id=delivery.id,
+            event_id=event.id,
+            source_version_id=candidate.source_version_id,
+            target_version_id=candidate.target_version_id,
+            relation_fingerprint=relation_fingerprint,
+            evidence=evidence,
+            profile_revision=profile.revision,
+            settings=self.settings,
+            prompts=self.prompt_settings,
+            runtime_fingerprint=runtime_fingerprint,
+        )
+        plan = relation_ai.build_plan(
+            organization_candidate_id=delivery.id,
+            event_id=event.id,
+            source_version_id=candidate.source_version_id,
+            target_version_id=candidate.target_version_id,
+            evidence=evidence,
+            coverage=coverage,
+            profile_revision=profile.revision,
+            settings=self.settings,
+        )
+        plan["runtime_fingerprint"] = runtime_fingerprint
+        return {
+            "delivery": delivery,
+            "candidate": candidate,
+            "event": event,
+            "source_work": source_work,
+            "target_work": target_work,
+            "relation": relation,
+            "source_version": source_version,
+            "target_version": target_version,
+            "profile": profile,
+            "official_relation": official_relation,
+            "evidence": evidence,
+            "coverage": coverage,
+            "cache_key": key,
+            "plan": plan,
+        }
+
+    @staticmethod
+    def _relation_analysis_dict(record: RelationImpactAnalysis, *, cached: bool = False) -> dict:
+        return {
+            **as_dict(record, {"evidence_json", "cache_key"}),
+            "evidence_count": len(record.evidence_json or []),
+            "cached": cached,
+        }
+
+    async def enqueue_relation_analysis(
+        self,
+        organization_candidate_id: str,
+        runtime_fingerprint: str | None = None,
+    ) -> dict:
+        runtime_fingerprint = runtime_fingerprint or await self.relation_runtime_fingerprint()
+        with self.write_guard, self.db.session() as session:
+            context = self._relation_analysis_context(
+                session, organization_candidate_id, runtime_fingerprint
+            )
+            if not self.settings.model_configured:
+                raise DomainError(
+                    "Apertus is not connected. Configure and start the local model before analysing this candidate.",
+                    503,
+                    "model_not_configured",
+                )
+            job, reused = durable_jobs.enqueue(
+                session,
+                job_type="relation_impact_analysis",
+                target_type="organization_relation_candidate",
+                target_id=organization_candidate_id,
+                queue="ai_background",
+                idempotency_key=f"relation-impact:{context['cache_key']}",
+                payload={
+                    "organization_candidate_id": organization_candidate_id,
+                    "runtime_fingerprint": runtime_fingerprint,
+                },
+                progress_total=3,
+                max_attempts=self.settings.job_max_attempts,
+                steps=[
+                    ("Prepare relation evidence", {"candidate_id": context["candidate"].id}),
+                    ("Analyse possible organizational impact", {"stage": "analysing"}),
+                    ("Validate evidence and save conclusion", {"stage": "validating"}),
+                ],
+            )
+            if reused and job.state in {"failed", "cancelled"}:
+                job = durable_jobs.retry(session, job.id)
+            context["delivery"].status = (
+                "analysed" if reused and job.state == "succeeded" else "queued"
+            )
+            context["delivery"].updated_at = utcnow()
+            session.commit()
+            return durable_jobs.serialize(session, job)
+
+    async def enqueue_pending_relation_analyses(
+        self, deliveries: list[tuple[str, str]]
+    ) -> dict:
+        """Fan organization deliveries into durable background AI work without blocking ingestion."""
+
+        queued = 0
+        waiting_for_configuration = 0
+        failed = 0
+        runtime_by_organization: dict[str, str] = {}
+        for organization_id, delivery_id in deliveries:
+            try:
+                with self.db.organization_context(organization_id), self.organization_runtime():
+                    runtime_fingerprint = runtime_by_organization.get(organization_id)
+                    if runtime_fingerprint is None:
+                        runtime_fingerprint = await self.relation_runtime_fingerprint()
+                        runtime_by_organization[organization_id] = runtime_fingerprint
+                    await self.enqueue_relation_analysis(delivery_id, runtime_fingerprint)
+                    queued += 1
+            except DomainError as exc:
+                if exc.code == "model_not_configured":
+                    waiting_for_configuration += 1
+                else:
+                    failed += 1
+                    logger.warning(
+                        "Could not enqueue relation analysis %s for organization %s: %s",
+                        delivery_id,
+                        organization_id,
+                        exc.code,
+                    )
+            except Exception:
+                failed += 1
+                logger.exception(
+                    "Could not enqueue relation analysis %s for organization %s",
+                    delivery_id,
+                    organization_id,
+                )
+        return {
+            "candidates": len(deliveries),
+            "queued": queued,
+            "waiting_for_configuration": waiting_for_configuration,
+            "failed": failed,
+        }
+
+    async def analyse_relation_candidate(
+        self, organization_candidate_id: str, runtime_fingerprint: str | None = None
+    ) -> dict:
+        runtime_fingerprint = runtime_fingerprint or await self.relation_runtime_fingerprint()
+        lock = self.analysis_locks.setdefault(f"relation:{organization_candidate_id}", asyncio.Lock())
+        async with lock:
+            settings, model_client = self.settings, self.model_client
+            prompts = self.prompt_settings.model_copy(deep=True)
+            with self.write_guard, self.db.session() as session:
+                context = self._relation_analysis_context(
+                    session, organization_candidate_id, runtime_fingerprint
+                )
+                cached = session.scalar(
+                    select(RelationImpactAnalysis)
+                    .where(
+                        RelationImpactAnalysis.cache_key == context["cache_key"],
+                        RelationImpactAnalysis.status == "succeeded",
+                    )
+                    .order_by(RelationImpactAnalysis.created_at.desc())
+                    .limit(1)
+                )
+                if cached:
+                    cached.use_count += 1
+                    cached.last_used_at = utcnow()
+                    context["delivery"].status = "analysed"
+                    context["delivery"].updated_at = utcnow()
+                    session.commit()
+                    return self._relation_analysis_dict(cached, cached=True)
+                record = RelationImpactAnalysis(
+                    organization_candidate_id=organization_candidate_id,
+                    candidate_id=context["candidate"].id,
+                    event_id=context["event"].id,
+                    target_work_id=context["target_work"].id,
+                    cache_key=context["cache_key"],
+                    evidence_json=context["evidence"],
+                    coverage=context["coverage"],
+                    analysis_plan=context["plan"],
+                    model=settings.apertus_model,
+                    prompt_revision=self.prompt_revision,
+                    last_used_at=utcnow(),
+                )
+                session.add(record)
+                session.flush()
+                record_id = record.id
+                session.commit()
+            trace_token = (
+                model_client.begin_trace("background")
+                if hasattr(model_client, "begin_trace")
+                else None
+            )
+            try:
+                result, coverage = await relation_ai.analyse(
+                    model_client,
+                    settings,
+                    prompts,
+                    analysis_id=record_id,
+                    evidence=context["evidence"],
+                    coverage=context["coverage"],
+                    event={
+                        "id": context["event"].id,
+                        "type": context["event"].event_type,
+                        "detected_at": context["event"].detected_at.isoformat(),
+                        "authority": context["event"].authority,
+                    },
+                    source_work={
+                        "id": context["source_work"].id,
+                        "title": context["source_work"].title,
+                        "kind": context["source_work"].kind,
+                        "authority": context["source_work"].authority,
+                    },
+                    target_work={
+                        "id": context["target_work"].id,
+                        "title": context["target_work"].title,
+                        "kind": context["target_work"].kind,
+                        "authority": context["target_work"].authority,
+                        "lifecycle_status": context["target_work"].lifecycle_status or "unknown",
+                    },
+                    candidate={
+                        "id": context["candidate"].id,
+                        "score": context["candidate"].score,
+                        "why": context["candidate"].why_json,
+                        "similarity_is_not_evidence": not bool(context["official_relation"]),
+                    },
+                    profile={
+                        "name": context["profile"].name,
+                        "description": context["profile"].description,
+                        "business_areas": context["profile"].business_areas,
+                    },
+                    official_relation=context["official_relation"],
+                )
+                status, error = "succeeded", None
+            except Exception as exc:
+                result, coverage, status = None, context["coverage"], "failed"
+                error = (
+                    exc.message
+                    if isinstance(exc, DomainError)
+                    else "Apertus relation analysis failed. The candidate and saved evidence remain available."
+                )
+                if not isinstance(exc, DomainError):
+                    logger.exception("Relation impact analysis failed")
+            trace = (
+                model_client.end_trace(trace_token)
+                if trace_token is not None and hasattr(model_client, "end_trace")
+                else []
+            )
+            provenance = await self.inference_provenance(settings, trace)
+            with self.write_guard, self.db.session() as session:
+                record = get(session, RelationImpactAnalysis, record_id)
+                delivery = get(session, OrganizationRelationCandidate, organization_candidate_id)
+                record.result = result
+                record.coverage = coverage
+                record.status = status
+                record.error = error
+                record.provenance = provenance
+                record.analysis_plan = relation_ai.complete_analysis_plan(
+                    context["plan"],
+                    status=status,
+                    coverage=coverage,
+                    provenance=provenance,
+                    result_url=f"/impact?candidate={organization_candidate_id}",
+                )
+                delivery.status = "analysed" if status == "succeeded" else "pending"
+                delivery.updated_at = utcnow()
+                session.commit()
+                return self._relation_analysis_dict(record, cached=False)
+
+    def relation_analysis_history(self, organization_candidate_id: str) -> dict:
+        with self.db.session() as session:
+            get(session, OrganizationRelationCandidate, organization_candidate_id)
+            records = list(
+                session.scalars(
+                    select(RelationImpactAnalysis)
+                    .where(
+                        RelationImpactAnalysis.organization_candidate_id
+                        == organization_candidate_id
+                    )
+                    .order_by(RelationImpactAnalysis.created_at.desc())
+                )
+            )
+            items = [self._relation_analysis_dict(record) for record in records]
+            current = next((item for item in items if item["status"] == "succeeded"), None)
+            return {
+                "items": items,
+                "total": len(records),
+                "current": current,
+                "latest_attempt": items[0] if items else None,
+            }
+
+    def relation_analysis_evidence(self, analysis_id: str, evidence_id: str) -> dict:
+        with self.db.session() as session:
+            record = get(session, RelationImpactAnalysis, analysis_id)
+            row = next(
+                (item for item in record.evidence_json or [] if item.get("evidence_id") == evidence_id),
+                None,
+            )
+            if not row:
+                raise DomainError("The cited relation evidence was not found.", 404, "not_found")
+            return row
 
     def enqueue_analysis(self, comparison_id: str):
         with self.write_guard, self.db.session() as session:

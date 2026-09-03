@@ -2414,6 +2414,21 @@ def validate_numeric_references(
             action["citation_numbers"] = checked(action["citation_numbers"], True)
     elif schema is AnswerSynthesis:
         result["citation_numbers"] = checked(result["citation_numbers"], result["supported"])
+    elif "citation_rows" in result:
+        root_rows = result.get("citation_rows", [])
+        if result.get("supported") and not root_rows:
+            root_rows = [
+                number
+                for action in result.get("actions", [])
+                if isinstance(action, dict)
+                for number in action.get("citation_rows", [])
+            ]
+        result["citation_rows"] = checked(
+            root_rows, bool(result.get("supported"))
+        )
+        for action in result.get("actions", []):
+            if isinstance(action, dict) and "citation_rows" in action:
+                action["citation_rows"] = checked(action["citation_rows"], True)
     return result
 
 
