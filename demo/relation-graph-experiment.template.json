@@ -1,0 +1,11 @@
+{
+  "schema_version": "hl053.graph-experiment.v1",
+  "experiment_id": null,
+  "build_commit": null,
+  "task_set_revision": null,
+  "randomization_method": null,
+  "started_at": null,
+  "completed_at": null,
+  "instructions": "Keep this blank template in Git. In an external copy, record at least 30 trials, 10 assigned participants, and 5 identical tasks per variant. Never include names, emails, source text, or notes.",
+  "trials": []
+}

@@ -25,6 +25,18 @@ Viewers can read the review history but cannot create entries. Review records ar
 
 The same review row stores three bounded fields needed to decide whether a graph is worthwhile: `workflow_variant`, server-validated `review_duration_ms`, and `evidence_opened`. The browser starts the timer only when the administrator expands the review panel; after 30 minutes the value is capped. It records the evidence flag only when the evidence link inside that panel is used.
 
-The platform dashboard aggregates decision-time p95, sample count, and evidence-open rate without organization names, candidate IDs, notes, source text, or high-cardinality labels. Historical entries without these fields remain valid and are excluded from measured-rate denominators. The first variant is `inbox_list_v1`; a future graph experiment must use a separate allowlisted variant and compare both correctness and time before graph navigation can be promoted.
+The platform dashboard aggregates decision-time p95, sample count, and evidence-open rate without organization names, candidate IDs, notes, source text, or high-cardinality labels. It also returns the same measures under `relation_review.by_variant`, so experimental results cannot be hidden inside an all-workflow average. Historical entries without these fields remain valid and are excluded from measured-rate denominators. The production variant remains `inbox_list_v1`; `graph_review_v1` must not be accepted by the API until an authorized prototype exists.
 
-The graph portion of HL-053 remains deferred until measured list/inbox use shows that a graph improves review time or correctness.
+## Graph experiment decision gate
+
+Use [the blank experiment template](../demo/relation-graph-experiment.template.json) outside the repository to record pseudonymous raw trials. Do not add participant names, email addresses, source text, or free-form notes. Both arms must use the same five or more tasks, separate participants, at least 30 trials and 10 participants per arm, and cover German, French, Italian, Romansh, and English. Every trial explicitly records completion, correctness, evidence use, authorization, non-color status, and the availability of the complete list alternative.
+
+Validate a completed result from a clean checkout at the exact tested commit:
+
+```powershell
+python scripts/check_relation_graph_experiment.py C:\evidence\relation-graph-results.json --results
+```
+
+The gate fails closed if the sample, build binding, safety, accessibility, task matching, or quality evidence is incomplete. Graph quality is noninferior only when correctness and completion are within two percentage points of the inbox and evidence use is within five points. Promotion additionally requires at least 20% lower median decision time or five percentage points higher correctness.
+
+A passing experiment without that material benefit returns `retain_inbox_list_only`; it is valid evidence that no graph should be shipped. A promoted graph is a secondary evidence view only. The timeline, list, and inbox remain complete alternatives, and no essential action may require graph interaction.

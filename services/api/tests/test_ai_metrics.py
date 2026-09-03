@@ -119,6 +119,20 @@ def test_ai_triage_metrics_report_latency_usage_validation_cache_and_decisions()
         "evidence_opened": 1,
         "evidence_open_rate": 0.5,
         "workflow_variants": {"inbox_list_v1": 2},
+        "by_variant": {
+            "inbox_list_v1": {
+                "measured_entries": 2,
+                "decisions": 2,
+                "duration": {
+                    "samples": 2,
+                    "p50_ms": 15_000.0,
+                    "p95_ms": 45_000.0,
+                    "max_ms": 45_000.0,
+                },
+                "evidence_opened": 1,
+                "evidence_open_rate": 0.5,
+            }
+        },
     }
 
 
@@ -132,6 +146,46 @@ def test_empty_ai_triage_metrics_are_explicit_and_division_safe():
     assert metrics["actions"]["accept_rate"] is None
     assert metrics["relation_review"]["duration"]["p95_ms"] is None
     assert metrics["relation_review"]["evidence_open_rate"] is None
+    assert metrics["relation_review"]["by_variant"] == {}
+
+
+def test_relation_review_metrics_keep_experiment_variants_separate():
+    reviews = [
+        SimpleNamespace(
+            decision="confirmed",
+            review_duration_ms=40_000,
+            evidence_opened=True,
+            workflow_variant="inbox_list_v1",
+        ),
+        SimpleNamespace(
+            decision="rejected",
+            review_duration_ms=20_000,
+            evidence_opened=False,
+            workflow_variant="graph_review_v1",
+        ),
+        SimpleNamespace(
+            decision="annotated",
+            review_duration_ms=10_000,
+            evidence_opened=True,
+            workflow_variant="graph_review_v1",
+        ),
+    ]
+
+    metrics = summarize_ai_triage_metrics([], [], [], [], reviews)["relation_review"]
+
+    assert metrics["by_variant"]["inbox_list_v1"]["duration"]["p50_ms"] == 40_000
+    assert metrics["by_variant"]["graph_review_v1"] == {
+        "measured_entries": 2,
+        "decisions": 1,
+        "duration": {
+            "samples": 1,
+            "p50_ms": 20_000.0,
+            "p95_ms": 20_000.0,
+            "max_ms": 20_000.0,
+        },
+        "evidence_opened": 1,
+        "evidence_open_rate": 0.5,
+    }
 
 
 def test_new_comparison_persists_time_to_deterministic_overview(harness):

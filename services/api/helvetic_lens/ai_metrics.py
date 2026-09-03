@@ -104,6 +104,33 @@ def summarize_ai_triage_metrics(
         variant = review.workflow_variant or "unknown"
         workflow_variants[variant] = workflow_variants.get(variant, 0) + 1
     evidence_opened = sum(bool(review.evidence_opened) for review in measured_reviews)
+    variant_metrics = {}
+    for variant in sorted(workflow_variants):
+        variant_measured = [
+            review
+            for review in measured_reviews
+            if (review.workflow_variant or "unknown") == variant
+        ]
+        variant_decisions = [
+            review
+            for review in variant_measured
+            if review.decision in {"confirmed", "rejected"}
+        ]
+        variant_durations = [
+            float(review.review_duration_ms)
+            for review in variant_decisions
+            if review.review_duration_ms is not None
+        ]
+        variant_evidence_opened = sum(bool(review.evidence_opened) for review in variant_measured)
+        variant_metrics[variant] = {
+            "measured_entries": len(variant_measured),
+            "decisions": len(variant_decisions),
+            "duration": _latency(variant_durations),
+            "evidence_opened": variant_evidence_opened,
+            "evidence_open_rate": round(
+                variant_evidence_opened / len(variant_measured), 4
+            ),
+        }
 
     return {
         "records": {
@@ -160,5 +187,6 @@ def summarize_ai_triage_metrics(
                 else None
             ),
             "workflow_variants": workflow_variants,
+            "by_variant": variant_metrics,
         },
     }
