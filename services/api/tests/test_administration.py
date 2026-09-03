@@ -67,6 +67,10 @@ def test_platform_reads_are_isolated_and_status_is_bounded(tmp_path):
         assert payload["ai_triage"]["records"]["total"] == 0
         assert payload["ai_triage"]["latency"]["deterministic_overview"]["samples"] == 0
         assert "retention" in payload["storage"]
+        assert payload["storage"]["retention"]["integration_logs_days"] == 30
+        assert payload["storage"]["retention"]["terminal_jobs_days"] == 90
+        assert payload["storage"]["retention"]["document_evidence"] == "immutable"
+        assert payload["storage"]["retention"]["ai_history"] == "user_retained"
         assert payload["backup"]["status"] == "not_configured"
 
 

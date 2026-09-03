@@ -2503,6 +2503,11 @@ class HelveticLens:
         newest_backup = (
             datetime.fromtimestamp(backup_files[0].stat().st_mtime, tz=UTC) if backup_files else None
         )
+        cleanup_marker = self.environment_settings.storage_path / "operations" / "last-cleanup.json"
+        try:
+            last_cleanup = json.loads(cleanup_marker.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            last_cleanup = None
         def ping_redis():
             client = Redis.from_url(
                     self.environment_settings.redis_url,
@@ -2566,7 +2571,11 @@ class HelveticLens:
                 "used_bytes": disk.used,
                 "retention": {
                     "document_evidence": "immutable",
-                    "integration_logs": "manual_cleanup",
+                    "ai_history": "user_retained",
+                    "integration_logs_days": self.environment_settings.integration_log_retention_days,
+                    "terminal_jobs_days": self.environment_settings.job_history_retention_days,
+                    "orphan_artifacts_hours": self.environment_settings.orphan_artifact_retention_hours,
+                    "last_cleanup_at": (last_cleanup or {}).get("completed_at"),
                     "candidate_ttl_days": self.environment_settings.relation_candidate_ttl_days,
                 },
             },

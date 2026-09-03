@@ -10,6 +10,7 @@ from celery import Celery
 from . import jobs, synchronization
 from .config import Settings
 from .db import Database
+from .maintenance import cleanup_operational_data
 from .models import Job
 
 settings = Settings()
@@ -37,6 +38,10 @@ celery_app.conf.update(
         "schedule-official-connectors": {
             "task": "helvetic_lens.schedule_connectors",
             "schedule": 15.0,
+        },
+        "cleanup-operational-data": {
+            "task": "helvetic_lens.cleanup_operational_data",
+            "schedule": 86400.0,
         },
     },
 )
@@ -74,6 +79,15 @@ def schedule_connectors():
         session.commit()
     database.engine.dispose()
     return result
+
+
+@celery_app.task(name="helvetic_lens.cleanup_operational_data")
+def cleanup_data():
+    database = Database(settings)
+    try:
+        return cleanup_operational_data(database, settings)
+    finally:
+        database.engine.dispose()
 
 
 @celery_app.task(name="helvetic_lens.run_job")

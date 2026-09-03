@@ -86,4 +86,18 @@ The development-host rehearsal created a PostgreSQL row and evidence file, backe
 
 Caddy stores certificates in its named volume and renews them automatically while ports 80/443 and DNS remain correct. Check Caddy logs and certificate expiry during the target-host rehearsal.
 
-Automated operational retention, cross-service correlation/metrics completion, Redis-loss recovery, and the full target-host install/upgrade/rollback exercise remain open HL-048 gates.
+## Operational retention and broker recovery
+
+Celery Beat runs bounded cleanup daily. The shipped defaults retain redacted integration request/response diagnostics for 30 days and terminal job execution records for 90 days. Authentication mailbox files expire after 48 hours. Unreferenced artifacts and files in the dedicated temporary directory expire only after a 24-hour grace period; an artifact referenced by any saved version or official regulatory document is never selected. Impact/Ask history, action decisions, comparisons, document versions, and immutable evidence have separate user/audit lifecycles and are not deleted by this task. The administration status reports the configured bounds and last successful cleanup marker.
+
+Redis is a disposable broker/cache, configured with AOF `everysec` and `noeviction`; PostgreSQL owns job and outbox state. If Redis is lost:
+
+1. leave API submissions stopped or accept that they remain persisted as queued work;
+2. restore or recreate the Redis volume and wait for `redis-cli ping` to succeed;
+3. restart scheduler and workers;
+4. the 30-second reconciliation returns stale `running`/`dispatched` jobs to a retryable state and the two-second outbox dispatcher resends pending messages;
+5. inspect job IDs and idempotency keys rather than manually submitting duplicate scans or analyses.
+
+Automated tests cover broker-send failure, pending outbox retention, stale-worker lease recovery, idempotent job creation/claim, and cleanup preservation of active work and immutable evidence. Kill/restart this stack on the target host during HL-049 to measure recovery time under load.
+
+Cross-service correlation/metrics completion and the full target-host install/upgrade/rollback exercise remain open HL-048 gates.

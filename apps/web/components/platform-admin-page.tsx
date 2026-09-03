@@ -128,7 +128,7 @@ function Dashboard({ data }: { data: PlatformStatus }) {
             <div className="flex justify-between"><span><Server className="inline mr-2" size={16} />{t("admin.gpu")}</span><strong>{data.model.cuda_devices?.length || 0}</strong></div>
             <div className="flex justify-between"><span><Gauge className="inline mr-2" size={16} />{t("admin.benchmark")}</span><strong>{label(data.model.benchmark?.status || "unknown")}</strong></div>
             <div className="flex justify-between"><span><Database className="inline mr-2" size={16} />{t("admin.backup")}</span><strong>{label(data.backup.status)}</strong></div>
-            <div className="flex justify-between"><span><ArchiveRestore className="inline mr-2" size={16} />{t("admin.retention")}</span><strong>{label(String(data.storage.retention.integration_logs))}</strong></div>
+            <div className="flex justify-between"><span><ArchiveRestore className="inline mr-2" size={16} />{t("admin.retention")}</span><strong>{t("admin.retentionDays", { count: Number(data.storage.retention.integration_logs_days ?? 0) })}</strong></div>
             <div className="flex justify-between"><span><Users className="inline mr-2" size={16} />{t("admin.organizations")}</span><strong>{data.resources.organizations}</strong></div>
             <div className="flex justify-between"><span><ArchiveRestore className="inline mr-2" size={16} />{t("admin.failedJobs")}</span><strong>{data.jobs.dead_letters}</strong></div>
           </div>

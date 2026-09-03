@@ -714,7 +714,7 @@ export type PlatformStatus = {
     total_bytes: number;
     free_bytes: number;
     used_bytes: number;
-    retention: Record<string, string | number>;
+    retention: Record<string, string | number | null>;
   };
   backup: {
     configured: boolean;
