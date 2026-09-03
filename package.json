@@ -11,7 +11,7 @@
     "dev:api": "uv run --project services/api uvicorn helvetic_lens.main:app --app-dir services/api --host 127.0.0.1 --port 8000",
     "build": "npm run check:i18n && npm run build --workspace apps/web",
     "typecheck": "npm run check:i18n && npm run typecheck --workspace apps/web",
-    "check:i18n": "node scripts/check-i18n.mjs",
+    "check:i18n": "node scripts/check-i18n.mjs && node scripts/audit-i18n-values.mjs",
     "format:web": "prettier --write apps/web",
     "format:check": "prettier --check apps/web",
     "test:api": "uv run --project services/api pytest services/api/tests -q",

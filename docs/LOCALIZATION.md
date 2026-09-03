@@ -26,7 +26,7 @@ For a UI change:
 5. inspect the longest translation at 390 px and desktop widths, using `pseudoTranslate` when a length stress case is useful;
 6. have a fluent reviewer update the status table below.
 
-The catalogue check rejects missing or unused literal keys. Runtime validation rejects missing locale entries and parameter/plural mismatches. Missing messages are a release error: production code must not silently produce a mixed-language screen or expose a raw key.
+The catalogue check rejects missing or unused literal keys and unapproved hard-coded English UI copy. The value audit evaluates the assembled catalogue, rejects unapproved English inheritance, and verifies that pseudo-locale expansion preserves named parameters. Runtime validation rejects missing locale entries and parameter/plural mismatches. Missing messages are a release error: production code does not silently fall back to English.
 
 ## Evidence and AI rules
 
@@ -52,10 +52,10 @@ Use language that distinguishes a possible impact from an official legal relatio
 
 | Locale | Catalogue status | Human language review |
 | --- | --- | --- |
-| `de-CH` | Core shell, access, registry, Impact, Ask/history | pending final public-beta review |
-| `fr-CH` | Core shell, access, registry, Impact, Ask/history | pending final public-beta review |
-| `it-CH` | Core shell, access, registry, Impact, Ask/history | pending expansion and final review |
-| `rm-CH` | Core shell, access, registry, Impact, Ask/history | pending expansion and native review |
+| `de-CH` | complete production catalogue; automated inheritance check passes | pending final public-beta review |
+| `fr-CH` | complete production catalogue; automated inheritance check passes | pending final public-beta review |
+| `it-CH` | complete production catalogue; automated inheritance check passes | pending final public-beta review |
+| `rm-CH` | complete production catalogue; automated inheritance check passes | pending native review |
 | `en-CH` | source catalogue | reviewed in automated product flows |
 
 HL-057 remains in progress until every release screen, transactional notification, five-locale browser path, and real local-Apertus cited answer has passed the acceptance gate. This document records current capability without implying that unfinished screens are release-ready.
