@@ -153,3 +153,33 @@ def test_download_can_pause_and_resume_without_discarding_progress(manager_facto
     manager.start_download("apertus-test")
     resumed = wait_for(manager, "apertus-test", lambda item: item["installed"])
     assert resumed["artifact"]["sha256"] == hashlib.sha256(payload).hexdigest()
+
+
+def test_hardware_profiles_choose_gpu_cpu_replication_and_split(manager_factory, monkeypatch):
+    manager, _ = manager_factory()
+    entry = manager.entries["apertus-test"]
+    assert manager.select_profile(entry)["name"] == "dev-1070"
+
+    manager.hardware["cuda_devices"] = []
+    assert manager.select_profile(entry)["name"] == "cpu-degraded"
+
+    manager.hardware["cuda_devices"] = [
+        {"index": 0, "name": "GTX 1080", "vram_bytes": 8 * 1024**3},
+        {"index": 1, "name": "GTX 1080", "vram_bytes": 8 * 1024**3},
+    ]
+    assert manager.select_profile(entry)["name"] == "dual-1080-replicated"
+    assert manager.select_profile(entry)["slots"] == 2
+
+    entry["size_bytes"] = 7 * 1024**3
+    profile = manager.select_profile(entry)
+    assert profile["name"] == "dual-1080-split"
+    assert profile["slots"] == 1
+
+
+def test_explicit_profile_rejects_unavailable_hardware(manager_factory):
+    manager, _ = manager_factory()
+    entry = manager.entries["apertus-test"]
+    with pytest.raises(ModelManagerError, match="two visible CUDA"):
+        manager.select_profile(entry, "dual-1080-replicated")
+    with pytest.raises(ModelManagerError, match="Unknown hardware"):
+        manager.select_profile(entry, "unsafe-profile")

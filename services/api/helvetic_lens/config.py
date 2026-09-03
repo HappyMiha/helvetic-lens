@@ -11,8 +11,8 @@ ROOT = next(
     Path.cwd(),
 )
 INFOMANIAK_API_ROOT = "https://api.infomaniak.com"
-LOCAL_DOCKER_HOST_URL = "http://127.0.0.1:12435/v1"
-LOCAL_DOCKER_CONTAINER_URL = "http://model-manager:8080/v1"
+LOCAL_DOCKER_HOST_URL = "http://127.0.0.1:12436/openai/v1"
+LOCAL_DOCKER_CONTAINER_URL = "http://model-manager:8090/openai/v1"
 
 
 def infomaniak_base_url(product_id: str) -> str:
@@ -40,10 +40,10 @@ class Settings(BaseSettings):
         default=ROOT / "data",
         validation_alias=AliasChoices("HELVETIC_LENS_DATA_DIR", "REGWATCH_DATA_DIR"),
     )
-    apertus_provider: Literal["custom", "docker", "infomaniak"] = "custom"
+    apertus_provider: Literal["custom", "docker", "infomaniak"] = "docker"
     apertus_product_id: str = Field(default="", pattern=r"^\d*$")
     apertus_base_url: str = ""
-    apertus_model: str = "swiss-ai/Apertus-v1.5-8B"
+    apertus_model: str = "apertus-1.5b-q4km"
     apertus_api_key: SecretStr = SecretStr("")
     apertus_timeout_seconds: int = Field(default=90, ge=5, le=300)
     apertus_request_retries: int = Field(default=2, ge=0, le=5)

@@ -140,7 +140,12 @@ export function ModelLibrary() {
             <div className="stat-card">
               <span className="eyebrow">ACTIVE MODEL</span>
               <strong>{data.deployment?.model_id || "None"}</strong>
-              <small>{label(data.deployment?.state || "stopped")}</small>
+              <small>
+                {label(data.deployment?.state || "stopped")}
+                {data.deployment?.hardware_profile
+                  ? ` · ${label(data.deployment.hardware_profile)} · ${data.deployment.available_slots ?? 0}/${data.deployment.accepted_slots ?? 0} slots`
+                  : ""}
+              </small>
             </div>
           </section>
           <div className="model-library-grid">

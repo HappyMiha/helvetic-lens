@@ -15,6 +15,6 @@ ENV MODEL_MANAGER_CATALOG=/manager/catalog.json
 ENV MODEL_MANAGER_LIBRARY=/models
 ENV MODEL_MANAGER_LLAMA_SERVER=/app/llama-server
 ENV MODEL_MANAGER_RUNTIME_IMAGE="ghcr.io/ggml-org/llama.cpp@sha256:031c0058432ab0769057273cdfda45848d00fef11e993448eef98c7ebb45a8c6"
-EXPOSE 8090 8080
+EXPOSE 8090
 ENTRYPOINT []
 CMD ["uvicorn", "model_manager.app:app", "--host", "0.0.0.0", "--port", "8090"]

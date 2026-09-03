@@ -181,6 +181,7 @@ export type Analysis = {
   error: string | null;
   result: Impact | null;
   coverage: Coverage;
+  provenance: Record<string, unknown>;
   model: string;
   prompt_revision: number;
   use_count: number;
@@ -440,7 +441,12 @@ export type LocalModelInventory = {
   };
   deployment: {
     model_id: string;
+    served_model_id?: string;
     state: string;
+    hardware_profile?: string;
+    accepted_slots?: number;
+    available_slots?: number;
+    context_size?: number;
     started_at?: string;
     ready_at?: string;
   } | null;

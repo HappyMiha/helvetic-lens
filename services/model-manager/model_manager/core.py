@@ -45,6 +45,7 @@ class ModelManager:
         self.controls: dict[str, dict[str, threading.Event]] = {}
         self.threads: dict[str, threading.Thread] = {}
         self.runner: subprocess.Popen[str] | None = None
+        self.runners: list[dict] = []
         self.runner_model_id: str | None = None
         self.logs: list[str] = []
         self.state = self._load_state()
@@ -269,7 +270,7 @@ class ModelManager:
                 "license_accepted": self._license_accepted(entry),
                 "compatibility": self.compatibility(entry),
                 "error": record.get("error"),
-                "active": self.runner_model_id == model_id and self.runner is not None and self.runner.poll() is None,
+                "active": self.runner_model_id == model_id and bool(self.inference_targets()),
             }
 
     def inventory(self) -> dict:
@@ -278,8 +279,76 @@ class ModelManager:
             "runtime_image": self.runtime_image,
             "hardware": self.hardware,
             "deployment": self.state.get("deployment"),
+            "runtime_metrics": self.runtime_metrics(),
             "models": [self.describe(model_id) for model_id in self.entries],
         }
+
+    def runtime_metrics(self) -> dict:
+        runners = []
+        with self.lock:
+            current = list(self.runners)
+        for runner in current:
+            rss_bytes = None
+            try:
+                status = Path(f"/proc/{runner['process'].pid}/status").read_text(encoding="utf-8")
+                rss_line = next(line for line in status.splitlines() if line.startswith("VmRSS:"))
+                rss_bytes = int(rss_line.split()[1]) * 1024
+            except (OSError, StopIteration, ValueError):
+                pass
+            runners.append(
+                {
+                    "slot": runner["slot"],
+                    "pid": runner["process"].pid,
+                    "state": runner["state"],
+                    "rss_bytes": rss_bytes,
+                }
+            )
+        return {"runner_rss_bytes": sum(item["rss_bytes"] or 0 for item in runners), "runners": runners}
+
+    def select_profile(self, entry: dict, requested: str | None = None) -> dict:
+        """Choose a safe runtime layout from measured visible hardware."""
+        devices = self.hardware.get("cuda_devices", [])
+        allowed = {"dev-1070", "dual-1080-replicated", "dual-1080-split", "cpu-degraded"}
+        if requested and requested not in allowed:
+            raise ModelManagerError("Unknown hardware profile.", 422, "invalid_hardware_profile")
+        if requested:
+            name = requested
+        elif not devices:
+            name = "cpu-degraded"
+        elif len(devices) == 1:
+            name = "dev-1070"
+        else:
+            # Reserve 2 GiB for KV/cache/runtime. Replicate only when each card
+            # can own an independent copy with headroom.
+            per_card_need = entry["size_bytes"] + 2 * 1024**3
+            name = (
+                "dual-1080-replicated"
+                if min(device["vram_bytes"] for device in devices[:2]) >= per_card_need
+                else "dual-1080-split"
+            )
+        if name.startswith("dual-1080") and len(devices) < 2:
+            raise ModelManagerError("This profile requires two visible CUDA devices.", 409, "profile_unavailable")
+        if name == "dev-1070" and not devices:
+            raise ModelManagerError("The GPU development profile requires one visible CUDA device.", 409, "profile_unavailable")
+        slots = 2 if name == "dual-1080-replicated" else 1
+        return {
+            "name": name,
+            "slots": slots,
+            "gpu_enabled": name != "cpu-degraded",
+            "degraded": name == "cpu-degraded",
+        }
+
+    def inference_targets(self) -> list[dict]:
+        with self.lock:
+            return [
+                {
+                    "slot": runner["slot"],
+                    "url": f"http://127.0.0.1:{runner['port']}",
+                    "device": runner.get("device"),
+                }
+                for runner in self.runners
+                if runner.get("state") == "ready" and runner["process"].poll() is None
+            ]
 
     def _ensure_download_allowed(self, entry: dict):
         if not self._license_accepted(entry):
@@ -416,29 +485,45 @@ class ModelManager:
                 self._model_state(model_id).update(state="error", error=message[:1000])
                 self._save_state()
 
-    def _drain_logs(self, process: subprocess.Popen[str]):
+    def _drain_logs(self, runner: dict):
+        process = runner["process"]
         if process.stdout is None:
             return
         for line in process.stdout:
             with self.lock:
-                self.logs.append(line.rstrip()[:2000])
+                self.logs.append(f"[{runner['slot']}] {line.rstrip()[:1950]}")
                 self.logs = self.logs[-200:]
         return_code = process.poll()
         with self.lock:
             model_id = self.runner_model_id
-            if (
-                model_id
-                and self.runner is process
-                and self._model_state(model_id)["state"] == "ready"
-                and return_code is not None
-            ):
-                error = f"llama.cpp exited unexpectedly with code {return_code}."
-                self._model_state(model_id).update(state="degraded", error=error)
+            runner["state"] = "error"
+            runner["error"] = f"llama.cpp exited unexpectedly with code {return_code}."
+            remaining = self.inference_targets()
+            if model_id and return_code is not None:
+                error = runner["error"]
+                state = "degraded" if remaining else "error"
+                self._model_state(model_id).update(state=state, error=error)
                 if self.state.get("deployment", {}).get("model_id") == model_id:
-                    self.state["deployment"].update(state="degraded", error=error)
+                    self.state["deployment"].update(
+                        state=state,
+                        error=error,
+                        available_slots=len(remaining),
+                    )
                 self._save_state()
 
-    def start_model(self, model_id: str) -> dict:
+    def _runner_specs(self, profile: dict) -> list[dict]:
+        if profile["name"] == "dual-1080-replicated":
+            return [
+                {"slot": "gpu-0", "port": 8081, "device": 0, "visible": "0"},
+                {"slot": "gpu-1", "port": 8082, "device": 1, "visible": "1"},
+            ]
+        if profile["name"] == "dual-1080-split":
+            return [{"slot": "gpu-split", "port": 8081, "device": [0, 1], "visible": "0,1"}]
+        if profile["name"] == "cpu-degraded":
+            return [{"slot": "cpu-0", "port": 8081, "device": None, "visible": ""}]
+        return [{"slot": "gpu-0", "port": 8081, "device": 0, "visible": "0"}]
+
+    def start_model(self, model_id: str, profile_name: str | None = None) -> dict:
         entry = self._entry(model_id)
         description = self.describe(model_id)
         if not description["installed"]:
@@ -446,94 +531,158 @@ class ModelManager:
         if description["compatibility"]["status"] == "incompatible":
             raise ModelManagerError(description["compatibility"]["reason"], 409, "model_incompatible")
         with self.lock:
-            if self.runner and self.runner.poll() is None:
+            if self.inference_targets() or any(r["process"].poll() is None for r in self.runners):
                 if self.runner_model_id == model_id:
                     return self.describe(model_id)
                 raise ModelManagerError("Stop the active model before starting another one.", 409, "model_active")
             requirements = entry["requirements"]
-            command = [
-                str(self.llama_server),
-                "-m",
-                str(self._artifact_path(entry)),
-                "--alias",
-                entry["served_model_id"],
-                "--chat-template-file",
-                entry["chat_template"],
-                "--host",
-                "0.0.0.0",
-                "--port",
-                "8080",
-                "--ctx-size",
-                str(requirements["recommended_context"]),
-                "--parallel",
-                str(requirements["slots"]),
-                "--n-predict",
-                "700",
-                "--n-gpu-layers",
-                str(requirements["gpu_layers"]),
-            ]
+            profile = self.select_profile(entry, profile_name)
             self._model_state(model_id).update(state="starting", error=None)
             self.state["deployment"] = {
                 "model_id": model_id,
+                "served_model_id": entry["served_model_id"],
+                "model_revision": entry["immutable_revision"],
+                "artifact_sha256": entry["sha256"],
+                "quantization": entry["quantization"],
                 "state": "starting",
                 "runtime_image": self.runtime_image,
+                "hardware_profile": profile["name"],
+                "accepted_slots": profile["slots"],
+                "available_slots": 0,
+                "context_size": requirements["recommended_context"],
+                "generation": {"max_tokens": 700, "parallel_per_runner": 1},
                 "started_at": now_iso(),
             }
             self._save_state()
-            self.runner = subprocess.Popen(
-                command,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1,
-            )
             self.runner_model_id = model_id
-            threading.Thread(target=self._drain_logs, args=(self.runner,), daemon=True).start()
-            threading.Thread(target=self._wait_until_ready, args=(model_id,), daemon=True).start()
+            self.runners = []
+            for spec in self._runner_specs(profile):
+                gpu_layers = 0 if profile["name"] == "cpu-degraded" else requirements["gpu_layers"]
+                command = [
+                    str(self.llama_server), "-m", str(self._artifact_path(entry)),
+                    "--alias", entry["served_model_id"],
+                    "--chat-template-file", entry["chat_template"],
+                    "--host", "127.0.0.1", "--port", str(spec["port"]),
+                    "--ctx-size", str(requirements["recommended_context"]),
+                    "--parallel", "1", "--n-predict", "700",
+                    "--n-gpu-layers", str(gpu_layers),
+                ]
+                if profile["name"] == "dual-1080-split":
+                    command.extend(["--split-mode", "layer", "--tensor-split", "1,1"])
+                environment = os.environ.copy()
+                if spec["visible"]:
+                    environment["CUDA_VISIBLE_DEVICES"] = spec["visible"]
+                elif profile["name"] == "cpu-degraded":
+                    environment["CUDA_VISIBLE_DEVICES"] = ""
+                process = subprocess.Popen(
+                    command,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1,
+                    env=environment,
+                )
+                runner = {**spec, "process": process, "state": "starting", "error": None}
+                self.runners.append(runner)
+                threading.Thread(target=self._drain_logs, args=(runner,), daemon=True).start()
+                threading.Thread(
+                    target=self._wait_until_ready,
+                    args=(model_id, runner, entry["served_model_id"]),
+                    daemon=True,
+                ).start()
+            self.runner = self.runners[0]["process"]
         return self.describe(model_id)
 
-    def _wait_until_ready(self, model_id: str):
+    def _warm_up(self, port: int, model_id: str) -> None:
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        body = json.dumps(
+            {
+                "model": model_id,
+                "messages": [{"role": "user", "content": "Return only {\"ready\":true}."}],
+                "temperature": 0,
+                "max_tokens": 12,
+                "response_format": {
+                    "type": "json_object",
+                    "schema": {
+                        "type": "object",
+                        "properties": {"ready": {"type": "boolean", "const": True}},
+                        "required": ["ready"],
+                        "additionalProperties": False,
+                    },
+                },
+            }
+        ).encode()
+        request = urllib.request.Request(
+            f"http://127.0.0.1:{port}/v1/chat/completions",
+            data=body,
+            headers={"Content-Type": "application/json"},
+        )
+        with opener.open(request, timeout=90) as response:
+            if response.status != 200:
+                raise OSError(f"warm-up returned HTTP {response.status}")
+
+    def _wait_until_ready(self, model_id: str, runner: dict, served_model_id: str):
         opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
         deadline = time.monotonic() + 300
         error = "The local inference runtime did not become ready in time."
         while time.monotonic() < deadline:
             with self.lock:
-                process = self.runner
-                if self.runner_model_id != model_id or process is None:
+                process = runner["process"]
+                if self.runner_model_id != model_id:
                     return
                 if process.poll() is not None:
                     error = f"llama.cpp exited with code {process.returncode}."
                     break
             try:
-                with opener.open("http://127.0.0.1:8080/health", timeout=2) as response:
+                with opener.open(f"http://127.0.0.1:{runner['port']}/health", timeout=2) as response:
                     if response.status == 200:
+                        self._warm_up(runner["port"], served_model_id)
                         with self.lock:
+                            runner["state"] = "ready"
+                            targets = self.inference_targets()
                             self._model_state(model_id)["state"] = "ready"
-                            self.state["deployment"]["state"] = "ready"
-                            self.state["deployment"]["ready_at"] = now_iso()
+                            self.state["deployment"].update(
+                                state="ready",
+                                ready_at=now_iso(),
+                                available_slots=len(targets),
+                                runners=[
+                                    {k: item.get(k) for k in ("slot", "port", "device", "state")}
+                                    for item in self.runners
+                                ],
+                            )
                             self._save_state()
                         return
-            except (OSError, urllib.error.URLError):
+            except (OSError, urllib.error.URLError, TimeoutError) as exc:
+                error = f"Local runtime warm-up failed: {exc}"
                 time.sleep(1)
         with self.lock:
-            self._model_state(model_id).update(state="error", error=error)
+            runner.update(state="error", error=error)
+            state = "degraded" if self.inference_targets() else "error"
+            self._model_state(model_id).update(state=state, error=error)
             if self.state.get("deployment"):
-                self.state["deployment"].update(state="error", error=error)
+                self.state["deployment"].update(
+                    state=state, error=error, available_slots=len(self.inference_targets())
+                )
             self._save_state()
 
     def stop_model(self, model_id: str) -> dict:
         self._entry(model_id)
         with self.lock:
-            if self.runner_model_id != model_id or not self.runner:
+            if self.runner_model_id != model_id or not self.runners:
                 return self.describe(model_id)
-            process = self.runner
-            if process.poll() is None:
-                process.terminate()
-                try:
-                    process.wait(timeout=20)
-                except subprocess.TimeoutExpired:
-                    process.kill()
+            for runner in self.runners:
+                process = runner["process"]
+                if process.poll() is None:
+                    process.terminate()
+            for runner in self.runners:
+                process = runner["process"]
+                if process.poll() is None:
+                    try:
+                        process.wait(timeout=20)
+                    except subprocess.TimeoutExpired:
+                        process.kill()
             self.runner = None
+            self.runners = []
             self.runner_model_id = None
             self._model_state(model_id).update(state="stopped", error=None)
             if self.state.get("deployment", {}).get("model_id") == model_id:
@@ -544,7 +693,9 @@ class ModelManager:
     def remove_model(self, model_id: str, referenced: bool = False) -> dict:
         entry = self._entry(model_id)
         with self.lock:
-            if self.runner_model_id == model_id and self.runner and self.runner.poll() is None:
+            if self.runner_model_id == model_id and any(
+                runner["process"].poll() is None for runner in self.runners
+            ):
                 raise ModelManagerError("Stop the active model before removing its artifact.", 409, "model_active")
             if referenced:
                 raise ModelManagerError(

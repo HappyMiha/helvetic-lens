@@ -73,7 +73,7 @@ $request = @{
     max_tokens = 80
     stream = $false
 } | ConvertTo-Json -Depth 6
-$response = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:12435/v1/chat/completions" `
+$response = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:12436/openai/v1/chat/completions" `
     -ContentType "application/json" -Body $request -TimeoutSec 180
 $parsed = $response.choices[0].message.content | ConvertFrom-Json
 if ($parsed.status -ne "ok") {

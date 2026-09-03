@@ -3,6 +3,7 @@ import hashlib
 import json
 import re
 import time
+from contextvars import ContextVar, Token
 from typing import Annotated, Literal
 
 import httpx
@@ -125,6 +126,22 @@ class ModelClient:
     def __init__(self, settings: Settings, integration_logger: IntegrationLogger | None = None):
         self.settings = settings
         self.integration_logger = integration_logger
+        self._trace: ContextVar[list[dict] | None] = ContextVar("model_trace", default=None)
+        self._priority: ContextVar[str] = ContextVar("model_priority", default="interactive")
+
+    def begin_trace(self, priority: str = "interactive") -> tuple[Token, Token]:
+        return self._trace.set([]), self._priority.set(priority)
+
+    def end_trace(self, token: tuple[Token, Token]) -> list[dict]:
+        events = list(self._trace.get() or [])
+        self._trace.reset(token[0])
+        self._priority.reset(token[1])
+        return events
+
+    def trace_event(self, event: dict) -> None:
+        events = self._trace.get()
+        if events is not None:
+            events.append(event)
 
     @property
     def provider_name(self) -> str:
@@ -135,7 +152,11 @@ class ModelClient:
         return "Apertus"
 
     def headers(self) -> dict[str, str]:
-        headers = {"User-Agent": "HelveticLens/0.1"}
+        headers = {
+            "User-Agent": "HelveticLens/0.1",
+            "X-Helvetic-Organization": "default",
+            "X-Helvetic-Priority": self._priority.get(),
+        }
         key = (
             ""
             if self.settings.apertus_provider == "docker"
@@ -192,9 +213,8 @@ class ModelClient:
             if self.settings.apertus_provider == "docker":
                 message = (
                     "Local Docker Apertus could not fit this request in its context window. "
-                    "Restart the local runner with scripts/local_apertus.ps1 so it uses the "
-                    "single-slot configuration, or reduce the evidence characters or maximum "
-                    "completion length in Settings."
+                    "Choose a larger verified context profile in Local models, or reduce the "
+                    "evidence characters or maximum completion length in Settings."
                 )
             else:
                 message = (
@@ -459,13 +479,44 @@ class ModelClient:
                         await pause(attempt, response)
                         continue
                     self.raise_for_provider_error(response, operation="chat completions")
-                    content = self.message_content(response.json())
+                    envelope = response.json()
+                    content = self.message_content(envelope)
+                    self.trace_event(
+                        {
+                            "outcome": "success",
+                            "attempt": attempt,
+                            "duration_ms": round((time.monotonic() - started) * 1000, 2),
+                            "queue_wait_ms": float(
+                                response.headers.get("x-helvetic-queue-wait-ms", 0) or 0
+                            ),
+                            "slot": response.headers.get("x-helvetic-slot"),
+                            "usage": envelope.get("usage", {})
+                            if isinstance(envelope, dict)
+                            else {},
+                        }
+                    )
                     log("success")
                     return content
                 except DomainError as exc:
+                    self.trace_event(
+                        {
+                            "outcome": "error",
+                            "attempt": attempt,
+                            "duration_ms": round((time.monotonic() - started) * 1000, 2),
+                            "error_code": exc.code,
+                        }
+                    )
                     log("error", exc.message)
                     raise
                 except httpx.RequestError as exc:
+                    self.trace_event(
+                        {
+                            "outcome": "error",
+                            "attempt": attempt,
+                            "duration_ms": round((time.monotonic() - started) * 1000, 2),
+                            "error_code": type(exc).__name__,
+                        }
+                    )
                     if isinstance(exc, httpx.TimeoutException):
                         message = "The chat completion request timed out."
                     elif isinstance(exc, httpx.ConnectError):
@@ -1879,7 +1930,7 @@ async def structured_completion(
     user = json.dumps(payload, ensure_ascii=False)
     raw = await client.complete(system, user, response_schema=response_schema, budget=budget)
     try:
-        return parse_response(
+        parsed = parse_response(
             normalize_wire_response(raw),
             schema,
             evidence,
@@ -1917,7 +1968,7 @@ async def structured_completion(
             response_schema=response_schema,
             budget=budget,
         )
-        return parse_response(
+        parsed = parse_response(
             normalize_wire_response(repaired),
             schema,
             evidence,
@@ -1926,6 +1977,14 @@ async def structured_completion(
             numeric_reference_count=numeric_reference_count,
             numeric_reference_evidence=numeric_reference_evidence,
         )
+        if hasattr(client, "trace_event"):
+            client.trace_event(
+                {"validation": "accepted", "repair": True, "initial_error": error.code}
+            )
+        return parsed
+    if hasattr(client, "trace_event"):
+        client.trace_event({"validation": "accepted", "repair": False})
+    return parsed
 
 
 async def impact_analysis(

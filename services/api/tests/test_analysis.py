@@ -46,6 +46,8 @@ def test_timeout_keeps_diff_retry_only_analysis_and_profile_invalidates_cache(ha
     route = "/api/comparisons/" + comparison_id + "/analyse"
     result = client.post(route).json()
     assert result["status"] == "succeeded" and result["cached"] is False
+    assert result["provenance"]["backend"] == "custom"
+    assert result["provenance"]["generation"]["max_tokens"] == service.settings.apertus_max_tokens
     assert len(fetcher.calls) == fetch_count
     assert len(client.get("/api/laws/" + law["id"]).json()["versions"]) == 2
     citation = result["result"]["actions"][0]["citations"][0]

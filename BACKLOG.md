@@ -70,7 +70,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-029](#hl-029) | P0       | DONE     | HL-028                                                 | Single-host local-first architecture and capacity contract          |
 | [HL-030](#hl-030) | P0       | DONE     | HL-029                                                 | Durable PostgreSQL jobs with Redis/Celery execution                 |
 | [HL-031](#hl-031) | P0       | DONE     | HL-029, HL-030                                         | Local model library, downloads, and runtime manager                 |
-| [HL-032](#hl-032) | P0       | PLANNED  | HL-030, HL-031                                         | Local-first inference routing, GPU fairness, and hardware benchmark |
+| [HL-032](#hl-032) | P0       | IN PROGRESS | HL-030, HL-031                                      | Local-first inference routing, GPU fairness, and hardware benchmark |
 | [HL-033](#hl-033) | P0       | PLANNED  | HL-003, HL-029                                         | Shared public corpus and organization-aware migration               |
 | [HL-034](#hl-034) | P0       | PLANNED  | HL-033                                                 | Registration, login, sessions, and onboarding                       |
 | [HL-035](#hl-035) | P0       | PLANNED  | HL-034                                                 | Organization membership and enforced admin/viewer access            |
@@ -595,6 +595,8 @@ Acceptance criteria:
 <a id="hl-032"></a>
 
 ### HL-032 — Make local inference primary and validate GPU routing on the target hardware
+
+**Status: IN PROGRESS.** The stable private gateway, local-first clean-install policy, automatic four-profile routing, warm-up/health, fair slot admission, visible model waits, complete result provenance, benchmark harness, and live GTX 1070 report are implemented. The 1.5B Q4 development profile passed 20/20 structured calls plus the serialized concurrent pair without schema/citation errors, OOM, or timeout. The checked-in report deliberately records `profile_matched: false`: final closure and any 8B promotion require rerunning the same benchmark on the planned dual-GTX-1080 server and observing two distinct replica slots.
 
 Give the application one stable inference interface while the runtime chooses a measured safe GPU layout.
 

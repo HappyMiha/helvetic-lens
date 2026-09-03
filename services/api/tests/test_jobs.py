@@ -210,3 +210,28 @@ def test_impact_and_ask_use_durable_ai_queues_and_return_saved_results(harness):
     assert answer_job["state"] == "succeeded"
     assert answer_job["result"]["data"]["record_id"]
     assert len(model.calls) >= 2
+
+
+def test_waiting_for_local_model_does_not_consume_job_attempt(harness):
+    _, _, service, _ = harness
+    with service.db.session() as session:
+        job, _ = jobs.enqueue(
+            session,
+            job_type="impact_analysis",
+            target_type="comparison",
+            target_id="waiting-target",
+            queue="ai_background",
+            idempotency_key="wait-for-model",
+            steps=[("Run local inference", {})],
+        )
+        session.commit()
+        job_id = job.id
+    with service.db.session() as session:
+        claimed = jobs.claim(session, job_id, "worker")
+        assert claimed is not None and claimed.attempts == 1
+        jobs.progress(session, job_id, current=0, step_position=1, step_state="running")
+        waiting = jobs.defer_for_model(session, job_id, "Warming up.", delay=2)
+        session.commit()
+        assert waiting.state == "waiting_for_model" and waiting.attempts == 0
+        assert waiting.lease_owner is None
+        assert jobs.serialize(session, waiting)["steps"][0]["state"] == "pending"

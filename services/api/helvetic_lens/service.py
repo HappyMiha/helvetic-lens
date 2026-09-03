@@ -180,6 +180,57 @@ class HelveticLens:
         if isinstance(self.model_client, ai.ModelClient):
             self.model_client = ai.ModelClient(settings, self.integration_logger)
 
+    async def inference_provenance(self, settings: Settings, trace: list[dict]) -> dict:
+        deployment, hardware = {}, {}
+        if settings.apertus_provider == "docker":
+            try:
+                inventory = await self.model_manager.inventory()
+                deployment = inventory.get("deployment") or {}
+                hardware = inventory.get("hardware") or {}
+            except DomainError as exc:
+                deployment = {"state": "unavailable", "error_code": exc.code}
+        calls = [event for event in trace if event.get("outcome")]
+        usage: dict[str, int] = {}
+        for event in calls:
+            for key, value in (event.get("usage") or {}).items():
+                if isinstance(value, int):
+                    usage[key] = usage.get(key, 0) + value
+        validations = [event for event in trace if event.get("validation")]
+        return {
+            "backend": settings.apertus_provider,
+            "model": settings.apertus_model,
+            "model_revision": deployment.get("model_revision"),
+            "artifact_sha256": deployment.get("artifact_sha256"),
+            "quantization": deployment.get("quantization"),
+            "runtime_version": deployment.get("runtime_image"),
+            "hardware_profile": deployment.get("hardware_profile"),
+            "hardware": {
+                "cuda_devices": hardware.get("cuda_devices", []),
+                "ram_bytes": hardware.get("ram_bytes"),
+            },
+            "context": {
+                "configured_chars": settings.apertus_context_chars,
+                "runtime_tokens": deployment.get("context_size"),
+            },
+            "generation": {
+                "max_tokens": settings.apertus_max_tokens,
+                "temperature": settings.apertus_temperature,
+                "top_p": settings.apertus_top_p,
+                "presence_penalty": settings.apertus_presence_penalty,
+                "reasoning_effort": settings.apertus_reasoning_effort,
+            },
+            "queue_wait_ms": round(sum(event.get("queue_wait_ms", 0) for event in calls), 2),
+            "inference_duration_ms": round(sum(event.get("duration_ms", 0) for event in calls), 2),
+            "token_counts": usage,
+            "provider_calls": len(calls),
+            "attempts": calls,
+            "validation": {
+                "accepted": bool(validations) and all(v.get("validation") == "accepted" for v in validations),
+                "repair_count": sum(1 for value in validations if value.get("repair")),
+                "events": validations,
+            },
+        }
+
     def apertus_configuration(self):
         with self.db.session() as session:
             saved = session.get(ApertusConfiguration, "default")
@@ -1537,6 +1588,38 @@ class HelveticLens:
                 return self.job_detail(job_id)
             job_type, target_id, payload = job.type, job.target_id, dict(job.payload or {})
 
+        if (
+            job_type in {"impact_analysis", "ask"}
+            and self.settings.apertus_provider == "docker"
+            and isinstance(self.model_client, ai.ModelClient)
+        ):
+            waiting_reason = None
+            try:
+                inventory = await self.model_manager.inventory()
+                deployment = inventory.get("deployment") or {}
+                if deployment.get("state") not in {"ready", "degraded"}:
+                    configured = self.settings.apertus_model
+                    model = next(
+                        (item for item in inventory.get("models", []) if item.get("id") == configured),
+                        None,
+                    )
+                    if model and model.get("installed") and deployment.get("state") not in {"starting"}:
+                        await self.model_manager.command(configured, "start")
+                        waiting_reason = f"Starting the verified local model {configured}."
+                    elif deployment.get("state") == "starting":
+                        waiting_reason = f"Warming up the local model {configured}."
+                    elif not model or not model.get("installed"):
+                        waiting_reason = f"Download and start the local model {configured} from Local models."
+                    else:
+                        waiting_reason = f"Waiting for local model {configured}."
+            except DomainError:
+                waiting_reason = "Waiting for the private local model manager to become available."
+            if waiting_reason:
+                with self.write_guard, self.db.session() as session:
+                    durable_jobs.defer_for_model(session, job_id, waiting_reason)
+                    session.commit()
+                return self.job_detail(job_id)
+
         def mark(current: int, position: int, state: str):
             with self.write_guard, self.db.session() as session:
                 if not durable_jobs.heartbeat(session, job_id, worker):
@@ -1802,6 +1885,11 @@ class HelveticLens:
                 session.add(record)
                 session.commit()
                 record_id = record.id
+            trace_token = (
+                model_client.begin_trace("background")
+                if hasattr(model_client, "begin_trace")
+                else None
+            )
             try:
                 result, coverage = await ai.impact_analysis(
                     model_client, settings, comparison, old, new, profile, prompts
@@ -1816,9 +1904,16 @@ class HelveticLens:
                 )
                 if not isinstance(exc, DomainError):
                     logger.exception("Model analysis failed")
+            trace = (
+                model_client.end_trace(trace_token)
+                if trace_token is not None and hasattr(model_client, "end_trace")
+                else []
+            )
+            provenance = await self.inference_provenance(settings, trace)
             with self.write_guard, self.db.session() as session:
                 record = get(session, Analysis, record_id)
                 record.result, record.coverage, record.status, record.error = result, coverage, status, error
+                record.provenance = provenance
                 session.commit()
                 return {
                     **as_dict(record),
@@ -1883,6 +1978,11 @@ class HelveticLens:
                 session.add(record)
                 session.commit()
                 record_id = record.id
+            trace_token = (
+                model_client.begin_trace("interactive")
+                if hasattr(model_client, "begin_trace")
+                else None
+            )
             try:
                 result = await ai.answer_question(
                     model_client,
@@ -1896,6 +1996,12 @@ class HelveticLens:
                     prompts,
                 )
             except Exception as exc:
+                trace = (
+                    model_client.end_trace(trace_token)
+                    if trace_token is not None and hasattr(model_client, "end_trace")
+                    else []
+                )
+                provenance = await self.inference_provenance(settings, trace)
                 message = (
                     exc.message
                     if isinstance(exc, DomainError)
@@ -1904,11 +2010,18 @@ class HelveticLens:
                 with self.write_guard, self.db.session() as session:
                     record = get(session, AskRecord, record_id)
                     record.status, record.error = "failed", message
+                    record.provenance = provenance
                     session.commit()
                 if isinstance(exc, DomainError):
                     raise
                 logger.exception("Model question failed")
                 raise DomainError(message, 502, "model_error") from exc
+            trace = (
+                model_client.end_trace(trace_token)
+                if trace_token is not None and hasattr(model_client, "end_trace")
+                else []
+            )
+            provenance = await self.inference_provenance(settings, trace)
             coverage = result.get("coverage") or {}
             stored_result = {
                 key: value
@@ -1920,6 +2033,7 @@ class HelveticLens:
                 record.status = "succeeded"
                 record.result = stored_result
                 record.coverage = coverage
+                record.provenance = provenance
                 record.context_mode = result.get("context_mode", prompts.ask_context_mode)
                 record.error = None
                 session.commit()
@@ -1930,6 +2044,7 @@ class HelveticLens:
         return {
             **(record.result or {}),
             "coverage": record.coverage or {},
+            "provenance": record.provenance or {},
             "model": record.model,
             "record_id": record.id,
             "cached": cached,

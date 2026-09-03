@@ -250,8 +250,8 @@ def test_local_docker_provider_derives_endpoint_lists_models_and_never_sends_rem
     assert response.status_code == 200
     assert response.json()["provider"] == "docker"
     assert response.json()["base_url"] in {
-        "http://127.0.0.1:12435/v1",
-        "http://local-apertus:8080/v1",
+        "http://127.0.0.1:12436/openai/v1",
+        "http://model-manager:8090/openai/v1",
     }
     assert response.json()["models"][0]["id"] == "hf.co/example/apertus-local:Q4_K_M"
     assert len(requests) == 1
@@ -391,6 +391,34 @@ def test_transient_completion_failures_are_retried_and_each_attempt_is_logged(ha
     assert [item["status"] for item in logs["items"]] == ["error", "error", "success"]
 
 
+@pytest.mark.asyncio
+async def test_model_trace_captures_gateway_slot_queue_usage_and_validation(harness, monkeypatch):
+    _, _, service, _ = harness
+    settings = service.settings.model_copy(
+        update={"apertus_base_url": "https://inference.example/v1", "apertus_model": "test"}
+    )
+
+    def respond(request):
+        return httpx.Response(
+            200,
+            headers={"x-helvetic-slot": "gpu-1", "x-helvetic-queue-wait-ms": "12.5"},
+            json={
+                "choices": [{"message": {"content": '{"status":"ok"}'}}],
+                "usage": {"prompt_tokens": 10, "completion_tokens": 4, "total_tokens": 14},
+            },
+        )
+
+    transport(monkeypatch, respond)
+    model = ModelClient(settings)
+    token = model.begin_trace("background")
+    assert await model.complete("system", "user") == '{"status":"ok"}'
+    model.trace_event({"validation": "accepted", "repair": False})
+    trace = model.end_trace(token)
+    assert trace[0]["slot"] == "gpu-1" and trace[0]["queue_wait_ms"] == 12.5
+    assert trace[0]["usage"]["total_tokens"] == 14
+    assert trace[-1] == {"validation": "accepted", "repair": False}
+
+
 def test_context_limit_failure_is_actionable_and_is_not_retried(harness, monkeypatch):
     client, _, _, _ = harness
     requests = []
@@ -420,7 +448,7 @@ def test_context_limit_failure_is_actionable_and_is_not_retried(harness, monkeyp
 
     assert response.status_code == 422
     assert response.json()["code"] == "model_context_exceeded"
-    assert "single-slot" in response.json()["detail"]
+    assert "Local models" in response.json()["detail"]
     assert len(requests) == 1
     logs = client.get("/api/integration-logs?provider=docker").json()
     assert logs["total"] == 1

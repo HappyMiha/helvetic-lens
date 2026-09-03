@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import asyncio
 import os
+import time
+from dataclasses import dataclass
 from pathlib import Path
 
-from fastapi import FastAPI, Query
-from fastapi.responses import JSONResponse
+import httpx
+from fastapi import FastAPI, Header, Query, Request
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 
 from .core import ModelManager, ModelManagerError
@@ -14,6 +18,63 @@ class Acceptance(BaseModel):
     accepted: bool
 
 
+@dataclass
+class WaitingRequest:
+    organization: str
+    priority: str
+    sequence: int
+    queued_at: float
+
+
+class FairAdmission:
+    """One owner per runner with organization fairness and priority aging."""
+
+    def __init__(self):
+        self.condition = asyncio.Condition()
+        self.waiting: list[WaitingRequest] = []
+        self.busy: set[str] = set()
+        self.sequence = 0
+        self.last_served: dict[str, int] = {}
+        self.served = 0
+
+    def _rank(self, item: WaitingRequest, now: float):
+        base = 0 if item.priority == "interactive" else 10
+        # Background work gains one priority level every 15 seconds so it
+        # cannot starve behind a continuous stream of interactive requests.
+        aged = max(0, base - int((now - item.queued_at) / 15))
+        return (aged, self.last_served.get(item.organization, -1), item.sequence)
+
+    async def acquire(self, organization: str, priority: str, timeout: float = 300):
+        async with self.condition:
+            self.sequence += 1
+            item = WaitingRequest(organization, priority, self.sequence, time.monotonic())
+            self.waiting.append(item)
+            deadline = time.monotonic() + timeout
+            while True:
+                targets = manager.inference_targets()
+                available = next((target for target in targets if target["slot"] not in self.busy), None)
+                winner = min(self.waiting, key=lambda value: self._rank(value, time.monotonic()))
+                if available and winner is item:
+                    self.waiting.remove(item)
+                    self.busy.add(available["slot"])
+                    return available, (time.monotonic() - item.queued_at) * 1000
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    self.waiting.remove(item)
+                    raise TimeoutError("Local inference admission timed out.")
+                try:
+                    await asyncio.wait_for(self.condition.wait(), timeout=min(remaining, 2))
+                except asyncio.TimeoutError:
+                    pass
+
+    async def release(self, target: dict, organization: str):
+        async with self.condition:
+            self.busy.discard(target["slot"])
+            self.served += 1
+            self.last_served[organization] = self.served
+            self.condition.notify_all()
+
+
 manager = ModelManager(
     Path(os.environ.get("MODEL_MANAGER_CATALOG", "/manager/catalog.json")),
     Path(os.environ.get("MODEL_MANAGER_LIBRARY", "/models")),
@@ -21,6 +82,7 @@ manager = ModelManager(
     os.environ.get("MODEL_MANAGER_RUNTIME_IMAGE", "unrecorded"),
 )
 app = FastAPI(title="Helvetic Lens private model manager", version="1")
+admission = FairAdmission()
 
 
 @app.on_event("shutdown")
@@ -70,8 +132,8 @@ def cancel_download(model_id: str):
 
 
 @app.post("/v1/models/{model_id}/start")
-def start_model(model_id: str):
-    return manager.start_model(model_id)
+def start_model(model_id: str, profile: str | None = Query(default=None)):
+    return manager.start_model(model_id, profile)
 
 
 @app.post("/v1/models/{model_id}/stop")
@@ -87,3 +149,62 @@ def remove_model(model_id: str, referenced: bool = Query(default=False)):
 @app.get("/v1/logs")
 def logs():
     return {"lines": manager.log_tail()}
+
+
+async def proxy_local(
+    request: Request,
+    path: str,
+    organization: str,
+    priority: str,
+):
+    if priority not in {"interactive", "background"}:
+        priority = "background"
+    try:
+        target, queue_wait_ms = await admission.acquire(organization[:80], priority)
+    except TimeoutError:
+        return JSONResponse(
+            status_code=504,
+            content={"error": {"code": 504, "message": "Local inference queue timed out."}},
+        )
+    try:
+        body = await request.body()
+        headers = {"content-type": request.headers.get("content-type", "application/json")}
+        async with httpx.AsyncClient(timeout=300, trust_env=False) as client:
+            response = await client.request(
+                request.method,
+                target["url"] + "/v1/" + path,
+                content=body or None,
+                headers=headers,
+            )
+        returned_headers = {
+            "content-type": response.headers.get("content-type", "application/json"),
+            "x-helvetic-queue-wait-ms": f"{queue_wait_ms:.2f}",
+            "x-helvetic-slot": target["slot"],
+        }
+        return Response(response.content, status_code=response.status_code, headers=returned_headers)
+    except httpx.RequestError as exc:
+        return JSONResponse(
+            status_code=502,
+            content={"error": {"code": 502, "message": f"Local runner transport failed: {type(exc).__name__}"}},
+        )
+    finally:
+        await admission.release(target, organization[:80])
+
+
+@app.api_route("/openai/v1/chat/completions", methods=["POST"])
+async def chat_completions(
+    request: Request,
+    x_helvetic_organization: str = Header(default="default"),
+    x_helvetic_priority: str = Header(default="interactive"),
+):
+    return await proxy_local(
+        request, "chat/completions", x_helvetic_organization, x_helvetic_priority
+    )
+
+
+@app.api_route("/openai/v1/models", methods=["GET"])
+async def list_local_models(
+    request: Request,
+    x_helvetic_organization: str = Header(default="default"),
+):
+    return await proxy_local(request, "models", x_helvetic_organization, "interactive")

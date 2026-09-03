@@ -96,6 +96,7 @@ services:
       REDIS_URL: redis://redis:6379/0
       JOB_EXECUTION_MODE: celery
       HELVETIC_LENS_DATA_DIR: /data
+      MODEL_MANAGER_URL: http://model-manager:8090
     command: ["celery", "-A", "helvetic_lens.celery_app:celery_app", "worker", "--loglevel=INFO", "-Q", "ai_interactive,ai_background", "--concurrency=1"]
     volumes:
       - document_data:/data
@@ -151,7 +152,6 @@ services:
       MODEL_MANAGER_LLAMA_SERVER: /app/llama-server
       MODEL_MANAGER_RUNTIME_IMAGE: ghcr.io/ggml-org/llama.cpp@sha256:031c0058432ab0769057273cdfda45848d00fef11e993448eef98c7ebb45a8c6
     ports:
-      - "127.0.0.1:${LOCAL_APERTUS_PORT:-12435}:8080"
       - "127.0.0.1:${MODEL_MANAGER_PORT:-12436}:8090"
     volumes:
       - model_library:/models

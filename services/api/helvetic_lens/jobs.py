@@ -232,6 +232,29 @@ def fail(session: Session, job_id: str, *, code: str, detail: str, retry_delay: 
     return job
 
 
+def defer_for_model(session: Session, job_id: str, detail: str, delay: int = 10) -> Job:
+    """Release a job without consuming an attempt while local inference warms up."""
+    job = session.get(Job, job_id)
+    if not job:
+        raise LookupError(job_id)
+    now = utcnow()
+    job.state = "waiting_for_model"
+    job.attempts = max(0, job.attempts - 1)
+    job.available_at = now + timedelta(seconds=max(2, delay))
+    job.error_code = "waiting_for_model"
+    job.error_detail = _bounded_error(detail)
+    job.lease_owner = None
+    job.heartbeat_at = job.updated_at = now
+    for step in session.scalars(
+        select(JobStep).where(JobStep.job_id == job_id, JobStep.state == "running")
+    ):
+        step.state = "pending"
+        step.started_at = None
+        step.error_detail = _bounded_error(detail)
+    _enqueue_outbox(session, job)
+    return job
+
+
 def cancel(session: Session, job_id: str) -> Job:
     job = session.get(Job, job_id)
     if not job:
