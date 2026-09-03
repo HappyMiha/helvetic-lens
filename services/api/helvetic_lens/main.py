@@ -9,7 +9,10 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
+from redis import Redis
+from redis.exceptions import RedisError
 from sqlalchemy import select, text
+from sqlalchemy.exc import SQLAlchemyError
 
 from .analysis import classify_question_intent
 from .auth import CSRF_COOKIE, SESSION_COOKIE, AuthService, RateLimiter
@@ -280,7 +283,7 @@ def create_app(
             "/api/auth/password-reset/request",
             "/api/auth/password-reset/complete",
         }
-        public_path = path == "/api/health" or path in public_auth_paths
+        public_path = path in {"/api/health", "/api/ready"} or path in public_auth_paths
         public_path = public_path or path in {"/docs", "/openapi.json", "/redoc"}
         if path.startswith("/api/") and not public_path and not identity and not settings.allow_anonymous_dev:
             return JSONResponse(
@@ -613,6 +616,23 @@ def create_app(
             },
             "private_sources_enabled": settings.allow_private_sources,
         }
+
+    @app.get("/api/ready")
+    def ready():
+        checks = {"database": False, "redis": False}
+        try:
+            with service.db.session() as session:
+                session.execute(text("SELECT 1"))
+            checks["database"] = True
+            client = Redis.from_url(settings.redis_url, socket_connect_timeout=2, socket_timeout=2)
+            try:
+                checks["redis"] = bool(client.ping())
+            finally:
+                client.close()
+        except (OSError, RedisError, SQLAlchemyError):
+            pass
+        status = 200 if all(checks.values()) else 503
+        return JSONResponse({"status": "ready" if status == 200 else "unavailable", "checks": checks}, status)
 
     @app.post("/api/preview")
     async def preview(data: PreviewInput):

@@ -215,3 +215,12 @@ The Windows agent's default pytest temporary directory had a permission conflict
 
 - Validate optional Firecrawl with a key and available credit.
 - JavaScript-only portals, OCR, authentication-gated pages, and exhaustive multi-page discovery remain outside this narrow implementation.
+
+## Public single-server boundary — 3 September 2026
+
+- The dedicated production Compose plan renders with PostgreSQL, Redis, one migration job, API, CPU/AI workers, scheduler, web, private model manager, and Caddy. Inspection of the rendered port bindings shows only TCP 80, TCP 443, and UDP 443; data, API, and inference services have no host binding.
+- PostgreSQL, Redis, Python, Node, llama.cpp, and Caddy inputs are pinned by registry digest. The three project images build successfully from the production file, including the complete five-locale Next.js production build.
+- The Caddy 2.10.2 image validates the checked-in TLS/reverse-proxy configuration. Startup ordering requires the migration to complete, PostgreSQL and Redis readiness to pass, the web service to become healthy, and only then the public proxy to start.
+- The production environment validator passes a complete non-secret fixture and deliberately rejects the tracked placeholder template, HTTP origins, anonymous access, insecure cookies, private-network fetching, inline jobs, cloud-first AI, oversized uploads, and relative backup paths. Matching application validation prevents bypassing the critical controls.
+- All 295 API tests pass, including the new database-and-Redis readiness endpoint and production configuration boundary. Ruff and TypeScript pass. The repository's pre-existing full-tree Prettier check still reports 26 application files; this deployment increment does not modify those files.
+- Backup/restore, cleanup retention, cross-service correlation/metrics, and an actual target-host install/upgrade/rollback rehearsal remain open HL-048 gates.

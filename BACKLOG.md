@@ -86,7 +86,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-045](#hl-045) | P1       | DONE     | HL-032, HL-044, HL-060, HL-061                         | Local-AI potential-impact analysis                                  |
 | [HL-046](#hl-046) | P1       | DONE     | HL-037, HL-045, HL-063                                 | Impact inbox and monitored-law cross-links                          |
 | [HL-047](#hl-047) | P1       | DONE     | HL-031, HL-035, HL-042                                 | Platform and organization admin console                             |
-| [HL-048](#hl-048) | P0       | PLANNED  | HL-029–HL-035, HL-038                                  | Public single-server deployment and operations baseline             |
+| [HL-048](#hl-048) | P0       | IN PROGRESS | HL-029–HL-035, HL-038                               | Public single-server deployment and operations baseline             |
 | [HL-049](#hl-049) | P0       | PLANNED  | HL-037–HL-048, HL-057–HL-064                           | Reproducible recovery and 100-user capacity gate                    |
 | [HL-057](#hl-057) | P1       | IN PROGRESS | HL-032, HL-034–HL-037, HL-045–HL-047                | Complete German, French, Italian, Romansh, and English localization |
 | [HL-058](#hl-058) | P0       | DONE     | HL-005, HL-036, HL-038                                 | Document-identity gate before comparison or AI                      |
@@ -1025,6 +1025,8 @@ Acceptance criteria:
 ### HL-048 — Ship a reproducible public single-server deployment and operations baseline
 
 Make the i7/32 GB/two-GTX-1080 server safe and recoverable enough for a public beta.
+
+**Status: IN PROGRESS.** A dedicated production Compose file now pins base/runtime images, runs migrations before readiness, exposes only Caddy on 80/443, keeps data and model paths on private networks, persists state, rotates logs, and restarts long-running services. A fail-closed validator and matching application checks reject insecure authentication, weak/placeholder secrets, HTTP origins, private-network fetching, inline jobs, cloud-first defaults, and oversized uploads. Backup/restore automation, bounded data retention, correlation/metrics completion, and a rehearsed upgrade/rollback remain.
 
 Acceptance criteria:
 

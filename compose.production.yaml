@@ -1,0 +1,239 @@
+name: helvetic-lens
+
+x-api-environment: &api-environment
+  APP_ENVIRONMENT: production
+  ALLOW_ANONYMOUS_DEV: "false"
+  SESSION_COOKIE_SECURE: "true"
+  SESSION_TTL_DAYS: ${SESSION_TTL_DAYS:-14}
+  PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?Set the public HTTPS URL}
+  DEFAULT_LOCALE: ${DEFAULT_LOCALE:-de-CH}
+  AUTH_EMAIL_MODE: ${AUTH_EMAIL_MODE:?Set SMTP delivery}
+  AUTH_EMAIL_FROM: ${AUTH_EMAIL_FROM:?Set the sender address}
+  AUTH_SMTP_HOST: ${AUTH_SMTP_HOST:?Set the SMTP host}
+  AUTH_SMTP_PORT: ${AUTH_SMTP_PORT:-587}
+  AUTH_SMTP_USERNAME: ${AUTH_SMTP_USERNAME:-}
+  AUTH_SMTP_PASSWORD: ${AUTH_SMTP_PASSWORD:-}
+  AUTH_SMTP_STARTTLS: ${AUTH_SMTP_STARTTLS:-true}
+  DATABASE_URL: postgresql+psycopg://${HELVETIC_LENS_DB_USER:-helvetic_lens}:${HELVETIC_LENS_DB_PASSWORD:?Set a strong database password}@db:5432/${HELVETIC_LENS_DB_NAME:-helvetic_lens}
+  REDIS_URL: redis://redis:6379/0
+  JOB_EXECUTION_MODE: celery
+  HELVETIC_LENS_DATA_DIR: /data
+  HELVETIC_LENS_CREDENTIAL_KEY: ${HELVETIC_LENS_CREDENTIAL_KEY:?Set a stable credential key}
+  MODEL_MANAGER_URL: http://model-manager:8090
+  APERTUS_PROVIDER: ${APERTUS_PROVIDER:-docker}
+  APERTUS_MODEL: ${APERTUS_MODEL:-apertus-1.5b-q4km}
+  APERTUS_TIMEOUT_SECONDS: ${APERTUS_TIMEOUT_SECONDS:-180}
+  APERTUS_CONTEXT_CHARS: ${APERTUS_CONTEXT_CHARS:-12000}
+  APERTUS_MAX_TOKENS: ${APERTUS_MAX_TOKENS:-1200}
+  APERTUS_TEMPERATURE: ${APERTUS_TEMPERATURE:-0.1}
+  APERTUS_TOP_P: ${APERTUS_TOP_P:-1}
+  APERTUS_JSON_MODE: ${APERTUS_JSON_MODE:-true}
+  ALLOW_PRIVATE_SOURCES: "false"
+  MAX_DOCUMENT_BYTES: ${MAX_DOCUMENT_BYTES:-8388608}
+  FETCH_TIMEOUT_SECONDS: ${FETCH_TIMEOUT_SECONDS:-25}
+  JOB_LEASE_SECONDS: ${JOB_LEASE_SECONDS:-300}
+  JOB_MAX_ATTEMPTS: ${JOB_MAX_ATTEMPTS:-3}
+  CONNECTOR_MAX_ACTIVE_JOBS: ${CONNECTOR_MAX_ACTIVE_JOBS:-2}
+  CONNECTOR_MAX_QUEUE_DEPTH: ${CONNECTOR_MAX_QUEUE_DEPTH:-20}
+  CONNECTOR_MIN_FREE_MEGABYTES: ${CONNECTOR_MIN_FREE_MEGABYTES:-2048}
+
+x-api-service: &api-service
+  image: helvetic-lens-api:${HELVETIC_LENS_RELEASE:?Set an immutable release identifier}
+  environment: *api-environment
+  volumes:
+    - document_data:/data
+  networks:
+    - app
+    - data
+    - model-control
+    - outbound
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options:
+      max-size: 20m
+      max-file: "5"
+
+services:
+  db:
+    image: postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73
+    environment:
+      POSTGRES_USER: ${HELVETIC_LENS_DB_USER:-helvetic_lens}
+      POSTGRES_PASSWORD: ${HELVETIC_LENS_DB_PASSWORD:?Set a strong database password}
+      POSTGRES_DB: ${HELVETIC_LENS_DB_NAME:-helvetic_lens}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    logging:
+      driver: json-file
+      options: {max-size: 20m, max-file: "5"}
+
+  redis:
+    image: redis:7.4-alpine@sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    logging:
+      driver: json-file
+      options: {max-size: 20m, max-file: "5"}
+
+  migrate:
+    <<: *api-service
+    build:
+      context: services/api
+    restart: "no"
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    <<: *api-service
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      model-manager:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/ready', timeout=3)"]
+      interval: 10s
+      timeout: 4s
+      retries: 20
+      start_period: 10s
+
+  worker-cpu:
+    <<: *api-service
+    command: ["celery", "-A", "helvetic_lens.celery_app:celery_app", "worker", "--loglevel=INFO", "-Q", "interactive,ingest,parse_diff,maintenance", "--concurrency=2"]
+    depends_on:
+      api:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker-ai:
+    <<: *api-service
+    command: ["celery", "-A", "helvetic_lens.celery_app:celery_app", "worker", "--loglevel=INFO", "-Q", "ai_interactive,ai_background", "--concurrency=1"]
+    depends_on:
+      api:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  scheduler:
+    <<: *api-service
+    command: ["celery", "-A", "helvetic_lens.celery_app:celery_app", "beat", "--loglevel=INFO"]
+    depends_on:
+      api:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  model-manager:
+    image: helvetic-lens-model-manager:${HELVETIC_LENS_RELEASE:?Set an immutable release identifier}
+    build:
+      context: .
+      dockerfile: services/model-manager/Dockerfile
+    gpus: all
+    environment:
+      MODEL_MANAGER_CATALOG: /manager/catalog.json
+      MODEL_MANAGER_LIBRARY: /models
+      MODEL_MANAGER_LLAMA_SERVER: /app/llama-server
+      MODEL_MANAGER_RUNTIME_IMAGE: ghcr.io/ggml-org/llama.cpp@sha256:031c0058432ab0769057273cdfda45848d00fef11e993448eef98c7ebb45a8c6
+    volumes:
+      - model_library:/models
+    networks:
+      - model-control
+      - outbound
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8090/health', timeout=3)"]
+      interval: 10s
+      timeout: 4s
+      retries: 30
+    logging:
+      driver: json-file
+      options: {max-size: 20m, max-file: "5"}
+
+  web:
+    image: helvetic-lens-web:${HELVETIC_LENS_RELEASE:?Set an immutable release identifier}
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        HELVETIC_LENS_API_URL: http://api:8000
+    environment:
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+    networks:
+      - app
+      - edge
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/login"]
+      interval: 10s
+      timeout: 4s
+      retries: 20
+    logging:
+      driver: json-file
+      options: {max-size: 20m, max-file: "5"}
+
+  caddy:
+    image: caddy:2.10.2-alpine@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d
+    environment:
+      HELVETIC_LENS_DOMAIN: ${HELVETIC_LENS_DOMAIN:?Set the public domain}
+      CADDY_ACME_EMAIL: ${CADDY_ACME_EMAIL:?Set the ACME contact email}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - edge
+    depends_on:
+      web:
+        condition: service_healthy
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options: {max-size: 20m, max-file: "5"}
+
+volumes:
+  postgres_data:
+  redis_data:
+  document_data:
+  model_library:
+  caddy_data:
+  caddy_config:
+
+networks:
+  edge:
+  outbound:
+  app:
+    internal: true
+  data:
+    internal: true
+  model-control:
+    internal: true

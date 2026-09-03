@@ -173,7 +173,7 @@ Use reasonable fetch timeouts and download limits. If a page requires unsupporte
 
 Current defaults: 8 MB per document, 25 seconds per source request, 1,000 PDF pages, 1.2 million extracted characters, 6,000 passages, and 25 documents per scan. Whitespace is normalised; changed words, numbers, and dates remain visible. Complex layouts and page headers can create extraction noise, so inspect previews. Optional Firecrawl requires your own server-side key and usable quota; its live path is not validated in this environment.
 
-The current Compose stack has PostgreSQL-backed durable jobs, Redis/Celery workers, organization-scoped authentication and roles, and a private managed inference endpoint. It still binds to loopback and lacks Caddy/TLS, a backup rehearsal, and a measured 100-user capacity result. Do not expose it publicly yet; see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+The development Compose stack binds to loopback. The separate [production single-server deployment](docs/PRODUCTION_DEPLOYMENT.md) adds fail-closed configuration validation, startup migration, Caddy TLS on ports 80/443, private data/model networks, readiness ordering, fixed image digests, restart policies, and bounded container logs. Backup/restore rehearsal and the measured 100-user capacity result remain release gates, so do not open public registration yet; see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 Public beta uses three implemented bounded official connectors rather than patches for individual URLs:
 

@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import Literal
+from urllib.parse import urlsplit
 
 from pydantic import AliasChoices, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -98,6 +99,23 @@ class Settings(BaseSettings):
                 raise ValueError("Production requires Secure session cookies.")
             if self.auth_email_mode == "development":
                 raise ValueError("Production cannot write authentication emails to the development mailbox.")
+            public_origin = urlsplit(self.public_base_url)
+            if public_origin.scheme != "https" or not public_origin.hostname:
+                raise ValueError("Production requires an HTTPS public base URL.")
+            if self.allow_private_sources:
+                raise ValueError("Production refuses private-network source fetching.")
+            if self.job_execution_mode != "celery":
+                raise ValueError("Production requires durable Celery job execution.")
+            if len(self.credential_encryption_key.get_secret_value()) < 32:
+                raise ValueError("Production requires a stable credential key of at least 32 characters.")
+            if not self.database_url.startswith("postgresql"):
+                raise ValueError("Production requires PostgreSQL.")
+            database_parts = urlsplit(self.database_url.replace("postgresql+psycopg", "postgresql", 1))
+            database_password = database_parts.password or ""
+            if len(database_password) < 24 or database_password == "helvetic_lens":
+                raise ValueError("Production requires a strong database password of at least 24 characters.")
+            if self.max_document_bytes > 20 * 1024 * 1024:
+                raise ValueError("Production uploads cannot exceed the reverse proxy's 20 MiB limit.")
         self.public_base_url = self.public_base_url.rstrip("/")
         self.default_locale = normalize_locale(self.default_locale)
         if self.auth_email_mode == "smtp" and (not self.auth_smtp_host or not self.auth_email_from):
