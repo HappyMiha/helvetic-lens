@@ -1471,6 +1471,14 @@ ins {
   font-size: 10px;
   line-height: 1.55;
 }
+.ask-answer-route {
+  color: #64725b;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin: 8px 0 0;
+  text-transform: capitalize;
+}
 .saved-answer-note {
   background: #f2f6eb;
   border: 1px solid #dce6cf;

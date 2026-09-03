@@ -175,6 +175,16 @@ The Windows agent's default pytest temporary directory had a permission conflict
 - All 247 API tests pass, including legacy-to-head migration coverage; Ruff, TypeScript, and the Next.js production build pass.
 - The rebuilt Compose stack is healthy at `e31b8f6a2c90 (head)`. Browser QA created a fresh local-Apertus report in one model call and displayed potential severity separately from supported evidence, the cited old/new passage, possible organization applicability, explicit `not found` date/deadline states, zero filler actions, full 1-of-1 coverage, and no desktop horizontal overflow.
 
+## Intent-routed Ask — 3 September 2026
+
+- Parameterized routing checks cover `explain_changes`, `organization_impact`, `actions`, `specific_unit`, `whole_document`, `vague`, and `off_topic`. The router sees zero document characters and makes zero provider calls.
+- The exact Russian vague phrase from product feedback returns four useful choices in under one second. Off-topic input returns the document-review boundary with zero inference. The queued UI endpoint executes these two deterministic routes immediately even when other Ask work uses Celery.
+- An existing current `impact-report-v2` satisfies canonical English change, applicability, and action questions without another model call. The saved answer records its source report, intent, scope, locale, selected change/evidence IDs, zero-call plan, and exact comparison; identical repeats use the Ask cache.
+- Specific-article checks force targeted selection of the requested unit plus adjacent passages. Small whole-document checks use both complete saved versions, while existing large-context regressions verify explicit targeted scope when the serialized prompt and output reservation do not fit.
+- Follow-up API checks pass the previous validated answer and its server-materialized citations, rather than question text alone. Change questions still use semantic-diff evidence and retain the hard three-request ceiling including repair and synthesis.
+- All 256 API tests pass, including legacy-to-head migration coverage; Ruff, TypeScript, and the Next.js production build pass.
+- The rebuilt Compose stack remains healthy at `e31b8f6a2c90 (head)`. Browser QA reused the fresh Impact report for **Explain the material changes simply**, displayed two exact citations and a zero-call fixed plan, then answered `Ничего не понятно но очень интересно` with a Russian clarification and four choices, also with zero calls. The comparison retained no desktop horizontal overflow.
+
 ## Remaining gates
 
 - Validate optional Firecrawl with a key and available credit.

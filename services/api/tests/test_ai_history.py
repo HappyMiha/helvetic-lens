@@ -201,8 +201,13 @@ def test_prompt_revisions_change_cache_boundary_without_deleting_old_history(har
     assert reset.status_code == 200 and reset.json()["source"] == "defaults"
     calls_before_cache = len(model.calls)
     reused_default = client.post(route, json=payload)
-    assert reused_default.status_code == 200 and reused_default.json()["cached"] is True
-    assert reused_default.json()["record_id"] == first.json()["record_id"]
+    assert reused_default.status_code == 200 and reused_default.json()["cached"] is False
+    assert reused_default.json()["context_mode"] == "impact_report"
+    assert reused_default.json()["coverage"]["provider_calls"] == 0
+    assert len(model.calls) == calls_before_cache
+    repeated_default = client.post(route, json=payload)
+    assert repeated_default.json()["cached"] is True
+    assert repeated_default.json()["record_id"] == reused_default.json()["record_id"]
     reused_impact = client.post(impact_route)
     assert reused_impact.status_code == 200 and reused_impact.json()["cached"] is True
     assert reused_impact.json()["id"] == first_impact.json()["id"]

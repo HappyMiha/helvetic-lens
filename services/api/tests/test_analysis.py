@@ -1,4 +1,5 @@
 import json
+import time
 
 import pytest
 from conftest import LAW_URL, add_law, import_old, policy, run_scan
@@ -11,6 +12,7 @@ from helvetic_lens.analysis import (
     answer_question,
     batch_diff_evidence,
     build_impact_plan,
+    classify_question_intent,
     diff_evidence,
     finalize_impact_report,
     impact_analysis,
@@ -127,7 +129,7 @@ def test_local_docker_finishes_with_validated_batch_results_without_synthesis_ca
     model.calls.clear()
     answer = client.post(
         f"/api/comparisons/{comparison['id']}/ask",
-        json={"question": "What changed?"},
+        json={"question": "Що змінилося?"},
     ).json()
     answer_tasks = [json.loads(user).get("task") for _, user in model.calls]
     assert answer["supported"] is True
@@ -146,7 +148,12 @@ def test_questions_use_selected_pair_and_explicit_unsupported_answer(harness):
     route = "/api/comparisons/" + comparison["id"] + "/ask"
     reply = client.post(route, json={"question": "What changed?"})
     assert reply.status_code == 200 and reply.json()["supported"] is True
-    prior_question = {"question": "What changed?"}
+    first_answer = reply.json()
+    prior_question = {
+        "question": "What changed?",
+        "answer": first_answer["answer"],
+        "citations": first_answer["citations"],
+    }
     older_reply = client.post(
         route, json={"question": "What did the older version say?", "history": [prior_question]}
     )
@@ -861,7 +868,7 @@ def test_invalid_json_is_validated_and_repaired_once_for_impact_and_ask(harness)
     model.calls.clear()
     model.invalid_json_responses = 1
     answer = client.post(
-        "/api/comparisons/" + comparison["id"] + "/ask", json={"question": "What changed?"}
+        "/api/comparisons/" + comparison["id"] + "/ask", json={"question": "Що змінилося?"}
     )
     assert answer.status_code == 200 and answer.json()["supported"] is True
     assert len(model.calls) == 2 and "repair" in json.loads(model.calls[1][1])
@@ -1016,11 +1023,95 @@ def test_vague_comment_and_numeric_gibberish_do_not_call_the_model(harness):
     route = f"/api/comparisons/{comparison['id']}/ask"
     model.calls.clear()
 
+    started = time.perf_counter()
     vague = client.post(route, json={"question": "Ничего не понятно но очень интересно"})
+    vague_elapsed = time.perf_counter() - started
     numeric = client.post(route, json={"question": "111"})
+    off_topic = client.post(route, json={"question": "Tell me a joke about the weather"})
 
-    assert vague.status_code == numeric.status_code == 200
+    assert vague.status_code == numeric.status_code == off_topic.status_code == 200
     assert vague.json()["context_mode"] == numeric.json()["context_mode"] == "clarification"
     assert vague.json()["coverage"]["provider_calls"] == 0
+    assert vague_elapsed < 1
     assert len(vague.json()["suggestions"]) == 4
+    assert off_topic.json()["intent"] == off_topic.json()["context_mode"] == "off_topic"
+    assert off_topic.json()["supported"] is False
+    assert off_topic.json()["coverage"]["provider_calls"] == 0
     assert model.calls == []
+
+
+@pytest.mark.parametrize(
+    ("question", "intent"),
+    [
+        ("What changed in this document?", "explain_changes"),
+        ("Does this affect our organization?", "organization_impact"),
+        ("Create a review checklist", "actions"),
+        ("Explain Article 5", "specific_unit"),
+        ("Summarize the whole document", "whole_document"),
+        ("Ничего не понятно но очень интересно", "vague"),
+        ("Tell me a joke about the weather", "off_topic"),
+    ],
+)
+def test_question_router_uses_no_document_body_or_model(question, intent):
+    route = classify_question_intent(question)
+
+    assert route["intent"] == intent
+    assert route["document_characters_seen"] == 0
+    assert route["provider_calls"] == 0
+
+
+def test_canonical_ask_reuses_current_validated_impact_report(harness):
+    client, _, service, model = harness
+    service.settings.apertus_base_url = "https://model.example/v1"
+    law = add_law(client)
+    old = import_old(client, law["id"])["version"]
+    comparison = client.post(
+        "/api/comparisons",
+        json={"old_version_id": old["id"], "new_version_id": law["current_version_id"]},
+    ).json()
+    impact = client.post(f"/api/comparisons/{comparison['id']}/analyse").json()
+    calls_after_impact = len(model.calls)
+
+    answer = client.post(
+        f"/api/comparisons/{comparison['id']}/ask",
+        json={"question": "Explain the material changes simply"},
+    ).json()
+
+    assert answer["intent"] == "explain_changes"
+    assert answer["context_mode"] == "impact_report"
+    assert answer["reused_impact_report_id"] == impact["id"]
+    assert answer["coverage"]["provider_calls"] == 0
+    assert answer["citations"] and answer["selected_change_ids"]
+    assert answer["analysis_plan"]["router"]["document_characters_seen"] == 0
+    assert answer["analysis_plan"]["limits"]["router_call_budget"] == 0
+    assert len(model.calls) == calls_after_impact
+    saved = client.get(f"/api/comparisons/{comparison['id']}/ai-history").json()
+    saved_answer = next(item for item in saved["items"] if item["type"] == "question")
+    assert saved_answer["result"]["intent"] == "explain_changes"
+    assert saved_answer["result"]["output_locale"] == "en"
+    assert saved_answer["result"]["selected_change_ids"]
+
+
+def test_specific_unit_ask_uses_only_target_and_neighbours(harness):
+    client, _, service, model = harness
+    service.settings.apertus_base_url = "https://model.example/v1"
+    law = add_law(client)
+    old = import_old(client, law["id"])["version"]
+    comparison = client.post(
+        "/api/comparisons",
+        json={"old_version_id": old["id"], "new_version_id": law["current_version_id"]},
+    ).json()
+    model.calls.clear()
+
+    answer = client.post(
+        f"/api/comparisons/{comparison['id']}/ask",
+        json={"question": "Explain Article 2"},
+    ).json()
+
+    assert answer["intent"] == "specific_unit"
+    assert answer["context_mode"] == "targeted_passages"
+    assert answer["coverage"]["limited"] is True
+    assert "neighbours" in answer["scope"]
+    supplied = json.loads(model.calls[0][1])
+    assert supplied["intent"] == "specific_unit"
+    assert supplied["output_locale"] == "en"

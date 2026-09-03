@@ -209,7 +209,9 @@ def test_impact_and_ask_use_durable_ai_queues_and_return_saved_results(harness):
     assert answer_job["queue"] == "ai_interactive" and answer_job["priority"] == 8
     assert answer_job["state"] == "succeeded"
     assert answer_job["result"]["data"]["record_id"]
-    assert len(model.calls) >= 2
+    assert answer_job["result"]["data"]["context_mode"] == "impact_report"
+    assert answer_job["result"]["data"]["coverage"]["provider_calls"] == 0
+    assert len(model.calls) == 1
 
 
 def test_waiting_for_local_model_does_not_consume_job_attempt(harness):

@@ -963,6 +963,39 @@ function PlanNote({ plan }: { plan?: AnalysisPlan }) {
   );
 }
 
+const askPrompts: Record<string, string[]> = {
+  en: [
+    "Explain the material changes simply",
+    "Does this affect our organization?",
+    "Show new obligations or deadlines",
+    "Create a review checklist",
+  ],
+  de: [
+    "Erkläre die wesentlichen Änderungen einfach",
+    "Betrifft das unsere Organisation?",
+    "Zeige neue Pflichten oder Fristen",
+    "Erstelle eine Prüfliste",
+  ],
+  fr: [
+    "Explique simplement les changements essentiels",
+    "Cela concerne-t-il notre organisation ?",
+    "Montre les nouvelles obligations ou échéances",
+    "Crée une liste de vérification",
+  ],
+  it: [
+    "Spiega semplicemente le modifiche essenziali",
+    "Questo riguarda la nostra organizzazione?",
+    "Mostra nuovi obblighi o scadenze",
+    "Crea una lista di controllo",
+  ],
+  rm: [
+    "Declera simplamain las midadas essenzialas",
+    "Ha quai in effect sin nossa organisaziun?",
+    "Mussa novas obligaziuns u termins",
+    "Crea ina glista da controlla",
+  ],
+};
+
 function AskPanel({
   comparisonId,
   configured,
@@ -975,7 +1008,12 @@ function AskPanel({
   const [question, setQuestion] = useState(""),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
-    [notice, setNotice] = useState("");
+    [notice, setNotice] = useState(""),
+    [promptLocale, setPromptLocale] = useState("en");
+  useEffect(() => {
+    const locale = navigator.language.toLowerCase().split("-")[0];
+    setPromptLocale(askPrompts[locale] ? locale : "en");
+  }, []);
   const savedHistory = useResource<AIHistoryPage>(
     `/comparisons/${comparisonId}/ai-history`,
     5000,
@@ -990,12 +1028,7 @@ function AskPanel({
     .slice(0, 20)
     .reverse();
   const ready = configured && !blockedReason;
-  const quickQuestions = [
-    "Explain the material changes simply",
-    "Does this affect our organization?",
-    "Show new obligations or deadlines",
-    "Create a review checklist",
-  ];
+  const quickQuestions = askPrompts[promptLocale];
   async function ask(event: React.FormEvent) {
     event.preventDefault();
     if (!question.trim()) return;
@@ -1013,7 +1046,14 @@ function AskPanel({
             history: history
               .filter((item) => item.status === "succeeded")
               .slice(-4)
-              .map((item) => ({ question: item.question })),
+              .map((item) => {
+                const prior = item.result as Answer | null;
+                return {
+                  question: item.question,
+                  answer: prior?.answer,
+                  citations: prior?.citations || [],
+                };
+              }),
           }),
         },
       );
@@ -1127,7 +1167,13 @@ function SavedQuestionTurn({
 }) {
   const answer = item.result as Pick<
     Answer,
-    "supported" | "answer" | "citations" | "suggestions"
+    | "supported"
+    | "answer"
+    | "citations"
+    | "suggestions"
+    | "intent"
+    | "context_mode"
+    | "reused_impact_report_id"
   > | null;
   return (
     <div className="chat-turn">
@@ -1144,6 +1190,14 @@ function SavedQuestionTurn({
             )}
             <p>{answer.answer}</p>
             <Citations values={answer.citations} />
+            {answer.intent && answer.context_mode && (
+              <p className="ask-answer-route">
+                {answer.intent.replaceAll("_", " ")} ·{" "}
+                {answer.context_mode === "impact_report"
+                  ? "reused validated report · no model call"
+                  : answer.context_mode.replaceAll("_", " ")}
+              </p>
+            )}
             {!!answer.suggestions?.length && (
               <div className="answer-suggestions">
                 {answer.suggestions.map((suggestion) => (

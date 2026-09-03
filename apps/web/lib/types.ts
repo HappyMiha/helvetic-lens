@@ -800,7 +800,22 @@ export type Answer = {
     | "deterministic_diff"
     | "full_saved_versions"
     | "targeted_passages"
-    | "clarification";
+    | "clarification"
+    | "impact_report"
+    | "off_topic";
+  intent:
+    | "explain_changes"
+    | "organization_impact"
+    | "actions"
+    | "specific_unit"
+    | "whole_document"
+    | "vague"
+    | "off_topic";
+  scope: string;
+  selected_change_ids: string[];
+  selected_evidence_ids: string[];
+  output_locale: string;
+  reused_impact_report_id?: string | null;
   suggestions?: string[];
   record_id: string;
   cached: boolean;
@@ -863,7 +878,7 @@ export type AIHistoryItem = {
     | (Omit<Answer, "coverage" | "model"> & { context_mode?: string })
     | null;
   question?: string;
-  history?: { question: string }[];
+  history?: { question: string; answer?: string; citations?: Citation[] }[];
   context_mode?: string;
 };
 

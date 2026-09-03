@@ -2851,6 +2851,9 @@ class HelveticLens:
             )
             self.ensure_complete_diff(session, comparison, old, new)
             profile = get(session, Profile, self.tenant_record_id)
+            impact_report = self.current_impact_report(
+                session, comparison, profile, self.settings, self.prompt_settings
+            )
             key = ai.ask_cache_key(
                 comparison,
                 profile,
@@ -2858,6 +2861,7 @@ class HelveticLens:
                 self.prompt_settings,
                 question,
                 history,
+                impact_report,
             )
             job, _ = durable_jobs.enqueue(
                 session,
@@ -2875,13 +2879,36 @@ class HelveticLens:
                 progress_total=3,
                 max_attempts=self.settings.job_max_attempts,
                 steps=[
-                    ("Prepare cited evidence", {"comparison_id": comparison_id}),
+                    ("Route question and prepare evidence", {"comparison_id": comparison_id}),
                     ("Run local inference", {}),
                     ("Validate and save answer", {}),
                 ],
             )
             session.commit()
             return durable_jobs.serialize(session, job)
+
+    @staticmethod
+    def current_impact_report(
+        session: Session,
+        comparison: Comparison,
+        profile: Profile,
+        settings,
+        prompts,
+    ) -> dict | None:
+        current_key = ai.cache_key(comparison, profile, settings, prompts)
+        record = session.scalar(
+            select(Analysis)
+            .where(
+                Analysis.comparison_id == comparison.id,
+                Analysis.cache_key == current_key,
+                Analysis.status == "succeeded",
+            )
+            .order_by(Analysis.created_at.desc())
+            .limit(1)
+        )
+        if not record or (record.result or {}).get("schema_version") != ai.IMPACT_REPORT_SCHEMA_VERSION:
+            return None
+        return {"id": record.id, "result": record.result}
 
     async def analyse(self, comparison_id: str):
         lock = self.analysis_locks.setdefault(comparison_id, asyncio.Lock())
@@ -3020,11 +3047,22 @@ class HelveticLens:
                     409,
                     f"document_identity_{identity['effective_status']}",
                 )
+            impact_report = self.current_impact_report(
+                session, comparison, profile, settings, prompts
+            )
             key = ai.ask_cache_key(
-                comparison, profile, settings, prompts, question, history
+                comparison, profile, settings, prompts, question, history, impact_report
             )
             analysis_plan = ai.build_ask_plan(
-                settings, comparison, old, new, question, prompts, profile, history
+                settings,
+                comparison,
+                old,
+                new,
+                question,
+                prompts,
+                profile,
+                history,
+                impact_report,
             )
         lock_key = comparison_id + ":" + key
         lock = self.ask_locks.setdefault(lock_key, asyncio.Lock())
@@ -3071,6 +3109,7 @@ class HelveticLens:
                     question,
                     history,
                     prompts,
+                    impact_report,
                 )
             except Exception as exc:
                 trace = (

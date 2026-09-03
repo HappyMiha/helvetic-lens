@@ -10,6 +10,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select, text
 
+from .analysis import classify_question_intent
 from .auth import CSRF_COOKIE, SESSION_COOKIE, AuthService, RateLimiter
 from .auth_mail import AuthMailer
 from .config import DomainError, Settings
@@ -59,8 +60,18 @@ class ScanInput(Input):
     baseline_version_id: str | None = None
 
 
+class HistoryCitation(Input):
+    version_id: str = Field(max_length=36)
+    passage_id: str = Field(max_length=120)
+    quote: str = Field(min_length=1, max_length=1500)
+    url: str | None = Field(default=None, max_length=3000)
+    page: int | None = Field(default=None, ge=1)
+
+
 class HistoryQuestion(Input):
     question: str = Field(min_length=1, max_length=2000)
+    answer: str | None = Field(default=None, max_length=6000)
+    citations: list[HistoryCitation] = Field(default_factory=list, max_length=10)
 
 
 class QuestionInput(HistoryQuestion):
@@ -797,7 +808,8 @@ def create_app(
             data.question,
             [q.model_dump() for q in data.history],
         )
-        if settings.job_execution_mode == "inline":
+        route = classify_question_intent(data.question)
+        if settings.job_execution_mode == "inline" or route["intent"] in {"vague", "off_topic"}:
             return await service.execute_job(job["id"])
         return job
 

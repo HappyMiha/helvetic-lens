@@ -18,6 +18,7 @@ from .prompt_settings import PromptSettings, default_prompt_settings, prompt_fin
 PROMPT_VERSION = "helvetic-lens-v9-bounded-regulatory-triage"
 IMPACT_REPORT_SCHEMA_VERSION = "impact-report-v2"
 DEFAULT_OUTPUT_LOCALE = "en"
+ASK_ROUTER_VERSION = "ask-intent-v1"
 MAX_IMPACT_BATCHES = 3
 MAX_ASK_BATCHES = 1
 MAX_IMPACT_HTTP_REQUESTS = 5
@@ -732,15 +733,41 @@ def ask_cache_key(
     prompts: PromptSettings,
     question: str,
     history: list[dict],
+    impact_report: dict | None = None,
 ) -> str:
     def normalized(value: object) -> str:
         return " ".join(str(value or "").split()).casefold()
 
+    route = classify_question_intent(question)
+    report_result = (impact_report or {}).get("result") or {}
     context = {
         "analysis": cache_key(comparison, profile, settings, prompts),
+        "router": ASK_ROUTER_VERSION,
+        "intent": route["intent"],
+        "output_locale": route["locale"],
         "question": normalized(question),
-        "history": [normalized(item.get("question")) for item in history[-4:]],
+        "history": [
+            {
+                "question": normalized(item.get("question")),
+                "answer": normalized(item.get("answer")),
+                "citations": [
+                    (
+                        normalized(citation.get("version_id")),
+                        normalized(citation.get("passage_id")),
+                        normalized(citation.get("quote")),
+                    )
+                    for citation in item.get("citations", [])[:10]
+                    if isinstance(citation, dict)
+                ],
+            }
+            for item in history[-4:]
+        ],
         "ask_context_mode": prompts.ask_context_mode,
+        "impact_report": (
+            hashlib.sha256(json.dumps(report_result, sort_keys=True).encode()).hexdigest()
+            if report_result
+            else None
+        ),
     }
     return hashlib.sha256(json.dumps(context, sort_keys=True).encode()).hexdigest()
 
@@ -1091,18 +1118,33 @@ def build_ask_plan(
     prompts: PromptSettings,
     profile: Profile | None = None,
     history: list[dict] | None = None,
+    impact_report: dict | None = None,
 ) -> dict:
-    """Persist a bounded preflight plan for Ask; HL-062 will expand its intent router."""
+    """Persist intent and a bounded context plan before any model request."""
 
-    change_question = is_change_question(question)
-    if not change_question and needs_question_clarification(question):
-        intent, context_mode, evidence, batches = "vague", "clarification", [], []
+    route = classify_question_intent(question)
+    intent = route["intent"]
+    report_answer = answer_from_impact_report(intent, route["locale"], impact_report)
+    report_citations = (report_answer or {}).get("citations", [])
+    report_change_ids = (report_answer or {}).get("selected_change_ids", [])
+    if intent in {"vague", "off_topic"}:
+        context_mode, evidence, batches = (
+            "clarification" if intent == "vague" else "off_topic",
+            [],
+            [],
+        )
         coverage = {"limited": False, "scope": "No document inference required."}
-    elif change_question and not comparison.diff.get("changed"):
-        intent, context_mode, evidence, batches = "explain_changes", "deterministic_diff", [], []
+    elif report_answer:
+        context_mode, evidence, batches = "impact_report", [], []
+        coverage = {
+            "limited": False,
+            "scope": "Reused the current validated impact report; no model call was required.",
+        }
+    elif intent == "explain_changes" and not comparison.diff.get("changed"):
+        context_mode, evidence, batches = "deterministic_diff", [], []
         coverage = {"limited": False, "scope": "No text change; deterministic answer."}
-    elif prompts.ask_context_mode == "automatic" and not change_question:
-        intent, context_mode = "whole_document", "targeted_passages"
+    elif intent in {"specific_unit", "whole_document"} and prompts.ask_context_mode == "automatic":
+        context_mode = "targeted_passages"
         request_fields = {
             "question": question,
             "previous_questions": (history or [])[-4:],
@@ -1120,10 +1162,11 @@ def build_ask_plan(
             system_prompt=_ask_system_prompt(prompts, _version_context_rule()),
             request_fields=request_fields,
             reserved_output_tokens=settings.apertus_max_tokens,
+            force_targeted=intent == "specific_unit",
         )
         batches = batch_version_evidence(evidence, context, settings.apertus_context_chars)
     else:
-        intent, context_mode = "explain_changes", "deterministic_diff"
+        context_mode = "deterministic_diff"
         evidence, _, coverage, batches = planned_diff_evidence(
             old,
             new,
@@ -1138,15 +1181,22 @@ def build_ask_plan(
     else:
         planned_calls = len(batches) + 1
     selected_ids = {row.get("change_id") for row in evidence if row.get("change_id")}
+    selected_ids.update(report_change_ids)
+    selected_evidence_ids = [f"{row.get('version_id')}:{row.get('passage_id')}" for row in evidence]
+    selected_evidence_ids.extend(
+        f"{citation.get('version_id')}:{citation.get('passage_id')}" for citation in report_citations
+    )
     estimated_characters = sum(int(batch.get("estimated_input_characters", 0)) for batch in batches)
     return {
         "schema_version": "analysis-plan-v1",
         "state": "planned",
         "task": "ask",
         "intent": intent,
+        "output_locale": route["locale"],
+        "router": route,
         "comparison_id": comparison.id,
         "selected_change_ids": sorted(selected_ids),
-        "selected_evidence_ids": [f"{row.get('version_id')}:{row.get('passage_id')}" for row in evidence],
+        "selected_evidence_ids": list(dict.fromkeys(selected_evidence_ids)),
         "change_decisions": (
             _change_decisions(comparison, selected_ids) if context_mode == "deterministic_diff" else []
         ),
@@ -1156,13 +1206,18 @@ def build_ask_plan(
                 "question": " ".join(question.split()).casefold(),
                 "profile_revision": profile.revision if profile else None,
                 "history": [
-                    " ".join(str(item.get("question", "")).split()).casefold()
+                    {
+                        "question": " ".join(str(item.get("question", "")).split()).casefold(),
+                        "answer": " ".join(str(item.get("answer", "")).split()).casefold(),
+                    }
                     for item in (history or [])[-4:]
                 ],
+                "impact_report_id": (impact_report or {}).get("id") if report_answer else None,
             },
         ),
         "limits": {
             "provider_call_budget": MAX_ASK_HTTP_REQUESTS,
+            "router_call_budget": 0,
             "configured_context_characters": settings.apertus_context_chars,
             "reserved_output_tokens_per_call": settings.apertus_max_tokens,
         },
@@ -1179,6 +1234,7 @@ def build_ask_plan(
             "batch_count": len(batches),
             "local_first": settings.apertus_provider == "docker",
             "profile_revision": profile.revision if profile else None,
+            "reused_impact_report_id": (impact_report or {}).get("id") if report_answer else None,
         },
         "coverage": {
             "included_passages": len(evidence),
@@ -1545,6 +1601,7 @@ def targeted_version_evidence(
     system_prompt: str = "",
     request_fields: dict | None = None,
     reserved_output_tokens: int = 0,
+    force_targeted: bool = False,
 ):
     """Use all small documents, otherwise retrieve a single bounded set with neighbours."""
 
@@ -1561,7 +1618,7 @@ def targeted_version_evidence(
     reserved_output_characters = max(0, reserved_output_tokens) * 3
     complete_coverage["serialized_request_characters"] = serialized_characters
     complete_coverage["reserved_output_characters"] = reserved_output_characters
-    if serialized_characters + reserved_output_characters + 512 <= max_chars:
+    if not force_targeted and serialized_characters + reserved_output_characters + 512 <= max_chars:
         return all_evidence, context, complete_coverage, "full_saved_versions"
 
     terms = _question_terms(question)
@@ -1575,6 +1632,24 @@ def targeted_version_evidence(
             )
             if score:
                 candidates.append((score, side, version, index))
+    explicit_unit = _SPECIFIC_UNIT.search(question)
+    if explicit_unit:
+        number_match = re.search(r"\d+", explicit_unit.group(0))
+        unit_number = int(number_match.group(0)) if number_match else 0
+        for side, version in versions:
+            exact = [
+                index
+                for index, passage in enumerate(version.passages)
+                if re.match(
+                    rf"\s*(?:art(?:icle|ikel|icolo|itgel)?\.?|§|статт(?:я|і)|стать(?:я|и))\s*{unit_number}\b",
+                    passage["text"],
+                    re.IGNORECASE,
+                )
+            ]
+            if exact:
+                candidates.extend((100, side, version, index) for index in exact)
+            elif 0 < unit_number <= len(version.passages):
+                candidates.append((50, side, version, unit_number - 1))
     candidates.sort(key=lambda item: (-item[0], item[1], item[3]))
     anchors = []
     for side in ("old", "new"):
@@ -2796,12 +2871,143 @@ CHANGE_QUESTION_STEMS = (
     "cosa è cambiato",
     "modifiche",
     "differenze",
+    "midad",
 )
 
 
 def is_change_question(question: str) -> bool:
     value = question.casefold()
     return bool(CHANGE_QUESTION.search(value)) or any(stem in value for stem in CHANGE_QUESTION_STEMS)
+
+
+def question_locale(question: str) -> str:
+    value = question.casefold()
+    if re.search(r"[іїєґ]", value):
+        return "uk"
+    if re.search(r"[а-яё]", value):
+        return "ru"
+    if any(marker in value for marker in ("jau ", "vus ", "betg ", "tge ", "midad")):
+        return "rm"
+    if re.search(r"[äöüß]", value) or any(
+        marker in value for marker in ("was ", "welche", "betrifft", "erkläre", "gesetz", "artikel")
+    ):
+        return "de"
+    if re.search(r"[àâçéèêëîïôùûüÿœ]", value) or any(
+        marker in value for marker in ("qu'est", "quelle", "explique", "échéance")
+    ):
+        return "fr"
+    if any(marker in value for marker in ("cosa ", "quale", "spiega", "riguarda", "scadenza")):
+        return "it"
+    return "en"
+
+
+_OFF_TOPIC_MARKERS = (
+    "weather",
+    "forecast",
+    "recipe",
+    "football",
+    "stock price",
+    "tell me a joke",
+    "погода",
+    "рецепт",
+    "футбол",
+    "анекдот",
+    "wetter",
+    "rezept",
+    "météo",
+    "recette",
+    "meteo",
+    "ricetta",
+)
+_ACTION_MARKERS = (
+    "what should",
+    "what do we do",
+    "next step",
+    "checklist",
+    "obligation",
+    "deadline",
+    "must we",
+    "review plan",
+    "що робити",
+    "список перевір",
+    "обов’яз",
+    "обов'яз",
+    "строк",
+    "что делать",
+    "обязанност",
+    "срок",
+    "nächste schritt",
+    "prüfliste",
+    "pflicht",
+    "frist",
+    "prochaine étape",
+    "liste de vérification",
+    "obligation",
+    "échéance",
+    "prossimo passo",
+    "lista di controllo",
+    "obblig",
+    "scaden",
+    "glista da controlla",
+    "obligaziun",
+    "termin",
+)
+_APPLICABILITY_MARKERS = (
+    "affect us",
+    "affect our",
+    "our organization",
+    "our company",
+    "applicab",
+    "business impact",
+    "впливає на нас",
+    "нашу організа",
+    "нашу компан",
+    "влияет на нас",
+    "нашу организа",
+    "betrifft uns",
+    "unsere organisation",
+    "concerne notre",
+    "notre organisation",
+    "riguarda la nostra",
+    "nostra organizzazione",
+    "nossa organisaziun",
+)
+_SPECIFIC_UNIT = re.compile(
+    r"(?:\b(?:art(?:icle|ikel|icolo|itgel)?\.?|section|§|paragraph|paragraphe|absatz|alin[eé]a|capoverso|статт(?:я|і|ю)|стать(?:я|и|ю))\s*\d+[a-z]?\b)",
+    re.IGNORECASE,
+)
+
+
+def classify_question_intent(question: str) -> dict:
+    """Classify the question without receiving or inspecting document content."""
+
+    value = normalize(question).casefold()
+    locale = question_locale(value)
+    if not re.search(r"[^\W\d_]", value, re.UNICODE) or any(
+        marker in value for marker in _CLARIFICATION_MARKERS
+    ):
+        intent = "vague"
+    elif any(marker in value for marker in _OFF_TOPIC_MARKERS):
+        intent = "off_topic"
+    elif _SPECIFIC_UNIT.search(value):
+        intent = "specific_unit"
+    elif any(marker in value for marker in _APPLICABILITY_MARKERS):
+        intent = "organization_impact"
+    elif any(marker in value for marker in _ACTION_MARKERS):
+        intent = "actions"
+    elif is_change_question(value):
+        intent = "explain_changes"
+    elif len(_question_terms(value)) <= 1 and len(value) < 18:
+        intent = "vague"
+    else:
+        intent = "whole_document"
+    return {
+        "schema_version": ASK_ROUTER_VERSION,
+        "intent": intent,
+        "locale": locale,
+        "document_characters_seen": 0,
+        "provider_calls": 0,
+    }
 
 
 _CLARIFICATION_MARKERS = (
@@ -2904,6 +3110,83 @@ def clarification_answer(question: str) -> tuple[str, list[str]]:
     )
 
 
+def off_topic_answer(question: str) -> tuple[str, list[str]]:
+    locale = question_locale(question)
+    messages = {
+        "uk": "Я можу відповідати лише про вибраний документ, його версії, зміни, можливий вплив і наступні кроки перевірки.",
+        "ru": "Я могу отвечать только о выбранном документе, его версиях, изменениях, возможном влиянии и следующих шагах проверки.",
+        "de": "Ich kann nur Fragen zum ausgewählten Dokument, seinen Versionen, Änderungen, möglichen Auswirkungen und Prüfschritten beantworten.",
+        "fr": "Je peux répondre uniquement sur le document sélectionné, ses versions, ses changements, leur impact possible et les étapes de vérification.",
+        "it": "Posso rispondere solo sul documento selezionato, le sue versioni, le modifiche, il possibile impatto e i passi di verifica.",
+        "rm": "Jau poss respunder mo davart il document tschernì, sias versiuns, las midadas, l'effect pussaivel e pass da controlla.",
+        "en": "I can answer only about the selected document, its versions, changes, possible impact, and review steps.",
+    }
+    return messages[locale], clarification_answer(question)[1]
+
+
+def _distinct_report_citations(values: list[dict], limit: int = 10) -> list[dict]:
+    result, seen = [], set()
+    for citation in values:
+        if not isinstance(citation, dict):
+            continue
+        key = (citation.get("version_id"), citation.get("passage_id"), citation.get("quote"))
+        if key in seen:
+            continue
+        result.append(citation)
+        seen.add(key)
+        if len(result) == limit:
+            break
+    return result
+
+
+def answer_from_impact_report(intent: str, locale: str, impact_report: dict | None) -> dict | None:
+    """Reuse a current validated report when its language matches the question."""
+
+    wrapper = impact_report or {}
+    report = wrapper.get("result") or {}
+    if (
+        intent not in {"explain_changes", "organization_impact", "actions"}
+        or report.get("schema_version") != IMPACT_REPORT_SCHEMA_VERSION
+        or report.get("output_locale") != locale
+    ):
+        return None
+    changes = report.get("material_changes", [])
+    if intent == "explain_changes":
+        details = [normalize(str(item.get("explanation", ""))) for item in changes[:4]]
+        answer = " ".join([report.get("headline", ""), *details]).strip()
+        citations = [citation for item in changes[:4] for citation in item.get("citations", [])]
+    elif intent == "organization_impact":
+        applicability = report.get("organization_applicability", {})
+        areas = ", ".join(report.get("business_areas", []))
+        answer = normalize(str(applicability.get("explanation", "")))
+        if areas:
+            answer += f" Affected areas to review: {areas}."
+        citations = applicability.get("citations", [])
+    else:
+        actions = report.get("actions", [])
+        if actions:
+            answer = "Review suggestions: " + " ".join(
+                f"{index}. {item.get('title')}: {item.get('rationale')}"
+                for index, item in enumerate(actions, 1)
+            )
+            citations = [citation for item in actions for citation in item.get("citations", [])]
+        else:
+            answer = (
+                "The validated report did not establish a concrete review action. Confirm organization "
+                "applicability or ask about a specific article before changing a process."
+            )
+            citations = report.get("citations", [])
+    if not answer:
+        return None
+    return {
+        "supported": True,
+        "answer": answer[:6000],
+        "citations": _distinct_report_citations(citations),
+        "reused_impact_report_id": wrapper.get("id"),
+        "selected_change_ids": [item.get("change_id") for item in changes if item.get("change_id")],
+    }
+
+
 def no_change_answer(question: str) -> str:
     value = question.casefold()
     if any(stem in value for stem in ("змін", "відмінност", "додал", "видал")):
@@ -2990,44 +3273,100 @@ async def answer_question(
     question: str,
     history: list[dict],
     prompts: PromptSettings | None = None,
+    impact_report: dict | None = None,
 ):
     prompts = prompts or default_prompt_settings()
     request_budget = InferenceBudget(MAX_ASK_HTTP_REQUESTS)
-    change_question = is_change_question(question)
-    if not change_question and needs_question_clarification(question):
-        answer, suggestions = clarification_answer(question)
+    route = classify_question_intent(question)
+    intent, output_locale = route["intent"], route["locale"]
+    complete_diff_intent = intent in {"explain_changes", "organization_impact", "actions"}
+
+    def routed(payload: dict, coverage: dict, context_mode: str, **extra) -> dict:
+        selected_evidence_ids = [
+            f"{citation.get('version_id')}:{citation.get('passage_id')}"
+            for citation in payload.get("citations", [])
+            if isinstance(citation, dict)
+        ]
         return {
+            **payload,
+            "coverage": coverage,
+            "model": settings.apertus_model,
+            "context_mode": context_mode,
+            "intent": intent,
+            "scope": coverage.get("scope", context_mode),
+            "selected_change_ids": extra.get("selected_change_ids", []),
+            "selected_evidence_ids": list(dict.fromkeys(selected_evidence_ids)),
+            "output_locale": output_locale,
+            "reused_impact_report_id": extra.get("reused_impact_report_id"),
+        }
+
+    if intent == "vague":
+        answer, suggestions = clarification_answer(question)
+        coverage = {
+            "included_passages": 0,
+            "available_passages": 0,
+            "included_characters": 0,
+            "limited": False,
+            "complete": True,
+            "provider_calls": 0,
+            "scope": "No model call was needed. Choose a clearer analysis intent first.",
+        }
+        return routed({
             "supported": True,
             "answer": answer,
             "suggestions": suggestions,
             "citations": [],
-            "coverage": {
-                "included_passages": 0,
-                "available_passages": 0,
-                "included_characters": 0,
-                "limited": False,
-                "complete": True,
-                "provider_calls": 0,
-                "scope": "No model call was needed. Choose a clearer analysis intent first.",
-            },
-            "model": settings.apertus_model,
-            "context_mode": "clarification",
+        }, coverage, "clarification")
+    if intent == "off_topic":
+        answer, suggestions = off_topic_answer(question)
+        coverage = {
+            "included_passages": 0,
+            "available_passages": 0,
+            "included_characters": 0,
+            "limited": False,
+            "complete": True,
+            "provider_calls": 0,
+            "scope": "The question is outside this document-review workspace; no model call was made.",
         }
-    if change_question and not comparison.diff["changed"]:
+        return routed({
+            "supported": False,
+            "answer": answer,
+            "suggestions": suggestions,
+            "citations": [],
+        }, coverage, "off_topic")
+    if intent == "explain_changes" and not comparison.diff["changed"]:
         evidence, deterministic_context, coverage = diff_evidence(
             old, new, comparison, settings.apertus_context_chars
         )
         coverage["provider_calls"] = 0
-        return {
+        return routed({
             "supported": True,
             "answer": no_change_answer(question),
             "citations": [],
-            "coverage": coverage,
-            "model": settings.apertus_model,
-            "context_mode": "deterministic_diff",
-        }
+        }, coverage, "deterministic_diff")
 
-    use_version_context = prompts.ask_context_mode == "automatic" and not change_question
+    report_answer = answer_from_impact_report(intent, output_locale, impact_report)
+    if report_answer:
+        coverage = {
+            "included_passages": len(report_answer["citations"]),
+            "available_passages": len(report_answer["citations"]),
+            "included_characters": sum(len(item.get("quote", "")) for item in report_answer["citations"]),
+            "limited": False,
+            "complete": True,
+            "provider_calls": 0,
+            "scope": "Reused the current validated impact report; no model call was made.",
+        }
+        return routed(
+            report_answer,
+            coverage,
+            "impact_report",
+            selected_change_ids=report_answer.get("selected_change_ids", []),
+            reused_impact_report_id=report_answer.get("reused_impact_report_id"),
+        )
+
+    use_version_context = (
+        prompts.ask_context_mode == "automatic" and intent in {"specific_unit", "whole_document"}
+    )
     if use_version_context:
         version_context_rule = _version_context_rule()
         version_system = _ask_system_prompt(prompts, version_context_rule)
@@ -3044,6 +3383,7 @@ async def answer_question(
                 "comparison_mode": comparison.mode,
             },
             reserved_output_tokens=settings.apertus_max_tokens,
+            force_targeted=intent == "specific_unit",
         )
         batches = batch_version_evidence(evidence, deterministic_context, settings.apertus_context_chars)
         coverage = batching_coverage(
@@ -3069,14 +3409,17 @@ async def answer_question(
             "changes. Formatting and renumbering noise is not model evidence. Use only the dossier. For a "
             "question about what changed, answer from it and never claim that the saved comparison is missing."
         )
+    selected_change_ids = sorted(
+        {row.get("change_id") for row in evidence if row.get("change_id")}
+    )
 
     if not evidence:
         coverage["provider_calls"] = 0
-        return {
-            "supported": change_question,
+        return routed({
+            "supported": complete_diff_intent,
             "answer": (
                 "The complete saved comparison contains only formatting or renumbering differences; no substantive wording change was detected."
-                if change_question
+                if complete_diff_intent
                 else (
                     no_matching_passage_answer(question)
                     if context_mode == "targeted_passages"
@@ -3086,16 +3429,13 @@ async def answer_question(
             "citations": [],
             "suggestions": (
                 []
-                if change_question
+                if complete_diff_intent
                 else [
                     "Mention a topic, article number, obligation, or deadline",
                     "Explain the material changes simply",
                 ]
             ),
-            "coverage": {**coverage, "provider_calls": 0},
-            "model": settings.apertus_model,
-            "context_mode": context_mode,
-        }
+        }, {**coverage, "provider_calls": 0}, context_mode)
     final_system = (
         version_system
         if use_version_context
@@ -3115,6 +3455,8 @@ async def answer_question(
         "previous_questions": history[-4:],
         "company": {"name": profile.name, "description": profile.description},
         "comparison_mode": comparison.mode,
+        "intent": intent,
+        "output_locale": output_locale,
         "coverage": coverage,
     }
     if len(batches) <= 1 and settings.apertus_provider != "docker":
@@ -3128,12 +3470,12 @@ async def answer_question(
             },
             Answer,
             evidence,
-            require_supported=change_question and coverage.get("complete", False),
+            require_supported=complete_diff_intent and coverage.get("complete", False),
             repair_instructions=prompts.repair_instructions,
             budget=request_budget,
         )
         coverage["provider_calls"] = request_budget.used
-        if change_question and not result["supported"]:
+        if complete_diff_intent and not result["supported"]:
             result = {
                 "supported": True,
                 "answer": deterministic_change_overview(question, deterministic_context, coverage),
@@ -3143,12 +3485,7 @@ async def answer_question(
                     "Show new obligations or deadlines",
                 ],
             }
-        return {
-            **result,
-            "coverage": coverage,
-            "model": settings.apertus_model,
-            "context_mode": context_mode,
-        }
+        return routed(result, coverage, context_mode, selected_change_ids=selected_change_ids)
 
     batch_system = (
         prompts.ask_instructions
@@ -3190,8 +3527,8 @@ async def answer_question(
     batch_answers = await bounded_batch_map(batches, answer_batch, settings.apertus_batch_concurrency)
     supported_answers = [answer for answer in batch_answers if answer["supported"]]
     if not supported_answers:
-        if change_question:
-            return {
+        if complete_diff_intent:
+            return routed({
                 "supported": True,
                 "answer": deterministic_change_overview(question, deterministic_context, coverage),
                 "suggestions": [
@@ -3199,28 +3536,23 @@ async def answer_question(
                     "Show new obligations or deadlines",
                 ],
                 "citations": [],
-                "coverage": {**coverage, "provider_calls": request_budget.used},
-                "model": settings.apertus_model,
-                "context_mode": context_mode,
-            }
-        return {
+            }, {**coverage, "provider_calls": request_budget.used}, context_mode,
+                selected_change_ids=selected_change_ids)
+        return routed({
             "supported": False,
             "answer": unsupported_evidence_answer(question),
             "citations": [],
-            "coverage": coverage,
-            "model": settings.apertus_model,
-            "context_mode": context_mode,
-        }
+        }, coverage, context_mode, selected_change_ids=selected_change_ids)
 
     if settings.apertus_provider == "docker":
         result = local_answer_synthesis(supported_answers)
         coverage["provider_calls"] = request_budget.used
-        return {
-            **result,
-            "coverage": {**coverage, "provider_calls": request_budget.used},
-            "model": settings.apertus_model,
-            "context_mode": context_mode,
-        }
+        return routed(
+            result,
+            {**coverage, "provider_calls": request_budget.used},
+            context_mode,
+            selected_change_ids=selected_change_ids,
+        )
 
     catalog = citation_catalog(supported_answers)
     synthesis_system = (
@@ -3249,7 +3581,7 @@ async def answer_question(
         },
         AnswerSynthesis,
         [],
-        require_supported=change_question and coverage.get("complete", False),
+        require_supported=complete_diff_intent and coverage.get("complete", False),
         validate_citations=False,
         numeric_reference_count=len(catalog),
         repair_instructions=prompts.repair_instructions,
@@ -3266,9 +3598,4 @@ async def answer_question(
         ),
     }
     coverage["provider_calls"] = request_budget.used
-    return {
-        **result,
-        "coverage": coverage,
-        "model": settings.apertus_model,
-        "context_mode": context_mode,
-    }
+    return routed(result, coverage, context_mode, selected_change_ids=selected_change_ids)
