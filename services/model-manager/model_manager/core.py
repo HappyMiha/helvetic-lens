@@ -544,18 +544,45 @@ class ModelManager:
             model_id = self.runner_model_id
             runner["state"] = "error"
             runner["error"] = f"llama.cpp exited unexpectedly with code {return_code}."
-            remaining = self.inference_targets()
             if model_id and return_code is not None:
-                error = runner["error"]
-                state = "degraded" if remaining else "error"
-                self._model_state(model_id).update(state=state, error=error)
-                if self.state.get("deployment", {}).get("model_id") == model_id:
-                    self.state["deployment"].update(
-                        state=state,
-                        error=error,
-                        available_slots=len(remaining),
-                    )
-                self._save_state()
+                self._sync_deployment_state(model_id)
+
+    def _sync_deployment_state(self, model_id: str) -> str:
+        """Persist one aggregate state for every planned runner. Caller holds self.lock."""
+
+        ready = self.inference_targets()
+        planned = len(self.runners)
+        starting = any(
+            runner.get("state") == "starting" and runner["process"].poll() is None
+            for runner in self.runners
+        )
+        failed = [runner for runner in self.runners if runner.get("state") == "error"]
+        if planned and len(ready) == planned:
+            state = "ready"
+        elif ready and failed:
+            state = "degraded"
+        elif starting:
+            state = "starting"
+        else:
+            state = "error"
+        error = failed[-1].get("error") if failed else None
+        self._model_state(model_id).update(state=state, error=error)
+        deployment = self.state.get("deployment") or {}
+        if deployment.get("model_id") == model_id:
+            update = {
+                "state": state,
+                "error": error,
+                "available_slots": len(ready),
+                "runners": [
+                    {k: item.get(k) for k in ("slot", "port", "device", "state", "error")}
+                    for item in self.runners
+                ],
+            }
+            if state in {"ready", "degraded"} and not deployment.get("ready_at"):
+                update["ready_at"] = now_iso()
+            deployment.update(update)
+        self._save_state()
+        return state
 
     def _runner_specs(self, profile: dict) -> list[dict]:
         if profile["name"] == "dual-1080-replicated":
@@ -686,31 +713,15 @@ class ModelManager:
                         self._warm_up(runner["port"], served_model_id)
                         with self.lock:
                             runner["state"] = "ready"
-                            targets = self.inference_targets()
-                            self._model_state(model_id)["state"] = "ready"
-                            self.state["deployment"].update(
-                                state="ready",
-                                ready_at=now_iso(),
-                                available_slots=len(targets),
-                                runners=[
-                                    {k: item.get(k) for k in ("slot", "port", "device", "state")}
-                                    for item in self.runners
-                                ],
-                            )
-                            self._save_state()
+                            runner["error"] = None
+                            self._sync_deployment_state(model_id)
                         return
             except (OSError, urllib.error.URLError, TimeoutError) as exc:
                 error = f"Local runtime warm-up failed: {exc}"
                 time.sleep(1)
         with self.lock:
             runner.update(state="error", error=error)
-            state = "degraded" if self.inference_targets() else "error"
-            self._model_state(model_id).update(state=state, error=error)
-            if self.state.get("deployment"):
-                self.state["deployment"].update(
-                    state=state, error=error, available_slots=len(self.inference_targets())
-                )
-            self._save_state()
+            self._sync_deployment_state(model_id)
 
     def stop_model(self, model_id: str) -> dict:
         self._entry(model_id)

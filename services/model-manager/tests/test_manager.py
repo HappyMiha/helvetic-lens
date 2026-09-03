@@ -222,3 +222,71 @@ def test_explicit_profile_rejects_unavailable_hardware(manager_factory):
         manager.select_profile(entry, "dual-1080-replicated")
     with pytest.raises(ModelManagerError, match="Unknown hardware"):
         manager.select_profile(entry, "unsafe-profile")
+
+
+def test_replicated_deployment_is_ready_only_when_every_runner_is_ready(manager_factory):
+    manager, _ = manager_factory()
+
+    class Process:
+        def __init__(self, return_code=None):
+            self.return_code = return_code
+
+        def poll(self):
+            return self.return_code
+
+    first = {"slot": "gpu-0", "port": 8081, "device": 0, "state": "ready", "process": Process()}
+    second = {
+        "slot": "gpu-1",
+        "port": 8082,
+        "device": 1,
+        "state": "starting",
+        "process": Process(),
+    }
+    manager.runner_model_id = "apertus-test"
+    manager.runners = [first, second]
+    manager.state["deployment"] = {"model_id": "apertus-test", "state": "starting"}
+
+    assert manager._sync_deployment_state("apertus-test") == "starting"
+    assert manager.state["deployment"]["available_slots"] == 1
+    assert "ready_at" not in manager.state["deployment"]
+
+    second.update(state="ready", error=None)
+    assert manager._sync_deployment_state("apertus-test") == "ready"
+    assert manager.state["deployment"]["available_slots"] == 2
+    assert manager.state["deployment"]["ready_at"]
+
+
+def test_late_ready_runner_cannot_hide_a_failed_replica(manager_factory):
+    manager, _ = manager_factory()
+
+    class Process:
+        def __init__(self, return_code=None):
+            self.return_code = return_code
+
+        def poll(self):
+            return self.return_code
+
+    failed = {
+        "slot": "gpu-0",
+        "port": 8081,
+        "device": 0,
+        "state": "error",
+        "error": "runner exited",
+        "process": Process(1),
+    }
+    late_ready = {
+        "slot": "gpu-1",
+        "port": 8082,
+        "device": 1,
+        "state": "ready",
+        "error": None,
+        "process": Process(),
+    }
+    manager.runner_model_id = "apertus-test"
+    manager.runners = [failed, late_ready]
+    manager.state["deployment"] = {"model_id": "apertus-test", "state": "starting"}
+
+    assert manager._sync_deployment_state("apertus-test") == "degraded"
+    assert manager.state["deployment"]["available_slots"] == 1
+    assert manager.state["deployment"]["error"] == "runner exited"
+    assert manager.state["models"]["apertus-test"]["state"] == "degraded"

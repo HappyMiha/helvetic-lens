@@ -224,6 +224,7 @@ The Windows agent's default pytest temporary directory had a permission conflict
 - Deterministic regressions cover valid replicated, valid split, valid GTX 1070 development, repeated-slot, wrong-profile, wrong-GPU, and failed-call cases. Physical dual-GTX-1080 execution remains required to close HL-032.
 - A fresh live v2 control run on the attached GTX 1070 passed all seven gate checks: 20/20 representative and 2/2 serialized concurrent calls, 20/20 schema and citation validation, no timeout or OOM, 984 ms median latency, 62.38 tokens/second median throughput, and a 3,078-token maximum tested prompt. Its explicit `dev-1070` requirement prevents the report from being used as dual-GPU promotion evidence.
 - Profile-selection regressions prove that a manually requested replica cannot bypass per-card headroom, split mode cannot exceed combined VRAM, and undersized one- or two-GPU hosts fall back to the CPU diagnostic profile. The chosen deployment now retains the exact model, reserved-headroom, required-layout, and visible-VRAM byte counts for target-host diagnosis.
+- Replicated-state regressions prove that a partially warmed two-runner deployment stays `starting`, becomes `ready` only at two available slots, and remains `degraded` when a late-ready runner coexists with a failed replica. This closes the race that could previously overwrite degraded state with a false aggregate `ready`.
 
 ## Public single-server boundary — 3 September 2026
 
