@@ -72,6 +72,7 @@ from .prompt_settings import (
     public_prompt_settings,
     resolved_prompt_settings,
 )
+from .registry import RegistryFilters, RegistryReader
 from .regulatory_corpus import RegulatoryCorpus
 
 logger = logging.getLogger(__name__)
@@ -911,6 +912,18 @@ class HelveticLens:
                 )
             return result
 
+    def registry(self, filters: RegistryFilters) -> dict:
+        with self.db.session() as session:
+            return RegistryReader(self.organization_id).page(session, filters)
+
+    def mark_registry_event_read(self, event_id: str, read: bool) -> dict:
+        with self.write_guard, self.db.session() as session:
+            return RegistryReader(self.organization_id).mark_read(session, event_id, read)
+
+    def regulatory_timeline(self, law_id: str) -> dict:
+        with self.db.session() as session:
+            return RegistryReader(self.organization_id).timeline(session, law_id)
+
     def regulatory_work_detail(self, work_id: str) -> dict:
         with self.db.session() as session:
             work = get(session, RegulatoryWork, work_id)
@@ -1176,6 +1189,7 @@ class HelveticLens:
                 raise DomainError("The requested record was not found.", 404, "not_found")
             return {
                 **self.law_summary(session, law, watch),
+                "regulatory_timeline": RegistryReader(self.organization_id).timeline(session, law_id),
                 "versions": [
                     version_summary(v)
                     for v in session.scalars(

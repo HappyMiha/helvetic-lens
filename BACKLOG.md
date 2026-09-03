@@ -4,7 +4,7 @@
 
 This backlog implements the product described in [README.md](README.md): a local-AI-first Swiss regulatory monitor with immutable evidence, a time-based legal registry, official-source connectors, cross-document impact analysis, and organization workspaces.
 
-**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-036`), document-identity gate (`HL-058`), and legal-unit semantic diff (`HL-059`) are implemented and verified through the API, browser build, migrations, and regression tests. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
+**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-037`), document-identity gate (`HL-058`), and legal-unit semantic diff (`HL-059`) are implemented and verified through the API, browser build, migrations, and regression tests. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
 
 ## Scope and priorities
 
@@ -75,7 +75,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-034](#hl-034) | P0       | DONE     | HL-033                                                 | Registration, login, sessions, and onboarding                       |
 | [HL-035](#hl-035) | P0       | DONE     | HL-034                                                 | Organization membership and enforced admin/viewer access            |
 | [HL-036](#hl-036) | P0       | DONE     | HL-005, HL-011, HL-033                                 | Normalized regulatory documents, dates, and events                  |
-| [HL-037](#hl-037) | P1       | PLANNED  | HL-035, HL-036                                         | Time-grouped monitoring registry and document timeline              |
+| [HL-037](#hl-037) | P1       | DONE     | HL-035, HL-036                                         | Time-grouped monitoring registry and document timeline              |
 | [HL-038](#hl-038) | P0       | PLANNED  | HL-030, HL-036                                         | Versioned incremental connector contract                            |
 | [HL-039](#hl-039) | P1       | PLANNED  | HL-038, existing ELI resolver                          | Fedlex federal-law catalogue connector                              |
 | [HL-040](#hl-040) | P1       | PLANNED  | HL-038                                                 | Swiss Parliament initiatives and bills connector                    |
@@ -689,6 +689,8 @@ Acceptance criteria:
 ### HL-037 — Build the time-grouped monitoring registry and document timeline
 
 Make recent Swiss legal activity understandable before a user opens a comparison.
+
+**Status: DONE.** The Registry page now reads the saved organization corpus in two views, preserves server-side filters and cursor state in the URL, groups detection timestamps using Europe/Zurich calendar boundaries, and keeps official legal dates visibly separate. Law detail includes one saved-data timeline for identifiers, expressions, versions, events, comparisons, relations, monitoring state, and provenance. See [the registry contract](docs/REGISTRY.md).
 
 Acceptance criteria:
 

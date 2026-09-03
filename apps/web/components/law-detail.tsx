@@ -602,6 +602,82 @@ export function LawDetail({ id }: { id: string }) {
                 </div>
               </details>
             </section>
+            <section className="panel mt-6">
+              <div className="panel-header">
+                <div>
+                  <span className="eyebrow">LEGAL RECORD</span>
+                  <h2>Document timeline</h2>
+                </div>
+                <div className="flex gap-2">
+                  <Status value={law.regulatory_timeline.work.lifecycle} />
+                  <Status value={law.regulatory_timeline.monitoring.active ? "active" : "paused"} />
+                </div>
+              </div>
+              <div className="p-5 grid lg:grid-cols-3 gap-4 border-b">
+                <div>
+                  <span className="eyebrow">AUTHORITY & KIND</span>
+                  <strong className="block mt-2">{law.regulatory_timeline.work.authority}</strong>
+                  <span className="muted text-sm">{label(law.regulatory_timeline.work.kind)}</span>
+                </div>
+                <div>
+                  <span className="eyebrow">IDENTIFIERS</span>
+                  <div className="mt-2 text-sm">
+                    {law.regulatory_timeline.identifiers.length
+                      ? law.regulatory_timeline.identifiers.map((item) => (
+                          <div key={item.scheme + item.value}>
+                            <span className="muted">{label(item.scheme)}:</span> {item.value}
+                          </div>
+                        ))
+                      : <span className="muted">No official identifier confirmed yet.</span>}
+                  </div>
+                </div>
+                <div>
+                  <span className="eyebrow">AVAILABLE EXPRESSIONS</span>
+                  <div className="mt-2 text-sm">
+                    {law.regulatory_timeline.expressions.map((item) => (
+                      <span className="status-badge status-neutral mr-1" key={item.id}>{item.language}</span>
+                    ))}
+                    <div className="muted mt-2">{law.regulatory_timeline.normalized_versions} immutable version descriptor(s)</div>
+                  </div>
+                </div>
+              </div>
+              {law.regulatory_timeline.relations.length > 0 && (
+                <div className="p-5 border-b">
+                  <span className="eyebrow">INCOMING & OUTGOING RELATIONS</span>
+                  <div className="comparison-list mt-3">
+                    {law.regulatory_timeline.relations.map((relation) => (
+                      <div className="flex items-center justify-between gap-3" key={relation.id}>
+                        <span>{relation.direction} · {label(relation.type)} · work {relation.other_work_id.slice(0, 8)}</span>
+                        <span className="flex gap-2"><Status value={relation.state} /><span className="muted text-xs">{label(relation.provenance)}</span></span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="eyebrow">SAVED EVENTS, VERSIONS & COMPARISONS</span>
+                  <Link href="/registry" className="text-link text-sm">Open registry <ArrowRight size={13} /></Link>
+                </div>
+                <div className="space-y-3">
+                  {law.regulatory_timeline.timeline.map((item) => (
+                    <div className="flex items-start gap-3 border-l-2 pl-4 py-1" key={item.id}>
+                      <History size={16} className="mt-1 muted shrink-0" />
+                      <div className="flex-1">
+                        <strong>{item.label}</strong>
+                        <div className="text-sm muted">{dateTime(item.at)} · {label(item.detail)}</div>
+                      </div>
+                      {item.url && item.url.startsWith("/") && (
+                        <Button asChild size="sm" variant="ghost"><Link href={item.url}>Inspect <ArrowUpRight size={13} /></Link></Button>
+                      )}
+                      {item.url && !item.url.startsWith("/") && (
+                        <Button asChild size="sm" variant="ghost"><a href={item.url} target="_blank" rel="noreferrer">Source <ArrowUpRight size={13} /></a></Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
             <AIHistory lawId={id} />
             {law.comparisons.length > 0 && (
               <section className="panel mt-6">

@@ -13,6 +13,7 @@ import {
   FileText,
   Globe2,
   History,
+  Landmark,
   Loader2,
   PackageOpen,
   ScrollText,
@@ -92,6 +93,13 @@ export function Shell({
           >
             <Activity size={17} />
             Overview
+          </Link>
+          <Link
+            className={"nav-item " + (pathname === "/registry" ? "active" : "")}
+            href="/registry"
+          >
+            <Landmark size={17} />
+            Registry
           </Link>
           {session?.authenticated && (
             <Link

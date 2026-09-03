@@ -212,6 +212,40 @@ export type Law = {
   analysis: Analysis | null;
 };
 export type LawDetail = Law & {
+  regulatory_timeline: {
+    monitoring: {
+      active: boolean;
+      last_checked: string | null;
+      last_result: string;
+    };
+    work: {
+      id: string | null;
+      kind: string;
+      authority: string;
+      lifecycle: string;
+      stable_official_url: string | null;
+    };
+    identifiers: { scheme: string; value: string; source_url: string | null }[];
+    expressions: { id: string; language: string; title: string; url: string | null }[];
+    normalized_versions: number;
+    relations: {
+      id: string;
+      direction: "incoming" | "outgoing";
+      type: string;
+      state: string;
+      other_work_id: string;
+      provenance: string;
+    }[];
+    source_provenance: { origin: string; source_url: string | null; observed_at: string }[];
+    timeline: {
+      id: string;
+      type: "event" | "version" | "comparison";
+      at: string;
+      label: string;
+      detail: string;
+      url: string | null;
+    }[];
+  };
   versions: Version[];
   observations: {
     id: string;

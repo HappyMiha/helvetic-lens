@@ -346,6 +346,18 @@ class RegulatoryEvent(Base):
             "'status_changed', 'decided', 'notice_published')",
             name="ck_regulatory_event_type",
         ),
+        CheckConstraint(
+            "connector_health IN ('healthy', 'degraded', 'error', 'unknown')",
+            name="ck_regulatory_event_connector_health",
+        ),
+        CheckConstraint(
+            "analysis_state IN ('pending', 'queued', 'running', 'complete', 'failed', 'not_required')",
+            name="ck_regulatory_event_analysis_state",
+        ),
+        CheckConstraint(
+            "impact IN ('high', 'medium', 'low', 'none', 'unknown')",
+            name="ck_regulatory_event_impact",
+        ),
     )
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     work_id: Mapped[str] = mapped_column(ForeignKey("regulatory_works.id"), index=True)
@@ -357,7 +369,23 @@ class RegulatoryEvent(Base):
     detected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     source_url: Mapped[str | None] = mapped_column(Text)
     provenance_method: Mapped[str] = mapped_column(String(60))
+    connector: Mapped[str] = mapped_column(String(80), index=True, default="unknown")
+    connector_health: Mapped[str] = mapped_column(String(20), index=True, default="unknown")
+    analysis_state: Mapped[str] = mapped_column(String(20), index=True, default="pending")
+    impact: Mapped[str] = mapped_column(String(20), index=True, default="unknown")
     evidence_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class RegulatoryEventState(Base):
+    __tablename__ = "regulatory_event_states"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "event_id", name="uq_regulatory_event_state_org_event"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    event_id: Mapped[str] = mapped_column(ForeignKey("regulatory_events.id"), index=True)
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
@@ -693,6 +721,7 @@ ORGANIZATION_SCOPED_MODELS = (
     PromptRevision,
     OrganizationQuota,
     FeedState,
+    RegulatoryEventState,
     IntegrationLog,
     Analysis,
     AskRecord,

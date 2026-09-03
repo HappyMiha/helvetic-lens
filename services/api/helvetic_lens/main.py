@@ -15,6 +15,7 @@ from .config import DomainError, Settings
 from .model_settings import ApertusSettingsInput
 from .models import DocumentWatch, Law, Profile, Scan, Source, Version
 from .prompt_settings import PromptSettingsInput
+from .registry import RegistryFilters
 from .service import HelveticLens, as_dict, get, version_summary
 
 
@@ -99,6 +100,10 @@ class InvitationAcceptInput(Input):
 
 class MemberRoleInput(Input):
     role: Literal["organization_admin", "viewer"]
+
+
+class RegistryReadInput(Input):
+    read: bool = True
 
 
 class OrganizationSwitchInput(Input):
@@ -457,6 +462,52 @@ def create_app(
     @app.get("/api/corpus/works/{work_id}")
     def regulatory_work_detail(work_id: str):
         return service.regulatory_work_detail(work_id)
+
+    @app.get("/api/registry")
+    def registry(
+        view: Literal["monitored", "events"] = "monitored",
+        q: str = Query(default="", max_length=300),
+        cursor: str = Query(default="", max_length=1000),
+        limit: int = Query(default=30, ge=1, le=100),
+        authority: str = Query(default="", max_length=80),
+        connector: str = Query(default="", max_length=80),
+        kind: str = Query(default="", max_length=40),
+        language: str = Query(default="", max_length=20),
+        lifecycle: str = Query(default="", max_length=60),
+        impact: str = Query(default="", max_length=20),
+        watched: str = Query(default="", max_length=20),
+        read: str = Query(default="", max_length=20),
+        health: str = Query(default="", max_length=20),
+        start: str = Query(default="", max_length=10),
+        end: str = Query(default="", max_length=10),
+    ):
+        return service.registry(
+            RegistryFilters(
+                view=view,
+                query=q,
+                cursor=cursor,
+                limit=limit,
+                authority=authority,
+                connector=connector,
+                kind=kind,
+                language=language,
+                lifecycle=lifecycle,
+                impact=impact,
+                watched=watched,
+                read=read,
+                health=health,
+                start=start,
+                end=end,
+            )
+        )
+
+    @app.patch("/api/registry/events/{event_id}/read")
+    def mark_registry_event_read(event_id: str, data: RegistryReadInput):
+        return service.mark_registry_event_read(event_id, data.read)
+
+    @app.get("/api/laws/{law_id}/timeline")
+    def regulatory_timeline(law_id: str):
+        return service.regulatory_timeline(law_id)
 
     @app.post("/api/laws", status_code=201)
     async def add_law(data: LawInput):

@@ -55,6 +55,9 @@ EVENT_TYPES = {
     "decided",
     "notice_published",
 }
+CONNECTOR_HEALTH_STATES = {"healthy", "degraded", "error", "unknown"}
+ANALYSIS_STATES = {"pending", "queued", "running", "complete", "failed", "not_required"}
+IMPACT_STATES = {"high", "medium", "low", "none", "unknown"}
 RELATION_TYPES = {
     "amends",
     "repeals",
@@ -184,6 +187,10 @@ class EventInput:
     external_key: str | None = None
     expression_id: str | None = None
     document_version_id: str | None = None
+    connector: str | None = None
+    connector_health: str = "healthy"
+    analysis_state: str = "pending"
+    impact: str = "unknown"
 
 
 @dataclass(frozen=True)
@@ -427,6 +434,8 @@ class RegulatoryCorpus:
                 ),
             )
         language = (version.identity_json or {}).get("language") or "und"
+        if language == "unknown":
+            language = "und"
         owner = law.owner_organization_id
         legacy_identity = f"{owner}:{law.canonical_identity}" if owner else law.canonical_identity
         return self.merge_document(
@@ -500,6 +509,12 @@ class RegulatoryCorpus:
             )
         if data.provenance_method not in PROVENANCE_METHODS:
             raise DomainError("Unknown provenance method.", 422, "invalid_provenance_method")
+        if (
+            data.connector_health not in CONNECTOR_HEALTH_STATES
+            or data.analysis_state not in ANALYSIS_STATES
+            or data.impact not in IMPACT_STATES
+        ):
+            raise DomainError("The registry event state is invalid.", 422, "invalid_event_state")
         authority = _clean(data.authority).lower()
         key = (
             f"{data.event_type}:{data.external_key}"
@@ -533,6 +548,10 @@ class RegulatoryCorpus:
             detected_at=data.detected_at,
             source_url=normalize_url(data.source_url),
             provenance_method=data.provenance_method,
+            connector=_clean(data.connector or authority).lower(),
+            connector_health=data.connector_health,
+            analysis_state=data.analysis_state,
+            impact=data.impact,
             evidence_json=dict(data.evidence),
         )
         session.add(record)
