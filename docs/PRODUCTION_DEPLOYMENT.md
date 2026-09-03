@@ -54,11 +54,23 @@ The 1.5B quantized Apertus profile remains the production default until the chec
 
 The `backup` service starts with the production stack, writes one backup immediately, and repeats every `BACKUP_INTERVAL_SECONDS` (daily by default). Each timestamped directory contains a PostgreSQL custom dump, the complete document/evidence volume, the exact deployment environment, the Caddy configuration, metadata, and SHA-256 checksums. A directory is moved into place only after every component succeeds. Completed backup directories expire after `BACKUP_RETENTION_DAYS`; partial directories and a failed run never replace `LATEST_SUCCESS`.
 
+The scheduler and a manual pre-upgrade backup share an exclusive file lock on the backup destination. If they overlap, the later process waits and then creates its own timestamped directory; it cannot race the earlier process's publication or `LATEST_SUCCESS` update. A same-second existing identifier is never reused.
+
 The application can read only a small status marker in a separate named volume. It cannot read the off-host dumps or copied secrets. Confirm the platform administration page shows a recent backup. Run an extra backup before an upgrade:
 
 ```sh
 docker compose --env-file .env.production -f compose.production.yaml run --rm backup once
 cat "$HELVETIC_LENS_BACKUP_DIR/LATEST_SUCCESS"
+```
+
+The lock behavior has a self-contained check using the same pinned backup image:
+
+```sh
+docker run --rm \
+  -v "$PWD/deploy/backup.sh:/operations/backup.sh:ro" \
+  -v "$PWD/deploy/test-backup-concurrency.sh:/operations/test.sh:ro" \
+  postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73 \
+  sh /operations/test.sh
 ```
 
 Copy or replicate `HELVETIC_LENS_BACKUP_DIR` off the server. A second directory on the same physical disk does not protect against disk or host loss.

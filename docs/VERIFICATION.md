@@ -241,6 +241,7 @@ The Windows agent's default pytest temporary directory had a permission conflict
 - The scheduled service runs immediately and daily by default, retains completed timestamped backups for a bounded configurable period, restarts after failure, and supports an explicit one-shot pre-upgrade backup.
 - Restore requires a strict timestamp identifier plus an identical confirmation value, rejects unexpected filesystem roots, verifies all component checksums first, restores PostgreSQL with ownership removed, and replaces the document volume. Host environment/configuration replacement remains a deliberate operator comparison.
 - A live isolated rehearsal created a PostgreSQL `recovery_probe=before-backup` row and `/artifacts/recovery-probe.txt`, backed both up, changed both to `after-backup`, then restored. PostgreSQL and the artifact both returned `before-backup`; the isolated containers, networks, volumes, and host backup directory were removed afterward.
+- The scheduled service and a manual pre-upgrade run now take the same exclusive destination lock. A pinned-image concurrency rehearsal starts two overlapping backups, proves they serialize into two complete checksum-valid timestamp directories, and verifies that `LATEST_SUCCESS` names the later complete backup.
 
 ## Operational retention and Redis recovery — 3 September 2026
 

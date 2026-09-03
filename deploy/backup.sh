@@ -14,12 +14,21 @@ fi
 case "$INTERVAL_SECONDS" in *[!0-9]*|'') echo "Invalid backup interval." >&2; exit 2 ;; esac
 case "$RETENTION_DAYS" in *[!0-9]*|'') echo "Invalid backup retention." >&2; exit 2 ;; esac
 
-run_backup() {
+run_backup() (
+  mkdir -p "$BACKUP_ROOT" "$STATUS_ROOT"
+  exec 9>"$BACKUP_ROOT/.backup.lock"
+  flock 9
+
   stamp=$(date -u +%Y%m%dT%H%M%SZ)
-  partial="$BACKUP_ROOT/.partial-$stamp-$$"
   final="$BACKUP_ROOT/$stamp"
+  while [ -e "$final" ]; do
+    sleep 1
+    stamp=$(date -u +%Y%m%dT%H%M%SZ)
+    final="$BACKUP_ROOT/$stamp"
+  done
+  partial="$BACKUP_ROOT/.partial-$stamp-$$"
   umask 077
-  mkdir -p "$BACKUP_ROOT" "$STATUS_ROOT" "$partial"
+  mkdir "$partial"
   trap 'rm -rf "$partial"' EXIT INT TERM
 
   PGPASSWORD="$POSTGRES_PASSWORD" pg_dump \
@@ -53,7 +62,7 @@ run_backup() {
   find "$BACKUP_ROOT" -mindepth 1 -maxdepth 1 -type d -name '20??????T??????Z' \
     -mtime "+$RETENTION_DAYS" -exec rm -rf '{}' ';'
   echo "Backup $stamp completed."
-}
+)
 
 run_backup
 if [ "${1:-schedule}" = "once" ]; then
