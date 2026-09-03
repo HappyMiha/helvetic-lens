@@ -26,5 +26,6 @@ npm run test:ai-triage:full
 
 The quick mode evaluates 220 passages per side for the rewrite case. Full mode evaluates all 1,401 passages per side and still requires every old and new unit to be present in the complete exact diff. On 3 September 2026, full mode completed locally in 7.6 seconds and produced 1,500 material change records: 1,302 aligned substantive changes plus 99 additions and 99 removals. It produced no moved, renumbered, formatting-only, or uncertain records for that deliberately unrelated rewrite.
 
-This deterministic result is only the first HL-064 gate. Provider-call budgets, cache invalidation, citation rejection, durable last-valid reports, action quality, operational measurements, and moderated two-minute usability remain separate acceptance checks.
+`npm run test:ai-triage:acceptance` exercises the API and analysis boundary. Its 1,401-passage comparison asserts a three-call Ask ceiling and five-call Impact ceiling. It also verifies zero-call clarification in under one second, identical-answer cache reuse, prompt-revision invalidation, exact quotation lookup in persisted passages, rejection of invented citations, preservation of the last valid report after a failed rerun, unique action keys, and a valid zero-action/zero-call formatting-only result.
 
+Operational measurements, human action-specificity review, and moderated two-minute usability remain separate acceptance checks.

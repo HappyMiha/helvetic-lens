@@ -17,6 +17,7 @@
     "test:api": "uv run --project services/api pytest services/api/tests -q",
     "test:ai-triage": "uv run --cache-dir services/api/.uv-cache --project services/api python scripts/check_ai_triage_regression.py",
     "test:ai-triage:full": "uv run --cache-dir services/api/.uv-cache --project services/api python scripts/check_ai_triage_regression.py --full",
+    "test:ai-triage:acceptance": "uv run --cache-dir services/api/.uv-cache --project services/api pytest services/api/tests/test_ai_triage_acceptance.py -q",
     "lint:api": "uv run --project services/api ruff check services/api",
     "demo:source": "python scripts/demo_source.py"
   },

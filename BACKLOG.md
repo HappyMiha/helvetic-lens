@@ -931,7 +931,7 @@ Acceptance criteria:
 
 Prove that the redesigned flow saves review time and cannot regress to thousands of low-value requests.
 
-**Status: IN PROGRESS.** The versioned five-locale corpus and deterministic quick/full gate now cover identity mismatch, line-wrap noise, insertion plus consequent renumbering, moved text, a real deadline change, official replacement metadata, and a complete 1,401-passage-per-side rewrite. The full gate preserves every exact unit without reclassifying rewrite content as formatting or structural noise. Provider budgets/cache/citation/last-valid-result assertions, operational measurements, action-quality review, and moderated two-minute usability remain. See [the regression gate](docs/AI_TRIAGE_REGRESSION.md).
+**Status: IN PROGRESS.** The versioned five-locale corpus and deterministic quick/full gate cover identity mismatch, line-wrap noise, insertion plus consequent renumbering, moved text, a real deadline change, official replacement metadata, and a complete 1,401-passage-per-side rewrite. The API gate enforces three/five-call Ask/Impact budgets, sub-second zero-call clarification, cache reuse and invalidation, exact quotation validation, rejection of invented citations, last-valid-report preservation, unique actions, and valid zero-action results. Operational measurements, human action-specificity review, and moderated two-minute usability remain. See [the regression gate](docs/AI_TRIAGE_REGRESSION.md).
 
 Acceptance criteria:
 
