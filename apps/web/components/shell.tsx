@@ -299,6 +299,7 @@ export function ProfileDialog({
   onOpenChange: (open: boolean) => void;
   health: Health | null;
 }) {
+  const { t, number } = useI18n();
   const { data } = useResource<Profile>(open ? "/profile" : null);
   const [name, setName] = useState(""),
     [description, setDescription] = useState(""),
@@ -338,7 +339,7 @@ export function ProfileDialog({
       });
       refreshWorkspace();
       setSuccess(
-        "Profile saved. Earlier impact analyses are marked stale if the profile changed.",
+        t("profile.saved"),
       );
     } catch (cause) {
       setError(errorText(cause));
@@ -354,7 +355,7 @@ export function ProfileDialog({
       const value = await api<{ latency_ms: number }>("/model/test", {
         method: "POST",
       });
-      setSuccess("Apertus responded in " + value.latency_ms + " ms.");
+      setSuccess(t("profile.testSuccess", { duration: number(value.latency_ms) }));
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -365,15 +366,14 @@ export function ProfileDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Company profile</DialogTitle>
+          <DialogTitle>{t("profile.title")}</DialogTitle>
           <DialogDescription>
-            Give Apertus context for a useful impact assessment. One profile
-            keeps the MVP simple.
+            {t("profile.body")}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={save} className="form-stack">
           <label>
-            Company name
+            {t("profile.name")}
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -382,46 +382,43 @@ export function ProfileDialog({
             />
           </label>
           <label>
-            What does your company do?
+            {t("profile.description")}
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="A Swiss software company processing customer data…"
+              placeholder={t("profile.descriptionPlaceholder")}
               rows={4}
               maxLength={6000}
             />
           </label>
           <label>
-            Business areas
+            {t("profile.areas")}
             <Input
               value={areas}
               onChange={(e) => setAreas(e.target.value)}
-              placeholder="Legal, IT, HR, Operations"
+              placeholder={t("profile.areasPlaceholder")}
             />
           </label>
           <ErrorNote message={error} />
           {success && <SuccessNote>{success}</SuccessNote>}
           <Button type="submit" disabled={!!busy || !name.trim()}>
-            {busy === "save" && <Loader2 className="animate-spin" />}Save
-            profile
+            {busy === "save" && <Loader2 className="animate-spin" />}{t("profile.save")}
           </Button>
         </form>
         <div className="border-t pt-5 mt-2">
           <div className="flex items-center gap-2 font-semibold">
             <Sparkles size={16} />
-            Apertus connection
+            {t("profile.connection")}
           </div>
           <p className="text-xs muted break-all">
             {health?.apertus.model || "swiss-ai/Apertus-v1.5-8B"}
           </p>
           <p className="text-xs muted">
-            Open Settings to edit the endpoint, model, key, and request limits.
-            Saved settings apply immediately; existing keys are never returned
-            to this browser.
+            {t("profile.connectionBody")}
           </p>
           <Button asChild variant="outline" size="sm" className="mr-2 mb-2">
             <Link href="/settings" onClick={() => onOpenChange(false)}>
-              Apertus settings
+              {t("shell.apertusSettings")}
             </Link>
           </Button>
           <Button variant="outline" size="sm" onClick={test} disabled={!!busy}>
@@ -430,7 +427,7 @@ export function ProfileDialog({
             ) : (
               <BookOpen />
             )}
-            Test real connection
+            {t("profile.test")}
           </Button>
         </div>
       </DialogContent>

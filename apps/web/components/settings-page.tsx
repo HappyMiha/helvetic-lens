@@ -476,7 +476,7 @@ function ApertusForm({
                   maxLength={30}
                 />
                 <span className="field-help">
-                  Use the numeric Product ID shown in the Infomaniak Manager.
+                  {t("settings.productIdHelp")}
                 </span>
               </label>
               <label>
@@ -485,11 +485,10 @@ function ApertusForm({
                   value={infomaniakBaseUrl(draft.product_id)}
                   readOnly
                   aria-readonly="true"
-                  placeholder="Generated after entering a Product ID"
+                  placeholder={t("settings.generatedEndpoint")}
                 />
                 <span className="field-help">
-                  Helvetic Lens controls this address and adds /models or
-                  /chat/completions for each request.
+                  {t("settings.infomaniakUrlHelp")}
                 </span>
               </label>
               <label>
@@ -629,7 +628,7 @@ function ApertusForm({
                       )
                     }
                   >
-                    Use Hugging Face
+                    {t("settings.useHuggingFace")}
                   </Button>
                   <Button
                     type="button"
@@ -642,7 +641,7 @@ function ApertusForm({
                       )
                     }
                   >
-                    Use Public AI defaults
+                    {t("settings.usePublicAi")}
                   </Button>
                   <a
                     href="https://platform.publicai.co/docs"
@@ -650,7 +649,7 @@ function ApertusForm({
                     rel="noreferrer"
                     className="text-xs inline-flex items-center gap-1"
                   >
-                    Public AI setup <ArrowUpRight size={12} />
+                     {t("settings.publicAiSetup")} <ArrowUpRight size={12} />
                   </a>
                   <a
                     href="https://huggingface.co/docs/inference-providers/providers/publicai"
@@ -658,12 +657,11 @@ function ApertusForm({
                     rel="noreferrer"
                     className="text-xs inline-flex items-center gap-1"
                   >
-                    Hugging Face setup <ArrowUpRight size={12} />
+                     {t("settings.huggingFaceSetup")} <ArrowUpRight size={12} />
                   </a>
                 </div>
                 <p className="field-help !mb-0">
-                  Presets fill the API address and model only. Credentials and
-                  generation parameters stay unchanged.
+                   {t("settings.presetHelp")}
                 </p>
               </div>
               <label>
@@ -677,8 +675,7 @@ function ApertusForm({
                   maxLength={2000}
                 />
                 <span className="field-help">
-                  Include /v1 if required. Helvetic Lens adds /chat/completions.
-                  Leave empty to disconnect.
+                   {t("settings.customUrlHelp")}
                 </span>
               </label>
               <label>
@@ -690,7 +687,7 @@ function ApertusForm({
                   maxLength={300}
                 />
                 <span className="field-help">
-                  Use the exact, case-sensitive ID served by the endpoint.
+                   {t("settings.modelIdHelp")}
                 </span>
               </label>
             </>
@@ -911,7 +908,7 @@ function ApertusForm({
                   }
                 />
                 <span className="field-help">
-                  Greater than −2 and less than 2. Default 0 adds no penalty.
+                   {t("settings.presenceHelp")}
                 </span>
               </label>
               <label>

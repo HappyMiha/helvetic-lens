@@ -4,12 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Loader2, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { api, dateTime, errorText, label, refreshWorkspace } from "@/lib/api";
+import { api, errorText, label, refreshWorkspace } from "@/lib/api";
+import { translate, useI18n } from "@/lib/i18n";
 import type { Job } from "@/lib/types";
 import { ErrorNote, Status } from "./common";
 import { AdminOnly } from "./auth-gate";
 
 export function DurableJobsPanel({ jobs }: { jobs: Job[] }) {
+  const { t, locale, dateTime, number } = useI18n();
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
 
@@ -30,13 +32,12 @@ export function DurableJobsPanel({ jobs }: { jobs: Job[] }) {
     <section className="panel">
       <div className="panel-header">
         <div>
-          <h2>Durable work queue</h2>
+          <h2>{t("jobs.title")}</h2>
           <p className="text-xs muted m-0 mt-1">
-            Work survives API, worker, and queue restarts. Completed evidence
-            stays available.
+            {t("jobs.body")}
           </p>
         </div>
-        <span className="text-xs muted">{jobs.length} recent jobs</span>
+        <span className="text-xs muted">{t("jobs.recent", { count: number(jobs.length) })}</span>
       </div>
       <ErrorNote message={error} />
       <div className="scan-items">
@@ -48,13 +49,13 @@ export function DurableJobsPanel({ jobs }: { jobs: Job[] }) {
             <div className="scan-item" key={job.id}>
               <div className="flex justify-between gap-4 items-start">
                 <div>
-                  <strong>{label(job.type)}</strong>
+                  <strong>{translate(locale, `status.${job.type}`) || label(job.type)}</strong>
                   <p className="text-xs muted m-0 mt-1">
-                    {dateTime(job.created_at)} · {label(job.queue)}
+                    {dateTime(job.created_at)} · {translate(locale, `status.${job.queue}`) || label(job.queue)}
                     {job.queue_position
-                      ? ` · queue position ${job.queue_position}`
+                      ? ` · ${t("jobs.position", { position: number(job.queue_position) })}`
                       : ""}{" "}
-                    · attempt {job.attempts}/{job.max_attempts}
+                    · {t("jobs.attempt", { attempt: number(job.attempts), total: number(job.max_attempts) })}
                   </p>
                 </div>
                 <Status value={job.state} />
@@ -63,14 +64,14 @@ export function DurableJobsPanel({ jobs }: { jobs: Job[] }) {
                 className="scan-progress mt-3"
                 value={job.progress.current}
                 max={job.progress.total || 1}
-                aria-label="Job progress"
+                aria-label={t("jobs.progress")}
               />
               <details className="text-xs muted mt-2">
-                <summary>Persisted steps</summary>
+                <summary>{t("jobs.steps")}</summary>
                 <ol className="event-list">
                   {job.steps.map((step) => (
                     <li key={step.id}>
-                      {step.name} · {label(step.state)}
+                      {translate(locale, `status.${step.name}`) || label(step.name)} · {translate(locale, `status.${step.state}`) || label(step.state)}
                     </li>
                   ))}
                 </ol>
@@ -80,7 +81,7 @@ export function DurableJobsPanel({ jobs }: { jobs: Job[] }) {
                 {job.result?.url && (
                   <Button asChild variant="outline" size="sm">
                     <Link href={job.result.url}>
-                      Open result <ArrowUpRight />
+                      {t("jobs.openResult")} <ArrowUpRight />
                     </Link>
                   </Button>
                 )}
@@ -96,7 +97,7 @@ export function DurableJobsPanel({ jobs }: { jobs: Job[] }) {
                     ) : (
                       <X />
                     )}
-                    Cancel
+                    {t("jobs.cancel")}
                   </Button>
                 )}</AdminOnly>
                 <AdminOnly>{!active && ["failed", "cancelled"].includes(job.state) && (
@@ -111,7 +112,7 @@ export function DurableJobsPanel({ jobs }: { jobs: Job[] }) {
                     ) : (
                       <RotateCcw />
                     )}
-                    Retry safely
+                    {t("jobs.retry")}
                   </Button>
                 )}</AdminOnly>
               </div>
