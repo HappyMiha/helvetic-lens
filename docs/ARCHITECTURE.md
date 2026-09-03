@@ -148,7 +148,7 @@ The broker is allowed to redeliver. A worker claims the PostgreSQL row with a re
 | `ai_background`  |  measured GPU slots | impact analysis and corpus linking                    | yields to interactive work without starving forever       |
 | `maintenance`    |                   1 | model download/checksum, cleanup, backup checks       | disk- and bandwidth-limited                               |
 
-The initial figures are safe starting points, not capacity claims. The target-server load test sets the shipped defaults. A PostgreSQL-backed admission/dispatch step applies per-organization inflight limits and round-robin fairness before work reaches the GPU queues.
+The initial figures are safe starting points, not capacity claims. The target-server load test sets the shipped defaults. PostgreSQL keeps durable priority jobs, while the private model gateway applies work-conserving cross-organization admission at the measured GPU-slot boundary. An organization waiting behind its own active request yields the next free slot to another waiting organization when one exists; otherwise capacity remains available to the queued work.
 
 Cancellation is cooperative. It stops future batches and preserves completed immutable evidence. A cancelled or failed AI job never changes a valid comparison into a failed comparison.
 

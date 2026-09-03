@@ -32,7 +32,7 @@ class FairAdmission:
     def __init__(self):
         self.condition = asyncio.Condition()
         self.waiting: list[WaitingRequest] = []
-        self.busy: set[str] = set()
+        self.owners: dict[str, str] = {}
         self.sequence = 0
         self.last_served: dict[str, int] = {}
         self.served = 0
@@ -44,6 +44,14 @@ class FairAdmission:
         aged = max(0, base - int((now - item.queued_at) / 15))
         return (aged, self.last_served.get(item.organization, -1), item.sequence)
 
+    def _winner(self, now: float) -> WaitingRequest:
+        active_organizations = set(self.owners.values())
+        unrepresented = [
+            item for item in self.waiting if item.organization not in active_organizations
+        ]
+        candidates = unrepresented or self.waiting
+        return min(candidates, key=lambda value: self._rank(value, now))
+
     async def acquire(self, organization: str, priority: str, timeout: float = 300):
         async with self.condition:
             self.sequence += 1
@@ -52,11 +60,14 @@ class FairAdmission:
             deadline = time.monotonic() + timeout
             while True:
                 targets = manager.inference_targets()
-                available = next((target for target in targets if target["slot"] not in self.busy), None)
-                winner = min(self.waiting, key=lambda value: self._rank(value, time.monotonic()))
+                available = next(
+                    (target for target in targets if target["slot"] not in self.owners),
+                    None,
+                )
+                winner = self._winner(time.monotonic())
                 if available and winner is item:
                     self.waiting.remove(item)
-                    self.busy.add(available["slot"])
+                    self.owners[available["slot"]] = organization
                     return available, (time.monotonic() - item.queued_at) * 1000
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
@@ -69,10 +80,32 @@ class FairAdmission:
 
     async def release(self, target: dict, organization: str):
         async with self.condition:
-            self.busy.discard(target["slot"])
+            owner = self.owners.pop(target["slot"], organization)
             self.served += 1
-            self.last_served[organization] = self.served
+            self.last_served[owner] = self.served
             self.condition.notify_all()
+
+    async def snapshot(self) -> dict:
+        async with self.condition:
+            targets = manager.inference_targets()
+            now = time.monotonic()
+            by_priority = {"interactive": 0, "background": 0}
+            for item in self.waiting:
+                by_priority[item.priority] = by_priority.get(item.priority, 0) + 1
+            oldest_wait_ms = max(
+                ((now - item.queued_at) * 1000 for item in self.waiting),
+                default=0,
+            )
+            return {
+                "slots": len(targets),
+                "busy_slots": len(self.owners),
+                "available_slots": max(0, len(targets) - len(self.owners)),
+                "waiting": len(self.waiting),
+                "waiting_organizations": len({item.organization for item in self.waiting}),
+                "waiting_by_priority": by_priority,
+                "oldest_wait_ms": round(oldest_wait_ms, 1),
+                "served": self.served,
+            }
 
 
 manager = ModelManager(
@@ -102,8 +135,10 @@ def health():
 
 
 @app.get("/v1/inventory")
-def inventory():
-    return manager.inventory()
+async def inventory():
+    payload = manager.inventory()
+    payload["admission"] = await admission.snapshot()
+    return payload
 
 
 @app.post("/v1/hardware/probe")

@@ -34,6 +34,9 @@ def local_docker_base_url() -> str:
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ROOT / ".env", extra="ignore", populate_by_name=True)
     database_url: str = ""
+    database_pool_size: int = Field(default=4, ge=1, le=32)
+    database_max_overflow: int = Field(default=2, ge=0, le=32)
+    database_pool_timeout_seconds: int = Field(default=15, ge=1, le=120)
     app_environment: Literal["development", "production", "test"] = "development"
     allow_anonymous_dev: bool = True
     session_cookie_secure: bool = False
@@ -114,6 +117,8 @@ class Settings(BaseSettings):
                 raise ValueError("Production requires a stable credential key of at least 32 characters.")
             if not self.database_url.startswith("postgresql"):
                 raise ValueError("Production requires PostgreSQL.")
+            if self.database_pool_size + self.database_max_overflow > 16:
+                raise ValueError("Production limits each process to at most 16 database connections.")
             database_parts = urlsplit(self.database_url.replace("postgresql+psycopg", "postgresql", 1))
             database_password = database_parts.password or ""
             if len(database_password) < 24 or database_password == "helvetic_lens":

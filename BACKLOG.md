@@ -87,7 +87,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-046](#hl-046) | P1       | DONE     | HL-037, HL-045, HL-063                                 | Impact inbox and monitored-law cross-links                          |
 | [HL-047](#hl-047) | P1       | DONE     | HL-031, HL-035, HL-042                                 | Platform and organization admin console                             |
 | [HL-048](#hl-048) | P0       | IN PROGRESS | HL-029–HL-035, HL-038                               | Public single-server deployment and operations baseline             |
-| [HL-049](#hl-049) | P0       | PLANNED  | HL-037–HL-048, HL-057–HL-064                           | Reproducible recovery and 100-user capacity gate                    |
+| [HL-049](#hl-049) | P0       | IN PROGRESS | HL-037–HL-048, HL-057–HL-064                        | Reproducible recovery and 100-user capacity gate                    |
 | [HL-057](#hl-057) | P1       | IN PROGRESS | HL-032, HL-034–HL-037, HL-045–HL-047                | Complete German, French, Italian, Romansh, and English localization |
 | [HL-058](#hl-058) | P0       | DONE     | HL-005, HL-036, HL-038                                 | Document-identity gate before comparison or AI                      |
 | [HL-059](#hl-059) | P0       | DONE     | HL-011, HL-036, HL-058                                 | Legal-unit semantic diff with noise classification                  |
@@ -1043,6 +1043,8 @@ Acceptance criteria:
 ### HL-049 — Pass recovery, fairness, and the reproducible 100-user capacity gate
 
 Measure the public claim on the actual target host and tune shipped limits to what it can sustain.
+
+**Status: IN PROGRESS — TARGET-HOST RUN REMAINS.** A checked-in, safely gated seed/cleanup pair now creates 100 accounts across 10 isolated organizations with private synthetic laws, artifact-backed versions, verified identity, deterministic comparisons, and watches. The capacity runner exercises 10–20 concurrent registry/evidence/comparison readers, filters, scans, one official connector, and 20 accepted AI submissions; it records request IDs, p50/p95/max latency, job queue wait/drain, execution duration, retries, connector duration, platform state, Docker/host/GPU/disk samples, and operator-supplied inference and backup/restore evidence. Recovery mode restarts the scheduler, API, Redis, both workers, and model manager one at a time, verifies the named service and API after each restart, and reactivates the previously running model. Bounded database pools and work-conserving cross-organization GPU admission are implemented and exposed without leaking tenant identities. A development smoke run created the full 100-account/10-organization corpus, completed 60 concurrent reads at 388 ms p95 and 22 command enqueues at 333 ms p95 with no unexpected HTTP errors, and verified all six service restarts; all synthetic rows and artifacts were then removed with the checked-in cleanup command. Public-beta completion still requires one isolated production run on the intended i7/32 GB/two-GTX-1080 host, with an active model during recovery, a dual-GPU inference report, connector completion, and measured backup/restore evidence.
 
 Acceptance criteria:
 

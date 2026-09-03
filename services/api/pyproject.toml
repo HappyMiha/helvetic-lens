@@ -21,6 +21,8 @@ dependencies = [
 
 [project.scripts]
 helvetic-lens-admin = "helvetic_lens.admin_cli:main"
+helvetic-lens-capacity-seed = "helvetic_lens.capacity_seed:main"
+helvetic-lens-capacity-cleanup = "helvetic_lens.capacity_cleanup:main"
 
 [dependency-groups]
 dev = ["pytest>=8.3,<10", "pytest-asyncio>=0.25,<2", "ruff>=0.11,<1"]

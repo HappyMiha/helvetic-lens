@@ -98,7 +98,7 @@ Redis is a disposable broker/cache, configured with AOF `everysec` and `noevicti
 4. the 30-second reconciliation returns stale `running`/`dispatched` jobs to a retryable state and the two-second outbox dispatcher resends pending messages;
 5. inspect job IDs and idempotency keys rather than manually submitting duplicate scans or analyses.
 
-Automated tests cover broker-send failure, pending outbox retention, stale-worker lease recovery, idempotent job creation/claim, and cleanup preservation of active work and immutable evidence. Kill/restart this stack on the target host during HL-049 to measure recovery time under load.
+Automated tests cover broker-send failure, pending outbox retention, stale-worker lease recovery, idempotent job creation/claim, and cleanup preservation of active work and immutable evidence. Use the checked-in [recovery and 100-user capacity gate](CAPACITY_GATE.md) to seed the isolated target stack, drive real concurrent work, restart each service, record resource/queue behavior, and evaluate the latency thresholds.
 
 ## Correlation and bounded metrics
 

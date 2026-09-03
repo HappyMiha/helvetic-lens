@@ -2550,6 +2550,13 @@ class HelveticLens:
                     "status": "required",
                     "message": "Run the target-host stability benchmark before public use.",
                 },
+                "admission": inventory.get("admission")
+                or {
+                    "slots": 0,
+                    "busy_slots": 0,
+                    "available_slots": 0,
+                    "waiting": 0,
+                },
             }
         except DomainError as exc:
             model = {"available": False, "state": "unavailable", "error": exc.message}
@@ -2564,7 +2571,13 @@ class HelveticLens:
             },
             "api_metrics": self.api_metrics.snapshot(),
             "dependency_metrics": {
-                "database": {"healthy": True, "query_ms": database_latency_ms},
+                "database": {
+                    "healthy": True,
+                    "query_ms": database_latency_ms,
+                    "pool_size_per_process": self.environment_settings.database_pool_size,
+                    "max_overflow_per_process": self.environment_settings.database_max_overflow,
+                    "pool_timeout_seconds": self.environment_settings.database_pool_timeout_seconds,
+                },
                 "redis": {"healthy": bool(redis_ok), "ping_ms": redis_latency_ms},
             },
             "resources": resources,

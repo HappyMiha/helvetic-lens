@@ -33,6 +33,12 @@ class Database:
             options["connect_args"] = {"check_same_thread": False}
             if ":memory:" in settings.db_url:
                 options["poolclass"] = StaticPool
+        else:
+            options.update(
+                pool_size=settings.database_pool_size,
+                max_overflow=settings.database_max_overflow,
+                pool_timeout=settings.database_pool_timeout_seconds,
+            )
         self.engine = create_engine(settings.db_url, **options)
         if settings.db_url.startswith("sqlite"):
 

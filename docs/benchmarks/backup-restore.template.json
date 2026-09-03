@@ -1,0 +1,9 @@
+{
+  "schema_version": "1",
+  "target_host": "replace-with-target-host",
+  "backup_id": "YYYYMMDDTHHMMSSZ",
+  "backup_seconds": 0,
+  "restore_seconds": 0,
+  "verified": false,
+  "verification": []
+}

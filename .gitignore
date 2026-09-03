@@ -24,6 +24,7 @@ data/
 .firecrawl/
 playwright-report/
 test-results/
+reports/
 .tmp/
 .tmp-tests/
 *.log
