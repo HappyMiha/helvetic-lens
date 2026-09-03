@@ -46,6 +46,8 @@ type InboxLaw = {
   analysis_history_count: number;
   official_relation?: { id: string; type: string; provenance: string };
   organization_review?: { id: string; decision: "confirmed" | "rejected"; note: string; created_at: string };
+  latest_review?: { id: string; decision: "confirmed" | "rejected" | "annotated"; note: string; created_at: string };
+  review_history_count: number;
   replacement?: {
     predecessor: { title: string; timeline: string };
     successor: { title: string; url?: string; monitored: boolean; timeline?: string };
@@ -88,6 +90,16 @@ type AnalysisHistory = {
     result?: { potential_severity?: string; explanation?: string; supported?: boolean };
   }>;
 };
+type ReviewHistoryResponse = {
+  items: Array<{
+    id: string;
+    decision: "confirmed" | "rejected" | "annotated";
+    note: string;
+    created_at: string;
+    actor?: { id: string; name: string };
+  }>;
+  total: number;
+};
 
 function whyText(items: InboxLaw["why"], fallback: string) {
   if (!items.length) return fallback;
@@ -124,6 +136,106 @@ function History({ item }: { item: InboxLaw }) {
               <p className="mb-0 mt-2">{record.result?.explanation || record.error || t("impact.noConclusion")}</p>
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ReviewPanel({ item, onChanged }: { item: InboxLaw; onChanged: () => void }) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState("");
+  const [message, setMessage] = useState("");
+  const [failure, setFailure] = useState("");
+  const history = useResource<ReviewHistoryResponse>(
+    open ? `/relation-candidates/${item.organization_candidate_id}/reviews` : null,
+  );
+
+  async function submit(decision: "confirmed" | "rejected" | "annotated") {
+    if (note.trim().length < 3) return;
+    setBusy(decision);
+    setMessage("");
+    setFailure("");
+    try {
+      await api(`/relation-candidates/${item.organization_candidate_id}/reviews`, {
+        method: "POST",
+        body: JSON.stringify({ decision, note: note.trim() }),
+      });
+      setNote("");
+      setMessage(
+        decision === "confirmed"
+          ? t("impact.reviewSaved.confirmed")
+          : decision === "rejected"
+            ? t("impact.reviewSaved.rejected")
+            : t("impact.reviewSaved.annotated"),
+      );
+      history.reload();
+      onChanged();
+    } catch (cause) {
+      setFailure(errorText(cause));
+    } finally {
+      setBusy("");
+    }
+  }
+
+  return (
+    <div className="mt-4 rounded-md border bg-white p-3">
+      <button
+        className="flex w-full items-center justify-between gap-3 text-left text-sm font-medium"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+      >
+        <span>{t("impact.reviewLead")}</span>
+        <span className="flex items-center gap-2 muted">
+          {t("impact.reviewEntries", { count: item.review_history_count })}
+          <ChevronDown size={14} className={open ? "rotate-180" : ""} />
+        </span>
+      </button>
+      {open && (
+        <div className="mt-3 space-y-3 border-t pt-3">
+          <p className="muted mb-0 text-sm">{t("impact.reviewHelp")}</p>
+          <textarea
+            className="min-h-24 w-full rounded-md border bg-white p-3 text-sm"
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            placeholder={t("impact.reviewReasonPlaceholder")}
+            maxLength={2000}
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" disabled={!!busy || note.trim().length < 3} onClick={() => submit("confirmed")}>
+              {t("impact.confirm")}
+            </Button>
+            <Button size="sm" variant="outline" disabled={!!busy || note.trim().length < 3} onClick={() => submit("rejected")}>
+              {t("impact.reject")}
+            </Button>
+            <Button size="sm" variant="ghost" disabled={!!busy || note.trim().length < 3} onClick={() => submit("annotated")}>
+              {t("impact.addAnnotation")}
+            </Button>
+          </div>
+          <ErrorNote message={failure} />
+          {message && <SuccessNote>{message}</SuccessNote>}
+          {history.loading && <span className="muted text-sm">{t("impact.reviewHistoryLoading")}</span>}
+          <ErrorNote message={history.error} />
+          {history.data?.items.map((review) => (
+            <div className="rounded-md border bg-[#fbfcf8] p-3 text-sm" key={review.id}>
+              <div className="flex flex-wrap justify-between gap-2">
+                <strong>
+                  {review.decision === "confirmed"
+                    ? t("impact.reviewDecision.confirmed")
+                    : review.decision === "rejected"
+                      ? t("impact.reviewDecision.rejected")
+                      : t("impact.reviewDecision.annotated")}
+                </strong>
+                <span className="muted">
+                  {review.actor?.name || t("impact.reviewSystemActor")} · {dateTime(review.created_at)}
+                </span>
+              </div>
+              <p className="mb-0 mt-2 whitespace-pre-wrap">{review.note}</p>
+            </div>
+          ))}
+          {history.data?.total === 0 && <p className="muted mb-0 text-sm">{t("impact.noReviews")}</p>}
         </div>
       )}
     </div>
@@ -216,26 +328,6 @@ function LawImpact({
             <RefreshCw size={14} /> {t("impact.reanalyse")}
           </Button>
         )}
-        {canManage && !item.official_relation && item.organization_review?.decision !== "confirmed" && (
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={!!busy}
-            onClick={() => command(`/relation-candidates/${item.organization_candidate_id}/reviews`, "The review lead was confirmed for this organization.", { decision: "confirmed", note: "Confirmed after organization review." })}
-          >
-            {t("impact.confirm")}
-          </Button>
-        )}
-        {canManage && !item.official_relation && item.organization_review?.decision !== "rejected" && (
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={!!busy}
-            onClick={() => command(`/relation-candidates/${item.organization_candidate_id}/reviews`, "The proposed impact was rejected for this organization.", { decision: "rejected", note: "Rejected after organization review." })}
-          >
-            {t("impact.reject")}
-          </Button>
-        )}
         {canManage && item.replacement && !item.replacement.successor.monitored && (
           <Button
             size="sm"
@@ -248,6 +340,7 @@ function LawImpact({
       </div>
       <ErrorNote message={failure || item.latest_attempt_error || ""} />
       {message && <SuccessNote>{message}</SuccessNote>}
+      {canManage && !item.official_relation && <ReviewPanel item={item} onChanged={onChanged} />}
       <History item={item} />
     </section>
   );

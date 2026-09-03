@@ -1221,8 +1221,19 @@ class HelveticLens:
         note: str,
         actor_user_id: str | None,
     ) -> dict:
-        if decision not in {"confirmed", "rejected"}:
-            raise DomainError("Choose confirmed or rejected.", 422, "invalid_relation_review")
+        if decision not in {"confirmed", "rejected", "annotated"}:
+            raise DomainError(
+                "Choose confirmed, rejected, or annotated.",
+                422,
+                "invalid_relation_review",
+            )
+        note = note.strip()
+        if len(note) < 3:
+            raise DomainError(
+                "Add a short review reason or annotation.",
+                422,
+                "relation_review_note_required",
+            )
         with self.write_guard, self.db.session() as session:
             delivery = get(session, OrganizationRelationCandidate, organization_candidate_id)
             candidate = get(session, RelationCandidate, delivery.candidate_id)
@@ -1246,6 +1257,44 @@ class HelveticLens:
             session.add(review)
             session.commit()
             return as_dict(review)
+
+    def relation_review_history(self, organization_candidate_id: str) -> dict:
+        with self.db.session() as session:
+            delivery = get(session, OrganizationRelationCandidate, organization_candidate_id)
+            reviews = list(
+                session.scalars(
+                    select(OrganizationRelationReview)
+                    .where(
+                        OrganizationRelationReview.organization_candidate_id == delivery.id
+                    )
+                    .order_by(
+                        OrganizationRelationReview.created_at.desc(),
+                        OrganizationRelationReview.id.desc(),
+                    )
+                )
+            )
+            actors = {
+                review.actor_user_id: session.get(User, review.actor_user_id)
+                for review in reviews
+                if review.actor_user_id
+            }
+            return {
+                "items": [
+                    {
+                        **as_dict(review),
+                        "actor": (
+                            {
+                                "id": actor.id,
+                                "name": actor.name,
+                            }
+                            if (actor := actors.get(review.actor_user_id))
+                            else None
+                        ),
+                    }
+                    for review in reviews
+                ],
+                "total": len(reviews),
+            }
 
     async def monitor_relation_successor(self, organization_candidate_id: str) -> dict:
         with self.db.session() as session:

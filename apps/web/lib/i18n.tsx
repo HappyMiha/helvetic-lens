@@ -1305,6 +1305,94 @@ const comparisonScopeMessages: Record<Locale, Messages> = {
 };
 for (const locale of locales) Object.assign(catalogTarget(locale), comparisonScopeMessages[locale]);
 
+const relationReviewMessages: Record<Locale, Messages> = {
+  "en-CH": {
+    "impact.reviewLead": "Review this proposed relation",
+    "impact.reviewEntries": "{count} review entries",
+    "impact.reviewHelp": "Inspect the saved evidence, then record why this relation should be confirmed, rejected, or checked later. Every entry remains in the history.",
+    "impact.reviewReasonPlaceholder": "Reason, evidence note, or follow-up question…",
+    "impact.addAnnotation": "Add note",
+    "impact.reviewHistoryLoading": "Reading review history…",
+    "impact.reviewSystemActor": "Development workspace",
+    "impact.noReviews": "No organization review has been recorded.",
+    "impact.reviewDecision.confirmed": "Confirmed",
+    "impact.reviewDecision.rejected": "Rejected",
+    "impact.reviewDecision.annotated": "Note added",
+    "impact.reviewSaved.confirmed": "The relation was confirmed and the reason was saved.",
+    "impact.reviewSaved.rejected": "The relation was rejected and the reason was saved.",
+    "impact.reviewSaved.annotated": "The review note was saved without changing the current decision.",
+  },
+  "de-CH": {
+    "impact.reviewLead": "Vorgeschlagene Beziehung prüfen",
+    "impact.reviewEntries": "{count} Prüfeinträge",
+    "impact.reviewHelp": "Prüfen Sie die gespeicherten Belege und halten Sie fest, warum die Beziehung bestätigt, verworfen oder später geprüft werden soll. Jeder Eintrag bleibt im Verlauf.",
+    "impact.reviewReasonPlaceholder": "Begründung, Belegnotiz oder Folgefrage…",
+    "impact.addAnnotation": "Notiz hinzufügen",
+    "impact.reviewHistoryLoading": "Prüfverlauf wird geladen…",
+    "impact.reviewSystemActor": "Entwicklungsarbeitsbereich",
+    "impact.noReviews": "Noch keine Organisationsprüfung erfasst.",
+    "impact.reviewDecision.confirmed": "Bestätigt",
+    "impact.reviewDecision.rejected": "Verworfen",
+    "impact.reviewDecision.annotated": "Notiz hinzugefügt",
+    "impact.reviewSaved.confirmed": "Die Beziehung wurde bestätigt und die Begründung gespeichert.",
+    "impact.reviewSaved.rejected": "Die Beziehung wurde verworfen und die Begründung gespeichert.",
+    "impact.reviewSaved.annotated": "Die Notiz wurde gespeichert, ohne den aktuellen Entscheid zu ändern.",
+  },
+  "fr-CH": {
+    "impact.reviewLead": "Examiner la relation proposée",
+    "impact.reviewEntries": "{count} entrées de revue",
+    "impact.reviewHelp": "Examinez les preuves enregistrées, puis indiquez pourquoi la relation doit être confirmée, rejetée ou revue plus tard. Chaque entrée reste dans l’historique.",
+    "impact.reviewReasonPlaceholder": "Motif, note sur les preuves ou question de suivi…",
+    "impact.addAnnotation": "Ajouter une note",
+    "impact.reviewHistoryLoading": "Chargement de l’historique de revue…",
+    "impact.reviewSystemActor": "Espace de développement",
+    "impact.noReviews": "Aucune revue de l’organisation n’a été enregistrée.",
+    "impact.reviewDecision.confirmed": "Confirmée",
+    "impact.reviewDecision.rejected": "Rejetée",
+    "impact.reviewDecision.annotated": "Note ajoutée",
+    "impact.reviewSaved.confirmed": "La relation a été confirmée et le motif enregistré.",
+    "impact.reviewSaved.rejected": "La relation a été rejetée et le motif enregistré.",
+    "impact.reviewSaved.annotated": "La note a été enregistrée sans modifier la décision actuelle.",
+  },
+  "it-CH": {
+    "impact.reviewLead": "Esamina la relazione proposta",
+    "impact.reviewEntries": "{count} voci di revisione",
+    "impact.reviewHelp": "Esamina le prove salvate e indica perché la relazione va confermata, rifiutata o verificata in seguito. Ogni voce resta nella cronologia.",
+    "impact.reviewReasonPlaceholder": "Motivo, nota sulle prove o domanda successiva…",
+    "impact.addAnnotation": "Aggiungi nota",
+    "impact.reviewHistoryLoading": "Caricamento cronologia revisioni…",
+    "impact.reviewSystemActor": "Spazio di sviluppo",
+    "impact.noReviews": "Non è stata registrata alcuna revisione dell’organizzazione.",
+    "impact.reviewDecision.confirmed": "Confermata",
+    "impact.reviewDecision.rejected": "Rifiutata",
+    "impact.reviewDecision.annotated": "Nota aggiunta",
+    "impact.reviewSaved.confirmed": "La relazione è stata confermata e il motivo è stato salvato.",
+    "impact.reviewSaved.rejected": "La relazione è stata rifiutata e il motivo è stato salvato.",
+    "impact.reviewSaved.annotated": "La nota è stata salvata senza modificare la decisione corrente.",
+  },
+  "rm-CH": {
+    "impact.reviewLead": "Examinar la relaziun proponida",
+    "impact.reviewEntries": "{count} entradas da controlla",
+    "impact.reviewHelp": "Examinai las cumprovas memorisadas e nudai pertge che la relaziun duai vegnir confermada, refusada u examinada pli tard. Mintga entrada resta en l’istorgia.",
+    "impact.reviewReasonPlaceholder": "Motiv, notizia da cumprova u dumonda successiva…",
+    "impact.addAnnotation": "Agiuntar notizia",
+    "impact.reviewHistoryLoading": "Chargiar l’istorgia da controlla…",
+    "impact.reviewSystemActor": "Spazi da svilup",
+    "impact.noReviews": "Anc nagina controlla da l’organisaziun è memorisada.",
+    "impact.reviewDecision.confirmed": "Confermada",
+    "impact.reviewDecision.rejected": "Refusada",
+    "impact.reviewDecision.annotated": "Notizia agiuntada",
+    "impact.reviewSaved.confirmed": "La relaziun è confermada ed il motiv è memorisà.",
+    "impact.reviewSaved.rejected": "La relaziun è refusada ed il motiv è memorisà.",
+    "impact.reviewSaved.annotated": "La notizia è memorisada senza midar la decisiun actuala.",
+  },
+};
+Object.assign(en, relationReviewMessages["en-CH"]);
+Object.assign(de, relationReviewMessages["de-CH"]);
+Object.assign(fr, relationReviewMessages["fr-CH"]);
+Object.assign(it, relationReviewMessages["it-CH"]);
+Object.assign(rm, relationReviewMessages["rm-CH"]);
+
 const catalog: Record<Locale, Messages> = { "de-CH": de, "fr-CH": fr, "it-CH": it, "rm-CH": rm, "en-CH": en };
 const localeCookie = "helvetic_lens_locale";
 

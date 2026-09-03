@@ -175,8 +175,8 @@ class DigestUnsubscribeInput(Input):
 
 
 class RelationReviewInput(Input):
-    decision: Literal["confirmed", "rejected"]
-    note: str = Field(default="", max_length=2000)
+    decision: Literal["confirmed", "rejected", "annotated"]
+    note: str = Field(min_length=3, max_length=2000)
 
 
 class OrganizationSwitchInput(Input):
@@ -848,6 +848,10 @@ def create_app(
             data.note,
             identity.user_id if identity else None,
         )
+
+    @app.get("/api/relation-candidates/{organization_candidate_id}/reviews")
+    def relation_candidate_reviews(organization_candidate_id: str):
+        return service.relation_review_history(organization_candidate_id)
 
     @app.get("/api/registry")
     def registry(

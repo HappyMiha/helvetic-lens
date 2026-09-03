@@ -83,6 +83,45 @@ def test_inbox_groups_law_impacts_by_event_and_filters_saved_fields(harness):
     assert reviewed_item["official_relation"] is None
 
 
+def test_relation_review_keeps_decisions_and_annotations_as_append_only_history(harness):
+    client, _, _, _ = harness
+    delivery_id, _ = relation_delivery(harness)
+
+    missing_reason = client.post(
+        f"/api/relation-candidates/{delivery_id}/reviews",
+        json={"decision": "confirmed", "note": ""},
+    )
+    assert missing_reason.status_code == 422
+
+    confirmed = client.post(
+        f"/api/relation-candidates/{delivery_id}/reviews",
+        json={"decision": "confirmed", "note": "The cited SR identifier matches."},
+    )
+    assert confirmed.status_code == 201
+    annotated = client.post(
+        f"/api/relation-candidates/{delivery_id}/reviews",
+        json={"decision": "annotated", "note": "Legal should verify Article 7 next."},
+    )
+    assert annotated.status_code == 201
+
+    item = client.get("/api/impact-inbox").json()["items"][0]["items"][0]
+    assert item["status"] == "confirmed_relation"
+    assert item["organization_review"]["decision"] == "confirmed"
+    assert item["latest_review"]["decision"] == "annotated"
+    assert item["review_history_count"] == 2
+
+    history = client.get(
+        f"/api/relation-candidates/{delivery_id}/reviews"
+    )
+    assert history.status_code == 200
+    assert history.json()["total"] == 2
+    assert [entry["decision"] for entry in history.json()["items"]] == [
+        "annotated",
+        "confirmed",
+    ]
+    assert history.json()["items"][0]["note"] == "Legal should verify Article 7 next."
+
+
 def test_inbox_personal_state_does_not_change_another_user(harness):
     client, _, service, _ = harness
     delivery_id, _ = relation_delivery(harness)

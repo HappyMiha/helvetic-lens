@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from .config import DomainError
@@ -151,7 +151,8 @@ class ImpactInboxReader:
         review = session.scalar(
             select(OrganizationRelationReview)
             .where(
-                OrganizationRelationReview.organization_candidate_id == delivery.id
+                OrganizationRelationReview.organization_candidate_id == delivery.id,
+                OrganizationRelationReview.decision.in_(("confirmed", "rejected")),
             )
             .order_by(
                 OrganizationRelationReview.created_at.desc(),
@@ -159,6 +160,20 @@ class ImpactInboxReader:
             )
             .limit(1)
         )
+        latest_review = session.scalar(
+            select(OrganizationRelationReview)
+            .where(OrganizationRelationReview.organization_candidate_id == delivery.id)
+            .order_by(
+                OrganizationRelationReview.created_at.desc(),
+                OrganizationRelationReview.id.desc(),
+            )
+            .limit(1)
+        )
+        review_history_count = session.scalar(
+            select(func.count())
+            .select_from(OrganizationRelationReview)
+            .where(OrganizationRelationReview.organization_candidate_id == delivery.id)
+        ) or 0
         current, latest, history_count = self._latest_analyses(session, delivery.id)
         status = self._status(relation, review, current, latest)
         result = (current.result or {}) if current else {}
@@ -244,6 +259,17 @@ class ImpactInboxReader:
                 if review
                 else None
             ),
+            "latest_review": (
+                {
+                    "id": latest_review.id,
+                    "decision": latest_review.decision,
+                    "note": latest_review.note,
+                    "created_at": _iso(latest_review.created_at),
+                }
+                if latest_review
+                else None
+            ),
+            "review_history_count": review_history_count,
             "replacement": replacement,
             "links": {
                 "timeline": f"/laws/{law.id}",

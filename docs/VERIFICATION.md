@@ -270,3 +270,11 @@ The Windows agent's default pytest temporary directory had a permission conflict
 - The catalogue check now parses TypeScript/TSX rather than relying on same-line regular expressions. It inspects JSX text, accessible string attributes, confirmation/prompt/error text, and rendered conditional string branches while explicitly allowing stable units and product names.
 - The stronger gate found the English `read` badge and 27 user-facing settings strings that were previously hidden by multiline markup or conditional expressions. Local-AI, credential-boundary, generation, connection-test, and reset guidance now has distinct DE/FR/IT/RM/EN catalogue entries; the local model-manager hint also names its actual port 12436.
 - The 1,195-key catalogue, inheritance/placeholder audit, TypeScript, and Next.js production build pass. HL-057 remains open only for the documented fluent German/French/Italian and native Romansh review; this automated work is not presented as human language approval.
+
+## Evidence-first relation review — 3 September 2026
+
+- Organization administrators can confirm, reject, or annotate a proposed relation only with a written reason. The API and database keep every decision, author, timestamp, and note as an append-only history.
+- A non-decisive annotation leaves the latest confirmed/rejected state unchanged. A later decision supersedes the current organization status without deleting any earlier entry, model result, or source proposal.
+- The Impact Inbox exposes the review form and complete newest-first history in DE/FR/IT/RM/EN. Viewers can inspect the history but the existing API authorization boundary rejects their mutations.
+- Confirmed official metadata remains authoritative and cannot be replaced through organization review. The graph remains gated on measured improvement over the complete inbox/list workflow.
+- All 305 API tests pass after the migration, including append-only review history, annotation semantics, viewer authorization, legacy upgrades, connectors, and AI regressions. Ruff, the five-locale catalogue audit, TypeScript, the production web build, and the rebuilt development Compose stack pass; PostgreSQL reports `c3b9d2e7f104 (head)`.

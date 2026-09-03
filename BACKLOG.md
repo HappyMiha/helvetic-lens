@@ -99,7 +99,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-050](#hl-050) | P2       | DONE     | HL-038, HL-042                                         | Broader official regulatory news connectors                         |
 | [HL-051](#hl-051) | P2       | DONE     | HL-044, HL-050                                         | Measured semantic candidate recall with pgvector if justified       |
 | [HL-052](#hl-052) | P2       | DONE     | HL-034, HL-046, HL-057                                 | Opt-in email and web digests                                        |
-| [HL-053](#hl-053) | P3       | PLANNED  | HL-044–HL-046                                          | Relation review workflow and visual graph                           |
+| [HL-053](#hl-053) | P3       | IN PROGRESS | HL-044–HL-046                                       | Relation review workflow and visual graph                           |
 | [HL-054](#hl-054) | P3       | DONE     | HL-034, HL-035                                         | Account recovery, verification, 2FA, and SSO refinements            |
 | [HL-055](#hl-055) | P2       | DONE     | HL-038, HL-041                                         | Broader federal and cantonal court coverage                         |
 | [HL-056](#hl-056) | P3       | PLANNED  | HL-049                                                 | Multi-host or high-availability deployment after measured need      |
@@ -1135,6 +1135,8 @@ Acceptance criteria:
 ### HL-053 — Add relation review workflow and a visual graph only after list/inbox validation
 
 Help administrators curate proposed relations when real usage proves that a graph adds value.
+
+**Status: IN PROGRESS — GRAPH VALIDATION REMAINS.** The Impact Inbox now provides an evidence-first, five-language review panel for proposed relations. Administrators must record a reason when confirming or rejecting a lead and can add a non-decisive annotation; every entry retains author and timestamp in an immutable organization-scoped history. Official confirmed metadata cannot be overridden, and viewers remain read-only. The graph is intentionally not implemented until real list/inbox use demonstrates an improvement in review time or correctness. See [the relation review contract](docs/RELATION_REVIEW.md).
 
 Acceptance criteria:
 

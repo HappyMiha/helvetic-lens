@@ -581,7 +581,7 @@ class OrganizationRelationReview(Base):
     __tablename__ = "organization_relation_reviews"
     __table_args__ = (
         CheckConstraint(
-            "decision IN ('confirmed', 'rejected')",
+            "decision IN ('confirmed', 'rejected', 'annotated')",
             name="ck_organization_relation_review_decision",
         ),
     )
