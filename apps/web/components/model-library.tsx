@@ -30,6 +30,7 @@ import {
 import type { Job, LocalModel, LocalModelInventory } from "@/lib/types";
 import { ErrorNote, Loading, SuccessNote } from "./common";
 import { useAuth } from "./auth-gate";
+import { useI18n } from "@/lib/i18n";
 
 function bytes(value: number) {
   if (!value) return "0 GB";
@@ -45,6 +46,7 @@ function modelAction(model: LocalModel) {
 }
 
 export function ModelLibrary() {
+  const { t } = useI18n();
   const { data, error, loading, reload } = useResource<LocalModelInventory>(
     "/admin/models",
     2000,
@@ -63,11 +65,11 @@ export function ModelLibrary() {
           method: "POST",
           body: JSON.stringify({ accepted: true }),
         });
-        setMessage("License acceptance saved for this exact model revision.");
+        setMessage(t("models.licenseSaved"));
       } else if (action === "remove") {
         await api(`/admin/models/${model.id}`, { method: "DELETE" });
         setMessage(
-          "Verified artifact removed. Catalogue metadata remains available.",
+          t("models.removed"),
         );
       } else {
         const result = await api<Job | LocalModel>(
@@ -76,8 +78,8 @@ export function ModelLibrary() {
         );
         setMessage(
           "queue" in result
-            ? `${action === "download" ? "Download" : "Start"} job queued safely. Progress is persisted in Activity.`
-            : `Model ${action} command accepted.`,
+            ? t("models.jobQueued", { action: action === "download" ? t("models.download") : t("models.start") })
+            : t("models.commandAccepted", { action }),
         );
       }
       refreshWorkspace();
@@ -90,61 +92,60 @@ export function ModelLibrary() {
   }
 
   return (
-    <Shell section="Local models">
+    <Shell section={t("nav.models")}>
       <div className="page-heading">
         <div>
-          <span className="eyebrow">LOCAL AI CONTROL PLANE</span>
-          <h1>Model library</h1>
+          <span className="eyebrow">{t("models.eyebrow")}</span>
+          <h1>{t("models.title")}</h1>
           <p>
-            Choose an approved Apertus artifact, verify it locally, and run it
-            on this server. Cloud connectors remain optional fallbacks.
+            {t("models.body")}
           </p>
         </div>
         <Button variant="outline" onClick={reload} disabled={loading}>
-          <RefreshCw className={loading ? "animate-spin" : ""} /> Refresh
+          <RefreshCw className={loading ? "animate-spin" : ""} /> {t("models.refresh")}
         </Button>
       </div>
       <ErrorNote message={error || actionError} />
       {message && <SuccessNote>{message}</SuccessNote>}
       {loading && !data ? (
-        <Loading text="Inspecting the local AI host…" />
+        <Loading text={t("models.loading")} />
       ) : data ? (
         <>
           <section className="stats-grid mb-5">
             <div className="stat-card">
               <span className="eyebrow">GPU</span>
               <strong>
-                {data.hardware.cuda_devices.length || "Not detected"}
+                {data.hardware.cuda_devices.length || t("models.notDetected")}
               </strong>
               <small>
                 {data.hardware.cuda_devices
                   .map((gpu) => gpu.name)
-                  .join(" · ") || "CPU fallback only"}
+                  .join(" · ") || t("models.cpu")}
               </small>
             </div>
             <div className="stat-card">
-              <span className="eyebrow">MEMORY</span>
+              <span className="eyebrow">{t("models.memory")}</span>
               <strong>{bytes(data.hardware.ram_bytes)}</strong>
               <small>
-                {bytes(data.hardware.disk_free_bytes)} model disk free
+                {t("models.diskFree", { size: bytes(data.hardware.disk_free_bytes) })}
               </small>
             </div>
             <div className="stat-card">
-              <span className="eyebrow">RUNTIME</span>
+              <span className="eyebrow">{t("models.runtime")}</span>
               <strong>
-                {data.hardware.runtime_supported ? "Ready" : "Unavailable"}
+                {data.hardware.runtime_supported ? t("models.ready") : t("models.unavailable")}
               </strong>
               <small>
-                Catalogue v{data.catalog_version} · pinned llama.cpp
+                {t("models.catalogue", { version: data.catalog_version })}
               </small>
             </div>
             <div className="stat-card">
-              <span className="eyebrow">ACTIVE MODEL</span>
-              <strong>{data.deployment?.model_id || "None"}</strong>
+              <span className="eyebrow">{t("models.active")}</span>
+              <strong>{data.deployment?.model_id || t("models.none")}</strong>
               <small>
                 {label(data.deployment?.state || "stopped")}
                 {data.deployment?.hardware_profile
-                  ? ` · ${label(data.deployment.hardware_profile)} · ${data.deployment.available_slots ?? 0}/${data.deployment.accepted_slots ?? 0} slots`
+                  ? ` · ${label(data.deployment.hardware_profile)} · ${t("models.slots", { available: data.deployment.available_slots ?? 0, accepted: data.deployment.accepted_slots ?? 0 })}`
                   : ""}
               </small>
             </div>
@@ -177,6 +178,7 @@ function ModelCard({
   busy: string;
   command: (model: LocalModel, action: string) => Promise<void>;
 }) {
+  const { t, number } = useI18n();
   const { isPlatformAdmin } = useAuth();
   const action = modelAction(model);
   const progress = model.download.total_bytes
@@ -190,7 +192,7 @@ function ModelCard({
             <Badge variant="outline">{model.quantization}</Badge>
             <Badge variant="outline">{label(model.compatibility.status)}</Badge>
             {model.download.cached_copy_available && (
-              <Badge variant="secondary">Cached locally</Badge>
+              <Badge variant="secondary">{t("models.cached")}</Badge>
             )}
           </div>
           <h2>{model.display_name}</h2>
@@ -207,11 +209,10 @@ function ModelCard({
             <HardDrive /> {bytes(model.size_bytes)}
           </span>
           <span>
-            <Gauge /> {model.requirements.recommended_context.toLocaleString()}{" "}
-            context
+            <Gauge /> {t("models.context", { count: number(model.requirements.recommended_context) })}
           </span>
           <span>
-            <Zap /> {bytes(model.requirements.min_vram_bytes)} minimum VRAM
+            <Zap /> {t("models.vram", { size: bytes(model.requirements.min_vram_bytes) })}
           </span>
         </div>
         {(model.download.resumable ||
@@ -229,9 +230,9 @@ function ModelCard({
           </div>
         )}
         <details className="text-xs muted">
-          <summary>Immutable artifact details</summary>
+          <summary>{t("models.details")}</summary>
           <p>
-            Revision: <code>{model.immutable_revision}</code>
+            {t("models.revision")}: <code>{model.immutable_revision}</code>
           </p>
           <p>
             SHA-256: <code>{model.sha256}</code>
@@ -244,13 +245,13 @@ function ModelCard({
         {isPlatformAdmin && (!model.license_accepted ? (
           <div className="license-box">
             <p className="m-0 text-sm">
-              Review{" "}
+              {t("models.review")}{" "}
               <a href={model.license_url} target="_blank" rel="noreferrer">
                 {model.license} <ExternalLink size={12} className="inline" />
               </a>
             </p>
             <Button onClick={() => command(model, "license")} disabled={!!busy}>
-              <CheckCircle2 /> Accept for this revision
+              <CheckCircle2 /> {t("models.accept")}
             </Button>
           </div>
         ) : (
@@ -275,7 +276,7 @@ function ModelCard({
                 <CircleStop />
               )}
               {action === "download" && model.state === "paused"
-                ? "Resume"
+                ? t("models.resume")
                 : label(action)}
             </Button>
             {model.download.resumable && (
@@ -284,7 +285,7 @@ function ModelCard({
                 onClick={() => command(model, "cancel")}
                 disabled={!!busy}
               >
-                <X /> Cancel transfer
+                <X /> {t("models.cancel")}
               </Button>
             )}
             {model.installed && !model.active && (
@@ -292,12 +293,12 @@ function ModelCard({
                 variant="outline"
                 onClick={() =>
                   window.confirm(
-                    `Remove the verified local artifact for ${model.display_name}? It must be downloaded and verified again before use.`,
+                    t("models.removeConfirm", { name: model.display_name }),
                   ) && command(model, "remove")
                 }
                 disabled={!!busy}
               >
-                <Trash2 /> Remove
+                <Trash2 /> {t("models.remove")}
               </Button>
             )}
           </div>
