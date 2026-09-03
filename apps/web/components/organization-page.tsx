@@ -30,7 +30,7 @@ type Invitation = {
 
 export function OrganizationPage() {
   const { session, canManage } = useAuth();
-  const { locale } = useI18n();
+  const { locale, t, number } = useI18n();
   const { data: members, reload: reloadMembers } = useResource<Member[]>(
     session?.authenticated ? "/organization/members" : null,
   );
@@ -75,11 +75,11 @@ export function OrganizationPage() {
 
   if (!session?.authenticated) {
     return (
-      <Shell section="Organization">
+      <Shell section={t("nav.organization")}>
         <section className="card p-8">
           <Users size={24} className="mb-4" />
-          <h1 className="text-2xl font-semibold">Local development workspace</h1>
-          <p className="muted max-w-2xl">Accounts and organization membership are available when authentication is enabled. This explicit development workspace keeps the existing local demo flow.</p>
+          <h1 className="text-2xl font-semibold">{t("org.localTitle")}</h1>
+          <p className="muted max-w-2xl">{t("org.localBody")}</p>
         </section>
       </Shell>
     );
@@ -97,7 +97,7 @@ export function OrganizationPage() {
       const link = `${window.location.origin}/login?invite=${encodeURIComponent(value.token)}&locale=${encodeURIComponent(value.recipient_locale)}`;
       setGeneratedLink(link);
       setEmail("");
-      setSuccess("Invitation created. Copy the private link and send it to the invited person.");
+      setSuccess(t("org.inviteCreated"));
       reloadInvitations();
     } catch (cause) {
       setError(errorText(cause));
@@ -107,12 +107,12 @@ export function OrganizationPage() {
   }
 
   return (
-    <Shell section="Organization">
+    <Shell section={t("nav.organization")}>
       <div className="page-heading">
         <div>
-          <span className="eyebrow">SHARED WORKSPACE</span>
-          <h1>{session?.organization?.name || "Organization"}</h1>
-          <p>Members share the same monitored documents, evidence, settings, and AI history.</p>
+          <span className="eyebrow">{t("org.eyebrow")}</span>
+          <h1>{session?.organization?.name || t("org.name")}</h1>
+          <p>{t("org.body")}</p>
         </div>
       </div>
       <ErrorNote message={error} />
@@ -123,8 +123,8 @@ export function OrganizationPage() {
           <div className="flex items-start gap-3">
             <MailCheck className="mt-0.5 text-amber-700" size={20} />
             <div>
-              <strong className="block">Verify your email</strong>
-              <p className="text-sm muted">Confirm {session.user.email} so you can recover access if you forget your password.</p>
+              <strong className="block">{t("org.verify")}</strong>
+              <p className="text-sm muted">{t("org.verifyBody", { email: session.user.email })}</p>
             </div>
           </div>
           <Button
@@ -133,11 +133,11 @@ export function OrganizationPage() {
             onClick={() => act(
               "verify-email",
               () => api("/auth/email-verification/request", { method: "POST", body: JSON.stringify({ email: session.user?.email }) }),
-              "If this address can be verified, a fresh one-time link has been sent.",
+              t("org.verifySent"),
             )}
           >
             {busy === "verify-email" ? <Loader2 className="animate-spin" /> : <MailCheck />}
-            Send verification link
+            {t("org.verifySend")}
           </Button>
         </section>
       )}
@@ -145,30 +145,30 @@ export function OrganizationPage() {
       {organizationStatus && (
         <>
           <section className="stats-grid mb-5">
-            <div className="stat-card"><span className="eyebrow">MONITORED</span><strong>{organizationStatus.workspace.active_watches}</strong><small>Active laws and documents</small></div>
-            <div className="stat-card"><span className="eyebrow">TEAM</span><strong>{organizationStatus.workspace.members}</strong><small>{organizationStatus.workspace.pending_invitations} pending invitations</small></div>
-            <div className="stat-card"><span className="eyebrow">AI EXECUTION</span><strong>{organizationStatus.ai.execution === "local" ? "Local" : "Cloud opt-in"}</strong><small>{organizationStatus.ai.provider} · credentials {organizationStatus.ai.credential_configured ? "configured" : "not required"}</small></div>
-            <div className="stat-card"><span className="eyebrow">PROMPTS</span><strong>Revision {organizationStatus.prompts.revision}</strong><small>{organizationStatus.prompts.source === "organization_override" ? "Organization override" : "Platform default"}</small></div>
+            <div className="stat-card"><span className="eyebrow">{t("org.monitored")}</span><strong>{organizationStatus.workspace.active_watches}</strong><small>{t("org.activeDocuments")}</small></div>
+            <div className="stat-card"><span className="eyebrow">{t("org.team")}</span><strong>{organizationStatus.workspace.members}</strong><small>{t("org.pending", { count: organizationStatus.workspace.pending_invitations })}</small></div>
+            <div className="stat-card"><span className="eyebrow">{t("org.aiExecution")}</span><strong>{organizationStatus.ai.execution === "local" ? t("org.local") : t("org.cloud")}</strong><small>{t("org.credentials", { provider: organizationStatus.ai.provider, state: organizationStatus.ai.credential_configured ? t("org.configured") : t("org.notRequired") })}</small></div>
+            <div className="stat-card"><span className="eyebrow">{t("org.prompts")}</span><strong>{t("org.revision", { revision: organizationStatus.prompts.revision })}</strong><small>{organizationStatus.prompts.source === "organization_override" ? t("org.override") : t("org.platformDefault")}</small></div>
           </section>
           {canManage && (
             <section className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-              <Link href="/sources" className="card p-5 hover:border-primary"><Globe2 className="text-primary mb-3" size={20} /><strong className="block">Watchlist & sources</strong><small className="muted">Add, pause, edit or remove monitored sources.</small></Link>
-              <Link href="/prompts" className="card p-5 hover:border-primary"><FileText className="text-primary mb-3" size={20} /><strong className="block">Prompt override</strong><small className="muted">Change AI behaviour for this organization only.</small></Link>
-              <Link href="/settings" className="card p-5 hover:border-primary"><Bot className="text-primary mb-3" size={20} /><strong className="block">AI provider</strong><small className="muted">Local by default; cloud transfer requires explicit opt-in.</small></Link>
-              <button type="button" onClick={() => document.querySelector<HTMLButtonElement>(".workspace")?.click()} className="card p-5 text-left hover:border-primary"><Shield className="text-primary mb-3" size={20} /><strong className="block">Company profile</strong><small className="muted">Context used to personalize impact analysis.</small></button>
+              <Link href="/sources" className="card p-5 hover:border-primary"><Globe2 className="text-primary mb-3" size={20} /><strong className="block">{t("org.watchlist")}</strong><small className="muted">{t("org.watchlistBody")}</small></Link>
+              <Link href="/prompts" className="card p-5 hover:border-primary"><FileText className="text-primary mb-3" size={20} /><strong className="block">{t("org.promptOverride")}</strong><small className="muted">{t("org.promptBody")}</small></Link>
+              <Link href="/settings" className="card p-5 hover:border-primary"><Bot className="text-primary mb-3" size={20} /><strong className="block">{t("org.aiProvider")}</strong><small className="muted">{t("org.aiProviderBody")}</small></Link>
+              <button type="button" onClick={() => document.querySelector<HTMLButtonElement>(".workspace")?.click()} className="card p-5 text-left hover:border-primary"><Shield className="text-primary mb-3" size={20} /><strong className="block">{t("org.company")}</strong><small className="muted">{t("org.companyBody")}</small></button>
             </section>
           )}
           <section className="card p-5 mb-5 grid sm:grid-cols-3 gap-4 text-sm">
-            <div><span className="eyebrow">SAVED AI WORK</span><strong className="block mt-2">{organizationStatus.ai.analyses} analyses · {organizationStatus.ai.questions} answers</strong></div>
-            <div><span className="eyebrow">RECORDED TOKENS</span><strong className="block mt-2">{Object.values(organizationStatus.ai.token_counts).reduce((sum, value) => sum + value, 0).toLocaleString()}</strong></div>
-            <div><span className="eyebrow">QUOTAS</span><strong className="block mt-2">{Object.keys(organizationStatus.quotas).length ? "Configured" : "Installation defaults"}</strong></div>
+            <div><span className="eyebrow">{t("org.savedAi")}</span><strong className="block mt-2">{t("org.aiCounts", { analyses: organizationStatus.ai.analyses, answers: organizationStatus.ai.questions })}</strong></div>
+            <div><span className="eyebrow">{t("org.tokens")}</span><strong className="block mt-2">{number(Object.values(organizationStatus.ai.token_counts).reduce((sum, value) => sum + value, 0))}</strong></div>
+            <div><span className="eyebrow">{t("org.quotas")}</span><strong className="block mt-2">{Object.keys(organizationStatus.quotas).length ? t("org.quotaConfigured") : t("org.installDefaults")}</strong></div>
           </section>
         </>
       )}
 
       {session?.organizations && session.organizations.length > 1 && (
         <section className="card p-6 mb-5">
-          <h2 className="text-lg font-semibold mb-2">Your workspaces</h2>
+          <h2 className="text-lg font-semibold mb-2">{t("org.workspaces")}</h2>
           <div className="flex flex-wrap gap-2">
             {session.organizations.map((organization) => (
               <Button
@@ -183,12 +183,12 @@ export function OrganizationPage() {
                         method: "POST",
                         body: JSON.stringify({ organization_id: organization.id }),
                       }),
-                    `Opened ${organization.name}.`,
+                    t("org.opened", { name: organization.name }),
                   ).then((changed) => changed && window.location.reload())
                 }
               >
                 {organization.current && <Check size={15} />}
-                {organization.name} · {organization.role === "viewer" ? "Viewer" : "Admin"}
+                {organization.name} · {organization.role === "viewer" ? t("org.viewer") : t("org.admin")}
               </Button>
             ))}
           </div>
@@ -199,15 +199,15 @@ export function OrganizationPage() {
         <div className="flex items-center gap-3 mb-5">
           <Users size={20} />
           <div>
-            <h2 className="text-lg font-semibold">Members</h2>
-            <p className="text-sm muted">Administrators manage the workspace. Viewers can inspect it.</p>
+            <h2 className="text-lg font-semibold">{t("org.members")}</h2>
+            <p className="text-sm muted">{t("org.membersBody")}</p>
           </div>
         </div>
         <div className="divide-y">
           {(members || []).map((member) => (
             <div key={member.id} className="py-4 flex flex-wrap items-center gap-3 justify-between">
               <div>
-                <strong>{member.user.name}</strong>{member.current && <span className="ml-2 text-xs muted">You</span>}
+                <strong>{member.user.name}</strong>{member.current && <span className="ml-2 text-xs muted">{t("org.you")}</span>}
                 <div className="text-sm muted">{member.user.email}</div>
               </div>
               <div className="flex items-center gap-2">
@@ -225,12 +225,12 @@ export function OrganizationPage() {
                               method: "PATCH",
                               body: JSON.stringify({ role: event.target.value }),
                             }),
-                          "Member role updated.",
+                          t("org.roleUpdated"),
                         )
                       }
                     >
-                      <option value="viewer">Viewer</option>
-                      <option value="organization_admin">Administrator</option>
+                      <option value="viewer">{t("org.viewer")}</option>
+                      <option value="organization_admin">{t("org.admin")}</option>
                     </select>
                     <Button
                       variant="outline"
@@ -244,23 +244,23 @@ export function OrganizationPage() {
                               method: "POST",
                               body: JSON.stringify({ membership_id: member.id }),
                             }),
-                          "Administration handed over. Your workspace is now read-only.",
+                          t("org.handoverDone"),
                         )
                       }
                     >
-                      <Shield size={14} /> Handover
+                      <Shield size={14} /> {t("org.handover")}
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      aria-label={`Remove ${member.user.name}`}
+                      aria-label={t("org.removeLabel", { name: member.user.name })}
                       disabled={!!busy}
                       onClick={() =>
-                        window.confirm(`Remove ${member.user.name} from this organization?`) &&
+                        window.confirm(t("org.removeConfirm", { name: member.user.name })) &&
                         act(
                           `remove-${member.id}`,
                           () => api(`/organization/members/${member.id}`, { method: "DELETE" }),
-                          "Member removed and their workspace sessions revoked.",
+                          t("org.memberRemoved"),
                         )
                       }
                     >
@@ -269,7 +269,7 @@ export function OrganizationPage() {
                   </>
                 ) : (
                   <span className="rounded-full border px-3 py-1 text-xs">
-                    {member.role === "viewer" ? "Viewer" : "Administrator"}
+                    {member.role === "viewer" ? t("org.viewer") : t("org.admin")}
                   </span>
                 )}
               </div>
@@ -282,23 +282,23 @@ export function OrganizationPage() {
         <section className="card p-6 mb-5">
           <div className="flex items-center gap-3 mb-5">
             <UserRoundPlus size={20} />
-            <div><h2 className="text-lg font-semibold">Invite a member</h2><p className="text-sm muted">Links expire after seven days and work once for the invited email.</p></div>
+            <div><h2 className="text-lg font-semibold">{t("org.invite")}</h2><p className="text-sm muted">{t("org.inviteBody")}</p></div>
           </div>
           <form onSubmit={invite} className="grid md:grid-cols-[1fr_170px_170px_auto] gap-3 items-end">
-            <label>Email<Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
-            <label>Role<select className="h-10 w-full rounded-md border bg-white px-3" value={role} onChange={(e) => setRole(e.target.value as typeof role)}><option value="viewer">Viewer</option><option value="organization_admin">Administrator</option></select></label>
-            <label>Invitation language<select className="h-10 w-full rounded-md border bg-white px-3" value={recipientLocale} onChange={(e) => setRecipientLocale(e.target.value as Locale)}>{locales.map((value) => <option value={value} key={value}>{localeNames[value]}</option>)}</select></label>
-            <Button type="submit" disabled={!!busy}>{busy === "invite" ? <Loader2 className="animate-spin" /> : <UserRoundPlus />} Create invitation</Button>
+            <label>{t("org.email")}<Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
+            <label>{t("org.role")}<select className="h-10 w-full rounded-md border bg-white px-3" value={role} onChange={(e) => setRole(e.target.value as typeof role)}><option value="viewer">{t("org.viewer")}</option><option value="organization_admin">{t("org.admin")}</option></select></label>
+            <label>{t("org.inviteLanguage")}<select className="h-10 w-full rounded-md border bg-white px-3" value={recipientLocale} onChange={(e) => setRecipientLocale(e.target.value as Locale)}>{locales.map((value) => <option value={value} key={value}>{localeNames[value]}</option>)}</select></label>
+            <Button type="submit" disabled={!!busy}>{busy === "invite" ? <Loader2 className="animate-spin" /> : <UserRoundPlus />} {t("org.createInvite")}</Button>
           </form>
-          {generatedLink && <div className="mt-4 flex gap-2"><Input readOnly value={generatedLink} /><Button variant="outline" onClick={() => navigator.clipboard.writeText(generatedLink)}><Copy /> Copy</Button></div>}
-          {!!invitations?.length && <div className="mt-6 divide-y">{invitations.map((invitation) => <div key={invitation.id} className="py-3 flex justify-between gap-3"><span><strong>{invitation.email}</strong><small className="block muted">{invitation.role.replace("organization_", "")} · {invitation.status} · {localeNames[invitation.recipient_locale] || invitation.recipient_locale}</small></span>{invitation.status === "pending" && <Button variant="ghost" size="sm" onClick={() => act(`revoke-${invitation.id}`, () => api(`/organization/invitations/${invitation.id}`, { method: "DELETE" }), "Invitation revoked.")}>Revoke</Button>}</div>)}</div>}
+          {generatedLink && <div className="mt-4 flex gap-2"><Input readOnly value={generatedLink} /><Button variant="outline" onClick={() => navigator.clipboard.writeText(generatedLink)}><Copy /> {t("org.copy")}</Button></div>}
+          {!!invitations?.length && <div className="mt-6 divide-y">{invitations.map((invitation) => <div key={invitation.id} className="py-3 flex justify-between gap-3"><span><strong>{invitation.email}</strong><small className="block muted">{invitation.role === "viewer" ? t("org.viewer") : t("org.admin")} · {invitation.status} · {localeNames[invitation.recipient_locale] || invitation.recipient_locale}</small></span>{invitation.status === "pending" && <Button variant="ghost" size="sm" onClick={() => act(`revoke-${invitation.id}`, () => api(`/organization/invitations/${invitation.id}`, { method: "DELETE" }), t("org.revoked"))}>{t("org.revoke")}</Button>}</div>)}</div>}
         </section>
       )}
 
       <section className="card p-6">
-        <h2 className="text-lg font-semibold mb-2">Join another workspace</h2>
-        <p className="text-sm muted mb-4">Paste an invitation token if you received one without opening its link.</p>
-        <div className="flex gap-2"><Input value={inviteToken} onChange={(e) => setInviteToken(e.target.value)} placeholder="Invitation token" /><Button disabled={inviteToken.length < 20 || !!busy} onClick={() => act("accept", () => api("/invitations/accept", { method: "POST", body: JSON.stringify({ token: inviteToken }) }), "Invitation accepted.").then((changed) => changed && window.location.reload())}>Join</Button></div>
+        <h2 className="text-lg font-semibold mb-2">{t("org.join")}</h2>
+        <p className="text-sm muted mb-4">{t("org.joinBody")}</p>
+        <div className="flex gap-2"><Input value={inviteToken} onChange={(e) => setInviteToken(e.target.value)} placeholder={t("org.inviteToken")} /><Button disabled={inviteToken.length < 20 || !!busy} onClick={() => act("accept", () => api("/invitations/accept", { method: "POST", body: JSON.stringify({ token: inviteToken }) }), t("org.accepted")).then((changed) => changed && window.location.reload())}>{t("org.joinButton")}</Button></div>
       </section>
     </Shell>
   );
