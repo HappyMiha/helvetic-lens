@@ -4,7 +4,7 @@
 
 This backlog implements the product described in [README.md](README.md): a local-AI-first Swiss regulatory monitor with immutable evidence, a time-based legal registry, official-source connectors, cross-document impact analysis, and organization workspaces.
 
-**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-035`), document-identity gate (`HL-058`), and legal-unit semantic diff (`HL-059`) are implemented and verified through the API, browser build, migrations, and regression tests. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
+**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-036`), document-identity gate (`HL-058`), and legal-unit semantic diff (`HL-059`) are implemented and verified through the API, browser build, migrations, and regression tests. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
 
 ## Scope and priorities
 
@@ -74,7 +74,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-033](#hl-033) | P0       | DONE     | HL-003, HL-029                                         | Shared public corpus and organization-aware migration               |
 | [HL-034](#hl-034) | P0       | DONE     | HL-033                                                 | Registration, login, sessions, and onboarding                       |
 | [HL-035](#hl-035) | P0       | DONE     | HL-034                                                 | Organization membership and enforced admin/viewer access            |
-| [HL-036](#hl-036) | P0       | PLANNED  | HL-005, HL-011, HL-033                                 | Normalized regulatory documents, dates, and events                  |
+| [HL-036](#hl-036) | P0       | DONE     | HL-005, HL-011, HL-033                                 | Normalized regulatory documents, dates, and events                  |
 | [HL-037](#hl-037) | P1       | PLANNED  | HL-035, HL-036                                         | Time-grouped monitoring registry and document timeline              |
 | [HL-038](#hl-038) | P0       | PLANNED  | HL-030, HL-036                                         | Versioned incremental connector contract                            |
 | [HL-039](#hl-039) | P1       | PLANNED  | HL-038, existing ELI resolver                          | Fedlex federal-law catalogue connector                              |
@@ -669,6 +669,8 @@ Acceptance criteria:
 <a id="hl-036"></a>
 
 ### HL-036 — Normalize Swiss regulatory documents, expressions, versions, dates, events, and relations
+
+**Status: DONE.** The shared corpus now separates authority-level works, identifiers, language expressions, immutable version descriptors, precision-preserving date facts, evidence-backed events, versioned relations, and explicit legacy mappings. Deterministic merge rules deduplicate connector retries and multilingual expressions, reject conflicting identifiers, and keep organization-owned provisional URL records isolated. Existing laws, artifacts, comparisons, and IDs remain readable; the migration backfills them without inferring lifecycle events.
 
 Create a common corpus model before importing whole official catalogues.
 

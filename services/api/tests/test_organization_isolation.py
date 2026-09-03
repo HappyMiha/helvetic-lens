@@ -51,6 +51,9 @@ def test_private_records_are_hidden_and_public_fedlex_artifacts_are_reused(tmp_p
             "/api/laws", json={"url": LAW_URL, "synthetic": True}
         ).json()
         private_version_id = private_law["current_version"]["id"]
+        private_work = client_a.get("/api/corpus/works").json()[0]
+        assert client_b.get(f"/api/corpus/works/{private_work['id']}").status_code == 404
+        assert client_b.get("/api/corpus/works").json() == []
         old = client_a.post(
             f"/api/laws/{private_law['id']}/import",
             files={"file": ("private-old.html", policy(10), "text/html")},

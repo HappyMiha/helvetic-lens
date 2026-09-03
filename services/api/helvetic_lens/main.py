@@ -446,6 +446,18 @@ def create_app(
     def laws():
         return service.list_laws()
 
+    @app.get("/api/corpus/works")
+    def regulatory_works(
+        kind: str | None = Query(default=None, max_length=40),
+        authority: str | None = Query(default=None, max_length=80),
+        limit: int = Query(default=100, ge=1, le=500),
+    ):
+        return service.list_regulatory_works(kind=kind, authority=authority, limit=limit)
+
+    @app.get("/api/corpus/works/{work_id}")
+    def regulatory_work_detail(work_id: str):
+        return service.regulatory_work_detail(work_id)
+
     @app.post("/api/laws", status_code=201)
     async def add_law(data: LawInput):
         return await service.add_law(data.model_dump())

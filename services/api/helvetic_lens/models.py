@@ -4,7 +4,9 @@ from uuid import uuid4
 from sqlalchemy import (
     JSON,
     Boolean,
+    CheckConstraint,
     DateTime,
+    Float,
     ForeignKey,
     Index,
     Integer,
@@ -197,6 +199,211 @@ class Version(Base):
     date_provenance: Mapped[str | None] = mapped_column(String(30))
     synthetic: Mapped[bool] = mapped_column(Boolean, default=False)
     identity_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class RegulatoryWork(Base):
+    """One authority-level legal or regulatory work, independent of language and URL."""
+
+    __tablename__ = "regulatory_works"
+    __table_args__ = (
+        Index(
+            "uq_public_regulatory_work_authority_key",
+            "authority",
+            "canonical_key",
+            unique=True,
+            postgresql_where=text("owner_organization_id IS NULL"),
+            sqlite_where=text("owner_organization_id IS NULL"),
+        ),
+        Index(
+            "uq_private_regulatory_work_authority_key",
+            "owner_organization_id",
+            "authority",
+            "canonical_key",
+            unique=True,
+            postgresql_where=text("owner_organization_id IS NOT NULL"),
+            sqlite_where=text("owner_organization_id IS NOT NULL"),
+        ),
+        CheckConstraint(
+            "kind IN ('act', 'ordinance', 'parliamentary_business', 'initiative', 'bill', "
+            "'court_decision', 'official_notice', 'unclassified_document')",
+            name="ck_regulatory_work_kind",
+        ),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    owner_organization_id: Mapped[str | None] = mapped_column(
+        ForeignKey("organizations.id"), index=True
+    )
+    kind: Mapped[str] = mapped_column(String(40), index=True)
+    authority: Mapped[str] = mapped_column(String(80), index=True)
+    canonical_key: Mapped[str] = mapped_column(String(700))
+    title: Mapped[str] = mapped_column(Text, default="")
+    stable_official_url: Mapped[str | None] = mapped_column(Text)
+    lifecycle_status: Mapped[str | None] = mapped_column(String(60), index=True)
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class RegulatoryIdentifier(Base):
+    __tablename__ = "regulatory_identifiers"
+    __table_args__ = (
+        UniqueConstraint("authority", "scheme", "normalized_value", name="uq_regulatory_identifier_value"),
+        UniqueConstraint("work_id", "scheme", "normalized_value", name="uq_regulatory_identifier_work_value"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    work_id: Mapped[str] = mapped_column(ForeignKey("regulatory_works.id"), index=True)
+    authority: Mapped[str] = mapped_column(String(80), index=True)
+    scheme: Mapped[str] = mapped_column(String(50), index=True)
+    value: Mapped[str] = mapped_column(Text)
+    normalized_value: Mapped[str] = mapped_column(String(700))
+    source_url: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class RegulatoryExpression(Base):
+    __tablename__ = "regulatory_expressions"
+    __table_args__ = (
+        UniqueConstraint("work_id", "language", "expression_key", name="uq_regulatory_expression_key"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    work_id: Mapped[str] = mapped_column(ForeignKey("regulatory_works.id"), index=True)
+    language: Mapped[str] = mapped_column(String(20), index=True)
+    expression_key: Mapped[str] = mapped_column(String(700))
+    title: Mapped[str] = mapped_column(Text, default="")
+    official_url: Mapped[str | None] = mapped_column(Text)
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class RegulatoryDocumentVersion(Base):
+    __tablename__ = "regulatory_document_versions"
+    __table_args__ = (
+        UniqueConstraint("expression_id", "version_key", name="uq_regulatory_document_version_key"),
+        UniqueConstraint("legacy_version_id", name="uq_regulatory_document_version_legacy"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    expression_id: Mapped[str] = mapped_column(ForeignKey("regulatory_expressions.id"), index=True)
+    version_key: Mapped[str] = mapped_column(String(700))
+    legacy_version_id: Mapped[str | None] = mapped_column(
+        ForeignKey("versions.id", ondelete="SET NULL")
+    )
+    content_hash: Mapped[str | None] = mapped_column(String(64), index=True)
+    artifact_key: Mapped[str | None] = mapped_column(String(80))
+    source_url: Mapped[str | None] = mapped_column(Text)
+    fetched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class RegulatoryDate(Base):
+    """A source-stated date. String storage preserves year/month/day precision."""
+
+    __tablename__ = "regulatory_dates"
+    __table_args__ = (
+        UniqueConstraint(
+            "entity_type",
+            "entity_id",
+            "kind",
+            "date_value",
+            "precision",
+            "provenance",
+            name="uq_regulatory_date_fact",
+        ),
+        CheckConstraint(
+            "kind IN ('detected_at', 'published_at', 'version_date', 'effective_from', "
+            "'effective_to', 'decision_date', 'fetched_at')",
+            name="ck_regulatory_date_kind",
+        ),
+        CheckConstraint(
+            "precision IN ('instant', 'day', 'month', 'year', 'unknown')",
+            name="ck_regulatory_date_precision",
+        ),
+        CheckConstraint(
+            "entity_type IN ('work', 'expression', 'version', 'event')",
+            name="ck_regulatory_date_entity_type",
+        ),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    entity_type: Mapped[str] = mapped_column(String(30), index=True)
+    entity_id: Mapped[str] = mapped_column(String(36), index=True)
+    kind: Mapped[str] = mapped_column(String(30), index=True)
+    date_value: Mapped[str] = mapped_column(String(40))
+    precision: Mapped[str] = mapped_column(String(20))
+    provenance: Mapped[str] = mapped_column(String(60))
+    source_url: Mapped[str | None] = mapped_column(Text)
+    evidence_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class RegulatoryEvent(Base):
+    __tablename__ = "regulatory_events"
+    __table_args__ = (
+        UniqueConstraint("authority", "dedupe_key", name="uq_regulatory_event_dedupe"),
+        CheckConstraint(
+            "event_type IN ('created', 'new_version', 'amended', 'repealed', 'replaced', "
+            "'status_changed', 'decided', 'notice_published')",
+            name="ck_regulatory_event_type",
+        ),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    work_id: Mapped[str] = mapped_column(ForeignKey("regulatory_works.id"), index=True)
+    expression_id: Mapped[str | None] = mapped_column(ForeignKey("regulatory_expressions.id"))
+    document_version_id: Mapped[str | None] = mapped_column(ForeignKey("regulatory_document_versions.id"))
+    authority: Mapped[str] = mapped_column(String(80), index=True)
+    event_type: Mapped[str] = mapped_column(String(40), index=True)
+    dedupe_key: Mapped[str] = mapped_column(String(700))
+    detected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    source_url: Mapped[str | None] = mapped_column(Text)
+    provenance_method: Mapped[str] = mapped_column(String(60))
+    evidence_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class RegulatoryRelation(Base):
+    __tablename__ = "regulatory_relations"
+    __table_args__ = (
+        UniqueConstraint("authority", "dedupe_key", name="uq_regulatory_relation_dedupe"),
+        CheckConstraint(
+            "relation_type IN ('amends', 'repeals', 'replaces', 'implements', 'cites', "
+            "'interprets', 'potentially_impacts')",
+            name="ck_regulatory_relation_type",
+        ),
+        CheckConstraint(
+            "state IN ('confirmed', 'proposed', 'rejected')",
+            name="ck_regulatory_relation_state",
+        ),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    subject_work_id: Mapped[str] = mapped_column(ForeignKey("regulatory_works.id"), index=True)
+    object_work_id: Mapped[str] = mapped_column(ForeignKey("regulatory_works.id"), index=True)
+    source_version_id: Mapped[str | None] = mapped_column(ForeignKey("regulatory_document_versions.id"))
+    supersedes_relation_id: Mapped[str | None] = mapped_column(ForeignKey("regulatory_relations.id"))
+    authority: Mapped[str] = mapped_column(String(80), index=True)
+    relation_type: Mapped[str] = mapped_column(String(40), index=True)
+    state: Mapped[str] = mapped_column(String(20), index=True)
+    provenance_method: Mapped[str] = mapped_column(String(40), index=True)
+    dedupe_key: Mapped[str] = mapped_column(String(700))
+    evidence_fingerprint: Mapped[str] = mapped_column(String(64))
+    confidence: Mapped[float | None] = mapped_column(Float)
+    evidence_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    rule_or_model_revision: Mapped[str | None] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class LegacyDocumentMapping(Base):
+    __tablename__ = "legacy_document_mappings"
+    __table_args__ = (UniqueConstraint("law_id", name="uq_legacy_document_mapping_law"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    owner_organization_id: Mapped[str | None] = mapped_column(
+        ForeignKey("organizations.id"), index=True
+    )
+    law_id: Mapped[str] = mapped_column(ForeignKey("laws.id", ondelete="CASCADE"), index=True)
+    work_id: Mapped[str | None] = mapped_column(ForeignKey("regulatory_works.id"), index=True)
+    mapping_status: Mapped[str] = mapped_column(String(30), index=True)
+    canonical_hint: Mapped[str | None] = mapped_column(Text)
+    reason: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
@@ -493,4 +700,10 @@ ORGANIZATION_SCOPED_MODELS = (
     JobStep,
     OutboxMessage,
 )
-SHARED_CORPUS_MODELS = (Law, Version, Comparison)
+SHARED_CORPUS_MODELS = (
+    Law,
+    Version,
+    Comparison,
+    RegulatoryWork,
+    LegacyDocumentMapping,
+)

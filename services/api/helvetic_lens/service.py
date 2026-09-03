@@ -46,6 +46,7 @@ from .models import (
     Job,
     JobStep,
     Law,
+    LegacyDocumentMapping,
     Observation,
     Organization,
     OrganizationQuota,
@@ -53,6 +54,13 @@ from .models import (
     Profile,
     PromptConfiguration,
     PromptRevision,
+    RegulatoryDate,
+    RegulatoryDocumentVersion,
+    RegulatoryEvent,
+    RegulatoryExpression,
+    RegulatoryIdentifier,
+    RegulatoryRelation,
+    RegulatoryWork,
     Scan,
     ScanItem,
     Source,
@@ -64,6 +72,7 @@ from .prompt_settings import (
     public_prompt_settings,
     resolved_prompt_settings,
 )
+from .regulatory_corpus import RegulatoryCorpus
 
 logger = logging.getLogger(__name__)
 DISCOVERY_TIMEOUT_SECONDS = 120
@@ -123,6 +132,7 @@ class HelveticLens:
         self.organization_name = organization_name
         self.db = Database(settings, organization_id)
         self.integration_logger = IntegrationLogger(self.db.session)
+        self.regulatory_corpus = RegulatoryCorpus()
         self.fetcher = fetcher or Fetcher(settings, self.integration_logger)
         self._provided_model_client = model_client is not None
         self._fallback_model_client = model_client or ai.ModelClient(settings, self.integration_logger)
@@ -871,6 +881,88 @@ class HelveticLens:
             session.commit()
             return {**as_dict(source), "preview": preview}
 
+    def list_regulatory_works(
+        self, *, kind: str | None = None, authority: str | None = None, limit: int = 100
+    ) -> list[dict]:
+        with self.db.session() as session:
+            query = select(RegulatoryWork)
+            if kind:
+                query = query.where(RegulatoryWork.kind == kind)
+            if authority:
+                query = query.where(RegulatoryWork.authority == authority.lower())
+            works = session.scalars(
+                query.order_by(RegulatoryWork.updated_at.desc(), RegulatoryWork.id).limit(limit)
+            ).all()
+            result = []
+            for work in works:
+                identifiers = session.scalars(
+                    select(RegulatoryIdentifier).where(RegulatoryIdentifier.work_id == work.id)
+                ).all()
+                expressions = session.scalars(
+                    select(RegulatoryExpression).where(RegulatoryExpression.work_id == work.id)
+                ).all()
+                result.append(
+                    {
+                        **as_dict(work),
+                        "identifiers": [as_dict(item) for item in identifiers],
+                        "languages": sorted({item.language for item in expressions}),
+                        "expression_count": len(expressions),
+                    }
+                )
+            return result
+
+    def regulatory_work_detail(self, work_id: str) -> dict:
+        with self.db.session() as session:
+            work = get(session, RegulatoryWork, work_id)
+            identifiers = session.scalars(
+                select(RegulatoryIdentifier).where(RegulatoryIdentifier.work_id == work.id)
+            ).all()
+            expressions = session.scalars(
+                select(RegulatoryExpression).where(RegulatoryExpression.work_id == work.id)
+            ).all()
+            expression_ids = [item.id for item in expressions]
+            versions = (
+                session.scalars(
+                    select(RegulatoryDocumentVersion).where(
+                        RegulatoryDocumentVersion.expression_id.in_(expression_ids)
+                    )
+                ).all()
+                if expression_ids
+                else []
+            )
+            entity_ids = [work.id, *expression_ids, *(item.id for item in versions)]
+            dates = session.scalars(
+                select(RegulatoryDate).where(RegulatoryDate.entity_id.in_(entity_ids))
+            ).all()
+            events = session.scalars(
+                select(RegulatoryEvent)
+                .where(RegulatoryEvent.work_id == work.id)
+                .order_by(RegulatoryEvent.detected_at.desc())
+            ).all()
+            relations = session.scalars(
+                select(RegulatoryRelation)
+                .where(
+                    or_(
+                        RegulatoryRelation.subject_work_id == work.id,
+                        RegulatoryRelation.object_work_id == work.id,
+                    )
+                )
+                .order_by(RegulatoryRelation.created_at.desc())
+            ).all()
+            mappings = session.scalars(
+                select(LegacyDocumentMapping).where(LegacyDocumentMapping.work_id == work.id)
+            ).all()
+            return {
+                **as_dict(work),
+                "identifiers": [as_dict(item) for item in identifiers],
+                "expressions": [as_dict(item) for item in expressions],
+                "versions": [as_dict(item) for item in versions],
+                "dates": [as_dict(item) for item in dates],
+                "events": [as_dict(item) for item in events],
+                "relations": [as_dict(item) for item in relations],
+                "legacy_mappings": [as_dict(item) for item in mappings],
+            }
+
     def delete_source(self, source_id: str):
         with self.write_guard, self.db.session() as session:
             source = get(session, Source, source_id)
@@ -1018,6 +1110,7 @@ class HelveticLens:
                 metadata=fetched.metadata,
             )
             law.current_version_id = version.id
+            self.regulatory_corpus.map_legacy_document(session, law, version)
             watch = DocumentWatch(
                 law_id=law.id,
                 display_name=data.get("name") or law.name,
