@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import json
 import math
 import os
@@ -22,6 +23,11 @@ import httpx
 TERMINAL_JOB_STATES = {"succeeded", "failed", "cancelled"}
 RECOVERY_ACK = "dedicated-capacity-environment"
 RECOVERY_SERVICES = ("scheduler", "api", "redis", "worker-cpu", "worker-ai", "model-manager")
+MIN_READ_REQUESTS = 300
+MAX_MEMORY_PERCENT = 85.0
+MAX_SWAP_GROWTH_BYTES = 256 * 1024 * 1024
+MAX_DISK_GROWTH_BYTES = 1024 * 1024 * 1024
+MIN_DISK_FREE_BYTES = 5 * 1024 * 1024 * 1024
 
 
 def percentile(values: list[float], percent: float) -> float | None:
@@ -129,6 +135,91 @@ def resource_snapshot() -> dict:
     return snapshot
 
 
+def _host_resource_values(sample: dict) -> tuple[float | None, int | None]:
+    host = sample.get("host") or {}
+    if isinstance(host.get("memory_percent"), (int, float)):
+        return float(host["memory_percent"]), host.get("swap_used_bytes")
+    if host.get("collector") == "procfs":
+        total = host.get("memory_total_bytes")
+        available = host.get("memory_available_bytes")
+        swap_total = host.get("swap_total_bytes")
+        swap_free = host.get("swap_free_bytes")
+        memory_percent = 100 * (total - available) / total if total and available is not None else None
+        swap_used = swap_total - swap_free if swap_total is not None and swap_free is not None else None
+        return memory_percent, swap_used
+    if host.get("collector") == "windows_cim":
+        memory = host.get("memory_kib") or {}
+        total = memory.get("TotalVisibleMemorySize")
+        free = memory.get("FreePhysicalMemory")
+        memory_percent = 100 * (total - free) / total if total and free is not None else None
+        # Windows' TotalVirtualMemorySize includes RAM, so it cannot prove swap behavior.
+        return memory_percent, None
+    return None, None
+
+
+def summarize_resources(samples: list[dict]) -> dict:
+    memory_values: list[float] = []
+    swap_values: list[int] = []
+    disk_free_values: list[int] = []
+    for sample in samples:
+        memory_percent, swap_used = _host_resource_values(sample)
+        if memory_percent is not None:
+            memory_values.append(memory_percent)
+        if swap_used is not None:
+            swap_values.append(swap_used)
+        disk = sample.get("disk") or {}
+        if isinstance(disk.get("free_bytes"), int):
+            disk_free_values.append(disk["free_bytes"])
+    disk_growth = None
+    if len(samples) >= 2:
+        first_used = (samples[0].get("disk") or {}).get("used_bytes")
+        last_used = (samples[-1].get("disk") or {}).get("used_bytes")
+        if isinstance(first_used, int) and isinstance(last_used, int):
+            disk_growth = max(0, last_used - first_used)
+    return {
+        "sample_count": len(samples),
+        "host_memory_peak_percent": round(max(memory_values), 2) if memory_values else None,
+        "swap_min_bytes": min(swap_values) if swap_values else None,
+        "swap_max_bytes": max(swap_values) if swap_values else None,
+        "swap_growth_bytes": max(swap_values) - min(swap_values) if swap_values else None,
+        "disk_min_free_bytes": min(disk_free_values) if disk_free_values else None,
+        "disk_growth_bytes": disk_growth,
+        "host_memory_telemetry_complete": len(memory_values) == len(samples) and bool(samples),
+        "host_swap_telemetry_complete": len(swap_values) == len(samples) and bool(samples),
+    }
+
+
+def manifest_integrity(manifest: dict) -> dict:
+    organizations = manifest.get("organizations")
+    if not isinstance(organizations, list):
+        organizations = []
+    accounts = [account for item in organizations for account in (item.get("accounts") or [])]
+    emails = [account.get("email") for account in accounts]
+    account_ids = [account.get("id") for account in accounts]
+    organization_ids = [item.get("organization_id") for item in organizations]
+    required_org_fields = {
+        "organization_id",
+        "law_id",
+        "old_version_id",
+        "new_version_id",
+        "comparison_id",
+    }
+    return {
+        "declared_account_count": manifest.get("account_count"),
+        "actual_account_count": len(accounts),
+        "organization_count": len(organizations),
+        "unique_account_emails": len(emails) == len(set(emails)) and all(emails),
+        "unique_account_ids": len(account_ids) == len(set(account_ids)) and all(account_ids),
+        "unique_organization_ids": (
+            len(organization_ids) == len(set(organization_ids)) and all(organization_ids)
+        ),
+        "organizations_complete": all(
+            required_org_fields.issubset(item) and len(item.get("accounts") or []) >= 3
+            for item in organizations
+        ),
+    }
+
+
 @dataclass
 class ResourceMonitor:
     interval: float = 2.0
@@ -184,6 +275,8 @@ class CapacityGate:
         self.recovery_result: dict = {"exercised": False, "services": []}
         self.inference_report = self._load_optional_report(arguments.inference_report)
         self.backup_report = self._load_optional_report(arguments.backup_report)
+        self.consistency_before: dict[str, dict] = {}
+        self.consistency_after: dict[str, dict] = {}
 
     @staticmethod
     def _load_optional_report(path: Path | None) -> dict | None:
@@ -268,6 +361,92 @@ class CapacityGate:
 
     def account_for(self, organization: dict, index: int) -> Account:
         return self.accounts[organization["accounts"][index]["email"]]
+
+    async def capture_consistency(self) -> dict[str, dict]:
+        snapshots: dict[str, dict] = {}
+        for organization in self.manifest["organizations"]:
+            account = self.account_for(organization, 0)
+            comparison_id = organization["comparison_id"]
+            comparison = await account.client.get(f"/api/comparisons/{comparison_id}")
+            history = await account.client.get(f"/api/comparisons/{comparison_id}/ai-history?limit=500")
+            if comparison.status_code != 200 or history.status_code != 200:
+                raise RuntimeError(
+                    f"Could not capture consistency evidence for comparison {comparison_id}."
+                )
+            comparison_payload = comparison.json()
+            history_payload = history.json()
+            structural = {
+                "id": comparison_payload.get("id"),
+                "law_id": comparison_payload.get("law_id"),
+                "old_version_id": comparison_payload.get("old_version_id"),
+                "new_version_id": comparison_payload.get("new_version_id"),
+                "mode": comparison_payload.get("mode"),
+                "diff": comparison_payload.get("diff"),
+            }
+            items = history_payload.get("items") or []
+            snapshots[comparison_id] = {
+                "structure_sha256": hashlib.sha256(
+                    json.dumps(structural, sort_keys=True, separators=(",", ":")).encode("utf-8")
+                ).hexdigest(),
+                "history_total": history_payload.get("total"),
+                "history_ids": sorted(item.get("id") for item in items if item.get("id")),
+                "history_types": dict(Counter(item.get("type") for item in items)),
+            }
+        return snapshots
+
+    def consistency_summary(self) -> dict:
+        comparison_ids = {
+            item["comparison_id"] for item in self.manifest.get("organizations", [])
+        }
+        stable_structures = True
+        retained_history = True
+        one_question_per_comparison = True
+        no_duplicate_impact_records = True
+        new_type_counts = Counter()
+        per_comparison: dict[str, dict] = {}
+        for comparison_id in sorted(comparison_ids):
+            before = self.consistency_before.get(comparison_id) or {}
+            after = self.consistency_after.get(comparison_id) or {}
+            before_ids = set(before.get("history_ids") or [])
+            after_ids = set(after.get("history_ids") or [])
+            structure_stable = bool(before) and (
+                before.get("structure_sha256") == after.get("structure_sha256")
+            )
+            history_retained = bool(before) and before_ids.issubset(after_ids)
+            stable_structures = stable_structures and structure_stable
+            retained_history = retained_history and history_retained
+            before_types = Counter(before.get("history_types") or {})
+            after_types = Counter(after.get("history_types") or {})
+            new_types = {
+                kind: max(0, after_types[kind] - before_types[kind])
+                for kind in set(before_types) | set(after_types)
+            }
+            new_type_counts.update(new_types)
+            one_question_per_comparison = (
+                one_question_per_comparison and new_types.get("question", 0) == 1
+            )
+            no_duplicate_impact_records = (
+                no_duplicate_impact_records and new_types.get("impact", 0) <= 1
+            )
+            per_comparison[comparison_id] = {
+                "structure_stable": structure_stable,
+                "history_retained": history_retained,
+                "new_history": new_types,
+            }
+        return {
+            "comparison_count": len(comparison_ids),
+            "all_comparisons_captured": (
+                comparison_ids == set(self.consistency_before) == set(self.consistency_after)
+            ),
+            "stable_comparison_evidence": stable_structures,
+            "prior_history_retained": retained_history,
+            "new_history": dict(new_type_counts),
+            "one_question_per_comparison": (
+                len(comparison_ids) >= 10 and one_question_per_comparison
+            ),
+            "no_duplicate_impact_records": no_duplicate_impact_records,
+            "per_comparison": per_comparison,
+        }
 
     async def run_reads(self):
         organizations = self.manifest["organizations"]
@@ -622,16 +801,16 @@ class CapacityGate:
             grouped[row.operation].append(row)
         return grouped
 
-    def criteria(self, job_summary: dict) -> dict:
+    def criteria(self, job_summary: dict, platform_status: dict | None) -> dict:
         reads = self.phase_summary("read")
         enqueues = self.phase_summary("enqueue")
         considered = [
             item
             for item in self.observations
-            if item.phase in {"read", "enqueue"} and item.status not in {422, 429}
+            if item.phase in {"read", "enqueue"}
         ]
         error_rate = (
-            100 * sum(item.status >= 400 for item in considered) / len(considered)
+            100 * sum(not item.expected for item in considered) / len(considered)
             if considered
             else 100.0
         )
@@ -640,10 +819,66 @@ class CapacityGate:
             for item in self.observations
             if item.phase == "enqueue" and item.expected
         )
+        manifest = manifest_integrity(self.manifest)
+        resources = summarize_resources(self.resource_monitor.samples)
+        consistency = self.consistency_summary()
+        inference_gate = (self.inference_report or {}).get("promotion_gate") or {}
+        inference_requirements = inference_gate.get("requirements") or {}
+        inference_calls = (self.inference_report or {}).get("representative_calls") or {}
+        inference_devices = (self.inference_report or {}).get("hardware", {}).get("cuda_devices") or []
+        inference_profile = inference_requirements.get("profile")
+        target_inference_passed = bool(
+            self.inference_report
+            and self.inference_report.get("benchmark") == "HL-032-local-structured-v2"
+            and self.inference_report.get("result") == "pass"
+            and inference_gate.get("passed") is True
+            and inference_profile in {"dual-1080-replicated", "dual-1080-split"}
+            and inference_requirements.get("cuda_devices", 0) >= 2
+            and len(inference_devices) >= 2
+            and all("1080" in str(device.get("name", "")) for device in inference_devices[:2])
+            and inference_calls.get("total", 0) >= 20
+            and inference_calls.get("successful", 0) >= 20
+            and inference_calls.get("schema_valid", 0) >= 20
+            and inference_calls.get("citation_valid", 0) >= 20
+            and inference_calls.get("timeouts") == 0
+            and inference_calls.get("oom") == 0
+        )
+        backup_verification = (self.backup_report or {}).get("verification") or []
+        backup_restore_verified = bool(
+            self.backup_report
+            and self.backup_report.get("schema_version") == "1"
+            and self.backup_report.get("verified") is True
+            and self.backup_report.get("target_host") not in {None, "", "replace-with-target-host"}
+            and self.backup_report.get("backup_id") not in {None, "", "YYYYMMDDTHHMMSSZ"}
+            and self.backup_report.get("backup_seconds", 0) > 0
+            and self.backup_report.get("restore_seconds", 0) > 0
+            and len(backup_verification) >= 3
+        )
+        result_rows = job_summary.get("results") or {}
+        job_states = job_summary.get("by_kind") or {}
+        recovered_model = (platform_status or {}).get("model") or {}
+        expected_enqueued_jobs = sum(
+            operations[kind] for kind in ("scan", "ai_analysis", "ai_question", "connector")
+        )
         checks = {
-            "100_accounts": self.manifest.get("account_count", 0) >= 100,
-            "several_organizations": len(self.manifest.get("organizations", [])) >= 5,
+            "100_real_unique_accounts": (
+                manifest["declared_account_count"] == 100
+                and manifest["actual_account_count"] == 100
+                and bool(manifest["unique_account_emails"])
+                and bool(manifest["unique_account_ids"])
+            ),
+            "several_complete_unique_organizations": (
+                manifest["organization_count"] >= 5
+                and bool(manifest["unique_organization_ids"])
+                and manifest["organizations_complete"]
+            ),
             "reader_concurrency_10_to_20": 10 <= self.arguments.read_concurrency <= 20,
+            "complete_read_workload_executed": (
+                self.arguments.read_requests >= MIN_READ_REQUESTS
+                and reads["requests"] == self.arguments.read_requests
+                and all((reads["operations"].get(kind) or {}).get("requests", 0) > 0
+                        for kind in ("registry", "evidence", "comparison"))
+            ),
             "read_p95_below_500_ms": (reads["p95_ms"] or math.inf) < 500,
             "enqueue_p95_below_1000_ms": (enqueues["p95_ms"] or math.inf) < 1000,
             "http_error_rate_below_1_percent": error_rate < 1,
@@ -654,18 +889,47 @@ class CapacityGate:
             "connector_work_accepted": operations["connector"] >= 1,
             "request_ids_present": all(item.request_id for item in considered),
             "service_recovery_exercised": bool(self.recovery_result.get("completed")),
-            "target_inference_benchmark_passed": bool(
-                self.inference_report
-                and self.inference_report.get("result") == "pass"
-                and len(self.inference_report.get("hardware", {}).get("cuda_devices") or []) >= 2
-                and self.inference_report.get("representative_calls", {}).get("oom") == 0
-                and self.inference_report.get("representative_calls", {}).get("schema_valid", 0) >= 20
+            "active_model_recovered": bool(
+                self.recovery_result.get("active_model_before")
+                and (job_states.get("model_runner_start") or {}).get("succeeded", 0) == 1
+                and recovered_model.get("model_id") == self.recovery_result.get("active_model_before")
+                and recovered_model.get("state") in {"ready", "degraded"}
             ),
-            "backup_restore_rehearsal_verified": bool(
-                self.backup_report
-                and self.backup_report.get("verified") is True
-                and self.backup_report.get("backup_seconds", 0) > 0
-                and self.backup_report.get("restore_seconds", 0) > 0
+            "target_inference_benchmark_passed": target_inference_passed,
+            "backup_restore_rehearsal_verified": backup_restore_verified,
+            "resource_telemetry_complete": (
+                resources["sample_count"] >= 2
+                and resources["host_memory_telemetry_complete"]
+                and resources["host_swap_telemetry_complete"]
+            ),
+            "host_memory_below_85_percent": (
+                resources["host_memory_peak_percent"] is not None
+                and resources["host_memory_peak_percent"] < MAX_MEMORY_PERCENT
+            ),
+            "host_swap_did_not_thrash": (
+                resources["swap_growth_bytes"] is not None
+                and resources["swap_growth_bytes"] <= MAX_SWAP_GROWTH_BYTES
+            ),
+            "disk_growth_and_headroom_bounded": (
+                resources["disk_growth_bytes"] is not None
+                and resources["disk_growth_bytes"] <= MAX_DISK_GROWTH_BYTES
+                and resources["disk_min_free_bytes"] is not None
+                and resources["disk_min_free_bytes"] >= MIN_DISK_FREE_BYTES
+            ),
+            "comparison_and_history_consistency": all(
+                (
+                    consistency["all_comparisons_captured"],
+                    consistency["stable_comparison_evidence"],
+                    consistency["prior_history_retained"],
+                    consistency["one_question_per_comparison"],
+                    consistency["no_duplicate_impact_records"],
+                )
+            ),
+            "accepted_jobs_have_unique_durable_ids": (
+                len(self.jobs) == len({job_id for job_id, _, _ in self.jobs})
+                and job_summary.get("submitted") == len(self.jobs)
+                and len(result_rows) == len(self.jobs)
+                and len(self.jobs) >= expected_enqueued_jobs
             ),
         }
         if job_summary.get("waited"):
@@ -673,21 +937,33 @@ class CapacityGate:
             for kind in ("ai_analysis", "ai_question"):
                 ai_states.update(job_summary.get("by_kind", {}).get(kind, {}))
             checks["accepted_ai_work_completed"] = ai_states["succeeded"] >= 20
+            checks["connector_work_completed"] = (
+                (job_states.get("connector") or {}).get("succeeded", 0) >= 1
+            )
             checks["queues_drained_before_timeout"] = job_summary.get("timed_out", 1) == 0
             checks["no_false_successes"] = all(
                 item.get("state") != "succeeded" or not item.get("error_code")
                 for item in job_summary.get("results", {}).values()
             )
-        return {"checks": checks, "passed": all(checks.values()), "http_error_rate_percent": round(error_rate, 3)}
+        return {
+            "checks": checks,
+            "passed": all(checks.values()),
+            "http_error_rate_percent": round(error_rate, 3),
+            "manifest": manifest,
+            "resources": resources,
+            "consistency": consistency,
+        }
 
     async def run(self) -> dict:
         monitor_task = asyncio.create_task(self.resource_monitor.run())
         try:
             await self.login_scenario_accounts()
+            self.consistency_before = await self.capture_consistency()
             await self.run_reads()
             await self.run_commands()
             await self.exercise_recovery()
             job_summary = await self.wait_for_jobs()
+            self.consistency_after = await self.capture_consistency()
             platform_status = await self.platform_status()
         finally:
             self.resource_monitor.stop()
@@ -736,7 +1012,7 @@ class CapacityGate:
                     else None
                 ),
             },
-            "criteria": self.criteria(job_summary),
+            "criteria": self.criteria(job_summary, platform_status),
         }
 
 

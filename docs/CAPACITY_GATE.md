@@ -2,13 +2,13 @@
 
 This gate turns the public-beta capacity claim into a repeatable target-host measurement. Run it only on a dedicated copy of the single-server deployment: it creates synthetic organizations and accounts, submits real scans, connector work and local AI jobs, and deliberately restarts the API, workers, Redis, scheduler and model manager.
 
-The gate is strict. A run does not pass without 100 seeded accounts, 10–20 concurrent readers, 20 accepted and completed AI jobs, concurrent scans, connector work, service recovery, a passing target-host inference benchmark, and a verified backup/restore timing record. Development hardware may produce a useful report, but it does not satisfy the two-GTX-1080 release gate.
+The gate is strict and fail-closed. A run does not pass without 100 actual unique accounts in the manifest, 300 completed reads at 10–20 concurrency, 20 accepted and completed AI jobs, concurrent scans, a successfully completed connector job, service and active-model recovery, a passing target-host inference benchmark, complete host telemetry, and a verified backup/restore timing record. Development hardware may produce a useful report, but it does not satisfy the two-GTX-1080 release gate.
 
 ## What is bounded
 
 - Every API/worker process has a PostgreSQL pool of 4 connections plus at most 2 overflow connections by default. Production refuses a per-process total above 16.
 - The CPU worker remains at concurrency 2 and the AI worker at concurrency 1. The model gateway owns each runner slot and prefers a waiting organization that does not already own a slot. If no other organization waits, one organization may use all idle slots.
-- The resource sampler records host RAM/swap when `psutil` is available, Docker CPU/RAM/network/block I/O, host disk use and `nvidia-smi` GPU utilization/VRAM/temperature. Platform status adds queue depth and age, retries, connector timing, model slots and admission wait state, API latency, database/Redis latency, retention and backup age.
+- The resource sampler records host RAM/swap through `psutil` or Linux `/proc`, Docker CPU/RAM/network/block I/O, host disk use and `nvidia-smi` GPU utilization/VRAM/temperature. Platform status adds queue depth and age, retries, connector timing, model slots and admission wait state, API latency, database/Redis latency, retention and backup age. The release gate requires at least two complete RAM/swap samples, peak host memory below 85%, swap growth no greater than 256 MiB, at least 5 GiB free disk, and no more than 1 GiB disk growth during the run. Windows CIM cannot distinguish swap from virtual memory, so a Windows-host report remains diagnostic unless `psutil` is installed.
 - Reports and manifests contain synthetic email addresses and IDs, but never the capacity password, cookies, CSRF values, provider credentials, prompts or document bodies.
 
 ## 1. Prepare the isolated target stack
@@ -100,18 +100,20 @@ services/api/.venv/bin/python scripts/run_capacity_gate.py \
 
 The Windows interpreter path is `services\api\.venv\Scripts\python.exe`; the remaining arguments are identical.
 
-The scenario logs in only the 30 accounts it needs, while proving that 100 exist in the manifest. Twenty clients concurrently read registry filters, saved evidence and comparisons. A bounded five-request command burst admits five scans, one bounded Fedlex catalogue sync, and one Impact analysis plus one material-change question for each of ten organizations. The runner then restarts scheduler, API, Redis, CPU worker, AI worker and model manager, reactivates the previously running local model, waits for durable jobs to terminate, and captures the final platform state.
+The scenario logs in only the 30 accounts it needs, while validating all 100 unique account records and every referenced organization/law/version/comparison identity in the manifest. Twenty clients complete 300 registry-filter, saved-evidence and comparison reads. A bounded five-request command burst admits five scans, one bounded Fedlex catalogue sync, and one Impact analysis plus one run-unique material-change question for each of ten organizations. The runner captures comparison digests and AI-history IDs, restarts scheduler, API, Redis, CPU worker, AI worker and model manager, reactivates the previously running local model, waits for every exact durable job ID to terminate, then verifies the model, comparison evidence and history again.
 
 The command exits zero only if all criteria pass:
 
 - registry/evidence/comparison read p95 is below 500 ms;
 - scan/connector/AI validation and enqueue p95 is below 1 second;
-- unexpected HTTP errors are below 1%, excluding deliberate `422` and `429` outcomes;
+- unexpected HTTP outcomes are below 1%; this scenario sends no deliberate invalid or rate-limited request, so any `422` or `429` is unexpected here;
 - at least 20 AI jobs were accepted and later succeeded;
-- every service recovered, all submitted jobs left the queue before the timeout, and no successful job carries an error code;
+- the connector job succeeded, every service recovered, the active model returned to ready/degraded state, all exact submitted job IDs terminated before the timeout, and no successful job carries an error code;
+- saved comparison evidence is byte-stable across recovery, prior AI history remains present, each run-unique question creates exactly one history item per organization, and no comparison gains more than one Impact record;
 - every measured API response has an `X-Request-ID`;
-- the target inference benchmark detected both target CUDA devices, passed without OOM, and completed at least 20 schema-valid calls;
-- the target-host backup/restore record is verified.
+- the v2 target inference benchmark was explicitly run as `dual-1080-replicated` or `dual-1080-split`, detected two GTX 1080 devices, passed its promotion gate without timeout/OOM, and completed at least 20 schema- and citation-valid calls;
+- complete Linux/psutil resource samples remain inside the documented RAM, swap and disk bounds;
+- the target-host backup/restore record includes non-placeholder host/backup identities, positive timings, and at least three recorded verification probes.
 
 Use `--no-wait-for-jobs`, `--skip-connector` or omit `--recovery` only for diagnostics. Such a report remains useful but intentionally fails the complete gate. Generated `reports/` are ignored by Git; check in a redacted accepted target-host report under `docs/benchmarks/` when the dual-GTX-1080 run is complete.
 
