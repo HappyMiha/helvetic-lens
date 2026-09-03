@@ -32,7 +32,9 @@ from helvetic_lens.models import (
 )
 from helvetic_lens.official_source_contracts import (
     FEDERAL_COURT_CONTRACT,
+    FEDERAL_NEWS_CONTRACT,
     FEDLEX_CONTRACT,
+    FINMA_CONTRACT,
     PARLIAMENT_CONTRACT,
     probe_source_contract,
 )
@@ -367,6 +369,16 @@ def test_shared_http_policy_retries_logs_and_rejects_cross_host_redirect(harness
             FEDERAL_COURT_CONTRACT,
             b'<html><h1>Liste der neu aufgenommenen Entscheide</h1><a href="/decision">03.09.2026</a></html>',
             "text/html",
+        ),
+        (
+            FEDERAL_NEWS_CONTRACT,
+            b'{"items":[{"langGroupId":"news-1","title":"Official notice","publishDate":"2026-09-03T00:00:00Z"}]}',
+            "application/json",
+        ),
+        (
+            FINMA_CONTRACT,
+            b"<rss><channel><item><title>Notice</title><link>https://www.finma.ch/de/news/notice</link><pubDate>Thu, 03 Sep 2026 00:00:00 GMT</pubDate></item></channel></rss>",
+            "text/xml",
         ),
     ],
 )

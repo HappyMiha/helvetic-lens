@@ -46,6 +46,8 @@ function connectorName(value: string) {
       fedlex: "Fedlex",
       "swiss-parliament": "Swiss Parliament",
       "federal-supreme-court": "Federal Supreme Court",
+      "federal-news": "Federal Council & departments",
+      "finma-news": "FINMA",
     }[value] || label(value)
   );
 }

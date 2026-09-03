@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
+from urllib.parse import urlencode
 from xml.etree import ElementTree
 
 from bs4 import BeautifulSoup
@@ -32,9 +33,7 @@ FEDLEX_CONTRACT = OfficialSourceContract(
         authority="fedlex",
         connector_version="1.1.0",
         schema_version="fedlex-jolux-v2",
-        allowed_hosts=frozenset(
-            {"fedlex.data.admin.ch", "www.fedlex.admin.ch", "fedlex.admin.ch"}
-        ),
+        allowed_hosts=frozenset({"fedlex.data.admin.ch", "www.fedlex.admin.ch", "fedlex.admin.ch"}),
         attribution="Swiss Confederation — Fedlex, retrieved from the linked official publication.",
         source_contract={
             "discovery": "RSS plus paginated JOLux/SPARQL reconciliation",
@@ -69,9 +68,7 @@ PARLIAMENT_CONTRACT = OfficialSourceContract(
             "Helvetic Lens is not an official publication."
         ),
         source_contract={
-            "discovery": (
-                "50-row ID-ordered catalogue, recent tail window, and known-active reconciliation"
-            ),
+            "discovery": ("50-row ID-ordered catalogue, recent tail window, and known-active reconciliation"),
             "required_identity": "affair id",
             "languages": ["de", "fr", "it", "en"],
             "rows_per_official_page": 50,
@@ -115,10 +112,55 @@ FEDERAL_COURT_CONTRACT = OfficialSourceContract(
     response_kind="federal_court_html",
 )
 
+FEDERAL_NEWS_CONTRACT = OfficialSourceContract(
+    manifest=ConnectorManifest(
+        name="federal-news",
+        authority="swiss_confederation",
+        connector_version="1.0.0",
+        schema_version="news-service-bund-v1",
+        allowed_hosts=frozenset({"d-nsbc-p.admin.ch", "www.admin.ch", "admin.ch"}),
+        attribution="Swiss Confederation — News Service Bund; official publication retained.",
+        source_contract={
+            "discovery": "bounded, overlapping News Service Bund JSON search",
+            "required_identity": "News Service Bund language-group id",
+            "languages": ["de", "fr", "it", "rm", "en"],
+            "coverage": "Federal Council, departments, offices, regulators, and consultation notices",
+            "cadence": "every 30 minutes",
+            "legal_status": "context-only official notice; never represented as enacted law",
+        },
+    ),
+    smoke_url="https://d-nsbc-p.admin.ch/v1/search?languages=de&offset=0&limit=1&sort=DESC",
+    response_kind="federal_news_json",
+    maximum_bytes=2_000_000,
+)
+
+FINMA_CONTRACT = OfficialSourceContract(
+    manifest=ConnectorManifest(
+        name="finma-news",
+        authority="finma",
+        connector_version="1.0.0",
+        schema_version="finma-rss-v1",
+        allowed_hosts=frozenset({"www.finma.ch", "finma.ch"}),
+        attribution="Swiss Financial Market Supervisory Authority FINMA — official news publication retained.",
+        source_contract={
+            "discovery": "official RSS feed with a two-day overlap",
+            "required_identity": "official FINMA news URL",
+            "languages": ["de", "fr", "it", "en"],
+            "coverage": "FINMA news, guidance, enforcement, and sanctions notices",
+            "cadence": "hourly",
+            "legal_status": "context-only official notice; never represented as enacted law",
+        },
+    ),
+    smoke_url="https://www.finma.ch/de/rss/news/",
+    response_kind="finma_rss",
+)
+
 OFFICIAL_SOURCE_CONTRACTS = (
     FEDLEX_CONTRACT,
     PARLIAMENT_CONTRACT,
     FEDERAL_COURT_CONTRACT,
+    FEDERAL_NEWS_CONTRACT,
+    FINMA_CONTRACT,
 )
 
 
@@ -138,6 +180,22 @@ def _validate_payload(kind: str, body: bytes) -> dict:
             if not isinstance(first, dict) or not {"id", "updated"}.issubset(first):
                 raise ValueError("required affair fields are missing")
             return {"format": "json", "required_fields": ["id", "updated"]}
+        if kind == "federal_news_json":
+            payload = json.loads(body)
+            if not isinstance(payload, dict) or not isinstance(payload.get("items"), list):
+                raise ValueError("news item collection is missing")
+            if payload["items"] and not {"langGroupId", "title", "publishDate"}.issubset(payload["items"][0]):
+                raise ValueError("required news fields are missing")
+            return {"format": "json", "items_observed": len(payload["items"])}
+        if kind == "finma_rss":
+            root = ElementTree.fromstring(body)
+            items = [node for node in root.iter() if node.tag.rsplit("}", 1)[-1] == "item"]
+            if not items:
+                raise ValueError("FINMA RSS is unexpectedly empty")
+            fields = {node.tag.rsplit("}", 1)[-1] for node in items[0]}
+            if not {"title", "link", "pubDate"}.issubset(fields):
+                raise ValueError("required FINMA RSS fields are missing")
+            return {"format": "xml", "items_observed": len(items)}
         if kind == "federal_court_html":
             soup = BeautifulSoup(body, "html.parser")
             text = " ".join(soup.stripped_strings).casefold()
@@ -172,8 +230,23 @@ async def probe_source_contract(
         options["sleep"] = sleep
     client = ConnectorHttpClient(settings, contract.manifest, logger, **options)
     try:
+        smoke_url = contract.smoke_url
+        if contract.response_kind == "federal_news_json":
+            today = datetime.now(UTC).date()
+            smoke_url = "https://d-nsbc-p.admin.ch/v1/search?" + urlencode(
+                {
+                    "languages": "de",
+                    "newsKinds": ["CONTENT_HUB", "ONSB"],
+                    "start_date": (today - timedelta(days=14)).isoformat() + "T00:00:00.000Z",
+                    "end_date": today.isoformat() + "T23:59:59.999Z",
+                    "offset": 0,
+                    "limit": 1,
+                    "sort": "DESC",
+                },
+                doseq=True,
+            )
         artifact = await client.get(
-            contract.smoke_url,
+            smoke_url,
             operation="source_contract_smoke",
             max_bytes=contract.maximum_bytes,
         )

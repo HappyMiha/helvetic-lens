@@ -757,10 +757,271 @@ LIMIT 250
         return tuple(relations)
 
 
+class FedlexConsultationConnector(OfficialConnector):
+    """Complete, bounded catalogue cycle for official consultation procedures."""
+
+    manifest = replace(
+        FEDLEX_CONTRACT.manifest,
+        connector_version="1.2.0",
+        schema_version="fedlex-consultation-v1",
+        source_contract={
+            **FEDLEX_CONTRACT.manifest.source_contract,
+            "discovery": "complete keyset cycle over JOLux Consultation resources",
+            "coverage": "official consultation procedures, deadlines, draft documents, and foreseen legal impacts",
+            "cadence": "every six hours",
+            "legal_status": "proposal/consultation; never represented as enacted law",
+        },
+    )
+
+    def __init__(
+        self,
+        settings,
+        logger=None,
+        *,
+        page_size=25,
+        transport=None,
+        sleep=None,
+        now=lambda: datetime.now(UTC),
+    ):
+        if not 1 <= page_size <= 100:
+            raise ValueError("Fedlex consultation page size must be between 1 and 100")
+        self.settings, self.page_size, self.now = settings, page_size, now
+        options = {"transport": transport}
+        if sleep is not None:
+            options["sleep"] = sleep
+        self.http = ConnectorHttpClient(settings, self.manifest, logger, **options)
+
+    @property
+    def stream(self):
+        return "consultations"
+
+    async def _raw_sparql(self, query, operation):
+        url = (
+            FEDLEX_SPARQL_ENDPOINT
+            + "?"
+            + urlencode({"query": query, "format": "application/sparql-results+json"})
+        )
+        artifact = await self.http.get(
+            url,
+            operation=operation,
+            max_bytes=FEDLEX_METADATA_LIMIT,
+            headers={"Accept": "application/sparql-results+json"},
+        )
+        return artifact, _rows(artifact.body)
+
+    async def health(self):
+        try:
+            _, rows = await self._raw_sparql(
+                f"PREFIX jolux: <{_JOLUX}> SELECT ?work WHERE {{ ?work a jolux:Consultation . }} LIMIT 1",
+                "fedlex_consultation_health",
+            )
+            if not rows or not _binding(rows[0], "work"):
+                raise DomainError(
+                    "Fedlex consultation catalogue is unexpectedly empty.", 502, "connector_contract_drift"
+                )
+            return ConnectorHealthReport(
+                "healthy",
+                "The bounded Fedlex consultation contract passed.",
+                self.now(),
+                {**self.manifest.source_contract, "sample_work": _binding(rows[0], "work")},
+            )
+        except DomainError as exc:
+            return ConnectorHealthReport(
+                "degraded", exc.message, self.now(), {**self.manifest.source_contract, "error_code": exc.code}
+            )
+
+    async def discover_since(self, cursor, page_checkpoint):
+        last_key = (cursor or {}).get("last_key") or ""
+        query = f"""PREFIX jolux: <{_JOLUX}>
+PREFIX dct: <http://purl.org/dc/terms/>
+SELECT ?work (SAMPLE(?status0) AS ?status) (MAX(?start0) AS ?start) (MAX(?end0) AS ?end) (MAX(?modified0) AS ?modified) WHERE {{
+ ?work a jolux:Consultation . FILTER(STR(?work) > {json.dumps(last_key)})
+ OPTIONAL {{ ?work jolux:consultationStatus ?status0 . }}
+ OPTIONAL {{ ?work jolux:hasSubTask ?task . OPTIONAL {{ ?task jolux:eventStartDate ?start0 . }} OPTIONAL {{ ?task jolux:eventEndDate ?end0 . }} OPTIONAL {{ ?task dct:modified ?modified0 . }} }}
+}} GROUP BY ?work ORDER BY STR(?work) LIMIT {self.page_size}"""
+        _, rows = await self._raw_sparql(query, "fedlex_consultation_discovery")
+        ordered = []
+        for row in rows:
+            work = _binding(row, "work")
+            if not work or not work.startswith(f"{FEDLEX_DATA_ORIGIN}/eli/dl/proj/"):
+                raise DomainError(
+                    "Fedlex returned an invalid consultation identity.", 502, "connector_contract_drift"
+                )
+            ordered.append((work, row))
+        ordered.sort()
+        terminal = len(ordered) < self.page_size
+        next_cursor = {
+            "last_key": "" if terminal else ordered[-1][0],
+            "cycle": int((cursor or {}).get("cycle", 0)) + (1 if terminal else 0),
+        }
+        refs = tuple(
+            DiscoveryReference(
+                work,
+                hashlib.sha256(
+                    json.dumps({key: _binding(row, key) for key in sorted(row)}, sort_keys=True).encode()
+                ).hexdigest(),
+                work,
+                f"{FEDLEX_SPARQL_ENDPOINT}#consultation={work}",
+            )
+            for work, row in ordered
+        )
+        return DiscoveryPage(
+            refs,
+            next_cursor,
+            f"{FEDLEX_SPARQL_ENDPOINT}#consultations-after={last_key or 'START'}&limit={self.page_size}",
+            self.manifest.schema_version,
+            complete=terminal,
+            empty_is_valid=bool(last_key),
+        )
+
+    async def _metadata_rows(self, work, language=None):
+        language_filter = f"FILTER(LANG(?title) = {json.dumps(language)})" if language else ""
+        query = f"""PREFIX jolux: <{_JOLUX}>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+SELECT DISTINCT ?title ?description ?eventId ?status ?statusLabel ?previousStatus ?start ?end ?institution ?draft ?relatedDraft ?impact WHERE {{
+ OPTIONAL {{ <{work}> jolux:eventTitle ?title . {language_filter} }}
+ OPTIONAL {{ <{work}> jolux:eventDescription ?description . FILTER(!BOUND(?title) || LANG(?description)=LANG(?title)) }}
+ OPTIONAL {{ <{work}> jolux:eventId ?eventId . }}
+ OPTIONAL {{ <{work}> jolux:consultationStatus ?status . OPTIONAL {{ ?status skos:prefLabel|rdfs:label ?statusLabel . FILTER(!BOUND(?title) || LANG(?statusLabel)=LANG(?title)) }} }}
+ OPTIONAL {{ <{work}> jolux:previousConsultationStatus ?previousStatus . }}
+ OPTIONAL {{ <{work}> jolux:foreseenImpactToLegalResource ?impact . }}
+ OPTIONAL {{ <{work}> jolux:hasSubTask ?task . OPTIONAL {{ ?task jolux:eventStartDate ?start . }} OPTIONAL {{ ?task jolux:eventEndDate ?end . }} OPTIONAL {{ ?task jolux:institutionInChargeOfTheEvent ?institution . }} OPTIONAL {{ ?task jolux:opinionIsAboutDraftDocument ?draft . }} OPTIONAL {{ ?task jolux:opinionHasDraftRelatedDocument ?relatedDraft . }} }}
+}} LIMIT 500"""
+        return await self._raw_sparql(query, "fedlex_consultation_metadata")
+
+    async def fetch_metadata(self, reference):
+        _, rows = await self._metadata_rows(reference.external_identity)
+        if not rows:
+            raise DomainError("Fedlex returned no consultation metadata.", 502, "connector_contract_drift")
+        titles = {
+            row["title"].get("xml:lang", "und"): _binding(row, "title")
+            for row in rows
+            if _binding(row, "title")
+        }
+        first = rows[0]
+        title = (
+            titles.get("de")
+            or titles.get("fr")
+            or titles.get("it")
+            or next(iter(titles.values()), reference.external_identity)
+        )
+        status = _binding(first, "status")
+        event_id = _binding(first, "eventId")
+        dates = tuple(
+            item
+            for item in (
+                _date(_binding(first, "start"), "published_at", reference.canonical_url),
+                _date(_binding(first, "end"), "effective_to", reference.canonical_url),
+            )
+            if item
+        )
+        identifiers = [
+            IdentifierInput("fedlex_consultation_uri", reference.external_identity, reference.canonical_url)
+        ]
+        if event_id:
+            identifiers.append(IdentifierInput("fedlex_consultation_id", event_id, reference.canonical_url))
+        return ConnectorMetadata(
+            reference.external_identity,
+            reference.source_revision,
+            "consultation",
+            title,
+            reference.canonical_url,
+            tuple(identifiers),
+            lifecycle_status=(status.rsplit("/", 1)[-1] if status else "consultation"),
+            dates=dates,
+            metadata={
+                "titles": titles,
+                "consultation_status_uri": status,
+                "consultation_status_label": _binding(first, "statusLabel"),
+                "previous_status_uri": _binding(first, "previousStatus"),
+                "opened_at": _binding(first, "start"),
+                "deadline": _binding(first, "end"),
+                "responsible_institution": _binding(first, "institution"),
+                "draft_documents": sorted({_binding(row, "draft") for row in rows if _binding(row, "draft")}),
+                "related_drafts": sorted(
+                    {_binding(row, "relatedDraft") for row in rows if _binding(row, "relatedDraft")}
+                ),
+                "proposal_not_enacted_law": True,
+            },
+            raw_provenance={
+                "method": "fedlex_jolux_sparql",
+                "source": reference.raw_provenance_ref,
+                "retrieved_at": utcnow().isoformat(),
+            },
+        )
+
+    async def list_expressions(self, metadata):
+        expressions = []
+        for language, title in sorted(metadata.metadata["titles"].items()):
+            if language not in FEDLEX_LANGUAGES:
+                continue
+            query = f"""PREFIX jolux: <{_JOLUX}> SELECT DISTINCT ?title ?description ?status ?start ?end ?institution ?draft ?relatedDraft ?impact WHERE {{ OPTIONAL {{ <{metadata.external_identity}> jolux:eventTitle ?title . FILTER(LANG(?title)={json.dumps(language)}) }} OPTIONAL {{ <{metadata.external_identity}> jolux:eventDescription ?description . FILTER(LANG(?description)={json.dumps(language)}) }} OPTIONAL {{ <{metadata.external_identity}> jolux:consultationStatus ?status . }} OPTIONAL {{ <{metadata.external_identity}> jolux:foreseenImpactToLegalResource ?impact . }} OPTIONAL {{ <{metadata.external_identity}> jolux:hasSubTask ?task . OPTIONAL {{ ?task jolux:eventStartDate ?start . }} OPTIONAL {{ ?task jolux:eventEndDate ?end . }} OPTIONAL {{ ?task jolux:institutionInChargeOfTheEvent ?institution . }} OPTIONAL {{ ?task jolux:opinionIsAboutDraftDocument ?draft . }} OPTIONAL {{ ?task jolux:opinionHasDraftRelatedDocument ?relatedDraft . }} }} }}"""
+            artifact_url = (
+                FEDLEX_SPARQL_ENDPOINT
+                + "?"
+                + urlencode({"query": query, "format": "application/sparql-results+json"})
+            )
+            expressions.append(
+                ConnectorExpression(
+                    language,
+                    f"{metadata.external_identity}/{language}",
+                    title,
+                    metadata.canonical_url,
+                    metadata.source_revision,
+                    artifact_url,
+                    metadata={"proposal_not_enacted_law": True},
+                )
+            )
+        return tuple(expressions)
+
+    async def fetch_official_artifact(self, expression):
+        artifact = await self.http.get(
+            expression.artifact_url,
+            operation="fedlex_consultation_artifact",
+            max_bytes=FEDLEX_METADATA_LIMIT,
+            headers={"Accept": "application/sparql-results+json"},
+        )
+        return replace(
+            artifact,
+            filename=f"fedlex-consultation-{expression.language}.json",
+            raw_provenance={
+                "official_sparql_sha256": hashlib.sha256(artifact.body).hexdigest(),
+                "retrieved_at": utcnow().isoformat(),
+            },
+        )
+
+    async def extract_relations(self, metadata):
+        _, rows = await self._metadata_rows(metadata.external_identity)
+        targets = sorted({_binding(row, "impact") for row in rows if _binding(row, "impact")})
+        result = []
+        for target in targets:
+            reference = fedlex_eli_reference(target)
+            if not reference:
+                continue
+            result.append(
+                ConnectorRelation(
+                    target=FedlexConnector._target_document(reference.work_uri),
+                    relation_type="potentially_impacts",
+                    state="confirmed",
+                    provenance_method="official_metadata",
+                    evidence={
+                        "predicate": "jolux:foreseenImpactToLegalResource",
+                        "consultation": metadata.external_identity,
+                        "target": reference.work_uri,
+                        "source": FEDLEX_SPARQL_ENDPOINT,
+                    },
+                    rule_revision="fedlex-consultation-impact-v1",
+                )
+            )
+        return tuple(result)
+
+
 def fedlex_connectors(
     settings: Settings,
     logger: IntegrationLogger | None = None,
-) -> tuple[FedlexConnector, ...]:
+) -> tuple[OfficialConnector, ...]:
     """The three fast feeds plus one bounded reconciliation stream per collection."""
 
     return tuple(
@@ -769,4 +1030,5 @@ def fedlex_connectors(
             FedlexConnector(settings, logger, mode="reconcile", collection=collection)
             for collection in ("cc", "oc", "fga")
         ]
+        + [FedlexConsultationConnector(settings, logger)]
     )

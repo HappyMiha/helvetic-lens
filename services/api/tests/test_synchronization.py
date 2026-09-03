@@ -30,12 +30,15 @@ def test_default_schedules_are_persisted_and_visible(harness):
 
     assert response.status_code == 200
     payload = response.json()
-    assert len(payload["items"]) == 12
+    assert len(payload["items"]) == 22
     assert {(item["connector"], item["stream"]) for item in payload["items"]} >= {
         ("fedlex", "rss-de"),
         ("swiss-parliament", "recent"),
         ("swiss-parliament", "notices"),
         ("federal-supreme-court", "latest"),
+        ("fedlex", "consultations"),
+        ("federal-news", "news-de"),
+        ("finma-news", "news-de"),
     }
     assert payload["pressure"]["blocked"] is False
     with service.db.session(include_all_organizations=True) as session:

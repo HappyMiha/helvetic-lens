@@ -357,6 +357,7 @@ def test_fedlex_stream_factory_includes_fast_feeds_and_all_catalogues(tmp_path):
         "reconcile-cc",
         "reconcile-oc",
         "reconcile-fga",
+        "consultations",
     }
 
 

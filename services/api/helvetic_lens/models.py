@@ -241,7 +241,7 @@ class RegulatoryWork(Base):
         ),
         CheckConstraint(
             "kind IN ('act', 'ordinance', 'parliamentary_business', 'initiative', 'bill', "
-            "'court_decision', 'official_notice', 'unclassified_document')",
+            "'court_decision', 'official_notice', 'consultation', 'unclassified_document')",
             name="ck_regulatory_work_kind",
         ),
     )

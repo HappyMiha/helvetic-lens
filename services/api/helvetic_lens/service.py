@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 from . import analysis as ai
 from . import jobs as durable_jobs
 from . import synchronization
+from .broad_official_connector import federal_news_connectors, finma_news_connectors
 from .config import DomainError, Settings
 from .connectors import CONNECTOR_CONTRACT_VERSION, ConnectorRunner
 from .credential_crypto import CredentialCipher
@@ -1081,6 +1082,31 @@ class HelveticLens:
             "error": result.error,
         }
 
+    async def sync_broad_official(self, connector_name: str, stream: str) -> dict:
+        available = (
+            federal_news_connectors(self.settings, self.integration_logger)
+            if connector_name == "federal-news"
+            else finma_news_connectors(self.settings, self.integration_logger)
+            if connector_name == "finma-news"
+            else ()
+        )
+        connector = next((item for item in available if item.stream == stream), None)
+        if connector is None:
+            raise DomainError(
+                "Choose a supported official-news stream.", 422, "official_news_stream_invalid"
+            )
+        result = await self.connector_runner.run_page(connector, stream=stream)
+        return {
+            "connector": result.connector,
+            "stream": result.stream,
+            "status": result.status,
+            "page_id": result.page_id,
+            "persisted": result.persisted,
+            "total": result.total,
+            "next_cursor": result.next_cursor,
+            "error": result.error,
+        }
+
     async def sync_parliament(self, stream: str) -> dict:
         active_ids = ()
         if stream == "active":
@@ -1241,6 +1267,8 @@ class HelveticLens:
             result = await self.sync_parliament(stream)
         elif connector == "federal-supreme-court":
             result = await self.sync_federal_court(stream)
+        elif connector in {"federal-news", "finma-news"}:
+            result = await self.sync_broad_official(connector, stream)
         else:
             raise DomainError(
                 "This scheduled connector is not supported.",

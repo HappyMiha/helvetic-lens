@@ -34,6 +34,7 @@ WORK_KINDS = {
     "bill",
     "court_decision",
     "official_notice",
+    "consultation",
     "unclassified_document",
 }
 DATE_KINDS = {
