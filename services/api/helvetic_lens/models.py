@@ -3,6 +3,7 @@ from uuid import uuid4
 
 from sqlalchemy import (
     JSON,
+    BigInteger,
     Boolean,
     CheckConstraint,
     DateTime,
@@ -1041,8 +1042,8 @@ class Job(Base):
     priority: Mapped[int] = mapped_column(Integer, default=5)
     idempotency_key: Mapped[str] = mapped_column(String(128))
     state: Mapped[str] = mapped_column(String(30), default="queued", index=True)
-    progress_current: Mapped[int] = mapped_column(Integer, default=0)
-    progress_total: Mapped[int] = mapped_column(Integer, default=1)
+    progress_current: Mapped[int] = mapped_column(BigInteger, default=0)
+    progress_total: Mapped[int] = mapped_column(BigInteger, default=1)
     attempts: Mapped[int] = mapped_column(Integer, default=0)
     max_attempts: Mapped[int] = mapped_column(Integer, default=3)
     payload: Mapped[dict] = mapped_column(JSON, default=dict)
@@ -1073,8 +1074,8 @@ class JobStep(Base):
     position: Mapped[int] = mapped_column(Integer)
     name: Mapped[str] = mapped_column(String(100))
     state: Mapped[str] = mapped_column(String(30), default="pending")
-    progress_current: Mapped[int] = mapped_column(Integer, default=0)
-    progress_total: Mapped[int] = mapped_column(Integer, default=1)
+    progress_current: Mapped[int] = mapped_column(BigInteger, default=0)
+    progress_total: Mapped[int] = mapped_column(BigInteger, default=1)
     details: Mapped[dict] = mapped_column(JSON, default=dict)
     error_detail: Mapped[str | None] = mapped_column(Text)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

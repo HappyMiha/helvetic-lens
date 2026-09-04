@@ -1,11 +1,34 @@
 from datetime import timedelta
 
 from conftest import add_law, import_old
-from sqlalchemy import select
+from sqlalchemy import BigInteger, select
 
 from helvetic_lens import jobs
 from helvetic_lens.db import utcnow
-from helvetic_lens.models import Job, OutboxMessage
+from helvetic_lens.models import Job, JobStep, OutboxMessage
+
+
+def test_job_progress_counters_support_multi_gigabyte_artifacts(harness):
+    _, _, service, _ = harness
+    model_size = 5_057_871_392
+
+    assert isinstance(Job.__table__.c.progress_current.type, BigInteger)
+    assert isinstance(Job.__table__.c.progress_total.type, BigInteger)
+    assert isinstance(JobStep.__table__.c.progress_current.type, BigInteger)
+    assert isinstance(JobStep.__table__.c.progress_total.type, BigInteger)
+
+    with service.db.session() as session:
+        job, _ = jobs.enqueue(
+            session,
+            job_type="model_download",
+            target_type="local_model",
+            target_id="apertus-8b-q4km",
+            queue="maintenance",
+            idempotency_key="multi-gigabyte-model",
+            progress_total=model_size,
+        )
+        session.commit()
+        assert job.progress_total == model_size
 
 
 def test_scan_runs_as_a_persisted_job_with_inspectable_steps(harness):
