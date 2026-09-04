@@ -16,13 +16,25 @@ from redis.exceptions import RedisError
 from sqlalchemy import select, text
 from sqlalchemy.exc import SQLAlchemyError
 
+from .assistant_contract import AssistantContextInput, build_assistant_context
 from .auth import CSRF_COOKIE, SESSION_COOKIE, AuthService, RateLimiter
 from .auth_mail import AuthMailer
 from .config import DomainError, Settings
 from .impact_inbox import ImpactInboxFilters
 from .locales import locale_from_accept_language
 from .model_settings import ApertusSettingsInput
-from .models import AdministrativeAudit, DocumentWatch, Law, Profile, Scan, Source, Version
+from .models import (
+    AdministrativeAudit,
+    Comparison,
+    DocumentWatch,
+    Job,
+    Law,
+    MonitoringTopic,
+    Profile,
+    Scan,
+    Source,
+    Version,
+)
 from .observability import correlation_context
 from .prompt_settings import PromptSettingsInput
 from .registry import RegistryFilters
@@ -249,6 +261,8 @@ def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
         return "scan", 20, 300
     if path.endswith("/ask") or path.endswith("/ask-jobs") or path == "/api/monitoring-topics/draft":
         return "ai", 30, 300
+    if path == "/api/assistant/context":
+        return "assistant_context", 120, 300
     if path.endswith("/analyse") or path.endswith("/analyse-jobs"):
         return "ai", 20, 300
     if path == "/api/digests/send":
@@ -379,6 +393,7 @@ def create_app(
             "/api/digests/unsubscribe",
             "/api/digests/send",
             "/api/source-pack-requests",
+            "/api/assistant/context",
         }
         viewer_personal_state = (
             path.startswith("/api/impact-inbox/events/") and path.endswith("/state")
@@ -688,6 +703,25 @@ def create_app(
     @app.post("/api/organization/handover")
     def handover_organization(data: HandoverInput, request: Request):
         return auth.handover(request.state.identity, data.membership_id)
+
+    @app.post("/api/assistant/context")
+    def assistant_context(data: AssistantContextInput, request: Request):
+        """Validate the minimum context before an assistant router may use it."""
+        if data.entity:
+            with service.db.session() as session:
+                if data.entity.kind == "law":
+                    get(session, Law, data.entity.id)
+                    service.watch(session, data.entity.id)
+                elif data.entity.kind == "comparison":
+                    comparison = get(session, Comparison, data.entity.id)
+                    service.watch(session, comparison.law_id)
+                elif data.entity.kind == "monitoring_topic":
+                    get(session, MonitoringTopic, data.entity.id)
+                elif data.entity.kind == "job":
+                    get(session, Job, data.entity.id)
+        identity = request.state.identity
+        role = identity.role if identity else "organization_admin"
+        return build_assistant_context(data, role=role)
 
     @app.get("/api/health")
     def health():

@@ -125,7 +125,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-080](#hl-080) | P1       | PLANNED  | HL-038, HL-071, HL-072                                 | Cantonal source-pack framework and one verified pilot               |
 | [HL-081](#hl-081) | P2       | PLANNED  | HL-080                                                 | Evidence-gated expansion to the next two cantonal packs             |
 | [HL-082](#hl-082) | P2       | PLANNED  | HL-038, HL-050, HL-071, HL-074–HL-076                  | Separate opt-in public-discourse signal pilot                       |
-| [HL-083](#hl-083) | P1       | PLANNED  | HL-035, HL-062, HL-074, HL-076, HL-077                 | Local assistant intent, context, privacy, and action contract       |
+| [HL-083](#hl-083) | P1       | IN PROGRESS | HL-035, HL-062, HL-074, HL-076, HL-077              | Local assistant intent, context, privacy, and action contract       |
 | [HL-084](#hl-084) | P1       | PLANNED  | HL-031, HL-032, HL-083                                 | Small local Apertus assistant profile and hardware gate             |
 | [HL-085](#hl-085) | P1       | PLANNED  | HL-065–HL-070, HL-083, HL-084                          | Persistent global assistant experience with cited answers          |
 | [HL-086](#hl-086) | P1       | PLANNED  | HL-035, HL-074, HL-075, HL-077, HL-083, HL-085         | Natural-language monitoring-topic flow through the assistant        |
@@ -1527,6 +1527,8 @@ The assistant is a product interface over existing authorized Helvetic Lens work
 ### HL-083 — Define the local assistant intent, context, privacy, and action contract
 
 Give the pet a useful job and a strict server-enforced boundary before choosing animation or personality details.
+
+**Status: IN PROGRESS.** A versioned `assistant-context.v1` API now accepts only the seven allowlisted intents, canonical product routes, tenant-validated law/comparison/topic/job references, and bounded typed state signals. Unknown fields and unrestricted URLs fail validation; entity references are checked inside the active organization boundary. The response explicitly lists included/excluded context, defaults conversation visibility to a personal draft, suppresses quips for sensitive product states, and emits only typed proposals. Shared-state proposals are disabled for viewers and cannot be constructed without explicit confirmation. Marvin now obtains permission to make a spontaneous remark from this server contract. Persisted conversation separation, cited intent execution, metrics, and the remaining entity-specific context producers are still pending.
 
 Acceptance criteria:
 

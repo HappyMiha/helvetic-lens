@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 
 type Tone = "neutral" | "dry" | "very_dry";
@@ -38,6 +39,28 @@ const DEFAULT_PREFERENCES: CompanionPreferences = {
   spontaneous: true,
   tone: "very_dry",
 };
+
+type AssistantContextResponse = {
+  persona: { quip_allowed: boolean };
+};
+
+function contractRoute(pathname: string) {
+  if (pathname.startsWith("/compare/")) return "/compare";
+  if (pathname.startsWith("/laws/")) return "/laws";
+  const allowed = new Set([
+    "/",
+    "/registry",
+    "/topics",
+    "/impact",
+    "/discover",
+    "/sources",
+    "/activity",
+    "/matrix",
+    "/digests",
+    "/organization",
+  ]);
+  return allowed.has(pathname) ? pathname : "/";
+}
 
 function routeContext(pathname: string): RouteContext {
   if (pathname.startsWith("/compare/")) {
@@ -196,6 +219,7 @@ export function MarvinCompanion({
   const [bubbleVisible, setBubbleVisible] = useState(false);
   const [bubbleKey, setBubbleKey] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [serverQuipAllowed, setServerQuipAllowed] = useState(false);
   const interactionCount = useRef(0);
   const deepScrollSeen = useRef(false);
   const context = useMemo(() => routeContext(pathname), [pathname]);
@@ -204,6 +228,29 @@ export function MarvinCompanion({
     setPreferences(readPreferences());
     setHydrated(true);
   }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    let active = true;
+    setServerQuipAllowed(false);
+    api<AssistantContextResponse>("/assistant/context", {
+      method: "POST",
+      body: JSON.stringify({
+        schema_version: "assistant-context.v1",
+        intent: "explain_screen",
+        route: contractRoute(pathname),
+      }),
+    })
+      .then((response) => {
+        if (active) setServerQuipAllowed(response.persona.quip_allowed);
+      })
+      .catch(() => {
+        if (active) setServerQuipAllowed(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [hydrated, pathname]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -225,6 +272,7 @@ export function MarvinCompanion({
       !preferences.enabled ||
       !preferences.spontaneous ||
       preferences.tone === "neutral" ||
+      !serverQuipAllowed ||
       seenRecently(pathname)
     ) {
       return;
@@ -244,6 +292,7 @@ export function MarvinCompanion({
     preferences.enabled,
     preferences.spontaneous,
     preferences.tone,
+    serverQuipAllowed,
     context.quipKey,
   ]);
 
@@ -253,6 +302,7 @@ export function MarvinCompanion({
       !preferences.enabled ||
       !preferences.spontaneous ||
       preferences.tone === "neutral" ||
+      !serverQuipAllowed ||
       open
     ) {
       return;
@@ -305,6 +355,7 @@ export function MarvinCompanion({
     preferences.enabled,
     preferences.spontaneous,
     preferences.tone,
+    serverQuipAllowed,
   ]);
 
   useEffect(() => {

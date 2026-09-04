@@ -29,6 +29,9 @@ test("spontaneous observations are bounded and never inspect form content", () =
   assert.match(companion, /target\.closest\("button, a\[href\], summary"\)/);
   assert.match(companion, /control\.closest\("form"\)/);
   assert.match(companion, /main\?\.addEventListener\("scroll"/);
+  assert.match(companion, /api<AssistantContextResponse>\("\/assistant\/context"/);
+  assert.match(companion, /schema_version: "assistant-context\.v1"/);
+  assert.match(companion, /!serverQuipAllowed/);
   assert.doesNotMatch(
     companion,
     /textContent|innerText|MutationObserver|FormData|querySelector(?:All)?<[^>]*>\(["'][^"']*(?:input|textarea)|fetch\(|\bapi\(/,
