@@ -17,6 +17,7 @@ import type {
   ProductionDeploymentStatus,
   Scan,
   Source,
+  SourceCapabilityCatalogue,
   Version,
 } from "@/lib/types";
 import {
@@ -127,6 +128,17 @@ export const resources = {
       staleMs: 8_000,
       pollMs: 8_000,
     }),
+
+  sourceCapabilities: () =>
+    key<SourceCapabilityCatalogue>(
+      "monitoring:source-capabilities",
+      "/connectors/capabilities",
+      {
+        tags: ["source-capabilities", "sources", "monitoring"],
+        varyByLocale: false,
+        staleMs: Number.POSITIVE_INFINITY,
+      },
+    ),
 
   scans: () =>
     key<Scan[]>("monitoring:scans", "/scans", {

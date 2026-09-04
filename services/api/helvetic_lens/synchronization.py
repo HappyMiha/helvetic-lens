@@ -33,6 +33,7 @@ from .models import (
 )
 from .regulatory_corpus import RegulatoryCorpus
 from .relation_candidates import generate_for_events
+from .source_capabilities import source_capability
 
 ACTIVE_JOB_STATES = frozenset(
     {"queued", "dispatched", "running", "retrying", "waiting_for_model"}
@@ -688,7 +689,21 @@ def serialize_schedule(
         .order_by(ConnectorRun.created_at.desc())
         .limit(1)
     )
+    active = _active_job(session, schedule.id)
+    capability = source_capability(schedule.connector, schedule.stream)
     last_success = _aware(state.last_success_at) if state and state.last_success_at else None
+    if active:
+        availability = "syncing"
+    elif latest and latest.status == "partial":
+        availability = "partial"
+    elif state and state.health == "healthy":
+        availability = "healthy"
+    elif state and state.health == "degraded":
+        availability = "degraded"
+    elif state and state.health == "error":
+        availability = "unavailable"
+    else:
+        availability = capability.catalogue_state if capability else "unavailable"
     return {
         "id": schedule.id,
         "connector": schedule.connector,
@@ -711,6 +726,8 @@ def serialize_schedule(
         if last_success
         else None,
         "partial_coverage": bool(latest and latest.status == "partial"),
+        "availability": availability,
+        "capability": capability.serialize() if capability else None,
         "last_run": serialize_run(latest),
     }
 

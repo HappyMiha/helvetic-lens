@@ -274,7 +274,7 @@ try {
   admin = new Cdp(adminTarget.webSocketDebuggerUrl);
   await Promise.all([admin.send("Page.enable"), admin.send("Runtime.enable"), admin.send("Network.enable")]);
 
-  for (const path of ["/", "/registry", "/impact", "/discover", "/digests", "/organization"]) {
+  for (const path of ["/", "/registry", "/impact", "/discover", "/digests", "/sources", "/organization"]) {
     for (const [index, width] of [360, 390, 430].entries()) {
       await auditRoute(admin, width, 844, path, "admin", true, index === 0);
     }
@@ -304,6 +304,13 @@ try {
     assert.equal(await evaluate(admin, "document.documentElement.lang"), locale);
     await auditRoute(admin, 390, 844, "/organization", `admin ${locale}`, true, false);
   }
+
+  await navigate(admin, "/sources");
+  await waitFor(admin, `document.querySelectorAll('.official-coverage-card').length === 6`, "Official source capability families did not render");
+  await auditRoute(admin, 390, 844, "/sources", "source capability catalogue", true, false);
+  await navigate(admin, "/connectors");
+  await waitFor(admin, `document.querySelectorAll('.capability-contract').length === 23`, "Operator source capability contracts did not render");
+  await auditRoute(admin, 390, 844, "/connectors", "operator capability catalogue", true, false);
 
   if (comparisonId) {
     await auditRoute(admin, 390, 844, `/compare/${comparisonId}`, "admin");

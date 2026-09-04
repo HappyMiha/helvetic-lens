@@ -38,7 +38,15 @@ import {
   useResource,
 } from "@/lib/api";
 import { resources } from "@/lib/resource-keys";
-import type { Candidate, Discovery, Job, Law, Scan, Source } from "@/lib/types";
+import type {
+  Candidate,
+  Discovery,
+  Job,
+  Law,
+  Scan,
+  Source,
+  SourceCapabilityCatalogue,
+} from "@/lib/types";
 import { ErrorNote, Loading, Status } from "./common";
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
 import { AddDocumentDialog } from "./document-forms";
@@ -57,6 +65,47 @@ type DocumentForm = {
   provider?: string;
 };
 
+function OfficialCoverage({ data }: { data?: SourceCapabilityCatalogue | null }) {
+  const { t, locale } = useI18n();
+  if (!data) return null;
+  const groups = new Map<string, SourceCapabilityCatalogue["items"]>();
+  for (const item of data.items) {
+    groups.set(item.connector, [...(groups.get(item.connector) || []), item]);
+  }
+  return (
+    <section className="official-coverage panel mb-6">
+      <div className="panel-header">
+        <div>
+          <span className="eyebrow">{t("sources.officialCoverageEyebrow")}</span>
+          <h2>{t("sources.officialCoverageTitle")}</h2>
+        </div>
+        <span className="status-badge status-neutral">{data.catalogue_revision}</span>
+      </div>
+      <div className="panel-body grid gap-3 md:grid-cols-2">
+        {[...groups.entries()].map(([connector, items]) => {
+          const copy = items[0].localized_copy[locale] || items[0].localized_copy["en-CH"];
+          const fullyVerified = items.filter((item) => item.catalogue_state === "available").length;
+          return (
+            <article className="official-coverage-card rounded-lg border p-4" key={connector}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="m-0">{label(connector)}</h3>
+                  <p className="mt-2 mb-1 text-sm">{copy.summary}</p>
+                </div>
+                <Status value={fullyVerified === items.length ? "available" : "partial"} />
+              </div>
+              <p className="muted mb-3 text-xs">{copy.boundary}</p>
+              <p className="mb-0 text-xs">
+                {t("sources.coverageStreams", { count: items.length })} · {t("sources.coverageVerified", { verified: fullyVerified, total: items.length })}
+              </p>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 export function Workspace({
   view = "overview",
 }: {
@@ -67,6 +116,9 @@ export function Workspace({
   const { t, dateTime } = useI18n();
   const laws = useResource(resources.laws());
   const sources = useResource(resources.sources());
+  const capabilities = useResource(
+    view === "sources" ? resources.sourceCapabilities() : null,
+  );
   const scans = useResource(resources.scans());
   const jobs = useResource(resources.jobs());
   const [form, setForm] = useState<DocumentForm | null>(null);
@@ -491,6 +543,12 @@ export function Workspace({
           <div className="info-note mb-6">
             {t("sources.discoveryNote")}
           </div>
+          <ErrorNote message={capabilities.error} />
+          {capabilities.loading && !capabilities.data ? (
+            <Loading text={t("sources.coverageLoading")} />
+          ) : (
+            <OfficialCoverage data={capabilities.data} />
+          )}
           {sources.loading && !sources.data ? (
             <Loading />
           ) : connected.length === 0 ? (

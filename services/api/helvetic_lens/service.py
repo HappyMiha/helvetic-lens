@@ -109,6 +109,7 @@ from .prompt_settings import (
 )
 from .registry import RegistryFilters, RegistryReader
 from .regulatory_corpus import RegulatoryCorpus
+from .source_capabilities import capability_catalogue
 
 logger = logging.getLogger(__name__)
 DISCOVERY_TIMEOUT_SECONDS = 120
@@ -1402,6 +1403,9 @@ class HelveticLens:
                 }
             )
         return sorted(saved, key=lambda item: (item["connector"], item["stream"]))
+
+    def connector_capabilities(self) -> dict:
+        return capability_catalogue()
 
     async def sync_fedlex(self, stream: str) -> dict:
         connector = next(

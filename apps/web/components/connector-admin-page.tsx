@@ -53,7 +53,7 @@ function ScheduleCard({
 }: {
   item: ConnectorSchedule;
 }) {
-  const { t, dateTime, number } = useI18n();
+  const { t, locale, dateTime, number } = useI18n();
   const [draft, setDraft] = useState(item);
   const [busy, setBusy] = useState("");
   const [message, setMessage] = useState("");
@@ -120,6 +120,9 @@ function ScheduleCard({
     Number(draft.jitter_seconds) !== item.jitter_seconds ||
     (draft.window_start || null) !== item.window_start ||
     (draft.window_end || null) !== item.window_end;
+  const capability = item.capability;
+  const capabilityCopy = capability?.localized_copy[locale] ||
+    capability?.localized_copy["en-CH"];
 
   return (
     <article className="panel overflow-visible">
@@ -127,7 +130,7 @@ function ScheduleCard({
         <div>
           <div className="flex items-center gap-2">
             <h2>{label(item.stream)}</h2>
-            <Status value={item.health} />
+            <Status value={item.availability} />
             {!item.enabled && <Status value="paused" />}
           </div>
           <p className="text-xs muted mt-1 mb-0">
@@ -259,6 +262,51 @@ function ScheduleCard({
           <p className="text-xs text-amber-800 mb-0">
             {t("connectors.partial")}
           </p>
+        )}
+        {capability && capabilityCopy && (
+          <details className="capability-contract rounded-lg border bg-stone-50/60 p-4">
+            <summary className="cursor-pointer font-semibold">
+              {t("connectors.capabilityContract")}
+            </summary>
+            <div className="grid gap-4 pt-4 text-sm">
+              <div>
+                <p className="mb-1 font-semibold">{capabilityCopy.summary}</p>
+                <p className="muted mb-0">{capabilityCopy.boundary}</p>
+              </div>
+              <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div>
+                  <dt className="eyebrow">{t("connectors.publisher")}</dt>
+                  <dd className="mt-1">{capability.publisher}</dd>
+                </div>
+                <div>
+                  <dt className="eyebrow">{t("connectors.catalogueState")}</dt>
+                  <dd className="mt-1"><Status value={capability.catalogue_state} /></dd>
+                </div>
+                <div>
+                  <dt className="eyebrow">{t("connectors.lastLiveCheck")}</dt>
+                  <dd className="mt-1">{capability.last_verified_live_check || t("connectors.notRecorded")}</dd>
+                </div>
+                <div>
+                  <dt className="eyebrow">{t("connectors.documentKinds")}</dt>
+                  <dd className="mt-1">{capability.document_kinds.map(label).join(", ")}</dd>
+                </div>
+                <div>
+                  <dt className="eyebrow">{t("connectors.languages")}</dt>
+                  <dd className="mt-1 uppercase">{capability.languages.join(", ")}</dd>
+                </div>
+                <div>
+                  <dt className="eyebrow">{t("connectors.manifestRevision")}</dt>
+                  <dd className="mt-1 font-mono text-xs">{capability.catalogue_revision}</dd>
+                </div>
+              </dl>
+              <div>
+                <span className="eyebrow">{t("connectors.knownGaps")}</span>
+                <ul className="mb-0 mt-2 list-disc space-y-1 pl-5 muted">
+                  {capability.known_gaps.map((gap) => <li key={gap}>{gap}</li>)}
+                </ul>
+              </div>
+            </div>
+          </details>
         )}
         {error && <ErrorNote message={error} />}
         {message && <SuccessNote>{message}</SuccessNote>}

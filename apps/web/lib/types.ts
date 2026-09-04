@@ -1004,6 +1004,34 @@ export type ConnectorRun = {
   started_at: string | null;
   finished_at: string | null;
 };
+export type SourceCapability = {
+  schema_version: string;
+  catalogue_revision: string;
+  catalogue_state: "available" | "partial";
+  connector: string;
+  stream: string;
+  authority: string;
+  publisher: string;
+  jurisdiction: string;
+  document_kinds: string[];
+  languages: string[];
+  cadence: string;
+  incremental_cursor: string;
+  historical_window: string;
+  artifact_behavior: string;
+  provenance_behavior: string;
+  reuse_attribution: string;
+  known_gaps: string[];
+  localized_copy: Record<string, { summary: string; boundary: string }>;
+  last_verified_live_check: string | null;
+  evidence: Record<string, boolean> & { promotion_ready: boolean };
+};
+export type SourceCapabilityCatalogue = {
+  schema_version: string;
+  catalogue_revision: string;
+  items: SourceCapability[];
+};
+
 export type ConnectorSchedule = {
   id: string;
   connector: string;
@@ -1028,6 +1056,14 @@ export type ConnectorSchedule = {
   last_success_at: string | null;
   freshness_lag_seconds: number | null;
   partial_coverage: boolean;
+  availability:
+    | "available"
+    | "syncing"
+    | "healthy"
+    | "degraded"
+    | "unavailable"
+    | "partial";
+  capability: SourceCapability | null;
   last_run: ConnectorRun | null;
 };
 export type ConnectorSchedulePage = {

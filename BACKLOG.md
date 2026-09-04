@@ -4,7 +4,7 @@
 
 This backlog implements the product described in [README.md](README.md): a local-AI-first Swiss regulatory monitor with immutable evidence, a time-based legal registry, official-source connectors, cross-document impact analysis, and organization workspaces.
 
-**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-047`, `HL-050`–`HL-052`), decision-ready comparison work (`HL-058`–`HL-063`), and reliable daily-work foundation (`HL-065`–`HL-067`) are implemented and verified through the API, browser build, migrations, regression tests, and responsive browser QA. The optional saved impact matrix (`HL-023`) is also complete. Five-language product localization (`HL-057`) is in progress. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [daily-use UX and product audit](docs/UX_PRODUCT_AUDIT.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), [impact-report contract](docs/IMPACT_REPORT.md), [Ask routing](docs/ASK_ROUTING.md), [localization contract](docs/LOCALIZATION.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
+**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-047`, `HL-050`–`HL-052`), decision-ready comparison work (`HL-058`–`HL-063`), and reliable daily-work foundation through the honest source catalogue (`HL-065`–`HL-071`) are implemented and verified through the API, browser build, migrations, regression tests, and responsive browser QA. The optional saved impact matrix (`HL-023`) is also complete. Five-language product localization (`HL-057`) is in progress. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [daily-use UX and product audit](docs/UX_PRODUCT_AUDIT.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), [impact-report contract](docs/IMPACT_REPORT.md), [Ask routing](docs/ASK_ROUTING.md), [localization contract](docs/LOCALIZATION.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
 
 ## Scope and priorities
 
@@ -113,7 +113,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-068](#hl-068) | P0       | DONE     | HL-063, HL-065, HL-067                                 | Responsive comparison decision workspace                            |
 | [HL-069](#hl-069) | P0       | DONE     | HL-030, HL-062, HL-067, HL-068                         | Asynchronous Ask experience with real job progress                  |
 | [HL-070](#hl-070) | P0       | DONE     | HL-065, HL-066, HL-068, HL-069                         | Working mobile information architecture at 390 px                   |
-| [HL-071](#hl-071) | P0       | PLANNED  | HL-038–HL-043, HL-050, HL-055                          | Versioned source capability catalogue and honest coverage           |
+| [HL-071](#hl-071) | P0       | DONE     | HL-038–HL-043, HL-050, HL-055                          | Versioned source capability catalogue and honest coverage           |
 | [HL-072](#hl-072) | P0       | PLANNED  | HL-033, HL-035, HL-042, HL-071                         | Organization source packs and Swiss Federal Starter                 |
 | [HL-073](#hl-073) | P0       | PLANNED  | HL-034, HL-035, HL-066, HL-070, HL-072, HL-074, HL-077 | Stateful onboarding, contextual help, and useful empty states       |
 | [HL-074](#hl-074) | P0       | PLANNED  | HL-033, HL-035, HL-036, HL-042, HL-071, HL-072         | Durable monitoring topics and editable monitoring plans             |
@@ -1331,6 +1331,8 @@ Acceptance criteria:
 - Represent existing Fedlex, Parliament, federal-court, consultation, News Service Bund, and FINMA capabilities at their actual tested scope, including incomplete language or bounded-history limitations.
 - Drive operator status and user-facing source copy from the same manifest so product claims cannot drift from connector tests and runbooks.
 - Require fixture, incremental-overlap, deduplication, provenance, drift, artifact reopening, and bounded live-smoke evidence before a capability is marked available.
+
+Completed on 4 September 2026. A versioned catalogue now covers every one of the 23 scheduled official streams and publishes authority, scope, languages, cadence, cursor, historical bounds, artifact and provenance behavior, attribution, gaps, and dated live evidence. The Sources page groups the same manifests into six understandable official-source families, while the operator schedule embeds each exact contract beside its runtime state. Promotion fails closed: only six exact streams with all seven evidence gates are `available`; the remaining seventeen are visibly `partial`. Runtime status distinguishes syncing, healthy, degraded, unavailable, and partial without converting a missing item or failed source into “nothing changed.” API regressions, the production build, and a real Chrome journey across phone/tablet sizes, five locales, admin/viewer roles, and offline recovery verify the contract.
 
 <a id="hl-072"></a>
 

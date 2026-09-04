@@ -730,6 +730,10 @@ def create_app(
     def connector_statuses():
         return service.connector_statuses()
 
+    @app.get("/api/connectors/capabilities")
+    def connector_capabilities():
+        return service.connector_capabilities()
+
     @app.post("/api/connectors/fedlex/{stream}/sync")
     async def sync_fedlex(stream: str):
         return service.enqueue_connector_sync("fedlex", stream)
