@@ -16,7 +16,7 @@ from redis.exceptions import RedisError
 from sqlalchemy import select, text
 from sqlalchemy.exc import SQLAlchemyError
 
-from .assistant_contract import AssistantContextInput, build_assistant_context
+from .assistant_contract import AssistantContextInput, AssistantRemarkInput, build_assistant_context
 from .auth import CSRF_COOKIE, SESSION_COOKIE, AuthService, RateLimiter
 from .auth_mail import AuthMailer
 from .config import DomainError, Settings
@@ -261,7 +261,7 @@ def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
         return "scan", 20, 300
     if path.endswith("/ask") or path.endswith("/ask-jobs") or path == "/api/monitoring-topics/draft":
         return "ai", 30, 300
-    if path == "/api/assistant/context":
+    if path in {"/api/assistant/context", "/api/assistant/remark"}:
         return "assistant_context", 120, 300
     if path.endswith("/analyse") or path.endswith("/analyse-jobs"):
         return "ai", 20, 300
@@ -394,6 +394,7 @@ def create_app(
             "/api/digests/send",
             "/api/source-pack-requests",
             "/api/assistant/context",
+            "/api/assistant/remark",
         }
         viewer_personal_state = (
             path.startswith("/api/impact-inbox/events/") and path.endswith("/state")
@@ -704,9 +705,7 @@ def create_app(
     def handover_organization(data: HandoverInput, request: Request):
         return auth.handover(request.state.identity, data.membership_id)
 
-    @app.post("/api/assistant/context")
-    def assistant_context(data: AssistantContextInput, request: Request):
-        """Validate the minimum context before an assistant router may use it."""
+    def validate_assistant_entity(data: AssistantContextInput):
         if data.entity:
             with service.db.session() as session:
                 if data.entity.kind == "law":
@@ -719,6 +718,11 @@ def create_app(
                     get(session, MonitoringTopic, data.entity.id)
                 elif data.entity.kind == "job":
                     get(session, Job, data.entity.id)
+
+    @app.post("/api/assistant/context")
+    def assistant_context(data: AssistantContextInput, request: Request):
+        """Validate the minimum context before an assistant router may use it."""
+        validate_assistant_entity(data)
         identity = request.state.identity
         role = identity.role if identity else "organization_admin"
         return build_assistant_context(data, role=role)
@@ -726,6 +730,17 @@ def create_app(
     @app.get("/api/assistant/runtime")
     async def assistant_runtime():
         return await service.assistant_runtime()
+
+    @app.post("/api/assistant/remark")
+    async def assistant_remark(data: AssistantRemarkInput):
+        validate_assistant_entity(data)
+        if data.signals.suppresses_quips:
+            raise DomainError(
+                "A spontaneous remark is disabled for the current product state.",
+                409,
+                "assistant_quip_suppressed",
+            )
+        return await service.assistant_remark(data)
 
     @app.get("/api/health")
     def health():

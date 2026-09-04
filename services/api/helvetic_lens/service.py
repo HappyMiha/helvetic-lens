@@ -23,6 +23,12 @@ from . import digests, monitoring_topics, source_packs, synchronization, topic_m
 from . import jobs as durable_jobs
 from . import relation_analysis as relation_ai
 from .ai_metrics import summarize_ai_triage_metrics
+from .assistant_contract import (
+    ASSISTANT_PERSONA_VERSION,
+    AssistantRemarkInput,
+    assistant_remark_messages,
+    assistant_remark_schema,
+)
 from .broad_official_connector import federal_news_connectors, finma_news_connectors
 from .config import DomainError, Settings
 from .connectors import CONNECTOR_CONTRACT_VERSION, ConnectorRunner
@@ -3109,6 +3115,66 @@ class HelveticLens:
     async def assistant_runtime(self):
         """Expose the local-only workload selection used by the product assistant."""
         return await self.model_manager.profile("assistant-lite")
+
+    async def assistant_remark(self, data: AssistantRemarkInput):
+        """Generate one bounded quip using only server-validated product context."""
+        messages = assistant_remark_messages(data)
+        completion = None
+        last_error = None
+        for attempt in range(2):
+            completion = await self.model_manager.complete_profile(
+                "assistant-lite",
+                self.organization_id,
+                messages,
+                max_tokens=24,
+                response_schema=assistant_remark_schema(data),
+            )
+            try:
+                payload = json.loads(completion["content"])
+                if set(payload) != {"angle"} or payload["angle"] not in {
+                    "bureaucracy",
+                    "evidence",
+                    "queue",
+                    "progress",
+                }:
+                    raise ValueError("remark JSON does not match the exact schema")
+                remark_key = f"companion.generated.{payload['angle']}"
+                break
+            except (ValueError, TypeError, json.JSONDecodeError) as exc:
+                last_error = exc
+                if attempt == 0:
+                    messages = [
+                        *messages,
+                        {"role": "assistant", "content": completion["content"][:500]},
+                        {
+                            "role": "user",
+                            "content": (
+                                "Repair the answer. Return exactly one JSON object with only an angle "
+                                "field using one of the allowed values."
+                            ),
+                        },
+                    ]
+        else:
+            raise DomainError(
+                "The local assistant returned an unusable remark.",
+                502,
+                "assistant_response_invalid",
+            ) from last_error
+        profile = completion["profile"]
+        model = profile["selected_model"]
+        return {
+            "key": remark_key,
+            "locale": data.locale,
+            "trigger": data.trigger,
+            "provenance": {
+                "profile": profile["id"],
+                "persona_version": ASSISTANT_PERSONA_VERSION,
+                "model": model["served_model_id"],
+                "model_revision": model.get("immutable_revision"),
+                "local": True,
+                "cloud_fallback": False,
+            },
+        }
 
     async def accept_model_license(self, model_id: str, accepted: bool):
         return await self.model_manager.accept_license(model_id, accepted)

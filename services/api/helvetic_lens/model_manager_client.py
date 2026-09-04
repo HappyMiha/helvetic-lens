@@ -40,6 +40,62 @@ class ModelManagerClient:
     async def profile(self, profile_id: str) -> dict:
         return await self._request("GET", f"/v1/profiles/{profile_id}")
 
+    async def complete_profile(
+        self,
+        profile_id: str,
+        organization_id: str,
+        messages: list[dict[str, str]],
+        *,
+        max_tokens: int | None = None,
+        response_schema: dict | None = None,
+    ) -> dict:
+        profile = await self.profile(profile_id)
+        if not profile.get("ready"):
+            selected = profile.get("selected_model") or {}
+            raise DomainError(
+                "The local assistant model is not running.",
+                503,
+                "assistant_local_unavailable",
+                {"state": profile.get("state"), "model": selected.get("display_name")},
+            )
+        generation = profile.get("generation") or {}
+        payload = {
+            "model": profile["selected_model"]["served_model_id"],
+            "messages": messages,
+            "temperature": generation.get("temperature", 0.35),
+            "max_tokens": min(int(max_tokens or generation.get("max_tokens", 384)), 384),
+            "stream": False,
+        }
+        if response_schema:
+            payload["response_format"] = {
+                "type": "json_object",
+                "schema": response_schema,
+            }
+        response = await self._request(
+            "POST",
+            "/openai/v1/chat/completions",
+            headers={
+                "X-Helvetic-Organization": organization_id,
+                "X-Helvetic-Priority": profile.get("policy", {}).get("priority", "interactive"),
+            },
+            json=payload,
+        )
+        try:
+            content = response["choices"][0]["message"]["content"]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise DomainError(
+                "The local assistant returned an unusable response.",
+                502,
+                "assistant_response_invalid",
+            ) from exc
+        if not isinstance(content, str):
+            raise DomainError(
+                "The local assistant returned an unusable response.",
+                502,
+                "assistant_response_invalid",
+            )
+        return {"content": content, "profile": profile}
+
     async def probe(self) -> dict:
         return await self._request("POST", "/v1/hardware/probe")
 

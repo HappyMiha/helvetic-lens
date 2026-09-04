@@ -12,7 +12,7 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 
@@ -51,6 +51,22 @@ type AssistantRuntime = {
   selected_model: { display_name: string };
   policy: { cloud_fallback: boolean; single_runtime: boolean };
 };
+
+type AssistantRemarkResponse = {
+  key: string;
+  provenance: {
+    local: true;
+    cloud_fallback: false;
+    persona_version: string;
+  };
+};
+
+const GENERATED_REMARK_KEYS = new Set([
+  "companion.generated.bureaucracy",
+  "companion.generated.evidence",
+  "companion.generated.queue",
+  "companion.generated.progress",
+]);
 
 function runtimeStatusKey(
   runtime: AssistantRuntime | null,
@@ -234,7 +250,7 @@ export function MarvinCompanion({
   open: boolean;
 }) {
   const pathname = usePathname();
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [preferences, setPreferences] =
     useState<CompanionPreferences>(DEFAULT_PREFERENCES);
@@ -246,6 +262,7 @@ export function MarvinCompanion({
   const [runtime, setRuntime] = useState<AssistantRuntime | null>(null);
   const interactionCount = useRef(0);
   const deepScrollSeen = useRef(false);
+  const remarkRequestId = useRef(0);
   const context = useMemo(() => routeContext(pathname), [pathname]);
 
   useEffect(() => {
@@ -291,8 +308,50 @@ export function MarvinCompanion({
     }
   }, [hydrated, preferences]);
 
+  const presentRemark = useCallback(
+    async (
+      trigger: "arrival" | "activity" | "deep_scroll",
+      fallbackKey: string,
+    ) => {
+      const requestId = ++remarkRequestId.current;
+      let selectedKey = fallbackKey;
+      if (runtime?.ready && preferences.tone !== "neutral") {
+        try {
+          const response = await api<AssistantRemarkResponse>(
+            "/assistant/remark",
+            {
+              method: "POST",
+              body: JSON.stringify({
+                schema_version: "assistant-context.v1",
+                intent: "explain_screen",
+                route: contractRoute(pathname),
+                locale,
+                trigger,
+                tone: preferences.tone,
+              }),
+            },
+          );
+          if (
+            response.provenance.local &&
+            response.provenance.cloud_fallback === false &&
+            GENERATED_REMARK_KEYS.has(response.key)
+          ) {
+            selectedKey = response.key;
+          }
+        } catch {
+          // The translated deterministic remark is the honest offline fallback.
+        }
+      }
+      if (requestId !== remarkRequestId.current) return;
+      setBubbleKey(selectedKey);
+      setBubbleVisible(true);
+    },
+    [locale, pathname, preferences.tone, runtime?.ready],
+  );
+
   useEffect(() => {
     setBubbleVisible(false);
+    remarkRequestId.current += 1;
     setBubbleKey(null);
     setSettingsOpen(false);
     interactionCount.current = 0;
@@ -311,8 +370,7 @@ export function MarvinCompanion({
     const timer = window.setTimeout(() => {
       if (document.visibilityState !== "visible" || open) return;
       rememberRoute(pathname);
-      setBubbleKey(context.quipKey);
-      setBubbleVisible(true);
+      void presentRemark("arrival", context.quipKey);
     }, delay);
     return () => window.clearTimeout(timer);
   }, [
@@ -324,6 +382,7 @@ export function MarvinCompanion({
     preferences.tone,
     serverQuipAllowed,
     context.quipKey,
+    presentRemark,
   ]);
 
   useEffect(() => {
@@ -341,8 +400,7 @@ export function MarvinCompanion({
     function showActivityRemark(key: string) {
       if (seenRecently(`${pathname}:activity`)) return;
       rememberRoute(`${pathname}:activity`);
-      setBubbleKey(key);
-      setBubbleVisible(true);
+      void presentRemark("activity", key);
     }
 
     function observeAllowlistedAction(event: PointerEvent) {
@@ -368,7 +426,9 @@ export function MarvinCompanion({
         target.scrollHeight - target.scrollTop - target.clientHeight;
       if (target.scrollHeight <= target.clientHeight || remaining > 160) return;
       deepScrollSeen.current = true;
-      showActivityRemark("companion.quip.deepScroll");
+      if (seenRecently(`${pathname}:activity`)) return;
+      rememberRoute(`${pathname}:activity`);
+      void presentRemark("deep_scroll", "companion.quip.deepScroll");
     }
 
     const main = document.querySelector<HTMLElement>("main.main");
@@ -385,6 +445,7 @@ export function MarvinCompanion({
     preferences.enabled,
     preferences.spontaneous,
     preferences.tone,
+    presentRemark,
     serverQuipAllowed,
   ]);
 

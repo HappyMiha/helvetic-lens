@@ -7,6 +7,19 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 ASSISTANT_CONTEXT_VERSION = "assistant-context.v1"
+ASSISTANT_PERSONA_VERSION = "marvin-local-v1"
+ASSISTANT_REMARK_ANGLES = ["bureaucracy", "evidence", "queue", "progress"]
+ASSISTANT_REMARK_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "angle": {
+            "type": "string",
+            "enum": ASSISTANT_REMARK_ANGLES,
+        }
+    },
+    "required": ["angle"],
+    "additionalProperties": False,
+}
 
 AssistantIntent = Literal[
     "explain_screen",
@@ -106,6 +119,62 @@ class AssistantContextInput(ContractModel):
                     f"{self.entity.kind} context requires route {route_requirements[self.entity.kind]}"
                 )
         return self
+
+
+class AssistantRemarkInput(AssistantContextInput):
+    trigger: Literal["arrival", "activity", "deep_scroll"]
+    tone: Literal["dry", "very_dry"] = "very_dry"
+
+
+def assistant_remark_schema(data: AssistantRemarkInput) -> dict:
+    """Select one safe angle before asking a small local model for structured output."""
+    if data.signals.job_state in {"queued", "starting_model", "generating", "validating"}:
+        preferred = "queue"
+    elif data.route in {"/compare", "/laws", "/impact", "/matrix"}:
+        preferred = "evidence"
+    elif data.route in {"/sources", "/activity"}:
+        preferred = "queue"
+    elif data.route in {"/topics", "/organization", "/digests"}:
+        preferred = "bureaucracy"
+    else:
+        preferred = "progress"
+    return {
+        "type": "object",
+        "properties": {"angle": {"type": "string", "enum": [preferred]}},
+        "required": ["angle"],
+        "additionalProperties": False,
+    }
+
+
+def assistant_remark_messages(data: AssistantRemarkInput) -> list[dict[str, str]]:
+    """Ask the small local model to select a safe semantic remark angle."""
+    route_purpose = {
+        "/": "daily regulatory radar",
+        "/registry": "saved regulatory development registry",
+        "/topics": "monitoring topic configuration",
+        "/impact": "possible impact review inbox",
+        "/discover": "regulatory discovery",
+        "/sources": "official source coverage",
+        "/activity": "background job activity",
+        "/matrix": "organization impact matrix",
+        "/digests": "notification digest settings",
+        "/organization": "organization profile",
+        "/laws": "monitored law record",
+        "/compare": "saved document comparison",
+    }[data.route]
+    preferred = assistant_remark_schema(data)["properties"]["angle"]["enum"][0]
+    system = (
+        f"Persona {ASSISTANT_PERSONA_VERSION}. Select the most relevant dry-robot remark angle for "
+        "the typed product event. Return JSON only with exactly one angle: bureaucracy for admin "
+        "friction, evidence for legal review, queue for sources or background work, or progress for "
+        "navigation and completed activity. Do not generate dialogue or infer beyond the event. "
+        f"The safe route classifier selected {preferred}; return that angle exactly."
+    )
+    user = (
+        f"Language: {data.locale}. Observe this event: {data.trigger} on {route_purpose}. "
+        f"Tone: {data.tone}. Signals: {data.signals.model_dump_json(exclude_defaults=True)}"
+    )
+    return [{"role": "system", "content": system}, {"role": "user", "content": user}]
 
 
 class AssistantActionProposal(ContractModel):

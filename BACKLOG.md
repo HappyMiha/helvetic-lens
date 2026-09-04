@@ -127,7 +127,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-082](#hl-082) | P2       | PLANNED  | HL-038, HL-050, HL-071, HL-074–HL-076                  | Separate opt-in public-discourse signal pilot                       |
 | [HL-083](#hl-083) | P1       | IN PROGRESS | HL-035, HL-062, HL-074, HL-076, HL-077              | Local assistant intent, context, privacy, and action contract       |
 | [HL-084](#hl-084) | P1       | IN PROGRESS | HL-031, HL-032, HL-083                              | Small local Apertus assistant profile and hardware gate             |
-| [HL-085](#hl-085) | P1       | PLANNED  | HL-065–HL-070, HL-083, HL-084                          | Persistent global assistant experience with cited answers          |
+| [HL-085](#hl-085) | P1       | IN PROGRESS | HL-065–HL-070, HL-083, HL-084                       | Persistent global assistant experience with cited answers          |
 | [HL-086](#hl-086) | P1       | PLANNED  | HL-035, HL-074, HL-075, HL-077, HL-083, HL-085         | Natural-language monitoring-topic flow through the assistant        |
 | [HL-087](#hl-087) | P1       | IN PROGRESS | HL-057, HL-085                                      | Proactive dry robot companion with safe five-language tone           |
 | [HL-088](#hl-088) | P0       | PLANNED  | HL-049, HL-057, HL-064, HL-065–HL-080, HL-083–HL-087, HL-089 | Responsive, first-value, relevance, and assistant acceptance gate |
@@ -1561,6 +1561,8 @@ Acceptance criteria:
 ### HL-085 — Build a persistent global assistant experience with cited answers
 
 Make the pet reachable during real work without covering evidence or sending users to the bottom of long pages.
+
+**Status: IN PROGRESS.** Spontaneous arrival, safe-navigation activity, and deep-scroll remarks now use the ready `assistant-lite` local runner with only the validated route, locale, trigger, tone, and typed signals. A safe server policy selects a bounded semantic remark angle and the small local model returns that structured decision; the trusted UI renderer supplies the five-language Marvin copy, so arbitrary or nonsensical model prose never reaches the user. The UI verifies local/no-cloud provenance and falls back to its deterministic route remark when local inference is stopped or invalid. Interactive conversation persistence, entity chips, cited Ask/Impact routing, and full failure/progress UX remain open.
 
 Acceptance criteria:
 

@@ -2,8 +2,13 @@ import pytest
 from pydantic import ValidationError
 
 from helvetic_lens.assistant_contract import (
+    ASSISTANT_PERSONA_VERSION,
+    ASSISTANT_REMARK_SCHEMA,
     AssistantActionProposal,
     AssistantContextInput,
+    AssistantRemarkInput,
+    assistant_remark_messages,
+    assistant_remark_schema,
     build_assistant_context,
 )
 
@@ -116,3 +121,135 @@ def test_context_endpoint_rejects_an_unavailable_tenant_entity(harness):
     )
     assert response.status_code == 404
     assert response.json()["code"] == "not_found"
+
+
+def test_remark_prompt_contains_only_bounded_context_and_versioned_persona():
+    data = AssistantRemarkInput.model_validate(
+        {
+            "route": "/sources",
+            "locale": "de-CH",
+            "trigger": "activity",
+            "tone": "very_dry",
+            "signals": {"result_count": 4},
+        }
+    )
+    messages = assistant_remark_messages(data)
+    serialized = "\n".join(item["content"] for item in messages)
+    assert ASSISTANT_PERSONA_VERSION in serialized
+    assert "official source coverage" in serialized
+    assert "de-CH" in serialized
+    assert "field" not in messages[1]["content"].lower()
+    assert ASSISTANT_REMARK_SCHEMA["properties"]["angle"]["enum"] == [
+        "bureaucracy",
+        "evidence",
+        "queue",
+        "progress",
+    ]
+    assert assistant_remark_schema(data)["properties"]["angle"]["enum"][0] == "queue"
+
+
+@pytest.mark.parametrize(
+    ("route", "expected"),
+    [
+        ("/compare", "evidence"),
+        ("/sources", "queue"),
+        ("/topics", "bureaucracy"),
+        ("/registry", "progress"),
+    ],
+)
+def test_remark_angle_is_ranked_from_safe_route_context(route, expected):
+    data = AssistantRemarkInput.model_validate(
+        {"route": route, "trigger": "arrival", "tone": "very_dry"}
+    )
+    assert assistant_remark_schema(data)["properties"]["angle"]["enum"] == [expected]
+
+
+class FakeAssistantManager:
+    def __init__(self):
+        self.calls = []
+
+    async def complete_profile(self, profile_id, organization_id, messages, **kwargs):
+        self.calls.append((profile_id, organization_id, messages, kwargs))
+        return {
+            "content": '{"angle":"queue"}',
+            "profile": {
+                "id": "assistant-lite",
+                "selected_model": {
+                    "served_model_id": "apertus-test",
+                    "immutable_revision": "abc123",
+                },
+            },
+        }
+
+
+def test_remark_endpoint_uses_local_profile_and_returns_provenance(harness):
+    client, _, service, _ = harness
+    manager = FakeAssistantManager()
+    service.model_manager = manager
+
+    response = client.post(
+        "/api/assistant/remark",
+        json={
+            "route": "/sources",
+            "locale": "en-CH",
+            "trigger": "arrival",
+            "tone": "very_dry",
+        },
+    )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["key"] == "companion.generated.queue"
+    assert response.json()["provenance"] == {
+        "profile": "assistant-lite",
+        "persona_version": ASSISTANT_PERSONA_VERSION,
+        "model": "apertus-test",
+        "model_revision": "abc123",
+        "local": True,
+        "cloud_fallback": False,
+    }
+    assert manager.calls[0][0] == "assistant-lite"
+
+
+def test_sensitive_state_rejects_remark_before_local_inference(harness):
+    client, _, service, _ = harness
+    manager = FakeAssistantManager()
+    service.model_manager = manager
+
+    response = client.post(
+        "/api/assistant/remark",
+        json={
+            "route": "/impact",
+            "trigger": "arrival",
+            "signals": {"has_high_impact_alert": True},
+        },
+    )
+
+    assert response.status_code == 409
+    assert response.json()["code"] == "assistant_quip_suppressed"
+    assert manager.calls == []
+
+
+def test_invalid_local_remark_gets_one_bounded_repair(harness):
+    client, _, service, _ = harness
+
+    class RepairingManager(FakeAssistantManager):
+        async def complete_profile(self, profile_id, organization_id, messages, **kwargs):
+            result = await super().complete_profile(
+                profile_id, organization_id, messages, **kwargs
+            )
+            if len(self.calls) == 1:
+                result["content"] = "not json"
+            return result
+
+    manager = RepairingManager()
+    service.model_manager = manager
+
+    response = client.post(
+        "/api/assistant/remark",
+        json={"route": "/sources", "trigger": "activity", "tone": "dry"},
+    )
+
+    assert response.status_code == 200, response.text
+    assert len(manager.calls) == 2
+    assert manager.calls[1][2][-1]["content"].startswith("Repair the answer")
+    assert manager.calls[0][3]["response_schema"]["additionalProperties"] is False

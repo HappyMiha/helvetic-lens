@@ -34,6 +34,10 @@ test("spontaneous observations are bounded and never inspect form content", () =
     /api<AssistantContextResponse>\("\/assistant\/context"/,
   );
   assert.match(companion, /api<AssistantRuntime>\("\/assistant\/runtime"\)/);
+  assert.match(companion, /api<AssistantRemarkResponse>/);
+  assert.match(companion, /provenance\.cloud_fallback === false/);
+  assert.match(companion, /GENERATED_REMARK_KEYS\.has\(response\.key\)/);
+  assert.match(companion, /remarkRequestId/);
   assert.match(companion, /runtime\.selected_model\.display_name/);
   assert.match(companion, /schema_version: "assistant-context\.v1"/);
   assert.match(companion, /!serverQuipAllowed/);
@@ -77,6 +81,10 @@ test("all five product locales define the companion contract", () => {
     "companion.quip.compare",
     "companion.quip.busy",
     "companion.runtimeProfile",
+    "companion.generated.bureaucracy",
+    "companion.generated.evidence",
+    "companion.generated.queue",
+    "companion.generated.progress",
   ]) {
     assert.equal(
       i18n.match(new RegExp(`"${key.replaceAll(".", "\\.")}"`, "g"))?.length,
