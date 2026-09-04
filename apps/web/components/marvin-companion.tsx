@@ -118,8 +118,8 @@ function contractRoute(pathname: string) {
 function routeContext(pathname: string): RouteContext {
   if (pathname.startsWith("/compare/")) {
     return {
-      actionHref: pathname,
-      actionKey: "companion.action.reviewComparison",
+      actionHref: `${pathname}?task=impact`,
+      actionKey: "companion.action.reviewCitedImpact",
       descriptionKey: "companion.context.compare",
       quipKey: "companion.quip.compare",
       titleKey: "companion.route.compare",

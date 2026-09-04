@@ -76,6 +76,7 @@ test("comparison questions use a private draft and the existing cited Ask flow",
   assert.match(companion, /ASSISTANT_JOB_TYPES/);
   assert.match(companion, /job\.progress\.current/);
   assert.match(companion, /jobResultHref\(job\)/);
+  assert.match(companion, /actionHref: `\$\{pathname\}\?task=impact`/);
 });
 
 test("the companion remains keyboard, mobile, and reduced-motion aware", () => {
@@ -125,6 +126,7 @@ test("all five product locales define the companion contract", () => {
     "companion.openJobResult",
     "companion.jobComplete",
     "companion.jobEnded",
+    "companion.action.reviewCitedImpact",
   ]) {
     assert.equal(
       i18n.match(new RegExp(`"${key.replaceAll(".", "\\.")}"`, "g"))?.length,
