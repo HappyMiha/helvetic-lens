@@ -1,6 +1,8 @@
 # Daily-use UX and product audit
 
-This audit translates observed product friction into the `HL-065`–`HL-088` roadmap. It is based on the current browser experience, responsive CSS, navigation, comparison/Ask implementation, onboarding, registry, Impact inbox, digest flow, official connector contracts, and local-model architecture.
+> **Historical audit — superseded for current-state findings on 4 September 2026.** This document preserves the observations that motivated `HL-065`–`HL-088`. Use the [4 September product review](PRODUCT_REVIEW_2026-09-04.md) for the current assessment and prioritized work. Since this audit, independent shell scrolling and mobile navigation, the canonical Company profile page, responsive comparison, asynchronous Ask with targeted updates, organization source packs, and durable monitoring topics/matching have been implemented (`HL-065`–`HL-072`, `HL-074`–`HL-075`). Statements below describing those capabilities as absent are historical, not claims about the current build. Onboarding and the unified interest/notification loop still have open work. Implementation evidence is recorded in [verification notes](VERIFICATION.md); independent usefulness and release acceptance remain separate gates.
+
+This audit translated observed product friction into the `HL-065`–`HL-088` roadmap. It was based on the browser experience, responsive CSS, navigation, comparison/Ask implementation, onboarding, registry, Impact inbox, digest flow, official connector contracts, and local-model architecture at that time.
 
 ## Product conclusion
 

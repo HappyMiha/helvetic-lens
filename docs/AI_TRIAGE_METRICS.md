@@ -6,7 +6,8 @@ The platform control room exposes a bounded aggregate over the newest 1,000 Impa
 
 | Measure | Definition |
 | --- | --- |
-| Deterministic overview p50/p95/max | Wall time saved with a newly computed complete comparison diff. This is also the current machine-measured **time to first useful insight**, because the deterministic overview is available before AI. |
+| Deterministic overview p50/p95/max | Recorded processing time for a newly computed complete comparison diff. This measures machine latency; it does not show when a user found, understood, or acted on a useful insight. |
+| Human time to first useful insight | Observed time from beginning a defined review task until the participant correctly explains the material change, its possible relevance, and supporting evidence. Record task, participant cohort, success criteria, and failures in moderated research. Do not derive this measure from diff latency or evidence-link clicks. |
 | Provider queue p50/p95/max | Sum of provider-reported queue wait for records that made at least one provider call. Zero-call deterministic or cached answers do not dilute this measure. |
 | Inference p50/p95/max | Sum of measured model request durations for records that made at least one provider call. |
 | Calls and tokens | Totals from saved inference provenance. Token fields are retained separately because OpenAI-compatible providers do not all report the same usage keys. |
@@ -18,6 +19,8 @@ The platform control room exposes a bounded aggregate over the newest 1,000 Impa
 | Review evidence-open rate | Measured relation-review entries that opened the saved evidence link divided by all measured entries. It is a workflow signal, not proof that evidence was understood. |
 | Relation review by variant | Decision time, decision count, sample count, and evidence-open rate split by allowlisted workflow variant so a prototype cannot claim gains from a blended aggregate. |
 
-The API returns these values under `ai_triage` from `/api/admin/status`. The localized platform dashboard shows the four primary rates/latencies and compact totals for calls, tokens, failures, limited results, and human action outcomes.
+The API returns the recorded operational and review aggregates under `ai_triage` from `/api/admin/status`. The localized platform dashboard shows the four primary rates/latencies and compact totals for calls, tokens, failures, limited results, and human action outcomes.
+
+The human insight measure above is a research definition, not an existing automatic API measurement. The current machine field/display may still use the legacy “time to first useful insight” label for deterministic latency. This documentation correction does not rename API fields, stored data, dashboard labels, or validator inputs. The compatible contract and display correction belongs to `HL-093`; until then, interpret that legacy value only as deterministic processing latency and never cite it as evidence of user comprehension or product usefulness.
 
 Historical comparisons created before this measurement was introduced have no deterministic-overview sample. Historical relation reviews have no workflow duration or evidence-open sample. They remain valid records but do not become artificial zero-latency or unopened-evidence samples. Relation-review aggregates contain no notes, source text, user/organization names, or candidate identifiers. Target-host benchmark evidence must record the server, clean Git revision, GPU/model profile, corpus revision, and observation window alongside these aggregates. `scripts/check_ai_triage_release.py` verifies that the usability round names the exact capacity-report hash rather than accepting metrics copied from another run. `scripts/check_relation_graph_experiment.py` independently validates the randomized list-versus-graph trial before any graph can be promoted.

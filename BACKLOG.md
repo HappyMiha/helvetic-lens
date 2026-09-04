@@ -4,16 +4,16 @@
 
 This backlog implements the product described in [README.md](README.md): a local-AI-first Swiss regulatory monitor with immutable evidence, a time-based legal registry, official-source connectors, cross-document impact analysis, and organization workspaces.
 
-**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-047`, `HL-050`–`HL-052`), decision-ready comparison work (`HL-058`–`HL-063`), and reliable daily-work foundation through bounded topic matching (`HL-065`–`HL-072`, `HL-074`–`HL-075`) are implemented and verified through the API, browser build, migrations, regression tests, and responsive browser QA. The optional saved impact matrix (`HL-023`) is also complete. Five-language product localization (`HL-057`) is in progress. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [daily-use UX and product audit](docs/UX_PRODUCT_AUDIT.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), [impact-report contract](docs/IMPACT_REPORT.md), [Ask routing](docs/ASK_ROUTING.md), [localization contract](docs/LOCALIZATION.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
+**Status, reviewed 4 September 2026:** The source/evidence, organization, local-runtime, connector, comparison, responsive-shell and topic foundations are implemented. Historical DONE records below retain their original scope and verification evidence; they do **not** establish useful AI reasoning, complete source coverage, accessible journeys, target-host capacity, or product-market fit. The [current product audit](docs/PRODUCT_REVIEW_2026-09-04.md) found concrete contrast and relevance defects, extractive local answers presented as analysis, and an unfinished topic-to-notification journey. The [product-quality reset](#product-quality-reset-2026-09-04) is the next execution order. Hardware/operations gates HL-032/048/049, native localization HL-057, independent AI/usability evidence HL-064 and daily-use acceptance HL-088 remain open. See also the [architecture](docs/ARCHITECTURE.md), [historical UX audit](docs/UX_PRODUCT_AUDIT.md), [AI triage design](docs/AI_TRIAGE.md), [impact-report contract](docs/IMPACT_REPORT.md), [Ask routing](docs/ASK_ROUTING.md), and [verification evidence](docs/VERIFICATION.md).
 
 ## Scope and priorities
 
-- **P0 — release foundation or safety/capacity gate.** The public beta cannot open without it.
+- **P0 — critical trust, accessibility, release foundation or capacity gate.** The public beta cannot open without it.
 - **P1 — required public-beta product capability.** P1 is required for the agreed local-AI-first product, even when it can follow the P0 foundation.
 - **P2 — valuable follow-up after public beta.** Add after the core three sources, registry, and impact inbox are reliable.
 - **P3 — evidence-driven expansion.** Implement only when real use demonstrates the need.
 
-The completed baseline contains 28 items, including two deliberately deferred optional items. The original public-beta roadmap contains **29 required items (`HL-029`–`HL-049` plus `HL-057`–`HL-064`)** and **7 earlier after-beta items (`HL-050`–`HL-056`)**. The daily-use roadmap adds **25 items (`HL-065`–`HL-089`)** for reliable responsive UX, source packages, topic monitoring, interest-based alerts, persisted AI relevance briefs, and a small local assistant. Follow dependencies and checkpoints; priority alone is not an execution order. No calendar estimates are assumed until the dual-GTX-1080 benchmark and connector contract spikes are complete.
+The original baseline contains 28 items: 27 completed and one deferred optional item (HL-024; optional HL-023 is complete). The original public-beta roadmap contains **29 required items (`HL-029`–`HL-049` plus `HL-057`–`HL-064`)** and **7 earlier after-beta items (`HL-050`–`HL-056`)**. The daily-use roadmap adds **25 items (`HL-065`–`HL-089`)**. The September product audit adds **12 corrective/evaluation items (`HL-090`–`HL-101`)**, while reusing the unfinished daily-use tasks rather than duplicating them. Follow dependencies and checkpoints; priority alone is not an execution order. Start discovery and design validation now; target-hardware absence blocks promotion, not useful prototype work. No unsupported calendar or capacity promises.
 
 Keep the proven stack and add only the infrastructure now justified by public use: **Next.js, Tailwind CSS/shadcn/ui, FastAPI, PostgreSQL, Redis, Celery, Caddy, BeautifulSoup, PyMuPDF, `difflib`, and a private llama.cpp-based local inference runtime**. A quantized **Apertus 8B** profile is the intended production default only after it passes the target-hardware gate; the smaller verified profile remains valid for development. Cloud model adapters are optional and disabled by default. **pgvector remains conditional on a measured recall gap.**
 
@@ -36,10 +36,13 @@ Keep the proven stack and add only the infrastructure now justified by public us
 | M11 — Interest-based monitoring | HL-074–HL-082, HL-089 | Users follow laws or natural-language topics and receive grouped, evidence-linked, organization-relevant alerts from explicitly activated official or public-discourse source packs. |
 | M12 — Local product assistant   | HL-083–HL-087         | A small local Apertus assistant explains the product, drafts monitoring plans, answers through cited workflows, and proposes safe user-confirmed actions.        |
 | M13 — Daily-use acceptance      | HL-088                | Responsive, first-value, relevance, local-model, accessibility, localization, and source-honesty gates pass on the actual target hardware.                       |
+| M14 — Product-quality reset     | HL-090–HL-101 plus open daily-use tasks | The complete interest-to-evidence-to-notification journey is useful in an independent pilot; validated local explanations, accessible reading, honest coverage and bounded operations replace implementation-only success claims. |
 
-Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, implement `HL-029` first, establish the `HL-057` internationalization conventions immediately, then run durable-job, local-model, organization, and translation work in parallel where their dependencies allow. Complete tenancy and the shared-corpus split before adding broad connectors; otherwise source records would need a second migration. Complete `HL-058`–`HL-064` before treating AI output as a product decision aid: the exact diff stays available for audit, while the default flow must identify material legal-unit changes and produce bounded, validated results. Implement the daily-use work in dependency order beginning with `HL-065`: repair the shell and update behavior before rearranging the comparison experience, establish honest source packages before onboarding users into them, and create durable topic/evidence contracts before adding conversational shortcuts. Localize each screen as it is built instead of translating the finished product at the end. Finish operations and the measured capacity gate before exposing registration publicly.
+**Historical sequencing:** HL-029 and HL-065 were the entry points for the now-implemented architecture and daily-work foundations; do not restart them. Preserve the original task record, including deferred HL-024. **Current execution follows M14 below.** Keep its original architectural constraints: shared corpus and tenancy before broad fan-out, complete saved evidence before model interpretation, durable topic contracts before conversational activation, localization alongside each screen, and measured operations/capacity before public registration.
 
 ## Task index
+
+**Status discipline:** DONE means the recorded implementation scope was completed, not that later defects are denied. Fixes to DONE work have explicit new IDs or follow-up acceptance notes. IN PROGRESS separates implemented code from missing field/hardware evidence. PLANNED is not delivered. New measured targets below are proposed acceptance thresholds, never current performance claims.
 
 | ID                | Priority | Status   | Dependencies                                           | Deliverable                                                         |
 | ----------------- | -------- | -------- | ------------------------------------------------------ | ------------------------------------------------------------------- |
@@ -91,7 +94,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-046](#hl-046) | P1       | DONE     | HL-037, HL-045, HL-063                                 | Impact inbox and monitored-law cross-links                          |
 | [HL-047](#hl-047) | P1       | DONE     | HL-031, HL-035, HL-042                                 | Platform and organization admin console                             |
 | [HL-048](#hl-048) | P0       | IN PROGRESS | HL-029–HL-035, HL-038                               | Public single-server deployment and operations baseline             |
-| [HL-049](#hl-049) | P0       | IN PROGRESS | HL-037–HL-048, HL-057–HL-064                        | Reproducible recovery and 100-user capacity gate                    |
+| [HL-049](#hl-049) | P0       | IN PROGRESS | HL-037–HL-048, HL-057–HL-063; implemented evaluation protocol | Reproducible recovery and 100-user capacity gate             |
 | [HL-057](#hl-057) | P1       | IN PROGRESS | HL-032, HL-034–HL-037, HL-045–HL-047                | Complete German, French, Italian, Romansh, and English localization |
 | [HL-058](#hl-058) | P0       | DONE     | HL-005, HL-036, HL-038                                 | Document-identity gate before comparison or AI                      |
 | [HL-059](#hl-059) | P0       | DONE     | HL-011, HL-036, HL-058                                 | Legal-unit semantic diff with noise classification                  |
@@ -99,7 +102,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-061](#hl-061) | P1       | DONE     | HL-033, HL-060                                         | Actionable, deduplicated impact-report contract                     |
 | [HL-062](#hl-062) | P1       | DONE     | HL-060, HL-061                                         | Intent-routed Ask experience and safe context selection             |
 | [HL-063](#hl-063) | P1       | DONE     | HL-030, HL-037, HL-059–HL-062                          | Decision-ready comparison UX and background progress                |
-| [HL-064](#hl-064) | P0       | PLANNED  | HL-057–HL-063                                          | AI-triage regression, evidence, latency, and usability gate         |
+| [HL-064](#hl-064) | P0       | IN PROGRESS | HL-049 final report, HL-057–HL-063                    | AI-triage regression, evidence, latency, and usability gate         |
 | [HL-050](#hl-050) | P2       | DONE     | HL-038, HL-042                                         | Broader official regulatory news connectors                         |
 | [HL-051](#hl-051) | P2       | DONE     | HL-044, HL-050                                         | Measured semantic candidate recall with pgvector if justified       |
 | [HL-052](#hl-052) | P2       | DONE     | HL-034, HL-046, HL-057                                 | Opt-in email and web digests                                        |
@@ -118,8 +121,8 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-073](#hl-073) | P0       | PLANNED  | HL-034, HL-035, HL-066, HL-070, HL-072, HL-074, HL-077 | Stateful onboarding, contextual help, and useful empty states       |
 | [HL-074](#hl-074) | P0       | DONE     | HL-033, HL-035, HL-036, HL-042, HL-071, HL-072         | Durable monitoring topics and editable monitoring plans             |
 | [HL-075](#hl-075) | P0       | DONE     | HL-044, HL-051, HL-074                                 | Bounded topic matching with persisted evidence                      |
-| [HL-076](#hl-076) | P0       | PLANNED  | HL-037, HL-046, HL-067, HL-075, HL-089                 | Unified interest feed for monitored laws and topics                 |
-| [HL-077](#hl-077) | P1       | PLANNED  | HL-035, HL-066, HL-074, HL-076                         | Contextual “Monitor this” entry points                              |
+| [HL-076](#hl-076) | P0       | PLANNED  | HL-037, HL-046, HL-067, HL-075, HL-094, HL-099         | Unified interest feed; HL-089 enriches cards asynchronously          |
+| [HL-077](#hl-077) | P1       | PLANNED  | HL-035, HL-066, HL-074                                 | Contextual “Monitor this”; integrate HL-076 as its feed arrives      |
 | [HL-078](#hl-078) | P1       | PLANNED  | HL-052, HL-076, HL-077                                 | In-app notification centre over the existing delivery state         |
 | [HL-079](#hl-079) | P1       | PLANNED  | HL-052, HL-075, HL-076                                 | Topic matches in existing digests                                   |
 | [HL-080](#hl-080) | P1       | PLANNED  | HL-038, HL-071, HL-072                                 | Cantonal source-pack framework and one verified pilot               |
@@ -130,8 +133,20 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-085](#hl-085) | P1       | IN PROGRESS | HL-065–HL-070, HL-083, HL-084                       | Persistent global assistant experience with cited answers          |
 | [HL-086](#hl-086) | P1       | PLANNED  | HL-035, HL-074, HL-075, HL-077, HL-083, HL-085         | Natural-language monitoring-topic flow through the assistant        |
 | [HL-087](#hl-087) | P1       | IN PROGRESS | HL-057, HL-085                                      | Proactive dry robot companion with safe five-language tone           |
-| [HL-088](#hl-088) | P0       | PLANNED  | HL-049, HL-057, HL-064, HL-065–HL-080, HL-083–HL-087, HL-089 | Responsive, first-value, relevance, and assistant acceptance gate |
-| [HL-089](#hl-089) | P0       | PLANNED  | HL-032, HL-045, HL-061, HL-075                         | Persisted AI relevance briefs for matched developments              |
+| [HL-088](#hl-088) | P0       | PLANNED  | HL-049, HL-057, HL-064, HL-065–HL-080, HL-083–HL-087, HL-089–HL-101 | Final daily-use acceptance, including independent pilot evidence |
+| [HL-089](#hl-089) | P0       | PLANNED  | HL-032, HL-045, HL-061, HL-075, HL-091, HL-092, HL-094, HL-100 | Persisted AI relevance briefs for matched developments       |
+| [HL-090](#hl-090) | P1       | PLANNED  | None                                                   | Target-user discovery and observed first-value prototypes           |
+| [HL-091](#hl-091) | P0       | PLANNED  | HL-031, HL-060, HL-093                                 | Capability-based local explanations versus explicit extractive mode |
+| [HL-092](#hl-092) | P0       | PLANNED  | HL-061, HL-091                                         | Truthful structured reports, dates, applicability and useful actions |
+| [HL-093](#hl-093) | P0       | PLANNED  | HL-059, HL-062, HL-075                                 | Independent semantic gold set and honest quality metrics            |
+| [HL-094](#hl-094) | P0       | PLANNED  | HL-030, HL-075                                         | Fair resumable matching and preview/production parity               |
+| [HL-095](#hl-095) | P1       | PLANNED  | HL-037, HL-066, HL-074                                 | Progressive topic, registry and recovery controls                   |
+| [HL-096](#hl-096) | P1       | PLANNED  | HL-063, HL-068                                         | Coherent visual system and readable scalable evidence               |
+| [HL-097](#hl-097) | P0       | PLANNED  | HL-065, HL-068, HL-070                                 | Visible AI controls and accessible populated journeys               |
+| [HL-098](#hl-098) | P0       | PLANNED  | HL-036, HL-071, HL-072                                 | Verified source coverage and versioned legacy-artifact repair       |
+| [HL-099](#hl-099) | P0       | PLANNED  | HL-030, HL-036, HL-046                                 | Bounded event read model and period-limited digest queries           |
+| [HL-100](#hl-100) | P0       | PLANNED  | HL-044, HL-045, HL-093                                 | Substantive relation evidence and safe assessment supersession       |
+| [HL-101](#hl-101) | P0       | PLANNED  | HL-090, HL-073, HL-076, HL-078, HL-079, HL-089, HL-032, HL-048, HL-049, HL-057, HL-064, HL-098–HL-100 | Measured longitudinal pilot and rollout decision |
 
 ## M0 — Ready to build
 
@@ -1528,7 +1543,7 @@ The assistant is a product interface over existing authorized Helvetic Lens work
 
 Give the pet a useful job and a strict server-enforced boundary before choosing animation or personality details.
 
-**Status: IN PROGRESS.** A versioned `assistant-context.v1` API now accepts only the seven allowlisted intents, canonical product routes, tenant-validated law/comparison/topic/job references, and bounded typed state signals. Unknown fields and unrestricted URLs fail validation; entity references are checked inside the active organization boundary. The response explicitly lists included/excluded context, defaults conversation visibility to a personal draft, suppresses quips for sensitive product states, and emits only typed proposals. Shared-state proposals are disabled for viewers and cannot be constructed without explicit confirmation. Marvin now obtains permission to make a spontaneous remark from this server contract. Persisted conversation separation, cited intent execution, metrics, and the remaining entity-specific context producers are still pending.
+**Status: IN PROGRESS.** A versioned `assistant-context.v1` API now accepts only the seven allowlisted intents, canonical product routes, tenant-validated law/comparison/topic/job references, and bounded typed state signals. Unknown fields and unrestricted URLs fail validation; entity references are checked inside the active organization boundary. The response explicitly lists included/excluded context, defaults conversation visibility to a personal draft, suppresses quips for sensitive product states, and emits only typed proposals. Shared-state proposals are disabled for viewers and cannot be constructed without explicit confirmation. Marvin now obtains permission to make a spontaneous remark from this server contract. Personal user-and-organization-scoped conversation persistence has since been delivered under HL-085. Complete cited intent execution, durable in-flight chat, metrics, and remaining entity-specific context producers are still pending.
 
 Acceptance criteria:
 
@@ -1623,12 +1638,275 @@ Acceptance criteria:
 - Freeze topic-match precision/noise, missed-item, source-degradation, event-grouping, and alert-usefulness thresholds before the final labelled evaluation; publish pass/fail evidence and do not tune against the acceptance set.
 - On the GTX 1070 and intended dual-GTX-1080 host, show an acknowledged AI job within one second, bounded queue wait/cancellation, measured cold/warm latency, 50-run stability without OOM, fair interactive/background work, and no silent cloud request.
 - Achieve 100% server validation for assistant action schemas, organization authorization, and accepted citations in the fixed test set; unsupported or invalid output fails closed with a useful manual path.
-- This core gate depends on unfinished capacity, localization, and AI-triage gates (`HL-049`, `HL-057`, `HL-064`) plus `HL-065`–`HL-080`, `HL-083`–`HL-087`, and `HL-089`. Experimental public discourse and subsequent canton expansion (`HL-081`, `HL-082`) pass their own evidence gates and do not block the core release.
+- This core gate depends on unfinished capacity, localization, and AI-triage gates (`HL-049`, `HL-057`, `HL-064`) plus `HL-065`–`HL-080`, `HL-083`–`HL-087`, `HL-089`, and corrective/pilot evidence `HL-090`–`HL-101`. Experimental public discourse and subsequent canton expansion (`HL-081`, `HL-082`) pass their own evidence gates and do not block the core release.
+
+<a id="product-quality-reset-2026-09-04"></a>
+
+## M14 — Product-quality reset, 4 September 2026
+
+Based on the [current code and live-product audit](docs/PRODUCT_REVIEW_2026-09-04.md), the product goal is one useful loop: **express an interest → receive a relevant development → understand its significance → verify evidence → decide → return for the next useful update**. Keep the current single-host architecture, immutable evidence and local-first policy. Do not replace these with another chat, matcher, notification store or microservice fleet.
+
+### Execution order and demonstrable increments
+
+| Increment | Work | Reviewable outcome |
+| --- | --- | --- |
+| A — Stop misleading or inaccessible output | HL-097 contrast first; HL-093 benchmark contract; HL-100 relevance; HL-091/092 local explanations. Run HL-090 discovery in parallel. | Enabled AI controls are visible. Generic title overlap cannot produce High impact. A model either explains with substantive evidence or is honestly extractive. |
+| B — Finish one vertical monitoring journey | HL-077/095 → HL-073 in parallel with HL-094/099 → HL-076; integrate HL-089/078/079. | A new organization follows a topic and gets one useful source-linked notification, with a no-AI path and an offline/degraded-source variant. |
+| C — Make daily reading pleasant | HL-096; finish HL-057/097; finish the existing HL-083–087 assistant scope. | Long titles, evidence, filters, chat and history work on mobile and keyboard without nested reading traps or invisible controls. |
+| D — Earn the release claim | HL-098; target HL-032/048/049/064 evidence; HL-101 federal pilot; HL-080 cantonal pilot before final HL-088. | Independent users repeatedly use the product; source coverage, usefulness, runtime and recovery have published evidence and remaining limits. |
+
+Dependencies identify integration prerequisites; they do not prevent early prototypes, fixtures or independent work. HL-076 no longer waits for AI enrichment to render a deterministic feed. HL-077 can add law/topic entry points before that feed exists. HL-073 can therefore prove first value without waiting for every notification feature.
+
+HL-093 supplies the reviewed dataset/protocol and baseline first; HL-091/100 do not wait for their own future fixes to pass its quality thresholds. HL-049 uses the already implemented AI-triage corpus/protocol; final HL-064 signs off only after the resulting capacity report exists. The federal pilot may precede HL-080, but the currently agreed broader daily-use release still requires that one verified cantonal pack. Later canton/media expansion remains optional.
+
+### Amendments to existing open tasks (not new duplicate features)
+
+- **HL-057:** Translate runtime enum values, filter options, date precision, source-pack display names and server-authored report text; dictionary parity alone is insufficient. Inspect populated Topics, Registry, Inbox, comparison and history in all five locales. Preserve source-language labels and distinguish an AI translation from official wording; native review remains mandatory.
+- **HL-073:** Persist first-value milestones rather than showing static explanatory cards. Start with the user's intent, one understandable coverage choice and a preview. Invited viewers see the organization's existing useful data or an admin request route. Missing sources, pending sync, zero matches and filtered-out results have different recovery actions. Target ≥80% unassisted first-interest-plus-evidence success in ≤5 minutes using the HL-090 protocol; prototype success does not close implementation acceptance, which is repeated on the built flow in HL-088/101.
+- **HL-076:** Make Today the grouped interest feed, not another technical watchlist. Group one logical publisher development across created/version/language ingestion facts while retaining exact event identities underneath; do not collapse later material amendments. Show detected and official dates separately, stable deep links, readable importance and one review action. A deterministic card is available without HL-089, then enriched in place; do not label unavailable AI as low importance. Preserve law-only views and personal states through migration.
+- **HL-077:** Use a common monitored-interest preview from existing document/discovery/comparison routes now and feed routes when ready. No broad automatic activation from a chat sentence; preserve explicit admin confirmation and viewer proposals.
+- **HL-078/079:** One logical development matching three interests produces one delivery per user/channel/policy window, not three cards or one per language. Revisions update the existing item unless a materially new development merits a follow-up. Include “why you received this,” source status, quiet hours, unsubscribe and evidence deep links; do not consume inference during rendering or delivery.
+- **HL-089:** Depend on HL-091/092/100 for explanatory and evidential quality. Metadata-only retrieval leads remain unassessed, not supported High conclusions. Expose pending/limited/offline/stale states; shared assessment reuse never leaks another organization's profile or private evidence.
+- **HL-083–085:** Complete context producers for every supported route; unknown/admin routes must not quietly use Today's advice. Make substantive companion turns durable before generation, with idempotent retry, cancellation, navigation/reload recovery and paginated retained history. Separate personal chat from shared cited analysis visibly. One natural mobile conversation scroll; put diagnostics/context/preferences behind disclosure. No new legal answer engine.
+- **HL-084/087:** Preserve the requested character, existing cooldown/deduplication, mute and reduced-motion controls. Proactive quips use zero inference or strictly idle background admission and must add zero GPU queue delay when real Ask/Impact jobs wait. Distinguish requested chat from spontaneous entertainment in workload priority. Show Test voice / Stop / unavailable or blocked status; verify actual audio on supported physical/browser combinations. Browser speech is not a dedicated locally hosted TTS guarantee; any remote voice must be disclosed and explicitly opted into, with a local-only option.
+- **HL-032/048/049/064:** Keep target-host gates open. Extend the representative run with real useful answers, background source sync/digests, companion traffic and a mature corpus. Existing syntax/runtime smoke remains valid but cannot pass semantic or human-usability acceptance. Early user testing runs without waiting for the production machine; the final release still references its actual measured report.
+- **HL-088:** Require all corrective HL-090–101 evidence as well as the original core dependencies. Require populated Topics/Marvin/comparison journeys without optional fixture skips, actual role checks, independent comprehension and pilot outcomes. A visual screenshot or accepted citation ID is not proof of accessible or correct behavior.
+
+### Shared acceptance for the new items
+
+Every user-facing change includes DE/FR/IT/RM/EN, admin/viewer/platform boundaries, mobile/keyboard behavior, cached/loading/empty/error/stale states and a no-local-model path where relevant. Attach evidence to the Git revision, input corpus, model/profile, environment and measured denominator. Implementers may not mark independent human or unavailable target-hardware gates complete from code inspection. Keep secrets, personal transcripts and raw operational data out of committed audit reports.
+
+<a id="hl-090"></a>
+
+### HL-090 — Validate a target audience and the first useful experience
+
+**Priority:** P1. **Status:** PLANNED. **Dependencies:** none. **Owner role:** product/UX with recruited Swiss users.
+
+Problem: no recorded field evidence establishes which audience returns, which decision improves, or which manual work is replaced.
+
+Deliverable: a concise research report, selected initial segment, evidence-linked jobs-to-be-done and two tested journey prototypes.
+
+Acceptance criteria:
+
+- Recruit at least eight independent participants across two candidate segments, including organization admins/readers and mobile use. Observe actual recent monitoring tasks and current alternatives; do not count project contributors as independent participants.
+- Record frequency, consequence of missed developments, useful information, noise tolerance, language needs and source expectations. Include disconfirming evidence; do not promise a portal for everyone.
+- Select one primary initial segment and a narrowly stated task. Prototype intent → coverage → relevant event → evidence → decision without requiring source URLs.
+- Run two rounds of moderated first-use tests, improving the prototype between them. Use fresh participants per round or exclude returning participants from first-use rates. Freeze the final-round denominator and report task success, time, assistance and misunderstandings; target ≥80% complete first interest and evidence in ≤5 minutes and explain a daily item's relevance in ≤60 seconds.
+- Separate early learning from final native-language/target-host acceptance. Publish anonymized findings and resulting backlog decisions; recruiting/contacting participants is an owner-arranged activity, not permission to send unsolicited messages.
+
+<a id="hl-091"></a>
+
+### HL-091 — Make local answers depend on verified model capability
+
+**Priority:** P0. **Status:** PLANNED. **Dependencies:** HL-031, HL-060, HL-093. **Owner role:** AI/backend.
+
+Problem: the Docker path selects rows and concatenates excerpts regardless of whether the configured model could produce a useful explanation.
+
+Deliverable: versioned capability-based answer modes through the existing runtime/planner, with explicit limited/extractive and explanatory modes.
+
+Acceptance criteria:
+
+- Remove provider-name-based assumptions about reasoning capability. Store approved model/profile/revision, language/task capabilities, context/output budgets and the independent evaluation reference. A more capable local model is not forced into the tiny-model adapter.
+- A promoted profile returns a concise explanation of the change or question, relevance and a supported next step/no action, with exact claim citations. Raw passage concatenation must never be labelled an AI impact interpretation.
+- A tiny/unverified profile provides clearly labelled selected evidence plus manual/cited follow-up, not fabricated reasoning. The product remains usable when local AI is unavailable; no silent cloud fallback or automatic model download/swap.
+- For short documents, allow both complete normalized texts plus material diff/context when the measured token budget fits. For large documents retain full persisted comparison, bounded legal-unit evidence and a visible coverage manifest. Never silently truncate or restore thousand-call batching.
+- Preserve one repair attempt, cancellation, plan limits (Ask ≤3, Impact ≤5 calls), evidence validation, cache fingerprints and shared-result reuse. Profile/prompt changes supersede rather than erase past results.
+- Pass the explanatory subset of HL-093 on each promoted local model/locale. Report limited modes separately; runtime JSON validity alone cannot promote a profile.
+
+<a id="hl-092"></a>
+
+### HL-092 — Produce truthful decision reports, dates and next actions
+
+**Priority:** P0. **Status:** PLANNED. **Dependencies:** HL-061, HL-091. **Owner role:** AI/backend with domain review.
+
+Problem: current rich reports wrap simpler output in templates and always mark some dates absent, so presentation overstates what was actually established.
+
+Deliverable: a versioned report schema and renderer that map each claim to evidence and distinguish facts, interpretations and review suggestions.
+
+Acceptance criteria:
+
+- Generate/validate what changed, relevance to specified organizational activity, applicability conditions, affected activities, official status and concrete action or `no_action_now`. Provide a short summary before expandable details.
+- Extract dates with type, source quote and provenance: publication, entry into force, transition period, deadline or relative period. Distinguish not reviewed, not found after review, ambiguous, not applicable and established; do not automatically insert `not_found`.
+- Validate date-present/date-absent/ambiguous/relative-period fixtures, numbers, scope exceptions and proposal-versus-enacted cases in all five locales. Zero invented critical dates or obligations; explicit fixture dates must not be falsely marked absent.
+- Deduplicate paraphrased actions by the underlying obligation/activity. Each action says what to inspect/change and why, with evidence; no repeated generic “review the law.” Owners are assigned by people unless the source genuinely specifies a role; recommendations are not asserted legal duties.
+- Localize server-authored prose and labels independently from official source wording. Store schema/prompt/model/profile provenance and expose incomplete analysis honestly.
+- Migrate rendering safely: legacy reports remain inspectable with original timestamps and a legacy/limited label. Reassessment is explicit or a bounded authorized migration; historical text is not silently rewritten.
+
+<a id="hl-093"></a>
+
+### HL-093 — Establish independent semantic quality and honest metrics
+
+**Priority:** P0. **Status:** PLANNED. **Dependencies:** HL-059, HL-062, HL-075. **Owner role:** evaluation/QA with fluent domain reviewers.
+
+Problem: tiny title-match examples and valid citation-row JSON establish regression/runtime behavior, not relevance, factual support or user understanding.
+
+Deliverable: a versioned public-source gold set, held-out evaluation protocol and separated runtime/semantic/human metric definitions.
+
+Completion of this evaluation-infrastructure task requires a reviewed set, runnable evaluator and honestly reported baseline failures. Passing the proposed model/product targets is required for subsequent profile promotion and final HL-064/088 acceptance, not a circular prerequisite to implementing HL-091/100.
+
+Acceptance criteria:
+
+- Assemble at least 200 independently labelled interest/event pairs, with per-language/source-type counts, negatives, paraphrases, German compounds, cross-language references, scope exceptions and high-value misses. Keep a held-out test set; record adjudication/disagreement instead of tuning against it.
+- Include at least 30 comparison/Ask/report scenarios across the five locales: changed date/number, insertion/renumbering, movement, hyphenation, unchanged text, repeal/replacement, unsupported inference, vague question and cached answer. Include the observed BBl line-wrap case and climate/direct-payments boilerplate pair.
+- Measure precision and recall (provisional targets ≥85% and ≥90%), factual entailment, material omissions, action usefulness and language quality separately. Proposed report target: ≥90% useful explanations and zero unsupported critical claims in the release set. Publish denominators, model revision and failures, not only an aggregate pass rate.
+- Keep the existing hardware/runtime benchmark, but prevent syntax validity or membership of a citation ID from passing semantic quality. Source rationale may explain retrieval but never prove a legal effect.
+- Rename/document the misleading `time_to_first_useful_insight` machine field/display as deterministic-overview latency through a compatible migration. Human time to insight is observed correct comprehension, with assistance recorded; an evidence click alone is not comprehension.
+- Distinguish early desktop/prototype sessions from final HL-064 native-language target-host evidence. No fabricated participant feedback or self-reviewed human gate.
+
+<a id="hl-094"></a>
+
+### HL-094 — Replace silent matching truncation with fair resumable batches
+
+**Priority:** P0. **Status:** PLANNED. **Dependencies:** HL-030, HL-075. **Owner role:** backend/queues.
+
+Problem: current hard caps protect workers but may exclude entitled organizations/topics/history without a durable next batch.
+
+Deliverable: checkpointed matching/backfill jobs and a shared preview/production scorer with visible coverage.
+
+Acceptance criteria:
+
+- Persist the eligible scope, cursor, watermark, remaining work and exclusion reason. Process bounded batches fairly across organizations/topics; limits per execution do not silently become lifetime monitoring limits.
+- Prove completion for 101 organizations, 51 relevant topics and 501 eligible historical events, plus more than 20 genuine matches. No starvation, duplicate assessments or unbounded memory; an explicit product quota is shown as a quota rather than unexplained missing coverage.
+- Reuse the same normalization/scorer for preview and activation on identical data. Preview clearly states its sample/window and does not promise unseen results.
+- Resume after worker/API/Redis interruption and topic revision changes; supersede stale work safely. Record pending, completed, excluded-by-plan and degraded coverage.
+- Show monitoring-from date, processed-through watermark and unfinished history in the interest detail and feed empty state. A source outage or unfinished backlog cannot become “nothing relevant happened.”
+
+<a id="hl-095"></a>
+
+### HL-095 — Simplify topic setup, registry filters and recovery
+
+**Priority:** P1. **Status:** PLANNED. **Dependencies:** HL-037, HL-066, HL-074. **Owner role:** frontend/product.
+
+Problem: expert configuration precedes value; raw enum names and opaque extraction errors force users to understand internals.
+
+Deliverable: progressive topic editor and scanning-oriented registry with contextual recovery, reusing existing APIs and authorization.
+
+Acceptance criteria:
+
+- Start with a plain-language interest and readable scope summary; progressively disclose source packs, concepts, synonyms, exclusions and technical filters. Use localized names, examples, sensible defaults and explain expected coverage/volume before confirmation.
+- Keep a complete manual no-AI flow. Warn on lost draft and validation errors; editing a saved topic scrolls/focuses the actual main container and exposes the loaded form even from the bottom of a long page.
+- Registry defaults to search, useful time presets (Today, Yesterday, last 7/30 days), unread/relevant switches and active-filter chips. Put advanced authority/connector/lifecycle filters behind disclosure. Preserve shareable URL/filter state and return position from evidence.
+- Show actual legal names/article labels where known; unknown metadata has a human explanation. Keep machine identifiers and scores in diagnostics. Link source discovery and law/topic creation through HL-077.
+- Provide actionable empty/error states: clear filters, choose coverage, wait for sync, inspect mismatched artifact or request admin repair. An identity mismatch must show what was expected versus received without letting AI override it.
+- Validate with long DE/FR titles and mobile keyboard. The first result or an honest next action appears without scrolling through the entire advanced filter form.
+
+<a id="hl-096"></a>
+
+### HL-096 — Unify visual language and make evidence comfortable to read
+
+**Priority:** P1. **Status:** PLANNED. **Dependencies:** HL-063, HL-068. **Owner role:** design/frontend.
+
+Problem: mixed themes, tiny metadata, raw IDs and unlimited material cards undermine clarity despite the improved shell.
+
+Deliverable: documented typography/color/spacing/density tokens and representative populated comparison/feed/assistant layouts.
+
+Acceptance criteria:
+
+- Consolidate hard-coded legacy colors into semantic surface/foreground/status tokens. Define a readable type scale, article/answer reading width and compact/comfortable density; meaning never depends only on color. HL-097 fixes critical contrast first.
+- Show a concise 3–5-change overview with plain-language legal-unit headings, meaningful before→after delta and expand-to-evidence. Preserve the complete deterministic diff and distinguish substantive, structural, formatting and uncertain matches.
+- Bound/window the rendered material list for a 200-cluster fixture while preserving search, deep-link/citation navigation, counts and access to every change. Raw unit IDs and verbose provenance are expandable.
+- Keep important actions and question entry reachable; metadata, planner diagnostics and history do not dominate the answer. Do not silently rewrite legacy extraction to beautify the comparison.
+- Verify long multilingual text, real errors, zero changes, many changes, 200% text zoom and 400% reflow. Mobile inputs use a readable scale and essential controls target at least 44 px as a product standard.
+- Review reading comfort/hierarchy with HL-090 participants. Cosmetic preference alone cannot pass the requirement that users find the change, understand it and verify evidence.
+
+<a id="hl-097"></a>
+
+### HL-097 — Restore visible AI controls and accessible complete journeys
+
+**Priority:** P0. **Status:** PLANNED. **Dependencies:** HL-065, HL-068, HL-070. **Owner role:** frontend/accessibility QA.
+
+Problem: a current surface-token regression makes enabled AI tabs almost invisible; responsive overlays and test coverage do not prove keyboard/screen-reader usability.
+
+Deliverable: immediate contrast correction followed by required populated accessibility/interaction regression coverage.
+
+Acceptance criteria:
+
+- Replace all foreground misuse of `--muted` surface color, including comparison tabs/close, triage labels, report dates, action metadata, Ask and history. Check rendered default, selected, hover, focus, error and disabled states; enabled normal text meets ≥4.5:1 contrast and applicable UI contrast requirements.
+- Use correct modal semantics on overlay breakpoints, focus isolation, Escape/close, return focus, background inertness and scroll locking. Preserve nonmodal desktop behavior and nested evidence/Marvin interaction; add skip-to-main and correct tab-versus-navigation semantics.
+- Add mandatory seeded Topics, populated comparison, evidence, inbox, onboarding and Marvin journeys. A missing comparison fixture or excluded route cannot produce an overall pass. Include actual focus assertions and runtime enum/contrast checks, not only source-string assertions.
+- Run keyboard and screen-reader review, 390×844/768×1024/desktop/zoom, all five locales, and Chromium/Firefox/Safari sampling. Record physical mobile software-keyboard and audio checks separately from emulation.
+- Require no critical/serious automated accessibility findings in required journeys, plus documented manual review. Automated checks are not a WCAG certification; retain concrete unresolved issues with severity.
+- The mobile pet never covers input, send, citation, navigation or close controls; reduced motion and audio-off remain effective.
+
+<a id="hl-098"></a>
+
+### HL-098 — Verify real coverage and repair derived legacy data transparently
+
+**Priority:** P0. **Status:** PLANNED. **Dependencies:** HL-036, HL-071, HL-072. **Owner role:** connectors/data quality.
+
+Problem: a capability entry or successful sync is not proof of complete coverage; legacy watches still expose unknown authority/language/type and old extraction noise.
+
+Deliverable: exact-stream acceptance records, per-interest freshness/coverage states and a bounded versioned repair path.
+
+Acceptance criteria:
+
+- For each stream advertised as available in the release's starter pack, record exact endpoint, language/kind scope, dates, artifact reopening, cursor overlap/recovery, duplicate handling, freshness and live smoke evidence. Unverified/unsupported streams remain explicitly partial or unavailable; do not promote the entire provider from one feed check.
+- Surface source last success, monitored window, pending history and degradation beside interests/quiet feed states. Distinguish disabled subscription, healthy-no-match, incomplete ingestion and AI delay; record publication-to-detection lag on actual observed items.
+- Normalize legacy official identifiers/authority/language/kind with provenance. Never infer a legal status/date just from a URL or replace a user's artifact with another work.
+- Provide versioned re-extraction/reclassification from saved artifacts with before/after preview, original hashes and provenance retained, bounded jobs and superseded derived results. The observed hyphenation-only BBl case must not become a substantive policy change after repair; legitimate hyphens, amounts, dates and scope changes remain detectable.
+- Keep old comparisons/AI history readable and clearly labelled by extractor/rule revision. No silent editing of historical conclusions, automatic loss of evidence or duplicate live amendment from a metadata repair.
+- Publish a maintained coverage matrix for federal laws, Parliament and supported courts. News/consultations/proposals remain distinguishable from enacted law; canton/media expansion follows HL-080/082 evidence gates rather than claiming universal Swiss coverage.
+
+<a id="hl-099"></a>
+
+### HL-099 — Bound inbox/feed reads and digest work on a mature corpus
+
+**Priority:** P0. **Status:** PLANNED. **Dependencies:** HL-030, HL-036, HL-046. **Owner role:** backend/database.
+
+Problem: the current inbox loads whole organization candidate/history sets, performs per-item lookups and filters in Python; digest rendering inherits that cost.
+
+Deliverable: a paginated event-centered PostgreSQL read model/query contract shared by current inbox, future Today and period-limited digests.
+
+Acceptance criteria:
+
+- Move filters/sorting/latest-analysis selection into bounded SQL or maintained read projections, batch entity lookups and use stable cursors/page sizes ≤50. No request scans/materializes all historical analysis records.
+- Group logical developments while retaining underlying event, language/version and evidence identities. Incoming events do not cause skipped/duplicated cursor results; unread and organization boundaries remain correct.
+- Generate digests only for the eligible time window/preferences with durable continuation where needed; truncation is visible and actionable. No inference on reads/delivery.
+- Test representative 100k corpus events, large organization histories and 20 concurrent readers on the target host. Proposed p95 read target ≤500 ms; report query counts and memory bounds independent of total history, not only latency on seven demo laws.
+- Preserve invalidation, stale-assessment display, filter deep links and legacy API callers through migration. Include source sync, interactive AI and digest overlap in HL-049 rather than declaring capacity from a standalone query.
+
+<a id="hl-100"></a>
+
+### HL-100 — Require substantive evidence before claiming relevance or impact
+
+**Priority:** P0. **Status:** PLANNED. **Dependencies:** HL-044, HL-045, HL-093. **Owner role:** retrieval/AI/backend.
+
+Problem: generic title overlap can become citable `candidate_fact`; a template can retain an unsupported High severity, creating apparent certainty without a substantive bridge.
+
+Deliverable: separate retrieval rationale from claim evidence, calibrated candidate gating and controlled supersession of affected saved assessments.
+
+Acceptance criteria:
+
+- Generic instrument/authority terms alone (including the observed `uber, verordnung` pair) cannot create a positive user-facing relevance/impact alert. Require substantive concept/scope evidence, an exact norm reference or a verified official relation; test multilingual boilerplate and hard near-matches.
+- Keep `candidate_fact` for explaining discovery, but prohibit it as the sole support of a positive impact, obligation or action. Require claim-linked source/target passages or authoritative relation metadata, not just a valid citation-row identifier.
+- Low-quality/contradictory/unsupported prose becomes unassessed or needs review. A generic fallback must not retain supported/High solely because the model emitted that enum. Preserve independently verified official/deterministic urgency when AI fails; distinguish that fact from unsupported AI-derived importance, evidence confidence and legal status.
+- Fix the relation-action loop's candidate-variable shadowing and validate each suggested action against its actual input candidate/evidence.
+- Preserve a concise explainable negative/low-importance outcome. Freeze thresholds with HL-093 held-out precision/recall tests; do not improve precision by silently dropping high-value positives.
+- Re-evaluate previously affected candidates through bounded rule-revision jobs; mark old assessments stale/superseded and retain history. Inbox must not present a prior succeeded result as current after input/rule/profile changes. Reprocessing creates no duplicate notification.
+
+<a id="hl-101"></a>
+
+### HL-101 — Run a longitudinal pilot and make an evidence-based rollout decision
+
+**Priority:** P0. **Status:** PLANNED. **Dependencies:** HL-090, HL-073, HL-076, HL-078, HL-079, HL-089, HL-032, HL-048, HL-049, HL-057, HL-064, HL-098–HL-100. **Owner role:** product/operations with participating organizations.
+
+Problem: implementation checks do not establish that people return, trust alerts or save time.
+
+Deliverable: four-week invitation-only pilot report, documented fixes and a go/hold/narrow-scope decision before broad public registration.
+
+Acceptance criteria:
+
+- Run with at least five independently participating organizations in the selected initial segment. Participation/invitations are explicitly arranged; respect language and data boundaries. Early local prototype research in HL-090 does not require this production gate.
+- Measure activation, weekly meaningful review, useful/irrelevant alerts, high-value misses, duplicates, task completion, manual effort replaced and reasons for abandonment. Report denominators and nonrespondents; do not equate login/chat count with value.
+- Proposed pilot signals: ≥80% of rated alerts useful, no duplicate delivery for the same logical development under one policy, and ≥60% of activated organizations completing meaningful review in week four. Record uncertainty and sample limitations; these are learning thresholds, not proof of market size.
+- Assign operational ownership for each promoted source, degraded coverage, user feedback, bad conclusions, restore procedures and model/rule changes. Run a source-outage and model-unavailable exercise without hiding deterministic evidence or sending false reassurance.
+- Include real mobile and native-language review, truthful inference wait expectations, privacy-preserving aggregate product metrics and a documented way to mute/refine monitoring. Do not log raw user questions into external analytics by default.
+- Report actual critical failures and at least two resulting improvement decisions. Broader launch needs target hardware/recovery and HL-088 acceptance; if the pilot fails, narrow scope or revise the journey and retest rather than adding more sources or persona effects.
 
 ## Shared completion rule
 
 An item is done only when its acceptance criteria are demonstrated through the actual UI/API/persistence path where applicable, meaningful checks pass for its state or evidence logic, and user-visible error states are handled. Completing this backlog document does not complete any development item.
 
-Minimum MVP evidence remains: a verified public source; a saved current version; an imported earlier version with provenance; a real comparison; an inspectable diff; a successful real Apertus analysis; a question with a working citation; and successful repeat/restart/failure checks. The public beta additionally requires every P0/P1 item in `HL-029`–`HL-049` plus `HL-057`–`HL-064`, source-contract evidence for all three core connectors, complete five-locale smoke/catalogue checks, the decision-ready AI-triage regression and usability gate, local-model and recovery benchmarks on the target host, organization-isolation checks, and the reproducible capacity scenario. The daily-use release then requires the core `HL-065`–`HL-080`, `HL-083`–`HL-089` gate; optional public-discourse and later-canton expansion remain governed by their own evidence gates.
+Minimum MVP evidence remains: a verified public source; a saved current version; an imported earlier version with provenance; a real comparison; an inspectable diff; a successful real Apertus analysis; a question with a working citation; and successful repeat/restart/failure checks. The public beta additionally requires every P0/P1 item in `HL-029`–`HL-049` plus `HL-057`–`HL-064`, source-contract evidence for all three core connectors, complete five-locale smoke/catalogue checks, the decision-ready AI-triage regression and usability gate, local-model and recovery benchmarks on the target host, organization-isolation checks, and the reproducible capacity scenario. The daily-use release then requires the core `HL-065`–`HL-080`, `HL-083`–`HL-089` gate and `HL-090`–`HL-101` corrective/field evidence. The invitation-only pilot follows technical gates but precedes final HL-088 sign-off, avoiding a circular release dependency; optional public-discourse and later-canton expansion remain governed by their own evidence gates.
 
 Still excluded from the public-beta release: Kubernetes, multi-host workers, database/broker high availability, enterprise SSO/SCIM, arbitrary custom roles, unbounded crawling, universal Swiss court coverage, an ornamental graph UI, OCR, login-gated ingestion, model training/fine-tuning, and automatic legal decisions. They remain future work only where an item above names a measurable entry condition. Ordinary validation, bounded fetching, safe rendering, authorization, secret handling, backups, and recovery are implementation requirements rather than optional enterprise decoration.
