@@ -35,6 +35,10 @@ import {
   useResource,
 } from "@/lib/api";
 import { resources } from "@/lib/resource-keys";
+import {
+  ASSISTANT_QUESTION_EVENT,
+  assistantQuestionDetail,
+} from "@/lib/assistant-events";
 import type {
   ActionDecision,
   AIHistoryItem,
@@ -246,6 +250,20 @@ export function ComparisonView({ id }: { id: string }) {
   const [mobileSurface, setMobileSurface] = useState<"evidence" | "companion">(
     "evidence",
   );
+  useEffect(() => {
+    function openAssistantQuestion(event: Event) {
+      const detail = assistantQuestionDetail(event);
+      if (!detail || detail.comparisonId !== id) return;
+      setCompanionTab("ask");
+      setMobileSurface("companion");
+      window.requestAnimationFrame(() =>
+        document.getElementById("apertus-question")?.focus(),
+      );
+    }
+    window.addEventListener(ASSISTANT_QUESTION_EVENT, openAssistantQuestion);
+    return () =>
+      window.removeEventListener(ASSISTANT_QUESTION_EVENT, openAssistantQuestion);
+  }, [id]);
   const identityBlocked = ["mismatch", "unknown"].includes(
     data?.identity?.effective_status || data?.identity?.status || "",
   );
@@ -2285,6 +2303,22 @@ function AskPanel({
         !JOB_TERMINAL_STATES.has(job.state),
     )
     .slice(0, 3);
+
+  useEffect(() => {
+    function receiveAssistantQuestion(event: Event) {
+      const detail = assistantQuestionDetail(event);
+      if (!detail || detail.comparisonId !== comparisonId) return;
+      setQuestion(detail.question);
+      setError("");
+      setNotice("");
+    }
+    window.addEventListener(ASSISTANT_QUESTION_EVENT, receiveAssistantQuestion);
+    return () =>
+      window.removeEventListener(
+        ASSISTANT_QUESTION_EVENT,
+        receiveAssistantQuestion,
+      );
+  }, [comparisonId]);
 
   useEffect(() => {
     for (const job of jobs) {

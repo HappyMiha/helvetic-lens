@@ -7,6 +7,8 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (path) => readFileSync(resolve(root, path), "utf8");
 const companion = read("apps/web/components/marvin-companion.tsx");
+const comparison = read("apps/web/components/comparison-view.tsx");
+const events = read("apps/web/lib/assistant-events.ts");
 const shell = read("apps/web/components/shell.tsx");
 const css = read("apps/web/app/globals.css");
 const i18n = read("apps/web/lib/i18n.tsx");
@@ -55,6 +57,17 @@ test("tone and spontaneous controls stay on-device", () => {
   assert.match(companion, /type="checkbox"/);
 });
 
+test("comparison questions use a private draft and the existing cited Ask flow", () => {
+  assert.match(companion, /DRAFT_KEY_PREFIX \+ comparisonId/);
+  assert.match(companion, /window\.sessionStorage/);
+  assert.match(companion, /new CustomEvent\(ASSISTANT_QUESTION_EVENT/);
+  assert.doesNotMatch(companion, /\/ask-jobs/);
+  assert.match(events, /question\.trim\(\)\.slice\(0, 2000\)/);
+  assert.match(comparison, /setCompanionTab\("ask"\)/);
+  assert.match(comparison, /setQuestion\(detail\.question\)/);
+  assert.match(comparison, /getElementById\("apertus-question"\)\?\.focus/);
+});
+
 test("the companion remains keyboard, mobile, and reduced-motion aware", () => {
   assert.match(companion, /event\.key !== "Escape"/);
   assert.match(companion, /aria-expanded=\{open\}/);
@@ -85,6 +98,10 @@ test("all five product locales define the companion contract", () => {
     "companion.generated.evidence",
     "companion.generated.queue",
     "companion.generated.progress",
+    "companion.askLabel",
+    "companion.askPlaceholder",
+    "companion.draftPrivacy",
+    "companion.openCitedAsk",
   ]) {
     assert.equal(
       i18n.match(new RegExp(`"${key.replaceAll(".", "\\.")}"`, "g"))?.length,

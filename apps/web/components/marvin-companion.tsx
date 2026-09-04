@@ -8,12 +8,14 @@ import {
   ChevronRight,
   Eye,
   MessageCircle,
+  Send,
   Settings2,
   Sparkles,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { ASSISTANT_QUESTION_EVENT } from "@/lib/assistant-events";
 import { useI18n } from "@/lib/i18n";
 
 type Tone = "neutral" | "dry" | "very_dry";
@@ -34,6 +36,7 @@ type RouteContext = {
 
 const STORAGE_KEY = "helvetic_lens_companion_v1";
 const SESSION_KEY = "helvetic_lens_companion_seen_v1";
+const DRAFT_KEY_PREFIX = "helvetic_lens_companion_draft_v1:";
 const DEFAULT_PREFERENCES: CompanionPreferences = {
   enabled: true,
   spontaneous: true,
@@ -257,6 +260,7 @@ export function MarvinCompanion({
   const [hydrated, setHydrated] = useState(false);
   const [bubbleVisible, setBubbleVisible] = useState(false);
   const [bubbleKey, setBubbleKey] = useState<string | null>(null);
+  const [questionDraft, setQuestionDraft] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [serverQuipAllowed, setServerQuipAllowed] = useState(false);
   const [runtime, setRuntime] = useState<AssistantRuntime | null>(null);
@@ -264,6 +268,9 @@ export function MarvinCompanion({
   const deepScrollSeen = useRef(false);
   const remarkRequestId = useRef(0);
   const context = useMemo(() => routeContext(pathname), [pathname]);
+  const comparisonId = pathname.startsWith("/compare/")
+    ? pathname.slice("/compare/".length)
+    : "";
 
   useEffect(() => {
     setPreferences(readPreferences());
@@ -348,6 +355,15 @@ export function MarvinCompanion({
     },
     [locale, pathname, preferences.tone, runtime?.ready],
   );
+
+  useEffect(() => {
+    if (!hydrated) return;
+    setQuestionDraft(
+      comparisonId
+        ? window.sessionStorage.getItem(DRAFT_KEY_PREFIX + comparisonId) || ""
+        : "",
+    );
+  }, [comparisonId, hydrated]);
 
   useEffect(() => {
     setBubbleVisible(false);
@@ -465,6 +481,27 @@ export function MarvinCompanion({
     setPreferences((current) => ({ ...current, ...next }));
   }
 
+  function updateQuestionDraft(value: string) {
+    setQuestionDraft(value);
+    if (!comparisonId) return;
+    if (value) window.sessionStorage.setItem(DRAFT_KEY_PREFIX + comparisonId, value);
+    else window.sessionStorage.removeItem(DRAFT_KEY_PREFIX + comparisonId);
+  }
+
+  function handQuestionToCitedAsk(event: React.FormEvent) {
+    event.preventDefault();
+    const question = questionDraft.trim();
+    if (!comparisonId || !question) return;
+    window.sessionStorage.removeItem(DRAFT_KEY_PREFIX + comparisonId);
+    setQuestionDraft("");
+    window.dispatchEvent(
+      new CustomEvent(ASSISTANT_QUESTION_EVENT, {
+        detail: { comparisonId, question },
+      }),
+    );
+    onOpenChange(false);
+  }
+
   if (!hydrated || !preferences.enabled) return null;
 
   const showQuip = preferences.tone !== "neutral";
@@ -546,6 +583,25 @@ export function MarvinCompanion({
               </span>
               <ChevronRight size={16} />
             </Link>
+
+            {comparisonId && (
+              <form className="marvin-ask-form" onSubmit={handQuestionToCitedAsk}>
+                <label htmlFor="marvin-question">{t("companion.askLabel")}</label>
+                <textarea
+                  id="marvin-question"
+                  maxLength={2000}
+                  onChange={(event) => updateQuestionDraft(event.target.value)}
+                  placeholder={t("companion.askPlaceholder")}
+                  rows={3}
+                  value={questionDraft}
+                />
+                <small>{t("companion.draftPrivacy")}</small>
+                <button disabled={!questionDraft.trim()} type="submit">
+                  <Send size={15} />
+                  {t("companion.openCitedAsk")}
+                </button>
+              </form>
+            )}
 
             <div className="marvin-boundary-note">
               <Bot size={16} />
