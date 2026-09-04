@@ -46,3 +46,13 @@ def test_backup_id_comes_from_the_successful_container_output():
     assert release_manager.ReleaseManager._backup_id(
         "Container ready\nBackup 20260904T112145Z completed.\n"
     ) == "20260904T112145Z"
+
+
+def test_only_a_live_allowlisted_model_is_preserved_for_a_release():
+    manager = release_manager.ReleaseManager
+
+    assert manager._active_model_id({"model_id": "apertus-8b-q4km", "state": "ready"}) == (
+        "apertus-8b-q4km"
+    )
+    assert manager._active_model_id({"model_id": "apertus-8b-q4km", "state": "stopped"}) is None
+    assert manager._active_model_id({"model_id": "../../secret", "state": "ready"}) is None

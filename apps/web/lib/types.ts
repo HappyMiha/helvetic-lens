@@ -891,6 +891,7 @@ export type DeploymentRun = {
   changes: DeploymentChange[];
   steps: DeploymentStep[];
   backup_id: string | null;
+  model_id?: string | null;
   rollback: {
     status: string;
     started_at?: string;

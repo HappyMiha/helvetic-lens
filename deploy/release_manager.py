@@ -507,6 +507,75 @@ class ReleaseManager:
                 time.sleep(5)
         raise DeploymentError("health_check", f"Public health check failed: {last_error}"[:2_000])
 
+    def _model_deployment(self, step: str) -> dict[str, Any]:
+        code = (
+            "import json,urllib.request;"
+            "d=json.load(urllib.request.urlopen('http://127.0.0.1:8090/v1/inventory',timeout=10));"
+            "print(json.dumps(d.get('deployment') or {}))"
+        )
+        completed = self._run(
+            [
+                "/usr/bin/docker",
+                "exec",
+                "helvetic-lens-model-manager-1",
+                "python3",
+                "-c",
+                code,
+            ],
+            step=step,
+            timeout=30,
+        )
+        try:
+            deployment = json.loads(completed.stdout)
+        except json.JSONDecodeError as exc:
+            raise DeploymentError(step, "The model manager returned invalid deployment state.") from exc
+        return deployment if isinstance(deployment, dict) else {}
+
+    @staticmethod
+    def _active_model_id(deployment: dict[str, Any]) -> str | None:
+        model_id = deployment.get("model_id")
+        if deployment.get("state") not in {"ready", "degraded", "starting"}:
+            return None
+        return model_id if isinstance(model_id, str) and re.fullmatch(r"[a-z0-9._-]+", model_id) else None
+
+    def _restore_model_runtime(self, model_id: str) -> None:
+        if not re.fullmatch(r"[a-z0-9._-]+", model_id):
+            raise DeploymentError("restore_model_runtime", "The active model identifier is invalid.")
+        code = (
+            "import urllib.request;"
+            f"r=urllib.request.Request('http://127.0.0.1:8090/v1/models/{model_id}/start',"
+            "data=b'',method='POST');"
+            "urllib.request.urlopen(r,timeout=30).read();print('accepted')"
+        )
+        self._run(
+            [
+                "/usr/bin/docker",
+                "exec",
+                "helvetic-lens-model-manager-1",
+                "python3",
+                "-c",
+                code,
+            ],
+            step="restore_model_runtime",
+            timeout=60,
+        )
+        last_state = "starting"
+        for _attempt in range(90):
+            deployment = self._model_deployment("restore_model_runtime")
+            last_state = str(deployment.get("state") or "stopped")
+            if last_state == "ready" and int(deployment.get("available_slots") or 0) > 0:
+                return
+            if last_state == "error":
+                raise DeploymentError(
+                    "restore_model_runtime",
+                    f"The local model runtime failed to restart: {deployment.get('error') or 'unknown error'}",
+                )
+            time.sleep(2)
+        raise DeploymentError(
+            "restore_model_runtime",
+            f"The local model runtime did not become ready; last state was {last_state}.",
+        )
+
     @staticmethod
     def _backup_id(output: str) -> str:
         matches = re.findall(r"\bBackup (20\d{6}T\d{6}Z) completed\.\s*$", output, re.MULTILINE)
@@ -533,6 +602,7 @@ class ReleaseManager:
         target_release: str,
         backup_id: str | None,
         target_started: bool,
+        active_model_id: str | None,
     ) -> dict[str, Any]:
         rollback: dict[str, Any] = {"status": "running", "started_at": timestamp()}
         errors: list[str] = []
@@ -573,6 +643,8 @@ class ReleaseManager:
                 step="rollback_start",
                 timeout=900,
             )
+            if active_model_id:
+                self._restore_model_runtime(active_model_id)
             self._public_health()
         except DeploymentError as exc:
             errors.append(str(exc))
@@ -609,6 +681,7 @@ class ReleaseManager:
             "changes": [],
             "steps": [],
             "backup_id": None,
+            "model_id": None,
             "rollback": {"status": "not_required"},
             "error": self._redact(str(error))[:8_000],
         }
@@ -720,6 +793,7 @@ class ReleaseManager:
             "changes": self._changes(previous_sha, target_sha),
             "steps": [],
             "backup_id": None,
+            "model_id": None,
             "rollback": {"status": "not_required"},
             "error": None,
             "log_id": self.log_path.name,
@@ -734,6 +808,7 @@ class ReleaseManager:
         quiesced = False
         target_started = False
         backup_id: str | None = None
+        active_model_id: str | None = None
         try:
             with self.step("checkout"):
                 target_dir = self._ensure_release(target_sha)
@@ -787,9 +862,15 @@ class ReleaseManager:
                     timeout=3600,
                 )
 
+            with self.step("capture_model_runtime"):
+                active_model_id = self._active_model_id(
+                    self._model_deployment("capture_model_runtime")
+                )
+                self.run_record["model_id"] = active_model_id
+
             with self.step("quiesce_writers"):
-                self._quiesce(previous_dir, previous_release)
                 quiesced = True
+                self._quiesce(previous_dir, previous_release)
 
             with self.step("pre_deploy_backup"):
                 backup = self._compose_run(
@@ -820,6 +901,10 @@ class ReleaseManager:
                     timeout=900,
                 )
 
+            if active_model_id:
+                with self.step("restore_model_runtime"):
+                    self._restore_model_runtime(active_model_id)
+
             with self.step("public_health_check"):
                 self._public_health()
 
@@ -846,6 +931,7 @@ class ReleaseManager:
                     release,
                     backup_id,
                     target_started,
+                    active_model_id,
                 )
             self.run_record["status"] = "failed"
             self.run_record["finished_at"] = timestamp()

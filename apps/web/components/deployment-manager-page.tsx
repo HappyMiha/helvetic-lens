@@ -51,6 +51,11 @@ function RunDetails({ run }: { run: DeploymentRun }) {
             {t("deploy.backup")}: <code>{run.backup_id}</code>
           </span>
         )}
+        {run.model_id && (
+          <span className="text-sm muted">
+            {t("deploy.model")}: <code>{run.model_id}</code>
+          </span>
+        )}
       </div>
 
       {run.error && (
