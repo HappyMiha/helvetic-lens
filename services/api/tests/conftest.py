@@ -88,7 +88,12 @@ class ScriptedModel:
                         "citation_rows": [],
                     }
                 )
-            citation_row = 999 if self.invalid else 1
+            rows = data["evidence"]["rows"]
+            official = [row[0] for row in rows if row[1] == "official_relation"]
+            paired = [next(row[0] for row in rows if row[1] == kind)
+                      for kind in ("event_source_passage", "monitored_work_passage")
+                      if any(row[1] == kind for row in rows)]
+            citation_rows = [999] if self.invalid else (official or paired)
             response = {
                     "supported": True,
                     "proposed_relation_type": "potentially_impacts",
@@ -107,10 +112,10 @@ class ScriptedModel:
                             "due_date": None,
                             "applicability_condition": "If the organization performs the activity described in the event.",
                             "evidence_grade": "possible",
-                            "citation_rows": [citation_row],
+                            "citation_rows": citation_rows,
                         }
                     ],
-                    "citation_rows": [citation_row],
+                    "citation_rows": citation_rows,
                 }
             if self.relation_compact:
                 response.pop("proposed_relation_type")

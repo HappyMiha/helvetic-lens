@@ -145,7 +145,7 @@ Keep the proven stack and add only the infrastructure now justified by public us
 | [HL-097](#hl-097) | P0       | IN PROGRESS  | HL-065, HL-068, HL-070                                 | Visible AI controls and accessible populated journeys               |
 | [HL-098](#hl-098) | P0       | PLANNED  | HL-036, HL-071, HL-072                                 | Verified source coverage and versioned legacy-artifact repair       |
 | [HL-099](#hl-099) | P0       | PLANNED  | HL-030, HL-036, HL-046                                 | Bounded event read model and period-limited digest queries           |
-| [HL-100](#hl-100) | P0       | PLANNED  | HL-044, HL-045, HL-093                                 | Substantive relation evidence and safe assessment supersession       |
+| [HL-100](#hl-100) | P0       | IN PROGRESS  | HL-044, HL-045, HL-093                                 | Substantive relation evidence and safe assessment supersession       |
 | [HL-101](#hl-101) | P0       | PLANNED  | HL-090, HL-073, HL-076, HL-078, HL-079, HL-089, HL-032, HL-048, HL-049, HL-057, HL-064, HL-098–HL-100 | Measured longitudinal pilot and rollout decision |
 
 ## M0 — Ready to build
@@ -1871,11 +1871,13 @@ Acceptance criteria:
 
 ### HL-100 — Require substantive evidence before claiming relevance or impact
 
-**Priority:** P0. **Status:** PLANNED. **Dependencies:** HL-044, HL-045, HL-093. **Owner role:** retrieval/AI/backend.
+**Priority:** P0. **Status:** IN PROGRESS. **Dependencies:** HL-044, HL-045, HL-093. **Owner role:** retrieval/AI/backend.
 
 Problem: generic title overlap can become citable `candidate_fact`; a template can retain an unsupported High severity, creating apparent certainty without a substantive bridge.
 
 Deliverable: separate retrieval rationale from claim evidence, calibrated candidate gating and controlled supersession of affected saved assessments.
+
+**Implemented 5 September 2026:** Candidate rule v2 excludes multilingual instrument/authority boilerplate and standalone numbers while preserving exact-reference retrieval. Relation-impact v3 requires a source/target passage pair or the matching confirmed official relation for each positive conclusion/action; metadata-only and generic/contradictory output becomes unassessed rather than supported High. Fixed action-loop shadowing. Prior result revisions remain immutable, visibly stale history and no longer supply the current inbox conclusion; explicit reanalysis reuses the delivery. Adversarial regression covers the reported German pair, all five languages and persisted history/urgency behavior. **Remaining:** independently reviewed precision/recall and claim entailment, bounded historical candidate reprocessing, and full input/profile/runtime freshness on reads. Citation identity plus an evidence pair is not proof of factual support. See [contract](docs/RELATION_IMPACT_ANALYSIS.md).
 
 Acceptance criteria:
 

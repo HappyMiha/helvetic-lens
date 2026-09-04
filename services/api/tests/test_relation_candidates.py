@@ -118,7 +118,7 @@ def test_candidates_are_shared_explainable_bounded_and_idempotent(harness):
         assert candidate.score_components_json["title_overlap"] > 0
         assert candidate.score_components_json["norm_reference"] > 0
         assert candidate.why_json
-        assert candidate.rule_revision == "relation-candidate-v1"
+        assert candidate.rule_revision == "relation-candidate-v2"
         assert candidate.expires_at.date() > now.date()
         assert relation.state == "proposed"
         assert relation.relation_type == "potentially_impacts"

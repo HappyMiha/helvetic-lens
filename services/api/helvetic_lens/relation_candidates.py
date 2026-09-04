@@ -26,7 +26,7 @@ from .models import (
 )
 from .regulatory_corpus import RegulatoryCorpus, RelationInput
 
-RULE_REVISION = "relation-candidate-v1"
+RULE_REVISION = "relation-candidate-v2"
 _WORD = re.compile(r"[a-z0-9]{3,}")
 _NORM = re.compile(r"\b(?:sr|rs)\s*([0-9]+(?:\.[0-9]+){1,4})\b", re.I)
 _ARTICLE = re.compile(r"\b(?:art(?:icle|ikel)?\.?)\s*([0-9]+[a-z]?)\b", re.I)
@@ -34,13 +34,24 @@ _STOP = {
     "und", "der", "die", "das", "des", "den", "von", "zur", "zum", "fur",
     "les", "des", "une", "sur", "pour", "dans", "loi", "della", "delle", "degli",
     "the", "and", "for", "with", "from", "law", "gesetz", "legge", "lescha",
+    # Instrument/authority boilerplate is not a regulated subject. Exact norm
+    # references and verified official relations are separate retrieval paths.
+    "uber", "verordnung", "verordnungen", "bundesgesetz", "bundesverordnung",
+    "bundesrat", "bundesrates", "schweizerischen", "schweizerische",
+    "anderung", "anderungen", "revision", "entwurf", "beschluss",
+    "ordonnance", "ordonnances", "federal", "federale", "federales", "federaux",
+    "conseil", "relatif", "relative", "concernant", "modification", "projet",
+    "ordinanza", "ordinanze", "federali", "consiglio", "modifica", "concernente",
+    "ordinaziun", "ordinaziuns", "federala", "federalas", "revisiun", "davart",
+    "act", "acts", "ordinance", "ordinances", "regulation", "regulations",
+    "council", "swiss", "amendment", "amendments", "concerning", "proposal",
 }
 
 
 def normalized_title_tokens(value: str) -> set[str]:
     value = unicodedata.normalize("NFKD", value.casefold())
     ascii_value = "".join(character for character in value if not unicodedata.combining(character))
-    tokens = {token for token in _WORD.findall(ascii_value) if token not in _STOP}
+    tokens = {token for token in _WORD.findall(ascii_value) if token not in _STOP and not token.isdigit()}
     # German official titles often concatenate the regulated subject with the
     # instrument type (Datenschutzgesetz). Keep the original token and add the
     # transparent legal suffix split so a proposal title can match the act.

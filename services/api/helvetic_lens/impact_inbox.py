@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from . import relation_analysis as relation_ai
 from .config import DomainError
 from .models import (
     Comparison,
@@ -65,7 +66,8 @@ class ImpactInboxReader:
                 .order_by(RelationImpactAnalysis.created_at.desc(), RelationImpactAnalysis.id.desc())
             )
         )
-        current = next((item for item in records if item.status == "succeeded"), None)
+        current = next((item for item in records if item.status == "succeeded"
+                        and relation_ai.result_uses_current_rules(item.result)), None)
         return current, records[0] if records else None, len(records)
 
     @staticmethod
@@ -118,6 +120,10 @@ class ImpactInboxReader:
             return "confirmed_relation"
         if review and review.decision == "rejected":
             return "no_supported_impact"
+        if current and (current.result or {}).get("assessment_status") == "needs_review":
+            return "stale"
+        if not current and latest and latest.status == "succeeded":
+            return "stale"
         if current and (current.result or {}).get("supported"):
             return "possible_impact"
         if current:
@@ -130,13 +136,16 @@ class ImpactInboxReader:
     def _severity(
         status: str, event: RegulatoryEvent, current: RelationImpactAnalysis | None
     ) -> str:
-        result = current.result if current else None
-        if result and result.get("potential_severity") in {"high", "medium", "low", "none"}:
-            return result["potential_severity"]
-        if event.impact in {"high", "medium", "low", "none"}:
+        # Preserve independent official/deterministic urgency even when AI is
+        # unavailable or its unsupported draft has been downgraded.
+        if event.impact in {"high", "medium", "low"}:
             return event.impact
         if status == "confirmed_relation" and event.event_type in {"repealed", "replaced"}:
             return "high"
+        result = current.result if current else None
+        if result and result.get("assessment_status") != "needs_review":
+            if result.get("potential_severity") in {"high", "medium", "low", "none"}:
+                return result["potential_severity"]
         return "unknown"
 
     def _law_item(

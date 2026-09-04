@@ -42,7 +42,7 @@ type InboxLaw = {
   law_id: string;
   law_title: string;
   law_active: boolean;
-  status: "confirmed_relation" | "possible_impact" | "awaiting_analysis" | "analysis_failed" | "no_supported_impact";
+  status: "confirmed_relation" | "possible_impact" | "awaiting_analysis" | "analysis_failed" | "no_supported_impact" | "stale";
   severity: string;
   why: Array<Record<string, unknown> | string>;
   potential_effect: string;
@@ -95,6 +95,7 @@ type AnalysisHistory = {
     status: string;
     created_at: string;
     model: string;
+    stale?: boolean;
     error?: string;
     result?: { potential_severity?: string; explanation?: string; supported?: boolean };
   }>;
@@ -144,7 +145,7 @@ function History({ item }: { item: InboxLaw }) {
           {history.data?.items.map((record) => (
             <div className="rounded-md border bg-white p-3 text-sm" key={record.id}>
               <div className="flex flex-wrap justify-between gap-2">
-                <span><Status value={record.status} /> {dateTime(record.created_at)}</span>
+                <span><Status value={record.stale ? "stale" : record.status} /> {dateTime(record.created_at)}</span>
                 <span className="muted">{record.model}</span>
               </div>
               <p className="mb-0 mt-2">{record.result?.explanation || record.error || t("impact.noConclusion")}</p>

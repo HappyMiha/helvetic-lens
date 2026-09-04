@@ -29,7 +29,7 @@ Mandatory facts enter first. Remaining passages are ranked deterministically and
 
 ## Validated result
 
-The persisted `relation-impact-v2` contract accepts `supported=false`, which is a valid result with no proposed relation, actions, or citations. A supported result contains:
+The persisted `relation-impact-v3` contract accepts `supported=false`, with no proposed relation or actions. A model-authored negative may have no citations; a downgraded unassessed result retains its selected evidence for inspection, never as proof of a positive impact. A supported result contains:
 
 - a proposed `potentially_impacts`, `implements`, `cites`, or `interprets` relation;
 - potential severity, kept separate from evidence strength;
@@ -38,6 +38,10 @@ The persisted `relation-impact-v2` contract accepts `supported=false`, which is 
 - numeric references to supplied evidence rows.
 
 The model cannot propose authoritative `amends`, `repeals`, or `replaces` facts. The server validates JSON and schema, permits one constrained repair, rejects out-of-range row numbers, creates stable action keys, removes duplicate actions, and turns accepted row numbers into links under `/api/relation-analyses/{analysis_id}/evidence/{evidence_id}`. Only those persisted rows can become displayed quotations.
+
+A positive conclusion and each action must independently cite saved passages from **both** the event source and the correct monitored work, with version/passage identity, or the exact confirmed official-relation row. Retrieval rationale (`candidate_fact`), event metadata and lifecycle fields alone are insufficient. This is a structural evidence floor, **not** an entailment/semantic-quality guarantee; independent HL-093 evaluation remains required.
+
+Missing evidence bridges or known generic/contradictory model text produce `assessment_status=needs_review`, `supported=false`, no AI-derived severity/actions, explicit validation issues and a localized unassessed explanation. In the inbox, this is “Needs re-analysis” with unknown AI importance, not a claim that there was no impact. Independently recorded event urgency and confirmed official facts are retained. Each action is checked against its own citations; another action or the report cannot lend it evidence.
 
 When official metadata already confirms a relation, `result.official_relation` keeps its exact type, authority, evidence fingerprint, and provenance. `result.proposed_relation_type` remains a separately labelled AI assessment. Inference never updates the confirmed corpus relation.
 
@@ -56,6 +60,8 @@ An identical successful result is reused only when all of these inputs match:
 - provider, endpoint, model, context and output settings;
 - local runtime/model artifact/hardware fingerprint; and
 - planner and result schema versions.
+
+The v3 result revision invalidates the cache. Results from earlier result-rule revisions remain unchanged in history with `stale=true`, and cannot be selected as the current inbox/history conclusion. Reanalysis uses the existing delivery and event, preventing duplicate inbox entries. Automatic bounded candidate backfill and complete read-time profile/runtime freshness are still tracked by HL-100/099; this change does not silently rewrite or bulk reprocess historical data.
 
 Changing any dependency creates a new durable job and history record. Reusing an identical request increments saved use metadata without another provider call.
 

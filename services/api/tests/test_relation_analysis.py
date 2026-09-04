@@ -308,7 +308,7 @@ def test_unsupported_relation_conclusion_is_saved_without_actions(harness):
     assert report["citations"] == []
 
 
-def test_small_local_model_shape_is_safely_completed_from_valid_action_rows(harness):
+def test_small_local_model_contradiction_is_saved_as_unassessed(harness):
     client, _, service, model = harness
     delivery_id, _ = relation_delivery(harness)
     service.settings.apertus_base_url = "https://model.example/v1"
@@ -319,8 +319,11 @@ def test_small_local_model_shape_is_safely_completed_from_valid_action_rows(harn
     report = analysis["result"]
 
     assert job["state"] == "succeeded"
-    assert report["proposed_relation_type"] == "potentially_impacts"
-    assert report["evidence_grade"] == "possible"
+    assert report["proposed_relation_type"] is None
+    assert report["supported"] is False
+    assert report["potential_severity"] == "none"
+    assert report["assessment_status"] == "needs_review"
+    assert report["evidence_grade"] == "needs_review"
     assert report["citations"]
     assert report["actions"] == []
     assert "Revision of the Data Protection Retention Act" in report["explanation"]

@@ -4099,6 +4099,7 @@ class HelveticLens:
         return {
             **as_dict(record, {"evidence_json", "cache_key"}),
             "evidence_count": len(record.evidence_json or []),
+            "stale": record.status == "succeeded" and not relation_ai.result_uses_current_rules(record.result),
             "cached": cached,
         }
 
@@ -4351,7 +4352,8 @@ class HelveticLens:
                 )
             )
             items = [self._relation_analysis_dict(record) for record in records]
-            current = next((item for item in items if item["status"] == "succeeded"), None)
+            current = next((item for item in items if item["status"] == "succeeded"
+                            and not item["stale"]), None)
             return {
                 "items": items,
                 "total": len(records),
