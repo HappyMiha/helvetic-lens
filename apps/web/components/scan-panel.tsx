@@ -4,9 +4,17 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Check, Loader2, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { api, errorText, label, refreshWorkspace } from "@/lib/api";
+import {
+  api,
+  errorText,
+  invalidateResources,
+  label,
+  mutateResource,
+  primeResource,
+} from "@/lib/api";
+import { resources } from "@/lib/resource-keys";
 import { useI18n } from "@/lib/i18n";
-import type { Scan } from "@/lib/types";
+import type { Job, Scan } from "@/lib/types";
 import { ErrorNote, Status } from "./common";
 import { AdminOnly } from "./auth-gate";
 
@@ -27,8 +35,16 @@ export function ScanPanel({
     setJobBusy(action);
     setJobError("");
     try {
-      await api(`/jobs/${job.id}/${action}`, { method: "POST" });
-      refreshWorkspace();
+      const updated = await api<Job>(`/jobs/${job.id}/${action}`, {
+        method: "POST",
+      });
+      primeResource(resources.job(updated.id), updated);
+      const updatedJobs = mutateResource(resources.jobs(), (current) =>
+        current?.map((item) => (item.id === updated.id ? updated : item)) ||
+        null,
+      );
+      if (updatedJobs === null) void invalidateResources(resources.jobs());
+      await invalidateResources(resources.scans());
     } catch (cause) {
       setJobError(errorText(cause));
     } finally {

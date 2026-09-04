@@ -19,7 +19,16 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { api, dateTime, errorText, label, useResource } from "@/lib/api";
+import {
+  api,
+  dateTime,
+  errorText,
+  invalidateResources,
+  label,
+  resourceTag,
+  useResource,
+} from "@/lib/api";
+import { resources } from "@/lib/resource-keys";
 import { ErrorNote, Loading, Status, SuccessNote } from "./common";
 import { Shell } from "./shell";
 import { useAuth } from "./auth-gate";
@@ -115,8 +124,13 @@ function whyText(items: InboxLaw["why"], fallback: string) {
 function History({ item }: { item: InboxLaw }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
-  const path = item.links.analysis_history.replace(/^\/api/, "");
-  const history = useResource<AnalysisHistory>(open ? path : null);
+  const history = useResource(
+    open
+      ? resources.relationAnalyses<AnalysisHistory>(
+          item.organization_candidate_id,
+        )
+      : null,
+  );
   return (
     <div className="mt-4 border-t pt-3">
       <button className="text-sm font-medium flex items-center gap-2" onClick={() => setOpen(!open)}>
@@ -142,7 +156,9 @@ function History({ item }: { item: InboxLaw }) {
   );
 }
 
-function ReviewPanel({ item, onChanged }: { item: InboxLaw; onChanged: () => void }) {
+type InboxMutation = "review" | "reanalysis" | "successor";
+
+function ReviewPanel({ item, onChanged }: { item: InboxLaw; onChanged: (change: InboxMutation) => void }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
@@ -152,7 +168,7 @@ function ReviewPanel({ item, onChanged }: { item: InboxLaw; onChanged: () => voi
   const [reviewStartedAt, setReviewStartedAt] = useState<number | null>(null);
   const [evidenceOpened, setEvidenceOpened] = useState(false);
   const history = useResource<ReviewHistoryResponse>(
-    open ? `/relation-candidates/${item.organization_candidate_id}/reviews` : null,
+    open ? resources.relationReviews<ReviewHistoryResponse>(item.organization_candidate_id) : null,
   );
 
   async function submit(decision: "confirmed" | "rejected" | "annotated") {
@@ -183,8 +199,8 @@ function ReviewPanel({ item, onChanged }: { item: InboxLaw; onChanged: () => voi
             ? t("impact.reviewSaved.rejected")
             : t("impact.reviewSaved.annotated"),
       );
-      history.reload();
-      onChanged();
+      void invalidateResources(resources.relationReviews(item.organization_candidate_id));
+      onChanged("review");
     } catch (cause) {
       setFailure(errorText(cause));
     } finally {
@@ -276,20 +292,20 @@ function LawImpact({
 }: {
   item: InboxLaw;
   canManage: boolean;
-  onChanged: () => void;
+  onChanged: (change: InboxMutation) => void;
 }) {
   const { t, locale } = useI18n();
   const [busy, setBusy] = useState("");
   const [message, setMessage] = useState("");
   const [failure, setFailure] = useState("");
-  async function command(path: string, success: string, body?: Record<string, unknown>) {
+  async function command(path: string, success: string, change: Exclude<InboxMutation, "review">, body?: Record<string, unknown>) {
     setBusy(path);
     setFailure("");
     setMessage("");
     try {
       await api(path, { method: "POST", body: body ? JSON.stringify(body) : undefined });
       setMessage(success);
-      onChanged();
+      onChanged(change);
     } catch (cause) {
       setFailure(errorText(cause));
     } finally {
@@ -349,6 +365,7 @@ function LawImpact({
             onClick={() => command(
               `/relation-candidates/${item.organization_candidate_id}/reanalyse-jobs`,
               t("impact.reanalysisQueued"),
+              "reanalysis",
               { output_locale: locale },
             )}
           >
@@ -359,7 +376,7 @@ function LawImpact({
           <Button
             size="sm"
             disabled={!!busy}
-            onClick={() => command(`/relation-candidates/${item.organization_candidate_id}/monitor-successor`, "The successor was added without removing the predecessor history.")}
+            onClick={() => command(`/relation-candidates/${item.organization_candidate_id}/monitor-successor`, "The successor was added without removing the predecessor history.", "successor")}
           >
             {t("impact.monitorSuccessor")}
           </Button>
@@ -392,8 +409,29 @@ export function ImpactInboxPage() {
   const { t } = useI18n();
   const [busy, setBusy] = useState("");
   const [failure, setFailure] = useState("");
-  const endpoint = "/impact-inbox?" + new URLSearchParams(params.toString()).toString();
-  const resource = useResource<InboxResponse>(endpoint, 15000);
+  const query = new URLSearchParams(params.toString()).toString();
+  const resource = useResource(
+    resources.impactInbox<InboxResponse>(query),
+  );
+  function refreshAfterMutation(change: InboxMutation) {
+    if (change === "successor") {
+      void invalidateResources(
+        resourceTag("impact-inbox", "organization"),
+        resources.laws(),
+        resourceTag("registry", "organization"),
+        resources.organizationStatus(),
+      );
+      return;
+    }
+    if (change === "reanalysis") {
+      void invalidateResources(
+        resourceTag("impact-inbox", "organization"),
+        resources.jobs(),
+      );
+      return;
+    }
+    void invalidateResources(resourceTag("impact-inbox", "organization"));
+  }
   function update(key: string, value: string) {
     const next = new URLSearchParams(params.toString());
     if (value) next.set(key, value);
@@ -408,7 +446,7 @@ export function ImpactInboxPage() {
         method: "PATCH",
         body: JSON.stringify({ state }),
       });
-      resource.reload();
+      void invalidateResources(resourceTag("impact-inbox", "organization"));
     } catch (cause) {
       setFailure(errorText(cause));
     } finally {
@@ -463,7 +501,7 @@ export function ImpactInboxPage() {
               <span className="text-sm muted"><Clock3 size={14} className="inline mr-1" />{t("impact.lawsAnalysed", { done: event.coverage.analysed, total: event.coverage.total })}</span>
             </div>
             <div className="space-y-3">
-              {event.items.map((item) => <LawImpact item={item} canManage={canManage} onChanged={resource.reload} key={item.organization_candidate_id} />)}
+              {event.items.map((item) => <LawImpact item={item} canManage={canManage} onChanged={refreshAfterMutation} key={item.organization_candidate_id} />)}
             </div>
             <div className="flex flex-wrap gap-2 mt-4">
               {event.source_artifact_url && <Button asChild size="sm" variant="outline"><Link href={event.source_artifact_url}>{t("impact.savedArtifact")}</Link></Button>}

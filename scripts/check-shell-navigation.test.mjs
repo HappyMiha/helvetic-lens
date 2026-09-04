@@ -70,7 +70,7 @@ test("company profile has one routed implementation and no modal bridge", () => 
   assert.doesNotMatch(shell, /href=["']\/(?:profile|company-profile)["']/);
   assert.match(settings, /href="\/organization#company-profile"/);
   assert.match(organization, /id="company-profile"/);
-  assert.match(organization, /useResource<Profile>\("\/profile"\)/);
+  assert.match(organization, /useResource\(resources\.profile\(\)\)/);
   assert.match(
     organization,
     /api<Profile>\("\/profile",\s*\{[\s\S]{0,80}method: "PATCH"/,
@@ -98,6 +98,8 @@ test("workspace selector performs only an authorized organization switch", () =>
   assert.match(switchBody, /api\("\/auth\/session\/organization"/);
   assert.doesNotMatch(switchBody, /\/profile|\/model\/test|\/settings/);
   assert.match(switchBody, /continueAfterProfileGuard/);
+  assert.match(switchBody, /resetResourceScope\("organization"\)/);
+  assert.match(switchBody, /resetResourceScope\("session"\)/);
   assert.match(shell, /aria-controls=\{optionsId\}/);
   assert.doesNotMatch(shell, /aria-haspopup="menu"|role="menu(?:item)?"/);
   assert.match(shell, /organizations\.length > 1/);
@@ -106,6 +108,7 @@ test("workspace selector performs only an authorized organization switch", () =>
   assert.match(signOutBody, /helvetic:before-navigation/);
   assert.match(signOutBody, /api\("\/auth\/logout"/);
   assert.match(signOutBody, /continueAfterProfileGuard/);
+  assert.match(signOutBody, /resetResourceScope\("all"\)/);
   assert.match(shell, /helvetic:navigation-committed/);
 });
 
@@ -147,16 +150,19 @@ test("technical navigation is role-gated and unknown sessions are least privileg
 });
 
 test("direct administration routes do not fetch or expose controls before authorization", () => {
-  assert.match(modelLibrary, /isPlatformAdmin \? "\/admin\/models" : null/);
+  assert.match(modelLibrary, /isPlatformAdmin \? resources\.models\(\) : null/);
   assert.match(
     connectorAdmin,
-    /isPlatformAdmin \? "\/admin\/connectors" : null/,
+    /isPlatformAdmin \? resources\.connectors\(\) : null/,
   );
   assert.match(
     platformAdmin,
-    /isPlatformAdmin \? "\/admin\/status" : null/,
+    /isPlatformAdmin \? resources\.platformStatus<PlatformStatus>\(\) : null/,
   );
-  assert.match(promptSettings, /useResource<PromptSettings>\(allowed \? endpoint : null\)/);
+  assert.match(
+    promptSettings,
+    /allowed[\s\S]{0,100}resources\.prompts\(platformScope \? "platform" : "organization"\)/,
+  );
   for (const source of [modelLibrary, connectorAdmin, platformAdmin]) {
     assert.match(source, /\{isPlatformAdmin && \([\s\S]{0,180}<Button/);
   }

@@ -27,7 +27,13 @@ import {
   SlidersHorizontal,
   Users,
 } from "lucide-react";
-import { api, errorText, useResource } from "@/lib/api";
+import {
+  api,
+  errorText,
+  resetResourceScope,
+  useResource,
+} from "@/lib/api";
+import { resources } from "@/lib/resource-keys";
 import { type AuthSession, useAuth } from "./auth-gate";
 import type { Health } from "@/lib/types";
 import { ErrorNote } from "./common";
@@ -172,7 +178,7 @@ export function Shell({
   wide?: boolean;
 }) {
   const pathname = usePathname();
-  const { data: health, error } = useResource<Health>("/health", 15000);
+  const { data: health, error } = useResource(resources.health());
   const { session, canManage, isPlatformAdmin } = useAuth();
   const { t } = useI18n();
   const [workspaceBusy, setWorkspaceBusy] = useState("");
@@ -218,6 +224,8 @@ export function Shell({
         method: "POST",
         body: JSON.stringify({ organization_id: organizationId }),
       });
+      resetResourceScope("organization");
+      resetResourceScope("session");
       continueAfterProfileGuard(() => window.location.reload());
     } catch (cause) {
       setWorkspaceError(errorText(cause));
@@ -233,6 +241,7 @@ export function Shell({
     setWorkspaceError("");
     try {
       await api("/auth/logout", { method: "POST" });
+      resetResourceScope("all");
       continueAfterProfileGuard(() => window.location.assign("/login"));
     } catch (cause) {
       setWorkspaceError(errorText(cause));

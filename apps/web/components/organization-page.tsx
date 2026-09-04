@@ -23,7 +23,16 @@ import { ErrorNote, Loading, SuccessNote } from "./common";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
-import { api, errorText, refreshWorkspace, useResource } from "@/lib/api";
+import {
+  api,
+  errorText,
+  invalidateResources,
+  resetResourceScope,
+  resourceTag,
+  useResource,
+  type ResourceInvalidation,
+} from "@/lib/api";
+import { resources } from "@/lib/resource-keys";
 import type { OrganizationStatus, Profile } from "@/lib/types";
 
 type Member = {
@@ -44,7 +53,7 @@ type Invitation = {
 
 function CompanyProfileSection({ canManage }: { canManage: boolean }) {
   const { t } = useI18n();
-  const profile = useResource<Profile>("/profile");
+  const profile = useResource(resources.profile());
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [areas, setAreas] = useState("");
@@ -229,7 +238,13 @@ function CompanyProfileSection({ canManage }: { canManage: boolean }) {
       });
       applyProfile(saved);
       profile.setData(saved);
-      refreshWorkspace();
+      void invalidateResources(
+        resources.organizationStatus(),
+        resourceTag("comparison", "organization"),
+        resourceTag("impact-matrix", "organization"),
+        resourceTag("impact-inbox", "organization"),
+        resourceTag("registry", "organization"),
+      );
       setSuccess(t("profile.saved"));
     } catch (cause) {
       setError(errorText(cause));
@@ -333,16 +348,18 @@ function CompanyProfileSection({ canManage }: { canManage: boolean }) {
 export function OrganizationPage() {
   const { session, canManage } = useAuth();
   const { locale, t, number } = useI18n();
-  const { data: members, reload: reloadMembers } = useResource<Member[]>(
-    session?.authenticated ? "/organization/members" : null,
+  const { data: members } = useResource(
+    session?.authenticated ? resources.organizationMembers<Member[]>() : null,
   );
-  const { data: invitations, reload: reloadInvitations } = useResource<
-    Invitation[]
-  >(session?.authenticated && canManage ? "/organization/invitations" : null);
-  const { data: organizationStatus, reload: reloadStatus } =
-    useResource<OrganizationStatus>(
-      session?.authenticated ? "/organization/status" : null,
-    );
+  const invitationsResource = useResource(
+    session?.authenticated && canManage
+      ? resources.organizationInvitations<Invitation[]>()
+      : null,
+  );
+  const invitations = invitationsResource.data;
+  const { data: organizationStatus } = useResource(
+    session?.authenticated ? resources.organizationStatus() : null,
+  );
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"viewer" | "organization_admin">("viewer");
   const [recipientLocale, setRecipientLocale] = useState<Locale>(locale);
@@ -362,6 +379,7 @@ export function OrganizationPage() {
     key: string,
     action: () => Promise<unknown>,
     message: string,
+    targets: ResourceInvalidation[] = [],
   ) {
     setBusy(key);
     setError("");
@@ -369,10 +387,7 @@ export function OrganizationPage() {
     try {
       await action();
       setSuccess(message);
-      reloadMembers();
-      reloadInvitations();
-      reloadStatus();
-      refreshWorkspace();
+      if (targets.length) await invalidateResources(...targets);
       return true;
     } catch (cause) {
       setError(errorText(cause));
@@ -415,7 +430,17 @@ export function OrganizationPage() {
       setGeneratedLink(link);
       setEmail("");
       setSuccess(t("org.inviteCreated"));
-      reloadInvitations();
+      if (invitationsResource.data) {
+        invitationsResource.setData((current) => [
+          value,
+          ...(current || []).filter((item) => item.id !== value.id),
+        ]);
+      } else {
+        await invalidateResources(
+          resources.organizationInvitations<Invitation[]>(),
+        );
+      }
+      void invalidateResources(resources.organizationStatus());
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -611,6 +636,10 @@ export function OrganizationPage() {
                               }),
                             }),
                           t("org.roleUpdated"),
+                          [
+                            resources.organizationMembers<Member[]>(),
+                            resources.organizationStatus(),
+                          ],
                         )
                       }
                     >
@@ -634,6 +663,11 @@ export function OrganizationPage() {
                               }),
                             }),
                           t("org.handoverDone"),
+                          [
+                            resources.organizationMembers<Member[]>(),
+                            resources.organizationStatus(),
+                            resources.authSession(),
+                          ],
                         )
                       }
                     >
@@ -657,6 +691,10 @@ export function OrganizationPage() {
                               method: "DELETE",
                             }),
                           t("org.memberRemoved"),
+                          [
+                            resources.organizationMembers<Member[]>(),
+                            resources.organizationStatus(),
+                          ],
                         )
                       }
                     >
@@ -773,6 +811,10 @@ export function OrganizationPage() {
                               method: "DELETE",
                             }),
                           t("org.revoked"),
+                          [
+                            resources.organizationInvitations<Invitation[]>(),
+                            resources.organizationStatus(),
+                          ],
                         )
                       }
                     >
@@ -806,7 +848,11 @@ export function OrganizationPage() {
                     body: JSON.stringify({ token: inviteToken }),
                   }),
                 t("org.accepted"),
-              ).then((changed) => changed && window.location.reload())
+              ).then((changed) => {
+                if (!changed) return;
+                resetResourceScope("all");
+                window.location.reload();
+              })
             }
           >
             {t("org.joinButton")}

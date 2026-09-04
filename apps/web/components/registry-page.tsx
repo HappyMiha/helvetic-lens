@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api, dateTime, errorText, label, useResource } from "@/lib/api";
+import { resources } from "@/lib/resource-keys";
 import { ErrorNote, Loading, Status } from "./common";
 import { Shell } from "./shell";
 import { useAuth } from "./auth-gate";
@@ -108,7 +109,7 @@ export function RegistryPage({ defaultView = "monitored" }: { defaultView?: "mon
   const endpointParameters = new URLSearchParams(params.toString());
   endpointParameters.set("view", view);
   const endpoint = "/registry?" + endpointParameters.toString();
-  const resource = useResource<RegistryResponse>(endpoint, 15000);
+  const resource = useResource(resources.registry<RegistryResponse>(endpoint));
 
   useEffect(() => setQuery(params.get("q") || ""), [params]);
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CalendarClock, ExternalLink, Mail, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { api, errorText, useResource } from "@/lib/api";
+import { resources } from "@/lib/resource-keys";
 import { useI18n } from "@/lib/i18n";
 import type { DigestOverview } from "@/lib/types";
 import { ErrorNote, Loading, SuccessNote } from "./common";
@@ -14,7 +15,7 @@ const severities = ["high", "medium", "low", "none", "unknown"];
 
 export function DigestsPage() {
   const { t, dateTime } = useI18n();
-  const resource = useResource<DigestOverview>("/digests");
+  const resource = useResource(resources.digests());
   const [enabled, setEnabled] = useState(false);
   const [frequency, setFrequency] = useState<"daily" | "weekly">("weekly");
   const [selectedSeverities, setSelectedSeverities] = useState<string[]>([]);

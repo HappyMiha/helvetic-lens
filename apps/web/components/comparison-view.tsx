@@ -26,10 +26,16 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   api,
   errorText,
+  fetchResource,
+  invalidateResources,
   label,
-  refreshWorkspace,
+  mutateResource,
+  mutateResourceForLocale,
+  primeResource,
+  primeResourceForLocale,
   useResource,
 } from "@/lib/api";
+import { resources } from "@/lib/resource-keys";
 import type {
   ActionDecision,
   AIHistoryItem,
@@ -40,7 +46,6 @@ import type {
   Change,
   Comparison,
   Coverage,
-  Health,
   Impact,
   Job,
   Version,
@@ -49,7 +54,7 @@ import { Citations, ErrorNote, Loading, Status } from "./common";
 import { AIHistory } from "./ai-history";
 import { Shell } from "./shell";
 import { useAuth } from "./auth-gate";
-import { translate, useI18n } from "@/lib/i18n";
+import { storedLocale, translate, type Locale, useI18n } from "@/lib/i18n";
 
 const PAGE_SIZE = 40;
 const JOB_TERMINAL_STATES = new Set(["succeeded", "failed", "cancelled"]);
@@ -76,14 +81,28 @@ function localLabel(value: string, locale: ComparisonLocale) {
 
 async function waitForJob(initial: Job, timeoutMessage: string): Promise<Job> {
   let current = initial;
+  primeResource(resources.job(current.id), current);
   const deadline = Date.now() + 10 * 60 * 1000;
   while (!JOB_TERMINAL_STATES.has(current.state)) {
     if (Date.now() >= deadline)
       throw new Error(timeoutMessage);
     await new Promise((resolve) => window.setTimeout(resolve, 1000));
-    current = await api<Job>("/jobs/" + current.id);
+    current = await fetchResource(resources.job(current.id));
+    primeResource(resources.job(current.id), current);
   }
   return current;
+}
+
+function completedAnalysis(job: Job): Analysis | null {
+  const result = job.result?.data;
+  if (
+    job.state !== "succeeded" ||
+    job.result?.type !== "analysis" ||
+    !result ||
+    typeof result !== "object"
+  )
+    return null;
+  return result as Analysis;
 }
 
 export function ComparisonView({ id }: { id: string }) {
@@ -91,18 +110,15 @@ export function ComparisonView({ id }: { id: string }) {
   const { locale, t, dateTime, number } = useI18n();
   const uiLocale = locale.slice(0, 2) as ComparisonLocale;
   const ui = comparisonCopy[uiLocale];
-  const [polling, setPolling] = useState(true);
   const { data, error: loadError } = useResource<Comparison>(
-    "/comparisons/" + id,
-    polling ? 2000 : 0,
+    resources.comparison(id),
   );
-  const { data: health } = useResource<Health>("/health", 15000);
+  const { data: health } = useResource(resources.health());
   const [filter, setFilter] = useState("substantive"),
     [context, setContext] = useState(false),
     [page, setPage] = useState(0);
   const [jumpTarget, setJumpTarget] = useState(""),
-    [analysing, setAnalysing] = useState(false),
-    [analysisJob, setAnalysisJob] = useState<Job | null>(null),
+    [analysisJobs, setAnalysisJobs] = useState<Partial<Record<Locale, Job>>>({}),
     [analysisNotice, setAnalysisNotice] = useState(""),
     [confirmingIdentity, setConfirmingIdentity] = useState(""),
     [error, setError] = useState("");
@@ -127,44 +143,81 @@ export function ComparisonView({ id }: { id: string }) {
     ? data.diff.classification_counts.structural +
       data.diff.classification_counts.formatting
     : 0;
+  const analysisJob = analysisJobs[locale] || null;
   const effectiveAnalysisJob = analysisJob || data?.analysis_job || null;
+  const effectiveAnalysisJobLocale = locale;
   const analysisJobActive =
     !!effectiveAnalysisJob &&
     !JOB_TERMINAL_STATES.has(effectiveAnalysisJob.state);
+  const polledAnalysisJob = useResource<Job>(
+    analysisJobActive && effectiveAnalysisJob
+      ? resources.job(effectiveAnalysisJob.id)
+      : null,
+  );
   useEffect(() => {
-    setPolling(analysisJobActive || analysing || analysis?.status === "pending");
-  }, [analysisJobActive, analysing, analysis?.status]);
+    setAnalysisJobs((current) => {
+      const saved = data?.analysis_job || null;
+      const local = current[locale] || null;
+      if (!saved || saved === local) return current;
+      if (
+        local &&
+        new Date(local.updated_at).getTime() >=
+          new Date(saved.updated_at).getTime()
+      )
+        return current;
+      return { ...current, [locale]: saved };
+    });
+  }, [data?.analysis_job, locale]);
   useEffect(() => {
-    if (!data?.analysis_job) return;
-    setAnalysisJob((current) =>
-      !current || current.id === data.analysis_job?.id ? data.analysis_job! : current,
+    if (polledAnalysisJob.error) setError(polledAnalysisJob.error);
+  }, [polledAnalysisJob.error]);
+  useEffect(() => {
+    const next = polledAnalysisJob.data;
+    if (!next || next.id !== effectiveAnalysisJob?.id) return;
+    setAnalysisJobs((current) => ({
+      ...current,
+      [effectiveAnalysisJobLocale]: next,
+    }));
+    if (!JOB_TERMINAL_STATES.has(next.state)) return;
+    const completed = completedAnalysis(next);
+    mutateResourceForLocale<Comparison>(
+      resources.comparison(id),
+      effectiveAnalysisJobLocale,
+      (current) =>
+        current
+          ? {
+              ...current,
+              analysis_job: next,
+              analysis: completed || current.analysis,
+            }
+          : current,
     );
-  }, [data?.analysis_job]);
-  useEffect(() => {
-    if (!analysisJobActive || !effectiveAnalysisJob) return;
-    const jobId = effectiveAnalysisJob.id;
-    const timer = window.setInterval(async () => {
-      try {
-        const next = await api<Job>("/jobs/" + jobId);
-        setAnalysisJob(next);
-        if (JOB_TERMINAL_STATES.has(next.state)) {
-          window.clearInterval(timer);
-          setAnalysing(false);
-          if (next.state === "succeeded") {
-            setAnalysisNotice(t("compare.reportReady"));
-            if (document.hidden && "Notification" in window && Notification.permission === "granted")
-              new Notification("Helvetic Lens", { body: t("compare.reportReadyShort") });
-          } else {
-            setAnalysisNotice(t("compare.analysisEnded", { state: localLabel(next.state, uiLocale) }));
-          }
-          refreshWorkspace();
-        }
-      } catch (cause) {
-        setError(errorText(cause));
-      }
-    }, 1000);
-    return () => window.clearInterval(timer);
-  }, [analysisJobActive, effectiveAnalysisJob?.id, t, uiLocale]);
+    void invalidateResources(resources.comparisonHistory(id));
+    if (next.state === "succeeded" && storedLocale() === effectiveAnalysisJobLocale) {
+      setAnalysisNotice(t("compare.reportReady"));
+      if (
+        document.hidden &&
+        "Notification" in window &&
+        Notification.permission === "granted"
+      )
+        new Notification("Helvetic Lens", {
+          body: t("compare.reportReadyShort"),
+        });
+    } else if (storedLocale() === effectiveAnalysisJobLocale) {
+      setAnalysisNotice(
+        t("compare.analysisEnded", {
+          state: localLabel(next.state, uiLocale),
+        }),
+      );
+    }
+  }, [
+    effectiveAnalysisJob?.id,
+    effectiveAnalysisJobLocale,
+    id,
+    polledAnalysisJob.data,
+    t,
+    uiLocale,
+  ]);
   useEffect(() => {
     if (jumpTarget)
       document
@@ -186,26 +239,48 @@ export function ComparisonView({ id }: { id: string }) {
   const changes =
     data?.diff.items.filter((item) => item.kind !== "unchanged") || [];
   async function analyse() {
-    setAnalysing(true);
+    const requestLocale = locale;
     setError("");
     try {
       const queued = await api<Job>("/comparisons/" + id + "/analyse-jobs", {
         method: "POST",
-        body: JSON.stringify({ output_locale: locale }),
+        body: JSON.stringify({ output_locale: requestLocale }),
       });
-      setAnalysisJob(queued);
-      setAnalysisNotice(
-        JOB_TERMINAL_STATES.has(queued.state)
-          ? t("compare.reportFinished")
-          : t("compare.analysisSubmitted"),
+      primeResourceForLocale(resources.job(queued.id), requestLocale, queued);
+      setAnalysisJobs((current) => ({ ...current, [requestLocale]: queued }));
+      mutateResourceForLocale<Comparison>(
+        resources.comparison(id),
+        requestLocale,
+        (current) =>
+          current ? { ...current, analysis_job: queued } : current,
       );
-      if (queued.state === "failed")
-        setError(queued.error?.detail || t("compare.analysisFailed"));
-      refreshWorkspace();
+      if (storedLocale() === requestLocale) {
+        setAnalysisNotice(
+          JOB_TERMINAL_STATES.has(queued.state)
+            ? t("compare.reportFinished")
+            : t("compare.analysisSubmitted"),
+        );
+        if (queued.state === "failed")
+          setError(queued.error?.detail || t("compare.analysisFailed"));
+      }
+      if (JOB_TERMINAL_STATES.has(queued.state)) {
+        const completed = completedAnalysis(queued);
+        mutateResourceForLocale<Comparison>(
+          resources.comparison(id),
+          requestLocale,
+          (current) =>
+            current
+              ? {
+                  ...current,
+                  analysis_job: queued,
+                  analysis: completed || current.analysis,
+                }
+              : current,
+        );
+        void invalidateResources(resources.comparisonHistory(id));
+      }
     } catch (cause) {
-      setError(errorText(cause));
-    } finally {
-      if (!analysisJobActive) setAnalysing(false);
+      if (storedLocale() === requestLocale) setError(errorText(cause));
     }
   }
   async function cancelAnalysis() {
@@ -214,12 +289,27 @@ export function ComparisonView({ id }: { id: string }) {
       const cancelled = await api<Job>(`/jobs/${effectiveAnalysisJob.id}/cancel`, {
         method: "POST",
       });
-      setAnalysisJob(cancelled);
-      setAnalysing(false);
-      setAnalysisNotice(t("compare.analysisCancelled"));
-      refreshWorkspace();
+      primeResourceForLocale(
+        resources.job(cancelled.id),
+        effectiveAnalysisJobLocale,
+        cancelled,
+      );
+      setAnalysisJobs((current) => ({
+        ...current,
+        [effectiveAnalysisJobLocale]: cancelled,
+      }));
+      if (storedLocale() === effectiveAnalysisJobLocale)
+        setAnalysisNotice(t("compare.analysisCancelled"));
+      mutateResourceForLocale<Comparison>(
+        resources.comparison(id),
+        effectiveAnalysisJobLocale,
+        (current) =>
+          current ? { ...current, analysis_job: cancelled } : current,
+      );
+      void invalidateResources(resources.comparisonHistory(id));
     } catch (cause) {
-      setError(errorText(cause));
+      if (storedLocale() === effectiveAnalysisJobLocale)
+        setError(errorText(cause));
     }
   }
   async function confirmIdentity(versionId: string) {
@@ -232,7 +322,7 @@ export function ComparisonView({ id }: { id: string }) {
           note: t("compare.identityConfirmedNote"),
         }),
       });
-      refreshWorkspace();
+      await invalidateResources(resources.comparison(id));
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -250,7 +340,6 @@ export function ComparisonView({ id }: { id: string }) {
     setError("");
     try {
       await api("/versions/" + versionId, { method: "DELETE" });
-      refreshWorkspace();
       window.location.href = "/laws/" + data?.law_id;
     } catch (cause) {
       setError(errorText(cause));
@@ -1185,7 +1274,20 @@ function ReviewActionControls({
       );
       setSaved(page.current[action.action_key || ""]);
       setEvents(page.history.filter((item) => item.action_key === action.action_key));
-      refreshWorkspace();
+      mutateResource<Comparison>(resources.comparison(comparisonId), (currentComparison) => {
+        if (
+          !currentComparison?.analysis ||
+          currentComparison.analysis.id !== analysisId
+        )
+          return currentComparison;
+        return {
+          ...currentComparison,
+          analysis: {
+            ...currentComparison.analysis,
+            action_decisions: page,
+          },
+        };
+      });
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -1381,8 +1483,7 @@ function AskPanel({
     [notice, setNotice] = useState("");
   const promptLocale = askPrompts[locale.slice(0, 2)] ? locale.slice(0, 2) : "en";
   const savedHistory = useResource<AIHistoryPage>(
-    `/comparisons/${comparisonId}/ai-history`,
-    5000,
+    resources.comparisonHistory(comparisonId),
   );
   const history = (savedHistory.data?.items || [])
     .filter((item) => item.type === "question")
@@ -1437,11 +1538,10 @@ function AskPanel({
           ? t("compare.answerCached")
           : t("compare.answerSaved"),
       );
-      savedHistory.reload();
-      refreshWorkspace();
+      void invalidateResources(resources.comparisonHistory(comparisonId));
     } catch (cause) {
       setError(errorText(cause));
-      savedHistory.reload();
+      void invalidateResources(resources.comparisonHistory(comparisonId));
     } finally {
       setBusy(false);
     }

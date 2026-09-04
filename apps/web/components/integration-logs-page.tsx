@@ -27,7 +27,9 @@ import {
   api,
   errorText,
   label,
-  refreshWorkspace,
+  invalidateResources,
+  resources,
+  resourceTag,
   useResource,
 } from "@/lib/api";
 import type {
@@ -99,9 +101,11 @@ export function IntegrationLogsPage() {
     if (query.trim()) params.set("query", query.trim());
     return "/integration-logs?" + params.toString();
   }, [offset, provider, query, sortBy, sortDirection, status]);
-  const logs = useResource<IntegrationLogPage>(path, 5000);
+  const logs = useResource<IntegrationLogPage>(
+    resources.integrationLogs<IntegrationLogPage>(path),
+  );
   const detail = useResource<IntegrationLogDetail>(
-    selectedId ? "/integration-logs/" + selectedId : null,
+    selectedId ? resources.integrationLog(selectedId) : null,
   );
   const rows = logs.data?.items || [];
   const errors = rows.filter((item) => item.status === "error").length;
@@ -134,8 +138,7 @@ export function IntegrationLogsPage() {
       setSelectedId(null);
       setOffset(0);
       setNote(t("logs.cleared", { count: number(result.deleted) }));
-      refreshWorkspace();
-      logs.reload();
+      await invalidateResources(resourceTag("integration-logs"));
     } catch (cause) {
       setError(errorText(cause));
     } finally {

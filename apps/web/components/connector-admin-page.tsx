@@ -17,8 +17,9 @@ import { Input } from "@/components/ui/input";
 import {
   api,
   errorText,
+  invalidateResources,
   label,
-  refreshWorkspace,
+  resources,
   useResource,
 } from "@/lib/api";
 import type { ConnectorSchedule, ConnectorSchedulePage } from "@/lib/types";
@@ -49,10 +50,8 @@ function connectorName(value: string, t: (key: string) => string) {
 
 function ScheduleCard({
   item,
-  onChange,
 }: {
   item: ConnectorSchedule;
-  onChange: () => void;
 }) {
   const { t, dateTime, number } = useI18n();
   const [draft, setDraft] = useState(item);
@@ -78,8 +77,10 @@ function ScheduleCard({
         }),
       });
       setMessage(t("connectors.saved"));
-      refreshWorkspace();
-      onChange();
+      await invalidateResources(
+        resources.connectors(),
+        resources.platformStatus(),
+      );
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -101,8 +102,11 @@ function ScheduleCard({
           ? t("connectors.already")
           : t("connectors.queued"),
       );
-      refreshWorkspace();
-      onChange();
+      await invalidateResources(
+        resources.connectors(),
+        resources.jobs(),
+        resources.platformStatus(),
+      );
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -267,8 +271,7 @@ export function ConnectorAdminPage() {
   const { t, number } = useI18n();
   const { isPlatformAdmin } = useAuth();
   const { data, error, loading, reload } = useResource<ConnectorSchedulePage>(
-    isPlatformAdmin ? "/admin/connectors" : null,
-    5000,
+    isPlatformAdmin ? resources.connectors() : null,
   );
   const groups = useMemo(() => {
     const values = new Map<string, ConnectorSchedule[]>();
@@ -357,7 +360,6 @@ export function ConnectorAdminPage() {
                       <ScheduleCard
                         key={item.id}
                         item={item}
-                        onChange={reload}
                       />
                     ))}
                   </section>

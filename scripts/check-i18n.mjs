@@ -78,7 +78,13 @@ function inspectRenderedExpression(file, sourceFile, node) {
 }
 for (const file of sourceFiles) {
   const source = fs.readFileSync(file, "utf8");
-  const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const sourceFile = ts.createSourceFile(
+    file,
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+  );
   function visit(node) {
     if (ts.isJsxText(node)) {
       recordLiteral(file, sourceFile, node, node.getText(sourceFile));

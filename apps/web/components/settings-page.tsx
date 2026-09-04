@@ -18,15 +18,15 @@ import { Input } from "@/components/ui/input";
 import {
   api,
   errorText,
-  refreshWorkspace,
+  invalidateResources,
+  resourceTag,
   useResource,
 } from "@/lib/api";
+import { resources } from "@/lib/resource-keys";
 import type {
   ApertusModelList,
   ApertusModelOption,
   ApertusSettings,
-  Health,
-  Profile,
 } from "@/lib/types";
 import { ErrorNote, Loading, SuccessNote } from "./common";
 import { Shell } from "./shell";
@@ -72,9 +72,9 @@ function draftValues(settings: ApertusSettings) {
 export function SettingsPage() {
   const { t } = useI18n();
   const { canManage } = useAuth();
-  const configuration = useResource<ApertusSettings>("/settings/apertus");
-  const { data: health } = useResource<Health>("/health");
-  const { data: profile } = useResource<Profile>("/profile");
+  const configuration = useResource(resources.settings());
+  const { data: health } = useResource(resources.health());
+  const { data: profile } = useResource(resources.profile());
   const [notice, setNotice] = useState("");
   return (
     <Shell section={t("nav.settings")}>
@@ -100,7 +100,15 @@ export function SettingsPage() {
             onSaved={(settings, message) => {
               configuration.setData(settings);
               setNotice(message);
-              refreshWorkspace();
+              void invalidateResources(
+                resources.health(),
+                resources.organizationStatus(),
+                resourceTag("comparison", "organization"),
+                resourceTag("ai-history", "organization"),
+                resourceTag("impact-matrix", "organization"),
+                resourceTag("impact-inbox", "organization"),
+                resourceTag("registry", "organization"),
+              );
             }}
             onEdit={() => setNotice("")}
           /></fieldset>

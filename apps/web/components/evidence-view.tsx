@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { label, useResource } from "@/lib/api";
+import { resources } from "@/lib/resource-keys";
 import { useI18n } from "@/lib/i18n";
 import type { Passage, Version } from "@/lib/types";
 import { ErrorNote, Loading, Status } from "./common";
@@ -28,7 +29,7 @@ export function EvidenceView({
   passageId: string;
 }) {
   const { t, dateTime, number } = useI18n();
-  const { data, error } = useResource<Evidence>("/versions/" + id);
+  const { data, error } = useResource(resources.version<Evidence>(id));
   const [page, setPage] = useState(0);
   const targetIndex =
     data?.passages.findIndex((passage) => passage.id === passageId) ?? -1;

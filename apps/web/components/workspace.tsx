@@ -31,10 +31,13 @@ import {
   api,
   errorText,
   host,
+  invalidateResources,
   label,
-  refreshWorkspace,
+  mutateResource,
+  resourceTag,
   useResource,
 } from "@/lib/api";
+import { resources } from "@/lib/resource-keys";
 import type { Candidate, Discovery, Job, Law, Scan, Source } from "@/lib/types";
 import { ErrorNote, Loading, Status } from "./common";
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
@@ -62,10 +65,10 @@ export function Workspace({
   const router = useRouter();
   const { canManage } = useAuth();
   const { t, dateTime } = useI18n();
-  const laws = useResource<Law[]>("/laws", 5000);
-  const sources = useResource<Source[]>("/sources", 8000);
-  const scans = useResource<Scan[]>("/scans", 2000);
-  const jobs = useResource<Job[]>("/jobs", 2000);
+  const laws = useResource(resources.laws());
+  const sources = useResource(resources.sources());
+  const scans = useResource(resources.scans());
+  const jobs = useResource(resources.jobs());
   const [form, setForm] = useState<DocumentForm | null>(null);
   const [query, setQuery] = useState(""),
     [sourceFilter, setSourceFilter] = useState(""),
@@ -104,11 +107,25 @@ export function Workspace({
     setBusy("scan");
     setError("");
     try {
-      await api<Scan>("/scans", {
+      const createdScan = await api<Scan>("/scans", {
         method: "POST",
         body: JSON.stringify({ law_ids: ids || null }),
       });
-      refreshWorkspace();
+      const updatedScans = mutateResource<Scan[]>(resources.scans(), (current) =>
+        current
+          ? [createdScan, ...current.filter((item) => item.id !== createdScan.id)]
+          : current,
+      );
+      if (updatedScans === null) void invalidateResources(resources.scans());
+      const createdJob = createdScan.job;
+      if (createdJob) {
+        const updatedJobs = mutateResource<Job[]>(resources.jobs(), (current) =>
+          current
+            ? [createdJob, ...current.filter((item) => item.id !== createdJob.id)]
+            : current,
+        );
+        if (updatedJobs === null) void invalidateResources(resources.jobs());
+      }
       setSelected([]);
     } catch (cause) {
       setError(errorText(cause));
@@ -122,8 +139,22 @@ export function Workspace({
     setError("");
     try {
       await api("/sources/" + deletingSource.id, { method: "DELETE" });
+      const deletedSourceId = deletingSource.id;
+      const updatedSources = mutateResource<Source[]>(resources.sources(), (current) =>
+        current?.filter((source) => source.id !== deletedSourceId) ?? current,
+      );
+      const updatedLaws = mutateResource<Law[]>(resources.laws(), (current) =>
+        current?.map((law) =>
+          law.source_id === deletedSourceId ? { ...law, source_id: null } : law,
+        ) ?? current,
+      );
+      void invalidateResources(
+        ...(updatedSources === null ? [resources.sources()] : []),
+        ...(updatedLaws === null ? [resources.laws()] : []),
+        resourceTag("law", "organization"),
+        resources.organizationStatus(),
+      );
       setDeletingSource(null);
-      refreshWorkspace();
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -687,12 +718,14 @@ function DiscoveryDialog({
     setBusy(true);
     setError("");
     try {
-      setDiscovery(
-        await api<Discovery>("/sources/" + source.id + "/discover", {
+      const result = await api<Discovery>(
+        "/sources/" + source.id + "/discover",
+        {
           method: "POST",
-        }),
+        },
       );
-      refreshWorkspace();
+      setDiscovery(result);
+      void invalidateResources(resources.sources());
     } catch (cause) {
       setError(errorText(cause));
     } finally {

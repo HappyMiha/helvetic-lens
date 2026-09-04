@@ -23,10 +23,14 @@ import { Input } from "@/components/ui/input";
 import {
   api,
   errorText,
+  invalidateResources,
   label,
-  refreshWorkspace,
+  mutateResource,
+  primeResource,
+  resourceTag,
   useResource,
 } from "@/lib/api";
+import { resources } from "@/lib/resource-keys";
 import { translate, useI18n, type Locale } from "@/lib/i18n";
 import type {
   Comparison,
@@ -67,8 +71,8 @@ export function LawDetail({ id }: { id: string }) {
     data: law,
     error: loadError,
     loading,
-  } = useResource<Detail>("/laws/" + id, 4000);
-  const scans = useResource<Scan[]>("/scans", 2000);
+  } = useResource(resources.law(id));
+  const scans = useResource(resources.scans());
   const [importOpen, setImportOpen] = useState(false),
     [baseline, setBaseline] = useState("");
   const [oldId, setOldId] = useState(""),
@@ -103,7 +107,11 @@ export function LawDetail({ id }: { id: string }) {
         method: "PATCH",
         body: JSON.stringify(payload),
       });
-      refreshWorkspace();
+      await invalidateResources(
+        resources.law(id),
+        resources.laws(),
+        resourceTag("registry", "organization"),
+      );
       setEditing(false);
     } catch (cause) {
       setError(errorText(cause));
@@ -116,14 +124,21 @@ export function LawDetail({ id }: { id: string }) {
     setError("");
     setNote("");
     try {
-      await api<Scan>("/scans", {
+      const created = await api<Scan>("/scans", {
         method: "POST",
         body: JSON.stringify({
           law_ids: [id],
           baseline_version_id: baseline || null,
         }),
       });
-      refreshWorkspace();
+      const scansWereLoaded = scans.data !== null;
+      scans.setData((current) => [
+        created,
+        ...(current || []).filter((item) => item.id !== created.id),
+      ]);
+      if (!scansWereLoaded) void invalidateResources(resources.scans());
+      if (created.job) primeResource(resources.job(created.job.id), created.job);
+      void invalidateResources(resources.jobs());
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -154,7 +169,19 @@ export function LawDetail({ id }: { id: string }) {
     try {
       await api("/laws/" + id, { method: "DELETE" });
       setDeleteOpen(false);
-      refreshWorkspace();
+      const updatedLaws = mutateResource(resources.laws(), (current) =>
+        current?.filter((item) => item.id !== id) || null,
+      );
+      void invalidateResources(
+        ...(updatedLaws === null ? [resources.laws()] : []),
+        resources.sources(),
+        resources.organizationStatus(),
+        resourceTag("registry", "organization"),
+        resourceTag("comparison", "organization"),
+        resourceTag("ai-history", "organization"),
+        resourceTag("impact-inbox", "organization"),
+        resourceTag("impact-matrix", "organization"),
+      );
       router.push("/");
     } catch (cause) {
       setError(errorText(cause));
@@ -177,7 +204,12 @@ export function LawDetail({ id }: { id: string }) {
       if (oldId === version.id) setOldId("");
       if (newId === version.id) setNewId("");
       setNote(t("law.importRemoved"));
-      refreshWorkspace();
+      await invalidateResources(
+        resources.law(id),
+        resources.version(version.id),
+        resourceTag("registry", "organization"),
+        resourceTag("comparison", "organization"),
+      );
     } catch (cause) {
       setError(errorText(cause));
     } finally {

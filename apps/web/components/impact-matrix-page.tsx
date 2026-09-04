@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ErrorNote, Loading, Status } from "@/components/common";
 import { Shell } from "@/components/shell";
 import { useResource } from "@/lib/api";
+import { resources } from "@/lib/resource-keys";
 import { useI18n } from "@/lib/i18n";
 import type { ImpactMatrix, ImpactMatrixCell } from "@/lib/types";
 
@@ -82,9 +83,10 @@ function MatrixCell({
 
 export function ImpactMatrixPage() {
   const { locale, t, number } = useI18n();
-  const resource = useResource<ImpactMatrix>(
-    `/impact-matrix?output_locale=${encodeURIComponent(locale)}`,
-    30_000,
+  const resource = useResource(
+    resources.impactMatrix(
+      `output_locale=${encodeURIComponent(locale)}`,
+    ),
   );
   const data = resource.data;
 

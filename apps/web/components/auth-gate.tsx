@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useResource } from "@/lib/api";
+import { resources } from "@/lib/resource-keys";
 import { useI18n } from "@/lib/i18n";
 
 export type AuthSession = {
@@ -52,7 +53,9 @@ export function AdminOnly({ children }: { children: React.ReactNode }) {
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { data, loading, error } = useResource<AuthSession>("/auth/session");
+  const { data, loading, error } = useResource(
+    resources.authSession<AuthSession>(),
+  );
   const { syncUserLocale, t } = useI18n();
   const authenticationPage = pathname === "/login";
   const publicPage = authenticationPage || pathname === "/unsubscribe";

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { dateTime, label, useResource } from "@/lib/api";
+import { resources } from "@/lib/resource-keys";
 import type {
   AIHistoryItem,
   AIHistoryPage,
@@ -30,12 +31,12 @@ export function AIHistory({
   compact?: boolean;
 }) {
   const { t } = useI18n();
-  const path = comparisonId
-    ? `/comparisons/${comparisonId}/ai-history`
+  const resource = comparisonId
+    ? resources.comparisonHistory(comparisonId)
     : lawId
-      ? `/laws/${lawId}/ai-history`
+      ? resources.lawHistory(lawId)
       : null;
-  const history = useResource<AIHistoryPage>(path, 5000);
+  const history = useResource<AIHistoryPage>(resource);
   return (
     <section
       id={comparisonId ? "ai-history" : undefined}

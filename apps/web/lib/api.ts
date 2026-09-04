@@ -1,10 +1,42 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 import { storedLocale, translate } from "@/lib/i18n";
+import {
+  disabledResourceSnapshot,
+  resourceKey,
+  resourceTag,
+  ResourceStore,
+  type ResourceInvalidation,
+  type ResourceKey,
+  type ResourceScope,
+  type ResourceSnapshot,
+  type ResourceSubscriptionOptions,
+  type ResourceTagTarget,
+  type ResourceUpdater,
+} from "@/lib/resource-cache";
+import { legacyResourceKey, resources } from "@/lib/resource-keys";
+
+export { resourceKey, resources, resourceTag };
+export type {
+  ResourceInvalidation,
+  ResourceKey,
+  ResourceScope,
+  ResourceSnapshot,
+  ResourceTagTarget,
+  ResourceUpdater,
+};
+
+export type ResourceOptions = ResourceSubscriptionOptions;
+
+const resourceStore = new ResourceStore();
 
 export class ApiError extends Error {
-  constructor(message: string, public code = "request_failed", public params: Record<string, unknown> = {}) {
+  constructor(
+    message: string,
+    public code = "request_failed",
+    public params: Record<string, unknown> = {},
+  ) {
     super(message);
   }
 }
@@ -34,9 +66,15 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     if (Array.isArray(message))
       message = message.map((item: { msg: string }) => item.msg).join("; ");
     const locale = storedLocale();
-    const localized = typeof data?.code === "string" ? translate(locale, `error.${data.code}`, data?.params || {}) : null;
+    const localized =
+      typeof data?.code === "string"
+        ? translate(locale, `error.${data.code}`, data?.params || {})
+        : null;
     throw new ApiError(
-      localized || (typeof message === "string" ? message : translate(locale, "error.fallback") || "Request failed."),
+      localized ||
+        (typeof message === "string"
+          ? message
+          : translate(locale, "error.fallback") || "Request failed."),
       typeof data?.code === "string" ? data.code : "request_failed",
       data?.params || {},
     );
@@ -44,62 +82,149 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   return data as T;
 }
 
-export function refreshWorkspace() {
-  window.dispatchEvent(new Event("helvetic-lens:refresh"));
+export function invalidateResources(
+  ...targets: ResourceInvalidation[]
+): Promise<void> {
+  return resourceStore.invalidate(...targets);
 }
 
-export function useResource<T>(path: string | null, interval = 0) {
-  const [data, setData] = useState<T | null>(null);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [revision, setRevision] = useState(0);
-  const reload = useCallback(() => setRevision((value) => value + 1), []);
-  useEffect(() => {
-    setData(null);
-    setError("");
-  }, [path]);
-  useEffect(() => {
-    if (!path) {
-      setLoading(false);
-      return;
-    }
-    let live = true;
-    const controller = new AbortController();
-    const load = async () => {
-      try {
-        const value = await api<T>(path, { signal: controller.signal });
-        if (live) {
-          setData(value);
-          setError("");
-        }
-      } catch (cause) {
-        if (live && !controller.signal.aborted)
-          setError(
-            cause instanceof Error
-              ? cause.message
-              : translate(storedLocale(), "error.fallback") || "Request failed.",
-          );
-      } finally {
-        if (live) setLoading(false);
-      }
-    };
-    setLoading(true);
-    void load();
-    const timer = interval ? window.setInterval(load, interval) : null;
-    window.addEventListener("helvetic-lens:refresh", reload);
-    return () => {
-      live = false;
-      controller.abort();
-      if (timer) window.clearInterval(timer);
-      window.removeEventListener("helvetic-lens:refresh", reload);
-    };
-  }, [path, interval, revision, reload]);
-  return { data, error, loading, reload, setData };
+export function mutateResource<T>(
+  key: ResourceKey<T>,
+  updater: ResourceUpdater<T>,
+): T | null {
+  return resourceStore.mutate(key, storedLocale(), updater);
+}
+
+/**
+ * Updates a locale-specific cache entry captured by an earlier interaction.
+ * Long-running requests must not write their result into a different locale
+ * merely because the user changed language while the request was running.
+ */
+export function mutateResourceForLocale<T>(
+  key: ResourceKey<T>,
+  locale: string,
+  updater: ResourceUpdater<T>,
+): T | null {
+  return resourceStore.mutate(key, locale, updater);
+}
+
+export function primeResource<T>(key: ResourceKey<T>, value: T): T {
+  return resourceStore.prime(key, storedLocale(), value);
+}
+
+export function primeResourceForLocale<T>(
+  key: ResourceKey<T>,
+  locale: string,
+  value: T,
+): T {
+  return resourceStore.prime(key, locale, value);
+}
+
+/**
+ * Loads a typed resource through the same store used by useResource.
+ * Imperative workflows such as durable-job polling therefore share in-flight
+ * requests and the latest snapshot with mounted subscribers.
+ */
+export async function fetchResource<T>(key: ResourceKey<T>): Promise<T> {
+  const locale = storedLocale();
+  const value = await resourceStore.revalidate(
+    key,
+    locale,
+    (signal) => api<T>(key.path, { signal }),
+    true,
+  );
+  if (value !== undefined) return value;
+  const snapshot = resourceStore.getSnapshot(key, locale);
+  throw new Error(
+    snapshot.error || translate(locale, "error.fallback") || "Request failed.",
+  );
+}
+
+export function resetResourceScope(scope: ResourceScope | "all"): void {
+  resourceStore.resetScope(scope);
+}
+
+export function useResource<T>(
+  input: ResourceKey<T> | string | null,
+  intervalOrOptions?: number | ResourceOptions,
+) {
+  const candidate =
+    typeof input === "string" ? legacyResourceKey<T>(input) : input;
+  const locale = storedLocale();
+  const candidateCacheId = candidate
+    ? resourceStore.cacheId(candidate, locale)
+    : "disabled";
+  const key = useMemo(
+    () => candidate,
+    // Resource factories intentionally return immutable value objects. Their
+    // cache identity and path, rather than object identity, own a subscription.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [candidateCacheId, candidate?.path],
+  );
+  const pollMs =
+    typeof intervalOrOptions === "number"
+      ? intervalOrOptions
+      : intervalOrOptions?.pollMs;
+  const staleMs =
+    typeof intervalOrOptions === "number"
+      ? intervalOrOptions || undefined
+      : intervalOrOptions?.staleMs;
+  const priority =
+    typeof intervalOrOptions === "number"
+      ? undefined
+      : intervalOrOptions?.priority;
+  const cacheId = candidateCacheId;
+  const path = key?.path || "";
+  const loader = useCallback(
+    (signal: AbortSignal) => api<T>(path, { signal }),
+    [path],
+  );
+  const subscribe = useCallback(
+    (listener: () => void) =>
+      key
+        ? resourceStore.subscribe(key, locale, listener, loader, {
+            pollMs,
+            staleMs,
+            priority,
+          })
+        : () => undefined,
+    [cacheId, key, loader, locale, pollMs, priority, staleMs],
+  );
+  const getSnapshot = useCallback(
+    () =>
+      key
+        ? resourceStore.getSnapshot(key, locale)
+        : (disabledResourceSnapshot as ResourceSnapshot<T>),
+    [cacheId, key, locale],
+  );
+  const getServerSnapshot = useCallback(
+    () => disabledResourceSnapshot as ResourceSnapshot<T>,
+    [],
+  );
+  const snapshot = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot,
+  );
+  const reload = useCallback(
+    () =>
+      key
+        ? resourceStore.revalidate(key, locale, loader, true)
+        : Promise.resolve(undefined),
+    [cacheId, key, loader, locale],
+  );
+  const setData = useCallback(
+    (updater: ResourceUpdater<T>) =>
+      key ? resourceStore.mutate(key, locale, updater) : null,
+    [cacheId, key, locale],
+  );
+  return { ...snapshot, reload, setData };
 }
 
 export function dateTime(value: string | null | undefined) {
   const locale = storedLocale();
-  if (!value) return translate(locale, "format.notChecked") || "Not checked yet";
+  if (!value)
+    return translate(locale, "format.notChecked") || "Not checked yet";
   return new Intl.DateTimeFormat(locale, {
     day: "2-digit",
     month: "short",

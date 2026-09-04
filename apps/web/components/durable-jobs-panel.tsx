@@ -4,7 +4,15 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Loader2, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { api, errorText, label, refreshWorkspace } from "@/lib/api";
+import {
+  api,
+  errorText,
+  invalidateResources,
+  label,
+  mutateResource,
+  primeResource,
+} from "@/lib/api";
+import { resources } from "@/lib/resource-keys";
 import { translate, useI18n } from "@/lib/i18n";
 import type { Job } from "@/lib/types";
 import { ErrorNote, Status } from "./common";
@@ -19,8 +27,15 @@ export function DurableJobsPanel({ jobs }: { jobs: Job[] }) {
     setBusy(job.id + action);
     setError("");
     try {
-      await api(`/jobs/${job.id}/${action}`, { method: "POST" });
-      refreshWorkspace();
+      const updated = await api<Job>(`/jobs/${job.id}/${action}`, {
+        method: "POST",
+      });
+      primeResource(resources.job(updated.id), updated);
+      const updatedJobs = mutateResource(resources.jobs(), (current) =>
+        current?.map((item) => (item.id === updated.id ? updated : item)) ||
+        null,
+      );
+      if (updatedJobs === null) void invalidateResources(resources.jobs());
     } catch (cause) {
       setError(errorText(cause));
     } finally {

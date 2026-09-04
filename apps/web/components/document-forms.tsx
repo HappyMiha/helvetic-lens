@@ -13,9 +13,17 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { api, errorText, refreshWorkspace, useResource } from "@/lib/api";
+import {
+  api,
+  errorText,
+  invalidateResources,
+  mutateResource,
+  resourceTag,
+  useResource,
+} from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
-import type { Health, Law, Preview, Source, Version } from "@/lib/types";
+import { resources } from "@/lib/resource-keys";
+import type { Law, Preview, Source, Version } from "@/lib/types";
 import { ErrorNote } from "./common";
 
 function documentUrl(value: string) {
@@ -67,9 +75,9 @@ export function AddDocumentDialog({
   onCreated?: (record: Law | Source) => void;
 }) {
   const { t } = useI18n();
-  const { data: health } = useResource<Health>(open ? "/health" : null);
+  const { data: health } = useResource(open ? resources.health() : null);
   const { data: trackedLaws } = useResource<Law[]>(
-    open && mode === "law" ? "/laws" : null,
+    open && mode === "law" ? resources.laws() : null,
   );
   const [url, setUrl] = useState(""),
     [name, setName] = useState(""),
@@ -144,7 +152,41 @@ export function AddDocumentDialog({
         method: source && mode === "source" ? "PATCH" : "POST",
         body: JSON.stringify(payload),
       });
-      refreshWorkspace();
+      if (mode === "source") {
+        const savedSource = result as Source;
+        const updatedSources = mutateResource<Source[]>(
+          resources.sources(),
+          (current) => {
+            if (!current) return current;
+            const withoutSavedSource = current.filter(
+              (item) => item.id !== savedSource.id,
+            );
+            return source
+              ? current.map((item) =>
+                  item.id === savedSource.id ? savedSource : item,
+                )
+              : [savedSource, ...withoutSavedSource];
+          },
+        );
+        void invalidateResources(
+          ...(updatedSources === null ? [resources.sources()] : []),
+          resources.organizationStatus(),
+        );
+      } else {
+        const savedLaw = result as Law;
+        const updatedLaws = mutateResource<Law[]>(
+          resources.laws(),
+          (current) =>
+            current
+              ? [savedLaw, ...current.filter((item) => item.id !== savedLaw.id)]
+              : current,
+        );
+        void invalidateResources(
+          ...(updatedLaws === null ? [resources.laws()] : []),
+          resourceTag("registry", "organization"),
+          resources.organizationStatus(),
+        );
+      }
       onOpenChange(false);
       onCreated?.(result);
     } catch (cause) {
@@ -377,7 +419,10 @@ export function ImportDialog({
         "/laws/" + law.id + "/import",
         { method: "POST", body: payload() },
       );
-      refreshWorkspace();
+      void invalidateResources(
+        resources.law(law.id),
+        resources.organizationStatus(),
+      );
       onOpenChange(false);
       onImported(result.version, result.reused);
     } catch (cause) {

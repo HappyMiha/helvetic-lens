@@ -14,9 +14,11 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   api,
   errorText,
-  refreshWorkspace,
+  invalidateResources,
+  resourceTag,
   useResource,
 } from "@/lib/api";
+import { resources } from "@/lib/resource-keys";
 import type { PromptSettings } from "@/lib/types";
 import { ErrorNote, Loading, SuccessNote } from "./common";
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
@@ -77,7 +79,11 @@ export function PromptSettingsPage({ platformScope = false }: { platformScope?: 
   const { canManage, isPlatformAdmin } = useAuth();
   const allowed = platformScope ? isPlatformAdmin : canManage;
   const endpoint = platformScope ? "/admin/prompts" : "/settings/prompts";
-  const configuration = useResource<PromptSettings>(allowed ? endpoint : null);
+  const configuration = useResource(
+    allowed
+      ? resources.prompts(platformScope ? "platform" : "organization")
+      : null,
+  );
   return (
     <Shell section={t("nav.prompts")} wide>
       <div className="page-heading">
@@ -163,7 +169,15 @@ function PromptForm({
       setNotice(
         t("prompts.savedNotice", { revision: value.revision }),
       );
-      refreshWorkspace();
+      void invalidateResources(
+        resources.organizationStatus(),
+        ...(platformScope ? [resources.prompts("organization")] : []),
+        resourceTag("comparison", "organization"),
+        resourceTag("ai-history", "organization"),
+        resourceTag("impact-matrix", "organization"),
+        resourceTag("impact-inbox", "organization"),
+        resourceTag("registry", "organization"),
+      );
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -186,7 +200,15 @@ function PromptForm({
           ? t("prompts.platformRestored")
           : t("prompts.orgRestored"),
       );
-      refreshWorkspace();
+      void invalidateResources(
+        resources.organizationStatus(),
+        ...(platformScope ? [resources.prompts("organization")] : []),
+        resourceTag("comparison", "organization"),
+        resourceTag("ai-history", "organization"),
+        resourceTag("impact-matrix", "organization"),
+        resourceTag("impact-inbox", "organization"),
+        resourceTag("registry", "organization"),
+      );
     } catch (cause) {
       setError(errorText(cause));
     } finally {

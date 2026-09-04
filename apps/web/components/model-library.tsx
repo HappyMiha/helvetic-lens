@@ -23,8 +23,9 @@ import { Button } from "@/components/ui/button";
 import {
   api,
   errorText,
+  invalidateResources,
   label,
-  refreshWorkspace,
+  resources,
   useResource,
 } from "@/lib/api";
 import type { Job, LocalModel, LocalModelInventory } from "@/lib/types";
@@ -49,8 +50,7 @@ export function ModelLibrary() {
   const { t } = useI18n();
   const { isPlatformAdmin } = useAuth();
   const { data, error, loading, reload } = useResource<LocalModelInventory>(
-    isPlatformAdmin ? "/admin/models" : null,
-    2000,
+    isPlatformAdmin ? resources.models() : null,
   );
   const [busy, setBusy] = useState("");
   const [message, setMessage] = useState("");
@@ -83,8 +83,13 @@ export function ModelLibrary() {
             : t("models.commandAccepted", { action }),
         );
       }
-      refreshWorkspace();
-      reload();
+      await invalidateResources(
+        resources.models(),
+        resources.jobs(),
+        resources.platformStatus(),
+        resources.health(),
+        resources.settings(),
+      );
     } catch (cause) {
       setActionError(errorText(cause));
     } finally {

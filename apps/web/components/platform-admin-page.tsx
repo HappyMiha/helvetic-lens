@@ -19,7 +19,7 @@ import { useAuth } from "./auth-gate";
 import { ErrorNote, Loading } from "./common";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { label, useResource } from "@/lib/api";
+import { label, resources, useResource } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import type { PlatformStatus } from "@/lib/types";
 
@@ -46,7 +46,9 @@ const links = [
 export function PlatformAdminPage() {
   const { t } = useI18n();
   const { isPlatformAdmin } = useAuth();
-  const status = useResource<PlatformStatus>(isPlatformAdmin ? "/admin/status" : null, 10000);
+  const status = useResource<PlatformStatus>(
+    isPlatformAdmin ? resources.platformStatus<PlatformStatus>() : null,
+  );
   return (
     <Shell section={t("nav.admin")} wide>
       <div className="page-heading">
