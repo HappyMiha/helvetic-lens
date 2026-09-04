@@ -37,6 +37,9 @@ class ModelManagerClient:
     async def inventory(self) -> dict:
         return await self._request("GET", "/v1/inventory")
 
+    async def profile(self, profile_id: str) -> dict:
+        return await self._request("GET", f"/v1/profiles/{profile_id}")
+
     async def probe(self) -> dict:
         return await self._request("POST", "/v1/hardware/probe")
 

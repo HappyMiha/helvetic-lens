@@ -2697,8 +2697,7 @@ ins {
     gap: 2px;
     overflow: visible;
     padding: 5px max(6px, env(safe-area-inset-right))
-      max(5px, env(safe-area-inset-bottom))
-      max(6px, env(safe-area-inset-left));
+      max(5px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
     background: rgb(249 250 245 / 96%);
     border-top: 1px solid var(--border);
     box-shadow: 0 -8px 28px rgb(24 32 26 / 8%);
@@ -3423,6 +3422,12 @@ ins {
 }
 .marvin-model-status:not(.is-ready) .status-dot {
   background: #c47a59;
+}
+.marvin-runtime-detail {
+  margin: -6px 0 2px;
+  color: #778175;
+  font-size: 11px;
+  line-height: 1.45;
 }
 .marvin-message {
   background: #fff;

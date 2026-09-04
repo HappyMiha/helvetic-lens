@@ -44,6 +44,29 @@ type AssistantContextResponse = {
   persona: { quip_allowed: boolean };
 };
 
+type AssistantRuntime = {
+  display_name: string;
+  ready: boolean;
+  state: "ready" | "degraded" | "starting" | "stopped" | "needs_download";
+  selected_model: { display_name: string };
+  policy: { cloud_fallback: boolean; single_runtime: boolean };
+};
+
+function runtimeStatusKey(
+  runtime: AssistantRuntime | null,
+  fallbackReady: boolean,
+) {
+  if (!runtime)
+    return fallbackReady
+      ? "companion.localReady"
+      : "companion.localUnavailable";
+  if (runtime.state === "ready") return "companion.localReady";
+  if (runtime.state === "degraded") return "companion.localLimited";
+  if (runtime.state === "starting") return "companion.localStarting";
+  if (runtime.state === "stopped") return "companion.localStopped";
+  return "companion.localNeedsDownload";
+}
+
 function contractRoute(pathname: string) {
   if (pathname.startsWith("/compare/")) return "/compare";
   if (pathname.startsWith("/laws/")) return "/laws";
@@ -220,6 +243,7 @@ export function MarvinCompanion({
   const [bubbleKey, setBubbleKey] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [serverQuipAllowed, setServerQuipAllowed] = useState(false);
+  const [runtime, setRuntime] = useState<AssistantRuntime | null>(null);
   const interactionCount = useRef(0);
   const deepScrollSeen = useRef(false);
   const context = useMemo(() => routeContext(pathname), [pathname]);
@@ -233,20 +257,26 @@ export function MarvinCompanion({
     if (!hydrated) return;
     let active = true;
     setServerQuipAllowed(false);
-    api<AssistantContextResponse>("/assistant/context", {
-      method: "POST",
-      body: JSON.stringify({
-        schema_version: "assistant-context.v1",
-        intent: "explain_screen",
-        route: contractRoute(pathname),
+    Promise.allSettled([
+      api<AssistantContextResponse>("/assistant/context", {
+        method: "POST",
+        body: JSON.stringify({
+          schema_version: "assistant-context.v1",
+          intent: "explain_screen",
+          route: contractRoute(pathname),
+        }),
       }),
-    })
-      .then((response) => {
-        if (active) setServerQuipAllowed(response.persona.quip_allowed);
-      })
-      .catch(() => {
-        if (active) setServerQuipAllowed(false);
-      });
+      api<AssistantRuntime>("/assistant/runtime"),
+    ]).then(([contextResult, runtimeResult]) => {
+      if (!active) return;
+      setServerQuipAllowed(
+        contextResult.status === "fulfilled" &&
+          contextResult.value.persona.quip_allowed,
+      );
+      setRuntime(
+        runtimeResult.status === "fulfilled" ? runtimeResult.value : null,
+      );
+    });
     return () => {
       active = false;
     };
@@ -377,6 +407,7 @@ export function MarvinCompanion({
   if (!hydrated || !preferences.enabled) return null;
 
   const showQuip = preferences.tone !== "neutral";
+  const runtimeReady = runtime?.ready ?? localAiReady;
 
   return (
     <aside
@@ -415,15 +446,22 @@ export function MarvinCompanion({
               </span>
               <span
                 className={`marvin-model-status ${
-                  localAiReady ? "is-ready" : ""
+                  runtimeReady ? "is-ready" : ""
                 }`}
               >
                 <span className="status-dot" />
-                {localAiReady
-                  ? t("companion.localReady")
-                  : t("companion.localUnavailable")}
+                {t(runtimeStatusKey(runtime, localAiReady))}
               </span>
             </div>
+
+            {runtime && (
+              <p className="marvin-runtime-detail">
+                {t("companion.runtimeProfile", {
+                  profile: runtime.display_name,
+                  model: runtime.selected_model.display_name,
+                })}
+              </p>
+            )}
 
             <div className="marvin-message">
               <span className="eyebrow">{t("companion.observation")}</span>

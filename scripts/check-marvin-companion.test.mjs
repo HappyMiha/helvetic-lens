@@ -29,7 +29,12 @@ test("spontaneous observations are bounded and never inspect form content", () =
   assert.match(companion, /target\.closest\("button, a\[href\], summary"\)/);
   assert.match(companion, /control\.closest\("form"\)/);
   assert.match(companion, /main\?\.addEventListener\("scroll"/);
-  assert.match(companion, /api<AssistantContextResponse>\("\/assistant\/context"/);
+  assert.match(
+    companion,
+    /api<AssistantContextResponse>\("\/assistant\/context"/,
+  );
+  assert.match(companion, /api<AssistantRuntime>\("\/assistant\/runtime"\)/);
+  assert.match(companion, /runtime\.selected_model\.display_name/);
   assert.match(companion, /schema_version: "assistant-context\.v1"/);
   assert.match(companion, /!serverQuipAllowed/);
   assert.doesNotMatch(
@@ -71,6 +76,7 @@ test("all five product locales define the companion contract", () => {
     "companion.spontaneousHelp",
     "companion.quip.compare",
     "companion.quip.busy",
+    "companion.runtimeProfile",
   ]) {
     assert.equal(
       i18n.match(new RegExp(`"${key.replaceAll(".", "\\.")}"`, "g"))?.length,

@@ -126,7 +126,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-081](#hl-081) | P2       | PLANNED  | HL-080                                                 | Evidence-gated expansion to the next two cantonal packs             |
 | [HL-082](#hl-082) | P2       | PLANNED  | HL-038, HL-050, HL-071, HL-074–HL-076                  | Separate opt-in public-discourse signal pilot                       |
 | [HL-083](#hl-083) | P1       | IN PROGRESS | HL-035, HL-062, HL-074, HL-076, HL-077              | Local assistant intent, context, privacy, and action contract       |
-| [HL-084](#hl-084) | P1       | PLANNED  | HL-031, HL-032, HL-083                                 | Small local Apertus assistant profile and hardware gate             |
+| [HL-084](#hl-084) | P1       | IN PROGRESS | HL-031, HL-032, HL-083                              | Small local Apertus assistant profile and hardware gate             |
 | [HL-085](#hl-085) | P1       | PLANNED  | HL-065–HL-070, HL-083, HL-084                          | Persistent global assistant experience with cited answers          |
 | [HL-086](#hl-086) | P1       | PLANNED  | HL-035, HL-074, HL-075, HL-077, HL-083, HL-085         | Natural-language monitoring-topic flow through the assistant        |
 | [HL-087](#hl-087) | P1       | IN PROGRESS | HL-057, HL-085                                      | Proactive dry robot companion with safe five-language tone           |
@@ -1544,6 +1544,8 @@ Acceptance criteria:
 ### HL-084 — Add a small local Apertus assistant profile through the existing runtime
 
 Serve the assistant locally on development and target hardware without creating another model service, scheduler, cache, or GPU allocator.
+
+**Status: IN PROGRESS.** The versioned model catalogue now defines a local-only `assistant-lite` workload profile with the pinned Apertus 1.5B Q4 candidate as its preferred cold-start model. The resolver reuses an already active compatible Apertus runner, never starts a second resident model, never silently swaps the active model, and exposes exact model revision, checksum, quantization, readiness, and no-cloud-fallback policy to Marvin's UI. Download/start remain explicit administrator actions. Target-host benchmarks, five-language accuracy evidence, cancellation/load measurements, and promotion of the candidate from provisional to verified remain open.
 
 Acceptance criteria:
 

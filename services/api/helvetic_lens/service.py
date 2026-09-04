@@ -3106,6 +3106,10 @@ class HelveticLens:
             await self.model_manager.probe()
         return await self.model_manager.inventory()
 
+    async def assistant_runtime(self):
+        """Expose the local-only workload selection used by the product assistant."""
+        return await self.model_manager.profile("assistant-lite")
+
     async def accept_model_license(self, model_id: str, accepted: bool):
         return await self.model_manager.accept_license(model_id, accepted)
 

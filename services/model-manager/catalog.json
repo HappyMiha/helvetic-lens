@@ -1,5 +1,19 @@
 {
   "catalog_version": 1,
+  "profiles": {
+    "assistant-lite": {
+      "display_name": "Marvin local assistant",
+      "preferred_model_id": "apertus-1.5b-q4km",
+      "reuse_active_compatible": true,
+      "priority": "interactive",
+      "cloud_fallback": false,
+      "generation": {
+        "max_tokens": 384,
+        "temperature": 0.35,
+        "context_size": 4096
+      }
+    }
+  },
   "entries": [
     {
       "id": "apertus-8b-q4km",
@@ -19,6 +33,7 @@
       "chat_template": "/templates/apertus-v1-chat-template.jinja",
       "structured_output": true,
       "served_model_id": "apertus-8b-q4km",
+      "assistant_profiles": ["assistant-lite"],
       "requirements": {
         "min_ram_bytes": 12884901888,
         "min_disk_bytes": 6442450944,
@@ -52,6 +67,7 @@
       "chat_template": "/templates/apertus-v1-chat-template.jinja",
       "structured_output": true,
       "served_model_id": "apertus-1.5b-q4km",
+      "assistant_profiles": ["assistant-lite"],
       "requirements": {
         "min_ram_bytes": 4294967296,
         "min_disk_bytes": 1342177280,

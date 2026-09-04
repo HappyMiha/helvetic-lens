@@ -75,7 +75,7 @@ class FairAdmission:
                     raise TimeoutError("Local inference admission timed out.")
                 try:
                     await asyncio.wait_for(self.condition.wait(), timeout=min(remaining, 2))
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     pass
 
     async def release(self, target: dict, organization: str):
@@ -139,6 +139,11 @@ async def inventory():
     payload = manager.inventory()
     payload["admission"] = await admission.snapshot()
     return payload
+
+
+@app.get("/v1/profiles/{profile_id}")
+def workload_profile(profile_id: str):
+    return manager.describe_profile(profile_id)
 
 
 @app.post("/v1/hardware/probe")

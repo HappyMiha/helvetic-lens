@@ -42,6 +42,7 @@ class ModelManager:
         if self.catalog.get("catalog_version") != 1 or not self.catalog.get("entries"):
             raise RuntimeError("Unsupported or empty local model catalogue.")
         self.entries = {entry["id"]: entry for entry in self.catalog["entries"]}
+        self.profiles = self.catalog.get("profiles", {})
         self.state_path = self.library_path / "manager-state.json"
         self.lock = threading.RLock()
         self.controls: dict[str, dict[str, threading.Event]] = {}
@@ -283,6 +284,70 @@ class ModelManager:
             "deployment": self.state.get("deployment"),
             "runtime_metrics": self.runtime_metrics(),
             "models": [self.describe(model_id) for model_id in self.entries],
+            "profiles": [self.describe_profile(profile_id) for profile_id in self.profiles],
+        }
+
+    def describe_profile(self, profile_id: str) -> dict:
+        """Resolve a workload profile without starting or swapping a model."""
+        try:
+            profile = self.profiles[profile_id]
+        except KeyError as exc:
+            raise ModelManagerError(
+                "This workload profile is not in the versioned allowlist.",
+                404,
+                "profile_not_allowed",
+            ) from exc
+        preferred_id = profile["preferred_model_id"]
+        preferred = self._entry(preferred_id)
+        selected_id = preferred_id
+        reused_active_runner = False
+        active_id = self.runner_model_id
+        if (
+            profile.get("reuse_active_compatible", False)
+            and active_id in self.entries
+            and profile_id in self.entries[active_id].get("assistant_profiles", [])
+        ):
+            selected_id = active_id
+            reused_active_runner = True
+        selected = self.describe(selected_id)
+        selected_state = selected["state"]
+        if selected["active"] and selected_state in {"ready", "degraded"}:
+            state = selected_state
+        elif selected["active"]:
+            state = "starting"
+        elif selected["installed"]:
+            state = "stopped"
+        else:
+            state = "needs_download"
+        return {
+            "id": profile_id,
+            "display_name": profile["display_name"],
+            "state": state,
+            "ready": state in {"ready", "degraded"},
+            "reused_active_runner": reused_active_runner,
+            "selected_model": {
+                "id": selected["id"],
+                "display_name": selected["display_name"],
+                "served_model_id": selected["served_model_id"],
+                "state": selected_state,
+                "installed": selected["installed"],
+                "active": selected["active"],
+                "immutable_revision": selected["immutable_revision"],
+                "artifact_sha256": selected["sha256"],
+                "quantization": selected["quantization"],
+                "base_repository": selected.get("base_repository"),
+            },
+            "preferred_model": {
+                "id": preferred_id,
+                "display_name": preferred["display_name"],
+            },
+            "policy": {
+                "priority": profile.get("priority", "interactive"),
+                "cloud_fallback": bool(profile.get("cloud_fallback", False)),
+                "single_runtime": True,
+                "automatic_model_switch": False,
+            },
+            "generation": profile.get("generation", {}),
         }
 
     def runtime_metrics(self) -> dict:

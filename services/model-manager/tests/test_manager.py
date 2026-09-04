@@ -29,6 +29,7 @@ def manager_factory(tmp_path, monkeypatch):
         cache.write_bytes(payload)
         entry = {
             "id": "apertus-test",
+            "display_name": "Apertus test",
             "family": "Apertus",
             "upstream_repo": "example/Apertus",
             "base_model_repo": "example/Apertus",
@@ -55,7 +56,25 @@ def manager_factory(tmp_path, monkeypatch):
             "hardware_profiles": [],
         }
         catalog = tmp_path / "catalog.json"
-        catalog.write_text(json.dumps({"catalog_version": 1, "entries": [entry]}))
+        entry["assistant_profiles"] = ["assistant-lite"]
+        catalog.write_text(
+            json.dumps(
+                {
+                    "catalog_version": 1,
+                    "profiles": {
+                        "assistant-lite": {
+                            "display_name": "Marvin local assistant",
+                            "preferred_model_id": "apertus-test",
+                            "reuse_active_compatible": True,
+                            "priority": "interactive",
+                            "cloud_fallback": False,
+                            "generation": {"max_tokens": 128},
+                        }
+                    },
+                    "entries": [entry],
+                }
+            )
+        )
         monkeypatch.setenv(
             "MODEL_MANAGER_FAKE_HARDWARE",
             json.dumps(
@@ -93,6 +112,34 @@ def test_allowlist_license_and_cached_atomic_download(manager_factory):
     assert model["artifact"]["sha256"] == model["sha256"]
     assert not (manager.library_path / "apertus-test.gguf.part").exists()
     assert manager.start_download("apertus-test", use_cached_copy=True)["installed"] is True
+
+
+def test_assistant_profile_prefers_small_model_and_never_claims_cloud_fallback(manager_factory):
+    manager, _ = manager_factory()
+    profile = manager.describe_profile("assistant-lite")
+
+    assert profile["state"] == "needs_download"
+    assert profile["selected_model"]["id"] == "apertus-test"
+    assert profile["preferred_model"]["id"] == "apertus-test"
+    assert profile["policy"] == {
+        "priority": "interactive",
+        "cloud_fallback": False,
+        "single_runtime": True,
+        "automatic_model_switch": False,
+    }
+
+
+def test_assistant_profile_reuses_the_active_compatible_runner(manager_factory, monkeypatch):
+    manager, _ = manager_factory()
+    manager.runner_model_id = "apertus-test"
+    monkeypatch.setattr(manager, "inference_targets", lambda: [{"slot": "gpu-0"}])
+    manager._model_state("apertus-test")["state"] = "ready"
+
+    profile = manager.describe_profile("assistant-lite")
+
+    assert profile["ready"] is True
+    assert profile["state"] == "ready"
+    assert profile["reused_active_runner"] is True
 
 
 def test_checksum_failure_never_replaces_existing_artifact(manager_factory):

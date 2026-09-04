@@ -723,6 +723,10 @@ def create_app(
         role = identity.role if identity else "organization_admin"
         return build_assistant_context(data, role=role)
 
+    @app.get("/api/assistant/runtime")
+    async def assistant_runtime():
+        return await service.assistant_runtime()
+
     @app.get("/api/health")
     def health():
         with service.db.session() as session:

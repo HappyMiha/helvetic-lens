@@ -37,6 +37,22 @@ class FakeModelManager:
             "models": [copy.deepcopy(self.model)],
         }
 
+    async def profile(self, profile_id):
+        assert profile_id == "assistant-lite"
+        return {
+            "id": profile_id,
+            "display_name": "Marvin local assistant",
+            "state": "needs_download",
+            "ready": False,
+            "reused_active_runner": False,
+            "selected_model": {
+                "id": "apertus-test",
+                "display_name": "Apertus test",
+                "served_model_id": "local-apertus",
+            },
+            "policy": {"cloud_fallback": False, "single_runtime": True},
+        }
+
     async def probe(self):
         return {"cuda_devices": [{"name": "Test GPU"}]}
 
@@ -92,3 +108,14 @@ def test_admin_can_accept_download_start_and_remove_allowlisted_model(harness, m
     assert client.post("/api/admin/models/apertus-test/stop").json()["state"] == "stopped"
     assert client.delete("/api/admin/models/apertus-test").json()["installed"] is False
     assert ("apertus-test", "download", {"cached": True}) in manager.actions
+
+
+def test_assistant_runtime_exposes_local_profile_without_admin_access(harness):
+    client, _, service, _ = harness
+    service.model_manager = FakeModelManager()
+
+    response = client.get("/api/assistant/runtime")
+
+    assert response.status_code == 200
+    assert response.json()["id"] == "assistant-lite"
+    assert response.json()["policy"]["cloud_fallback"] is False
