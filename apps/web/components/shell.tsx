@@ -40,6 +40,7 @@ import { api, errorText, refreshWorkspace, useResource } from "@/lib/api";
 import { AdminOnly, useAuth } from "./auth-gate";
 import type { Health, Profile } from "@/lib/types";
 import { ErrorNote, SuccessNote } from "./common";
+import { BrandLockup } from "./brand";
 import { LanguageSelector, useI18n } from "@/lib/i18n";
 
 export function Shell({
@@ -60,11 +61,8 @@ export function Shell({
     <div className="shell">
       <aside className="sidebar">
         <Link href="/" className="brand">
-          <span className="brand-mark" aria-hidden="true">
-            HL
-          </span>
           <span>
-            Helvetic Lens
+            <BrandLockup />
             <small>{t("brand.tagline")}</small>
           </span>
         </Link>
