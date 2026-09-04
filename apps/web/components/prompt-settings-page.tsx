@@ -77,7 +77,7 @@ export function PromptSettingsPage({ platformScope = false }: { platformScope?: 
   const { canManage, isPlatformAdmin } = useAuth();
   const allowed = platformScope ? isPlatformAdmin : canManage;
   const endpoint = platformScope ? "/admin/prompts" : "/settings/prompts";
-  const configuration = useResource<PromptSettings>(endpoint);
+  const configuration = useResource<PromptSettings>(allowed ? endpoint : null);
   return (
     <Shell section={t("nav.prompts")} wide>
       <div className="page-heading">
@@ -93,21 +93,29 @@ export function PromptSettingsPage({ platformScope = false }: { platformScope?: 
         </div>
         <FileText className="muted" size={29} />
       </div>
-      <ErrorNote message={configuration.error} />
-      {configuration.data ? (
-        <fieldset disabled={!allowed} className={allowed ? "border-0 p-0 m-0" : "border-0 p-0 m-0 viewer-settings"}><PromptForm
-          key={configuration.data.fingerprint}
-          initial={configuration.data}
-          onSaved={configuration.setData}
-          endpoint={endpoint}
-          platformScope={platformScope}
-        /></fieldset>
+      {!allowed ? (
+        <ErrorNote
+          message={t(platformScope ? "admin.denied" : "error.viewer_read_only")}
+        />
+      ) : configuration.data ? (
+        <fieldset className="border-0 p-0 m-0">
+          <PromptForm
+            key={configuration.data.fingerprint}
+            initial={configuration.data}
+            onSaved={configuration.setData}
+            endpoint={endpoint}
+            platformScope={platformScope}
+          />
+        </fieldset>
       ) : (
-        !configuration.error && (
-          <section className="panel p-6">
-            <Loading text={t("prompts.loading")} />
-          </section>
-        )
+        <>
+          <ErrorNote message={configuration.error} />
+          {!configuration.error && (
+            <section className="panel p-6">
+              <Loading text={t("prompts.loading")} />
+            </section>
+          )}
+        </>
       )}
     </Shell>
   );

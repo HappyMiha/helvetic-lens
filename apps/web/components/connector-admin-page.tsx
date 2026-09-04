@@ -288,9 +288,11 @@ export function ConnectorAdminPage() {
             {t("connectors.body")}
           </p>
         </div>
-        <Button variant="outline" onClick={reload} disabled={loading}>
-          <RefreshCw className={loading ? "animate-spin" : ""} /> {t("logs.refresh")}
-        </Button>
+        {isPlatformAdmin && (
+          <Button variant="outline" onClick={reload} disabled={loading}>
+            <RefreshCw className={loading ? "animate-spin" : ""} /> {t("logs.refresh")}
+          </Button>
+        )}
       </div>
       {!isPlatformAdmin ? (
         <ErrorNote message={t("connectors.denied")} />

@@ -159,10 +159,13 @@ test("long desktop navigation has a bounded keyboard-reachable scroll region", (
     "navigation items must stay inside their scroll viewport",
   );
 
-  const brand = shellSource.indexOf('className="brand"');
-  const workspace = shellSource.indexOf('className="workspace text-left"');
-  const nav = shellSource.indexOf('className="nav-group"');
-  const bottom = shellSource.indexOf('className="sidebar-bottom"');
+  const asideStart = shellSource.indexOf('<aside className="sidebar">');
+  const asideEnd = shellSource.indexOf("</aside>", asideStart);
+  const asideSource = shellSource.slice(asideStart, asideEnd);
+  const brand = asideSource.indexOf('className="brand"');
+  const workspace = asideSource.indexOf("<WorkspaceSwitcher");
+  const nav = asideSource.indexOf('className="nav-group"');
+  const bottom = asideSource.indexOf('className="sidebar-bottom"');
   assert.ok(
     brand >= 0 && brand < workspace,
     "brand must precede the workspace control",

@@ -33,10 +33,15 @@ const AuthContext = createContext<AuthSession | null>(null);
 
 export function useAuth() {
   const session = useContext(AuthContext);
+  const developmentWorkspace = session?.anonymous_development === true;
   return {
     session,
-    canManage: !session?.authenticated || session.role === "organization_admin",
-    isPlatformAdmin: !session?.authenticated || !!session.platform_admin,
+    canManage:
+      developmentWorkspace ||
+      (session?.authenticated === true && session.role === "organization_admin"),
+    isPlatformAdmin:
+      developmentWorkspace ||
+      (session?.authenticated === true && session.platform_admin === true),
   };
 }
 

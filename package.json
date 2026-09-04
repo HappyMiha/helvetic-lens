@@ -12,7 +12,7 @@
     "build": "npm run check:i18n && npm run check:shell && npm run build --workspace apps/web",
     "typecheck": "npm run check:i18n && npm run check:shell && npm run typecheck --workspace apps/web",
     "check:i18n": "node scripts/check-i18n.mjs && node scripts/audit-i18n-values.mjs",
-    "check:shell": "node --test scripts/check-shell-scroll.test.mjs",
+    "check:shell": "node --test scripts/check-shell-scroll.test.mjs scripts/check-shell-navigation.test.mjs",
     "format:web": "prettier --write apps/web",
     "format:check": "prettier --check apps/web",
     "test:api": "uv run --project services/api pytest services/api/tests -q",

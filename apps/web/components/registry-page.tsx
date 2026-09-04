@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -93,29 +93,54 @@ function officialDates(row: RegistryRow, t: (key: string, values?: Record<string
   );
 }
 
-export function RegistryPage() {
+export function RegistryPage({ defaultView = "monitored" }: { defaultView?: "monitored" | "events" }) {
   const params = useSearchParams();
-  const pathname = usePathname();
   const router = useRouter();
   const { canManage } = useAuth();
   const { t } = useI18n();
-  const view = params.get("view") === "events" ? "events" : "monitored";
+  const requestedView = params.get("view");
+  const legacyView = requestedView === "events" || requestedView === "monitored" ? requestedView : null;
+  const view = legacyView || defaultView;
+  const canonicalPath = view === "events" ? "/discover" : "/registry";
   const [query, setQuery] = useState(params.get("q") || "");
   const [busy, setBusy] = useState("");
   const [actionError, setActionError] = useState("");
-  const endpoint = "/registry?" + new URLSearchParams(params.toString()).toString();
+  const endpointParameters = new URLSearchParams(params.toString());
+  endpointParameters.set("view", view);
+  const endpoint = "/registry?" + endpointParameters.toString();
   const resource = useResource<RegistryResponse>(endpoint, 15000);
 
   useEffect(() => setQuery(params.get("q") || ""), [params]);
 
+  useEffect(() => {
+    if (requestedView === null) return;
+    const next = new URLSearchParams(params.toString());
+    next.delete("view");
+    const search = next.toString();
+    router.replace(canonicalPath + (search ? `?${search}` : ""), {
+      scroll: false,
+    });
+  }, [canonicalPath, params, requestedView, router]);
+
+  function routeFor(targetView: "monitored" | "events") {
+    const next = new URLSearchParams(params.toString());
+    next.delete("view");
+    next.delete("cursor");
+    const search = next.toString();
+    const path = targetView === "events" ? "/discover" : "/registry";
+    return path + (search ? `?${search}` : "");
+  }
+
   function update(values: Record<string, string>, resetCursor = true) {
     const next = new URLSearchParams(params.toString());
+    next.delete("view");
     for (const [key, value] of Object.entries(values)) {
       if (value) next.set(key, value);
       else next.delete(key);
     }
     if (resetCursor) next.delete("cursor");
-    router.push(pathname + "?" + next.toString());
+    const search = next.toString();
+    router.push(canonicalPath + (search ? `?${search}` : ""));
   }
   function search(event: FormEvent) {
     event.preventDefault();
@@ -139,7 +164,7 @@ export function RegistryPage() {
   }
 
   return (
-    <Shell section={t("nav.registry")} wide>
+    <Shell section={t(view === "events" ? "nav.discover" : "nav.monitoring")} wide>
       <div className="page-heading">
         <div>
           <span className="eyebrow">{t("registry.eyebrow")}</span>
@@ -151,14 +176,36 @@ export function RegistryPage() {
       </div>
 
       <div className="flex flex-wrap gap-2 mb-5" role="tablist" aria-label={t("registry.views")}>
-        <Button type="button" variant={view === "monitored" ? "default" : "outline"} onClick={() => update({ view: "monitored" })}>
-          <BookOpen size={16} /> {t("registry.monitored")}
+        <Button asChild variant={view === "monitored" ? "default" : "outline"}>
+          <Link
+            aria-controls="registry-results"
+            aria-selected={view === "monitored"}
+            href={routeFor("monitored")}
+            id="registry-monitored-tab"
+            role="tab"
+          >
+            <BookOpen size={16} /> {t("registry.monitored")}
+          </Link>
         </Button>
-        <Button type="button" variant={view === "events" ? "default" : "outline"} onClick={() => update({ view: "events" })}>
-          <Clock3 size={16} /> {t("registry.events")}
+        <Button asChild variant={view === "events" ? "default" : "outline"}>
+          <Link
+            aria-controls="registry-results"
+            aria-selected={view === "events"}
+            href={routeFor("events")}
+            id="registry-events-tab"
+            role="tab"
+          >
+            <Clock3 size={16} /> {t("registry.events")}
+          </Link>
         </Button>
       </div>
 
+      <div
+        aria-labelledby={view === "events" ? "registry-events-tab" : "registry-monitored-tab"}
+        id="registry-results"
+        role="tabpanel"
+        tabIndex={0}
+      >
       <section className="card p-5 mb-5">
         <form className="flex gap-2 mb-4" onSubmit={search}>
           <div className="relative flex-1">
@@ -166,7 +213,7 @@ export function RegistryPage() {
             <Input className="pl-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("registry.searchPlaceholder")} />
           </div>
           <Button type="submit" variant="outline">{t("common.search")}</Button>
-          <Button type="button" variant="ghost" onClick={() => { setQuery(""); router.push(pathname + `?view=${view}`); }}>{t("common.clear")}</Button>
+          <Button type="button" variant="ghost" onClick={() => { setQuery(""); router.push(canonicalPath); }}>{t("common.clear")}</Button>
         </form>
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
           {FILTERS.map(([key, title, values]) => (
@@ -245,6 +292,7 @@ export function RegistryPage() {
           <Button variant="outline" onClick={() => update({ cursor: resource.data?.next_cursor || "" }, false)}>{t("registry.next")} <ArrowRight size={15} /></Button>
         </div>
       )}
+      </div>
     </Shell>
   );
 }

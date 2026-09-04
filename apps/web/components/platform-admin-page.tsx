@@ -55,13 +55,24 @@ export function PlatformAdminPage() {
           <h1>{t("admin.title")}</h1>
           <p>{t("admin.body")}</p>
         </div>
-        <Button variant="outline" onClick={status.reload} disabled={status.loading}>
-          <RefreshCw className={status.loading ? "animate-spin" : ""} /> {t("logs.refresh")}
-        </Button>
+        {isPlatformAdmin && (
+          <Button variant="outline" onClick={status.reload} disabled={status.loading}>
+            <RefreshCw className={status.loading ? "animate-spin" : ""} /> {t("logs.refresh")}
+          </Button>
+        )}
       </div>
-      {!isPlatformAdmin && <ErrorNote message={t("admin.denied")} />}
-      <ErrorNote message={status.error} />
-      {status.loading && !status.data ? <Loading text={t("admin.loading")} /> : status.data && <Dashboard data={status.data} />}
+      {!isPlatformAdmin ? (
+        <ErrorNote message={t("admin.denied")} />
+      ) : (
+        <>
+          <ErrorNote message={status.error} />
+          {status.loading && !status.data ? (
+            <Loading text={t("admin.loading")} />
+          ) : (
+            status.data && <Dashboard data={status.data} />
+          )}
+        </>
+      )}
     </Shell>
   );
 }

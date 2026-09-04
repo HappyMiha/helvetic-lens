@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Activity,
   ArrowUpRight,
-  BookOpen,
-  Building2,
+  Check,
   ChevronDown,
   CircleHelp,
+  FileSearch,
   FileText,
   Globe2,
   History,
@@ -18,31 +18,149 @@ import {
   LayoutGrid,
   Loader2,
   Mail,
+  MoreHorizontal,
   PackageOpen,
   RefreshCw,
   ScrollText,
   Settings2,
   ShieldCheck,
   SlidersHorizontal,
-  Sparkles,
   Users,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { api, errorText, refreshWorkspace, useResource } from "@/lib/api";
-import { AdminOnly, useAuth } from "./auth-gate";
-import type { Health, Profile } from "@/lib/types";
-import { ErrorNote, SuccessNote } from "./common";
+import { api, errorText, useResource } from "@/lib/api";
+import { type AuthSession, useAuth } from "./auth-gate";
+import type { Health } from "@/lib/types";
+import { ErrorNote } from "./common";
 import { BrandLockup } from "./brand";
 import { LanguageSelector, useI18n } from "@/lib/i18n";
+
+type NavigationItemProps = {
+  active: boolean;
+  children: React.ReactNode;
+  href: string;
+};
+
+function NavigationItem({ active, children, href }: NavigationItemProps) {
+  return (
+    <Link
+      aria-current={active ? "page" : undefined}
+      className={`nav-item ${active ? "active" : ""}`}
+      href={href}
+    >
+      {children}
+    </Link>
+  );
+}
+
+type WorkspaceOption = NonNullable<AuthSession["organizations"]>[number];
+
+function WorkspaceSwitcher({
+  busy,
+  canSwitch,
+  currentName,
+  error,
+  mobile = false,
+  onSwitch,
+  organizations,
+}: {
+  busy: string;
+  canSwitch: boolean;
+  currentName: string;
+  error: string;
+  mobile?: boolean;
+  onSwitch: (organizationId: string) => Promise<void>;
+  organizations: WorkspaceOption[];
+}) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const optionsId = useId();
+
+  useEffect(() => {
+    if (!open) return;
+    function closeOnOutsideClick(event: PointerEvent) {
+      if (!containerRef.current?.contains(event.target as Node)) setOpen(false);
+    }
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      setOpen(false);
+      triggerRef.current?.focus();
+    }
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [open]);
+
+  return (
+    <div
+      className={`workspace-switcher ${mobile ? "mobile-workspace-switcher" : ""}`}
+      ref={containerRef}
+    >
+      {canSwitch ? (
+        <button
+          aria-controls={optionsId}
+          aria-expanded={open}
+          className="workspace text-left"
+          onClick={() => setOpen((value) => !value)}
+          ref={triggerRef}
+          type="button"
+        >
+          <span className="eyebrow">{t("shell.workspace")}</span>
+          <span className="flex items-center justify-between mt-2 font-semibold gap-2">
+            <span>{currentName}</span>
+            <ChevronDown className={open ? "rotate-180" : ""} size={14} />
+          </span>
+        </button>
+      ) : (
+        <div className="workspace">
+          <span className="eyebrow">{t("shell.workspace")}</span>
+          <span className="block mt-2 font-semibold">{currentName}</span>
+        </div>
+      )}
+      {open && (
+        <ul
+          aria-label={t("shell.switchWorkspace")}
+          className="workspace-menu"
+          id={optionsId}
+        >
+          {organizations.map((organization) => (
+            <li key={organization.id}>
+              <button
+                className="workspace-option"
+                disabled={organization.current || !!busy}
+                onClick={() => void onSwitch(organization.id)}
+                type="button"
+              >
+                <span>
+                  <strong>{organization.name}</strong>
+                  <small>
+                    {organization.role === "viewer"
+                      ? t("org.viewer")
+                      : t("org.admin")}
+                  </small>
+                </span>
+                {busy === organization.id ? (
+                  <Loader2 className="animate-spin" size={14} />
+                ) : organization.current ? (
+                  <Check size={14} />
+                ) : null}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {error && (
+        <p className="workspace-error" role="alert">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
 
 export function Shell({
   children,
@@ -57,7 +175,157 @@ export function Shell({
   const { data: health, error } = useResource<Health>("/health", 15000);
   const { session, canManage, isPlatformAdmin } = useAuth();
   const { t } = useI18n();
-  const [profileOpen, setProfileOpen] = useState(false);
+  const [workspaceBusy, setWorkspaceBusy] = useState("");
+  const [workspaceError, setWorkspaceError] = useState("");
+
+  const organizations = session?.organizations || [];
+  const canSwitchWorkspace = session?.authenticated && organizations.length > 1;
+  const monitoringActive =
+    pathname === "/registry" ||
+    pathname.startsWith("/laws") ||
+    pathname.startsWith("/compare");
+  const administrationActive =
+    pathname === "/logs" ||
+    pathname === "/prompts" ||
+    pathname === "/settings" ||
+    pathname === "/admin" ||
+    pathname === "/connectors" ||
+    pathname === "/models";
+  const [administrationOpen, setAdministrationOpen] =
+    useState(administrationActive);
+
+  useEffect(() => {
+    if (administrationActive) setAdministrationOpen(true);
+  }, [administrationActive]);
+
+  function continueAfterProfileGuard(continueNavigation: () => void) {
+    const event = new CustomEvent("helvetic:navigation-committed", {
+      cancelable: true,
+      detail: { continueNavigation },
+    });
+    if (window.dispatchEvent(event)) continueNavigation();
+  }
+
+  async function switchWorkspace(organizationId: string) {
+    const proceed = window.dispatchEvent(
+      new CustomEvent("helvetic:before-navigation", { cancelable: true }),
+    );
+    if (!proceed) return;
+    setWorkspaceBusy(organizationId);
+    setWorkspaceError("");
+    try {
+      await api("/auth/session/organization", {
+        method: "POST",
+        body: JSON.stringify({ organization_id: organizationId }),
+      });
+      continueAfterProfileGuard(() => window.location.reload());
+    } catch (cause) {
+      setWorkspaceError(errorText(cause));
+      setWorkspaceBusy("");
+    }
+  }
+
+  async function signOut() {
+    const proceed = window.dispatchEvent(
+      new CustomEvent("helvetic:before-navigation", { cancelable: true }),
+    );
+    if (!proceed) return;
+    setWorkspaceError("");
+    try {
+      await api("/auth/logout", { method: "POST" });
+      continueAfterProfileGuard(() => window.location.assign("/login"));
+    } catch (cause) {
+      setWorkspaceError(errorText(cause));
+    }
+  }
+
+  const workspaceItems = (
+    <>
+      <NavigationItem active={pathname === "/matrix"} href="/matrix">
+        <LayoutGrid size={17} />
+        {t("nav.matrix")}
+      </NavigationItem>
+      {session?.authenticated && (
+        <NavigationItem active={pathname === "/digests"} href="/digests">
+          <Mail size={17} />
+          {t("nav.digests")}
+        </NavigationItem>
+      )}
+      <NavigationItem active={pathname === "/activity"} href="/activity">
+        <History size={17} />
+        {t("nav.activity")}
+      </NavigationItem>
+      <NavigationItem
+        active={pathname === "/organization"}
+        href="/organization"
+      >
+        <Users size={17} />
+        {t("nav.profile")}
+      </NavigationItem>
+    </>
+  );
+
+  const administrationItems = (
+    <>
+      {canManage && (
+        <>
+          <NavigationItem active={pathname === "/settings"} href="/settings">
+            <Settings2 size={17} />
+            {t("nav.settings")}
+          </NavigationItem>
+          <NavigationItem active={pathname === "/prompts"} href="/prompts">
+            <FileText size={17} />
+            {t("nav.prompts")}
+          </NavigationItem>
+          <NavigationItem active={pathname === "/logs"} href="/logs">
+            <ScrollText size={17} />
+            {t("nav.logs")}
+          </NavigationItem>
+        </>
+      )}
+      {isPlatformAdmin && (
+        <>
+          <span className="nav-subheading">{t("shell.platform")}</span>
+          <NavigationItem active={pathname === "/admin"} href="/admin">
+            <SlidersHorizontal size={17} />
+            {t("nav.admin")}
+          </NavigationItem>
+          <NavigationItem
+            active={pathname === "/connectors"}
+            href="/connectors"
+          >
+            <RefreshCw size={17} />
+            {t("nav.sync")}
+          </NavigationItem>
+          <NavigationItem active={pathname === "/models"} href="/models">
+            <PackageOpen size={17} />
+            {t("nav.models")}
+          </NavigationItem>
+        </>
+      )}
+    </>
+  );
+
+  const mobileOverflowRoute = [
+    [pathname === "/impact", "nav.impact"],
+    [pathname === "/discover", "nav.discover"],
+    [pathname === "/sources", "nav.sources"],
+    [pathname === "/matrix", "nav.matrix"],
+    [pathname === "/digests", "nav.digests"],
+    [pathname === "/activity", "nav.activity"],
+    [pathname === "/organization", "nav.profile"],
+    [pathname === "/settings", "nav.settings"],
+    [pathname === "/prompts", "nav.prompts"],
+    [pathname === "/logs", "nav.logs"],
+    [pathname === "/admin", "nav.admin"],
+    [pathname === "/connectors", "nav.sync"],
+    [pathname === "/models", "nav.models"],
+  ].find(([active]) => active);
+  const mobileOverflowActive = Boolean(mobileOverflowRoute);
+  const mobileOverflowLabel = mobileOverflowRoute
+    ? t(mobileOverflowRoute[1] as string)
+    : t("nav.more");
+
   return (
     <div className="shell">
       <aside className="sidebar">
@@ -67,163 +335,77 @@ export function Shell({
             <small>{t("brand.tagline")}</small>
           </span>
         </Link>
-        <button
-          className="workspace text-left"
-          onClick={() => {
-            if (canManage) setProfileOpen(true);
-          }}
-        >
-          <span className="eyebrow">{t("shell.workspace")}</span>
-          <span className="flex items-center justify-between mt-2 font-semibold">
-            {session?.organization?.name || t("shell.defaultWorkspace")}
-            <ChevronDown size={14} />
-          </span>
-        </button>
-        <nav className="nav-group">
-          <span className="eyebrow mb-2 ml-3">{t("shell.monitor")}</span>
-          <Link
-            className={
-              "nav-item " +
-              (pathname === "/" ||
-              pathname.startsWith("/laws") ||
-              pathname.startsWith("/compare")
-                ? "active"
-                : "")
-            }
-            href="/"
-          >
-            <Activity size={17} />
-            {t("nav.overview")}
-          </Link>
-          <Link
-            className={"nav-item " + (pathname === "/registry" ? "active" : "")}
-            href="/registry"
-          >
-            <Landmark size={17} />
-            {t("nav.registry")}
-          </Link>
-          <Link
-            className={"nav-item " + (pathname === "/impact" ? "active" : "")}
-            href="/impact"
-          >
-            <Inbox size={17} />
-            {t("nav.impact")}
-          </Link>
-          <Link
-            className={"nav-item " + (pathname === "/matrix" ? "active" : "")}
-            href="/matrix"
-          >
-            <LayoutGrid size={17} />
-            {t("nav.matrix")}
-          </Link>
-          {session?.authenticated && (
-            <Link
-              className={
-                "nav-item " + (pathname === "/digests" ? "active" : "")
+        <WorkspaceSwitcher
+          busy={workspaceBusy}
+          canSwitch={Boolean(canSwitchWorkspace)}
+          currentName={
+            session?.organization?.name || t("shell.defaultWorkspace")
+          }
+          error={workspaceError}
+          onSwitch={switchWorkspace}
+          organizations={organizations}
+        />
+        <nav aria-label={t("shell.primaryNavigation")} className="nav-group">
+          <section className="nav-section">
+            <span className="nav-heading">{t("shell.dailyWork")}</span>
+            <NavigationItem active={pathname === "/"} href="/">
+              <Activity size={17} />
+              {t("nav.today")}
+            </NavigationItem>
+            <NavigationItem active={monitoringActive} href="/registry">
+              <Landmark size={17} />
+              {t("nav.monitoring")}
+            </NavigationItem>
+            <NavigationItem active={pathname === "/impact"} href="/impact">
+              <Inbox size={17} />
+              {t("nav.impact")}
+            </NavigationItem>
+            <NavigationItem active={pathname === "/discover"} href="/discover">
+              <FileSearch size={17} />
+              {t("nav.discover")}
+            </NavigationItem>
+            <NavigationItem active={pathname === "/sources"} href="/sources">
+              <Globe2 size={17} />
+              {t("nav.sources")}
+            </NavigationItem>
+          </section>
+          <section className="nav-section">
+            <span className="nav-heading">{t("shell.workspaceSettings")}</span>
+            {workspaceItems}
+          </section>
+          {(canManage || isPlatformAdmin) && (
+            <details
+              className="nav-admin"
+              onToggle={(event) =>
+                setAdministrationOpen(event.currentTarget.open)
               }
-              href="/digests"
+              open={administrationOpen}
             >
-              <Mail size={17} />
-              {t("nav.digests")}
-            </Link>
+              <summary>
+                <ShieldCheck size={15} />
+                {t("shell.administration")}
+                <ChevronDown size={13} />
+              </summary>
+              <div className="nav-section nav-admin-items">
+                {administrationItems}
+              </div>
+            </details>
           )}
-          {session?.authenticated && (
-            <Link
-              className={
-                "nav-item " + (pathname === "/organization" ? "active" : "")
-              }
-              href="/organization"
-            >
-              <Users size={17} />
-              {t("nav.organization")}
-            </Link>
-          )}
-          <Link
-            className={"nav-item " + (pathname === "/sources" ? "active" : "")}
-            href="/sources"
-          >
-            <Globe2 size={17} />
-            {t("nav.sources")}
-          </Link>
-          <Link
-            className={"nav-item " + (pathname === "/activity" ? "active" : "")}
-            href="/activity"
-          >
-            <History size={17} />
-            {t("nav.activity")}
-          </Link>
-          <Link
-            className={"nav-item " + (pathname === "/logs" ? "active" : "")}
-            href="/logs"
-          >
-            <ScrollText size={17} />
-            {t("nav.logs")}
-          </Link>
-          {isPlatformAdmin && (
-            <Link
-              className={"nav-item " + (pathname === "/admin" ? "active" : "")}
-              href="/admin"
-            >
-              <SlidersHorizontal size={17} />
-              {t("nav.admin")}
-            </Link>
-          )}
-          {isPlatformAdmin && (
-            <Link
-              className={
-                "nav-item " + (pathname === "/connectors" ? "active" : "")
-              }
-              href="/connectors"
-            >
-              <RefreshCw size={17} />
-              {t("nav.sync")}
-            </Link>
-          )}
-          {isPlatformAdmin && (
-            <Link
-              className={"nav-item " + (pathname === "/models" ? "active" : "")}
-              href="/models"
-            >
-              <PackageOpen size={17} />
-              {t("nav.models")}
-            </Link>
-          )}
-          <AdminOnly>
-            <button className="nav-item" onClick={() => setProfileOpen(true)}>
-              <Building2 size={17} />
-              {t("nav.profile")}
-            </button>
-          </AdminOnly>
-          <Link
-            className={"nav-item " + (pathname === "/prompts" ? "active" : "")}
-            href="/prompts"
-          >
-            <FileText size={17} />
-            {t("nav.prompts")}
-          </Link>
-          <Link
-            className={"nav-item " + (pathname === "/settings" ? "active" : "")}
-            href="/settings"
-          >
-            <Settings2 size={17} />
-            {t("nav.settings")}
-          </Link>
         </nav>
         <div className="sidebar-bottom">
-          <Link
-            className="model-card"
-            href={isPlatformAdmin ? "/models" : "/settings"}
-          >
-            <Sparkles size={17} />
+          <div className="model-card" role="status">
+            <span className={`status-dot ${error ? "!bg-red-500" : ""}`} />
             <div>
-              <strong>{t("shell.apertusSettings")}</strong>
+              <strong>
+                {error ? t("shell.apiUnavailable") : t("shell.systemStatus")}
+              </strong>
               <span>
                 {health?.apertus.configured
-                  ? t("shell.endpointConfigured")
-                  : t("shell.connectEndpoint")}
+                  ? t("shell.localAiReady")
+                  : t("shell.localAiUnavailable")}
               </span>
             </div>
-          </Link>
+          </div>
           <p className="text-xs muted leading-relaxed">
             {t("shell.evidencePromise")}
           </p>
@@ -248,7 +430,7 @@ export function Shell({
           <div className="flex items-center gap-5">
             <LanguageSelector compact />
             <span className="hidden sm:inline text-xs">
-              <span className={"status-dot " + (error ? "!bg-red-500" : "")} />
+              <span className={`status-dot ${error ? "!bg-red-500" : ""}`} />
               {error
                 ? t("shell.apiUnavailable")
                 : health
@@ -259,10 +441,8 @@ export function Shell({
               <button
                 className="avatar"
                 title={t("shell.signOut", { name: session.user?.name || "" })}
-                onClick={async () => {
-                  await api("/auth/logout", { method: "POST" });
-                  window.location.assign("/login");
-                }}
+                onClick={() => void signOut()}
+                type="button"
               >
                 {(session.user?.name || "HL")
                   .split(" ")
@@ -276,23 +456,69 @@ export function Shell({
             )}
           </div>
         </header>
-        <nav className="mobile-nav">
-          <Link href="/">{t("nav.overview")}</Link>
-          <Link href="/registry">{t("nav.registry")}</Link>
-          <Link href="/impact">{t("nav.impact")}</Link>
-          <Link href="/matrix">{t("nav.matrix")}</Link>
-          {session?.authenticated && (
-            <Link href="/digests">{t("nav.digests")}</Link>
-          )}
-          <Link href="/sources">{t("nav.sources")}</Link>
-          <Link href="/activity">{t("nav.activity")}</Link>
-          {isPlatformAdmin && <Link href="/admin">{t("nav.admin")}</Link>}
-          {isPlatformAdmin && <Link href="/models">{t("nav.models")}</Link>}
-          <Link href="/logs">{t("nav.logs")}</Link>
-          <Link href="/prompts">{t("nav.prompts")}</Link>
-          <Link href="/settings">{t("nav.settings")}</Link>
+        <nav aria-label={t("shell.mobileNavigation")} className="mobile-nav">
+          <NavigationItem active={pathname === "/"} href="/">
+            <Activity size={15} />
+            {t("nav.today")}
+          </NavigationItem>
+          <NavigationItem active={monitoringActive} href="/registry">
+            <Landmark size={15} />
+            {t("nav.monitoring")}
+          </NavigationItem>
+          <details className="mobile-nav-more">
+            <summary
+              aria-current={mobileOverflowActive ? "page" : undefined}
+              className={mobileOverflowActive ? "active" : undefined}
+            >
+              <MoreHorizontal size={16} />
+              <span className="mobile-nav-more-label">
+                {mobileOverflowLabel}
+              </span>
+            </summary>
+            <div className="mobile-nav-menu">
+              <span className="nav-heading">{t("shell.dailyWork")}</span>
+              <NavigationItem active={pathname === "/impact"} href="/impact">
+                <Inbox size={15} />
+                {t("nav.impact")}
+              </NavigationItem>
+              <NavigationItem
+                active={pathname === "/discover"}
+                href="/discover"
+              >
+                <FileSearch size={15} />
+                {t("nav.discover")}
+              </NavigationItem>
+              <NavigationItem active={pathname === "/sources"} href="/sources">
+                <Globe2 size={15} />
+                {t("nav.sources")}
+              </NavigationItem>
+              <span className="nav-heading">
+                {t("shell.workspaceSettings")}
+              </span>
+              <WorkspaceSwitcher
+                busy={workspaceBusy}
+                canSwitch={Boolean(canSwitchWorkspace)}
+                currentName={
+                  session?.organization?.name || t("shell.defaultWorkspace")
+                }
+                error={workspaceError}
+                mobile
+                onSwitch={switchWorkspace}
+                organizations={organizations}
+              />
+              {workspaceItems}
+              {(canManage || isPlatformAdmin) && (
+                <>
+                  <span className="nav-heading">
+                    {t("shell.administration")}
+                  </span>
+                  {administrationItems}
+                </>
+              )}
+            </div>
+          </details>
         </nav>
-        <div className={"content " + (wide ? "content-wide" : "")}>
+        <div className={`content ${wide ? "content-wide" : ""}`}>
           {error && <ErrorNote message={t("shell.apiError")} />}
           {session?.authenticated && session.role === "viewer" && (
             <div className="mb-5 rounded-xl border border-[#d6decf] bg-[#f3f6ef] px-4 py-3 text-sm text-[#50604c]">
@@ -307,153 +533,6 @@ export function Shell({
           </footer>
         </div>
       </main>
-      <ProfileDialog
-        open={profileOpen}
-        onOpenChange={setProfileOpen}
-        health={health}
-      />
     </div>
-  );
-}
-
-export function ProfileDialog({
-  open,
-  onOpenChange,
-  health,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  health: Health | null;
-}) {
-  const { t, number } = useI18n();
-  const { data } = useResource<Profile>(open ? "/profile" : null);
-  const [name, setName] = useState(""),
-    [description, setDescription] = useState(""),
-    [areas, setAreas] = useState("");
-  const [busy, setBusy] = useState(""),
-    [error, setError] = useState(""),
-    [success, setSuccess] = useState("");
-  useEffect(() => {
-    if (data) {
-      setName(data.name);
-      setDescription(data.description);
-      setAreas(data.business_areas.join(", "));
-    }
-  }, [data]);
-  useEffect(() => {
-    if (open) {
-      setError("");
-      setSuccess("");
-    }
-  }, [open]);
-  async function save(event: React.FormEvent) {
-    event.preventDefault();
-    setBusy("save");
-    setError("");
-    setSuccess("");
-    try {
-      await api("/profile", {
-        method: "PATCH",
-        body: JSON.stringify({
-          name,
-          description,
-          business_areas: areas
-            .split(",")
-            .map((v) => v.trim())
-            .filter(Boolean),
-        }),
-      });
-      refreshWorkspace();
-      setSuccess(t("profile.saved"));
-    } catch (cause) {
-      setError(errorText(cause));
-    } finally {
-      setBusy("");
-    }
-  }
-  async function test() {
-    setBusy("test");
-    setError("");
-    setSuccess("");
-    try {
-      const value = await api<{ latency_ms: number }>("/model/test", {
-        method: "POST",
-      });
-      setSuccess(
-        t("profile.testSuccess", { duration: number(value.latency_ms) }),
-      );
-    } catch (cause) {
-      setError(errorText(cause));
-    } finally {
-      setBusy("");
-    }
-  }
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
-        <DialogHeader>
-          <DialogTitle>{t("profile.title")}</DialogTitle>
-          <DialogDescription>{t("profile.body")}</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={save} className="form-stack">
-          <label>
-            {t("profile.name")}
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              maxLength={200}
-            />
-          </label>
-          <label>
-            {t("profile.description")}
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder={t("profile.descriptionPlaceholder")}
-              rows={4}
-              maxLength={6000}
-            />
-          </label>
-          <label>
-            {t("profile.areas")}
-            <Input
-              value={areas}
-              onChange={(e) => setAreas(e.target.value)}
-              placeholder={t("profile.areasPlaceholder")}
-            />
-          </label>
-          <ErrorNote message={error} />
-          {success && <SuccessNote>{success}</SuccessNote>}
-          <Button type="submit" disabled={!!busy || !name.trim()}>
-            {busy === "save" && <Loader2 className="animate-spin" />}
-            {t("profile.save")}
-          </Button>
-        </form>
-        <div className="border-t pt-5 mt-2">
-          <div className="flex items-center gap-2 font-semibold">
-            <Sparkles size={16} />
-            {t("profile.connection")}
-          </div>
-          <p className="text-xs muted break-all">
-            {health?.apertus.model || "swiss-ai/Apertus-v1.5-8B"}
-          </p>
-          <p className="text-xs muted">{t("profile.connectionBody")}</p>
-          <Button asChild variant="outline" size="sm" className="mr-2 mb-2">
-            <Link href="/settings" onClick={() => onOpenChange(false)}>
-              {t("shell.apertusSettings")}
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" onClick={test} disabled={!!busy}>
-            {busy === "test" ? (
-              <Loader2 className="animate-spin" />
-            ) : (
-              <BookOpen />
-            )}
-            {t("profile.test")}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
   );
 }

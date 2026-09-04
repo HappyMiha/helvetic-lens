@@ -1,5 +1,5 @@
 import asyncio
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from conftest import add_law
 from sqlalchemy import select
@@ -25,6 +25,7 @@ from helvetic_lens.relation_candidates import generate_for_events
 
 def relation_delivery(harness, *, confirmed: bool = False, relation_type: str = "amends"):
     client, _, service, _ = harness
+    detected_at = datetime.now(UTC) - timedelta(minutes=5)
     law = add_law(client, name="Federal Data Protection Retention Act")
     with service.db.session(include_all_organizations=True) as session:
         mapping = session.scalar(
@@ -70,7 +71,7 @@ def relation_delivery(harness, *, confirmed: bool = False, relation_type: str = 
                                 ),
                             },
                         ),
-                        fetched_at=datetime(2026, 9, 3, 8, tzinfo=UTC),
+                        fetched_at=detected_at - timedelta(minutes=1),
                     ),
                 ),
                 metadata={"affected_norm": "SR 235.1", "articles": ["Art. 25"]},
@@ -99,7 +100,7 @@ def relation_delivery(harness, *, confirmed: bool = False, relation_type: str = 
                 document_version_id=source.version.id,
                 authority="swiss_parliament",
                 event_type="created",
-                detected_at=datetime(2026, 9, 3, 8, 5, tzinfo=UTC),
+                detected_at=detected_at,
                 provenance_method="official_metadata",
                 source_url=source.work.stable_official_url,
                 evidence={"affected_norm": "SR 235.1", "articles": ["Art. 25"]},

@@ -5,7 +5,7 @@ from sqlalchemy import select
 from helvetic_lens.auth import CSRF_COOKIE
 from helvetic_lens.config import Settings
 from helvetic_lens.main import create_app
-from helvetic_lens.models import AdministrativeAudit, User
+from helvetic_lens.models import AdministrativeAudit, OrganizationMembership, User
 
 
 def settings(tmp_path):
@@ -73,6 +73,57 @@ def test_platform_reads_are_isolated_and_status_is_bounded(tmp_path):
         assert payload["storage"]["retention"]["document_evidence"] == "immutable"
         assert payload["storage"]["retention"]["ai_history"] == "user_retained"
         assert payload["backup"]["status"] == "not_configured"
+
+
+def test_platform_admin_with_viewer_membership_can_manage_only_the_platform(tmp_path):
+    app = create_app(settings(tmp_path), fetcher=FakeFetcher(), model_client=ScriptedModel())
+    with TestClient(app) as client:
+        identity = register(client, "platform-viewer@example.ch")
+        with app.state.service.db.session(include_all_organizations=True) as session:
+            user = session.scalar(select(User).where(User.id == identity["user"]["id"]))
+            membership = session.scalar(
+                select(OrganizationMembership).where(
+                    OrganizationMembership.user_id == identity["user"]["id"],
+                    OrganizationMembership.organization_id == identity["organization"]["id"],
+                )
+            )
+            user.platform_admin = True
+            membership.role = "viewer"
+            session.commit()
+
+        current = client.get("/api/auth/session").json()
+        assert current["platform_admin"] is True
+        assert current["role"] == "viewer"
+
+        defaults = client.get("/api/admin/prompts")
+        assert defaults.status_code == 200
+        editable = {
+            key: defaults.json()[key]
+            for key in (
+                "impact_instructions",
+                "impact_synthesis_instructions",
+                "ask_instructions",
+                "answer_synthesis_instructions",
+                "repair_instructions",
+                "ask_context_mode",
+            )
+        }
+        assert (
+            client.patch("/api/admin/prompts", json=editable, headers=csrf(client)).status_code
+            == 200
+        )
+
+        organization_write = client.patch(
+            "/api/profile",
+            json={
+                "name": "Must remain unchanged",
+                "description": "",
+                "business_areas": [],
+            },
+            headers=csrf(client),
+        )
+        assert organization_write.status_code == 403
+        assert organization_write.json()["code"] == "viewer_read_only"
 
 
 def test_organization_status_and_mutation_audit_never_capture_request_body(tmp_path):

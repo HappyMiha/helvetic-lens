@@ -47,8 +47,9 @@ function modelAction(model: LocalModel) {
 
 export function ModelLibrary() {
   const { t } = useI18n();
+  const { isPlatformAdmin } = useAuth();
   const { data, error, loading, reload } = useResource<LocalModelInventory>(
-    "/admin/models",
+    isPlatformAdmin ? "/admin/models" : null,
     2000,
   );
   const [busy, setBusy] = useState("");
@@ -101,16 +102,22 @@ export function ModelLibrary() {
             {t("models.body")}
           </p>
         </div>
-        <Button variant="outline" onClick={reload} disabled={loading}>
-          <RefreshCw className={loading ? "animate-spin" : ""} /> {t("models.refresh")}
-        </Button>
+        {isPlatformAdmin && (
+          <Button variant="outline" onClick={reload} disabled={loading}>
+            <RefreshCw className={loading ? "animate-spin" : ""} /> {t("models.refresh")}
+          </Button>
+        )}
       </div>
-      <ErrorNote message={error || actionError} />
-      {message && <SuccessNote>{message}</SuccessNote>}
-      {loading && !data ? (
-        <Loading text={t("models.loading")} />
-      ) : data ? (
+      {!isPlatformAdmin ? (
+        <ErrorNote message={t("admin.denied")} />
+      ) : (
         <>
+          <ErrorNote message={error || actionError} />
+          {message && <SuccessNote>{message}</SuccessNote>}
+          {loading && !data ? (
+            <Loading text={t("models.loading")} />
+          ) : data ? (
+            <>
           <section className="stats-grid mb-5">
             <div className="stat-card">
               <span className="eyebrow">GPU</span>
@@ -161,8 +168,10 @@ export function ModelLibrary() {
               />
             ))}
           </div>
+            </>
+          ) : null}
         </>
-      ) : null}
+      )}
     </Shell>
   );
 }

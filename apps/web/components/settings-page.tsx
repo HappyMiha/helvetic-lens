@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import {
   ArrowUpRight,
   BookOpen,
@@ -28,7 +29,7 @@ import type {
   Profile,
 } from "@/lib/types";
 import { ErrorNote, Loading, SuccessNote } from "./common";
-import { ProfileDialog, Shell } from "./shell";
+import { Shell } from "./shell";
 import { useAuth } from "./auth-gate";
 import { useI18n } from "@/lib/i18n";
 
@@ -74,7 +75,6 @@ export function SettingsPage() {
   const configuration = useResource<ApertusSettings>("/settings/apertus");
   const { data: health } = useResource<Health>("/health");
   const { data: profile } = useResource<Profile>("/profile");
-  const [profileOpen, setProfileOpen] = useState(false);
   const [notice, setNotice] = useState("");
   return (
     <Shell section={t("nav.settings")}>
@@ -140,12 +140,8 @@ export function SettingsPage() {
               {profile?.business_areas.join(" · ") ||
                 t("settings.areas")}
             </p>
-            {canManage && <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setProfileOpen(true)}
-            >
-              {t("settings.editCompany")}
+            {canManage && <Button asChild variant="outline" size="sm">
+              <Link href="/organization#company-profile">{t("settings.editCompany")}</Link>
             </Button>}
           </section>
           <section className="panel p-6">
@@ -162,11 +158,6 @@ export function SettingsPage() {
           </section>
         </div>
       </div>
-      {canManage && <ProfileDialog
-        open={profileOpen}
-        onOpenChange={setProfileOpen}
-        health={health}
-      />}
     </Shell>
   );
 }

@@ -4,7 +4,7 @@
 
 This backlog implements the product described in [README.md](README.md): a local-AI-first Swiss regulatory monitor with immutable evidence, a time-based legal registry, official-source connectors, cross-document impact analysis, and organization workspaces.
 
-**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-047`, `HL-050`–`HL-052`), decision-ready comparison work (`HL-058`–`HL-063`), and reliable application shell (`HL-065`) are implemented and verified through the API, browser build, migrations, regression tests, and responsive browser QA. The optional saved impact matrix (`HL-023`) is also complete. Five-language product localization (`HL-057`) is in progress. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [daily-use UX and product audit](docs/UX_PRODUCT_AUDIT.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), [impact-report contract](docs/IMPACT_REPORT.md), [Ask routing](docs/ASK_ROUTING.md), [localization contract](docs/LOCALIZATION.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
+**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-047`, `HL-050`–`HL-052`), decision-ready comparison work (`HL-058`–`HL-063`), and reliable daily-work foundation (`HL-065`–`HL-066`) are implemented and verified through the API, browser build, migrations, regression tests, and responsive browser QA. The optional saved impact matrix (`HL-023`) is also complete. Five-language product localization (`HL-057`) is in progress. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [daily-use UX and product audit](docs/UX_PRODUCT_AUDIT.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), [impact-report contract](docs/IMPACT_REPORT.md), [Ask routing](docs/ASK_ROUTING.md), [localization contract](docs/LOCALIZATION.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
 
 ## Scope and priorities
 
@@ -108,7 +108,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-055](#hl-055) | P2       | DONE     | HL-038, HL-041                                         | Broader federal and cantonal court coverage                         |
 | [HL-056](#hl-056) | P3       | PLANNED  | HL-049                                                 | Multi-host or high-availability deployment after measured need      |
 | [HL-065](#hl-065) | P0       | DONE     | HL-035, HL-047                                         | Reliable application shell and independent scroll contract          |
-| [HL-066](#hl-066) | P0       | PLANNED  | HL-035, HL-047, HL-065                                 | Task-based navigation and canonical Company profile page            |
+| [HL-066](#hl-066) | P0       | DONE     | HL-035, HL-047, HL-065                                 | Task-based navigation and canonical Company profile page            |
 | [HL-067](#hl-067) | P0       | PLANNED  | HL-030, HL-063, HL-065                                 | Keyed resource cache and targeted interface updates                 |
 | [HL-068](#hl-068) | P0       | PLANNED  | HL-063, HL-065, HL-067                                 | Responsive comparison decision workspace                            |
 | [HL-069](#hl-069) | P0       | PLANNED  | HL-030, HL-062, HL-067, HL-068                         | Asynchronous Ask experience with real job progress                  |
@@ -1243,6 +1243,8 @@ Acceptance criteria:
 ### HL-066 — Replace module navigation with task-based navigation and a canonical Company profile page
 
 Organize the interface around daily regulatory work and remove duplicate or surprising ways to reach organization settings.
+
+**Status: DONE.** Desktop and mobile now share task-oriented daily, workspace, and role-gated administration destinations; multi-organization users can switch workspaces in either layout, and the mobile overflow names the active destination. The organization selector only switches organizations; `/organization#company-profile` is the single responsive profile editor with browser history, direct links, discard controls, normalized-save hydration, and navigation guards that survive refreshes and failed workspace changes. Monitoring and Discover use canonical routes, while unauthorized direct administration routes neither fetch privileged resources nor expose enabled controls. The former modal, duplicate AI connection test, DOM-click bridge, clipped mobile route strip, and permissive unknown-session role fallback are removed. Server tests independently prove that a platform administrator with a viewer membership can operate platform controls without gaining organization write access.
 
 Acceptance criteria:
 

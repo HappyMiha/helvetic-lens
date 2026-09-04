@@ -329,6 +329,9 @@ def create_app(
                     status_code=error.status,
                     content={"detail": error.message, "code": error.code, "params": error.params},
                 )
+        platform_path = path.startswith("/api/admin/") or (
+            path.startswith("/api/connectors/") and path.endswith("/sync")
+        )
         viewer_allowed_mutations = {
             "/api/auth/logout",
             "/api/invitations/accept",
@@ -345,6 +348,7 @@ def create_app(
             identity
             and identity.role == "viewer"
             and request.method in {"POST", "PUT", "PATCH", "DELETE"}
+            and not (identity.platform_admin and platform_path)
             and path not in viewer_allowed_mutations
             and not viewer_personal_state
         ):
@@ -355,9 +359,6 @@ def create_app(
                     "code": "viewer_read_only",
                 },
             )
-        platform_path = path.startswith("/api/admin/") or (
-            path.startswith("/api/connectors/") and path.endswith("/sync")
-        )
         if identity and platform_path and not identity.platform_admin:
             return JSONResponse(
                 status_code=403,
