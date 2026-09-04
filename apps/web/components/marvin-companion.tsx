@@ -22,6 +22,7 @@ import { api, useResource } from "@/lib/api";
 import { ASSISTANT_QUESTION_EVENT } from "@/lib/assistant-events";
 import { translate, useI18n } from "@/lib/i18n";
 import { jobResultHref } from "@/lib/job-links";
+import { MarvinVoice, RemarkDelivery, type VoiceState } from "@/lib/marvin-delivery";
 import { resources } from "@/lib/resource-keys";
 import type { Job } from "@/lib/types";
 
@@ -44,7 +45,6 @@ type RouteContext = {
 };
 
 const STORAGE_KEY = "helvetic_lens_companion_v1";
-const SESSION_KEY = "helvetic_lens_companion_seen_v1";
 const DRAFT_KEY_PREFIX = "helvetic_lens_companion_draft_v1:";
 const TERMINAL_JOB_STATES = new Set(["succeeded", "failed", "cancelled"]);
 const ASSISTANT_JOB_TYPES = new Set([
@@ -212,6 +212,7 @@ function routeContext(pathname: string): RouteContext {
     pathname === "/prompts" ||
     pathname === "/models" ||
     pathname === "/connectors" ||
+    pathname === "/logs" ||
     pathname === "/admin"
   ) {
     return {
@@ -259,29 +260,6 @@ function readPreferences(): CompanionPreferences {
   }
 }
 
-function rememberRoute(pathname: string) {
-  try {
-    const seen = JSON.parse(
-      window.sessionStorage.getItem(SESSION_KEY) || "{}",
-    ) as Record<string, number>;
-    seen[pathname] = Date.now();
-    window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(seen));
-  } catch {
-    // The companion remains useful when storage is unavailable.
-  }
-}
-
-function seenRecently(pathname: string): boolean {
-  try {
-    const seen = JSON.parse(
-      window.sessionStorage.getItem(SESSION_KEY) || "{}",
-    ) as Record<string, number>;
-    return Date.now() - (seen[pathname] || 0) < 15 * 60 * 1000;
-  } catch {
-    return false;
-  }
-}
-
 function RobotPortrait({ compact = false }: { compact?: boolean }) {
   return (
     <span
@@ -324,6 +302,7 @@ export function MarvinCompanion({
   >([]);
   const [chatPending, setChatPending] = useState(false);
   const [speaking, setSpeaking] = useState(false);
+  const [voiceState, setVoiceState] = useState<VoiceState>("idle");
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [conversationLoaded, setConversationLoaded] = useState(false);
   const [recentQuestions, setRecentQuestions] = useState<
@@ -339,6 +318,8 @@ export function MarvinCompanion({
   const deepScrollSeen = useRef(false);
   const remarkRequestId = useRef(0);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const voiceRef = useRef<MarvinVoice | null>(null);
+  const deliveryRef = useRef<RemarkDelivery | null>(null);
   const knownAiJobStates = useRef<Map<string, string> | null>(null);
   const context = useMemo(() => routeContext(pathname), [pathname]);
   const entity = useMemo(() => routeEntity(pathname), [pathname]);
@@ -368,6 +349,8 @@ export function MarvinCompanion({
 
   useEffect(() => {
     setPreferences(readPreferences());
+    try { deliveryRef.current = new RemarkDelivery(window.sessionStorage); }
+    catch { deliveryRef.current = new RemarkDelivery(); }
     setHydrated(true);
   }, []);
 
@@ -487,31 +470,16 @@ export function MarvinCompanion({
 
   const speak = useCallback(
     (copy: string, force = false) => {
-      if (
-        (!preferences.voice && !force) ||
-        typeof window === "undefined" ||
-        !("speechSynthesis" in window)
-      )
+      if (!preferences.voice && !force) return;
+      if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
+        setVoiceState("unavailable");
         return;
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(copy);
-      const language = locale.split("-")[0].toLowerCase();
-      const voices = window.speechSynthesis.getVoices();
-      utterance.voice =
-        voices.find(
-          (voice) =>
-            voice.localService && voice.lang.toLowerCase().startsWith(language),
-        ) ||
-        voices.find((voice) => voice.lang.toLowerCase().startsWith(language)) ||
-        null;
-      utterance.lang = locale;
-      utterance.pitch = 0.68;
-      utterance.rate = 0.78;
-      utterance.volume = 0.88;
-      utterance.onstart = () => setSpeaking(true);
-      utterance.onend = () => setSpeaking(false);
-      utterance.onerror = () => setSpeaking(false);
-      window.speechSynthesis.speak(utterance);
+      }
+      voiceRef.current ??= new MarvinVoice(window.speechSynthesis, window.SpeechSynthesisUtterance, (state) => {
+        setVoiceState(state);
+        setSpeaking(state === "speaking");
+      });
+      voiceRef.current.speak(copy, locale);
     },
     [locale, preferences.voice],
   );
@@ -521,6 +489,7 @@ export function MarvinCompanion({
       trigger: "arrival" | "activity" | "deep_scroll",
       fallbackKey: string,
     ) => {
+      if (document.visibilityState !== "visible" || open || !deliveryRef.current?.reserve(pathname)) return;
       const requestId = ++remarkRequestId.current;
       let selectedKey = fallbackKey;
       if (contextAttached && runtime?.ready && preferences.tone !== "neutral") {
@@ -543,7 +512,8 @@ export function MarvinCompanion({
           if (
             response.provenance.local &&
             response.provenance.cloud_fallback === false &&
-            GENERATED_REMARK_KEYS.has(response.key)
+            GENERATED_REMARK_KEYS.has(response.key) &&
+            response.key !== "companion.generated.progress"
           ) {
             selectedKey = response.key;
           }
@@ -551,18 +521,26 @@ export function MarvinCompanion({
           // The translated deterministic remark is the honest offline fallback.
         }
       }
-      if (requestId !== remarkRequestId.current) return;
-      setBubbleKey(selectedKey);
+      if (requestId !== remarkRequestId.current || document.visibilityState !== "visible") return;
+      // The model may repeatedly choose the same key. Prefer context, then unused lines.
+      const freshKey = deliveryRef.current.choose([
+        fallbackKey, selectedKey, context.quipKey,
+        ...[...GENERATED_REMARK_KEYS].filter((key) => key !== "companion.generated.progress"),
+      ]);
+      if (!freshKey) return;
+      setBubbleKey(freshKey);
       setBubbleVisible(true);
-      const remark = t(selectedKey);
+      const remark = t(freshKey);
       playSigh();
       speak(remark);
     },
     [
       contextAttached,
+      context.quipKey,
       entity,
       locale,
       pathname,
+      open,
       playSigh,
       preferences.tone,
       runtime?.ready,
@@ -594,21 +572,27 @@ export function MarvinCompanion({
     const current = new Map(aiJobs.map((job) => [job.id, job.state]));
     const previous = knownAiJobStates.current;
     knownAiJobStates.current = current;
-    if (!previous || open) return;
+    if (!previous || open || !hydrated || !preferences.enabled || !preferences.spontaneous ||
+        preferences.tone === "neutral" || !contextAttached || document.visibilityState !== "visible") return;
     const completed = aiJobs.find(
       (job) =>
         TERMINAL_JOB_STATES.has(job.state) &&
         previous.has(job.id) &&
         !TERMINAL_JOB_STATES.has(previous.get(job.id) || ""),
     );
-    if (!completed) return;
-    setBubbleKey(
+    if (!completed || !deliveryRef.current?.reserve(pathname)) return;
+    const key = deliveryRef.current.choose([
       completed.state === "succeeded"
         ? "companion.jobComplete"
         : "companion.jobEnded",
-    );
+    ]);
+    if (!key) return;
+    setBubbleKey(key);
     setBubbleVisible(true);
-  }, [aiJobs, open]);
+    playSigh();
+    speak(t(key));
+  }, [aiJobs, open, hydrated, preferences.enabled, preferences.spontaneous, preferences.tone,
+    contextAttached, pathname, playSigh, speak, t]);
 
   useEffect(() => {
     setBubbleVisible(false);
@@ -616,24 +600,28 @@ export function MarvinCompanion({
     setBubbleKey(null);
     interactionCount.current = 0;
     deepScrollSeen.current = false;
+  }, [pathname, open, preferences.enabled, preferences.spontaneous, preferences.tone, contextAttached]);
+
+  useEffect(() => {
     if (
       !hydrated ||
       !preferences.enabled ||
       !preferences.spontaneous ||
       preferences.tone === "neutral" ||
       !contextAttached ||
-      !serverQuipAllowed ||
-      seenRecently(pathname)
+      !serverQuipAllowed
     ) {
       return;
     }
     const delay = 6500 + (pathname.length % 4) * 1200;
     const timer = window.setTimeout(() => {
       if (document.visibilityState !== "visible" || open) return;
-      rememberRoute(pathname);
       void presentRemark("arrival", context.quipKey);
     }, delay);
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      remarkRequestId.current += 1;
+    };
   }, [
     hydrated,
     open,
@@ -660,9 +648,8 @@ export function MarvinCompanion({
       return;
     }
 
+    let activityTimer: number | undefined;
     function showActivityRemark(key: string) {
-      if (seenRecently(`${pathname}:activity`)) return;
-      rememberRoute(`${pathname}:activity`);
       void presentRemark("activity", key);
     }
 
@@ -674,7 +661,7 @@ export function MarvinCompanion({
       if (!control || control.closest("form")) return;
       interactionCount.current += 1;
       if (interactionCount.current === 4) {
-        window.setTimeout(
+        activityTimer = window.setTimeout(
           () => showActivityRemark("companion.quip.busy"),
           1200,
         );
@@ -689,8 +676,6 @@ export function MarvinCompanion({
         target.scrollHeight - target.scrollTop - target.clientHeight;
       if (target.scrollHeight <= target.clientHeight || remaining > 160) return;
       deepScrollSeen.current = true;
-      if (seenRecently(`${pathname}:activity`)) return;
-      rememberRoute(`${pathname}:activity`);
       void presentRemark("deep_scroll", "companion.quip.deepScroll");
     }
 
@@ -698,6 +683,7 @@ export function MarvinCompanion({
     document.addEventListener("pointerup", observeAllowlistedAction, true);
     main?.addEventListener("scroll", observeScroll, { passive: true });
     return () => {
+      window.clearTimeout(activityTimer);
       document.removeEventListener("pointerup", observeAllowlistedAction, true);
       main?.removeEventListener("scroll", observeScroll);
     };
@@ -725,10 +711,15 @@ export function MarvinCompanion({
     return () => document.removeEventListener("keydown", closeOnEscape);
   }, [onOpenChange, open]);
 
+  useEffect(() => {
+    if (!bubbleVisible || speaking) return;
+    const timer = window.setTimeout(() => setBubbleVisible(false), 30_000);
+    return () => window.clearTimeout(timer);
+  }, [bubbleVisible, bubbleKey, speaking]);
+
   useEffect(
     () => () => {
-      if (typeof window !== "undefined" && "speechSynthesis" in window)
-        window.speechSynthesis.cancel();
+      voiceRef.current?.stop();
       void audioContextRef.current?.close();
     },
     [],
@@ -821,6 +812,20 @@ export function MarvinCompanion({
 
   const showQuip = preferences.tone !== "neutral";
   const runtimeReady = runtime?.ready ?? localAiReady;
+  const voiceControls = (
+    <div className="marvin-voice-controls">
+      <button type="button" onClick={() => {
+        if (speaking) { voiceRef.current?.stop(); return; }
+        updatePreferences({ voice: true });
+        speak(t(bubbleKey || "companion.voicePreview"), true);
+      }}>
+        {speaking ? <VolumeX size={15} /> : <Volume2 size={15} />}
+        {t(speaking ? "companion.stopVoice" : preferences.voice ? "companion.speakAgain" : "companion.enableVoice")}
+      </button>
+      {voiceState === "blocked" && <small role="status">{t("companion.voiceBlocked")}</small>}
+      {voiceState === "unavailable" && <small role="status">{t("companion.voiceUnavailable")}</small>}
+    </div>
+  );
 
   return (
     <aside
@@ -853,6 +858,7 @@ export function MarvinCompanion({
           </header>
 
           <div className="marvin-drawer-body">
+            {voiceControls}
             <div className="marvin-status-row">
               <button
                 aria-label={
@@ -953,7 +959,7 @@ export function MarvinCompanion({
                         <div className="marvin-chat-actions">
                           <button
                             aria-label={t("companion.speakAgain")}
-                            onClick={() => speak(item.content)}
+                            onClick={() => speak(item.content, true)}
                             type="button"
                           >
                             <Volume2 size={13} />
@@ -1219,8 +1225,7 @@ export function MarvinCompanion({
                         !event.target.checked &&
                         "speechSynthesis" in window
                       ) {
-                        window.speechSynthesis.cancel();
-                        setSpeaking(false);
+                        voiceRef.current?.stop();
                       } else if (event.target.checked) {
                         speak(t("companion.voicePreview"), true);
                       }
@@ -1267,6 +1272,7 @@ export function MarvinCompanion({
             <strong>{t("companion.name")}</strong>
             <span>{t(bubbleKey || context.quipKey)}</span>
           </button>
+          {voiceControls}
         </div>
       )}
 

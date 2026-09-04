@@ -3323,6 +3323,23 @@ ins {
   padding: 0;
   text-align: left;
 }
+.marvin-bubble { flex-wrap: wrap; }
+.marvin-bubble-copy { flex: 1; }
+.marvin-voice-controls { display: grid; gap: 6px; }
+.marvin-voice-controls button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  color: inherit;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  padding: 8px 10px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.marvin-voice-controls small { font-size: 12px; line-height: 1.4; }
+.marvin-bubble .marvin-voice-controls { flex-basis: 100%; order: 3; margin-top: 10px; }
 .marvin-bubble-copy strong {
   color: #dce8d8;
   font-size: 11px;
