@@ -197,6 +197,11 @@ class ConnectorScheduleInput(Input):
     window_end: str | None = Field(default=None, max_length=5)
 
 
+class SourcePackRequestInput(Input):
+    pack_id: str = Field(min_length=1, max_length=120)
+    action: Literal["activate", "deactivate"]
+
+
 def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
     if method not in {"POST", "PUT", "PATCH", "DELETE"}:
         return None
@@ -339,6 +344,7 @@ def create_app(
             "/api/digests/preferences",
             "/api/digests/unsubscribe",
             "/api/digests/send",
+            "/api/source-pack-requests",
         }
         viewer_personal_state = (
             path.startswith("/api/impact-inbox/events/") and path.endswith("/state")
@@ -733,6 +739,28 @@ def create_app(
     @app.get("/api/connectors/capabilities")
     def connector_capabilities():
         return service.connector_capabilities()
+
+    @app.get("/api/source-packs")
+    def source_packs():
+        return service.source_pack_catalogue()
+
+    @app.post("/api/source-packs/{pack_id}/activate", status_code=202)
+    def activate_source_pack(pack_id: str, request: Request):
+        identity = request.state.identity
+        return service.activate_source_pack(pack_id, identity.user_id if identity else None)
+
+    @app.post("/api/source-packs/{pack_id}/deactivate")
+    def deactivate_source_pack(pack_id: str):
+        return service.deactivate_source_pack(pack_id)
+
+    @app.post("/api/source-pack-requests", status_code=201)
+    def request_source_pack_change(data: SourcePackRequestInput, request: Request):
+        identity = request.state.identity
+        return service.request_source_pack_change(
+            data.pack_id,
+            data.action,
+            identity.user_id if identity else None,
+        )
 
     @app.post("/api/connectors/fedlex/{stream}/sync")
     async def sync_fedlex(stream: str):

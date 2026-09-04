@@ -34,6 +34,7 @@ from .models import (
 from .regulatory_corpus import RegulatoryCorpus
 from .relation_candidates import generate_for_events
 from .source_capabilities import source_capability
+from .source_packs import enabled_organizations_for_stream
 
 ACTIVE_JOB_STATES = frozenset(
     {"queued", "dispatched", "running", "retrying", "waiting_for_model"}
@@ -563,24 +564,28 @@ def _fan_out(session: Session, run: ConnectorRun, events: list[RegulatoryEvent])
         watches_by_law.setdefault(watch.law_id, []).append(watch)
     inserted = 0
     touched: dict[str, list[str]] = {}
+    pack_organizations = enabled_organizations_for_stream(session, run.connector, run.stream)
     for event in events:
+        organization_ids = set(pack_organizations)
         for law_id in law_by_work.get(event.work_id, set()):
             for watch in watches_by_law.get(law_id, []):
-                exists = session.scalar(
-                    select(RegulatoryEventState.id).where(
-                        RegulatoryEventState.organization_id == watch.organization_id,
-                        RegulatoryEventState.event_id == event.id,
+                organization_ids.add(watch.organization_id)
+        for organization_id in organization_ids:
+            exists = session.scalar(
+                select(RegulatoryEventState.id).where(
+                    RegulatoryEventState.organization_id == organization_id,
+                    RegulatoryEventState.event_id == event.id,
+                )
+            )
+            if not exists:
+                session.add(
+                    RegulatoryEventState(
+                        organization_id=organization_id,
+                        event_id=event.id,
                     )
                 )
-                if not exists:
-                    session.add(
-                        RegulatoryEventState(
-                            organization_id=watch.organization_id,
-                            event_id=event.id,
-                        )
-                    )
-                    inserted += 1
-                touched.setdefault(watch.organization_id, []).append(event.id)
+                inserted += 1
+            touched.setdefault(organization_id, []).append(event.id)
     for organization_id, event_ids in touched.items():
         state = session.scalar(
             select(FeedState).where(

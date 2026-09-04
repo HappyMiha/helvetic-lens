@@ -19,7 +19,7 @@ from sqlalchemy import delete, func, inspect, or_, select
 from sqlalchemy.orm import Session
 
 from . import analysis as ai
-from . import digests, synchronization
+from . import digests, source_packs, synchronization
 from . import jobs as durable_jobs
 from . import relation_analysis as relation_ai
 from .ai_metrics import summarize_ai_triage_metrics
@@ -323,6 +323,7 @@ class HelveticLens:
             if not session.scalar(select(OrganizationQuota)):
                 session.add(OrganizationQuota(values={}))
             synchronization.seed_schedules(session)
+            source_packs.seed_definitions(session)
             active_job_states = ["queued", "dispatched", "running", "retrying", "waiting_for_model"]
             for scan in session.scalars(select(Scan).where(Scan.status.in_(["queued", "running"]))):
                 durable_job = session.scalar(
@@ -1406,6 +1407,37 @@ class HelveticLens:
 
     def connector_capabilities(self) -> dict:
         return capability_catalogue()
+
+    def source_pack_catalogue(self) -> dict:
+        with self.db.session(include_all_organizations=True) as session:
+            schedules = synchronization.schedule_status(session, self.settings)["items"]
+            session.commit()
+        with self.db.session() as session:
+            return source_packs.catalogue(session, schedules)
+
+    def activate_source_pack(self, pack_id: str, actor_user_id: str | None) -> dict:
+        with self.write_guard, self.db.session() as session:
+            return source_packs.activate(
+                session,
+                pack_id,
+                organization_id=self.organization_id,
+                actor_user_id=actor_user_id,
+            )
+
+    def deactivate_source_pack(self, pack_id: str) -> dict:
+        with self.write_guard, self.db.session() as session:
+            return source_packs.deactivate(session, pack_id)
+
+    def request_source_pack_change(
+        self, pack_id: str, action: str, requested_by_user_id: str | None
+    ) -> dict:
+        with self.write_guard, self.db.session() as session:
+            return source_packs.request_change(
+                session,
+                pack_id,
+                action,
+                requested_by_user_id=requested_by_user_id,
+            )
 
     async def sync_fedlex(self, stream: str) -> dict:
         connector = next(
@@ -3380,6 +3412,15 @@ class HelveticLens:
                 result_type = "connector_run"
                 result_id = payload.get("run_id")
                 result_url = "/connectors"
+            elif job_type == "source_pack_backfill":
+                mark(0, 1, "running")
+                with self.write_guard, self.db.session() as session:
+                    result_json = source_packs.run_backfill(session, target_id)
+                    session.commit()
+                mark(1, 1, "succeeded")
+                result_type = "source_pack_subscription"
+                result_id = target_id
+                result_url = "/sources#source-packs"
             else:
                 raise DomainError("This durable job type is not supported by the worker.", 422, "job_type_unknown")
         except durable_jobs.JobCancelled:
@@ -3395,6 +3436,8 @@ class HelveticLens:
                 if job_type == "connector_sync" and payload.get("run_id"):
                     run = synchronization.fail_run(session, payload["run_id"], detail)
                     run.status = failed_job.state
+                if job_type == "source_pack_backfill":
+                    source_packs.fail_backfill(session, target_id, detail)
                 session.commit()
             if not isinstance(exc, DomainError):
                 logger.exception("Durable job failed: %s", job_id)

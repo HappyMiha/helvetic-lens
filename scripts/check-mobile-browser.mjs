@@ -306,6 +306,7 @@ try {
   }
 
   await navigate(admin, "/sources");
+  await waitFor(admin, `document.querySelectorAll('.source-pack-card').length === 5`, "Swiss Federal Starter subpacks did not render");
   await waitFor(admin, `document.querySelectorAll('.official-coverage-card').length === 6`, "Official source capability families did not render");
   await auditRoute(admin, 390, 844, "/sources", "source capability catalogue", true, false);
   await navigate(admin, "/connectors");

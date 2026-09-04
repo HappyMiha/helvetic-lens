@@ -206,6 +206,83 @@ class Source(Base):
     discovery: Mapped[dict] = mapped_column(JSON, default=dict)
 
 
+class SourcePackDefinition(Base):
+    """Global, versioned source-selection contract shared by every organization."""
+
+    __tablename__ = "source_pack_definitions"
+    id: Mapped[str] = mapped_column(String(120), primary_key=True)
+    parent_id: Mapped[str | None] = mapped_column(
+        ForeignKey("source_pack_definitions.id", ondelete="CASCADE"), index=True
+    )
+    revision: Mapped[str] = mapped_column(String(40))
+    name_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    description_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    expected_first_data_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    filters_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class SourcePackSubscription(Base):
+    __tablename__ = "source_pack_subscriptions"
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id", "pack_id", name="uq_source_pack_subscription_org_pack"
+        ),
+        CheckConstraint(
+            "state IN ('inactive', 'queued', 'backfilling', 'active', 'partial', 'failed')",
+            name="ck_source_pack_subscription_state",
+        ),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    pack_id: Mapped[str] = mapped_column(
+        ForeignKey("source_pack_definitions.id"), index=True
+    )
+    enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    state: Mapped[str] = mapped_column(String(20), default="inactive", index=True)
+    revision: Mapped[int] = mapped_column(Integer, default=0)
+    progress_current: Mapped[int] = mapped_column(BigInteger, default=0)
+    progress_total: Mapped[int] = mapped_column(BigInteger, default=1)
+    included_event_count: Mapped[int] = mapped_column(BigInteger, default=0)
+    failed_count: Mapped[int] = mapped_column(Integer, default=0)
+    last_error: Mapped[str | None] = mapped_column(Text)
+    activated_by_user_id: Mapped[str | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True
+    )
+    activated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    deactivated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class SourcePackChangeRequest(Base):
+    __tablename__ = "source_pack_change_requests"
+    __table_args__ = (
+        CheckConstraint(
+            "requested_action IN ('activate', 'deactivate')",
+            name="ck_source_pack_request_action",
+        ),
+        CheckConstraint(
+            "status IN ('pending', 'fulfilled', 'cancelled')",
+            name="ck_source_pack_request_status",
+        ),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    pack_id: Mapped[str] = mapped_column(
+        ForeignKey("source_pack_definitions.id"), index=True
+    )
+    requested_by_user_id: Mapped[str | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True
+    )
+    requested_action: Mapped[str] = mapped_column(String(20))
+    status: Mapped[str] = mapped_column(String(20), default="pending", index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 class Law(Base):
     __tablename__ = "laws"
     __table_args__ = (
@@ -1107,6 +1184,8 @@ ORGANIZATION_SCOPED_MODELS = (
     DigestDelivery,
     DocumentWatch,
     Source,
+    SourcePackSubscription,
+    SourcePackChangeRequest,
     Observation,
     IdentityDecision,
     Scan,

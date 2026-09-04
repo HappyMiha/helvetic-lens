@@ -12,6 +12,7 @@ import {
   Globe2,
   History,
   Loader2,
+  PackageOpen,
   Plus,
   RefreshCw,
   Search,
@@ -46,6 +47,8 @@ import type {
   Scan,
   Source,
   SourceCapabilityCatalogue,
+  SourcePack,
+  SourcePackCatalogue,
 } from "@/lib/types";
 import { ErrorNote, Loading, Status } from "./common";
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
@@ -106,6 +109,109 @@ function OfficialCoverage({ data }: { data?: SourceCapabilityCatalogue | null })
   );
 }
 
+function SourcePacks({
+  data,
+  canManage,
+  busy,
+  onChange,
+}: {
+  data?: SourcePackCatalogue | null;
+  canManage: boolean;
+  busy: string;
+  onChange: (pack: SourcePack | { id: string }, activate: boolean) => void;
+}) {
+  const { t, locale, dateTime } = useI18n();
+  if (!data) return null;
+  const text = (values: Record<string, string>) => values[locale] || values["en-CH"];
+  return (
+    <section id="source-packs" className="source-packs panel mb-6">
+      <div className="panel-header items-start gap-4">
+        <div>
+          <span className="eyebrow">{t("sourcePacks.eyebrow")}</span>
+          <h2>{text(data.starter.name)}</h2>
+          <p className="muted mb-0 max-w-3xl">{text(data.starter.description)}</p>
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <Status value={data.starter.state} />
+          {canManage && (
+            <Button
+              size="sm"
+              variant={data.starter.state === "active" ? "outline" : "default"}
+              disabled={busy === data.starter.id}
+              onClick={() => onChange(data.starter, data.starter.state !== "active")}
+            >
+              {busy === data.starter.id && <Loader2 className="animate-spin" />}
+              {data.starter.state === "active" ? t("sourcePacks.disableAll") : t("sourcePacks.enableStarter")}
+            </Button>
+          )}
+        </div>
+      </div>
+      <div className="panel-body">
+        <div className="info-note mb-4">{text(data.starter.expected_first_data)}</div>
+        <div className="grid gap-4 xl:grid-cols-2">
+          {data.items.map((pack) => {
+            const active = pack.subscription.enabled;
+            const changing = busy === pack.id;
+            const boundaries = [...new Set(pack.capabilities.map((item) => (item.localized_copy[locale] || item.localized_copy["en-CH"]).boundary))];
+            return (
+              <article className="source-pack-card rounded-lg border p-4" data-pack-id={pack.id} key={pack.id}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="m-0">{text(pack.name)}</h3>
+                    <p className="muted mt-2 mb-0 text-sm">{text(pack.description)}</p>
+                  </div>
+                  <Status value={pack.subscription.state} />
+                </div>
+                <dl className="source-facts mt-4">
+                  <div><dt>{t("sourcePacks.authorities")}</dt><dd>{pack.authorities.map(label).join(", ")}</dd></div>
+                  <div><dt>{t("sourcePacks.kinds")}</dt><dd>{pack.document_kinds.map(label).join(", ")}</dd></div>
+                  <div><dt>{t("sourcePacks.languages")}</dt><dd className="uppercase">{pack.languages.join(", ")}</dd></div>
+                  <div><dt>{t("sourcePacks.cadence")}</dt><dd>{pack.cadences.join(", ")}</dd></div>
+                  <div><dt>{t("sourcePacks.lastSync")}</dt><dd>{pack.last_success_at ? dateTime(pack.last_success_at) : t("sourcePacks.notYet")}</dd></div>
+                  <div><dt>{t("sourcePacks.savedEvents")}</dt><dd>{pack.subscription.included_event_count}</dd></div>
+                </dl>
+                <div className="mt-4 rounded-md bg-stone-50 p-3 text-sm">
+                  <p className="mb-1 font-semibold">{t("sourcePacks.firstData")}</p>
+                  <p className="muted mb-0">{text(pack.expected_first_data)}</p>
+                </div>
+                <details className="mt-3 text-sm">
+                  <summary className="cursor-pointer font-semibold">{t("sourcePacks.coverageLimits")}</summary>
+                  <ul className="mb-0 mt-2 list-disc space-y-1 pl-5 muted">
+                    {boundaries.map((boundary) => <li key={boundary}>{boundary}</li>)}
+                  </ul>
+                </details>
+                {pack.subscription.state === "backfilling" || pack.subscription.state === "queued" ? (
+                  <div className="mt-4" aria-live="polite">
+                    <div className="mb-1 flex justify-between text-xs"><span>{t("sourcePacks.backfilling")}</span><span>{pack.subscription.progress_current}/{pack.subscription.progress_total}</span></div>
+                    <progress className="w-full" value={pack.subscription.progress_current} max={Math.max(1, pack.subscription.progress_total)} />
+                  </div>
+                ) : null}
+                {pack.subscription.last_error && <ErrorNote message={pack.subscription.last_error} />}
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <span className="text-xs muted">
+                    {pack.partial ? t("sourcePacks.partialCoverage") : t("sourcePacks.verifiedCoverage")}
+                  </span>
+                  {canManage ? (
+                    <Button size="sm" variant={active ? "outline" : "default"} disabled={changing} onClick={() => onChange(pack, !active)}>
+                      {changing && <Loader2 className="animate-spin" />}
+                      {active ? t("sourcePacks.disable") : pack.subscription.state === "partial" ? t("sourcePacks.continue") : t("sourcePacks.enable")}
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="outline" disabled={changing || !!pack.pending_request} onClick={() => onChange(pack, !active)}>
+                      {changing && <Loader2 className="animate-spin" />}
+                      {pack.pending_request ? t("sourcePacks.requestPending") : active ? t("sourcePacks.requestDisable") : t("sourcePacks.requestEnable")}
+                    </Button>
+                  )}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function Workspace({
   view = "overview",
 }: {
@@ -119,6 +225,9 @@ export function Workspace({
   const capabilities = useResource(
     view === "sources" ? resources.sourceCapabilities() : null,
   );
+  const sourcePacks = useResource(
+    view === "sources" ? resources.sourcePacks() : null,
+  );
   const scans = useResource(resources.scans());
   const jobs = useResource(resources.jobs());
   const [form, setForm] = useState<DocumentForm | null>(null);
@@ -130,6 +239,8 @@ export function Workspace({
     [error, setError] = useState("");
   const [discoverySource, setDiscoverySource] = useState<Source | null>(null);
   const [deletingSource, setDeletingSource] = useState<Source | null>(null);
+  const [packBusy, setPackBusy] = useState("");
+  const [packMessage, setPackMessage] = useState("");
   const records = laws.data || [],
     connected = sources.data || [];
   const running = scans.data?.find((scan) =>
@@ -154,6 +265,31 @@ export function Workspace({
         ? values.filter((value) => value !== id)
         : [...values, id],
     );
+  }
+  async function changePack(pack: SourcePack | { id: string }, activate: boolean) {
+    setPackBusy(pack.id);
+    setError("");
+    setPackMessage("");
+    try {
+      if (canManage) {
+        await api(`/source-packs/${encodeURIComponent(pack.id)}/${activate ? "activate" : "deactivate"}`, { method: "POST" });
+        setPackMessage(activate ? t("sourcePacks.activationQueued") : t("sourcePacks.disabledMessage"));
+      } else {
+        await api("/source-pack-requests", {
+          method: "POST",
+          body: JSON.stringify({ pack_id: pack.id, action: activate ? "activate" : "deactivate" }),
+        });
+        setPackMessage(t("sourcePacks.requestSaved"));
+      }
+      await Promise.all([
+        invalidateResources(resources.sourcePacks()),
+        invalidateResources(resourceTag("jobs")),
+      ]);
+    } catch (cause) {
+      setError(errorText(cause));
+    } finally {
+      setPackBusy("");
+    }
   }
   async function scan(ids?: string[]) {
     setBusy("scan");
@@ -544,6 +680,13 @@ export function Workspace({
             {t("sources.discoveryNote")}
           </div>
           <ErrorNote message={capabilities.error} />
+          <ErrorNote message={sourcePacks.error} />
+          {packMessage && <div className="success-note mb-6">{packMessage}</div>}
+          {sourcePacks.loading && !sourcePacks.data ? (
+            <Loading text={t("sourcePacks.loading")} />
+          ) : (
+            <SourcePacks data={sourcePacks.data} canManage={canManage} busy={packBusy} onChange={changePack} />
+          )}
           {capabilities.loading && !capabilities.data ? (
             <Loading text={t("sources.coverageLoading")} />
           ) : (

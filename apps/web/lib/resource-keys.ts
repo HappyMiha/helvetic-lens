@@ -18,6 +18,7 @@ import type {
   Scan,
   Source,
   SourceCapabilityCatalogue,
+  SourcePackCatalogue,
   Version,
 } from "@/lib/types";
 import {
@@ -139,6 +140,13 @@ export const resources = {
         staleMs: Number.POSITIVE_INFINITY,
       },
     ),
+
+  sourcePacks: () =>
+    key<SourcePackCatalogue>("monitoring:source-packs", "/source-packs", {
+      tags: ["source-packs", "sources", "jobs", "monitoring"],
+      staleMs: 2_000,
+      pollMs: 2_000,
+    }),
 
   scans: () =>
     key<Scan[]>("monitoring:scans", "/scans", {

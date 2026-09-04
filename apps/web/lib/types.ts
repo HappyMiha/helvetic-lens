@@ -1031,6 +1031,52 @@ export type SourceCapabilityCatalogue = {
   catalogue_revision: string;
   items: SourceCapability[];
 };
+export type SourcePackSubscription = {
+  id?: string;
+  enabled: boolean;
+  state: "inactive" | "queued" | "backfilling" | "active" | "partial" | "failed";
+  progress_current: number;
+  progress_total: number;
+  included_event_count: number;
+  failed_count: number;
+  last_error: string | null;
+  activated_at: string | null;
+  deactivated_at: string | null;
+};
+export type SourcePack = {
+  id: string;
+  parent_id: string;
+  revision: string;
+  name: Record<string, string>;
+  description: Record<string, string>;
+  expected_first_data: Record<string, string>;
+  filters: { streams: [string, string][] };
+  authorities: string[];
+  document_kinds: string[];
+  languages: string[];
+  cadences: string[];
+  historical_windows: string[];
+  known_gaps: string[];
+  capabilities: SourceCapability[];
+  last_success_at: string | null;
+  partial: boolean;
+  subscription: SourcePackSubscription;
+  pending_request: { id: string; action: "activate" | "deactivate"; created_at: string } | null;
+};
+export type SourcePackCatalogue = {
+  catalogue_revision: string;
+  starter: {
+    id: string;
+    revision: string;
+    name: Record<string, string>;
+    description: Record<string, string>;
+    expected_first_data: Record<string, string>;
+    state: "inactive" | "partial" | "active";
+    active_subpack_count: number;
+    subpack_count: number;
+  };
+  items: SourcePack[];
+};
 
 export type ConnectorSchedule = {
   id: string;
