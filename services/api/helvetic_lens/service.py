@@ -2603,6 +2603,23 @@ class HelveticLens:
             )
             return [durable_jobs.serialize(session, record) for record in records]
 
+    def ask_jobs(self, comparison_id: str, limit: int = 20):
+        with self.db.session() as session:
+            get(session, Comparison, comparison_id)
+            records = list(
+                session.scalars(
+                    select(Job)
+                    .where(
+                        Job.type == "ask",
+                        Job.target_type == "comparison",
+                        Job.target_id == comparison_id,
+                    )
+                    .order_by(Job.created_at.desc())
+                    .limit(max(1, min(50, limit)))
+                )
+            )
+            return [durable_jobs.serialize(session, record) for record in records]
+
     @staticmethod
     def _age_seconds(value: datetime | None, now: datetime) -> int | None:
         if value is None:
@@ -3251,14 +3268,58 @@ class HelveticLens:
                 result_id = result_json["id"]
                 result_url = f"/compare/{target_id}#impact"
             elif job_type == "ask":
-                mark(1, 1, "succeeded")
-                mark(1, 2, "running")
+                mark(0, 1, "running")
+
+                async def report_ask_progress(stage: str):
+                    with self.write_guard, self.db.session() as progress_session:
+                        if not durable_jobs.heartbeat(progress_session, job_id, worker):
+                            progress_session.commit()
+                            raise durable_jobs.JobCancelled()
+                        if stage == "evidence_selected":
+                            durable_jobs.progress(
+                                progress_session,
+                                job_id,
+                                current=1,
+                                step_position=1,
+                                step_state="succeeded",
+                                step_details={"stage": "selecting_evidence"},
+                            )
+                            durable_jobs.progress(
+                                progress_session,
+                                job_id,
+                                current=1,
+                                step_position=2,
+                                step_state="running",
+                                step_details={"stage": "generating"},
+                            )
+                        elif stage == "generated":
+                            durable_jobs.progress(
+                                progress_session,
+                                job_id,
+                                current=2,
+                                step_position=2,
+                                step_state="succeeded",
+                                step_details={"stage": "generating"},
+                            )
+                            durable_jobs.progress(
+                                progress_session,
+                                job_id,
+                                current=2,
+                                step_position=3,
+                                step_state="running",
+                                step_details={"stage": "validating"},
+                            )
+                        progress_session.commit()
+
                 result_json = await self.ask(
                     target_id,
                     payload.get("question", ""),
                     payload.get("history", []),
                     output_locale=payload.get("output_locale"),
+                    progress_callback=report_ask_progress,
                 )
+                # Cached and deterministic answers can finish before the model stages run.
+                mark(1, 1, "succeeded")
                 mark(2, 2, "succeeded")
                 mark(3, 3, "succeeded")
                 result_type = "answer"
@@ -4019,7 +4080,7 @@ class HelveticLens:
                 impact_report,
                 output_locale,
             )
-            job, _ = durable_jobs.enqueue(
+            job, reused = durable_jobs.enqueue(
                 session,
                 job_type="ask",
                 target_type="comparison",
@@ -4036,13 +4097,27 @@ class HelveticLens:
                 progress_total=3,
                 max_attempts=self.settings.job_max_attempts,
                 steps=[
-                    ("Route question and prepare evidence", {"comparison_id": comparison_id}),
-                    ("Run local inference", {}),
+                    ("Select saved evidence", {"comparison_id": comparison_id}),
+                    ("Generate cited answer", {}),
                     ("Validate and save answer", {}),
                 ],
             )
+            if reused and job.state in {"failed", "cancelled"}:
+                job = durable_jobs.retry(session, job.id)
+            reused_completed = reused and job.state == "succeeded"
+            if reused_completed and job.result_id:
+                record = session.get(AskRecord, job.result_id)
+                if record:
+                    record.use_count += 1
+                    record.last_used_at = utcnow()
             session.commit()
-            return durable_jobs.serialize(session, job)
+            serialized = durable_jobs.serialize(session, job)
+            if reused_completed and serialized.get("result"):
+                serialized["result"]["data"] = {
+                    **(serialized["result"].get("data") or {}),
+                    "cached": True,
+                }
+            return serialized
 
     @staticmethod
     def current_impact_report(
@@ -4207,6 +4282,7 @@ class HelveticLens:
         question: str,
         history: list[dict],
         output_locale: str | None = None,
+        progress_callback=None,
     ):
         settings, model_client = self.settings, self.model_client
         prompts = self.prompt_settings.model_copy(deep=True)
@@ -4252,6 +4328,8 @@ class HelveticLens:
                 impact_report,
                 output_locale,
             )
+        if progress_callback:
+            await progress_callback("evidence_selected")
         lock_key = comparison_id + ":" + key
         lock = self.ask_locks.setdefault(lock_key, asyncio.Lock())
         async with lock:
@@ -4267,18 +4345,33 @@ class HelveticLens:
                     cached.last_used_at = utcnow()
                     session.commit()
                     return self.ask_result(cached, cached=True)
-                record = AskRecord(
-                    comparison_id=comparison_id,
-                    cache_key=key,
-                    question=question.strip(),
-                    history=history[-4:],
-                    model=settings.apertus_model,
-                    prompt_revision=prompt_revision,
-                    context_mode=prompts.ask_context_mode,
-                    analysis_plan=analysis_plan,
-                    last_used_at=utcnow(),
+                record = session.scalar(
+                    select(AskRecord)
+                    .where(AskRecord.cache_key == key)
+                    .order_by(AskRecord.created_at.desc())
+                    .limit(1)
                 )
-                session.add(record)
+                if record:
+                    record.status = "pending"
+                    record.error = None
+                    record.result = {}
+                    record.coverage = {}
+                    record.provenance = {}
+                    record.analysis_plan = analysis_plan
+                    record.last_used_at = utcnow()
+                else:
+                    record = AskRecord(
+                        comparison_id=comparison_id,
+                        cache_key=key,
+                        question=question.strip(),
+                        history=history[-4:],
+                        model=settings.apertus_model,
+                        prompt_revision=prompt_revision,
+                        context_mode=prompts.ask_context_mode,
+                        analysis_plan=analysis_plan,
+                        last_used_at=utcnow(),
+                    )
+                    session.add(record)
                 session.commit()
                 record_id = record.id
             with correlation_context(comparison_id=comparison.id, ask_record_id=record_id):
@@ -4301,6 +4394,8 @@ class HelveticLens:
                         impact_report,
                         output_locale,
                     )
+                    if progress_callback:
+                        await progress_callback("generated")
                 except Exception as exc:
                     trace = (
                         model_client.end_trace(trace_token)

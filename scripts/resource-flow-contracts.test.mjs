@@ -365,10 +365,13 @@ test("flow call sites use targeted cache contracts instead of global refresh bro
     );
   }
 
+  assert.ok(comparison.includes("resources.comparisonAskJobs(comparisonId)"));
   assert.ok(
-    comparison.includes("primeResource(resources.job(current.id), current)"),
+    comparison.includes(
+      "primeResourceForLocale(resources.job(next.id), locale, next)",
+    ),
   );
-  assert.ok(comparison.includes("fetchResource(resources.job(current.id))"));
+  assert.ok(comparison.includes("askJobs.setData"));
   assert.ok(
     comparison.includes(
       "analysisJobActive && effectiveAnalysisJob ? resources.job(effectiveAnalysisJob.id) : null",

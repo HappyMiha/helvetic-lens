@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -27,12 +27,10 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   api,
   errorText,
-  fetchResource,
   invalidateResources,
   label,
   mutateResource,
   mutateResourceForLocale,
-  primeResource,
   primeResourceForLocale,
   useResource,
 } from "@/lib/api";
@@ -210,19 +208,6 @@ const localizedValues: Record<ComparisonLocale, Record<string, string>> = {
 
 function localLabel(value: string, locale: ComparisonLocale) {
   return localizedValues[locale][value] || label(value);
-}
-
-async function waitForJob(initial: Job, timeoutMessage: string): Promise<Job> {
-  let current = initial;
-  primeResource(resources.job(current.id), current);
-  const deadline = Date.now() + 10 * 60 * 1000;
-  while (!JOB_TERMINAL_STATES.has(current.state)) {
-    if (Date.now() >= deadline) throw new Error(timeoutMessage);
-    await new Promise((resolve) => window.setTimeout(resolve, 1000));
-    current = await fetchResource(resources.job(current.id));
-    primeResource(resources.job(current.id), current);
-  }
-  return current;
 }
 
 function completedAnalysis(job: Job): Analysis | null {
@@ -2256,15 +2241,18 @@ function AskPanel({
 }) {
   const { locale, t } = useI18n();
   const [question, setQuestion] = useState(""),
-    [busy, setBusy] = useState(false),
+    [submitting, setSubmitting] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
+  const knownJobStates = useRef(new Map<string, string>());
+  const handledTerminalJobs = useRef(new Set<string>());
   const promptLocale = askPrompts[locale.slice(0, 2)]
     ? locale.slice(0, 2)
     : "en";
   const savedHistory = useResource<AIHistoryPage>(
     resources.comparisonHistory(comparisonId),
   );
+  const askJobs = useResource<Job[]>(resources.comparisonAskJobs(comparisonId));
   const history = (savedHistory.data?.items || [])
     .filter((item) => item.type === "question")
     .sort(
@@ -2276,10 +2264,64 @@ function AskPanel({
     .reverse();
   const ready = configured && !blockedReason;
   const quickQuestions = askPrompts[promptLocale];
+  const jobs = askJobs.data || [];
+  const activeJob = jobs.find((job) => !JOB_TERMINAL_STATES.has(job.state));
+  const historyRecordIds = new Set(history.map((item) => item.id));
+  const visibleJobs = jobs
+    .filter(
+      (job) =>
+        !job.result?.id ||
+        !historyRecordIds.has(job.result.id) ||
+        !JOB_TERMINAL_STATES.has(job.state),
+    )
+    .slice(0, 3);
+
+  useEffect(() => {
+    for (const job of jobs) {
+      const previous = knownJobStates.current.get(job.id);
+      knownJobStates.current.set(job.id, job.state);
+      if (!JOB_TERMINAL_STATES.has(job.state)) continue;
+      if (!handledTerminalJobs.current.has(job.id)) {
+        handledTerminalJobs.current.add(job.id);
+        void invalidateResources(resources.comparisonHistory(comparisonId));
+      }
+      if (!previous || JOB_TERMINAL_STATES.has(previous)) continue;
+      const result = job.result?.data as Answer | undefined;
+      const completed = job.state === "succeeded";
+      setNotice(
+        completed
+          ? result?.cached
+            ? t("compare.answerCached")
+            : t("compare.answerReady")
+          : t("compare.askEnded", {
+              state: localLabel(job.state, promptLocale as ComparisonLocale),
+            }),
+      );
+      if (
+        completed &&
+        document.hidden &&
+        "Notification" in window &&
+        Notification.permission === "granted"
+      ) {
+        new Notification("Helvetic Lens", {
+          body: t("compare.answerReadyShort"),
+        });
+      }
+    }
+  }, [comparisonId, jobs, promptLocale, t]);
+
+  function updateJob(next: Job) {
+    primeResourceForLocale(resources.job(next.id), locale, next);
+    askJobs.setData((current) => [
+      next,
+      ...(current || []).filter((item) => item.id !== next.id),
+    ]);
+  }
+
   async function ask(event: React.FormEvent) {
     event.preventDefault();
     if (!question.trim()) return;
-    setBusy(true);
+    setSubmitting(true);
     setError("");
     setNotice("");
     try {
@@ -2305,21 +2347,47 @@ function AskPanel({
           }),
         },
       );
-      const job = await waitForJob(queued, t("compare.queueTimeout"));
-      if (job.state !== "succeeded")
-        throw new Error(job.error?.detail || t("compare.answerFailed"));
-      const answer = job.result?.data as Answer | undefined;
-      if (!answer) throw new Error(t("compare.answerMissing"));
+      updateJob(queued);
       setQuestion("");
       setNotice(
-        answer.cached ? t("compare.answerCached") : t("compare.answerSaved"),
+        JOB_TERMINAL_STATES.has(queued.state)
+          ? (queued.result?.data as Answer | undefined)?.cached
+            ? t("compare.answerCached")
+            : t("compare.answerReady")
+          : t("compare.askSubmitted"),
       );
-      void invalidateResources(resources.comparisonHistory(comparisonId));
+      if (JOB_TERMINAL_STATES.has(queued.state))
+        void invalidateResources(resources.comparisonHistory(comparisonId));
     } catch (cause) {
       setError(errorText(cause));
-      void invalidateResources(resources.comparisonHistory(comparisonId));
     } finally {
-      setBusy(false);
+      setSubmitting(false);
+    }
+  }
+
+  async function cancel(job: Job) {
+    setError("");
+    try {
+      updateJob(await api<Job>(`/jobs/${job.id}/cancel`, { method: "POST" }));
+      setNotice(t("compare.askCancelled"));
+    } catch (cause) {
+      setError(errorText(cause));
+    }
+  }
+
+  async function retry(job: Job) {
+    setError("");
+    setNotice("");
+    try {
+      const retried = await api<Job>(`/jobs/${job.id}/retry`, {
+        method: "POST",
+      });
+      handledTerminalJobs.current.delete(job.id);
+      updateJob(retried);
+      setNotice(t("compare.askResubmitted"));
+    } catch (cause) {
+      setError(errorText(cause));
+      setQuestion(job.request?.question || question);
     }
   }
   return (
@@ -2349,11 +2417,21 @@ function AskPanel({
               onEvidence={onEvidence}
             />
           ))}
+          {visibleJobs.map((job) => (
+            <AskJobCard
+              key={job.id}
+              job={job}
+              onCancel={() => cancel(job)}
+              onRetry={() => retry(job)}
+              onRevise={() => setQuestion(job.request?.question || "")}
+            />
+          ))}
         </div>
         {savedHistory.loading && !savedHistory.data && (
           <Loading text={t("compare.loadingQuestions")} />
         )}
         <ErrorNote message={savedHistory.error} />
+        <ErrorNote message={askJobs.error} />
         {blockedReason && <ErrorNote message={blockedReason} />}
         <div
           className="ask-intents"
@@ -2386,7 +2464,7 @@ function AskPanel({
                 ? t("compare.askPlaceholder")
                 : blockedReason || t("compare.connectToAsk")
             }
-            disabled={!ready || busy}
+            disabled={!ready || submitting || !!activeJob}
             maxLength={2000}
             rows={3}
           />
@@ -2395,14 +2473,177 @@ function AskPanel({
           <Button
             type="submit"
             className="mt-3 w-full"
-            disabled={!ready || busy || !question.trim()}
+            disabled={!ready || submitting || !!activeJob || !question.trim()}
           >
-            {busy ? <Loader2 className="animate-spin" /> : <Send />}
-            {busy ? t("compare.reviewingEvidence") : t("compare.askCitations")}
+            {submitting ? <Loader2 className="animate-spin" /> : <Send />}
+            {submitting
+              ? t("compare.submittingQuestion")
+              : activeJob
+                ? t("compare.questionInProgress")
+                : t("compare.askCitations")}
           </Button>
         </form>
       </div>
     </section>
+  );
+}
+
+function AskJobCard({
+  job,
+  onCancel,
+  onRetry,
+  onRevise,
+}: {
+  job: Job;
+  onCancel: () => void;
+  onRetry: () => void;
+  onRevise: () => void;
+}) {
+  const { t } = useI18n();
+  const result = job.result?.data as Answer | undefined;
+  const active = !JOB_TERMINAL_STATES.has(job.state);
+  const limited =
+    job.state === "succeeded" &&
+    (!result?.supported || result?.coverage?.limited);
+  const runningStep = job.steps.find((step) => step.state === "running");
+  const stage =
+    job.state === "waiting_for_model"
+      ? "startingModel"
+      : ["queued", "dispatched", "retrying"].includes(job.state)
+        ? "queued"
+        : job.state === "succeeded"
+          ? limited
+            ? "limited"
+            : "completed"
+          : job.state === "failed"
+            ? "failed"
+            : job.state === "cancelled"
+              ? "cancelled"
+              : runningStep?.position === 1
+                ? "selectingEvidence"
+                : runningStep?.position === 3
+                  ? "validating"
+                  : "generating";
+  const percent = JOB_TERMINAL_STATES.has(job.state)
+    ? 100
+    : Math.max(
+        4,
+        Math.round(
+          (job.progress.current / Math.max(1, job.progress.total)) * 100,
+        ),
+      );
+  const code = job.error?.code || "";
+  const recovery =
+    job.state === "waiting_for_model" || code.includes("model")
+      ? t("compare.askRecoveryModel")
+      : code.includes("context")
+        ? t("compare.askRecoveryContext")
+        : code.includes("valid") ||
+            code.includes("citation") ||
+            code.includes("structured")
+          ? t("compare.askRecoveryValidation")
+          : !result?.supported && job.state === "succeeded"
+            ? t("compare.askRecoveryEvidence")
+            : job.state === "failed"
+              ? t("compare.askRecoveryRetry")
+              : ["queued", "dispatched", "retrying"].includes(job.state)
+                ? job.state === "retrying"
+                  ? t("compare.askRecoveryQueue")
+                  : t("compare.queueTimeout")
+                : "";
+  const stageLabel = (() => {
+    switch (stage) {
+      case "queued":
+        return t("compare.askStage.queued");
+      case "startingModel":
+        return t("compare.askStage.startingModel");
+      case "selectingEvidence":
+        return t("compare.askStage.selectingEvidence");
+      case "generating":
+        return t("compare.askStage.generating");
+      case "validating":
+        return t("compare.askStage.validating");
+      case "completed":
+        return t("compare.askStage.completed");
+      case "limited":
+        return t("compare.askStage.limited");
+      case "failed":
+        return t("compare.askStage.failed");
+      default:
+        return t("compare.askStage.cancelled");
+    }
+  })();
+  return (
+    <article
+      className={`ask-job-card ${job.state} ${limited ? "limited" : ""}`}
+      aria-live={active ? "polite" : "assertive"}
+      aria-atomic="true"
+    >
+      <p className="question-bubble">
+        {job.request?.question || t("compare.savedQuestion")}
+      </p>
+      <div className="ask-job-heading">
+        {active ? (
+          <Loader2 className="animate-spin" size={15} />
+        ) : job.state === "succeeded" ? (
+          <Check size={15} />
+        ) : (
+          <XCircle size={15} />
+        )}
+        <div>
+          <strong>{stageLabel}</strong>
+          <span>
+            {job.queue_position
+              ? t("compare.queuePosition", { position: job.queue_position })
+              : t("compare.backgroundAttempt", {
+                  attempt: Math.max(1, job.attempts),
+                  total: job.max_attempts,
+                })}
+          </span>
+        </div>
+      </div>
+      <div className="analysis-job-track" aria-hidden="true">
+        <span style={{ width: `${percent}%` }} />
+      </div>
+      {job.state === "failed" && (
+        <ErrorNote message={job.error?.detail || t("compare.answerFailed")} />
+      )}
+      {active && runningStep?.position === 1 && (
+        <p className="ask-job-recovery">{t("compare.reviewingEvidence")}</p>
+      )}
+      {recovery && <p className="ask-job-recovery">{recovery}</p>}
+      {job.state === "succeeded" && (
+        <p className="ask-job-result-kind">
+          {!result
+            ? t("compare.answerMissing")
+            : result.cached
+              ? t("compare.answerFromCache")
+              : `${t("compare.answerFromInference")} · ${t("compare.answerSaved")}`}
+        </p>
+      )}
+      <div className="ask-job-actions">
+        {active && (
+          <Button type="button" size="sm" variant="outline" onClick={onCancel}>
+            <XCircle size={14} /> {t("compare.cancelQuestion")}
+          </Button>
+        )}
+        {job.state === "waiting_for_model" && (
+          <Button asChild size="sm" variant="outline">
+            <Link href="/models">{t("compare.openModels")}</Link>
+          </Button>
+        )}
+        {["failed", "cancelled"].includes(job.state) && (
+          <Button type="button" size="sm" variant="outline" onClick={onRetry}>
+            {t("compare.retryQuestion")}
+          </Button>
+        )}
+        {(job.state === "failed" || limited) && (
+          <Button type="button" size="sm" variant="ghost" onClick={onRevise}>
+            {t("compare.reviseQuestion")}
+          </Button>
+        )}
+      </div>
+    </article>
   );
 }
 

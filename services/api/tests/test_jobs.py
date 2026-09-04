@@ -239,7 +239,105 @@ def test_impact_and_ask_use_durable_ai_queues_and_return_saved_results(harness):
     assert answer_job["result"]["data"]["record_id"]
     assert answer_job["result"]["data"]["context_mode"] == "impact_report"
     assert answer_job["result"]["data"]["coverage"]["provider_calls"] == 0
+    assert answer_job["steps"][0]["details"]["stage"] == "selecting_evidence"
+    assert answer_job["steps"][1]["details"]["stage"] == "generating"
+    assert answer_job["steps"][2]["details"]["stage"] == "validating"
     assert len(model.calls) == 1
+
+    repeated = client.post(
+        f"/api/comparisons/{comparison['id']}/ask-jobs",
+        json={"question": "What changed?", "history": []},
+    ).json()
+    assert repeated["id"] == answer_job["id"]
+    assert repeated["result"]["data"]["cached"] is True
+    assert len(model.calls) == 1
+    questions = [
+        item
+        for item in client.get(f"/api/comparisons/{comparison['id']}/ai-history").json()[
+            "items"
+        ]
+        if item["type"] == "question"
+    ]
+    assert len(questions) == 1 and questions[0]["use_count"] == 2
+
+
+def test_ask_job_is_immediately_recoverable_and_duplicate_submission_reuses_it(harness):
+    client, _, service, _ = harness
+    law = add_law(client)
+    old = import_old(client, law["id"])["version"]
+    comparison = client.post(
+        "/api/comparisons",
+        json={"old_version_id": old["id"], "new_version_id": law["current_version_id"]},
+    ).json()
+    service.settings.apertus_base_url = "https://model.example/v1"
+    service.settings.job_execution_mode = "celery"
+    payload = {
+        "question": "Nothing makes sense but this is interesting",
+        "history": [{"question": "secret prior question", "answer": "secret prior answer"}],
+        "output_locale": "en-CH",
+    }
+
+    first = client.post(f"/api/comparisons/{comparison['id']}/ask-jobs", json=payload)
+    assert first.status_code == 202
+    queued = first.json()
+    assert queued["state"] == "queued"
+    assert queued["request"] == {
+        "question": payload["question"],
+        "output_locale": "en-CH",
+    }
+    assert "history" not in queued["request"]
+
+    recovered = client.get(f"/api/comparisons/{comparison['id']}/ask-jobs").json()
+    assert [item["id"] for item in recovered] == [queued["id"]]
+    assert recovered[0]["request"]["question"] == payload["question"]
+
+    assert client.post(f"/api/jobs/{queued['id']}/cancel").json()["state"] == "cancelled"
+    retried = client.post(f"/api/comparisons/{comparison['id']}/ask-jobs", json=payload).json()
+    assert retried["id"] == queued["id"]
+    assert retried["state"] == "queued"
+    assert len(client.get(f"/api/comparisons/{comparison['id']}/ask-jobs").json()) == 1
+
+
+def test_retrying_ask_reuses_the_failed_history_record(harness):
+    client, _, service, model = harness
+    law = add_law(client)
+    old = import_old(client, law["id"])["version"]
+    comparison = client.post(
+        "/api/comparisons",
+        json={"old_version_id": old["id"], "new_version_id": law["current_version_id"]},
+    ).json()
+    service.settings.apertus_base_url = "https://model.example/v1"
+    payload = {"question": "Explain Article 1", "history": []}
+    model.fail = True
+
+    failed_attempt = client.post(
+        f"/api/comparisons/{comparison['id']}/ask-jobs", json=payload
+    ).json()
+    assert failed_attempt["state"] == "retrying"
+    failed_history = [
+        item
+        for item in client.get(f"/api/comparisons/{comparison['id']}/ai-history").json()[
+            "items"
+        ]
+        if item["type"] == "question"
+    ]
+    assert len(failed_history) == 1 and failed_history[0]["status"] == "failed"
+
+    model.fail = False
+    completed = client.post(
+        f"/api/comparisons/{comparison['id']}/ask-jobs", json=payload
+    ).json()
+    assert completed["id"] == failed_attempt["id"] and completed["state"] == "succeeded"
+    completed_history = [
+        item
+        for item in client.get(f"/api/comparisons/{comparison['id']}/ai-history").json()[
+            "items"
+        ]
+        if item["type"] == "question"
+    ]
+    assert len(completed_history) == 1
+    assert completed_history[0]["id"] == failed_history[0]["id"]
+    assert completed_history[0]["status"] == "succeeded"
 
 
 def test_resubmitting_cancelled_impact_job_requeues_same_persisted_work(harness):

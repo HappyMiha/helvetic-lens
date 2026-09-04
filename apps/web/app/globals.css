@@ -2039,6 +2039,58 @@ ins {
   max-height: 550px;
   overflow-y: auto;
 }
+.ask-job-card {
+  background: #f8faf4;
+  border: 1px solid #dce5d2;
+  border-radius: 9px;
+  display: grid;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 12px;
+}
+.ask-job-card.failed,
+.ask-job-card.cancelled {
+  background: #fff7f4;
+  border-color: #e8b5a8;
+}
+.ask-job-card.limited {
+  background: #fffaf0;
+  border-color: #eadfc4;
+}
+.ask-job-card .question-bubble {
+  margin: 0;
+}
+.ask-job-heading {
+  align-items: center;
+  display: flex;
+  gap: 9px;
+}
+.ask-job-heading > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.ask-job-heading strong {
+  color: #47563d;
+  font-size: 11px;
+}
+.ask-job-heading span,
+.ask-job-recovery,
+.ask-job-result-kind {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.55;
+  margin: 0;
+}
+.ask-job-result-kind {
+  color: #526648;
+  font-weight: 700;
+}
+.ask-job-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
 .chat-turn {
   margin-bottom: 16px;
 }
@@ -2064,6 +2116,15 @@ ins {
   color: #7b866e;
   font-size: 10px;
   line-height: 1.55;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ask-job-card .animate-spin {
+    animation: none;
+  }
+  .analysis-job-track span {
+    transition: none;
+  }
 }
 .ask-answer-route {
   color: #64725b;

@@ -608,6 +608,10 @@ export type Job = {
   max_attempts: number;
   queue_position: number | null;
   cancel_requested: boolean;
+  request: {
+    question: string;
+    output_locale: string | null;
+  } | null;
   error: { code: string; detail: string } | null;
   result: {
     type: string | null;

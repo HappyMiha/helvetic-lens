@@ -16,7 +16,6 @@ from redis.exceptions import RedisError
 from sqlalchemy import select, text
 from sqlalchemy.exc import SQLAlchemyError
 
-from .analysis import classify_question_intent
 from .auth import CSRF_COOKIE, SESSION_COOKIE, AuthService, RateLimiter
 from .auth_mail import AuthMailer
 from .config import DomainError, Settings
@@ -1136,6 +1135,10 @@ def create_app(
             selected_locale(request, data.output_locale),
         )
 
+    @app.get("/api/comparisons/{comparison_id}/ask-jobs")
+    def ask_jobs(comparison_id: str, limit: int = Query(default=20, ge=1, le=50)):
+        return service.ask_jobs(comparison_id, limit)
+
     @app.post("/api/comparisons/{comparison_id}/ask-jobs", status_code=202)
     async def ask_job(comparison_id: str, data: QuestionInput, request: Request):
         job = service.enqueue_ask(
@@ -1144,8 +1147,11 @@ def create_app(
             [q.model_dump() for q in data.history],
             selected_locale(request, data.output_locale),
         )
-        route = classify_question_intent(data.question)
-        if settings.job_execution_mode == "inline" or route["intent"] in {"vague", "off_topic"}:
+        if settings.job_execution_mode == "inline" and job["state"] not in {
+            "succeeded",
+            "failed",
+            "cancelled",
+        }:
             return await service.execute_job(job["id"])
         return job
 

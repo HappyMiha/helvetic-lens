@@ -111,7 +111,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-066](#hl-066) | P0       | DONE     | HL-035, HL-047, HL-065                                 | Task-based navigation and canonical Company profile page            |
 | [HL-067](#hl-067) | P0       | DONE     | HL-030, HL-063, HL-065                                 | Keyed resource cache and targeted interface updates                 |
 | [HL-068](#hl-068) | P0       | DONE     | HL-063, HL-065, HL-067                                 | Responsive comparison decision workspace                            |
-| [HL-069](#hl-069) | P0       | PLANNED  | HL-030, HL-062, HL-067, HL-068                         | Asynchronous Ask experience with real job progress                  |
+| [HL-069](#hl-069) | P0       | DONE     | HL-030, HL-062, HL-067, HL-068                         | Asynchronous Ask experience with real job progress                  |
 | [HL-070](#hl-070) | P0       | PLANNED  | HL-065, HL-066, HL-068, HL-069                         | Working mobile information architecture at 390 px                   |
 | [HL-071](#hl-071) | P0       | PLANNED  | HL-038–HL-043, HL-050, HL-055                          | Versioned source capability catalogue and honest coverage           |
 | [HL-072](#hl-072) | P0       | PLANNED  | HL-033, HL-035, HL-042, HL-071                         | Organization source packs and Swiss Federal Starter                 |
@@ -1299,6 +1299,8 @@ Acceptance criteria:
 - Retrying is idempotent, distinguishes cached results from new inference, and never creates duplicate shared history from double click, reconnect, or browser back/forward.
 - Error states preserve the question and provide a specific recovery action for model unavailable, queue delay, context limit, validation failure, and unsupported evidence.
 - Progress and completion use `aria-live` appropriately, respect reduced motion, and remain comprehensible without an animated mascot.
+
+Completed on 4 September 2026. Ask now persists and returns a durable job immediately, restores active jobs after navigation, and reports queue, evidence selection, generation, validation, completion, limited, failure, and cancellation states from backend progress. The comparison workspace updates Ask history without reloading the saved diff, preserves failed questions for revision, provides model/context/validation/evidence recovery actions, and can cancel or idempotently retry the same job. Completed duplicate submissions reuse one history record and visibly distinguish a cached answer from new inference. Five-locale text, `aria-live`, reduced-motion behavior, API regressions, resource-flow contracts, and the rebuilt Compose stack were verified.
 
 <a id="hl-070"></a>
 

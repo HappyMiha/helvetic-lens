@@ -179,6 +179,15 @@ export const resources = {
       },
     ),
 
+  comparisonAskJobs: (id: string) =>
+    key<Job[]>(`comparison:ask-jobs:${id}`, `/comparisons/${id}/ask-jobs`, {
+      owner: "comparison",
+      tags: ["ask-jobs", "jobs", `comparison:${id}`],
+      staleMs: 1_000,
+      pollMs: 1_000,
+      priority: "interactive",
+    }),
+
   registry: <T = unknown>(query = "") => {
     const path = withQuery("/registry", query);
     return key<T>(`monitoring:${path}`, path, {
