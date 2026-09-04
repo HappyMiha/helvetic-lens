@@ -152,6 +152,58 @@ def test_context_endpoint_labels_only_a_validated_tenant_entity(harness):
     assert "validated_entity_label" in result["privacy"]["included"]
 
 
+def test_personal_assistant_conversation_persists_draft_and_handoffs(harness):
+    client, _, _, _ = harness
+    law = add_law(client)
+    old = import_old(client, law["id"])["version"]
+    comparison = client.post(
+        "/api/comparisons",
+        json={"old_version_id": old["id"], "new_version_id": law["current_version_id"]},
+    ).json()
+    context = {
+        "intent": "explain_screen",
+        "route": "/compare",
+        "entity": {"kind": "comparison", "id": comparison["id"]},
+        "locale": "de-CH",
+    }
+
+    opened = client.post("/api/assistant/conversations", json=context)
+    assert opened.status_code == 200, opened.text
+    conversation = opened.json()
+    assert conversation["entity"]["label"] == law["name"]
+    assert conversation["visibility"] == "personal"
+
+    saved = client.patch(
+        f"/api/assistant/conversations/{conversation['id']}",
+        json={"draft": "Welche Frist hat sich geändert?"},
+    )
+    assert saved.status_code == 200, saved.text
+    assert saved.json()["draft"] == "Welche Frist hat sich geändert?"
+
+    handed_off = client.post(
+        f"/api/assistant/conversations/{conversation['id']}/handoffs",
+        json={"question": "Welche Frist hat sich geändert?"},
+    )
+    assert handed_off.status_code == 200, handed_off.text
+    assert handed_off.json()["draft"] == ""
+    assert handed_off.json()["handoffs"][-1]["question"] == "Welche Frist hat sich geändert?"
+
+    reopened = client.post("/api/assistant/conversations", json=context)
+    assert reopened.status_code == 200, reopened.text
+    assert reopened.json()["id"] == conversation["id"]
+    assert reopened.json()["handoffs"] == handed_off.json()["handoffs"]
+
+
+def test_personal_assistant_conversation_rejects_unknown_record(harness):
+    client, _, _, _ = harness
+    response = client.patch(
+        "/api/assistant/conversations/00000000-0000-0000-0000-000000000099",
+        json={"draft": "private"},
+    )
+    assert response.status_code == 404
+    assert response.json()["code"] == "not_found"
+
+
 def test_remark_prompt_contains_only_bounded_context_and_versioned_persona():
     data = AssistantRemarkInput.model_validate(
         {

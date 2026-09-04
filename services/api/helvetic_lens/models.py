@@ -1234,6 +1234,36 @@ class AskRecord(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
 
 
+class AssistantConversation(Base):
+    """Private assistant state for one principal and one validated product context."""
+
+    __tablename__ = "assistant_conversations"
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id",
+            "principal_key",
+            "context_key",
+            name="uq_assistant_conversation_principal_context",
+        ),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    user_id: Mapped[str | None] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    principal_key: Mapped[str] = mapped_column(String(80), index=True)
+    context_key: Mapped[str] = mapped_column(String(100), index=True)
+    route: Mapped[str] = mapped_column(String(40))
+    entity_kind: Mapped[str | None] = mapped_column(String(40))
+    entity_id: Mapped[str | None] = mapped_column(String(36), index=True)
+    title: Mapped[str] = mapped_column(String(300), default="")
+    locale: Mapped[str] = mapped_column(String(5), default="en-CH")
+    draft: Mapped[str] = mapped_column(Text, default="")
+    handoffs_json: Mapped[list] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
 class Job(Base):
     __tablename__ = "jobs"
     __table_args__ = (
@@ -1340,6 +1370,7 @@ ORGANIZATION_SCOPED_MODELS = (
     ActionDecision,
     RelationImpactAnalysis,
     AskRecord,
+    AssistantConversation,
     Job,
     JobStep,
     OutboxMessage,

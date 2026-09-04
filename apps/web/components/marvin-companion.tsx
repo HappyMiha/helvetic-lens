@@ -81,6 +81,13 @@ type AssistantRemarkResponse = {
   };
 };
 
+type AssistantConversationResponse = {
+  id: string;
+  draft: string;
+  handoffs: Array<{ id: string; question: string; created_at: string }>;
+  visibility: "personal";
+};
+
 const GENERATED_REMARK_KEYS = new Set([
   "companion.generated.bureaucracy",
   "companion.generated.evidence",
@@ -293,6 +300,12 @@ export function MarvinCompanion({
   const [bubbleVisible, setBubbleVisible] = useState(false);
   const [bubbleKey, setBubbleKey] = useState<string | null>(null);
   const [questionDraft, setQuestionDraft] = useState("");
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [conversationLoaded, setConversationLoaded] = useState(false);
+  const [recentQuestions, setRecentQuestions] = useState<
+    AssistantConversationResponse["handoffs"]
+  >([]);
+  const [handoffPending, setHandoffPending] = useState(false);
   const [contextAttached, setContextAttached] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [serverQuipAllowed, setServerQuipAllowed] = useState(false);
@@ -338,20 +351,31 @@ export function MarvinCompanion({
     let active = true;
     setServerQuipAllowed(false);
     setContextLabel(null);
+    setConversationId(null);
+    setConversationLoaded(false);
+    setRecentQuestions([]);
+    const contextPayload = {
+      schema_version: "assistant-context.v1",
+      intent: "explain_screen",
+      route: contractRoute(pathname),
+      ...(entity ? { entity } : {}),
+      locale,
+    };
     Promise.allSettled([
       contextAttached
         ? api<AssistantContextResponse>("/assistant/context", {
             method: "POST",
-            body: JSON.stringify({
-              schema_version: "assistant-context.v1",
-              intent: "explain_screen",
-              route: contractRoute(pathname),
-              ...(entity ? { entity } : {}),
-            }),
+            body: JSON.stringify(contextPayload),
           })
         : Promise.resolve(null),
       api<AssistantRuntime>("/assistant/runtime"),
-    ]).then(([contextResult, runtimeResult]) => {
+      contextAttached && comparisonId
+        ? api<AssistantConversationResponse>("/assistant/conversations", {
+            method: "POST",
+            body: JSON.stringify(contextPayload),
+          })
+        : Promise.resolve(null),
+    ]).then(([contextResult, runtimeResult, conversationResult]) => {
       if (!active) return;
       setServerQuipAllowed(
         contextResult.status === "fulfilled" &&
@@ -365,11 +389,28 @@ export function MarvinCompanion({
       setRuntime(
         runtimeResult.status === "fulfilled" ? runtimeResult.value : null,
       );
+      if (
+        conversationResult.status === "fulfilled" &&
+        conversationResult.value
+      ) {
+        setConversationId(conversationResult.value.id);
+        setRecentQuestions(conversationResult.value.handoffs);
+        setQuestionDraft(
+          conversationResult.value.draft ||
+            window.sessionStorage.getItem(DRAFT_KEY_PREFIX + comparisonId) ||
+            "",
+        );
+        setConversationLoaded(true);
+      } else if (comparisonId) {
+        setQuestionDraft(
+          window.sessionStorage.getItem(DRAFT_KEY_PREFIX + comparisonId) || "",
+        );
+      }
     });
     return () => {
       active = false;
     };
-  }, [contextAttached, entity, hydrated, pathname]);
+  }, [comparisonId, contextAttached, entity, hydrated, locale, pathname]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -427,13 +468,18 @@ export function MarvinCompanion({
   );
 
   useEffect(() => {
-    if (!hydrated) return;
-    setQuestionDraft(
-      comparisonId
-        ? window.sessionStorage.getItem(DRAFT_KEY_PREFIX + comparisonId) || ""
-        : "",
-    );
-  }, [comparisonId, hydrated]);
+    if (!conversationId || !conversationLoaded || !comparisonId) return;
+    const timer = window.setTimeout(() => {
+      void api<AssistantConversationResponse>(
+        `/assistant/conversations/${conversationId}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ draft: questionDraft }),
+        },
+      ).catch(() => undefined);
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [comparisonId, conversationId, conversationLoaded, questionDraft]);
 
   useEffect(() => {
     setContextAttached(true);
@@ -586,10 +632,25 @@ export function MarvinCompanion({
     else window.sessionStorage.removeItem(DRAFT_KEY_PREFIX + comparisonId);
   }
 
-  function handQuestionToCitedAsk(event: React.FormEvent) {
+  async function handQuestionToCitedAsk(event: React.FormEvent) {
     event.preventDefault();
     const question = questionDraft.trim();
     if (!comparisonId || !question) return;
+    setHandoffPending(true);
+    if (conversationId) {
+      try {
+        const saved = await api<AssistantConversationResponse>(
+          `/assistant/conversations/${conversationId}/handoffs`,
+          {
+            method: "POST",
+            body: JSON.stringify({ question }),
+          },
+        );
+        setRecentQuestions(saved.handoffs);
+      } catch {
+        // The cited Ask workflow remains available if personal history is offline.
+      }
+    }
     window.sessionStorage.removeItem(DRAFT_KEY_PREFIX + comparisonId);
     setQuestionDraft("");
     window.dispatchEvent(
@@ -598,6 +659,7 @@ export function MarvinCompanion({
       }),
     );
     onOpenChange(false);
+    setHandoffPending(false);
   }
 
   if (!hydrated || !preferences.enabled) return null;
@@ -717,10 +779,35 @@ export function MarvinCompanion({
                   value={questionDraft}
                 />
                 <small>{t("companion.draftPrivacy")}</small>
-                <button disabled={!questionDraft.trim()} type="submit">
-                  <Send size={15} />
+                <button
+                  disabled={!questionDraft.trim() || handoffPending}
+                  type="submit"
+                >
+                  {handoffPending ? (
+                    <Loader2 className="animate-spin" size={15} />
+                  ) : (
+                    <Send size={15} />
+                  )}
                   {t("companion.openCitedAsk")}
                 </button>
+                {recentQuestions.length > 0 && (
+                  <div className="marvin-recent-questions">
+                    <strong>{t("companion.recentQuestions")}</strong>
+                    {recentQuestions
+                      .slice(-3)
+                      .reverse()
+                      .map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => updateQuestionDraft(item.question)}
+                          title={item.question}
+                          type="button"
+                        >
+                          {item.question}
+                        </button>
+                      ))}
+                  </div>
+                )}
               </form>
             )}
 

@@ -14,17 +14,19 @@ from pydantic import BaseModel, ConfigDict, Field
 from redis import Redis
 from redis.exceptions import RedisError
 from sqlalchemy import select, text
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from .assistant_contract import AssistantContextInput, AssistantRemarkInput, build_assistant_context
 from .auth import CSRF_COOKIE, SESSION_COOKIE, AuthService, RateLimiter
 from .auth_mail import AuthMailer
 from .config import DomainError, Settings
+from .db import utcnow
 from .impact_inbox import ImpactInboxFilters
 from .locales import locale_from_accept_language
 from .model_settings import ApertusSettingsInput
 from .models import (
     AdministrativeAudit,
+    AssistantConversation,
     Comparison,
     DocumentWatch,
     Job,
@@ -101,6 +103,14 @@ class QuestionInput(HistoryQuestion):
 
 class AnalysisInput(Input):
     output_locale: Literal["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"] | None = None
+
+
+class AssistantDraftInput(Input):
+    draft: str = Field(default="", max_length=2000)
+
+
+class AssistantHandoffInput(Input):
+    question: str = Field(min_length=1, max_length=2000)
 
 
 class ActionDecisionInput(Input):
@@ -261,7 +271,7 @@ def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
         return "scan", 20, 300
     if path.endswith("/ask") or path.endswith("/ask-jobs") or path == "/api/monitoring-topics/draft":
         return "ai", 30, 300
-    if path in {"/api/assistant/context", "/api/assistant/remark"}:
+    if path.startswith("/api/assistant/"):
         return "assistant_context", 120, 300
     if path.endswith("/analyse") or path.endswith("/analyse-jobs"):
         return "ai", 20, 300
@@ -396,6 +406,9 @@ def create_app(
             "/api/assistant/context",
             "/api/assistant/remark",
         }
+        viewer_assistant_state = path.startswith("/api/assistant/conversations/") or (
+            path == "/api/assistant/conversations"
+        )
         viewer_personal_state = (
             path.startswith("/api/impact-inbox/events/") and path.endswith("/state")
         ) or (path.startswith("/api/registry/events/") and path.endswith("/read"))
@@ -405,6 +418,7 @@ def create_app(
             and request.method in {"POST", "PUT", "PATCH", "DELETE"}
             and not (identity.platform_admin and platform_path)
             and path not in viewer_allowed_mutations
+            and not viewer_assistant_state
             and not viewer_personal_state
         ):
             return JSONResponse(
@@ -723,6 +737,43 @@ def create_app(
                     return f"{job.type.replace('_', ' ').title()} · {job.id[:8]}"
         return None
 
+    def assistant_principal(request: Request) -> tuple[str | None, str]:
+        identity = request.state.identity
+        if identity:
+            return identity.user_id, f"user:{identity.user_id}"
+        return None, "anonymous-development"
+
+    def assistant_conversation_record(record: AssistantConversation) -> dict:
+        return {
+            "id": record.id,
+            "route": record.route,
+            "entity": (
+                {"kind": record.entity_kind, "id": record.entity_id, "label": record.title}
+                if record.entity_kind and record.entity_id
+                else None
+            ),
+            "locale": record.locale,
+            "draft": record.draft,
+            "handoffs": record.handoffs_json[-20:],
+            "created_at": record.created_at.isoformat(),
+            "updated_at": record.updated_at.isoformat(),
+            "visibility": "personal",
+        }
+
+    def personal_assistant_conversation(
+        session, conversation_id: str, request: Request
+    ) -> AssistantConversation:
+        _, principal = assistant_principal(request)
+        record = session.scalar(
+            select(AssistantConversation).where(
+                AssistantConversation.id == conversation_id,
+                AssistantConversation.principal_key == principal,
+            )
+        )
+        if not record:
+            raise DomainError("Assistant conversation not found.", 404, "not_found")
+        return record
+
     @app.post("/api/assistant/context")
     def assistant_context(data: AssistantContextInput, request: Request):
         """Validate the minimum context before an assistant router may use it."""
@@ -738,6 +789,91 @@ def create_app(
     @app.get("/api/assistant/runtime")
     async def assistant_runtime():
         return await service.assistant_runtime()
+
+    @app.post("/api/assistant/conversations")
+    def open_assistant_conversation(data: AssistantContextInput, request: Request):
+        label = validate_assistant_entity(data) or data.route
+        user_id, principal = assistant_principal(request)
+        context_key = (
+            f"{data.entity.kind}:{data.entity.id}"
+            if data.entity
+            else f"route:{data.route}"
+        )
+        with service.db.session() as session:
+            record = session.scalar(
+                select(AssistantConversation).where(
+                    AssistantConversation.principal_key == principal,
+                    AssistantConversation.context_key == context_key,
+                )
+            )
+            if record is None:
+                record = AssistantConversation(
+                    user_id=user_id,
+                    principal_key=principal,
+                    context_key=context_key,
+                    route=data.route,
+                    entity_kind=data.entity.kind if data.entity else None,
+                    entity_id=data.entity.id if data.entity else None,
+                    title=label[:300],
+                    locale=data.locale,
+                )
+                session.add(record)
+            else:
+                record.route = data.route
+                record.title = label[:300]
+                record.locale = data.locale
+            record.updated_at = utcnow()
+            try:
+                session.commit()
+            except IntegrityError:
+                # Two tabs may open the same private context simultaneously.
+                session.rollback()
+                record = session.scalar(
+                    select(AssistantConversation).where(
+                        AssistantConversation.principal_key == principal,
+                        AssistantConversation.context_key == context_key,
+                    )
+                )
+                if record is None:
+                    raise
+                record.route = data.route
+                record.title = label[:300]
+                record.locale = data.locale
+                record.updated_at = utcnow()
+                session.commit()
+            return assistant_conversation_record(record)
+
+    @app.patch("/api/assistant/conversations/{conversation_id}")
+    def update_assistant_draft(
+        conversation_id: str, data: AssistantDraftInput, request: Request
+    ):
+        with service.db.session() as session:
+            record = personal_assistant_conversation(session, conversation_id, request)
+            record.draft = data.draft
+            record.updated_at = utcnow()
+            session.commit()
+            return assistant_conversation_record(record)
+
+    @app.post("/api/assistant/conversations/{conversation_id}/handoffs")
+    def record_assistant_handoff(
+        conversation_id: str, data: AssistantHandoffInput, request: Request
+    ):
+        with service.db.session() as session:
+            record = personal_assistant_conversation(session, conversation_id, request)
+            now = utcnow()
+            handoffs = list(record.handoffs_json or [])
+            handoffs.append(
+                {
+                    "id": str(uuid.uuid4()),
+                    "question": data.question,
+                    "created_at": now.isoformat(),
+                }
+            )
+            record.handoffs_json = handoffs[-20:]
+            record.draft = ""
+            record.updated_at = now
+            session.commit()
+            return assistant_conversation_record(record)
 
     @app.post("/api/assistant/remark")
     async def assistant_remark(data: AssistantRemarkInput):

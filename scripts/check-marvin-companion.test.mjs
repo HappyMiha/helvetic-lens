@@ -80,6 +80,10 @@ test("comparison questions use a private draft and the existing cited Ask flow",
   assert.match(companion, /function routeEntity\(pathname: string\)/);
   assert.match(companion, /\.\.\.\(entity \? \{ entity \} : \{\}\)/);
   assert.match(companion, /contextLabel \|\| t\(context\.titleKey\)/);
+  assert.match(companion, /\/assistant\/conversations/);
+  assert.match(companion, /conversationResult\.value\.draft/);
+  assert.match(companion, /recentQuestions/);
+  assert.doesNotMatch(companion, /setQuestionDraft\(\s*comparisonId\s*\?/);
 });
 
 test("the companion remains keyboard, mobile, and reduced-motion aware", () => {

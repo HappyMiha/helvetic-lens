@@ -82,6 +82,28 @@ def test_registration_creates_private_workspace_and_revocable_cookie_session(tmp
         assert added.status_code == 201, added.text
         assert client.get("/api/auth/session").json()["onboarding_required"] is False
 
+        conversation = client.post(
+            "/api/assistant/conversations",
+            json={"route": "/", "locale": "en-CH"},
+            headers=_csrf(client),
+        )
+        assert conversation.status_code == 200, conversation.text
+        conversation_id = conversation.json()["id"]
+        assert (
+            client.patch(
+                f"/api/assistant/conversations/{conversation_id}",
+                json={"draft": "private"},
+            ).status_code
+            == 403
+        )
+        saved_draft = client.patch(
+            f"/api/assistant/conversations/{conversation_id}",
+            json={"draft": "private"},
+            headers=_csrf(client),
+        )
+        assert saved_draft.status_code == 200
+        assert saved_draft.json()["draft"] == "private"
+
         logged_out = client.post("/api/auth/logout", headers=_csrf(client))
         assert logged_out.status_code == 200
         assert client.get("/api/laws").status_code == 401
