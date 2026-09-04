@@ -485,11 +485,19 @@ class ReleaseManager:
         last_error = "no response"
         for _attempt in range(12):
             try:
-                with urllib.request.urlopen(f"{public_base}/api/ready", timeout=10) as response:
+                ready_request = urllib.request.Request(
+                    f"{public_base}/api/ready",
+                    headers={"User-Agent": "HelveticLens-ReleaseManager/1.0", "Accept": "application/json"},
+                )
+                with urllib.request.urlopen(ready_request, timeout=10) as response:
                     ready = json.loads(response.read(64 * 1024))
                     if response.status != 200 or ready.get("status") != "ready":
                         raise ValueError(f"readiness returned {response.status}: {ready}")
-                with urllib.request.urlopen(f"{public_base}/login", timeout=10) as response:
+                login_request = urllib.request.Request(
+                    f"{public_base}/login",
+                    headers={"User-Agent": "HelveticLens-ReleaseManager/1.0", "Accept": "text/html"},
+                )
+                with urllib.request.urlopen(login_request, timeout=10) as response:
                     body = response.read(256 * 1024)
                     if response.status != 200 or b"Helvetic Lens" not in body:
                         raise ValueError(f"login returned {response.status} without the product marker")
@@ -499,13 +507,12 @@ class ReleaseManager:
                 time.sleep(5)
         raise DeploymentError("health_check", f"Public health check failed: {last_error}"[:2_000])
 
-    def _latest_backup_id(self) -> str:
-        backup_root = Path(self.env_values.get("HELVETIC_LENS_BACKUP_DIR", ""))
-        marker = backup_root / "LATEST_SUCCESS"
-        value = marker.read_text(encoding="utf-8").strip()
-        if not re.fullmatch(r"20\d{6}T\d{6}Z", value):
-            raise DeploymentError("backup", "The backup service did not publish a valid backup identifier.")
-        return value
+    @staticmethod
+    def _backup_id(output: str) -> str:
+        matches = re.findall(r"\bBackup (20\d{6}T\d{6}Z) completed\.\s*$", output, re.MULTILINE)
+        if not matches:
+            raise DeploymentError("backup", "The backup service did not report a valid backup identifier.")
+        return matches[-1]
 
     def _quiesce(self, release_dir: Path, release: str, *, check: bool = True) -> None:
         self._compose_run(
@@ -785,7 +792,7 @@ class ReleaseManager:
                 quiesced = True
 
             with self.step("pre_deploy_backup"):
-                self._compose_run(
+                backup = self._compose_run(
                     previous_dir,
                     previous_release,
                     "run",
@@ -795,7 +802,7 @@ class ReleaseManager:
                     step="pre_deploy_backup",
                     timeout=1800,
                 )
-                backup_id = self._latest_backup_id()
+                backup_id = self._backup_id(backup.stdout)
                 self.run_record["backup_id"] = backup_id
 
             with self.step("start_release"):

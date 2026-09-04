@@ -40,3 +40,9 @@ def test_release_update_preserves_secrets_and_file_permissions(tmp_path):
         "AUTH_SMTP_PASSWORD=do-not-change\n"
     )
     assert environment.stat().st_mode & 0o777 == 0o600
+
+
+def test_backup_id_comes_from_the_successful_container_output():
+    assert release_manager.ReleaseManager._backup_id(
+        "Container ready\nBackup 20260904T112145Z completed.\n"
+    ) == "20260904T112145Z"
