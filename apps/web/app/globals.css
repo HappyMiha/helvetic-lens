@@ -3412,7 +3412,17 @@ ins {
 }
 .marvin-context-chip {
   background: #edf2e8;
+  border: 0;
   color: #46603d;
+  cursor: pointer;
+}
+.marvin-context-chip.is-detached {
+  background: #f2f1ed;
+  color: #667168;
+}
+.marvin-context-chip:focus-visible {
+  box-shadow: 0 0 0 3px rgba(199, 77, 54, 0.14);
+  outline: 1px solid #c74d36;
 }
 .marvin-model-status {
   color: #8b4b3d;

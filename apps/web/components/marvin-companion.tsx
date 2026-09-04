@@ -261,6 +261,7 @@ export function MarvinCompanion({
   const [bubbleVisible, setBubbleVisible] = useState(false);
   const [bubbleKey, setBubbleKey] = useState<string | null>(null);
   const [questionDraft, setQuestionDraft] = useState("");
+  const [contextAttached, setContextAttached] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [serverQuipAllowed, setServerQuipAllowed] = useState(false);
   const [runtime, setRuntime] = useState<AssistantRuntime | null>(null);
@@ -282,20 +283,22 @@ export function MarvinCompanion({
     let active = true;
     setServerQuipAllowed(false);
     Promise.allSettled([
-      api<AssistantContextResponse>("/assistant/context", {
-        method: "POST",
-        body: JSON.stringify({
-          schema_version: "assistant-context.v1",
-          intent: "explain_screen",
-          route: contractRoute(pathname),
-        }),
-      }),
+      contextAttached
+        ? api<AssistantContextResponse>("/assistant/context", {
+            method: "POST",
+            body: JSON.stringify({
+              schema_version: "assistant-context.v1",
+              intent: "explain_screen",
+              route: contractRoute(pathname),
+            }),
+          })
+        : Promise.resolve(null),
       api<AssistantRuntime>("/assistant/runtime"),
     ]).then(([contextResult, runtimeResult]) => {
       if (!active) return;
       setServerQuipAllowed(
         contextResult.status === "fulfilled" &&
-          contextResult.value.persona.quip_allowed,
+          Boolean(contextResult.value?.persona.quip_allowed),
       );
       setRuntime(
         runtimeResult.status === "fulfilled" ? runtimeResult.value : null,
@@ -304,7 +307,7 @@ export function MarvinCompanion({
     return () => {
       active = false;
     };
-  }, [hydrated, pathname]);
+  }, [contextAttached, hydrated, pathname]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -322,7 +325,11 @@ export function MarvinCompanion({
     ) => {
       const requestId = ++remarkRequestId.current;
       let selectedKey = fallbackKey;
-      if (runtime?.ready && preferences.tone !== "neutral") {
+      if (
+        contextAttached &&
+        runtime?.ready &&
+        preferences.tone !== "neutral"
+      ) {
         try {
           const response = await api<AssistantRemarkResponse>(
             "/assistant/remark",
@@ -353,7 +360,7 @@ export function MarvinCompanion({
       setBubbleKey(selectedKey);
       setBubbleVisible(true);
     },
-    [locale, pathname, preferences.tone, runtime?.ready],
+    [contextAttached, locale, pathname, preferences.tone, runtime?.ready],
   );
 
   useEffect(() => {
@@ -364,6 +371,10 @@ export function MarvinCompanion({
         : "",
     );
   }, [comparisonId, hydrated]);
+
+  useEffect(() => {
+    setContextAttached(true);
+  }, [pathname]);
 
   useEffect(() => {
     setBubbleVisible(false);
@@ -377,6 +388,7 @@ export function MarvinCompanion({
       !preferences.enabled ||
       !preferences.spontaneous ||
       preferences.tone === "neutral" ||
+      !contextAttached ||
       !serverQuipAllowed ||
       seenRecently(pathname)
     ) {
@@ -398,6 +410,7 @@ export function MarvinCompanion({
     preferences.tone,
     serverQuipAllowed,
     context.quipKey,
+    contextAttached,
     presentRemark,
   ]);
 
@@ -407,6 +420,7 @@ export function MarvinCompanion({
       !preferences.enabled ||
       !preferences.spontaneous ||
       preferences.tone === "neutral" ||
+      !contextAttached ||
       !serverQuipAllowed ||
       open
     ) {
@@ -463,6 +477,7 @@ export function MarvinCompanion({
     preferences.tone,
     presentRemark,
     serverQuipAllowed,
+    contextAttached,
   ]);
 
   useEffect(() => {
@@ -538,10 +553,24 @@ export function MarvinCompanion({
 
           <div className="marvin-drawer-body">
             <div className="marvin-status-row">
-              <span className="marvin-context-chip">
+              <button
+                aria-label={
+                  contextAttached
+                    ? t("companion.detachContext")
+                    : t("companion.attachContext")
+                }
+                className={`marvin-context-chip ${
+                  contextAttached ? "" : "is-detached"
+                }`}
+                onClick={() => setContextAttached((value) => !value)}
+                type="button"
+              >
                 <Eye size={13} />
-                {t(context.titleKey)}
-              </span>
+                {contextAttached
+                  ? t(context.titleKey)
+                  : t("companion.attachContext")}
+                {contextAttached && <X size={12} />}
+              </button>
               <span
                 className={`marvin-model-status ${
                   runtimeReady ? "is-ready" : ""
@@ -561,30 +590,39 @@ export function MarvinCompanion({
               </p>
             )}
 
-            <div className="marvin-message">
-              <span className="eyebrow">{t("companion.observation")}</span>
-              <p>{t(context.descriptionKey)}</p>
-            </div>
+            {contextAttached ? (
+              <div className="marvin-message">
+                <span className="eyebrow">{t("companion.observation")}</span>
+                <p>{t(context.descriptionKey)}</p>
+              </div>
+            ) : (
+              <div className="marvin-message">
+                <span className="eyebrow">{t("companion.observation")}</span>
+                <p>{t("companion.noContext")}</p>
+              </div>
+            )}
 
-            {showQuip && (
+            {showQuip && contextAttached && (
               <blockquote className="marvin-quip">
                 “{t(context.quipKey)}”
               </blockquote>
             )}
 
-            <Link
-              className="marvin-primary-action"
-              href={context.actionHref}
-              onClick={() => onOpenChange(false)}
-            >
-              <span>
-                <Sparkles size={16} />
-                {t(context.actionKey)}
-              </span>
-              <ChevronRight size={16} />
-            </Link>
+            {contextAttached && (
+              <Link
+                className="marvin-primary-action"
+                href={context.actionHref}
+                onClick={() => onOpenChange(false)}
+              >
+                <span>
+                  <Sparkles size={16} />
+                  {t(context.actionKey)}
+                </span>
+                <ChevronRight size={16} />
+              </Link>
+            )}
 
-            {comparisonId && (
+            {comparisonId && contextAttached && (
               <form className="marvin-ask-form" onSubmit={handQuestionToCitedAsk}>
                 <label htmlFor="marvin-question">{t("companion.askLabel")}</label>
                 <textarea

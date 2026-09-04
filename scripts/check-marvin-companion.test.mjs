@@ -66,6 +66,12 @@ test("comparison questions use a private draft and the existing cited Ask flow",
   assert.match(comparison, /setCompanionTab\("ask"\)/);
   assert.match(comparison, /setQuestion\(detail\.question\)/);
   assert.match(comparison, /getElementById\("apertus-question"\)\?\.focus/);
+  assert.match(companion, /setContextAttached\(\(value\) => !value\)/);
+  assert.match(
+    companion,
+    /contextAttached\s*\?\s*api<AssistantContextResponse>/,
+  );
+  assert.match(companion, /comparisonId && contextAttached/);
 });
 
 test("the companion remains keyboard, mobile, and reduced-motion aware", () => {
@@ -102,6 +108,9 @@ test("all five product locales define the companion contract", () => {
     "companion.askPlaceholder",
     "companion.draftPrivacy",
     "companion.openCitedAsk",
+    "companion.detachContext",
+    "companion.attachContext",
+    "companion.noContext",
   ]) {
     assert.equal(
       i18n.match(new RegExp(`"${key.replaceAll(".", "\\.")}"`, "g"))?.length,
