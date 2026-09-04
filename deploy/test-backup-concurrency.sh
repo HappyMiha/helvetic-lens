@@ -24,12 +24,12 @@ chmod +x /mock-bin/pg_dump
 
 PATH="/mock-bin:$PATH" MOCK_BACKUP_DELAY=2 \
   POSTGRES_PASSWORD=test POSTGRES_HOST=test POSTGRES_USER=test POSTGRES_DB=test \
-  HELVETIC_LENS_RELEASE=test-release /operations/backup.sh once > /tmp/first.log 2>&1 &
+  HELVETIC_LENS_RELEASE=test-release /bin/sh /operations/backup.sh once > /tmp/first.log 2>&1 &
 first_pid=$!
 sleep 1
 PATH="/mock-bin:$PATH" MOCK_BACKUP_DELAY=0 \
   POSTGRES_PASSWORD=test POSTGRES_HOST=test POSTGRES_USER=test POSTGRES_DB=test \
-  HELVETIC_LENS_RELEASE=test-release /operations/backup.sh once > /tmp/second.log 2>&1 &
+  HELVETIC_LENS_RELEASE=test-release /bin/sh /operations/backup.sh once > /tmp/second.log 2>&1 &
 second_pid=$!
 
 wait "$first_pid"
