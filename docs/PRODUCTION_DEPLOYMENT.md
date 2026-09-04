@@ -30,6 +30,34 @@ Validation stops before Docker when anonymous access, insecure cookies, HTTP pub
 
 The migration container must exit successfully before the API starts. API readiness then requires both PostgreSQL and Redis. Workers and the web wait for readiness; Caddy waits for the web. Caddy obtains and renews public certificates automatically. Only Caddy publishes host ports 80/443. The API, PostgreSQL, Redis, workers, and local model endpoint have no host port mappings.
 
+## Cloudflare Tunnel (no public IP)
+
+For a host behind CGNAT, a changing address, or a router where inbound ports cannot be opened, use the tunnel override instead of the direct Caddy entry point. The server makes outbound connections to Cloudflare; this mode publishes no host ports.
+
+1. Add the domain to Cloudflare and copy every existing DNS record before changing the authoritative nameservers. Keep the Infomaniak MX, SPF, DMARC, DKIM, autoconfig, autodiscover, and mail SRV records so mail remains at Infomaniak.
+2. Authorize `cloudflared`, create a locally managed tunnel, and route both public hostnames to it. Keep the generated certificate and credentials JSON in the ignored `.cloudflared` directory.
+3. Create `.cloudflared/config.yml` with the generated tunnel UUID and credentials filename:
+
+```sh
+install -d -m 700 .cloudflared
+cloudflared tunnel login
+cloudflared tunnel create helvetic-lens
+cloudflared tunnel route dns --overwrite-dns helvetic-lens helveticlens.ch
+cloudflared tunnel route dns --overwrite-dns helvetic-lens www.helveticlens.ch
+```
+
+4. Start the production stack with the override:
+
+```sh
+python3 scripts/validate_production_env.py --env-file .env.production
+docker compose --env-file .env.production \
+  -f compose.production.yaml \
+  -f compose.cloudflare-tunnel.yaml \
+  up -d --wait
+```
+
+The `.cloudflared` directory is ignored by Git and should remain private. Cloudflare terminates public HTTPS and forwards HTTP through the encrypted tunnel to the private `web` service. Caddy remains disabled unless the explicit `direct` profile is selected.
+
 Inspect state without exposing an internal service:
 
 ```sh
