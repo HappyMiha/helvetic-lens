@@ -1361,8 +1361,11 @@ def create_app(
         return service.scan_detail(scan_id)
 
     @app.get("/api/jobs")
-    def jobs(limit: int = Query(default=50, ge=1, le=200)):
-        return service.jobs(limit)
+    def jobs(
+        limit: int = Query(default=50, ge=1, le=200),
+        workload: Literal["all", "ai"] = "all",
+    ):
+        return service.jobs(limit, workload=workload)
 
     @app.get("/api/jobs/{job_id}")
     def job(job_id: str):

@@ -13,6 +13,7 @@ import {
   primeResource,
 } from "@/lib/api";
 import { resources } from "@/lib/resource-keys";
+import { jobResultHref } from "@/lib/job-links";
 import { translate, useI18n } from "@/lib/i18n";
 import type { Job } from "@/lib/types";
 import { ErrorNote, Status } from "./common";
@@ -95,7 +96,7 @@ export function DurableJobsPanel({ jobs }: { jobs: Job[] }) {
               <div className="flex justify-end gap-2 mt-2">
                 {job.result?.url && (
                   <Button asChild variant="outline" size="sm">
-                    <Link href={job.result.url}>
+                    <Link href={jobResultHref(job)}>
                       {t("jobs.openResult")} <ArrowUpRight />
                     </Link>
                   </Button>

@@ -72,6 +72,10 @@ test("comparison questions use a private draft and the existing cited Ask flow",
     /contextAttached\s*\?\s*api<AssistantContextResponse>/,
   );
   assert.match(companion, /comparisonId && contextAttached/);
+  assert.match(companion, /useResource<Job\[]>\(resources\.assistantJobs\(\)/);
+  assert.match(companion, /ASSISTANT_JOB_TYPES/);
+  assert.match(companion, /job\.progress\.current/);
+  assert.match(companion, /jobResultHref\(job\)/);
 });
 
 test("the companion remains keyboard, mobile, and reduced-motion aware", () => {
@@ -111,6 +115,16 @@ test("all five product locales define the companion contract", () => {
     "companion.detachContext",
     "companion.attachContext",
     "companion.noContext",
+    "companion.aiWork",
+    "companion.activeJobs",
+    "companion.latestJob",
+    "companion.jobSaved",
+    "companion.queuePosition",
+    "companion.jobProgress",
+    "companion.openJob",
+    "companion.openJobResult",
+    "companion.jobComplete",
+    "companion.jobEnded",
   ]) {
     assert.equal(
       i18n.match(new RegExp(`"${key.replaceAll(".", "\\.")}"`, "g"))?.length,

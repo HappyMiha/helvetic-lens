@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  ArrowUpRight,
   BellOff,
   Bot,
   ChevronRight,
   Eye,
+  Loader2,
   MessageCircle,
   Send,
   Settings2,
@@ -14,9 +16,12 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { api } from "@/lib/api";
+import { api, useResource } from "@/lib/api";
 import { ASSISTANT_QUESTION_EVENT } from "@/lib/assistant-events";
-import { useI18n } from "@/lib/i18n";
+import { translate, useI18n } from "@/lib/i18n";
+import { jobResultHref } from "@/lib/job-links";
+import { resources } from "@/lib/resource-keys";
+import type { Job } from "@/lib/types";
 
 type Tone = "neutral" | "dry" | "very_dry";
 
@@ -37,6 +42,12 @@ type RouteContext = {
 const STORAGE_KEY = "helvetic_lens_companion_v1";
 const SESSION_KEY = "helvetic_lens_companion_seen_v1";
 const DRAFT_KEY_PREFIX = "helvetic_lens_companion_draft_v1:";
+const TERMINAL_JOB_STATES = new Set(["succeeded", "failed", "cancelled"]);
+const ASSISTANT_JOB_TYPES = new Set([
+  "ask",
+  "impact_analysis",
+  "relation_impact_analysis",
+]);
 const DEFAULT_PREFERENCES: CompanionPreferences = {
   enabled: true,
   spontaneous: true,
@@ -183,6 +194,10 @@ function routeContext(pathname: string): RouteContext {
   };
 }
 
+function humanize(value: string) {
+  return value.replaceAll("_", " ").replace(/^./, (character) => character.toUpperCase());
+}
+
 function readPreferences(): CompanionPreferences {
   try {
     const saved = JSON.parse(
@@ -268,10 +283,31 @@ export function MarvinCompanion({
   const interactionCount = useRef(0);
   const deepScrollSeen = useRef(false);
   const remarkRequestId = useRef(0);
+  const knownAiJobStates = useRef<Map<string, string> | null>(null);
   const context = useMemo(() => routeContext(pathname), [pathname]);
   const comparisonId = pathname.startsWith("/compare/")
     ? pathname.slice("/compare/".length)
     : "";
+  const jobsResource = useResource<Job[]>(resources.assistantJobs(), {
+    pollMs: open ? 2_000 : 10_000,
+    staleMs: open ? 1_000 : 5_000,
+    priority: "interactive",
+  });
+  const aiJobs = useMemo(
+    () =>
+      (jobsResource.data || []).filter((job) =>
+        ASSISTANT_JOB_TYPES.has(job.type),
+      ),
+    [jobsResource.data],
+  );
+  const activeAiJobs = useMemo(
+    () => aiJobs.filter((job) => !TERMINAL_JOB_STATES.has(job.state)),
+    [aiJobs],
+  );
+  const visibleAiJobs = useMemo(
+    () => (activeAiJobs.length ? activeAiJobs.slice(0, 3) : aiJobs.slice(0, 1)),
+    [activeAiJobs, aiJobs],
+  );
 
   useEffect(() => {
     setPreferences(readPreferences());
@@ -375,6 +411,26 @@ export function MarvinCompanion({
   useEffect(() => {
     setContextAttached(true);
   }, [pathname]);
+
+  useEffect(() => {
+    const current = new Map(aiJobs.map((job) => [job.id, job.state]));
+    const previous = knownAiJobStates.current;
+    knownAiJobStates.current = current;
+    if (!previous || open) return;
+    const completed = aiJobs.find(
+      (job) =>
+        TERMINAL_JOB_STATES.has(job.state) &&
+        previous.has(job.id) &&
+        !TERMINAL_JOB_STATES.has(previous.get(job.id) || ""),
+    );
+    if (!completed) return;
+    setBubbleKey(
+      completed.state === "succeeded"
+        ? "companion.jobComplete"
+        : "companion.jobEnded",
+    );
+    setBubbleVisible(true);
+  }, [aiJobs, open]);
 
   useEffect(() => {
     setBubbleVisible(false);
@@ -641,6 +697,82 @@ export function MarvinCompanion({
               </form>
             )}
 
+            {visibleAiJobs.length > 0 && (
+              <section className="marvin-jobs" aria-live="polite">
+                <div className="marvin-jobs-heading">
+                  <span>
+                    <Loader2
+                      className={activeAiJobs.length ? "animate-spin" : ""}
+                      size={15}
+                    />
+                    <strong>{t("companion.aiWork")}</strong>
+                  </span>
+                  <small>
+                    {activeAiJobs.length
+                      ? t("companion.activeJobs", {
+                          count: activeAiJobs.length,
+                        })
+                      : t("companion.latestJob")}
+                  </small>
+                </div>
+                {visibleAiJobs.map((job) => {
+                  const active = !TERMINAL_JOB_STATES.has(job.state);
+                  const activeStep =
+                    job.steps.find((step) => step.state === "running") ||
+                    job.steps.find((step) => step.state === "pending");
+                  const percent = Math.round(
+                    (Math.max(0, job.progress.current) /
+                      Math.max(1, job.progress.total)) *
+                      100,
+                  );
+                  return (
+                    <article className="marvin-job" key={job.id}>
+                      <div>
+                        <strong>
+                          {translate(locale, `status.${job.type}`) ||
+                            humanize(job.type)}
+                        </strong>
+                        <span className={`marvin-job-state ${job.state}`}>
+                          {translate(locale, `status.${job.state}`) ||
+                            humanize(job.state)}
+                        </span>
+                      </div>
+                      <p>
+                        {activeStep
+                          ? translate(locale, `status.${activeStep.name}`) ||
+                            activeStep.name
+                          : t("companion.jobSaved")}
+                        {job.queue_position
+                          ? ` · ${t("companion.queuePosition", {
+                              position: job.queue_position,
+                            })}`
+                          : ""}
+                      </p>
+                      <div
+                        aria-label={t("companion.jobProgress", { percent })}
+                        aria-valuemax={100}
+                        aria-valuemin={0}
+                        aria-valuenow={percent}
+                        className="marvin-job-track"
+                        role="progressbar"
+                      >
+                        <span style={{ width: `${percent}%` }} />
+                      </div>
+                      <Link
+                        href={jobResultHref(job)}
+                        onClick={() => onOpenChange(false)}
+                      >
+                        {active
+                          ? t("companion.openJob")
+                          : t("companion.openJobResult")}
+                        <ArrowUpRight size={13} />
+                      </Link>
+                    </article>
+                  );
+                })}
+              </section>
+            )}
+
             <div className="marvin-boundary-note">
               <Bot size={16} />
               <p>{t("companion.contextBoundary")}</p>
@@ -737,7 +869,13 @@ export function MarvinCompanion({
         aria-label={
           open
             ? t("companion.close")
-            : t("companion.open", { page: t(context.titleKey) })
+            : `${t("companion.open", { page: t(context.titleKey) })}${
+                activeAiJobs.length
+                  ? `. ${t("companion.activeJobs", {
+                      count: activeAiJobs.length,
+                    })}`
+                  : ""
+              }`
         }
         className="marvin-trigger"
         onClick={() => onOpenChange(!open)}
@@ -747,7 +885,11 @@ export function MarvinCompanion({
       >
         <RobotPortrait />
         <span className="marvin-trigger-badge">
-          <MessageCircle size={13} />
+          {activeAiJobs.length ? (
+            <span aria-hidden="true">{Math.min(activeAiJobs.length, 9)}</span>
+          ) : (
+            <MessageCircle size={13} />
+          )}
         </span>
       </button>
     </aside>

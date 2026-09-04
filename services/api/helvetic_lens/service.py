@@ -2770,10 +2770,17 @@ class HelveticLens:
         with self.db.session() as session:
             return durable_jobs.serialize(session, get(session, Job, job_id))
 
-    def jobs(self, limit: int = 50):
+    def jobs(self, limit: int = 50, *, workload: str = "all"):
         with self.db.session() as session:
+            statement = select(Job)
+            if workload == "ai":
+                statement = statement.where(
+                    Job.type.in_(("ask", "impact_analysis", "relation_impact_analysis"))
+                )
             records = list(
-                session.scalars(select(Job).order_by(Job.created_at.desc()).limit(max(1, min(200, limit))))
+                session.scalars(
+                    statement.order_by(Job.created_at.desc()).limit(max(1, min(200, limit)))
+                )
             )
             return [durable_jobs.serialize(session, record) for record in records]
 

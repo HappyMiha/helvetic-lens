@@ -3539,6 +3539,80 @@ ins {
   cursor: not-allowed;
   opacity: 0.46;
 }
+.marvin-jobs {
+  border: 1px solid #dce2d9;
+  border-radius: 12px;
+  display: grid;
+  gap: 9px;
+  padding: 12px;
+}
+.marvin-jobs-heading,
+.marvin-jobs-heading > span,
+.marvin-job > div,
+.marvin-job > a {
+  align-items: center;
+  display: flex;
+}
+.marvin-jobs-heading,
+.marvin-job > div {
+  justify-content: space-between;
+}
+.marvin-jobs-heading > span {
+  color: #26342c;
+  font-size: 12px;
+  gap: 7px;
+}
+.marvin-jobs-heading small {
+  color: #748078;
+  font-size: 10px;
+}
+.marvin-job {
+  background: #f7f8f4;
+  border-radius: 9px;
+  display: grid;
+  gap: 7px;
+  padding: 10px;
+}
+.marvin-job > div > strong,
+.marvin-job-state {
+  font-size: 10px;
+}
+.marvin-job-state {
+  color: #7a6449;
+}
+.marvin-job-state.succeeded {
+  color: #45663b;
+}
+.marvin-job-state.failed,
+.marvin-job-state.cancelled {
+  color: #a44434;
+}
+.marvin-job p {
+  color: #68736c;
+  font-size: 10px;
+  line-height: 1.4;
+  margin: 0;
+}
+.marvin-job-track {
+  background: #dde3da;
+  border-radius: 999px;
+  height: 5px;
+  overflow: hidden;
+}
+.marvin-job-track > span {
+  background: #c74d36;
+  display: block;
+  height: 100%;
+  transition: width 180ms ease;
+}
+.marvin-job > a {
+  color: #506b47;
+  font-size: 10px;
+  font-weight: 750;
+  gap: 5px;
+  justify-content: flex-end;
+  text-decoration: none;
+}
 .marvin-boundary-note {
   align-items: flex-start;
   background: #f0f2ed;

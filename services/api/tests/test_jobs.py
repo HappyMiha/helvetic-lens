@@ -31,6 +31,37 @@ def test_job_progress_counters_support_multi_gigabyte_artifacts(harness):
         assert job.progress_total == model_size
 
 
+def test_job_registry_can_filter_assistant_work_without_connector_noise(harness):
+    client, _, service, _ = harness
+    with service.db.session() as session:
+        assistant_job, _ = jobs.enqueue(
+            session,
+            job_type="ask",
+            target_type="comparison",
+            target_id="comparison-for-marvin",
+            queue="ai_interactive",
+            idempotency_key="marvin-assistant-job",
+        )
+        connector_job, _ = jobs.enqueue(
+            session,
+            job_type="connector_sync",
+            target_type="connector_schedule",
+            target_id="connector-for-marvin",
+            queue="ingest",
+            idempotency_key="marvin-connector-job",
+        )
+        session.commit()
+        assistant_id, connector_id = assistant_job.id, connector_job.id
+
+    response = client.get("/api/jobs?workload=ai&limit=50")
+
+    assert response.status_code == 200
+    ids = {item["id"] for item in response.json()}
+    assert assistant_id in ids
+    assert connector_id not in ids
+    assert client.get("/api/jobs?workload=unknown").status_code == 422
+
+
 def test_scan_runs_as_a_persisted_job_with_inspectable_steps(harness):
     client, _, _, _ = harness
     law = add_law(client)

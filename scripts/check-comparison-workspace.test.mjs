@@ -84,3 +84,13 @@ test("saved citations jump in place while companion tab state is retained", () =
     "Evidence jumps must retain the selected companion tab",
   );
 });
+
+test("durable AI result links open the matching comparison task", () => {
+  assert.match(comparison, /HASH_COMPANION_TAB\.get\(/);
+  assert.match(comparison, /linkedTask \? `#\$\{linkedTask\}` : window\.location\.hash/);
+  assert.match(comparison, /searchParams\.get\("task"\)/);
+  assert.match(comparison, /target\.searchParams\.set\("task"/);
+  assert.match(comparison, /window\.addEventListener\("hashchange"/);
+  assert.match(comparison, /COMPANION_TAB_HASH\[tab\]/);
+  assert.match(comparison, /target\.hash = ""/);
+});

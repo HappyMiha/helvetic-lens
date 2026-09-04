@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
@@ -64,6 +65,18 @@ const PAGE_SIZE = 40;
 const JOB_TERMINAL_STATES = new Set(["succeeded", "failed", "cancelled"]);
 type ComparisonLocale = "de" | "fr" | "it" | "rm" | "en";
 type CompanionTab = "summary" | "actions" | "ask" | "history";
+const COMPANION_TAB_HASH: Record<CompanionTab, string> = {
+  summary: "#impact",
+  actions: "#actions",
+  ask: "#ask",
+  history: "#history",
+};
+const HASH_COMPANION_TAB = new Map(
+  Object.entries(COMPANION_TAB_HASH).map(([tab, hash]) => [
+    hash,
+    tab as CompanionTab,
+  ]),
+);
 const comparisonCopy = {
   en: {
     overview: "Deterministic change overview",
@@ -229,6 +242,8 @@ function completedAnalysis(job: Job): Analysis | null {
 export function ComparisonView({ id }: { id: string }) {
   const { canManage } = useAuth();
   const { locale, t, dateTime, number } = useI18n();
+  const searchParams = useSearchParams();
+  const linkedTask = searchParams.get("task");
   const uiLocale = locale.slice(0, 2) as ComparisonLocale;
   const ui = comparisonCopy[uiLocale];
   const { data, error: loadError } = useResource<Comparison>(
@@ -250,6 +265,24 @@ export function ComparisonView({ id }: { id: string }) {
   const [mobileSurface, setMobileSurface] = useState<"evidence" | "companion">(
     "evidence",
   );
+  useEffect(() => {
+    function openLinkedCompanionTask() {
+      const tab = HASH_COMPANION_TAB.get(
+        linkedTask ? `#${linkedTask}` : window.location.hash,
+      );
+      if (!tab) return;
+      setCompanionTab(tab);
+      setMobileSurface("companion");
+      if (tab === "ask")
+        window.requestAnimationFrame(() =>
+          document.getElementById("apertus-question")?.focus(),
+        );
+    }
+    openLinkedCompanionTask();
+    window.addEventListener("hashchange", openLinkedCompanionTask);
+    return () =>
+      window.removeEventListener("hashchange", openLinkedCompanionTask);
+  }, [data?.id, id, linkedTask]);
   useEffect(() => {
     function openAssistantQuestion(event: Event) {
       const detail = assistantQuestionDetail(event);
@@ -512,6 +545,17 @@ export function ComparisonView({ id }: { id: string }) {
   function openCompanion(tab: CompanionTab) {
     setCompanionTab(tab);
     setMobileSurface("companion");
+    const target = new URL(window.location.href);
+    target.searchParams.set("task", COMPANION_TAB_HASH[tab].slice(1));
+    target.hash = "";
+    window.history.replaceState(null, "", target);
+  }
+  function openEvidence() {
+    setMobileSurface("evidence");
+    const target = new URL(window.location.href);
+    target.searchParams.delete("task");
+    target.hash = "";
+    window.history.replaceState(null, "", target);
   }
   return (
     <Shell section={t("compare.section")} wide>
@@ -662,7 +706,7 @@ export function ComparisonView({ id }: { id: string }) {
             evidenceActive={mobileSurface === "evidence"}
             includeEvidence
             canAsk={canManage}
-            onEvidence={() => setMobileSurface("evidence")}
+            onEvidence={openEvidence}
             onSelect={openCompanion}
           />
           <div
