@@ -4,7 +4,7 @@
 
 This backlog implements the product described in [README.md](README.md): a local-AI-first Swiss regulatory monitor with immutable evidence, a time-based legal registry, official-source connectors, cross-document impact analysis, and organization workspaces.
 
-**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-047`, `HL-050`–`HL-052`) and decision-ready comparison work (`HL-058`–`HL-063`) are implemented and verified through the API, browser build, migrations, and regression tests. Five-language product localization (`HL-057`) is in progress. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), [impact-report contract](docs/IMPACT_REPORT.md), [Ask routing](docs/ASK_ROUTING.md), [localization contract](docs/LOCALIZATION.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
+**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-047`, `HL-050`–`HL-052`) and decision-ready comparison work (`HL-058`–`HL-063`) are implemented and verified through the API, browser build, migrations, and regression tests. The optional saved impact matrix (`HL-023`) is also complete. Five-language product localization (`HL-057`) is in progress. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [daily-use UX and product audit](docs/UX_PRODUCT_AUDIT.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), [impact-report contract](docs/IMPACT_REPORT.md), [Ask routing](docs/ASK_ROUTING.md), [localization contract](docs/LOCALIZATION.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
 
 ## Scope and priorities
 
@@ -13,7 +13,7 @@ This backlog implements the product described in [README.md](README.md): a local
 - **P2 — valuable follow-up after public beta.** Add after the core three sources, registry, and impact inbox are reliable.
 - **P3 — evidence-driven expansion.** Implement only when real use demonstrates the need.
 
-The completed baseline contains 28 items, including two deliberately deferred optional items. The public-beta roadmap contains **29 required items (`HL-029`–`HL-049` plus `HL-057`–`HL-064`)** and **7 after-beta items (`HL-050`–`HL-056`)**. Follow dependencies and checkpoints; priority alone is not an execution order. No calendar estimates are assumed until the dual-GTX-1080 benchmark and connector contract spikes are complete.
+The completed baseline contains 28 items, including two deliberately deferred optional items. The original public-beta roadmap contains **29 required items (`HL-029`–`HL-049` plus `HL-057`–`HL-064`)** and **7 earlier after-beta items (`HL-050`–`HL-056`)**. The daily-use roadmap adds **24 items (`HL-065`–`HL-088`)** for reliable responsive UX, source packages, topic monitoring, interest-based alerts, and a small local assistant. Follow dependencies and checkpoints; priority alone is not an execution order. No calendar estimates are assumed until the dual-GTX-1080 benchmark and connector contract spikes are complete.
 
 Keep the proven stack and add only the infrastructure now justified by public use: **Next.js, Tailwind CSS/shadcn/ui, FastAPI, PostgreSQL, Redis, Celery, Caddy, BeautifulSoup, PyMuPDF, `difflib`, and a private llama.cpp-based local inference runtime**. A quantized **Apertus 8B** profile is the intended production default only after it passes the target-hardware gate; the smaller verified profile remains valid for development. Cloud model adapters are optional and disabled by default. **pgvector remains conditional on a measured recall gap.**
 
@@ -32,8 +32,12 @@ Keep the proven stack and add only the infrastructure now justified by public us
 | M7A — Decision-ready comparison | HL-058–HL-064         | Verified document identity, legal-unit changes, bounded local inference, useful actions, and an evidence-first review experience replace noisy passage batches. |
 | M8 — Impact intelligence        | HL-044–HL-046         | Evidence-backed relations connect new events to monitored laws and appear in an actionable organization inbox.                                                  |
 | M9 — Public beta                | HL-047–HL-049, HL-057 | Five-language UI/AI/history, admin/operations UI, Internet-facing single-host deployment, recovery, and the reproducible 100-user gate pass.                    |
+| M10 — Reliable daily workspace  | HL-065–HL-073         | Navigation, scrolling, comparison AI, mobile use, source selection, and first-run guidance work as one predictable product.                                     |
+| M11 — Interest-based monitoring | HL-074–HL-082         | Users follow laws or natural-language topics and receive grouped, evidence-linked events from explicitly activated official or public-discourse source packs.   |
+| M12 — Local product assistant   | HL-083–HL-087         | A small local Apertus assistant explains the product, drafts monitoring plans, answers through cited workflows, and proposes safe user-confirmed actions.        |
+| M13 — Daily-use acceptance      | HL-088                | Responsive, first-value, relevance, local-model, accessibility, localization, and source-honesty gates pass on the actual target hardware.                       |
 
-Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, implement `HL-029` first, establish the `HL-057` internationalization conventions immediately, then run durable-job, local-model, organization, and translation work in parallel where their dependencies allow. Complete tenancy and the shared-corpus split before adding broad connectors; otherwise source records would need a second migration. Complete `HL-058`–`HL-064` before treating AI output as a product decision aid: the exact diff stays available for audit, while the default flow must identify material legal-unit changes and produce bounded, validated results. Localize each screen as it is built instead of translating the finished product at the end. Finish operations and the measured capacity gate before exposing registration publicly.
+Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, implement `HL-029` first, establish the `HL-057` internationalization conventions immediately, then run durable-job, local-model, organization, and translation work in parallel where their dependencies allow. Complete tenancy and the shared-corpus split before adding broad connectors; otherwise source records would need a second migration. Complete `HL-058`–`HL-064` before treating AI output as a product decision aid: the exact diff stays available for audit, while the default flow must identify material legal-unit changes and produce bounded, validated results. Implement the daily-use work in dependency order beginning with `HL-065`: repair the shell and update behavior before rearranging the comparison experience, establish honest source packages before onboarding users into them, and create durable topic/evidence contracts before adding conversational shortcuts. Localize each screen as it is built instead of translating the finished product at the end. Finish operations and the measured capacity gate before exposing registration publicly.
 
 ## Task index
 
@@ -103,6 +107,30 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-054](#hl-054) | P3       | DONE     | HL-034, HL-035                                         | Account recovery, verification, 2FA, and SSO refinements            |
 | [HL-055](#hl-055) | P2       | DONE     | HL-038, HL-041                                         | Broader federal and cantonal court coverage                         |
 | [HL-056](#hl-056) | P3       | PLANNED  | HL-049                                                 | Multi-host or high-availability deployment after measured need      |
+| [HL-065](#hl-065) | P0       | PLANNED  | HL-035, HL-047                                         | Reliable application shell and independent scroll contract          |
+| [HL-066](#hl-066) | P0       | PLANNED  | HL-035, HL-047, HL-065                                 | Task-based navigation and canonical Company profile page            |
+| [HL-067](#hl-067) | P0       | PLANNED  | HL-030, HL-063, HL-065                                 | Keyed resource cache and targeted interface updates                 |
+| [HL-068](#hl-068) | P0       | PLANNED  | HL-063, HL-065, HL-067                                 | Responsive comparison decision workspace                            |
+| [HL-069](#hl-069) | P0       | PLANNED  | HL-030, HL-062, HL-067, HL-068                         | Asynchronous Ask experience with real job progress                  |
+| [HL-070](#hl-070) | P0       | PLANNED  | HL-065, HL-066, HL-068, HL-069                         | Working mobile information architecture at 390 px                   |
+| [HL-071](#hl-071) | P0       | PLANNED  | HL-038–HL-043, HL-050, HL-055                          | Versioned source capability catalogue and honest coverage           |
+| [HL-072](#hl-072) | P0       | PLANNED  | HL-033, HL-035, HL-042, HL-071                         | Organization source packs and Swiss Federal Starter                 |
+| [HL-073](#hl-073) | P0       | PLANNED  | HL-034, HL-035, HL-066, HL-070, HL-072, HL-074, HL-077 | Stateful onboarding, contextual help, and useful empty states       |
+| [HL-074](#hl-074) | P0       | PLANNED  | HL-033, HL-035, HL-036, HL-042, HL-071, HL-072         | Durable monitoring topics and editable monitoring plans             |
+| [HL-075](#hl-075) | P0       | PLANNED  | HL-044, HL-051, HL-074                                 | Bounded topic matching with persisted evidence                      |
+| [HL-076](#hl-076) | P0       | PLANNED  | HL-037, HL-046, HL-067, HL-075                         | Unified interest feed for monitored laws and topics                 |
+| [HL-077](#hl-077) | P1       | PLANNED  | HL-035, HL-066, HL-074, HL-076                         | Contextual “Monitor this” entry points                              |
+| [HL-078](#hl-078) | P1       | PLANNED  | HL-052, HL-076, HL-077                                 | In-app notification centre over the existing delivery state         |
+| [HL-079](#hl-079) | P1       | PLANNED  | HL-052, HL-075, HL-076                                 | Topic matches in existing digests                                   |
+| [HL-080](#hl-080) | P1       | PLANNED  | HL-038, HL-071, HL-072                                 | Cantonal source-pack framework and one verified pilot               |
+| [HL-081](#hl-081) | P2       | PLANNED  | HL-080                                                 | Evidence-gated expansion to the next two cantonal packs             |
+| [HL-082](#hl-082) | P2       | PLANNED  | HL-038, HL-050, HL-071, HL-074–HL-076                  | Separate opt-in public-discourse signal pilot                       |
+| [HL-083](#hl-083) | P1       | PLANNED  | HL-035, HL-062, HL-074, HL-076, HL-077                 | Local assistant intent, context, privacy, and action contract       |
+| [HL-084](#hl-084) | P1       | PLANNED  | HL-031, HL-032, HL-083                                 | Small local Apertus assistant profile and hardware gate             |
+| [HL-085](#hl-085) | P1       | PLANNED  | HL-065–HL-070, HL-083, HL-084                          | Persistent global assistant experience with cited answers          |
+| [HL-086](#hl-086) | P1       | PLANNED  | HL-035, HL-074, HL-075, HL-077, HL-083, HL-085         | Natural-language monitoring-topic flow through the assistant        |
+| [HL-087](#hl-087) | P1       | PLANNED  | HL-057, HL-085                                         | Original dry robot persona with safe five-language tone             |
+| [HL-088](#hl-088) | P0       | PLANNED  | HL-049, HL-057, HL-064, HL-065–HL-080, HL-083–HL-087   | Responsive, first-value, relevance, and assistant acceptance gate   |
 
 ## M0 — Ready to build
 
@@ -1190,10 +1218,367 @@ Acceptance criteria:
 - Add shared/object artifact storage, externalized PostgreSQL/Redis, remote GPU routing, or replicas only with explicit consistency, backup, TLS, and failure-recovery tests.
 - Do not call a multi-host deployment highly available until database, broker, artifacts, ingress, and model routing all have tested failure behavior.
 
+## M10 — Reliable daily workspace
+
+The findings and target flow for this milestone are recorded in the [daily-use UX and product audit](docs/UX_PRODUCT_AUDIT.md). Fix the interaction foundation before adding more destinations to the current navigation or more cards to the comparison page. `HL-073` is grouped here because it closes the first-use UX, but its dependency order deliberately schedules it after topic monitoring and `HL-077`.
+
+<a id="hl-065"></a>
+
+### HL-065 — Establish a reliable application shell and scroll contract
+
+Make navigation and primary actions reachable regardless of page length, viewport height, browser zoom, role, or translation length.
+
+Acceptance criteria:
+
+- On desktop, use a `100dvh` application shell with an independently scrollable navigation region and an independently scrollable main region; brand, organization switcher, account access, and the current route remain usable when either region is long.
+- Keep focus inside the visible viewport when keyboard users traverse a long menu, and preserve a clear active route at 1024×768, 200% zoom, and with the longest DE/FR/IT/RM/EN labels.
+- On mobile, use one predictable document scroll rather than nested vertical scroll traps; overlays lock and restore the underlying scroll and return focus to their trigger.
+- Define reusable shell, page-header, content-width, and sticky-region primitives instead of route-specific height calculations.
+- Add responsive tests for short and long pages, admin-only routes, browser zoom, keyboard reachability, safe-area insets, and dynamic viewport changes.
+
+<a id="hl-066"></a>
+
+### HL-066 — Replace module navigation with task-based navigation and a canonical Company profile page
+
+Organize the interface around daily regulatory work and remove duplicate or surprising ways to reach organization settings.
+
+Acceptance criteria:
+
+- Group navigation into daily work (**Today**, **Monitoring**, **Impact inbox**, **Discover**, **Sources**), workspace settings, and role-gated administration; technical model, connector, prompt, and diagnostic pages do not compete with the everyday routes.
+- Make the workspace selector switch organizations only. Provide one canonical routed Company profile page with a stable URL, browser history, direct linking, unsaved-change protection, and responsive layout.
+- Remove duplicate Company profile triggers, DOM-query/click routing workarounds, and the profile modal. Move provider/model connection tests to Local AI or Integration settings.
+- Preserve the same authorized destinations on desktop and mobile, with an explicit overflow destination rather than a clipped horizontal route list.
+- Verify admin/viewer/platform-admin visibility and API authorization independently; hiding a link never substitutes for server enforcement, and viewers do not receive enabled-looking edit/delete/admin controls they cannot use.
+
+<a id="hl-067"></a>
+
+### HL-067 — Replace global refresh broadcasts with keyed resource updates
+
+Keep successful AI and mutation flows from reloading unrelated data, moving the page, or repeating expensive requests.
+
+Acceptance criteria:
+
+- Introduce a typed/keyed resource cache or invalidation layer with request deduplication, stale-while-revalidate behavior, and explicit ownership of each resource key.
+- An Ask completion updates its job, answer, and comparison history keys only; it does not refetch the saved diff, model catalogue, health checks, navigation data, or unrelated organization resources.
+- Mutations optimistically update or invalidate the smallest correct key set and reconcile failures without losing scroll, selected comparison tab, expanded evidence, or typed input.
+- Pause low-priority polling while the page is hidden and prevent concurrent duplicate fetches after focus, navigation, or reconnect.
+- Add request-count and state-preservation tests for Ask, impact rerun, relation review, watch creation, organization switch, and sign-out.
+
+<a id="hl-068"></a>
+
+### HL-068 — Turn comparison into a responsive decision workspace
+
+Keep exact evidence inspectable while making the useful explanation and next decision visible without a kilometre-long page.
+
+Acceptance criteria:
+
+- On wide desktop, keep evidence in the primary pane and use a viewport-stable 420–480 px companion panel with **Summary**, **Actions**, **Ask**, and **History** tabs; each tab scrolls within its own content area without determining the full page height.
+- Lead with a compact, plain-language answer covering material changes, possible relevance, applicability/status, and up to three useful review actions. Put detailed provenance, processing metadata, uncertainties, and repeated evidence lists behind deliberate disclosure.
+- Evidence links move to the exact saved legal unit in the comparison without losing the selected companion tab or scroll position; keyboard and screen-reader users receive the same relationship.
+- Tablet uses an accessible drawer or split view. Mobile uses task tabs and a full-screen assistant/report surface that can be opened before traversing the entire diff.
+- Retain deterministic diff, material/noise filters, original artifacts, citations, and history as complete audit views; compact presentation never discards evidence.
+
+<a id="hl-069"></a>
+
+### HL-069 — Make Ask asynchronous and show real AI job progress
+
+Treat a local-model request as durable work rather than a frozen form that appears to reload the page.
+
+Acceptance criteria:
+
+- Submit immediately creates a pending user message and durable job card with real stages such as queued, starting model, selecting evidence, generating, validating, completed, limited, failed, and cancelled.
+- The user can leave the comparison, continue other work, cancel where safe, and return to the same job; completion appears in place and through the notification surface without a full page refresh.
+- Retrying is idempotent, distinguishes cached results from new inference, and never creates duplicate shared history from double click, reconnect, or browser back/forward.
+- Error states preserve the question and provide a specific recovery action for model unavailable, queue delay, context limit, validation failure, and unsupported evidence.
+- Progress and completion use `aria-live` appropriately, respect reduced motion, and remain comprehensible without an animated mascot.
+
+<a id="hl-070"></a>
+
+### HL-070 — Provide a working mobile information architecture at 390 px
+
+Design mobile as a complete task surface instead of compressing the desktop sidebar and two-column pages.
+
+Acceptance criteria:
+
+- Provide a compact top bar and at most four primary bottom destinations plus **More**; preserve all authorized workspace/admin routes in a labelled mobile menu.
+- Registry, monitoring, Impact inbox, comparison, Company profile, onboarding, notifications, and assistant flows work without horizontal page overflow at 360, 390, and 430 px widths.
+- Comparison offers clear Summary/Diff/Ask/History task switching and readable before/after cards or a controlled side toggle; no critical AI control sits after the full diff.
+- Interactive targets are at least 44×44 CSS px, sticky controls respect safe areas and the on-screen keyboard, and dialogs/drawers expose a visible close path.
+- Add real-browser journey checks at 390×844 and 768×1024 for both viewer and admin roles, including long localized labels, loading, empty, error, and offline/reconnect states.
+
+<a id="hl-071"></a>
+
+### HL-071 — Publish a versioned source capability catalogue with honest coverage
+
+Make supported Swiss information sources an explicit product contract before packaging or promoting them.
+
+Acceptance criteria:
+
+- Store a versioned manifest for each connector: authority/publisher, stream, jurisdiction, document/event kinds, languages, cadence, incremental cursor, historical window, artifact/provenance behavior, reuse/attribution note, known gaps, and last verified live check.
+- Surface states such as available, syncing, healthy, degraded, unavailable, and partial. A missing or failed source is never interpreted or worded as “nothing changed.”
+- Represent existing Fedlex, Parliament, federal-court, consultation, News Service Bund, and FINMA capabilities at their actual tested scope, including incomplete language or bounded-history limitations.
+- Drive operator status and user-facing source copy from the same manifest so product claims cannot drift from connector tests and runbooks.
+- Require fixture, incremental-overlap, deduplication, provenance, drift, artifact reopening, and bounded live-smoke evidence before a capability is marked available.
+
+<a id="hl-072"></a>
+
+### HL-072 — Add organization source packs and a Swiss Federal Starter
+
+Let a new organization activate trusted coverage without finding and pasting individual URLs.
+
+Acceptance criteria:
+
+- Add global `SourcePackDefinition` records and organization-scoped subscriptions. Enabling a pack filters and backfills from the shared public corpus; it never starts duplicate connector cursors, downloads, artifacts, or per-organization ingestion.
+- Ship a Swiss Federal Starter composed of visible subpacks for Fedlex legislation/consultations, Parliament, supported federal courts, and official policy/regulator notices. Users can inspect and activate subpacks separately.
+- Before activation, show source authority, content kinds, languages, cadence, last successful sync, historical window, known gaps, expected first-data behavior, and whether coverage is partial.
+- Activation/deactivation is idempotent, reversible, audited, and admin-only; viewers can inspect active coverage and request a change without mutating shared settings.
+- Backfill is bounded and queued, reports progress and partial failure, and reuses existing normalized documents/events. Disabling a pack stops future organization feed inclusion without deleting shared legal evidence.
+
+<a id="hl-073"></a>
+
+### HL-073 — Add stateful onboarding, contextual help, and useful empty states
+
+Guide a new user from an empty organization to one inspectable, relevant item without requiring a manual or exact source URL.
+
+Acceptance criteria:
+
+- Persist onboarding progress independently of whether any `DocumentWatch` exists. Guide users through intent choice, starter-pack review, a law or topic, notification preference, and first saved/cached evidence.
+- Offer three plain-language starting intents: monitor a topic, follow a law, or explore current events. Show role-appropriate steps and let invited users skip setup already completed by their organization.
+- Replace generic empty cards with distinct states for no subscription, active synchronization, no match in the selected period, filters hiding items, source degradation, and genuinely quiet periods.
+- Add concise contextual explanations and one clear next action on unfamiliar pages; advanced source URLs, prompt settings, and connector details stay available without becoming the default first step.
+- Label any synthetic/sample item unmistakably, allow an admin to remove it, localize the whole journey in DE/FR/IT/RM/EN, and demonstrate first saved interest plus opened real/cached evidence in under five minutes.
+
+## M11 — Interest-based monitoring
+
+<a id="hl-074"></a>
+
+### HL-074 — Add durable monitoring topics and editable monitoring plans
+
+Represent “follow simplified naturalisation” or another subject as a reviewable organization object instead of an opaque chat sentence.
+
+Acceptance criteria:
+
+- Add organization-scoped `MonitoringTopic` records with immutable revisions containing a plain-language goal, concepts/synonyms, exclusions, jurisdictions, languages, source packs, document/event kinds, importance floor, status, author, and timestamps.
+- Local AI may draft a plan from natural language, but the UI always previews each field and lets an authorized user edit and confirm it. No model response silently widens sources, geography, history, or alert volume.
+- Creating and editing a useful topic works manually when the model is offline; model/provider identity and prompt revision are recorded only for AI-assisted drafts.
+- Preview a bounded count and representative set of already-saved candidate events before activation, with an explanation of why each candidate matched and how to reduce noise.
+- Distinguish a topic match from a confirmed legal relation throughout persistence and UI; matching an interest does not establish that one law legally affects another.
+- Enforce organization isolation, admin/viewer permissions, revision history, pause/resume, soft archival, and idempotent creation through the API and UI.
+
+<a id="hl-075"></a>
+
+### HL-075 — Implement bounded topic matching with persisted evidence
+
+Connect new normalized events to saved interests without running an unbounded model call for every topic/document pair.
+
+Acceptance criteria:
+
+- Generate candidates with official identifiers/citations, controlled metadata, jurisdictions, dates, and PostgreSQL full-text search first; use local AI only for a capped ambiguous set after deterministic filtering.
+- Extend the existing HL-044 candidate/evidence pipeline and HL-051 evaluation rather than creating a parallel matcher. Keep pgvector disabled unless the measured multilingual recall gate still justifies it.
+- Persist `TopicEventMatch` with the topic revision, event/document versions, reason signals, exact evidence references, model/rule fingerprint, confidence band, decision status, and timestamps.
+- Bound backfill, per-event/per-organization fan-out, AI calls, retries, and retention through durable queues; prove the bound for 100 organizations and never scan the Cartesian product of every topic and every artifact on each synchronization.
+- Reprocess only when the topic revision, event evidence, rule version, or approved model/prompt fingerprint changes. Failures do not generate user alerts and remain recoverable in operations UI.
+- Maintain a multilingual labelled evaluation set and record precision/noise, missed relevant items, evidence-open, confirm/reject, mute, and refinement measures before changing default thresholds.
+
+<a id="hl-076"></a>
+
+### HL-076 — Unify law and topic relevance into one daily interest feed
+
+Present one understandable event when the same development relates to several monitored laws or topics.
+
+Acceptance criteria:
+
+- Build feed items from persisted regulatory events, watched-law relations, and topic matches without copying the underlying evidence or creating separate competing histories.
+- Each card answers: what happened, why it appeared, official legal status, date and jurisdiction, possible significance, which interests it touches, confidence/limitations, and the most useful next review action.
+- Group one source event across multiple matching laws/topics and clearly list those relationships instead of sending duplicate cards or notifications.
+- Preserve per-user unread, read, dismissed, and muted state; organization admins can confirm/reject a shared relevance relation without erasing the original proposal or another user's reading state.
+- Keep the current law-only registry and Impact inbox complete during migration, with stable deep links to the event, comparison, original artifact, and exact evidence.
+
+<a id="hl-077"></a>
+
+### HL-077 — Add contextual “Monitor this” entry points
+
+Turn discovery, comparison, and cited questions into a natural path to durable monitoring.
+
+Acceptance criteria:
+
+- Offer **Monitor this** from registry events, law/document pages, comparison, Impact inbox, search/discovery results, cited Ask answers, and the global assistant.
+- Preview whether the result will create a law watch, topic, or source-pack subscription and show its jurisdiction, filters, active sources, expected cadence, and initial bounded matches before confirmation.
+- Never create monitoring because the model merely suggested it. Saving is an explicit, idempotent authorized action with clear success state and a direct link to the new interest.
+- Viewers can save a personal draft or send a structured request to organization admins; they cannot bypass server-side read-only policy.
+- Support the full flow on mobile and in all five product languages, including duplicate, insufficient-source, and source-degraded states.
+
+<a id="hl-078"></a>
+
+### HL-078 — Add an in-app notification centre over the existing delivery state
+
+Extend the completed HL-052 user preferences, read state, durable jobs, and delivery history so users can see meaningful persisted feed changes inside the product without inventing another event store or implying real-time coverage.
+
+Acceptance criteria:
+
+- Add a header/mobile notification entry with durable unread count, grouped list, and deep links to the exact feed/evidence item; build it from the unified interest feed and user delivery state.
+- Let each user choose organization, topic, law, source pack, event type, importance, channel, timezone, and quiet-hours preferences within admin-defined organization limits.
+- Use bounded polling or server-sent events appropriate to the single-host architecture. Label detected time separately from official publication/effective dates and make latency/cadence visible.
+- Persist unread/read/dismissed state across devices and sessions, enforce organization isolation, and deduplicate reconnect, retry, and multi-interest matches.
+- Degraded-source, failed-analysis, and queue-delay notices are operationally honest and do not masquerade as legal developments.
+
+<a id="hl-079"></a>
+
+### HL-079 — Add topic matches to existing digests
+
+Extend the completed HL-052 email/web digest with topic matches while keeping its delivery, unsubscribe, and history contracts intact.
+
+Acceptance criteria:
+
+- Add topic, watched-law, source-pack, event-type, and importance filters while preserving direct unsubscribe, organization boundaries, delivery history, and existing source/severity preferences.
+- Group each underlying event once, then list all relevant interests, official status, possible significance, and exact evidence links. A digest never repeats the same event for every topic.
+- Reuse persisted summaries, matches, and citations; delivery must not trigger new AI inference or change read/review state.
+- Respect timezone and quiet hours, keep daily/weekly schedules, and allow an explicit high-priority immediate option only after notification noise is measured.
+- Keep generation and delivery idempotent and queued, with honest empty, partial-source, and failed-delivery records.
+
+<a id="hl-080"></a>
+
+### HL-080 — Create a cantonal source-pack framework and one verified pilot
+
+Prove the data and UX contract for cantonal coverage before presenting a Swiss-wide canton selector.
+
+Acceptance criteria:
+
+- Select one pilot canton from demonstrated user value, official-source maintainability, language coverage, reuse terms, and available identifiers/artifacts; record the choice rather than choosing only the easiest scraper.
+- Extend the capability catalogue and source-pack manifest with canton, municipalities if supported, document/event kinds, languages, cadence, historical window, known gaps, health, and original-source links.
+- Reuse the shared connector/event/evidence/deduplication contract and organization subscription flow. Cantonal activation does not create a private scraper fleet per organization.
+- Pass fixtures, incremental overlap, cursor recovery, provenance, drift detection, artifact reopening, bounded live smoke, and five-language product copy before labelling the pilot available.
+- Label the package as a pilot with its exact coverage. The canton selector shows unavailable/planned cantons honestly and never implies that absence means no cantonal development occurred.
+
+<a id="hl-081"></a>
+
+### HL-081 — Expand to the next two evidence-gated cantonal packs
+
+Select exactly two further cantons from measured demand and add them only when each official-source contract meets the same product and operations bar. Any later canton receives a separately scoped backlog item.
+
+Acceptance criteria:
+
+- Track each of the two selected cantons as its own implementation/release unit with user demand, source inventory, legal/reuse review, language mapping, identifier strategy, cadence, history, gaps, and maintenance owner.
+- Do not generalize a parser merely because two portals look similar; share tested primitives while keeping source-specific drift fixtures and health.
+- Require the same incremental, deduplication, provenance, artifact, recovery, live-smoke, and organization-subscription evidence as the pilot before enabling a pack.
+- Show original-source titles and content in their available language while localizing product controls and explanations in DE/FR/IT/RM/EN.
+- Keep planned/unavailable packs visible only with accurate status and no empty-data promise.
+
+<a id="hl-082"></a>
+
+### HL-082 — Pilot an independent, opt-in public-discourse signal
+
+Treat selected media coverage and attributable political statements as contextual signals, not legal authority or proof that the law changed.
+
+Acceptance criteria:
+
+- Complete a rights/robots/stability/source-quality spike, name and document at most two pilot sources, and freeze that scope before implementation; store publisher, author/speaker where available, publication time, canonical link, correction/removal state, and provenance.
+- Normalize this material under a distinct `public_discourse` or `commentary` kind, visually separate it from official legislation, Parliament, court, consultation, and regulator events, and state that it does not change legal status.
+- Match it through the same bounded topic pipeline with stricter recency, confidence, expiry, source diversity, and noise thresholds; activation is an explicit organization opt-in.
+- Deduplicate syndicated/updated coverage, honour removals/corrections, link to the publisher, and avoid storing or redistributing full protected articles unless permitted.
+- Run a labelled usefulness/noise evaluation before enabling notifications; a sharp statement becomes visible because it is attributable and relevant, never because it is sensational.
+
+## M12 — Local product assistant
+
+The assistant is a product interface over existing authorized Helvetic Lens workflows. It is not a second legal engine, a new ingestion path, or an autonomous administrator.
+
+<a id="hl-083"></a>
+
+### HL-083 — Define the local assistant intent, context, privacy, and action contract
+
+Give the pet a useful job and a strict server-enforced boundary before choosing animation or personality details.
+
+Acceptance criteria:
+
+- Version a small intent schema for explaining the current screen, finding an authorized saved item, explaining a change, answering through cited Ask/Impact, drafting/refining a monitoring topic, proposing a supported next step, and reporting durable job/history state.
+- Define the minimum permitted context for every intent. The router receives identifiers and a bounded summary, never an unfiltered corpus, another organization’s records, credentials, raw integration logs, or unrestricted URLs.
+- Separate personal draft conversation from organization-shared analyses/history in the data model and UI. State retention, deletion, and visibility plainly before the first message.
+- Return typed, allowlisted proposals with server-validated entity IDs. Navigation/read actions may be immediate; every write shows a human-readable preview and requires explicit confirmation by an authorized user.
+- Enforce tenant and viewer boundaries in the API. The assistant cannot change roles, credentials, providers, prompts, model downloads, connector schedules, deletions, or external communication, and it never silently activates monitoring.
+- Measure successful task completion, evidence use, corrections, and abandoned/failed flows; message count and personality engagement are not product-success metrics.
+
+<a id="hl-084"></a>
+
+### HL-084 — Add a small local Apertus assistant profile through the existing runtime
+
+Serve the assistant locally on development and target hardware without creating another model service, scheduler, cache, or GPU allocator.
+
+Acceptance criteria:
+
+- Add an allowlisted `assistant-lite` profile to the existing HL-031/HL-032 model library, private gateway, queue, and runner. Start with a verified small quantized Apertus candidate such as 1.5B Q4 only if licence, tokenizer, format, and quality checks pass.
+- Reuse an already loaded compatible runner when possible and avoid competing VRAM residency. Define one fair interactive slot on the GTX 1070 development machine and measure the intended dual-GTX-1080 target through the unfinished HL-032 promotion gate.
+- Record context, generation, VRAM/RAM, cold-start, warm-latency, cancellation, queue-fairness, and 50-run stability results, including concurrent background regulatory jobs and ten active organizations.
+- Measure five-language intent-routing and action-proposal accuracy with a fixed labelled set. Invalid/unsupported output fails closed or receives the existing single bounded repair attempt; it cannot execute a guessed action.
+- Keep persona/tone in versioned prompt configuration. This task serves an existing base model and does not claim model training, ownership, or fine-tuning.
+- Show model/profile/provenance and local status to the user. There is no silent cloud fallback; unavailable local inference leaves deterministic navigation/search and manual topic creation usable.
+
+<a id="hl-085"></a>
+
+### HL-085 — Build a persistent global assistant experience with cited answers
+
+Make the pet reachable during real work without covering evidence or sending users to the bottom of long pages.
+
+Acceptance criteria:
+
+- Use a persistent desktop drawer, a tablet overlay/drawer, and a mobile full-screen sheet. The collapsed control remains reachable but never covers primary actions, evidence, navigation, form fields, or safe areas.
+- Show current page/entity context as visible removable chips, explain what will be shared before sending, and require explicit context switching when the organization or primary record changes.
+- Persist drafts, conversations, selected context, and durable AI jobs across navigation/reload according to the privacy contract; display the real stages and completion behavior from HL-069.
+- Route law/change questions through existing cited Ask/Impact planners and exact saved evidence. Citations open the correct legal unit and invalid citations fail closed; deterministic search/status answers do not invoke the model unnecessarily.
+- Preserve keyboard/focus order, screen-reader labelling, zoom, reduced motion, close/restore behavior, and a hide/disable preference on desktop and mobile.
+- Provide specific limited/offline/error states and useful manual alternatives; the character never jokes instead of explaining a failure or missing evidence.
+
+<a id="hl-086"></a>
+
+### HL-086 — Create monitoring topics from natural language through the assistant
+
+Support the natural flow “follow this law or this broader issue” while keeping the resulting monitor explicit and editable.
+
+Acceptance criteria:
+
+- Convert a request into the normalized HL-074 draft with name, goal, concepts/exclusions, languages, geography/cantons, official source packs, event kinds, importance floor, and bounded historical preview.
+- Show matching examples, expected scope/volume, source limitations/degradation, and equivalent existing law watches/topics before offering a save action.
+- Let the user edit every field and explain why the assistant proposed it. The assistant uses only approved source capabilities and never starts arbitrary crawling from a mentioned URL.
+- Saving requires explicit organization-admin confirmation and is idempotent. A viewer can keep a personal draft or send the structured proposal to an admin without creating shared monitoring.
+- Future alerts state which confirmed topic revision matched, why, and with what evidence/confidence; the assistant does not retroactively rewrite the original plan to justify a match.
+
+<a id="hl-087"></a>
+
+### HL-087 — Create an original dry robot guide persona in all five languages
+
+Express the requested intelligence, boredom, pessimism, and reluctant helpfulness as optional product character without copying a protected character identity, likeness, artwork, or dialogue.
+
+Acceptance criteria:
+
+- Create an original public name, silhouette, microcopy, motion, and visual system after a naming/likeness review. “Marvin” may remain an internal working reference only; shipped assets and quotations are original.
+- Keep the factual answer neutral and place any optional dry remark in a separate `quip` field that cannot alter citations, actions, confidence, legal status, or accessibility text.
+- Offer per-user Off/Neutral, Dry, and Very dry settings with an immediate off switch. Core product use never depends on seeing or interacting with the pet.
+- Suppress sarcasm for legal conclusions/deadlines, high-impact alerts, uncertainty/unsupported evidence, failures, security/access guidance, destructive confirmations, and distress-sensitive content.
+- Have native reviewers approve tone in DE/FR/IT/RM/EN; do not mechanically translate jokes that become insulting, ambiguous, or culturally inappropriate.
+- Animation never delays an answer, hides real job status, steals focus, or ignores reduced-motion and assistive-technology preferences.
+
+## M13 — Daily-use acceptance
+
+<a id="hl-088"></a>
+
+### HL-088 — Pass the responsive, first-value, relevance, and assistant acceptance gate
+
+Require measured usefulness on the actual product and hardware before declaring the daily-use experience ready.
+
+Acceptance criteria:
+
+- Run the core journeys at 390×844, 768×1024, 1024×768 at 200% zoom, and 1440×900 in DE/FR/IT/RM/EN for organization admin, viewer, and platform-admin roles; record keyboard, screen-reader, reduced-motion, and contrast results.
+- Demonstrate registration/invitation, source-pack activation, first law/topic, first real/cached evidence, Today/Impact review, comparison, asynchronous Ask through navigation/reload, citation opening, notification/digest deduplication, and admin/viewer isolation.
+- A new organization reaches a saved interest and inspectable real/cached result in under five minutes without knowing a source URL; the main AI control is found within ten seconds on desktop and mobile in observed tests.
+- Prove pack activation idempotency, zero per-organization duplicate ingestion/artifacts, bounded 100-organization topic fan-out, one feed/notification/digest item per event, and preserved personal read/dismiss state.
+- Freeze topic-match precision/noise, missed-item, source-degradation, event-grouping, and alert-usefulness thresholds before the final labelled evaluation; publish pass/fail evidence and do not tune against the acceptance set.
+- On the GTX 1070 and intended dual-GTX-1080 host, show an acknowledged AI job within one second, bounded queue wait/cancellation, measured cold/warm latency, 50-run stability without OOM, fair interactive/background work, and no silent cloud request.
+- Achieve 100% server validation for assistant action schemas, organization authorization, and accepted citations in the fixed test set; unsupported or invalid output fails closed with a useful manual path.
+- This core gate depends on unfinished capacity, localization, and AI-triage gates (`HL-049`, `HL-057`, `HL-064`) plus `HL-065`–`HL-080` and `HL-083`–`HL-087`. Experimental public discourse and subsequent canton expansion (`HL-081`, `HL-082`) pass their own evidence gates and do not block the core release.
+
 ## Shared completion rule
 
 An item is done only when its acceptance criteria are demonstrated through the actual UI/API/persistence path where applicable, meaningful checks pass for its state or evidence logic, and user-visible error states are handled. Completing this backlog document does not complete any development item.
 
-Minimum MVP evidence remains: a verified public source; a saved current version; an imported earlier version with provenance; a real comparison; an inspectable diff; a successful real Apertus analysis; a question with a working citation; and successful repeat/restart/failure checks. The public beta additionally requires every P0/P1 item in `HL-029`–`HL-049` plus `HL-057`–`HL-064`, source-contract evidence for all three core connectors, complete five-locale smoke/catalogue checks, the decision-ready AI-triage regression and usability gate, local-model and recovery benchmarks on the target host, organization-isolation checks, and the reproducible capacity scenario.
+Minimum MVP evidence remains: a verified public source; a saved current version; an imported earlier version with provenance; a real comparison; an inspectable diff; a successful real Apertus analysis; a question with a working citation; and successful repeat/restart/failure checks. The public beta additionally requires every P0/P1 item in `HL-029`–`HL-049` plus `HL-057`–`HL-064`, source-contract evidence for all three core connectors, complete five-locale smoke/catalogue checks, the decision-ready AI-triage regression and usability gate, local-model and recovery benchmarks on the target host, organization-isolation checks, and the reproducible capacity scenario. The daily-use release then requires the core `HL-065`–`HL-080` and `HL-083`–`HL-088` gate; optional public-discourse and later-canton expansion remain governed by their own evidence gates.
 
 Still excluded from the public-beta release: Kubernetes, multi-host workers, database/broker high availability, enterprise SSO/SCIM, arbitrary custom roles, unbounded crawling, universal Swiss court coverage, an ornamental graph UI, OCR, login-gated ingestion, model training/fine-tuning, and automatic legal decisions. They remain future work only where an item above names a measurable entry condition. Ordinary validation, bounded fetching, safe rendering, authorization, secret handling, backups, and recovery are implementation requirements rather than optional enterprise decoration.
