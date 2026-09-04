@@ -283,6 +283,90 @@ class SourcePackChangeRequest(Base):
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class MonitoringTopic(Base):
+    """An organization-owned interest whose plan changes through immutable revisions."""
+
+    __tablename__ = "monitoring_topics"
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id", "idempotency_key", name="uq_monitoring_topic_org_idempotency"
+        ),
+        CheckConstraint(
+            "status IN ('active', 'paused', 'archived')",
+            name="ck_monitoring_topic_status",
+        ),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    idempotency_key: Mapped[str] = mapped_column(String(120))
+    status: Mapped[str] = mapped_column(String(20), default="active", index=True)
+    current_revision: Mapped[int] = mapped_column(Integer, default=1)
+    created_by_user_id: Mapped[str | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class MonitoringTopicRevision(Base):
+    __tablename__ = "monitoring_topic_revisions"
+    __table_args__ = (
+        UniqueConstraint("topic_id", "revision", name="uq_monitoring_topic_revision"),
+        CheckConstraint(
+            "importance_floor IN ('high', 'medium', 'low', 'none')",
+            name="ck_monitoring_topic_importance",
+        ),
+        CheckConstraint(
+            "status IN ('active', 'paused', 'archived')",
+            name="ck_monitoring_topic_revision_status",
+        ),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    topic_id: Mapped[str] = mapped_column(
+        ForeignKey("monitoring_topics.id", ondelete="CASCADE"), index=True
+    )
+    revision: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(20))
+    name: Mapped[str] = mapped_column(String(240))
+    goal: Mapped[str] = mapped_column(Text)
+    concepts_json: Mapped[list] = mapped_column(JSON, default=list)
+    synonyms_json: Mapped[list] = mapped_column(JSON, default=list)
+    exclusions_json: Mapped[list] = mapped_column(JSON, default=list)
+    jurisdictions_json: Mapped[list] = mapped_column(JSON, default=list)
+    languages_json: Mapped[list] = mapped_column(JSON, default=list)
+    source_pack_ids_json: Mapped[list] = mapped_column(JSON, default=list)
+    document_kinds_json: Mapped[list] = mapped_column(JSON, default=list)
+    event_kinds_json: Mapped[list] = mapped_column(JSON, default=list)
+    importance_floor: Mapped[str] = mapped_column(String(20), default="low")
+    author_user_id: Mapped[str | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True
+    )
+    ai_provider: Mapped[str | None] = mapped_column(String(80))
+    ai_model: Mapped[str | None] = mapped_column(String(200))
+    prompt_revision: Mapped[int | None] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class MonitoringTopicDraft(Base):
+    """A model proposal that cannot activate monitoring without explicit confirmation."""
+
+    __tablename__ = "monitoring_topic_drafts"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    goal_input: Mapped[str] = mapped_column(Text)
+    plan_json: Mapped[dict] = mapped_column(JSON)
+    provider: Mapped[str] = mapped_column(String(80))
+    model: Mapped[str] = mapped_column(String(200))
+    prompt_revision: Mapped[int] = mapped_column(Integer)
+    created_by_user_id: Mapped[str | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 class Law(Base):
     __tablename__ = "laws"
     __table_args__ = (
@@ -1186,6 +1270,9 @@ ORGANIZATION_SCOPED_MODELS = (
     Source,
     SourcePackSubscription,
     SourcePackChangeRequest,
+    MonitoringTopic,
+    MonitoringTopicRevision,
+    MonitoringTopicDraft,
     Observation,
     IdentityDecision,
     Scan,

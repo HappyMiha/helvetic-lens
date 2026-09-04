@@ -1078,6 +1078,71 @@ export type SourcePackCatalogue = {
   items: SourcePack[];
 };
 
+export type MonitoringTopicPlan = {
+  id?: string;
+  revision?: number;
+  status?: "active" | "paused" | "archived";
+  name: string;
+  goal: string;
+  concepts: string[];
+  synonyms: string[];
+  exclusions: string[];
+  jurisdictions: string[];
+  languages: string[];
+  source_pack_ids: string[];
+  document_kinds: string[];
+  event_kinds: string[];
+  importance_floor: "high" | "medium" | "low" | "none";
+  author_user_id?: string | null;
+  ai_assisted?: boolean;
+  ai_provider?: string | null;
+  ai_model?: string | null;
+  prompt_revision?: number | null;
+  created_at?: string;
+};
+export type MonitoringTopic = {
+  id: string;
+  status: "active" | "paused" | "archived";
+  current_revision: number;
+  created_by_user_id: string | null;
+  created_at: string;
+  updated_at: string;
+  archived_at: string | null;
+  plan: MonitoringTopicPlan;
+  revisions?: MonitoringTopicPlan[];
+  reused?: boolean;
+};
+export type MonitoringTopicPreview = {
+  candidate_count: number;
+  count_is_complete: boolean;
+  scanned_event_limit: number;
+  representative_limit: number;
+  explanation: string;
+  items: {
+    event_id: string;
+    work_id: string;
+    title: string;
+    event_type: string;
+    document_kind: string;
+    authority: string;
+    detected_at: string;
+    source_url: string | null;
+    importance: string;
+    match_type: "topic_candidate";
+    legal_relation_confirmed: false;
+    reason_signals: { type: string; value: string }[];
+  }[];
+};
+export type MonitoringTopicDraft = {
+  id: string;
+  plan: MonitoringTopicPlan;
+  provider: string;
+  model: string;
+  prompt_revision: number;
+  created_at: string;
+  requires_confirmation: true;
+};
+
 export type ConnectorSchedule = {
   id: string;
   connector: string;

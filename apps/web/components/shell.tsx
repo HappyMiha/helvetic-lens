@@ -20,6 +20,7 @@ import {
   Mail,
   MoreHorizontal,
   PackageOpen,
+  Radar,
   RefreshCw,
   Rocket,
   ScrollText,
@@ -347,6 +348,7 @@ export function Shell({
   );
 
   const mobileOverflowRoute = [
+    [pathname === "/topics", "nav.topics"],
     [pathname === "/sources", "nav.sources"],
     [pathname === "/matrix", "nav.matrix"],
     [pathname === "/digests", "nav.digests"],
@@ -394,6 +396,10 @@ export function Shell({
             <NavigationItem active={monitoringActive} href="/registry">
               <Landmark size={17} />
               {t("nav.monitoring")}
+            </NavigationItem>
+            <NavigationItem active={pathname === "/topics"} href="/topics">
+              <Radar size={17} />
+              {t("nav.topics")}
             </NavigationItem>
             <NavigationItem active={pathname === "/impact"} href="/impact">
               <Inbox size={17} />
@@ -534,6 +540,10 @@ export function Shell({
               <NavigationItem active={pathname === "/sources"} href="/sources">
                 <Globe2 size={15} />
                 {t("nav.sources")}
+              </NavigationItem>
+              <NavigationItem active={pathname === "/topics"} href="/topics">
+                <Radar size={15} />
+                {t("nav.topics")}
               </NavigationItem>
               <span className="nav-heading">
                 {t("shell.workspaceSettings")}

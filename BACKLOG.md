@@ -116,7 +116,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-071](#hl-071) | P0       | DONE     | HL-038–HL-043, HL-050, HL-055                          | Versioned source capability catalogue and honest coverage           |
 | [HL-072](#hl-072) | P0       | DONE     | HL-033, HL-035, HL-042, HL-071                         | Organization source packs and Swiss Federal Starter                 |
 | [HL-073](#hl-073) | P0       | PLANNED  | HL-034, HL-035, HL-066, HL-070, HL-072, HL-074, HL-077 | Stateful onboarding, contextual help, and useful empty states       |
-| [HL-074](#hl-074) | P0       | PLANNED  | HL-033, HL-035, HL-036, HL-042, HL-071, HL-072         | Durable monitoring topics and editable monitoring plans             |
+| [HL-074](#hl-074) | P0       | DONE     | HL-033, HL-035, HL-036, HL-042, HL-071, HL-072         | Durable monitoring topics and editable monitoring plans             |
 | [HL-075](#hl-075) | P0       | PLANNED  | HL-044, HL-051, HL-074                                 | Bounded topic matching with persisted evidence                      |
 | [HL-076](#hl-076) | P0       | PLANNED  | HL-037, HL-046, HL-067, HL-075                         | Unified interest feed for monitored laws and topics                 |
 | [HL-077](#hl-077) | P1       | PLANNED  | HL-035, HL-066, HL-074, HL-076                         | Contextual “Monitor this” entry points                              |
@@ -1380,6 +1380,8 @@ Acceptance criteria:
 - Preview a bounded count and representative set of already-saved candidate events before activation, with an explanation of why each candidate matched and how to reduce noise.
 - Distinguish a topic match from a confirmed legal relation throughout persistence and UI; matching an interest does not establish that one law legally affects another.
 - Enforce organization isolation, admin/viewer permissions, revision history, pause/resume, soft archival, and idempotent creation through the API and UI.
+
+Completed on 4 September 2026. Organization-scoped topics now keep explicit plans and immutable revisions for goal, terms, exclusions, geography, languages, source packs, document/event kinds, importance, lifecycle, author, and timestamps. Administrators can work entirely manually or ask the configured local-first model for a separately persisted, strict structured draft with one repair attempt; every field remains editable and requires a deterministic bounded preview plus explicit activation. AI provenance is written only when such a draft is confirmed. Preview scans at most 500 saved events, returns at most ten explained candidates, and labels them as topic matches rather than legal relations. Idempotent creation, optimistic edits, pause/resume, soft archive, tenant isolation, viewer read-only access, five-language UI, and migration/API regressions verify the lifecycle.
 
 <a id="hl-075"></a>
 

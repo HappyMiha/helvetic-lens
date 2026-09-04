@@ -11,6 +11,7 @@ import type {
   Law,
   LawDetail,
   LocalModelInventory,
+  MonitoringTopic,
   OrganizationStatus,
   Profile,
   PromptSettings,
@@ -147,6 +148,17 @@ export const resources = {
       staleMs: 2_000,
       pollMs: 2_000,
     }),
+
+  monitoringTopics: (includeArchived = false) =>
+    key<MonitoringTopic[]>(
+      `monitoring:topics:${includeArchived ? "all" : "current"}`,
+      `/monitoring-topics${includeArchived ? "?include_archived=true" : ""}`,
+      {
+        tags: ["monitoring-topics", "monitoring"],
+        staleMs: 5_000,
+        pollMs: 5_000,
+      },
+    ),
 
   scans: () =>
     key<Scan[]>("monitoring:scans", "/scans", {

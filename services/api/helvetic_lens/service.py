@@ -19,7 +19,7 @@ from sqlalchemy import delete, func, inspect, or_, select
 from sqlalchemy.orm import Session
 
 from . import analysis as ai
-from . import digests, source_packs, synchronization
+from . import digests, monitoring_topics, source_packs, synchronization
 from . import jobs as durable_jobs
 from . import relation_analysis as relation_ai
 from .ai_metrics import summarize_ai_triage_metrics
@@ -1437,6 +1437,134 @@ class HelveticLens:
                 pack_id,
                 action,
                 requested_by_user_id=requested_by_user_id,
+            )
+
+    def monitoring_topics(self, *, include_archived: bool = False) -> list[dict]:
+        with self.db.session() as session:
+            return monitoring_topics.list_topics(session, include_archived=include_archived)
+
+    def monitoring_topic(self, topic_id: str) -> dict:
+        with self.db.session() as session:
+            return monitoring_topics.get_topic(session, topic_id)
+
+    def preview_monitoring_topic(self, data: dict) -> dict:
+        with self.db.session() as session:
+            return monitoring_topics.preview(session, data)
+
+    async def draft_monitoring_topic(
+        self, goal: str, locale: str, *, actor_user_id: str | None
+    ) -> dict:
+        """Ask the configured model for a proposal without activating monitoring."""
+        with self.db.session() as session:
+            context = monitoring_topics.draft_context(session)
+        schema = monitoring_topics.TopicDraftOutput.model_json_schema()
+        system = (
+            "Create a conservative monitoring-topic plan from the user's goal. "
+            "Return only JSON matching the schema. Select only values and source-pack IDs "
+            "listed in the supplied context. Do not broaden the goal or invent sources. "
+            "The user will inspect, edit, preview, and explicitly confirm this draft."
+        )
+        payload = {
+            "task": "monitoring_topic_draft",
+            "goal": goal,
+            "output_locale": locale,
+            "allowed": context,
+            "defaults": {
+                "jurisdictions": ["CH"],
+                "importance_floor": "low",
+            },
+        }
+
+        def parse_and_validate(candidate: str) -> dict:
+            parsed = monitoring_topics.parse_draft(candidate)
+            with self.db.session() as validation_session:
+                return monitoring_topics.normalize_plan(parsed.model_dump(), validation_session)
+
+        raw = await self.model_client.complete(
+            system,
+            json.dumps(payload, ensure_ascii=False),
+            response_schema=schema,
+        )
+        try:
+            proposed = parse_and_validate(raw)
+        except DomainError as original_error:
+            repair_payload = {
+                "task": "repair_monitoring_topic_draft",
+                "invalid_response": raw[:12000],
+                "allowed": context,
+                "schema": schema,
+            }
+            repaired = await self.model_client.complete(
+                "Repair the candidate. Return only valid JSON matching the supplied schema and allowed values.",
+                json.dumps(repair_payload, ensure_ascii=False),
+                response_schema=schema,
+            )
+            try:
+                proposed = parse_and_validate(repaired)
+            except DomainError:
+                raise original_error from None
+        with self.write_guard, self.db.session() as session:
+            return monitoring_topics.save_draft(
+                session,
+                goal=goal,
+                plan=proposed,
+                provider=self.settings.apertus_provider,
+                model=self.settings.apertus_model,
+                prompt_revision=self.prompt_revision,
+                actor_user_id=actor_user_id,
+            )
+
+    def create_monitoring_topic(
+        self,
+        data: dict,
+        *,
+        idempotency_key: str,
+        actor_user_id: str | None,
+        ai_draft_id: str | None = None,
+    ) -> dict:
+        with self.write_guard, self.db.session() as session:
+            return monitoring_topics.create_topic(
+                session,
+                data,
+                idempotency_key=idempotency_key,
+                actor_user_id=actor_user_id,
+                ai_draft_id=ai_draft_id,
+            )
+
+    def update_monitoring_topic(
+        self,
+        topic_id: str,
+        data: dict,
+        *,
+        expected_revision: int,
+        actor_user_id: str | None,
+        ai_draft_id: str | None = None,
+    ) -> dict:
+        with self.write_guard, self.db.session() as session:
+            return monitoring_topics.update_topic(
+                session,
+                topic_id,
+                data,
+                expected_revision=expected_revision,
+                actor_user_id=actor_user_id,
+                ai_draft_id=ai_draft_id,
+            )
+
+    def change_monitoring_topic_status(
+        self,
+        topic_id: str,
+        status: str,
+        *,
+        expected_revision: int,
+        actor_user_id: str | None,
+    ) -> dict:
+        with self.write_guard, self.db.session() as session:
+            return monitoring_topics.change_status(
+                session,
+                topic_id,
+                status,
+                expected_revision=expected_revision,
+                actor_user_id=actor_user_id,
             )
 
     async def sync_fedlex(self, stream: str) -> dict:

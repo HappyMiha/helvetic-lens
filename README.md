@@ -11,6 +11,7 @@ The MVP must be a functional product with a narrow scope. Sources are configured
 > **Public-beta direction:** Local AI becomes the default and cloud providers become explicit optional adapters. The target remains one physical i7/32 GB/two-GTX-1080 server and one Compose deployment. Durable jobs, managed quantized models, account sessions, enforced organization roles, the normalized regulatory corpus, time-grouped registry, three official-source connectors, persisted scheduled synchronization, cited fixed-budget analysis, and the organization impact inbox are implemented; complete German/French/Italian/Romansh/English localization follows in the backlog. See the [architecture decision](docs/ARCHITECTURE.md), [impact inbox contract](docs/IMPACT_INBOX.md), and `HL-029`–`HL-049` plus `HL-057` in [BACKLOG.md](BACKLOG.md).
 
 Development tasks, priorities, dependencies, and acceptance criteria are tracked in [BACKLOG.md](BACKLOG.md).
+Organization interests use explicit, revisioned [monitoring topics](docs/MONITORING_TOPICS.md) with a manual path, optional local-AI draft, and deterministic preview before activation.
 
 ## Run locally
 

@@ -202,6 +202,40 @@ class SourcePackRequestInput(Input):
     action: Literal["activate", "deactivate"]
 
 
+class MonitoringTopicPlanInput(Input):
+    name: str = Field(min_length=1, max_length=240)
+    goal: str = Field(min_length=1, max_length=3000)
+    concepts: list[str] = Field(min_length=1, max_length=20)
+    synonyms: list[str] = Field(default_factory=list, max_length=30)
+    exclusions: list[str] = Field(default_factory=list, max_length=20)
+    jurisdictions: list[str] = Field(min_length=1, max_length=12)
+    languages: list[str] = Field(min_length=1, max_length=5)
+    source_pack_ids: list[str] = Field(min_length=1, max_length=20)
+    document_kinds: list[str] = Field(min_length=1, max_length=20)
+    event_kinds: list[str] = Field(min_length=1, max_length=20)
+    importance_floor: Literal["high", "medium", "low", "none"] = "low"
+
+
+class MonitoringTopicCreateInput(MonitoringTopicPlanInput):
+    idempotency_key: str = Field(min_length=8, max_length=120)
+    ai_draft_id: str | None = Field(default=None, max_length=36)
+
+
+class MonitoringTopicUpdateInput(MonitoringTopicPlanInput):
+    expected_revision: int = Field(ge=1)
+    ai_draft_id: str | None = Field(default=None, max_length=36)
+
+
+class MonitoringTopicDraftInput(Input):
+    goal: str = Field(min_length=3, max_length=3000)
+    locale: Literal["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"] = "en-CH"
+
+
+class MonitoringTopicStatusInput(Input):
+    status: Literal["active", "paused", "archived"]
+    expected_revision: int = Field(ge=1)
+
+
 def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
     if method not in {"POST", "PUT", "PATCH", "DELETE"}:
         return None
@@ -213,7 +247,7 @@ def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
         return "fetch", 30, 300
     if path == "/api/scans":
         return "scan", 20, 300
-    if path.endswith("/ask") or path.endswith("/ask-jobs"):
+    if path.endswith("/ask") or path.endswith("/ask-jobs") or path == "/api/monitoring-topics/draft":
         return "ai", 30, 300
     if path.endswith("/analyse") or path.endswith("/analyse-jobs"):
         return "ai", 20, 300
@@ -760,6 +794,68 @@ def create_app(
             data.pack_id,
             data.action,
             identity.user_id if identity else None,
+        )
+
+    @app.get("/api/monitoring-topics")
+    def monitoring_topics(include_archived: bool = False):
+        return service.monitoring_topics(include_archived=include_archived)
+
+    @app.get("/api/monitoring-topics/{topic_id}")
+    def monitoring_topic(topic_id: str):
+        return service.monitoring_topic(topic_id)
+
+    @app.post("/api/monitoring-topics/preview")
+    def preview_monitoring_topic(data: MonitoringTopicPlanInput):
+        return service.preview_monitoring_topic(data.model_dump())
+
+    @app.post("/api/monitoring-topics/draft")
+    async def draft_monitoring_topic(data: MonitoringTopicDraftInput, request: Request):
+        identity = request.state.identity
+        return await service.draft_monitoring_topic(
+            data.goal,
+            data.locale,
+            actor_user_id=identity.user_id if identity else None,
+        )
+
+    @app.post("/api/monitoring-topics", status_code=201)
+    def create_monitoring_topic(data: MonitoringTopicCreateInput, request: Request):
+        identity = request.state.identity
+        values = data.model_dump()
+        idempotency_key = values.pop("idempotency_key")
+        ai_draft_id = values.pop("ai_draft_id")
+        return service.create_monitoring_topic(
+            values,
+            idempotency_key=idempotency_key,
+            actor_user_id=identity.user_id if identity else None,
+            ai_draft_id=ai_draft_id,
+        )
+
+    @app.put("/api/monitoring-topics/{topic_id}")
+    def update_monitoring_topic(
+        topic_id: str, data: MonitoringTopicUpdateInput, request: Request
+    ):
+        identity = request.state.identity
+        values = data.model_dump()
+        expected_revision = values.pop("expected_revision")
+        ai_draft_id = values.pop("ai_draft_id")
+        return service.update_monitoring_topic(
+            topic_id,
+            values,
+            expected_revision=expected_revision,
+            actor_user_id=identity.user_id if identity else None,
+            ai_draft_id=ai_draft_id,
+        )
+
+    @app.patch("/api/monitoring-topics/{topic_id}/status")
+    def change_monitoring_topic_status(
+        topic_id: str, data: MonitoringTopicStatusInput, request: Request
+    ):
+        identity = request.state.identity
+        return service.change_monitoring_topic_status(
+            topic_id,
+            data.status,
+            expected_revision=data.expected_revision,
+            actor_user_id=identity.user_id if identity else None,
         )
 
     @app.post("/api/connectors/fedlex/{stream}/sync")
