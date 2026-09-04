@@ -13,6 +13,8 @@ import {
   Send,
   Settings2,
   Sparkles,
+  Volume2,
+  VolumeX,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -27,8 +29,10 @@ type Tone = "neutral" | "dry" | "very_dry";
 
 type CompanionPreferences = {
   enabled: boolean;
+  sound: boolean;
   spontaneous: boolean;
   tone: Tone;
+  voice: boolean;
 };
 
 type RouteContext = {
@@ -50,8 +54,10 @@ const ASSISTANT_JOB_TYPES = new Set([
 ]);
 const DEFAULT_PREFERENCES: CompanionPreferences = {
   enabled: true,
+  sound: true,
   spontaneous: true,
   tone: "very_dry",
+  voice: false,
 };
 
 type AssistantContextResponse = {
@@ -85,6 +91,13 @@ type AssistantConversationResponse = {
   id: string;
   draft: string;
   handoffs: Array<{ id: string; question: string; created_at: string }>;
+  messages: Array<{
+    id: string;
+    role: "user" | "assistant";
+    content: string;
+    created_at: string;
+    requires_cited_ask?: boolean;
+  }>;
   visibility: "personal";
 };
 
@@ -219,7 +232,9 @@ function routeContext(pathname: string): RouteContext {
 }
 
 function humanize(value: string) {
-  return value.replaceAll("_", " ").replace(/^./, (character) => character.toUpperCase());
+  return value
+    .replaceAll("_", " ")
+    .replace(/^./, (character) => character.toUpperCase());
 }
 
 function readPreferences(): CompanionPreferences {
@@ -229,6 +244,7 @@ function readPreferences(): CompanionPreferences {
     ) as Partial<CompanionPreferences> | null;
     return {
       enabled: saved?.enabled ?? DEFAULT_PREFERENCES.enabled,
+      sound: saved?.sound ?? DEFAULT_PREFERENCES.sound,
       spontaneous: saved?.spontaneous ?? DEFAULT_PREFERENCES.spontaneous,
       tone:
         saved?.tone === "neutral" ||
@@ -236,6 +252,7 @@ function readPreferences(): CompanionPreferences {
         saved?.tone === "very_dry"
           ? saved.tone
           : DEFAULT_PREFERENCES.tone,
+      voice: saved?.voice ?? DEFAULT_PREFERENCES.voice,
     };
   } catch {
     return DEFAULT_PREFERENCES;
@@ -300,6 +317,13 @@ export function MarvinCompanion({
   const [bubbleVisible, setBubbleVisible] = useState(false);
   const [bubbleKey, setBubbleKey] = useState<string | null>(null);
   const [questionDraft, setQuestionDraft] = useState("");
+  const [chatDraft, setChatDraft] = useState("");
+  const [chatError, setChatError] = useState(false);
+  const [chatMessages, setChatMessages] = useState<
+    AssistantConversationResponse["messages"]
+  >([]);
+  const [chatPending, setChatPending] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [conversationLoaded, setConversationLoaded] = useState(false);
   const [recentQuestions, setRecentQuestions] = useState<
@@ -314,6 +338,7 @@ export function MarvinCompanion({
   const interactionCount = useRef(0);
   const deepScrollSeen = useRef(false);
   const remarkRequestId = useRef(0);
+  const audioContextRef = useRef<AudioContext | null>(null);
   const knownAiJobStates = useRef<Map<string, string> | null>(null);
   const context = useMemo(() => routeContext(pathname), [pathname]);
   const entity = useMemo(() => routeEntity(pathname), [pathname]);
@@ -354,6 +379,7 @@ export function MarvinCompanion({
     setConversationId(null);
     setConversationLoaded(false);
     setRecentQuestions([]);
+    setChatMessages([]);
     const contextPayload = {
       schema_version: "assistant-context.v1",
       intent: "explain_screen",
@@ -369,7 +395,7 @@ export function MarvinCompanion({
           })
         : Promise.resolve(null),
       api<AssistantRuntime>("/assistant/runtime"),
-      contextAttached && comparisonId
+      contextAttached
         ? api<AssistantConversationResponse>("/assistant/conversations", {
             method: "POST",
             body: JSON.stringify(contextPayload),
@@ -395,6 +421,7 @@ export function MarvinCompanion({
       ) {
         setConversationId(conversationResult.value.id);
         setRecentQuestions(conversationResult.value.handoffs);
+        setChatMessages(conversationResult.value.messages || []);
         setQuestionDraft(
           conversationResult.value.draft ||
             window.sessionStorage.getItem(DRAFT_KEY_PREFIX + comparisonId) ||
@@ -421,6 +448,74 @@ export function MarvinCompanion({
     }
   }, [hydrated, preferences]);
 
+  const playSigh = useCallback(
+    (force = false) => {
+      if ((!preferences.sound && !force) || typeof window === "undefined")
+        return;
+      try {
+        const audio =
+          audioContextRef.current ||
+          new window.AudioContext({ latencyHint: "interactive" });
+        audioContextRef.current = audio;
+        if (audio.state === "suspended") void audio.resume();
+        const start = audio.currentTime;
+        const gain = audio.createGain();
+        const low = audio.createOscillator();
+        const breath = audio.createOscillator();
+        low.type = "sine";
+        breath.type = "triangle";
+        low.frequency.setValueAtTime(164, start);
+        low.frequency.exponentialRampToValueAtTime(82, start + 0.72);
+        breath.frequency.setValueAtTime(246, start);
+        breath.frequency.exponentialRampToValueAtTime(110, start + 0.58);
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.exponentialRampToValueAtTime(0.035, start + 0.06);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.78);
+        low.connect(gain);
+        breath.connect(gain);
+        gain.connect(audio.destination);
+        low.start(start);
+        breath.start(start + 0.08);
+        low.stop(start + 0.8);
+        breath.stop(start + 0.68);
+      } catch {
+        // Audio is decorative; browser policy may keep it silent.
+      }
+    },
+    [preferences.sound],
+  );
+
+  const speak = useCallback(
+    (copy: string, force = false) => {
+      if (
+        (!preferences.voice && !force) ||
+        typeof window === "undefined" ||
+        !("speechSynthesis" in window)
+      )
+        return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(copy);
+      const language = locale.split("-")[0].toLowerCase();
+      const voices = window.speechSynthesis.getVoices();
+      utterance.voice =
+        voices.find(
+          (voice) =>
+            voice.localService && voice.lang.toLowerCase().startsWith(language),
+        ) ||
+        voices.find((voice) => voice.lang.toLowerCase().startsWith(language)) ||
+        null;
+      utterance.lang = locale;
+      utterance.pitch = 0.68;
+      utterance.rate = 0.78;
+      utterance.volume = 0.88;
+      utterance.onstart = () => setSpeaking(true);
+      utterance.onend = () => setSpeaking(false);
+      utterance.onerror = () => setSpeaking(false);
+      window.speechSynthesis.speak(utterance);
+    },
+    [locale, preferences.voice],
+  );
+
   const presentRemark = useCallback(
     async (
       trigger: "arrival" | "activity" | "deep_scroll",
@@ -428,11 +523,7 @@ export function MarvinCompanion({
     ) => {
       const requestId = ++remarkRequestId.current;
       let selectedKey = fallbackKey;
-      if (
-        contextAttached &&
-        runtime?.ready &&
-        preferences.tone !== "neutral"
-      ) {
+      if (contextAttached && runtime?.ready && preferences.tone !== "neutral") {
         try {
           const response = await api<AssistantRemarkResponse>(
             "/assistant/remark",
@@ -463,8 +554,21 @@ export function MarvinCompanion({
       if (requestId !== remarkRequestId.current) return;
       setBubbleKey(selectedKey);
       setBubbleVisible(true);
+      const remark = t(selectedKey);
+      playSigh();
+      speak(remark);
     },
-    [contextAttached, entity, locale, pathname, preferences.tone, runtime?.ready],
+    [
+      contextAttached,
+      entity,
+      locale,
+      pathname,
+      playSigh,
+      preferences.tone,
+      runtime?.ready,
+      speak,
+      t,
+    ],
   );
 
   useEffect(() => {
@@ -483,6 +587,7 @@ export function MarvinCompanion({
 
   useEffect(() => {
     setContextAttached(true);
+    setSettingsOpen(false);
   }, [pathname]);
 
   useEffect(() => {
@@ -509,7 +614,6 @@ export function MarvinCompanion({
     setBubbleVisible(false);
     remarkRequestId.current += 1;
     setBubbleKey(null);
-    setSettingsOpen(false);
     interactionCount.current = 0;
     deepScrollSeen.current = false;
     if (
@@ -621,6 +725,15 @@ export function MarvinCompanion({
     return () => document.removeEventListener("keydown", closeOnEscape);
   }, [onOpenChange, open]);
 
+  useEffect(
+    () => () => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window)
+        window.speechSynthesis.cancel();
+      void audioContextRef.current?.close();
+    },
+    [],
+  );
+
   function updatePreferences(next: Partial<CompanionPreferences>) {
     setPreferences((current) => ({ ...current, ...next }));
   }
@@ -628,7 +741,8 @@ export function MarvinCompanion({
   function updateQuestionDraft(value: string) {
     setQuestionDraft(value);
     if (!comparisonId) return;
-    if (value) window.sessionStorage.setItem(DRAFT_KEY_PREFIX + comparisonId, value);
+    if (value)
+      window.sessionStorage.setItem(DRAFT_KEY_PREFIX + comparisonId, value);
     else window.sessionStorage.removeItem(DRAFT_KEY_PREFIX + comparisonId);
   }
 
@@ -662,6 +776,47 @@ export function MarvinCompanion({
     setHandoffPending(false);
   }
 
+  async function chatWithMarvin(event: React.FormEvent) {
+    event.preventDefault();
+    const message = chatDraft.trim();
+    if (!conversationId || !message || chatPending) return;
+    setChatPending(true);
+    setChatError(false);
+    setChatDraft("");
+    const optimistic = {
+      id: `pending-${Date.now()}`,
+      role: "user" as const,
+      content: message,
+      created_at: new Date().toISOString(),
+    };
+    setChatMessages((current) => [...current, optimistic]);
+    try {
+      const saved = await api<AssistantConversationResponse>(
+        `/assistant/conversations/${conversationId}/messages`,
+        {
+          method: "POST",
+          body: JSON.stringify({ message, tone: preferences.tone }),
+        },
+      );
+      setChatMessages(saved.messages || []);
+      const answer = [...(saved.messages || [])]
+        .reverse()
+        .find((item) => item.role === "assistant");
+      if (answer) {
+        playSigh();
+        speak(answer.content);
+      }
+    } catch {
+      setChatMessages((current) =>
+        current.filter((item) => item.id !== optimistic.id),
+      );
+      setChatDraft(message);
+      setChatError(true);
+    } finally {
+      setChatPending(false);
+    }
+  }
+
   if (!hydrated || !preferences.enabled) return null;
 
   const showQuip = preferences.tone !== "neutral";
@@ -672,6 +827,7 @@ export function MarvinCompanion({
       aria-label={t("companion.panelLabel")}
       className="marvin-companion"
       data-open={open}
+      data-speaking={speaking}
     >
       {open && (
         <section className="marvin-drawer">
@@ -767,9 +923,109 @@ export function MarvinCompanion({
               </Link>
             )}
 
+            {contextAttached && (
+              <section
+                className="marvin-chat"
+                aria-label={t("companion.chatTitle")}
+              >
+                <div className="marvin-chat-heading">
+                  <span>
+                    <MessageCircle size={15} />
+                    <strong>{t("companion.chatTitle")}</strong>
+                  </span>
+                  <small>{t("companion.chatLocal")}</small>
+                </div>
+                <div className="marvin-chat-log" aria-live="polite">
+                  {chatMessages.length === 0 && (
+                    <p className="marvin-chat-empty">
+                      {t("companion.chatEmpty")}
+                    </p>
+                  )}
+                  {chatMessages.slice(-8).map((item) => (
+                    <article className={`is-${item.role}`} key={item.id}>
+                      <span>
+                        {item.role === "assistant"
+                          ? t("companion.name")
+                          : t("companion.you")}
+                      </span>
+                      <p>{item.content}</p>
+                      {item.role === "assistant" && (
+                        <div className="marvin-chat-actions">
+                          <button
+                            aria-label={t("companion.speakAgain")}
+                            onClick={() => speak(item.content)}
+                            type="button"
+                          >
+                            <Volume2 size={13} />
+                          </button>
+                          {item.requires_cited_ask && comparisonId && (
+                            <button
+                              onClick={() => {
+                                const userMessage = [...chatMessages]
+                                  .slice(0, chatMessages.indexOf(item))
+                                  .reverse()
+                                  .find((turn) => turn.role === "user");
+                                updateQuestionDraft(userMessage?.content || "");
+                              }}
+                              type="button"
+                            >
+                              {t("companion.prepareCitedAsk")}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </article>
+                  ))}
+                  {chatPending && (
+                    <div className="marvin-thinking">
+                      <Loader2 className="animate-spin" size={14} />
+                      {t("companion.thinking")}
+                    </div>
+                  )}
+                </div>
+                {chatError && (
+                  <p className="marvin-chat-error">
+                    {t("companion.chatError")}
+                  </p>
+                )}
+                <form onSubmit={chatWithMarvin}>
+                  <textarea
+                    aria-label={t("companion.chatPlaceholder")}
+                    maxLength={2000}
+                    onChange={(event) => setChatDraft(event.target.value)}
+                    placeholder={t("companion.chatPlaceholder")}
+                    rows={2}
+                    value={chatDraft}
+                  />
+                  <button
+                    aria-label={t("companion.sendChat")}
+                    disabled={
+                      !chatDraft.trim() ||
+                      chatPending ||
+                      !conversationLoaded ||
+                      !runtimeReady
+                    }
+                    type="submit"
+                  >
+                    {chatPending ? (
+                      <Loader2 className="animate-spin" size={15} />
+                    ) : (
+                      <Send size={15} />
+                    )}
+                  </button>
+                </form>
+                <small>{t("companion.chatBoundary")}</small>
+              </section>
+            )}
+
             {comparisonId && contextAttached && (
-              <form className="marvin-ask-form" onSubmit={handQuestionToCitedAsk}>
-                <label htmlFor="marvin-question">{t("companion.askLabel")}</label>
+              <form
+                className="marvin-ask-form"
+                onSubmit={handQuestionToCitedAsk}
+              >
+                <label htmlFor="marvin-question">
+                  {t("companion.askLabel")}
+                </label>
                 <textarea
                   id="marvin-question"
                   maxLength={2000}
@@ -938,6 +1194,42 @@ export function MarvinCompanion({
                   <span>
                     <strong>{t("companion.spontaneous")}</strong>
                     <small>{t("companion.spontaneousHelp")}</small>
+                  </span>
+                </label>
+                <label className="marvin-check-row">
+                  <input
+                    checked={preferences.sound}
+                    onChange={(event) => {
+                      updatePreferences({ sound: event.target.checked });
+                      if (event.target.checked) playSigh(true);
+                    }}
+                    type="checkbox"
+                  />
+                  <span>
+                    <strong>{t("companion.sound")}</strong>
+                    <small>{t("companion.soundHelp")}</small>
+                  </span>
+                </label>
+                <label className="marvin-check-row">
+                  <input
+                    checked={preferences.voice}
+                    onChange={(event) => {
+                      updatePreferences({ voice: event.target.checked });
+                      if (
+                        !event.target.checked &&
+                        "speechSynthesis" in window
+                      ) {
+                        window.speechSynthesis.cancel();
+                        setSpeaking(false);
+                      } else if (event.target.checked) {
+                        speak(t("companion.voicePreview"), true);
+                      }
+                    }}
+                    type="checkbox"
+                  />
+                  <span>
+                    <strong>{t("companion.voice")}</strong>
+                    <small>{t("companion.voiceHelp")}</small>
                   </span>
                 </label>
                 <button

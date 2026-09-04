@@ -86,6 +86,24 @@ test("comparison questions use a private draft and the existing cited Ask flow",
   assert.doesNotMatch(companion, /setQuestionDraft\(\s*comparisonId\s*\?/);
 });
 
+test("Marvin chat stays local, personal, voiced, and evidence-bound", () => {
+  assert.match(
+    companion,
+    /\/assistant\/conversations\/\$\{conversationId\}\/messages/,
+  );
+  assert.match(companion, /requires_cited_ask/);
+  assert.match(companion, /window\.speechSynthesis/);
+  assert.match(companion, /new SpeechSynthesisUtterance/);
+  assert.match(companion, /new window\.AudioContext/);
+  assert.match(companion, /pitch = 0\.68/);
+  assert.match(companion, /rate = 0\.78/);
+  assert.match(companion, /data-speaking=\{speaking\}/);
+  assert.match(css, /@keyframes marvin-blink/);
+  assert.match(css, /@keyframes marvin-speak/);
+  assert.match(css, /\.marvin-chat-log/);
+  assert.match(css, /prefers-reduced-motion[\s\S]*\.marvin-mouth/);
+});
+
 test("the companion remains keyboard, mobile, and reduced-motion aware", () => {
   assert.match(companion, /event\.key !== "Escape"/);
   assert.match(companion, /aria-expanded=\{open\}/);
@@ -120,6 +138,12 @@ test("all five product locales define the companion contract", () => {
     "companion.askPlaceholder",
     "companion.draftPrivacy",
     "companion.openCitedAsk",
+    "companion.chatTitle",
+    "companion.chatEmpty",
+    "companion.chatBoundary",
+    "companion.sound",
+    "companion.voice",
+    "companion.voicePreview",
     "companion.detachContext",
     "companion.attachContext",
     "companion.noContext",

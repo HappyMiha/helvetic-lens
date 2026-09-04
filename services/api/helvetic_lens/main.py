@@ -16,7 +16,12 @@ from redis.exceptions import RedisError
 from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-from .assistant_contract import AssistantContextInput, AssistantRemarkInput, build_assistant_context
+from .assistant_contract import (
+    AssistantChatInput,
+    AssistantContextInput,
+    AssistantRemarkInput,
+    build_assistant_context,
+)
 from .auth import CSRF_COOKIE, SESSION_COOKIE, AuthService, RateLimiter
 from .auth_mail import AuthMailer
 from .config import DomainError, Settings
@@ -755,6 +760,7 @@ def create_app(
             "locale": record.locale,
             "draft": record.draft,
             "handoffs": record.handoffs_json[-20:],
+            "messages": (record.messages_json or [])[-40:],
             "created_at": record.created_at.isoformat(),
             "updated_at": record.updated_at.isoformat(),
             "visibility": "personal",
@@ -767,6 +773,7 @@ def create_app(
         record = session.scalar(
             select(AssistantConversation).where(
                 AssistantConversation.id == conversation_id,
+                AssistantConversation.organization_id == service.organization_id,
                 AssistantConversation.principal_key == principal,
             )
         )
@@ -802,6 +809,7 @@ def create_app(
         with service.db.session() as session:
             record = session.scalar(
                 select(AssistantConversation).where(
+                    AssistantConversation.organization_id == service.organization_id,
                     AssistantConversation.principal_key == principal,
                     AssistantConversation.context_key == context_key,
                 )
@@ -830,6 +838,7 @@ def create_app(
                 session.rollback()
                 record = session.scalar(
                     select(AssistantConversation).where(
+                        AssistantConversation.organization_id == service.organization_id,
                         AssistantConversation.principal_key == principal,
                         AssistantConversation.context_key == context_key,
                     )
@@ -871,6 +880,47 @@ def create_app(
             )
             record.handoffs_json = handoffs[-20:]
             record.draft = ""
+            record.updated_at = now
+            session.commit()
+            return assistant_conversation_record(record)
+
+    @app.post("/api/assistant/conversations/{conversation_id}/messages")
+    async def send_assistant_message(
+        conversation_id: str, data: AssistantChatInput, request: Request
+    ):
+        with service.db.session() as session:
+            record = personal_assistant_conversation(session, conversation_id, request)
+            snapshot = {
+                "locale": record.locale,
+                "route": record.route,
+                "entity_kind": record.entity_kind,
+                "entity_label": record.title,
+                "history": list(record.messages_json or [])[-12:],
+            }
+        answer = await service.assistant_chat(data, **snapshot)
+        now = utcnow()
+        with service.db.session() as session:
+            record = personal_assistant_conversation(session, conversation_id, request)
+            messages = list(record.messages_json or [])
+            messages.extend(
+                [
+                    {
+                        "id": str(uuid.uuid4()),
+                        "role": "user",
+                        "content": data.message,
+                        "created_at": now.isoformat(),
+                    },
+                    {
+                        "id": str(uuid.uuid4()),
+                        "role": "assistant",
+                        "content": answer["reply"],
+                        "requires_cited_ask": answer["requires_cited_ask"],
+                        "created_at": now.isoformat(),
+                        "provenance": answer["provenance"],
+                    },
+                ]
+            )
+            record.messages_json = messages[-40:]
             record.updated_at = now
             session.commit()
             return assistant_conversation_record(record)

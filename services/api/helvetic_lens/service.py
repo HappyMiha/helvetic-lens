@@ -24,10 +24,14 @@ from . import jobs as durable_jobs
 from . import relation_analysis as relation_ai
 from .ai_metrics import summarize_ai_triage_metrics
 from .assistant_contract import (
+    ASSISTANT_CHAT_SCHEMA,
     ASSISTANT_PERSONA_VERSION,
+    AssistantChatInput,
     AssistantRemarkInput,
+    assistant_chat_messages,
     assistant_remark_messages,
     assistant_remark_schema,
+    assistant_route_help,
 )
 from .broad_official_connector import federal_news_connectors, finma_news_connectors
 from .config import DomainError, Settings
@@ -3173,6 +3177,107 @@ class HelveticLens:
             "key": remark_key,
             "locale": data.locale,
             "trigger": data.trigger,
+            "provenance": {
+                "profile": profile["id"],
+                "persona_version": ASSISTANT_PERSONA_VERSION,
+                "model": model["served_model_id"],
+                "model_revision": model.get("immutable_revision"),
+                "local": True,
+                "cloud_fallback": False,
+            },
+        }
+
+    async def assistant_chat(
+        self,
+        data: AssistantChatInput,
+        *,
+        locale: str,
+        route: str,
+        entity_kind: str | None,
+        entity_label: str,
+        history: list[dict],
+    ):
+        """Answer a personal companion turn without creating an uncited legal path."""
+        route_reply = assistant_route_help(data.message, locale, route, data.tone)
+        if route_reply:
+            return {
+                "reply": route_reply,
+                "requires_cited_ask": False,
+                "provenance": {
+                    "profile": "assistant-router",
+                    "persona_version": ASSISTANT_PERSONA_VERSION,
+                    "model": "deterministic-route-help",
+                    "model_revision": None,
+                    "local": True,
+                    "cloud_fallback": False,
+                },
+            }
+        messages = assistant_chat_messages(
+            message=data.message,
+            locale=locale,
+            tone=data.tone,
+            route=route,
+            entity_kind=entity_kind,
+            entity_label=entity_label,
+            history=history,
+        )
+        completion = None
+        last_error = None
+        for attempt in range(2):
+            completion = await self.model_manager.complete_profile(
+                "assistant-lite",
+                self.organization_id,
+                messages,
+                max_tokens=260,
+                response_schema=ASSISTANT_CHAT_SCHEMA,
+            )
+            try:
+                payload = json.loads(completion["content"])
+                if set(payload) != {"reply", "requires_cited_ask"}:
+                    raise ValueError("chat JSON does not match the exact schema")
+                if not isinstance(payload["reply"], str) or not payload["reply"].strip():
+                    raise ValueError("chat reply is empty")
+                if len(payload["reply"]) > 900 or not isinstance(
+                    payload["requires_cited_ask"], bool
+                ):
+                    raise ValueError("chat fields are invalid")
+                lowered_reply = payload["reply"].lower()
+                leaked_markers = (
+                    "requires_cited_ask",
+                    "return json",
+                    "screen_purpose",
+                    "supplied schema",
+                    "these instructions",
+                    "persona marvin-local",
+                )
+                if any(marker in lowered_reply for marker in leaked_markers):
+                    raise ValueError("chat reply exposed an internal instruction")
+                payload["reply"] = payload["reply"].strip()
+                break
+            except (ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
+                last_error = exc
+                if attempt == 0:
+                    messages = [
+                        *messages,
+                        {"role": "assistant", "content": str(completion.get("content", ""))[:900]},
+                        {
+                            "role": "user",
+                            "content": (
+                                "Repair the answer. Return exactly one JSON object with only reply "
+                                "and requires_cited_ask fields matching the schema."
+                            ),
+                        },
+                    ]
+        else:
+            raise DomainError(
+                "The local assistant returned an unusable chat response.",
+                502,
+                "assistant_response_invalid",
+            ) from last_error
+        profile = completion["profile"]
+        model = profile["selected_model"]
+        return {
+            **payload,
             "provenance": {
                 "profile": profile["id"],
                 "persona_version": ASSISTANT_PERSONA_VERSION,
