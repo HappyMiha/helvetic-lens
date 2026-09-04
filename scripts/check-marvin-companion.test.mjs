@@ -77,6 +77,9 @@ test("comparison questions use a private draft and the existing cited Ask flow",
   assert.match(companion, /job\.progress\.current/);
   assert.match(companion, /jobResultHref\(job\)/);
   assert.match(companion, /actionHref: `\$\{pathname\}\?task=impact`/);
+  assert.match(companion, /function routeEntity\(pathname: string\)/);
+  assert.match(companion, /\.\.\.\(entity \? \{ entity \} : \{\}\)/);
+  assert.match(companion, /contextLabel \|\| t\(context\.titleKey\)/);
 });
 
 test("the companion remains keyboard, mobile, and reduced-motion aware", () => {

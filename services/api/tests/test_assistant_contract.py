@@ -1,4 +1,5 @@
 import pytest
+from conftest import add_law, import_old
 from pydantic import ValidationError
 
 from helvetic_lens.assistant_contract import (
@@ -121,6 +122,34 @@ def test_context_endpoint_rejects_an_unavailable_tenant_entity(harness):
     )
     assert response.status_code == 404
     assert response.json()["code"] == "not_found"
+
+
+def test_context_endpoint_labels_only_a_validated_tenant_entity(harness):
+    client, _, _, _ = harness
+    law = add_law(client)
+    old = import_old(client, law["id"])["version"]
+    comparison = client.post(
+        "/api/comparisons",
+        json={"old_version_id": old["id"], "new_version_id": law["current_version_id"]},
+    ).json()
+
+    response = client.post(
+        "/api/assistant/context",
+        json={
+            "intent": "explain_screen",
+            "route": "/compare",
+            "entity": {"kind": "comparison", "id": comparison["id"]},
+        },
+    )
+
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result["context"]["entity"] == {
+        "kind": "comparison",
+        "id": comparison["id"],
+        "label": law["name"],
+    }
+    assert "validated_entity_label" in result["privacy"]["included"]
 
 
 def test_remark_prompt_contains_only_bounded_context_and_versioned_persona():

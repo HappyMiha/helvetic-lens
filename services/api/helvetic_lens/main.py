@@ -705,27 +705,35 @@ def create_app(
     def handover_organization(data: HandoverInput, request: Request):
         return auth.handover(request.state.identity, data.membership_id)
 
-    def validate_assistant_entity(data: AssistantContextInput):
+    def validate_assistant_entity(data: AssistantContextInput) -> str | None:
         if data.entity:
             with service.db.session() as session:
                 if data.entity.kind == "law":
-                    get(session, Law, data.entity.id)
+                    law = get(session, Law, data.entity.id)
                     service.watch(session, data.entity.id)
+                    return law.name
                 elif data.entity.kind == "comparison":
                     comparison = get(session, Comparison, data.entity.id)
                     service.watch(session, comparison.law_id)
+                    return get(session, Law, comparison.law_id).name
                 elif data.entity.kind == "monitoring_topic":
-                    get(session, MonitoringTopic, data.entity.id)
+                    return get(session, MonitoringTopic, data.entity.id).name
                 elif data.entity.kind == "job":
-                    get(session, Job, data.entity.id)
+                    job = get(session, Job, data.entity.id)
+                    return f"{job.type.replace('_', ' ').title()} · {job.id[:8]}"
+        return None
 
     @app.post("/api/assistant/context")
     def assistant_context(data: AssistantContextInput, request: Request):
         """Validate the minimum context before an assistant router may use it."""
-        validate_assistant_entity(data)
+        entity_label = validate_assistant_entity(data)
         identity = request.state.identity
         role = identity.role if identity else "organization_admin"
-        return build_assistant_context(data, role=role)
+        result = build_assistant_context(data, role=role)
+        if entity_label and result["context"]["entity"]:
+            result["context"]["entity"]["label"] = entity_label[:300]
+            result["privacy"]["included"].append("validated_entity_label")
+        return result
 
     @app.get("/api/assistant/runtime")
     async def assistant_runtime():

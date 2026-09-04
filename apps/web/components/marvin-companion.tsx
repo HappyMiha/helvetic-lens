@@ -55,7 +55,13 @@ const DEFAULT_PREFERENCES: CompanionPreferences = {
 };
 
 type AssistantContextResponse = {
+  context: { entity: { kind: string; id: string; label?: string } | null };
   persona: { quip_allowed: boolean };
+};
+
+type AssistantEntityRef = {
+  kind: "law" | "comparison";
+  id: string;
 };
 
 type AssistantRuntime = {
@@ -113,6 +119,17 @@ function contractRoute(pathname: string) {
     "/organization",
   ]);
   return allowed.has(pathname) ? pathname : "/";
+}
+
+function routeEntity(pathname: string): AssistantEntityRef | null {
+  const match = pathname.match(
+    /^\/(compare|laws)\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i,
+  );
+  if (!match) return null;
+  return {
+    kind: match[1] === "compare" ? "comparison" : "law",
+    id: match[2],
+  };
 }
 
 function routeContext(pathname: string): RouteContext {
@@ -279,12 +296,14 @@ export function MarvinCompanion({
   const [contextAttached, setContextAttached] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [serverQuipAllowed, setServerQuipAllowed] = useState(false);
+  const [contextLabel, setContextLabel] = useState<string | null>(null);
   const [runtime, setRuntime] = useState<AssistantRuntime | null>(null);
   const interactionCount = useRef(0);
   const deepScrollSeen = useRef(false);
   const remarkRequestId = useRef(0);
   const knownAiJobStates = useRef<Map<string, string> | null>(null);
   const context = useMemo(() => routeContext(pathname), [pathname]);
+  const entity = useMemo(() => routeEntity(pathname), [pathname]);
   const comparisonId = pathname.startsWith("/compare/")
     ? pathname.slice("/compare/".length)
     : "";
@@ -318,6 +337,7 @@ export function MarvinCompanion({
     if (!hydrated) return;
     let active = true;
     setServerQuipAllowed(false);
+    setContextLabel(null);
     Promise.allSettled([
       contextAttached
         ? api<AssistantContextResponse>("/assistant/context", {
@@ -326,6 +346,7 @@ export function MarvinCompanion({
               schema_version: "assistant-context.v1",
               intent: "explain_screen",
               route: contractRoute(pathname),
+              ...(entity ? { entity } : {}),
             }),
           })
         : Promise.resolve(null),
@@ -336,6 +357,11 @@ export function MarvinCompanion({
         contextResult.status === "fulfilled" &&
           Boolean(contextResult.value?.persona.quip_allowed),
       );
+      setContextLabel(
+        contextResult.status === "fulfilled"
+          ? contextResult.value?.context.entity?.label || null
+          : null,
+      );
       setRuntime(
         runtimeResult.status === "fulfilled" ? runtimeResult.value : null,
       );
@@ -343,7 +369,7 @@ export function MarvinCompanion({
     return () => {
       active = false;
     };
-  }, [contextAttached, hydrated, pathname]);
+  }, [contextAttached, entity, hydrated, pathname]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -375,6 +401,7 @@ export function MarvinCompanion({
                 schema_version: "assistant-context.v1",
                 intent: "explain_screen",
                 route: contractRoute(pathname),
+                ...(entity ? { entity } : {}),
                 locale,
                 trigger,
                 tone: preferences.tone,
@@ -396,7 +423,7 @@ export function MarvinCompanion({
       setBubbleKey(selectedKey);
       setBubbleVisible(true);
     },
-    [contextAttached, locale, pathname, preferences.tone, runtime?.ready],
+    [contextAttached, entity, locale, pathname, preferences.tone, runtime?.ready],
   );
 
   useEffect(() => {
@@ -623,7 +650,7 @@ export function MarvinCompanion({
               >
                 <Eye size={13} />
                 {contextAttached
-                  ? t(context.titleKey)
+                  ? contextLabel || t(context.titleKey)
                   : t("companion.attachContext")}
                 {contextAttached && <X size={12} />}
               </button>
