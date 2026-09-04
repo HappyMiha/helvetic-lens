@@ -110,15 +110,24 @@ a:focus-visible {
   background: #dbe3ff;
 }
 .shell {
+  position: fixed;
+  inset: 0;
   display: grid;
   grid-template-columns: 224px minmax(0, 1fr);
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
 }
 .sidebar {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  padding: 32px 20px 22px;
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding: max(32px, env(safe-area-inset-top))
+    max(20px, env(safe-area-inset-right))
+    max(22px, env(safe-area-inset-bottom))
+    max(20px, env(safe-area-inset-left));
   border-right: 1px solid var(--border);
   background: #fbfcff;
   display: flex;
@@ -178,18 +187,37 @@ a:focus-visible {
 }
 .nav-group {
   display: grid;
+  align-content: start;
+  flex: 1 1 auto;
   gap: 6px;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  padding-block: 6px;
+  padding-inline-end: 4px;
+  scroll-padding-block: 8px;
+  scrollbar-gutter: stable;
 }
 .nav-item {
   display: flex;
   align-items: center;
   gap: 11px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   padding: 12px;
   border: none;
   background: transparent;
   border-radius: 8px;
   text-align: left;
   color: #66736d;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  scroll-margin-block: 8px;
+}
+.nav-item svg {
+  flex: 0 0 auto;
 }
 .nav-item.active {
   background: #e9edff;
@@ -197,19 +225,32 @@ a:focus-visible {
   font-weight: 600;
 }
 .main {
+  height: 100%;
   min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
 }
 .topbar {
-  height: 72px;
+  min-height: 72px;
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 36px;
+  padding: env(safe-area-inset-top)
+    max(36px, env(safe-area-inset-right)) 0
+    max(36px, env(safe-area-inset-left));
   background: #fafbf8;
+  position: sticky;
+  top: 0;
+  z-index: 20;
 }
 .content {
-  padding: 35px 36px 50px;
+  padding: 35px max(36px, env(safe-area-inset-right))
+    max(50px, env(safe-area-inset-bottom))
+    max(36px, env(safe-area-inset-left));
   max-width: 1600px;
   margin: auto;
 }
@@ -280,16 +321,32 @@ p {
 }
 @media (max-width: 900px) {
   .shell {
+    position: static;
+    inset: auto;
     grid-template-columns: 1fr;
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow: visible;
   }
   .sidebar {
     display: none;
   }
+  .main {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+    scrollbar-gutter: auto;
+  }
   .topbar {
-    padding: 0 20px;
+    padding: env(safe-area-inset-top)
+      max(20px, env(safe-area-inset-right)) 0
+      max(20px, env(safe-area-inset-left));
   }
   .content {
-    padding: 25px 18px;
+    padding: 25px max(18px, env(safe-area-inset-right))
+      max(25px, env(safe-area-inset-bottom))
+      max(18px, env(safe-area-inset-left));
   }
   .page-heading {
     flex-direction: column;
@@ -307,7 +364,8 @@ p {
   max-width: 1900px;
 }
 .sidebar-bottom {
-  margin-top: auto;
+  flex: 0 0 auto;
+  margin-top: 0;
 }
 .model-card {
   border: 1px solid var(--border);
@@ -2238,7 +2296,8 @@ ins {
     justify-content: center;
     gap: 18px;
     overflow-x: auto;
-    padding: 14px;
+    padding: 14px max(14px, env(safe-area-inset-right)) 14px
+      max(14px, env(safe-area-inset-left));
     background: #f9faf5;
     border-bottom: 1px solid var(--border);
     font-size: 12px;
@@ -2265,6 +2324,10 @@ ins {
   }
   .model-library-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .chat-history {
+    max-height: none;
+    overflow-y: visible;
   }
   .impact-matrix-scroll {
     overflow: visible;

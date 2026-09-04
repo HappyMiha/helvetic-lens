@@ -4,7 +4,7 @@
 
 This backlog implements the product described in [README.md](README.md): a local-AI-first Swiss regulatory monitor with immutable evidence, a time-based legal registry, official-source connectors, cross-document impact analysis, and organization workspaces.
 
-**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-047`, `HL-050`–`HL-052`) and decision-ready comparison work (`HL-058`–`HL-063`) are implemented and verified through the API, browser build, migrations, and regression tests. The optional saved impact matrix (`HL-023`) is also complete. Five-language product localization (`HL-057`) is in progress. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [daily-use UX and product audit](docs/UX_PRODUCT_AUDIT.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), [impact-report contract](docs/IMPACT_REPORT.md), [Ask routing](docs/ASK_ROUTING.md), [localization contract](docs/LOCALIZATION.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
+**Status:** The hackathon MVP (`HL-001`–`HL-031`, `HL-033`–`HL-047`, `HL-050`–`HL-052`), decision-ready comparison work (`HL-058`–`HL-063`), and reliable application shell (`HL-065`) are implemented and verified through the API, browser build, migrations, regression tests, and responsive browser QA. The optional saved impact matrix (`HL-023`) is also complete. Five-language product localization (`HL-057`) is in progress. `HL-032` awaits its physical dual-GTX-1080 acceptance benchmark. The remaining public-beta/local-AI-first roadmap is planned. See the [target architecture](docs/ARCHITECTURE.md), [daily-use UX and product audit](docs/UX_PRODUCT_AUDIT.md), [decision-ready AI triage design](docs/AI_TRIAGE.md), [impact-report contract](docs/IMPACT_REPORT.md), [Ask routing](docs/ASK_ROUTING.md), [localization contract](docs/LOCALIZATION.md), and [verification evidence](docs/VERIFICATION.md). Stable `HL-xxx` identifiers remain the task reference.
 
 ## Scope and priorities
 
@@ -107,7 +107,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-054](#hl-054) | P3       | DONE     | HL-034, HL-035                                         | Account recovery, verification, 2FA, and SSO refinements            |
 | [HL-055](#hl-055) | P2       | DONE     | HL-038, HL-041                                         | Broader federal and cantonal court coverage                         |
 | [HL-056](#hl-056) | P3       | PLANNED  | HL-049                                                 | Multi-host or high-availability deployment after measured need      |
-| [HL-065](#hl-065) | P0       | PLANNED  | HL-035, HL-047                                         | Reliable application shell and independent scroll contract          |
+| [HL-065](#hl-065) | P0       | DONE     | HL-035, HL-047                                         | Reliable application shell and independent scroll contract          |
 | [HL-066](#hl-066) | P0       | PLANNED  | HL-035, HL-047, HL-065                                 | Task-based navigation and canonical Company profile page            |
 | [HL-067](#hl-067) | P0       | PLANNED  | HL-030, HL-063, HL-065                                 | Keyed resource cache and targeted interface updates                 |
 | [HL-068](#hl-068) | P0       | PLANNED  | HL-063, HL-065, HL-067                                 | Responsive comparison decision workspace                            |
@@ -1227,6 +1227,8 @@ The findings and target flow for this milestone are recorded in the [daily-use U
 ### HL-065 — Establish a reliable application shell and scroll contract
 
 Make navigation and primary actions reachable regardless of page length, viewport height, browser zoom, role, or translation length.
+
+**Status: DONE.** The desktop shell is pinned to the dynamic viewport with independent bounded navigation and main scroll regions, a sticky topbar, long-label wrapping, focus-safe scroll padding, and device safe-area spacing. Mobile returns to one document scroll and removes the nested AI-history scroll. The regression contract runs in local and Docker builds. Browser QA at 1280×600, 1024×768 in German, and 390×844 proved no document/double scroll on desktop, no horizontal overflow, keyboard reachability of the last administration route, independent main/navigation positions, and one mobile document scroller.
 
 Acceptance criteria:
 

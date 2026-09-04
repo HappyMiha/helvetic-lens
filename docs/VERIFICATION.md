@@ -290,3 +290,11 @@ The Windows agent's default pytest temporary directory had a permission conflict
 - Confirmed official metadata remains authoritative and cannot be replaced through organization review. The graph remains gated on measured improvement over the complete inbox/list workflow.
 - The review panel now records a capped time-to-decision, fixed `inbox_list_v1` variant, and evidence-open flag with the saved review. The platform control room aggregates decision-time p95 and evidence-open rate without notes, source passages, organization names, user names, or candidate identifiers; unmeasured historical rows do not become artificial zero samples.
 - All 305 API tests pass after the migrations, including append-only review history, annotation semantics, bounded workflow metrics, viewer authorization, legacy upgrades, connectors, and AI regressions. Ruff, the five-locale catalogue audit, TypeScript, the production web build, and the rebuilt development Compose stack pass; PostgreSQL reports `d4a8c1f6b205 (head)`.
+
+## Reliable application shell and scrolling — 4 September 2026
+
+- The desktop shell now owns the dynamic viewport. The route list and main content are independently bounded scroll regions, while the brand, organization switcher, account controls, support links, and sticky route header remain available.
+- At 1280×600, the document stayed at 600 px with no document scroll while the 698 px navigation and 1,699 px main content scrolled independently. Keyboard traversal reached the final route without moving the document or main region.
+- At 1024×768 with German labels, navigation stayed within its 168 px horizontal viewport (`scrollWidth === clientWidth`); keyboard focus reached `Einstellungen` with visible focus spacing at the bottom of the independently scrolling menu.
+- At 390×844, the sidebar is removed from layout and the page uses one normal document scroller. The main region and AI history do not create nested vertical scroll traps, and the 375 px layout has no horizontal overflow.
+- Safe-area padding is applied to viewport chrome and content. The Node shell contract, five-language catalogue audit, TypeScript/Next.js production build, and rebuilt Compose web image all pass.
