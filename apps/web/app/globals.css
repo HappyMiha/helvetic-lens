@@ -61,7 +61,7 @@
   --primary: #315efb;
   --secondary: #edf0f7;
   --muted: #f0f2f7;
-  --muted-foreground: #70798c;
+  --muted-foreground: #566176;
   --border: #dfe3ec;
 }
 * {
@@ -1183,7 +1183,7 @@ summary {
   align-items: center;
   background: transparent;
   border: 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   cursor: pointer;
   display: flex;
   font-size: 10px;
@@ -1231,7 +1231,7 @@ summary {
   background: transparent;
   border: 0;
   border-left: 1px solid var(--border);
-  color: var(--muted);
+  color: var(--muted-foreground);
   cursor: pointer;
   display: none;
   justify-content: center;
@@ -1339,7 +1339,7 @@ summary {
 }
 .triage-summary span,
 .triage-summary small {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 9px;
 }
 .triage-summary strong {
@@ -1565,7 +1565,7 @@ ins {
   justify-content: space-between;
 }
 .semantic-cluster-heading span {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 9px;
   text-transform: uppercase;
 }
@@ -1636,7 +1636,7 @@ ins {
 }
 .analysis-job-title span,
 .analysis-job p {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 10px;
   margin: 0;
 }
@@ -1762,7 +1762,7 @@ ins {
 .impact-change-title span,
 .impact-applicability > span,
 .impact-date-list span {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 9px;
 }
 .impact-change-list p,
@@ -1851,7 +1851,7 @@ ins {
   margin: 4px 0 0;
 }
 .action-decision-history {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 9px;
 }
 .action-decision-history summary {
@@ -1899,7 +1899,7 @@ ins {
   font-size: 9px;
 }
 .report-provenance dt {
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .report-provenance dd {
   margin: 0;
@@ -1926,7 +1926,7 @@ ins {
 }
 .action-meta,
 .action-condition {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 9px;
 }
 .action-empty {
@@ -1944,7 +1944,7 @@ ins {
 }
 .action-empty p {
   margin: 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 10px;
   line-height: 1.6;
 }
@@ -2080,7 +2080,7 @@ ins {
 .ask-job-heading span,
 .ask-job-recovery,
 .ask-job-result-kind {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 10px;
   line-height: 1.55;
   margin: 0;
@@ -2178,7 +2178,7 @@ ins {
   font-size: 13px;
 }
 .prompt-context-option span {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 11px;
   line-height: 1.55;
 }
@@ -2246,7 +2246,7 @@ ins {
   white-space: nowrap;
 }
 .ai-history-meta {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 10px;
   margin-top: 3px;
 }
@@ -2257,7 +2257,7 @@ ins {
 }
 .ai-history-facts {
   align-items: flex-start;
-  color: var(--muted);
+  color: var(--muted-foreground);
   display: flex;
   flex-wrap: wrap;
   font-size: 10px;
@@ -2276,7 +2276,7 @@ ins {
   padding-left: 20px;
 }
 .history-citations {
-  color: var(--muted);
+  color: var(--muted-foreground);
   display: inline-flex;
   flex-wrap: wrap;
   font-size: 10px;

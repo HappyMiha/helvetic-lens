@@ -142,7 +142,7 @@ Keep the proven stack and add only the infrastructure now justified by public us
 | [HL-094](#hl-094) | P0       | PLANNED  | HL-030, HL-075                                         | Fair resumable matching and preview/production parity               |
 | [HL-095](#hl-095) | P1       | PLANNED  | HL-037, HL-066, HL-074                                 | Progressive topic, registry and recovery controls                   |
 | [HL-096](#hl-096) | P1       | PLANNED  | HL-063, HL-068                                         | Coherent visual system and readable scalable evidence               |
-| [HL-097](#hl-097) | P0       | PLANNED  | HL-065, HL-068, HL-070                                 | Visible AI controls and accessible populated journeys               |
+| [HL-097](#hl-097) | P0       | IN PROGRESS  | HL-065, HL-068, HL-070                                 | Visible AI controls and accessible populated journeys               |
 | [HL-098](#hl-098) | P0       | PLANNED  | HL-036, HL-071, HL-072                                 | Verified source coverage and versioned legacy-artifact repair       |
 | [HL-099](#hl-099) | P0       | PLANNED  | HL-030, HL-036, HL-046                                 | Bounded event read model and period-limited digest queries           |
 | [HL-100](#hl-100) | P0       | PLANNED  | HL-044, HL-045, HL-093                                 | Substantive relation evidence and safe assessment supersession       |
@@ -1813,11 +1813,13 @@ Acceptance criteria:
 
 ### HL-097 — Restore visible AI controls and accessible complete journeys
 
-**Priority:** P0. **Status:** PLANNED. **Dependencies:** HL-065, HL-068, HL-070. **Owner role:** frontend/accessibility QA.
+**Priority:** P0. **Status:** IN PROGRESS. **Dependencies:** HL-065, HL-068, HL-070. **Owner role:** frontend/accessibility QA.
 
 Problem: a current surface-token regression makes enabled AI tabs almost invisible; responsive overlays and test coverage do not prove keyboard/screen-reader usability.
 
 Deliverable: immediate contrast correction followed by required populated accessibility/interaction regression coverage.
+
+**Implemented 4 September 2026:** Corrected all 15 surface-token foreground rules and strengthened the shared muted text token. `npm run check:ai:contrast` renders the actual PostCSS output in Chromium and checks default/selected/hover/focus/error states at four widths; it fails on the original 1.12:1 Actions tab and passes 345 corrected samples (minimum 6.00:1). This is the immediate contrast slice only. Modal focus isolation, required populated route fixtures, all-locale/cross-browser and manual assistive-technology review below remain open. See [verification](docs/VERIFICATION.md).
 
 Acceptance criteria:
 
