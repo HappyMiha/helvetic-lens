@@ -13,6 +13,7 @@ import {
   ChevronRight,
   FileText,
   GitCompareArrows,
+  History as HistoryIcon,
   Loader2,
   ListChecks,
   MessageSquare,
@@ -46,11 +47,12 @@ import type {
   Change,
   Comparison,
   Coverage,
+  Citation,
   Impact,
   Job,
   Version,
 } from "@/lib/types";
-import { Citations, ErrorNote, Loading, Status } from "./common";
+import { ErrorNote, Loading, Status } from "./common";
 import { AIHistory } from "./ai-history";
 import { Shell } from "./shell";
 import { useAuth } from "./auth-gate";
@@ -59,20 +61,151 @@ import { storedLocale, translate, type Locale, useI18n } from "@/lib/i18n";
 const PAGE_SIZE = 40;
 const JOB_TERMINAL_STATES = new Set(["succeeded", "failed", "cancelled"]);
 type ComparisonLocale = "de" | "fr" | "it" | "rm" | "en";
+type CompanionTab = "summary" | "actions" | "ask" | "history";
 const comparisonCopy = {
-  en: { overview: "Deterministic change overview", material: "Material", reviewFirst: "Review first", addedRemoved: "Added / removed", newDeleted: "New or deleted units", movedRenumbered: "Moved / renumbered", structural: "Structural, kept out of AI", formatting: "Formatting only", hidden: "Hidden by default", needsReview: "Needs review", uncertain: "Uncertain match" },
-  de: { overview: "Deterministische Änderungsübersicht", material: "Wesentlich", reviewFirst: "Zuerst prüfen", addedRemoved: "Hinzugefügt / entfernt", newDeleted: "Neue oder gelöschte Einheiten", movedRenumbered: "Verschoben / neu nummeriert", structural: "Strukturell, nicht an KI gesendet", formatting: "Nur Formatierung", hidden: "Standardmässig ausgeblendet", needsReview: "Prüfung nötig", uncertain: "Unsichere Zuordnung" },
-  fr: { overview: "Aperçu déterministe des changements", material: "Essentiel", reviewFirst: "À examiner d’abord", addedRemoved: "Ajouté / supprimé", newDeleted: "Unités nouvelles ou supprimées", movedRenumbered: "Déplacé / renuméroté", structural: "Structurel, exclu de l’IA", formatting: "Mise en forme seulement", hidden: "Masqué par défaut", needsReview: "À vérifier", uncertain: "Correspondance incertaine" },
-  it: { overview: "Panoramica deterministica delle modifiche", material: "Sostanziale", reviewFirst: "Da esaminare prima", addedRemoved: "Aggiunto / rimosso", newDeleted: "Unità nuove o eliminate", movedRenumbered: "Spostato / rinumerato", structural: "Strutturale, escluso dall’IA", formatting: "Solo formattazione", hidden: "Nascosto per impostazione predefinita", needsReview: "Da verificare", uncertain: "Corrispondenza incerta" },
-  rm: { overview: "Survista deterministica da las midadas", material: "Essenzial", reviewFirst: "Examinar l’emprim", addedRemoved: "Agiuntà / eliminà", newDeleted: "Unitads novas u eliminadas", movedRenumbered: "Spustà / renumerà", structural: "Structural, exclus da l’IA", formatting: "Mo furmataziun", hidden: "Zuppentà tenor standard", needsReview: "Da verifitgar", uncertain: "Attribuziun intscherta" },
+  en: {
+    overview: "Deterministic change overview",
+    material: "Material",
+    reviewFirst: "Review first",
+    addedRemoved: "Added / removed",
+    newDeleted: "New or deleted units",
+    movedRenumbered: "Moved / renumbered",
+    structural: "Structural, kept out of AI",
+    formatting: "Formatting only",
+    hidden: "Hidden by default",
+    needsReview: "Needs review",
+    uncertain: "Uncertain match",
+  },
+  de: {
+    overview: "Deterministische Änderungsübersicht",
+    material: "Wesentlich",
+    reviewFirst: "Zuerst prüfen",
+    addedRemoved: "Hinzugefügt / entfernt",
+    newDeleted: "Neue oder gelöschte Einheiten",
+    movedRenumbered: "Verschoben / neu nummeriert",
+    structural: "Strukturell, nicht an KI gesendet",
+    formatting: "Nur Formatierung",
+    hidden: "Standardmässig ausgeblendet",
+    needsReview: "Prüfung nötig",
+    uncertain: "Unsichere Zuordnung",
+  },
+  fr: {
+    overview: "Aperçu déterministe des changements",
+    material: "Essentiel",
+    reviewFirst: "À examiner d’abord",
+    addedRemoved: "Ajouté / supprimé",
+    newDeleted: "Unités nouvelles ou supprimées",
+    movedRenumbered: "Déplacé / renuméroté",
+    structural: "Structurel, exclu de l’IA",
+    formatting: "Mise en forme seulement",
+    hidden: "Masqué par défaut",
+    needsReview: "À vérifier",
+    uncertain: "Correspondance incertaine",
+  },
+  it: {
+    overview: "Panoramica deterministica delle modifiche",
+    material: "Sostanziale",
+    reviewFirst: "Da esaminare prima",
+    addedRemoved: "Aggiunto / rimosso",
+    newDeleted: "Unità nuove o eliminate",
+    movedRenumbered: "Spostato / rinumerato",
+    structural: "Strutturale, escluso dall’IA",
+    formatting: "Solo formattazione",
+    hidden: "Nascosto per impostazione predefinita",
+    needsReview: "Da verificare",
+    uncertain: "Corrispondenza incerta",
+  },
+  rm: {
+    overview: "Survista deterministica da las midadas",
+    material: "Essenzial",
+    reviewFirst: "Examinar l’emprim",
+    addedRemoved: "Agiuntà / eliminà",
+    newDeleted: "Unitads novas u eliminadas",
+    movedRenumbered: "Spustà / renumerà",
+    structural: "Structural, exclus da l’IA",
+    formatting: "Mo furmataziun",
+    hidden: "Zuppentà tenor standard",
+    needsReview: "Da verifitgar",
+    uncertain: "Attribuziun intscherta",
+  },
 } satisfies Record<ComparisonLocale, Record<string, string>>;
 
 const localizedValues: Record<ComparisonLocale, Record<string, string>> = {
-  en: { confirmed: "Confirmed", supported: "Supported", possible: "Possible", needs_review: "Needs review", accepted: "Accepted", assigned: "Assigned", scheduled: "Scheduled", dismissed: "Dismissed", not_applicable: "Not applicable", ready: "Ready", limited: "Limited", failed: "Failed", cancelled: "Cancelled" },
-  de: { confirmed: "Bestätigt", supported: "Belegt", possible: "Möglich", needs_review: "Prüfung nötig", accepted: "Angenommen", assigned: "Zugewiesen", scheduled: "Terminiert", dismissed: "Verworfen", not_applicable: "Nicht anwendbar", ready: "Bereit", limited: "Begrenzt", failed: "Fehlgeschlagen", cancelled: "Abgebrochen" },
-  fr: { confirmed: "Confirmé", supported: "Étayé", possible: "Possible", needs_review: "À vérifier", accepted: "Accepté", assigned: "Attribué", scheduled: "Planifié", dismissed: "Écarté", not_applicable: "Non applicable", ready: "Prêt", limited: "Limité", failed: "Échec", cancelled: "Annulé" },
-  it: { confirmed: "Confermato", supported: "Supportato", possible: "Possibile", needs_review: "Da verificare", accepted: "Accettato", assigned: "Assegnato", scheduled: "Pianificato", dismissed: "Scartato", not_applicable: "Non applicabile", ready: "Pronto", limited: "Limitato", failed: "Non riuscito", cancelled: "Annullato" },
-  rm: { confirmed: "Confermà", supported: "Cumprovà", possible: "Pussaivel", needs_review: "Da verifitgar", accepted: "Acceptà", assigned: "Attribuì", scheduled: "Planisà", dismissed: "Refusà", not_applicable: "Betg applitgabel", ready: "Pront", limited: "Limità", failed: "Betg reussì", cancelled: "Interrut" },
+  en: {
+    confirmed: "Confirmed",
+    supported: "Supported",
+    possible: "Possible",
+    needs_review: "Needs review",
+    accepted: "Accepted",
+    assigned: "Assigned",
+    scheduled: "Scheduled",
+    dismissed: "Dismissed",
+    not_applicable: "Not applicable",
+    ready: "Ready",
+    limited: "Limited",
+    failed: "Failed",
+    cancelled: "Cancelled",
+  },
+  de: {
+    confirmed: "Bestätigt",
+    supported: "Belegt",
+    possible: "Möglich",
+    needs_review: "Prüfung nötig",
+    accepted: "Angenommen",
+    assigned: "Zugewiesen",
+    scheduled: "Terminiert",
+    dismissed: "Verworfen",
+    not_applicable: "Nicht anwendbar",
+    ready: "Bereit",
+    limited: "Begrenzt",
+    failed: "Fehlgeschlagen",
+    cancelled: "Abgebrochen",
+  },
+  fr: {
+    confirmed: "Confirmé",
+    supported: "Étayé",
+    possible: "Possible",
+    needs_review: "À vérifier",
+    accepted: "Accepté",
+    assigned: "Attribué",
+    scheduled: "Planifié",
+    dismissed: "Écarté",
+    not_applicable: "Non applicable",
+    ready: "Prêt",
+    limited: "Limité",
+    failed: "Échec",
+    cancelled: "Annulé",
+  },
+  it: {
+    confirmed: "Confermato",
+    supported: "Supportato",
+    possible: "Possibile",
+    needs_review: "Da verificare",
+    accepted: "Accettato",
+    assigned: "Assegnato",
+    scheduled: "Pianificato",
+    dismissed: "Scartato",
+    not_applicable: "Non applicabile",
+    ready: "Pronto",
+    limited: "Limitato",
+    failed: "Non riuscito",
+    cancelled: "Annullato",
+  },
+  rm: {
+    confirmed: "Confermà",
+    supported: "Cumprovà",
+    possible: "Pussaivel",
+    needs_review: "Da verifitgar",
+    accepted: "Acceptà",
+    assigned: "Attribuì",
+    scheduled: "Planisà",
+    dismissed: "Refusà",
+    not_applicable: "Betg applitgabel",
+    ready: "Pront",
+    limited: "Limità",
+    failed: "Betg reussì",
+    cancelled: "Interrut",
+  },
 };
 
 function localLabel(value: string, locale: ComparisonLocale) {
@@ -84,8 +217,7 @@ async function waitForJob(initial: Job, timeoutMessage: string): Promise<Job> {
   primeResource(resources.job(current.id), current);
   const deadline = Date.now() + 10 * 60 * 1000;
   while (!JOB_TERMINAL_STATES.has(current.state)) {
-    if (Date.now() >= deadline)
-      throw new Error(timeoutMessage);
+    if (Date.now() >= deadline) throw new Error(timeoutMessage);
     await new Promise((resolve) => window.setTimeout(resolve, 1000));
     current = await fetchResource(resources.job(current.id));
     primeResource(resources.job(current.id), current);
@@ -118,10 +250,17 @@ export function ComparisonView({ id }: { id: string }) {
     [context, setContext] = useState(false),
     [page, setPage] = useState(0);
   const [jumpTarget, setJumpTarget] = useState(""),
-    [analysisJobs, setAnalysisJobs] = useState<Partial<Record<Locale, Job>>>({}),
+    [jumpRevision, setJumpRevision] = useState(0),
+    [analysisJobs, setAnalysisJobs] = useState<Partial<Record<Locale, Job>>>(
+      {},
+    ),
     [analysisNotice, setAnalysisNotice] = useState(""),
     [confirmingIdentity, setConfirmingIdentity] = useState(""),
     [error, setError] = useState("");
+  const [companionTab, setCompanionTab] = useState<CompanionTab>("summary");
+  const [mobileSurface, setMobileSurface] = useState<"evidence" | "companion">(
+    "evidence",
+  );
   const identityBlocked = ["mismatch", "unknown"].includes(
     data?.identity?.effective_status || data?.identity?.status || "",
   );
@@ -193,7 +332,10 @@ export function ComparisonView({ id }: { id: string }) {
           : current,
     );
     void invalidateResources(resources.comparisonHistory(id));
-    if (next.state === "succeeded" && storedLocale() === effectiveAnalysisJobLocale) {
+    if (
+      next.state === "succeeded" &&
+      storedLocale() === effectiveAnalysisJobLocale
+    ) {
       setAnalysisNotice(t("compare.reportReady"));
       if (
         document.hidden &&
@@ -219,11 +361,11 @@ export function ComparisonView({ id }: { id: string }) {
     uiLocale,
   ]);
   useEffect(() => {
-    if (jumpTarget)
-      document
-        .getElementById(jumpTarget)
-        ?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [jumpTarget, page]);
+    if (!jumpTarget) return;
+    const target = document.getElementById(jumpTarget);
+    target?.scrollIntoView({ behavior: "smooth", block: "center" });
+    target?.focus({ preventScroll: true });
+  }, [jumpRevision, jumpTarget, page]);
   const items =
     data?.diff.items.filter(
       (item) =>
@@ -251,8 +393,7 @@ export function ComparisonView({ id }: { id: string }) {
       mutateResourceForLocale<Comparison>(
         resources.comparison(id),
         requestLocale,
-        (current) =>
-          current ? { ...current, analysis_job: queued } : current,
+        (current) => (current ? { ...current, analysis_job: queued } : current),
       );
       if (storedLocale() === requestLocale) {
         setAnalysisNotice(
@@ -286,9 +427,12 @@ export function ComparisonView({ id }: { id: string }) {
   async function cancelAnalysis() {
     if (!effectiveAnalysisJob) return;
     try {
-      const cancelled = await api<Job>(`/jobs/${effectiveAnalysisJob.id}/cancel`, {
-        method: "POST",
-      });
+      const cancelled = await api<Job>(
+        `/jobs/${effectiveAnalysisJob.id}/cancel`,
+        {
+          method: "POST",
+        },
+      );
       primeResourceForLocale(
         resources.job(cancelled.id),
         effectiveAnalysisJobLocale,
@@ -330,12 +474,7 @@ export function ComparisonView({ id }: { id: string }) {
     }
   }
   async function removeMistakenImport(versionId: string) {
-    if (
-      !window.confirm(
-        t("compare.removeImportConfirm"),
-      )
-    )
-      return;
+    if (!window.confirm(t("compare.removeImportConfirm"))) return;
     setConfirmingIdentity(versionId);
     setError("");
     try {
@@ -347,12 +486,29 @@ export function ComparisonView({ id }: { id: string }) {
     }
   }
   function jump(value: string) {
+    const target = data?.diff.items.find((item) => item.id === value);
+    const includeContext = target?.kind === "unchanged";
+    const targetItems =
+      data?.diff.items.filter(
+        (item) => includeContext || item.kind !== "unchanged",
+      ) || [];
     setFilter("all");
-    setContext(false);
+    setContext(includeContext);
     setPage(
-      Math.floor(changes.findIndex((item) => item.id === value) / PAGE_SIZE),
+      Math.max(
+        0,
+        Math.floor(
+          targetItems.findIndex((item) => item.id === value) / PAGE_SIZE,
+        ),
+      ),
     );
+    setMobileSurface("evidence");
     setJumpTarget(value);
+    setJumpRevision((current) => current + 1);
+  }
+  function openCompanion(tab: CompanionTab) {
+    setCompanionTab(tab);
+    setMobileSurface("companion");
   }
   return (
     <Shell section={t("compare.section")} wide>
@@ -371,7 +527,9 @@ export function ComparisonView({ id }: { id: string }) {
               <h1>{data.law.name}</h1>
               <div className="flex flex-wrap gap-3 items-center text-xs muted">
                 <Status value={data.mode} />
-                <span>{t("compare.savedAt", { date: dateTime(data.created_at) })}</span>
+                <span>
+                  {t("compare.savedAt", { date: dateTime(data.created_at) })}
+                </span>
                 {(data.old_version.synthetic || data.new_version.synthetic) && (
                   <span className="synthetic-label">
                     {t("compare.synthetic")}
@@ -412,23 +570,21 @@ export function ComparisonView({ id }: { id: string }) {
               <p>
                 {t("compare.tracked")}: <b>{data.law.name}</b>
                 <br />
-                {t("compare.detectedBefore")}: {" "}
+                {t("compare.detectedBefore")}:{" "}
                 <b>
                   {data.identity.old.detected_identifier ||
                     data.identity.old.detected_title ||
                     t("compare.notIdentified")}
                 </b>
                 <br />
-                {t("compare.detectedAfter")}: {" "}
+                {t("compare.detectedAfter")}:{" "}
                 <b>
                   {data.identity.new.detected_identifier ||
                     data.identity.new.detected_title ||
                     t("compare.notIdentified")}
                 </b>
               </p>
-              <span>
-                {t("compare.identityGateBody")}
-              </span>
+              <span>{t("compare.identityGateBody")}</span>
               <div className="flex flex-wrap gap-2 mt-3">
                 <Button asChild variant="outline" size="sm">
                   <a href={data.old_version.artifact_url} target="_blank">
@@ -460,7 +616,9 @@ export function ComparisonView({ id }: { id: string }) {
                         disabled={!!confirmingIdentity}
                         onClick={() => removeMistakenImport(version.id)}
                       >
-                        {t("compare.removeImport", { version: version.id.slice(0, 8) })}
+                        {t("compare.removeImport", {
+                          version: version.id.slice(0, 8),
+                        })}
                       </Button>
                     ))}
               </div>
@@ -485,15 +643,33 @@ export function ComparisonView({ id }: { id: string }) {
                         {confirmingIdentity === version.id && (
                           <Loader2 className="animate-spin" />
                         )}
-                        {t(index === 0 ? "compare.confirmThis" : "compare.confirmOther")}
+                        {t(
+                          index === 0
+                            ? "compare.confirmThis"
+                            : "compare.confirmOther",
+                        )}
                       </Button>
                     ))}
                 </div>
               )}
             </div>
           )}
-          <div className="comparison-layout">
-            <div className="min-w-0">
+          <ComparisonWorkspaceTabs
+            active={companionTab}
+            evidenceActive={mobileSurface === "evidence"}
+            includeEvidence
+            canAsk={canManage}
+            onEvidence={() => setMobileSurface("evidence")}
+            onSelect={openCompanion}
+          />
+          <div
+            className="comparison-layout"
+            data-mobile-surface={mobileSurface}
+          >
+            <div
+              className="comparison-evidence-pane min-w-0"
+              id="comparison-evidence"
+            >
               <section className="panel diff-panel">
                 <div className="panel-header">
                   <h2>{t("compare.meaningful")}</h2>
@@ -504,7 +680,9 @@ export function ComparisonView({ id }: { id: string }) {
                     <span className="count-removed">
                       − {number(data.diff.counts.removed)} {t("status.removed")}
                     </span>
-                    <span>{number(data.diff.counts.modified)} {t("status.modified")}</span>
+                    <span>
+                      {number(data.diff.counts.modified)} {t("status.modified")}
+                    </span>
                   </div>
                 </div>
                 {data.diff.classification_counts && (
@@ -549,8 +727,14 @@ export function ComparisonView({ id }: { id: string }) {
                   </div>
                 )}
                 <div className="version-pair">
-                  <VersionCard version={data.old_version} side={t("compare.beforeUpper")} />
-                  <VersionCard version={data.new_version} side={t("compare.afterUpper")} />
+                  <VersionCard
+                    version={data.old_version}
+                    side={t("compare.beforeUpper")}
+                  />
+                  <VersionCard
+                    version={data.new_version}
+                    side={t("compare.afterUpper")}
+                  />
                 </div>
                 <div className="diff-toolbar">
                   <div
@@ -574,7 +758,8 @@ export function ComparisonView({ id }: { id: string }) {
                             ? t("compare.materialFirst")
                             : value === "all"
                               ? t("compare.allChanges")
-                              : (translate(locale, `status.${value}`) || label(value))}
+                              : translate(locale, `status.${value}`) ||
+                                label(value)}
                         </button>
                       ),
                     )}
@@ -604,7 +789,10 @@ export function ComparisonView({ id }: { id: string }) {
                       </option>
                       {changes.map((item, index) => (
                         <option key={item.id} value={item.id}>
-                          {number(index + 1)}. {translate(locale, `status.${item.kind}`) || label(item.kind)} —{" "}
+                          {number(index + 1)}.{" "}
+                          {translate(locale, `status.${item.kind}`) ||
+                            label(item.kind)}{" "}
+                          —{" "}
                           {(item.new?.text || item.old?.text || "").slice(
                             0,
                             100,
@@ -621,17 +809,13 @@ export function ComparisonView({ id }: { id: string }) {
                   <span>
                     <ins>{t("compare.addedWording")}</ins>
                   </span>
-                  <span className="muted">
-                    {t("compare.neutralWording")}
-                  </span>
+                  <span className="muted">{t("compare.neutralWording")}</span>
                 </div>
                 {!data.diff.changed && (
                   <div className="unchanged-state">
                     <Check size={24} />
                     <h2>{t("compare.noChanges")}</h2>
-                    <p>
-                      {t("compare.sameText")}
-                    </p>
+                    <p>{t("compare.sameText")}</p>
                   </div>
                 )}
                 {data.diff.changed && items.length === 0 && (
@@ -648,32 +832,66 @@ export function ComparisonView({ id }: { id: string }) {
                       {filter === "substantive" && !classificationAvailable
                         ? t("compare.classificationHelp")
                         : filter === "substantive"
-                          ? t("compare.hiddenDifferences", { count: number(hiddenExactChangeCount) })
+                          ? t("compare.hiddenDifferences", {
+                              count: number(hiddenExactChangeCount),
+                            })
                           : t("compare.chooseFilter")}
                     </p>
                   </div>
                 )}
-                {filter === "substantive" && data.diff.change_clusters?.length ? (
+                {filter === "substantive" &&
+                data.diff.change_clusters?.length ? (
                   <div className="semantic-clusters">
                     {data.diff.change_clusters.map((cluster, index) => {
                       const clusterItems = cluster.change_ids
-                        .map((changeId) => changes.find((item) => item.id === changeId))
+                        .map((changeId) =>
+                          changes.find((item) => item.id === changeId),
+                        )
                         .filter((item): item is Change => !!item);
                       const first = clusterItems[0];
                       return (
                         <article key={cluster.id}>
                           <div className="semantic-cluster-heading">
-                            <span>{t("compare.changeGroup", { number: number(index + 1) })}</span>
-                            <strong>{t("compare.exactChangeCount", { count: number(cluster.change_ids.length) })}</strong>
+                            <span>
+                              {t("compare.changeGroup", {
+                                number: number(index + 1),
+                              })}
+                            </span>
+                            <strong>
+                              {t("compare.exactChangeCount", {
+                                count: number(cluster.change_ids.length),
+                              })}
+                            </strong>
                           </div>
-                          <p>{cluster.classifications.map(label).join(" · ")}</p>
-                          <p className="semantic-cluster-units">
-                            {t("compare.before")}: {cluster.old_unit_ids[0] || t("compare.noEarlierUnit")} · {t("compare.after")}: {cluster.new_unit_ids[0] || t("compare.noCurrentUnit")}
+                          <p>
+                            {cluster.classifications.map(label).join(" · ")}
                           </p>
-                          <p>{(first?.new?.text || first?.old?.text || t("compare.savedUnitChange")).slice(0, 260)}</p>
-                          {cluster.ambiguous && <span className="needs-review-label">{t("compare.needsReview")}</span>}
+                          <p className="semantic-cluster-units">
+                            {t("compare.before")}:{" "}
+                            {cluster.old_unit_ids[0] ||
+                              t("compare.noEarlierUnit")}{" "}
+                            · {t("compare.after")}:{" "}
+                            {cluster.new_unit_ids[0] ||
+                              t("compare.noCurrentUnit")}
+                          </p>
+                          <p>
+                            {(
+                              first?.new?.text ||
+                              first?.old?.text ||
+                              t("compare.savedUnitChange")
+                            ).slice(0, 260)}
+                          </p>
+                          {cluster.ambiguous && (
+                            <span className="needs-review-label">
+                              {t("compare.needsReview")}
+                            </span>
+                          )}
                           {first && (
-                            <Button size="sm" variant="outline" onClick={() => jump(first.id)}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => jump(first.id)}
+                            >
                               <FileText size={13} /> {t("compare.viewEvidence")}
                             </Button>
                           )}
@@ -686,6 +904,7 @@ export function ComparisonView({ id }: { id: string }) {
                     {visible.map((item) => (
                       <div
                         id={item.id}
+                        tabIndex={-1}
                         className={
                           "diff-row diff-" +
                           item.kind +
@@ -693,8 +912,16 @@ export function ComparisonView({ id }: { id: string }) {
                         }
                         key={item.id}
                       >
-                        <DiffSide item={item} side="old" version={data.old_version} />
-                        <DiffSide item={item} side="new" version={data.new_version} />
+                        <DiffSide
+                          item={item}
+                          side="old"
+                          version={data.old_version}
+                        />
+                        <DiffSide
+                          item={item}
+                          side="new"
+                          version={data.new_version}
+                        />
                       </div>
                     ))}
                   </div>
@@ -702,7 +929,13 @@ export function ComparisonView({ id }: { id: string }) {
                 {filter !== "substantive" && items.length > 0 && (
                   <div className="pagination">
                     <span>
-                      {t("evidence.range", { start: number(page * PAGE_SIZE + 1), end: number(Math.min((page + 1) * PAGE_SIZE, items.length)), total: number(items.length) })}
+                      {t("evidence.range", {
+                        start: number(page * PAGE_SIZE + 1),
+                        end: number(
+                          Math.min((page + 1) * PAGE_SIZE, items.length),
+                        ),
+                        total: number(items.length),
+                      })}
                     </span>
                     <div className="flex gap-2 items-center">
                       <Button
@@ -735,8 +968,40 @@ export function ComparisonView({ id }: { id: string }) {
                 )}
               </section>
             </div>
-            <aside className="analysis-column">
-              <section className="panel impact-panel">
+            {mobileSurface === "companion" && (
+              <button
+                type="button"
+                className="comparison-drawer-backdrop"
+                aria-label={t("common.close")}
+                onClick={() => setMobileSurface("evidence")}
+              />
+            )}
+            <aside
+              className="analysis-column"
+              aria-label={t("compare.currentReport")}
+            >
+              <div className="companion-nav-wrap">
+                <ComparisonWorkspaceTabs
+                  active={companionTab}
+                  canAsk={canManage}
+                  onSelect={openCompanion}
+                />
+                <button
+                  type="button"
+                  className="companion-close"
+                  aria-label={t("common.close")}
+                  onClick={() => setMobileSurface("evidence")}
+                >
+                  <XCircle size={18} />
+                </button>
+              </div>
+              <section
+                id="companion-summary"
+                role="tabpanel"
+                aria-label={t("compare.whatChanged")}
+                hidden={companionTab !== "summary"}
+                className="panel impact-panel companion-tab-panel"
+              >
                 <div className="panel-header">
                   <div className="flex items-center gap-2">
                     <Sparkles size={18} className="text-primary" />
@@ -749,7 +1014,11 @@ export function ComparisonView({ id }: { id: string }) {
                 <div className="panel-body">
                   <span className="eyebrow">{t("compare.reportFlow")}</span>
                   {analysisNotice && (
-                    <div className="analysis-notice" role="status" aria-live="polite">
+                    <div
+                      className="analysis-notice"
+                      role="status"
+                      aria-live="polite"
+                    >
                       <Bell size={15} /> {analysisNotice}
                     </div>
                   )}
@@ -757,9 +1026,7 @@ export function ComparisonView({ id }: { id: string }) {
                     <div className="model-unavailable">
                       <Sparkles size={25} />
                       <h3>{t("compare.connectApertus")}</h3>
-                      <p>
-                        {t("compare.connectApertusBody")}
-                      </p>
+                      <p>{t("compare.connectApertusBody")}</p>
                       <span>{t("compare.noAiResponse")}</span>
                       <Button
                         asChild
@@ -767,7 +1034,9 @@ export function ComparisonView({ id }: { id: string }) {
                         size="sm"
                         className="mt-3"
                       >
-                        <Link href="/settings">{t("compare.configureApertus")}</Link>
+                        <Link href="/settings">
+                          {t("compare.configureApertus")}
+                        </Link>
                       </Button>
                     </div>
                   )}
@@ -787,7 +1056,10 @@ export function ComparisonView({ id }: { id: string }) {
                     </div>
                   )}
                   {analysisJobActive && effectiveAnalysisJob && (
-                    <AnalysisJobProgress job={effectiveAnalysisJob} onCancel={cancelAnalysis} />
+                    <AnalysisJobProgress
+                      job={effectiveAnalysisJob}
+                      onCancel={cancelAnalysis}
+                    />
                   )}
                   {!analysisJobActive && effectiveAnalysisJob && (
                     <AnalysisJobOutcome job={effectiveAnalysisJob} />
@@ -795,27 +1067,40 @@ export function ComparisonView({ id }: { id: string }) {
                   {analysis?.status === "succeeded" && analysis.result ? (
                     <>
                       <div className="impact-report-heading">
-                        <span className="eyebrow">{t("compare.whatChanged")}</span>
-                        <h3>{analysis.result.headline || analysis.result.summary}</h3>
+                        <span className="eyebrow">
+                          {t("compare.whatChanged")}
+                        </span>
+                        <h3>
+                          {analysis.result.headline || analysis.result.summary}
+                        </h3>
                       </div>
                       <p className="impact-summary">
                         {analysis.result.summary}
                       </p>
                       <p className="text-sm muted">
                         {analysis.result.reason}{" "}
-                        <Citations values={analysis.result.citations} />
+                        <ComparisonCitations
+                          values={analysis.result.citations}
+                          items={data.diff.items}
+                          onEvidence={jump}
+                        />
                       </p>
                       {analysis.result.evidence_grade && (
                         <div className="impact-grade-line">
                           <span>
-                            {t("compare.potentialSeverity")}: {" "}
+                            {t("compare.potentialSeverity")}:{" "}
                             {localLabel(
-                              analysis.result.materiality || analysis.result.impact,
+                              analysis.result.materiality ||
+                                analysis.result.impact,
                               uiLocale,
                             )}
                           </span>
                           <span>
-                            {t("compare.evidence")}: {localLabel(analysis.result.evidence_grade, uiLocale)}
+                            {t("compare.evidence")}:{" "}
+                            {localLabel(
+                              analysis.result.evidence_grade,
+                              uiLocale,
+                            )}
                           </span>
                         </div>
                       )}
@@ -825,60 +1110,92 @@ export function ComparisonView({ id }: { id: string }) {
                         ))}
                       </div>
                       {!!analysis.result.material_changes?.length && (
-                        <div className="impact-report-section">
-                          <span className="eyebrow">{t("compare.materialCards")}</span>
-                          <div className="impact-change-list">
-                            {analysis.result.material_changes.map((change) => (
-                              <article key={change.change_id}>
-                                <div className="impact-change-title">
-                                  <strong>{change.title}</strong>
-                                  <span>{localLabel(change.evidence_grade, uiLocale)}</span>
-                                </div>
-                                <p>
-                                  {change.old_unit?.label || t("compare.noEarlierUnit")}{" "}
-                                  →{" "}
-                                  {change.new_unit?.label || t("compare.noCurrentUnit")}
-                                </p>
-                                <p>{change.explanation}</p>
-                                <p className="material-card-meta">
-                                  {t("compare.organizationRelevance")}: {localLabel(
-                                    analysis.result!.organization_applicability?.status || "unknown",
-                                    uiLocale,
-                                  )}
-                                  {analysis.result!.important_dates?.length
-                                    ? ` · ${t("compare.dateFindingCount", { count: number(analysis.result!.important_dates.length) })}`
-                                    : ` · ${t("compare.noDateFinding")}`}
-                                </p>
-                                <p className="material-card-meta">
-                                  {t("compare.datesObligations")}: {analysis.result!.important_dates?.length
-                                    ? analysis.result!.important_dates
-                                        .map((item) => `${item.label}: ${item.date || translate(locale, `status.${item.status}`) || label(item.status)}`)
-                                        .join("; ")
-                                    : t("compare.noneSupported")}
-                                </p>
-                                <p className="material-card-meta">
-                                  {t("compare.assumptions")}: {analysis.result!.uncertainties?.length
-                                    ? analysis.result!.uncertainties.join("; ")
-                                    : t("compare.noneRecorded")}
-                                </p>
-                                <Citations values={change.citations} />
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="outline"
-                                  className="mt-2"
-                                  onClick={() => jump(change.change_id)}
-                                >
-                                  <FileText size={13} /> {t("compare.viewEvidence")}
-                                </Button>
-                              </article>
-                            ))}
+                        <details className="impact-details">
+                          <summary>
+                            <FileText size={14} />
+                            {t("compare.materialCards")} ·{" "}
+                            {number(analysis.result.material_changes.length)}
+                          </summary>
+                          <div className="impact-report-section">
+                            <div className="impact-change-list">
+                              {analysis.result.material_changes.map(
+                                (change) => (
+                                  <article key={change.change_id}>
+                                    <div className="impact-change-title">
+                                      <strong>{change.title}</strong>
+                                      <span>
+                                        {localLabel(
+                                          change.evidence_grade,
+                                          uiLocale,
+                                        )}
+                                      </span>
+                                    </div>
+                                    <p>
+                                      {change.old_unit?.label ||
+                                        t("compare.noEarlierUnit")}{" "}
+                                      →{" "}
+                                      {change.new_unit?.label ||
+                                        t("compare.noCurrentUnit")}
+                                    </p>
+                                    <p>{change.explanation}</p>
+                                    <p className="material-card-meta">
+                                      {t("compare.organizationRelevance")}:{" "}
+                                      {localLabel(
+                                        analysis.result!
+                                          .organization_applicability?.status ||
+                                          "unknown",
+                                        uiLocale,
+                                      )}
+                                      {analysis.result!.important_dates?.length
+                                        ? ` · ${t("compare.dateFindingCount", { count: number(analysis.result!.important_dates.length) })}`
+                                        : ` · ${t("compare.noDateFinding")}`}
+                                    </p>
+                                    <p className="material-card-meta">
+                                      {t("compare.datesObligations")}:{" "}
+                                      {analysis.result!.important_dates?.length
+                                        ? analysis
+                                            .result!.important_dates.map(
+                                              (item) =>
+                                                `${item.label}: ${item.date || translate(locale, `status.${item.status}`) || label(item.status)}`,
+                                            )
+                                            .join("; ")
+                                        : t("compare.noneSupported")}
+                                    </p>
+                                    <p className="material-card-meta">
+                                      {t("compare.assumptions")}:{" "}
+                                      {analysis.result!.uncertainties?.length
+                                        ? analysis.result!.uncertainties.join(
+                                            "; ",
+                                          )
+                                        : t("compare.noneRecorded")}
+                                    </p>
+                                    <ComparisonCitations
+                                      values={change.citations}
+                                      items={data.diff.items}
+                                      onEvidence={jump}
+                                    />
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="outline"
+                                      className="mt-2"
+                                      onClick={() => jump(change.change_id)}
+                                    >
+                                      <FileText size={13} />{" "}
+                                      {t("compare.viewEvidence")}
+                                    </Button>
+                                  </article>
+                                ),
+                              )}
+                            </div>
                           </div>
-                        </div>
+                        </details>
                       )}
                       {analysis.result.organization_applicability && (
                         <div className="impact-report-section">
-                          <span className="eyebrow">{t("compare.whyMatter")}</span>
+                          <span className="eyebrow">
+                            {t("compare.whyMatter")}
+                          </span>
                           <div className="impact-applicability">
                             <strong>
                               {localLabel(
@@ -888,7 +1205,7 @@ export function ComparisonView({ id }: { id: string }) {
                               )}
                             </strong>
                             <span>
-                              {t("compare.evidence")}: {" "}
+                              {t("compare.evidence")}:{" "}
                               {localLabel(
                                 analysis.result.organization_applicability
                                   .evidence_grade,
@@ -900,11 +1217,13 @@ export function ComparisonView({ id }: { id: string }) {
                                 analysis.result.organization_applicability
                                   .explanation
                               }{" "}
-                              <Citations
+                              <ComparisonCitations
                                 values={
                                   analysis.result.organization_applicability
                                     .citations
                                 }
+                                items={data.diff.items}
+                                onEvidence={jump}
                               />
                             </p>
                           </div>
@@ -912,12 +1231,21 @@ export function ComparisonView({ id }: { id: string }) {
                       )}
                       {!!analysis.result.important_dates?.length && (
                         <div className="impact-report-section">
-                          <span className="eyebrow">{t("compare.datesDeadlines")}</span>
+                          <span className="eyebrow">
+                            {t("compare.datesDeadlines")}
+                          </span>
                           <div className="impact-date-list">
                             {analysis.result.important_dates.map((item) => (
                               <div key={item.kind + item.label}>
                                 <strong>{item.label}</strong>
-                                <span>{item.date || translate(locale, `status.${item.status}`) || label(item.status)}</span>
+                                <span>
+                                  {item.date ||
+                                    translate(
+                                      locale,
+                                      `status.${item.status}`,
+                                    ) ||
+                                    label(item.status)}
+                                </span>
                               </div>
                             ))}
                           </div>
@@ -933,66 +1261,24 @@ export function ComparisonView({ id }: { id: string }) {
                           </ul>
                         </details>
                       )}
-                      {analysis.result.actions.length > 0 ? (
-                        <>
-                          <div className="action-heading">
-                            <span className="eyebrow">{t("compare.reviewPlan")}</span>
-                            <h3>{t("compare.suggestedActions")}</h3>
-                          </div>
-                          <ol className="action-list">
-                            {analysis.result.actions.map((action, index) => (
-                              <li key={action.action_key || index}>
-                                <span>{index + 1}</span>
-                                <div>
-                                  <strong>{action.title || action.text}</strong>
-                                  {action.rationale && (
-                                    <p>{action.rationale}</p>
-                                  )}
-                                  {action.owner_role && (
-                                    <p className="action-meta">
-                                      {t("compare.owner")}: {action.owner_role} · {t("compare.area")}: {" "}
-                                      {action.affected_area} · {t("compare.priority")}: {" "}
-                                      {action.priority ? (translate(locale, `status.${action.priority}`) || label(action.priority)) : t("compare.notRecorded")} · {t("compare.due")}: {" "}
-                                      {action.due_date || action.due_basis}
-                                    </p>
-                                  )}
-                                  {action.applicability_condition && (
-                                    <p className="action-condition">
-                                      {t("compare.applyWhen")}: {" "}
-                                      {action.applicability_condition}
-                                    </p>
-                                  )}
-                                  <Citations values={action.citations} />
-                                  {action.action_key && (
-                                    <ReviewActionControls
-                                      comparisonId={id}
-                                      analysisId={analysis.id}
-                                      action={action}
-                                      current={analysis.action_decisions?.current?.[action.action_key]}
-                                      history={analysis.action_decisions?.history?.filter(
-                                        (item) => item.action_key === action.action_key,
-                                      ) || []}
-                                      canManage={canManage}
-                                    />
-                                  )}
-                                </div>
-                              </li>
-                            ))}
-                          </ol>
-                        </>
-                      ) : (
-                        <div className="action-empty">
-                            <span className="eyebrow">{t("compare.knowWhatToDo")}</span>
-                            <strong>{t("compare.noAction")}</strong>
-                          <p>
-                              {t("compare.noActionBody")}
-                          </p>
-                        </div>
-                      )}
-                      <ReportProvenance analysis={analysis} comparison={data} />
+                      <ActionPreview
+                        actions={analysis.result.actions}
+                        onOpen={() => openCompanion("actions")}
+                      />
+                      <details className="impact-details provenance-disclosure">
+                        <summary>
+                          <ListChecks size={14} /> {t("compare.provenance")}
+                        </summary>
+                        <ReportProvenance
+                          analysis={analysis}
+                          comparison={data}
+                          onHistory={() => openCompanion("history")}
+                        />
+                      </details>
                     </>
                   ) : (
-                    !analysisJobActive && health?.apertus.configured && (
+                    !analysisJobActive &&
+                    health?.apertus.configured && (
                       <p className="text-sm muted">
                         {!data.diff.changed
                           ? t("compare.noChangesAssess")
@@ -1011,7 +1297,9 @@ export function ComparisonView({ id }: { id: string }) {
                       variant="outline"
                       disabled={
                         analysisJobActive ||
-                        (analysis?.status === "succeeded" && !analysis.stale && effectiveAnalysisJob?.state === "succeeded") ||
+                        (analysis?.status === "succeeded" &&
+                          !analysis.stale &&
+                          effectiveAnalysisJob?.state === "succeeded") ||
                         !health?.apertus.configured ||
                         identityBlocked ||
                         !canAnalyseMeaningfulChanges
@@ -1023,20 +1311,37 @@ export function ComparisonView({ id }: { id: string }) {
                       ) : (
                         <Sparkles />
                       )}
-                      {analysis?.stale || analysis?.status === "failed" || effectiveAnalysisJob?.state === "failed"
+                      {analysis?.stale ||
+                      analysis?.status === "failed" ||
+                      effectiveAnalysisJob?.state === "failed"
                         ? t("compare.retryAnalysis")
                         : analysis?.status === "succeeded"
                           ? t("compare.currentSaved")
                           : t("compare.analyse")}
                     </Button>
                   )}
-                  <p className="review-note">
-                    {t("compare.reviewDisclaimer")}
-                  </p>
+                  <p className="review-note">{t("compare.reviewDisclaimer")}</p>
                 </div>
               </section>
+              <ActionsPanel
+                id="companion-actions"
+                hidden={companionTab !== "actions"}
+                analysis={analysis}
+                comparisonId={id}
+                canManage={canManage}
+                identityBlocked={identityBlocked}
+                items={data.diff.items}
+                onEvidence={jump}
+                onSummary={() => openCompanion("summary")}
+              />
               {identityBlocked ? (
-                <section className="panel ask-panel">
+                <section
+                  id="companion-ask"
+                  role="tabpanel"
+                  aria-label={t("compare.ask")}
+                  hidden={companionTab !== "ask"}
+                  className="panel ask-panel companion-tab-panel"
+                >
                   <div className="panel-header">
                     <h2 className="flex items-center gap-2">
                       <MessageSquare size={17} />
@@ -1050,21 +1355,347 @@ export function ComparisonView({ id }: { id: string }) {
                   </div>
                 </section>
               ) : (
-                <>
-                  {canManage && (
-                    <AskPanel
-                      comparisonId={id}
-                      configured={!!health?.apertus.configured}
-                    />
-                  )}
-                  <AIHistory comparisonId={id} compact />
-                </>
+                canManage && (
+                  <AskPanel
+                    comparisonId={id}
+                    configured={!!health?.apertus.configured}
+                    hidden={companionTab !== "ask"}
+                    evidenceItems={data.diff.items}
+                    onEvidence={jump}
+                  />
+                )
               )}
+              <AIHistory
+                comparisonId={id}
+                compact
+                hidden={companionTab !== "history"}
+                evidenceItems={data.diff.items}
+                onEvidence={jump}
+              />
             </aside>
           </div>
         </>
       )}
     </Shell>
+  );
+}
+
+function ComparisonWorkspaceTabs({
+  active,
+  evidenceActive = false,
+  includeEvidence = false,
+  canAsk,
+  onEvidence,
+  onSelect,
+}: {
+  active: CompanionTab;
+  evidenceActive?: boolean;
+  includeEvidence?: boolean;
+  canAsk: boolean;
+  onEvidence?: () => void;
+  onSelect: (tab: CompanionTab) => void;
+}) {
+  const { t } = useI18n();
+  const tabs: {
+    id: "evidence" | CompanionTab;
+    label: string;
+    icon: React.ReactNode;
+    disabled?: boolean;
+  }[] = [
+    ...(includeEvidence
+      ? [
+          {
+            id: "evidence" as const,
+            label: t("compare.meaningful"),
+            icon: <FileText size={15} />,
+          },
+        ]
+      : []),
+    {
+      id: "summary",
+      label: t("compare.whatChanged"),
+      icon: <Sparkles size={15} />,
+    },
+    {
+      id: "actions",
+      label: t("compare.suggestedActions"),
+      icon: <ListChecks size={15} />,
+    },
+    {
+      id: "ask",
+      label: t("compare.ask"),
+      icon: <MessageSquare size={15} />,
+      disabled: !canAsk,
+    },
+    {
+      id: "history",
+      label: t("history.title"),
+      icon: <HistoryIcon size={15} />,
+    },
+  ];
+  function moveFocus(event: React.KeyboardEvent<HTMLButtonElement>) {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const buttons = Array.from(
+      event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>(
+        '[role="tab"]:not(:disabled)',
+      ) || [],
+    );
+    const current = buttons.indexOf(event.currentTarget);
+    const next =
+      event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? buttons.length - 1
+          : (current + (event.key === "ArrowRight" ? 1 : -1) + buttons.length) %
+            buttons.length;
+    buttons[next]?.focus();
+    buttons[next]?.click();
+  }
+  return (
+    <div
+      className={includeEvidence ? "comparison-task-tabs" : "companion-tabs"}
+      role="tablist"
+      aria-label={t("compare.section")}
+    >
+      {tabs.map((tab) => {
+        const selected =
+          tab.id === "evidence"
+            ? evidenceActive
+            : !evidenceActive && tab.id === active;
+        return (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={selected}
+            aria-controls={
+              tab.id === "evidence"
+                ? "comparison-evidence"
+                : `companion-${tab.id}`
+            }
+            tabIndex={selected ? 0 : -1}
+            disabled={tab.disabled}
+            onKeyDown={moveFocus}
+            onClick={() =>
+              tab.id === "evidence" ? onEvidence?.() : onSelect(tab.id)
+            }
+            key={tab.id}
+          >
+            {tab.icon}
+            <span>{tab.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ActionPreview({
+  actions,
+  onOpen,
+}: {
+  actions: Impact["actions"];
+  onOpen: () => void;
+}) {
+  const { t } = useI18n();
+  if (!actions.length)
+    return (
+      <div className="action-empty">
+        <span className="eyebrow">{t("compare.knowWhatToDo")}</span>
+        <strong>{t("compare.noAction")}</strong>
+        <p>{t("compare.noActionBody")}</p>
+      </div>
+    );
+  return (
+    <div className="action-preview">
+      <div className="action-preview-heading">
+        <div>
+          <span className="eyebrow">{t("compare.reviewPlan")}</span>
+          <h3>{t("compare.suggestedActions")}</h3>
+        </div>
+        <Button type="button" size="sm" variant="outline" onClick={onOpen}>
+          {t("compare.suggestedActions")} <ArrowRight size={13} />
+        </Button>
+      </div>
+      <ol>
+        {actions.slice(0, 3).map((action, index) => (
+          <li key={action.action_key || index}>
+            <span>{index + 1}</span>
+            <strong>{action.title || action.text}</strong>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function ActionsPanel({
+  id,
+  hidden,
+  analysis,
+  comparisonId,
+  canManage,
+  identityBlocked,
+  items,
+  onEvidence,
+  onSummary,
+}: {
+  id: string;
+  hidden: boolean;
+  analysis: Analysis | null | undefined;
+  comparisonId: string;
+  canManage: boolean;
+  identityBlocked: boolean;
+  items: Change[];
+  onEvidence: (changeId: string) => void;
+  onSummary: () => void;
+}) {
+  const { locale, t } = useI18n();
+  return (
+    <section
+      id={id}
+      role="tabpanel"
+      aria-label={t("compare.suggestedActions")}
+      hidden={hidden}
+      className="panel companion-tab-panel actions-panel"
+    >
+      <div className="panel-header">
+        <h2 className="flex items-center gap-2">
+          <ListChecks size={18} /> {t("compare.suggestedActions")}
+        </h2>
+        {analysis?.result && <Status value={analysis.result.impact} />}
+      </div>
+      <div className="panel-body">
+        {identityBlocked ? (
+          <div className="historical-note">{t("compare.analysisBlocked")}</div>
+        ) : analysis?.status === "succeeded" && analysis.result ? (
+          analysis.result.actions.length ? (
+            <ol className="action-list">
+              {analysis.result.actions.map((action, index) => (
+                <li key={action.action_key || index}>
+                  <span>{index + 1}</span>
+                  <div>
+                    <strong>{action.title || action.text}</strong>
+                    {action.rationale && <p>{action.rationale}</p>}
+                    {action.owner_role && (
+                      <p className="action-meta">
+                        {t("compare.owner")}: {action.owner_role} ·{" "}
+                        {t("compare.area")}: {action.affected_area} ·{" "}
+                        {t("compare.priority")}:{" "}
+                        {action.priority
+                          ? translate(locale, `status.${action.priority}`) ||
+                            label(action.priority)
+                          : t("compare.notRecorded")}{" "}
+                        · {t("compare.due")}:{" "}
+                        {action.due_date || action.due_basis}
+                      </p>
+                    )}
+                    {action.applicability_condition && (
+                      <p className="action-condition">
+                        {t("compare.applyWhen")}:{" "}
+                        {action.applicability_condition}
+                      </p>
+                    )}
+                    <ComparisonCitations
+                      values={action.citations}
+                      items={items}
+                      onEvidence={onEvidence}
+                    />
+                    {action.action_key && (
+                      <ReviewActionControls
+                        comparisonId={comparisonId}
+                        analysisId={analysis.id}
+                        action={action}
+                        current={
+                          analysis.action_decisions?.current?.[
+                            action.action_key
+                          ]
+                        }
+                        history={
+                          analysis.action_decisions?.history?.filter(
+                            (item) => item.action_key === action.action_key,
+                          ) || []
+                        }
+                        canManage={canManage}
+                      />
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <div className="action-empty">
+              <span className="eyebrow">{t("compare.knowWhatToDo")}</span>
+              <strong>{t("compare.noAction")}</strong>
+              <p>{t("compare.noActionBody")}</p>
+            </div>
+          )
+        ) : (
+          <div className="action-empty">
+            <span className="eyebrow">{t("compare.reviewPlan")}</span>
+            <strong>{t("compare.readyToAnalyse")}</strong>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={onSummary}
+            >
+              <Sparkles size={14} /> {t("compare.currentReport")}
+            </Button>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function ComparisonCitations({
+  values,
+  items,
+  onEvidence,
+}: {
+  values: Citation[];
+  items: Change[];
+  onEvidence: (changeId: string) => void;
+}) {
+  const { t } = useI18n();
+  if (!values?.length) return null;
+  return (
+    <span className="citations comparison-citations">
+      {values.map((citation, index) => {
+        const change = items.find(
+          (item) =>
+            item.old?.id === citation.passage_id ||
+            item.new?.id === citation.passage_id,
+        );
+        const accessibleLabel = t("common.citation", {
+          number: index + 1,
+          quote: citation.quote.slice(0, 80),
+        });
+        return change ? (
+          <button
+            type="button"
+            onClick={() => onEvidence(change.id)}
+            aria-label={accessibleLabel}
+            title={citation.quote}
+            key={`${citation.version_id}-${citation.passage_id}-${index}`}
+          >
+            [{index + 1}] <FileText size={10} />
+          </button>
+        ) : (
+          <Link
+            href={citation.url}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={accessibleLabel}
+            title={citation.quote}
+            key={`${citation.version_id}-${citation.passage_id}-${index}`}
+          >
+            [{index + 1}] <ArrowUpRight size={10} />
+          </Link>
+        );
+      })}
+    </span>
   );
 }
 
@@ -1078,7 +1709,8 @@ function VersionCard({ version, side }: { version: Version; side: string }) {
       </div>
       <strong>{version.declared_date || t("law.versionDateUnknown")}</strong>
       <p>
-        {translate(locale, `status.${version.origin}`) || label(version.origin)} ·{" "}
+        {translate(locale, `status.${version.origin}`) || label(version.origin)}{" "}
+        ·{" "}
         {version.declared_date
           ? t("compare.dateSupplied")
           : t("compare.noPublicationDate")}
@@ -1113,15 +1745,21 @@ function DiffSide({
     >
       <div className="passage-meta">
         <span>
-          {side === "old" ? t("compare.beforeUpper") : t("compare.afterUpper")} ·{" "}
-          {translate(locale, `status.${item.classification || item.change_type || item.kind}`) || label(item.classification || item.change_type || item.kind)}
+          {side === "old" ? t("compare.beforeUpper") : t("compare.afterUpper")}{" "}
+          ·{" "}
+          {translate(
+            locale,
+            `status.${item.classification || item.change_type || item.kind}`,
+          ) || label(item.classification || item.change_type || item.kind)}
         </span>
         {passage && (
           <Link
             href={"/evidence/" + version.id + "?passage=" + passage.id}
             target="_blank"
           >
-            {passage.page ? `${t("compare.page", { page: passage.page })} · ` : ""}
+            {passage.page
+              ? `${t("compare.page", { page: passage.page })} · `
+              : ""}
             {passage.id}
             <ArrowUpRight size={10} />
           </Link>
@@ -1146,19 +1784,33 @@ function DiffSide({
   );
 }
 
-function AnalysisJobProgress({ job, onCancel }: { job: Job; onCancel: () => void }) {
+function AnalysisJobProgress({
+  job,
+  onCancel,
+}: {
+  job: Job;
+  onCancel: () => void;
+}) {
   const { locale: productLocale, t } = useI18n();
   const locale = productLocale.slice(0, 2) as ComparisonLocale;
-  const activeStep = job.steps.find((step) => step.state === "running") ||
+  const activeStep =
+    job.steps.find((step) => step.state === "running") ||
     job.steps.find((step) => step.state === "pending");
   const state = (() => {
-    if (["queued", "dispatched", "retrying", "waiting_for_model"].includes(job.state))
+    if (
+      ["queued", "dispatched", "retrying", "waiting_for_model"].includes(
+        job.state,
+      )
+    )
       return job.queue_position
         ? t("compare.queuePosition", { position: job.queue_position })
         : t("compare.queueWaiting");
     if (activeStep?.position === 1) return t("compare.preparingChanges");
     if (activeStep?.position === 2)
-      return t("compare.analysingGroups", { current: activeStep.progress.current, total: activeStep.progress.total });
+      return t("compare.analysingGroups", {
+        current: activeStep.progress.current,
+        total: activeStep.progress.total,
+      });
     if (activeStep?.position === 3) return t("compare.validatingEvidence");
     return localLabel(job.state, locale);
   })();
@@ -1171,7 +1823,12 @@ function AnalysisJobProgress({ job, onCancel }: { job: Job; onCancel: () => void
         <Loader2 className="animate-spin" size={17} />
         <div>
           <strong>{state}</strong>
-          <span>{t("compare.backgroundAttempt", { attempt: job.attempts, total: job.max_attempts })}</span>
+          <span>
+            {t("compare.backgroundAttempt", {
+              attempt: job.attempts,
+              total: job.max_attempts,
+            })}
+          </span>
         </div>
       </div>
       <div
@@ -1184,9 +1841,7 @@ function AnalysisJobProgress({ job, onCancel }: { job: Job; onCancel: () => void
       >
         <span style={{ width: `${percent}%` }} />
       </div>
-      <p>
-        {t("compare.backgroundBody")}
-      </p>
+      <p>{t("compare.backgroundBody")}</p>
       <Button type="button" size="sm" variant="outline" onClick={onCancel}>
         <XCircle size={14} /> {t("compare.cancelAnalysis")}
       </Button>
@@ -1209,7 +1864,9 @@ function AnalysisJobOutcome({ job }: { job: Job }) {
       <strong>{localLabel(state, locale)}</strong>
       <span>
         {job.finished_at ? dateTime(job.finished_at) : dateTime(job.updated_at)}
-        {job.error?.detail ? ` · ${job.error.detail}` : ` · ${t("compare.savedBackground")}`}
+        {job.error?.detail
+          ? ` · ${job.error.detail}`
+          : ` · ${t("compare.savedBackground")}`}
       </span>
     </div>
   );
@@ -1245,11 +1902,16 @@ function ReviewActionControls({
     let scheduled_for: string | null = null;
     let rationale: string | null = null;
     if (decision === "assigned") {
-      assigned_to = window.prompt(t("compare.assignPrompt"), action.owner_role || "")?.trim() || null;
+      assigned_to =
+        window
+          .prompt(t("compare.assignPrompt"), action.owner_role || "")
+          ?.trim() || null;
       if (!assigned_to) return;
     }
     if (decision === "scheduled") {
-      const date = window.prompt(t("compare.schedulePrompt"), action.due_date || "")?.trim();
+      const date = window
+        .prompt(t("compare.schedulePrompt"), action.due_date || "")
+        ?.trim();
       if (!date) return;
       const localDate = new Date(`${date}T09:00:00`);
       if (Number.isNaN(localDate.getTime())) {
@@ -1265,29 +1927,42 @@ function ReviewActionControls({
     setBusy(decision);
     setError("");
     try {
-      const page = await api<{ current: Record<string, ActionDecision>; history: ActionDecision[] }>(
+      const page = await api<{
+        current: Record<string, ActionDecision>;
+        history: ActionDecision[];
+      }>(
         `/comparisons/${comparisonId}/analyses/${analysisId}/actions/${encodeURIComponent(action.action_key || "")}/decisions`,
         {
           method: "POST",
-          body: JSON.stringify({ decision, assigned_to, scheduled_for, rationale }),
+          body: JSON.stringify({
+            decision,
+            assigned_to,
+            scheduled_for,
+            rationale,
+          }),
         },
       );
       setSaved(page.current[action.action_key || ""]);
-      setEvents(page.history.filter((item) => item.action_key === action.action_key));
-      mutateResource<Comparison>(resources.comparison(comparisonId), (currentComparison) => {
-        if (
-          !currentComparison?.analysis ||
-          currentComparison.analysis.id !== analysisId
-        )
-          return currentComparison;
-        return {
-          ...currentComparison,
-          analysis: {
-            ...currentComparison.analysis,
-            action_decisions: page,
-          },
-        };
-      });
+      setEvents(
+        page.history.filter((item) => item.action_key === action.action_key),
+      );
+      mutateResource<Comparison>(
+        resources.comparison(comparisonId),
+        (currentComparison) => {
+          if (
+            !currentComparison?.analysis ||
+            currentComparison.analysis.id !== analysisId
+          )
+            return currentComparison;
+          return {
+            ...currentComparison,
+            analysis: {
+              ...currentComparison.analysis,
+              action_decisions: page,
+            },
+          };
+        },
+      );
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -1308,20 +1983,48 @@ function ReviewActionControls({
         </div>
       )}
       {canManage && (
-        <div className="action-decision-buttons" aria-label={t("compare.actionDecision")}>
-          <Button size="sm" variant="outline" disabled={!!busy} onClick={() => decide("accepted")}>
+        <div
+          className="action-decision-buttons"
+          aria-label={t("compare.actionDecision")}
+        >
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!!busy}
+            onClick={() => decide("accepted")}
+          >
             <Check size={13} /> {t("compare.accept")}
           </Button>
-          <Button size="sm" variant="outline" disabled={!!busy} onClick={() => decide("assigned")}>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!!busy}
+            onClick={() => decide("assigned")}
+          >
             <UserRound size={13} /> {t("compare.assign")}
           </Button>
-          <Button size="sm" variant="outline" disabled={!!busy} onClick={() => decide("scheduled")}>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!!busy}
+            onClick={() => decide("scheduled")}
+          >
             <CalendarClock size={13} /> {t("compare.schedule")}
           </Button>
-          <Button size="sm" variant="ghost" disabled={!!busy} onClick={() => decide("dismissed")}>
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={!!busy}
+            onClick={() => decide("dismissed")}
+          >
             {t("compare.dismiss")}
           </Button>
-          <Button size="sm" variant="ghost" disabled={!!busy} onClick={() => decide("not_applicable")}>
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={!!busy}
+            onClick={() => decide("not_applicable")}
+          >
             {t("compare.notApplicable")}
           </Button>
         </div>
@@ -1329,11 +2032,14 @@ function ReviewActionControls({
       {error && <ErrorNote message={error} />}
       {events.length > 1 && (
         <details className="action-decision-history">
-          <summary>{t("compare.recordedDecisions", { count: number(events.length) })}</summary>
+          <summary>
+            {t("compare.recordedDecisions", { count: number(events.length) })}
+          </summary>
           <ol>
             {events.map((item) => (
               <li key={item.id}>
-                {localLabel(item.decision, locale)} · {item.actor_label} · {dateTime(item.created_at)}
+                {localLabel(item.decision, locale)} · {item.actor_label} ·{" "}
+                {dateTime(item.created_at)}
                 {item.rationale ? ` — ${item.rationale}` : ""}
               </li>
             ))}
@@ -1344,24 +2050,67 @@ function ReviewActionControls({
   );
 }
 
-function ReportProvenance({ analysis, comparison }: { analysis: Analysis; comparison: Comparison }) {
+function ReportProvenance({
+  analysis,
+  comparison,
+  onHistory,
+}: {
+  analysis: Analysis;
+  comparison: Comparison;
+  onHistory: () => void;
+}) {
   const { t, dateTime } = useI18n();
   const provenance = analysis.provenance || {};
   const execution = analysis.analysis_plan?.execution;
-  const outputLocale = analysis.result?.output_locale || t("compare.notRecorded");
+  const outputLocale =
+    analysis.result?.output_locale || t("compare.notRecorded");
   return (
     <div className="report-provenance">
       <div className="report-provenance-title">
         <ListChecks size={15} />
         <strong>{t("compare.provenance")}</strong>
-        <a href="#ai-history">{t("compare.priorReports")}</a>
+        <button type="button" onClick={onHistory}>
+          {t("compare.priorReports")}
+        </button>
       </div>
       <dl>
-        <div><dt>{t("compare.generated")}</dt><dd>{dateTime(analysis.created_at)}</dd></div>
-        <div><dt>{t("compare.versions")}</dt><dd>{comparison.old_version.id.slice(0, 8)} → {comparison.new_version.id.slice(0, 8)}</dd></div>
-        <div><dt>{t("compare.profile")}</dt><dd>{t("compare.revision", { revision: execution?.profile_revision ?? t("compare.notRecorded") })}</dd></div>
-        <div><dt>{t("compare.modelRuntime")}</dt><dd>{analysis.model} · {String(provenance.runtime_version || provenance.backend || t("compare.notRecorded"))}</dd></div>
-        <div><dt>{t("compare.promptLocale")}</dt><dd>{t("compare.revision", { revision: analysis.prompt_revision })} · {outputLocale}</dd></div>
+        <div>
+          <dt>{t("compare.generated")}</dt>
+          <dd>{dateTime(analysis.created_at)}</dd>
+        </div>
+        <div>
+          <dt>{t("compare.versions")}</dt>
+          <dd>
+            {comparison.old_version.id.slice(0, 8)} →{" "}
+            {comparison.new_version.id.slice(0, 8)}
+          </dd>
+        </div>
+        <div>
+          <dt>{t("compare.profile")}</dt>
+          <dd>
+            {t("compare.revision", {
+              revision: execution?.profile_revision ?? t("compare.notRecorded"),
+            })}
+          </dd>
+        </div>
+        <div>
+          <dt>{t("compare.modelRuntime")}</dt>
+          <dd>
+            {analysis.model} ·{" "}
+            {String(
+              provenance.runtime_version ||
+                provenance.backend ||
+                t("compare.notRecorded"),
+            )}
+          </dd>
+        </div>
+        <div>
+          <dt>{t("compare.promptLocale")}</dt>
+          <dd>
+            {t("compare.revision", { revision: analysis.prompt_revision })} ·{" "}
+            {outputLocale}
+          </dd>
+        </div>
       </dl>
       <CoverageNote coverage={analysis.coverage} />
       <PlanNote plan={analysis.analysis_plan} />
@@ -1377,14 +2126,19 @@ function CoverageNote({ coverage }: { coverage?: Partial<Coverage> }) {
       <div
         className={coverage.limited ? "coverage-note limited" : "coverage-note"}
       >
-        {coverage.limited ? t("compare.limitedReview") : t("compare.aiReview")} {t("compare.materialCoverage", { included: number(coverage.reviewed_material_items ?? 0), total: number(coverage.material_items) })}
+        {coverage.limited ? t("compare.limitedReview") : t("compare.aiReview")}{" "}
+        {t("compare.materialCoverage", {
+          included: number(coverage.reviewed_material_items ?? 0),
+          total: number(coverage.material_items),
+        })}
         {coverage.suppressed_non_material_items
           ? ` · ${t("compare.suppressed", { count: number(coverage.suppressed_non_material_items) })}`
           : ""}
         {coverage.provider_calls !== undefined
           ? ` · ${t("compare.modelCalls", { count: number(coverage.provider_calls) })}`
           : ""}
-        . {t("compare.coverageMaterialScope", {
+        .{" "}
+        {t("compare.coverageMaterialScope", {
           included: number(coverage.reviewed_material_items ?? 0),
           suppressed: number(coverage.suppressed_non_material_items ?? 0),
         })}
@@ -1396,11 +2150,19 @@ function CoverageNote({ coverage }: { coverage?: Partial<Coverage> }) {
     <div
       className={coverage.limited ? "coverage-note limited" : "coverage-note"}
     >
-      {coverage.limited ? t("compare.limitedContext") : t("compare.evidenceReviewed")} {t("compare.passageCoverage", { included: number(coverage.included_passages ?? 0), total: number(coverage.available_passages), characters: number(coverage.included_characters ?? 0) })}
+      {coverage.limited
+        ? t("compare.limitedContext")
+        : t("compare.evidenceReviewed")}{" "}
+      {t("compare.passageCoverage", {
+        included: number(coverage.included_passages ?? 0),
+        total: number(coverage.available_passages),
+        characters: number(coverage.included_characters ?? 0),
+      })}
       {coverage.provider_calls !== undefined
         ? ` · ${t("compare.modelCalls", { count: number(coverage.provider_calls) })}`
         : ""}
-      . {coverage.included_passages === 0
+      .{" "}
+      {coverage.included_passages === 0
         ? t("compare.coverageNoMatch")
         : coverage.limited
           ? t("compare.coverageSelectedScope")
@@ -1421,11 +2183,21 @@ function PlanNote({ plan }: { plan?: AnalysisPlan }) {
   const repairs = Number(actual?.validation?.repair_count || 0);
   return (
     <p className="coverage-note mb-0">
-      {t("compare.fixedPlan", { expected: number(plan.estimates.planned_generation_calls), actual: number(plan.actual?.provider_calls ?? 0), limit: number(plan.limits.provider_call_budget), groups: number(plan.execution.batch_count), coverage: plan.coverage.limited ? t("status.limited") : t("status.complete") })}
+      {t("compare.fixedPlan", {
+        expected: number(plan.estimates.planned_generation_calls),
+        actual: number(plan.actual?.provider_calls ?? 0),
+        limit: number(plan.limits.provider_call_budget),
+        groups: number(plan.execution.batch_count),
+        coverage: plan.coverage.limited
+          ? t("status.limited")
+          : t("status.complete"),
+      })}
       {actual
         ? ` · ${t("compare.timings", { queue: number(Math.round(actual.queue_wait_ms)), inference: number(Math.round(actual.inference_duration_ms)) })}`
         : ""}
-      {tokenTotal ? ` · ${t("compare.recordedTokens", { count: number(tokenTotal) })}` : ""}
+      {tokenTotal
+        ? ` · ${t("compare.recordedTokens", { count: number(tokenTotal) })}`
+        : ""}
       {actual
         ? ` · ${t("compare.validationRepairs", { count: number(repairs) })}`
         : ""}
@@ -1471,17 +2243,25 @@ function AskPanel({
   comparisonId,
   configured,
   blockedReason,
+  hidden,
+  evidenceItems,
+  onEvidence,
 }: {
   comparisonId: string;
   configured: boolean;
   blockedReason?: string;
+  hidden: boolean;
+  evidenceItems: Change[];
+  onEvidence: (changeId: string) => void;
 }) {
   const { locale, t } = useI18n();
   const [question, setQuestion] = useState(""),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
-  const promptLocale = askPrompts[locale.slice(0, 2)] ? locale.slice(0, 2) : "en";
+  const promptLocale = askPrompts[locale.slice(0, 2)]
+    ? locale.slice(0, 2)
+    : "en";
   const savedHistory = useResource<AIHistoryPage>(
     resources.comparisonHistory(comparisonId),
   );
@@ -1527,16 +2307,12 @@ function AskPanel({
       );
       const job = await waitForJob(queued, t("compare.queueTimeout"));
       if (job.state !== "succeeded")
-        throw new Error(
-          job.error?.detail || t("compare.answerFailed"),
-        );
+        throw new Error(job.error?.detail || t("compare.answerFailed"));
       const answer = job.result?.data as Answer | undefined;
       if (!answer) throw new Error(t("compare.answerMissing"));
       setQuestion("");
       setNotice(
-        answer.cached
-          ? t("compare.answerCached")
-          : t("compare.answerSaved"),
+        answer.cached ? t("compare.answerCached") : t("compare.answerSaved"),
       );
       void invalidateResources(resources.comparisonHistory(comparisonId));
     } catch (cause) {
@@ -1547,7 +2323,13 @@ function AskPanel({
     }
   }
   return (
-    <section className="panel ask-panel">
+    <section
+      id="companion-ask"
+      role="tabpanel"
+      aria-label={t("compare.ask")}
+      hidden={hidden}
+      className="panel ask-panel companion-tab-panel"
+    >
       <div className="panel-header">
         <h2 className="flex items-center gap-2">
           <MessageSquare size={17} />
@@ -1556,15 +2338,15 @@ function AskPanel({
         <span className="text-xs muted">{t("compare.thisComparison")}</span>
       </div>
       <div className="panel-body">
-        <p className="text-xs muted mt-0">
-          {t("compare.askBody")}
-        </p>
+        <p className="text-xs muted mt-0">{t("compare.askBody")}</p>
         <div className="chat-history" aria-live="polite">
           {history.map((item) => (
             <SavedQuestionTurn
               item={item}
               key={item.id}
               onSuggestion={setQuestion}
+              evidenceItems={evidenceItems}
+              onEvidence={onEvidence}
             />
           ))}
         </div>
@@ -1627,9 +2409,13 @@ function AskPanel({
 function SavedQuestionTurn({
   item,
   onSuggestion,
+  evidenceItems,
+  onEvidence,
 }: {
   item: AIHistoryItem;
   onSuggestion: (value: string) => void;
+  evidenceItems: Change[];
+  onEvidence: (changeId: string) => void;
 }) {
   const { t, locale, dateTime, number } = useI18n();
   const answer = item.result as Pick<
@@ -1656,13 +2442,20 @@ function SavedQuestionTurn({
               </strong>
             )}
             <p>{answer.answer}</p>
-            <Citations values={answer.citations} />
+            <ComparisonCitations
+              values={answer.citations}
+              items={evidenceItems}
+              onEvidence={onEvidence}
+            />
             {answer.intent && answer.context_mode && (
               <p className="ask-answer-route">
-                {translate(locale, `status.${answer.intent}`) || label(answer.intent)} ·{" "}
+                {translate(locale, `status.${answer.intent}`) ||
+                  label(answer.intent)}{" "}
+                ·{" "}
                 {answer.context_mode === "impact_report"
                   ? t("compare.reusedReport")
-                  : translate(locale, `status.${answer.context_mode}`) || label(answer.context_mode)}
+                  : translate(locale, `status.${answer.context_mode}`) ||
+                    label(answer.context_mode)}
               </p>
             )}
             {!!answer.suggestions?.length && (

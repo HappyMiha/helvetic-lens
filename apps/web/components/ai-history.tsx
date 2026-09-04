@@ -15,6 +15,7 @@ import { resources } from "@/lib/resource-keys";
 import type {
   AIHistoryItem,
   AIHistoryPage,
+  Change,
   Citation,
   Impact,
 } from "@/lib/types";
@@ -25,10 +26,16 @@ export function AIHistory({
   lawId,
   comparisonId,
   compact = false,
+  hidden,
+  evidenceItems = [],
+  onEvidence,
 }: {
   lawId?: string;
   comparisonId?: string;
   compact?: boolean;
+  hidden?: boolean;
+  evidenceItems?: Change[];
+  onEvidence?: (changeId: string) => void;
 }) {
   const { t } = useI18n();
   const resource = comparisonId
@@ -39,8 +46,15 @@ export function AIHistory({
   const history = useResource<AIHistoryPage>(resource);
   return (
     <section
-      id={comparisonId ? "ai-history" : undefined}
-      className={compact ? "panel ai-history compact" : "panel ai-history mt-6"}
+      id={comparisonId ? "companion-history" : undefined}
+      role={comparisonId ? "tabpanel" : undefined}
+      aria-label={comparisonId ? t("history.title") : undefined}
+      hidden={hidden}
+      className={
+        compact
+          ? "panel ai-history compact companion-tab-panel"
+          : "panel ai-history mt-6"
+      }
     >
       <div className="panel-header">
         <div className="flex items-center gap-3">
@@ -64,7 +78,12 @@ export function AIHistory({
       ) : history.data?.items.length ? (
         <div className="ai-history-list">
           {history.data.items.map((item) => (
-            <HistoryItem item={item} key={`${item.type}-${item.id}`} />
+            <HistoryItem
+              item={item}
+              evidenceItems={evidenceItems}
+              onEvidence={onEvidence}
+              key={`${item.type}-${item.id}`}
+            />
           ))}
         </div>
       ) : (
@@ -78,7 +97,15 @@ export function AIHistory({
   );
 }
 
-function HistoryItem({ item }: { item: AIHistoryItem }) {
+function HistoryItem({
+  item,
+  evidenceItems,
+  onEvidence,
+}: {
+  item: AIHistoryItem;
+  evidenceItems: Change[];
+  onEvidence?: (changeId: string) => void;
+}) {
   const { locale, t, number } = useI18n();
   const impact = item.type === "impact" ? (item.result as Impact | null) : null;
   const answer =
@@ -101,7 +128,11 @@ function HistoryItem({ item }: { item: AIHistoryItem }) {
     0,
   );
   const repairs = Number(actual?.validation?.repair_count || 0);
-  const outputLocale = String((item.result as { output_locale?: string } | null)?.output_locale || plan?.output_locale || "");
+  const outputLocale = String(
+    (item.result as { output_locale?: string } | null)?.output_locale ||
+      plan?.output_locale ||
+      "",
+  );
   const outputLanguage = localeNames[outputLocale as Locale] || outputLocale;
   return (
     <details className="ai-history-item">
@@ -116,9 +147,13 @@ function HistoryItem({ item }: { item: AIHistoryItem }) {
         <span className="min-w-0 flex-1">
           <span className="ai-history-title">{title}</span>
           <span className="ai-history-meta">
-            {item.type === "impact" ? t("history.impact") : t("history.question")} ·{" "}
-            {dateTime(item.created_at)} · {item.model}
-            {outputLanguage ? ` · ${t("history.outputLanguage", { language: outputLanguage })}` : ""}
+            {item.type === "impact"
+              ? t("history.impact")
+              : t("history.question")}{" "}
+            · {dateTime(item.created_at)} · {item.model}
+            {outputLanguage
+              ? ` · ${t("history.outputLanguage", { language: outputLanguage })}`
+              : ""}
           </span>
         </span>
         <Status value={item.status} />
@@ -151,11 +186,13 @@ function HistoryItem({ item }: { item: AIHistoryItem }) {
             {t("history.currentOriginal")} <ArrowUpRight size={12} />
           </a>
           <span>
-            {t("history.prompt", { revision: item.prompt_revision })} · {t("history.reuse", { count: item.use_count - 1 })}
+            {t("history.prompt", { revision: item.prompt_revision })} ·{" "}
+            {t("history.reuse", { count: item.use_count - 1 })}
           </span>
           {item.last_used_at && (
             <span className="inline-flex items-center gap-1">
-              <Clock3 size={12} /> {t("history.lastOpened", { date: dateTime(item.last_used_at) })}
+              <Clock3 size={12} />{" "}
+              {t("history.lastOpened", { date: dateTime(item.last_used_at) })}
             </span>
           )}
         </div>
@@ -163,14 +200,68 @@ function HistoryItem({ item }: { item: AIHistoryItem }) {
         {plan?.limits && (
           <div className="coverage-note mb-0" aria-label={t("history.plan")}>
             <strong>{t("history.plan")}</strong>
-            <span> · {t("history.expectedCalls", { count: plan.estimates.planned_generation_calls })}</span>
-            <span> · {t("history.actualCalls", { count: actual?.provider_calls ?? 0 })}</span>
-            <span> · {t("history.callLimit", { count: plan.limits.provider_call_budget })}</span>
-            <span> · {t("history.evidenceGroups", { count: plan.execution.batch_count })}</span>
-            <span> · {t(plan.coverage.limited ? "history.limitedCoverage" : "history.completeCoverage")}</span>
-            {actual && <><span> · {t("history.queue", { value: Math.round(actual.queue_wait_ms) })}</span><span> · {t("history.inference", { value: Math.round(actual.inference_duration_ms) })}</span></>}
-            {tokenTotal ? <span> · {t("history.tokens", { count: number(tokenTotal) })}</span> : null}
-            {actual ? <span> · {t("history.repairs", { count: repairs })}</span> : null}
+            <span>
+              {" "}
+              ·{" "}
+              {t("history.expectedCalls", {
+                count: plan.estimates.planned_generation_calls,
+              })}
+            </span>
+            <span>
+              {" "}
+              ·{" "}
+              {t("history.actualCalls", { count: actual?.provider_calls ?? 0 })}
+            </span>
+            <span>
+              {" "}
+              ·{" "}
+              {t("history.callLimit", {
+                count: plan.limits.provider_call_budget,
+              })}
+            </span>
+            <span>
+              {" "}
+              ·{" "}
+              {t("history.evidenceGroups", {
+                count: plan.execution.batch_count,
+              })}
+            </span>
+            <span>
+              {" "}
+              ·{" "}
+              {t(
+                plan.coverage.limited
+                  ? "history.limitedCoverage"
+                  : "history.completeCoverage",
+              )}
+            </span>
+            {actual && (
+              <>
+                <span>
+                  {" "}
+                  ·{" "}
+                  {t("history.queue", {
+                    value: Math.round(actual.queue_wait_ms),
+                  })}
+                </span>
+                <span>
+                  {" "}
+                  ·{" "}
+                  {t("history.inference", {
+                    value: Math.round(actual.inference_duration_ms),
+                  })}
+                </span>
+              </>
+            )}
+            {tokenTotal ? (
+              <span>
+                {" "}
+                · {t("history.tokens", { count: number(tokenTotal) })}
+              </span>
+            ) : null}
+            {actual ? (
+              <span> · {t("history.repairs", { count: repairs })}</span>
+            ) : null}
           </div>
         )}
         {impact && (
@@ -183,16 +274,28 @@ function HistoryItem({ item }: { item: AIHistoryItem }) {
             {impact.organization_applicability && (
               <p>
                 <strong>
-                  {t("history.applicability", { value: label(impact.organization_applicability.status) })}
+                  {t("history.applicability", {
+                    value: label(impact.organization_applicability.status),
+                  })}
                 </strong>{" "}
-                · {t("history.evidenceGrade", { value: label(impact.organization_applicability.evidence_grade) })} ·{" "}
-                {impact.organization_applicability.explanation}
+                ·{" "}
+                {t("history.evidenceGrade", {
+                  value: label(
+                    impact.organization_applicability.evidence_grade,
+                  ),
+                })}{" "}
+                · {impact.organization_applicability.explanation}
               </p>
             )}
             {!!impact.material_changes?.length && (
               <p>
-                {t("history.materialChanges", { count: impact.material_changes.length })} ·{" "}
-                {t("history.evidenceGrade", { value: label(impact.evidence_grade || "needs_review") })}
+                {t("history.materialChanges", {
+                  count: impact.material_changes.length,
+                })}{" "}
+                ·{" "}
+                {t("history.evidenceGrade", {
+                  value: label(impact.evidence_grade || "needs_review"),
+                })}
               </p>
             )}
             {impact.actions?.length > 0 && (
@@ -207,7 +310,11 @@ function HistoryItem({ item }: { item: AIHistoryItem }) {
                 ))}
               </ol>
             )}
-            <HistoryCitations values={impact.citations} />
+            <HistoryCitations
+              values={impact.citations}
+              items={evidenceItems}
+              onEvidence={onEvidence}
+            />
           </div>
         )}
         {item.type === "question" && (
@@ -222,13 +329,19 @@ function HistoryItem({ item }: { item: AIHistoryItem }) {
                   </strong>
                 )}
                 <p>{answer.answer}</p>
-                <HistoryCitations values={answer.citations || []} />
+                <HistoryCitations
+                  values={answer.citations || []}
+                  items={evidenceItems}
+                  onEvidence={onEvidence}
+                />
                 <p className="text-xs muted mb-0">
-                  {t("history.context", { value: label(
-                    answer.context_mode ||
-                      item.context_mode ||
-                      "saved evidence",
-                  ) })}
+                  {t("history.context", {
+                    value: label(
+                      answer.context_mode ||
+                        item.context_mode ||
+                        "saved evidence",
+                    ),
+                  })}
                 </p>
               </>
             )}
@@ -248,21 +361,45 @@ function HistoryItem({ item }: { item: AIHistoryItem }) {
   );
 }
 
-function HistoryCitations({ values }: { values: Citation[] }) {
+function HistoryCitations({
+  values,
+  items,
+  onEvidence,
+}: {
+  values: Citation[];
+  items: Change[];
+  onEvidence?: (changeId: string) => void;
+}) {
   const { t } = useI18n();
   if (!values?.length) return null;
   return (
     <span className="history-citations">
-      {t("history.evidence")}: {" "}
-      {values.map((citation, index) => (
-        <Link
-          href={citation.url}
-          key={`${citation.version_id}-${citation.passage_id}`}
-          title={citation.quote}
-        >
-          [{index + 1}]
-        </Link>
-      ))}
+      {t("history.evidence")}:{" "}
+      {values.map((citation, index) => {
+        const change = items.find(
+          (item) =>
+            item.old?.id === citation.passage_id ||
+            item.new?.id === citation.passage_id,
+        );
+        return change && onEvidence ? (
+          <button
+            type="button"
+            onClick={() => onEvidence(change.id)}
+            key={`${citation.version_id}-${citation.passage_id}-${index}`}
+            title={citation.quote}
+          >
+            [{index + 1}]
+          </button>
+        ) : (
+          <Link
+            href={citation.url}
+            key={`${citation.version_id}-${citation.passage_id}-${index}`}
+            title={citation.quote}
+          >
+            [{index + 1}]
+          </Link>
+        );
+      })}
     </span>
   );
 }

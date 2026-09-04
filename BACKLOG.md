@@ -110,7 +110,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-065](#hl-065) | P0       | DONE     | HL-035, HL-047                                         | Reliable application shell and independent scroll contract          |
 | [HL-066](#hl-066) | P0       | DONE     | HL-035, HL-047, HL-065                                 | Task-based navigation and canonical Company profile page            |
 | [HL-067](#hl-067) | P0       | DONE     | HL-030, HL-063, HL-065                                 | Keyed resource cache and targeted interface updates                 |
-| [HL-068](#hl-068) | P0       | PLANNED  | HL-063, HL-065, HL-067                                 | Responsive comparison decision workspace                            |
+| [HL-068](#hl-068) | P0       | DONE     | HL-063, HL-065, HL-067                                 | Responsive comparison decision workspace                            |
 | [HL-069](#hl-069) | P0       | PLANNED  | HL-030, HL-062, HL-067, HL-068                         | Asynchronous Ask experience with real job progress                  |
 | [HL-070](#hl-070) | P0       | PLANNED  | HL-065, HL-066, HL-068, HL-069                         | Working mobile information architecture at 390 px                   |
 | [HL-071](#hl-071) | P0       | PLANNED  | HL-038–HL-043, HL-050, HL-055                          | Versioned source capability catalogue and honest coverage           |
@@ -1283,6 +1283,8 @@ Acceptance criteria:
 - Evidence links move to the exact saved legal unit in the comparison without losing the selected companion tab or scroll position; keyboard and screen-reader users receive the same relationship.
 - Tablet uses an accessible drawer or split view. Mobile uses task tabs and a full-screen assistant/report surface that can be opened before traversing the entire diff.
 - Retain deterministic diff, material/noise filters, original artifacts, citations, and history as complete audit views; compact presentation never discards evidence.
+
+Completed 4 September 2026. Wide comparisons now keep the deterministic evidence pane primary beside a viewport-stable 420–480 px companion with Summary, Actions, Ask, and History tabs. Summary leads with the saved plain-language assessment and at most three action titles; full action decisions, material-change cards, uncertainties, provenance, processing coverage, and prior reports remain available in their dedicated tab or disclosures. Matching citations from current and historical answers jump to the exact saved diff row, focus it for assistive technology, and preserve the selected companion task. Tablet uses an accessible overlay drawer and mobile exposes the same tasks before the diff in a full-screen surface. Sixteen shell/workspace regressions, the five-language catalogue audit, resource-store tests, TypeScript, the Next.js production build, and live browser checks at 1440 px and 390 px cover the result.
 
 <a id="hl-069"></a>
 
