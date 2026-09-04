@@ -804,6 +804,12 @@ def create_app(
     def monitoring_topic(topic_id: str):
         return service.monitoring_topic(topic_id)
 
+    @app.get("/api/monitoring-topics/{topic_id}/matches")
+    def monitoring_topic_matches(
+        topic_id: str, limit: int = Query(default=100, ge=1, le=200)
+    ):
+        return service.monitoring_topic_matches(topic_id, limit=limit)
+
     @app.post("/api/monitoring-topics/preview")
     def preview_monitoring_topic(data: MonitoringTopicPlanInput):
         return service.preview_monitoring_topic(data.model_dump())

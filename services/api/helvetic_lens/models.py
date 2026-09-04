@@ -367,6 +367,53 @@ class MonitoringTopicDraft(Base):
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class TopicEventMatch(Base):
+    """A bounded, evidence-linked topic candidate; it is not a legal relation."""
+
+    __tablename__ = "topic_event_matches"
+    __table_args__ = (
+        Index(
+            "ix_topic_event_matches_org_topic_matched",
+            "organization_id",
+            "topic_id",
+            "matched_at",
+        ),
+        UniqueConstraint("topic_revision_id", "event_id", name="uq_topic_event_match_revision_event"),
+        CheckConstraint(
+            "confidence_band IN ('high', 'medium', 'low')",
+            name="ck_topic_event_match_confidence",
+        ),
+        CheckConstraint(
+            "decision_status IN ('pending', 'confirmed', 'rejected', 'muted')",
+            name="ck_topic_event_match_decision",
+        ),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    topic_id: Mapped[str] = mapped_column(ForeignKey("monitoring_topics.id"), index=True)
+    topic_revision_id: Mapped[str] = mapped_column(
+        ForeignKey("monitoring_topic_revisions.id"), index=True
+    )
+    event_id: Mapped[str] = mapped_column(ForeignKey("regulatory_events.id"), index=True)
+    work_id: Mapped[str] = mapped_column(ForeignKey("regulatory_works.id"), index=True)
+    expression_id: Mapped[str | None] = mapped_column(ForeignKey("regulatory_expressions.id"))
+    document_version_id: Mapped[str | None] = mapped_column(
+        ForeignKey("regulatory_document_versions.id")
+    )
+    reason_signals_json: Mapped[list] = mapped_column(JSON, default=list)
+    evidence_references_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    evidence_fingerprint: Mapped[str] = mapped_column(String(64), index=True)
+    rule_fingerprint: Mapped[str] = mapped_column(String(100), index=True)
+    model_provider: Mapped[str | None] = mapped_column(String(80))
+    model_name: Mapped[str | None] = mapped_column(String(200))
+    model_prompt_revision: Mapped[int | None] = mapped_column(Integer)
+    confidence_band: Mapped[str] = mapped_column(String(20), index=True)
+    decision_status: Mapped[str] = mapped_column(String(20), default="pending", index=True)
+    matched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class Law(Base):
     __tablename__ = "laws"
     __table_args__ = (
@@ -1273,6 +1320,7 @@ ORGANIZATION_SCOPED_MODELS = (
     MonitoringTopic,
     MonitoringTopicRevision,
     MonitoringTopicDraft,
+    TopicEventMatch,
     Observation,
     IdentityDecision,
     Scan,

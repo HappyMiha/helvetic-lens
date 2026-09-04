@@ -19,7 +19,7 @@ from sqlalchemy import delete, func, inspect, or_, select
 from sqlalchemy.orm import Session
 
 from . import analysis as ai
-from . import digests, monitoring_topics, source_packs, synchronization
+from . import digests, monitoring_topics, source_packs, synchronization, topic_matching
 from . import jobs as durable_jobs
 from . import relation_analysis as relation_ai
 from .ai_metrics import summarize_ai_triage_metrics
@@ -1446,6 +1446,10 @@ class HelveticLens:
     def monitoring_topic(self, topic_id: str) -> dict:
         with self.db.session() as session:
             return monitoring_topics.get_topic(session, topic_id)
+
+    def monitoring_topic_matches(self, topic_id: str, *, limit: int = 100) -> list[dict]:
+        with self.db.session() as session:
+            return topic_matching.list_matches(session, topic_id, limit=limit)
 
     def preview_monitoring_topic(self, data: dict) -> dict:
         with self.db.session() as session:
@@ -3549,6 +3553,20 @@ class HelveticLens:
                 result_type = "source_pack_subscription"
                 result_id = target_id
                 result_url = "/sources#source-packs"
+            elif job_type == "topic_match_backfill":
+                mark(0, 1, "running")
+                with self.write_guard, self.db.session() as session:
+                    result_json = topic_matching.run_backfill(
+                        session,
+                        target_id,
+                        int(payload.get("revision") or 0),
+                        self.settings,
+                    )
+                    session.commit()
+                mark(1, 1, "succeeded")
+                result_type = "monitoring_topic"
+                result_id = target_id
+                result_url = "/topics"
             else:
                 raise DomainError("This durable job type is not supported by the worker.", 422, "job_type_unknown")
         except durable_jobs.JobCancelled:

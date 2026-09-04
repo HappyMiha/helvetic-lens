@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from . import jobs as durable_jobs
 from .config import DomainError
 from .db import utcnow
 from .models import (
@@ -346,6 +347,25 @@ def _add_revision(
     return revision
 
 
+def _enqueue_match_backfill(
+    session: Session, topic: MonitoringTopic, *, organization_id: str | None = None
+):
+    job, _ = durable_jobs.enqueue(
+        session,
+        job_type="topic_match_backfill",
+        target_type="monitoring_topic",
+        target_id=topic.id,
+        queue="ingest",
+        idempotency_key=f"topic-match:{topic.id}:{topic.current_revision}",
+        payload={"topic_id": topic.id, "revision": topic.current_revision},
+        priority=5,
+        progress_total=1,
+        steps=[("Match a bounded saved-event window", {})],
+        organization_id=organization_id,
+    )
+    return durable_jobs.serialize(session, job)
+
+
 def create_topic(
     session: Session,
     data: dict,
@@ -380,8 +400,13 @@ def create_topic(
     )
     if draft:
         draft.used_at = utcnow()
+    backfill_job = _enqueue_match_backfill(session, topic)
     session.commit()
-    return {**_topic_payload(session, topic, history=True), "reused": False}
+    return {
+        **_topic_payload(session, topic, history=True),
+        "reused": False,
+        "backfill_job": backfill_job,
+    }
 
 
 def update_topic(
@@ -422,8 +447,13 @@ def update_topic(
     )
     if draft:
         draft.used_at = utcnow()
+    backfill_job = _enqueue_match_backfill(session, topic)
     session.commit()
-    return {**_topic_payload(session, topic, history=True), "reused": False}
+    return {
+        **_topic_payload(session, topic, history=True),
+        "reused": False,
+        "backfill_job": backfill_job,
+    }
 
 
 def change_status(
@@ -454,8 +484,13 @@ def change_status(
     if status == "archived":
         topic.archived_at = topic.updated_at
     _add_revision(session, topic, plan, status=status, actor_user_id=actor_user_id)
+    backfill_job = _enqueue_match_backfill(session, topic) if status == "active" else None
     session.commit()
-    return {**_topic_payload(session, topic, history=True), "reused": False}
+    return {
+        **_topic_payload(session, topic, history=True),
+        "reused": False,
+        "backfill_job": backfill_job,
+    }
 
 
 def _values(raw: object) -> set[str]:

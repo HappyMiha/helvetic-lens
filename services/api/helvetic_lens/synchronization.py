@@ -35,6 +35,7 @@ from .regulatory_corpus import RegulatoryCorpus
 from .relation_candidates import generate_for_events
 from .source_capabilities import source_capability
 from .source_packs import enabled_organizations_for_stream
+from .topic_matching import generate_for_events as generate_topic_matches
 
 ACTIVE_JOB_STATES = frozenset(
     {"queued", "dispatched", "running", "retrying", "waiting_for_model"}
@@ -647,6 +648,7 @@ def finish_run(
     result["relation_candidates"] = generate_for_events(
         session, events, RegulatoryCorpus(), settings or Settings()
     )
+    result["topic_matches"] = generate_topic_matches(session, events, settings or Settings())
     finished = _aware(now or utcnow())
     run.finished_at = finished
     if run.started_at:

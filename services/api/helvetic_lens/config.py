@@ -66,6 +66,12 @@ class Settings(BaseSettings):
     relation_candidates_per_event: int = Field(default=20, ge=1, le=100)
     relation_candidates_per_organization: int = Field(default=10, ge=1, le=50)
     relation_candidate_ttl_days: int = Field(default=30, ge=1, le=365)
+    topic_match_organizations_per_event: int = Field(default=100, ge=1, le=500)
+    topic_match_topics_per_organization_event: int = Field(default=50, ge=1, le=200)
+    topic_matches_per_organization_event: int = Field(default=20, ge=1, le=100)
+    topic_match_backfill_limit: int = Field(default=500, ge=1, le=5000)
+    topic_match_retention_days: int = Field(default=180, ge=7, le=3650)
+    topic_match_ai_candidates_per_event: int = Field(default=3, ge=0, le=10)
     data_dir: Path = Field(
         default=ROOT / "data",
         validation_alias=AliasChoices("HELVETIC_LENS_DATA_DIR", "REGWATCH_DATA_DIR"),

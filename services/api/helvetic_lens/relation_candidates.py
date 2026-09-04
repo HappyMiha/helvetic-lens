@@ -66,6 +66,12 @@ def _references(*values) -> tuple[set[str], set[str]]:
     return set(_NORM.findall(text_value)), {item.casefold() for item in _ARTICLE.findall(text_value)}
 
 
+def legal_references(*values) -> tuple[set[str], set[str]]:
+    """Expose the established citation normalizer to bounded interest matching."""
+
+    return _references(*values)
+
+
 @dataclass(frozen=True)
 class CandidateScore:
     score: float

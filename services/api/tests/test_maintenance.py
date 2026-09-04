@@ -129,6 +129,7 @@ def test_cleanup_bounds_operational_data_without_deleting_evidence_or_active_wor
         "integration_logs": 1,
         "terminal_jobs": 1,
         "digest_deliveries": 1,
+        "topic_matches": 0,
         "orphan_artifacts": 1,
         "temporary_files": 0,
         "auth_messages": 1,

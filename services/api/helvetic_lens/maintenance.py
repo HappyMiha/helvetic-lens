@@ -20,6 +20,7 @@ from .models import (
     Observation,
     OutboxMessage,
     RegulatoryDocumentVersion,
+    TopicEventMatch,
     Version,
 )
 
@@ -89,6 +90,19 @@ def cleanup_operational_data(
         if old_digest_ids:
             session.execute(delete(DigestDelivery).where(DigestDelivery.id.in_(old_digest_ids)))
 
+        expired_topic_match_ids = list(
+            session.scalars(
+                select(TopicEventMatch.id).where(
+                    TopicEventMatch.expires_at <= now,
+                    TopicEventMatch.decision_status.in_(("pending", "rejected", "muted")),
+                )
+            )
+        )
+        if expired_topic_match_ids:
+            session.execute(
+                delete(TopicEventMatch).where(TopicEventMatch.id.in_(expired_topic_match_ids))
+            )
+
         referenced_artifacts = set(
             session.scalars(select(Version.artifact_key).where(Version.artifact_key != ""))
         )
@@ -118,6 +132,7 @@ def cleanup_operational_data(
         "integration_logs": len(old_log_ids),
         "terminal_jobs": len(old_job_ids),
         "digest_deliveries": len(old_digest_ids),
+        "topic_matches": len(expired_topic_match_ids),
         "orphan_artifacts": orphan_artifacts,
         "temporary_files": temporary_files,
         "auth_messages": auth_messages,

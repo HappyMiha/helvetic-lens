@@ -12,6 +12,7 @@ Celery Beat (15-second admission tick)
   -> CPU worker runs one bounded connector page
   -> shared work/version/event deduplication
   -> idempotent organization watch/feed fan-out
+  -> bounded relation and monitoring-topic candidate generation
 ```
 
 PostgreSQL is the source of truth. Redis may redeliver a message, and Beat may restart, without creating another active job for the same stream. A failed worker retry keeps the first start boundary so already committed events are still included in the final fan-out.
