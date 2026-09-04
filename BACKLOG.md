@@ -112,7 +112,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-067](#hl-067) | P0       | DONE     | HL-030, HL-063, HL-065                                 | Keyed resource cache and targeted interface updates                 |
 | [HL-068](#hl-068) | P0       | DONE     | HL-063, HL-065, HL-067                                 | Responsive comparison decision workspace                            |
 | [HL-069](#hl-069) | P0       | DONE     | HL-030, HL-062, HL-067, HL-068                         | Asynchronous Ask experience with real job progress                  |
-| [HL-070](#hl-070) | P0       | PLANNED  | HL-065, HL-066, HL-068, HL-069                         | Working mobile information architecture at 390 px                   |
+| [HL-070](#hl-070) | P0       | DONE     | HL-065, HL-066, HL-068, HL-069                         | Working mobile information architecture at 390 px                   |
 | [HL-071](#hl-071) | P0       | PLANNED  | HL-038–HL-043, HL-050, HL-055                          | Versioned source capability catalogue and honest coverage           |
 | [HL-072](#hl-072) | P0       | PLANNED  | HL-033, HL-035, HL-042, HL-071                         | Organization source packs and Swiss Federal Starter                 |
 | [HL-073](#hl-073) | P0       | PLANNED  | HL-034, HL-035, HL-066, HL-070, HL-072, HL-074, HL-077 | Stateful onboarding, contextual help, and useful empty states       |
@@ -1315,6 +1315,8 @@ Acceptance criteria:
 - Comparison offers clear Summary/Diff/Ask/History task switching and readable before/after cards or a controlled side toggle; no critical AI control sits after the full diff.
 - Interactive targets are at least 44×44 CSS px, sticky controls respect safe areas and the on-screen keyboard, and dialogs/drawers expose a visible close path.
 - Add real-browser journey checks at 390×844 and 768×1024 for both viewer and admin roles, including long localized labels, loading, empty, error, and offline/reconnect states.
+
+Completed on 4 September 2026. Mobile now has a compact top bar, four primary bottom destinations, and a labelled role-filtered More menu containing every remaining authorized route. Comparison exposes five reachable Summary, Diff, Actions, Ask, and History tasks before the evidence stream; companion tasks become a bounded full-screen surface on phones. Safe-area spacing, independently scrollable overflow navigation, 44 px controls, bounded dialogs, long-value wrapping, and compact five-language labels prevent the desktop shell from collapsing on narrow screens. A Chrome CDP journey verifies the real production stack at 360, 390, 430, and 768 px, including admin/viewer menus, onboarding, comparison task switching, horizontal overflow, target size, and an actual offline/reconnect transition.
 
 <a id="hl-071"></a>
 

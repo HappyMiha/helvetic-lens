@@ -14,6 +14,7 @@
     "check:i18n": "node scripts/check-i18n.mjs && node scripts/audit-i18n-values.mjs",
     "check:shell": "node --test scripts/check-shell-scroll.test.mjs scripts/check-shell-navigation.test.mjs scripts/check-comparison-workspace.test.mjs scripts/check-async-ask.test.mjs",
     "check:resources": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test scripts/resource-cache.test.mjs scripts/resource-flow-contracts.test.mjs",
+    "check:mobile:browser": "node scripts/check-mobile-browser.mjs",
     "format:web": "prettier --write apps/web",
     "format:check": "prettier --check apps/web",
     "test:api": "uv run --project services/api pytest services/api/tests -q",

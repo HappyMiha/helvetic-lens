@@ -184,6 +184,9 @@ export function Shell({
   const { t } = useI18n();
   const [workspaceBusy, setWorkspaceBusy] = useState("");
   const [workspaceError, setWorkspaceError] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const mobileMenuRef = useRef<HTMLDetailsElement>(null);
+  const mobileMenuTriggerRef = useRef<HTMLElement>(null);
 
   const organizations = session?.organizations || [];
   const canSwitchWorkspace = session?.authenticated && organizations.length > 1;
@@ -205,6 +208,28 @@ export function Shell({
   useEffect(() => {
     if (administrationActive) setAdministrationOpen(true);
   }, [administrationActive]);
+
+  useEffect(() => setMobileMenuOpen(false), [pathname]);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    function closeOnOutside(event: PointerEvent) {
+      if (!mobileMenuRef.current?.contains(event.target as Node)) {
+        setMobileMenuOpen(false);
+      }
+    }
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      setMobileMenuOpen(false);
+      mobileMenuTriggerRef.current?.focus();
+    }
+    document.addEventListener("pointerdown", closeOnOutside);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutside);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [mobileMenuOpen]);
 
   function continueAfterProfileGuard(continueNavigation: () => void) {
     const event = new CustomEvent("helvetic:navigation-committed", {
@@ -322,8 +347,6 @@ export function Shell({
   );
 
   const mobileOverflowRoute = [
-    [pathname === "/impact", "nav.impact"],
-    [pathname === "/discover", "nav.discover"],
     [pathname === "/sources", "nav.sources"],
     [pathname === "/matrix", "nav.matrix"],
     [pathname === "/digests", "nav.digests"],
@@ -475,35 +498,39 @@ export function Shell({
         <nav aria-label={t("shell.mobileNavigation")} className="mobile-nav">
           <NavigationItem active={pathname === "/"} href="/">
             <Activity size={15} />
-            {t("nav.today")}
+            <span>{t("mobileNav.today")}</span>
           </NavigationItem>
           <NavigationItem active={monitoringActive} href="/registry">
             <Landmark size={15} />
-            {t("nav.monitoring")}
+            <span>{t("mobileNav.monitoring")}</span>
           </NavigationItem>
-          <details className="mobile-nav-more">
+          <NavigationItem active={pathname === "/impact"} href="/impact">
+            <Inbox size={15} />
+            <span>{t("mobileNav.impact")}</span>
+          </NavigationItem>
+          <NavigationItem active={pathname === "/discover"} href="/discover">
+            <FileSearch size={15} />
+            <span>{t("mobileNav.discover")}</span>
+          </NavigationItem>
+          <details
+            className="mobile-nav-more"
+            onToggle={(event) => setMobileMenuOpen(event.currentTarget.open)}
+            open={mobileMenuOpen}
+            ref={mobileMenuRef}
+          >
             <summary
               aria-current={mobileOverflowActive ? "page" : undefined}
+              aria-label={t("shell.mobileMenuLabel", { destination: mobileOverflowLabel })}
               className={mobileOverflowActive ? "active" : undefined}
+              ref={mobileMenuTriggerRef}
             >
               <MoreHorizontal size={16} />
               <span className="mobile-nav-more-label">
-                {mobileOverflowLabel}
+                {mobileOverflowActive ? mobileOverflowLabel : t("mobileNav.more")}
               </span>
             </summary>
             <div className="mobile-nav-menu">
               <span className="nav-heading">{t("shell.dailyWork")}</span>
-              <NavigationItem active={pathname === "/impact"} href="/impact">
-                <Inbox size={15} />
-                {t("nav.impact")}
-              </NavigationItem>
-              <NavigationItem
-                active={pathname === "/discover"}
-                href="/discover"
-              >
-                <FileSearch size={15} />
-                {t("nav.discover")}
-              </NavigationItem>
               <NavigationItem active={pathname === "/sources"} href="/sources">
                 <Globe2 size={15} />
                 {t("nav.sources")}

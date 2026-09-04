@@ -1384,6 +1384,7 @@ function ComparisonWorkspaceTabs({
   const tabs: {
     id: "evidence" | CompanionTab;
     label: string;
+    shortLabel: string;
     icon: React.ReactNode;
     disabled?: boolean;
   }[] = [
@@ -1392,6 +1393,7 @@ function ComparisonWorkspaceTabs({
           {
             id: "evidence" as const,
             label: t("compare.meaningful"),
+            shortLabel: t("compare.mobileTab.diff"),
             icon: <FileText size={15} />,
           },
         ]
@@ -1399,22 +1401,26 @@ function ComparisonWorkspaceTabs({
     {
       id: "summary",
       label: t("compare.whatChanged"),
+      shortLabel: t("compare.mobileTab.summary"),
       icon: <Sparkles size={15} />,
     },
     {
       id: "actions",
       label: t("compare.suggestedActions"),
+      shortLabel: t("compare.mobileTab.actions"),
       icon: <ListChecks size={15} />,
     },
     {
       id: "ask",
       label: t("compare.ask"),
+      shortLabel: t("compare.mobileTab.ask"),
       icon: <MessageSquare size={15} />,
       disabled: !canAsk,
     },
     {
       id: "history",
       label: t("history.title"),
+      shortLabel: t("compare.mobileTab.history"),
       icon: <HistoryIcon size={15} />,
     },
   ];
@@ -1465,9 +1471,13 @@ function ComparisonWorkspaceTabs({
               tab.id === "evidence" ? onEvidence?.() : onSelect(tab.id)
             }
             key={tab.id}
+            aria-label={tab.label}
           >
             {tab.icon}
-            <span>{tab.label}</span>
+            <span className="comparison-tab-label-full">{tab.label}</span>
+            <span className="comparison-tab-label-short" aria-hidden="true">
+              {tab.shortLabel}
+            </span>
           </button>
         );
       })}

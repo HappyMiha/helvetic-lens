@@ -182,10 +182,30 @@ test("mobile uses explicit overflow and the same role-filtered route fragments",
     shell.match(/\{administrationItems\}/g)?.length === 2,
     "desktop and mobile must render the same authorized administration destinations",
   );
+  const mobileStart = shell.indexOf(
+    '<nav aria-label={t("shell.mobileNavigation")} className="mobile-nav">',
+  );
+  const mobileEnd = shell.indexOf("</nav>", mobileStart);
+  const mobileSource = shell.slice(mobileStart, mobileEnd);
+  const moreStart = mobileSource.indexOf("<details");
+  const primarySource = mobileSource.slice(0, moreStart);
+  for (const destination of ["/", "/registry", "/impact", "/discover"]) {
+    assert.match(
+      primarySource,
+      new RegExp(`href=["']${destination.replaceAll("/", "\\/")}["']`),
+      `${destination} must be a primary mobile destination`,
+    );
+  }
+  assert.match(mobileSource.slice(moreStart), /href="\/sources"/);
+  assert.match(shell, /setMobileMenuOpen\(false\)/);
+  assert.match(shell, /event\.key !== "Escape"/);
   const mobileRule = [...css.matchAll(/\.mobile-nav\s*\{([^{}]*)\}/g)]
     .map((match) => match[1])
-    .find((body) => /display:\s*flex/.test(body));
+    .find((body) => /display:\s*grid/.test(body));
   assert.ok(mobileRule, "Missing mobile navigation rule");
   assert.doesNotMatch(mobileRule, /overflow-x:\s*auto/);
   assert.match(mobileRule, /overflow:\s*visible/);
+  assert.match(mobileRule, /grid-template-columns:\s*repeat\(5,/);
+  assert.match(mobileRule, /position:\s*fixed/);
+  assert.match(mobileRule, /inset:\s*auto 0 0/);
 });

@@ -1730,6 +1730,15 @@ const asynchronousAskMessages: Record<Locale, Messages> = {
 };
 for (const locale of locales) Object.assign(catalogTarget(locale), asynchronousAskMessages[locale]);
 
+const mobileWorkspaceMessages: Record<Locale, Messages> = {
+  "en-CH": { "mobileNav.today": "Today", "mobileNav.monitoring": "Monitor", "mobileNav.impact": "Impact", "mobileNav.discover": "Discover", "mobileNav.more": "More", "shell.mobileMenuLabel": "More navigation. Current destination: {destination}", "compare.mobileTab.diff": "Diff", "compare.mobileTab.summary": "Summary", "compare.mobileTab.actions": "Actions", "compare.mobileTab.ask": "Ask", "compare.mobileTab.history": "History" },
+  "de-CH": { "mobileNav.today": "Heute", "mobileNav.monitoring": "Beobachten", "mobileNav.impact": "Auswirkung", "mobileNav.discover": "Entdecken", "mobileNav.more": "Mehr", "shell.mobileMenuLabel": "Weitere Navigation. Aktuelles Ziel: {destination}", "compare.mobileTab.diff": "Vergleich", "compare.mobileTab.summary": "Übersicht", "compare.mobileTab.actions": "Aufgaben", "compare.mobileTab.ask": "Fragen", "compare.mobileTab.history": "Verlauf" },
+  "fr-CH": { "mobileNav.today": "Aujourd’hui", "mobileNav.monitoring": "Veille", "mobileNav.impact": "Impacts", "mobileNav.discover": "Découvrir", "mobileNav.more": "Plus", "shell.mobileMenuLabel": "Navigation supplémentaire. Destination actuelle: {destination}", "compare.mobileTab.diff": "Écarts", "compare.mobileTab.summary": "Résumé", "compare.mobileTab.actions": "À faire", "compare.mobileTab.ask": "Demander", "compare.mobileTab.history": "Historique" },
+  "it-CH": { "mobileNav.today": "Oggi", "mobileNav.monitoring": "Monitora", "mobileNav.impact": "Impatto", "mobileNav.discover": "Scopri", "mobileNav.more": "Altro", "shell.mobileMenuLabel": "Altra navigazione. Destinazione attuale: {destination}", "compare.mobileTab.diff": "Modifiche", "compare.mobileTab.summary": "Sintesi", "compare.mobileTab.actions": "Azioni", "compare.mobileTab.ask": "Chiedi", "compare.mobileTab.history": "Cronologia" },
+  "rm-CH": { "mobileNav.today": "Oz", "mobileNav.monitoring": "Survegliar", "mobileNav.impact": "Effects", "mobileNav.discover": "Scuvrir", "mobileNav.more": "Dapli", "shell.mobileMenuLabel": "Ulteriura navigaziun. Destinaziun actuala: {destination}", "compare.mobileTab.diff": "Midadas", "compare.mobileTab.summary": "Survista", "compare.mobileTab.actions": "Acziuns", "compare.mobileTab.ask": "Dumandar", "compare.mobileTab.history": "Istorgia" }
+};
+for (const locale of locales) Object.assign(catalogTarget(locale), mobileWorkspaceMessages[locale]);
+
 const catalog: Record<Locale, Messages> = { "de-CH": de, "fr-CH": fr, "it-CH": it, "rm-CH": rm, "en-CH": en };
 const localeCookie = "helvetic_lens_locale";
 
