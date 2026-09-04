@@ -67,6 +67,7 @@ def test_private_records_are_hidden_and_public_fedlex_artifacts_are_reused(tmp_p
         assert client_b.get(f"/api/versions/{private_version_id}").status_code == 404
         assert client_b.get(f"/api/comparisons/{comparison['id']}").status_code == 404
         assert client_b.get(f"/api/comparisons/{comparison['id']}/ai-history").status_code == 404
+        assert client_b.get("/api/impact-matrix").json()["rows"] == []
         assert client_b.get("/api/search", params={"q": "Synthetic retention"}).status_code == 404
         assert client_b.get(f"/api/exports/{private_law['id']}").status_code == 404
         assert client_b.get("/api/laws").json() == []

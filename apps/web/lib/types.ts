@@ -324,6 +324,42 @@ export type Impact = {
   }[];
   citations: Citation[];
 };
+export type ImpactMatrixCell = {
+  area: string;
+  state: "assessed" | "unknown" | "stale" | "unanalysed" | "failed";
+  impact: "high" | "medium" | "low" | null;
+  previous_impact: "high" | "medium" | "low" | null;
+  reason: string | null;
+};
+export type ImpactMatrix = {
+  output_locale: string;
+  profile: { revision: number; business_areas: string[] };
+  rows: Array<{
+    law_id: string;
+    law_title: string;
+    comparison_id: string | null;
+    comparison_url: string | null;
+    comparison_created_at: string | null;
+    report_state: "current" | "stale" | "unanalysed" | "failed";
+    analysis_id: string | null;
+    analysis_created_at: string | null;
+    analysis_output_locale: string | null;
+    latest_attempt_status: string | null;
+    headline: string | null;
+    overall_impact: "high" | "medium" | "low" | null;
+    previous_overall_impact: "high" | "medium" | "low" | null;
+    cells: ImpactMatrixCell[];
+  }>;
+  summary: {
+    documents: number;
+    current_reports: number;
+    stale_reports: number;
+    failed_reports: number;
+    unanalysed_documents: number;
+    assessed_cells: number;
+    unknown_cells: number;
+  };
+};
 export type Analysis = {
   id: string;
   status: string;
@@ -755,6 +791,21 @@ export type PlatformStatus = {
       evidence_opened: number;
       evidence_open_rate: number | null;
       workflow_variants: Record<string, number>;
+      by_variant: Record<
+        string,
+        {
+          measured_entries: number;
+          decisions: number;
+          duration: {
+            samples: number;
+            p50_ms: number | null;
+            p95_ms: number | null;
+            max_ms: number | null;
+          };
+          evidence_opened: number;
+          evidence_open_rate: number | null;
+        }
+      >;
     };
   };
   jobs: {

@@ -47,6 +47,7 @@ from .identity import (
     build_artifact_identity,
 )
 from .impact_inbox import ImpactInboxFilters, ImpactInboxReader
+from .impact_matrix import ImpactMatrixReader
 from .integration_logs import IntegrationLogger
 from .model_manager_client import ModelManagerClient
 from .model_settings import ApertusSettingsInput, public_settings, resolve_key, resolved_settings
@@ -1053,6 +1054,15 @@ class HelveticLens:
     def impact_inbox(self, filters: ImpactInboxFilters, user_id: str | None) -> dict:
         with self.db.session() as session:
             return ImpactInboxReader(self.organization_id, user_id).page(session, filters)
+
+    def impact_matrix(self, output_locale: str) -> dict:
+        with self.db.session() as session:
+            return ImpactMatrixReader(
+                profile_id=self.tenant_record_id,
+                settings=self.settings,
+                prompts=self.prompt_settings,
+                output_locale=output_locale,
+            ).page(session)
 
     def digest_overview(self, user_id: str | None) -> dict:
         if not user_id:

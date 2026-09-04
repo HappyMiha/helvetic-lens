@@ -15,6 +15,7 @@ import {
   History,
   Inbox,
   Landmark,
+  LayoutGrid,
   Loader2,
   Mail,
   PackageOpen,
@@ -107,6 +108,13 @@ export function Shell({
           >
             <Inbox size={17} />
             {t("nav.impact")}
+          </Link>
+          <Link
+            className={"nav-item " + (pathname === "/matrix" ? "active" : "")}
+            href="/matrix"
+          >
+            <LayoutGrid size={17} />
+            {t("nav.matrix")}
           </Link>
           {session?.authenticated && (
             <Link
@@ -272,6 +280,7 @@ export function Shell({
           <Link href="/">{t("nav.overview")}</Link>
           <Link href="/registry">{t("nav.registry")}</Link>
           <Link href="/impact">{t("nav.impact")}</Link>
+          <Link href="/matrix">{t("nav.matrix")}</Link>
           {session?.authenticated && (
             <Link href="/digests">{t("nav.digests")}</Link>
           )}

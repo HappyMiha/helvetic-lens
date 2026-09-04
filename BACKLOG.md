@@ -61,7 +61,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-020](#hl-020) | P1       | DONE     | HL-009, HL-014, HL-015, HL-018, HL-019                 | Regression checks for state and evidence                            |
 | [HL-021](#hl-021) | P1       | DONE     | HL-008, HL-012, HL-013, HL-016, HL-019, HL-020, HL-025 | End-to-end product acceptance                                       |
 | [HL-022](#hl-022) | P1       | DONE     | HL-001, HL-021                                         | Setup documentation and repeatable demo                             |
-| [HL-023](#hl-023) | P2       | DEFERRED | HL-018, HL-022                                         | Optional business impact matrix                                     |
+| [HL-023](#hl-023) | P2       | DONE     | HL-018, HL-022                                         | Optional business impact matrix                                     |
 | [HL-024](#hl-024) | P2       | DEFERRED | HL-019, HL-022                                         | Optional pgvector retrieval                                         |
 | [HL-025](#hl-025) | P0       | DONE     | HL-002, HL-003, HL-017 adapter code                    | Settings page with persisted Apertus parameters                     |
 | [HL-026](#hl-026) | P1       | DONE     | HL-006, HL-007, HL-017                                 | Integration diagnostics and controlled deletion                     |
@@ -515,6 +515,8 @@ Acceptance criteria:
 ### HL-023 — Add the business impact matrix
 
 Provide an additional view over existing evidence-backed analyses.
+
+**Status: DONE.** `/matrix` now presents every active monitored law against the current company-profile business areas using only saved, validated Impact reports. Exact area matches expose the report's indicative rating and reason; unassessed, unanalysed, failed, and stale states remain explicit and never collapse to low impact. Profile, prompt, model/runtime, locale, or comparison changes invalidate current values through the same cache fingerprint used by HL-018, while prior values remain clearly historical. Every row and assessed cell returns to the exact saved comparison/evidence. The page is organization-scoped, read-only, responsive, localized in all five product languages, and does not alter scanning or trigger inference. See [the saved Impact matrix contract](docs/IMPACT_MATRIX.md).
 
 Acceptance criteria:
 

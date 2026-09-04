@@ -921,6 +921,13 @@ def create_app(
             identity.user_id if identity else None,
         )
 
+    @app.get("/api/impact-matrix")
+    def impact_matrix(
+        request: Request,
+        output_locale: Literal["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"] | None = None,
+    ):
+        return service.impact_matrix(selected_locale(request, output_locale))
+
     @app.patch("/api/impact-inbox/events/{event_id}/state")
     def set_impact_inbox_state(
         event_id: str, data: ImpactInboxStateInput, request: Request
