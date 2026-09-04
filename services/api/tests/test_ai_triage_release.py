@@ -2,6 +2,7 @@ import hashlib
 import json
 from pathlib import Path
 
+import pytest
 from scripts.check_ai_triage_release import evaluate
 
 TEMPLATE = Path(__file__).resolve().parents[3] / "demo" / "ai-triage-usability-review.template.json"
@@ -130,4 +131,61 @@ def test_release_gate_rejects_missing_target_metrics_and_action_outcomes(tmp_pat
 
     assert result["checks"]["local_ai_latency_baseline_measured"] is False
     assert result["checks"]["review_action_outcomes_measured"] is False
+    assert result["passed"] is False
+
+
+@pytest.mark.parametrize("format", ["canonical_only", "legacy_only", "both"])
+def test_machine_latency_exports_are_compatible_without_claiming_human_insight(tmp_path, format):
+    capacity = capacity_payload()
+    latency = capacity["platform_status"]["ai_triage"]["latency"]
+    latency["time_to_first_useful_insight"].update(latency["deterministic_overview"])
+    if format == "canonical_only":
+        del latency["time_to_first_useful_insight"]
+    elif format == "legacy_only":
+        del latency["deterministic_overview"]
+    result = evaluate(*write_evidence(tmp_path, capacity))
+    assert result["passed"] is True
+    assert result["schema_version"] == "hl064.release.v2"
+    assert result["checks"]["deterministic_overview_latency_measured"] is True
+    assert "deterministic_insight_baseline_measured" not in result["checks"]
+
+
+@pytest.mark.parametrize("invalid", [None, True, -1, float("nan"), float("inf")])
+def test_invalid_machine_latency_does_not_pass_the_release_gate(tmp_path, invalid):
+    capacity = capacity_payload()
+    capacity["platform_status"]["ai_triage"]["latency"]["deterministic_overview"]["p95_ms"] = invalid
+    result = evaluate(*write_evidence(tmp_path, capacity))
+    assert result["checks"]["deterministic_overview_latency_measured"] is False
+    assert result["passed"] is False
+
+
+@pytest.mark.parametrize("empty", [{}, None])
+def test_legacy_alias_cannot_mask_missing_canonical_samples(tmp_path, empty):
+    capacity = capacity_payload()
+    latency = capacity["platform_status"]["ai_triage"]["latency"]
+    latency["time_to_first_useful_insight"].update(latency["deterministic_overview"])
+    latency["deterministic_overview"] = empty
+    result = evaluate(*write_evidence(tmp_path, capacity))
+    assert result["checks"]["deterministic_overview_latency_measured"] is False
+
+
+def test_untyped_legacy_insight_field_is_not_accepted_as_a_measurement(tmp_path):
+    capacity = capacity_payload()
+    latency = capacity["platform_status"]["ai_triage"]["latency"]
+    latency["time_to_first_useful_insight"] = latency.pop("deterministic_overview")
+    result = evaluate(*write_evidence(tmp_path, capacity))
+    assert result["checks"]["deterministic_overview_latency_measured"] is False
+
+
+def test_fast_machine_metrics_and_evidence_clicks_do_not_replace_correct_comprehension(tmp_path):
+    capacity_path, usability_path = write_evidence(tmp_path, capacity_payload())
+    usability = json.loads(usability_path.read_text(encoding="utf-8"))
+    for session in usability["sessions"]:
+        session["opened_exact_evidence"] = True
+        session["identified_main_material_change"] = False
+        session["seconds_to_first_useful_insight"] = None
+    usability_path.write_text(json.dumps(usability), encoding="utf-8")
+    result = evaluate(capacity_path, usability_path)
+    assert result["checks"]["deterministic_overview_latency_measured"] is True
+    assert result["checks"]["five_independent_usability_sessions_passed"] is False
     assert result["passed"] is False

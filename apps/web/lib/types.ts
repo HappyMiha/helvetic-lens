@@ -749,10 +749,7 @@ export type PlatformStatus = {
       limited_rate: number;
     };
     latency: Record<
-      | "deterministic_overview"
-      | "time_to_first_useful_insight"
-      | "provider_queue"
-      | "inference",
+      "deterministic_overview" | "provider_queue" | "inference",
       {
         samples: number;
         p50_ms: number | null;
@@ -760,7 +757,19 @@ export type PlatformStatus = {
         max_ms: number | null;
         source?: string;
       }
-    >;
+    > & {
+      /** @deprecated Machine latency only; use deterministic_overview. */
+      time_to_first_useful_insight?: {
+        samples: number;
+        p50_ms: number | null;
+        p95_ms: number | null;
+        max_ms: number | null;
+        source: string;
+        deprecated?: boolean;
+        replacement?: string;
+        measurement_kind?: string;
+      };
+    };
     usage: {
       provider_calls: number;
       token_counts: Record<string, number>;

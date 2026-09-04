@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 
+import pytest
 from conftest import add_law, import_old
 
 from helvetic_lens.ai_metrics import summarize_ai_triage_metrics
@@ -89,6 +90,12 @@ def test_ai_triage_metrics_report_latency_usage_validation_cache_and_decisions()
     assert metrics["latency"]["provider_queue"]["p95_ms"] == 40.0
     assert metrics["latency"]["inference"]["p95_ms"] == 400.0
     assert metrics["latency"]["time_to_first_useful_insight"]["source"] == "deterministic_overview"
+    legacy = metrics["latency"]["time_to_first_useful_insight"]
+    assert legacy["deprecated"] is True
+    assert legacy["replacement"] == "latency.deterministic_overview"
+    assert legacy["measurement_kind"] == "machine_processing_latency"
+    for field, value in metrics["latency"]["deterministic_overview"].items():
+        assert legacy[field] == value
     assert metrics["usage"] == {
         "provider_calls": 3,
         "token_counts": {"total_tokens": 130},
@@ -147,6 +154,23 @@ def test_empty_ai_triage_metrics_are_explicit_and_division_safe():
     assert metrics["relation_review"]["duration"]["p95_ms"] is None
     assert metrics["relation_review"]["evidence_open_rate"] is None
     assert metrics["relation_review"]["by_variant"] == {}
+
+
+@pytest.mark.parametrize("unknown", [None, "12", True, -1, float("nan"), float("inf")])
+def test_unknown_or_invalid_timings_do_not_become_zero_latency_samples(unknown):
+    metrics = summarize_ai_triage_metrics(
+        [record(queue=unknown, inference=unknown), record(queue=0, inference=12)], [],
+        [SimpleNamespace(diff={"metrics": {"overview_ms": unknown}}),
+         SimpleNamespace(diff={"metrics": {"overview_ms": 0}})], [],
+    )
+    overview = metrics["latency"]["deterministic_overview"]
+    assert overview == {"samples": 1, "p50_ms": 0, "p95_ms": 0, "max_ms": 0}
+    assert metrics["latency"]["provider_queue"]["samples"] == 1
+    assert metrics["latency"]["provider_queue"]["p95_ms"] == 0
+    assert metrics["latency"]["inference"]["samples"] == 1
+    assert metrics["latency"]["inference"]["p95_ms"] == 12
+    assert metrics["records"]["total"] == 2
+    assert metrics["usage"]["provider_calls"] == 2
 
 
 def test_relation_review_metrics_keep_experiment_variants_separate():

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from datetime import datetime
 from pathlib import Path
 
@@ -93,7 +94,8 @@ def validate(path: Path, *, require_results: bool) -> dict:
             session_starts.append(started_at)
             session_completions.append(completed_at)
         seconds = session["seconds_to_first_useful_insight"]
-        if not isinstance(seconds, int | float) or isinstance(seconds, bool) or seconds < 0:
+        if (not isinstance(seconds, int | float) or isinstance(seconds, bool)
+                or not math.isfinite(seconds) or seconds < 0):
             failures.append(f"{locale}: first-useful-insight time must be a non-negative number")
         elif seconds > 120:
             failures.append(f"{locale}: first useful insight took {seconds} seconds")

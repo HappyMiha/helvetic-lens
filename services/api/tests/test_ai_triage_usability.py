@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+import pytest
 from scripts.check_ai_triage_usability import validate
 
 TEMPLATE = Path(__file__).resolve().parents[3] / "demo" / "ai-triage-usability-review.template.json"
@@ -84,3 +85,14 @@ def test_completed_review_requires_independent_participants_and_concrete_notes(t
     assert result["passed"] is False
     assert "Every locale requires a different independent participant" in result["failures"]
     assert any("moderator_notes" in failure for failure in result["failures"])
+
+
+@pytest.mark.parametrize("invalid", [float("nan"), float("inf"), -1, True, None])
+def test_invalid_observed_duration_cannot_pass_human_acceptance(tmp_path, invalid):
+    payload = completed_payload()
+    payload["sessions"][0]["seconds_to_first_useful_insight"] = invalid
+    completed = tmp_path / "review.json"
+    completed.write_text(json.dumps(payload), encoding="utf-8")
+    result = validate(completed, require_results=True)
+    assert result["passed"] is False
+    assert any("time must be a non-negative number" in failure for failure in result["failures"])

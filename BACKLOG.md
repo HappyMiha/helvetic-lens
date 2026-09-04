@@ -138,7 +138,7 @@ Keep the proven stack and add only the infrastructure now justified by public us
 | [HL-090](#hl-090) | P1       | PLANNED  | None                                                   | Target-user discovery and observed first-value prototypes           |
 | [HL-091](#hl-091) | P0       | PLANNED  | HL-031, HL-060, HL-093                                 | Capability-based local explanations versus explicit extractive mode |
 | [HL-092](#hl-092) | P0       | PLANNED  | HL-061, HL-091                                         | Truthful structured reports, dates, applicability and useful actions |
-| [HL-093](#hl-093) | P0       | PLANNED  | HL-059, HL-062, HL-075                                 | Independent semantic gold set and honest quality metrics            |
+| [HL-093](#hl-093) | P0       | IN PROGRESS  | HL-059, HL-062, HL-075                                 | Independent semantic gold set and honest quality metrics            |
 | [HL-094](#hl-094) | P0       | PLANNED  | HL-030, HL-075                                         | Fair resumable matching and preview/production parity               |
 | [HL-095](#hl-095) | P1       | PLANNED  | HL-037, HL-066, HL-074                                 | Progressive topic, registry and recovery controls                   |
 | [HL-096](#hl-096) | P1       | PLANNED  | HL-063, HL-068                                         | Coherent visual system and readable scalable evidence               |
@@ -1736,11 +1736,13 @@ Acceptance criteria:
 
 ### HL-093 — Establish independent semantic quality and honest metrics
 
-**Priority:** P0. **Status:** PLANNED. **Dependencies:** HL-059, HL-062, HL-075. **Owner role:** evaluation/QA with fluent domain reviewers.
+**Priority:** P0. **Status:** IN PROGRESS. **Dependencies:** HL-059, HL-062, HL-075. **Owner role:** evaluation/QA with fluent domain reviewers.
 
 Problem: tiny title-match examples and valid citation-row JSON establish regression/runtime behavior, not relevance, factual support or user understanding.
 
 Deliverable: a versioned public-source gold set, held-out evaluation protocol and separated runtime/semantic/human metric definitions.
+
+**Implemented 5 September 2026:** The operational metric contract now explicitly deprecates the misleading machine `time_to_first_useful_insight` alias in favor of `deterministic_overview`, with compatible API/TypeScript and release-validator handling. Missing/invalid timings no longer count as zero-duration samples. Release v2 separately names machine latency and retains observed human comprehension as an independent gate, including nonfinite-input rejection. See [metric definitions and migration](docs/AI_TRIAGE_METRICS.md). **Remaining:** independent labels/adjudication, held-out semantic evaluator/baseline, model/language quality and real participant evidence; regression fixtures are not labelled human acceptance data.
 
 Completion of this evaluation-infrastructure task requires a reviewed set, runnable evaluator and honestly reported baseline failures. Passing the proposed model/product targets is required for subsequent profile promotion and final HL-064/088 acceptance, not a circular prerequisite to implementing HL-091/100.
 

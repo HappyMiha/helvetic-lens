@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -21,7 +22,10 @@ def _load(path: Path) -> tuple[dict, str]:
 
 
 def _at_least(value: Any, minimum: float) -> bool:
-    return isinstance(value, int | float) and not isinstance(value, bool) and value >= minimum
+    return (
+        isinstance(value, int | float) and not isinstance(value, bool)
+        and math.isfinite(value) and value >= minimum
+    )
 
 
 def _is_git_commit(value: object) -> bool:
@@ -53,8 +57,15 @@ def evaluate(capacity_path: Path, usability_path: Path) -> dict:
     metrics = platform_status.get("ai_triage") or {}
     records = metrics.get("records") or {}
     latency = metrics.get("latency") or {}
+    # Compatibility with older exports never converts a machine timing into
+    # observed comprehension. Prefer the canonical field when present, even if
+    # it is empty: an obsolete alias must not mask a missing current sample.
+    legacy_overview = latency.get("time_to_first_useful_insight") or {}
     deterministic = latency.get("deterministic_overview") or {}
-    first_useful = latency.get("time_to_first_useful_insight") or {}
+    if "deterministic_overview" not in latency:
+        deterministic = (
+            legacy_overview if legacy_overview.get("source") == "deterministic_overview" else {}
+        )
     provider_queue = latency.get("provider_queue") or {}
     inference_latency = latency.get("inference") or {}
     usage = metrics.get("usage") or {}
@@ -95,11 +106,10 @@ def evaluate(capacity_path: Path, usability_path: Path) -> dict:
         "usability_decisions_precede_captured_metrics": bool(
             capacity_started and review_completed and review_completed <= capacity_started
         ),
-        "deterministic_insight_baseline_measured": (
+        "deterministic_overview_latency_measured": (
             _at_least(deterministic.get("samples"), 10)
-            and isinstance(deterministic.get("p95_ms"), int | float)
+            and _at_least(deterministic.get("p95_ms"), 0)
             and deterministic["p95_ms"] < 1000
-            and first_useful.get("source") == "deterministic_overview"
         ),
         "local_ai_latency_baseline_measured": (
             _at_least(provider_queue.get("samples"), 20)
@@ -126,7 +136,7 @@ def evaluate(capacity_path: Path, usability_path: Path) -> dict:
         ),
     }
     return {
-        "schema_version": "hl064.release.v1",
+        "schema_version": "hl064.release.v2",
         "passed": all(checks.values()),
         "checks": checks,
         "evidence": {

@@ -7,8 +7,12 @@ from collections.abc import Iterable
 from typing import Any
 
 
-def _number(value: Any) -> float:
-    return float(value) if isinstance(value, int | float) and not isinstance(value, bool) else 0.0
+def _measurement(value: Any) -> float | None:
+    """Unknown or corrupt timings are not zero-duration observations."""
+    if not isinstance(value, int | float) or isinstance(value, bool):
+        return None
+    measured = float(value)
+    return measured if math.isfinite(measured) and measured >= 0 else None
 
 
 def _percentile(values: list[float], percentile: float) -> float | None:
@@ -61,10 +65,14 @@ def summarize_ai_triage_metrics(
         calls = int(actual.get("provider_calls", provenance.get("provider_calls", 0)) or 0)
         provider_calls += calls
         if calls:
-            queue_waits.append(_number(actual.get("queue_wait_ms", provenance.get("queue_wait_ms"))))
-            inference_times.append(
-                _number(actual.get("inference_duration_ms", provenance.get("inference_duration_ms")))
+            queue = _measurement(actual.get("queue_wait_ms", provenance.get("queue_wait_ms")))
+            inference = _measurement(
+                actual.get("inference_duration_ms", provenance.get("inference_duration_ms"))
             )
+            if queue is not None:
+                queue_waits.append(queue)
+            if inference is not None:
+                inference_times.append(inference)
         for key, value in (actual.get("token_counts") or provenance.get("token_counts") or {}).items():
             if isinstance(value, int) and not isinstance(value, bool):
                 token_counts[key] = token_counts.get(key, 0) + value
@@ -78,10 +86,11 @@ def summarize_ai_triage_metrics(
         cache_hits += max(0, int(getattr(record, "use_count", 1) or 1) - 1)
 
     overview_times = [
-        _number(((getattr(comparison, "diff", None) or {}).get("metrics") or {}).get("overview_ms"))
+        measured
         for comparison in comparison_records
-        if ((getattr(comparison, "diff", None) or {}).get("metrics") or {}).get("overview_ms")
-        is not None
+        if (measured := _measurement(
+            ((getattr(comparison, "diff", None) or {}).get("metrics") or {}).get("overview_ms")
+        )) is not None
     ]
     requests = len(records) + cache_hits
     accepted = sum(decision.decision == "accepted" for decision in decision_records)
@@ -148,6 +157,9 @@ def summarize_ai_triage_metrics(
             "time_to_first_useful_insight": {
                 **_latency(overview_times),
                 "source": "deterministic_overview",
+                "deprecated": True,
+                "replacement": "latency.deterministic_overview",
+                "measurement_kind": "machine_processing_latency",
             },
             "provider_queue": _latency(queue_waits),
             "inference": _latency(inference_times),
