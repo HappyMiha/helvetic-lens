@@ -27,7 +27,31 @@ Do not attach an annual report or synthetic policy to an unrelated real act as i
 
 - Native HTML selects main/article content when possible and removes common navigation, scripts, forms, headers, and footers. It does not execute JavaScript. Supported Fedlex ELI law URLs use the fixed official SPARQL endpoint and validated official publication-store URLs; this is a narrow resolver, not a general browser. Unusual structure and template fragments can require a better direct URL.
 - Discovery inspects at most 50 direct candidates within the selected host/path, prioritising PDF/TXT links and excluding common navigation. It follows no links inside those candidates. Native redirects outside the boundary are rejected; returned rendered-provider URLs are also checked. Previews and individual errors are persisted, with a 120-second inspection budget and explicit coverage counts.
-- PyMuPDF extracts text and page numbers. Image-only and password-protected PDFs are rejected; no OCR is included.
+- pdfminer.six extracts ordered text blocks and physical page numbers through the shared `pdf_reader` module. Court metadata reads the opening 40 pages; persisted document evidence reads the complete file within the 1,000-page / text-size limits. Image-only and encrypted PDFs are rejected; no OCR is included.
 - Login-gated sources are unsupported.
 - Firecrawl is an explicit optional provider, requesting a fresh scrape with maxAge=0. No silent fallback or bundled credit is provided, and no real Firecrawl result has been validated for this build.
 - Fetch/import timestamps are not official effective dates. Snapshots retain their first provenance; subsequent observations separately record how content was obtained.
+
+## PDF extractor change, 4 September 2026
+
+New PDF extractions record `<provider>-pdfminer-v1`; HTML and plain-text extraction
+retain their existing version. Original PDF bytes remain available and repaired
+line-break hyphenation keeps the raw block text for inspection. The shared reader
+uses pdfminer.six directly under MIT; ReportLab is a development-only fixture
+generator. No PDF rendering engine or AI call is required.
+
+Eight locally saved PDFs (2 to 176 pages) were re-extracted successfully on the
+development host, taking approximately 0.08 to 12.01 seconds each. A fresh native
+Fedlex fetch of the NFA message (`eli/fga/2002/316`) also passed: 269 pages,
+677,990 characters, 5,689 passages, and 17.14 seconds for extraction (download time
+excluded). This checks real-file readability, not independently verified legal completeness. The older
+measurements in the table above are historical and should not be treated as exact
+counts for the new parser. Regression tests cover column order, soft wraps,
+Unicode metadata/text, blank-page citation offsets, encryption, malformed files,
+page limits, and full extraction beyond the court metadata excerpt.
+
+Existing test snapshots are not rewritten or deleted automatically. For a clean
+demo, import both comparison versions with the new extractor; differences caused
+only by switching parsers are not evidence of a legislative amendment. Rebuild
+the API and worker images before using the new extractor; old images still carry
+their historical dependencies and licenses.

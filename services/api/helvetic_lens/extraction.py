@@ -11,11 +11,11 @@ from pathlib import PurePosixPath
 from urllib.parse import urldefrag, urljoin, urlsplit, urlunsplit
 
 import httpx
-import pymupdf
 from bs4 import BeautifulSoup, UnicodeDammit
 
 from .config import DomainError, Settings
 from .integration_logs import IntegrationLogger, response_snapshot
+from .pdf_reader import MAX_PDF_PAGES, PDF_EXTRACTOR_VERSION, read_pdf
 
 EXTRACTOR_VERSION = "native-v3"
 FEDLEX_DATA_ORIGIN = "https://fedlex.data.admin.ch"
@@ -30,7 +30,6 @@ FEDLEX_ELI_PATH = re.compile(
     re.I,
 )
 FEDLEX_METADATA_LIMIT = 256 * 1024
-MAX_PDF_PAGES = 1000
 _PDF_LINE_BREAK_HYPHEN = re.compile(
     r"(?P<head>[^\W\d_])(?P<hyphen>[-\u2010\u2011])[\t ]*\r?\n[\t ]*"
     r"(?P<continuation>[^\W\d_]+)",
@@ -606,30 +605,17 @@ def extract(
     title = name
     if body.startswith(b"%PDF") or mime == "application/pdf" or name.lower().endswith(".pdf"):
         mime = "application/pdf"
-        try:
-            with pymupdf.open(stream=body, filetype="pdf") as pdf:
-                if pdf.needs_pass:
-                    raise DomainError("Password-protected PDFs are not supported.")
-                if pdf.page_count > MAX_PDF_PAGES:
-                    raise DomainError(
-                        f"This PDF exceeds the {MAX_PDF_PAGES:,}-page extraction limit.", 413
-                    )
-                title = normalize((pdf.metadata or {}).get("title") or name)
-                for page_number, page in enumerate(pdf, 1):
-                    for block in page.get_text("blocks", sort=True):
-                        if len(block) > 6 and block[6] != 0:
-                            continue
-                        raw_text = unicodedata.normalize("NFC", block[4]).strip()
-                        text = _normalize_pdf_block(block[4])
-                        if text:
-                            passage = {"text": text, "page": page_number}
-                            if normalize(raw_text) != text:
-                                passage["raw_text"] = raw_text
-                            passages.append(passage)
-        except (pymupdf.FileDataError, RuntimeError, ValueError) as exc:
-            raise DomainError(
-                "This PDF could not be read. It may be damaged or unsupported.", 422, "invalid_pdf"
-            ) from exc
+        pdf = read_pdf(body, max_pages=MAX_PDF_PAGES)
+        title = normalize(pdf.title or name)
+        for page in pdf.pages:
+            for block in page.blocks:
+                raw_text = unicodedata.normalize("NFC", block).strip()
+                text = _normalize_pdf_block(block)
+                if text:
+                    passage = {"text": text, "page": page.number}
+                    if normalize(raw_text) != text:
+                        passage["raw_text"] = raw_text
+                    passages.append(passage)
         if not passages:
             raise DomainError(
                 "This PDF has no extractable text. Scanned PDFs require OCR, which is not in this MVP.",
@@ -741,7 +727,8 @@ def extract(
         raise DomainError("The extracted document exceeds the MVP text limit.", 413, "document_too_large")
     for number, passage in enumerate(passages, 1):
         passage["id"] = f"p{number:05d}"
-    return Extracted(title[:500], text, passages, mime, name, body, f"{provider}-v3")
+    extractor = f"{provider}-{PDF_EXTRACTOR_VERSION}" if mime == "application/pdf" else f"{provider}-v3"
+    return Extracted(title[:500], text, passages, mime, name, body, extractor)
 
 
 def discover_links(fetched: Fetched, section: str = "/", limit: int = 50) -> dict:

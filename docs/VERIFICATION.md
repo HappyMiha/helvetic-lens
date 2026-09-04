@@ -2,6 +2,17 @@
 
 The source-to-diff workflow, Settings page, and live Apertus path are verified.
 
+## PDF reader replacement and ELv2 — 4 September 2026
+
+- Replaced the current PyMuPDF runtime/test dependency with MIT-licensed pdfminer.six. The shared reader supplies text blocks, Unicode metadata, and physical page references to document ingestion and Federal Criminal Court metadata extraction. ReportLab generates test fixtures only; it is absent from the production API environment.
+- 48 focused extraction/PDF/court tests pass. The Windows suite passes 398 tests, excluding the five Linux-only release-manager tests (`fcntl`). Python lint passes across the API.
+- A full Linux run with `--network none` executes 403 tests: 388 pass and 15 connector tests fail because their public-address validation needs real DNS even with mocked HTTP. Re-running all four affected connector files with ordinary Docker networking passes all 24 tests, including those 15. A separate Linux run of extraction, PDF, both court connectors, and release-manager tests passes all 60 tests. These are complementary runs, not a claim that the suite is fully offline-independent.
+- Eight saved PDFs (2–176 pages) and a fresh official Fedlex NFA PDF (269 pages) extract successfully. The NFA result contains 677,990 characters and 5,689 passages, taking 17.14 seconds to extract on the development host. These checks establish readability and regression behavior, not independent legal completeness. See [source boundaries](SOURCES.md).
+- API, web, and model-manager Docker builds succeed. The web build includes its shell/resource/i18n checks and TypeScript compilation. Runtime probes confirm the official ELv2 text in all three images and no PyMuPDF, ReportLab, or host uv cache in the API runtime. Existing live containers and data volumes were not restarted or deleted.
+- The Python wheel and sdist build successfully, include license/notices, and exclude host caches. Root/API license copies and wheel notices match; the unchanged official ELv2 text has SHA-256 `48255018b41fc0e965b1115af7e6779bc218bb8a6747d561da800d5022622aa2`. Package metadata uses SPDX `Elastic-2.0`. Third-party license wording is preserved separately; only trailing whitespace is normalized in the reproduced dependency notices.
+- The API lock removes `pymupdf` and adds `pdfminer-six`, `charset-normalizer`, and development-only `reportlab`/`pillow`; existing locked dependency versions are unchanged. The existing FastAPI/Starlette test-client deprecation warning remains unrelated to this change.
+- No paid AI calls, working database reset, automatic evidence rewrite, or public deployment was performed for this verification. Old images/commits retain their historical dependencies and terms; rebuild/recreate the API and workers before using the new reader.
+
 ## Durable PostgreSQL jobs and Redis/Celery execution — 3 September 2026
 
 - 155 API regressions pass. Job tests cover transactional outbox creation, duplicate idempotency keys, one-worker claims, broker failure, stale leases, bounded attempts, queued and running cancellation, safe retry, persisted scan steps, and saved Impact/Ask results.

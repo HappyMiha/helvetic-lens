@@ -2,7 +2,7 @@ import asyncio
 from datetime import UTC, datetime
 
 import httpx
-import pymupdf
+from pdf_fixture import make_pdf
 from sqlalchemy import func, select
 
 from helvetic_lens.config import Settings
@@ -42,19 +42,15 @@ def home(*, broken=False, changed=False):
 
 
 def pdf(docket, french=False):
-    document = pymupdf.open()
-    page = document.new_page()
     heading = (
         "Jugement du 21 aout 2026 Cour des plaintes"
         if french
         else "Urteil vom 20. August 2026 Strafkammer"
     )
-    page.insert_text(
-        (72, 72),
+    return make_pdf([
         f"Bundesstrafgericht\nNummer: {docket}\n{heading}\n"
-        "Art. 25 DSG und SR 235.1 werden angewendet.",
-    )
-    return document.tobytes()
+        "Art. 25 DSG und SR 235.1 werden angewendet."
+    ])
 
 
 def transport(*, broken=False, changed=False):

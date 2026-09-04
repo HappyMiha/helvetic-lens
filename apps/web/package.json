@@ -1,6 +1,7 @@
 {
   "name": "@helvetic-lens/web",
   "version": "0.1.0",
+  "license": "Elastic-2.0",
   "private": true,
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1",

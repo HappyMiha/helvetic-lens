@@ -4,6 +4,8 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends python3-venv ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /manager
+LABEL org.opencontainers.image.licenses="Elastic-2.0"
+COPY LICENSE NOTICE THIRD_PARTY_NOTICES.md ./
 COPY services/model-manager/requirements.txt ./
 RUN python3 -m venv /venv && /venv/bin/pip install --no-cache-dir -r requirements.txt
 COPY services/model-manager/model_manager ./model_manager

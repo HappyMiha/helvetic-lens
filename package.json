@@ -1,6 +1,7 @@
 {
   "name": "helvetic-lens",
   "version": "0.1.0",
+  "license": "Elastic-2.0",
   "private": true,
   "workspaces": [
     "apps/web"

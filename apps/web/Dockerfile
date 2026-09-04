@@ -12,6 +12,8 @@ RUN npm run build
 
 FROM node:24-alpine@sha256:e67514e5d0f6c46656005e1b693b2ec9d52e80b641307de684d4a015ba7a4eaf
 WORKDIR /app
+LABEL org.opencontainers.image.licenses="Elastic-2.0"
+COPY LICENSE NOTICE THIRD_PARTY_NOTICES.md ./
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
 COPY --from=build /app/apps/web/.next/standalone ./

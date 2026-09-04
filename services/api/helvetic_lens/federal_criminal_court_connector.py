@@ -9,7 +9,6 @@ import uuid
 from datetime import UTC, date, datetime
 from urllib.parse import urljoin, urlsplit
 
-import pymupdf
 from bs4 import BeautifulSoup
 
 from .config import DomainError, Settings
@@ -26,6 +25,7 @@ from .connectors import (
 )
 from .integration_logs import IntegrationLogger
 from .official_source_contracts import FEDERAL_CRIMINAL_COURT_CONTRACT
+from .pdf_reader import read_pdf
 from .regulatory_corpus import DateInput, DocumentInput, ExpressionInput, IdentifierInput
 
 COURT_HOME = "https://www.bstger.ch/de/home/index"
@@ -161,13 +161,10 @@ def _pdf_metadata(body: bytes, dockets: list[str]) -> dict:
             "connector_contract_drift",
         )
     try:
-        with pymupdf.open(stream=body, filetype="pdf") as pdf:
-            if pdf.needs_pass or pdf.page_count < 1:
-                raise ValueError("unreadable PDF")
-            total_pages = pdf.page_count
-            page_limit = min(total_pages, 40)
-            pages = [_clean(pdf[index].get_text("text", sort=True)) for index in range(page_limit)]
-    except (pymupdf.FileDataError, RuntimeError, ValueError) as exc:
+        pdf = read_pdf(body, text_page_limit=40)
+        total_pages = pdf.page_count
+        pages = [_clean("\n".join(page.blocks)) for page in pdf.pages]
+    except DomainError as exc:
         raise DomainError(
             "The Federal Criminal Court decision PDF could not be read.",
             502,

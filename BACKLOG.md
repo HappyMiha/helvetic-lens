@@ -15,7 +15,7 @@ This backlog implements the product described in [README.md](README.md): a local
 
 The original baseline contains 28 items: 27 completed and one deferred optional item (HL-024; optional HL-023 is complete). The original public-beta roadmap contains **29 required items (`HL-029`–`HL-049` plus `HL-057`–`HL-064`)** and **7 earlier after-beta items (`HL-050`–`HL-056`)**. The daily-use roadmap adds **25 items (`HL-065`–`HL-089`)**. The September product audit adds **12 corrective/evaluation items (`HL-090`–`HL-101`)**, while reusing the unfinished daily-use tasks rather than duplicating them. Follow dependencies and checkpoints; priority alone is not an execution order. Start discovery and design validation now; target-hardware absence blocks promotion, not useful prototype work. No unsupported calendar or capacity promises.
 
-Keep the proven stack and add only the infrastructure now justified by public use: **Next.js, Tailwind CSS/shadcn/ui, FastAPI, PostgreSQL, Redis, Celery, Caddy, BeautifulSoup, PyMuPDF, `difflib`, and a private llama.cpp-based local inference runtime**. A quantized **Apertus 8B** profile is the intended production default only after it passes the target-hardware gate; the smaller verified profile remains valid for development. Cloud model adapters are optional and disabled by default. **pgvector remains conditional on a measured recall gap.**
+Keep the proven stack and add only the infrastructure now justified by public use: **Next.js, Tailwind CSS/shadcn/ui, FastAPI, PostgreSQL, Redis, Celery, Caddy, BeautifulSoup, pdfminer.six, `difflib`, and a private llama.cpp-based local inference runtime**. A quantized **Apertus 8B** profile is the intended production default only after it passes the target-hardware gate; the smaller verified profile remains valid for development. Cloud model adapters are optional and disabled by default. **pgvector remains conditional on a measured recall gap.**
 
 ## Release checkpoints
 
@@ -204,7 +204,7 @@ Implement one extraction path shared by current documents and imported versions.
 Acceptance criteria:
 
 - Fetch supported public HTTP(S) HTML/PDF URLs, retain the original and final URL, and report the actual detected input type.
-- Extract meaningful HTML text with BeautifulSoup and text-based PDF content with PyMuPDF. Keep headings, article numbers, substantive dates, and paragraph/page boundaries.
+- Extract meaningful HTML text with BeautifulSoup and text-based PDF content with pdfminer.six. Keep headings, article numbers, substantive dates, and paragraph/page boundaries.
 - Normalize whitespace and obvious navigation boilerplate consistently without erasing legal wording, numbers, or punctuation that may carry meaning.
 - Return a preview containing title, content type, text excerpt, extraction result, and any limitation before the user saves a document.
 - Resolve supported Fedlex ELI law URLs through the official Linked Data metadata into their current or explicitly dated HTML/PDF publication, while retaining the stable ELI URL for later scans and recording resolved provenance.

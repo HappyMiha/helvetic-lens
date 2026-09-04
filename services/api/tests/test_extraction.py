@@ -1,9 +1,9 @@
 import socket
 
 import httpx
-import pymupdf
 import pytest
 from conftest import policy
+from pdf_fixture import make_pdf
 
 from helvetic_lens.config import DomainError, Settings
 from helvetic_lens.diffing import compare_passages
@@ -35,9 +35,7 @@ def test_pdf_dehyphenation_only_repairs_explicit_safe_line_breaks(raw, expected)
 
 def test_pdf_extraction_keeps_raw_multiline_evidence_when_repairing_soft_wraps():
     raw = "Die Personengesell-\nschaft reicht ein.\nKlein-\nund Mittelunternehmen"
-    with pymupdf.open() as document:
-        document.new_page().insert_text((72, 72), raw)
-        result = extract(document.tobytes(), "application/pdf", "wrapped.pdf")
+    result = extract(make_pdf([raw]), "application/pdf", "wrapped.pdf")
 
     assert result.passages[0]["text"] == (
         "Die Personengesellschaft reicht ein. Klein- und Mittelunternehmen"
@@ -62,29 +60,23 @@ def test_normalisation_removes_layout_noise_but_keeps_changed_numbers():
 
 
 def test_pdf_text_and_page_references_with_scanned_pdf_error():
-    with pymupdf.open() as document:
-        document.new_page().insert_text(
-            (72, 72), "Synthetic policy: retain records for 30 days. This is a test."
-        )
-        document.new_page().insert_text((72, 72), "The second page contains a separate fictional paragraph.")
-        content = document.tobytes()
+    content = make_pdf([
+        "Synthetic policy: retain records for 30 days. This is a test.",
+        "The second page contains a separate fictional paragraph.",
+    ])
     result = extract(content, "application/pdf", "test.pdf")
     assert {p["page"] for p in result.passages} == {1, 2}
     assert result.preview()["page_count"] == 2
-    with pymupdf.open() as blank:
-        blank.new_page()
-        with pytest.raises(DomainError) as error:
-            extract(blank.tobytes(), "application/pdf")
+    with pytest.raises(DomainError) as error:
+        extract(make_pdf([""]), "application/pdf")
     assert error.value.code == "ocr_required"
 
 
 def test_pdf_above_the_old_mvp_page_limit_is_supported():
-    with pymupdf.open() as document:
-        for page_number in range(1, 252):
-            document.new_page().insert_text(
-                (72, 72), f"Official report page {page_number}: extractable regulatory text."
-            )
-        content = document.tobytes()
+    content = make_pdf([
+        f"Official report page {page_number}: extractable regulatory text."
+        for page_number in range(1, 252)
+    ])
     result = extract(content, "application/pdf", "long-report.pdf")
     assert result.preview()["page_count"] == 251
     assert result.passages[-1]["page"] == 251

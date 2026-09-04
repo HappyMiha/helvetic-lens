@@ -1,4 +1,7 @@
 .venv
+.uv-cache
+dist
+services
 __pycache__
 .pytest_cache
 .pytest-temp-*
