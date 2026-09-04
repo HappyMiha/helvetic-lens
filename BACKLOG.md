@@ -129,7 +129,7 @@ Preserve `HL-001`–`HL-028` as the completed MVP record. For public beta, imple
 | [HL-084](#hl-084) | P1       | PLANNED  | HL-031, HL-032, HL-083                                 | Small local Apertus assistant profile and hardware gate             |
 | [HL-085](#hl-085) | P1       | PLANNED  | HL-065–HL-070, HL-083, HL-084                          | Persistent global assistant experience with cited answers          |
 | [HL-086](#hl-086) | P1       | PLANNED  | HL-035, HL-074, HL-075, HL-077, HL-083, HL-085         | Natural-language monitoring-topic flow through the assistant        |
-| [HL-087](#hl-087) | P1       | PLANNED  | HL-057, HL-085                                         | Original dry robot persona with safe five-language tone             |
+| [HL-087](#hl-087) | P1       | IN PROGRESS | HL-057, HL-085                                      | Proactive dry robot companion with safe five-language tone           |
 | [HL-088](#hl-088) | P0       | PLANNED  | HL-049, HL-057, HL-064, HL-065–HL-080, HL-083–HL-087, HL-089 | Responsive, first-value, relevance, and assistant acceptance gate |
 | [HL-089](#hl-089) | P0       | PLANNED  | HL-032, HL-045, HL-061, HL-075                         | Persisted AI relevance briefs for matched developments              |
 
@@ -1583,15 +1583,19 @@ Acceptance criteria:
 
 <a id="hl-087"></a>
 
-### HL-087 — Create an original dry robot guide persona in all five languages
+### HL-087 — Create a proactive dry robot companion in all five languages
 
-Express the requested intelligence, boredom, pessimism, and reluctant helpfulness as optional product character without copying a protected character identity, likeness, artwork, or dialogue.
+Express the requested intelligence, boredom, pessimism, reluctant helpfulness, and spontaneous commentary as optional product character. Use **Marvin** as the working product name with original artwork and dialogue; complete a naming/likeness review before a public launch.
+
+**Status: IN PROGRESS.** The first product slice mounts a persistent original robot control for signed-in and local-development workspaces, explains the current route, exposes local-model availability, and can make bounded spontaneous remarks after route arrival, repeated safe navigation actions, or reaching the end of a long workspace. It stores tone and interruption preferences only in the browser, observes an allowlist of interaction types instead of field values or page copy, uses a 15-minute per-context cooldown, and ships localized UI in DE/FR/IT/RM/EN. The local-model intent router, persisted conversation, cited tool use, sensitive-state suppression, and native-language tone review remain governed by HL-083–HL-085 and the criteria below.
 
 Acceptance criteria:
 
-- Create an original public name, silhouette, microcopy, motion, and visual system after a naming/likeness review. “Marvin” may remain an internal working reference only; shipped assets and quotations are original.
+- Use original silhouette, microcopy, motion, and visual assets. Keep Marvin as the working name requested by the product owner and complete a naming/likeness review before public release; do not copy protected artwork or dialogue.
 - Keep the factual answer neutral and place any optional dry remark in a separate `quip` field that cannot alter citations, actions, confidence, legal status, or accessibility text.
 - Offer per-user Off/Neutral, Dry, and Very dry settings with an immediate off switch. Core product use never depends on seeing or interacting with the pet.
+- Let the companion react without a user prompt only to explicit, allowlisted product context: route/entity identifiers, job states, result counts, safe navigation events, and coarse scroll/idle signals. Never inspect typed field values, clipboard data, arbitrary page text, credentials, raw integration logs, or another organization’s state.
+- Rate-limit proactive remarks per user and context, never stack interruptions, never steal focus, and let the user mute spontaneous remarks immediately. The UI must state what context is observed.
 - Suppress sarcasm for legal conclusions/deadlines, high-impact alerts, uncertainty/unsupported evidence, failures, security/access guidance, destructive confirmations, and distress-sensitive content.
 - Have native reviewers approve tone in DE/FR/IT/RM/EN; do not mechanically translate jokes that become insulting, ambiguous, or culturally inappropriate.
 - Animation never delays an answer, hides real job status, steals focus, or ignores reduced-motion and assistive-technology preferences.

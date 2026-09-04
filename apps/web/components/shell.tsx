@@ -29,18 +29,14 @@ import {
   SlidersHorizontal,
   Users,
 } from "lucide-react";
-import {
-  api,
-  errorText,
-  resetResourceScope,
-  useResource,
-} from "@/lib/api";
+import { api, errorText, resetResourceScope, useResource } from "@/lib/api";
 import { resources } from "@/lib/resource-keys";
 import { type AuthSession, useAuth } from "./auth-gate";
 import type { Health } from "@/lib/types";
 import { ErrorNote } from "./common";
 import { BrandLockup } from "./brand";
 import { LanguageSelector, useI18n } from "@/lib/i18n";
+import { MarvinCompanion } from "./marvin-companion";
 
 type NavigationItemProps = {
   active: boolean;
@@ -186,6 +182,7 @@ export function Shell({
   const [workspaceBusy, setWorkspaceBusy] = useState("");
   const [workspaceError, setWorkspaceError] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDetailsElement>(null);
   const mobileMenuTriggerRef = useRef<HTMLElement>(null);
 
@@ -282,7 +279,7 @@ export function Shell({
         <LayoutGrid size={17} />
         {t("nav.matrix")}
       </NavigationItem>
-      {session?.authenticated && (
+      {(session?.authenticated || session?.anonymous_development) && (
         <NavigationItem active={pathname === "/digests"} href="/digests">
           <Mail size={17} />
           {t("nav.digests")}
@@ -327,7 +324,10 @@ export function Shell({
             <SlidersHorizontal size={17} />
             {t("nav.admin")}
           </NavigationItem>
-          <NavigationItem active={pathname === "/deployments"} href="/deployments">
+          <NavigationItem
+            active={pathname === "/deployments"}
+            href="/deployments"
+          >
             <Rocket size={17} />
             {t("nav.deployments")}
           </NavigationItem>
@@ -368,7 +368,7 @@ export function Shell({
     : t("nav.more");
 
   return (
-    <div className="shell">
+    <div className={`shell ${assistantOpen ? "assistant-open" : ""}`}>
       <aside className="sidebar">
         <Link href="/" className="brand">
           <span>
@@ -526,13 +526,17 @@ export function Shell({
           >
             <summary
               aria-current={mobileOverflowActive ? "page" : undefined}
-              aria-label={t("shell.mobileMenuLabel", { destination: mobileOverflowLabel })}
+              aria-label={t("shell.mobileMenuLabel", {
+                destination: mobileOverflowLabel,
+              })}
               className={mobileOverflowActive ? "active" : undefined}
               ref={mobileMenuTriggerRef}
             >
               <MoreHorizontal size={16} />
               <span className="mobile-nav-more-label">
-                {mobileOverflowActive ? mobileOverflowLabel : t("mobileNav.more")}
+                {mobileOverflowActive
+                  ? mobileOverflowLabel
+                  : t("mobileNav.more")}
               </span>
             </summary>
             <div className="mobile-nav-menu">
@@ -586,6 +590,13 @@ export function Shell({
           </footer>
         </div>
       </main>
+      {(session?.authenticated || session?.anonymous_development) && (
+        <MarvinCompanion
+          localAiReady={Boolean(health?.apertus.configured)}
+          onOpenChange={setAssistantOpen}
+          open={assistantOpen}
+        />
+      )}
     </div>
   );
 }

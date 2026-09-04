@@ -3,7 +3,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/package.json
 RUN npm ci
-COPY scripts/check-i18n.mjs scripts/audit-i18n-values.mjs scripts/check-shell-scroll.test.mjs scripts/check-shell-navigation.test.mjs scripts/check-comparison-workspace.test.mjs scripts/check-async-ask.test.mjs scripts/resource-cache.test.mjs scripts/resource-flow-contracts.test.mjs scripts/
+COPY scripts/check-i18n.mjs scripts/audit-i18n-values.mjs scripts/check-shell-scroll.test.mjs scripts/check-shell-navigation.test.mjs scripts/check-comparison-workspace.test.mjs scripts/check-async-ask.test.mjs scripts/check-marvin-companion.test.mjs scripts/resource-cache.test.mjs scripts/resource-flow-contracts.test.mjs scripts/
 COPY apps/web apps/web
 ARG HELVETIC_LENS_API_URL=http://api:8000
 ENV HELVETIC_LENS_API_URL=$HELVETIC_LENS_API_URL

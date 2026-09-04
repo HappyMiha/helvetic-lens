@@ -3128,3 +3128,490 @@ ins {
     padding: 13px;
   }
 }
+
+/* Global local-AI companion */
+.marvin-companion {
+  display: contents;
+}
+.marvin-trigger {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  bottom: max(22px, env(safe-area-inset-bottom));
+  display: flex;
+  height: 70px;
+  justify-content: center;
+  padding: 0;
+  position: fixed;
+  right: max(22px, env(safe-area-inset-right));
+  width: 70px;
+  z-index: 72;
+}
+.marvin-trigger::before {
+  background: rgb(36 48 41 / 14%);
+  border-radius: 999px;
+  content: "";
+  filter: blur(8px);
+  height: 15px;
+  inset: auto 7px -1px;
+  position: absolute;
+}
+.marvin-trigger:hover .marvin-robot {
+  transform: translateY(-3px) rotate(-2deg);
+}
+.marvin-trigger:focus-visible {
+  border-radius: 18px;
+}
+.marvin-trigger-badge {
+  align-items: center;
+  background: #c74d36;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  bottom: 2px;
+  color: white;
+  display: flex;
+  height: 25px;
+  justify-content: center;
+  position: absolute;
+  right: 0;
+  width: 25px;
+  z-index: 4;
+}
+.marvin-robot {
+  display: block;
+  height: 68px;
+  position: relative;
+  transition: transform 180ms ease;
+  width: 58px;
+  z-index: 2;
+}
+.marvin-antenna {
+  background: #52615a;
+  border-radius: 2px;
+  height: 12px;
+  left: 28px;
+  position: absolute;
+  top: 0;
+  width: 3px;
+}
+.marvin-antenna::before {
+  background: #c74d36;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  content: "";
+  height: 9px;
+  left: -3px;
+  position: absolute;
+  top: -3px;
+  width: 9px;
+}
+.marvin-head {
+  background: linear-gradient(145deg, #f9fbf7, #dfe6dd);
+  border: 2px solid #405047;
+  border-radius: 18px 18px 15px 15px;
+  box-shadow:
+    inset 0 -6px 0 rgb(73 92 80 / 8%),
+    0 7px 18px rgb(28 42 34 / 17%);
+  height: 39px;
+  left: 5px;
+  position: absolute;
+  top: 9px;
+  width: 49px;
+}
+.marvin-eye {
+  background: #29382f;
+  border-radius: 999px;
+  height: 6px;
+  position: absolute;
+  top: 12px;
+  width: 6px;
+}
+.marvin-eye::after {
+  background: #c74d36;
+  border-radius: 999px;
+  content: "";
+  height: 2px;
+  left: 2px;
+  position: absolute;
+  top: 2px;
+  width: 2px;
+}
+.marvin-eye-left {
+  left: 11px;
+}
+.marvin-eye-right {
+  right: 11px;
+}
+.marvin-mouth {
+  border-top: 2px solid #6d7770;
+  bottom: 8px;
+  height: 4px;
+  left: 14px;
+  position: absolute;
+  transform: rotate(-2deg);
+  width: 18px;
+}
+.marvin-body {
+  align-items: center;
+  background: #41534a;
+  border: 2px solid #29382f;
+  border-radius: 10px 10px 15px 15px;
+  bottom: 0;
+  color: #dbe4d8;
+  display: flex;
+  font-size: 8px;
+  font-weight: 800;
+  height: 25px;
+  justify-content: center;
+  left: 12px;
+  letter-spacing: 1px;
+  position: absolute;
+  width: 35px;
+}
+.marvin-robot-compact {
+  flex: 0 0 44px;
+  height: 51px;
+  transform: scale(0.74);
+  transform-origin: center;
+  width: 44px;
+}
+.marvin-bubble {
+  align-items: start;
+  animation: marvin-arrive 240ms ease-out;
+  background: #202b25;
+  border: 1px solid #3f5046;
+  border-radius: 14px;
+  bottom: max(96px, calc(env(safe-area-inset-bottom) + 96px));
+  box-shadow: 0 18px 45px rgb(22 32 26 / 24%);
+  color: #f5f7f2;
+  display: flex;
+  max-width: min(330px, calc(100vw - 32px));
+  padding: 13px 12px 13px 15px;
+  position: fixed;
+  right: max(22px, env(safe-area-inset-right));
+  z-index: 71;
+}
+.marvin-bubble::after {
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 9px solid #202b25;
+  bottom: -8px;
+  content: "";
+  position: absolute;
+  right: 24px;
+}
+.marvin-bubble-copy {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  display: grid;
+  gap: 4px;
+  line-height: 1.45;
+  padding: 0;
+  text-align: left;
+}
+.marvin-bubble-copy strong {
+  color: #dce8d8;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.marvin-bubble-copy span {
+  font-size: 12px;
+}
+.marvin-bubble-close {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: #aebbb2;
+  display: flex;
+  justify-content: center;
+  margin: -7px -6px 0 5px;
+  min-height: 32px;
+  min-width: 32px;
+  order: 2;
+  padding: 0;
+}
+.marvin-drawer {
+  background: #fbfcf8;
+  border: 1px solid #ccd5ca;
+  border-radius: 18px;
+  bottom: 18px;
+  box-shadow: 0 24px 70px rgb(25 37 29 / 24%);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  max-width: calc(100vw - 32px);
+  overflow: hidden;
+  position: fixed;
+  right: max(18px, env(safe-area-inset-right));
+  top: max(70px, calc(env(safe-area-inset-top) + 12px));
+  width: 390px;
+  z-index: 73;
+}
+.marvin-drawer-header {
+  align-items: center;
+  background: #25332c;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  min-height: 70px;
+  padding: 10px 12px 10px 16px;
+}
+.marvin-identity {
+  align-items: center;
+  display: flex;
+  gap: 3px;
+}
+.marvin-identity strong,
+.marvin-identity small {
+  display: block;
+}
+.marvin-identity strong {
+  font-size: 15px;
+}
+.marvin-identity small {
+  color: #bfc9c1;
+  font-size: 10px;
+  margin-top: 3px;
+}
+.marvin-icon-button {
+  align-items: center;
+  background: rgb(255 255 255 / 8%);
+  border: 1px solid rgb(255 255 255 / 15%);
+  border-radius: 9px;
+  color: #fff;
+  display: flex;
+  height: 38px;
+  justify-content: center;
+  width: 38px;
+}
+.marvin-drawer-body {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 18px;
+}
+.marvin-status-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+}
+.marvin-context-chip,
+.marvin-model-status {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 650;
+  gap: 5px;
+  padding: 6px 8px;
+}
+.marvin-context-chip {
+  background: #edf2e8;
+  color: #46603d;
+}
+.marvin-model-status {
+  color: #8b4b3d;
+}
+.marvin-model-status.is-ready {
+  color: #45663b;
+}
+.marvin-model-status:not(.is-ready) .status-dot {
+  background: #c47a59;
+}
+.marvin-message {
+  background: #fff;
+  border: 1px solid #dce2d9;
+  border-radius: 12px;
+  padding: 15px;
+}
+.marvin-message p {
+  color: #3e4d45;
+  line-height: 1.58;
+  margin: 8px 0 0;
+}
+.marvin-quip {
+  border-left: 3px solid #c74d36;
+  color: #59655e;
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.55;
+  margin: 0;
+  padding: 8px 10px 8px 13px;
+}
+.marvin-primary-action,
+.marvin-settings-toggle,
+.marvin-disable {
+  align-items: center;
+  border-radius: 10px;
+  display: flex;
+  font-size: 12px;
+  font-weight: 700;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 10px 12px;
+  text-decoration: none;
+}
+.marvin-primary-action {
+  background: #c74d36;
+  color: #fff;
+}
+.marvin-primary-action > span,
+.marvin-settings-toggle > span,
+.marvin-disable {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+.marvin-primary-action:hover {
+  background: #ad3f2d;
+}
+.marvin-boundary-note {
+  align-items: flex-start;
+  background: #f0f2ed;
+  border-radius: 10px;
+  color: #68736c;
+  display: flex;
+  font-size: 10px;
+  gap: 9px;
+  line-height: 1.5;
+  padding: 11px;
+}
+.marvin-boundary-note svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+.marvin-boundary-note p {
+  margin: 0;
+}
+.marvin-settings-toggle {
+  background: transparent;
+  border: 1px solid #dce2d9;
+  color: #4d5a52;
+  width: 100%;
+}
+.marvin-settings-toggle svg {
+  transition: transform 160ms ease;
+}
+.marvin-settings {
+  background: #f5f6f2;
+  border: 1px solid #dce2d9;
+  border-radius: 11px;
+  display: grid;
+  gap: 14px;
+  padding: 13px;
+}
+.marvin-settings > label:not(.marvin-check-row) {
+  display: grid;
+  font-size: 11px;
+  font-weight: 700;
+  gap: 6px;
+}
+.marvin-settings select {
+  background: #fff;
+  border: 1px solid #cfd7cc;
+  border-radius: 8px;
+  color: #344039;
+  min-height: 40px;
+  padding: 0 9px;
+}
+.marvin-check-row {
+  align-items: flex-start;
+  display: flex;
+  gap: 9px;
+}
+.marvin-check-row input {
+  margin-top: 2px;
+}
+.marvin-check-row strong,
+.marvin-check-row small {
+  display: block;
+}
+.marvin-check-row strong {
+  font-size: 11px;
+}
+.marvin-check-row small {
+  color: #707b74;
+  font-size: 10px;
+  line-height: 1.45;
+  margin-top: 3px;
+}
+.marvin-disable {
+  background: transparent;
+  border: 0;
+  color: #8b493d;
+  justify-content: flex-start;
+  padding-left: 0;
+}
+@keyframes marvin-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@media (min-width: 1351px) {
+  .shell .main {
+    transition: margin-right 180ms ease;
+  }
+  .shell.assistant-open .main {
+    margin-right: 410px;
+  }
+}
+@media (max-width: 900px) {
+  .marvin-trigger {
+    bottom: calc(67px + env(safe-area-inset-bottom));
+    height: 60px;
+    right: max(12px, env(safe-area-inset-right));
+    width: 60px;
+  }
+  .marvin-robot {
+    transform: scale(0.86);
+  }
+  .marvin-trigger:hover .marvin-robot {
+    transform: scale(0.86);
+  }
+  .marvin-bubble {
+    bottom: calc(134px + env(safe-area-inset-bottom));
+    right: max(12px, env(safe-area-inset-right));
+  }
+  .marvin-drawer {
+    border: 0;
+    border-radius: 0;
+    bottom: 0;
+    max-width: none;
+    right: 0;
+    top: 0;
+    width: 100%;
+    z-index: 70;
+  }
+  .marvin-drawer-header {
+    padding-top: max(10px, env(safe-area-inset-top));
+  }
+  .marvin-drawer-body {
+    padding-bottom: calc(82px + env(safe-area-inset-bottom));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .marvin-bubble {
+    animation: none;
+  }
+  .marvin-robot,
+  .shell .main,
+  .marvin-settings-toggle svg {
+    transition: none;
+  }
+}
+@media print {
+  .marvin-companion {
+    display: none;
+  }
+}
