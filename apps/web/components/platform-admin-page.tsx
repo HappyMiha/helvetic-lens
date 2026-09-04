@@ -10,6 +10,7 @@ import {
   Gauge,
   HardDrive,
   RefreshCw,
+  Rocket,
   ScrollText,
   Server,
   Users,
@@ -36,6 +37,7 @@ function age(seconds: number | null, never: string) {
 }
 
 const links = [
+  ["admin.deployments", "/deployments", Rocket, "admin.deploymentsBody"],
   ["admin.modelControl", "/models", Bot, "admin.modelControlBody"],
   ["admin.sourceSync", "/connectors", RefreshCw, "admin.sourceSyncBody"],
   ["admin.jobs", "/activity", Activity, "admin.jobsBody"],
@@ -96,7 +98,7 @@ function Dashboard({ data }: { data: PlatformStatus }) {
         <div className="stat-card"><span className="eyebrow">{t("admin.localModel")}</span><strong>{label(data.model.state)}</strong><small>{data.model.model_id || t("admin.noDeployment")} · {t("admin.slots", { available: data.model.available_slots || 0, accepted: data.model.accepted_slots || 0 })}</small></div>
       </section>
 
-      <section className="grid md:grid-cols-2 xl:grid-cols-5 gap-3">
+      <section className="grid md:grid-cols-2 xl:grid-cols-6 gap-3">
         {links.map(([title, href, Icon, description]) => (
           <Link href={href} className="card p-5 hover:border-primary transition-colors" key={href}>
             <Icon size={20} className="mb-3 text-primary" /><strong className="block mb-1">{t(title)}</strong><span className="text-xs muted">{t(description)}</span>

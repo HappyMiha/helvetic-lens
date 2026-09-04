@@ -70,6 +70,10 @@ class Settings(BaseSettings):
         default=ROOT / "data",
         validation_alias=AliasChoices("HELVETIC_LENS_DATA_DIR", "REGWATCH_DATA_DIR"),
     )
+    deployment_state_dir: Path | None = Field(
+        default=None,
+        validation_alias="HELVETIC_LENS_DEPLOY_STATE_DIR",
+    )
     credential_encryption_key: SecretStr = Field(
         default=SecretStr(""),
         validation_alias=AliasChoices(
@@ -144,6 +148,10 @@ class Settings(BaseSettings):
     @property
     def storage_path(self) -> Path:
         return self.data_dir if self.data_dir.is_absolute() else ROOT / self.data_dir
+
+    @property
+    def deployment_status_path(self) -> Path:
+        return self.deployment_state_dir or self.storage_path / "operations" / "deployments"
 
     @property
     def db_url(self) -> str:

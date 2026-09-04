@@ -864,6 +864,68 @@ export type PlatformStatus = {
     created_at: string;
   }>;
 };
+export type DeploymentStep = {
+  name: string;
+  status: string;
+  started_at: string;
+  finished_at?: string | null;
+  duration_seconds?: number | null;
+};
+export type DeploymentChange = {
+  sha: string;
+  short_sha: string;
+  subject: string;
+  author: string;
+  committed_at: string;
+};
+export type DeploymentRun = {
+  id: string;
+  kind: "release" | "poll";
+  status: string;
+  target_sha: string | null;
+  previous_sha: string | null;
+  release: string | null;
+  started_at: string;
+  finished_at: string | null;
+  duration_seconds: number | null;
+  changes: DeploymentChange[];
+  steps: DeploymentStep[];
+  backup_id: string | null;
+  rollback: {
+    status: string;
+    started_at?: string;
+    finished_at?: string;
+    backup_restored?: boolean;
+    error?: string;
+  };
+  error: string | null;
+};
+export type ProductionDeploymentStatus = {
+  schema_version: number;
+  service: {
+    enabled: boolean;
+    state: string;
+    poll_interval_seconds: number | null;
+    last_checked_at: string | null;
+    next_retry_at: string | null;
+    error?: string;
+  };
+  remote: {
+    repository: string | null;
+    branch: string;
+    sha: string | null;
+    summary?: string | null;
+    checked_at: string | null;
+  };
+  current: {
+    sha: string | null;
+    release: string | null;
+    summary: string | null;
+    deployed_at: string | null;
+  };
+  last_run: DeploymentRun | null;
+  history: DeploymentRun[];
+};
 export type OrganizationStatus = {
   scope: "organization";
   generated_at: string;

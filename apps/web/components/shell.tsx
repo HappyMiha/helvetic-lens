@@ -21,6 +21,7 @@ import {
   MoreHorizontal,
   PackageOpen,
   RefreshCw,
+  Rocket,
   ScrollText,
   Settings2,
   ShieldCheck,
@@ -195,6 +196,7 @@ export function Shell({
     pathname === "/prompts" ||
     pathname === "/settings" ||
     pathname === "/admin" ||
+    pathname === "/deployments" ||
     pathname === "/connectors" ||
     pathname === "/models";
   const [administrationOpen, setAdministrationOpen] =
@@ -299,6 +301,10 @@ export function Shell({
             <SlidersHorizontal size={17} />
             {t("nav.admin")}
           </NavigationItem>
+          <NavigationItem active={pathname === "/deployments"} href="/deployments">
+            <Rocket size={17} />
+            {t("nav.deployments")}
+          </NavigationItem>
           <NavigationItem
             active={pathname === "/connectors"}
             href="/connectors"
@@ -327,6 +333,7 @@ export function Shell({
     [pathname === "/prompts", "nav.prompts"],
     [pathname === "/logs", "nav.logs"],
     [pathname === "/admin", "nav.admin"],
+    [pathname === "/deployments", "nav.deployments"],
     [pathname === "/connectors", "nav.sync"],
     [pathname === "/models", "nav.models"],
   ].find(([active]) => active);

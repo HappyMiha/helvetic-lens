@@ -14,6 +14,7 @@ import type {
   OrganizationStatus,
   Profile,
   PromptSettings,
+  ProductionDeploymentStatus,
   Scan,
   Source,
   Version,
@@ -292,6 +293,15 @@ export const resources = {
       scope: "platform",
       owner: "administration",
       tags: ["platform-status", "runtime", "administration"],
+      staleMs: 10_000,
+      pollMs: 10_000,
+    }),
+
+  deployments: () =>
+    key<ProductionDeploymentStatus>("platform:deployments", "/admin/deployments", {
+      scope: "platform",
+      owner: "administration",
+      tags: ["deployments", "runtime", "administration"],
       staleMs: 10_000,
       pollMs: 10_000,
     }),

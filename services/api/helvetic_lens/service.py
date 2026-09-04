@@ -28,6 +28,7 @@ from .config import DomainError, Settings
 from .connectors import CONNECTOR_CONTRACT_VERSION, ConnectorRunner
 from .credential_crypto import CredentialCipher
 from .db import Database, utcnow
+from .deployments import deployment_snapshot
 from .diffing import DIFF_SCHEMA_VERSION, compare_passages
 from .extraction import (
     Extracted,
@@ -2817,6 +2818,9 @@ class HelveticLens:
             },
             "recent_audit": recent_audit,
         }
+
+    def deployment_status(self):
+        return deployment_snapshot(self.environment_settings.deployment_status_path)
 
     def organization_status(self):
         now = utcnow()

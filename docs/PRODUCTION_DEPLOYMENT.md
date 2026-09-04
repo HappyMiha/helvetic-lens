@@ -126,6 +126,32 @@ The development-host rehearsal created a PostgreSQL row and evidence file, backe
 
 Caddy stores certificates in its named volume and renews them automatically while ports 80/443 and DNS remain correct. Check Caddy logs and certificate expiry during the target-host rehearsal.
 
+## Automatic Git deployments
+
+The host-side release manager can poll the trusted `origin/main` branch every two minutes. It never runs Git from inside the application and never exposes the Docker socket or arbitrary commands to the browser. Platform administrators receive a read-only **Deployments** page containing the active and remote commit, every release step, the commits included, the last error, rollback outcome, and the latest 30 runs.
+
+Install the manager and its user cron entry from the trusted production checkout:
+
+```sh
+./deploy/install-auto-deploy.sh
+/usr/bin/python3 /srv/helvetic-lens/deploy-control/release_manager.py --poll
+```
+
+Each new remote commit is checked out by its full SHA under `/srv/helvetic-lens/releases`; the development checkout is never pulled or reset. Before production is interrupted, the candidate must pass environment validation, Compose validation, API lint, the complete API test suite, and the production image build (including the web checks and Next.js build). The manager then stops public entry points and writers, creates a locked backup on `HELVETIC_LENS_BACKUP_DIR`, runs the one-shot migration, starts the exact release images, and verifies both `/api/ready` and `/login` over the public HTTPS URL.
+
+If startup or public verification fails, the manager keeps writers stopped, restores the pre-deploy database and evidence backup when the candidate may have migrated data, and restarts the previous immutable release. A failed commit is retried after 15 minutes; a newer commit is evaluated on the next poll. The running release manager updates its installed copy only after a successful deployment.
+
+Sanitized status is written atomically to `HELVETIC_LENS_DEPLOY_STATE_DIR` (default `/srv/helvetic-lens/deploy-state`) and mounted read-only into the API. Full host logs stay outside the web surface in that directory's `logs` subdirectory. Production secrets remain only in `.env.production` and the protected backup.
+
+Inspect the scheduler and status from the host:
+
+```sh
+crontab -l
+/usr/bin/python3 /srv/helvetic-lens/deploy-control/release_manager.py --status
+```
+
+Remove only the marked cron entry to pause automation; an in-progress run remains protected by the deployment lock and should be allowed to finish.
+
 ## Operational retention and broker recovery
 
 Celery Beat runs bounded cleanup daily. The shipped defaults retain redacted integration request/response diagnostics for 30 days and terminal job execution records for 90 days. Authentication mailbox files expire after 48 hours. Unreferenced artifacts and files in the dedicated temporary directory expire only after a 24-hour grace period; an artifact referenced by any saved version or official regulatory document is never selected. Impact/Ask history, action decisions, comparisons, document versions, and immutable evidence have separate user/audit lifecycles and are not deleted by this task. The administration status reports the configured bounds and last successful cleanup marker.

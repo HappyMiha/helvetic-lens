@@ -52,6 +52,13 @@ def test_valid_production_environment_passes_without_cloud_credentials():
     assert validate(valid_environment()) == []
 
 
+def test_deployment_status_mount_is_read_only_and_docker_socket_is_never_exposed():
+    compose = (ROOT / "compose.production.yaml").read_text(encoding="utf-8")
+
+    assert ":/operations/deployments:ro" in compose
+    assert "/var/run/docker.sock" not in compose
+
+
 def test_production_environment_rejects_public_data_paths_and_insecure_auth():
     values = valid_environment()
     values.update(

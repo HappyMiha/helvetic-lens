@@ -755,6 +755,10 @@ def create_app(
     async def platform_status():
         return await service.platform_status()
 
+    @app.get("/api/admin/deployments")
+    def deployment_status():
+        return service.deployment_status()
+
     @app.get("/api/admin/prompts")
     def platform_prompts():
         return service.platform_prompt_configuration()

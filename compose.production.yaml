@@ -21,6 +21,7 @@ x-api-environment: &api-environment
   REDIS_URL: redis://redis:6379/0
   JOB_EXECUTION_MODE: celery
   HELVETIC_LENS_DATA_DIR: /data
+  HELVETIC_LENS_DEPLOY_STATE_DIR: /operations/deployments
   HELVETIC_LENS_CREDENTIAL_KEY: ${HELVETIC_LENS_CREDENTIAL_KEY:?Set a stable credential key}
   MODEL_MANAGER_URL: http://model-manager:8090
   APERTUS_PROVIDER: ${APERTUS_PROVIDER:-docker}
@@ -51,6 +52,7 @@ x-api-service: &api-service
   volumes:
     - document_data:/data
     - backup_status:/data/backups:ro
+    - ${HELVETIC_LENS_DEPLOY_STATE_DIR:-/srv/helvetic-lens/deploy-state}:/operations/deployments:ro
   networks:
     - app
     - data

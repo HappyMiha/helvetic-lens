@@ -74,6 +74,10 @@ def test_platform_reads_are_isolated_and_status_is_bounded(tmp_path):
         assert payload["storage"]["retention"]["ai_history"] == "user_retained"
         assert payload["backup"]["status"] == "not_configured"
 
+        deployments = client.get("/api/admin/deployments")
+        assert deployments.status_code == 200
+        assert deployments.json()["service"]["state"] == "not_configured"
+
 
 def test_platform_admin_with_viewer_membership_can_manage_only_the_platform(tmp_path):
     app = create_app(settings(tmp_path), fetcher=FakeFetcher(), model_client=ScriptedModel())
