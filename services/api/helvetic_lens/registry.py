@@ -13,6 +13,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from .config import DomainError
+from .corpus_access import event_evidence_links
 from .models import (
     Comparison,
     DocumentWatch,
@@ -200,11 +201,6 @@ class RegistryReader:
             dates = self._dates(session, entity_ids)
             linked = self._linked_laws(session, work.id)
             state = states.get(event.id)
-            evidence_url = None
-            if event.document_version_id:
-                version = session.get(RegulatoryDocumentVersion, event.document_version_id)
-                if version and version.legacy_version_id:
-                    evidence_url = f"/evidence/{version.legacy_version_id}"
             rows.append(
                 {
                     "id": f"event:{event.id}",
@@ -229,7 +225,7 @@ class RegistryReader:
                     "linked_laws": linked,
                     "official_dates": dates,
                     "source_url": event.source_url or work.stable_official_url,
-                    "evidence_url": evidence_url,
+                    "evidence_url": None,
                     "timeline_url": linked[0]["timeline_url"] if linked else None,
                     "comparison_url": None,
                 }
@@ -365,6 +361,13 @@ class RegistryReader:
                 if (datetime.fromisoformat(row["detected_at"]), row["id"]) < (cursor_time, cursor_id)
             ]
         selected = rows[: filters.limit]
+        if filters.view == "events":
+            # Only resolve links for the visible page, without loading version bodies.
+            for start in range(0, len(selected), 100):
+                batch = selected[start:start + 100]
+                links = event_evidence_links(session, self.organization_id, [row["event_id"] for row in batch])
+                for row in batch:
+                    row["evidence_url"] = links.get(row["event_id"])
         for row in selected:
             row["group"] = detected_group(
                 datetime.fromisoformat(row["detected_at"]),

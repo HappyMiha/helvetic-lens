@@ -34,6 +34,9 @@ from test_digest_preview_pages import (
 from test_digest_resume import (
     test_digest_yield_is_atomic_fair_and_finishes_without_new_model_calls,
 )
+from test_evidence_navigation import (
+    test_event_surfaces_share_exact_evidence_and_revocation_guards,
+)
 from test_feed_evidence import (
     test_exact_event_link_reaches_old_event_and_remains_scoped,
     test_topic_only_artifact_is_exact_visible_version_without_body_hydration,
@@ -86,7 +89,7 @@ from test_topic_reviews import (
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation"), default="history")
+    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -107,6 +110,12 @@ def main():
         with TestClient(app) as client:
             service = app.state.service
             harness = (client, fetcher, service, model)
+            if args.suite.startswith("evidence-navigation"):
+                condition = {"evidence-navigation": None, "evidence-navigation-legacy": "legacy",
+                             "evidence-navigation-private": "foreign_law", "evidence-navigation-revoked": "revoked"}[args.suite]
+                test_event_surfaces_share_exact_evidence_and_revocation_guards(harness, condition)
+                print("PostgreSQL: registry, inbox and Today share exact native/legacy evidence links and access guards without body hydration.")
+                return
             if args.suite == "native-evidence":
                 test_native_connector_roundtrip_reads_saved_text_and_safe_original_without_legacy_copy(harness)
                 print("PostgreSQL: native connector ingestion, saved text and safe original response work without creating legacy copies.")

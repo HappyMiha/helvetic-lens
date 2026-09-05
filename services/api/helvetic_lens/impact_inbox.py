@@ -511,9 +511,9 @@ class ImpactInboxReader:
                         "items": [],
                     },
                 )
-                artifact_id = context.artifacts.get(event.document_version_id)
-                if artifact_id:
-                    group["source_artifact_url"] = f"/evidence/{artifact_id}"
+                artifact_url = context.artifacts.get(event.id)
+                if artifact_url:
+                    group["source_artifact_url"] = artifact_url
                 group["items"].append(item)
         groups = []
         order = {"high": 0, "medium": 1, "low": 2, "none": 3, "unknown": 4}

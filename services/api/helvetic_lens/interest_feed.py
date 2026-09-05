@@ -15,6 +15,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from .config import DomainError
+from .corpus_access import event_evidence_links
 from .impact_inbox import ImpactInboxFilters, ImpactInboxReader, _iso
 from .inbox_context import visible
 from .models import (
@@ -25,7 +26,6 @@ from .models import (
     MonitoringTopicRevision,
     OrganizationRelationCandidate,
     RegulatoryDate,
-    RegulatoryDocumentVersion,
     RegulatoryEvent,
     RegulatoryEventState,
     RegulatoryEventUserState,
@@ -33,7 +33,6 @@ from .models import (
     RegulatoryWork,
     RelationCandidate,
     TopicEventMatch,
-    Version,
 )
 from .topic_matching import describe_matches
 
@@ -107,18 +106,7 @@ class InterestFeedReader(ImpactInboxReader):
             })
         works = {item.id: item for item in session.scalars(select(RegulatoryWork).where(
             RegulatoryWork.id.in_({item.work_id for item in events}), visible(RegulatoryWork, self.organization_id)))}
-        artifacts = dict(session.execute(select(RegulatoryEvent.id, Version.id)
-            .join(RegulatoryDocumentVersion, RegulatoryDocumentVersion.id == RegulatoryEvent.document_version_id)
-            .join(RegulatoryExpression, RegulatoryExpression.id == RegulatoryDocumentVersion.expression_id)
-            .join(Version, Version.id == RegulatoryDocumentVersion.legacy_version_id)
-            .join(Law, Law.id == Version.law_id)
-            .where(RegulatoryEvent.id.in_(ids), RegulatoryExpression.work_id == RegulatoryEvent.work_id,
-                   visible(Version, self.organization_id), visible(Law, self.organization_id))).all())
-        native_versions = dict(session.execute(select(RegulatoryEvent.id, RegulatoryDocumentVersion.id)
-            .join(RegulatoryDocumentVersion, RegulatoryDocumentVersion.id == RegulatoryEvent.document_version_id)
-            .join(RegulatoryExpression, RegulatoryExpression.id == RegulatoryDocumentVersion.expression_id)
-            .where(RegulatoryEvent.id.in_(ids), RegulatoryExpression.work_id == RegulatoryEvent.work_id,
-                   RegulatoryDocumentVersion.legacy_version_id.is_(None))).all())
+        evidence_links = event_evidence_links(session, self.organization_id, ids)
         languages = dict(session.execute(select(RegulatoryEvent.id, RegulatoryExpression.language)
             .join(RegulatoryExpression, RegulatoryExpression.id == RegulatoryEvent.expression_id)
             .where(RegulatoryEvent.id.in_(ids), RegulatoryExpression.work_id == RegulatoryEvent.work_id)).all())
@@ -157,8 +145,7 @@ class InterestFeedReader(ImpactInboxReader):
                 "source": event.connector or event.authority, "authority": event.authority,
                 "detected_at": _iso(event.detected_at), "official_dates": dates.get(event.id, []),
                 "source_url": event.source_url or work.stable_official_url,
-                "source_artifact_url": (f"/evidence/{artifacts[event.id]}" if event.id in artifacts
-                                        else f"/corpus-evidence/{native_versions[event.id]}" if event.id in native_versions else None),
+                "source_artifact_url": evidence_links.get(event.id),
                 "read_state": states.get(event.id, "unread"),
                 "severity": law["severity"] if law else "unknown",
                 "law_impacts": law["items"] if law else [],

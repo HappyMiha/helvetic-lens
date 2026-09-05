@@ -2,22 +2,22 @@
 
 from dataclasses import dataclass
 
-from sqlalchemy import case, func, or_, select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session, load_only
 
 from .config import DomainError
+from .corpus_access import event_evidence_links
+from .corpus_access import visible as visible
 from .models import (
     Comparison,
     DocumentWatch,
     Law,
     LegacyDocumentMapping,
     OrganizationRelationCandidate,
-    RegulatoryDocumentVersion,
     RegulatoryEvent,
     RegulatoryRelation,
     RegulatoryWork,
     RelationCandidate,
-    Version,
 )
 
 
@@ -32,10 +32,6 @@ class InboxContext:
     comparisons: dict[str, str]
     artifacts: dict[str, str]
     successors: dict[str, tuple[str, bool]]
-
-
-def visible(model, organization_id: str):
-    return or_(model.owner_organization_id.is_(None), model.owner_organization_id == organization_id)
 
 
 def load_context(
@@ -139,21 +135,8 @@ def load_context(
             row.law_id: row.id
             for row in session.execute(select(ranked.c.law_id, ranked.c.id).where(ranked.c.position == 1))
         }
-    version_ids = {event.document_version_id for event in events.values() if event.document_version_id}
-    artifacts = (
-        dict(
-            session.execute(
-                select(RegulatoryDocumentVersion.id, Version.id)
-                .join(
-                    Version,
-                    Version.id == RegulatoryDocumentVersion.legacy_version_id,
-                )
-                .where(RegulatoryDocumentVersion.id.in_(version_ids), visible(Version, organization_id))
-            ).all()
-        )
-        if version_ids
-        else {}
-    )
+    artifacts = event_evidence_links(session, organization_id,
+                                    [event.id for event in events.values() if event.document_version_id])
     replacement_sources = {
         candidate.source_work_id
         for candidate in candidates.values()

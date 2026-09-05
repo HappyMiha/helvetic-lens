@@ -3,8 +3,8 @@
 The native connectors already persist raw artifacts and extracted passages in
 RegulatoryDocumentVersion. `/corpus-evidence/{id}?passage=<saved-passage-id>` now
 uses the existing evidence viewer directly, without manufacturing a Law, legacy
-Version, comparison or model job. Today links native-only source versions to this
-route; existing legacy evidence routes remain unchanged.
+Version, comparison or model job. Today, the event registry and Impact inbox link native-only source versions to
+this route; existing legacy evidence routes remain unchanged.
 
 ## Access and API
 
@@ -52,16 +52,29 @@ appear in the document JSON. Source links in the viewer accept HTTP(S) only.
 This reuses the existing viewer's per-document response and client-side display
 pagination. It does **not** introduce server-side passage paging or establish
 100-reader/large-document capacity; those HL-099/target-host gates remain open.
-Native links in every older registry/inbox/assistant surface are follow-up work;
-the Today path and direct native evidence route are implemented here. Recorded
-metadata-only versions are valid evidence records but do not imply a saved PDF.
+The three event surfaces share `corpus_access.event_evidence_links` with the same
+SQL access policy as the viewer/original download. Each lookup returns only exact
+event/version IDs, never text or passage bodies, and accepts at most 100 distinct
+events (an empty batch performs no query). Registry resolves links only after
+selecting the displayed page. This removes its per-event full-version load; its
+other corpus/filter reads are still not fully bounded SQL paging. An unrelated
+newer version is never substituted. Revoked grants, a private work/legacy Law or
+Version, and a version expression belonging to another work suppress the link;
+no native fallback bypasses an inaccessible legacy binding. A missing original
+file does not remove access to saved extracted text. Assistant and other timeline
+surfaces remain separate follow-up work. Recorded metadata-only versions are
+valid evidence records but do not imply a saved PDF.
 
 ## Reproduce verification
 
-- `python -m pytest services/api/tests/test_corpus_evidence.py -q`
+- `python -m pytest services/api/tests/test_corpus_evidence.py services/api/tests/test_evidence_navigation.py services/api/tests/test_inbox_context.py -q`
 - `npm run build` then `npm run check:native-evidence:browser`
 - Empty local PostgreSQL runner `scripts/check_inbox_history_postgres.py` suites
-  `native-evidence`, `native-evidence-private`, `native-evidence-relation`.
+  `native-evidence`, `native-evidence-private`, `native-evidence-relation`,
+  `evidence-navigation`, `evidence-navigation-legacy`, `evidence-navigation-private`,
+  `evidence-navigation-revoked`.
+- `npm run check:registry:browser` and `npm run check:inbox:browser` verify that
+  both existing surfaces render the new native source link.
 
 The API fixture runs the actual native connector persistence/extraction pipeline
 with synthetic official responses, then reads saved text and original bytes.

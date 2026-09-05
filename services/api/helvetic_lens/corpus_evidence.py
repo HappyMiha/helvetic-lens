@@ -2,50 +2,16 @@
 import re
 from pathlib import Path
 
-from sqlalchemy import or_, select
 from sqlalchemy.orm import load_only
 
 from .config import DomainError
-from .inbox_context import visible
-from .models import (
-    DocumentWatch,
-    Law,
-    LegacyDocumentMapping,
-    OrganizationRelationCandidate,
-    RegulatoryDocumentVersion,
-    RegulatoryEvent,
-    RegulatoryEventState,
-    RegulatoryExpression,
-    RegulatoryWork,
-    RelationCandidate,
-    Version,
-)
+from .corpus_access import accessible_versions
+from .models import RegulatoryDocumentVersion
 from .topic_matching import _iso
 
 
 def authorized_version(session, organization_id, version_id, *, body=True):
-    admitted = (select(RegulatoryEventState.id)
-        .join(RegulatoryEvent, RegulatoryEvent.id == RegulatoryEventState.event_id)
-        .where(RegulatoryEventState.organization_id == organization_id,
-               RegulatoryEvent.document_version_id == RegulatoryDocumentVersion.id,
-               RegulatoryEvent.work_id == RegulatoryWork.id).exists())
-    delivered = (select(OrganizationRelationCandidate.id)
-        .join(RelationCandidate, RelationCandidate.id == OrganizationRelationCandidate.candidate_id)
-        .join(RegulatoryEvent, RegulatoryEvent.id == RelationCandidate.event_id)
-        .where(OrganizationRelationCandidate.organization_id == organization_id,
-               RegulatoryEvent.document_version_id == RegulatoryDocumentVersion.id,
-               RegulatoryEvent.work_id == RegulatoryWork.id).exists())
-    watched = (select(DocumentWatch.id)
-        .join(Law, Law.id == DocumentWatch.law_id)
-        .join(LegacyDocumentMapping, LegacyDocumentMapping.law_id == Law.id)
-        .where(DocumentWatch.organization_id == organization_id,
-               LegacyDocumentMapping.work_id == RegulatoryWork.id,
-               visible(Law, organization_id), visible(LegacyDocumentMapping, organization_id)).exists())
-    query = (select(RegulatoryDocumentVersion, RegulatoryExpression.language, RegulatoryWork.title)
-        .join(RegulatoryExpression, RegulatoryExpression.id == RegulatoryDocumentVersion.expression_id)
-        .join(RegulatoryWork, RegulatoryWork.id == RegulatoryExpression.work_id)
-        .where(RegulatoryDocumentVersion.id == version_id, visible(RegulatoryWork, organization_id),
-               or_(admitted, delivered, watched)))
+    query = accessible_versions(organization_id).where(RegulatoryDocumentVersion.id == version_id)
     if not body:
         query = query.options(load_only(RegulatoryDocumentVersion.id, RegulatoryDocumentVersion.legacy_version_id,
                                          RegulatoryDocumentVersion.artifact_key, RegulatoryDocumentVersion.content_type,
@@ -53,13 +19,7 @@ def authorized_version(session, organization_id, version_id, *, body=True):
     row = session.execute(query).first()
     if row is None:
         raise DomainError("The saved source evidence is unavailable in this organization.", 404, "not_found")
-    version, language, title = row
-    if version.legacy_version_id:
-        linked = session.scalar(select(Version.id).join(Law, Law.id == Version.law_id)
-            .where(Version.id == version.legacy_version_id, visible(Version, organization_id), visible(Law, organization_id)))
-        if not linked:
-            raise DomainError("The saved source evidence is unavailable in this organization.", 404, "not_found")
-    return version, language, title
+    return row
 
 
 def artifact_path(settings, key):

@@ -87,6 +87,7 @@ const row = {
   linked_laws: [],
   official_dates: {},
   timeline_url: "/laws/qa-law",
+  evidence_url: "/corpus-evidence/qa-native",
 };
 try {
   await waitFor(
@@ -224,6 +225,7 @@ try {
           url: `${base}${path}?locale=${locale}`,
         });
         await waitFor(ready, "Missing required populated registry");
+        assert.ok(await evaluate(cdp, `!!document.querySelector('a[href="/corpus-evidence/qa-native"]')`), "Native saved-source link missing from registry");
         await waitFor(
           () =>
             evaluate(

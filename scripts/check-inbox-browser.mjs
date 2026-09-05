@@ -32,7 +32,7 @@ async function waitFor(check, message) {
 }
 const law = { organization_candidate_id: "candidate-old", candidate_id: "shared", watch_id: "watch", law_id: "law", law_title: "Synthetic monitored law",
   status: "awaiting_analysis", severity: "unknown", why: ["Saved official reference"], potential_effect: "Awaiting evidence review", suggested_next_step: "Inspect the saved evidence", coverage: {}, analysis_history_count: 0, review_history_count: 0, links: { timeline: "/laws/law", analysis_history: "/api/test" } };
-const event = title => ({ event_id: title, title, source: "fedlex", authority: "Fedlex", type: "amended", document_kind: "law", detected_at: "2026-09-05T08:00:00Z", read_state: "unread", severity: "unknown", coverage: { analysed: 0, total: 1 }, items: [law] });
+const event = title => ({ event_id: title, title, source: "fedlex", authority: "Fedlex", type: "amended", document_kind: "law", detected_at: "2026-09-05T08:00:00Z", read_state: "unread", severity: "unknown", coverage: { analysed: 0, total: 1 }, items: [law], source_artifact_url: "/corpus-evidence/qa-native" });
 try {
   await waitFor(async () => (await fetch(base)).ok, "Isolated production UI failed to start");
   let debugPort;
@@ -69,6 +69,7 @@ try {
     await waitFor(() => evaluate(cdp, `!!document.querySelector('[data-inbox-navigation]') && document.body.innerText.includes('On this page')`), "Inbox failed to render");
   };
   await navigate("");
+  await waitFor(() => evaluate(cdp, `!!document.querySelector('a[href="/corpus-evidence/qa-native"]')`), "Native saved-source link missing from inbox");
   await waitFor(() => evaluate(cdp, `document.body.innerText.includes('Newest saved event')`), "Initial event missing");
   await evaluate(cdp, `document.querySelector('[data-inbox-navigation] a[href*="cursor=next"]').click()`);
   await waitFor(() => evaluate(cdp, `document.body.innerText.includes('Older saved event')`), "Next-page click failed");

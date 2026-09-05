@@ -1500,6 +1500,19 @@ native links, server-side large-document paging, target capacity and independent
 usability/native-language acceptance remain open with the other HL-076 work.
 
 
+**Implemented 6 September 2026 (evidence navigation across event surfaces):**
+The event registry and Impact inbox now expose the same exact native/legacy
+saved-version link as Today. One shared SQL access policy checks organization
+grants, source-work identity and both legacy owners; an unrelated newer version
+is never substituted. Registry resolves evidence links only for the displayed
+page instead of loading full version bodies per corpus event. Existing inbox
+batch bounds remain intact. 88 API regressions, four isolated PostgreSQL suites,
+20 registry and ten evidence-viewer browser journeys plus inbox navigation pass.
+This closes native links on these three event surfaces; other timeline/assistant
+routes, whole-registry SQL pagination, source/story grouping, AI briefs and the
+external acceptance gates remain open. See `docs/NATIVE_EVIDENCE.md`.
+
+
 Acceptance criteria:
 
 - Build feed items from persisted regulatory events, watched-law relations, and topic matches without copying the underlying evidence or creating separate competing histories.

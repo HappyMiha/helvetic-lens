@@ -68,7 +68,8 @@ source codes remain visible. Official event dates retain raw year/month/day/inst
 precision and their own source links; a work publication date is not substituted.
 
 Saved evidence links come from the event's exact document version, including
-when only a topic matches. A scalar join checks the version's expression belongs
+when only a topic matches. A shared scalar access query (also used by the event registry and Impact inbox)
+checks the version's expression belongs
 to that event's work and the mapped legacy Version and Law are visible. It never
 substitutes the monitored law's newest version, materializes original document
 bodies, or calls a model. Existing `/evidence/{version}` authorization still applies.
