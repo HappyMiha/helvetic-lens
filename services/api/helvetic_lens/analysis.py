@@ -10,14 +10,15 @@ import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from .config import DomainError, Settings
+from .date_mentions import scan_date_mentions
 from .extraction import normalize
 from .integration_logs import IntegrationLogger, response_snapshot
 from .models import Comparison, Profile, Version
 from .prompt_settings import PromptSettings, default_prompt_settings, prompt_fingerprint
 from .selected_evidence import selected_evidence_copy
 
-PROMPT_VERSION = "helvetic-lens-v10-explicit-response-mode"
-IMPACT_REPORT_SCHEMA_VERSION = "impact-report-v3"
+PROMPT_VERSION = "helvetic-lens-v11-evidenced-date-mentions"
+IMPACT_REPORT_SCHEMA_VERSION = "impact-report-v4"
 DEFAULT_OUTPUT_LOCALE = "en-CH"
 ASK_ROUTER_VERSION = "ask-intent-v1"
 MAX_IMPACT_BATCHES = 3
@@ -103,12 +104,25 @@ class OrganizationApplicabilityReport(StructuredOutput):
 
 
 class ImportantDateReport(StructuredOutput):
-    kind: Literal["effective_date", "deadline", "transition", "other"]
+    kind: Literal["effective_date", "deadline", "transition", "other", "relative_period"]
     label: str = Field(min_length=1, max_length=300)
     date: str | None = None
+    mention: str | None = None
+    version_side: Literal["old", "new"] | None = None
+    change_id: str | None = None
     status: Literal["found", "not_found", "uncertain", "not_reviewed"]
     evidence_grade: EvidenceGrade
     citations: list[Citation] = Field(default_factory=list, max_length=4)
+
+
+class DateReview(StructuredOutput):
+    method: Literal["date-mentions-v1"]
+    scope: Literal["selected_material_evidence"]
+    legal_meaning_status: Literal["not_reviewed"]
+    scanned_passages: int = Field(ge=0)
+    detected_mentions: int = Field(ge=0)
+    displayed_mentions: int = Field(ge=0, le=8)
+    display_limited: bool
 
 
 class ReviewActionReport(StructuredOutput):
@@ -145,7 +159,7 @@ class ImpactEvidenceCoverage(StructuredOutput):
 
 
 class ImpactReport(StructuredOutput):
-    schema_version: Literal["impact-report-v3"]
+    schema_version: Literal["impact-report-v4"]
     response_mode: ResponseMode
     assessment_status: Literal["assessed", "not_assessed", "not_required"]
     output_locale: str
@@ -157,6 +171,7 @@ class ImpactReport(StructuredOutput):
     organization_applicability: OrganizationApplicabilityReport
     business_areas: list[str] = Field(max_length=12)
     important_dates: list[ImportantDateReport] = Field(default_factory=list, max_length=8)
+    date_review: DateReview
     uncertainties: list[str] = Field(default_factory=list, max_length=8)
     evidence_grade: EvidenceGrade
     evidence_coverage: ImpactEvidenceCoverage
@@ -2057,7 +2072,7 @@ def _report_actions(result: dict, evidence: list[dict]) -> list[dict]:
             "owner_role": normalize(str(candidate.get("owner_role") or "Not assigned"))[:200],
             "affected_area": area[:200],
             "priority": candidate.get("priority") or result.get("impact", "medium"),
-            "due_basis": normalize(str(candidate.get("due_basis") or "not_found"))[:500],
+            "due_basis": normalize(str(candidate.get("due_basis") or "not_reviewed"))[:500],
             "due_date": candidate.get("due_date") or None,
             "applicability_condition": normalize(
                 str(
@@ -2193,7 +2208,6 @@ def finalize_impact_report(
         uncertainties.extend(
             [
                 "Organization applicability is a review hypothesis unless confirmed against the cited legal scope.",
-                "No effective date or compliance deadline was established from the selected evidence.",
                 "No responsible owner was established from the legal text or organization profile.",
             ]
         )
@@ -2203,6 +2217,7 @@ def finalize_impact_report(
         )
     headline = normalize(str(result.get("summary", "Impact review")))
     sentence = re.split(r"(?<=[.!?])\s+", headline, maxsplit=1)[0]
+    date_mentions, date_review = scan_date_mentions(evidence, output_locale)
     report = {
         "schema_version": IMPACT_REPORT_SCHEMA_VERSION,
         "response_mode": result.get("response_mode", "generated_explanation"),
@@ -2215,28 +2230,8 @@ def finalize_impact_report(
         "material_changes": material_changes,
         "organization_applicability": applicability,
         "business_areas": business_areas,
-        "important_dates": (
-            [
-                {
-                    "kind": "effective_date",
-                    "label": "Effective date",
-                    "date": None,
-                    "status": "not_found",
-                    "evidence_grade": "needs_review",
-                    "citations": [],
-                },
-                {
-                    "kind": "deadline",
-                    "label": "Compliance deadline",
-                    "date": None,
-                    "status": "not_found",
-                    "evidence_grade": "needs_review",
-                    "citations": [],
-                },
-            ]
-            if has_material
-            else []
-        ),
+        "important_dates": date_mentions,
+        "date_review": date_review,
         "uncertainties": uncertainties[:8],
         "evidence_grade": (
             "needs_review"
@@ -2272,8 +2267,6 @@ def finalize_impact_report(
             },
             uncertainties=[copy["reason"]],
         )
-        for date in report["important_dates"]:
-            date["status"] = "not_reviewed"
         for change in report["material_changes"]:
             change["explanation"] = "\n".join(
                 f"{copy['earlier' if row['side'] == 'old' else 'current']}: "

@@ -58,6 +58,7 @@ import type {
 import { ErrorNote, Loading, Status } from "./common";
 import { AIHistory } from "./ai-history";
 import { AnalysisModeNotice } from "./analysis-mode-notice";
+import { ReportDates } from "./report-dates";
 import { Shell } from "./shell";
 import { useAuth } from "./auth-gate";
 import { storedLocale, translate, type Locale, useI18n } from "@/lib/i18n";
@@ -1278,28 +1279,9 @@ export function ComparisonView({ id }: { id: string }) {
                           </div>
                         </div>
                       )}
-                      {!!analysis.result.important_dates?.length && (
-                        <div className="impact-report-section">
-                          <span className="eyebrow">
-                            {t("compare.datesDeadlines")}
-                          </span>
-                          <div className="impact-date-list">
-                            {analysis.result.important_dates.map((item) => (
-                              <div key={item.kind + item.label}>
-                                <strong>{item.label}</strong>
-                                <span>
-                                  {item.date ||
-                                    translate(
-                                      locale,
-                                      `status.${item.status}`,
-                                    ) ||
-                                    label(item.status)}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                      <ReportDates report={analysis.result} renderCitations={(values) => (
+                        <ComparisonCitations values={values} items={data.diff.items} onEvidence={jump} />
+                      )} />
                       {!!analysis.result.uncertainties?.length && (
                         <details className="impact-uncertainties">
                           <summary>{t("compare.assumptionsUnknowns")}</summary>
@@ -1648,7 +1630,7 @@ function ActionsPanel({
                             label(action.priority)
                           : t("compare.notRecorded")}{" "}
                         · {t("compare.due")}:{" "}
-                        {action.due_date || action.due_basis}
+                        {action.due_date || (action.due_basis === "not_reviewed" ? t("status.not_reviewed") : action.due_basis)}
                       </p>
                     )}
                     {action.applicability_condition && (

@@ -260,7 +260,7 @@ export type Impact = {
   impact: "high" | "medium" | "low" | "unknown";
   reason: string;
   business_areas: string[];
-  schema_version?: "impact-report-v2" | "impact-report-v3";
+  schema_version?: "impact-report-v2" | "impact-report-v3" | "impact-report-v4";
   response_mode?: ResponseMode;
   assessment_status?: "assessed" | "not_assessed" | "not_required";
   output_locale?: string;
@@ -294,13 +294,25 @@ export type Impact = {
     citations: Citation[];
   };
   important_dates?: {
-    kind: "effective_date" | "deadline" | "transition" | "other";
+    kind: "effective_date" | "deadline" | "transition" | "other" | "relative_period";
     label: string;
     date: string | null;
+    mention?: string | null;
+    version_side?: "old" | "new" | null;
+    change_id?: string | null;
     status: "found" | "not_found" | "uncertain" | "not_reviewed";
     evidence_grade: "confirmed" | "supported" | "possible" | "needs_review";
     citations: Citation[];
   }[];
+  date_review?: {
+    method: "date-mentions-v1";
+    scope: "selected_material_evidence";
+    legal_meaning_status: "not_reviewed";
+    scanned_passages: number;
+    detected_mentions: number;
+    displayed_mentions: number;
+    display_limited: boolean;
+  };
   uncertainties?: string[];
   evidence_coverage?: {
     reviewed_material_items: number;

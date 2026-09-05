@@ -1719,11 +1719,13 @@ Acceptance criteria:
 
 ### HL-092 — Produce truthful decision reports, dates and next actions
 
-**Priority:** P0. **Status:** PLANNED. **Dependencies:** HL-061, HL-091. **Owner role:** AI/backend with domain review.
+**Priority:** P0. **Status:** IN PROGRESS. **Dependencies:** HL-061, HL-091. **Owner role:** AI/backend with domain review.
 
 Problem: current rich reports wrap simpler output in templates and always mark some dates absent, so presentation overstates what was actually established.
 
 Deliverable: a versioned report schema and renderer that map each claim to evidence and distinguish facts, interpretations and review suggestions.
+
+**Implemented 5 September 2026 (date-evidence slice):** Report v4 replaces automatically absent dates with a deterministic, bounded view of literal calendar/period mentions in saved material passages. Both version sides, exact quotes, source links, scan counts and display limits persist in cache/history. All five locales explain that these are candidates: no legal date type, applicability, enacted status or calendar deadline has been established. Zero pattern matches remains unreviewed, never `not_found`; missing action due dates also remain unreviewed. No extra LLM calls. Earlier v2/v3 records remain immutable and stale until explicit reassessment. **Remaining:** evidence-validated legal date types and scope/conditions, reviewed absence/not-applicable states, relative-period anchors, actual decision/action generation and semantic deduplication, native/domain review and the full acceptance fixtures. Pattern matching does not pass those semantic gates. See [date evidence contract](docs/IMPACT_REPORT.md#date-mentions-and-review-state-hl-092).
 
 Acceptance criteria:
 

@@ -22,6 +22,7 @@ import type {
 } from "@/lib/types";
 import { ErrorNote, Loading, Status } from "./common";
 import { AnalysisModeNotice } from "./analysis-mode-notice";
+import { ReportDates } from "./report-dates";
 import { localeNames, type Locale, useI18n } from "@/lib/i18n";
 
 export function AIHistory({
@@ -308,12 +309,15 @@ function HistoryItem({
                   <li key={action.action_key || index}>
                     {action.title || action.text}
                     {action.owner_role
-                      ? ` · ${action.owner_role} · ${action.due_date || action.due_basis}`
+                      ? ` · ${action.owner_role} · ${action.due_date || (action.due_basis === "not_reviewed" ? t("status.not_reviewed") : action.due_basis)}`
                       : ""}
                   </li>
                 ))}
               </ol>
             )}
+            <ReportDates report={impact} renderCitations={(values) => (
+              <HistoryCitations values={values} items={evidenceItems} onEvidence={onEvidence} />
+            )} />
             <HistoryCitations
               values={impact.citations}
               items={evidenceItems}

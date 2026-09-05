@@ -53,7 +53,7 @@ def test_timeout_keeps_diff_retry_only_analysis_and_profile_invalidates_cache(ha
     result = client.post(route).json()
     assert result["status"] == "succeeded" and result["cached"] is False
     report = result["result"]
-    assert report["schema_version"] == "impact-report-v3"
+    assert report["schema_version"] == "impact-report-v4"
     assert report["headline"] and report["materiality"] == report["impact"]
     assert report["material_changes"][0]["old_unit"]["passage_id"]
     assert report["material_changes"][0]["new_unit"]["passage_id"]
@@ -61,7 +61,7 @@ def test_timeout_keeps_diff_retry_only_analysis_and_profile_invalidates_cache(ha
         "confirmed",
         "needs_review",
     }
-    assert {item["status"] for item in report["important_dates"]} == {"not_found"}
+    assert {item["status"] for item in report["important_dates"]} == {"uncertain"}
     assert len({action["action_key"] for action in report["actions"]}) == len(report["actions"])
     assert result["provenance"]["backend"] == "custom"
     assert result["provenance"]["generation"]["max_tokens"] == service.settings.apertus_max_tokens
@@ -601,7 +601,7 @@ def test_impact_report_merges_duplicate_actions_and_combines_exact_changes():
     assert len(report["actions"]) == 1
     assert len(report["actions"][0]["related_change_ids"]) == 2
     assert len(report["actions"][0]["citations"]) == 2
-    assert report["actions"][0]["due_basis"] == "not_found"
+    assert report["actions"][0]["due_basis"] == "not_reviewed"
     assert report["actions"][0]["due_date"] is None
     assert report["actions"][0]["review_suggestion"] is True
     assert report["organization_applicability"]["evidence_grade"] == "possible"

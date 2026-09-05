@@ -155,7 +155,7 @@ def test_failed_impact_rerun_keeps_last_valid_report_current(harness):
 
     visible = client.get(f"/api/comparisons/{comparison['id']}").json()["analysis"]
     assert visible["id"] == first["id"]
-    assert visible["result"]["schema_version"] == "impact-report-v3"
+    assert visible["result"]["schema_version"] == "impact-report-v4"
     assert visible["latest_attempt"]["id"] == failed["id"]
     assert visible["latest_attempt"]["status"] == "failed"
     history = client.get(f"/api/comparisons/{comparison['id']}/ai-history").json()

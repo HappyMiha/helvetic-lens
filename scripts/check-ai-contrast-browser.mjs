@@ -11,6 +11,7 @@ import postcss from "postcss";
 import tailwindcss from "@tailwindcss/postcss";
 import { Cdp, evaluate, pollJson, sleep } from "./browser-cdp.mjs";
 import { analysisModeFixtures } from "./analysis-mode-fixtures.mjs";
+import { reportDateFixtures } from "./report-date-fixtures.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const cssPath = join(root, "apps/web/app/globals.css");
@@ -64,6 +65,8 @@ const markup = `<div class="comparison-layout" data-mobile-surface="companion">
     ${analysisModeFixtures().map(({ html, locale, mode }) => html
       .replace("<strong>", `<strong data-contrast="Mode ${locale} ${mode}">`)
       .replace("<p ", `<p data-contrast="Mode body ${locale} ${mode}" `)).join("\n")}
+    ${reportDateFixtures().map(({ html, locale, state }) => html
+      .replaceAll(/<(h3|p|strong|span|summary|blockquote)([ >])/g, `<$1 data-contrast="Dates ${locale} ${state}"$2`)).join("\n")}
   </div></section></aside></div>`;
 
 // Composite transparent ancestor surfaces before WCAG relative luminance.
@@ -147,6 +150,10 @@ try {
       return rows;
     };
     await audit("default");
+    const overflowingDates = await evaluate(cdp, `Array.from(document.querySelectorAll('[data-date-review]')).filter(el => el.scrollWidth > el.clientWidth + 1).length`);
+    assert.equal(overflowingDates, 0, `Date sections must fit their pane at ${width}px`);
+    await evaluate(cdp, `document.querySelectorAll('[data-date-review] details').forEach(el => el.open = true)`);
+    await audit("date sources expanded");
     const { root: documentNode } = await cdp.send("DOM.getDocument");
     const { nodeIds } = await cdp.send("DOM.querySelectorAll", {
       nodeId: documentNode.nodeId,
@@ -183,6 +190,16 @@ try {
       "Focus outline must contrast with its surface",
     );
     assert.equal(await evaluate(cdp, `document.activeElement.disabled`), false);
+    await evaluate(cdp, `(() => { const summary = document.querySelector('[data-date-review] summary'); summary.closest('details').open = false; summary.focus(); })()`);
+    assert.equal(await evaluate(cdp, `document.activeElement.tagName`), "SUMMARY", `Date source must accept keyboard focus at ${width}px`);
+    for (const type of ["keyDown", "keyUp"]) await cdp.send("Input.dispatchKeyEvent", {
+      type, key: " ", code: "Space", windowsVirtualKeyCode: 32,
+    });
+    assert.equal(await evaluate(cdp, `document.querySelector('[data-date-review] details').open`), true);
+    for (const type of ["keyDown", "keyUp"]) await cdp.send("Input.dispatchKeyEvent", {
+      type, key: "Tab", code: "Tab", windowsVirtualKeyCode: 9,
+    });
+    assert.equal(await evaluate(cdp, `document.activeElement.getAttribute('href')`), "/evidence/old?passage=p1");
   }
   console.log(
     `AI contrast: ${samples} rendered samples passed; minimum ${minimum.toFixed(2)}:1. Default, selected, hover, keyboard focus and error; 390/768/1024/1440px. Disabled controls excluded from text contrast.`,
