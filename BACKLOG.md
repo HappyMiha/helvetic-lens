@@ -140,7 +140,7 @@ Keep the proven stack and add only the infrastructure now justified by public us
 | [HL-092](#hl-092) | P0       | PLANNED  | HL-061, HL-091                                         | Truthful structured reports, dates, applicability and useful actions |
 | [HL-093](#hl-093) | P0       | IN PROGRESS  | HL-059, HL-062, HL-075                                 | Independent semantic gold set and honest quality metrics            |
 | [HL-094](#hl-094) | P0       | IN PROGRESS  | HL-030, HL-075                                         | Fair resumable matching and preview/production parity               |
-| [HL-095](#hl-095) | P1       | PLANNED  | HL-037, HL-066, HL-074                                 | Progressive topic, registry and recovery controls                   |
+| [HL-095](#hl-095) | P1       | IN PROGRESS | HL-037, HL-066, HL-074                                 | Progressive topic, registry and recovery controls                   |
 | [HL-096](#hl-096) | P1       | PLANNED  | HL-063, HL-068                                         | Coherent visual system and readable scalable evidence               |
 | [HL-097](#hl-097) | P0       | IN PROGRESS  | HL-065, HL-068, HL-070                                 | Visible AI controls and accessible populated journeys               |
 | [HL-098](#hl-098) | P0       | PLANNED  | HL-036, HL-071, HL-072                                 | Verified source coverage and versioned legacy-artifact repair       |
@@ -1808,11 +1808,13 @@ Remaining before HL-094 can be marked DONE: complete coverage/degradation and mo
 
 ### HL-095 — Simplify topic setup, registry filters and recovery
 
-**Priority:** P1. **Status:** PLANNED. **Dependencies:** HL-037, HL-066, HL-074. **Owner role:** frontend/product.
+**Priority:** P1. **Status:** IN PROGRESS. **Dependencies:** HL-037, HL-066, HL-074. **Owner role:** frontend/product.
 
 Problem: expert configuration precedes value; raw enum names and opaque extraction errors force users to understand internals.
 
 Deliverable: progressive topic editor and scanning-oriented registry with contextual recovery, reusing existing APIs and authorization.
+
+**Implemented 5 September 2026 (progressive topic editor slice):** Goal, name and matching terms lead the manual flow. Sources/scope and synonym/exclusion controls are disclosed on demand, with five-language document/event labels, native language names and localized source-pack names in the form and saved cards. Defaults select only enabled packs; polling no longer reverses a user's cleared selection. The scope summary explains saved-event limits and separates selecting a topic rule from activating a source pack. Missing hidden scope reveals its controls before any preview request. Busy requests protect the submitted form; failed previews retain the draft. Editing from the bottom of a 30-topic list scrolls/focuses the actual editor below the sticky toolbar. `npm run check:topics:browser` passes ten populated locale/width journeys plus revision-safe retry and viewer checks; no AI or real source activation is involved. **Remaining:** draft-loss/navigation guards, registry simplification, comprehensive source health/recovery, physical mobile input and independent usability/native-language review. See [topic editor contract](docs/TOPIC_EDITOR.md).
 
 Acceptance criteria:
 

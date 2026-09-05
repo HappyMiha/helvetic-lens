@@ -2,6 +2,14 @@
 
 The source-to-diff workflow, Settings page, and live Apertus path are verified.
 
+## Progressive topic editor — 5 September 2026 (HappyDucky02)
+
+- Final production build passes **1,617 localization keys**, **27 shell**, **22 resource/delivery**, **111 rendered report/navigation checks**, TypeScript and Next compilation. This frontend slice leaves matching, API authorization, idempotency and revision enforcement unchanged; no migration or deployment occurs.
+- **`npm run check:topics:browser` passes ten required populated Chrome journeys** (DE/FR/IT/RM/EN × 390/1440 px) using 30 synthetic saved topics and enabled/disabled source-pack fixtures. It checks collapsed advanced controls, catalogue labels, enabled-only defaults, a cleared selection surviving actual polling, explicit missing-scope recovery, manual preview/activation payloads without AI, idempotency keys, pending-form protection and editing from below the form in the actual main scroller. Essential action/disclosure/checkbox tests use hit-tested pointer events, not only programmatic clicks.
+- Additional checks preserve a failed preview's edited goal, retry/save with `expected_revision=3` and unchanged hidden synonyms/exclusions, and show saved topics without editing controls to a viewer. Every API is intercepted before Next's proxy; no actual monitoring, source activation, provider call, organization change or message delivery occurs. The initial mock health response was corrected to match the real nested provider schema; test polling was fixed to accept both synchronous and asynchronous conditions.
+- Synthetic 390/1440 screenshots were inspected. Inspection found the editor heading hidden beneath the sticky toolbar; scroll alignment now uses the measured toolbar height, and the browser assertion requires the form to sit below it. Existing **8,060 PostCSS contrast samples (minimum 4.79:1)** passed after the new styles were compiled; these are existing component samples, not a whole-topic accessibility scan. Changed TS/test files pass Prettier; whitespace checks pass.
+- HL-095 stays in progress: complete draft/navigation-loss protection, registry controls and source recovery remain open, as do native translation approval, screen-reader/physical mobile input and independent user study gates. The synthetic UI suite proves flow and payload behavior, not legal relevance, source completeness, AI quality or a production acceptance result. See `docs/TOPIC_EDITOR.md`.
+
 ## Mobile navigation and skip-to-content — 5 September 2026 (HappyDucky02)
 
 - Production web build passes **1,590 localization keys**, **27 shell**, **22 resource/delivery**, **111 rendered report/navigation checks**, TypeScript and Next compilation. No API change, schema migration, model invocation or production deployment occurs.
