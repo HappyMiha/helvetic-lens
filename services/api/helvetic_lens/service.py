@@ -119,7 +119,7 @@ from .prompt_settings import (
 )
 from .registry import RegistryFilters, RegistryReader
 from .regulatory_corpus import RegulatoryCorpus
-from .relation_freshness import uses_configuration, uses_profile
+from .relation_freshness import uses_configuration, uses_profile, uses_prompts
 from .source_capabilities import capability_catalogue
 
 logger = logging.getLogger(__name__)
@@ -1067,15 +1067,15 @@ class HelveticLens:
 
     def impact_inbox(self, filters: ImpactInboxFilters, user_id: str | None) -> dict:
         with self.db.session() as session:
-            return ImpactInboxReader(self.organization_id, user_id, settings=self.settings).page(session, filters)
+            return ImpactInboxReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings).page(session, filters)
 
     def impact_inbox_page(self, filters: ImpactInboxFilters, user_id: str | None, *, cursor: str = "", limit: int = 50) -> dict:
         with self.db.session() as session:
-            return ImpactInboxReader(self.organization_id, user_id, settings=self.settings).paginated(session, filters, cursor=cursor, limit=limit)
+            return ImpactInboxReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings).paginated(session, filters, cursor=cursor, limit=limit)
 
     def impact_inbox_law_options(self, query: str, selected: str) -> dict:
         with self.db.session() as session:
-            return ImpactInboxReader(self.organization_id, None, settings=self.settings).law_options(session, query=query, selected=selected)
+            return ImpactInboxReader(self.organization_id, None, settings=self.settings, prompts=self.prompt_settings).law_options(session, query=query, selected=selected)
 
     def impact_matrix(self, output_locale: str) -> dict:
         with self.db.session() as session:
@@ -1103,7 +1103,7 @@ class HelveticLens:
             )
             period_end = utcnow()
             period_start = period_end - digests.FREQUENCIES[effective.frequency]
-            reader = ImpactInboxReader(self.organization_id, user_id, settings=self.settings)
+            reader = ImpactInboxReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings)
             if cursor and not preview_page:
                 raise DomainError("A cursor requires paged preview mode.", 422, "invalid_digest_cursor")
             if preview_page:
@@ -1220,7 +1220,7 @@ class HelveticLens:
         self, event_id: str, state: str, user_id: str | None
     ) -> dict:
         with self.write_guard, self.db.session() as session:
-            return ImpactInboxReader(self.organization_id, user_id, settings=self.settings).set_state(
+            return ImpactInboxReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings).set_state(
                 session, event_id, state
             )
 
@@ -4136,6 +4136,7 @@ class HelveticLens:
             coverage=coverage,
             profile_revision=profile.revision,
             settings=self.settings,
+            prompts=self.prompt_settings,
             output_locale=output_locale,
         )
         plan["runtime_fingerprint"] = runtime_fingerprint
@@ -4423,6 +4424,7 @@ class HelveticLens:
                         not relation_ai.result_uses_current_rules(record.result)
                         or not uses_profile(record.analysis_plan, profile_revision)
                         or not uses_configuration(record.analysis_plan, self.settings)
+                        or not uses_prompts(record.analysis_plan, self.prompt_settings)
                     ),
                 }
                 for record in records

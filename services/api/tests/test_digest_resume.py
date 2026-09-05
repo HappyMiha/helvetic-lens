@@ -170,7 +170,7 @@ def test_prepared_selection_rechecks_private_state_and_revoked_admissions(harnes
             cp = digests.prepare_batch(session, job["target_id"], cp, settings=service.settings)
             session.commit()
     with service.db.session() as session:
-        ImpactInboxReader(service.organization_id, user_id, settings=service.settings).set_state(session, specs[1]["id"], "muted")
+        ImpactInboxReader(service.organization_id, user_id, settings=service.settings, prompts=service.prompt_settings).set_state(session, specs[1]["id"], "muted")
     with service.db.session() as session:
         candidate = session.scalar(select(RelationCandidate).where(RelationCandidate.event_id == specs[-1]["id"]))
         admission = session.scalar(select(OrganizationRelationCandidate).where(OrganizationRelationCandidate.candidate_id == candidate.id))

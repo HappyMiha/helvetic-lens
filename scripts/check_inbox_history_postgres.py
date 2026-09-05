@@ -54,12 +54,16 @@ from test_relation_configuration_freshness import (
 from test_relation_profile_freshness import (
     test_profile_edit_invalidates_history_inbox_and_severity_without_spending_tokens,
 )
+from test_relation_prompt_freshness import (
+    test_digest_prompt_change_restarts_selection_and_never_sends_old_selection,
+    test_used_prompt_edit_invalidates_history_and_inbox_without_new_inference,
+)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest"), default="history")
+    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -80,6 +84,15 @@ def main():
         with TestClient(app) as client:
             service = app.state.service
             harness = (client, fetcher, service, model)
+            if args.suite == "prompts":
+                test_used_prompt_edit_invalidates_history_and_inbox_without_new_inference(harness, "impact_instructions")
+                print("PostgreSQL: used prompt edit invalidates current relation history and inbox without inference, jobs or rewriting saved evidence.")
+                return
+            if args.suite == "prompts-digest":
+                with MonkeyPatch.context() as patch:
+                    test_digest_prompt_change_restarts_selection_and_never_sends_old_selection(harness, patch)
+                print("PostgreSQL: platform prompt edit restarts bounded digest preparation and rejects completed stale selection without sending mail.")
+                return
             if args.suite == "configuration":
                 test_configuration_changes_remove_current_conclusion_without_jobs_or_history_rewrite(harness, "apertus_model", "new-model")
                 print("PostgreSQL: model change invalidates history and both inbox readers without inference or history rewrites; original configuration restores the valid saved report.")

@@ -17,7 +17,7 @@ from .analysis import (
 )
 from .config import DomainError, Settings
 from .extraction import normalize
-from .prompt_settings import PromptSettings, prompt_fingerprint
+from .prompt_settings import PromptSettings
 
 SCHEMA_VERSION = "relation-impact-v3"
 PLANNER_VERSION = "relation-impact-plan-v1"
@@ -184,6 +184,11 @@ def generation_parameters(settings: Settings) -> dict:
     }
 
 
+def relation_prompt_fingerprint(prompts: PromptSettings) -> str:
+    """Only instructions consumed by relation analysis, including its repair retry."""
+    return _fingerprint({"impact": prompts.impact_instructions, "repair": prompts.repair_instructions})
+
+
 def configuration_fingerprint(settings: Settings) -> str:
     """Public answer-affecting configuration; never credentials or transport knobs."""
     return _fingerprint({
@@ -230,7 +235,7 @@ def cache_key(
                 for row in evidence
             ],
             "profile_revision": profile_revision,
-            "prompt": prompt_fingerprint(prompts),
+            "prompt": relation_prompt_fingerprint(prompts),
             "provider": settings.apertus_provider,
             "product_id": settings.apertus_product_id,
             "endpoint": settings.apertus_base_url,
@@ -254,6 +259,7 @@ def build_plan(
     coverage: dict,
     profile_revision: int,
     settings: Settings,
+    prompts: PromptSettings,
     output_locale: str = DEFAULT_OUTPUT_LOCALE,
 ) -> dict:
     characters = sum(len(row["text"]) for row in evidence)
@@ -287,6 +293,7 @@ def build_plan(
             "local_first": settings.apertus_provider == "docker",
             "profile_revision": profile_revision,
             "configuration_fingerprint": configuration_fingerprint(settings),
+            "prompt_fingerprint": relation_prompt_fingerprint(prompts),
             "generation_parameters": generation_parameters(settings),
         },
         "coverage": coverage,

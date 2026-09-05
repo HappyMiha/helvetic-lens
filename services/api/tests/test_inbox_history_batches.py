@@ -35,7 +35,7 @@ def history_corpus(harness, count=50, archive=100):
             if kind == 0:
                 continue
             common = {"organization_id": service.organization_id, "organization_candidate_id": delivery.id, "created_at": stamp}
-            analysis = {**common, "analysis_plan": {"execution": {"profile_revision": 1, "configuration_fingerprint": relation_analysis.configuration_fingerprint(service.settings)}}, "candidate_id": candidate.id, "event_id": candidate.event_id, "target_work_id": candidate.target_work_id,
+            analysis = {**common, "analysis_plan": {"execution": {"profile_revision": 1, "configuration_fingerprint": relation_analysis.configuration_fingerprint(service.settings), "prompt_fingerprint": relation_analysis.relation_prompt_fingerprint(service.prompt_settings)}}, "candidate_id": candidate.id, "event_id": candidate.event_id, "target_work_id": candidate.target_work_id,
                         "cache_key": "0"*64, "model": "test-only", "evidence_json": [{"text": "Synthetic archived evidence "*30}]}
             analyses, reviews = [], []
             for j in range(archive+1):
@@ -112,7 +112,7 @@ def test_new_history_after_scalar_selection_waits_for_next_read(harness, monkeyp
     _, _, service, _ = harness
     expected = history_corpus(harness, count=2, archive=1)
     delivery_id = next(id_ for id_, kind in expected.items() if kind == 1)
-    reader = ImpactInboxReader(service.organization_id, None, settings=service.settings)
+    reader = ImpactInboxReader(service.organization_id, None, settings=service.settings, prompts=service.prompt_settings)
     relevant = (model.status == "succeeded") if model == RelationImpactAnalysis else model.decision.in_(("confirmed", "rejected"))
     with service.db.session() as session:
         prior = reader._history_selection(session, model, [delivery_id], relevant)[delivery_id]
@@ -148,7 +148,7 @@ def test_batch_selector_explicitly_scopes_even_privileged_sessions(harness):
         session.commit()
         other_id = other.id
     with service.db.session(include_all_organizations=True) as session:
-        reader = ImpactInboxReader(other_id, None, settings=service.settings)
+        reader = ImpactInboxReader(other_id, None, settings=service.settings, prompts=service.prompt_settings)
         assert reader._page_histories(session, list(expected)) == ({}, {})
         assert reader._page_histories(session, []) == ({}, {})
         with pytest.raises(ValueError):

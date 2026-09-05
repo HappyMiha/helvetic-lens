@@ -1,5 +1,13 @@
 # Verification record
 
+## Effective relation prompt freshness — 5 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl-100-prompt-freshness`. **187 affected API tests pass in 244.03 seconds**, including relation/configuration/profile/cache, inbox/context/bounded history, digest preview/delivery/coverage, AI history and administration. After tightening empty-override precedence, **29 final focused prompt/resume tests pass in 51.59 seconds**. Fifteen new cases cover both consumed instructions, four irrelevant prompt controls without duplicate inference, platform inheritance/organization override/reset, failed retry/recovery, missing/malformed prompt provenance, digest restart/refusal, privileged tenant isolation and empty/JSON-null stored overrides.
+- Separate empty **PostgreSQL 16.14** checks pass for `scripts/check_inbox_history_postgres.py --suite prompts`, `--suite prompts-digest`, and `--suite batches`; the final digest helper is rechecked on another empty PostgreSQL instance. The 50-event/7,474-history-record corpus retains four history queries and 111 hydrated selected records. All task-labelled scratch containers use ephemeral memory storage, bind only to dynamically allocated loopback ports and are removed after testing. No working database/container is changed.
+- Production web build passes **1,662 localization keys, 27 shell, 22 resource/delivery and 130 report/navigation/calendar/draft checks**, TypeScript and Next compilation. Only invalidation tags change in the prompt UI; no new visual/browser review is claimed. Ruff and whitespace checks pass; pre-existing Starlette and Node tooling warnings remain.
+- Old prompt-less report provenance is history-only, with preserved citations; the cache identity changes once for the next explicit/scheduled request. Reads do not regenerate, rewrite histories or send messages. Scripted models/mail doubles only; no real AI call, migration or production deployment. Evidence and runtime-artifact freshness plus independent quality gates remain open; HL-100 stays **IN PROGRESS**.
+
+
 ## Relation configuration freshness — 5 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl-100-settings-freshness`. **134 affected API tests pass in 189.66 seconds** across relation analysis/freshness/cache, inbox history/navigation/pagination and digest preview/period/batching/resume; **28 additional context/coverage tests pass in 6.22 seconds**. The new configuration suite covers all eleven answer-affecting changes, four credential/transport no-ops, saved settings/failed retry/reset and completed digest selection invalidation. A final tenant-isolation case checks privileged-session resolution as well (final focused suite: 18 cases).

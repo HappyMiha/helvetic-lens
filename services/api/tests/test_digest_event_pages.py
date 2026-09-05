@@ -80,14 +80,14 @@ def test_equal_time_keysets_ignore_new_admissions_and_advance_empty_filtered_pag
         return result
     monkeypatch.setattr(ImpactInboxReader, "page", record_page)
     with service.db.session() as session:
-        groups = list(ImpactInboxReader(service.organization_id, None, settings=service.settings).iter_groups(
+        groups = list(ImpactInboxReader(service.organization_id, None, settings=service.settings, prompts=service.prompt_settings).iter_groups(
             session, ImpactInboxFilters(detected_from=end - timedelta(days=1), detected_before=end, severity="high"), page_size=17,
         ))
     assert [item["event_id"] for item in groups] == list(reversed(ids[:50]))
     assert selected == list(reversed(ids))  # Cursor crosses the empty low-severity pages.
     monkeypatch.setattr(ImpactInboxReader, "page", page)
     with service.db.session() as session:
-        groups = list(ImpactInboxReader(service.organization_id, None, settings=service.settings).iter_groups(
+        groups = list(ImpactInboxReader(service.organization_id, None, settings=service.settings, prompts=service.prompt_settings).iter_groups(
             session, ImpactInboxFilters(detected_from=end - timedelta(days=1), detected_before=end), page_size=50,
         ))
     assert {item["event_id"] for item in groups} == set(ids) | {inserted}
@@ -98,7 +98,7 @@ def test_equal_time_keysets_ignore_new_admissions_and_advance_empty_filtered_pag
 def test_event_pages_reject_unbounded_sizes(harness, size):
     _, _, service, _ = harness
     with service.db.session() as session, pytest.raises(ValueError, match="between 1 and 50"):
-        list(ImpactInboxReader(service.organization_id, None, settings=service.settings).iter_groups(session, ImpactInboxFilters(), page_size=size))
+        list(ImpactInboxReader(service.organization_id, None, settings=service.settings, prompts=service.prompt_settings).iter_groups(session, ImpactInboxFilters(), page_size=size))
 
 
 def test_group_summary_does_not_consume_after_overflow_evidence():
@@ -125,6 +125,6 @@ def test_event_page_never_splits_related_law_deliveries(harness):
             session.get(OrganizationRelationCandidate, id_).created_at = utcnow() - timedelta(seconds=1)
         session.commit()
     with service.db.session() as session:
-        groups = list(ImpactInboxReader(service.organization_id, None, settings=service.settings).iter_groups(session, ImpactInboxFilters(), page_size=1))
+        groups = list(ImpactInboxReader(service.organization_id, None, settings=service.settings, prompts=service.prompt_settings).iter_groups(session, ImpactInboxFilters(), page_size=1))
     assert len(groups) == 1
     assert {item["organization_candidate_id"] for item in groups[0]["items"]} == {first, second}

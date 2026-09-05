@@ -25,6 +25,7 @@ from .models import (
     RelationCandidate,
     RelationImpactAnalysis,
 )
+from .prompt_settings import PromptSettings
 from .relation_freshness import current_profile_result
 
 
@@ -55,7 +56,8 @@ class ImpactInboxFilters:
 
 
 class ImpactInboxReader:
-    def __init__(self, organization_id: str, user_id: str | None, *, settings: Settings):
+    def __init__(self, organization_id: str, user_id: str | None, *, settings: Settings, prompts: PromptSettings):
+        self.prompts = prompts
         self.settings = settings
         self.organization_id = organization_id
         self.user_id = user_id
@@ -63,7 +65,7 @@ class ImpactInboxReader:
 
     @staticmethod
     def _latest_analyses(
-        session: Session, organization_candidate_id: str, *, settings: Settings
+        session: Session, organization_candidate_id: str, *, settings: Settings, prompts: PromptSettings
     ) -> tuple[RelationImpactAnalysis | None, RelationImpactAnalysis | None, int]:
         history = select(RelationImpactAnalysis).where(
             RelationImpactAnalysis.organization_candidate_id == organization_candidate_id
@@ -79,7 +81,7 @@ class ImpactInboxReader:
             & (RelationImpactAnalysis.id <= latest.id),
         )
         history = history.where(through_latest)
-        current = session.scalar(history.where(current_profile_result(settings)).limit(1))
+        current = session.scalar(history.where(current_profile_result(settings, prompts)).limit(1))
         # Count in SQL; never transfer/materialize the historical JSON/evidence
         # payloads just to find two records or display the history count.
         count = session.scalar(select(func.count()).select_from(RelationImpactAnalysis).where(
@@ -120,7 +122,7 @@ class ImpactInboxReader:
 
     def _page_histories(self, session: Session, candidate_ids: list[str]) -> tuple[dict, dict]:
         analyses = self._history_selection(session, RelationImpactAnalysis, candidate_ids,
-                                          current_profile_result(self.settings))
+                                          current_profile_result(self.settings, self.prompts))
         reviews = self._history_selection(session, OrganizationRelationReview, candidate_ids,
                                          OrganizationRelationReview.decision.in_(("confirmed", "rejected")))
         return analyses, reviews

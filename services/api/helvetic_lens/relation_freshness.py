@@ -5,6 +5,7 @@ from sqlalchemy import String, cast, select
 from . import relation_analysis
 from .config import Settings
 from .models import Profile, RelationImpactAnalysis
+from .prompt_settings import PromptSettings
 
 
 def uses_profile(plan: dict | None, revision: int | None) -> bool:
@@ -20,7 +21,13 @@ def uses_configuration(plan: dict | None, settings: Settings) -> bool:
     return saved == relation_analysis.configuration_fingerprint(settings)
 
 
-def current_profile_result(settings: Settings):
+def uses_prompts(plan: dict | None, prompts: PromptSettings) -> bool:
+    execution = plan.get("execution") if isinstance(plan, dict) else None
+    saved = execution.get("prompt_fingerprint") if isinstance(execution, dict) else None
+    return saved == relation_analysis.relation_prompt_fingerprint(prompts)
+
+
+def current_profile_result(settings: Settings, prompts: PromptSettings):
     """A correlated scalar predicate keeps tenant identity inside the SQL check."""
     model = RelationImpactAnalysis
     matching_profile = select(Profile.id).where(
@@ -33,4 +40,6 @@ def current_profile_result(settings: Settings):
         & matching_profile
         & (model.analysis_plan["execution"]["configuration_fingerprint"].as_string()
            == relation_analysis.configuration_fingerprint(settings))
+        & (model.analysis_plan["execution"]["prompt_fingerprint"].as_string()
+           == relation_analysis.relation_prompt_fingerprint(prompts))
     )

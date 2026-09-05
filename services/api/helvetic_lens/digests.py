@@ -21,8 +21,18 @@ from .db import Database, utcnow
 from .impact_inbox import ImpactInboxFilters, ImpactInboxReader
 from .locales import normalize_locale
 from .model_settings import resolved_settings
-from .models import ApertusConfiguration, DigestDelivery, DigestPreference, Job, OrganizationMembership, User
-from .relation_analysis import configuration_fingerprint
+from .models import (
+    ApertusConfiguration,
+    DigestDelivery,
+    DigestPreference,
+    Job,
+    OrganizationMembership,
+    PlatformPromptConfiguration,
+    PromptConfiguration,
+    User,
+)
+from .prompt_settings import resolved_prompt_settings
+from .relation_analysis import configuration_fingerprint, relation_prompt_fingerprint
 
 SEVERITIES = {"high", "medium", "low", "none", "unknown"}
 FREQUENCIES = {"daily": timedelta(days=1), "weekly": timedelta(days=7)}
@@ -439,7 +449,14 @@ def _reader(session: Session, delivery: DigestDelivery, settings: Settings) -> I
         ApertusConfiguration.organization_id == delivery.organization_id))
     public_record = ApertusConfiguration(values=values, key_source="none") if values is not None else None
     effective = resolved_settings(settings, public_record)
-    return ImpactInboxReader(delivery.organization_id, delivery.user_id, settings=effective)
+    prompt_record = session.execute(select(PromptConfiguration.id, PromptConfiguration.values).where(
+        PromptConfiguration.organization_id == delivery.organization_id)).first()
+    if prompt_record is None:
+        prompt_record = session.execute(select(PlatformPromptConfiguration.id, PlatformPromptConfiguration.values).where(
+            PlatformPromptConfiguration.id == "default")).first()
+    # An existing empty override still wins, exactly as organization_runtime does.
+    prompts = resolved_prompt_settings(PromptConfiguration(values=prompt_record[1]) if prompt_record is not None else None)
+    return ImpactInboxReader(delivery.organization_id, delivery.user_id, settings=effective, prompts=prompts)
 
 
 def prepare_batch(session: Session, delivery_id: str, checkpoint: dict | None = None, *, settings: Settings) -> dict:
@@ -459,10 +476,12 @@ def prepare_batch(session: Session, delivery_id: str, checkpoint: dict | None = 
     fingerprint = _preference_fingerprint(preference)
     reader = _reader(session, delivery, settings)
     configuration = configuration_fingerprint(reader.settings)
+    prompt = relation_prompt_fingerprint(reader.prompts)
     if (not checkpoint or checkpoint.get("preference_fingerprint") != fingerprint
-            or checkpoint.get("configuration_fingerprint") != configuration):
+            or checkpoint.get("configuration_fingerprint") != configuration
+            or checkpoint.get("prompt_fingerprint") != prompt):
         checkpoint = {**_selection_context(delivery), "admitted_before": _iso(utcnow()),
-                      "preference_fingerprint": fingerprint, "configuration_fingerprint": configuration, "cursor": None, "event_ids": [],
+                      "preference_fingerprint": fingerprint, "configuration_fingerprint": configuration, "prompt_fingerprint": prompt, "cursor": None, "event_ids": [],
                       "processed": 0, "batches": 0, "complete": False,
                       "restarts": checkpoint.get("restarts", 0) + bool(checkpoint)}
     if checkpoint["complete"] or delivery.status == "succeeded" or not preference.enabled:
@@ -504,8 +523,9 @@ def deliver(database: Database, settings: Settings, delivery_id: str, *, selecti
         if selection is not None:
             _validate_selection(delivery, selection)
             if (not selection.get("complete") or selection.get("preference_fingerprint") != _preference_fingerprint(preference)
-                    or selection.get("configuration_fingerprint") != configuration_fingerprint(reader.settings)):
-                raise DomainError("Digest preferences or model configuration changed; preparation will restart before sending.", 409, "digest_preferences_changed")
+                    or selection.get("configuration_fingerprint") != configuration_fingerprint(reader.settings)
+                    or selection.get("prompt_fingerprint") != relation_prompt_fingerprint(reader.prompts)):
+                raise DomainError("Digest preferences, model configuration or analysis prompts changed; preparation will restart before sending.", 409, "digest_preferences_changed")
             filters = replace(filters, event_ids=tuple(selection["event_ids"]),
                               admitted_before=datetime.fromisoformat(selection["admitted_before"]))
         # Recheck current access, personal state and saved conclusions for at most

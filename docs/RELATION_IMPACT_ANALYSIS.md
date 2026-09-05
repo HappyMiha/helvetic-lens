@@ -61,7 +61,7 @@ An identical successful result is reused only when all of these inputs match:
 - local runtime/model artifact/hardware fingerprint; and
 - planner and result schema versions.
 
-The v3 result revision invalidates the cache. Results from earlier result-rule revisions remain unchanged in history with `stale=true`, and cannot be selected as the current inbox/history conclusion. Reanalysis uses the existing delivery and event, preventing duplicate inbox entries. Automatic bounded candidate backfill and complete read-time evidence/prompt/runtime freshness are still tracked by HL-100/099; this change does not silently rewrite or bulk reprocess historical data.
+The v3 result revision invalidates the cache. Results from earlier result-rule revisions remain unchanged in history with `stale=true`, and cannot be selected as the current inbox/history conclusion. Reanalysis uses the existing delivery and event, preventing duplicate inbox entries. Automatic bounded candidate backfill and complete read-time evidence/runtime freshness are still tracked by HL-100/099; this change does not silently rewrite or bulk reprocess historical data.
 
 Profile freshness is checked on every relation-history and inbox read: a succeeded
 report is current only if its saved `analysis_plan.execution.profile_revision`
@@ -112,11 +112,34 @@ Delivery uses existing saved reports only; it never generates explanations.
 history, with citations accessible. They cannot reliably prove the full original
 configuration. No backfill, migration, data deletion or automatic bulk inference
 runs. Cache identity changes once so the next explicit/scheduled request can create
-a report with the new provenance. This does not yet detect prompt edits, changing
-evidence or replacement of a local model artifact behind the same configured model
-name. Those HL-100 freshness boundaries remain open. Reads use the configuration
+a report with the new provenance. This does not yet detect changing evidence or replacement of a local model
+artifact behind the same configured model name. Those HL-100 freshness boundaries remain open. Reads use the configuration
 snapshot available to the request; this is not a global transactional lock against
 an administrator changing settings concurrently.
+
+Effective prompts are checked as well. New plans persist
+`analysis_plan.execution.prompt_fingerprint`, shared with relation cache identity.
+Only `impact_instructions` and `repair_instructions` participate: relation analysis
+does not use Ask, batch synthesis or Ask context-mode controls. Editing those
+unrelated controls alone must not invalidate a valid report or spend tokens again.
+The fingerprint compares content, not revision numbers; the same revision number
+in a platform default and an organization override does not establish equivalence.
+Organization overrides win in full, then platform defaults, then built-in defaults.
+Resetting an override follows the same inheritance rules as actual generation.
+
+The SQL history selector checks this fingerprint without hydrating archived
+prompts/evidence. History remains inspectable and failed new attempts cannot revive
+an old prompt's applicability. Reports predating prompt provenance conservatively
+remain stale until a new explicit/scheduled request; no bulk inference or mutation
+occurs on reads. Returning to the same effective instructions can reuse a report
+whose other freshness checks still pass.
+
+Digest preparation and final delivery resolve effective prompts for the recipient's
+organization, even in privileged sessions. Changed prompt fingerprints restart
+bounded selection and reject stale completed checkpoints before sending. Historical
+sent digests are not rewritten. Prompt save/reset invalidates relation-history and
+digest client caches; existing sessions observe changes on their next fresh read,
+not via a new cross-client push channel.
 
 This is revision-based invalidation, not a semantic test of profile similarity;
 unmanaged database edits that bypass the profile revision are outside this contract.
