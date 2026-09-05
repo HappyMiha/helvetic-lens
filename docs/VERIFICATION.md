@@ -2,6 +2,14 @@
 
 The source-to-diff workflow, Settings page, and live Apertus path are verified.
 
+## Topic draft switch and reload protection — 5 September 2026 (HappyDucky02)
+
+- Final production build passes **1,619 localization keys**, **27 shell**, **22 resource/delivery**, **111 rendered report/navigation checks**, TypeScript and Next compilation. Changed TS/browser-test files pass Prettier and whitespace checks. There is no API/schema/deployment change.
+- The required ten populated topic browser journeys (five locales × 390/1440 px) now additionally pass **40 real localized discard confirmations**, with accept/cancel paths for switching saved topics and starting a new one. Declining retains the exact draft and focuses the editor; unchanged, reset, successfully saved and reverted plans do not raise false warnings. A real Chrome `beforeunload` dialog on reload is cancelled and the failed-preview draft survives. The successful revision save clears the guard before the viewer navigation test.
+- Previous assertions remain active: actual hit-tested pointer controls, 30-topic deep-list editing, catalogue polling, manual no-AI preview/explicit activation, scoped source selections, busy protection, expected revision, hidden values and viewer controls. The harness now waits for requested focus restoration and successful-save completion before sending the next pointer/navigation event; these are real browser timing requirements, not disabled product checks.
+- All APIs are intercepted with synthetic data. No real organization/monitoring changes, source activation, provider call, message or production restart occurred. Existing contrast evidence belongs to the preceding editor/layout slice; this change adds only a shared muted-text status, with no new color/layout system.
+- This closes only same-page replacement and browser reload/unload protection. Client-side route/history changes, crash recovery and physical mobile termination can still lose a draft. HL-095 remains in progress; no persistent-draft or complete navigation-safety claim is made.
+
 ## Progressive topic editor — 5 September 2026 (HappyDucky02)
 
 - Final production build passes **1,617 localization keys**, **27 shell**, **22 resource/delivery**, **111 rendered report/navigation checks**, TypeScript and Next compilation. This frontend slice leaves matching, API authorization, idempotency and revision enforcement unchanged; no migration or deployment occurs.

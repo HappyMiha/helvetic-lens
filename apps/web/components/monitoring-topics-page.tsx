@@ -192,6 +192,9 @@ export function MonitoringTopicsPage() {
   const topics = useResource(resources.monitoringTopics(true));
   const packs = useResource(resources.sourcePacks());
   const [form, setForm] = useState<FormPlan>(initialPlan);
+  const [savedForm, setSavedForm] = useState<FormPlan>(initialPlan);
+  const dirty =
+    JSON.stringify(toPayload(form)) !== JSON.stringify(toPayload(savedForm));
   const [editing, setEditing] = useState<MonitoringTopic | null>(null);
   const [preview, setPreview] = useState<MonitoringTopicPreview | null>(null);
   const [idempotencyKey, setIdempotencyKey] = useState("");
@@ -238,7 +241,33 @@ export function MonitoringTopicsPage() {
     if (initializedPacks.current || !packs.data || editing) return;
     initializedPacks.current = true;
     setForm((current) => ({ ...current, source_pack_ids: defaultPackIds }));
+    setSavedForm((current) => ({
+      ...current,
+      source_pack_ids: defaultPackIds,
+    }));
   }, [packs.data, defaultPackIds, editing]);
+
+  useEffect(() => {
+    if (!dirty) return;
+    function beforeUnload(event: BeforeUnloadEvent) {
+      event.preventDefault();
+      event.returnValue = "";
+    }
+    window.addEventListener("beforeunload", beforeUnload);
+    return () => window.removeEventListener("beforeunload", beforeUnload);
+  }, [dirty]);
+
+  function confirmDiscard() {
+    if (!dirty || window.confirm(t("topics.discardConfirm"))) return true;
+    focusEditor();
+    return false;
+  }
+
+  function discard() {
+    if (!confirmDiscard()) return;
+    reset();
+    focusEditor();
+  }
 
   function focusEditor() {
     requestAnimationFrame(() => {
@@ -261,7 +290,9 @@ export function MonitoringTopicsPage() {
 
   function reset() {
     setEditing(null);
-    setForm({ ...initialPlan, source_pack_ids: defaultPackIds });
+    const next = { ...initialPlan, source_pack_ids: defaultPackIds };
+    setForm(next);
+    setSavedForm(next);
     setPreview(null);
     setIdempotencyKey("");
     setAiDraft(null);
@@ -386,8 +417,13 @@ export function MonitoringTopicsPage() {
   }
 
   function edit(topic: MonitoringTopic) {
+    if (!confirmDiscard()) return;
     setEditing(topic);
-    setForm(fromPlan(topic.plan));
+    const next = fromPlan(topic.plan);
+    setForm(next);
+    setSavedForm(next);
+    setIdempotencyKey("");
+    setMessage("");
     setPreview(null);
     setAiDraft(null);
     setError("");
@@ -418,7 +454,12 @@ export function MonitoringTopicsPage() {
           <p className="muted m-0">{t("topics.body")}</p>
         </div>
         {editing && (
-          <Button disabled={!!busy} variant="outline" onClick={reset}>
+          <Button
+            data-topic-new
+            disabled={!!busy}
+            variant="outline"
+            onClick={discard}
+          >
             <Plus /> {t("topics.new")}
           </Button>
         )}
@@ -436,6 +477,15 @@ export function MonitoringTopicsPage() {
         >
           <fieldset disabled={!!busy} className="min-w-0">
             <ErrorNote message={error} />
+            {dirty && (
+              <p
+                className="text-sm text-muted-foreground"
+                role="status"
+                data-topic-unsaved
+              >
+                {t("topics.unsavedNote")}
+              </p>
+            )}
             <div className="flex items-start justify-between gap-4 mb-5">
               <div>
                 <span className="eyebrow">
@@ -684,7 +734,7 @@ export function MonitoringTopicsPage() {
                 </Button>
               )}
               {editing && (
-                <Button type="button" variant="ghost" onClick={reset}>
+                <Button type="button" variant="ghost" onClick={discard}>
                   <RotateCcw /> {t("topics.cancel")}
                 </Button>
               )}

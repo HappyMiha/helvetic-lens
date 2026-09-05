@@ -21,8 +21,13 @@ before sending a request. Preview is read-only; saving/activation remains a
 separate explicit action with existing idempotency and revision checks. Pending
 preview/draft/save work disables the editable plan and topic-switch actions, so a
 late response cannot overwrite newly typed fields. Failed previews preserve the
-plan. Navigating away/reloading can still lose an unsaved draft: a complete draft
-navigation/recovery guard remains open HL-095 work.
+plan. A visible unsaved-change indicator compares the edited plan with the loaded
+or reset baseline. Starting a new topic, cancelling an edit or editing another
+saved topic asks before discarding changed fields; cancellation retains the plan
+and returns focus to it. Unchanged/reverted plans and successful saves do not ask.
+Reload/document unload uses the browser's native warning after user interaction.
+Client-side route links/history, crash recovery and mobile browser termination are
+not covered by this slice; no persistent draft storage is claimed.
 
 Editing a topic at the bottom of a long list scrolls the actual editor into view,
 accounts for the sticky toolbar height and focuses its loaded name field. This
@@ -36,10 +41,13 @@ application API requests are intercepted. The required ten populated journeys
 cover five locales at 390/1440 px, pointer reachability, real catalogue polling,
 manual preview/explicit activation, idempotency, hidden-scope recovery, busy-state
 protection, long-list editing and horizontal layout. Additional cases check failed
-preview retention/retry, expected revision and viewer read-only controls. No real
+preview retention/retry, expected revision and viewer read-only controls. Forty
+localized discard decisions check acceptance/cancellation across the ten journeys;
+a real native beforeunload dialog is cancelled to retain a failed-preview draft.
+Successful saving removes that guard before leaving. No real
 monitoring, AI call, source activation or production data is involved.
 
 The contract is functional regression evidence, not native translation approval,
 a complete screen-reader/keyboard audit, physical mobile keyboard certification,
-proof of matching usefulness or a user study. Registry simplification, draft-loss
+proof of matching usefulness or a user study. Registry simplification, route/history draft-loss
 guards, full coverage health/recovery and independent usability gates remain open.

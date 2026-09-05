@@ -2866,6 +2866,12 @@ Object.assign(rm, {
   "topics.kind.notice_published": "Publicaziun d’ina communicaziun"
 });
 
+Object.assign(en, {"topics.unsavedNote": "Unsaved topic changes", "topics.discardConfirm": "Discard your unsaved topic changes?"});
+Object.assign(de, {"topics.unsavedNote": "Ungespeicherte Themenänderungen", "topics.discardConfirm": "Ungespeicherte Änderungen am Thema verwerfen?"});
+Object.assign(fr, {"topics.unsavedNote": "Modifications du thème non enregistrées", "topics.discardConfirm": "Abandonner les modifications non enregistrées de ce thème ?"});
+Object.assign(it, {"topics.unsavedNote": "Modifiche al tema non salvate", "topics.discardConfirm": "Scartare le modifiche non salvate del tema?"});
+Object.assign(rm, {"topics.unsavedNote": "Midadas dal tema betg memorisadas", "topics.discardConfirm": "Sbirrar las midadas dal tema betg memorisadas?"});
+
 const catalog: Record<Locale, Messages> = { "de-CH": de, "fr-CH": fr, "it-CH": it, "rm-CH": rm, "en-CH": en };
 const localeCookie = "helvetic_lens_locale";
 

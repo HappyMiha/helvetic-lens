@@ -103,6 +103,8 @@ const otherPack = {
   subscription: { enabled: false },
 };
 let previewFailure = false;
+let dialogAccept = false;
+const dialogs = [];
 async function waitFor(check, message) {
   for (let i = 0; i < 150; i++) {
     if (
@@ -140,6 +142,10 @@ try {
       exceptionDetails.exception?.description || exceptionDetails.text,
     ),
   );
+  cdp.on("Page.javascriptDialogOpening", async ({ type, message }) => {
+    dialogs.push({ type, message });
+    await cdp.send("Page.handleJavaScriptDialog", { accept: dialogAccept });
+  });
   cdp.on("Fetch.requestPaused", async ({ requestId, request }) => {
     const url = new URL(request.url);
     requests.push({
@@ -220,6 +226,10 @@ try {
     );
   };
   const click = async (selector) => {
+    await evaluate(
+      cdp,
+      `new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))`,
+    );
     const point = await evaluate(
       cdp,
       `(() => {const el=document.querySelector(${JSON.stringify(selector)}); el.scrollIntoView({block:'center'}); const r=el.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2; return {x,y,visible:r.width>0&&r.height>0&&el.contains(document.elementFromPoint(x,y))};})()`,
@@ -392,6 +402,84 @@ try {
         ),
         topic(29).plan.name,
       );
+      // Four explicit discard decisions per locale/width; no backend write.
+      const guardStart = dialogs.length;
+      await fill("topic-goal", "Do not lose this edited topic draft.");
+      assert.ok(
+        await evaluate(cdp, `!!document.querySelector('[data-topic-unsaved]')`),
+      );
+      dialogAccept = false;
+      await click('[data-topic-edit="topic-0"]');
+      await waitFor(
+        () => dialogs.length === guardStart + 1,
+        "Switching topics did not ask about unsaved edits",
+      );
+      assert.equal(
+        await evaluate(
+          cdp,
+          `document.querySelector('[name="topic-goal"]').value`,
+        ),
+        "Do not lose this edited topic draft.",
+      );
+      assert.equal(
+        await evaluate(
+          cdp,
+          `document.querySelector('[name="topic-name"]').value`,
+        ),
+        topic(29).plan.name,
+      );
+      dialogAccept = true;
+      await click('[data-topic-edit="topic-0"]');
+      await waitFor(
+        () =>
+          evaluate(
+            cdp,
+            `document.querySelector('[name="topic-name"]').value === ${JSON.stringify(topic(0).plan.name)}`,
+          ),
+        "Accepted discard did not switch topics",
+      );
+      assert.equal(dialogs.length, guardStart + 2);
+      await click('[data-topic-edit="topic-29"]');
+      assert.equal(
+        dialogs.length,
+        guardStart + 2,
+        "An unchanged saved plan prompted unnecessarily",
+      );
+      await fill("topic-goal", "Keep this text when cancelling a new topic.");
+      dialogAccept = false;
+      await click("[data-topic-new]");
+      await waitFor(
+        () => dialogs.length === guardStart + 3,
+        "Starting a new topic did not protect the draft",
+      );
+      assert.equal(
+        await evaluate(
+          cdp,
+          `document.querySelector('[name="topic-goal"]').value`,
+        ),
+        "Keep this text when cancelling a new topic.",
+      );
+      dialogAccept = true;
+      await click("[data-topic-new]");
+      await waitFor(
+        () =>
+          evaluate(
+            cdp,
+            `document.querySelector('[name="topic-name"]').value === '' && !document.querySelector('[data-topic-unsaved]')`,
+          ),
+        "Accepted new topic did not reset the baseline",
+      );
+      assert.equal(dialogs.length, guardStart + 4);
+      await click('[data-topic-edit="topic-29"]');
+      await fill("topic-goal", "Temporary change");
+      await fill("topic-goal", topic(29).plan.goal);
+      await click('[data-topic-edit="topic-0"]');
+      assert.equal(
+        dialogs.length,
+        guardStart + 4,
+        "Reverting a change still caused a discard prompt",
+      );
+      await click('[data-topic-edit="topic-29"]');
       if (locale === "en-CH") {
         await mkdir(join(root, "test-results/topic-editor"), {
           recursive: true,
@@ -429,6 +517,18 @@ try {
     await evaluate(cdp, `document.querySelector('[name="topic-goal"]').value`),
     "Keep this revised goal after a failed preview.",
   );
+  dialogAccept = false;
+  const beforeReload = dialogs.length;
+  await cdp.send("Page.reload");
+  await waitFor(
+    () => dialogs.length === beforeReload + 1,
+    "Dirty draft reload did not raise native beforeunload",
+  );
+  assert.equal(dialogs.at(-1).type, "beforeunload");
+  assert.equal(
+    await evaluate(cdp, `document.querySelector('[name="topic-goal"]').value`),
+    "Keep this revised goal after a failed preview.",
+  );
   previewFailure = false;
   await click('.monitoring-topic-builder button[type="submit"]');
   await waitFor(
@@ -453,6 +553,14 @@ try {
   );
   assert.deepEqual(revision.body.exclusions, ["sport"]);
   assert.deepEqual(revision.body.synonyms, ["data protection"]);
+  await waitFor(
+    () =>
+      evaluate(
+        cdp,
+        `!document.querySelector('[data-topic-unsaved]') && !document.querySelector('.monitoring-topic-builder fieldset').disabled`,
+      ),
+    "Saved revision did not release the draft guard",
+  );
   viewer = true;
   await cdp.send("Page.navigate", { url: `${base}/topics?qa=viewer` });
   await waitFor(
@@ -476,13 +584,16 @@ try {
     false,
     "Manual topic editing must not call AI or activate source coverage",
   );
+  assert.equal(dialogs.filter((d) => d.type === "confirm").length, 40);
+  assert.equal(dialogs.filter((d) => d.type === "beforeunload").length, 1);
   assert.deepEqual(exceptions, []);
   console.log(
-    "Topic production UI: 10 required five-locale/mobile-desktop journeys passed; progressive scope, localized choices, polling-safe selections, no-AI preview/explicit activation, idempotency, hidden-scope recovery, busy protection, deep-list edit focus and retained failed draft. All APIs synthetic; no real monitoring/model call.",
+    "Topic production UI: 10 required five-locale/mobile-desktop journeys passed; progressive scope, localized choices, polling-safe selections, no-AI preview/explicit activation, idempotency, hidden-scope recovery, busy protection, deep-list edit focus, retained failed draft, 40 localized discard decisions and native reload cancellation. All APIs synthetic; no real monitoring/model call.",
   );
 } catch (error) {
   console.error({
     exceptions,
+    dialogs,
     requests: requests.slice(-10),
     page: cdp
       ? await evaluate(
