@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 import postcss from "postcss";
 import tailwindcss from "@tailwindcss/postcss";
 import { Cdp, evaluate, pollJson, sleep } from "./browser-cdp.mjs";
+import { analysisModeFixtures } from "./analysis-mode-fixtures.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const cssPath = join(root, "apps/web/app/globals.css");
@@ -60,6 +61,9 @@ const markup = `<div class="comparison-layout" data-mobile-surface="companion">
     ${sample("p", "Comparison versions", 'class="ai-history-facts"')}
     ${sample("span", "Citations", 'class="history-citations"')}
     ${sample("p", "Provider unavailable", 'class="error-note"')}
+    ${analysisModeFixtures().map(({ html, locale, mode }) => html
+      .replace("<strong>", `<strong data-contrast="Mode ${locale} ${mode}">`)
+      .replace("<p ", `<p data-contrast="Mode body ${locale} ${mode}" `)).join("\n")}
   </div></section></aside></div>`;
 
 // Composite transparent ancestor surfaces before WCAG relative luminance.

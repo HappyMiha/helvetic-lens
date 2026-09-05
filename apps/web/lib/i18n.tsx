@@ -2294,6 +2294,50 @@ const companionMessages: Record<Locale, Messages> = {
 };
 for (const locale of locales) Object.assign(catalogTarget(locale), companionMessages[locale]);
 
+const responseModeMessages: Record<Locale, Messages> = {
+  "en-CH": {
+    "aiMode.selected": "Selected evidence · impact not assessed",
+    "aiMode.selectedBody": "This mode selects saved passages; it does not explain their impact. Open the citations to review applicability, dates and possible actions. No assessment does not mean no action is needed.",
+    "aiMode.generated": "AI-generated explanation · verify the evidence",
+    "aiMode.deterministic": "Saved facts · no AI interpretation",
+    "aiMode.legacy": "Historical result · response mode was not recorded",
+    "status.not_reviewed": "Not reviewed",
+  },
+  "de-CH": {
+    "aiMode.selected": "Ausgewählte Belege · Auswirkungen nicht beurteilt",
+    "aiMode.selectedBody": "Dieser Modus wählt gespeicherte Passagen aus, erklärt aber ihre Auswirkungen nicht. Prüfen Sie anhand der Belege Anwendbarkeit, Termine und mögliche Massnahmen. Eine fehlende Beurteilung bedeutet nicht, dass kein Handlungsbedarf besteht.",
+    "aiMode.generated": "KI-generierte Erklärung · Belege prüfen",
+    "aiMode.deterministic": "Gespeicherte Fakten · keine KI-Auslegung",
+    "aiMode.legacy": "Historisches Ergebnis · Antwortmodus nicht erfasst",
+    "status.not_reviewed": "Nicht geprüft",
+  },
+  "fr-CH": {
+    "aiMode.selected": "Éléments sélectionnés · impact non évalué",
+    "aiMode.selectedBody": "Ce mode sélectionne des passages enregistrés sans expliquer leur impact. Ouvrez les citations pour examiner l’applicabilité, les dates et les actions possibles. L’absence d’évaluation ne signifie pas qu’aucune action n’est nécessaire.",
+    "aiMode.generated": "Explication générée par l’IA · vérifier les preuves",
+    "aiMode.deterministic": "Faits enregistrés · sans interprétation par l’IA",
+    "aiMode.legacy": "Résultat historique · mode de réponse non enregistré",
+    "status.not_reviewed": "Non examiné",
+  },
+  "it-CH": {
+    "aiMode.selected": "Prove selezionate · impatto non valutato",
+    "aiMode.selectedBody": "Questa modalità seleziona passaggi salvati senza spiegarne l’impatto. Apri le citazioni per esaminare applicabilità, date e possibili azioni. L’assenza di valutazione non significa che non occorra agire.",
+    "aiMode.generated": "Spiegazione generata dall’IA · verificare le prove",
+    "aiMode.deterministic": "Fatti salvati · nessuna interpretazione dell’IA",
+    "aiMode.legacy": "Risultato storico · modalità di risposta non registrata",
+    "status.not_reviewed": "Non esaminato",
+  },
+  "rm-CH": {
+    "aiMode.selected": "Cumprovas tschernidas · influenza betg valitada",
+    "aiMode.selectedBody": "Quest modus tscherna passadis memorisads senza explitgar lur influenza. Avri las citaziuns per examinar l’applicabladad, las datas e las mesiras pussaivlas. Ina valitaziun mancanta na signifitga betg ch’i na dovria naginas mesiras.",
+    "aiMode.generated": "Explicaziun generada da l’IA · verificar las cumprovas",
+    "aiMode.deterministic": "Fatgs memorisads · nagina interpretaziun da l’IA",
+    "aiMode.legacy": "Resultat istoric · modus da resposta betg registrà",
+    "status.not_reviewed": "Betg examinà",
+  },
+};
+for (const locale of locales) Object.assign(catalogTarget(locale), responseModeMessages[locale]);
+
 const catalog: Record<Locale, Messages> = { "de-CH": de, "fr-CH": fr, "it-CH": it, "rm-CH": rm, "en-CH": en };
 const localeCookie = "helvetic_lens_locale";
 

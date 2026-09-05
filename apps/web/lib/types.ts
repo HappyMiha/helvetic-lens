@@ -254,15 +254,18 @@ export type AnalysisPlan = {
     result_url: string;
   };
 };
+export type ResponseMode = "selected_evidence" | "generated_explanation" | "deterministic";
 export type Impact = {
   summary: string;
-  impact: "high" | "medium" | "low";
+  impact: "high" | "medium" | "low" | "unknown";
   reason: string;
   business_areas: string[];
-  schema_version?: "impact-report-v2";
+  schema_version?: "impact-report-v2" | "impact-report-v3";
+  response_mode?: ResponseMode;
+  assessment_status?: "assessed" | "not_assessed" | "not_required";
   output_locale?: string;
   headline?: string;
-  materiality?: "high" | "medium" | "low";
+  materiality?: "high" | "medium" | "low" | "unknown";
   evidence_grade?: "confirmed" | "supported" | "possible" | "needs_review";
   material_changes?: {
     change_id: string;
@@ -294,7 +297,7 @@ export type Impact = {
     kind: "effective_date" | "deadline" | "transition" | "other";
     label: string;
     date: string | null;
-    status: "found" | "not_found" | "uncertain";
+    status: "found" | "not_found" | "uncertain" | "not_reviewed";
     evidence_grade: "confirmed" | "supported" | "possible" | "needs_review";
     citations: Citation[];
   }[];
@@ -1206,6 +1209,7 @@ export type Profile = {
   revision: number;
 };
 export type Answer = {
+  response_mode?: ResponseMode;
   supported: boolean;
   answer: string;
   citations: Citation[];

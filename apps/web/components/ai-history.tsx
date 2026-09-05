@@ -18,8 +18,10 @@ import type {
   Change,
   Citation,
   Impact,
+  ResponseMode,
 } from "@/lib/types";
 import { ErrorNote, Loading, Status } from "./common";
+import { AnalysisModeNotice } from "./analysis-mode-notice";
 import { localeNames, type Locale, useI18n } from "@/lib/i18n";
 
 export function AIHistory({
@@ -115,6 +117,7 @@ function HistoryItem({
           answer: string;
           citations: Citation[];
           context_mode?: string;
+          response_mode?: ResponseMode;
         } | null)
       : null;
   const title =
@@ -266,6 +269,7 @@ function HistoryItem({
         )}
         {impact && (
           <div className="ai-history-result">
+            <AnalysisModeNotice mode={impact.response_mode} />
             <div className="flex items-center gap-2 mb-2">
               <Status value={impact.impact} />
               <strong>{impact.headline || impact.summary}</strong>
@@ -323,6 +327,7 @@ function HistoryItem({
             <p className="font-semibold">{item.question}</p>
             {answer && (
               <>
+                <AnalysisModeNotice mode={answer.response_mode} />
                 {!answer.supported && (
                   <strong className="text-sm">
                     {t("history.notSupported")}

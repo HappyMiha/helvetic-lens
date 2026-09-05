@@ -57,6 +57,7 @@ import type {
 } from "@/lib/types";
 import { ErrorNote, Loading, Status } from "./common";
 import { AIHistory } from "./ai-history";
+import { AnalysisModeNotice } from "./analysis-mode-notice";
 import { Shell } from "./shell";
 import { useAuth } from "./auth-gate";
 import { storedLocale, translate, type Locale, useI18n } from "@/lib/i18n";
@@ -224,7 +225,7 @@ const localizedValues: Record<ComparisonLocale, Record<string, string>> = {
 };
 
 function localLabel(value: string, locale: ComparisonLocale) {
-  return localizedValues[locale][value] || label(value);
+  return localizedValues[locale][value] || translate(`${locale}-CH` as Locale, `status.${value}`) || label(value);
 }
 
 function completedAnalysis(job: Job): Analysis | null {
@@ -1052,7 +1053,7 @@ export function ComparisonView({ id }: { id: string }) {
                 <div className="panel-header">
                   <div className="flex items-center gap-2">
                     <Sparkles size={18} className="text-primary" />
-                    <h2>{t("compare.currentReport")}</h2>
+                    <h2>{t(analysis?.result?.response_mode === "selected_evidence" ? "aiMode.selected" : "compare.currentReport")}</h2>
                   </div>
                   {analysis?.result && (
                     <Status value={analysis.result.impact} />
@@ -1113,6 +1114,7 @@ export function ComparisonView({ id }: { id: string }) {
                   )}
                   {analysis?.status === "succeeded" && analysis.result ? (
                     <>
+                      <AnalysisModeNotice mode={analysis.result.response_mode} />
                       <div className="impact-report-heading">
                         <span className="eyebrow">
                           {t("compare.whatChanged")}
@@ -1308,10 +1310,10 @@ export function ComparisonView({ id }: { id: string }) {
                           </ul>
                         </details>
                       )}
-                      <ActionPreview
+                      {analysis.result.response_mode !== "selected_evidence" && <ActionPreview
                         actions={analysis.result.actions}
                         onOpen={() => openCompanion("actions")}
-                      />
+                      />}
                       <details className="impact-details provenance-disclosure">
                         <summary>
                           <ListChecks size={14} /> {t("compare.provenance")}
@@ -1626,7 +1628,9 @@ function ActionsPanel({
         {identityBlocked ? (
           <div className="historical-note">{t("compare.analysisBlocked")}</div>
         ) : analysis?.status === "succeeded" && analysis.result ? (
-          analysis.result.actions.length ? (
+          analysis.result.response_mode === "selected_evidence" ? (
+            <AnalysisModeNotice mode="selected_evidence" />
+          ) : analysis.result.actions.length ? (
             <ol className="action-list">
               {analysis.result.actions.map((action, index) => (
                 <li key={action.action_key || index}>
@@ -2755,6 +2759,7 @@ function SavedQuestionTurn({
     | "suggestions"
     | "intent"
     | "context_mode"
+    | "response_mode"
     | "reused_impact_report_id"
   > | null;
   return (
@@ -2765,6 +2770,7 @@ function SavedQuestionTurn({
           <ErrorNote message={item.error || t("compare.savedRequestFailed")} />
         ) : answer ? (
           <>
+            <AnalysisModeNotice mode={answer.response_mode} />
             {!answer.supported && (
               <strong className="block mb-2">
                 {t("compare.notSupported")}

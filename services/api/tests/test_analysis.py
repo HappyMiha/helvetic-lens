@@ -53,7 +53,7 @@ def test_timeout_keeps_diff_retry_only_analysis_and_profile_invalidates_cache(ha
     result = client.post(route).json()
     assert result["status"] == "succeeded" and result["cached"] is False
     report = result["result"]
-    assert report["schema_version"] == "impact-report-v2"
+    assert report["schema_version"] == "impact-report-v3"
     assert report["headline"] and report["materiality"] == report["impact"]
     assert report["material_changes"][0]["old_unit"]["passage_id"]
     assert report["material_changes"][0]["new_unit"]["passage_id"]
@@ -986,19 +986,19 @@ def test_small_local_model_change_evidence_is_rendered_in_the_selected_language(
     ]
 
     assert localized_cited_change_answer(citations, "old", "new", "de-CH", "fallback").startswith(
-        "Der Wortlaut wurde"
+        "Früherer gespeicherter Wortlaut"
     )
     assert localized_cited_change_answer(citations, "old", "new", "fr-CH", "fallback").startswith(
-        "Le libellé est passé"
+        "Texte antérieur enregistré"
     )
     assert localized_cited_change_answer(citations, "old", "new", "it-CH", "fallback").startswith(
-        "Il testo è stato modificato"
+        "Testo precedente salvato"
     )
     assert localized_cited_change_answer(citations, "old", "new", "rm-CH", "fallback").startswith(
-        "Il text è vegnì midà"
+        "Text precedent memorisà"
     )
     assert localized_cited_change_answer(citations, "old", "new", "en-CH", "fallback").startswith(
-        "The wording changed"
+        "Earlier saved wording"
     )
 
 

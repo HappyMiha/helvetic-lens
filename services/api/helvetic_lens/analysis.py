@@ -14,9 +14,10 @@ from .extraction import normalize
 from .integration_logs import IntegrationLogger, response_snapshot
 from .models import Comparison, Profile, Version
 from .prompt_settings import PromptSettings, default_prompt_settings, prompt_fingerprint
+from .selected_evidence import selected_evidence_copy
 
-PROMPT_VERSION = "helvetic-lens-v9-bounded-regulatory-triage"
-IMPACT_REPORT_SCHEMA_VERSION = "impact-report-v2"
+PROMPT_VERSION = "helvetic-lens-v10-explicit-response-mode"
+IMPACT_REPORT_SCHEMA_VERSION = "impact-report-v3"
 DEFAULT_OUTPUT_LOCALE = "en-CH"
 ASK_ROUTER_VERSION = "ask-intent-v1"
 MAX_IMPACT_BATCHES = 3
@@ -73,6 +74,7 @@ class Impact(StructuredOutput):
 
 
 EvidenceGrade = Literal["confirmed", "supported", "possible", "needs_review"]
+ResponseMode = Literal["selected_evidence", "generated_explanation", "deterministic"]
 
 
 class LegalUnitReference(StructuredOutput):
@@ -104,7 +106,7 @@ class ImportantDateReport(StructuredOutput):
     kind: Literal["effective_date", "deadline", "transition", "other"]
     label: str = Field(min_length=1, max_length=300)
     date: str | None = None
-    status: Literal["found", "not_found", "uncertain"]
+    status: Literal["found", "not_found", "uncertain", "not_reviewed"]
     evidence_grade: EvidenceGrade
     citations: list[Citation] = Field(default_factory=list, max_length=4)
 
@@ -143,10 +145,12 @@ class ImpactEvidenceCoverage(StructuredOutput):
 
 
 class ImpactReport(StructuredOutput):
-    schema_version: Literal["impact-report-v2"]
+    schema_version: Literal["impact-report-v3"]
+    response_mode: ResponseMode
+    assessment_status: Literal["assessed", "not_assessed", "not_required"]
     output_locale: str
     headline: str = Field(min_length=1, max_length=500)
-    materiality: Literal["high", "medium", "low"]
+    materiality: Literal["high", "medium", "low", "unknown"]
     summary: str = Field(min_length=1, max_length=3000)
     reason: str = Field(min_length=1, max_length=2000)
     material_changes: list[MaterialChangeReport] = Field(default_factory=list, max_length=8)
@@ -159,7 +163,7 @@ class ImpactReport(StructuredOutput):
     actions: list[ReviewActionReport] = Field(default_factory=list, max_length=5)
     citations: list[Citation] = Field(default_factory=list, max_length=10)
     # Compatibility for older clients while the richer materiality field is adopted.
-    impact: Literal["high", "medium", "low"]
+    impact: Literal["high", "medium", "low", "unknown"]
 
 
 class Answer(StructuredOutput):
@@ -2201,6 +2205,8 @@ def finalize_impact_report(
     sentence = re.split(r"(?<=[.!?])\s+", headline, maxsplit=1)[0]
     report = {
         "schema_version": IMPACT_REPORT_SCHEMA_VERSION,
+        "response_mode": result.get("response_mode", "generated_explanation"),
+        "assessment_status": "assessed" if has_material else "not_required",
         "output_locale": output_locale,
         "headline": (sentence or headline or "Impact review")[:500],
         "materiality": result.get("impact", "low"),
@@ -2252,6 +2258,28 @@ def finalize_impact_report(
         "citations": citations,
         "impact": result.get("impact", "low"),
     }
+    if report["response_mode"] == "selected_evidence":
+        # A row selector has not assessed impact, applicability or obligations.
+        # Do not turn a model-emitted enum or copied company profile into a finding.
+        copy = selected_evidence_copy(output_locale)
+        report.update(
+            headline=copy["headline"], summary=copy["summary"], reason=copy["reason"],
+            assessment_status="not_assessed", materiality="unknown", impact="unknown",
+            business_areas=[], actions=[], evidence_grade="needs_review",
+            organization_applicability={
+                "status": "unknown", "explanation": copy["reason"],
+                "evidence_grade": "needs_review", "citations": [],
+            },
+            uncertainties=[copy["reason"]],
+        )
+        for date in report["important_dates"]:
+            date["status"] = "not_reviewed"
+        for change in report["material_changes"]:
+            change["explanation"] = "\n".join(
+                f"{copy['earlier' if row['side'] == 'old' else 'current']}: "
+                f"{evidence_citation(row)['quote'][:440]}"
+                for row in rows_by_change[change["change_id"]][:2]
+            )[:1200]
     validated = ImpactReport.model_validate(report).model_dump()
     keys = [action["action_key"] for action in validated["actions"]]
     if len(keys) != len(set(keys)):
@@ -2324,7 +2352,7 @@ def local_answer_synthesis(answers: list[dict]) -> dict:
 def localized_cited_change_answer(
     citations: list[dict], old_version_id: str, new_version_id: str, output_locale: str, fallback: str
 ) -> str:
-    """Render validated local-model evidence as concise prose when a small model echoes row labels."""
+    """Label selected quotations without inferring changes from citation absence/order."""
 
     old_quotes = distinct_texts(
         [item for item in citations if item.get("version_id") == old_version_id], "quote", 3, 1400
@@ -2334,41 +2362,12 @@ def localized_cited_change_answer(
     )
     if not old_quotes and not new_quotes:
         return fallback
-    templates = {
-        "de-CH": {
-            "changed": "Der Wortlaut wurde von „{old}“ zu „{new}“ geändert.",
-            "removed": "Der frühere Wortlaut „{old}“ wurde entfernt.",
-            "added": "Der neue Wortlaut „{new}“ wurde hinzugefügt.",
-        },
-        "fr-CH": {
-            "changed": "Le libellé est passé de « {old} » à « {new} ».",
-            "removed": "L’ancien libellé « {old} » a été supprimé.",
-            "added": "Le nouveau libellé « {new} » a été ajouté.",
-        },
-        "it-CH": {
-            "changed": "Il testo è stato modificato da « {old} » a « {new} ».",
-            "removed": "Il testo precedente « {old} » è stato eliminato.",
-            "added": "È stato aggiunto il nuovo testo « {new} ».",
-        },
-        "rm-CH": {
-            "changed": "Il text è vegnì midà da « {old} » a « {new} ».",
-            "removed": "Il text precedent « {old} » è vegnì eliminà.",
-            "added": "Il nov text « {new} » è vegnì agiuntà.",
-        },
-        "en-CH": {
-            "changed": "The wording changed from “{old}” to “{new}”.",
-            "removed": "The earlier wording “{old}” was removed.",
-            "added": "The new wording “{new}” was added.",
-        },
-    }
-    language = templates.get(output_locale, templates[DEFAULT_OUTPUT_LOCALE])
+    copy = selected_evidence_copy(output_locale)
     sentences = []
-    for index in range(max(len(old_quotes), len(new_quotes))):
-        old_quote = old_quotes[index][:440] if index < len(old_quotes) else ""
-        new_quote = new_quotes[index][:440] if index < len(new_quotes) else ""
-        kind = "changed" if old_quote and new_quote else "removed" if old_quote else "added"
-        sentences.append(language[kind].format(old=old_quote, new=new_quote))
-    return " ".join(sentences)[:6000]
+    for key, quotes in (("earlier", old_quotes), ("current", new_quotes)):
+        if quotes:
+            sentences.append(f"{copy[key]}: " + " | ".join(quotes))
+    return "\n\n".join(sentences)[:6000]
 
 
 def select_evidence(
@@ -2789,7 +2788,8 @@ async def impact_analysis(
     if not evidence:
         coverage["provider_calls"] = 0
         result = {
-                "summary": "No substantive wording change was detected after removing PDF reflow, page counters, and pure renumbering from the complete exact comparison.",
+            "response_mode": "deterministic",
+            "summary": "No substantive wording change was detected after removing PDF reflow, page counters, and pure renumbering from the complete exact comparison.",
                 "impact": "low",
                 "reason": "The saved files still have exact textual differences, but the deterministic triage classified them as formatting or structural noise.",
                 "business_areas": [],
@@ -2896,6 +2896,8 @@ async def impact_analysis(
     if settings.apertus_provider == "docker":
         coverage["provider_calls"] = request_budget.used
         result = local_impact_synthesis(reviews)
+        result["response_mode"] = "selected_evidence"
+        coverage["response_mode"] = "selected_evidence"
         return finalize_impact_report(
             result, comparison, evidence, coverage, output_locale=output_locale
         ), coverage
@@ -3251,6 +3253,24 @@ def answer_from_impact_report(intent: str, locale: str, impact_report: dict | No
     ):
         return None
     changes = report.get("material_changes", [])
+    if report.get("response_mode") == "selected_evidence":
+        copy = selected_evidence_copy(locale)
+        selected_changes = changes[:3] if intent == "explain_changes" else []
+        return {
+            "supported": intent == "explain_changes",
+            "answer": "\n\n".join([
+                copy["summary"],
+                *[item["explanation"] for item in selected_changes],
+                copy["reason"],
+            ])[:6000],
+            "response_mode": "selected_evidence",
+            "citations": _distinct_report_citations([
+                *report.get("citations", []),
+                *[citation for item in selected_changes for citation in item.get("citations", [])],
+            ]),
+            "reused_impact_report_id": wrapper.get("id"),
+            "selected_change_ids": [item["change_id"] for item in changes],
+        }
     if intent == "explain_changes":
         details = [normalize(str(item.get("explanation", ""))) for item in changes[:4]]
         answer = " ".join([report.get("headline", ""), *details]).strip()
@@ -3282,6 +3302,7 @@ def answer_from_impact_report(intent: str, locale: str, impact_report: dict | No
         "supported": True,
         "answer": answer[:6000],
         "citations": _distinct_report_citations(citations),
+        "response_mode": report.get("response_mode", "generated_explanation"),
         "reused_impact_report_id": wrapper.get("id"),
         "selected_change_ids": [item.get("change_id") for item in changes if item.get("change_id")],
     }
@@ -3388,9 +3409,14 @@ async def answer_question(
             for citation in payload.get("citations", [])
             if isinstance(citation, dict)
         ]
+        response_mode = payload.get("response_mode") or (
+            "selected_evidence" if request_budget.used and settings.apertus_provider == "docker"
+            else "generated_explanation" if request_budget.used else "deterministic"
+        )
         return {
             **payload,
-            "coverage": coverage,
+            "response_mode": response_mode,
+            "coverage": {**coverage, "response_mode": response_mode},
             "model": settings.apertus_model,
             "context_mode": context_mode,
             "intent": intent,
@@ -3585,6 +3611,7 @@ async def answer_question(
             result = {
                 "supported": True,
                 "answer": deterministic_change_overview(question, deterministic_context, coverage),
+                "response_mode": "deterministic",
                 "citations": [],
                 "suggestions": [
                     "Explain the material changes simply",
@@ -3637,6 +3664,7 @@ async def answer_question(
             return routed({
                 "supported": True,
                 "answer": deterministic_change_overview(question, deterministic_context, coverage),
+                "response_mode": "deterministic",
                 "suggestions": [
                     "Explain the material changes simply",
                     "Show new obligations or deadlines",
@@ -3647,12 +3675,18 @@ async def answer_question(
         return routed({
             "supported": False,
             "answer": unsupported_evidence_answer(question),
+            "response_mode": "deterministic",
             "citations": [],
-        }, coverage, context_mode, selected_change_ids=selected_change_ids)
+        }, {**coverage, "provider_calls": request_budget.used}, context_mode,
+            selected_change_ids=selected_change_ids)
 
     if settings.apertus_provider == "docker":
         result = local_answer_synthesis(supported_answers)
-        if intent == "explain_changes":
+        result["response_mode"] = "selected_evidence"
+        if intent in {"organization_impact", "actions"}:
+            result["supported"] = False
+            result["answer"] = selected_evidence_copy(output_locale)["reason"]
+        elif intent == "explain_changes":
             result["answer"] = localized_cited_change_answer(
                 result["citations"], old.id, new.id, output_locale, result["answer"]
             )

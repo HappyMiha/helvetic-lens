@@ -1698,11 +1698,13 @@ Acceptance criteria:
 
 ### HL-091 — Make local answers depend on verified model capability
 
-**Priority:** P0. **Status:** PLANNED. **Dependencies:** HL-031, HL-060, HL-093. **Owner role:** AI/backend.
+**Priority:** P0. **Status:** IN PROGRESS. **Dependencies:** HL-031, HL-060, HL-093. **Owner role:** AI/backend.
 
 Problem: the Docker path selects rows and concatenates excerpts regardless of whether the configured model could produce a useful explanation.
 
 Deliverable: versioned capability-based answer modes through the existing runtime/planner, with explicit limited/extractive and explanatory modes.
+
+**Implemented 5 September 2026 (truthful limited-mode slice):** Report v3 and persisted Ask results distinguish selected evidence, generated explanation and deterministic output. The current tiny-model adapter no longer publishes an impact rating, copied profile applicability, absent-date claim or action/no-action conclusion. Selected quotations cannot imply addition/removal or pair unrelated articles. Cached answers preserve the mode; prior reports remain immutable and stale under the new cache boundary. The comparison/actions/chat/history UI explains the limit in all five locales. **Remaining:** replace provider-based adapter selection with an approved model/profile/revision/task/locale capability registry, bind it to evaluation and token budgets, validate explanatory profiles on HL-093 and the target host. No profile was promoted and no independent semantic evaluation is claimed. See [report contract](docs/IMPACT_REPORT.md).
 
 Acceptance criteria:
 
