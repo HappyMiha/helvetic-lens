@@ -57,6 +57,9 @@ const requests = [],
   exceptions = [];
 let locale = "en-CH";
 let viewer = false;
+let qaUser = "qa",
+  qaOrganization = "qa-org",
+  saveFailure = false;
 const plan = {
   name: "Synthetic long topic — Datenschutz und parlamentarische Entwicklungen / protection des données",
   goal: "Follow fictional privacy developments in the saved organization corpus.",
@@ -158,8 +161,8 @@ try {
     if (url.pathname === "/api/auth/session")
       body = {
         authenticated: true,
-        user: { id: "qa", name: "QA", email: "qa@example.invalid", locale },
-        organization: { id: "qa-org", name: "Synthetic QA" },
+        user: { id: qaUser, name: "QA", email: "qa@example.invalid", locale },
+        organization: { id: qaOrganization, name: "Synthetic QA" },
         role: viewer ? "viewer" : "organization_admin",
         platform_admin: false,
       };
@@ -193,8 +196,10 @@ try {
       url.pathname === "/api/monitoring-topics" &&
       request.method === "POST"
     ) {
-      code = 201;
-      body = topic("new");
+      code = saveFailure ? 503 : 201;
+      body = saveFailure
+        ? { detail: "Synthetic interrupted activation" }
+        : topic("new");
     } else if (
       url.pathname.startsWith("/api/monitoring-topics/") &&
       request.method === "PUT"
@@ -480,6 +485,85 @@ try {
         "Reverting a change still caused a discard prompt",
       );
       await click('[data-topic-edit="topic-29"]');
+      // A real accepted reload loses React memory, but requires explicit recovery.
+      await fill("topic-goal", `Recover this ${locale} ${width} edit.`);
+      await waitFor(
+        () =>
+          evaluate(
+            cdp,
+            `!!document.querySelector('[data-topic-tab-saved]') && Object.keys(sessionStorage).some(key=>key.startsWith('helvetic-topic-tab-v1:'))`,
+          ),
+        "Tab draft was not stored",
+      );
+      const writesBeforeRecovery = requests.filter(
+        (r) =>
+          r.method !== "GET" && r.path.startsWith("/api/monitoring-topics"),
+      ).length;
+      dialogAccept = true;
+      await cdp.send("Page.reload");
+      await waitFor(
+        () =>
+          evaluate(
+            cdp,
+            `!!document.querySelector('[data-topic-recovery]') && document.querySelector('.monitoring-topic-builder fieldset').disabled`,
+          ),
+        "Reload did not offer a saved draft",
+      );
+      assert.equal(
+        requests.filter(
+          (r) =>
+            r.method !== "GET" && r.path.startsWith("/api/monitoring-topics"),
+        ).length,
+        writesBeforeRecovery,
+        "Recovery must not submit or ask AI",
+      );
+      assert.ok(
+        await evaluate(cdp, `!document.querySelector('[data-topic-save]')`),
+      );
+      if (locale === "en-CH") {
+        await mkdir(join(root, "test-results/topic-editor"), {
+          recursive: true,
+        });
+        const shot = await cdp.send("Page.captureScreenshot", {
+          format: "png",
+        });
+        await writeFile(
+          join(root, "test-results/topic-editor", `recovery-${width}.png`),
+          Buffer.from(shot.data, "base64"),
+        );
+      }
+      await click("[data-topic-restore]");
+      await waitFor(
+        () =>
+          evaluate(
+            cdp,
+            `document.activeElement.name === 'topic-name' && !document.querySelector('[data-topic-recovery]')`,
+          ),
+        "Restored draft did not focus editor",
+      );
+      assert.equal(
+        await evaluate(
+          cdp,
+          `document.querySelector('[name="topic-goal"]').value`,
+        ),
+        `Recover this ${locale} ${width} edit.`,
+      );
+      assert.ok(
+        await evaluate(
+          cdp,
+          `!!document.querySelector('[data-topic-unsaved]') && !document.querySelector('[data-topic-save]')`,
+        ),
+      );
+      // Restoring preserves the loaded baseline; reverting clears storage.
+      await fill("topic-goal", topic(29).plan.goal);
+      await waitFor(
+        () =>
+          evaluate(
+            cdp,
+            `!document.querySelector('[data-topic-unsaved]') && !Object.keys(sessionStorage).some(key=>key.startsWith('helvetic-topic-tab-v1:'))`,
+          ),
+        "Reverted recovered draft was not cleared",
+      );
       if (locale === "en-CH") {
         await mkdir(join(root, "test-results/topic-editor"), {
           recursive: true,
@@ -561,6 +645,153 @@ try {
       ),
     "Saved revision did not release the draft guard",
   );
+  // Preserve the activation key across a failed write and real reload.
+  await fill("topic-name", "Retry recovered activation");
+  await fill(
+    "topic-goal",
+    "Keep the same explicit activation after connection loss.",
+  );
+  await fill("topic-concepts", "privacy");
+  await click('.monitoring-topic-builder button[type="submit"]');
+  await waitFor(
+    () =>
+      evaluate(
+        cdp,
+        `!!document.querySelector('[data-topic-save]') && !document.querySelector('.monitoring-topic-builder fieldset').disabled`,
+      ),
+    "Activation retry preview missing",
+  );
+  saveFailure = true;
+  await click("[data-topic-save]");
+  await waitFor(
+    () =>
+      evaluate(
+        cdp,
+        `document.querySelector('.monitoring-topic-builder').textContent.includes('Synthetic interrupted activation') && !document.querySelector('.monitoring-topic-builder fieldset').disabled`,
+      ),
+    "Failed activation lost editable plan",
+  );
+  const activationKey = requests
+    .filter((r) => r.method === "POST" && r.path === "/api/monitoring-topics")
+    .at(-1).body.idempotency_key;
+  dialogAccept = true;
+  await cdp.send("Page.reload");
+  await waitFor(
+    () => evaluate(cdp, `!!document.querySelector('[data-topic-recovery]')`),
+    "Failed activation not recoverable",
+  );
+  await click("[data-topic-restore]");
+  await click('.monitoring-topic-builder button[type="submit"]');
+  await waitFor(
+    () =>
+      evaluate(
+        cdp,
+        `!!document.querySelector('[data-topic-save]') && !document.querySelector('.monitoring-topic-builder fieldset').disabled`,
+      ),
+    "Recovered activation needs fresh preview",
+  );
+  saveFailure = false;
+  await click("[data-topic-save]");
+  await waitFor(
+    () =>
+      evaluate(
+        cdp,
+        `!document.querySelector('[data-topic-unsaved]') && !document.querySelector('.monitoring-topic-builder fieldset').disabled`,
+      ),
+    "Recovered activation did not save",
+  );
+  assert.equal(
+    requests
+      .filter((r) => r.method === "POST" && r.path === "/api/monitoring-topics")
+      .at(-1).body.idempotency_key,
+    activationKey,
+  );
+  assert.ok(
+    await evaluate(
+      cdp,
+      `!Object.keys(sessionStorage).some(key=>key.startsWith('helvetic-topic-tab-v1:'))`,
+    ),
+  );
+
+  // Storage denial is visible; successful recovery remains optional, never automatic.
+  await evaluate(
+    cdp,
+    `window.qaStorageSet = Storage.prototype.setItem; Storage.prototype.setItem = function(){throw new DOMException('Synthetic quota','QuotaExceededError')}`,
+  );
+  await fill("topic-goal", "Keep this draft in the original account only.");
+  await waitFor(
+    () =>
+      evaluate(cdp, `!!document.querySelector('[data-topic-storage-error]')`),
+    "Storage failure was silent",
+  );
+  assert.ok(
+    await evaluate(cdp, `!document.querySelector('[data-topic-tab-saved]')`),
+  );
+  await evaluate(cdp, `Storage.prototype.setItem = window.qaStorageSet`);
+  await fill("topic-name", "Original account draft");
+  await waitFor(
+    () => evaluate(cdp, `!!document.querySelector('[data-topic-tab-saved]')`),
+    "Storage did not recover",
+  );
+  // Use the actual Next navigation link and browser Back, without a reload.
+  await click('a[href="/registry"]');
+  await waitFor(
+    () => evaluate(cdp, `location.pathname === '/registry'`),
+    "Registry navigation did not complete",
+  );
+  const routeHistory = await cdp.send("Page.getNavigationHistory");
+  await cdp.send("Page.navigateToHistoryEntry", {
+    entryId: routeHistory.entries[routeHistory.currentIndex - 1].id,
+  });
+  await waitFor(
+    () =>
+      evaluate(
+        cdp,
+        `location.pathname === '/topics' && !!document.querySelector('[data-topic-recovery]')`,
+      ),
+    "Client route/Back lost the saved draft",
+  );
+  await click("[data-topic-restore]");
+  assert.equal(
+    await evaluate(cdp, `document.querySelector('[name="topic-goal"]').value`),
+    "Keep this draft in the original account only.",
+  );
+  qaUser = "another-user";
+  await cdp.send("Page.navigate", { url: `${base}/topics?qa=other-user` });
+  await waitFor(
+    () =>
+      evaluate(
+        cdp,
+        `!!document.querySelector('[name="topic-goal"]') && !document.querySelector('[data-topic-recovery]') && document.querySelector('[name="topic-goal"]').value === ''`,
+      ),
+    "Another user saw the first account's draft",
+  );
+  qaUser = "qa";
+  qaOrganization = "another-org";
+  await cdp.send("Page.navigate", { url: `${base}/topics?qa=other-org` });
+  await waitFor(
+    () =>
+      evaluate(
+        cdp,
+        `!!document.querySelector('[name="topic-goal"]') && !document.querySelector('[data-topic-recovery]') && document.querySelector('[name="topic-goal"]').value === ''`,
+      ),
+    "Another organization saw a foreign draft",
+  );
+  qaOrganization = "qa-org";
+  await cdp.send("Page.navigate", { url: `${base}/topics?qa=original-scope` });
+  await waitFor(
+    () => evaluate(cdp, `!!document.querySelector('[data-topic-recovery]')`),
+    "Original account lost its retained draft",
+  );
+  await click("[data-topic-discard-recovery]");
+  await waitFor(
+    () =>
+      evaluate(
+        cdp,
+        `!document.querySelector('[data-topic-recovery]') && !Object.keys(sessionStorage).some(key=>key.startsWith('helvetic-topic-tab-v1:'))`,
+      ),
+    "Explicit discard did not clear the tab draft",
+  );
   viewer = true;
   await cdp.send("Page.navigate", { url: `${base}/topics?qa=viewer` });
   await waitFor(
@@ -585,10 +816,10 @@ try {
     "Manual topic editing must not call AI or activate source coverage",
   );
   assert.equal(dialogs.filter((d) => d.type === "confirm").length, 40);
-  assert.equal(dialogs.filter((d) => d.type === "beforeunload").length, 1);
+  assert.equal(dialogs.filter((d) => d.type === "beforeunload").length, 13);
   assert.deepEqual(exceptions, []);
   console.log(
-    "Topic production UI: 10 required five-locale/mobile-desktop journeys passed; progressive scope, localized choices, polling-safe selections, no-AI preview/explicit activation, idempotency, hidden-scope recovery, busy protection, deep-list edit focus, retained failed draft, 40 localized discard decisions and native reload cancellation. All APIs synthetic; no real monitoring/model call.",
+    "Topic production UI: 10 required five-locale/mobile-desktop journeys passed; progressive scope, localized choices, polling-safe selections, no-AI preview/explicit activation, idempotency, hidden-scope recovery, busy protection, deep-list edit focus, retained failed draft, 40 localized discard decisions, native reload cancellation and 10 accepted reload/explicit restore journeys with no automatic writes; activation retry key recovery, storage denial, actual client navigation/Back, account/organization isolation and explicit discard. All APIs synthetic; no real monitoring/model call.",
   );
 } catch (error) {
   console.error({

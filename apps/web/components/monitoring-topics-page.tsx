@@ -28,6 +28,16 @@ import type {
   MonitoringTopicPlan,
   MonitoringTopicPreview,
 } from "@/lib/types";
+import {
+  topicDraftKey,
+  readTopicDraft,
+  writeTopicDraft,
+  removeTopicDraft,
+  type TopicForm as FormPlan,
+  type TopicTabDraft,
+  type TopicEditIdentity,
+  type TopicAiIdentity,
+} from "@/lib/topic-tab-draft";
 import { useAuth } from "./auth-gate";
 import { ErrorNote, Loading, Status, SuccessNote } from "./common";
 import { Shell } from "./shell";
@@ -59,16 +69,6 @@ const EVENT_KINDS = [
   "notice_published",
 ];
 const LANGUAGES = ["de", "fr", "it", "rm", "en"];
-
-type FormPlan = Omit<
-  MonitoringTopicPlan,
-  "concepts" | "synonyms" | "exclusions" | "jurisdictions"
-> & {
-  concepts: string;
-  synonyms: string;
-  exclusions: string;
-  jurisdictions: string;
-};
 
 const initialPlan: FormPlan = {
   name: "",
@@ -187,6 +187,17 @@ function Choices({
 }
 
 export function MonitoringTopicsPage() {
+  const { session } = useAuth();
+  const principal = session?.authenticated
+    ? session.user?.id
+    : session?.anonymous_development
+      ? "anonymous-development"
+      : undefined;
+  const scope = topicDraftKey(principal, session?.organization?.id);
+  return <TopicEditor key={scope || "unavailable"} draftScope={scope} />;
+}
+
+function TopicEditor({ draftScope }: { draftScope: string | null }) {
   const { t, locale } = useI18n();
   const { canManage } = useAuth();
   const topics = useResource(resources.monitoringTopics(true));
@@ -195,16 +206,90 @@ export function MonitoringTopicsPage() {
   const [savedForm, setSavedForm] = useState<FormPlan>(initialPlan);
   const dirty =
     JSON.stringify(toPayload(form)) !== JSON.stringify(toPayload(savedForm));
-  const [editing, setEditing] = useState<MonitoringTopic | null>(null);
+  const [editing, setEditing] = useState<TopicEditIdentity | null>(null);
   const [preview, setPreview] = useState<MonitoringTopicPreview | null>(null);
   const [idempotencyKey, setIdempotencyKey] = useState("");
-  const [aiDraft, setAiDraft] = useState<MonitoringTopicDraft | null>(null);
+  const [aiDraft, setAiDraft] = useState<TopicAiIdentity | null>(null);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const editorRef = useRef<HTMLFormElement>(null);
   const scopeRef = useRef<HTMLDetailsElement>(null);
   const initializedPacks = useRef(false);
+  const [draftLoaded, setDraftLoaded] = useState(false);
+  const [recovery, setRecovery] = useState<TopicTabDraft | null>(null);
+  const [storageFailed, setStorageFailed] = useState(false);
+
+  useEffect(() => {
+    if (!draftScope || !canManage) return;
+    try {
+      const loaded = readTopicDraft(window.sessionStorage, draftScope);
+      setRecovery(loaded.draft);
+      setStorageFailed(loaded.failed);
+    } catch {
+      setStorageFailed(true);
+    }
+    setDraftLoaded(true);
+  }, [draftScope, canManage]);
+
+  useEffect(() => {
+    if (!draftLoaded || !draftScope || !canManage || recovery) return;
+    try {
+      const ok = dirty
+        ? writeTopicDraft(window.sessionStorage, {
+            version: 1,
+            scope: draftScope,
+            savedAt: Date.now(),
+            form,
+            baseline: savedForm,
+            editing,
+            aiDraft,
+            idempotencyKey,
+          })
+        : removeTopicDraft(window.sessionStorage, draftScope);
+      setStorageFailed(!ok);
+    } catch {
+      setStorageFailed(true);
+    }
+  }, [
+    draftLoaded,
+    draftScope,
+    canManage,
+    recovery,
+    dirty,
+    form,
+    savedForm,
+    editing,
+    aiDraft,
+    idempotencyKey,
+  ]);
+
+  function restoreDraft() {
+    if (!recovery) return;
+    initializedPacks.current = true;
+    setForm(recovery.form);
+    setSavedForm(recovery.baseline);
+    setEditing(recovery.editing);
+    setAiDraft(recovery.aiDraft);
+    setIdempotencyKey(recovery.idempotencyKey);
+    setPreview(null);
+    setRecovery(null);
+    setMessage(t("topics.tabDraftRestored"));
+    focusEditor();
+  }
+
+  function discardRecoveredDraft() {
+    if (draftScope) {
+      try {
+        setStorageFailed(!removeTopicDraft(window.sessionStorage, draftScope));
+      } catch {
+        setStorageFailed(true);
+      }
+    }
+    setRecovery(null);
+    focusEditor();
+  }
+
   const packIds = useMemo(
     () => packs.data?.items.map((item) => item.id) || [],
     [packs.data],
@@ -456,7 +541,7 @@ export function MonitoringTopicsPage() {
         {editing && (
           <Button
             data-topic-new
-            disabled={!!busy}
+            disabled={!!busy || !!recovery}
             variant="outline"
             onClick={discard}
           >
@@ -475,7 +560,43 @@ export function MonitoringTopicsPage() {
           onSubmit={previewPlan}
           aria-busy={!!busy}
         >
-          <fieldset disabled={!!busy} className="min-w-0">
+          {recovery && (
+            <section
+              data-topic-recovery
+              className="mb-5 rounded-lg border p-4"
+              aria-label={t("topics.tabDraftTitle")}
+            >
+              <h2 className="font-semibold">{t("topics.tabDraftTitle")}</h2>
+              <p className="text-sm muted">
+                {t("topics.tabDraftFound", {
+                  date: dateTime(new Date(recovery.savedAt).toISOString()),
+                })}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" data-topic-restore onClick={restoreDraft}>
+                  {t("topics.tabDraftRestore")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  data-topic-discard-recovery
+                  onClick={discardRecoveredDraft}
+                >
+                  {t("topics.tabDraftDiscard")}
+                </Button>
+              </div>
+            </section>
+          )}
+          {storageFailed && (
+            <p
+              role="status"
+              data-topic-storage-error
+              className="text-sm muted mb-3"
+            >
+              {t("topics.tabDraftUnavailable")}
+            </p>
+          )}
+          <fieldset disabled={!!busy || !!recovery} className="min-w-0">
             <ErrorNote message={error} />
             {dirty && (
               <p
@@ -484,6 +605,11 @@ export function MonitoringTopicsPage() {
                 data-topic-unsaved
               >
                 {t("topics.unsavedNote")}
+                {draftLoaded && draftScope && !storageFailed && (
+                  <span data-topic-tab-saved className="block">
+                    {t("topics.tabDraftSaved")}
+                  </span>
+                )}
               </p>
             )}
             <div className="flex items-start justify-between gap-4 mb-5">
@@ -894,7 +1020,7 @@ export function MonitoringTopicsPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    disabled={!!busy}
+                    disabled={!!busy || !!recovery}
                     data-topic-edit={topic.id}
                     onClick={() => edit(topic)}
                   >
@@ -904,7 +1030,7 @@ export function MonitoringTopicsPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={!!busy}
+                      disabled={!!busy || !!recovery}
                       onClick={() => void status(topic, "paused")}
                     >
                       <Pause /> {t("topics.pause")}
@@ -913,7 +1039,7 @@ export function MonitoringTopicsPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={!!busy}
+                      disabled={!!busy || !!recovery}
                       onClick={() => void status(topic, "active")}
                     >
                       <Play /> {t("topics.resume")}
@@ -922,7 +1048,7 @@ export function MonitoringTopicsPage() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    disabled={!!busy}
+                    disabled={!!busy || !!recovery}
                     onClick={() => void status(topic, "archived")}
                   >
                     <Archive /> {t("topics.archive")}

@@ -16,7 +16,7 @@
     "check:shell": "node --test scripts/check-shell-scroll.test.mjs scripts/check-shell-navigation.test.mjs scripts/check-comparison-workspace.test.mjs scripts/check-async-ask.test.mjs scripts/check-marvin-companion.test.mjs",
     "check:resources": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test scripts/resource-cache.test.mjs scripts/resource-flow-contracts.test.mjs scripts/marvin-delivery.test.mjs",
     "check:ai:contrast": "node scripts/check-ai-contrast-browser.mjs",
-    "check:reports": "node --test scripts/report-dates.test.mjs scripts/topic-history.test.mjs scripts/topic-preview.test.mjs scripts/digest-coverage.test.mjs scripts/inbox-navigation.test.mjs scripts/registry-filters.test.mjs",
+    "check:reports": "node --test scripts/report-dates.test.mjs scripts/topic-history.test.mjs scripts/topic-preview.test.mjs scripts/digest-coverage.test.mjs scripts/inbox-navigation.test.mjs scripts/registry-filters.test.mjs scripts/topic-tab-draft.test.mjs",
     "check:registry:browser": "node scripts/check-registry-filters-browser.mjs",
     "check:digests:browser": "node scripts/check-digest-preview-browser.mjs",
     "check:inbox:browser": "node scripts/check-inbox-browser.mjs",

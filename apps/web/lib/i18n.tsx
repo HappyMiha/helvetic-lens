@@ -3081,6 +3081,52 @@ Object.assign(rm, {
   "registryFilters.value.und": "Betg inditgà"
 });
 
+Object.assign(en, {
+  "topics.tabDraftTitle": "Unfinished monitoring plan",
+  "topics.tabDraftFound": "A plan from {date} is saved in this tab for this account and organization. Restore it or discard it before starting another.",
+  "topics.tabDraftRestore": "Restore plan",
+  "topics.tabDraftDiscard": "Discard saved draft",
+  "topics.tabDraftRestored": "Plan restored. Preview it again before saving; the original revision is retained.",
+  "topics.tabDraftUnavailable": "Tab recovery is unavailable. Keep this page open or copy your work before leaving.",
+  "topics.tabDraftSaved": "Draft kept in this tab for 24 hours. It is not active monitoring or a backup; closing the tab may remove it."
+});
+Object.assign(de, {
+  "topics.tabDraftTitle": "Unfertiger Monitoring-Plan",
+  "topics.tabDraftFound": "Ein Plan vom {date} ist in diesem Tab für dieses Konto und diese Organisation gespeichert. Stellen Sie ihn wieder her oder verwerfen Sie ihn, bevor Sie neu beginnen.",
+  "topics.tabDraftRestore": "Plan wiederherstellen",
+  "topics.tabDraftDiscard": "Entwurf verwerfen",
+  "topics.tabDraftRestored": "Plan wiederhergestellt. Prüfen Sie die Vorschau vor dem Speichern erneut; die ursprüngliche Revision bleibt erhalten.",
+  "topics.tabDraftUnavailable": "Die Wiederherstellung im Tab ist nicht verfügbar. Lassen Sie diese Seite offen oder kopieren Sie Ihre Arbeit, bevor Sie sie verlassen.",
+  "topics.tabDraftSaved": "Entwurf für 24 Stunden in diesem Tab gespeichert. Kein aktives Monitoring und keine Sicherung; beim Schliessen des Tabs kann er verloren gehen."
+});
+Object.assign(fr, {
+  "topics.tabDraftTitle": "Plan de suivi inachevé",
+  "topics.tabDraftFound": "Un plan du {date} est conservé dans cet onglet pour ce compte et cette organisation. Restaurez-le ou abandonnez-le avant de recommencer.",
+  "topics.tabDraftRestore": "Restaurer le plan",
+  "topics.tabDraftDiscard": "Abandonner le brouillon",
+  "topics.tabDraftRestored": "Plan restauré. Vérifiez à nouveau l’aperçu avant d’enregistrer ; la révision initiale est conservée.",
+  "topics.tabDraftUnavailable": "La récupération dans cet onglet est indisponible. Gardez cette page ouverte ou copiez votre travail avant de la quitter.",
+  "topics.tabDraftSaved": "Brouillon conservé 24 heures dans cet onglet. Ce n’est ni un suivi actif ni une sauvegarde ; fermer l’onglet peut le supprimer."
+});
+Object.assign(it, {
+  "topics.tabDraftTitle": "Piano di monitoraggio incompleto",
+  "topics.tabDraftFound": "Un piano del {date} è conservato in questa scheda per questo account e questa organizzazione. Ripristinalo o eliminalo prima di iniziarne un altro.",
+  "topics.tabDraftRestore": "Ripristina il piano",
+  "topics.tabDraftDiscard": "Elimina la bozza",
+  "topics.tabDraftRestored": "Piano ripristinato. Controlla di nuovo l’anteprima prima di salvare; la revisione originale è mantenuta.",
+  "topics.tabDraftUnavailable": "Il recupero nella scheda non è disponibile. Tieni aperta questa pagina o copia il lavoro prima di uscire.",
+  "topics.tabDraftSaved": "Bozza conservata per 24 ore in questa scheda. Non è un monitoraggio attivo né un backup; chiudere la scheda può eliminarla."
+});
+Object.assign(rm, {
+  "topics.tabDraftTitle": "Plan da surveglianza betg terminà",
+  "topics.tabDraftFound": "In plan dals {date} è memorisà en quest tab per quest conto e questa organisaziun. Restaurescha u stizza el avant che cumenzar in auter.",
+  "topics.tabDraftRestore": "Restaurar il plan",
+  "topics.tabDraftDiscard": "Stizzar il sboz",
+  "topics.tabDraftRestored": "Plan restaurà. Controllescha puspè la prevista avant che memorisar; la revisiun originala resta mantegnida.",
+  "topics.tabDraftUnavailable": "La recuperaziun en il tab n’è betg disponibla. Lascha averta questa pagina u copiescha tia lavur avant che bandunar ella.",
+  "topics.tabDraftSaved": "Sboz memorisà per 24 uras en quest tab. Quai n’è ni surveglianza activa ni ina copia da segirezza; serrar il tab po stizzar el."
+});
+
 const catalog: Record<Locale, Messages> = { "de-CH": de, "fr-CH": fr, "it-CH": it, "rm-CH": rm, "en-CH": en };
 const localeCookie = "helvetic_lens_locale";
 
