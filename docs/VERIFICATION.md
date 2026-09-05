@@ -2,6 +2,13 @@
 
 The source-to-diff workflow, Settings page, and live Apertus path are verified.
 
+## Saved digest periods and SQL eligibility — 5 September 2026 (HappyDucky02)
+
+- **30 focused tests pass** across digest periods/delivery, impact inbox, history selection and relation analysis. Seven new cases cover half-open saved periods, retry after a test-only mail failure, success idempotency, empty preview source discovery and exact 50/51-event truncation. Existing Starlette deprecation warning remains.
+- A 10,000-old-event corpus on SQLite and a separate disposable **PostgreSQL 16.14** run (`scripts/check_inbox_history_postgres.py --suite periods`) asserts only three eligible delivery/event records and one selected personal-state record are hydrated. Start-inclusive/end-exclusive boundaries, source/authority matching, personal and organization isolation and payload-free source menu reads pass. No model calls or real email deliveries occurred.
+- Ruff and whitespace checks pass. This backend slice preserves the external API/UI shape and has no schema migration. The task-owned PostgreSQL container was removed; existing services and production data were untouched.
+- This is period eligibility, not bounded event pagination: a busy selected period still loads all its eligible candidates. Durable continuation, visible/actionable truncation, batched lookups, late/backdated admission policy and intended-host 100k-event/20-reader gates remain open in HL-099. No full-suite or target-host capacity claim is made for this slice.
+
 ## Bounded per-candidate inbox analysis history — 5 September 2026 (HappyDucky02)
 
 - The final focused inbox/history/digest/relation-analysis run passed **23 tests**, including six new history-selection/migration regressions. A 10,001-analysis synthetic history loads only the latest attempt and the latest current-schema success (two ORM records) using three selection/count queries. Empty/current/legacy histories, tenant isolation, equal-timestamp ordering and a newer attempt injected between queries preserve the intended result.

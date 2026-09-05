@@ -44,6 +44,10 @@ class ImpactInboxFilters:
     item_type: str = ""
     watched_law: str = ""
     state: str = ""
+    detected_from: datetime | None = None
+    detected_before: datetime | None = None
+    sources: tuple[str, ...] = ()
+    excluded_states: tuple[str, ...] = ()
 
 
 class ImpactInboxReader:
@@ -306,19 +310,57 @@ class ImpactInboxReader:
             },
         }
 
+    def _deliveries(self, filters: ImpactInboxFilters):
+        query = (
+            select(OrganizationRelationCandidate)
+            .join(RelationCandidate, RelationCandidate.id == OrganizationRelationCandidate.candidate_id)
+            .join(RegulatoryEvent, RegulatoryEvent.id == RelationCandidate.event_id)
+            .join(RegulatoryWork, RegulatoryWork.id == RelationCandidate.source_work_id)
+            .where(OrganizationRelationCandidate.organization_id == self.organization_id)
+        )
+        if filters.detected_from is not None:
+            query = query.where(RegulatoryEvent.detected_at >= filters.detected_from)
+        if filters.detected_before is not None:
+            query = query.where(RegulatoryEvent.detected_at < filters.detected_before)
+        if filters.sources:
+            query = query.where(or_(RegulatoryEvent.connector.in_(filters.sources),
+                                    RegulatoryEvent.authority.in_(filters.sources)))
+        if filters.excluded_states:
+            excluded = select(RegulatoryEventUserState.id).where(
+                RegulatoryEventUserState.organization_id == self.organization_id,
+                RegulatoryEventUserState.principal_key == self.principal,
+                RegulatoryEventUserState.event_id == RegulatoryEvent.id,
+                RegulatoryEventUserState.state.in_(filters.excluded_states),
+            ).exists()
+            query = query.where(~excluded)
+        return query
+
+    def source_options(self, session: Session) -> list[str]:
+        # Keep the full available source menu without hydrating candidate/evidence
+        # histories, even when the selected digest window or source filter is empty.
+        query = self._deliveries(ImpactInboxFilters()).with_only_columns(
+            RegulatoryEvent.connector, RegulatoryEvent.authority,
+            maintain_column_froms=True,
+        ).distinct()
+        return sorted({value for row in session.execute(query) for value in row if value})
+
     def page(self, session: Session, filters: ImpactInboxFilters) -> dict:
+        query = self._deliveries(filters)
+        selected_events = query.with_only_columns(RelationCandidate.event_id, maintain_column_froms=True)
         states = {
             item.event_id: item
             for item in session.scalars(
                 select(RegulatoryEventUserState).where(
-                    RegulatoryEventUserState.principal_key == self.principal
+                    RegulatoryEventUserState.organization_id == self.organization_id,
+                    RegulatoryEventUserState.principal_key == self.principal,
+                    RegulatoryEventUserState.event_id.in_(selected_events),
                 )
             )
         }
         grouped: dict[str, dict] = {}
         deliveries = list(
             session.scalars(
-                select(OrganizationRelationCandidate).order_by(
+                query.order_by(
                     OrganizationRelationCandidate.created_at.desc(),
                     OrganizationRelationCandidate.id.desc(),
                 )

@@ -143,19 +143,30 @@ def serialize_delivery(delivery: DigestDelivery) -> dict:
     }
 
 
-def filtered_summary(page: dict, preference: DigestPreference, period_start: datetime) -> dict:
+def inbox_filters(preference: DigestPreference, period_start: datetime, period_end: datetime) -> ImpactInboxFilters:
+    return ImpactInboxFilters(
+        detected_from=_aware(period_start), detected_before=_aware(period_end),
+        sources=tuple(preference.sources or []), excluded_states=("dismissed", "muted"),
+    )
+
+
+def filtered_summary(page: dict, preference: DigestPreference, period_start: datetime, period_end: datetime) -> dict:
     selected = []
+    truncated = False
     severities = set(preference.severities or [])
     sources = set(preference.sources or [])
     for group in page.get("items", []):
         detected = datetime.fromisoformat(group["detected_at"].replace("Z", "+00:00"))
-        if detected < _aware(period_start) or group.get("read_state") in {"dismissed", "muted"}:
+        if not _aware(period_start) <= detected < _aware(period_end) or group.get("read_state") in {"dismissed", "muted"}:
             continue
         if sources and group.get("source") not in sources and group.get("authority") not in sources:
             continue
         items = [item for item in group.get("items", []) if not severities or item["severity"] in severities]
         if not items:
             continue
+        if len(selected) == 50:
+            truncated = True
+            break
         selected.append(
             {
                 "event_id": group["event_id"],
@@ -180,9 +191,7 @@ def filtered_summary(page: dict, preference: DigestPreference, period_start: dat
                 ],
             }
         )
-        if len(selected) >= 50:
-            break
-    return {"events": selected, "truncated": len(selected) >= 50}
+    return {"events": selected, "truncated": truncated}
 
 
 def render_message(settings: Settings, delivery: DigestDelivery, user: User) -> tuple[str, str, str]:
@@ -306,9 +315,9 @@ def deliver(database: Database, settings: Settings, delivery_id: str) -> dict:
         if not preference or not user or not user.active:
             raise DomainError("The digest recipient is no longer active.", 409, "digest_recipient_inactive")
         page = ImpactInboxReader(delivery.organization_id, delivery.user_id).page(
-            session, ImpactInboxFilters()
+            session, inbox_filters(preference, delivery.period_start, delivery.period_end)
         )
-        delivery.summary = filtered_summary(page, preference, delivery.period_start)
+        delivery.summary = filtered_summary(page, preference, delivery.period_start, delivery.period_end)
         delivery.item_count = len(delivery.summary["events"])
         if not delivery.item_count:
             delivery.status = "skipped"

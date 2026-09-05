@@ -16,6 +16,9 @@ from fastapi.testclient import TestClient
 from helvetic_lens.config import Settings
 from helvetic_lens.main import create_app
 from helvetic_lens.models import OrganizationRelationCandidate
+from test_digest_periods import (
+    test_period_sql_excludes_large_history_future_other_sources_and_private_states,
+)
 from test_inbox_history_bounds import (
     check_history_index_roundtrip,
     test_large_history_reads_only_latest_and_current_payloads,
@@ -25,6 +28,7 @@ from test_inbox_history_bounds import (
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
+    parser.add_argument("--suite", choices=("history", "periods"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -44,7 +48,12 @@ def main():
         app = create_app(settings, fetcher=fetcher, model_client=model)
         with TestClient(app) as client:
             service = app.state.service
-            test_large_history_reads_only_latest_and_current_payloads((client, fetcher, service, model))
+            harness = (client, fetcher, service, model)
+            if args.suite == "periods":
+                test_period_sql_excludes_large_history_future_other_sources_and_private_states(harness)
+                print("PostgreSQL: 10,000 archived events excluded before payload hydration; half-open period, source filters, private states, tenant isolation and column-only source options passed. No AI or mail calls.")
+                return
+            test_large_history_reads_only_latest_and_current_payloads(harness)
             with service.db.session() as session:
                 delivery_id = session.scalar(select(OrganizationRelationCandidate.id))
             check_history_index_roundtrip(service, delivery_id)

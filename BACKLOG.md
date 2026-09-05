@@ -1905,7 +1905,14 @@ Implemented history-read slice — 5 September 2026 (HappyDucky02):
 
 - Impact inbox and digest consumers now select at most two analysis payloads per candidate: the latest attempt and the latest successful result under current rules. Filtering/ordering and the exact history count run in SQL, retaining failed-attempt recovery and old-schema visibility without loading every historical JSON/evidence body into the API process.
 - A timestamp/ID ceiling keeps a newer attempt arriving between queries for the next read. An organization/candidate/time index supports traversal. Synthetic 10,001-analysis regressions assert three queries and two materialized payloads for the selector; the actual inbox response, tenant isolation, equal-timestamp ordering and populated SQLite/PostgreSQL index migration also pass.
-- This is not yet bounded event pagination or a capacity certification: the organization candidate list and digest source window remain unbounded, and SQL counting/current-schema search can still inspect many rows. Complete event-centered filters/cursors, batched entity/review lookups, period-limited digests and the target-host 100k-event/20-reader gate remain open. See `docs/INBOX_READS.md`.
+- This is not yet bounded event pagination or a capacity certification: the interactive organization candidate list remains unbounded, and SQL counting/current-schema search can still inspect many rows. Complete event-centered filters/cursors, batched entity/review lookups, bounded digest continuation and the target-host 100k-event/20-reader gate remain open. See `docs/INBOX_READS.md`.
+
+
+Implemented digest-period slice — 5 September 2026 (HappyDucky02):
+
+- Digest preview and delivery now filter the half-open saved detection period `[period_start, period_end)`, selected sources and the recipient's dismissed/muted states in SQL before loading candidate/evidence payloads. Delayed/retried delivery cannot pull in events at or after its saved end. Preview captures one end instant; all available source options remain discoverable through a column-only distinct query.
+- Exactly 50 eligible events no longer falsely indicate truncation; a 51st eligible event is required. Existing severity and evidence grouping are preserved, with no inference or read-state mutation.
+- Thirty focused regressions pass, including a 10,000-old-event SQLite/PostgreSQL check with only three selected delivery/event payloads, period boundaries, private-state/organization isolation and failed-mail retry using a test double. This does not bound an arbitrarily busy selected period: cursor selection, durable continuation, visible/actionable truncation and intended-host capacity verification remain open.
 
 
 <a id="hl-100"></a>
