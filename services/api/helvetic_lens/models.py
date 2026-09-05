@@ -387,6 +387,10 @@ class TopicEventMatch(Base):
             "decision_status IN ('pending', 'confirmed', 'rejected', 'muted')",
             name="ck_topic_event_match_decision",
         ),
+        CheckConstraint(
+            "match_status IN ('unchecked', 'matching', 'not_matching')",
+            name="ck_topic_event_match_validity",
+        ),
     )
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
@@ -409,6 +413,11 @@ class TopicEventMatch(Base):
     model_prompt_revision: Mapped[int | None] = mapped_column(Integer)
     confidence_band: Mapped[str] = mapped_column(String(20), index=True)
     decision_status: Mapped[str] = mapped_column(String(20), default="pending", index=True)
+    match_status: Mapped[str] = mapped_column(String(20), default="unchecked", server_default="unchecked")
+    evaluation_fingerprint: Mapped[str | None] = mapped_column(String(64))
+    evaluated_rule_fingerprint: Mapped[str | None] = mapped_column(String(100))
+    evaluated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    review_snapshot_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     matched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
@@ -677,6 +686,8 @@ class RegulatoryEventState(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
     event_id: Mapped[str] = mapped_column(ForeignKey("regulatory_events.id"), index=True)
+    topic_match_generation: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    topic_match_input_fingerprint: Mapped[str | None] = mapped_column(String(64))
     read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 

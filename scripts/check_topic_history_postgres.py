@@ -42,12 +42,16 @@ from test_topic_live import (
 from test_topic_preview_parity import (
     test_preview_history_and_live_share_decision_reasons_and_confidence,
 )
+from test_topic_validity import (
+    check_validity_migration_roundtrip,
+    test_nonmatch_and_changed_positive_preserve_reviewed_evidence,
+)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("history", "live", "preview"), default="history")
+    parser.add_argument("--suite", choices=("history", "live", "preview", "validity"), default="history")
     args = parser.parse_args()
     value = args.database_url
     url = make_url(value)
@@ -81,6 +85,13 @@ def main():
         app = create_app(settings, fetcher=fetcher, model_client=model)
         with TestClient(app) as client:
             service = app.state.service
+            if args.suite == "validity":
+                test_nonmatch_and_changed_positive_preserve_reviewed_evidence(
+                    (client, fetcher, service, model), "confirmed", "live",
+                )
+                check_validity_migration_roundtrip(service)
+                print("PostgreSQL: live invalidation/revalidation preserves reviewed evidence; populated validity migration round-trip preserves legacy decisions without certifying them.")
+                return
             if args.suite == "preview":
                 test_preview_history_and_live_share_decision_reasons_and_confidence(
                     (client, fetcher, service, model), "Federal publication",

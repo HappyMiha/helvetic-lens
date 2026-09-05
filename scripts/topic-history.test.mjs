@@ -35,4 +35,11 @@ for (const locale of ["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"]) {
     assert.doesNotMatch(html, /<progress|<button|topicHistory\./);
     assert.match(html, /data-topic-history="complete"/);
   });
+  test(`${locale}: an obsolete evaluator exposes refresh without certifying its old result`, () => {
+    const html = render("superseded", { scan: { processed: 500, remaining: 0 } });
+    assert.match(html, /data-topic-history="superseded"/);
+    assert.match(html, /<button/);
+    assert.doesNotMatch(html, /topicHistory\.|data-topic-history="complete"/);
+    assert.doesNotMatch(render("superseded", { viewer: true }), /<button/);
+  });
 }

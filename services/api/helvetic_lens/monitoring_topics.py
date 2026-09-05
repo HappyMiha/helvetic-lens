@@ -348,18 +348,22 @@ def _add_revision(
     return revision
 
 
+def _history_key(topic: MonitoringTopic) -> str:
+    from .topic_matching import EVALUATION_REVISION, HISTORY_REVISION, RULE_REVISION
+
+    return f"{HISTORY_REVISION}:{RULE_REVISION}:{EVALUATION_REVISION}:{topic.id}:{topic.current_revision}"
+
+
 def _enqueue_match_backfill(
     session: Session, topic: MonitoringTopic, *, organization_id: str | None = None
 ):
-    from .topic_matching import HISTORY_REVISION, RULE_REVISION
-
     job, _ = durable_jobs.enqueue(
         session,
         job_type="topic_match_backfill",
         target_type="monitoring_topic",
         target_id=topic.id,
         queue="ingest",
-        idempotency_key=f"{HISTORY_REVISION}:{RULE_REVISION}:{topic.id}:{topic.current_revision}",
+        idempotency_key=_history_key(topic),
         payload={"topic_id": topic.id, "revision": topic.current_revision},
         priority=5,
         progress_total=1,
@@ -389,6 +393,8 @@ def history_scan(session: Session, topic: MonitoringTopic) -> dict:
         status = "legacy_limited" if result.get("has_more") else result.get("status", "unknown")
         if status == "bounded_complete":
             status = "complete"  # Older full windows have no checkpoint/counter detail.
+        if status == "complete" and job.idempotency_key != _history_key(topic):
+            status = "superseded"  # A newer evaluator must recheck old positive rows.
     else:
         status = job.state
     return {
@@ -415,6 +421,8 @@ def request_history_scan(session: Session, topic_id: str) -> dict:
     job = _history_job(session, topic)
     if job and job.state not in durable_jobs.TERMINAL_STATES:
         pass  # An existing worker or pending outbox already owns this revision.
+    elif job and job.idempotency_key != _history_key(topic):
+        _enqueue_match_backfill(session, topic)
     elif job and job.state in {"failed", "cancelled"}:
         durable_jobs.retry(session, job.id)
     elif not job or (job.result_json or {}).get("has_more") or (job.result_json or {}).get("status") == "superseded":

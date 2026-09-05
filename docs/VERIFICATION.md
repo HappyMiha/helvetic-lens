@@ -2,6 +2,15 @@
 
 The source-to-diff workflow, Settings page, and live Apertus path are verified.
 
+## Topic match validity and review preservation — 5 September 2026 (HappyDucky02)
+
+- History and live evaluation now preserve human confirmation/rejection/mute and the original reviewed evidence when a formerly matching event becomes a non-match or receives changed positive evidence. The matches API distinguishes machine eligibility, historical confidence and the current applicability of a human decision; changed inputs are already labelled stale while a worker is pending. Revoked admissions cannot expose retained matches.
+- The focused topic history/live/preview/validity run passed **58 tests**, including 16 new regressions for reviewed negative/positive transitions, source/rule/plan changes, tenant visibility, transaction rollback/retry, legacy recovery, A → B → A source corrections and populated migration round-trip. The new admission generation prevents incorrect reuse of a completed job after reversion; unchanged source health alone does not invalidate relevance. No model calls are made by these scenarios.
+- The final Windows-compatible API suite passed **532 tests** in 420.69 seconds. Only the unchanged Linux-only release-manager module requiring `fcntl` was excluded; the existing Starlette test-client deprecation warning remains. The resumed read-only sandbox could not create SQLite migration temporary files; the successful isolated regression runs used the approved test execution permission, without changing database behavior to bypass the failure.
+- Disposable **PostgreSQL 16.14** passed `scripts/check_topic_history_postgres.py --suite validity` using actual live jobs and a populated downgrade/upgrade. Migration `f9c208b5a431` preserves legacy evidence/decisions and leaves unverifiable eligibility `unchecked`. The verified task-owned database container was removed. Production databases/services were untouched.
+- `npm run typecheck` passed the 1,572-key five-language catalogue/value audit, 27 shell checks, 22 resource/delivery checks, rendered report/history/preview checks and TypeScript. After adding the final five old-evaluator recovery cases, `npm run check:reports` passed **65 rendered checks**. API/script Ruff and whitespace checks also pass. This slice changes only existing recovery copy, not layout or routes.
+- The shared topic review command/feed presentation, complete coverage warnings and target-host load gates remain open. These checks are not a user-pilot result, legal-relevance certification, Ubuntu deployment test or authorization to run production migrations.
+
 ## Topic preview and activation parity — 5 September 2026 (HappyDucky02)
 
 - Preview now scores only the current organization's admitted saved events using the same deterministic scorer as historical and live matching. Normalized official references, lexical and metadata signals, exclusions, jurisdiction, language, source pack and event/document-kind rules agree across all three paths. Public corpus records admitted only to another organization do not appear. Preview creates no records, jobs or AI calls.

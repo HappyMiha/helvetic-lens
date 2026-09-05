@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import Text, cast, func, or_, select, text
@@ -30,6 +31,7 @@ from .source_packs import definition_matches
 RULE_REVISION = "topic-match-v1"
 HISTORY_REVISION = "topic-history-v1"
 LIVE_REVISION = "topic-live-v1"
+EVALUATION_REVISION = "topic-evaluation-v1"
 
 
 def _iso(value: datetime | None) -> str | None:
@@ -239,71 +241,118 @@ def score_event(
     return confidence, signals[:20]
 
 
-def _persist_match(
+def _preserve_review(record: TopicEventMatch) -> None:
+    """Bind an existing human decision to its original evidence, never reset it.
+
+    The review endpoint will supply an explicit snapshot when implemented. For
+    older/scripted decisions capture only known provenance; no invented actor or
+    decision date, and a missing evaluation fingerprint stays unverifiable.
+    """
+    if record.decision_status == "pending":
+        return
+    snapshot = record.review_snapshot_json or {}
+    if snapshot.get("decision") == record.decision_status:
+        return
+    record.review_snapshot_json = deepcopy({
+        "decision": record.decision_status,
+        "evidence_fingerprint": record.evidence_fingerprint,
+        "evaluation_fingerprint": record.evaluation_fingerprint,
+        "rule_fingerprint": record.rule_fingerprint,
+        "reasons": record.reason_signals_json,
+        "evidence": record.evidence_references_json,
+        "confidence": record.confidence_band,
+        "matched_at": _iso(record.matched_at),
+    })
+
+
+def _evaluation_fingerprint(session: Session, event: RegulatoryEvent,
+                            revision: MonitoringTopicRevision,
+                            definitions: dict[str, SourcePackDefinition],
+                            evidence_fingerprint: str | None = None) -> str:
+    return _fingerprint([
+        EVALUATION_REVISION, evidence_fingerprint or _live_evidence_fingerprint(session, event), revision.id,
+        [(key, definitions[key].revision, definitions[key].filters_json)
+         for key in sorted(revision.source_pack_ids_json) if key in definitions],
+    ])
+
+
+def _persist_evaluation(
     session: Session, event: RegulatoryEvent, work: RegulatoryWork,
     topic: MonitoringTopic, revision: MonitoringTopicRevision,
-    confidence: str, signals: list[dict], settings: Settings,
+    scored: tuple[str, list[dict]] | None, definitions: dict[str, SourcePackDefinition],
+    settings: Settings, *, evidence_fingerprint: str | None = None,
 ) -> str:
-    """One idempotent evidence writer for historical and live matching."""
+    """Persist one eligibility result without erasing a human decision.
+
+    Never create rows for every negative event/topic pair. An existing match
+    keeps its last positive evidence when it stops matching, alongside the
+    latest machine evaluation; the two states have different meanings.
+    """
     now = utcnow()
-    organization_id = topic.organization_id
-    evidence = {
-        "event_id": event.id,
-        "work_id": work.id,
-        "expression_id": event.expression_id,
-        "document_version_id": event.document_version_id,
-        "source_url": event.source_url or work.stable_official_url,
-        "detected_at": _iso(event.detected_at),
-        "provenance_method": event.provenance_method,
-        "official_identifiers": [
-            {"scheme": item.scheme, "value": item.value, "source_url": item.source_url}
-            for item in session.scalars(
-                select(RegulatoryIdentifier).where(RegulatoryIdentifier.work_id == work.id)
-            )
-        ],
-    }
-    evidence_fingerprint = _fingerprint(
-        {"event": evidence, "event_evidence": event.evidence_json, "signals": signals}
-    )
-    rule_fingerprint = f"{RULE_REVISION}:{revision.revision}"
     record = session.scalar(
-        select(TopicEventMatch)
-        .where(
-            TopicEventMatch.organization_id == organization_id,
+        select(TopicEventMatch).where(
+            TopicEventMatch.organization_id == topic.organization_id,
             TopicEventMatch.topic_revision_id == revision.id,
             TopicEventMatch.event_id == event.id,
-        )
-        .execution_options(include_all_organizations=True)
+        ).with_for_update().execution_options(include_all_organizations=True)
     )
-    if record and record.evidence_fingerprint == evidence_fingerprint and record.rule_fingerprint == rule_fingerprint:
-        return "reused"
-    if not record:
+    if not record and not scored:
+        return "excluded"
+    fingerprint = _evaluation_fingerprint(session, event, revision, definitions, evidence_fingerprint)
+    rule_fingerprint = f"{RULE_REVISION}:{revision.revision}"
+    status = "matching" if scored else "not_matching"
+    if record:
+        _preserve_review(record)
+        if (record.match_status == status and record.evaluation_fingerprint == fingerprint
+                and record.evaluated_rule_fingerprint == rule_fingerprint):
+            return "reused" if scored else "excluded"
+        outcome = "updated" if scored else "invalidated"
+    else:
         record = TopicEventMatch(
-            organization_id=organization_id,
-            topic_id=topic.id,
-            topic_revision_id=revision.id,
-            event_id=event.id,
-            work_id=work.id,
+            organization_id=topic.organization_id, topic_id=topic.id,
+            topic_revision_id=revision.id, event_id=event.id, work_id=work.id,
             expires_at=now,
         )
-        session.add(record)
         outcome = "matched"
-    else:
-        record.decision_status = "pending"
-        outcome = "updated"
+    record.match_status = status
+    record.evaluation_fingerprint = fingerprint
+    record.evaluated_rule_fingerprint = rule_fingerprint
+    record.evaluated_at = now
+    record.updated_at = now
+    if not scored:
+        return outcome
+
+    confidence, signals = scored
+    expression = session.get(RegulatoryExpression, event.expression_id) if event.expression_id else None
+    evidence = {
+        "event_id": event.id, "work_id": work.id,
+        "expression_id": event.expression_id, "document_version_id": event.document_version_id,
+        "source_url": event.source_url or work.stable_official_url,
+        "detected_at": _iso(event.detected_at), "provenance_method": event.provenance_method,
+        "work_title": work.title, "work_kind": work.kind,
+        "expression_title": expression.title if expression else None,
+        "expression_language": expression.language if expression else None,
+        "event_type": event.event_type, "impact": event.impact,
+        "source_evidence": deepcopy(event.evidence_json),
+        "work_metadata": deepcopy(work.metadata_json),
+        "official_identifiers": [
+            {"scheme": item.scheme, "value": item.value, "source_url": item.source_url}
+            for item in session.scalars(select(RegulatoryIdentifier).where(RegulatoryIdentifier.work_id == work.id))
+        ],
+    }
     record.expression_id = event.expression_id
     record.document_version_id = event.document_version_id
     record.reason_signals_json = signals
     record.evidence_references_json = evidence
-    record.evidence_fingerprint = evidence_fingerprint
+    record.evidence_fingerprint = _fingerprint({"event": evidence, "signals": signals})
     record.rule_fingerprint = rule_fingerprint
     record.model_provider = None
     record.model_name = None
     record.model_prompt_revision = None
     record.confidence_band = confidence
     record.matched_at = now
-    record.updated_at = now
     record.expires_at = now + timedelta(days=settings.topic_match_retention_days)
+    session.add(record)
     return outcome
 
 
@@ -331,6 +380,7 @@ def generate_for_events(
         "matched": 0,
         "updated": 0,
         "reused": 0,
+        "invalidated": 0,
         "organization_bound_hit": False,
         "topic_bound_hit": False,
         "match_bound_hit": False,
@@ -347,6 +397,7 @@ def generate_for_events(
         expression = session.get(RegulatoryExpression, event.expression_id) if event.expression_id else None
         if not work:
             continue
+        event_fingerprint = _live_evidence_fingerprint(session, event)
         organization_rows = list(
             session.scalars(
                 select(RegulatoryEventState.organization_id)
@@ -374,13 +425,17 @@ def generate_for_events(
                 if scored:
                     confidence, signals = scored
                     ranked.append((0 if confidence == "high" else 1, topic, revision, confidence, signals))
+                else:
+                    outcome = _persist_evaluation(session, event, work, topic, revision, None, definitions, settings, evidence_fingerprint=event_fingerprint)
+                    if outcome == "invalidated":
+                        result["invalidated"] += 1
             ranked.sort(key=lambda item: (item[0], item[1].id))
             if len(ranked) > settings.topic_matches_per_organization_event:
                 result["match_bound_hit"] = True
             for _, topic, revision, confidence, signals in ranked[
                 : settings.topic_matches_per_organization_event
             ]:
-                outcome = _persist_match(session, event, work, topic, revision, confidence, signals, settings)
+                outcome = _persist_evaluation(session, event, work, topic, revision, (confidence, signals), definitions, settings, evidence_fingerprint=event_fingerprint)
                 result[outcome] += 1
     session.flush()
     return result
@@ -395,6 +450,11 @@ def _live_evidence_fingerprint(session: Session, event: RegulatoryEvent) -> str:
                   event.source_url, event.provenance_method, _iso(event.detected_at)],
         "work": [work.title, work.kind, work.metadata_json, work.stable_official_url] if work else None,
         "expression": [expression.title, expression.language] if expression else None,
+        "source_definitions": [
+            [item.id, item.revision, item.filters_json]
+            for item in session.scalars(select(SourcePackDefinition)
+                .where(SourcePackDefinition.active.is_(True)).order_by(SourcePackDefinition.id))
+        ],
         "identifiers": sorted(
             (item.scheme, item.value, item.normalized_value, item.source_url or "")
             for item in session.scalars(select(RegulatoryIdentifier).where(RegulatoryIdentifier.work_id == event.work_id))
@@ -430,11 +490,18 @@ def enqueue_live_events(session: Session, events: list[RegulatoryEvent], setting
             if not admissions:
                 break
             for state in admissions:
-                key = _fingerprint([state.id, fingerprint])
+                input_key = _fingerprint([RULE_REVISION, EVALUATION_REVISION, fingerprint])
+                # Content can change A -> B -> A. A hash-only key would reuse
+                # the first completed A job and leave the B evaluation current.
+                # The event lock serializes this durable admission generation.
+                if state.topic_match_input_fingerprint != input_key:
+                    state.topic_match_generation += 1
+                    state.topic_match_input_fingerprint = input_key
+                key = _fingerprint([state.id, state.topic_match_generation, input_key])
                 _job, reused = jobs.enqueue(
                     session, organization_id=state.organization_id,
                     job_type="topic_match_event", target_type="regulatory_event", target_id=event.id,
-                    queue="ingest", idempotency_key=f"{LIVE_REVISION}:{RULE_REVISION}:{key}",
+                    queue="ingest", idempotency_key=f"{LIVE_REVISION}:{RULE_REVISION}:{EVALUATION_REVISION}:{key}",
                     payload={"event_id": event.id, "admission_id": state.id,
                              "evidence_fingerprint": fingerprint},
                     priority=4, steps=[("Match active topics", {})],
@@ -515,9 +582,12 @@ def run_live_batch(
         scored = score_event(session, event, work, expression, revision, definitions)
         if scored:
             confidence, signals = scored
-            outcome = _persist_match(session, event, work, topic, revision, confidence, signals, settings)
+            outcome = _persist_evaluation(session, event, work, topic, revision, (confidence, signals), definitions, settings, evidence_fingerprint=evidence_fingerprint)
             checkpoint[outcome] += 1
         else:
+            outcome = _persist_evaluation(session, event, work, topic, revision, None, definitions, settings, evidence_fingerprint=evidence_fingerprint)
+            if outcome == "invalidated":
+                checkpoint["invalidated"] = checkpoint.get("invalidated", 0) + 1
             checkpoint["excluded"] += 1
     checkpoint["processed"] += len(rows)
     checkpoint["batches"] += 1
@@ -598,6 +668,7 @@ def run_backfill(
     result = generate_for_events(session, [event for _state, event in selected], settings, topic_id=topic.id)
     for key in ("matched", "updated", "reused"):
         checkpoint[key] += result[key]
+    checkpoint["invalidated"] = checkpoint.get("invalidated", 0) + result["invalidated"]
     checkpoint["processed"] += len(selected)
     checkpoint["excluded"] += len(selected) - result["matched"] - result["updated"] - result["reused"]
     checkpoint["batches"] += 1
@@ -625,28 +696,62 @@ def list_matches(session: Session, topic_id: str, *, limit: int = 100) -> list[d
     topic = session.get(MonitoringTopic, topic_id)
     if not topic:
         raise DomainError("The monitoring topic was not found.", 404, "monitoring_topic_not_found")
+    # A retained historical match must not restore a revoked event admission.
     records = session.scalars(
-        select(TopicEventMatch)
+        select(TopicEventMatch).join(RegulatoryEventState,
+            (RegulatoryEventState.event_id == TopicEventMatch.event_id)
+            & (RegulatoryEventState.organization_id == TopicEventMatch.organization_id))
         .where(TopicEventMatch.topic_id == topic.id)
         .order_by(TopicEventMatch.matched_at.desc(), TopicEventMatch.id.desc())
         .limit(max(1, min(limit, 200)))
-    )
-    return [
-        {
-            "id": item.id,
-            "topic_id": item.topic_id,
-            "topic_revision_id": item.topic_revision_id,
-            "event_id": item.event_id,
-            "work_id": item.work_id,
-            "expression_id": item.expression_id,
+    ).all()
+    definitions = {item.id: item for item in session.scalars(
+        select(SourcePackDefinition).where(SourcePackDefinition.active.is_(True))
+    )}
+    result = []
+    fingerprints: dict[str, str] = {}
+    for item in records:
+        event = session.get(RegulatoryEvent, item.event_id)
+        revision = session.get(MonitoringTopicRevision, item.topic_revision_id)
+        if not event or not revision or not session.get(RegulatoryWork, event.work_id):
+            continue
+        if event.id not in fingerprints:
+            fingerprints[event.id] = _live_evidence_fingerprint(session, event)
+        validity = (
+            "plan_changed" if revision.revision != topic.current_revision
+            else f"topic_{topic.status}" if topic.status != "active"
+            else "unchecked" if not item.evaluation_fingerprint
+            else "rule_changed" if item.evaluated_rule_fingerprint != f"{RULE_REVISION}:{revision.revision}"
+            else "evidence_changed" if item.evaluation_fingerprint != _evaluation_fingerprint(session, event, revision, definitions, fingerprints[event.id])
+            else item.match_status
+        )
+        # Reading cannot mutate/forge a review. Legacy decisions with no complete
+        # fingerprint are retained, but never asserted to confirm current inputs.
+        review = item.review_snapshot_json
+        if item.decision_status != "pending" and not review:
+            review = {"decision": item.decision_status,
+                      "evaluation_fingerprint": item.evaluation_fingerprint,
+                      "rule_fingerprint": item.rule_fingerprint,
+                      "evidence": item.evidence_references_json, "reasons": item.reason_signals_json,
+                      "confidence": item.confidence_band, "matched_at": _iso(item.matched_at)}
+        decision_current = bool(
+            validity == "matching" and review and review.get("evaluation_fingerprint")
+            and review["evaluation_fingerprint"] == item.evaluation_fingerprint
+            and review["rule_fingerprint"] == item.evaluated_rule_fingerprint
+            and review["decision"] == item.decision_status
+        )
+        result.append({
+            "id": item.id, "topic_id": item.topic_id, "topic_revision_id": item.topic_revision_id,
+            "event_id": item.event_id, "work_id": item.work_id, "expression_id": item.expression_id,
             "document_version_id": item.document_version_id,
-            "reasons": item.reason_signals_json,
-            "evidence": item.evidence_references_json,
+            "reasons": item.reason_signals_json, "evidence": item.evidence_references_json,
             "rule_fingerprint": item.rule_fingerprint,
-            "confidence": item.confidence_band,
-            "decision": item.decision_status,
-            "matched_at": _iso(item.matched_at),
-            "expires_at": _iso(item.expires_at),
-        }
-        for item in records
-    ]
+            "confidence": item.confidence_band if validity == "matching" else None,
+            "last_match_confidence": item.confidence_band,
+            "decision": item.decision_status, "decision_is_current": decision_current,
+            "review_evidence": review,
+            "validity": validity, "is_current": validity == "matching",
+            "evaluated_at": _iso(item.evaluated_at),
+            "matched_at": _iso(item.matched_at), "expires_at": _iso(item.expires_at),
+        })
+    return result

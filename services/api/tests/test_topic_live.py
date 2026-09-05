@@ -122,14 +122,14 @@ def test_live_failure_cancel_and_retry_preserve_cursor_and_committed_matches(har
         session.commit()
     job_id, _ = enqueue(service, event_id)
     first = execute(service, job_id)
-    original = topic_matching._persist_match
+    original = topic_matching._persist_evaluation
 
     def fail_after_write(*args, **kwargs):
         original(*args, **kwargs)
         args[0].flush()
         raise RuntimeError("Synthetic live worker failure after writing a match")
 
-    monkeypatch.setattr(topic_matching, "_persist_match", fail_after_write)
+    monkeypatch.setattr(topic_matching, "_persist_evaluation", fail_after_write)
     failed = execute(service, job_id)
     assert failed["state"] == "retrying" and failed["progress"]["current"] == 1
     assert failed["result"] == first["result"]
@@ -140,7 +140,7 @@ def test_live_failure_cancel_and_retry_preserve_cursor_and_committed_matches(har
         jobs.retry(session, job_id)
         session.commit()
         assert session.get(Job, job_id).progress_current == 1
-    monkeypatch.setattr(topic_matching, "_persist_match", original)
+    monkeypatch.setattr(topic_matching, "_persist_evaluation", original)
     for _ in range(4):
         finished = execute(service, job_id)
     assert finished["state"] == "succeeded" and finished["result"]["data"]["matched"] == 5
