@@ -71,14 +71,14 @@ def test_paging_advances_through_empty_severity_pages_and_binds_filter_account_s
     user_id = recipient(service)
     with service.db.session() as session:
         with pytest.raises(DomainError) as error:
-            ImpactInboxReader(service.organization_id, user_id).paginated(session, ImpactInboxFilters(severity="high"), cursor=first["next_cursor"])
+            ImpactInboxReader(service.organization_id, user_id, settings=service.settings).paginated(session, ImpactInboxFilters(severity="high"), cursor=first["next_cursor"])
         assert error.value.code == "invalid_inbox_cursor"
         foreign = Organization(name="Page outsider", slug="page-outsider")
         session.add(foreign)
         session.commit()
         foreign_id = foreign.id
     with service.db.organization_context(foreign_id), service.db.session() as session:
-        reader = ImpactInboxReader(foreign_id, None)
+        reader = ImpactInboxReader(foreign_id, None, settings=service.settings)
         with pytest.raises(DomainError):
             reader.paginated(session, ImpactInboxFilters(severity="high"), cursor=first["next_cursor"])
         assert reader.paginated(session, ImpactInboxFilters())["items"] == []
@@ -151,7 +151,7 @@ def test_watched_law_filter_keeps_legacy_event_severity_order_and_complete_law_g
         session.add(RelationImpactAnalysis(organization_candidate_id=first, candidate_id=candidate.id,
                                           event_id=candidate.event_id, target_work_id=candidate.target_work_id,
                                           cache_key="0"*64, model="test-only", status="succeeded",
-                                          analysis_plan={"execution": {"profile_revision": 1}},
+                                          analysis_plan={"execution": {"profile_revision": 1, "configuration_fingerprint": relation_analysis.configuration_fingerprint(service.settings)}},
                                           result={"schema_version": relation_analysis.SCHEMA_VERSION, "supported": True,
                                                   "potential_severity": "high", "explanation": "Synthetic tested result"}))
         session.commit()

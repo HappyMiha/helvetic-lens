@@ -167,10 +167,10 @@ def test_prepared_selection_rechecks_private_state_and_revoked_admissions(harnes
     cp = None
     while not cp or not cp["complete"]:
         with service.db.session() as session:
-            cp = digests.prepare_batch(session, job["target_id"], cp)
+            cp = digests.prepare_batch(session, job["target_id"], cp, settings=service.settings)
             session.commit()
     with service.db.session() as session:
-        ImpactInboxReader(service.organization_id, user_id).set_state(session, specs[1]["id"], "muted")
+        ImpactInboxReader(service.organization_id, user_id, settings=service.settings).set_state(session, specs[1]["id"], "muted")
     with service.db.session() as session:
         candidate = session.scalar(select(RelationCandidate).where(RelationCandidate.event_id == specs[-1]["id"]))
         admission = session.scalar(select(OrganizationRelationCandidate).where(OrganizationRelationCandidate.candidate_id == candidate.id))
@@ -184,11 +184,11 @@ def test_foreign_or_corrupt_checkpoint_is_rejected_without_advancing(harness):
     _, _, service, _ = harness
     job, _, _ = setup_delivery(harness)
     with service.db.session() as session:
-        cp = digests.prepare_batch(session, job["target_id"])
+        cp = digests.prepare_batch(session, job["target_id"], settings=service.settings)
         for bad in [{**cp, "organization_id": "foreign"}, {**cp, "event_ids": ["x"] * 52},
                     {**cp, "cursor": {"detected_at": "invalid", "id": "x"}}, {**cp, "processed": -1}]:
             with pytest.raises(DomainError) as error:
-                digests.prepare_batch(session, job["target_id"], bad)
+                digests.prepare_batch(session, job["target_id"], bad, settings=service.settings)
             assert error.value.code == "digest_checkpoint_invalid"
         assert session.get(DigestDelivery, job["target_id"]).summary == {}
 
@@ -233,7 +233,7 @@ def test_completed_preparation_does_not_cache_recipient_authorization(harness, m
     cp = None
     while not cp or not cp["complete"]:
         with service.db.session() as session:
-            cp = digests.prepare_batch(session, job["target_id"], cp)
+            cp = digests.prepare_batch(session, job["target_id"], cp, settings=service.settings)
             session.commit()
     with service.db.session() as session:
         if change == "remove_membership":
@@ -253,14 +253,14 @@ def test_preferences_changed_after_preparation_require_restart_before_sending(ha
     cp = None
     while not cp or not cp["complete"]:
         with service.db.session() as session:
-            cp = digests.prepare_batch(session, job["target_id"], cp)
+            cp = digests.prepare_batch(session, job["target_id"], cp, settings=service.settings)
             session.commit()
     service.save_digest_preference(user_id, enabled=True, frequency="daily", sources=[], severities=["low"])
     with pytest.raises(DomainError) as error:
         digests.deliver(service.db, service.environment_settings, job["target_id"], selection=cp)
     assert error.value.code == "digest_preferences_changed" and sent == []
     with service.db.session() as session:
-        restarted = digests.prepare_batch(session, job["target_id"], cp)
+        restarted = digests.prepare_batch(session, job["target_id"], cp, settings=service.settings)
         assert restarted["restarts"] == 1 and restarted["processed"] == 50 and not restarted["complete"]
 
 

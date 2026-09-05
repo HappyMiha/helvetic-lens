@@ -20,7 +20,9 @@ from .config import DomainError, Settings
 from .db import Database, utcnow
 from .impact_inbox import ImpactInboxFilters, ImpactInboxReader
 from .locales import normalize_locale
-from .models import DigestDelivery, DigestPreference, Job, OrganizationMembership, User
+from .model_settings import resolved_settings
+from .models import ApertusConfiguration, DigestDelivery, DigestPreference, Job, OrganizationMembership, User
+from .relation_analysis import configuration_fingerprint
 
 SEVERITIES = {"high", "medium", "low", "none", "unknown"}
 FREQUENCIES = {"daily": timedelta(days=1), "weekly": timedelta(days=7)}
@@ -431,7 +433,16 @@ def _recipient(session: Session, delivery: DigestDelivery, *, lock: bool = False
     return user
 
 
-def prepare_batch(session: Session, delivery_id: str, checkpoint: dict | None = None) -> dict:
+def _reader(session: Session, delivery: DigestDelivery, settings: Settings) -> ImpactInboxReader:
+    # Only public configuration is inspected; no credential decryption or inference.
+    values = session.scalar(select(ApertusConfiguration.values).where(
+        ApertusConfiguration.organization_id == delivery.organization_id))
+    public_record = ApertusConfiguration(values=values, key_source="none") if values is not None else None
+    effective = resolved_settings(settings, public_record)
+    return ImpactInboxReader(delivery.organization_id, delivery.user_id, settings=effective)
+
+
+def prepare_batch(session: Session, delivery_id: str, checkpoint: dict | None = None, *, settings: Settings) -> dict:
     """Prepare <=50 event keys. Caller commits cursor and queue yield atomically."""
     delivery = session.scalar(select(DigestDelivery).where(DigestDelivery.id == delivery_id).with_for_update())
     if not delivery:
@@ -446,14 +457,16 @@ def prepare_batch(session: Session, delivery_id: str, checkpoint: dict | None = 
     if checkpoint:
         _validate_selection(delivery, checkpoint)
     fingerprint = _preference_fingerprint(preference)
-    if not checkpoint or checkpoint.get("preference_fingerprint") != fingerprint:
+    reader = _reader(session, delivery, settings)
+    configuration = configuration_fingerprint(reader.settings)
+    if (not checkpoint or checkpoint.get("preference_fingerprint") != fingerprint
+            or checkpoint.get("configuration_fingerprint") != configuration):
         checkpoint = {**_selection_context(delivery), "admitted_before": _iso(utcnow()),
-                      "preference_fingerprint": fingerprint, "cursor": None, "event_ids": [],
+                      "preference_fingerprint": fingerprint, "configuration_fingerprint": configuration, "cursor": None, "event_ids": [],
                       "processed": 0, "batches": 0, "complete": False,
                       "restarts": checkpoint.get("restarts", 0) + bool(checkpoint)}
     if checkpoint["complete"] or delivery.status == "succeeded" or not preference.enabled:
         return {**checkpoint, "complete": True}
-    reader = ImpactInboxReader(delivery.organization_id, delivery.user_id)
     filters = replace(inbox_filters(preference, delivery.period_start, delivery.period_end),
                       admitted_before=datetime.fromisoformat(checkpoint["admitted_before"]))
     page = reader.event_page(session, filters, cursor=checkpoint["cursor"])
@@ -465,7 +478,7 @@ def prepare_batch(session: Session, delivery_id: str, checkpoint: dict | None = 
 
 
 def deliver(database: Database, settings: Settings, delivery_id: str, *, selection: dict | None = None,
-            job_id: str | None = None, worker: str | None = None) -> dict | None:
+            job_id: str | None = None, worker: str | None = None, analysis_settings: Settings | None = None) -> dict | None:
     with database.session() as session:
         if job_id:
             owned_job = session.scalar(select(Job).where(Job.id == job_id).with_for_update())
@@ -487,11 +500,12 @@ def deliver(database: Database, settings: Settings, delivery_id: str, *, selecti
             session.commit()
             return serialize_delivery(delivery)
         filters = inbox_filters(preference, delivery.period_start, delivery.period_end)
-        reader = ImpactInboxReader(delivery.organization_id, delivery.user_id)
+        reader = _reader(session, delivery, analysis_settings or settings)
         if selection is not None:
             _validate_selection(delivery, selection)
-            if not selection.get("complete") or selection.get("preference_fingerprint") != _preference_fingerprint(preference):
-                raise DomainError("Digest preferences changed; preparation will restart before sending.", 409, "digest_preferences_changed")
+            if (not selection.get("complete") or selection.get("preference_fingerprint") != _preference_fingerprint(preference)
+                    or selection.get("configuration_fingerprint") != configuration_fingerprint(reader.settings)):
+                raise DomainError("Digest preferences or model configuration changed; preparation will restart before sending.", 409, "digest_preferences_changed")
             filters = replace(filters, event_ids=tuple(selection["event_ids"]),
                               admitted_before=datetime.fromisoformat(selection["admitted_before"]))
         # Recheck current access, personal state and saved conclusions for at most

@@ -112,7 +112,7 @@ def test_period_sql_excludes_large_history_future_other_sources_and_private_stat
     with service.db.session() as session:
         loaded = []
         sa_event.listen(session, "loaded_as_persistent", lambda _session, row: loaded.append(row))
-        reader = ImpactInboxReader(service.organization_id, user_id)
+        reader = ImpactInboxReader(service.organization_id, user_id, settings=service.settings)
         page = reader.page(session, digests.inbox_filters(preference, start, end))
         assert {item["event_id"] for item in page["items"]} == {ids["start"], ids["inside"], ids["other_reader"]}
         assert len([row for row in loaded if isinstance(row, OrganizationRelationCandidate)]) == 3

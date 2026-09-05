@@ -184,6 +184,19 @@ def generation_parameters(settings: Settings) -> dict:
     }
 
 
+def configuration_fingerprint(settings: Settings) -> str:
+    """Public answer-affecting configuration; never credentials or transport knobs."""
+    return _fingerprint({
+        "provider": settings.apertus_provider,
+        "product_id": settings.apertus_product_id,
+        "endpoint": settings.apertus_base_url,
+        "model": settings.apertus_model,
+        "context_chars": settings.apertus_context_chars,
+        "max_tokens": settings.apertus_max_tokens,
+        "generation_parameters": generation_parameters(settings),
+    })
+
+
 def cache_key(
     *,
     organization_candidate_id: str,
@@ -202,6 +215,7 @@ def cache_key(
         {
             "schema": SCHEMA_VERSION,
             "planner": PLANNER_VERSION,
+            "configuration_fingerprint": configuration_fingerprint(settings),
             "organization_candidate_id": organization_candidate_id,
             "event_id": event_id,
             "source_version_id": source_version_id,
@@ -272,6 +286,7 @@ def build_plan(
             "batch_count": 1,
             "local_first": settings.apertus_provider == "docker",
             "profile_revision": profile_revision,
+            "configuration_fingerprint": configuration_fingerprint(settings),
             "generation_parameters": generation_parameters(settings),
         },
         "coverage": coverage,

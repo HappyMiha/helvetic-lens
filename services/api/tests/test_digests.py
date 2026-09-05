@@ -53,7 +53,7 @@ def test_saved_digest_uses_inbox_without_changing_personal_read_state(harness):
         assert delivery.item_count == 1
         assert delivery.summary["events"][0]["impacts"][0]["evidence"]
     with service.db.session() as session:
-        inbox = ImpactInboxReader(service.organization_id, user_id).page(
+        inbox = ImpactInboxReader(service.organization_id, user_id, settings=service.settings).page(
             session, ImpactInboxFilters()
         )
         assert inbox["items"][0]["read_state"] == "unread"
@@ -122,7 +122,7 @@ def test_delivery_failure_is_saved_without_changing_inbox_state(harness, monkeyp
         delivery = session.get(DigestDelivery, job["target_id"])
         assert delivery.status == "failed"
         assert delivery.summary["events"]
-        inbox = ImpactInboxReader(service.organization_id, user_id).page(
+        inbox = ImpactInboxReader(service.organization_id, user_id, settings=service.settings).page(
             session, ImpactInboxFilters()
         )
         assert inbox["items"][0]["read_state"] == "unread"

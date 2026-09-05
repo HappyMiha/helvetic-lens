@@ -61,7 +61,7 @@ An identical successful result is reused only when all of these inputs match:
 - local runtime/model artifact/hardware fingerprint; and
 - planner and result schema versions.
 
-The v3 result revision invalidates the cache. Results from earlier result-rule revisions remain unchanged in history with `stale=true`, and cannot be selected as the current inbox/history conclusion. Reanalysis uses the existing delivery and event, preventing duplicate inbox entries. Automatic bounded candidate backfill and complete read-time evidence/settings/runtime freshness are still tracked by HL-100/099; this change does not silently rewrite or bulk reprocess historical data.
+The v3 result revision invalidates the cache. Results from earlier result-rule revisions remain unchanged in history with `stale=true`, and cannot be selected as the current inbox/history conclusion. Reanalysis uses the existing delivery and event, preventing duplicate inbox entries. Automatic bounded candidate backfill and complete read-time evidence/prompt/runtime freshness are still tracked by HL-100/099; this change does not silently rewrite or bulk reprocess historical data.
 
 Profile freshness is checked on every relation-history and inbox read: a succeeded
 report is current only if its saved `analysis_plan.execution.profile_revision`
@@ -89,8 +89,34 @@ request timeout/retry and batch concurrency changes intentionally preserve a
 successful request's identity; none changes the requested semantic inputs.
 Existing cache keys from before this addition miss once on the next explicit or
 scheduled analysis, without rewriting/deleting those reports or scheduling a
-bulk rerun. Changing settings alone does not yet mark all previously saved
-reports stale during read: that separate HL-100 freshness boundary remains open.
+bulk rerun.
+
+Relation history and legacy/paged inbox reads now also require
+`analysis_plan.execution.configuration_fingerprint` to match the resolved current
+provider/product/endpoint/model/context/output and generation configuration. The
+same predicate is applied in SQL before history payload hydration. Credentials,
+request timeout/retries and batch concurrency are excluded. Returning to exactly
+the old configuration can reuse its still-valid report; failed attempts under a
+new configuration cannot revive old applicability. Official facts remain separate.
+The settings form invalidates relation-history and digest preview caches on save
+or reset.
+
+Digest preparation and final delivery resolve public settings for the recipient's
+organization without loading/decrypting its saved credential. A fingerprint is
+included in the preparation checkpoint: a configuration change restarts bounded
+selection, and an already completed selection is rejected before sending if its
+configuration no longer matches. Existing checkpoints without it restart safely.
+Delivery uses existing saved reports only; it never generates explanations.
+
+**Upgrade limit:** reports without this new fingerprint are retained as stale
+history, with citations accessible. They cannot reliably prove the full original
+configuration. No backfill, migration, data deletion or automatic bulk inference
+runs. Cache identity changes once so the next explicit/scheduled request can create
+a report with the new provenance. This does not yet detect prompt edits, changing
+evidence or replacement of a local model artifact behind the same configured model
+name. Those HL-100 freshness boundaries remain open. Reads use the configuration
+snapshot available to the request; this is not a global transactional lock against
+an administrator changing settings concurrently.
 
 This is revision-based invalidation, not a semantic test of profile similarity;
 unmanaged database edits that bypass the profile revision are outside this contract.

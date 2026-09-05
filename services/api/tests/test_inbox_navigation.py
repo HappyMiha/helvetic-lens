@@ -55,7 +55,7 @@ def test_options_remain_available_outside_page_and_limit_without_loading_laws(ha
         session.commit()
         other_id = other.id
     with service.db.organization_context(other_id), service.db.session() as session:
-        assert ImpactInboxReader(other_id, None).law_options(session, selected=ids[-1]) == {"items": [], "has_more": False, "selected": None}
+        assert ImpactInboxReader(other_id, None, settings=service.settings).law_options(session, selected=ids[-1]) == {"items": [], "has_more": False, "selected": None}
 
 
 def test_candidate_link_reaches_old_event_without_traversing_recent_pages(harness):

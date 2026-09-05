@@ -107,6 +107,8 @@ export function SettingsPage() {
                 resourceTag("ai-history", "organization"),
                 resourceTag("impact-matrix", "organization"),
                 resourceTag("impact-inbox", "organization"),
+                resourceTag("relation-analyses", "organization"),
+                resourceTag("digests", "organization"),
                 resourceTag("registry", "organization"),
               );
             }}

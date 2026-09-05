@@ -127,7 +127,7 @@ def test_preview_cursor_binds_reader_organization_and_saved_filters(harness):
             setattr(preference, key, value)
         with service.db.session() as session, pytest.raises(DomainError, match="Restart"):
             digests.preview_page(
-                session, ImpactInboxReader(service.organization_id, user), preference, cursor=first
+                session, ImpactInboxReader(service.organization_id, user, settings=service.settings), preference, cursor=first
             )
     with service.db.session(include_all_organizations=True) as session:
         foreign = Organization(name="Foreign preview", slug="foreign-preview")

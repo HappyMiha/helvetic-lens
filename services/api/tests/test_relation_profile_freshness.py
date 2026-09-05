@@ -49,7 +49,7 @@ def test_profile_edit_invalidates_history_inbox_and_severity_without_spending_to
         assert client.get(route, params={"severity": "medium"}).json()["items"] == []
     # The worker/preview both use this selector: no stale AI severity may enter a digest.
     with service.db.session() as session:
-        current, latest, total = ImpactInboxReader._latest_analyses(session, delivery)
+        current, latest, total = ImpactInboxReader._latest_analyses(session, delivery, settings=service.settings)
         assert current is None and latest.id == saved["id"] and total == 1
         assert session.scalar(select(func.count()).select_from(Job)) == jobs_before
         record = session.get(RelationImpactAnalysis, saved["id"])
@@ -118,7 +118,7 @@ def test_another_organizations_matching_revision_cannot_validate_a_stale_report(
         session.add(Profile(id=other.id, organization_id=other.id, revision=1))
         session.commit()
     with service.db.session(include_all_organizations=True) as session:
-        current, latest, count = ImpactInboxReader._latest_analyses(session, delivery)
+        current, latest, count = ImpactInboxReader._latest_analyses(session, delivery, settings=service.settings)
         assert current is None and latest.id == saved["id"] and count == 1
-        histories, _ = ImpactInboxReader(service.organization_id, None)._page_histories(session, [delivery])
+        histories, _ = ImpactInboxReader(service.organization_id, None, settings=service.settings)._page_histories(session, [delivery])
         assert histories[delivery][0] is None

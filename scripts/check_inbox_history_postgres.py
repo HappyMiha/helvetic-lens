@@ -47,6 +47,10 @@ from test_inbox_navigation import (
 from test_inbox_page_api import (
     test_public_pages_have_stable_equal_time_order_and_only_hydrate_selected_events,
 )
+from test_relation_configuration_freshness import (
+    test_configuration_changes_remove_current_conclusion_without_jobs_or_history_rewrite,
+    test_digest_restarts_configuration_selection_and_rejects_old_prepared_delivery,
+)
 from test_relation_profile_freshness import (
     test_profile_edit_invalidates_history_inbox_and_severity_without_spending_tokens,
 )
@@ -55,7 +59,7 @@ from test_relation_profile_freshness import (
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile"), default="history")
+    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -76,6 +80,15 @@ def main():
         with TestClient(app) as client:
             service = app.state.service
             harness = (client, fetcher, service, model)
+            if args.suite == "configuration":
+                test_configuration_changes_remove_current_conclusion_without_jobs_or_history_rewrite(harness, "apertus_model", "new-model")
+                print("PostgreSQL: model change invalidates history and both inbox readers without inference or history rewrites; original configuration restores the valid saved report.")
+                return
+            if args.suite == "configuration-digest":
+                with MonkeyPatch.context() as patch:
+                    test_digest_restarts_configuration_selection_and_rejects_old_prepared_delivery(harness, patch)
+                print("PostgreSQL: persisted model settings invalidate completed digest selection and restart bounded preparation without sending mail or calling AI.")
+                return
             if args.suite == "profile":
                 test_profile_edit_invalidates_history_inbox_and_severity_without_spending_tokens(harness)
                 print("PostgreSQL: profile edit immediately invalidates current history, legacy/paged inbox and severity; retained evidence stays accessible, with no read-time inference, jobs or history rewrites.")
