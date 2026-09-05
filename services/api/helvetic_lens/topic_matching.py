@@ -9,6 +9,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import Text, cast, func, or_, select, text
 from sqlalchemy.orm import Session
 
+from . import jobs
 from .config import DomainError, Settings
 from .db import utcnow
 from .models import (
@@ -28,6 +29,7 @@ from .source_packs import definition_matches
 
 RULE_REVISION = "topic-match-v1"
 HISTORY_REVISION = "topic-history-v1"
+LIVE_REVISION = "topic-live-v1"
 
 
 def _iso(value: datetime | None) -> str | None:
@@ -237,6 +239,74 @@ def _score(
     return confidence, signals[:20]
 
 
+def _persist_match(
+    session: Session, event: RegulatoryEvent, work: RegulatoryWork,
+    topic: MonitoringTopic, revision: MonitoringTopicRevision,
+    confidence: str, signals: list[dict], settings: Settings,
+) -> str:
+    """One idempotent evidence writer for historical and live matching."""
+    now = utcnow()
+    organization_id = topic.organization_id
+    evidence = {
+        "event_id": event.id,
+        "work_id": work.id,
+        "expression_id": event.expression_id,
+        "document_version_id": event.document_version_id,
+        "source_url": event.source_url or work.stable_official_url,
+        "detected_at": _iso(event.detected_at),
+        "provenance_method": event.provenance_method,
+        "official_identifiers": [
+            {"scheme": item.scheme, "value": item.value, "source_url": item.source_url}
+            for item in session.scalars(
+                select(RegulatoryIdentifier).where(RegulatoryIdentifier.work_id == work.id)
+            )
+        ],
+    }
+    evidence_fingerprint = _fingerprint(
+        {"event": evidence, "event_evidence": event.evidence_json, "signals": signals}
+    )
+    rule_fingerprint = f"{RULE_REVISION}:{revision.revision}"
+    record = session.scalar(
+        select(TopicEventMatch)
+        .where(
+            TopicEventMatch.organization_id == organization_id,
+            TopicEventMatch.topic_revision_id == revision.id,
+            TopicEventMatch.event_id == event.id,
+        )
+        .execution_options(include_all_organizations=True)
+    )
+    if record and record.evidence_fingerprint == evidence_fingerprint and record.rule_fingerprint == rule_fingerprint:
+        return "reused"
+    if not record:
+        record = TopicEventMatch(
+            organization_id=organization_id,
+            topic_id=topic.id,
+            topic_revision_id=revision.id,
+            event_id=event.id,
+            work_id=work.id,
+            expires_at=now,
+        )
+        session.add(record)
+        outcome = "matched"
+    else:
+        record.decision_status = "pending"
+        outcome = "updated"
+    record.expression_id = event.expression_id
+    record.document_version_id = event.document_version_id
+    record.reason_signals_json = signals
+    record.evidence_references_json = evidence
+    record.evidence_fingerprint = evidence_fingerprint
+    record.rule_fingerprint = rule_fingerprint
+    record.model_provider = None
+    record.model_name = None
+    record.model_prompt_revision = None
+    record.confidence_band = confidence
+    record.matched_at = now
+    record.updated_at = now
+    record.expires_at = now + timedelta(days=settings.topic_match_retention_days)
+    return outcome
+
+
 def generate_for_events(
     session: Session,
     events: list[RegulatoryEvent],
@@ -246,7 +316,6 @@ def generate_for_events(
 ) -> dict:
     """Match only organizations already entitled to each event, under hard caps."""
 
-    now = utcnow()
     # A topic-specific replay belongs only to that topic's organization. Global
     # fan-out caps must not exclude its owner or enumerate other organizations.
     topic_organization = None
@@ -311,66 +380,156 @@ def generate_for_events(
             for _, topic, revision, confidence, signals in ranked[
                 : settings.topic_matches_per_organization_event
             ]:
-                evidence = {
-                    "event_id": event.id,
-                    "work_id": work.id,
-                    "expression_id": event.expression_id,
-                    "document_version_id": event.document_version_id,
-                    "source_url": event.source_url or work.stable_official_url,
-                    "detected_at": _iso(event.detected_at),
-                    "provenance_method": event.provenance_method,
-                    "official_identifiers": [
-                        {"scheme": item.scheme, "value": item.value, "source_url": item.source_url}
-                        for item in session.scalars(
-                            select(RegulatoryIdentifier).where(RegulatoryIdentifier.work_id == work.id)
-                        )
-                    ],
-                }
-                evidence_fingerprint = _fingerprint(
-                    {"event": evidence, "event_evidence": event.evidence_json, "signals": signals}
-                )
-                rule_fingerprint = f"{RULE_REVISION}:{revision.revision}"
-                record = session.scalar(
-                    select(TopicEventMatch)
-                    .where(
-                        TopicEventMatch.organization_id == organization_id,
-                        TopicEventMatch.topic_revision_id == revision.id,
-                        TopicEventMatch.event_id == event.id,
-                    )
-                    .execution_options(include_all_organizations=True)
-                )
-                if record and record.evidence_fingerprint == evidence_fingerprint and record.rule_fingerprint == rule_fingerprint:
-                    result["reused"] += 1
-                    continue
-                if not record:
-                    record = TopicEventMatch(
-                        organization_id=organization_id,
-                        topic_id=topic.id,
-                        topic_revision_id=revision.id,
-                        event_id=event.id,
-                        work_id=work.id,
-                        expires_at=now,
-                    )
-                    session.add(record)
-                    result["matched"] += 1
-                else:
-                    record.decision_status = "pending"
-                    result["updated"] += 1
-                record.expression_id = event.expression_id
-                record.document_version_id = event.document_version_id
-                record.reason_signals_json = signals
-                record.evidence_references_json = evidence
-                record.evidence_fingerprint = evidence_fingerprint
-                record.rule_fingerprint = rule_fingerprint
-                record.model_provider = None
-                record.model_name = None
-                record.model_prompt_revision = None
-                record.confidence_band = confidence
-                record.matched_at = now
-                record.updated_at = now
-                record.expires_at = now + timedelta(days=settings.topic_match_retention_days)
+                outcome = _persist_match(session, event, work, topic, revision, confidence, signals, settings)
+                result[outcome] += 1
     session.flush()
     return result
+
+
+def _live_evidence_fingerprint(session: Session, event: RegulatoryEvent) -> str:
+    work = session.get(RegulatoryWork, event.work_id)
+    expression = session.get(RegulatoryExpression, event.expression_id) if event.expression_id else None
+    return _fingerprint({
+        "event": [event.id, event.work_id, event.expression_id, event.document_version_id,
+                  event.event_type, event.impact, event.connector, event.evidence_json,
+                  event.source_url, event.provenance_method, _iso(event.detected_at)],
+        "work": [work.title, work.kind, work.metadata_json, work.stable_official_url] if work else None,
+        "expression": [expression.title, expression.language] if expression else None,
+        "identifiers": sorted(
+            (item.scheme, item.value, item.normalized_value, item.source_url or "")
+            for item in session.scalars(select(RegulatoryIdentifier).where(RegulatoryIdentifier.work_id == event.work_id))
+        ),
+    })
+
+
+def enqueue_live_events(session: Session, events: list[RegulatoryEvent], settings: Settings) -> dict:
+    """Spool every entitled organization into its own durable, bounded matching job.
+
+    Called in the connector's fan-out transaction. The organization limit is a
+    SQL page size, never a recall cutoff. Retrying that transaction is idempotent.
+    A tenant session can enqueue only its own admissions; only the internal
+    connector session may enumerate all organizations.
+    """
+    result = {"events": len(events), "organizations_considered": 0,
+              "queued": 0, "reused": 0, "ai_calls": 0, "status": "queued"}
+    for source in sorted(events, key=lambda item: item.id):
+        # Serialize spooling the same event across overlapping connector retries.
+        event = session.scalar(select(RegulatoryEvent).where(RegulatoryEvent.id == source.id).with_for_update())
+        if not event:
+            continue
+        fingerprint = _live_evidence_fingerprint(session, event)
+        after = ""
+        while True:
+            admissions = list(session.scalars(
+                select(RegulatoryEventState).where(
+                    RegulatoryEventState.event_id == event.id,
+                    RegulatoryEventState.organization_id > after,
+                ).order_by(RegulatoryEventState.organization_id)
+                .limit(settings.topic_match_organizations_per_event)
+            ))
+            if not admissions:
+                break
+            for state in admissions:
+                key = _fingerprint([state.id, fingerprint])
+                _job, reused = jobs.enqueue(
+                    session, organization_id=state.organization_id,
+                    job_type="topic_match_event", target_type="regulatory_event", target_id=event.id,
+                    queue="ingest", idempotency_key=f"{LIVE_REVISION}:{RULE_REVISION}:{key}",
+                    payload={"event_id": event.id, "admission_id": state.id,
+                             "evidence_fingerprint": fingerprint},
+                    priority=4, steps=[("Match active topics", {})],
+                )
+                result["reused" if reused else "queued"] += 1
+                result["organizations_considered"] += 1
+            after = admissions[-1].organization_id
+    return result
+
+
+def run_live_batch(
+    session: Session, event_id: str, settings: Settings, *, admission_id: str,
+    evidence_fingerprint: str, checkpoint: dict | None = None,
+    captured_at: datetime | None = None,
+) -> dict:
+    """Exhaust current saved topic rules with a keyset cursor and no model calls."""
+    organization_id = session.info["organization_id"]
+    checkpoint = dict(checkpoint or {})
+    if checkpoint and (
+        checkpoint.get("version") != LIVE_REVISION
+        or checkpoint.get("organization_id") != organization_id
+        or checkpoint.get("event_id") != event_id
+        or checkpoint.get("admission_id") != admission_id
+        or checkpoint.get("evidence_fingerprint") != evidence_fingerprint
+    ):
+        raise DomainError("The live matching checkpoint does not match this event.", 409, "topic_checkpoint_invalid")
+    if not checkpoint:
+        checkpoint = {
+            "version": LIVE_REVISION, "rule_revision": RULE_REVISION,
+            "organization_id": organization_id, "event_id": event_id, "admission_id": admission_id,
+            "evidence_fingerprint": evidence_fingerprint,
+            "captured_at": _iso(captured_at or utcnow()), "cursor": None,
+            "processed": 0, "matched": 0, "updated": 0, "reused": 0, "excluded": 0, "batches": 0,
+        }
+    admission = session.scalar(select(RegulatoryEventState).where(
+        RegulatoryEventState.id == admission_id, RegulatoryEventState.event_id == event_id,
+        RegulatoryEventState.organization_id == organization_id,
+    ).with_for_update())
+    event = session.get(RegulatoryEvent, event_id) if admission else None
+    work = session.get(RegulatoryWork, event.work_id) if event else None
+    reason = (
+        "event_not_visible" if not admission or not event or not work
+        else "matching_rule_changed" if checkpoint["rule_revision"] != RULE_REVISION
+        else "evidence_changed" if _live_evidence_fingerprint(session, event) != evidence_fingerprint
+        else None
+    )
+    if reason:
+        if event and work and reason != "event_not_visible":
+            enqueue_live_events(session, [event], settings)
+        return {**checkpoint, "status": "superseded", "exclusion_reason": reason,
+                "remaining": 0, "has_more": False, "ai_calls": 0, "checkpoint": checkpoint}
+
+    through = datetime.fromisoformat(checkpoint["captured_at"])
+    statement = select(MonitoringTopic, MonitoringTopicRevision).join(
+        MonitoringTopicRevision,
+        (MonitoringTopicRevision.topic_id == MonitoringTopic.id)
+        & (MonitoringTopicRevision.revision == MonitoringTopic.current_revision),
+    ).where(
+        MonitoringTopic.organization_id == organization_id,
+        MonitoringTopic.status == "active",
+        MonitoringTopicRevision.created_at <= through,
+    )
+    # First worker start is after the admission commit. Topics created/edited
+    # later have their own history replay; neither side of that race loses events.
+    if "eligible_topics" not in checkpoint:
+        checkpoint["eligible_topics"] = session.scalar(select(func.count()).select_from(statement.subquery()))
+    if checkpoint["cursor"]:
+        statement = statement.where(MonitoringTopic.id > checkpoint["cursor"])
+    # Even if every considered topic matches, writes stay within the batch budget.
+    size = min(settings.topic_match_topics_per_organization_event, settings.topic_matches_per_organization_event)
+    rows = list(session.execute(statement.order_by(MonitoringTopic.id).limit(size)
+                                .with_for_update(of=MonitoringTopic)))
+    definitions = {item.id: item for item in session.scalars(
+        select(SourcePackDefinition).where(SourcePackDefinition.active.is_(True))
+    )}
+    expression = session.get(RegulatoryExpression, event.expression_id) if event.expression_id else None
+    for topic, revision in rows:
+        scored = _score(session, event, work, expression, revision, definitions)
+        if scored:
+            confidence, signals = scored
+            outcome = _persist_match(session, event, work, topic, revision, confidence, signals, settings)
+            checkpoint[outcome] += 1
+        else:
+            checkpoint["excluded"] += 1
+    checkpoint["processed"] += len(rows)
+    checkpoint["batches"] += 1
+    if rows:
+        checkpoint["cursor"] = rows[-1][0].id
+        statement = statement.where(MonitoringTopic.id > checkpoint["cursor"])
+    remaining = session.scalar(select(func.count()).select_from(statement.subquery())) if rows else 0
+    checkpoint["remaining"] = remaining
+    checkpoint["removed_since_capture"] = max(0, checkpoint["eligible_topics"] - checkpoint["processed"] - remaining)
+    session.flush()
+    return {**checkpoint, "status": "pending" if remaining else "complete", "has_more": bool(remaining),
+            "ai_calls": 0, "checkpoint": checkpoint}
 
 
 def run_backfill(

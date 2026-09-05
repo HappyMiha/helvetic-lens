@@ -43,6 +43,7 @@ def _enqueue_outbox(session: Session, job: Job) -> OutboxMessage:
     if pending:
         return pending
     message = OutboxMessage(
+        organization_id=job.organization_id,
         job_id=job.id,
         queue=job.queue,
         payload={"job_id": job.id},
@@ -121,6 +122,7 @@ def enqueue(
     for position, (name, details) in enumerate(steps or [], 1):
         session.add(
             JobStep(
+                organization_id=organization_id,
                 job_id=job.id,
                 position=position,
                 name=name[:100],
@@ -363,7 +365,7 @@ def retry(session: Session, job_id: str) -> Job:
         step.progress_current = 0
         step.error_detail = None
         step.started_at = step.finished_at = None
-    if job.type != "topic_match_backfill" or not (job.payload or {}).get("checkpoint"):
+    if job.type not in {"topic_match_backfill", "topic_match_event"} or not (job.payload or {}).get("checkpoint"):
         job.progress_current = succeeded_steps
     _enqueue_outbox(session, job)
     return job

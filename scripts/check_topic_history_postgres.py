@@ -21,20 +21,32 @@ from alembic import command
 from alembic.config import Config
 from conftest import FakeFetcher, ScriptedModel
 from fastapi.testclient import TestClient
-from helvetic_lens import jobs
+from helvetic_lens import jobs, topic_matching
 from helvetic_lens.config import Settings
 from helvetic_lens.db import utcnow
 from helvetic_lens.main import create_app
-from helvetic_lens.models import Job, MonitoringTopic
+from helvetic_lens.models import (
+    Job,
+    MonitoringTopic,
+    Organization,
+    RegulatoryEvent,
+    RegulatoryEventState,
+)
 from test_topic_history import (
     test_501_events_resume_through_outbox_without_duplicates_or_model_calls,
+)
+from test_topic_live import (
+    seed_topics,
+    test_51_matching_topics_resume_after_write_limit_and_retain_metadata_matches,
 )
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    value = parser.parse_args().database_url
+    parser.add_argument("--suite", choices=("history", "live"), default="history")
+    args = parser.parse_args()
+    value = args.database_url
     url = make_url(value)
     if (
         url.get_backend_name() != "postgresql"
@@ -66,12 +78,12 @@ def main():
         app = create_app(settings, fetcher=fetcher, model_client=model)
         with TestClient(app) as client:
             service = app.state.service
-            test_501_events_resume_through_outbox_without_duplicates_or_model_calls(
-                (client, fetcher, service, model)
+            regression = (
+                test_51_matching_topics_resume_after_write_limit_and_retain_metadata_matches
+                if args.suite == "live" else test_501_events_resume_through_outbox_without_duplicates_or_model_calls
             )
-            print(
-                "PostgreSQL: 501 events, tied cursors, outbox continuation, no duplicate matches and zero AI calls passed."
-            )
+            regression((client, fetcher, service, model))
+            print(f"PostgreSQL: {args.suite} cursor, outbox continuation, no duplicate matches and zero AI calls passed.")
 
             config = Config(str(ROOT / "services/api/alembic.ini"))
             config.set_main_option(
@@ -99,9 +111,11 @@ def main():
 
             with service.db.session() as session:
                 job = session.scalar(
-                    select(Job).where(Job.type == "topic_match_backfill")
+                    select(Job).where(Job.type == ("topic_match_event" if args.suite == "live" else "topic_match_backfill"))
                 )
-                job_id, topic_id = job.id, job.target_id
+                job_id = job.id
+                topic_id = session.scalar(select(MonitoringTopic.id)) if args.suite == "live" else job.target_id
+                live_payload = dict(job.payload)
                 job.state, job.lease_owner = "running", "batch-worker"
                 job.heartbeat_at = utcnow() - timedelta(minutes=10)
                 session.commit()
@@ -132,13 +146,47 @@ def main():
                     is None
                 )
             assert asyncio.run(service.execute_job(job_id))["state"] == "succeeded"
-            assert (
-                client.get(f"/api/monitoring-topics/{topic_id}").json()["history_scan"][
-                    "processed"
-                ]
-                == 501
-            )
+            if args.suite == "history":
+                assert client.get(f"/api/monitoring-topics/{topic_id}").json()["history_scan"]["processed"] == 501
+            else:
+                assert client.get(f"/api/jobs/{job_id}").json()["progress"]["current"] == 51
             print("PostgreSQL: plan lock and completed-checkpoint replay passed.")
+
+            if args.suite == "live":
+                event_id = live_payload["event_id"]
+                with service.db.session() as batch, service.db.session() as edit:
+                    # Exercise the actual joined query, not merely a manually held lock.
+                    data = topic_matching.run_live_batch(
+                        batch, event_id, service.settings,
+                        admission_id=live_payload["admission_id"],
+                        evidence_fingerprint=live_payload["evidence_fingerprint"],
+                    )
+                    assert data["processed"] == 20 and data["remaining"] == 31
+                    locked = batch.scalar(select(MonitoringTopic).where(MonitoringTopic.id == data["cursor"]))
+                    assert edit.scalar(select(MonitoringTopic).where(MonitoringTopic.id == locked.id)
+                                       .with_for_update(skip_locked=True)) is None
+                with service.db.session(include_all_organizations=True) as session:
+                    for index in range(100):
+                        org = Organization(name=f"Live PG {index}", slug=f"live-pg-{index}")
+                        session.add(org)
+                        session.flush()
+                        session.add(RegulatoryEventState(organization_id=org.id, event_id=event_id))
+                        seed_topics(session, org.id, 1, concepts=["rare citizenship subject"], synonyms=[])
+                    result = topic_matching.enqueue_live_events(
+                        session, [session.get(RegulatoryEvent, event_id)], service.settings
+                    )
+                    assert result["organizations_considered"] == 101 and result["queued"] == 100
+                    assert result["reused"] == 1
+                    last = session.scalar(select(Job).where(Job.type == "topic_match_event")
+                                          .order_by(Job.organization_id.desc()))
+                    owner, last_id = last.organization_id, last.id
+                    session.commit()
+                with service.db.organization_context(owner):
+                    result = asyncio.run(service.execute_job(last_id))
+                    assert result["state"] == "succeeded" and result["result"]["data"]["matched"] == 1
+                assert client.get(f"/api/jobs/{last_id}").status_code == 404
+                assert model.calls == []
+                print("PostgreSQL: actual live batch locks, 101-organization spooling and tenant worker isolation passed.")
 
 
 if __name__ == "__main__":

@@ -2,6 +2,15 @@
 
 The source-to-diff workflow, Settings page, and live Apertus path are verified.
 
+## Resumable live topic matching — 5 September 2026 (HappyDucky02)
+
+- Connector fan-out now commits organization-owned live matching jobs/outbox records instead of running a permanently capped shortlist. PostgreSQL organization pagination reaches the 101st owner; live topic batches continue beyond 50 considered topics and 20 matching results. The unchanged deterministic scorer and shared evidence writer make zero model requests.
+- The Windows-compatible API regression passed **501 tests**. After adding the final connector-replay, spooling rollback and cross-organization fairness assertions, the focused live/history/matching/synchronization/job run passed **47 tests** (including all nine new live regressions). The unchanged Linux-only release-manager module requiring `fcntl` was excluded from the Windows run; this is not an Ubuntu or 100-user performance certification. The existing Starlette test-client deprecation warning remains.
+- A disposable **PostgreSQL 16.14** database passed `scripts/check_topic_history_postgres.py --suite live`: 51 metadata-relevant topics persist through three outbox executions; duplicate delivery reuses results; 101 organizations are spooled without truncation; the last owner’s worker sees only its data and the first owner’s API receives 404 for that job. Actual joined live-batch topic locks, lease recovery, completed-checkpoint replay and a populated history-index downgrade/upgrade also passed. The test container was removed afterwards.
+- Failure after writing a match rolls back the entire batch; failure while spooling rolls back jobs, steps and outbox together. Cancellation/retry retains the prior cursor, successful batches do not exhaust the failure budget, and a large organization yields behind another organization’s waiting event. Tests also cover changed-evidence supersession, revoked admissions, foreign checkpoints and creation/edit races between the history and live paths.
+- API/script Ruff checks and `npm run typecheck` pass, including the five-language catalogue/value audit (1,567 recognized production keys), 27 shell checks, 22 resource/delivery checks and 40 rendered report/history checks. New live/history queue names and steps have DE/FR/IT/RM/EN translations. No layout or routing changes were made in this slice.
+- No production service was restarted, no production schema/data changed and no paid provider was called. Organization metadata spooling remains proportional to admitted event/organization pairs; target-host load/capacity, preview parity, feed-wide coverage and reviewed evidence validity remain open backlog work.
+
 ## PDF reader replacement and ELv2 — 4 September 2026
 
 - Replaced the current PyMuPDF runtime/test dependency with MIT-licensed pdfminer.six. The shared reader supplies text blocks, Unicode metadata, and physical page references to document ingestion and Federal Criminal Court metadata extraction. ReportLab generates test fixtures only; it is absent from the production API environment.

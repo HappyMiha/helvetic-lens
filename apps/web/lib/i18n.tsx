@@ -2526,6 +2526,40 @@ const topicHistoryMessages: Record<Locale, Messages> = {
 };
 for (const locale of locales) Object.assign(catalogTarget(locale), topicHistoryMessages[locale]);
 
+const topicJobMessages: Record<Locale, Messages> = {
+  "en-CH": {
+    "status.topic_match_event": "Match new events to topics",
+    "status.topic_match_backfill": "Check saved topic history",
+    "status.Match active topics": "Match active topics",
+    "status.Match saved events in resumable batches": "Match saved events in resumable batches"
+  },
+  "de-CH": {
+    "status.topic_match_event": "Neue Ereignisse mit Themen abgleichen",
+    "status.topic_match_backfill": "Gespeicherte Themenhistorie prüfen",
+    "status.Match active topics": "Aktive Themen abgleichen",
+    "status.Match saved events in resumable batches": "Gespeicherte Ereignisse in fortsetzbaren Etappen prüfen"
+  },
+  "fr-CH": {
+    "status.topic_match_event": "Rapprocher les nouveaux événements des sujets",
+    "status.topic_match_backfill": "Vérifier l’historique des sujets",
+    "status.Match active topics": "Rapprocher les sujets actifs",
+    "status.Match saved events in resumable batches": "Vérifier les événements enregistrés par étapes reprenables"
+  },
+  "it-CH": {
+    "status.topic_match_event": "Abbinare i nuovi eventi ai temi",
+    "status.topic_match_backfill": "Verificare lo storico dei temi",
+    "status.Match active topics": "Abbinare i temi attivi",
+    "status.Match saved events in resumable batches": "Verificare gli eventi salvati in fasi riprendibili"
+  },
+  "rm-CH": {
+    "status.topic_match_event": "Cumparegliar novs eveniments cun temas",
+    "status.topic_match_backfill": "Examinar l’istorgia dals temas",
+    "status.Match active topics": "Cumparegliar temas activs",
+    "status.Match saved events in resumable batches": "Examinar eveniments memorisads en etappas cuntinuablas"
+  }
+};
+for (const locale of locales) Object.assign(catalogTarget(locale), topicJobMessages[locale]);
+
 const catalog: Record<Locale, Messages> = { "de-CH": de, "fr-CH": fr, "it-CH": it, "rm-CH": rm, "en-CH": en };
 const localeCookie = "helvetic_lens_locale";
 

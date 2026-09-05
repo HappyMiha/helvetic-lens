@@ -3739,23 +3739,33 @@ class HelveticLens:
                 result_type = "source_pack_subscription"
                 result_id = target_id
                 result_url = "/sources#source-packs"
-            elif job_type == "topic_match_backfill":
+            elif job_type in {"topic_match_backfill", "topic_match_event"}:
                 with self.write_guard, self.db.session() as session:
                     batch_job = session.scalar(select(Job).where(Job.id == job_id).with_for_update())
                     if batch_job.state != "running" or batch_job.lease_owner != worker:
                         return self.job_detail(job_id)
                     if batch_job.cancel_requested:
                         raise durable_jobs.JobCancelled()
-                    result_json = topic_matching.run_backfill(
-                        session,
-                        target_id,
-                        int(payload.get("revision") or 0),
-                        self.settings,
-                        checkpoint=(batch_job.payload or {}).get("checkpoint"),
-                        captured_at=batch_job.started_at,
-                    )
+                    batch_options = {
+                        "checkpoint": (batch_job.payload or {}).get("checkpoint"),
+                        "captured_at": batch_job.started_at,
+                    }
+                    if job_type == "topic_match_event":
+                        result_json = topic_matching.run_live_batch(
+                            session, target_id, self.settings,
+                            admission_id=payload.get("admission_id", ""),
+                            evidence_fingerprint=payload.get("evidence_fingerprint", ""),
+                            **batch_options,
+                        )
+                        result_type = "regulatory_event"
+                    else:
+                        result_json = topic_matching.run_backfill(
+                            session, target_id, int(payload.get("revision") or 0),
+                            self.settings, **batch_options,
+                        )
+                        result_type = "monitoring_topic"
                     batch_job.payload = {**(batch_job.payload or {}), "checkpoint": result_json["checkpoint"]}
-                    batch_job.result_type, batch_job.result_id, batch_job.result_url = "monitoring_topic", target_id, "/topics"
+                    batch_job.result_type, batch_job.result_id, batch_job.result_url = result_type, target_id, "/topics"
                     batch_job.result_json = result_json
                     durable_jobs.progress(
                         session, job_id, current=result_json.get("processed", 0),
@@ -3766,7 +3776,7 @@ class HelveticLens:
                     if result_json["has_more"]:
                         durable_jobs.yield_batch(session, batch_job)
                     else:
-                        durable_jobs.complete(session, job_id, result_type="monitoring_topic",
+                        durable_jobs.complete(session, job_id, result_type=result_type,
                                               result_id=target_id, result_url="/topics", result_json=result_json)
                         # Superseded or empty scans must not appear to have examined more events.
                         batch_job.progress_current = result_json.get("processed", 0)

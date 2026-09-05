@@ -205,6 +205,7 @@ def test_shared_event_fans_out_to_two_organizations_once(harness):
 
         assert finished.changed_count == 1
         assert finished.fanout_count == 2
+        assert session.scalar(select(func.count()).select_from(Job).where(Job.type == "topic_match_event")) == 2
         assert session.scalar(select(func.count()).select_from(RegulatoryEventState)) == 2
         assert session.scalar(select(func.count()).select_from(FeedState)) == 2
         assert session.scalar(select(func.count()).select_from(RegulatoryDocumentVersion)) == 1
@@ -237,6 +238,7 @@ def test_shared_event_fans_out_to_two_organizations_once(harness):
         )
         session.commit()
         assert repeated.fanout_count == 2
+        assert session.scalar(select(func.count()).select_from(Job).where(Job.type == "topic_match_event")) == 2
         assert session.scalar(select(func.count()).select_from(RegulatoryEventState)) == 2
         assert session.scalar(select(func.count()).select_from(FeedState)) == 2
 
