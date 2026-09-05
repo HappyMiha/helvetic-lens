@@ -3638,6 +3638,50 @@ const topicReviewMessages: Record<Locale, Messages> = {
 };
 for (const locale of locales) Object.assign(catalogTarget(locale), topicReviewMessages[locale]);
 
+const topicDuplicateMessages: Record<Locale, Messages> = {
+  "en-CH": {
+    "topicDuplicates.title": "Topics with the same matching rules",
+    "topicDuplicates.none": "No identical rules found in the checked topics",
+    "topicDuplicates.basis": "Names and goals may differ. This compares current search terms, exclusions, coverage and importance settings in your organization, not the meaning of the topic. Archived topics are excluded.",
+    "topicDuplicates.limited": "Only the {count} most recently updated topics were checked; other matches may exist.",
+    "topicDuplicates.more": "Showing {count} matching topics. More were found in this check.",
+    "topicDuplicates.confirm": "I reviewed the existing topics and want to save this plan separately."
+  },
+  "de-CH": {
+    "topicDuplicates.title": "Themen mit denselben Suchregeln",
+    "topicDuplicates.none": "Keine identischen Regeln in den geprüften Themen gefunden",
+    "topicDuplicates.basis": "Namen und Ziele können abweichen. Verglichen werden aktuelle Suchbegriffe, Ausschlüsse, Abdeckung und Wichtigkeitseinstellungen Ihrer Organisation, nicht die Bedeutung des Themas. Archivierte Themen sind ausgeschlossen.",
+    "topicDuplicates.limited": "Nur die {count} zuletzt aktualisierten Themen wurden geprüft; weitere Treffer sind möglich.",
+    "topicDuplicates.more": "{count} passende Themen werden angezeigt. Bei dieser Prüfung wurden weitere gefunden.",
+    "topicDuplicates.confirm": "Ich habe die bestehenden Themen geprüft und möchte diesen Plan separat speichern."
+  },
+  "fr-CH": {
+    "topicDuplicates.title": "Thèmes avec les mêmes règles de recherche",
+    "topicDuplicates.none": "Aucune règle identique trouvée dans les thèmes vérifiés",
+    "topicDuplicates.basis": "Les noms et objectifs peuvent différer. La comparaison porte sur les termes, exclusions, couverture et seuils d’importance actuels de votre organisation, pas sur le sens du thème. Les thèmes archivés sont exclus.",
+    "topicDuplicates.limited": "Seuls les {count} thèmes modifiés le plus récemment ont été vérifiés ; d’autres correspondances sont possibles.",
+    "topicDuplicates.more": "{count} thèmes correspondants affichés. Cette vérification en a trouvé d’autres.",
+    "topicDuplicates.confirm": "J’ai examiné les thèmes existants et souhaite enregistrer ce plan séparément."
+  },
+  "it-CH": {
+    "topicDuplicates.title": "Temi con le stesse regole di ricerca",
+    "topicDuplicates.none": "Nessuna regola identica trovata nei temi verificati",
+    "topicDuplicates.basis": "Nomi e obiettivi possono differire. Si confrontano termini, esclusioni, copertura e soglie di importanza attuali dell’organizzazione, non il significato del tema. I temi archiviati sono esclusi.",
+    "topicDuplicates.limited": "Sono stati verificati solo i {count} temi aggiornati più di recente; potrebbero esserci altre corrispondenze.",
+    "topicDuplicates.more": "Sono mostrati {count} temi corrispondenti. La verifica ne ha trovati altri.",
+    "topicDuplicates.confirm": "Ho esaminato i temi esistenti e desidero salvare questo piano separatamente."
+  },
+  "rm-CH": {
+    "topicDuplicates.title": "Temas cun las medemas reglas da tschertga",
+    "topicDuplicates.none": "Naginas reglas identicas chattadas en ils temas examinads",
+    "topicDuplicates.basis": "Nums e finamiras pon variar. Cumparegliads vegnan ils terms, las exclusiuns, la cuvrida e las impostaziuns d’impurtanza actualas da l’organisaziun, betg il senn dal tema. Temas archivads èn exclus.",
+    "topicDuplicates.limited": "Mo ils {count} temas actualisads il pli dacurt èn vegnids examinads; ulteriuras correspundenzas èn pussaivlas.",
+    "topicDuplicates.more": "{count} temas correspundents vegnan mussads. L’examinaziun ha chattà ulteriurs.",
+    "topicDuplicates.confirm": "Jau hai examinà ils temas existents e vul memorisar quest plan separadamain."
+  }
+};
+for (const locale of locales) Object.assign(catalogTarget(locale), topicDuplicateMessages[locale]);
+
 function supported(value: string | null | undefined): Locale | null {
   if (!value) return null;
   const exact = locales.find((item) => item.toLowerCase() === value.replace("_", "-").toLowerCase());

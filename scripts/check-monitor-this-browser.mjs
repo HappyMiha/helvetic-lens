@@ -32,6 +32,9 @@ async function waitFor(check, message) {
 }
 let locale = "en-CH", role = "organization_admin", user = "qa", saved = null;
 const title = "Synthetic privacy development";
+const existing = {id: "qa-existing-topic", status: "paused", current_revision: 1, created_at: "2026-09-06T08:00:00Z", updated_at: "2026-09-06T08:00:00Z", revisions: [],
+  plan: {name: "Synthetic existing topic with a deliberately long descriptive name for narrow screens", goal: "Privacy", concepts: ["privacy"], synonyms: [], exclusions: [], jurisdictions: ["CH"], languages: ["en"], source_pack_ids: ["fedlex-legislation"], document_kinds: ["act"], event_kinds: ["amended"], importance_floor: "low"}};
+
 try {
   await waitFor(async () => (await fetch(base)).ok, "Isolated production UI failed to start");
   let debugPort;
@@ -56,12 +59,13 @@ try {
       else body = {kind: url.searchParams.get("kind"), id: "qa-event", title: title, requires_confirmation: true, ai_calls: 0,
         source_url: "https://example.invalid/official-source", evidence_url: "/corpus-evidence/qa-native", watches: [{law_id: "qa-law", name: "Already monitored document", active: false, url: "/laws/qa-law"}], more_watches: false};
     } else if (url.pathname === "/api/source-packs") body = {items: [{id: "fedlex-legislation", name: {en: "Synthetic enabled sources"}, subscription: {enabled: true}}]};
-    else if (url.pathname === "/api/monitoring-topics/preview") body = {candidate_count: 0, scanned_event_count: 0, scanned_event_limit: 500, items: [], count_is_complete: true, sample_captured_at: "2026-09-06T08:00:00Z"};
+    else if (url.pathname === "/api/monitoring-topics/preview") body = {candidate_count: 0, scanned_event_count: 0, scanned_event_limit: 500, items: [], count_is_complete: true, sample_captured_at: "2026-09-06T08:00:00Z",
+      matching_topics: {items: [{id: existing.id, name: existing.plan.name, status: existing.status, current_revision: 1}], match_count: 12, scanned_count: 500, scan_limit: 500, count_is_complete: false, display_truncated: true, basis: "same_matching_rules_v1"}};
     else if (url.pathname === "/api/monitoring-topics" && request.method === "POST") {
       assert.equal(role, "organization_admin", "Viewer must not activate monitoring");
       saved = {id: "qa-topic", status: "active", current_revision: 1, plan: JSON.parse(request.postData), revisions: [], created_at: "2026-09-06T08:00:00Z", updated_at: "2026-09-06T08:00:00Z"};
       code = 201; body = saved;
-    } else if (url.pathname === "/api/monitoring-topics") body = saved ? [saved] : [];
+    } else if (url.pathname === "/api/monitoring-topics") body = saved ? [saved, existing] : [existing];
     else {code = 503; body = {detail: "Unconfigured synthetic endpoint"};}
     await cdp.send("Fetch.fulfillRequest", {requestId, responseCode: code, responseHeaders: [{name: "Content-Type", value: "application/json"}], body: Buffer.from(JSON.stringify(body)).toString("base64")}).catch(() => {});
   });
@@ -98,14 +102,34 @@ try {
     assert.equal(creates().length, before, "Preview activated monitoring");
     assert.equal(previews().at(-1).body.concepts[0], "privacy");
     assert.deepEqual(previews().at(-1).body.source_pack_ids, ["fedlex-legislation"]);
+    assert.ok(await evaluate(cdp, `!!document.querySelector('[data-topic-duplicates] a[href="#topic-qa-existing-topic"]') && !!document.getElementById('topic-qa-existing-topic')`), "Existing topic warning/target missing");
+    assert.ok(await evaluate(cdp, `document.querySelector('[data-topic-duplicates]').innerText.includes('500')`), "Limited check must be disclosed");
+    assert.equal(await evaluate(cdp, `document.body.innerText.includes('topicDuplicates.')`), false);
+    if (locale === "en-CH" && role === "organization_admin") {
+      await evaluate(cdp, `document.querySelector('[data-topic-duplicates]').scrollIntoView({block:'center'})`);
+      await sleep(200);
+      const shot = await cdp.send("Page.captureScreenshot", {format: "png"});
+      await writeFile(join(root, ".tmp", `topic-duplicates-${width}.png`), Buffer.from(shot.data, "base64"));
+    }
     if (role === "organization_admin") {
+      assert.ok(await evaluate(cdp, `document.querySelector('[data-topic-save]').disabled`), "Duplicate bypassed review");
+      await click('[data-topic-duplicate-confirm]');
+      assert.ok(await evaluate(cdp, `!document.querySelector('[data-topic-save]').disabled`));
+      // A newly computed preview always needs its own explicit review.
+      await click('.monitoring-topic-builder button[type="submit"]');
+      await waitFor(() => evaluate(cdp, `!document.querySelector('.monitoring-topic-builder fieldset').disabled && !document.querySelector('[data-topic-duplicate-confirm]').checked`), "Repeated preview retained obsolete acknowledgement");
+      assert.ok(await evaluate(cdp, `document.querySelector('[data-topic-save]').disabled`));
+      await evaluate(cdp, `document.querySelector('[data-topic-duplicate-confirm]').focus()`);
+      await cdp.send("Input.dispatchKeyEvent", {type: "keyDown", key: " ", code: "Space", windowsVirtualKeyCode: 32});
+      await cdp.send("Input.dispatchKeyEvent", {type: "keyUp", key: " ", code: "Space", windowsVirtualKeyCode: 32});
+      await waitFor(() => evaluate(cdp, `!document.querySelector('[data-topic-save]').disabled`), "Keyboard acknowledgement failed");
       await click('[data-topic-save]');
       await waitFor(() => evaluate(cdp, `!!document.querySelector('[data-topic-open-saved]')`), "Saved topic link missing");
       assert.equal(creates().length, before + 1);
       assert.ok(creates().at(-1).body.idempotency_key.length >= 8);
       assert.equal(await evaluate(cdp, `document.querySelector('[data-topic-open-saved]').getAttribute('href')`), "/topics#topic-qa-topic");
     } else {
-      assert.ok(await evaluate(cdp, `!document.querySelector('[data-topic-save]') && !!document.querySelector('[data-topic-personal-note]') && !document.querySelector('[data-topic-edit]')`));
+      assert.ok(await evaluate(cdp, `!document.querySelector('[data-topic-save]') && !document.querySelector('[data-topic-duplicate-confirm]') && !!document.querySelector('[data-topic-personal-note]') && !document.querySelector('[data-topic-edit]')`));
       await cdp.send("Page.reload");
       await waitFor(() => evaluate(cdp, `!!document.querySelector('[data-topic-restore]')`), "Viewer personal draft not recoverable");
       assert.ok(await evaluate(cdp, `document.querySelector('[data-monitor-use]').disabled`), "Context can overwrite recovery");
@@ -123,7 +147,7 @@ try {
   assert.ok(await evaluate(cdp, `!document.querySelector('[data-monitor-use]')`));
   assert.equal(requests.some(r => r.path.includes('/draft') || (r.path === '/api/source-packs' && r.method !== 'GET')), false);
   assert.deepEqual(exceptions, []);
-  console.log("Monitor-this production UI: 20 five-locale mobile/desktop admin/viewer journeys pass explicit context copy, existing-watch/evidence links, manual concepts, enabled-pack scope, preview without activation, explicit authorized save/direct link, viewer reload/restore without activation and unavailable-context recovery. All APIs intercepted; no real monitoring or inference.");
+  console.log("Monitor-this production UI: 20 five-locale mobile/desktop admin/viewer journeys pass explicit context copy, existing-watch/evidence links, manual concepts, enabled-pack scope, preview without activation, duplicate links and bounded-check disclosure, required pointer/keyboard review reset on repeated preview, explicit authorized save/direct link, viewer read-only duplicate warning and reload/restore without activation and unavailable-context recovery. All APIs intercepted; no real monitoring or inference.");
 } catch (error) {
   console.error({ locale, role, user, requests: requests.slice(-10), exceptions, form: cdp ? await evaluate(cdp, `JSON.stringify({inputs: Array.from(document.querySelectorAll(".monitoring-topic-builder input")).map(el=>({name:el.name,value:el.value,valid:el.checkValidity()})),text:document.body.innerText.slice(-1800)})`).catch(()=>"unavailable") : "none", page: cdp ? await evaluate(cdp, "JSON.stringify({url:location.href,ready:document.readyState,html:document.documentElement.outerHTML.slice(0,1800)})").catch(() => "unavailable") : "no browser" });
   throw error;

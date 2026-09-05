@@ -252,6 +252,10 @@ class MonitoringTopicPlanInput(Input):
     importance_floor: Literal["high", "medium", "low", "none"] = "low"
 
 
+class MonitoringTopicPreviewInput(MonitoringTopicPlanInput):
+    exclude_topic_id: str | None = Field(default=None, max_length=36)
+
+
 class MonitoringTopicCreateInput(MonitoringTopicPlanInput):
     idempotency_key: str = Field(min_length=8, max_length=120)
     ai_draft_id: str | None = Field(default=None, max_length=36)
@@ -1093,7 +1097,7 @@ def create_app(
         return service.request_topic_history_scan(topic_id)
 
     @app.post("/api/monitoring-topics/preview")
-    def preview_monitoring_topic(data: MonitoringTopicPlanInput):
+    def preview_monitoring_topic(data: MonitoringTopicPreviewInput):
         return service.preview_monitoring_topic(data.model_dump())
 
     @app.post("/api/monitoring-topics/draft")

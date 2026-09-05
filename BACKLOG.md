@@ -1538,10 +1538,23 @@ remain separate actions, with a direct link after success. Viewers can keep a
 personal 24-hour browser-tab draft and preview saved candidates; shared writes,
 AI drafting and history activation remain forbidden. Five-language/mobile-browser,
 API and scratch PostgreSQL evidence is recorded in `docs/MONITORING_CONTEXT.md`.
-Remaining: complete law/topic/pack choice, equivalent-topic duplicate detection,
+Remaining: complete law/topic/pack choice, broader semantic-equivalence suggestions,
 contextual cadence/degradation, viewer admin-request workflow, and cited-answer /
 global-assistant entries. Personal tab recovery is not cross-device draft storage;
 this is not completion of HL-077 or independent usability/native review.
+
+**Implemented 6 September 2026 (same-rule duplicate review):** The common topic
+preview now finds active/paused topics in the current organization with the same
+current terms, exclusions, coverage and importance rules (case/order-insensitive,
+without conflating concepts and synonyms). It omits the topic being edited and
+archived topics. The UI links to existing topics and requires an explicit review
+before separately saving matching rules; viewers only inspect the warning. New
+previews discard old acknowledgement. One scalar query checks at most 500 topics
+and displays ten matches, disclosing scan and display limits independently. This
+is an advisory snapshot, not semantic topic merging or a concurrent uniqueness
+constraint; renamed descriptions do not hide identical rules. See
+`docs/MONITORING_TOPICS.md` and the verification record. No model calls or implicit
+monitoring changes. HL-077 and independent acceptance remain open.
 
 Acceptance criteria:
 

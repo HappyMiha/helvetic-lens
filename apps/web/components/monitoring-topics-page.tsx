@@ -44,6 +44,7 @@ import { ErrorNote, Loading, Status, SuccessNote } from "./common";
 import { Shell } from "./shell";
 import { TopicSavedMatches } from "./topic-match-review";
 import { TopicHistoryStatus } from "./topic-history-status";
+import { TopicDuplicateReview } from "./topic-duplicate-review";
 import { TopicPreviewCoverage } from "./topic-preview-coverage";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -237,6 +238,10 @@ function TopicEditor({
     JSON.stringify(toPayload(form)) !== JSON.stringify(toPayload(savedForm));
   const [editing, setEditing] = useState<TopicEditIdentity | null>(null);
   const [preview, setPreview] = useState<MonitoringTopicPreview | null>(null);
+  const [duplicatesConfirmed, setDuplicatesConfirmed] = useState(false);
+  useEffect(() => setDuplicatesConfirmed(false), [preview]);
+  const needsDuplicateReview =
+    Boolean(preview?.matching_topics?.items.length) && !duplicatesConfirmed;
   const [idempotencyKey, setIdempotencyKey] = useState("");
   const [aiDraft, setAiDraft] = useState<TopicAiIdentity | null>(null);
   const [busy, setBusy] = useState("");
@@ -475,7 +480,7 @@ function TopicEditor({
         "/monitoring-topics/preview",
         {
           method: "POST",
-          body: JSON.stringify(toPayload(form)),
+          body: JSON.stringify({ ...toPayload(form), exclude_topic_id: editing?.id }),
         },
       );
       setPreview(result);
@@ -488,6 +493,7 @@ function TopicEditor({
   }
 
   async function save() {
+    if (!preview || needsDuplicateReview) return;
     setBusy("save");
     setError("");
     try {
@@ -987,13 +993,21 @@ function TopicEditor({
                 })}
               </div>
             )}
+            {preview?.matching_topics && (
+              <TopicDuplicateReview
+                result={preview.matching_topics}
+                canManage={canManage}
+                confirmed={duplicatesConfirmed}
+                onConfirm={setDuplicatesConfirmed}
+              />
+            )}
             <div className="mt-5 flex flex-wrap gap-2">
               <Button disabled={busy !== ""} type="submit">
                 <Eye /> {t("topics.preview")}
               </Button>
               {preview && canManage && (
                 <Button
-                  disabled={busy !== ""}
+                  disabled={busy !== "" || needsDuplicateReview}
                   data-topic-save
                   onClick={() => void save()}
                   type="button"

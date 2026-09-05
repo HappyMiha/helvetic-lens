@@ -559,6 +559,59 @@ def change_status(
     }
 
 
+DUPLICATE_SCAN_LIMIT = 500
+DUPLICATE_RESULT_LIMIT = 10
+RULE_LIST_FIELDS = (
+    "concepts", "synonyms", "exclusions", "jurisdictions", "languages",
+    "source_pack_ids", "document_kinds", "event_kinds",
+)
+
+
+def _rule_signature(plan: dict) -> tuple:
+    # Keep concepts separate from synonyms: their matching/confidence differs.
+    # Names/goals are descriptions, not rules; this is NOT semantic equivalence.
+    return tuple(
+        tuple(sorted({value.casefold() for value in plan[field]}))
+        for field in RULE_LIST_FIELDS
+    ) + (plan["importance_floor"],)
+
+
+def matching_rule_topics(session: Session, plan: dict, *, exclude_topic_id: str | None = None) -> dict:
+    """Bounded, read-only warning, with explicit scope even in privileged sessions."""
+    topic, revision = MonitoringTopic, MonitoringTopicRevision
+    organization_id = session.info["organization_id"]
+    statement = select(
+        topic.id, topic.status, topic.current_revision, revision.name,
+        revision.importance_floor,
+        *(getattr(revision, f"{field}_json") for field in RULE_LIST_FIELDS),
+    ).join(revision, (revision.topic_id == topic.id) & (revision.revision == topic.current_revision)).where(
+        topic.organization_id == organization_id,
+        revision.organization_id == organization_id,
+        topic.status.in_(("active", "paused")),
+    )
+    if exclude_topic_id:
+        statement = statement.where(topic.id != exclude_topic_id)
+    rows = list(session.execute(statement.order_by(topic.updated_at.desc(), topic.id.desc())
+                                .limit(DUPLICATE_SCAN_LIMIT + 1)))
+    signature = _rule_signature(plan)
+    matches = []
+    for row in rows[:DUPLICATE_SCAN_LIMIT]:
+        saved = {field: row[index + 5] for index, field in enumerate(RULE_LIST_FIELDS)}
+        saved["importance_floor"] = row.importance_floor
+        if _rule_signature(saved) == signature:
+            matches.append({"id": row.id, "name": row.name, "status": row.status,
+                            "current_revision": row.current_revision})
+    return {
+        "items": matches[:DUPLICATE_RESULT_LIMIT],
+        "match_count": len(matches),
+        "scanned_count": min(len(rows), DUPLICATE_SCAN_LIMIT),
+        "scan_limit": DUPLICATE_SCAN_LIMIT,
+        "count_is_complete": len(rows) <= DUPLICATE_SCAN_LIMIT,
+        "display_truncated": len(matches) > DUPLICATE_RESULT_LIMIT,
+        "basis": "same_matching_rules_v1",
+    }
+
+
 def preview(session: Session, data: dict) -> dict:
     # Local import avoids the plan-lifecycle/matcher dependency cycle. This is
     # exactly the scorer used by live ingestion and saved-history activation.
@@ -607,6 +660,7 @@ def preview(session: Session, data: dict) -> dict:
             "confidence": confidence,
         })
     return {
+        "matching_topics": matching_rule_topics(session, plan, exclude_topic_id=data.get("exclude_topic_id")),
         "candidate_count": len(candidates),
         "count_is_complete": not scan_truncated,
         "scanned_event_limit": PREVIEW_SCAN_LIMIT,

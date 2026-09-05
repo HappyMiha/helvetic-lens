@@ -60,7 +60,7 @@ The UI hides activation/edit controls and disables AI drafting for viewers.
 
 HL-077 remains IN PROGRESS: this slice creates contextual **topics** and links
 existing watches. It does not yet unify new law-watch/source-pack subscription
-choices, detect semantically equivalent topics, show predicted cadence/volume,
+choices, detect semantically equivalent topics beyond the same-rule warning, show predicted cadence/volume,
 submit a viewer proposal to administrators, or add per-answer/global-assistant
 entry points. Source degradation/cadence need explicit contextual presentation;
 the existing bounded preview's coverage disclaimer is not that full requirement.

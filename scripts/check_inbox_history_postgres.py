@@ -83,6 +83,11 @@ from test_relation_version_freshness import (
     test_changed_or_removed_version_invalidates_current_without_rewriting_history,
     test_final_digest_read_drops_obsolete_ai_severity_without_sending,
 )
+from test_topic_duplicates import (
+    test_privileged_query_still_checks_both_topic_and_revision_owners,
+    test_rule_warning_is_read_only_case_order_insensitive_and_excludes_self,
+    test_warning_reads_at_most_501_current_scalar_rules_and_discloses_both_limits,
+)
 from test_topic_reviews import (
     test_postgres_concurrent_reviews_do_not_overwrite_or_duplicate,
     test_review_hides_topic_feed_match_but_preserves_evidence_and_personal_state,
@@ -93,7 +98,7 @@ from test_topic_reviews import (
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked", "monitoring-context", "monitoring-context-activate"), default="history")
+    parser.add_argument("--suite", choices=("topic-duplicates", "topic-duplicates-scope", "topic-duplicates-bounds", "history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked", "monitoring-context", "monitoring-context-activate"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -114,6 +119,13 @@ def main():
         with TestClient(app) as client:
             service = app.state.service
             harness = (client, fetcher, service, model)
+            if args.suite.startswith("topic-duplicates"):
+                check = {"topic-duplicates": test_rule_warning_is_read_only_case_order_insensitive_and_excludes_self,
+                         "topic-duplicates-scope": test_privileged_query_still_checks_both_topic_and_revision_owners,
+                         "topic-duplicates-bounds": test_warning_reads_at_most_501_current_scalar_rules_and_discloses_both_limits}[args.suite]
+                check(harness)
+                print("PostgreSQL: topic duplicate warning contract, owner scope or scalar bounds passed without inference.")
+                return
             if args.suite == "monitoring-context":
                 test_native_event_context_uses_saved_title_and_artifact_without_automatic_monitoring(harness)
                 print("PostgreSQL: native context lookup remains read-only, scalar and exact without creating monitoring.")

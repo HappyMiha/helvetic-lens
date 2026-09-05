@@ -1167,6 +1167,15 @@ export type MonitoringTopic = {
   };
 };
 export type MonitoringTopicPreview = {
+  matching_topics?: {
+    items: { id: string; name: string; status: "active" | "paused"; current_revision: number }[];
+    match_count: number;
+    scanned_count: number;
+    scan_limit: number;
+    count_is_complete: boolean;
+    display_truncated: boolean;
+    basis: "same_matching_rules_v1";
+  };
   candidate_count: number;
   count_is_complete: boolean;
   scanned_event_limit: number;
