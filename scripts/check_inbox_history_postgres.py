@@ -29,6 +29,10 @@ from test_digest_preview_pages import (
 from test_digest_resume import (
     test_digest_yield_is_atomic_fair_and_finishes_without_new_model_calls,
 )
+from test_feed_evidence import (
+    test_exact_event_link_reaches_old_event_and_remains_scoped,
+    test_topic_only_artifact_is_exact_visible_version_without_body_hydration,
+)
 from test_inbox_context import (
     test_comparison_and_artifact_links_use_visible_scalar_ids_only,
     test_context_queries_do_not_grow_between_one_and_fifty_event_pages,
@@ -77,7 +81,7 @@ from test_topic_reviews import (
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry"), default="history")
+    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -98,6 +102,14 @@ def main():
         with TestClient(app) as client:
             service = app.state.service
             harness = (client, fetcher, service, model)
+            if args.suite in {"feed-evidence", "feed-private-evidence"}:
+                test_topic_only_artifact_is_exact_visible_version_without_body_hydration(harness, "foreign_version" if args.suite == "feed-private-evidence" else None)
+                print("PostgreSQL: exact event artifact lookup respects private version ownership without document-body hydration.")
+                return
+            if args.suite == "feed-event-link":
+                test_exact_event_link_reaches_old_event_and_remains_scoped(harness)
+                print("PostgreSQL: direct older-event feed navigation respects scope, cursor binding and admission revocation.")
+                return
             if args.suite == "topic-reviews":
                 test_review_hides_topic_feed_match_but_preserves_evidence_and_personal_state(harness)
                 print("PostgreSQL: shared topic review excludes/restores the exact feed match while retaining evidence and personal state.")

@@ -1311,11 +1311,11 @@ def create_app(
         )
 
     @app.get("/api/interest-feed")
-    def interest_feed(request: Request, period: str = Query(default="all", max_length=20),
+    def interest_feed(request: Request, event: str = Query(default="", max_length=36), period: str = Query(default="all", max_length=20),
                       state: str = Query(default="", max_length=20),
                       cursor: str = Query(default="", max_length=4096), limit: int = Query(default=20, ge=1, le=50)):
         identity = request.state.identity
-        return service.interest_feed(identity.user_id if identity else None, period=period, state=state, cursor=cursor, limit=limit)
+        return service.interest_feed(identity.user_id if identity else None, period=period, state=state, cursor=cursor, limit=limit, event=event)
 
     @app.patch("/api/interest-feed/events/{event_id}/state")
     def set_interest_feed_state(event_id: str, data: ImpactInboxStateInput, request: Request):

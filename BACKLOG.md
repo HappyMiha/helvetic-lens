@@ -1474,6 +1474,18 @@ are recorded in `docs/VERIFICATION.md`; see `docs/TOPIC_MATCH_REVIEWS.md`.
 This closes the shared topic-review implementation gap, not the remaining HL-076
 criteria or independent usability/native-language gates.
 
+**Implemented 6 September 2026 (development evidence context):** Today has scoped
+exact-event links and a return-to-all control, so old matching developments can be
+opened directly. Cards expose recorded jurisdiction/language, localized detection
+provenance and date labels, original date precision/source links and explicitly
+historical connector health. Exact mapped saved copies are linked even for
+topic-only events, with version/law privacy and same-work checks and no body
+hydration. Unknown scope is not inferred; work dates are not substituted for event
+dates. Five-locale browser checks and isolated PostgreSQL evidence/deep-link tests
+are recorded in `docs/VERIFICATION.md`. Native-only artifact viewing, full source
+coverage/status normalization, AI briefs/notifications and the remaining HL-076
+criteria stay open.
+
 
 Acceptance criteria:
 

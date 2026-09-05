@@ -190,7 +190,7 @@ def test_zurich_calendar_filters_separate_detection_from_official_dates(harness,
     assert {item["event_id"] for item in today_page["items"]} == set(ids[1:])
     assert client.get("/api/interest-feed?period=yesterday").json()["items"][0]["event_id"] == ids[0]
     card = next(item for item in today_page["items"] if item["event_id"] == ids[1])
-    assert card["official_dates"] == [{"kind": "published_at", "value": "1999", "precision": "year", "provenance": "official_metadata"}]
+    assert card["official_dates"] == [{"kind": "published_at", "value": "1999", "precision": "year", "provenance": "official_metadata", "source_url": None}]
 
 
 def test_private_work_cannot_leak_through_retained_admission_even_in_privileged_reader(harness):

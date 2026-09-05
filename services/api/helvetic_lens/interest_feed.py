@@ -25,14 +25,26 @@ from .models import (
     MonitoringTopicRevision,
     OrganizationRelationCandidate,
     RegulatoryDate,
+    RegulatoryDocumentVersion,
     RegulatoryEvent,
     RegulatoryEventState,
     RegulatoryEventUserState,
+    RegulatoryExpression,
     RegulatoryWork,
     RelationCandidate,
     TopicEventMatch,
+    Version,
 )
 from .topic_matching import describe_matches
+
+
+def _jurisdictions(work, event):
+    # Only recorded values; an unknown jurisdiction must not silently become CH.
+    metadata = work.metadata_json if isinstance(work.metadata_json, dict) else {}
+    evidence = event.evidence_json if isinstance(event.evidence_json, dict) else {}
+    value = metadata.get("jurisdiction") or metadata.get("jurisdictions") or evidence.get("jurisdiction")
+    values = value if isinstance(value, list) else [value]
+    return sorted({item.strip() for item in values if isinstance(item, str) and item.strip()})
 
 
 class InterestFeedReader(ImpactInboxReader):
@@ -95,6 +107,16 @@ class InterestFeedReader(ImpactInboxReader):
             })
         works = {item.id: item for item in session.scalars(select(RegulatoryWork).where(
             RegulatoryWork.id.in_({item.work_id for item in events}), visible(RegulatoryWork, self.organization_id)))}
+        artifacts = dict(session.execute(select(RegulatoryEvent.id, Version.id)
+            .join(RegulatoryDocumentVersion, RegulatoryDocumentVersion.id == RegulatoryEvent.document_version_id)
+            .join(RegulatoryExpression, RegulatoryExpression.id == RegulatoryDocumentVersion.expression_id)
+            .join(Version, Version.id == RegulatoryDocumentVersion.legacy_version_id)
+            .join(Law, Law.id == Version.law_id)
+            .where(RegulatoryEvent.id.in_(ids), RegulatoryExpression.work_id == RegulatoryEvent.work_id,
+                   visible(Version, self.organization_id), visible(Law, self.organization_id))).all())
+        languages = dict(session.execute(select(RegulatoryEvent.id, RegulatoryExpression.language)
+            .join(RegulatoryExpression, RegulatoryExpression.id == RegulatoryEvent.expression_id)
+            .where(RegulatoryEvent.id.in_(ids), RegulatoryExpression.work_id == RegulatoryEvent.work_id)).all())
         states = dict(session.execute(select(RegulatoryEventUserState.event_id, RegulatoryEventUserState.state).where(
             RegulatoryEventUserState.organization_id == self.organization_id,
             RegulatoryEventUserState.principal_key == self.principal,
@@ -106,7 +128,8 @@ class InterestFeedReader(ImpactInboxReader):
                 RegulatoryDate.kind.in_(["published_at", "decision_date", "effective_from", "effective_to"])
         ).order_by(RegulatoryDate.kind, RegulatoryDate.date_value, RegulatoryDate.id)):
             dates.setdefault(fact.entity_id, []).append({"kind": fact.kind, "value": fact.date_value,
-                                                       "precision": fact.precision, "provenance": fact.provenance})
+                                                       "precision": fact.precision, "provenance": fact.provenance,
+                                                       "source_url": fact.source_url})
         watches: dict[str, list] = {}
         for watch in session.execute(self._watches(captured).where(
                 LegacyDocumentMapping.work_id.in_({event.work_id for event in events})).order_by(DocumentWatch.display_name, DocumentWatch.id)):
@@ -120,12 +143,16 @@ class InterestFeedReader(ImpactInboxReader):
             if not work or (not law and not relevant and not watches.get(event.work_id)):
                 continue
             result.append({
-                "event_id": event.id, "title": work.title, "type": event.event_type,
+                "event_id": event.id, "event_url": f"/?event={event.id}", "title": work.title, "type": event.event_type,
+                "jurisdictions": _jurisdictions(work, event),
+                "document_language": languages.get(event.id),
+                "provenance_method": event.provenance_method,
+                "connector_health_at_detection": event.connector_health,
                 "document_kind": work.kind, "lifecycle_status": work.lifecycle_status,
                 "source": event.connector or event.authority, "authority": event.authority,
                 "detected_at": _iso(event.detected_at), "official_dates": dates.get(event.id, []),
                 "source_url": event.source_url or work.stable_official_url,
-                "source_artifact_url": law.get("source_artifact_url") if law else None,
+                "source_artifact_url": f"/evidence/{artifacts[event.id]}" if event.id in artifacts else None,
                 "read_state": states.get(event.id, "unread"),
                 "severity": law["severity"] if law else "unknown",
                 "law_impacts": law["items"] if law else [],
@@ -135,10 +162,12 @@ class InterestFeedReader(ImpactInboxReader):
             })
         return result
 
-    def feed(self, session: Session, *, period: str = "all", state: str = "", cursor: str = "", limit: int = 20) -> dict:
+    def feed(self, session: Session, *, period: str = "all", state: str = "", cursor: str = "", limit: int = 20, event: str = "") -> dict:
         if period not in {"all", "today", "yesterday", "week", "month"} or state not in {"", "unread", "read", "dismissed", "muted"} or not 1 <= limit <= 50:
             raise DomainError("Choose a supported feed filter and page size.", 422, "invalid_feed_filter")
-        scope = hashlib.sha256(json.dumps([self.organization_id, self.principal, period, state]).encode()).hexdigest()
+        if not isinstance(event, str) or len(event) > 36:
+            raise DomainError("Choose a valid saved event.", 422, "invalid_feed_filter")
+        scope = hashlib.sha256(json.dumps([self.organization_id, self.principal, period, state, event]).encode()).hexdigest()
         captured, after = datetime.now(UTC), None
         if cursor:
             try:
@@ -155,6 +184,8 @@ class InterestFeedReader(ImpactInboxReader):
             except (ValueError, KeyError, TypeError, UnicodeError, RecursionError) as exc:
                 raise DomainError("Open the first feed page for these filters and account.", 422, "invalid_feed_cursor") from exc
         query = self._events(captured)
+        if event:
+            query = query.where(RegulatoryEvent.id == event)
         if period != "all":
             today = captured.astimezone(ZoneInfo("Europe/Zurich")).date()
             start = today - timedelta(days={"today": 0, "yesterday": 1, "week": 6, "month": 29}[period])

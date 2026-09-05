@@ -3263,6 +3263,159 @@ const interestFeedMessages: Record<Locale, Messages> = {
 };
 for (const locale of locales) Object.assign(catalogTarget(locale), interestFeedMessages[locale]);
 
+const feedEvidenceMessages: Record<Locale, Messages> = {
+  "en-CH": {
+    "feedEvidence.context": "Source and date context",
+    "feedEvidence.jurisdiction": "Recorded jurisdiction",
+    "feedEvidence.provenance": "Evidence provenance",
+    "feedEvidence.health": "Connector state when detected",
+    "feedEvidence.healthHelp": "This is the stored state at detection, not a live health check.",
+    "feedEvidence.saved": "Open saved evidence",
+    "feedEvidence.noSaved": "No linked saved copy is available for this event. The publisher link may show newer content.",
+    "feedEvidence.openEvent": "Open this development",
+    "feedEvidence.allEvents": "All developments",
+    "feedEvidence.linked": "Showing one saved development. If it is no longer relevant or available, return to the feed.",
+    "feedEvidence.published_at": "Published",
+    "feedEvidence.decision_date": "Decision date",
+    "feedEvidence.effective_from": "Effective from",
+    "feedEvidence.effective_to": "Effective until",
+    "feedEvidence.precision.day": "Day precision",
+    "feedEvidence.precision.month": "Month precision",
+    "feedEvidence.precision.year": "Year precision",
+    "feedEvidence.precision.instant": "Exact timestamp",
+    "feedEvidence.precision.unknown": "Precision unknown"
+  },
+  "de-CH": {
+    "feedEvidence.context": "Quellen- und Datumskontext",
+    "feedEvidence.jurisdiction": "Erfasster Geltungsbereich",
+    "feedEvidence.provenance": "Herkunft des Belegs",
+    "feedEvidence.health": "Konnektorstatus bei Erkennung",
+    "feedEvidence.healthHelp": "Dies ist der gespeicherte Zustand bei der Erkennung, keine aktuelle Zustandsprüfung.",
+    "feedEvidence.saved": "Gespeicherten Beleg öffnen",
+    "feedEvidence.noSaved": "Für dieses Ereignis ist keine gespeicherte Kopie verknüpft. Der Herausgeberlink kann neuere Inhalte zeigen.",
+    "feedEvidence.openEvent": "Diese Entwicklung öffnen",
+    "feedEvidence.allEvents": "Alle Entwicklungen",
+    "feedEvidence.linked": "Eine gespeicherte Entwicklung wird angezeigt. Ist sie nicht mehr relevant oder verfügbar, kehren Sie zur Übersicht zurück.",
+    "feedEvidence.published_at": "Veröffentlicht",
+    "feedEvidence.decision_date": "Entscheiddatum",
+    "feedEvidence.effective_from": "Gültig ab",
+    "feedEvidence.effective_to": "Gültig bis",
+    "feedEvidence.precision.day": "Tagesgenau",
+    "feedEvidence.precision.month": "Monatsgenau",
+    "feedEvidence.precision.year": "Jahresgenau",
+    "feedEvidence.precision.instant": "Genauer Zeitstempel",
+    "feedEvidence.precision.unknown": "Genauigkeit unbekannt"
+  },
+  "fr-CH": {
+    "feedEvidence.context": "Contexte des sources et des dates",
+    "feedEvidence.jurisdiction": "Juridiction enregistrée",
+    "feedEvidence.provenance": "Provenance de la preuve",
+    "feedEvidence.health": "État du connecteur lors de la détection",
+    "feedEvidence.healthHelp": "Il s’agit de l’état enregistré lors de la détection, pas d’un contrôle actuel.",
+    "feedEvidence.saved": "Ouvrir la preuve enregistrée",
+    "feedEvidence.noSaved": "Aucune copie enregistrée n’est liée à cet événement. Le lien de l’éditeur peut afficher un contenu plus récent.",
+    "feedEvidence.openEvent": "Ouvrir cette évolution",
+    "feedEvidence.allEvents": "Toutes les évolutions",
+    "feedEvidence.linked": "Une évolution enregistrée est affichée. Si elle n’est plus pertinente ou disponible, revenez au fil.",
+    "feedEvidence.published_at": "Publication",
+    "feedEvidence.decision_date": "Date de décision",
+    "feedEvidence.effective_from": "En vigueur dès",
+    "feedEvidence.effective_to": "En vigueur jusqu’au",
+    "feedEvidence.precision.day": "Précision au jour",
+    "feedEvidence.precision.month": "Précision au mois",
+    "feedEvidence.precision.year": "Précision à l’année",
+    "feedEvidence.precision.instant": "Horodatage exact",
+    "feedEvidence.precision.unknown": "Précision inconnue"
+  },
+  "it-CH": {
+    "feedEvidence.context": "Contesto delle fonti e delle date",
+    "feedEvidence.jurisdiction": "Giurisdizione registrata",
+    "feedEvidence.provenance": "Provenienza della prova",
+    "feedEvidence.health": "Stato del connettore al rilevamento",
+    "feedEvidence.healthHelp": "È lo stato salvato al momento del rilevamento, non una verifica attuale.",
+    "feedEvidence.saved": "Apri la prova salvata",
+    "feedEvidence.noSaved": "Non è collegata una copia salvata di questo evento. Il link dell’editore può mostrare contenuti più recenti.",
+    "feedEvidence.openEvent": "Apri questo sviluppo",
+    "feedEvidence.allEvents": "Tutti gli sviluppi",
+    "feedEvidence.linked": "È mostrato uno sviluppo salvato. Se non è più pertinente o disponibile, torna al flusso.",
+    "feedEvidence.published_at": "Pubblicazione",
+    "feedEvidence.decision_date": "Data della decisione",
+    "feedEvidence.effective_from": "In vigore dal",
+    "feedEvidence.effective_to": "In vigore fino al",
+    "feedEvidence.precision.day": "Precisione al giorno",
+    "feedEvidence.precision.month": "Precisione al mese",
+    "feedEvidence.precision.year": "Precisione all’anno",
+    "feedEvidence.precision.instant": "Data e ora esatte",
+    "feedEvidence.precision.unknown": "Precisione sconosciuta"
+  },
+  "rm-CH": {
+    "feedEvidence.context": "Context da funtaunas e datas",
+    "feedEvidence.jurisdiction": "Giurisdicziun registrada",
+    "feedEvidence.provenance": "Derivanza da la cumprova",
+    "feedEvidence.health": "Stadi dal connectur tar la detecziun",
+    "feedEvidence.healthHelp": "Quai è il stadi memorisà tar la detecziun, betg ina controlla actuala.",
+    "feedEvidence.saved": "Avrir la cumprova memorisada",
+    "feedEvidence.noSaved": "Nagina copia memorisada è colliada cun quest eveniment. La colliaziun da l’editur po mussar cuntegn pli nov.",
+    "feedEvidence.openEvent": "Avrir quest svilup",
+    "feedEvidence.allEvents": "Tut ils svilups",
+    "feedEvidence.linked": "In svilup memorisà vegn mussà. Sche quel n’è betg pli relevant u disponibel, turnai al fluss.",
+    "feedEvidence.published_at": "Publicaziun",
+    "feedEvidence.decision_date": "Data da decisiun",
+    "feedEvidence.effective_from": "En vigur a partir da",
+    "feedEvidence.effective_to": "En vigur fin a",
+    "feedEvidence.precision.day": "Precisiun dal di",
+    "feedEvidence.precision.month": "Precisiun dal mais",
+    "feedEvidence.precision.year": "Precisiun da l’onn",
+    "feedEvidence.precision.instant": "Temp exact",
+    "feedEvidence.precision.unknown": "Precisiun nunenconuschenta"
+  }
+};
+for (const locale of locales) Object.assign(catalogTarget(locale), feedEvidenceMessages[locale]);
+
+const feedProvenanceMessages: Record<Locale, Messages> = {
+  "en-CH": {
+    "feedProvenance.official_metadata": "Official source metadata",
+    "feedProvenance.exact_identifier": "Exact identifier match",
+    "feedProvenance.text_rule": "Text matching rule",
+    "feedProvenance.model_proposal": "AI proposal, not confirmed",
+    "feedProvenance.human_review": "Human review",
+    "feedProvenance.legacy_mapping": "Existing document mapping"
+  },
+  "de-CH": {
+    "feedProvenance.official_metadata": "Metadaten der offiziellen Quelle",
+    "feedProvenance.exact_identifier": "Exakte Kennungsübereinstimmung",
+    "feedProvenance.text_rule": "Textabgleichregel",
+    "feedProvenance.model_proposal": "KI-Vorschlag, nicht bestätigt",
+    "feedProvenance.human_review": "Menschliche Prüfung",
+    "feedProvenance.legacy_mapping": "Bestehende Dokumentzuordnung"
+  },
+  "fr-CH": {
+    "feedProvenance.official_metadata": "Métadonnées de la source officielle",
+    "feedProvenance.exact_identifier": "Correspondance exacte d’identifiant",
+    "feedProvenance.text_rule": "Règle de correspondance textuelle",
+    "feedProvenance.model_proposal": "Proposition IA non confirmée",
+    "feedProvenance.human_review": "Examen humain",
+    "feedProvenance.legacy_mapping": "Lien de document existant"
+  },
+  "it-CH": {
+    "feedProvenance.official_metadata": "Metadati della fonte ufficiale",
+    "feedProvenance.exact_identifier": "Corrispondenza esatta dell’identificativo",
+    "feedProvenance.text_rule": "Regola di corrispondenza testuale",
+    "feedProvenance.model_proposal": "Proposta IA non confermata",
+    "feedProvenance.human_review": "Revisione umana",
+    "feedProvenance.legacy_mapping": "Associazione del documento esistente"
+  },
+  "rm-CH": {
+    "feedProvenance.official_metadata": "Metadatas da la funtauna uffiziala",
+    "feedProvenance.exact_identifier": "Identificatur exactamain correspundent",
+    "feedProvenance.text_rule": "Regla da cumparegliaziun dal text",
+    "feedProvenance.model_proposal": "Proposta dad IA betg confermada",
+    "feedProvenance.human_review": "Controlla umana",
+    "feedProvenance.legacy_mapping": "Colliaziun existenta dal document"
+  }
+};
+for (const locale of locales) Object.assign(catalogTarget(locale), feedProvenanceMessages[locale]);
+
 const topicReviewMessages: Record<Locale, Messages> = {
   "en-CH": {
     "topicReview.matches": "Saved topic matches",

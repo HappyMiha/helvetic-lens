@@ -10,9 +10,11 @@ import { resources } from "@/lib/resource-keys";
 import { Shell } from "./shell";
 import { ErrorNote, Loading, Status } from "./common";
 import { InboxPageNavigation } from "./inbox-page-navigation";
+import { FeedEvidenceContext, type FeedEvidence } from "./feed-evidence-context";
 import { Button } from "./ui/button";
 
-type FeedEvent = {
+type FeedEvent = FeedEvidence & {
+  event_url?: string;
   event_id: string; title: string; type: string; document_kind: string; lifecycle_status: string | null;
   source: string; detected_at: string; source_url?: string; source_artifact_url?: string;
   official_dates: Array<{ kind: string; value: string; precision: string; provenance: string }>;
@@ -75,6 +77,7 @@ export function InterestFeedPage() {
         <option value="">{t("filter.allStates")}</option>{states.map(state => <option key={state} value={state}>{t(`status.${state}`)}</option>)}
       </select></label>
     </div>
+    {params.has("event") && <div className="rounded-lg border p-4 mb-4"><p>{t("feedEvidence.linked")}</p><Link data-feed-all className="underline min-h-[44px] inline-flex items-center" href={href({ event: "", cursor: "", period: "", state: "" })}>{t("feedEvidence.allEvents")}</Link></div>}
     <ErrorNote message={feed.error || failure} />
     <p role="status" className="text-sm">{notice}</p>
     {feed.loading && !feed.data && <Loading />}
@@ -87,8 +90,9 @@ export function InterestFeedPage() {
           <div><dt className="muted">{t("feed.detected")}</dt><dd>{dateTime(item.detected_at, { dateStyle: "medium", timeStyle: "short" })}</dd></div>
           <div><dt className="muted">{t("feed.officialStatus")}</dt><dd><Status value={item.lifecycle_status} /></dd></div>
         </dl>
-        {item.official_dates.length ? <details className="text-sm mb-4"><summary className="cursor-pointer min-h-[44px]">{t("feed.officialDates")}</summary>{item.official_dates.map((fact, index) => <p key={index}>{fact.kind}: {fact.value} · {fact.provenance}</p>)}</details> : <p className="text-sm muted">{t("registry.officialDatesUnknown")}</p>}
+        <FeedEvidenceContext item={item} />
         {sourceLink(item.source_url) && <a href={sourceLink(item.source_url)} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center underline font-semibold">{t("common.officialSource")}</a>}
+        <Link data-feed-permalink className="underline inline-flex min-h-[44px] items-center ml-4" href={href({ event: item.event_id, cursor: "", period: "", state: "" })}>{t("feedEvidence.openEvent")}</Link>
         {item.monitored_documents?.length > 0 && <section className="border-t mt-3 pt-4"><h3 className="text-base font-semibold">{t("registry.monitored")}</h3>
           <ul>{item.monitored_documents.map(document => <li key={document.watch_id}><Link href={document.url} className="underline min-h-[44px] inline-flex items-center">{document.name}</Link></li>)}</ul>
         </section>}
