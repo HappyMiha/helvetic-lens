@@ -2,6 +2,14 @@
 
 The source-to-diff workflow, Settings page, and live Apertus path are verified.
 
+## Interactive inbox pagination and independent law search — 5 September 2026 (HappyDucky02)
+
+- **53 affected API tests pass** in 126.98 seconds: public pages, inbox/reviews, relation analysis, digest pages/resume and two new navigation prerequisite scenarios. A 61-watch search uses scalar columns only, displays 50 plus a selected result outside that cap, escapes literal wildcards, includes paused watches and excludes another organization. A 61-event corpus opens its oldest event directly through an organization candidate link; unknown/foreign links remain empty and mismatched cursors fail.
+- A separate **PostgreSQL 16.14** run (`scripts/check_inbox_history_postgres.py --suite options`) confirms real law-search response and materialization bounds. Its verified task-owned container and volume were removed. No production database or paid model was used.
+- Production web build passes with **1,589 localization keys**, 27 shell checks, 22 resource/delivery checks and **111 report/navigation checks** (26 new navigation cases, including 20 real-component localized renders). New copy has explicit DE/FR/IT/RM/EN values; native-speaker review remains a separate gate. The existing module-type/Starlette warnings are unchanged dependencies/tooling notices, not hidden test failures.
+- `npm run check:inbox:browser` exercises the actual compiled page in disposable Next/Chrome processes with every application API response intercepted. It passes next/back navigation, law options independent of event pages, sparse-page continuation, old-event links, filter reset, invalid-cursor recovery and layout at 390/768/1024/1440 px. It asserts the UI never requests the old whole-history inbox. The harness initially selected a Chrome extension target and had an incomplete fake health response; both fixture issues were corrected before the passing run.
+- Actual localized components with production PostCSS pass **8,060 contrast samples**, minimum **4.79:1**. All 15 new navigation locale/state fixtures fit their pane at the four widths; enabled navigation links remain at least 44 px high. Ruff/whitespace checks pass. This is focused UI/regression evidence, not complete accessibility/usability certification or the intended-host 100k-event/20-reader benchmark.
+
 ## Bounded public inbox page API — 5 September 2026 (HappyDucky02)
 
 - **105 affected API/queue tests pass** in 160.68 seconds, including 17 new public-page cases. Real endpoint tests traverse 121 equal-time events without skips/duplicates, defer concurrent new admissions, advance empty severity-filtered pages, preserve legacy watched-law/severity semantics and isolate personal states. Source/authority and event/document-kind aliases agree with the legacy response. Malformed, oversized, wrong-filter/account/organization cursors and invalid limits are rejected.

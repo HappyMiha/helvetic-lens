@@ -1943,6 +1943,14 @@ Implemented bounded public inbox API — 5 September 2026 (HappyDucky02):
 - Real HTTP/SQLite regressions cover 121 equal-time events, concurrent admissions, private-state isolation, SQL filter parity and malformed/foreign cursors. A separate PostgreSQL run verifies 50/50/21 pages and selected payload hydration. See `docs/VERIFICATION.md` for the final affected-suite result; this is not a 100k-event/20-reader capacity claim.
 
 
+Implemented interactive inbox navigation — 5 September 2026 (HappyDucky02):
+
+- The Impact inbox now consumes bounded pages instead of the legacy whole-history route. Page counters are labelled explicitly; older/newest navigation, browser back, sparse severity pages and invalid-cursor recovery preserve filters and do not accumulate all history in the browser. New navigation/help copy is present in DE/FR/IT/RM/EN.
+- Independent scalar watch search exposes at most 50 choices plus a separately selected option, with a visible refine-search notice. A law absent from the current event page remains selectable, including paused watches. Organization-scoped candidate links open an old event directly without paging through newer history; filter changes exit the linked-event view.
+- Fifty-three affected API tests pass; PostgreSQL verifies scalar option bounds/isolation. Real production-page browser tests use intercepted synthetic APIs and verify next/back, independent options, sparse pages, candidate links, filter reset and recovery at mobile/desktop sizes, without fetching the legacy inbox. Localization, production build and rendered/contrast checks pass; see `docs/VERIFICATION.md`.
+- HL-099 remains in progress: per-law lookup batching, large fanout, sparse digest preview cost, late-admission policy, broader feed projections and intended-host 100k-event/20-reader/overlap gates remain. This is not a native-speaker or user-pilot sign-off.
+
+
 <a id="hl-100"></a>
 
 ### HL-100 — Require substantive evidence before claiming relevance or impact

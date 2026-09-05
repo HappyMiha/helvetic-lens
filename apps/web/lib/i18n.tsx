@@ -2634,6 +2634,84 @@ const topicPreviewMessages: Record<Locale, Messages> = {
 };
 for (const locale of locales) Object.assign(catalogTarget(locale), topicPreviewMessages[locale]);
 
+const inboxPagingMessages: Record<Locale, Messages> = {
+  "en-CH": {
+    "inboxPaging.refresh": "Refresh this page",
+    "inboxPaging.navigation": "Inbox pages",
+    "inboxPaging.scope": "On this page",
+    "inboxPaging.counts": "{shown} events shown from {scanned} checked on this page.",
+    "inboxPaging.emptyPage": "No events on this page match the filters. Continue to older events.",
+    "inboxPaging.next": "Older events",
+    "inboxPaging.newest": "Start again with newest events",
+    "inboxPaging.lawSearch": "Find a monitored law",
+    "inboxPaging.lawLimit": "First 50 matches shown. Refine the law search to find more.",
+    "inboxPaging.selectedLaw": "Selected law",
+    "inboxPaging.linked": "You are viewing the event from the saved link.",
+    "inboxPaging.allEvents": "Show all events"
+  },
+  "de-CH": {
+    "inboxPaging.refresh": "Diese Seite aktualisieren",
+    "inboxPaging.navigation": "Postfachseiten",
+    "inboxPaging.scope": "Auf dieser Seite",
+    "inboxPaging.counts": "{shown} Ereignisse angezeigt, {scanned} auf dieser Seite geprüft.",
+    "inboxPaging.emptyPage": "Auf dieser Seite entspricht kein Ereignis den Filtern. Gehen Sie zu älteren Ereignissen.",
+    "inboxPaging.next": "Ältere Ereignisse",
+    "inboxPaging.newest": "Mit den neuesten Ereignissen neu beginnen",
+    "inboxPaging.lawSearch": "Überwachtes Gesetz suchen",
+    "inboxPaging.lawLimit": "Die ersten 50 Treffer werden angezeigt. Grenzen Sie die Gesetzessuche ein.",
+    "inboxPaging.selectedLaw": "Ausgewähltes Gesetz",
+    "inboxPaging.linked": "Sie sehen das Ereignis aus dem gespeicherten Link.",
+    "inboxPaging.allEvents": "Alle Ereignisse anzeigen"
+  },
+  "fr-CH": {
+    "inboxPaging.refresh": "Actualiser cette page",
+    "inboxPaging.navigation": "Pages de la boîte de réception",
+    "inboxPaging.scope": "Sur cette page",
+    "inboxPaging.counts": "{shown} événements affichés sur {scanned} examinés sur cette page.",
+    "inboxPaging.emptyPage": "Aucun événement de cette page ne correspond aux filtres. Passez aux événements plus anciens.",
+    "inboxPaging.next": "Événements plus anciens",
+    "inboxPaging.newest": "Recommencer avec les événements les plus récents",
+    "inboxPaging.lawSearch": "Rechercher une loi suivie",
+    "inboxPaging.lawLimit": "Les 50 premiers résultats sont affichés. Affinez la recherche de loi.",
+    "inboxPaging.selectedLaw": "Loi sélectionnée",
+    "inboxPaging.linked": "Vous consultez l’événement du lien enregistré.",
+    "inboxPaging.allEvents": "Afficher tous les événements"
+  },
+  "it-CH": {
+    "inboxPaging.refresh": "Aggiorna questa pagina",
+    "inboxPaging.navigation": "Pagine della posta degli impatti",
+    "inboxPaging.scope": "In questa pagina",
+    "inboxPaging.counts": "{shown} eventi mostrati su {scanned} esaminati in questa pagina.",
+    "inboxPaging.emptyPage": "Nessun evento di questa pagina corrisponde ai filtri. Passa agli eventi precedenti.",
+    "inboxPaging.next": "Eventi precedenti",
+    "inboxPaging.newest": "Ricomincia dagli eventi più recenti",
+    "inboxPaging.lawSearch": "Cerca una legge monitorata",
+    "inboxPaging.lawLimit": "Sono mostrati i primi 50 risultati. Affina la ricerca della legge.",
+    "inboxPaging.selectedLaw": "Legge selezionata",
+    "inboxPaging.linked": "Stai consultando l’evento del collegamento salvato.",
+    "inboxPaging.allEvents": "Mostra tutti gli eventi"
+  },
+  "rm-CH": {
+    "inboxPaging.refresh": "Actualisar questa pagina",
+    "inboxPaging.navigation": "Paginas da la posta dals effects",
+    "inboxPaging.scope": "Sin questa pagina",
+    "inboxPaging.counts": "{shown} eveniments mussads da {scanned} examinads sin questa pagina.",
+    "inboxPaging.emptyPage": "Nagin eveniment da questa pagina correspunda als filters. Cuntinuai cun eveniments pli vegls.",
+    "inboxPaging.next": "Eveniments pli vegls",
+    "inboxPaging.newest": "Cumenziar danovamain cun ils eveniments ils pli novs",
+    "inboxPaging.lawSearch": "Tschertgar ina lescha survegliada",
+    "inboxPaging.lawLimit": "Ils emprims 50 resultats vegnan mussads. Restrenschai la tschertga da leschas.",
+    "inboxPaging.selectedLaw": "Lescha tschernida",
+    "inboxPaging.linked": "Vus vesais l’eveniment da la colliaziun memorisada.",
+    "inboxPaging.allEvents": "Mussar tut ils eveniments"
+  }
+};
+Object.assign(en, inboxPagingMessages["en-CH"]);
+Object.assign(de, inboxPagingMessages["de-CH"]);
+Object.assign(fr, inboxPagingMessages["fr-CH"]);
+Object.assign(it, inboxPagingMessages["it-CH"]);
+Object.assign(rm, inboxPagingMessages["rm-CH"]);
+
 const catalog: Record<Locale, Messages> = { "de-CH": de, "fr-CH": fr, "it-CH": it, "rm-CH": rm, "en-CH": en };
 const localeCookie = "helvetic_lens_locale";
 

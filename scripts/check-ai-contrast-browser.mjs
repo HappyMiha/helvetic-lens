@@ -90,6 +90,12 @@ const markup = `<div class="comparison-layout" data-mobile-surface="companion">
         "digest-coverage-notice.tsx", "DigestCoverageNotice", locale, {
           summary: { truncated: state !== "laws", events: [{ impacts_truncated: state !== "events" }] },
         }).replaceAll(/<(p|a)([ >])/g, `<$1 data-contrast="Digest coverage ${locale} ${state}"$2`))).join("\n")}
+    ${["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"].flatMap(locale =>
+      ["sparse", "last", "recovery"].map(state => renderLocalizedComponent(
+        "inbox-page-navigation.tsx", "InboxPageNavigation", locale, {
+          page: state === "recovery" ? undefined : { total_events: state === "sparse" ? 0 : 21, scanned_event_count: 50, has_more: state === "sparse" },
+          nextHref: state === "sparse" ? "/impact?cursor=test" : undefined, newestHref: "/impact",
+        }).replaceAll(/<(p|a)([ >])/g, `<$1 data-contrast="Inbox pages ${locale} ${state}"$2`))).join("\n")}
   </div></section></aside></div>`;
 
 // Composite transparent ancestor surfaces before WCAG relative luminance.
@@ -180,6 +186,9 @@ try {
     assert.equal(await evaluate(cdp, `document.querySelectorAll('[data-digest-coverage]').length`), 15, `All digest language/state fixtures must render at ${width}px`);
     assert.equal(await evaluate(cdp, `Array.from(document.querySelectorAll('[data-digest-coverage]')).filter(el => el.scrollWidth > el.clientWidth + 1).length`), 0, `Digest notices must fit their pane at ${width}px`);
     assert.equal(await evaluate(cdp, `Array.from(document.querySelectorAll('[data-digest-coverage] a')).filter(el => el.getBoundingClientRect().height < 44 || el.getAttribute('href') !== '/impact').length`), 0, `Digest review links must remain usable at ${width}px`);
+    assert.equal(await evaluate(cdp, `document.querySelectorAll('[data-inbox-navigation]').length`), 15, `All inbox language/state fixtures must render at ${width}px`);
+    assert.equal(await evaluate(cdp, `Array.from(document.querySelectorAll('[data-inbox-navigation]')).filter(el => el.scrollWidth > el.clientWidth + 1).length`), 0, `Inbox navigation must fit its pane at ${width}px`);
+    assert.equal(await evaluate(cdp, `Array.from(document.querySelectorAll('[data-inbox-navigation] a')).filter(el => el.getBoundingClientRect().height < 44).length`), 0, `Inbox navigation links must remain usable at ${width}px`);
     await evaluate(cdp, `document.querySelectorAll('[data-date-review] details').forEach(el => el.open = true)`);
     await audit("date sources expanded");
     const { root: documentNode } = await cdp.send("DOM.getDocument");

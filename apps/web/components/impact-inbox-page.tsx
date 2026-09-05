@@ -29,6 +29,8 @@ import {
   useResource,
 } from "@/lib/api";
 import { resources } from "@/lib/resource-keys";
+import { inboxQuery } from "@/lib/inbox-navigation";
+import { InboxPageNavigation } from "./inbox-page-navigation";
 import { ErrorNote, Loading, Status, SuccessNote } from "./common";
 import { Shell } from "./shell";
 import { useAuth } from "./auth-gate";
@@ -88,7 +90,13 @@ type InboxResponse = {
   total_events: number;
   total_impacts: number;
   unread: number;
+  counts_scope: "page";
+  scanned_event_count: number;
+  has_more: boolean;
+  next_cursor: string | null;
 };
+type LawOption = { id: string; watch_id: string; title: string };
+type LawOptions = { items: LawOption[]; selected: LawOption | null; has_more: boolean };
 type AnalysisHistory = {
   items: Array<{
     id: string;
@@ -410,9 +418,15 @@ export function ImpactInboxPage() {
   const { t } = useI18n();
   const [busy, setBusy] = useState("");
   const [failure, setFailure] = useState("");
-  const query = new URLSearchParams(params.toString()).toString();
+  const [lawSearch, setLawSearch] = useState("");
+  const [submittedLawSearch, setSubmittedLawSearch] = useState("");
+  const query = inboxQuery(params.toString());
+  const selectedLaw = params.get("watched_law") || "";
+  const optionsQuery = new URLSearchParams({ q: submittedLawSearch, selected: selectedLaw }).toString();
+  const lawOptions = useResource(resources.inboxLawOptions<LawOptions>(optionsQuery));
+  const options = Array.from(new Map([...(lawOptions.data?.items || []), ...(lawOptions.data?.selected ? [lawOptions.data.selected] : [])].map(item => [item.id, item])).values());
   const resource = useResource(
-    resources.impactInbox<InboxResponse>(query),
+    resources.impactInboxPage<InboxResponse>(query),
   );
   function refreshAfterMutation(change: InboxMutation) {
     if (change === "successor") {
@@ -434,11 +448,10 @@ export function ImpactInboxPage() {
     void invalidateResources(resourceTag("impact-inbox", "organization"));
   }
   function update(key: string, value: string) {
-    const next = new URLSearchParams(params.toString());
-    if (value) next.set(key, value);
-    else next.delete(key);
-    router.push(pathname + "?" + next.toString());
+    router.push(pathname + "?" + inboxQuery(query, { [key]: value }), { scroll: false });
   }
+  const newestHref = params.has("cursor") ? pathname + "?" + inboxQuery(query, { cursor: "" }) : undefined;
+  const nextHref = resource.data?.next_cursor ? pathname + "?" + inboxQuery(query, { cursor: resource.data.next_cursor }) : undefined;
   async function setState(event: InboxEvent, state: InboxState) {
     setBusy(event.event_id + state);
     setFailure("");
@@ -463,14 +476,19 @@ export function ImpactInboxPage() {
           <p className="muted m-0">{t("impact.body")}</p>
         </div>
       </div>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <h2 className="text-sm m-0">{t("inboxPaging.scope")}</h2>
+        <Button variant="outline" size="sm" onClick={() => void invalidateResources(resourceTag("impact-inbox", "organization"), resourceTag("laws", "organization"))}><RefreshCw size={14} /> {t("inboxPaging.refresh")}</Button>
+      </div>
+      {params.has("candidate") && <p className="rounded-md border p-3 text-sm">{t("inboxPaging.linked")} <Link className="underline inline-flex items-center min-h-11" href={pathname + "?" + inboxQuery(query, { candidate: "" })}>{t("inboxPaging.allEvents")}</Link></p>}
       {resource.data && (
-        <div className="grid grid-cols-3 gap-3 mb-5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
           <div className="stat-card"><Inbox size={18} /><strong>{resource.data.total_events}</strong><span>{t("impact.sourceEvents")}</span></div>
           <div className="stat-card"><Sparkles size={18} /><strong>{resource.data.total_impacts}</strong><span>{t("impact.lawImpacts")}</span></div>
           <div className="stat-card"><CircleAlert size={18} /><strong>{resource.data.unread}</strong><span>{t("impact.unread")}</span></div>
         </div>
       )}
-      <section className="card p-4 mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <section className="card p-4 mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {FILTERS.map(([key, title, values]) => (
           <label className="text-xs muted" key={key}>{key === "source" ? t("filter.authority") : key === "severity" ? t("filter.severity") : key === "item_type" ? t("filter.type") : key === "state" ? t("filter.myState") : title}
             <select className="input mt-1 w-full" value={params.get(key) || ""} onChange={(event) => update(key, event.target.value)}>
@@ -478,19 +496,31 @@ export function ImpactInboxPage() {
             </select>
           </label>
         ))}
-        <label className="text-xs muted">{t("filter.watchedLaw")}
+        <div className="sm:col-span-2 lg:col-span-4 grid gap-3 sm:grid-cols-2">
+          <form className="flex gap-2 mb-2" onSubmit={event => { event.preventDefault(); setSubmittedLawSearch(lawSearch.trim()); }}>
+            <label className="text-xs muted flex-1 min-w-0">{t("inboxPaging.lawSearch")}
+              <input className="input mt-1 w-full" value={lawSearch} maxLength={300} onChange={event => setLawSearch(event.target.value)} />
+            </label>
+            <Button type="submit" size="sm" variant="outline" className="self-end">{t("common.search")}</Button>
+          </form>
+          <label className="text-xs muted">{t("filter.watchedLaw")}
           <select className="input mt-1 w-full" value={params.get("watched_law") || ""} onChange={(event) => update("watched_law", event.target.value)}>
             <option value="">{t("filter.allWatchedLaws")}</option>
-            {Array.from(new Map(resource.data?.items.flatMap((event) => event.items.map((item) => [item.law_id, item.law_title])) || [])).map(([id, title]) => <option key={id} value={id}>{title}</option>)}
+            {selectedLaw && !options.some(item => item.id === selectedLaw || item.watch_id === selectedLaw) && <option value={selectedLaw}>{t("inboxPaging.selectedLaw")}</option>}
+            {options.map(item => <option key={item.id} value={item.watch_id === selectedLaw ? selectedLaw : item.id}>{item.title}</option>)}
           </select>
-        </label>
+          </label>
+          {lawOptions.data?.has_more && <p className="text-xs muted mt-2 mb-0">{t("inboxPaging.lawLimit")}</p>}
+          <ErrorNote message={lawOptions.error} />
+        </div>
       </section>
       <ErrorNote message={failure || resource.error} />
+      <InboxPageNavigation page={resource.data || undefined} newestHref={newestHref} nextHref={nextHref} busy={resource.loading} />
       {resource.loading && !resource.data && <Loading text={t("impact.loading")} />}
-      {!resource.loading && resource.data?.total_events === 0 && (
+      {!resource.loading && resource.data?.total_events === 0 && !resource.data.has_more && (
         <section className="empty-state card"><FileSearch size={28} /><h2>{t("impact.empty")}</h2><p className="muted">{t("impact.emptyBody")}</p></section>
       )}
-      <div className="space-y-5">
+      <div className="space-y-5" aria-busy={resource.loading}>
         {resource.data?.items.map((event) => (
           <article className={`card p-5 ${event.read_state === "dismissed" || event.read_state === "muted" ? "opacity-70" : ""}`} key={event.event_id}>
             <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
@@ -515,6 +545,7 @@ export function ImpactInboxPage() {
           </article>
         ))}
       </div>
+      {resource.data && resource.data.total_events > 0 && <InboxPageNavigation page={resource.data} newestHref={newestHref} nextHref={nextHref} busy={resource.loading} />}
     </Shell>
   );
 }

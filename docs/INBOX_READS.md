@@ -32,7 +32,13 @@ The response includes `items`, `total_events`, `total_impacts`, `unread`, `count
 
 The cursor carries the detection-time/ID position, initial admission ceiling and a versioned organization/principal/filter fingerprint. Invalid, oversized, malformed or mismatched tokens receive a recoverable 422. It is an opaque navigation value, not a signed credential: independently scoped queries enforce access even if a caller constructs a token. A new filter or account starts at the first page. The admission ceiling defers new deliveries until a fresh traversal; existing evidence and private state remain live. It is not a transaction snapshot or a guarantee for edits to detection timestamps/backdated admission metadata.
 
-The legacy `/api/impact-inbox` route and its current web consumer remain available with their original response shape in this API slice. The next consumer migration must label page-only counters, handle sparse pages and invalid cursor recovery, reset cursors on filter changes, and preserve law-filter options and deep links without reading the legacy full inbox. Event pagination does not bound one event's law fanout, per-law SQL lookups or database sorting cost.
+The legacy `/api/impact-inbox` route remains available with its original response shape. The Impact inbox web page now uses only the bounded route. Counters sit under “On this page”; top/bottom navigation offers older events and a fresh start, while browser back restores the prior URL. Empty severity pages still offer continuation. Invalid cursors retain a first-page recovery link. Filters reset the cursor and exit a pinned notification event; automatic refresh and action invalidation retain the current page rather than accumulating history. Event pagination does not bound one event's law fanout, per-law SQL lookups or database sorting cost.
+
+### Filter options and notification links
+
+`GET /api/impact-inbox/law-options?q=...&selected=...` searches organization watch display names using scalar columns only, independently of current inbox filters/page. It returns up to 50 matches and an overflow flag (51st scalar sentinel), plus a separately selected organization-owned option so it stays visible outside the search window. Search treats wildcard characters literally. Paused watches remain selectable for their saved history. Law-ID and watch-ID links are supported; no source, version or analysis JSON is hydrated. A leading substring search/sort can still inspect many names in PostgreSQL; the transfer bound is not a constant CPU guarantee.
+
+The UI submits law search explicitly, explains the first-50 limit and keeps the selected value while results load. `/impact?candidate=<organization_candidate_id>` resolves the linked event directly through an organization-scoped SQL predicate, even beyond the newest 50 keys. Unavailable/foreign links return no event; changing filters exits this focused view. The candidate parameter participates in cursor scope, so it cannot silently reuse another traversal. Complete event law groups, review controls and saved-analysis history remain accessible as before.
 
 ## Durable digest preparation
 
@@ -56,11 +62,13 @@ No schema migration is required. Existing queued jobs without checkpoints initia
 
 `--suite inbox` verifies the real bounded HTTP endpoint on PostgreSQL with 121 equal-time events in 50/50/21 pages, stable navigation, page-only counts and exactly the selected event/delivery payloads hydrated. SQLite also covers SQL filter parity, private-state/account isolation, sparse severity pages, concurrent admissions and invalid cursors/limits.
 
+`--suite options` separately checks independent scalar watch search and selected options beyond the cap on PostgreSQL. `npm run check:inbox:browser` starts isolated Next/Chrome processes against an existing production build and intercepts every application API request with synthetic fixtures. It checks real page navigation/back, sparse-page continuation, notification focus, filter reset, cursor recovery and responsive overflow; it never uses the running API or real organization data.
+
 SQLite regressions additionally exercise empty/legacy/current results, another organization's access, and a newer attempt inserted at the query boundary. This is regression evidence, not an independent concurrency or capacity benchmark on HappySnowman.
 
 ## Still required
 
-- Migrate interactive consumers to the bounded API and preserve independent filter options/deep links; the compatibility `page` route can still load the whole organization's eligible candidate set. Move severity eligibility into SQL/a maintained projection if measurements justify it.
+- Migrate remaining full-list consumers such as the compatibility `page` route and future Today projections where appropriate. The interactive Impact inbox is paginated; severity eligibility still needs SQL/a maintained projection if measurements justify it.
 - Batch entity/review lookups and share an event-centered cursor contract with the future Today feed, with pages no larger than 50.
 - Bound per-event law fanout and measure query/dispatch wall-clock work; worker preparation now yields each 50-event page, while sparse interactive previews can still traverse the full selected period.
 - Preserve deep links, personal state, stale-evidence states and grouped law/topic relationships during that transition.

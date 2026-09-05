@@ -246,6 +246,20 @@ export const resources = {
     });
   },
 
+  impactInboxPage: <T = unknown>(query = "") => {
+    const path = withQuery("/impact-inbox/page", query);
+    return key<T>(`monitoring:${path}`, path, {
+      tags: ["impact-inbox", "monitoring"], staleMs: 15_000, pollMs: 15_000,
+    });
+  },
+
+  inboxLawOptions: <T = unknown>(query = "") => {
+    const path = withQuery("/impact-inbox/law-options", query);
+    return key<T>(`monitoring:${path}`, path, {
+      tags: ["laws", "monitoring"], staleMs: 30_000,
+    });
+  },
+
   impactMatrix: (query = "") => {
     const path = withQuery("/impact-matrix", query);
     return key<ImpactMatrix>(`monitoring:${path}`, path, {

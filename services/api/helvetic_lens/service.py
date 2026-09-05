@@ -1072,6 +1072,10 @@ class HelveticLens:
         with self.db.session() as session:
             return ImpactInboxReader(self.organization_id, user_id).paginated(session, filters, cursor=cursor, limit=limit)
 
+    def impact_inbox_law_options(self, query: str, selected: str) -> dict:
+        with self.db.session() as session:
+            return ImpactInboxReader(self.organization_id, None).law_options(session, query=query, selected=selected)
+
     def impact_matrix(self, output_locale: str) -> dict:
         with self.db.session() as session:
             return ImpactMatrixReader(

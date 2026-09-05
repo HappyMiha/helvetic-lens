@@ -1318,14 +1318,19 @@ def create_app(
         item_type: str = Query(default="", max_length=40),
         watched_law: str = Query(default="", max_length=36),
         state: str = Query(default="", max_length=20),
+        candidate: str = Query(default="", max_length=36),
         cursor: str = Query(default="", max_length=4096),
         limit: int = Query(default=50, ge=1, le=50),
     ):
         identity = request.state.identity
         return service.impact_inbox_page(
-            ImpactInboxFilters(source=source, severity=severity, item_type=item_type, watched_law=watched_law, state=state),
+            ImpactInboxFilters(source=source, severity=severity, item_type=item_type, watched_law=watched_law, state=state, candidate=candidate),
             identity.user_id if identity else None, cursor=cursor, limit=limit,
         )
+
+    @app.get("/api/impact-inbox/law-options")
+    def impact_inbox_law_options(q: str = Query(default="", max_length=300), selected: str = Query(default="", max_length=36)):
+        return service.impact_inbox_law_options(q, selected)
 
     @app.get("/api/impact-matrix")
     def impact_matrix(

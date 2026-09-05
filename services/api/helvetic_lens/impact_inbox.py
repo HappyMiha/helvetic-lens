@@ -48,6 +48,7 @@ class ImpactInboxFilters:
     item_type: str = ""
     watched_law: str = ""
     state: str = ""
+    candidate: str = ""
     detected_from: datetime | None = None
     detected_before: datetime | None = None
     sources: tuple[str, ...] = ()
@@ -347,6 +348,15 @@ class ImpactInboxReader:
             )
             query = query.where(~states.where(RegulatoryEventUserState.state != "unread").exists()
                                 if filters.state == "unread" else states.where(RegulatoryEventUserState.state == filters.state).exists())
+        if filters.candidate:
+            delivery, candidate = aliased(OrganizationRelationCandidate), aliased(RelationCandidate)
+            linked = select(delivery.id).join(candidate, candidate.id == delivery.candidate_id).where(
+                delivery.organization_id == self.organization_id, delivery.id == filters.candidate,
+                candidate.event_id == RegulatoryEvent.id,
+            )
+            if filters.admitted_before is not None:
+                linked = linked.where(delivery.created_at < filters.admitted_before)
+            query = query.where(linked.exists())
         if filters.watched_law:
             delivery, candidate = aliased(OrganizationRelationCandidate), aliased(RelationCandidate)
             watched = select(delivery.id).join(candidate, candidate.id == delivery.candidate_id).join(
@@ -402,9 +412,22 @@ class ImpactInboxReader:
             "cursor": {"detected_at": _iso(selected[-1].detected_at), "id": selected[-1].id} if selected else cursor,
         }
 
+    def law_options(self, session: Session, *, query: str = "", selected: str = "") -> dict:
+        """Small scalar-only watch search, independent of the displayed inbox page."""
+        base = select(DocumentWatch.id, DocumentWatch.law_id, DocumentWatch.display_name).where(
+            DocumentWatch.organization_id == self.organization_id,
+        )
+        search = base.where(DocumentWatch.display_name.icontains(query.strip(), autoescape=True)) if query.strip() else base
+        rows = session.execute(search.order_by(func.lower(DocumentWatch.display_name), DocumentWatch.id).limit(51)).all()
+        chosen = session.execute(base.where(or_(DocumentWatch.id == selected, DocumentWatch.law_id == selected))).first() if selected else None
+        def option(row):
+            return {"id": row.law_id, "watch_id": row.id, "title": row.display_name}
+        return {"items": [option(row) for row in rows[:50]], "has_more": len(rows) > 50,
+                "selected": option(chosen) if chosen else None}
+
     def _cursor_scope(self, filters: ImpactInboxFilters) -> str:
         context = [self.organization_id, self.principal,
-                   filters.source, filters.severity, filters.item_type, filters.watched_law, filters.state]
+                   filters.source, filters.severity, filters.item_type, filters.watched_law, filters.state, filters.candidate]
         return hashlib.sha256(json.dumps(context, ensure_ascii=True).encode()).hexdigest()
 
     def paginated(self, session: Session, filters: ImpactInboxFilters, *, cursor: str = "", limit: int = 50) -> dict:
