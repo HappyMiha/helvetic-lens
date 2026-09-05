@@ -1,13 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { CalendarClock, ExternalLink, Mail, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { api, errorText, useResource } from "@/lib/api";
+import {
+  api,
+  errorText,
+  invalidateResources,
+  primeResourceForLocale,
+  resourceScopeEpoch,
+  resourceTag,
+  useResource,
+} from "@/lib/api";
 import { resources } from "@/lib/resource-keys";
 import { useI18n } from "@/lib/i18n";
-import type { DigestOverview } from "@/lib/types";
+import type { DigestPreviewOverview } from "@/lib/types";
 import { ErrorNote, Loading, SuccessNote } from "./common";
 import { Shell } from "./shell";
 import { DigestCoverageNotice } from "./digest-coverage-notice";
@@ -15,8 +23,20 @@ import { DigestCoverageNotice } from "./digest-coverage-notice";
 const severities = ["high", "medium", "low", "none", "unknown"];
 
 export function DigestsPage() {
-  const { t, dateTime } = useI18n();
-  const resource = useResource(resources.digests());
+  const { t, dateTime, locale } = useI18n();
+  const [cursor, setCursor] = useState("");
+  const [previous, setPrevious] = useState<string[]>([]);
+  const resource = useResource(resources.digestPage(cursor));
+  const initialized = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  const focusPreview = useRef(false);
+  const previewHeading = useRef<HTMLHeadingElement>(null);
   const [enabled, setEnabled] = useState(false);
   const [frequency, setFrequency] = useState<"daily" | "weekly">("weekly");
   const [selectedSeverities, setSelectedSeverities] = useState<string[]>([]);
@@ -26,12 +46,26 @@ export function DigestsPage() {
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
-    if (!resource.data) return;
-    setEnabled(resource.data.preference.enabled);
-    setFrequency(resource.data.preference.frequency);
-    setSelectedSeverities(resource.data.preference.severities);
-    setSelectedSources(resource.data.preference.sources);
+    // Paging/refetches must not silently replace this person's unsaved choices.
+    if (resource.data && !initialized.current) {
+      initialized.current = true;
+      setEnabled(resource.data.preference.enabled);
+      setFrequency(resource.data.preference.frequency);
+      setSelectedSeverities(resource.data.preference.severities);
+      setSelectedSources(resource.data.preference.sources);
+    }
+    if (resource.data && focusPreview.current) {
+      focusPreview.current = false;
+      previewHeading.current?.focus();
+    }
   }, [resource.data]);
+
+  function restartPreview() {
+    focusPreview.current = true;
+    setPrevious([]);
+    setCursor("");
+    void invalidateResources(resourceTag("digests", "organization"));
+  }
 
   function toggle(
     values: string[],
@@ -46,25 +80,42 @@ export function DigestsPage() {
   }
 
   async function save() {
+    const organizationEpoch = resourceScopeEpoch("organization");
+    const sessionEpoch = resourceScopeEpoch("session");
+    const stillCurrent = () =>
+      organizationEpoch === resourceScopeEpoch("organization") &&
+      sessionEpoch === resourceScopeEpoch("session");
     setBusy("save");
     setError("");
     setNotice("");
     try {
-      const result = await api<DigestOverview>("/digests/preferences", {
-        method: "PUT",
-        body: JSON.stringify({
-          enabled,
-          frequency,
-          severities: selectedSeverities,
-          sources: selectedSources,
-        }),
-      });
-      resource.setData(result);
+      const result = await api<DigestPreviewOverview>(
+        "/digests/preferences?preview_page=true",
+        {
+          method: "PUT",
+          body: JSON.stringify({
+            enabled,
+            frequency,
+            severities: selectedSeverities,
+            sources: selectedSources,
+          }),
+        },
+      );
+      if (!stillCurrent()) return;
+      void invalidateResources(resourceTag("digests", "organization"));
+      primeResourceForLocale(
+        resources.digestPage(result.preview.current_cursor),
+        locale,
+        result,
+      );
+      if (!mounted.current) return;
+      setCursor(result.preview.current_cursor);
+      setPrevious([]);
       setNotice(t("digests.saved"));
     } catch (cause) {
-      setError(errorText(cause));
+      if (mounted.current && stillCurrent()) setError(errorText(cause));
     } finally {
-      setBusy("");
+      if (mounted.current && stillCurrent()) setBusy("");
     }
   }
 
@@ -94,14 +145,27 @@ export function DigestsPage() {
         <Mail className="muted" size={28} />
       </div>
       <ErrorNote message={resource.error || error} />
+      {resource.error && (
+        <Button
+          data-digest-recovery
+          className="min-h-11"
+          variant="outline"
+          onClick={restartPreview}
+          disabled={!!busy}
+        >
+          {t("digestPage.restart")}
+        </Button>
+      )}
       {notice && <SuccessNote>{notice}</SuccessNote>}
       {!resource.data ? (
-        <div className="panel p-6">
-          <Loading />
-        </div>
+        resource.loading ? (
+          <div className="panel p-6">
+            <Loading />
+          </div>
+        ) : null
       ) : (
         <div className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)] items-start">
-          <section className="panel p-6 grid gap-5">
+          <fieldset disabled={!!busy} className="panel p-6 grid gap-5 min-w-0">
             <div>
               <h2 className="mb-2">{t("digests.delivery")}</h2>
               <p className="text-sm muted m-0">{t("digests.deliveryBody")}</p>
@@ -199,14 +263,101 @@ export function DigestsPage() {
                   })
                 : t("digests.off")}
             </p>
-          </section>
-          <div className="grid gap-6">
-            <section className="panel p-6">
-              <h2 className="mb-2">{t("digests.preview")}</h2>
+          </fieldset>
+          <div className="grid gap-6 min-w-0">
+            <section
+              className="panel p-6"
+              aria-busy={resource.validating}
+              data-digest-preview
+            >
+              <h2
+                ref={previewHeading}
+                tabIndex={-1}
+                className="mb-2 scroll-mt-24"
+              >
+                {t("digests.preview")}
+              </h2>
               <p className="text-sm muted">{t("digests.previewBody")}</p>
+              <nav
+                aria-label={t("digestPage.navigation")}
+                className="rounded-lg border border-border p-4 text-sm mb-4"
+                data-digest-navigation
+              >
+                <p role="status" className="m-0">
+                  {t("digestPage.counts", {
+                    shown: resource.data.preview.events.length,
+                    scanned: resource.data.preview.scanned_event_count,
+                  })}
+                </p>
+                <p className="muted">
+                  {t("digestPage.period", {
+                    start: dateTime(resource.data.preview.period_start, {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    }),
+                    end: dateTime(resource.data.preview.period_end, {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    }),
+                  })}
+                </p>
+                <p>{t("digestPage.savedFilters")}</p>
+                <p>
+                  {t(
+                    resource.data.preview.has_more
+                      ? "digestPage.more"
+                      : "digestPage.end",
+                  )}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    data-digest-back
+                    className="min-h-11"
+                    disabled={!!busy || resource.validating || !previous.length}
+                    onClick={() => {
+                      focusPreview.current = true;
+                      setCursor(previous[previous.length - 1]);
+                      setPrevious(previous.slice(0, -1));
+                    }}
+                  >
+                    {t("digestPage.back")}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    data-digest-next
+                    className="min-h-11"
+                    disabled={
+                      !!busy ||
+                      resource.validating ||
+                      !resource.data.preview.has_more
+                    }
+                    onClick={() => {
+                      if (!resource.data?.preview.next_cursor) return;
+                      focusPreview.current = true;
+                      setPrevious([
+                        ...previous,
+                        resource.data.preview.current_cursor,
+                      ]);
+                      setCursor(resource.data.preview.next_cursor);
+                    }}
+                  >
+                    {t("digestPage.next")}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    data-digest-restart
+                    className="min-h-11"
+                    disabled={!!busy || resource.validating}
+                    onClick={restartPreview}
+                  >
+                    {t("digestPage.restart")}
+                  </Button>
+                </div>
+              </nav>
               <DigestCoverageNotice summary={resource.data.preview} />
               {resource.data.preview.events.length === 0 ? (
-                <p className="muted">{t("digests.empty")}</p>
+                <p className="muted">{t("digestPage.empty")}</p>
               ) : (
                 <div className="grid gap-4">
                   {resource.data.preview.events.map((event) => (

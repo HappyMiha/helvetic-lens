@@ -118,6 +118,12 @@ def test_event_page_never_splits_related_law_deliveries(harness):
     _, _, service, _ = harness
     first, _ = relation_delivery(harness)
     second = _add_second_delivery(harness, first)
+    # The admission ceiling is exclusive; Windows clock ticks can otherwise put
+    # a just-committed fixture exactly at the captured traversal boundary.
+    with service.db.session() as session:
+        for id_ in (first, second):
+            session.get(OrganizationRelationCandidate, id_).created_at = utcnow() - timedelta(seconds=1)
+        session.commit()
     with service.db.session() as session:
         groups = list(ImpactInboxReader(service.organization_id, None).iter_groups(session, ImpactInboxFilters(), page_size=1))
     assert len(groups) == 1

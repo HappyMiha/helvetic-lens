@@ -1085,7 +1085,7 @@ class HelveticLens:
                 output_locale=output_locale,
             ).page(session)
 
-    def digest_overview(self, user_id: str | None) -> dict:
+    def digest_overview(self, user_id: str | None, *, preview_page: bool = False, cursor: str = "") -> dict:
         if not user_id:
             raise DomainError("Sign in to configure digests.", 401, "authentication_required")
         with self.db.session() as session:
@@ -1103,9 +1103,13 @@ class HelveticLens:
             period_end = utcnow()
             period_start = period_end - digests.FREQUENCIES[effective.frequency]
             reader = ImpactInboxReader(self.organization_id, user_id)
-            groups = reader.iter_groups(
-                session, digests.inbox_filters(effective, period_start, period_end)
-            )
+            if cursor and not preview_page:
+                raise DomainError("A cursor requires paged preview mode.", 422, "invalid_digest_cursor")
+            if preview_page:
+                preview = digests.preview_page(session, reader, effective, cursor=cursor)
+            else:
+                groups = reader.iter_groups(session, digests.inbox_filters(effective, period_start, period_end))
+                preview = digests.summarize_groups(groups, effective, period_start, period_end)
             deliveries = list(
                 session.scalars(
                     select(DigestDelivery)
@@ -1117,7 +1121,7 @@ class HelveticLens:
             source_options = reader.source_options(session)
             return {
                 "preference": digests.serialize_preference(preference),
-                "preview": digests.summarize_groups(groups, effective, period_start, period_end),
+                "preview": preview,
                 "source_options": source_options,
                 "delivery_mode": self.environment_settings.auth_email_mode,
                 "deliveries": [digests.serialize_delivery(item) for item in deliveries],
@@ -1131,6 +1135,7 @@ class HelveticLens:
         frequency: str,
         severities: list[str],
         sources: list[str],
+        preview_page: bool = False,
     ) -> dict:
         if not user_id:
             raise DomainError("Sign in to configure digests.", 401, "authentication_required")
@@ -1159,7 +1164,7 @@ class HelveticLens:
             )
             preference.updated_at = now
             session.commit()
-        return self.digest_overview(user_id)
+        return self.digest_overview(user_id, preview_page=preview_page)
 
     def enqueue_digest_now(self, user_id: str | None) -> dict:
         if not user_id:

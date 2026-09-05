@@ -51,6 +51,17 @@ export type DigestOverview = {
     created_at: string;
   }>;
 };
+export type DigestPreviewOverview = Omit<DigestOverview, "preview"> & {
+  preview: DigestSummary & {
+    counts_scope: "page";
+    scanned_event_count: number;
+    period_start: string;
+    period_end: string;
+    has_more: boolean;
+    current_cursor: string;
+    next_cursor: string | null;
+  };
+};
 export type ApertusSettings = {
   provider: "custom" | "docker" | "infomaniak";
   product_id: string;

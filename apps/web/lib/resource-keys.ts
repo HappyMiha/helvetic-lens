@@ -4,6 +4,7 @@ import type {
   Comparison,
   ConnectorSchedulePage,
   DigestOverview,
+  DigestPreviewOverview,
   Health,
   ImpactMatrix,
   IntegrationLogDetail,
@@ -386,6 +387,16 @@ export const resources = {
       {
         owner: "administration",
         tags: ["integration-log", "integration-logs", `integration-log:${id}`],
+      },
+    ),
+
+  digestPage: (cursor = "") =>
+    key<DigestPreviewOverview>(
+      `organization:digests:page:${cursor}`,
+      `/digests?preview_page=true&cursor=${encodeURIComponent(cursor)}`,
+      {
+        owner: "organization",
+        tags: ["digests", "organization"],
       },
     ),
 

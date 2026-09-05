@@ -23,6 +23,9 @@ from test_digest_event_pages import (
 from test_digest_periods import (
     test_period_sql_excludes_large_history_future_other_sources_and_private_states,
 )
+from test_digest_preview_pages import (
+    test_http_preview_bounds_sparse_pages_and_save_without_mail_or_inference,
+)
 from test_digest_resume import (
     test_digest_yield_is_atomic_fair_and_finishes_without_new_model_calls,
 )
@@ -49,7 +52,7 @@ from test_inbox_page_api import (
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors"), default="history")
+    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -70,6 +73,11 @@ def main():
         with TestClient(app) as client:
             service = app.state.service
             harness = (client, fetcher, service, model)
+            if args.suite == "preview":
+                with MonkeyPatch.context() as patch:
+                    test_http_preview_bounds_sparse_pages_and_save_without_mail_or_inference(harness, patch)
+                print("PostgreSQL: authenticated digest save/preview traverse 121 events in 50/50/21 pages, including two empty severity pages; stable first/back period, legacy compatibility, no read-state/job/delivery writes, AI or mail calls.")
+                return
             if args.suite == "context":
                 test_context_queries_do_not_grow_between_one_and_fifty_event_pages(harness)
                 print("PostgreSQL: one- and 50-event HTTP pages both execute 16 SELECTs; no Law, Version, Comparison or RegulatoryDocumentVersion ORM payloads loaded. No AI or mail calls.")

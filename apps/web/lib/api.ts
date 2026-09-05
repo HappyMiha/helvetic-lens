@@ -140,6 +140,11 @@ export async function fetchResource<T>(key: ResourceKey<T>): Promise<T> {
   );
 }
 
+/** Capture before a mutation; discard its result after an account/workspace switch. */
+export function resourceScopeEpoch(scope: ResourceScope): number {
+  return resourceStore.scopeEpoch(scope);
+}
+
 export function resetResourceScope(scope: ResourceScope | "all"): void {
   resourceStore.resetScope(scope);
 }

@@ -1349,15 +1349,16 @@ def create_app(
         )
 
     @app.get("/api/digests")
-    def digest_overview(request: Request):
+    def digest_overview(request: Request, preview_page: bool = False, cursor: str = Query(default="", max_length=2048)):
         identity = request.state.identity
-        return service.digest_overview(identity.user_id if identity else None)
+        return service.digest_overview(identity.user_id if identity else None, preview_page=preview_page, cursor=cursor)
 
     @app.put("/api/digests/preferences")
-    def save_digest_preference(data: DigestPreferenceInput, request: Request):
+    def save_digest_preference(data: DigestPreferenceInput, request: Request, preview_page: bool = False):
         identity = request.state.identity
         return service.save_digest_preference(
             identity.user_id if identity else None,
+            preview_page=preview_page,
             **data.model_dump(),
         )
 

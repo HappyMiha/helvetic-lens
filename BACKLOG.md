@@ -1974,6 +1974,14 @@ Implemented batched inbox document/link context — 5 September 2026 (HappyDucky
 - HL-099 stays in progress: per-event law fanout/response size, SQL cost, sparse preview continuation, late-admission policy, future Today projections and the intended-host 100k-event/20-reader/overlap gates are not completed by this slice.
 
 
+Implemented bounded interactive digest preview — 5 September 2026 (HappyDucky02):
+
+- The web digest and preference-save response opt into a 50-event-key page contract. Sparse severity filters return an honest empty page with continuation instead of synchronously traversing the full period. Captured detection/admission bounds persist across next/back; cursors bind the current organization, recipient and saved preferences. Compatibility consumers keep the original API behavior.
+- All five locales expose page-only counts, captured Zurich-time period, Previous/Next/Restart, empty-page guidance and stale-cursor recovery. Paging keeps unsaved preferences; saving resets navigation. Buttons retain 44 px targets and page changes focus the preview heading. Reads do not invoke AI, enqueue messages or change private read states.
+- **95 affected API tests pass**, including 13 new cases. A separate disposable PostgreSQL run passes authenticated 121-event navigation/save in 50/50/21 pages with exactly the selected event payloads hydrated. **Ten localized production-browser journeys pass** at 390/1440 px using only intercepted synthetic APIs; final build and localization/resource/rendered checks pass. See `docs/VERIFICATION.md` and `docs/INBOX_READS.md`.
+- HL-099 remains **IN PROGRESS**. Related-law fanout/response size, SQL cost, compatibility full-list consumers, late-admission catch-up policy, future Today projections and intended-host 100k-event/20-reader/overlap gates remain open. No production deployment, real email, paid/local-model call or capacity/native-speaker sign-off occurred.
+
+
 <a id="hl-100"></a>
 
 ### HL-100 — Require substantive evidence before claiming relevance or impact

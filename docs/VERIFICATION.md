@@ -2,6 +2,14 @@
 
 The source-to-diff workflow, Settings page, and live Apertus path are verified.
 
+## Bounded interactive digest preview — 5 September 2026 (HappyDucky02)
+
+- Task branch: `codex/HappyDucky02/hl-099-paged-digest-preview`. **95 affected API tests pass in 90.38 seconds**, covering digest pages/periods/coverage/resume/delivery and inbox pages/context/private state. Thirteen new cases cover authenticated preference save and sparse 50/50/21 navigation, stable equal-time order/captured first-page revisit, compatibility output, malformed/boundary/scope/preference cursors, late admissions and current personal mute state. Preview reads produce no model/mail calls or job/delivery/read-state writes.
+- A separate **PostgreSQL 16.14** check (`--suite preview`) passes the authenticated 121-event scenario on an empty task-owned loopback database. The first two pages inspect 50 events each with zero severity matches; the last inspects 21 and returns all 21 matches. Exactly the selected event payloads are hydrated. The disposable container was removed; existing application/production containers were untouched.
+- **Ten required Chrome production-UI journeys pass** (DE/FR/IT/RM/EN × 390/1440 px). Real pointer hits verify Next/Back through empty pages, a fixed captured first period, retained unsaved choices, explicit bounded save, cursor-error recovery and 44 px navigation targets. Page changes focus the preview heading; no horizontal overflow or runtime exceptions were observed. Every API request is intercepted; no real recipient or provider is contacted. Ignored screenshots are in `test-results/digest-preview/` and both representative widths were visually inspected.
+- Final `npm run build` passes **1,629 localization keys**, **27 shell**, **22 resource/delivery**, **111 rendered report/navigation checks**, TypeScript and Next production generation. Ruff, focused changed-file Prettier and whitespace checks pass. Existing Starlette/httpx deprecation warning remains. An earlier affected run exposed the existing exclusive-admission fixture's Windows clock-tick race; the multiple-law fixture now explicitly predates capture rather than relying on elapsed wall time. The final rerun passes without changing admission semantics.
+- This is an event-key work bound, not a fixed request-time/memory guarantee, immutable evidence snapshot, target-host capacity result, full assistive-technology/native-language review or complete HL-099 delivery. A selected event may still affect many laws; compatibility previews remain unbounded across their period. No schema migration or deployment occurs.
+
 ## Topic draft switch and reload protection — 5 September 2026 (HappyDucky02)
 
 - Final production build passes **1,619 localization keys**, **27 shell**, **22 resource/delivery**, **111 rendered report/navigation checks**, TypeScript and Next compilation. Changed TS/browser-test files pass Prettier and whitespace checks. There is no API/schema/deployment change.

@@ -26,11 +26,50 @@ The summary repeats the period/state/source/severity checks and marks `truncated
 
 ## Event pages for digest consumers
 
-`iter_groups` selects at most 50 distinct event IDs per SQL keyset page, ordered by `detected_at DESC, id DESC`, then hydrates only those event groups. Related laws are never split between pages. Digest preview and delivery stop after 50 eligible summarized events plus one eligible overflow sentinel; up to 49 additional groups can have been prefetched in that last page. Severity still uses the actual persisted assessment/review rules after hydration, so sparse matches may require traversing the full selected period.
+`iter_groups` selects at most 50 distinct event IDs per SQL keyset page, ordered by `detected_at DESC, id DESC`, then hydrates only those event groups. Related laws are never split between pages. Legacy digest preview and direct delivery stop after 50 eligible summarized events plus one eligible overflow sentinel; up to 49 additional groups can have been prefetched in that last page. Severity still uses the actual persisted assessment/review rules after hydration, so sparse matches may require traversing the full selected period.
 
 The traversal fixes an admission-time ceiling (`OrganizationRelationCandidate.created_at < traversal_start`); newly admitted events or law deliveries wait for the next traversal. The cursor advances through selected keys even when presentation filtering removes every group. Existing evidence/state changes are not frozen. Arbitrarily backdated admission timestamps or edits to event detection timestamps are outside this traversal guarantee. The legacy public inbox API remains unchanged; an additive bounded route is now available as described below.
 
 This bounds retained event pages, not every dimension of work: one event can affect many watched laws; related entity/review/history lookups now use 100-candidate batches, while SQL DISTINCT/sorting can inspect many candidate rows. Worker preparation now checkpoints one 50-event page per execution; per-event law fanout, query cost and SMTP duration still need workload validation before claiming a hard wall-clock or memory bound.
+
+## Interactive digest preview pages
+
+The web digest now opts into `GET /api/digests?preview_page=true&cursor=...`.
+The same opt-in on `PUT /api/digests/preferences?preview_page=true` bounds the
+response after saving preferences. Each request selects at most 50 event keys
+plus a scalar overflow sentinel, then filters those groups by the recipient's
+saved severities. There is no automatic scan through empty pages. The original
+API response remains available without the opt-in for compatibility; it is not
+a bounded interactive route.
+
+The preview retains `events` and `truncated`, and adds `counts_scope: "page"`,
+`scanned_event_count`, `period_start`, `period_end`, `has_more`, `current_cursor`
+and `next_cursor`. An empty page with `has_more` is not evidence of an empty
+period. `truncated` still refers to the old summary event cap, not the existence
+of more pages. Each page retains the five-law summary/coverage notices.
+
+Cursors pin the half-open detection period and exclusive admission ceiling,
+including when returning to the first page. They bind organization, reader and
+saved enabled/frequency/source/severity preferences. Invalid, malformed or
+mismatched cursors return `invalid_digest_cursor` before event hydration. They
+are bounded navigation tokens, not credentials: all reads independently enforce
+organization and personal-state scope. Existing conclusions, muted/dismissed
+states and deleted records remain live; these pages are not immutable snapshots.
+Restarting captures a new period/admission ceiling.
+
+The five-language UI labels page-only counts and the captured Zurich-time period,
+explains that saved filters apply, and offers Previous, Next 50 and Restart.
+Sparse pages retain Next; invalid cursors offer recovery without a permanent
+loading indicator. Paging preserves unsaved form choices and moves keyboard
+focus to the preview heading. Saving resets page history; late save results do
+not prime a different account/workspace epoch or locale. Navigation buttons have
+44 px minimum height. No preview read schedules email, changes read state or
+runs inference. Browser QA uses intercepted synthetic API responses only.
+
+This bounds inspected event keys per interactive request, not related-law fanout,
+source-menu cardinality, SQL CPU/sorting, or the latency of a highly connected
+event. Preference-save and explicit cache refreshes are separate bounded reads.
+The actual send job and its 50-selected-event email cap are unchanged.
 
 ## Public inbox page API
 
@@ -78,10 +117,19 @@ SQLite regressions additionally exercise empty/legacy/current results, another o
 
 `--suite context` verifies the 1/50-event constant-query and materialization checks on PostgreSQL. Separate empty-database `--suite links` and `--suite successors` runs verify stable scalar link selection, heavy-body exclusion, private ownership and current-organization successor alias ranking. The link fixtures are synthetic ID/visibility checks, not proof of legal-document identity matching. SQLite also verifies that 121 compatibility-route events split context into 100/21 candidate batches without losing events.
 
+`--suite preview` verifies authenticated preference save and GET navigation on
+PostgreSQL with 121 equal-time events: two empty 50-key severity pages and a final
+21-match page, stable first/back period, unchanged compatibility output and no
+new AI/mail/job/delivery/read-state writes. SQLite also rejects malformed,
+foreign-reader/organization and changed-preference cursors, verifies late
+admission exclusion until restart, and honors personal state changed after the
+capture. `npm run check:digests:browser` requires all ten synthetic localized
+390/1440 px journeys, including real pointer hits and focus recovery.
+
 ## Still required
 
 - Migrate remaining full-list consumers such as the compatibility `page` route and future Today projections where appropriate. The interactive Impact inbox is paginated; severity eligibility still needs SQL/a maintained projection if measurements justify it.
 - Share the event-centered cursor contract and batched context/history reader with the future Today feed, with pages no larger than 50.
-- Bound per-event law fanout and measure query/dispatch wall-clock work; worker preparation now yields each 50-event page, while sparse interactive previews can still traverse the full selected period.
+- Bound per-event law fanout and measure query/dispatch wall-clock work; worker preparation now yields each 50-event page, and interactive web previews now inspect at most 50 keys per request. The compatibility preview can still traverse a full period.
 - Preserve deep links, personal state, stale-evidence states and grouped law/topic relationships during that transition.
 - Run the representative 100k-event/20-reader and overlapping sync/AI/digest workload on the intended host. The 500 ms p95 target and memory/SQL workload gates remain unverified.

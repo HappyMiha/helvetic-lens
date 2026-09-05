@@ -164,6 +164,52 @@ def inbox_filters(preference: DigestPreference, period_start: datetime, period_e
     )
 
 
+def preview_page(session: Session, reader: ImpactInboxReader, preference: DigestPreference, *, cursor: str = "") -> dict:
+    """Inspect at most 50 event keys, even when no severity matches this page.
+
+    Cursors pin a period/admission ceiling and bind the actual reader/preferences.
+    They are navigation positions, not authorization or immutable result snapshots.
+    """
+    scope = hashlib.sha256(json.dumps([
+        reader.organization_id, reader.principal, _preference_fingerprint(preference),
+    ]).encode()).hexdigest()
+    end, after = utcnow(), None
+    if cursor:
+        try:
+            if len(cursor) > 2048:
+                raise ValueError("oversized")
+            data = json.loads(base64.b64decode(cursor + "=" * (-len(cursor) % 4), altchars=b"-_", validate=True))
+            if not isinstance(data, dict) or data.get("version") != 1 or data.get("scope") != scope:
+                raise ValueError("scope")
+            end = datetime.fromisoformat(data["period_end"])
+            if end.tzinfo is None:
+                raise ValueError("timezone")
+            end - FREQUENCIES[preference.frequency]  # Reject dates that cannot form a complete period.
+            after = data["after"]
+            if after is not None:
+                if not isinstance(after, dict) or not isinstance(after.get("id"), str) or not 1 <= len(after["id"]) <= 36:
+                    raise ValueError("position")
+                stamp = datetime.fromisoformat(after["detected_at"])
+                if stamp.tzinfo is None or not end - FREQUENCIES[preference.frequency] <= stamp < end:
+                    raise ValueError("period")
+        except (ValueError, TypeError, KeyError, OverflowError) as error:
+            raise DomainError("This digest preview has expired or its settings changed. Restart the preview.",
+                              422, "invalid_digest_cursor") from error
+    start = end - FREQUENCIES[preference.frequency]
+    def token(position):
+        return base64.urlsafe_b64encode(json.dumps({
+            "version": 1, "scope": scope, "period_end": _iso(end), "after": position,
+        }, separators=(",", ":")).encode()).decode().rstrip("=")
+    page = reader.event_page(session, replace(inbox_filters(preference, start, end), admitted_before=end), cursor=after)
+    return {
+        **filtered_summary(page, preference, start, end),
+        "counts_scope": "page", "scanned_event_count": page["scanned"],
+        "period_start": _iso(start), "period_end": _iso(end),
+        "has_more": page["has_more"], "current_cursor": token(after),
+        "next_cursor": token(page["cursor"]) if page["has_more"] else None,
+    }
+
+
 def filtered_summary(page: dict, preference: DigestPreference, period_start: datetime, period_end: datetime) -> dict:
     return summarize_groups(page.get("items", []), preference, period_start, period_end)
 
