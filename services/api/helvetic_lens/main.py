@@ -281,6 +281,8 @@ def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
         return "fetch", 30, 300
     if path == "/api/laws" or (path.startswith("/api/laws/") and path.endswith("/import")):
         return "fetch", 30, 300
+    if path == "/api/monitoring-topics/preview":
+        return "topic_preview", 30, 300
     if path == "/api/scans":
         return "scan", 20, 300
     if path.endswith("/ask") or path.endswith("/ask-jobs") or path == "/api/monitoring-topics/draft":
@@ -417,6 +419,7 @@ def create_app(
             "/api/digests/unsubscribe",
             "/api/digests/send",
             "/api/source-pack-requests",
+            "/api/monitoring-topics/preview",
             "/api/assistant/context",
             "/api/assistant/remark",
         }
@@ -1051,6 +1054,12 @@ def create_app(
             data.action,
             identity.user_id if identity else None,
         )
+
+    @app.get("/api/monitoring-context")
+    def monitoring_context(kind: Literal["event", "law", "comparison"], id: str = Query(min_length=1, max_length=36)):
+        from .monitoring_context import describe
+        with service.db.session() as session:
+            return describe(session, service.organization_id, kind, id)
 
     @app.get("/api/monitoring-topics")
     def monitoring_topics(include_archived: bool = False):

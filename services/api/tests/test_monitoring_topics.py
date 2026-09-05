@@ -254,6 +254,12 @@ def test_viewer_can_inspect_but_cannot_create_or_change_topics(tmp_path):
             session.commit()
         headers = {"X-CSRF-Token": client.cookies.get(CSRF_COOKIE)}
         assert client.get("/api/monitoring-topics").status_code == 200
+        preview = client.post("/api/monitoring-topics/preview", json=plan(), headers=headers)
+        assert preview.status_code == 200, preview.text
+        with app.state.service.db.session(include_all_organizations=True) as session:
+            assert session.scalar(select(func.count()).select_from(MonitoringTopic)) == 0
+            assert session.scalar(select(func.count()).select_from(MonitoringTopicDraft)) == 0
+
         blocked_draft = client.post(
             "/api/monitoring-topics/draft",
             json={"goal": "Follow naturalisation", "locale": "en-CH"},

@@ -1,5 +1,6 @@
 "use client";
 
+import { MonitorThis } from "./monitor-this";
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -33,6 +34,7 @@ type RegistryRow = {
   id: string;
   record_type: "event" | "monitored";
   event_id?: string;
+  law_id?: string;
   event_type: string;
   detected_at: string;
   title: string;
@@ -619,6 +621,7 @@ export function RegistryPage({
                           </Link>
                         </Button>
                       )}
+                      {(row.record_type === "event" ? row.event_id : row.law_id) && <MonitorThis kind={row.record_type === "event" ? "event" : "law"} id={row.record_type === "event" ? row.event_id! : row.law_id!} />}
                       {row.evidence_url && (
                         <Button asChild size="sm" variant="outline">
                           <Link href={row.evidence_url}>

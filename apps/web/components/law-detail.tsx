@@ -1,5 +1,6 @@
 "use client";
 
+import { MonitorThis } from "./monitor-this";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -228,6 +229,7 @@ export function LawDetail({ id }: { id: string }) {
       ) : (
         law && (
           <>
+            <MonitorThis kind="law" id={law.id} />
             <div className="page-heading">
               <div className="min-w-0">
                 <span className="eyebrow">{t("law.eyebrow")}</span>

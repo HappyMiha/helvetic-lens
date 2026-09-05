@@ -1,5 +1,6 @@
 "use client";
 
+import { MonitorThis } from "./monitor-this";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -91,6 +92,7 @@ export function InterestFeedPage() {
           <div><dt className="muted">{t("feed.officialStatus")}</dt><dd><Status value={item.lifecycle_status} /></dd></div>
         </dl>
         <FeedEvidenceContext item={item} />
+        <MonitorThis kind="event" id={item.event_id} />
         {sourceLink(item.source_url) && <a href={sourceLink(item.source_url)} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center underline font-semibold">{t("common.officialSource")}</a>}
         <Link data-feed-permalink className="underline inline-flex min-h-[44px] items-center ml-4" href={href({ event: item.event_id, cursor: "", period: "", state: "" })}>{t("feedEvidence.openEvent")}</Link>
         {item.monitored_documents?.length > 0 && <section className="border-t mt-3 pt-4"><h3 className="text-base font-semibold">{t("registry.monitored")}</h3>

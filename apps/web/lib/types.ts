@@ -1355,3 +1355,21 @@ export type AIHistoryPage = {
   items: AIHistoryItem[];
   total: number;
 };
+
+export type MonitoringContext = {
+  kind: "event" | "law" | "comparison";
+  id: string;
+  title: string;
+  source_url?: string | null;
+  reference_url?: string | null;
+  evidence_url?: string | null;
+  requires_confirmation: true;
+  ai_calls: number;
+  more_watches: boolean;
+  watches: Array<{
+    law_id: string;
+    name: string;
+    active: boolean;
+    url: string;
+  }>;
+};

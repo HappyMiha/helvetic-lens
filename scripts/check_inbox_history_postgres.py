@@ -64,6 +64,10 @@ from test_interest_feed import (
     test_equal_time_cursor_covers_all_events_and_binds_filters_and_principal,
     test_one_card_for_multiple_topics_and_law_without_ai,
 )
+from test_monitoring_context import (
+    test_context_to_topic_preview_and_explicit_activation_reuses_existing_lifecycle,
+    test_native_event_context_uses_saved_title_and_artifact_without_automatic_monitoring,
+)
 from test_relation_configuration_freshness import (
     test_configuration_changes_remove_current_conclusion_without_jobs_or_history_rewrite,
     test_digest_restarts_configuration_selection_and_rejects_old_prepared_delivery,
@@ -89,7 +93,7 @@ from test_topic_reviews import (
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked"), default="history")
+    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked", "monitoring-context", "monitoring-context-activate"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -110,6 +114,14 @@ def main():
         with TestClient(app) as client:
             service = app.state.service
             harness = (client, fetcher, service, model)
+            if args.suite == "monitoring-context":
+                test_native_event_context_uses_saved_title_and_artifact_without_automatic_monitoring(harness)
+                print("PostgreSQL: native context lookup remains read-only, scalar and exact without creating monitoring.")
+                return
+            if args.suite == "monitoring-context-activate":
+                test_context_to_topic_preview_and_explicit_activation_reuses_existing_lifecycle(harness)
+                print("PostgreSQL: contextual topic preview stays read-only; explicit activation and repeated confirmation create one topic.")
+                return
             if args.suite.startswith("evidence-navigation"):
                 condition = {"evidence-navigation": None, "evidence-navigation-legacy": "legacy",
                              "evidence-navigation-private": "foreign_law", "evidence-navigation-revoked": "revoked"}[args.suite]

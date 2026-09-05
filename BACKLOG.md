@@ -122,7 +122,7 @@ Keep the proven stack and add only the infrastructure now justified by public us
 | [HL-074](#hl-074) | P0       | DONE     | HL-033, HL-035, HL-036, HL-042, HL-071, HL-072         | Durable monitoring topics and editable monitoring plans             |
 | [HL-075](#hl-075) | P0       | DONE     | HL-044, HL-051, HL-074                                 | Bounded topic matching with persisted evidence                      |
 | [HL-076](#hl-076) | P0       | IN PROGRESS | HL-037, HL-046, HL-067, HL-075, HL-094, HL-099         | Unified interest feed; HL-089 enriches cards asynchronously          |
-| [HL-077](#hl-077) | P1       | PLANNED  | HL-035, HL-066, HL-074                                 | Contextual “Monitor this”; integrate HL-076 as its feed arrives      |
+| [HL-077](#hl-077) | P1       | IN PROGRESS | HL-035, HL-066, HL-074                                 | Contextual “Monitor this”; integrate HL-076 as its feed arrives      |
 | [HL-078](#hl-078) | P1       | PLANNED  | HL-052, HL-076, HL-077                                 | In-app notification centre over the existing delivery state         |
 | [HL-079](#hl-079) | P1       | PLANNED  | HL-052, HL-075, HL-076                                 | Topic matches in existing digests                                   |
 | [HL-080](#hl-080) | P1       | PLANNED  | HL-038, HL-071, HL-072                                 | Cantonal source-pack framework and one verified pilot               |
@@ -1526,6 +1526,22 @@ Acceptance criteria:
 ### HL-077 — Add contextual “Monitor this” entry points
 
 Turn discovery, comparison, and cited questions into a natural path to durable monitoring.
+
+**6 September 2026 — IN PROGRESS (HappyDucky02):** a shared contextual topic
+entry now connects Today, registry/discovery, Impact inbox, document and comparison
+to the existing topic editor. The saved entity is resolved server-side with
+organization/owner checks and exact evidence links; existing watches (including
+paused ones) are shown rather than duplicated. Copying the title/goal is explicit,
+concepts remain editable and required, and an existing or recovered draft is not
+silently replaced. The usual bounded preview and idempotent administrator save
+remain separate actions, with a direct link after success. Viewers can keep a
+personal 24-hour browser-tab draft and preview saved candidates; shared writes,
+AI drafting and history activation remain forbidden. Five-language/mobile-browser,
+API and scratch PostgreSQL evidence is recorded in `docs/MONITORING_CONTEXT.md`.
+Remaining: complete law/topic/pack choice, equivalent-topic duplicate detection,
+contextual cadence/degradation, viewer admin-request workflow, and cited-answer /
+global-assistant entries. Personal tab recovery is not cross-device draft storage;
+this is not completion of HL-077 or independent usability/native review.
 
 Acceptance criteria:
 

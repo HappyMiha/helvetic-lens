@@ -14,7 +14,7 @@ When an AI draft is explicitly confirmed, the resulting revision records provide
 
 ## Lifecycle and access
 
-Active topics can be paused and resumed. Archival is soft and keeps the topic and complete revision history; archived topics cannot be edited or reactivated. Viewers can inspect topics and revisions but cannot draft, create, edit, pause, resume, or archive them. Database query criteria apply organization isolation to topics, revisions, and AI drafts.
+Active topics can be paused and resumed. Archival is soft and keeps the topic and complete revision history; archived topics cannot be edited or reactivated. Viewers can inspect topics/revisions and prepare a personal browser-tab draft with a read-only candidate preview. They cannot request AI drafts or create, edit, pause, resume, or archive shared topics. See [Contextual topic setup](MONITORING_CONTEXT.md) for personal draft scope and contextual entry points. Database query criteria apply organization isolation to topics, revisions, and AI drafts.
 
 ## API
 

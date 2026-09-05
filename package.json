@@ -35,6 +35,7 @@
     "check:topics:browser": "node scripts/check-topic-editor-browser.mjs",
     "check:feed:browser": "node scripts/check-interest-feed-browser.mjs",
     "check:topic-reviews:browser": "node scripts/check-topic-reviews-browser.mjs",
+    "check:monitor-this:browser": "node scripts/check-monitor-this-browser.mjs",
     "check:native-evidence:browser": "node scripts/check-native-evidence-browser.mjs"
   },
   "devDependencies": {

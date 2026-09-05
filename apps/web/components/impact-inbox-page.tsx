@@ -1,5 +1,6 @@
 "use client";
 
+import { MonitorThis } from "./monitor-this";
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -535,6 +536,7 @@ export function ImpactInboxPage() {
               {event.items.map((item) => <LawImpact item={item} canManage={canManage} onChanged={refreshAfterMutation} key={item.organization_candidate_id} />)}
             </div>
             <div className="flex flex-wrap gap-2 mt-4">
+              <MonitorThis kind="event" id={event.event_id} />
               {event.source_artifact_url && <Button asChild size="sm" variant="outline"><Link href={event.source_artifact_url}>{t("impact.savedArtifact")}</Link></Button>}
               {event.source_url && <Button asChild size="sm" variant="ghost"><a href={event.source_url} target="_blank" rel="noreferrer">{t("common.officialSource")} <ArrowUpRight size={13} /></a></Button>}
               <Button size="sm" variant="ghost" disabled={!!busy} onClick={() => setState(event, event.read_state === "read" ? "unread" : "read")}><Eye size={14} /> {t("registry.markRead", { state: t(`status.${event.read_state === "read" ? "unread" : "read"}`) })}</Button>

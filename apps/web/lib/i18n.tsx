@@ -3416,6 +3416,75 @@ const feedProvenanceMessages: Record<Locale, Messages> = {
 };
 for (const locale of locales) Object.assign(catalogTarget(locale), feedProvenanceMessages[locale]);
 
+const monitorThisMessages: Record<Locale, Messages> = {
+  "en-CH": {
+    "monitorThis.open": "Monitor this topic",
+    "monitorThis.title": "Start from this item",
+    "monitorThis.help": "Create a topic around this item. Choose your own concepts and review the languages, area and enabled source packs. A topic finds related saved developments; it does not subscribe you to new sources or create a document watch. Nothing is activated until an administrator confirms the preview.",
+    "monitorThis.use": "Use as a topic starting point",
+    "monitorThis.goal": "Follow developments about {title}",
+    "monitorThis.back": "Back to the item",
+    "monitorThis.watched": "This document is already in the organization’s watchlist. Open it instead if you only want its saved versions.",
+    "monitorThis.personal": "You can prepare and preview a personal draft. It stays in this browser tab for up to 24 hours; it is not shared or active monitoring. Only an organization administrator can activate a topic or request an AI draft.",
+    "monitorThis.openSaved": "Open saved topic",
+    "monitorThis.summary": "Choose the concepts and scope, then preview related developments before activating a topic.",
+    "monitorThis.details": "Topic or document monitoring?"
+  },
+  "de-CH": {
+    "monitorThis.open": "Dieses Thema beobachten",
+    "monitorThis.title": "Von diesem Eintrag ausgehen",
+    "monitorThis.help": "Erstellen Sie ein Thema zu diesem Eintrag. Wählen Sie eigene Suchbegriffe und prüfen Sie Sprachen, Gebiet und aktivierte Quellenpakete. Ein Thema findet verwandte gespeicherte Entwicklungen; es aktiviert keine neuen Quellen und keine Dokumentüberwachung. Erst ein Administrator aktiviert es nach der Vorschau.",
+    "monitorThis.use": "Als Ausgangspunkt verwenden",
+    "monitorThis.goal": "Entwicklungen zu {title} verfolgen",
+    "monitorThis.back": "Zurück zum Eintrag",
+    "monitorThis.watched": "Dieses Dokument steht bereits auf der Beobachtungsliste der Organisation. Öffnen Sie es, wenn Sie nur die gespeicherten Versionen sehen möchten.",
+    "monitorThis.personal": "Sie können einen persönlichen Entwurf vorbereiten und prüfen. Er bleibt bis zu 24 Stunden in diesem Browser-Tab; er wird weder geteilt noch aktiviert. Nur ein Organisationsadministrator kann ein Thema aktivieren oder einen KI-Entwurf anfordern.",
+    "monitorThis.openSaved": "Gespeichertes Thema öffnen",
+    "monitorThis.summary": "Wählen Sie Begriffe und Umfang und prüfen Sie verwandte Entwicklungen, bevor Sie ein Thema aktivieren.",
+    "monitorThis.details": "Thema oder Dokument beobachten?"
+  },
+  "fr-CH": {
+    "monitorThis.open": "Suivre ce sujet",
+    "monitorThis.title": "Partir de cet élément",
+    "monitorThis.help": "Créez un sujet autour de cet élément. Choisissez vos concepts et vérifiez les langues, la zone et les packs de sources activés. Un sujet recherche des évolutions enregistrées liées ; il n’active ni nouvelles sources ni suivi de document. Seul un administrateur peut l’activer après aperçu.",
+    "monitorThis.use": "Utiliser comme point de départ",
+    "monitorThis.goal": "Suivre les évolutions concernant {title}",
+    "monitorThis.back": "Revenir à l’élément",
+    "monitorThis.watched": "Ce document figure déjà dans la liste de suivi de l’organisation. Ouvrez-le pour consulter uniquement ses versions enregistrées.",
+    "monitorThis.personal": "Vous pouvez préparer un brouillon personnel et consulter son aperçu. Il reste dans cet onglet pendant 24 heures au maximum ; il n’est ni partagé ni actif. Seul un administrateur de l’organisation peut activer un sujet ou demander un brouillon IA.",
+    "monitorThis.openSaved": "Ouvrir le sujet enregistré",
+    "monitorThis.summary": "Choisissez les concepts et le périmètre, puis consultez les évolutions liées avant d’activer un sujet.",
+    "monitorThis.details": "Suivre un sujet ou un document ?"
+  },
+  "it-CH": {
+    "monitorThis.open": "Monitora questo tema",
+    "monitorThis.title": "Parti da questo elemento",
+    "monitorThis.help": "Crea un tema attorno a questo elemento. Scegli i concetti e verifica lingue, area e pacchetti di fonti attivi. Un tema trova sviluppi correlati già salvati; non attiva nuove fonti né il monitoraggio di un documento. Solo un amministratore può attivarlo dopo l’anteprima.",
+    "monitorThis.use": "Usa come punto di partenza",
+    "monitorThis.goal": "Seguire gli sviluppi su {title}",
+    "monitorThis.back": "Torna all’elemento",
+    "monitorThis.watched": "Questo documento è già monitorato dall’organizzazione. Aprilo se vuoi consultare soltanto le versioni salvate.",
+    "monitorThis.personal": "Puoi preparare una bozza personale e visualizzarne l’anteprima. Resta in questa scheda del browser per un massimo di 24 ore; non è condivisa né attiva. Solo un amministratore dell’organizzazione può attivare un tema o richiedere una bozza IA.",
+    "monitorThis.openSaved": "Apri il tema salvato",
+    "monitorThis.summary": "Scegli concetti e ambito, poi visualizza gli sviluppi correlati prima di attivare un tema.",
+    "monitorThis.details": "Monitorare un tema o un documento?"
+  },
+  "rm-CH": {
+    "monitorThis.open": "Observar quest tema",
+    "monitorThis.title": "Partir da questa endataziun",
+    "monitorThis.help": "Creai in tema davart questa endataziun. Tschernei ils concepts e controllai las linguas, il territori ed ils pachets da funtaunas activads. In tema chatta svilups memorisads ch’èn colliads; el n’activescha naginas novas funtaunas e nagina surveglianza da documents. Pir in administratur po l’activar suenter la prevista.",
+    "monitorThis.use": "Duvrar sco punct da partenza",
+    "monitorThis.goal": "Suandar ils svilups davart {title}",
+    "monitorThis.back": "Enavos a l’endataziun",
+    "monitorThis.watched": "Quest document è gia sin la glista da surveglianza da l’organisaziun. Avri el, sche Vus vulais mo consultar las versiuns memorisadas.",
+    "monitorThis.personal": "Vus pudais preparar e prevair in sboz persunal. El resta en quest tab dal navigatur per maximalmain 24 uras; el n’è ni partì ni activ. Mo in administratur da l’organisaziun po activar in tema u dumandar in sboz dad IA.",
+    "monitorThis.openSaved": "Avrir il tema memorisà",
+    "monitorThis.summary": "Tschernei ils concepts ed il sectur, lura consultai ils svilups colliads avant d’activar in tema.",
+    "monitorThis.details": "Observar in tema u in document?"
+  }
+};
+for (const locale of locales) Object.assign(catalogTarget(locale), monitorThisMessages[locale]);
+
 const nativeEvidenceMessages: Record<Locale, Messages> = {
   "en-CH": {
     "nativeEvidence.noArtifact": "The original file is unavailable. Any saved extracted text remains below.",

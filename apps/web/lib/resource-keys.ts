@@ -13,6 +13,7 @@ import type {
   LawDetail,
   LocalModelInventory,
   MonitoringTopic,
+  MonitoringContext,
   OrganizationStatus,
   Profile,
   PromptSettings,
@@ -150,6 +151,15 @@ export const resources = {
       pollMs: 2_000,
     }),
 
+  monitoringContext: (kind: string, id: string) =>
+    key<MonitoringContext>(
+      `monitoring:context:${kind}:${id}`,
+      `/monitoring-context?${new URLSearchParams({ kind, id })}`,
+      {
+        tags: ["monitoring-context", "laws", "corpus", "impact-inbox"],
+        staleMs: 0,
+      },
+    ),
   monitoringTopics: (includeArchived = false) =>
     key<MonitoringTopic[]>(
       `monitoring:topics:${includeArchived ? "all" : "current"}`,

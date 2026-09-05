@@ -1,5 +1,6 @@
 "use client";
 
+import { MonitorThis } from "./monitor-this";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -578,6 +579,7 @@ export function ComparisonView({ id }: { id: string }) {
         !loadError && <Loading text={t("compare.loading")} />
       ) : (
         <>
+          <MonitorThis kind="comparison" id={data.id} />
           <div className="page-heading">
             <div>
               <span className="eyebrow">{t("compare.eyebrow")}</span>

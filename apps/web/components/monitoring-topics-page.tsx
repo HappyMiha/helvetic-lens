@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   Archive,
@@ -187,7 +188,19 @@ function Choices({
   );
 }
 
-export function MonitoringTopicsPage() {
+function officialContextUrl(value?: string | null) {
+  if (!value) return undefined;
+  try {
+    const url = new URL(value);
+    return ["https:", "http:"].includes(url.protocol) ? url.href : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+type EntryContext = { kind: string; id: string };
+
+export function MonitoringTopicsPage({ context }: { context?: EntryContext }) {
   const { session } = useAuth();
   const principal = session?.authenticated
     ? session.user?.id
@@ -195,12 +208,27 @@ export function MonitoringTopicsPage() {
       ? "anonymous-development"
       : undefined;
   const scope = topicDraftKey(principal, session?.organization?.id);
-  return <TopicEditor key={scope || "unavailable"} draftScope={scope} />;
+  return (
+    <TopicEditor
+      key={scope || "unavailable"}
+      draftScope={scope}
+      context={context}
+    />
+  );
 }
 
-function TopicEditor({ draftScope }: { draftScope: string | null }) {
+function TopicEditor({
+  draftScope,
+  context,
+}: {
+  draftScope: string | null;
+  context?: EntryContext;
+}) {
   const { t, locale } = useI18n();
   const { canManage } = useAuth();
+  const origin = useResource(
+    context ? resources.monitoringContext(context.kind, context.id) : null,
+  );
   const topics = useResource(resources.monitoringTopics(true));
   const packs = useResource(resources.sourcePacks());
   const [form, setForm] = useState<FormPlan>(initialPlan);
@@ -214,6 +242,7 @@ function TopicEditor({ draftScope }: { draftScope: string | null }) {
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [savedTopicId, setSavedTopicId] = useState("");
   const editorRef = useRef<HTMLFormElement>(null);
   const scopeRef = useRef<HTMLDetailsElement>(null);
   const initializedPacks = useRef(false);
@@ -222,7 +251,7 @@ function TopicEditor({ draftScope }: { draftScope: string | null }) {
   const [storageFailed, setStorageFailed] = useState(false);
 
   useEffect(() => {
-    if (!draftScope || !canManage) return;
+    if (!draftScope) return;
     try {
       const loaded = readTopicDraft(window.sessionStorage, draftScope);
       setRecovery(loaded.draft);
@@ -231,10 +260,10 @@ function TopicEditor({ draftScope }: { draftScope: string | null }) {
       setStorageFailed(true);
     }
     setDraftLoaded(true);
-  }, [draftScope, canManage]);
+  }, [draftScope]);
 
   useEffect(() => {
-    if (!draftLoaded || !draftScope || !canManage || recovery) return;
+    if (!draftLoaded || !draftScope || recovery) return;
     try {
       const ok = dirty
         ? writeTopicDraft(window.sessionStorage, {
@@ -255,7 +284,6 @@ function TopicEditor({ draftScope }: { draftScope: string | null }) {
   }, [
     draftLoaded,
     draftScope,
-    canManage,
     recovery,
     dirty,
     form,
@@ -264,6 +292,19 @@ function TopicEditor({ draftScope }: { draftScope: string | null }) {
     aiDraft,
     idempotencyKey,
   ]);
+
+  function useContext() {
+    if (!origin.data || recovery || !draftLoaded || !confirmDiscard()) return;
+    reset();
+    // Titles are context, not guessed search terms. The user chooses the concepts.
+    setForm({
+      ...initialPlan,
+      source_pack_ids: defaultPackIds,
+      name: origin.data.title.slice(0, 240),
+      goal: t("monitorThis.goal", { title: origin.data.title }).slice(0, 3000),
+    });
+    focusEditor();
+  }
 
   function restoreDraft() {
     if (!recovery) return;
@@ -376,6 +417,7 @@ function TopicEditor({ draftScope }: { draftScope: string | null }) {
 
   function reset() {
     setEditing(null);
+    setSavedTopicId("");
     const next = { ...initialPlan, source_pack_ids: defaultPackIds };
     setForm(next);
     setSavedForm(next);
@@ -450,6 +492,7 @@ function TopicEditor({ draftScope }: { draftScope: string | null }) {
     setError("");
     try {
       const payload = toPayload(form);
+      let savedId = editing?.id || "";
       if (editing) {
         await api(`/monitoring-topics/${editing.id}`, {
           method: "PUT",
@@ -460,7 +503,7 @@ function TopicEditor({ draftScope }: { draftScope: string | null }) {
           }),
         });
       } else {
-        await api("/monitoring-topics", {
+        const created = await api<MonitoringTopic>("/monitoring-topics", {
           method: "POST",
           body: JSON.stringify({
             ...payload,
@@ -468,11 +511,13 @@ function TopicEditor({ draftScope }: { draftScope: string | null }) {
             ai_draft_id: aiDraft?.id,
           }),
         });
+        savedId = created.id;
       }
       const savedMessage = t(editing ? "topics.updated" : "topics.created");
       await invalidateResources(resources.monitoringTopics(true));
       reset();
       setMessage(savedMessage);
+      setSavedTopicId(savedId);
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -551,10 +596,106 @@ function TopicEditor({ draftScope }: { draftScope: string | null }) {
         )}
       </div>
       <ErrorNote
-        message={topics.error || packs.error || (!canManage ? error : "")}
+        message={topics.error || packs.error || (!draftScope ? error : "")}
       />
-      {message && <SuccessNote>{message}</SuccessNote>}
-      {canManage ? (
+      {message && (
+        <SuccessNote>
+          {message}
+          {savedTopicId && (
+            <Link
+              data-topic-open-saved
+              className="ml-3 underline"
+              href={`/topics#topic-${encodeURIComponent(savedTopicId)}`}
+            >
+              {t("monitorThis.openSaved")}
+            </Link>
+          )}
+        </SuccessNote>
+      )}
+      {context && (
+        <section data-monitor-context className="card p-5 mb-5 break-words">
+          <h2>{t("monitorThis.title")}</h2>
+          <ErrorNote message={origin.error} />
+          {origin.loading && !origin.data && <Loading />}
+          {origin.data && (
+            <>
+              <p className="font-semibold">{origin.data.title}</p>
+              <p>{t("monitorThis.summary")}</p>
+              <details className="text-sm mb-3">
+                <summary className="cursor-pointer min-h-11 content-center">
+                  {t("monitorThis.details")}
+                </summary>
+                <p>{t("monitorThis.help")}</p>
+              </details>
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  data-monitor-use
+                  type="button"
+                  onClick={useContext}
+                  disabled={!!busy || !!recovery || !draftLoaded}
+                >
+                  {t("monitorThis.use")}
+                </Button>
+                {officialContextUrl(origin.data.source_url) && (
+                  <a
+                    className="underline min-h-11 inline-flex items-center"
+                    href={officialContextUrl(origin.data.source_url)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {t("common.officialSource")}
+                  </a>
+                )}
+                {origin.data.reference_url && (
+                  <Link
+                    className="underline min-h-11 inline-flex items-center"
+                    href={origin.data.reference_url}
+                  >
+                    {t("monitorThis.back")}
+                  </Link>
+                )}
+                {origin.data.evidence_url && (
+                  <Link
+                    className="underline min-h-11 inline-flex items-center"
+                    href={origin.data.evidence_url}
+                  >
+                    {t("impact.savedArtifact")}
+                  </Link>
+                )}
+              </div>
+              {origin.data.watches.length > 0 && (
+                <div className="mt-4">
+                  <p>{t("monitorThis.watched")}</p>
+                  <ul>
+                    {origin.data.watches.map((watch) => (
+                      <li key={watch.law_id}>
+                        <Link
+                          className="underline min-h-11 inline-flex items-center"
+                          href={watch.url}
+                        >
+                          {watch.name}
+                        </Link>{" "}
+                        <Status value={watch.active ? "active" : "paused"} />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {origin.data.more_watches && (
+                <Link className="underline" href="/registry">
+                  {t("registry.monitored")}
+                </Link>
+              )}
+            </>
+          )}
+        </section>
+      )}
+      {!canManage && (
+        <div data-topic-personal-note className="info-note mb-5">
+          {t("monitorThis.personal")}
+        </div>
+      )}
+      {draftScope ? (
         <form
           ref={editorRef}
           className="monitoring-topic-builder card p-5 mb-6 scroll-mt-4"
@@ -824,7 +965,9 @@ function TopicEditor({ draftScope }: { draftScope: string | null }) {
             </details>
             <div className="flex flex-wrap items-center gap-3">
               <Button
-                disabled={busy !== "" || form.goal.trim().length < 3}
+                disabled={
+                  !canManage || busy !== "" || form.goal.trim().length < 3
+                }
                 onClick={() => void draftWithAi()}
                 type="button"
                 variant="outline"
@@ -848,7 +991,7 @@ function TopicEditor({ draftScope }: { draftScope: string | null }) {
               <Button disabled={busy !== ""} type="submit">
                 <Eye /> {t("topics.preview")}
               </Button>
-              {preview && (
+              {preview && canManage && (
                 <Button
                   disabled={busy !== ""}
                   data-topic-save
@@ -946,7 +1089,11 @@ function TopicEditor({ draftScope }: { draftScope: string | null }) {
         )}
         <div className="grid gap-4 xl:grid-cols-2">
           {topics.data?.map((topic) => (
-            <article className="card p-5 scroll-mt-6" id={`topic-${topic.id}`} key={topic.id}>
+            <article
+              className="card p-5 scroll-mt-6"
+              id={`topic-${topic.id}`}
+              key={topic.id}
+            >
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="flex flex-wrap gap-2 mb-2">

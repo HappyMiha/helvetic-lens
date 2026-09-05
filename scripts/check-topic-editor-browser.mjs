@@ -798,7 +798,7 @@ try {
     () =>
       evaluate(
         cdp,
-        `!!document.querySelector('[data-topic-history]') && !document.querySelector('.monitoring-topic-builder')`,
+        `!!document.querySelector('[data-topic-history]') && !!document.querySelector('[data-topic-personal-note]')`,
       ),
     "Viewer route did not load saved topics",
   );
