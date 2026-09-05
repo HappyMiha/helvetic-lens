@@ -1958,6 +1958,14 @@ Implemented batched analysis/review histories — 5 September 2026 (HappyDucky02
 - A 50-event SQLite/PostgreSQL corpus with 7,474 analysis/review records uses four history queries and 111 materialized records. Further regressions cover 100/21 candidate batching, empty/foreign inputs and concurrent appends. See `docs/VERIFICATION.md` for the affected-suite result. Related-entity/comparison lookups, law fanout, database sorting cost and the intended-host capacity gates remain open; HL-099 is still in progress.
 
 
+Implemented batched inbox document/link context — 5 September 2026 (HappyDucky02):
+
+- Inbox and digest pages now share related candidate/event/work/watch/relation reads in batches of at most 100 candidates. Scalar law/comparison/artifact selection avoids hydrating document text, passage arrays and diff bodies merely to render links. Deferred unrelated fields cannot trigger hidden per-item reads.
+- Latest visible comparisons keep stable time/ID ordering. Successor links prefer the current organization's active watch, then paused watch, then the oldest visible mapped law; multiple legacy addresses no longer select an arbitrary alias or borrow another organization's monitoring state.
+- **103 affected API tests pass**. The one-/50-event synthetic HTTP fixture uses 16 SELECTs in both SQLite and PostgreSQL without loading Law/Version/Comparison/RegulatoryDocumentVersion payloads. Separate PostgreSQL checks cover heavy-body exclusion, private link ownership and successor ranking; 121-event compatibility pages retain every event through 100/21 context batches. See `docs/VERIFICATION.md` and `docs/INBOX_READS.md` for scope and limitations.
+- HL-099 stays in progress: per-event law fanout/response size, SQL cost, sparse preview continuation, late-admission policy, future Today projections and the intended-host 100k-event/20-reader/overlap gates are not completed by this slice.
+
+
 <a id="hl-100"></a>
 
 ### HL-100 — Require substantive evidence before claiming relevance or impact

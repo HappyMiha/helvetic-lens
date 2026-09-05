@@ -2,6 +2,14 @@
 
 The source-to-diff workflow, Settings page, and live Apertus path are verified.
 
+## Batched inbox document/link context — 5 September 2026 (HappyDucky02)
+
+- **103 affected API tests pass** in **110.35 seconds** across inbox context/history/navigation/pages/reviews, relation analysis and digest period/page/coverage/resume flows. Four new tests cover constant query count, selected-column/materialization limits, 100/21 context batches for 121 legacy-route events, stable visible links and successor alias selection without foreign monitoring state.
+- A real HTTP page with synthetic one-/50-event selections executes **16 SELECTs in both cases**, including configuration and empty-history metadata. It hydrates no Law, Version, Comparison or RegulatoryDocumentVersion ORM objects; candidate evidence and work metadata remain deferred. Large synthetic document/passage/diff bodies do not load merely to generate links. Counts for populated histories, replacements, authentication and additional candidate batches differ; no universal fixed-query/latency guarantee is claimed.
+- Separate empty, isolated **PostgreSQL 16.14** checks pass for `scripts/check_inbox_history_postgres.py --suite context`, `--suite links` and `--suite successors`. They verify actual endpoint SQL, stable comparison time/ID ranking, owner visibility and active/paused/unwatched successor selection. Link fixtures test synthetic identifiers and visibility, not legal-document identity quality. Each verified task-owned database/container volume is removed after use; no production data/services, paid model or actual email is involved.
+- Ruff and whitespace checks pass. No migration, API shape change or frontend layout change is required; no new frontend build is claimed. The pre-existing Starlette test-client warning remains. The initial new query-count assertion guessed 15; inspection accounted for all 16 (three configuration, three page/state/delivery, two empty-history, eight context), then both database checks confirmed the corrected bound.
+- HL-099 remains in progress: a single event can still fan out to many laws, response assembly still retains its selected delivery groups, SQL windows/sorting are not constant CPU, sparse previews can traverse a full period, and the target-host 100k-event/20-reader workload is still unverified.
+
 ## Batched inbox analysis and review histories — 5 September 2026 (HappyDucky02)
 
 - **99 affected API tests pass** in 138.06 seconds across inbox pages/navigation/history/reviews, relation analysis and digest period/page/coverage/resume flows. Five new regression cases cover mixed current/failed/legacy/empty histories, retained human decisions beneath annotations, 100/21 batching, explicit organization scope in privileged sessions and concurrent analysis/review appends after scalar selection.

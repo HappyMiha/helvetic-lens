@@ -26,6 +26,11 @@ from test_digest_periods import (
 from test_digest_resume import (
     test_digest_yield_is_atomic_fair_and_finishes_without_new_model_calls,
 )
+from test_inbox_context import (
+    test_comparison_and_artifact_links_use_visible_scalar_ids_only,
+    test_context_queries_do_not_grow_between_one_and_fifty_event_pages,
+    test_successor_aliases_prefer_current_organization_watch_without_foreign_state,
+)
 from test_inbox_history_batches import (
     test_page_selects_histories_in_four_queries_with_bounded_payloads,
 )
@@ -44,7 +49,7 @@ from test_inbox_page_api import (
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options", "batches"), default="history")
+    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -65,6 +70,18 @@ def main():
         with TestClient(app) as client:
             service = app.state.service
             harness = (client, fetcher, service, model)
+            if args.suite == "context":
+                test_context_queries_do_not_grow_between_one_and_fifty_event_pages(harness)
+                print("PostgreSQL: one- and 50-event HTTP pages both execute 16 SELECTs; no Law, Version, Comparison or RegulatoryDocumentVersion ORM payloads loaded. No AI or mail calls.")
+                return
+            if args.suite == "links":
+                test_comparison_and_artifact_links_use_visible_scalar_ids_only(harness)
+                print("PostgreSQL: stable latest visible comparison and artifact links use scalar IDs; large document/diff bodies and foreign-owned links are excluded.")
+                return
+            if args.suite == "successors":
+                test_successor_aliases_prefer_current_organization_watch_without_foreign_state(harness)
+                print("PostgreSQL: successor alias ranking prefers current-organization active/paused watches then oldest visible mapping; foreign watch state is never borrowed.")
+                return
             if args.suite == "batches":
                 test_page_selects_histories_in_four_queries_with_bounded_payloads(harness)
                 print("PostgreSQL: 50-event inbox page reads 7,474 historical analysis/review rows with 4 selection/hydration queries and 111 materialized records; current conclusions, failed attempts, legacy output and latest human decisions remain correct. No AI or mail calls.")

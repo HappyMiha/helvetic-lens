@@ -14,14 +14,11 @@ from sqlalchemy.orm import Session, aliased
 
 from . import relation_analysis as relation_ai
 from .config import DomainError
+from .inbox_context import InboxContext, load_context
 from .models import (
-    Comparison,
     DocumentWatch,
-    Law,
-    LegacyDocumentMapping,
     OrganizationRelationCandidate,
     OrganizationRelationReview,
-    RegulatoryDocumentVersion,
     RegulatoryEvent,
     RegulatoryEventUserState,
     RegulatoryRelation,
@@ -134,41 +131,14 @@ class ImpactInboxReader:
         return analyses, reviews
 
     @staticmethod
-    def _watch_context(
-        session: Session, delivery: OrganizationRelationCandidate
-    ) -> tuple[DocumentWatch, Law, RegulatoryWork]:
-        watch = session.get(DocumentWatch, delivery.watch_id)
+    def _watch_context(context: InboxContext, delivery: OrganizationRelationCandidate, candidate: RelationCandidate):
+        watch = context.watches.get(delivery.watch_id)
         if not watch:
             raise DomainError("The monitored document is no longer available.", 404, "not_found")
-        law = session.get(Law, watch.law_id)
-        candidate = session.get(RelationCandidate, delivery.candidate_id)
-        target = session.get(RegulatoryWork, candidate.target_work_id) if candidate else None
-        if not law or not candidate or not target:
+        target = context.works.get(candidate.target_work_id)
+        if watch.law_id not in context.law_ids or not target:
             raise DomainError("The saved impact candidate is incomplete.", 409, "candidate_incomplete")
-        return watch, law, target
-
-    @staticmethod
-    def _comparison_url(session: Session, law_id: str) -> str | None:
-        comparison = session.scalar(
-            select(Comparison)
-            .where(Comparison.law_id == law_id)
-            .order_by(Comparison.created_at.desc(), Comparison.id.desc())
-            .limit(1)
-        )
-        return f"/compare/{comparison.id}" if comparison else None
-
-    @staticmethod
-    def _mapped_law(session: Session, work_id: str) -> tuple[Law | None, DocumentWatch | None]:
-        mapping = session.scalar(
-            select(LegacyDocumentMapping).where(LegacyDocumentMapping.work_id == work_id)
-        )
-        law = session.get(Law, mapping.law_id) if mapping else None
-        watch = (
-            session.scalar(select(DocumentWatch).where(DocumentWatch.law_id == law.id))
-            if law
-            else None
-        )
-        return law, watch
+        return watch, watch.law_id, target
 
     @staticmethod
     def _status(
@@ -213,15 +183,15 @@ class ImpactInboxReader:
 
     def _law_item(
         self,
-        session: Session,
+        context: InboxContext,
         delivery: OrganizationRelationCandidate,
         candidate: RelationCandidate,
         event: RegulatoryEvent,
         analysis_history: tuple,
         review_history: tuple,
     ) -> dict:
-        watch, law, target = self._watch_context(session, delivery)
-        relation = session.get(RegulatoryRelation, candidate.relation_id) if candidate.relation_id else None
+        watch, law_id, target = self._watch_context(context, delivery, candidate)
+        relation = context.relations.get(candidate.relation_id) if candidate.relation_id else None
         review, latest_review, review_history_count = review_history
         current, latest, history_count = analysis_history
         status = self._status(relation, review, current, latest)
@@ -252,29 +222,29 @@ class ImpactInboxReader:
         )
         replacement = None
         if official and official.relation_type == "replaces":
-            successor_law, successor_watch = self._mapped_law(session, candidate.source_work_id)
-            source_work = session.get(RegulatoryWork, candidate.source_work_id)
+            successor_law_id, successor_monitored = context.successors.get(candidate.source_work_id, (None, False))
+            source_work = context.works[candidate.source_work_id]
             replacement = {
                 "predecessor": {
                     "work_id": target.id,
-                    "law_id": law.id,
+                    "law_id": law_id,
                     "title": watch.display_name,
-                    "timeline": f"/laws/{law.id}",
+                    "timeline": f"/laws/{law_id}",
                 },
                 "successor": {
                     "work_id": source_work.id,
-                    "law_id": successor_law.id if successor_law else None,
+                    "law_id": successor_law_id,
                     "title": source_work.title,
                     "url": source_work.stable_official_url,
-                    "monitored": bool(successor_watch and successor_watch.active),
-                    "timeline": f"/laws/{successor_law.id}" if successor_law else None,
+                    "monitored": successor_monitored,
+                    "timeline": f"/laws/{successor_law_id}" if successor_law_id else None,
                 },
             }
         return {
             "organization_candidate_id": delivery.id,
             "candidate_id": candidate.id,
             "watch_id": watch.id,
-            "law_id": law.id,
+            "law_id": law_id,
             "law_title": watch.display_name,
             "law_active": watch.active,
             "target_work_id": target.id,
@@ -321,8 +291,8 @@ class ImpactInboxReader:
             "review_history_count": review_history_count,
             "replacement": replacement,
             "links": {
-                "timeline": f"/laws/{law.id}",
-                "comparison": self._comparison_url(session, law.id),
+                "timeline": f"/laws/{law_id}",
+                "comparison": f"/compare/{context.comparisons[law_id]}" if law_id in context.comparisons else None,
                 "relation_evidence": (
                     f"/api/relations/{official.id}"
                     if official
@@ -517,13 +487,14 @@ class ImpactInboxReader:
         for start in range(0, len(deliveries), 100):
             batch = deliveries[start:start + 100]
             analyses, reviews = self._page_histories(session, [delivery.id for delivery in batch])
+            context = load_context(session, self.organization_id, batch)
             for delivery in batch:
-                candidate = session.get(RelationCandidate, delivery.candidate_id)
-                event = session.get(RegulatoryEvent, candidate.event_id) if candidate else None
-                source = session.get(RegulatoryWork, candidate.source_work_id) if candidate else None
+                candidate = context.candidates.get(delivery.candidate_id)
+                event = context.events.get(candidate.event_id) if candidate else None
+                source = context.works.get(candidate.source_work_id) if candidate else None
                 if not candidate or not event or not source:
                     continue
-                item = self._law_item(session, delivery, candidate, event,
+                item = self._law_item(context, delivery, candidate, event,
                                       analyses.get(delivery.id, (None, None, 0)), reviews.get(delivery.id, (None, None, 0)))
                 state_record = states.get(event.id)
                 state = state_record.state if state_record else "unread"
@@ -543,10 +514,9 @@ class ImpactInboxReader:
                         "items": [],
                     },
                 )
-                if event.document_version_id:
-                    source_version = session.get(RegulatoryDocumentVersion, event.document_version_id)
-                    if source_version and source_version.legacy_version_id:
-                        group["source_artifact_url"] = f"/evidence/{source_version.legacy_version_id}"
+                artifact_id = context.artifacts.get(event.document_version_id)
+                if artifact_id:
+                    group["source_artifact_url"] = f"/evidence/{artifact_id}"
                 group["items"].append(item)
         groups = []
         order = {"high": 0, "medium": 1, "low": 2, "none": 3, "unknown": 4}

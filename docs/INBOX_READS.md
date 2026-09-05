@@ -10,6 +10,14 @@ Interactive pages, the compatibility inbox and digest consumers now select histo
 
 The earlier single-candidate `_latest_analyses` helper remains compatible with its existing three-query ceiling tests, but page/digest assembly no longer calls it. Migration `fa27c61d3098` already indexes analysis organization/candidate/time/ID; this batching slice adds no schema migration. Window sorting/counting still examines selected candidates' histories in the database. The contract bounds transferred historical payloads and history-query round trips, not database CPU, per-event law fanout, total response size or all related-entity queries. There is no inference on reads.
 
+## Related documents, events and links
+
+The same batches of at most 100 organization candidates now share related context. Candidate/event/work/watch/relation records load in ID batches with only the columns used to render the inbox; deferred fields reject accidental lazy reads. Accessible law IDs, latest comparison IDs and original-artifact version IDs use scalar queries, so reading the inbox does not hydrate Law, Version, Comparison or RegulatoryDocumentVersion objects or their large document/diff bodies. Archived evidence is still available through its explicit detail routes.
+
+Comparison selection ranks by `created_at DESC, id DESC` per law, with explicit public/current-owner scope. Artifact links require a visible legacy Version. For confirmed replacement relationships, multiple legacy URLs can map to the successor work: select this organization's active watch first, then its paused watch, then the oldest accessible mapping (time/ID tie-break). Another organization's active watch cannot make the successor appear monitored. This replaces the earlier arbitrary first-mapping choice.
+
+Context requires at most nine SELECTs per candidate batch (the ninth is needed only for replacements), alongside the existing history selection. A synthetic real-HTTP fixture with no saved AI/review history executes 16 SELECTs for both one and 50 events: three configuration reads, event keys/private state/deliveries, two empty-history metadata reads and eight context queries. Populated histories, replacements, authentication and additional 100-candidate batches change the total. This is a measured regression bound for that fixture, not a universal request count or latency guarantee. Explicit organization/owner predicates also protect context lookup in privileged sessions.
+
 ## Digest detection periods
 
 Preview captures one end instant and delivery reuses its saved start/end. SQL selects `detected_at >= start AND detected_at < end`, optional connector/authority choices and personal dismissed/muted exclusions before hydrating candidate/evidence records. Read events remain eligible; another user's or organization's mute cannot suppress this recipient's event. Source choices use distinct scalar columns over the organization's available candidates, so a quiet period or active source filter does not erase the menu.
@@ -22,7 +30,7 @@ The summary repeats the period/state/source/severity checks and marks `truncated
 
 The traversal fixes an admission-time ceiling (`OrganizationRelationCandidate.created_at < traversal_start`); newly admitted events or law deliveries wait for the next traversal. The cursor advances through selected keys even when presentation filtering removes every group. Existing evidence/state changes are not frozen. Arbitrarily backdated admission timestamps or edits to event detection timestamps are outside this traversal guarantee. The legacy public inbox API remains unchanged; an additive bounded route is now available as described below.
 
-This bounds retained event pages, not every dimension of work: one event can affect many watched laws; related entity/review/history lookups are still per item, and SQL DISTINCT/sorting can inspect many candidate rows. Worker preparation now checkpoints one 50-event page per execution; per-event law fanout, query cost and SMTP duration still need workload validation before claiming a hard wall-clock or memory bound.
+This bounds retained event pages, not every dimension of work: one event can affect many watched laws; related entity/review/history lookups now use 100-candidate batches, while SQL DISTINCT/sorting can inspect many candidate rows. Worker preparation now checkpoints one 50-event page per execution; per-event law fanout, query cost and SMTP duration still need workload validation before claiming a hard wall-clock or memory bound.
 
 ## Public inbox page API
 
@@ -32,7 +40,7 @@ The response includes `items`, `total_events`, `total_impacts`, `unread`, `count
 
 The cursor carries the detection-time/ID position, initial admission ceiling and a versioned organization/principal/filter fingerprint. Invalid, oversized, malformed or mismatched tokens receive a recoverable 422. It is an opaque navigation value, not a signed credential: independently scoped queries enforce access even if a caller constructs a token. A new filter or account starts at the first page. The admission ceiling defers new deliveries until a fresh traversal; existing evidence and private state remain live. It is not a transaction snapshot or a guarantee for edits to detection timestamps/backdated admission metadata.
 
-The legacy `/api/impact-inbox` route remains available with its original response shape. The Impact inbox web page now uses only the bounded route. Counters sit under “On this page”; top/bottom navigation offers older events and a fresh start, while browser back restores the prior URL. Empty severity pages still offer continuation. Invalid cursors retain a first-page recovery link. Filters reset the cursor and exit a pinned notification event; automatic refresh and action invalidation retain the current page rather than accumulating history. Event pagination does not bound one event's law fanout, per-law SQL lookups or database sorting cost.
+The legacy `/api/impact-inbox` route remains available with its original response shape. The Impact inbox web page now uses only the bounded route. Counters sit under “On this page”; top/bottom navigation offers older events and a fresh start, while browser back restores the prior URL. Empty severity pages still offer continuation. Invalid cursors retain a first-page recovery link. Filters reset the cursor and exit a pinned notification event; automatic refresh and action invalidation retain the current page rather than accumulating history. Event pagination does not bound one event's law fanout or database sorting cost; related lookups now use the candidate batches described above.
 
 ### Filter options and notification links
 
@@ -68,10 +76,12 @@ No schema migration is required. Existing queued jobs without checkpoints initia
 
 SQLite regressions additionally exercise empty/legacy/current results, another organization's access, and a newer attempt inserted at the query boundary. This is regression evidence, not an independent concurrency or capacity benchmark on HappySnowman.
 
+`--suite context` verifies the 1/50-event constant-query and materialization checks on PostgreSQL. Separate empty-database `--suite links` and `--suite successors` runs verify stable scalar link selection, heavy-body exclusion, private ownership and current-organization successor alias ranking. The link fixtures are synthetic ID/visibility checks, not proof of legal-document identity matching. SQLite also verifies that 121 compatibility-route events split context into 100/21 candidate batches without losing events.
+
 ## Still required
 
 - Migrate remaining full-list consumers such as the compatibility `page` route and future Today projections where appropriate. The interactive Impact inbox is paginated; severity eligibility still needs SQL/a maintained projection if measurements justify it.
-- Batch entity/review lookups and share an event-centered cursor contract with the future Today feed, with pages no larger than 50.
+- Share the event-centered cursor contract and batched context/history reader with the future Today feed, with pages no larger than 50.
 - Bound per-event law fanout and measure query/dispatch wall-clock work; worker preparation now yields each 50-event page, while sparse interactive previews can still traverse the full selected period.
 - Preserve deep links, personal state, stale-evidence states and grouped law/topic relationships during that transition.
 - Run the representative 100k-event/20-reader and overlapping sync/AI/digest workload on the intended host. The 500 ms p95 target and memory/SQL workload gates remain unverified.
