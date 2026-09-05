@@ -119,7 +119,7 @@ from .prompt_settings import (
 )
 from .registry import RegistryFilters, RegistryReader
 from .regulatory_corpus import RegulatoryCorpus
-from .relation_freshness import uses_configuration, uses_profile, uses_prompts
+from .relation_freshness import uses_configuration, uses_profile, uses_prompts, uses_versions
 from .source_capabilities import capability_catalogue
 
 logger = logging.getLogger(__name__)
@@ -4403,7 +4403,9 @@ class HelveticLens:
 
     def relation_analysis_history(self, organization_candidate_id: str) -> dict:
         with self.db.session() as session:
-            get(session, OrganizationRelationCandidate, organization_candidate_id)
+            delivery = get(session, OrganizationRelationCandidate, organization_candidate_id)
+            version_ids = session.execute(select(RelationCandidate.source_version_id, RelationCandidate.target_version_id)
+                                          .where(RelationCandidate.id == delivery.candidate_id)).one()
             records = list(
                 session.scalars(
                     select(RelationImpactAnalysis)
@@ -4425,6 +4427,7 @@ class HelveticLens:
                         or not uses_profile(record.analysis_plan, profile_revision)
                         or not uses_configuration(record.analysis_plan, self.settings)
                         or not uses_prompts(record.analysis_plan, self.prompt_settings)
+                        or not uses_versions(record.analysis_plan, *version_ids)
                     ),
                 }
                 for record in records

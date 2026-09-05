@@ -58,12 +58,16 @@ from test_relation_prompt_freshness import (
     test_digest_prompt_change_restarts_selection_and_never_sends_old_selection,
     test_used_prompt_edit_invalidates_history_and_inbox_without_new_inference,
 )
+from test_relation_version_freshness import (
+    test_changed_or_removed_version_invalidates_current_without_rewriting_history,
+    test_final_digest_read_drops_obsolete_ai_severity_without_sending,
+)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest"), default="history")
+    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -84,6 +88,15 @@ def main():
         with TestClient(app) as client:
             service = app.state.service
             harness = (client, fetcher, service, model)
+            if args.suite == "versions":
+                test_changed_or_removed_version_invalidates_current_without_rewriting_history(harness, "target", False)
+                print("PostgreSQL: changed candidate document version excludes obsolete history/inbox applicability while preserving citations, counts and history payloads without inference.")
+                return
+            if args.suite == "versions-digest":
+                with MonkeyPatch.context() as patch:
+                    test_final_digest_read_drops_obsolete_ai_severity_without_sending(harness, patch)
+                print("PostgreSQL: final digest read drops a prepared event whose AI-only severity became stale after document-version change; no mail is sent.")
+                return
             if args.suite == "prompts":
                 test_used_prompt_edit_invalidates_history_and_inbox_without_new_inference(harness, "impact_instructions")
                 print("PostgreSQL: used prompt edit invalidates current relation history and inbox without inference, jobs or rewriting saved evidence.")

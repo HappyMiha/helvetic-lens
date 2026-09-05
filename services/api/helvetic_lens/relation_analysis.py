@@ -20,7 +20,7 @@ from .extraction import normalize
 from .prompt_settings import PromptSettings
 
 SCHEMA_VERSION = "relation-impact-v3"
-PLANNER_VERSION = "relation-impact-plan-v1"
+PLANNER_VERSION = "relation-impact-plan-v2"
 MAX_PROVIDER_CALLS = 5
 MAX_ACTIONS = 5
 DEFAULT_OUTPUT_LOCALE = "en-CH"
@@ -184,6 +184,11 @@ def generation_parameters(settings: Settings) -> dict:
     }
 
 
+def version_binding(source_version_id: str | None, target_version_id: str | None) -> dict:
+    # Explicit empty sentinels distinguish known metadata-only inputs from absent provenance.
+    return {"source": source_version_id or "", "target": target_version_id or ""}
+
+
 def relation_prompt_fingerprint(prompts: PromptSettings) -> str:
     """Only instructions consumed by relation analysis, including its repair retry."""
     return _fingerprint({"impact": prompts.impact_instructions, "repair": prompts.repair_instructions})
@@ -292,6 +297,7 @@ def build_plan(
             "batch_count": 1,
             "local_first": settings.apertus_provider == "docker",
             "profile_revision": profile_revision,
+            "version_binding": version_binding(source_version_id, target_version_id),
             "configuration_fingerprint": configuration_fingerprint(settings),
             "prompt_fingerprint": relation_prompt_fingerprint(prompts),
             "generation_parameters": generation_parameters(settings),

@@ -141,6 +141,31 @@ sent digests are not rewritten. Prompt save/reset invalidates relation-history a
 digest client caches; existing sessions observe changes on their next fresh read,
 not via a new cross-client push channel.
 
+Planner v2 also records `execution.version_binding` for the candidate's exact source
+and target document-version IDs. An explicit empty value means the candidate had no corresponding corpus version
+ID; a missing binding is not accepted as proof of that state.
+Current inbox/history selection compares both IDs to the same organization
+candidate. A refreshed or removed version ID makes the old assessment history-only,
+while the original result and citations remain accessible. A failed fresh attempt
+cannot revive applicability from different versions. Official event urgency and
+confirmed relations remain independent.
+
+The predicate uses correlated scalar SQL before bounded history hydration. The
+history endpoint reads only the candidate's two version-ID columns in addition to
+its existing history read. Digest final selection reuses the predicate, so prepared
+events lose eligibility if their only matching importance was an obsolete AI
+assessment. No version is deleted or amended by these reads, and no inference is
+queued. Planner identity changes once to allow new provenance on the next
+explicit/scheduled analysis.
+
+This binding does **not** yet detect content/metadata corrections under an unchanged
+version ID, changed legacy fallback evidence while the candidate ID remains absent,
+official-relation changes, a newer corpus version before candidate refresh, or
+runtime artifact replacement. Nor does it restart an entire digest
+traversal for every candidate mutation; late/newly relevant events may wait for a
+later traversal. Complete evidence freshness and catch-up remain separate backlog
+items, not claims made by this narrower correction.
+
 This is revision-based invalidation, not a semantic test of profile similarity;
 unmanaged database edits that bypass the profile revision are outside this contract.
 

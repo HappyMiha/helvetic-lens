@@ -26,7 +26,7 @@ from .models import (
     RelationImpactAnalysis,
 )
 from .prompt_settings import PromptSettings
-from .relation_freshness import current_profile_result
+from .relation_freshness import current_analysis_predicate
 
 
 def _iso(value: datetime | None) -> str | None:
@@ -81,7 +81,7 @@ class ImpactInboxReader:
             & (RelationImpactAnalysis.id <= latest.id),
         )
         history = history.where(through_latest)
-        current = session.scalar(history.where(current_profile_result(settings, prompts)).limit(1))
+        current = session.scalar(history.where(current_analysis_predicate(settings, prompts)).limit(1))
         # Count in SQL; never transfer/materialize the historical JSON/evidence
         # payloads just to find two records or display the history count.
         count = session.scalar(select(func.count()).select_from(RelationImpactAnalysis).where(
@@ -122,7 +122,7 @@ class ImpactInboxReader:
 
     def _page_histories(self, session: Session, candidate_ids: list[str]) -> tuple[dict, dict]:
         analyses = self._history_selection(session, RelationImpactAnalysis, candidate_ids,
-                                          current_profile_result(self.settings, self.prompts))
+                                          current_analysis_predicate(self.settings, self.prompts))
         reviews = self._history_selection(session, OrganizationRelationReview, candidate_ids,
                                          OrganizationRelationReview.decision.in_(("confirmed", "rejected")))
         return analyses, reviews
