@@ -1,5 +1,14 @@
 # Verification record
 
+## Relation profile freshness — 5 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl-100-profile-freshness`. **147 affected API tests pass in 141.58 seconds**: relation generation/history/evidence, inbox selection/context/paging and digest preview/period/resume/coverage. Nine new regression cases cover actual profile PATCH, preserved citations, stale severity filtering, no read-time jobs/model calls/history rewrites, failure followed by recovery, missing/malformed/mismatched provenance, official facts and explicit organization scoping even in privileged sessions. Existing synthetic performance reports now contain valid profile provenance rather than omitting it.
+- **PostgreSQL 16.14**, two isolated empty loopback databases: `scripts/check_inbox_history_postgres.py --suite profile` passes the actual history/inbox/profile endpoint scenario; `--suite batches` passes 50 events / 7,474 historical analysis/review rows with **four history queries and 111 loaded records**. Scalar SQL profile checks do not hydrate archived evidence or introduce a query per report. These are correctness/bounded-hydration tests, not a target-server CPU/p95 benchmark.
+- The public read behavior keeps previous reports and citations inspectable while removing obsolete organization-specific conclusions from current selection. Profile-save cache invalidation now also covers relation histories and digest previews. No schema migration, real model call, external message, production deployment or production data change.
+- Production build passes **1,655 localization keys, 27 shell checks, 22 resource/delivery checks and 117 report/navigation/calendar checks**, TypeScript and Next compilation. The final nine profile regressions pass again (16.92 seconds) after strengthening official-urgency coverage. Ruff, changed-component Prettier and whitespace checks pass. Both owned temporary PostgreSQL containers were removed.
+- Scope is saved **profile revision** freshness. Complete evidence/prompt/settings/runtime invalidation and historical candidate backfill remain open under HL-100; independent legal-quality/user studies are not replaced by these synthetic checks. Existing Starlette/httpx deprecation warning remains unchanged.
+
+
 The source-to-diff workflow, Settings page, and live Apertus path are verified.
 
 ## Everyday registry filters — 5 September 2026 (HappyDucky02)

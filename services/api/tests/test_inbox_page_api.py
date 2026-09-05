@@ -151,6 +151,7 @@ def test_watched_law_filter_keeps_legacy_event_severity_order_and_complete_law_g
         session.add(RelationImpactAnalysis(organization_candidate_id=first, candidate_id=candidate.id,
                                           event_id=candidate.event_id, target_work_id=candidate.target_work_id,
                                           cache_key="0"*64, model="test-only", status="succeeded",
+                                          analysis_plan={"execution": {"profile_revision": 1}},
                                           result={"schema_version": relation_analysis.SCHEMA_VERSION, "supported": True,
                                                   "potential_severity": "high", "explanation": "Synthetic tested result"}))
         session.commit()

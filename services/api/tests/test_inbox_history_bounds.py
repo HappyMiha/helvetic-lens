@@ -28,6 +28,7 @@ def history_rows(service, delivery_id, count=10_000):
             "organization_id": delivery.organization_id, "organization_candidate_id": delivery.id,
             "candidate_id": candidate.id, "event_id": candidate.event_id,
             "target_work_id": candidate.target_work_id, "cache_key": "0" * 64,
+            "analysis_plan": {"execution": {"profile_revision": 1}},
             "model": "test-only", "status": "succeeded", "created_at": utcnow() - timedelta(hours=1),
             "evidence_json": [{"text": "Synthetic archived evidence. " * 30}],
         }
@@ -140,6 +141,7 @@ def test_newer_attempt_between_queries_waits_for_the_next_read(harness, monkeypa
                     "organization_candidate_id": value.organization_candidate_id,
                     "candidate_id": value.candidate_id, "event_id": value.event_id,
                     "target_work_id": value.target_work_id, "cache_key": "1" * 64,
+                    "analysis_plan": {"execution": {"profile_revision": 1}},
                     "model": "test-only", "status": "succeeded",
                     "result": {"schema_version": relation_analysis.SCHEMA_VERSION},
                     "created_at": value.created_at + timedelta(minutes=1),

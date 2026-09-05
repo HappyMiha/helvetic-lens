@@ -151,7 +151,11 @@ function CompanyProfileSection({ canManage }: { canManage: boolean }) {
       }
       const target = event.target as Element | null;
       const anchor = target?.closest<HTMLAnchorElement>("a[href]");
-      if (!anchor || anchor.target === "_blank" || anchor.hasAttribute("download")) {
+      if (
+        !anchor ||
+        anchor.target === "_blank" ||
+        anchor.hasAttribute("download")
+      ) {
         return;
       }
       const destination = new URL(anchor.href, window.location.href);
@@ -243,6 +247,8 @@ function CompanyProfileSection({ canManage }: { canManage: boolean }) {
         resourceTag("comparison", "organization"),
         resourceTag("impact-matrix", "organization"),
         resourceTag("impact-inbox", "organization"),
+        resourceTag("relation-analyses", "organization"),
+        resourceTag("digests", "organization"),
         resourceTag("registry", "organization"),
       );
       setSuccess(t("profile.saved"));

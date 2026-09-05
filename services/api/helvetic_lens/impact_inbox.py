@@ -12,7 +12,6 @@ from datetime import UTC, datetime
 from sqlalchemy import case, func, or_, select
 from sqlalchemy.orm import Session, aliased
 
-from . import relation_analysis as relation_ai
 from .config import DomainError
 from .inbox_context import InboxContext, load_context
 from .models import (
@@ -26,6 +25,7 @@ from .models import (
     RelationCandidate,
     RelationImpactAnalysis,
 )
+from .relation_freshness import current_profile_result
 
 
 def _iso(value: datetime | None) -> str | None:
@@ -78,12 +78,7 @@ class ImpactInboxReader:
             & (RelationImpactAnalysis.id <= latest.id),
         )
         history = history.where(through_latest)
-        current = latest if latest.status == "succeeded" and relation_ai.result_uses_current_rules(latest.result) else session.scalar(
-            history.where(
-                RelationImpactAnalysis.status == "succeeded",
-                RelationImpactAnalysis.result["schema_version"].as_string() == relation_ai.SCHEMA_VERSION,
-            ).limit(1)
-        )
+        current = session.scalar(history.where(current_profile_result()).limit(1))
         # Count in SQL; never transfer/materialize the historical JSON/evidence
         # payloads just to find two records or display the history count.
         count = session.scalar(select(func.count()).select_from(RelationImpactAnalysis).where(
@@ -124,8 +119,7 @@ class ImpactInboxReader:
 
     def _page_histories(self, session: Session, candidate_ids: list[str]) -> tuple[dict, dict]:
         analyses = self._history_selection(session, RelationImpactAnalysis, candidate_ids,
-                                          (RelationImpactAnalysis.status == "succeeded")
-                                          & (RelationImpactAnalysis.result["schema_version"].as_string() == relation_ai.SCHEMA_VERSION))
+                                          current_profile_result())
         reviews = self._history_selection(session, OrganizationRelationReview, candidate_ids,
                                          OrganizationRelationReview.decision.in_(("confirmed", "rejected")))
         return analyses, reviews

@@ -35,7 +35,7 @@ def history_corpus(harness, count=50, archive=100):
             if kind == 0:
                 continue
             common = {"organization_id": service.organization_id, "organization_candidate_id": delivery.id, "created_at": stamp}
-            analysis = {**common, "candidate_id": candidate.id, "event_id": candidate.event_id, "target_work_id": candidate.target_work_id,
+            analysis = {**common, "analysis_plan": {"execution": {"profile_revision": 1}}, "candidate_id": candidate.id, "event_id": candidate.event_id, "target_work_id": candidate.target_work_id,
                         "cache_key": "0"*64, "model": "test-only", "evidence_json": [{"text": "Synthetic archived evidence "*30}]}
             analyses, reviews = [], []
             for j in range(archive+1):

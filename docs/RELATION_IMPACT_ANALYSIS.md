@@ -61,9 +61,27 @@ An identical successful result is reused only when all of these inputs match:
 - local runtime/model artifact/hardware fingerprint; and
 - planner and result schema versions.
 
-The v3 result revision invalidates the cache. Results from earlier result-rule revisions remain unchanged in history with `stale=true`, and cannot be selected as the current inbox/history conclusion. Reanalysis uses the existing delivery and event, preventing duplicate inbox entries. Automatic bounded candidate backfill and complete read-time profile/runtime freshness are still tracked by HL-100/099; this change does not silently rewrite or bulk reprocess historical data.
+The v3 result revision invalidates the cache. Results from earlier result-rule revisions remain unchanged in history with `stale=true`, and cannot be selected as the current inbox/history conclusion. Reanalysis uses the existing delivery and event, preventing duplicate inbox entries. Automatic bounded candidate backfill and complete read-time evidence/settings/runtime freshness are still tracked by HL-100/099; this change does not silently rewrite or bulk reprocess historical data.
 
-Changing any dependency creates a new durable job and history record. Reusing an identical request increments saved use metadata without another provider call.
+Profile freshness is checked on every relation-history and inbox read: a succeeded
+report is current only if its saved `analysis_plan.execution.profile_revision`
+matches the profile of **that report's organization**. Missing or malformed profile
+provenance is history-only. Inbox selectors apply this inside their scalar SQL
+selection, before hydrating only the latest/current records; they never load the
+entire evidence archive to compare revisions. The digest preview/worker share this
+selection, so a stale AI severity cannot make a development eligible for a digest.
+Official event urgency and confirmed relations remain independent of AI freshness.
+
+After a profile edit, the old text/citations stay accessible as stale history, but
+its organization-specific explanation/actions/severity no longer supply the current
+inbox conclusion. A failed new attempt cannot revive the previous profile's report;
+a failed attempt under the **same** profile still preserves an older valid result.
+The profile form also invalidates cached relation histories and digest previews.
+Reads do not enqueue inference, increment reuse counts, rewrite history or send mail.
+This is revision-based invalidation, not a semantic test of profile similarity;
+unmanaged database edits that bypass the profile revision are outside this contract.
+
+Changing any dependency creates a new durable job and history record when analysis is explicitly requested or scheduled. Reusing an identical request increments saved use metadata without another provider call.
 
 ## Verification
 

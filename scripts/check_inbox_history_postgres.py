@@ -47,12 +47,15 @@ from test_inbox_navigation import (
 from test_inbox_page_api import (
     test_public_pages_have_stable_equal_time_order_and_only_hydrate_selected_events,
 )
+from test_relation_profile_freshness import (
+    test_profile_edit_invalidates_history_inbox_and_severity_without_spending_tokens,
+)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview"), default="history")
+    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -73,6 +76,10 @@ def main():
         with TestClient(app) as client:
             service = app.state.service
             harness = (client, fetcher, service, model)
+            if args.suite == "profile":
+                test_profile_edit_invalidates_history_inbox_and_severity_without_spending_tokens(harness)
+                print("PostgreSQL: profile edit immediately invalidates current history, legacy/paged inbox and severity; retained evidence stays accessible, with no read-time inference, jobs or history rewrites.")
+                return
             if args.suite == "preview":
                 with MonkeyPatch.context() as patch:
                     test_http_preview_bounds_sparse_pages_and_save_without_mail_or_inference(harness, patch)

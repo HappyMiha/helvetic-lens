@@ -119,6 +119,7 @@ from .prompt_settings import (
 )
 from .registry import RegistryFilters, RegistryReader
 from .regulatory_corpus import RegulatoryCorpus
+from .relation_freshness import uses_profile
 from .source_capabilities import capability_catalogue
 
 logger = logging.getLogger(__name__)
@@ -4412,7 +4413,19 @@ class HelveticLens:
                     .order_by(RelationImpactAnalysis.created_at.desc())
                 )
             )
-            items = [self._relation_analysis_dict(record) for record in records]
+            profile_revision = session.scalar(
+                select(Profile.revision).where(Profile.organization_id == self.organization_id)
+            )
+            items = [
+                {
+                    **self._relation_analysis_dict(record),
+                    "stale": record.status == "succeeded" and (
+                        not relation_ai.result_uses_current_rules(record.result)
+                        or not uses_profile(record.analysis_plan, profile_revision)
+                    ),
+                }
+                for record in records
+            ]
             current = next((item for item in items if item["status"] == "succeeded"
                             and not item["stale"]), None)
             return {
