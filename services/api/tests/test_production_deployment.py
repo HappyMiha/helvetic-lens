@@ -1,3 +1,4 @@
+import shlex
 from pathlib import Path
 
 import pytest
@@ -57,6 +58,25 @@ def test_deployment_status_mount_is_read_only_and_docker_socket_is_never_exposed
 
     assert ":/operations/deployments:ro" in compose
     assert "/var/run/docker.sock" not in compose
+
+
+def test_web_build_includes_all_node_checks_and_shared_fixtures():
+    dockerfile = (ROOT / "apps/web/Dockerfile").read_text(encoding="utf-8")
+    build_stage, runtime_stage = dockerfile.split("\nFROM ", maxsplit=1)
+    copied_scripts = set()
+    for line in build_stage.splitlines():
+        if line.startswith("COPY "):
+            parts = shlex.split(line)
+            if parts[-1] == "scripts/":
+                for source in parts[1:-1]:
+                    copied_scripts.update(ROOT.glob(source))
+
+    required_scripts = set((ROOT / "scripts").glob("*.mjs"))
+    assert required_scripts
+    assert not required_scripts - copied_scripts, "Node checks/fixtures missing from web builder"
+    assert not any(line.startswith("COPY ") and "scripts/" in line for line in runtime_stage.splitlines()), (
+        "Build checks must not be copied into the runtime image"
+    )
 
 
 def test_production_environment_rejects_public_data_paths_and_insecure_auth():
