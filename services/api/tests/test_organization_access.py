@@ -80,6 +80,12 @@ def test_invited_viewer_sees_shared_workspace_but_cannot_mutate(tmp_path):
         )
         assert personal_state.status_code == 404
         assert personal_state.json()["code"] == "not_found"
+        feed_state = viewer.patch(
+            "/api/interest-feed/events/00000000-0000-0000-0000-000000000000/state",
+            json={"state": "read"}, headers=csrf(viewer),
+        )
+        assert feed_state.status_code == 404
+        assert feed_state.json()["code"] == "not_found"
         assert (
             viewer.post(
                 "/api/relation-candidates/00000000-0000-0000-0000-000000000000/reanalyse-jobs",

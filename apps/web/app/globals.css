@@ -4056,3 +4056,6 @@ dialog.analysis-column:not([open]) {
 .shell[data-navigation-modal="true"] .mobile-nav {
   z-index: 49;
 }
+
+/* Keep personal feed controls usable above the global compact select style. */
+select.interest-feed-control { min-height: 44px; }

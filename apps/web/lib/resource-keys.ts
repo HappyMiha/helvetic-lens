@@ -247,6 +247,14 @@ export const resources = {
     });
   },
 
+  interestFeed: <T = unknown>(query = "") => {
+    const path = withQuery("/interest-feed", query);
+    return key<T>(`monitoring:${path}`, path, {
+      tags: ["impact-inbox", "monitoring", "topics", "relation-analyses", "digests"],
+      staleMs: 15_000, pollMs: 15_000,
+    });
+  },
+
   impactInboxPage: <T = unknown>(query = "") => {
     const path = withQuery("/impact-inbox/page", query);
     return key<T>(`monitoring:${path}`, path, {

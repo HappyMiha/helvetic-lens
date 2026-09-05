@@ -47,6 +47,11 @@ from test_inbox_navigation import (
 from test_inbox_page_api import (
     test_public_pages_have_stable_equal_time_order_and_only_hydrate_selected_events,
 )
+from test_interest_feed import (
+    test_direct_watched_document_event_is_retained_without_topics_or_relation_candidates,
+    test_equal_time_cursor_covers_all_events_and_binds_filters_and_principal,
+    test_one_card_for_multiple_topics_and_law_without_ai,
+)
 from test_relation_configuration_freshness import (
     test_configuration_changes_remove_current_conclusion_without_jobs_or_history_rewrite,
     test_digest_restarts_configuration_selection_and_rejects_old_prepared_delivery,
@@ -67,7 +72,7 @@ from test_relation_version_freshness import (
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest"), default="history")
+    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -88,6 +93,18 @@ def main():
         with TestClient(app) as client:
             service = app.state.service
             harness = (client, fetcher, service, model)
+            if args.suite == "feed-watch":
+                test_direct_watched_document_event_is_retained_without_topics_or_relation_candidates(harness)
+                print("PostgreSQL: direct active-watch updates stay in the feed without any topic or law-relation candidate; paused watches stop admitting them.")
+                return
+            if args.suite == "feed":
+                test_one_card_for_multiple_topics_and_law_without_ai(harness)
+                print("PostgreSQL: one event across two current topics and a watched law, source links and no inference.")
+                return
+            if args.suite == "feed-pages":
+                test_equal_time_cursor_covers_all_events_and_binds_filters_and_principal(harness)
+                print("PostgreSQL: equal-time feed keyset pages cover every event without duplicates and bind account/filters.")
+                return
             if args.suite == "versions":
                 test_changed_or_removed_version_invalidates_current_without_rewriting_history(harness, "target", False)
                 print("PostgreSQL: changed candidate document version excludes obsolete history/inbox applicability while preserving citations, counts and history payloads without inference.")

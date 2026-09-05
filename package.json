@@ -32,7 +32,8 @@
     "demo:source": "python scripts/demo_source.py",
     "check:comparison:browser": "node scripts/check-comparison-browser.mjs",
     "check:shell:browser": "node scripts/check-shell-browser.mjs",
-    "check:topics:browser": "node scripts/check-topic-editor-browser.mjs"
+    "check:topics:browser": "node scripts/check-topic-editor-browser.mjs",
+    "check:feed:browser": "node scripts/check-interest-feed-browser.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.2.0",

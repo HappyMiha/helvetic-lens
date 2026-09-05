@@ -60,6 +60,7 @@ from .identity import (
 from .impact_inbox import ImpactInboxFilters, ImpactInboxReader
 from .impact_matrix import ImpactMatrixReader
 from .integration_logs import IntegrationLogger
+from .interest_feed import InterestFeedReader
 from .model_manager_client import ModelManagerClient
 from .model_settings import ApertusSettingsInput, public_settings, resolve_key, resolved_settings
 from .models import (
@@ -1064,6 +1065,14 @@ class HelveticLens:
     def registry(self, filters: RegistryFilters, user_id: str | None = None) -> dict:
         with self.db.session() as session:
             return RegistryReader(self.organization_id, user_id).page(session, filters)
+
+    def interest_feed(self, user_id: str | None, **filters) -> dict:
+        with self.db.session() as session:
+            return InterestFeedReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings).feed(session, **filters)
+
+    def set_interest_feed_state(self, event_id: str, state: str, user_id: str | None) -> dict:
+        with self.write_guard, self.db.session() as session:
+            return InterestFeedReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings).set_feed_state(session, event_id, state)
 
     def impact_inbox(self, filters: ImpactInboxFilters, user_id: str | None) -> dict:
         with self.db.session() as session:

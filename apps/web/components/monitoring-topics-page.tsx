@@ -945,7 +945,7 @@ function TopicEditor({ draftScope }: { draftScope: string | null }) {
         )}
         <div className="grid gap-4 xl:grid-cols-2">
           {topics.data?.map((topic) => (
-            <article className="card p-5" key={topic.id}>
+            <article className="card p-5 scroll-mt-6" id={`topic-${topic.id}`} key={topic.id}>
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="flex flex-wrap gap-2 mb-2">

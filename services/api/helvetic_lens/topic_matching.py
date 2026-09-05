@@ -444,21 +444,23 @@ def generate_for_events(
 def _live_evidence_fingerprint(session: Session, event: RegulatoryEvent) -> str:
     work = session.get(RegulatoryWork, event.work_id)
     expression = session.get(RegulatoryExpression, event.expression_id) if event.expression_id else None
+    definitions = session.scalars(select(SourcePackDefinition).where(SourcePackDefinition.active.is_(True))).all()
+    identifiers = session.scalars(select(RegulatoryIdentifier).where(RegulatoryIdentifier.work_id == event.work_id)).all()
+    return evidence_fingerprint(event, work, expression, definitions, identifiers)
+
+
+def evidence_fingerprint(event, work, expression, definitions, identifiers) -> str:
+    """Same match identity for worker and bounded, bulk-loaded read projections."""
     return _fingerprint({
         "event": [event.id, event.work_id, event.expression_id, event.document_version_id,
                   event.event_type, event.impact, event.connector, event.evidence_json,
                   event.source_url, event.provenance_method, _iso(event.detected_at)],
         "work": [work.title, work.kind, work.metadata_json, work.stable_official_url] if work else None,
         "expression": [expression.title, expression.language] if expression else None,
-        "source_definitions": [
-            [item.id, item.revision, item.filters_json]
-            for item in session.scalars(select(SourcePackDefinition)
-                .where(SourcePackDefinition.active.is_(True)).order_by(SourcePackDefinition.id))
-        ],
-        "identifiers": sorted(
-            (item.scheme, item.value, item.normalized_value, item.source_url or "")
-            for item in session.scalars(select(RegulatoryIdentifier).where(RegulatoryIdentifier.work_id == event.work_id))
-        ),
+        "source_definitions": [[item.id, item.revision, item.filters_json]
+                               for item in sorted(definitions, key=lambda item: item.id)],
+        "identifiers": sorted((item.scheme, item.value, item.normalized_value, item.source_url or "")
+                              for item in identifiers),
     })
 
 
@@ -705,18 +707,41 @@ def list_matches(session: Session, topic_id: str, *, limit: int = 100) -> list[d
         .order_by(TopicEventMatch.matched_at.desc(), TopicEventMatch.id.desc())
         .limit(max(1, min(limit, 200)))
     ).all()
+    return describe_matches(session, records)
+
+
+def describe_matches(session: Session, records: list[TopicEventMatch]) -> list[dict]:
+    """Read saved evidence without per-match queries or loading original documents."""
+    if not records:
+        return []
+    events = {item.id: item for item in session.scalars(select(RegulatoryEvent).where(
+        RegulatoryEvent.id.in_({item.event_id for item in records})))}
+    works = {item.id: item for item in session.scalars(select(RegulatoryWork).where(
+        RegulatoryWork.id.in_({item.work_id for item in events.values()})))}
+    expressions = {item.id: item for item in session.scalars(select(RegulatoryExpression).where(
+        RegulatoryExpression.id.in_({item.expression_id for item in events.values() if item.expression_id})))}
+    topics = {item.id: item for item in session.scalars(select(MonitoringTopic).where(
+        MonitoringTopic.id.in_({item.topic_id for item in records})))}
+    revisions = {item.id: item for item in session.scalars(select(MonitoringTopicRevision).where(
+        MonitoringTopicRevision.id.in_({item.topic_revision_id for item in records})))}
+    identifiers: dict[str, list] = {}
+    for identifier in session.scalars(select(RegulatoryIdentifier).where(RegulatoryIdentifier.work_id.in_(works))):
+        identifiers.setdefault(identifier.work_id, []).append(identifier)
     definitions = {item.id: item for item in session.scalars(
         select(SourcePackDefinition).where(SourcePackDefinition.active.is_(True))
     )}
     result = []
     fingerprints: dict[str, str] = {}
     for item in records:
-        event = session.get(RegulatoryEvent, item.event_id)
-        revision = session.get(MonitoringTopicRevision, item.topic_revision_id)
-        if not event or not revision or not session.get(RegulatoryWork, event.work_id):
+        event = events.get(item.event_id)
+        revision = revisions.get(item.topic_revision_id)
+        topic = topics.get(item.topic_id)
+        work = works.get(event.work_id) if event else None
+        if not event or not revision or not topic or not work:
             continue
         if event.id not in fingerprints:
-            fingerprints[event.id] = _live_evidence_fingerprint(session, event)
+            fingerprints[event.id] = evidence_fingerprint(
+                event, work, expressions.get(event.expression_id), definitions.values(), identifiers.get(work.id, []))
         validity = (
             "plan_changed" if revision.revision != topic.current_revision
             else f"topic_{topic.status}" if topic.status != "active"

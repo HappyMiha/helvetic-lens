@@ -121,7 +121,7 @@ Keep the proven stack and add only the infrastructure now justified by public us
 | [HL-073](#hl-073) | P0       | PLANNED  | HL-034, HL-035, HL-066, HL-070, HL-072, HL-074, HL-077 | Stateful onboarding, contextual help, and useful empty states       |
 | [HL-074](#hl-074) | P0       | DONE     | HL-033, HL-035, HL-036, HL-042, HL-071, HL-072         | Durable monitoring topics and editable monitoring plans             |
 | [HL-075](#hl-075) | P0       | DONE     | HL-044, HL-051, HL-074                                 | Bounded topic matching with persisted evidence                      |
-| [HL-076](#hl-076) | P0       | PLANNED  | HL-037, HL-046, HL-067, HL-075, HL-094, HL-099         | Unified interest feed; HL-089 enriches cards asynchronously          |
+| [HL-076](#hl-076) | P0       | IN PROGRESS | HL-037, HL-046, HL-067, HL-075, HL-094, HL-099         | Unified interest feed; HL-089 enriches cards asynchronously          |
 | [HL-077](#hl-077) | P1       | PLANNED  | HL-035, HL-066, HL-074                                 | Contextual “Monitor this”; integrate HL-076 as its feed arrives      |
 | [HL-078](#hl-078) | P1       | PLANNED  | HL-052, HL-076, HL-077                                 | In-app notification centre over the existing delivery state         |
 | [HL-079](#hl-079) | P1       | PLANNED  | HL-052, HL-075, HL-076                                 | Topic matches in existing digests                                   |
@@ -1440,6 +1440,27 @@ Acceptance criteria:
 ### HL-076 — Unify law and topic relevance into one daily interest feed
 
 Present one understandable event when the same development relates to several monitored laws or topics.
+
+**5 September 2026 — IN PROGRESS (HappyDucky02):** the Today route now reads a
+bounded persisted-event feed across current topic matches, watched-law impact
+deliveries and direct active document watches. One event has one card with all
+matching interests, rules-based reasons/confidence, source link, separate detection
+and source-stated event dates, saved law-analysis status and review/timeline links.
+Private reading state reuses the existing event state store, including topic-only
+events and viewers. Current revision/evidence, expiry, review relevance and tenant
+admission are checked before a topic can appear. No inference occurs on a feed read.
+Calendar filters use Zurich dates; stable cursor pages allow honest sparse pages.
+The old document overview remains at `/overview`; registry and Impact inbox routes
+remain intact. Five-locale mobile/desktop journeys and PostgreSQL checks are
+recorded in `docs/VERIFICATION.md`; contract/limits: `docs/INTEREST_FEED.md`.
+
+Still open: grouping separate event IDs describing one publisher development,
+shared topic-review UI/audit and notifications, organization AI briefs (HL-089),
+fully surfaced jurisdiction/provenance and live coverage diagnostics, interest
+fan-out pagination, event-specific deep links/artifacts beyond existing timeline
+and review routes, and independent user/native-language evaluation. This slice
+is not completion of HL-076 or a claim of complete website monitoring.
+
 
 Acceptance criteria:
 

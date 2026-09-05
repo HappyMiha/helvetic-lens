@@ -3159,6 +3159,110 @@ export function pseudoTranslate(key: string, values: Values = {}): string | null
   }).join("")}⟧`;
 }
 
+const interestFeedMessages: Record<Locale, Messages> = {
+  "en-CH": {
+    "feed.title": "Your monitoring, in one place.",
+    "feed.body": "Saved developments linked to your topics and monitored laws. Open the source, review why it appeared, then decide what needs attention.",
+    "feed.boundary": "This feed covers saved, evaluated events only. An empty page does not prove that no new developments exist. Check topic coverage and source health.",
+    "feed.empty": "No current matches on this page.",
+    "feed.topicBoundary": "Topic relevance is a saved rules-based match, not a confirmed legal impact. AI analysis is optional and never required to show an event.",
+    "feed.review": "Review law impact",
+    "feed.overview": "Document overview",
+    "feed.all": "All saved dates",
+    "feed.today": "Today",
+    "feed.yesterday": "Yesterday",
+    "feed.week": "Last 7 days",
+    "feed.month": "Last 30 days",
+    "feed.saved": "Personal reading state saved.",
+    "feed.officialStatus": "Official status",
+    "feed.officialDates": "Source-stated event dates",
+    "feed.detected": "Detected date",
+    "feed.coverage": "Coverage and limits",
+    "feed.confidence": "Topic match confidence"
+  },
+  "de-CH": {
+    "feed.title": "Ihr Monitoring an einem Ort.",
+    "feed.body": "Gespeicherte Entwicklungen zu Ihren Themen und überwachten Gesetzen. Öffnen Sie die Quelle, prüfen Sie den Bezug und entscheiden Sie, was Aufmerksamkeit braucht.",
+    "feed.boundary": "Diese Übersicht umfasst nur gespeicherte, ausgewertete Ereignisse. Eine leere Seite beweist nicht, dass es keine neuen Entwicklungen gibt. Prüfen Sie Themenabdeckung und Quellenstatus.",
+    "feed.empty": "Keine aktuellen Treffer auf dieser Seite.",
+    "feed.topicBoundary": "Der Themenbezug ist ein gespeicherter regelbasierter Treffer, keine bestätigte rechtliche Auswirkung. KI-Analysen sind optional; Ereignisse bleiben auch ohne sie sichtbar.",
+    "feed.review": "Gesetzesauswirkung prüfen",
+    "feed.overview": "Dokumentübersicht",
+    "feed.all": "Alle gespeicherten Daten",
+    "feed.today": "Heute",
+    "feed.yesterday": "Gestern",
+    "feed.week": "Letzte 7 Tage",
+    "feed.month": "Letzte 30 Tage",
+    "feed.saved": "Persönlicher Lesestatus gespeichert.",
+    "feed.officialStatus": "Offizieller Status",
+    "feed.officialDates": "Ereignisdaten laut Quelle",
+    "feed.detected": "Erkannt am",
+    "feed.coverage": "Abdeckung und Grenzen",
+    "feed.confidence": "Sicherheit des Thementreffers"
+  },
+  "fr-CH": {
+    "feed.title": "Votre veille, au même endroit.",
+    "feed.body": "Évolutions enregistrées liées à vos thèmes et aux lois suivies. Ouvrez la source, vérifiez le lien et décidez de ce qui mérite votre attention.",
+    "feed.boundary": "Ce fil couvre uniquement les événements enregistrés et évalués. Une page vide ne prouve pas l’absence de nouveautés. Vérifiez la couverture des thèmes et l’état des sources.",
+    "feed.empty": "Aucune correspondance actuelle sur cette page.",
+    "feed.topicBoundary": "Le lien thématique est une correspondance fondée sur des règles, pas un impact juridique confirmé. L’analyse IA est facultative et ne bloque jamais l’affichage d’un événement.",
+    "feed.review": "Examiner l’impact sur la loi",
+    "feed.overview": "Vue des documents",
+    "feed.all": "Toutes les dates enregistrées",
+    "feed.today": "Aujourd’hui",
+    "feed.yesterday": "Hier",
+    "feed.week": "7 derniers jours",
+    "feed.month": "30 derniers jours",
+    "feed.saved": "État de lecture personnel enregistré.",
+    "feed.officialStatus": "Statut officiel",
+    "feed.officialDates": "Dates de l’événement selon la source",
+    "feed.detected": "Date de détection",
+    "feed.coverage": "Couverture et limites",
+    "feed.confidence": "Confiance du lien thématique"
+  },
+  "it-CH": {
+    "feed.title": "Il tuo monitoraggio, in un solo posto.",
+    "feed.body": "Sviluppi salvati collegati ai tuoi temi e alle leggi monitorate. Apri la fonte, verifica il collegamento e decidi cosa richiede attenzione.",
+    "feed.boundary": "Questo elenco copre solo eventi salvati e valutati. Una pagina vuota non dimostra l’assenza di novità. Verifica la copertura dei temi e lo stato delle fonti.",
+    "feed.empty": "Nessuna corrispondenza attuale in questa pagina.",
+    "feed.topicBoundary": "La pertinenza tematica è una corrispondenza basata su regole, non un impatto giuridico confermato. L’analisi IA è facoltativa e non blocca la visualizzazione degli eventi.",
+    "feed.review": "Esamina l’impatto sulla legge",
+    "feed.overview": "Panoramica documenti",
+    "feed.all": "Tutte le date salvate",
+    "feed.today": "Oggi",
+    "feed.yesterday": "Ieri",
+    "feed.week": "Ultimi 7 giorni",
+    "feed.month": "Ultimi 30 giorni",
+    "feed.saved": "Stato di lettura personale salvato.",
+    "feed.officialStatus": "Stato ufficiale",
+    "feed.officialDates": "Date dell’evento secondo la fonte",
+    "feed.detected": "Data di rilevamento",
+    "feed.coverage": "Copertura e limiti",
+    "feed.confidence": "Affidabilità del collegamento tematico"
+  },
+  "rm-CH": {
+    "feed.title": "Tia surveglianza en in lieu.",
+    "feed.body": "Svilups memorisads colliads cun tes temas e las leschas survegliadas. Avra la funtauna, controlla il connex e decida tge che dovra attenziun.",
+    "feed.boundary": "Questa survista cumpiglia mo eveniments memorisads ed evaluads. Ina pagina vida na cumprova betg ch’i na dat naginas novas. Controlla la cuvrida dals temas ed il status da las funtaunas.",
+    "feed.empty": "Nagins resultats actuals sin questa pagina.",
+    "feed.topicBoundary": "Il connex tematic è in resultat basà sin reglas, betg in effect giuridic confermà. L’analisa IA è facultativa e na blochescha mai la visualisaziun d’in eveniment.",
+    "feed.review": "Examinar l’effect sin la lescha",
+    "feed.overview": "Survista dals documents",
+    "feed.all": "Tut las datas memorisadas",
+    "feed.today": "Oz",
+    "feed.yesterday": "Ier",
+    "feed.week": "Ultims 7 dis",
+    "feed.month": "Ultims 30 dis",
+    "feed.saved": "Status da lectura persunal memorisà.",
+    "feed.officialStatus": "Status uffizial",
+    "feed.officialDates": "Datas da l’eveniment tenor la funtauna",
+    "feed.detected": "Data da detecziun",
+    "feed.coverage": "Cuvrida e limits",
+    "feed.confidence": "Confidenza dal resultat tematic"
+  }
+};
+for (const locale of locales) Object.assign(catalogTarget(locale), interestFeedMessages[locale]);
+
 function supported(value: string | null | undefined): Locale | null {
   if (!value) return null;
   const exact = locales.find((item) => item.toLowerCase() === value.replace("_", "-").toLowerCase());

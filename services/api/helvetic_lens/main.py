@@ -415,7 +415,7 @@ def create_app(
             path == "/api/assistant/conversations"
         )
         viewer_personal_state = (
-            path.startswith("/api/impact-inbox/events/") and path.endswith("/state")
+            path.startswith(("/api/impact-inbox/events/", "/api/interest-feed/events/")) and path.endswith("/state")
         ) or (path.startswith("/api/registry/events/") and path.endswith("/read"))
         if (
             identity
@@ -1288,6 +1288,18 @@ def create_app(
             ),
             identity.user_id if identity else None,
         )
+
+    @app.get("/api/interest-feed")
+    def interest_feed(request: Request, period: str = Query(default="all", max_length=20),
+                      state: str = Query(default="", max_length=20),
+                      cursor: str = Query(default="", max_length=4096), limit: int = Query(default=20, ge=1, le=50)):
+        identity = request.state.identity
+        return service.interest_feed(identity.user_id if identity else None, period=period, state=state, cursor=cursor, limit=limit)
+
+    @app.patch("/api/interest-feed/events/{event_id}/state")
+    def set_interest_feed_state(event_id: str, data: ImpactInboxStateInput, request: Request):
+        identity = request.state.identity
+        return service.set_interest_feed_state(event_id, data.state, identity.user_id if identity else None)
 
     @app.get("/api/impact-inbox")
     def impact_inbox(
