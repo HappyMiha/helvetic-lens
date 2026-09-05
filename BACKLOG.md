@@ -1936,6 +1936,13 @@ Implemented resumable digest worker slice — 5 September 2026 (HappyDucky02):
 - Eighty-eight affected API/queue tests pass, including 14 new recovery/recipient gates; a separate PostgreSQL worker/outbox fairness-and-resume scenario also passes. The progress/transport contract and remaining limitations are documented in `docs/INBOX_READS.md`. Interactive preview/public inbox pagination, batching of per-law lookups, large per-event fanout, late admission policy and intended-host 100k-event/20-reader/overlap gates remain open. Stable Message-ID plus row locks does not make SMTP exactly once after an ambiguous send/crash.
 
 
+Implemented bounded public inbox API — 5 September 2026 (HappyDucky02):
+
+- Added `/api/impact-inbox/page` with 1–50 event-key pages, stable detection-time/ID cursors, a traversal admission ceiling and organization/principal/filter binding. Source, type, personal state and watched-law admission prefilters run in SQL; existing event-level severity semantics and complete related-law groups remain intact.
+- Responses explicitly identify page-only counts and inspected keys, including empty severity-filtered pages that still have a next cursor. The original route remains compatible; the web consumer migration, independent filter options/deep links, per-law lookup batching and intended-host capacity gates are still open. Cursor values select positions, never grant permissions.
+- Real HTTP/SQLite regressions cover 121 equal-time events, concurrent admissions, private-state isolation, SQL filter parity and malformed/foreign cursors. A separate PostgreSQL run verifies 50/50/21 pages and selected payload hydration. See `docs/VERIFICATION.md` for the final affected-suite result; this is not a 100k-event/20-reader capacity claim.
+
+
 <a id="hl-100"></a>
 
 ### HL-100 — Require substantive evidence before claiming relevance or impact

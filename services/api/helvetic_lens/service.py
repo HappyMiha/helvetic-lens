@@ -1068,6 +1068,10 @@ class HelveticLens:
         with self.db.session() as session:
             return ImpactInboxReader(self.organization_id, user_id).page(session, filters)
 
+    def impact_inbox_page(self, filters: ImpactInboxFilters, user_id: str | None, *, cursor: str = "", limit: int = 50) -> dict:
+        with self.db.session() as session:
+            return ImpactInboxReader(self.organization_id, user_id).paginated(session, filters, cursor=cursor, limit=limit)
+
     def impact_matrix(self, output_locale: str) -> dict:
         with self.db.session() as session:
             return ImpactMatrixReader(

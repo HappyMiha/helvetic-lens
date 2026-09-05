@@ -20,9 +20,19 @@ The summary repeats the period/state/source/severity checks and marks `truncated
 
 `iter_groups` selects at most 50 distinct event IDs per SQL keyset page, ordered by `detected_at DESC, id DESC`, then hydrates only those event groups. Related laws are never split between pages. Digest preview and delivery stop after 50 eligible summarized events plus one eligible overflow sentinel; up to 49 additional groups can have been prefetched in that last page. Severity still uses the actual persisted assessment/review rules after hydration, so sparse matches may require traversing the full selected period.
 
-The traversal fixes an admission-time ceiling (`OrganizationRelationCandidate.created_at < traversal_start`); newly admitted events or law deliveries wait for the next traversal. The cursor advances through selected keys even when presentation filtering removes every group. Existing evidence/state changes are not frozen. Arbitrarily backdated admission timestamps or edits to event detection timestamps are outside this traversal guarantee. The public inbox API remains unchanged and is not yet paginated.
+The traversal fixes an admission-time ceiling (`OrganizationRelationCandidate.created_at < traversal_start`); newly admitted events or law deliveries wait for the next traversal. The cursor advances through selected keys even when presentation filtering removes every group. Existing evidence/state changes are not frozen. Arbitrarily backdated admission timestamps or edits to event detection timestamps are outside this traversal guarantee. The legacy public inbox API remains unchanged; an additive bounded route is now available as described below.
 
 This bounds retained event pages, not every dimension of work: one event can affect many watched laws; related entity/review/history lookups are still per item, and SQL DISTINCT/sorting can inspect many candidate rows. Worker preparation now checkpoints one 50-event page per execution; per-event law fanout, query cost and SMTP duration still need workload validation before claiming a hard wall-clock or memory bound.
+
+## Public inbox page API
+
+`GET /api/impact-inbox/page` accepts the existing `source`, `severity`, `item_type`, `watched_law` and personal `state` filters, plus `limit` (1–50, default 50) and `cursor`. It selects at most 50 event keys plus a scalar overflow sentinel before hydrating selected events/deliveries. Source/authority, event/document kind, personal state and watched-law admission predicates run in SQL. Missing personal state means unread. All related laws for a selected event remain together; severity retains the existing event-before-watched-law filtering order.
+
+The response includes `items`, `total_events`, `total_impacts`, `unread`, `counts_scope: "page"`, `scanned_event_count`, `limit`, `captured_at`, `has_more` and nullable `next_cursor`. The three totals describe only returned groups on this page, never the entire inbox. Severity still depends on saved analysis/review state after hydration: a page can contain no displayed events while `has_more` is true. Consumers must follow the next cursor rather than treating an empty display page as exhaustion.
+
+The cursor carries the detection-time/ID position, initial admission ceiling and a versioned organization/principal/filter fingerprint. Invalid, oversized, malformed or mismatched tokens receive a recoverable 422. It is an opaque navigation value, not a signed credential: independently scoped queries enforce access even if a caller constructs a token. A new filter or account starts at the first page. The admission ceiling defers new deliveries until a fresh traversal; existing evidence and private state remain live. It is not a transaction snapshot or a guarantee for edits to detection timestamps/backdated admission metadata.
+
+The legacy `/api/impact-inbox` route and its current web consumer remain available with their original response shape in this API slice. The next consumer migration must label page-only counters, handle sparse pages and invalid cursor recovery, reset cursors on filter changes, and preserve law-filter options and deep links without reading the legacy full inbox. Event pagination does not bound one event's law fanout, per-law SQL lookups or database sorting cost.
 
 ## Durable digest preparation
 
@@ -44,11 +54,13 @@ No schema migration is required. Existing queued jobs without checkpoints initia
 
 `--suite resume` separately exercises the actual PostgreSQL worker/outbox lifecycle with two opted-in organization members: 50-event yield, fair dispatch of the other recipient, continuation to 61 events and one recorded send via a mail double. SQLite tests inject rollback before checkpoint commit, cancel/retry, failed mail, final preference races, stale leases, revoked membership/admission, disabled users/subscriptions and out-of-order delivery completion.
 
+`--suite inbox` verifies the real bounded HTTP endpoint on PostgreSQL with 121 equal-time events in 50/50/21 pages, stable navigation, page-only counts and exactly the selected event/delivery payloads hydrated. SQLite also covers SQL filter parity, private-state/account isolation, sparse severity pages, concurrent admissions and invalid cursors/limits.
+
 SQLite regressions additionally exercise empty/legacy/current results, another organization's access, and a newer attempt inserted at the query boundary. This is regression evidence, not an independent concurrency or capacity benchmark on HappySnowman.
 
 ## Still required
 
-- Move organization event/candidate filtering and grouping into bounded SQL or a maintained read projection; the current `page` method still loads the whole organization's candidate set.
+- Migrate interactive consumers to the bounded API and preserve independent filter options/deep links; the compatibility `page` route can still load the whole organization's eligible candidate set. Move severity eligibility into SQL/a maintained projection if measurements justify it.
 - Batch entity/review lookups and share an event-centered cursor contract with the future Today feed, with pages no larger than 50.
 - Bound per-event law fanout and measure query/dispatch wall-clock work; worker preparation now yields each 50-event page, while sparse interactive previews can still traverse the full selected period.
 - Preserve deep links, personal state, stale-evidence states and grouped law/topic relationships during that transition.

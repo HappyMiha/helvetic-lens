@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import base64
+import hashlib
+import json
 from collections.abc import Iterator
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 
 from sqlalchemy import func, or_, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 
 from . import relation_analysis as relation_ai
 from .config import DomainError
@@ -332,6 +335,31 @@ class ImpactInboxReader:
         if filters.sources:
             query = query.where(or_(RegulatoryEvent.connector.in_(filters.sources),
                                     RegulatoryEvent.authority.in_(filters.sources)))
+        if filters.source:
+            query = query.where(or_(RegulatoryEvent.connector == filters.source, RegulatoryEvent.authority == filters.source))
+        if filters.item_type:
+            query = query.where(or_(RegulatoryEvent.event_type == filters.item_type, RegulatoryWork.kind == filters.item_type))
+        if filters.state:
+            states = select(RegulatoryEventUserState.id).where(
+                RegulatoryEventUserState.organization_id == self.organization_id,
+                RegulatoryEventUserState.principal_key == self.principal,
+                RegulatoryEventUserState.event_id == RegulatoryEvent.id,
+            )
+            query = query.where(~states.where(RegulatoryEventUserState.state != "unread").exists()
+                                if filters.state == "unread" else states.where(RegulatoryEventUserState.state == filters.state).exists())
+        if filters.watched_law:
+            delivery, candidate = aliased(OrganizationRelationCandidate), aliased(RelationCandidate)
+            watched = select(delivery.id).join(candidate, candidate.id == delivery.candidate_id).join(
+                DocumentWatch, DocumentWatch.id == delivery.watch_id,
+            ).where(delivery.organization_id == self.organization_id,
+                    candidate.event_id == RegulatoryEvent.id,
+                    or_(DocumentWatch.id == filters.watched_law, DocumentWatch.law_id == filters.watched_law))
+            if filters.admitted_before is not None:
+                watched = watched.where(delivery.created_at < filters.admitted_before)
+            # Keep every law in selected events until severity is evaluated, so the
+            # legacy severity-before-watched-law semantics do not change silently.
+            query = query.where(watched.exists())
+
         if filters.excluded_states:
             excluded = select(RegulatoryEventUserState.id).where(
                 RegulatoryEventUserState.organization_id == self.organization_id,
@@ -373,6 +401,46 @@ class ImpactInboxReader:
             "admitted_before": _iso(filters.admitted_before),
             "cursor": {"detected_at": _iso(selected[-1].detected_at), "id": selected[-1].id} if selected else cursor,
         }
+
+    def _cursor_scope(self, filters: ImpactInboxFilters) -> str:
+        context = [self.organization_id, self.principal,
+                   filters.source, filters.severity, filters.item_type, filters.watched_law, filters.state]
+        return hashlib.sha256(json.dumps(context, ensure_ascii=True).encode()).hexdigest()
+
+    def paginated(self, session: Session, filters: ImpactInboxFilters, *, cursor: str = "", limit: int = 50) -> dict:
+        """Public bounded-page contract; counts describe returned groups only.
+
+        Cursors select positions, never permissions. Every read remains scoped to
+        the authenticated organization/principal, independently of token contents.
+        """
+        if not 1 <= limit <= 50:
+            raise DomainError("Choose a page size between 1 and 50.", 422, "invalid_inbox_page_size")
+        after = None
+        if cursor:
+            try:
+                if len(cursor) > 4096:
+                    raise ValueError("Cursor too large")
+                payload = json.loads(base64.b64decode(cursor + "=" * (-len(cursor) % 4), altchars=b"-_", validate=True))
+                if not isinstance(payload, dict) or payload.get("version") != 1 or payload.get("scope") != self._cursor_scope(filters):
+                    raise ValueError("Different cursor context")
+                captured = datetime.fromisoformat(payload["captured_at"])
+                after = payload["after"]
+                position = datetime.fromisoformat(after["detected_at"])
+                if captured.tzinfo is None or position.tzinfo is None or not isinstance(after["id"], str) or not 1 <= len(after["id"]) <= 36:
+                    raise ValueError("Invalid cursor position")
+                filters = replace(filters, admitted_before=captured)
+            except (ValueError, TypeError, KeyError, UnicodeError, RecursionError) as exc:
+                raise DomainError("This inbox page link is invalid for the current filters or account. Open the first page.",
+                                  422, "invalid_inbox_cursor") from exc
+        page = self.event_page(session, filters, cursor=after, page_size=limit)
+        next_cursor = None
+        if page["has_more"]:
+            payload = {"version": 1, "scope": self._cursor_scope(filters), "captured_at": page["admitted_before"], "after": page["cursor"]}
+            next_cursor = base64.urlsafe_b64encode(json.dumps(payload, separators=(",", ":")).encode()).decode().rstrip("=")
+        return {"items": page["items"], "total_events": page.get("total_events", 0),
+                "total_impacts": page.get("total_impacts", 0), "unread": page.get("unread", 0),
+                "counts_scope": "page", "scanned_event_count": page["scanned"], "limit": limit,
+                "captured_at": page["admitted_before"], "has_more": page["has_more"], "next_cursor": next_cursor}
 
     def iter_groups(self, session: Session, filters: ImpactInboxFilters, *, page_size: int = 50) -> Iterator[dict]:
         """Visit bounded event pages without retaining a full-history list."""

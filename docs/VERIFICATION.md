@@ -2,6 +2,13 @@
 
 The source-to-diff workflow, Settings page, and live Apertus path are verified.
 
+## Bounded public inbox page API — 5 September 2026 (HappyDucky02)
+
+- **105 affected API/queue tests pass** in 160.68 seconds, including 17 new public-page cases. Real endpoint tests traverse 121 equal-time events without skips/duplicates, defer concurrent new admissions, advance empty severity-filtered pages, preserve legacy watched-law/severity semantics and isolate personal states. Source/authority and event/document-kind aliases agree with the legacy response. Malformed, oversized, wrong-filter/account/organization cursors and invalid limits are rejected.
+- A separate disposable **PostgreSQL 16.14** run (`scripts/check_inbox_history_postgres.py --suite inbox`) verifies 50/50/21 HTTP pages and exactly the selected event/delivery payloads materialized. The verified task-owned container and volume were removed. No model or real email calls, production service changes or production data were involved.
+- Ruff and whitespace checks pass. This additive backend route has no migration or frontend change; the existing web consumer still uses the legacy route until its next migration. Existing Starlette test-client warning remains. The prior production frontend build is not claimed as a new build for this slice.
+- Page-only counters are explicitly labelled in the API. Cursors choose positions rather than authorize access; independently scoped SQL enforces organization/private-state boundaries. Existing evidence is live, and per-event law fanout, per-law queries, severity scan cost, frontend navigation and target-host 100k-event/20-reader capacity remain open HL-099 work.
+
 ## Resumable digest preparation and recipient revalidation — 5 September 2026 (HappyDucky02)
 
 - Final affected API/queue run: **88 passed** in 138.33 seconds, including 14 new resumable-digest regressions. A failure injected before checkpoint commit rolls back the page; completed pages survive cancel/retry; a completed selection prevents a full rescan after mail failure. Tests cover fair outbox dispatch, preference changes during/after preparation, opt-out, current private-state/admission checks, foreign/corrupt checkpoints, stale worker ownership, cancellation before dispatch, revoked membership/disabled user and monotonic delivery watermarks.

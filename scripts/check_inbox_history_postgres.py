@@ -30,12 +30,15 @@ from test_inbox_history_bounds import (
     check_history_index_roundtrip,
     test_large_history_reads_only_latest_and_current_payloads,
 )
+from test_inbox_page_api import (
+    test_public_pages_have_stable_equal_time_order_and_only_hydrate_selected_events,
+)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume"), default="history")
+    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -56,6 +59,10 @@ def main():
         with TestClient(app) as client:
             service = app.state.service
             harness = (client, fetcher, service, model)
+            if args.suite == "inbox":
+                test_public_pages_have_stable_equal_time_order_and_only_hydrate_selected_events(harness)
+                print("PostgreSQL: public inbox API traverses 121 equal-time events in 50/50/21 pages, with exactly two selected event/delivery payloads per event, stable cursors and page-only counts. No AI or mail calls.")
+                return
             if args.suite == "resume":
                 with MonkeyPatch.context() as patch:
                     test_digest_yield_is_atomic_fair_and_finishes_without_new_model_calls(harness, patch)
