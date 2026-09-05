@@ -26,6 +26,9 @@ from test_digest_periods import (
 from test_digest_resume import (
     test_digest_yield_is_atomic_fair_and_finishes_without_new_model_calls,
 )
+from test_inbox_history_batches import (
+    test_page_selects_histories_in_four_queries_with_bounded_payloads,
+)
 from test_inbox_history_bounds import (
     check_history_index_roundtrip,
     test_large_history_reads_only_latest_and_current_payloads,
@@ -41,7 +44,7 @@ from test_inbox_page_api import (
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options"), default="history")
+    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options", "batches"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -62,6 +65,10 @@ def main():
         with TestClient(app) as client:
             service = app.state.service
             harness = (client, fetcher, service, model)
+            if args.suite == "batches":
+                test_page_selects_histories_in_four_queries_with_bounded_payloads(harness)
+                print("PostgreSQL: 50-event inbox page reads 7,474 historical analysis/review rows with 4 selection/hydration queries and 111 materialized records; current conclusions, failed attempts, legacy output and latest human decisions remain correct. No AI or mail calls.")
+                return
             if args.suite == "options":
                 test_options_remain_available_outside_page_and_limit_without_loading_laws(harness)
                 print("PostgreSQL: independent 50-law scalar search, selected item beyond the limit, literal wildcard escaping, paused watches and organization isolation pass without hydrating Law/DocumentWatch models.")

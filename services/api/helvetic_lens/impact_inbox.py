@@ -9,7 +9,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import case, func, or_, select
 from sqlalchemy.orm import Session, aliased
 
 from . import relation_analysis as relation_ai
@@ -95,6 +95,44 @@ class ImpactInboxReader:
         )) or 0
         return current, latest, count
 
+    def _history_selection(self, session: Session, model, candidate_ids: list[str], relevant) -> dict[str, tuple]:
+        """Select latest/relevant IDs and counts together, then hydrate only those.
+
+        The scalar window query sees one database statement snapshot. New history
+        appended before hydration cannot alter its chosen IDs/count. Existing rows
+        remain live records; this is not a frozen transaction-wide evidence view.
+        """
+        if len(candidate_ids) > 100:
+            raise ValueError("History selection requires batches of at most 100 candidates.")
+        if not candidate_ids:
+            return {}
+        ordering = (model.created_at.desc(), model.id.desc())
+        ranked = select(
+            model.id.label("latest_id"), model.organization_candidate_id.label("candidate_id"),
+            func.row_number().over(partition_by=model.organization_candidate_id, order_by=ordering).label("position"),
+            func.count().over(partition_by=model.organization_candidate_id).label("total"),
+            func.first_value(case((relevant, model.id), else_=None)).over(
+                partition_by=model.organization_candidate_id,
+                order_by=(case((relevant, 0), else_=1), *ordering),
+            ).label("relevant_id"),
+        ).where(model.organization_id == self.organization_id,
+                model.organization_candidate_id.in_(candidate_ids)).subquery()
+        metadata = session.execute(select(ranked.c.candidate_id, ranked.c.latest_id, ranked.c.relevant_id, ranked.c.total)
+                                   .where(ranked.c.position == 1)).all()
+        chosen_ids = {id_ for row in metadata for id_ in (row.latest_id, row.relevant_id) if id_}
+        records = {row.id: row for row in session.scalars(select(model).where(
+            model.organization_id == self.organization_id, model.id.in_(chosen_ids),
+        ))} if chosen_ids else {}
+        return {row.candidate_id: (records.get(row.relevant_id), records.get(row.latest_id), row.total) for row in metadata}
+
+    def _page_histories(self, session: Session, candidate_ids: list[str]) -> tuple[dict, dict]:
+        analyses = self._history_selection(session, RelationImpactAnalysis, candidate_ids,
+                                          (RelationImpactAnalysis.status == "succeeded")
+                                          & (RelationImpactAnalysis.result["schema_version"].as_string() == relation_ai.SCHEMA_VERSION))
+        reviews = self._history_selection(session, OrganizationRelationReview, candidate_ids,
+                                         OrganizationRelationReview.decision.in_(("confirmed", "rejected")))
+        return analyses, reviews
+
     @staticmethod
     def _watch_context(
         session: Session, delivery: OrganizationRelationCandidate
@@ -179,36 +217,13 @@ class ImpactInboxReader:
         delivery: OrganizationRelationCandidate,
         candidate: RelationCandidate,
         event: RegulatoryEvent,
+        analysis_history: tuple,
+        review_history: tuple,
     ) -> dict:
         watch, law, target = self._watch_context(session, delivery)
         relation = session.get(RegulatoryRelation, candidate.relation_id) if candidate.relation_id else None
-        review = session.scalar(
-            select(OrganizationRelationReview)
-            .where(
-                OrganizationRelationReview.organization_candidate_id == delivery.id,
-                OrganizationRelationReview.decision.in_(("confirmed", "rejected")),
-            )
-            .order_by(
-                OrganizationRelationReview.created_at.desc(),
-                OrganizationRelationReview.id.desc(),
-            )
-            .limit(1)
-        )
-        latest_review = session.scalar(
-            select(OrganizationRelationReview)
-            .where(OrganizationRelationReview.organization_candidate_id == delivery.id)
-            .order_by(
-                OrganizationRelationReview.created_at.desc(),
-                OrganizationRelationReview.id.desc(),
-            )
-            .limit(1)
-        )
-        review_history_count = session.scalar(
-            select(func.count())
-            .select_from(OrganizationRelationReview)
-            .where(OrganizationRelationReview.organization_candidate_id == delivery.id)
-        ) or 0
-        current, latest, history_count = self._latest_analyses(session, delivery.id)
+        review, latest_review, review_history_count = review_history
+        current, latest, history_count = analysis_history
         status = self._status(relation, review, current, latest)
         result = (current.result or {}) if current else {}
         citations = result.get("citations") or []
@@ -499,37 +514,40 @@ class ImpactInboxReader:
                 )
             )
         )
-        for delivery in deliveries:
-            candidate = session.get(RelationCandidate, delivery.candidate_id)
-            event = session.get(RegulatoryEvent, candidate.event_id) if candidate else None
-            source = session.get(RegulatoryWork, candidate.source_work_id) if candidate else None
-            if not candidate or not event or not source:
-                continue
-            item = self._law_item(session, delivery, candidate, event)
-            state_record = states.get(event.id)
-            state = state_record.state if state_record else "unread"
-            group = grouped.setdefault(
-                event.id,
-                {
-                    "event_id": event.id,
-                    "title": source.title or "Untitled regulatory item",
-                    "source": event.connector or event.authority,
-                    "authority": event.authority,
-                    "type": event.event_type,
-                    "document_kind": source.kind,
-                    "detected_at": _iso(event.detected_at),
-                    "source_url": event.source_url or source.stable_official_url,
-                    "source_artifact_url": None,
-                    "read_state": state,
-                    "items": [],
-                },
-            )
-            if event.document_version_id:
-                source_version = session.get(RegulatoryDocumentVersion, event.document_version_id)
-                if source_version and source_version.legacy_version_id:
-                    group["source_artifact_url"] = f"/evidence/{source_version.legacy_version_id}"
-            group["items"].append(item)
-
+        for start in range(0, len(deliveries), 100):
+            batch = deliveries[start:start + 100]
+            analyses, reviews = self._page_histories(session, [delivery.id for delivery in batch])
+            for delivery in batch:
+                candidate = session.get(RelationCandidate, delivery.candidate_id)
+                event = session.get(RegulatoryEvent, candidate.event_id) if candidate else None
+                source = session.get(RegulatoryWork, candidate.source_work_id) if candidate else None
+                if not candidate or not event or not source:
+                    continue
+                item = self._law_item(session, delivery, candidate, event,
+                                      analyses.get(delivery.id, (None, None, 0)), reviews.get(delivery.id, (None, None, 0)))
+                state_record = states.get(event.id)
+                state = state_record.state if state_record else "unread"
+                group = grouped.setdefault(
+                    event.id,
+                    {
+                        "event_id": event.id,
+                        "title": source.title or "Untitled regulatory item",
+                        "source": event.connector or event.authority,
+                        "authority": event.authority,
+                        "type": event.event_type,
+                        "document_kind": source.kind,
+                        "detected_at": _iso(event.detected_at),
+                        "source_url": event.source_url or source.stable_official_url,
+                        "source_artifact_url": None,
+                        "read_state": state,
+                        "items": [],
+                    },
+                )
+                if event.document_version_id:
+                    source_version = session.get(RegulatoryDocumentVersion, event.document_version_id)
+                    if source_version and source_version.legacy_version_id:
+                        group["source_artifact_url"] = f"/evidence/{source_version.legacy_version_id}"
+                group["items"].append(item)
         groups = []
         order = {"high": 0, "medium": 1, "low": 2, "none": 3, "unknown": 4}
         for group in grouped.values():

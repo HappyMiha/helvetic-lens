@@ -1951,6 +1951,13 @@ Implemented interactive inbox navigation — 5 September 2026 (HappyDucky02):
 - HL-099 remains in progress: per-law lookup batching, large fanout, sparse digest preview cost, late-admission policy, broader feed projections and intended-host 100k-event/20-reader/overlap gates remain. This is not a native-speaker or user-pilot sign-off.
 
 
+Implemented batched analysis/review histories — 5 September 2026 (HappyDucky02):
+
+- Inbox and digest assembly now load histories in candidate batches of at most 100. Per table, SQL selects latest/relevant IDs and exact counts together; only those payloads are hydrated. At most four history queries handle a batch with both histories, replacing up to six queries per law without loading archived evidence/review notes.
+- The last current-schema success survives a failed attempt; a confirmation/rejection survives newer annotations. Equal-time ID ordering is stable, and a concurrent append after scalar selection waits for the next read. Explicit organization predicates apply even in privileged sessions. No schema migration or UI/API shape change is needed.
+- A 50-event SQLite/PostgreSQL corpus with 7,474 analysis/review records uses four history queries and 111 materialized records. Further regressions cover 100/21 candidate batching, empty/foreign inputs and concurrent appends. See `docs/VERIFICATION.md` for the affected-suite result. Related-entity/comparison lookups, law fanout, database sorting cost and the intended-host capacity gates remain open; HL-099 is still in progress.
+
+
 <a id="hl-100"></a>
 
 ### HL-100 — Require substantive evidence before claiming relevance or impact

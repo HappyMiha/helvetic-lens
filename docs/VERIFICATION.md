@@ -2,6 +2,13 @@
 
 The source-to-diff workflow, Settings page, and live Apertus path are verified.
 
+## Batched inbox analysis and review histories — 5 September 2026 (HappyDucky02)
+
+- **99 affected API tests pass** in 138.06 seconds across inbox pages/navigation/history/reviews, relation analysis and digest period/page/coverage/resume flows. Five new regression cases cover mixed current/failed/legacy/empty histories, retained human decisions beneath annotations, 100/21 batching, explicit organization scope in privileged sessions and concurrent analysis/review appends after scalar selection.
+- A real 50-event API page backed by **7,474 historical records** uses exactly **four history selection/hydration queries** and materializes **111 selected analysis/review records**. An isolated **PostgreSQL 16.14** run (`scripts/check_inbox_history_postgres.py --suite batches`) passes the same assertions and response semantics. The task-owned database container and volume were verified and removed afterwards. No AI requests, actual mail or production data/services were used.
+- Ruff and whitespace checks pass. This backend-only slice has no schema migration or public response/layout change; no new frontend build is claimed. The existing Starlette test-client warning remains. The test corpus initially retained the seed helper's official relation, which correctly took precedence over legacy AI status; the history-only fixture was corrected to remove that unrelated confirmation before the passing run.
+- History metadata/IDs/counts use one statement snapshot per table, followed by bounded payload retrieval. This is not an immutable snapshot of selected records, a fixed CPU cost for SQL windows, a bound on per-event law fanout, elimination of remaining per-law entity/comparison queries, or a target-host 100k-event/20-reader capacity result. HL-099 remains in progress; see `docs/INBOX_READS.md`.
+
 ## Interactive inbox pagination and independent law search — 5 September 2026 (HappyDucky02)
 
 - **53 affected API tests pass** in 126.98 seconds: public pages, inbox/reviews, relation analysis, digest pages/resume and two new navigation prerequisite scenarios. A 61-watch search uses scalar columns only, displays 50 plus a selected result outside that cap, escapes literal wildcards, includes paused watches and excludes another organization. A 61-event corpus opens its oldest event directly through an organization candidate link; unknown/foreign links remain empty and mismatched cursors fail.
