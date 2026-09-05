@@ -309,3 +309,11 @@ Public-beta acceptance additionally requires local-only clean-install behavior, 
 - Kubernetes, multi-host workers, database/broker high availability, OCR, login-gated ingestion, model training/fine-tuning, and automatic legal decisions remain outside the public-beta release.
 
 The complete task definitions, dependencies, acceptance gates, and explicitly deferred work live in [BACKLOG.md](BACKLOG.md).
+
+## Development on HappyDucky02 and HappySnowman
+
+Use one `codex/<host-alias>/<task>` branch and worktree per concurrent task. Install
+the shared Git hooks once per clone to record the development host and reject
+unsafe history updates. Fetch, merge and retest other changes before updating
+`main`; never develop inside the checkout serving production. See
+[the two-computer workflow](docs/MULTI_PC_DEVELOPMENT.md) and [agent instructions](AGENTS.md).

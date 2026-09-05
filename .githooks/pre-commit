@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+. "$(git rev-parse --show-toplevel)/.githooks/common.sh"
+require_task_branch

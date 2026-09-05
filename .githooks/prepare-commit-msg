@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+# Git may supply a relative message path; preserve it before common.sh changes cwd.
+case "$1" in /*|?:/*) message=$1 ;; *) message="$(pwd)/$1" ;; esac
+. "$(git rev-parse --show-toplevel)/.githooks/common.sh"
+require_task_branch
+git interpret-trailers --in-place --if-exists replace \
+    --trailer "Development-Host: $host" "$message"

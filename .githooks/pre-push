@@ -1,0 +1,37 @@
+#!/bin/sh
+set -eu
+. "$(git rev-parse --show-toplevel)/.githooks/common.sh"
+[ "$1" = origin ] || die 'Use the named origin remote so the shared-main check cannot target a different remote accidentally.'
+
+while read -r local_ref local_oid remote_ref remote_oid; do
+    case "$remote_ref" in
+        refs/heads/main)
+            is_zero "$local_oid" && die 'Deleting main is prohibited.'
+            # Inspect the exact server receiving this push, not a stale tracking ref
+            # or a different fetch URL. Failure to reach it blocks publication.
+            git fetch --quiet --no-tags "$2" refs/heads/main </dev/null || die 'Cannot refresh remote main; nothing was pushed.'
+            latest=$(git rev-parse --verify FETCH_HEAD)
+            git merge-base --is-ancestor "$latest" "$local_oid" || \
+                die 'Remote main has changes missing from this commit. Fetch, merge on your task branch, review and retest; never force-push.'
+            ;;
+        refs/heads/codex/"$host"/?*)
+            # Removing an already integrated, host-owned task branch is allowed.
+            is_zero "$local_oid" && continue
+            ;;
+        refs/heads/*)
+            die "Publish a codex/$host/<task> branch; do not write another host's branch."
+            ;;
+        refs/tags/*)
+            # Release tags identify versions, not development machines.
+            if ! is_zero "$remote_oid"; then
+                die 'Replacing or deleting an existing release tag is prohibited.'
+            fi
+            continue
+            ;;
+        *) die "Unsupported destination ref: $remote_ref" ;;
+    esac
+    if ! is_zero "$remote_oid"; then
+        git merge-base --is-ancestor "$remote_oid" "$local_oid" || \
+            die 'This update would replace published history (or its base is not fetched). Fetch and merge; no force-push.'
+    fi
+done
