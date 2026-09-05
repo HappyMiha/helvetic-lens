@@ -22,6 +22,7 @@ import type {
 } from "@/lib/types";
 import { ErrorNote, Loading, Status } from "./common";
 import { AnalysisModeNotice } from "./analysis-mode-notice";
+import { MonitorSavedAnswer } from "./monitor-this";
 import { ReportDates } from "./report-dates";
 import { localeNames, type Locale, useI18n } from "@/lib/i18n";
 
@@ -338,6 +339,7 @@ function HistoryItem({
                   </strong>
                 )}
                 <p>{answer.answer}</p>
+                <MonitorSavedAnswer id={item.id} status={item.status} answer={answer} />
                 <HistoryCitations
                   values={answer.citations || []}
                   items={evidenceItems}

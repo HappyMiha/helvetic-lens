@@ -1060,7 +1060,7 @@ def create_app(
         )
 
     @app.get("/api/monitoring-context")
-    def monitoring_context(kind: Literal["event", "law", "comparison"], id: str = Query(min_length=1, max_length=36)):
+    def monitoring_context(kind: Literal["event", "law", "comparison", "answer"], id: str = Query(min_length=1, max_length=36)):
         from .monitoring_context import describe
         with service.db.session() as session:
             return describe(session, service.organization_id, kind, id)

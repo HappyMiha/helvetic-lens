@@ -3801,6 +3801,35 @@ const topicSourceMessages: Record<Locale, Messages> = {
 };
 for (const locale of locales) Object.assign(catalogTarget(locale), topicSourceMessages[locale]);
 
+const monitorAnswerMessages: Record<Locale, Messages> = {
+  "en-CH": {
+    "monitorThis.savedQuestion": "Saved question",
+    "monitorThis.questionBoundary": "The saved question can start an editable monitoring goal. It is not a search rule or a current legal conclusion. Choose specific concepts and review sources before activation.",
+    "monitorThis.questionGoal": "Follow developments about {title} related to this question: {question}"
+  },
+  "de-CH": {
+    "monitorThis.savedQuestion": "Gespeicherte Frage",
+    "monitorThis.questionBoundary": "Die gespeicherte Frage kann als bearbeitbares Monitoring-Ziel dienen. Sie ist weder eine Suchregel noch eine aktuelle rechtliche Schlussfolgerung. Wählen Sie konkrete Begriffe und prüfen Sie die Quellen vor der Aktivierung.",
+    "monitorThis.questionGoal": "Entwicklungen zu {title} im Zusammenhang mit dieser Frage verfolgen: {question}"
+  },
+  "fr-CH": {
+    "monitorThis.savedQuestion": "Question enregistrée",
+    "monitorThis.questionBoundary": "La question enregistrée peut servir de point de départ à un objectif modifiable. Ce n’est ni une règle de recherche ni une conclusion juridique actuelle. Choisissez des termes précis et examinez les sources avant activation.",
+    "monitorThis.questionGoal": "Suivre les évolutions concernant {title} en lien avec cette question : {question}"
+  },
+  "it-CH": {
+    "monitorThis.savedQuestion": "Domanda salvata",
+    "monitorThis.questionBoundary": "La domanda salvata può avviare un obiettivo di monitoraggio modificabile. Non è una regola di ricerca né una conclusione giuridica attuale. Scegli termini precisi ed esamina le fonti prima dell’attivazione.",
+    "monitorThis.questionGoal": "Seguire gli sviluppi relativi a {title} collegati a questa domanda: {question}"
+  },
+  "rm-CH": {
+    "monitorThis.savedQuestion": "Dumonda memorisada",
+    "monitorThis.questionBoundary": "La dumonda memorisada po servir sco punct da partenza per ina finamira modifitgabla. Ella n’è ni ina regla da tschertga ni ina conclusiun giuridica actuala. Tscherna terms specifics ed examinescha las funtaunas avant l’activaziun.",
+    "monitorThis.questionGoal": "Suandar svilups davart {title} en connex cun questa dumonda: {question}"
+  }
+};
+for (const locale of locales) Object.assign(catalogTarget(locale), monitorAnswerMessages[locale]);
+
 function supported(value: string | null | undefined): Locale | null {
   if (!value) return null;
   const exact = locales.find((item) => item.toLowerCase() === value.replace("_", "-").toLowerCase());

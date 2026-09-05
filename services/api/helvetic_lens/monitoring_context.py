@@ -1,12 +1,25 @@
 """Read-only contextual entry into the existing explicit monitoring-plan workflow."""
+from datetime import UTC
+
 from sqlalchemy import func, select
 
 from .config import DomainError
 from .corpus_access import event_evidence_links, visible
-from .models import Comparison, DocumentWatch, Law, LegacyDocumentMapping, RegulatoryEvent, RegulatoryWork
+from .models import (
+    AskRecord,
+    Comparison,
+    DocumentWatch,
+    Law,
+    LegacyDocumentMapping,
+    RegulatoryEvent,
+    RegulatoryWork,
+    Version,
+)
 
 
 def describe(session, organization_id, kind, entity_id):
+    if kind == "answer":
+        return _answer_context(session, organization_id, entity_id)
     if kind == "event":
         row = session.execute(select(RegulatoryEvent.id, RegulatoryWork.id.label("work_id"),
             RegulatoryWork.title, func.coalesce(RegulatoryEvent.source_url, RegulatoryWork.stable_official_url).label("source_url"))
@@ -52,3 +65,38 @@ def describe(session, organization_id, kind, entity_id):
             "watch_limit": 20, "more_watches": len(rows) > 20,
             "watches": [{"law_id": item.law_id, "name": item.display_name, "active": item.active,
                          "url": f"/laws/{item.law_id}"} for item in rows[:20]]}
+
+
+def _answer_context(session, organization_id, record_id):
+    # Read only the user's question and eligibility metadata, never answer prose,
+    # transcripts, full comparison diffs or saved document bodies.
+    row = session.execute(select(
+        AskRecord.question, AskRecord.created_at,
+        AskRecord.result["supported"].label("supported"),
+        AskRecord.result["citations"].label("citations"),
+        Comparison.id.label("comparison_id"), Comparison.law_id,
+        Comparison.old_version_id, Comparison.new_version_id,
+    ).join(Comparison, Comparison.id == AskRecord.comparison_id)
+      .join(Law, Law.id == Comparison.law_id)
+      .where(AskRecord.id == record_id, AskRecord.organization_id == organization_id,
+             AskRecord.status == "succeeded", visible(Comparison, organization_id), visible(Law, organization_id))).first()
+    # SQLite JSON extraction represents JSON true as integer 1; PostgreSQL
+    # returns bool. Do not accept truthy strings or arbitrary objects.
+    supported = row is not None and (row.supported is True or type(row.supported) is int and row.supported == 1)
+    if not supported or not isinstance(row.citations, list) or not row.citations:
+        raise DomainError("The saved cited answer is unavailable.", 404, "not_found")
+    version_ids = {row.old_version_id, row.new_version_id}
+    visible_ids = set(session.scalars(select(Version.id).where(
+        Version.id.in_(version_ids), Version.law_id == row.law_id, visible(Version, organization_id))))
+    if visible_ids != version_ids or not all(
+        isinstance(item, dict) and isinstance(item.get("version_id"), str) and item["version_id"] in version_ids
+        and isinstance(item.get("passage_id"), str) and item["passage_id"].strip()
+        for item in row.citations
+    ):
+        raise DomainError("The saved cited answer is unavailable.", 404, "not_found")
+    context = describe(session, organization_id, "comparison", row.comparison_id)
+    created_at = row.created_at.replace(tzinfo=UTC) if row.created_at.tzinfo is None else row.created_at
+    return {**context, "kind": "answer", "id": record_id,
+            "question": row.question[:2000], "answer_created_at": created_at.isoformat(),
+            "comparison_id": row.comparison_id,
+            "reference_url": f"/compare/{row.comparison_id}?task=ask"}

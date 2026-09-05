@@ -1,6 +1,6 @@
 "use client";
 
-import { MonitorThis } from "./monitor-this";
+import { MonitorThis, MonitorSavedAnswer } from "./monitor-this";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -2799,6 +2799,7 @@ function SavedQuestionTurn({
                     label(answer.context_mode)}
               </p>
             )}
+            <MonitorSavedAnswer id={item.id} status={item.status} answer={answer} />
             {!!answer.suggestions?.length && (
               <div className="answer-suggestions">
                 {answer.suggestions.map((suggestion) => (

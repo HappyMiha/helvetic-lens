@@ -8,7 +8,7 @@ export function MonitorThis({
   kind,
   id,
 }: {
-  kind: "event" | "law" | "comparison";
+  kind: "event" | "law" | "comparison" | "answer";
   id: string;
 }) {
   const { t, locale } = useI18n();
@@ -23,4 +23,15 @@ export function MonitorThis({
       </Link>
     </Button>
   );
+}
+
+// Only saved, supported cited answers offer this route. The server rechecks
+// ownership and status; no answer text or question is put into the URL.
+export function MonitorSavedAnswer({ id, status, answer }: {
+  id: string;
+  status: string;
+  answer: { supported?: boolean; citations?: unknown[] } | null;
+}) {
+  if (status !== "succeeded" || answer?.supported !== true || !Array.isArray(answer.citations) || !answer.citations.length) return null;
+  return <div className="mt-3" data-monitor-answer><MonitorThis kind="answer" id={id} /></div>;
 }

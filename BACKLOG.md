@@ -1539,8 +1539,8 @@ personal 24-hour browser-tab draft and preview saved candidates; shared writes,
 AI drafting and history activation remain forbidden. Five-language/mobile-browser,
 API and scratch PostgreSQL evidence is recorded in `docs/MONITORING_CONTEXT.md`.
 Remaining: complete law/topic/pack choice, broader semantic-equivalence suggestions,
-measured delivery/coverage guarantees beyond saved source readiness, viewer admin-request workflow, and cited-answer /
-global-assistant entries. Personal tab recovery is not cross-device draft storage;
+measured delivery/coverage guarantees beyond saved source readiness, viewer admin-request workflow, and
+global-assistant entries. Saved cited answers now have contextual entries. Personal tab recovery is not cross-device draft storage;
 this is not completion of HL-077 or independent usability/native review.
 
 **Implemented 6 September 2026 (same-rule duplicate review):** The common topic
@@ -1569,6 +1569,18 @@ five-language role/mobile browser evidence is recorded in `docs/VERIFICATION.md`
 This is saved operational evidence, not live health, promised notification cadence,
 complete language/source coverage or predicted future volume. Remaining HL-077
 choices/assistant entry points and independent acceptance remain open.
+
+**Implemented 6 September 2026 (saved cited answers):** Ask and AI history now
+link succeeded, supported cited answers to the common editor using only the saved
+record ID. Context reads verify organization, comparison/law and both version
+owners, preserve the original question/date and existing document watches, and
+never rerun inference or copy answer prose into search rules. Explicit copy makes
+the question an editable goal; concepts stay user-chosen. Failed, pending,
+unsupported, uncited or unavailable records cannot seed this flow. Five-locale
+browser navigation, API and PostgreSQL evidence is in `docs/VERIFICATION.md`.
+The return link targets the saved comparison's Ask panel, not an arbitrary old
+turn outside its existing display window. Global assistant entries, common new
+law/topic/pack choices and independent/native acceptance remain open.
 
 Acceptance criteria:
 

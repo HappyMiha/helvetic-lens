@@ -62,6 +62,10 @@ const fixture = JSON.parse(
     "utf8",
   ),
 );
+const savedAnswer = {id: "qa-saved-answer", type: "question", status: "succeeded", question: "Which record duties changed?", created_at: "2026-09-06T08:00:00Z", last_used_at: null, use_count: 1, model: "synthetic", prompt_revision: 1, coverage: {},
+  comparison: {id: fixture.id, mode: fixture.mode, before: {id: fixture.old_version_id, artifact_url: `/api/versions/${fixture.old_version_id}/artifact`}, after: {id: fixture.new_version_id, artifact_url: `/api/versions/${fixture.new_version_id}/artifact`}},
+  result: {supported: true, answer: "Synthetic supported answer.", citations: fixture.analysis.result.citations}};
+const historyItems = [savedAnswer, {...savedAnswer, id: "qa-failed", status: "failed", error: "Synthetic failure", result: null}, {...savedAnswer, id: "qa-unsupported", result: {...savedAnswer.result, supported: false}}, {...savedAnswer, id: "qa-uncited", result: {...savedAnswer.result, citations: []}}];
 async function waitFor(check, message) {
   for (let i = 0; i < 150; i++) {
     if (await check().catch(() => false)) return;
@@ -114,7 +118,10 @@ try {
       };
     else if (url.pathname === `/api/comparisons/${fixture.id}`) body = fixture;
     else if (url.pathname.endsWith("/ai-history"))
-      body = { items: [], total: 0 };
+      body = { items: historyItems, total: historyItems.length };
+    else if (url.pathname === "/api/monitoring-context") body = {kind: "answer", id: savedAnswer.id, title: fixture.law.name, question: savedAnswer.question, answer_created_at: savedAnswer.created_at, reference_url: `/compare/${fixture.id}?task=ask`, requires_confirmation: true, ai_calls: 0, watches: []};
+    else if (url.pathname === "/api/monitoring-topics") body = [];
+    else if (url.pathname === "/api/source-packs") body = {items: []};
     else if (url.pathname.endsWith("/ask-jobs") || url.pathname === "/api/jobs")
       body = [];
     else {
@@ -195,6 +202,8 @@ try {
       );
       assert.equal(await modal(), false);
       await clickTab("ask");
+      await waitFor(() => evaluate(cdp, `document.querySelectorAll('#companion-ask [data-monitor-answer]').length === 1`), "Only the succeeded cited answer should offer monitoring");
+      assert.ok(await evaluate(cdp, `document.querySelector('#companion-ask [data-monitor-answer] a').getAttribute('href').includes('record=qa-saved-answer')`));
       assert.ok(
         await evaluate(
           cdp,
@@ -363,6 +372,21 @@ try {
         ),
         `Overflow at ${width}/${locale}`,
       );
+      await clickTab("history");
+      await evaluate(cdp, `document.querySelectorAll('#companion-history .ai-history-item').forEach(item => item.open = true)`);
+      assert.equal(await evaluate(cdp, `document.querySelectorAll('#companion-history [data-monitor-answer]').length`), 1, "History must not offer failed/unsupported/uncited answers");
+      if (width === 390) {
+        await evaluate(cdp, `document.querySelector('.companion-close').click()`);
+        await waitFor(async () => !(await modal()), "History close failed before Ask entry check");
+        await clickTab("ask");
+      }
+      await evaluate(cdp, `document.querySelector('${width === 390 ? "#companion-ask" : "#companion-history"} [data-monitor-answer] a').click()`);
+      await waitFor(() => evaluate(cdp, `!!document.querySelector('[data-monitor-saved-question]')`), "History action did not reach saved question context");
+      assert.ok(await evaluate(cdp, `location.pathname === '/topics' && location.search.includes('from=answer') && location.search.includes('record=qa-saved-answer') && !location.search.includes('duties')`));
+      assert.ok(await evaluate(cdp, `document.querySelector('[data-monitor-saved-question]').innerText.includes('Which record duties changed?')`));
+      assert.equal(await evaluate(cdp, `document.querySelector('[name="topic-name"]').value`), "", "Navigation silently activated/copied a topic");
+      assert.ok(await evaluate(cdp, `document.documentElement.scrollWidth <= innerWidth + 1`), "Saved question context overflowed on mobile");
+      if (locale === "en-CH") await capture(`monitor-from-answer-${width}`);
     }
   }
   assert.deepEqual(
@@ -375,7 +399,7 @@ try {
     "No comparison fixture was used",
   );
   console.log(
-    "Comparison production UI: 15 populated locale/overlay-width journeys passed; modal focus isolation, forward/back Tab, Escape/close and return focus, draft persistence through close/desktop resize, nonmodal desktop and cited evidence focus. All API calls intercepted; no live model or data mutation. Physical keyboard/mobile, screen-reader and other-browser review remain separate.",
+    "Comparison production UI: 15 populated locale/overlay-width journeys passed; modal focus isolation, forward/back Tab, Escape/close and return focus, draft persistence through close/desktop resize, nonmodal desktop and cited evidence focus, saved-answer-only monitoring buttons in Ask/history and history-to-topic navigation retaining the saved question without implicit copy/activation. All API calls intercepted; no live model or data mutation. Physical keyboard/mobile, screen-reader and other-browser review remain separate.",
   );
 } catch (error) {
   console.error({

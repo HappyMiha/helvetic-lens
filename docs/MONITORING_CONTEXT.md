@@ -32,6 +32,40 @@ Only the existing explicit administrator activation creates the shared topic,
 with the same idempotency key/retry lifecycle. Success links directly to the saved
 topic. Changing a plan invalidates its old preview as before.
 
+## From a saved cited answer
+
+Ask and AI history now offer the same Monitor this topic action beside succeeded,
+supported answers with citations. The URL contains `from=answer` and the saved
+Ask record ID, never the question, answer or a model-generated URL. The context
+endpoint explicitly checks the Ask record's organization, visible comparison/law,
+and both saved versions' owner and law bindings. Failed/pending/unsupported or
+uncited records, malformed citation metadata, and citations to unrelated versions
+are unavailable, including to a privileged session inspecting this organization.
+
+The editor shows the recorded user question and answer timestamp beside the saved
+document title. Only **Use as topic starting point** copies the question into an
+editable goal; concepts remain blank and required. Existing dirty/recovered drafts
+are protected. The usual source-readiness and duplicate review, bounded preview
+and explicit authorized save remain unchanged; viewers retain their personal draft
+flow. No automatic extraction of search rules or additional inference occurs.
+
+The context read projects only the question, timestamp and supported/citation
+metadata, never the answer prose, chat transcript, full comparison diff or document
+bodies. It does not increment answer reuse counters or create monitoring/history
+records. Citation metadata is an eligibility check against the saved answer's
+existing validation; this action neither redisplays quotes nor independently
+revalidates their legal meaning. Old answers are not represented as current legal
+conclusions. The return link opens that saved comparison's Ask panel; it does not
+promise to locate an older turn beyond the existing history display window.
+
+Tests execute an actual synthetic Ask first, then verify unchanged inference and
+record counters, explicit owner guards and malformed/unsupported cases. Separate
+PostgreSQL checks cover JSON projection and private-version denial. Browser checks
+exercise Ask/history button eligibility, actual navigation to the original question,
+explicit editable goal copy, no question text in URLs, both roles and five locales.
+Global assistant entries, common new law/topic/pack choice, durable origin metadata
+on the saved topic and unbounded historical-turn deep links remain separate work.
+
 ## Viewer behavior
 
 Viewers can now edit a **personal browser-tab draft** and use the same read-only
@@ -61,8 +95,8 @@ The UI hides activation/edit controls and disables AI drafting for viewers.
 HL-077 remains IN PROGRESS: this slice creates contextual **topics** and links
 existing watches. It does not yet unify new law-watch/source-pack subscription
 choices, detect semantically equivalent topics beyond the same-rule warning, show predicted cadence/volume,
-submit a viewer proposal to administrators, or add per-answer/global-assistant
-entry points. Selected-source operational readiness and configured cadence are now shown by
+submit a viewer proposal to administrators, or add global-assistant
+entry points. Saved cited Ask/history answers now have their own contextual entry. Selected-source operational readiness and configured cadence are now shown by
 the explicit preview (see `MONITORING_TOPICS.md`). This records subscriptions,
 schedules and health without predicting actual future delivery or volume.
 No production deployment, migration, live source/model call or message is required

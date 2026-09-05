@@ -307,7 +307,9 @@ function TopicEditor({
       ...initialPlan,
       source_pack_ids: defaultPackIds,
       name: origin.data.title.slice(0, 240),
-      goal: t("monitorThis.goal", { title: origin.data.title }).slice(0, 3000),
+      goal: (origin.data.question
+        ? t("monitorThis.questionGoal", { title: origin.data.title, question: origin.data.question })
+        : t("monitorThis.goal", { title: origin.data.title })).slice(0, 3000),
     });
     focusEditor();
   }
@@ -627,6 +629,14 @@ function TopicEditor({
           {origin.data && (
             <>
               <p className="font-semibold">{origin.data.title}</p>
+              {origin.data.question && (
+                <div className="rounded-lg border p-3 mb-3" data-monitor-saved-question>
+                  <p className="font-medium">{t("monitorThis.savedQuestion")}</p>
+                  <p>{origin.data.question}</p>
+                  {origin.data.answer_created_at && <p className="text-sm muted">{dateTime(origin.data.answer_created_at)}</p>}
+                  <p className="text-sm">{t("monitorThis.questionBoundary")}</p>
+                </div>
+              )}
               <p>{t("monitorThis.summary")}</p>
               <details className="text-sm mb-3">
                 <summary className="cursor-pointer min-h-11 content-center">

@@ -1391,7 +1391,10 @@ export type AIHistoryPage = {
 };
 
 export type MonitoringContext = {
-  kind: "event" | "law" | "comparison";
+  kind: "event" | "law" | "comparison" | "answer";
+  question?: string;
+  answer_created_at?: string;
+  comparison_id?: string;
   id: string;
   title: string;
   source_url?: string | null;

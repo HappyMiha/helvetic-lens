@@ -58,6 +58,7 @@ try {
     else if (url.pathname === "/api/monitoring-context") {
       if (url.searchParams.get("id") === "unavailable") {code = 404; body = {detail: "Synthetic unavailable context"};}
       else body = {kind: url.searchParams.get("kind"), id: "qa-event", title: title, requires_confirmation: true, ai_calls: 0,
+        ...(url.searchParams.get("kind") === "answer" ? {question: "Which privacy obligations changed?", answer_created_at: "2026-09-06T08:00:00Z", comparison_id: "qa-comparison"} : {}),
         source_url: "https://example.invalid/official-source", evidence_url: "/corpus-evidence/qa-native", watches: [{law_id: "qa-law", name: "Already monitored document", active: false, url: "/laws/qa-law"}], more_watches: false};
     } else if (url.pathname === "/api/source-packs") body = {items: [{id: "fedlex-legislation", name: {en: "Synthetic enabled sources"}, subscription: {enabled: true}}]};
     else if (url.pathname === "/api/monitoring-topics/preview") body = {candidate_count: 0, scanned_event_count: 0, scanned_event_limit: 500, items: [], count_is_complete: true, sample_captured_at: "2026-09-06T08:00:00Z",
@@ -84,7 +85,7 @@ try {
     locale = language; role = permission; user = `${language}-${width}-${permission}`; saved = null;
     const before = creates().length, previewBefore = previews().length;
     await cdp.send("Emulation.setDeviceMetricsOverride", {width, height: 900, deviceScaleFactor: 1, mobile: width < 500});
-    await cdp.send("Page.navigate", {url: `${base}/topics?from=event&record=qa-event&locale=${locale}`});
+    await cdp.send("Page.navigate", {url: `${base}/topics?from=${width === 1440 ? "answer" : "event"}&record=${width === 1440 ? "qa-answer" : "qa-event"}&locale=${locale}`});
     await waitFor(() => evaluate(cdp, `!!document.querySelector('[data-monitor-use]') && !document.querySelector('[data-monitor-use]').disabled && document.documentElement.lang === ${JSON.stringify(locale)}`), "Context not ready");
     assert.equal(await evaluate(cdp, `document.querySelector('[name="topic-name"]').value`), "", "Context silently replaced draft");
     assert.equal(creates().length, before);
@@ -98,6 +99,11 @@ try {
     await click('[data-monitor-use]');
     await waitFor(() => evaluate(cdp, `document.querySelector('[name="topic-name"]').value === ${JSON.stringify(title)}`), "Explicit context copy failed");
     assert.equal(await evaluate(cdp, `document.querySelector('[name="topic-concepts"]').value`), "", "Guessed search terms were added");
+    if (width === 1440) {
+      assert.ok(await evaluate(cdp, `document.querySelector('[data-monitor-saved-question]').innerText.includes('Which privacy obligations changed?')`));
+      assert.ok(await evaluate(cdp, `document.querySelector('[name="topic-goal"]').value.includes('Which privacy obligations changed?')`));
+      assert.equal(await evaluate(cdp, `location.search.includes('privacy')`), false, "Question leaked into URL");
+    }
     await evaluate(cdp, `(()=>{const el=document.querySelector('[name="topic-concepts"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,'privacy');el.dispatchEvent(new Event('input',{bubbles:true}));})()`);
     await click('.monitoring-topic-builder button[type="submit"]');
     await waitFor(() => evaluate(cdp, `!!document.querySelector('[data-topic-preview]') && !document.querySelector('.monitoring-topic-builder fieldset').disabled`), "Preview failed");
