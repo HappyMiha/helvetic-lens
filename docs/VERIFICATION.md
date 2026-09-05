@@ -2,6 +2,13 @@
 
 The source-to-diff workflow, Settings page, and live Apertus path are verified.
 
+## Everyday registry filters — 5 September 2026 (HappyDucky02)
+
+- Task branch: `codex/HappyDucky02/hl-095-registry-filter-disclosure`. Final production build passes **1,655 localization keys**, **27 shell**, **22 resource/delivery** and **117 report/navigation/calendar checks**, TypeScript and Next production generation. Six new calendar cases verify Zurich midnight, both DST transitions, year/leap boundaries, inclusive 7/30-day ranges and independence from Honolulu/Tokyo runtime zones. The four existing registry API regressions pass unchanged in 3.16 seconds; existing Starlette deprecation warning remains.
+- **20 required populated production-Chrome journeys pass**, covering Monitoring and Discover in DE/FR/IT/RM/EN at 390/1440 px. They verify collapsed advanced controls, real pointer-reachable presets/disclosures/chips, native search submission, URL-driven selection and Back restoration, empty-result clear, preserved locale, unsupported deep-link values and cursor reset. Viewer mutation controls remain absent; an administrator retains the existing read-state control. No registry mutation endpoint is called.
+- Browser visibility checks use actual `checkVisibility()`: collapsed native details can retain layout boxes despite invisible content. Essential controls meet the focused 44 px checks, long DE/FR title fixtures do not overflow either width and runtime exceptions remain absent. Ignored representative screenshots under `test-results/registry-filters/` were visually inspected. Every API call is intercepted; no running backend, real source, model or recipient is contacted.
+- Changed component/helper/test files pass Prettier and whitespace checks. This is a frontend filter/navigation slice with no API/schema/deployment change. It does not certify all raw metadata translations, source-health recovery, complete keyboard/screen-reader behavior, physical mobile input, independent usability or mature-corpus registry query performance. HL-095 remains in progress.
+
 ## Bounded interactive digest preview — 5 September 2026 (HappyDucky02)
 
 - Task branch: `codex/HappyDucky02/hl-099-paged-digest-preview`. **95 affected API tests pass in 90.38 seconds**, covering digest pages/periods/coverage/resume/delivery and inbox pages/context/private state. Thirteen new cases cover authenticated preference save and sparse 50/50/21 navigation, stable equal-time order/captured first-page revisit, compatibility output, malformed/boundary/scope/preference cursors, late admissions and current personal mute state. Preview reads produce no model/mail calls or job/delivery/read-state writes.
