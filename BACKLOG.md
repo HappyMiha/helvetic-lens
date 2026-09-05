@@ -144,7 +144,7 @@ Keep the proven stack and add only the infrastructure now justified by public us
 | [HL-096](#hl-096) | P1       | PLANNED  | HL-063, HL-068                                         | Coherent visual system and readable scalable evidence               |
 | [HL-097](#hl-097) | P0       | IN PROGRESS  | HL-065, HL-068, HL-070                                 | Visible AI controls and accessible populated journeys               |
 | [HL-098](#hl-098) | P0       | PLANNED  | HL-036, HL-071, HL-072                                 | Verified source coverage and versioned legacy-artifact repair       |
-| [HL-099](#hl-099) | P0       | PLANNED  | HL-030, HL-036, HL-046                                 | Bounded event read model and period-limited digest queries           |
+| [HL-099](#hl-099) | P0       | IN PROGRESS | HL-030, HL-036, HL-046                                 | Bounded event read model and period-limited digest queries           |
 | [HL-100](#hl-100) | P0       | IN PROGRESS  | HL-044, HL-045, HL-093                                 | Substantive relation evidence and safe assessment supersession       |
 | [HL-101](#hl-101) | P0       | PLANNED  | HL-090, HL-073, HL-076, HL-078, HL-079, HL-089, HL-032, HL-048, HL-049, HL-057, HL-064, HL-098–HL-100 | Measured longitudinal pilot and rollout decision |
 
@@ -1886,7 +1886,7 @@ Acceptance criteria:
 
 ### HL-099 — Bound inbox/feed reads and digest work on a mature corpus
 
-**Priority:** P0. **Status:** PLANNED. **Dependencies:** HL-030, HL-036, HL-046. **Owner role:** backend/database.
+**Priority:** P0. **Status:** IN PROGRESS. **Dependencies:** HL-030, HL-036, HL-046. **Owner role:** backend/database.
 
 Problem: the current inbox loads whole organization candidate/history sets, performs per-item lookups and filters in Python; digest rendering inherits that cost.
 
@@ -1899,6 +1899,14 @@ Acceptance criteria:
 - Generate digests only for the eligible time window/preferences with durable continuation where needed; truncation is visible and actionable. No inference on reads/delivery.
 - Test representative 100k corpus events, large organization histories and 20 concurrent readers on the target host. Proposed p95 read target ≤500 ms; report query counts and memory bounds independent of total history, not only latency on seven demo laws.
 - Preserve invalidation, stale-assessment display, filter deep links and legacy API callers through migration. Include source sync, interactive AI and digest overlap in HL-049 rather than declaring capacity from a standalone query.
+
+
+Implemented history-read slice — 5 September 2026 (HappyDucky02):
+
+- Impact inbox and digest consumers now select at most two analysis payloads per candidate: the latest attempt and the latest successful result under current rules. Filtering/ordering and the exact history count run in SQL, retaining failed-attempt recovery and old-schema visibility without loading every historical JSON/evidence body into the API process.
+- A timestamp/ID ceiling keeps a newer attempt arriving between queries for the next read. An organization/candidate/time index supports traversal. Synthetic 10,001-analysis regressions assert three queries and two materialized payloads for the selector; the actual inbox response, tenant isolation, equal-timestamp ordering and populated SQLite/PostgreSQL index migration also pass.
+- This is not yet bounded event pagination or a capacity certification: the organization candidate list and digest source window remain unbounded, and SQL counting/current-schema search can still inspect many rows. Complete event-centered filters/cursors, batched entity/review lookups, period-limited digests and the target-host 100k-event/20-reader gate remain open. See `docs/INBOX_READS.md`.
+
 
 <a id="hl-100"></a>
 

@@ -2,6 +2,13 @@
 
 The source-to-diff workflow, Settings page, and live Apertus path are verified.
 
+## Bounded per-candidate inbox analysis history — 5 September 2026 (HappyDucky02)
+
+- The final focused inbox/history/digest/relation-analysis run passed **23 tests**, including six new history-selection/migration regressions. A 10,001-analysis synthetic history loads only the latest attempt and the latest current-schema success (two ORM records) using three selection/count queries. Empty/current/legacy histories, tenant isolation, equal-timestamp ordering and a newer attempt injected between queries preserve the intended result.
+- An independent disposable **PostgreSQL 16.14** run of `scripts/check_inbox_history_postgres.py` verified the same 10,001-row materialization/query bounds through the real selector and inbox endpoint. A populated downgrade/upgrade of index migration `fa27c61d3098` preserved selected IDs and the history count. The verified scratch container was removed afterwards. No paid model or production database/service was used.
+- Ruff and whitespace checks pass. This backend-only slice leaves the existing UI/API shape unchanged and does not require a frontend rebuild. The full 532-test Windows run recorded for match validity belongs to the preceding validity change; the final history slice was checked with its affected 23-test suite and PostgreSQL gate rather than claiming another full run.
+- These are per-candidate payload bounds, not whole-inbox pagination or fixed database CPU cost: current organization candidate enumeration, related-entity lookups and digest source-window selection remain HL-099 work. The intended-host 100k-event/20-reader latency, memory and overlap gates remain open; see `docs/INBOX_READS.md`.
+
 ## Topic match validity and review preservation — 5 September 2026 (HappyDucky02)
 
 - History and live evaluation now preserve human confirmation/rejection/mute and the original reviewed evidence when a formerly matching event becomes a non-match or receives changed positive evidence. The matches API distinguishes machine eligibility, historical confidence and the current applicability of a human decision; changed inputs are already labelled stale while a worker is pending. Revoked admissions cannot expose retained matches.

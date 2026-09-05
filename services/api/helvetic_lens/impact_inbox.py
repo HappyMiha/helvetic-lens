@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from . import relation_analysis as relation_ai
@@ -56,19 +56,33 @@ class ImpactInboxReader:
     def _latest_analyses(
         session: Session, organization_candidate_id: str
     ) -> tuple[RelationImpactAnalysis | None, RelationImpactAnalysis | None, int]:
-        records = list(
-            session.scalars(
-                select(RelationImpactAnalysis)
-                .where(
-                    RelationImpactAnalysis.organization_candidate_id
-                    == organization_candidate_id
-                )
-                .order_by(RelationImpactAnalysis.created_at.desc(), RelationImpactAnalysis.id.desc())
-            )
+        history = select(RelationImpactAnalysis).where(
+            RelationImpactAnalysis.organization_candidate_id == organization_candidate_id
+        ).order_by(RelationImpactAnalysis.created_at.desc(), RelationImpactAnalysis.id.desc())
+        latest = session.scalar(history.limit(1))
+        if latest is None:
+            return None, None, 0
+        # A newly completed attempt after the first query belongs to the next
+        # read, not to a current/failed-latest combination from different tops.
+        through_latest = or_(
+            RelationImpactAnalysis.created_at < latest.created_at,
+            (RelationImpactAnalysis.created_at == latest.created_at)
+            & (RelationImpactAnalysis.id <= latest.id),
         )
-        current = next((item for item in records if item.status == "succeeded"
-                        and relation_ai.result_uses_current_rules(item.result)), None)
-        return current, records[0] if records else None, len(records)
+        history = history.where(through_latest)
+        current = latest if latest.status == "succeeded" and relation_ai.result_uses_current_rules(latest.result) else session.scalar(
+            history.where(
+                RelationImpactAnalysis.status == "succeeded",
+                RelationImpactAnalysis.result["schema_version"].as_string() == relation_ai.SCHEMA_VERSION,
+            ).limit(1)
+        )
+        # Count in SQL; never transfer/materialize the historical JSON/evidence
+        # payloads just to find two records or display the history count.
+        count = session.scalar(select(func.count()).select_from(RelationImpactAnalysis).where(
+            RelationImpactAnalysis.organization_candidate_id == organization_candidate_id,
+            through_latest,
+        )) or 0
+        return current, latest, count
 
     @staticmethod
     def _watch_context(

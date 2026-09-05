@@ -1196,6 +1196,7 @@ class ActionDecision(Base):
 class RelationImpactAnalysis(Base):
     __tablename__ = "relation_impact_analyses"
     __table_args__ = (
+        Index("ix_relation_analysis_org_candidate_time", "organization_id", "organization_candidate_id", "created_at", "id"),
         CheckConstraint(
             "status IN ('pending', 'succeeded', 'failed')",
             name="ck_relation_impact_analysis_status",
