@@ -1922,6 +1922,13 @@ Implemented digest event-page slice — 5 September 2026 (HappyDucky02):
 - Thirty-seven focused tests pass, including seven new paging cases; PostgreSQL also verifies 121 equal-time keys plus a concurrent new admission. Interactive inbox pagination, per-event law fanout/batched lookups, durable work continuation, actionable truncation, late-admission catch-up and target-host capacity gates remain open. A severity filter can still require visiting every event in a period, though only one bounded event page is retained at a time.
 
 
+Implemented digest coverage notices — 5 September 2026 (HappyDucky02):
+
+- Web preview, saved delivery history and text/HTML email now expose limited digest selections and offer the full saved Impact inbox as the next step. Each summarized event persists the eligible watched-law count and a five-law overflow flag; the web card/email show the actual shown/eligible count. Older records without counts remain readable without invented coverage.
+- All five UI/email languages have explicit copy. Twenty real-component render checks cover event-only/law-only/combined overflow and empty/legacy summaries; 61 focused API regressions pass, including 24 new selection/email cases. Production web build and the 1,577-key localization audit pass. Chrome/PostCSS checks pass at 390/768/1024/1440 px with 7,500 contrast samples (minimum 4.79:1), no overflow in the notices and review links at least 44 px high.
+- The link opens the full saved inbox; it is not a frozen-period continuation or proof that unprocessed/backdated events were delivered. Durable checkpoints, public inbox pagination/batched reads, intended-host capacity and native-speaker review remain open.
+
+
 <a id="hl-100"></a>
 
 ### HL-100 — Require substantive evidence before claiming relevance or impact

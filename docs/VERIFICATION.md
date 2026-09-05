@@ -2,6 +2,13 @@
 
 The source-to-diff workflow, Settings page, and live Apertus path are verified.
 
+## Visible digest selection limits — 5 September 2026 (HappyDucky02)
+
+- **61 focused API tests pass**, including 24 new eligible-law count, legacy-summary and localized text/HTML email tests. Per-event law counts apply after severity filtering; exactly five laws do not trigger overflow. No model or actual email delivery is used.
+- `npm run build` passes TypeScript, Next.js production compilation/static generation and the integrated 27 shell, 22 resource/delivery and **85 rendered component** checks (20 new digest notice cases). Localization audit passes **1,577 production keys** with no unapproved English inheritance.
+- Actual component output with production PostCSS in headless Chrome passes **7,500 text-contrast samples**, minimum **4.79:1**, at 390/768/1024/1440 px. All 15 digest language/overflow fixtures fit their panes, and their `/impact` links are at least 44 px high. This is focused component QA, not a complete assistive-technology, native-speaker or end-to-end usability certification.
+- Ruff, changed-component formatting and whitespace checks pass. Existing records lacking per-law coverage metadata remain readable; UI/history/email do not invent omitted-law counts. The full-inbox link does not claim to preserve a historical period/preferences snapshot. Production services/data remain untouched.
+
 ## Digest event keyset pages — 5 September 2026 (HappyDucky02)
 
 - **37 focused tests pass** across event pages/periods/delivery, inbox/history and relation analysis, including seven new paging regressions. A 260-event synthetic period with 120 earlier nonmatching severity groups stops after four 50-ID pages once the 51st eligible group is found. The summary retains 50 events, every law for a selected event stays together and invalid page sizes are rejected.

@@ -15,6 +15,8 @@ export type DigestPreference = {
   last_sent_at: string | null;
 };
 export type DigestEvent = {
+  impact_count?: number;
+  impacts_truncated?: boolean;
   event_id: string;
   title: string;
   source: string;
@@ -30,9 +32,10 @@ export type DigestEvent = {
     evidence: string | null;
   }>;
 };
+export type DigestSummary = { events: DigestEvent[]; truncated: boolean };
 export type DigestOverview = {
   preference: DigestPreference;
-  preview: { events: DigestEvent[]; truncated: boolean };
+  preview: DigestSummary;
   source_options: string[];
   delivery_mode: "disabled" | "development" | "smtp";
   deliveries: Array<{
@@ -42,6 +45,7 @@ export type DigestOverview = {
     period_end: string;
     status: string;
     item_count: number;
+    summary?: Partial<DigestSummary>;
     error: string | null;
     sent_at: string | null;
     created_at: string;

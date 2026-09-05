@@ -10,6 +10,7 @@ import { useI18n } from "@/lib/i18n";
 import type { DigestOverview } from "@/lib/types";
 import { ErrorNote, Loading, SuccessNote } from "./common";
 import { Shell } from "./shell";
+import { DigestCoverageNotice } from "./digest-coverage-notice";
 
 const severities = ["high", "medium", "low", "none", "unknown"];
 
@@ -203,6 +204,7 @@ export function DigestsPage() {
             <section className="panel p-6">
               <h2 className="mb-2">{t("digests.preview")}</h2>
               <p className="text-sm muted">{t("digests.previewBody")}</p>
+              <DigestCoverageNotice summary={resource.data.preview} />
               {resource.data.preview.events.length === 0 ? (
                 <p className="muted">{t("digests.empty")}</p>
               ) : (
@@ -249,6 +251,15 @@ export function DigestsPage() {
                           )}
                         </div>
                       ))}
+                      {event.impacts_truncated &&
+                        typeof event.impact_count === "number" && (
+                          <p className="text-sm font-medium mt-3 mb-0">
+                            {t("digests.moreLaws", {
+                              shown: event.impacts.length,
+                              total: event.impact_count,
+                            })}
+                          </p>
+                        )}
                     </article>
                   ))}
                 </div>
@@ -262,15 +273,18 @@ export function DigestsPage() {
                 resource.data.deliveries.map((delivery) => (
                   <div
                     key={delivery.id}
-                    className="flex justify-between gap-4 py-3 border-b border-border text-sm"
+                    className="py-3 border-b border-border text-sm"
                   >
-                    <span>
-                      {dateTime(delivery.created_at)} ·{" "}
-                      {t(`status.${delivery.status}`)}
-                    </span>
-                    <span>
-                      {t("digests.items", { count: delivery.item_count })}
-                    </span>
+                    <div className="flex flex-wrap justify-between gap-2">
+                      <span>
+                        {dateTime(delivery.created_at)} ·{" "}
+                        {t(`status.${delivery.status}`)}
+                      </span>
+                      <span>
+                        {t("digests.items", { count: delivery.item_count })}
+                      </span>
+                    </div>
+                    <DigestCoverageNotice summary={delivery.summary} />
                   </div>
                 ))
               )}

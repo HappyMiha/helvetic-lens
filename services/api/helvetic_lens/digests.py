@@ -24,6 +24,8 @@ FREQUENCIES = {"daily": timedelta(days=1), "weekly": timedelta(days=7)}
 
 _MESSAGES = {
     "de-CH": {
+        "event_limit": "Diese Zusammenfassung ist auf 50 Ereignisse begrenzt. Öffnen Sie das Auswirkungs-Postfach für die vollständige gespeicherte Liste oder grenzen Sie die Quellen und Schweregrade ein.",
+        "more_laws": "{shown} von {total} passenden überwachten Gesetzen werden angezeigt.",
         "subject": "Helvetic Lens: {count} Änderungen zur Prüfung",
         "heading": "Ihr regulatorischer Überblick",
         "empty": "Für diesen Zeitraum gibt es keine passenden neuen Hinweise.",
@@ -33,6 +35,8 @@ _MESSAGES = {
         "severity": {"high": "hoch", "medium": "mittel", "low": "niedrig", "none": "keine", "unknown": "unklar"},
     },
     "fr-CH": {
+        "event_limit": "Cette synthèse est limitée à 50 événements. Ouvrez la boîte des impacts pour consulter la liste enregistrée complète, ou affinez les sources et les niveaux de gravité.",
+        "more_laws": "{shown} lois surveillées correspondantes affichées sur {total}.",
         "subject": "Helvetic Lens : {count} changements à examiner",
         "heading": "Votre synthèse réglementaire",
         "empty": "Aucun nouvel élément correspondant pour cette période.",
@@ -42,6 +46,8 @@ _MESSAGES = {
         "severity": {"high": "élevée", "medium": "moyenne", "low": "faible", "none": "aucune", "unknown": "incertaine"},
     },
     "it-CH": {
+        "event_limit": "Questo riepilogo è limitato a 50 eventi. Apri la posta degli impatti per l’elenco completo salvato, oppure restringi le fonti e i livelli di gravità.",
+        "more_laws": "{shown} leggi monitorate corrispondenti mostrate su {total}.",
         "subject": "Helvetic Lens: {count} modifiche da esaminare",
         "heading": "Il tuo riepilogo normativo",
         "empty": "Nessun nuovo elemento corrispondente per questo periodo.",
@@ -51,6 +57,8 @@ _MESSAGES = {
         "severity": {"high": "alta", "medium": "media", "low": "bassa", "none": "nessuna", "unknown": "incerta"},
     },
     "rm-CH": {
+        "event_limit": "Questa resumaziun è limitada a 50 eveniments. Avra la posta dals effects per la glista cumpletta memorisada u restrenscha las funtaunas e las gradaziuns da gravitad.",
+        "more_laws": "{shown} da {total} leschas survegliadas correspundentas vegnan mussadas.",
         "subject": "Helvetic Lens: {count} midadas da controllar",
         "heading": "Tia survista regulativa",
         "empty": "I na dat nagins novs avis adattads per questa perioda.",
@@ -60,6 +68,8 @@ _MESSAGES = {
         "severity": {"high": "auta", "medium": "mesauna", "low": "bassa", "none": "nagina", "unknown": "intschertezza"},
     },
     "en-CH": {
+        "event_limit": "This digest is limited to 50 events. Open the impact inbox for the full saved list, or narrow your source and severity filters.",
+        "more_laws": "Showing {shown} of {total} matching watched laws.",
         "subject": "Helvetic Lens: {count} changes to review",
         "heading": "Your regulatory digest",
         "empty": "There are no matching new items for this period.",
@@ -183,6 +193,8 @@ def summarize_groups(groups: Iterable[dict], preference: DigestPreference, perio
                 ),
                 "detected_at": group["detected_at"],
                 "source_url": group.get("source_url"),
+                "impact_count": len(items),
+                "impacts_truncated": len(items) > 5,
                 "impacts": [
                     {
                         "law_id": item["law_id"],
@@ -212,6 +224,9 @@ def render_message(settings: Settings, delivery: DigestDelivery, user: User) -> 
     subject = message["subject"].format(count=len(events))
     lines = [message["heading"]]
     cards = []
+    limit_notice = message["event_limit"] if (delivery.summary or {}).get("truncated") else ""
+    if limit_notice:
+        lines.append("\n" + limit_notice)
     for event in events:
         severity = message["severity"].get(event["severity"], event["severity"])
         lines.append(f"\n{event['title']} [{severity}] — {event['source']}")
@@ -234,16 +249,23 @@ def render_message(settings: Settings, delivery: DigestDelivery, user: User) -> 
                 f"{escape(impact['potential_effect'])}<br>"
                 f"<em>{escape(impact['next_step'])}</em>{evidence_link}</li>"
             )
+        law_notice = ""
+        if event.get("impacts_truncated") and isinstance(event.get("impact_count"), int):
+            law_notice = message["more_laws"].format(shown=len(event["impacts"]), total=event["impact_count"])
+            lines.append(law_notice)
         cards.append(
             f"<section><h2>{escape(event['title'])}</h2>"
             f"<p>{escape(event['source'])} · {escape(severity)}</p>"
-            f"<ul>{''.join(impacts)}</ul></section>"
+            f"<ul>{''.join(impacts)}</ul>"
+            + (f"<p>{escape(law_notice)}</p>" if law_notice else "")
+            + "</section>"
         )
     if not events:
         lines.append("\n" + message["empty"])
     lines.extend([f"\n{message['open']}: {inbox_url}", f"{message['unsubscribe']}: {unsubscribe_url}"])
     html = (
         f'<html lang="{locale}"><body><h1>{escape(message["heading"])}</h1>'
+        + (f"<p>{escape(limit_notice)}</p>" if limit_notice else "")
         + ("".join(cards) or f'<p>{escape(message["empty"])}</p>')
         + f'<p><a href="{inbox_url}">{escape(message["open"])}</a></p>'
         + f'<p><a href="{unsubscribe_url}">{escape(message["unsubscribe"])}</a></p>'

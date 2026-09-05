@@ -85,6 +85,11 @@ const markup = `<div class="comparison-layout" data-mobile-surface="companion">
             sample_captured_at: "2026-09-05T10:00:00Z" },
           capturedAtLabel: "5 September 2026 12:00",
         }).replaceAll(/<(p|time)([ >])/g, `<$1 data-contrast="Topic preview ${locale} ${state}"$2`))).join("\n")}
+    ${["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"].flatMap(locale =>
+      ["events", "laws", "both"].map(state => renderLocalizedComponent(
+        "digest-coverage-notice.tsx", "DigestCoverageNotice", locale, {
+          summary: { truncated: state !== "laws", events: [{ impacts_truncated: state !== "events" }] },
+        }).replaceAll(/<(p|a)([ >])/g, `<$1 data-contrast="Digest coverage ${locale} ${state}"$2`))).join("\n")}
   </div></section></aside></div>`;
 
 // Composite transparent ancestor surfaces before WCAG relative luminance.
@@ -172,6 +177,9 @@ try {
     assert.equal(overflowingDates, 0, `Date sections must fit their pane at ${width}px`);
     assert.equal(await evaluate(cdp, `Array.from(document.querySelectorAll('[data-topic-history]')).filter(el => el.scrollWidth > el.clientWidth + 1).length`), 0, `History progress must fit its pane at ${width}px`);
     assert.equal(await evaluate(cdp, `Array.from(document.querySelectorAll('[data-topic-preview-coverage]')).filter(el => el.scrollWidth > el.clientWidth + 1).length`), 0, `Preview coverage must fit its pane at ${width}px`);
+    assert.equal(await evaluate(cdp, `document.querySelectorAll('[data-digest-coverage]').length`), 15, `All digest language/state fixtures must render at ${width}px`);
+    assert.equal(await evaluate(cdp, `Array.from(document.querySelectorAll('[data-digest-coverage]')).filter(el => el.scrollWidth > el.clientWidth + 1).length`), 0, `Digest notices must fit their pane at ${width}px`);
+    assert.equal(await evaluate(cdp, `Array.from(document.querySelectorAll('[data-digest-coverage] a')).filter(el => el.getBoundingClientRect().height < 44 || el.getAttribute('href') !== '/impact').length`), 0, `Digest review links must remain usable at ${width}px`);
     await evaluate(cdp, `document.querySelectorAll('[data-date-review] details').forEach(el => el.open = true)`);
     await audit("date sources expanded");
     const { root: documentNode } = await cdp.send("DOM.getDocument");
