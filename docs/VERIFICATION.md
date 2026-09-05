@@ -1,5 +1,12 @@
 # Verification record
 
+## Relation generation cache identity — 5 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl-100-generation-cache`. **61 affected API tests pass in 47.95 seconds**, including 20 new checks. Eleven answer-affecting provider/model/context/product/generation changes produce distinct cache keys; four credential/transport/concurrency changes preserve identity. Five actual analysis-job endpoint scenarios generate a new durable report after each previously ignored generation control changes, then reuse it on repeat and token rotation. Each uses a scripted model, never a paid/local inference endpoint.
+- Saved plans preserve the exact generation controls for each attempt without credentials; the previous report's parameters remain unchanged. Profile freshness, failure/history and evidence-gate regressions remain green. Ruff and whitespace checks pass. No frontend change in this slice; the preceding profile slice's production build is not claimed as a new build here.
+- This fixes **request identity**, not complete read-time settings/runtime freshness. Old cache keys miss on the next explicit/scheduled request but are not rewritten or automatically bulk reanalysed. No migration, production action, real model call or message delivery. HL-100 remains in progress.
+
+
 ## Relation profile freshness — 5 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl-100-profile-freshness`. **147 affected API tests pass in 141.58 seconds**: relation generation/history/evidence, inbox selection/context/paging and digest preview/period/resume/coverage. Nine new regression cases cover actual profile PATCH, preserved citations, stale severity filtering, no read-time jobs/model calls/history rewrites, failure followed by recovery, missing/malformed/mismatched provenance, official facts and explicit organization scoping even in privileged sessions. Existing synthetic performance reports now contain valid profile provenance rather than omitting it.

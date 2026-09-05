@@ -78,6 +78,20 @@ inbox conclusion. A failed new attempt cannot revive the previous profile's repo
 a failed attempt under the **same** profile still preserves an older valid result.
 The profile form also invalidates cached relation histories and digest previews.
 Reads do not enqueue inference, increment reuse counts, rewrite history or send mail.
+
+Relation request identity also includes product ID and every configured sampling/
+output control: temperature, top-p, presence penalty, reasoning effort and JSON
+mode, in addition to the existing provider/endpoint/model/context/token limits.
+The five generation controls are saved under
+`analysis_plan.execution.generation_parameters`, so a retained report states the
+configuration used for it. No credentials are saved there. API-key rotation,
+request timeout/retry and batch concurrency changes intentionally preserve a
+successful request's identity; none changes the requested semantic inputs.
+Existing cache keys from before this addition miss once on the next explicit or
+scheduled analysis, without rewriting/deleting those reports or scheduling a
+bulk rerun. Changing settings alone does not yet mark all previously saved
+reports stale during read: that separate HL-100 freshness boundary remains open.
+
 This is revision-based invalidation, not a semantic test of profile similarity;
 unmanaged database edits that bypass the profile revision are outside this contract.
 

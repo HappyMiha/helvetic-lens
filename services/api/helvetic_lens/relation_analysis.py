@@ -169,6 +169,21 @@ def select_evidence(rows: list[dict], context_chars: int) -> tuple[list[dict], d
     return selected, coverage
 
 
+def generation_parameters(settings: Settings) -> dict:
+    """Generation controls shared by cache identity and saved plan provenance.
+
+    Credentials and transport retry/time limits are deliberately excluded: they
+    do not change the requested answer and rotating a key must not burn tokens.
+    """
+    return {
+        "temperature": settings.apertus_temperature,
+        "top_p": settings.apertus_top_p,
+        "presence_penalty": settings.apertus_presence_penalty,
+        "reasoning_effort": settings.apertus_reasoning_effort,
+        "json_mode": settings.apertus_json_mode,
+    }
+
+
 def cache_key(
     *,
     organization_candidate_id: str,
@@ -203,10 +218,12 @@ def cache_key(
             "profile_revision": profile_revision,
             "prompt": prompt_fingerprint(prompts),
             "provider": settings.apertus_provider,
+            "product_id": settings.apertus_product_id,
             "endpoint": settings.apertus_base_url,
             "model": settings.apertus_model,
             "context_chars": settings.apertus_context_chars,
             "max_tokens": settings.apertus_max_tokens,
+            "generation_parameters": generation_parameters(settings),
             "runtime_fingerprint": runtime_fingerprint,
             "output_locale": output_locale,
         }
@@ -255,6 +272,7 @@ def build_plan(
             "batch_count": 1,
             "local_first": settings.apertus_provider == "docker",
             "profile_revision": profile_revision,
+            "generation_parameters": generation_parameters(settings),
         },
         "coverage": coverage,
     }
