@@ -37,6 +37,7 @@ import { ErrorNote } from "./common";
 import { BrandLockup } from "./brand";
 import { LanguageSelector, useI18n } from "@/lib/i18n";
 import { MarvinCompanion } from "./marvin-companion";
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "./ui/dialog";
 
 type NavigationItemProps = {
   active: boolean;
@@ -183,8 +184,7 @@ export function Shell({
   const [workspaceError, setWorkspaceError] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
-  const mobileMenuRef = useRef<HTMLDetailsElement>(null);
-  const mobileMenuTriggerRef = useRef<HTMLElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   const organizations = session?.organizations || [];
   const canSwitchWorkspace = session?.authenticated && organizations.length > 1;
@@ -210,24 +210,13 @@ export function Shell({
   useEffect(() => setMobileMenuOpen(false), [pathname]);
 
   useEffect(() => {
-    if (!mobileMenuOpen) return;
-    function closeOnOutside(event: PointerEvent) {
-      if (!mobileMenuRef.current?.contains(event.target as Node)) {
-        setMobileMenuOpen(false);
-      }
-    }
-    function closeOnEscape(event: KeyboardEvent) {
-      if (event.key !== "Escape") return;
-      setMobileMenuOpen(false);
-      mobileMenuTriggerRef.current?.focus();
-    }
-    document.addEventListener("pointerdown", closeOnOutside);
-    document.addEventListener("keydown", closeOnEscape);
-    return () => {
-      document.removeEventListener("pointerdown", closeOnOutside);
-      document.removeEventListener("keydown", closeOnEscape);
+    const query = window.matchMedia("(max-width: 900px)");
+    const closeOnDesktop = () => {
+      if (!query.matches) setMobileMenuOpen(false);
     };
-  }, [mobileMenuOpen]);
+    query.addEventListener("change", closeOnDesktop);
+    return () => query.removeEventListener("change", closeOnDesktop);
+  }, []);
 
   function continueAfterProfileGuard(continueNavigation: () => void) {
     const event = new CustomEvent("helvetic:navigation-committed", {
@@ -368,7 +357,13 @@ export function Shell({
     : t("nav.more");
 
   return (
-    <div className={`shell ${assistantOpen ? "assistant-open" : ""}`}>
+    <div
+      className={`shell ${assistantOpen ? "assistant-open" : ""}`}
+      data-navigation-modal={mobileMenuOpen ? "true" : undefined}
+    >
+      <a className="skip-link" href="#main-content">
+        {t("shell.skipToContent")}
+      </a>
       <aside className="sidebar">
         <Link href="/" className="brand">
           <span>
@@ -518,28 +513,52 @@ export function Shell({
             <FileSearch size={15} />
             <span>{t("mobileNav.discover")}</span>
           </NavigationItem>
-          <details
-            className="mobile-nav-more"
-            onToggle={(event) => setMobileMenuOpen(event.currentTarget.open)}
-            open={mobileMenuOpen}
-            ref={mobileMenuRef}
-          >
-            <summary
-              aria-current={mobileOverflowActive ? "page" : undefined}
-              aria-label={t("shell.mobileMenuLabel", {
-                destination: mobileOverflowLabel,
-              })}
-              className={mobileOverflowActive ? "active" : undefined}
-              ref={mobileMenuTriggerRef}
+          <Dialog open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <DialogTrigger asChild>
+              <button
+                type="button"
+                aria-current={mobileOverflowActive ? "page" : undefined}
+                aria-label={t("shell.mobileMenuLabel", {
+                  destination: mobileOverflowLabel,
+                })}
+                className={`mobile-nav-more ${mobileOverflowActive ? "active" : ""}`}
+              >
+                <MoreHorizontal size={16} />
+                <span className="mobile-nav-more-label">
+                  {mobileOverflowActive
+                    ? mobileOverflowLabel
+                    : t("mobileNav.more")}
+                </span>
+              </button>
+            </DialogTrigger>
+            <DialogContent
+              className="mobile-nav-menu translate-x-0 translate-y-0"
+              ref={mobileMenuRef}
+              aria-describedby={undefined}
+              onEscapeKeyDown={(event) => {
+                // Escape closes the nested workspace selector first, not both layers.
+                const trigger =
+                  mobileMenuRef.current?.querySelector<HTMLButtonElement>(
+                    '.workspace-switcher button[aria-expanded="true"]',
+                  );
+                if (trigger) {
+                  event.preventDefault();
+                  trigger.click();
+                  trigger.focus();
+                }
+              }}
+              onCloseAutoFocus={(event) => {
+                if (!window.matchMedia("(max-width: 900px)").matches) {
+                  event.preventDefault();
+                  document
+                    .getElementById("main-content")
+                    ?.focus({ preventScroll: true });
+                }
+              }}
             >
-              <MoreHorizontal size={16} />
-              <span className="mobile-nav-more-label">
-                {mobileOverflowActive
-                  ? mobileOverflowLabel
-                  : t("mobileNav.more")}
-              </span>
-            </summary>
-            <div className="mobile-nav-menu">
+              <DialogTitle className="pr-12 text-left">
+                {t("shell.mobileNavigation")}
+              </DialogTitle>
               <span className="nav-heading">{t("shell.dailyWork")}</span>
               <NavigationItem active={pathname === "/sources"} href="/sources">
                 <Globe2 size={15} />
@@ -572,10 +591,14 @@ export function Shell({
                   {administrationItems}
                 </>
               )}
-            </div>
-          </details>
+            </DialogContent>
+          </Dialog>
         </nav>
-        <div className={`content ${wide ? "content-wide" : ""}`}>
+        <div
+          id="main-content"
+          tabIndex={-1}
+          className={`content ${wide ? "content-wide" : ""}`}
+        >
           {error && <ErrorNote message={t("shell.apiError")} />}
           {session?.authenticated && session.role === "viewer" && (
             <div className="mb-5 rounded-xl border border-[#d6decf] bg-[#f3f6ef] px-4 py-3 text-sm text-[#50604c]">

@@ -78,7 +78,10 @@ test("company profile has one routed implementation and no modal bridge", () => 
   assert.match(organization, /beforeunload/);
   assert.match(organization, /helvetic:before-navigation/);
   assert.match(organization, /helvetic:navigation-committed/);
-  assert.match(organization, /window\.addEventListener\("popstate", continueNavigation, \{ once: true \}\)/);
+  assert.match(
+    organization,
+    /window\.addEventListener\("popstate", continueNavigation, \{ once: true \}\)/,
+  );
   assert.match(organization, /useState<string \| null>\(null\)/);
   assert.match(
     organization,
@@ -169,8 +172,8 @@ test("direct administration routes do not fetch or expose controls before author
 });
 
 test("mobile uses explicit overflow and the same role-filtered route fragments", () => {
-  assert.match(shell, /className="mobile-nav-more"/);
-  assert.match(shell, /className="mobile-nav-menu"/);
+  assert.match(shell, /className=\{`mobile-nav-more /);
+  assert.match(shell, /className="mobile-nav-menu /);
   assert.match(shell, /t\("nav\.more"\)/);
   assert.match(shell, /mobileOverflowLabel/);
   assert.match(shell, /mobile-workspace-switcher/);
@@ -187,7 +190,7 @@ test("mobile uses explicit overflow and the same role-filtered route fragments",
   );
   const mobileEnd = shell.indexOf("</nav>", mobileStart);
   const mobileSource = shell.slice(mobileStart, mobileEnd);
-  const moreStart = mobileSource.indexOf("<details");
+  const moreStart = mobileSource.indexOf("<Dialog open=");
   const primarySource = mobileSource.slice(0, moreStart);
   for (const destination of ["/", "/registry", "/impact", "/discover"]) {
     assert.match(

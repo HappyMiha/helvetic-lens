@@ -2712,6 +2712,13 @@ Object.assign(fr, inboxPagingMessages["fr-CH"]);
 Object.assign(it, inboxPagingMessages["it-CH"]);
 Object.assign(rm, inboxPagingMessages["rm-CH"]);
 
+// Keyboard bypass for the persistent application navigation.
+Object.assign(en, { "shell.skipToContent": "Skip to main content" });
+Object.assign(de, { "shell.skipToContent": "Zum Hauptinhalt springen" });
+Object.assign(fr, { "shell.skipToContent": "Aller au contenu principal" });
+Object.assign(it, { "shell.skipToContent": "Vai al contenuto principale" });
+Object.assign(rm, { "shell.skipToContent": "Ir al cuntegn principal" });
+
 const catalog: Record<Locale, Messages> = { "de-CH": de, "fr-CH": fr, "it-CH": it, "rm-CH": rm, "en-CH": en };
 const localeCookie = "helvetic_lens_locale";
 

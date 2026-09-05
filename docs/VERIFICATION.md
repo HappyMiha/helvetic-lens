@@ -2,6 +2,14 @@
 
 The source-to-diff workflow, Settings page, and live Apertus path are verified.
 
+## Mobile navigation and skip-to-content — 5 September 2026 (HappyDucky02)
+
+- Production web build passes **1,590 localization keys**, **27 shell**, **22 resource/delivery**, **111 rendered report/navigation checks**, TypeScript and Next compilation. No API change, schema migration, model invocation or production deployment occurs.
+- **`npm run check:shell:browser` passes 30 populated Chrome journeys**: DE/FR/IT/RM/EN × viewer/organization administrator/platform administrator × 390/768 px, each also resizing to/from 1440 px. Real keyboard input verifies the visible first-stop skip link, focus isolation, forward/reverse Tab, nested workspace Escape, returned opener focus and restored scrolling. Role-filtered links, modal name, viewport geometry, background navigation stacking, backdrop/close-button dismissal and actual source-route navigation pass. Every application API is intercepted; no workspace is switched or real message/model call made.
+- Browser verification found and fixed a real off-screen menu regression: compiled CSS retained the shared dialog's percentage translate. Explicit zero-translation utilities now remove those defaults before compilation. The harness was also corrected to send native Enter text, wait for opening animation/listener readiness and use distinct route URLs for each authenticated-role fixture.
+- Existing **15 populated comparison browser journeys**, the paginated inbox browser suite and **8,060 PostCSS contrast samples (minimum 4.79:1)** pass on the final build. Synthetic screenshots at 390/768 px were inspected; the long platform menu scrolls within the viewport. Evidence stays in ignored `test-results/shell-navigation/`. Prettier for changed TS/test files and whitespace checks pass.
+- HL-097 stays in progress. This slice does not claim complete axe/WCAG clearance, nested Marvin/evidence-overlay coverage, all required product journeys, screen-reader/native-speaker review, physical mobile input/audio or Firefox/Safari behavior. See `docs/NAVIGATION_ACCESSIBILITY.md` for the reproducible scope.
+
 ## Comparison overlay focus and persistent Ask draft — 5 September 2026 (HappyDucky02)
 
 - Production web build passes TypeScript/Next compilation and **1,589 localization keys**, **27 shell**, **22 resource/delivery**, and **111 rendered report/navigation checks**. No new API behavior, migration, model invocation or production deployment is involved.

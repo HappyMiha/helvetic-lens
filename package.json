@@ -28,7 +28,8 @@
     "test:ai-triage:review-template": "uv run --cache-dir services/api/.uv-cache --project services/api python scripts/check_ai_triage_usability.py",
     "lint:api": "uv run --project services/api ruff check services/api",
     "demo:source": "python scripts/demo_source.py",
-    "check:comparison:browser": "node scripts/check-comparison-browser.mjs"
+    "check:comparison:browser": "node scripts/check-comparison-browser.mjs",
+    "check:shell:browser": "node scripts/check-shell-browser.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.2.0",
