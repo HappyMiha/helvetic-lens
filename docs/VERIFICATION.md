@@ -2,6 +2,14 @@
 
 The source-to-diff workflow, Settings page, and live Apertus path are verified.
 
+## Comparison overlay focus and persistent Ask draft — 5 September 2026 (HappyDucky02)
+
+- Production web build passes TypeScript/Next compilation and **1,589 localization keys**, **27 shell**, **22 resource/delivery**, and **111 rendered report/navigation checks**. No new API behavior, migration, model invocation or production deployment is involved.
+- New **`npm run check:comparison:browser` passes 15 required populated journeys** (DE/FR/IT/RM/EN × 390/768/1024 px), each also crossing to/from 1440 px. Actual Chrome key events verify forward/reverse Tab moves among controls without escaping, background programmatic focus is rejected, Escape/close restores the opener, root scrolling is unlocked and a saved citation returns focus to its evidence. Native tablet backdrop clicks dismiss the panel. The draft survives close/reopen and responsive changes without remounting the Ask subtree. Desktop stays nonmodal and allows normal outside focus.
+- The committed fixture contains only synthetic API-shaped versions, a fictional retention policy and a ScriptedModel report. Every application API request is intercepted before Next's proxy; the run cannot silently omit its comparison or citation fixture. Initial harness issues (sandbox DevTools access, incorrect admin role/unconfigured fake provider, incomplete platform key events and an autofocus race in a multi-call assertion) were corrected before the passing run; real role/provider checks were not weakened.
+- The actual PostCSS/component contrast suite passes **8,060 samples, minimum 4.79:1** across four widths and enabled states. Inspected synthetic screenshots at 390/1024/1440 px confirm the full-screen/drawer/nonmodal layouts and visible draft. Evidence stays in ignored `test-results/comparison-overlays/`; no screenshots or real user data are committed.
+- This focused comparison slice does not claim axe/whole-route accessibility clearance, WCAG certification, nested Radix/Marvin overlays, global navigation focus isolation, a native-speaker sign-off, physical mobile software-keyboard/audio behavior or Firefox/Safari/screen-reader review. Those remain open under HL-097. Existing tablet/desktop compact tab labels and desktop pet placement still warrant the broader visual/accessibility work.
+
 ## Batched inbox document/link context — 5 September 2026 (HappyDucky02)
 
 - **103 affected API tests pass** in **110.35 seconds** across inbox context/history/navigation/pages/reviews, relation analysis and digest period/page/coverage/resume flows. Four new tests cover constant query count, selected-column/materialization limits, 100/21 context batches for 121 legacy-route events, stable visible links and successor alias selection without foreign monitoring state.

@@ -1,0 +1,931 @@
+{
+  "id": "b9a6bb5c-256b-42f6-8ce9-eabd88b4ff94",
+  "owner_organization_id": "00000000-0000-0000-0000-000000000001",
+  "law_id": "e691569d-aac3-4bfb-af17-75d44eaa5be1",
+  "old_version_id": "2eaf9f3f-5f04-4d72-bc58-95532c3ee805",
+  "new_version_id": "5f75edf8-0b6f-4cda-8ffa-8100786fed21",
+  "mode": "saved_versions",
+  "diff": {
+    "schema_version": 6,
+    "algorithm": "legal-unit-hierarchy-and-exact-audit-v6",
+    "granularity": "legal_unit",
+    "complete": true,
+    "old_passage_count": 3,
+    "new_passage_count": 3,
+    "items": [
+      {
+        "id": "c00001",
+        "kind": "unchanged",
+        "significance": "unchanged",
+        "change_type": "unchanged",
+        "classification": "unchanged",
+        "material": false,
+        "match": {
+          "reason": "normalized_content",
+          "score": 0.55,
+          "components": {
+            "stable_label": 0.0,
+            "content": 1.0,
+            "neighbour": 1.0,
+            "parent_context": 1.0
+          },
+          "ambiguous": false
+        },
+        "old": {
+          "text": "Synthetic retention policy",
+          "page": null,
+          "id": "p00001"
+        },
+        "new": {
+          "text": "Synthetic retention policy",
+          "page": null,
+          "id": "p00001"
+        },
+        "old_unit_id": "u-10fffe7f354950af",
+        "new_unit_id": "u-10fffe7f354950af",
+        "old_position": 1,
+        "new_position": 1,
+        "old_parts": [
+          {
+            "text": "Synthetic retention policy",
+            "kind": "equal"
+          }
+        ],
+        "new_parts": [
+          {
+            "text": "Synthetic retention policy",
+            "kind": "equal"
+          }
+        ]
+      },
+      {
+        "id": "c00002",
+        "kind": "modified",
+        "significance": "substantive",
+        "change_type": "modified",
+        "classification": "substantive",
+        "material": true,
+        "match": {
+          "reason": "bounded_content_and_neighbour_alignment",
+          "score": 0.48,
+          "components": {
+            "stable_label": 0.0,
+            "content": 0.826,
+            "neighbour": 1.0,
+            "parent_context": 1.0
+          },
+          "ambiguous": false
+        },
+        "old": {
+          "text": "Demo organisations must retain records for 10 days.",
+          "page": null,
+          "id": "p00002"
+        },
+        "new": {
+          "text": "Demo organisations must retain records for 30 days.",
+          "page": null,
+          "id": "p00002"
+        },
+        "old_unit_id": "u-8896d2b671198d12",
+        "new_unit_id": "u-707b04f9872b76d9",
+        "old_position": 2,
+        "new_position": 2,
+        "old_parts": [
+          {
+            "text": "Demo organisations must retain records for ",
+            "kind": "equal"
+          },
+          {
+            "text": "10",
+            "kind": "removed"
+          },
+          {
+            "text": " days.",
+            "kind": "equal"
+          }
+        ],
+        "new_parts": [
+          {
+            "text": "Demo organisations must retain records for ",
+            "kind": "equal"
+          },
+          {
+            "text": "30",
+            "kind": "added"
+          },
+          {
+            "text": " days.",
+            "kind": "equal"
+          }
+        ]
+      },
+      {
+        "id": "c00003",
+        "kind": "unchanged",
+        "significance": "unchanged",
+        "change_type": "unchanged",
+        "classification": "unchanged",
+        "material": false,
+        "match": {
+          "reason": "normalized_content",
+          "score": 0.55,
+          "components": {
+            "stable_label": 0.0,
+            "content": 1.0,
+            "neighbour": 1.0,
+            "parent_context": 1.0
+          },
+          "ambiguous": false
+        },
+        "old": {
+          "text": "This fictional policy is test data and is not a legal requirement.",
+          "page": null,
+          "id": "p00003"
+        },
+        "new": {
+          "text": "This fictional policy is test data and is not a legal requirement.",
+          "page": null,
+          "id": "p00003"
+        },
+        "old_unit_id": "u-d40d227d370479ae",
+        "new_unit_id": "u-d40d227d370479ae",
+        "old_position": 3,
+        "new_position": 3,
+        "old_parts": [
+          {
+            "text": "This fictional policy is test data and is not a legal requirement.",
+            "kind": "equal"
+          }
+        ],
+        "new_parts": [
+          {
+            "text": "This fictional policy is test data and is not a legal requirement.",
+            "kind": "equal"
+          }
+        ]
+      }
+    ],
+    "counts": {
+      "added": 0,
+      "removed": 0,
+      "modified": 1,
+      "unchanged": 2
+    },
+    "classification_counts": {
+      "substantive": 1,
+      "structural": 0,
+      "formatting": 0,
+      "uncertain": 0
+    },
+    "semantic_counts": {
+      "substantive": 1,
+      "added": 0,
+      "removed": 0,
+      "moved": 0,
+      "renumbered": 0,
+      "formatting_only": 0,
+      "uncertain": 0
+    },
+    "legal_units": {
+      "old": [
+        {
+          "id": "u-10fffe7f354950af",
+          "type": "passage",
+          "label": null,
+          "path": [
+            "passage:1"
+          ],
+          "parent_path": [],
+          "position": 1,
+          "page": null,
+          "passage_ids": [
+            "p00001"
+          ],
+          "text": "Synthetic retention policy",
+          "canonical_text": "synthetic retention policy"
+        },
+        {
+          "id": "u-8896d2b671198d12",
+          "type": "passage",
+          "label": null,
+          "path": [
+            "passage:2"
+          ],
+          "parent_path": [],
+          "position": 2,
+          "page": null,
+          "passage_ids": [
+            "p00002"
+          ],
+          "text": "Demo organisations must retain records for 10 days.",
+          "canonical_text": "demo organisations must retain records for 10 days."
+        },
+        {
+          "id": "u-d40d227d370479ae",
+          "type": "passage",
+          "label": null,
+          "path": [
+            "passage:3"
+          ],
+          "parent_path": [],
+          "position": 3,
+          "page": null,
+          "passage_ids": [
+            "p00003"
+          ],
+          "text": "This fictional policy is test data and is not a legal requirement.",
+          "canonical_text": "this fictional policy is test data and is not a legal requirement."
+        }
+      ],
+      "new": [
+        {
+          "id": "u-10fffe7f354950af",
+          "type": "passage",
+          "label": null,
+          "path": [
+            "passage:1"
+          ],
+          "parent_path": [],
+          "position": 1,
+          "page": null,
+          "passage_ids": [
+            "p00001"
+          ],
+          "text": "Synthetic retention policy",
+          "canonical_text": "synthetic retention policy"
+        },
+        {
+          "id": "u-707b04f9872b76d9",
+          "type": "passage",
+          "label": null,
+          "path": [
+            "passage:2"
+          ],
+          "parent_path": [],
+          "position": 2,
+          "page": null,
+          "passage_ids": [
+            "p00002"
+          ],
+          "text": "Demo organisations must retain records for 30 days.",
+          "canonical_text": "demo organisations must retain records for 30 days."
+        },
+        {
+          "id": "u-d40d227d370479ae",
+          "type": "passage",
+          "label": null,
+          "path": [
+            "passage:3"
+          ],
+          "parent_path": [],
+          "position": 3,
+          "page": null,
+          "passage_ids": [
+            "p00003"
+          ],
+          "text": "This fictional policy is test data and is not a legal requirement.",
+          "canonical_text": "this fictional policy is test data and is not a legal requirement."
+        }
+      ]
+    },
+    "semantic_changes": [
+      {
+        "id": "c00002",
+        "kind": "modified",
+        "classification": "substantive",
+        "significance": "substantive",
+        "change_type": "modified",
+        "material": true,
+        "match": {
+          "reason": "bounded_content_and_neighbour_alignment",
+          "score": 0.48,
+          "components": {
+            "stable_label": 0.0,
+            "content": 0.826,
+            "neighbour": 1.0,
+            "parent_context": 1.0
+          },
+          "ambiguous": false
+        },
+        "old_unit_id": "u-8896d2b671198d12",
+        "new_unit_id": "u-707b04f9872b76d9",
+        "old_position": 2,
+        "new_position": 2
+      }
+    ],
+    "change_clusters": [
+      {
+        "id": "sc-cc1d970692d936f8",
+        "classifications": [
+          "substantive"
+        ],
+        "change_ids": [
+          "c00002"
+        ],
+        "old_unit_ids": [
+          "u-8896d2b671198d12"
+        ],
+        "new_unit_ids": [
+          "u-707b04f9872b76d9"
+        ],
+        "context_before_unit_id": "u-10fffe7f354950af",
+        "context_after_unit_id": "u-d40d227d370479ae",
+        "ambiguous": false
+      }
+    ],
+    "material_count": 1,
+    "changed": true,
+    "material_changed": true,
+    "metrics": {
+      "overview_ms": 0.85,
+      "measured_at": "2026-09-05T16:47:22.482575+00:00"
+    }
+  },
+  "identity_json": {
+    "revision": "artifact-identity-v2",
+    "status": "probable",
+    "reason_code": "probable_title_assignment",
+    "reason": "The saved artifacts are consistently assigned by title or partial metadata.",
+    "old": {
+      "revision": "artifact-identity-v2",
+      "status": "probable",
+      "reason_code": "title_strong_probable",
+      "reason": "The extracted legal title is strongly consistent with the monitored document, but no matching official identifier was available.",
+      "score": 1.0,
+      "tracked_title": "Synthetic retention policy",
+      "detected_title": "Synthetic retention policy",
+      "tracked_identifier": null,
+      "detected_identifier": null,
+      "artifact": {
+        "revision": "artifact-identity-v2",
+        "authority": "User-provided artifact",
+        "canonical_work_id": null,
+        "official_identifiers": [],
+        "document_kind": "document",
+        "title": "Synthetic retention policy",
+        "language": "unknown",
+        "version_date": "2025-01-01",
+        "publication_date": null,
+        "source_url": null,
+        "extractor": "native-v3",
+        "content_type": "text/html",
+        "filename": "previous.html",
+        "evidence": [
+          {
+            "type": "title",
+            "source": "Connector metadata or extracted heading",
+            "value": "Synthetic retention policy"
+          }
+        ],
+        "fingerprint": "41031a3ffec36c7430d5d91597730bb2be5e841703d6125540cc8daba2d1ab9a"
+      },
+      "fingerprint": "41031a3ffec36c7430d5d91597730bb2be5e841703d6125540cc8daba2d1ab9a"
+    },
+    "new": {
+      "revision": "artifact-identity-v2",
+      "status": "probable",
+      "reason_code": "title_strong_probable",
+      "reason": "The extracted legal title is strongly consistent with the monitored document, but no matching official identifier was available.",
+      "score": 1.0,
+      "tracked_title": "Synthetic retention policy",
+      "detected_title": "Synthetic retention policy",
+      "tracked_identifier": null,
+      "detected_identifier": null,
+      "artifact": {
+        "revision": "artifact-identity-v2",
+        "authority": "regulator.example",
+        "canonical_work_id": null,
+        "official_identifiers": [],
+        "document_kind": "document",
+        "title": "Synthetic retention policy",
+        "language": "unknown",
+        "version_date": null,
+        "publication_date": null,
+        "source_url": "https://regulator.example/laws/retention.html",
+        "extractor": "native-v3",
+        "content_type": "text/html",
+        "filename": "retention.html",
+        "evidence": [
+          {
+            "type": "title",
+            "source": "Connector metadata or extracted heading",
+            "value": "Synthetic retention policy"
+          }
+        ],
+        "fingerprint": "9bb6551a9937e599c109ee2ae387d944362356604912c016ad8cbfa491fbf40c"
+      },
+      "fingerprint": "9bb6551a9937e599c109ee2ae387d944362356604912c016ad8cbfa491fbf40c"
+    },
+    "pair_score": 1.0,
+    "fingerprint": "438a1233b5245d36f077ba09834af56e8e11f0cb44cb41301e93ee726d92ec51",
+    "effective_status": "probable",
+    "confirmed_sides": []
+  },
+  "created_at": "2026-09-05T16:47:22.483576+00:00",
+  "old_version": {
+    "id": "2eaf9f3f-5f04-4d72-bc58-95532c3ee805",
+    "owner_organization_id": "00000000-0000-0000-0000-000000000001",
+    "law_id": "e691569d-aac3-4bfb-af17-75d44eaa5be1",
+    "title": "Synthetic retention policy",
+    "content_hash": "5708b7ff17657fb3f3b0fa61b929f4b86e4d8372bc585cd9bc7c4ba119b68de5",
+    "extractor": "native-v3",
+    "content_type": "text/html",
+    "filename": "previous.html",
+    "source_url": null,
+    "origin": "uploaded",
+    "declared_date": "2025-01-01",
+    "date_provenance": "user_supplied",
+    "synthetic": true,
+    "identity_json": {
+      "revision": "artifact-identity-v2",
+      "authority": "User-provided artifact",
+      "canonical_work_id": null,
+      "official_identifiers": [],
+      "document_kind": "document",
+      "title": "Synthetic retention policy",
+      "language": "unknown",
+      "version_date": "2025-01-01",
+      "publication_date": null,
+      "source_url": null,
+      "extractor": "native-v3",
+      "content_type": "text/html",
+      "filename": "previous.html",
+      "evidence": [
+        {
+          "type": "title",
+          "source": "Connector metadata or extracted heading",
+          "value": "Synthetic retention policy"
+        }
+      ],
+      "fingerprint": "41031a3ffec36c7430d5d91597730bb2be5e841703d6125540cc8daba2d1ab9a"
+    },
+    "created_at": "2026-09-05T16:47:22.450469+00:00",
+    "characters": 147,
+    "passage_count": 3,
+    "page_count": 0,
+    "evidence_url": "/evidence/2eaf9f3f-5f04-4d72-bc58-95532c3ee805",
+    "artifact_url": "/api/versions/2eaf9f3f-5f04-4d72-bc58-95532c3ee805/artifact"
+  },
+  "new_version": {
+    "id": "5f75edf8-0b6f-4cda-8ffa-8100786fed21",
+    "owner_organization_id": "00000000-0000-0000-0000-000000000001",
+    "law_id": "e691569d-aac3-4bfb-af17-75d44eaa5be1",
+    "title": "Synthetic retention policy",
+    "content_hash": "fb53968f9157ce0d518eadf8fa73d84c345a7667b6427115e1b74e511394b215",
+    "extractor": "native-v3",
+    "content_type": "text/html",
+    "filename": "retention.html",
+    "source_url": "https://regulator.example/laws/retention.html",
+    "origin": "live",
+    "declared_date": null,
+    "date_provenance": null,
+    "synthetic": true,
+    "identity_json": {
+      "revision": "artifact-identity-v2",
+      "authority": "regulator.example",
+      "canonical_work_id": null,
+      "official_identifiers": [],
+      "document_kind": "document",
+      "title": "Synthetic retention policy",
+      "language": "unknown",
+      "version_date": null,
+      "publication_date": null,
+      "source_url": "https://regulator.example/laws/retention.html",
+      "extractor": "native-v3",
+      "content_type": "text/html",
+      "filename": "retention.html",
+      "evidence": [
+        {
+          "type": "title",
+          "source": "Connector metadata or extracted heading",
+          "value": "Synthetic retention policy"
+        }
+      ],
+      "fingerprint": "9bb6551a9937e599c109ee2ae387d944362356604912c016ad8cbfa491fbf40c"
+    },
+    "created_at": "2026-09-05T16:47:22.136966+00:00",
+    "characters": 147,
+    "passage_count": 3,
+    "page_count": 0,
+    "evidence_url": "/evidence/5f75edf8-0b6f-4cda-8ffa-8100786fed21",
+    "artifact_url": "/api/versions/5f75edf8-0b6f-4cda-8ffa-8100786fed21/artifact"
+  },
+  "law": {
+    "id": "e691569d-aac3-4bfb-af17-75d44eaa5be1",
+    "owner_organization_id": "00000000-0000-0000-0000-000000000001",
+    "canonical_identity": "https://regulator.example/laws/retention.html",
+    "source_id": null,
+    "name": "Synthetic retention policy",
+    "url": "https://regulator.example/laws/retention.html",
+    "provider": "native",
+    "active": true,
+    "current_version_id": "5f75edf8-0b6f-4cda-8ffa-8100786fed21",
+    "created_at": "2026-09-05T16:47:22.112898+00:00",
+    "last_checked": "2026-09-05T16:47:22.111898+00:00",
+    "last_result": "baseline_created",
+    "last_error": null
+  },
+  "identity": {
+    "revision": "artifact-identity-v2",
+    "status": "probable",
+    "reason_code": "probable_title_assignment",
+    "reason": "The saved artifacts are consistently assigned by title or partial metadata.",
+    "old": {
+      "revision": "artifact-identity-v2",
+      "status": "probable",
+      "reason_code": "title_strong_probable",
+      "reason": "The extracted legal title is strongly consistent with the monitored document, but no matching official identifier was available.",
+      "score": 1.0,
+      "tracked_title": "Synthetic retention policy",
+      "detected_title": "Synthetic retention policy",
+      "tracked_identifier": null,
+      "detected_identifier": null,
+      "artifact": {
+        "revision": "artifact-identity-v2",
+        "authority": "User-provided artifact",
+        "canonical_work_id": null,
+        "official_identifiers": [],
+        "document_kind": "document",
+        "title": "Synthetic retention policy",
+        "language": "unknown",
+        "version_date": "2025-01-01",
+        "publication_date": null,
+        "source_url": null,
+        "extractor": "native-v3",
+        "content_type": "text/html",
+        "filename": "previous.html",
+        "evidence": [
+          {
+            "type": "title",
+            "source": "Connector metadata or extracted heading",
+            "value": "Synthetic retention policy"
+          }
+        ],
+        "fingerprint": "41031a3ffec36c7430d5d91597730bb2be5e841703d6125540cc8daba2d1ab9a"
+      },
+      "fingerprint": "41031a3ffec36c7430d5d91597730bb2be5e841703d6125540cc8daba2d1ab9a"
+    },
+    "new": {
+      "revision": "artifact-identity-v2",
+      "status": "probable",
+      "reason_code": "title_strong_probable",
+      "reason": "The extracted legal title is strongly consistent with the monitored document, but no matching official identifier was available.",
+      "score": 1.0,
+      "tracked_title": "Synthetic retention policy",
+      "detected_title": "Synthetic retention policy",
+      "tracked_identifier": null,
+      "detected_identifier": null,
+      "artifact": {
+        "revision": "artifact-identity-v2",
+        "authority": "regulator.example",
+        "canonical_work_id": null,
+        "official_identifiers": [],
+        "document_kind": "document",
+        "title": "Synthetic retention policy",
+        "language": "unknown",
+        "version_date": null,
+        "publication_date": null,
+        "source_url": "https://regulator.example/laws/retention.html",
+        "extractor": "native-v3",
+        "content_type": "text/html",
+        "filename": "retention.html",
+        "evidence": [
+          {
+            "type": "title",
+            "source": "Connector metadata or extracted heading",
+            "value": "Synthetic retention policy"
+          }
+        ],
+        "fingerprint": "9bb6551a9937e599c109ee2ae387d944362356604912c016ad8cbfa491fbf40c"
+      },
+      "fingerprint": "9bb6551a9937e599c109ee2ae387d944362356604912c016ad8cbfa491fbf40c"
+    },
+    "pair_score": 1.0,
+    "fingerprint": "438a1233b5245d36f077ba09834af56e8e11f0cb44cb41301e93ee726d92ec51",
+    "effective_status": "probable",
+    "confirmed_sides": []
+  },
+  "analysis": {
+    "id": "ebbdbb87-a4f1-497e-a22f-a22abaff7320",
+    "organization_id": "00000000-0000-0000-0000-000000000001",
+    "comparison_id": "b9a6bb5c-256b-42f6-8ce9-eabd88b4ff94",
+    "cache_key": "6c2c3fc2cd8c69dcfe5317364e89199f3f5b189fe2368bb39e55b653969ec812",
+    "status": "succeeded",
+    "result": {
+      "schema_version": "impact-report-v4",
+      "response_mode": "generated_explanation",
+      "assessment_status": "assessed",
+      "output_locale": "en-CH",
+      "headline": "Test-only summary.",
+      "materiality": "medium",
+      "summary": "Test-only summary.",
+      "reason": "Test-only reason.",
+      "material_changes": [
+        {
+          "change_id": "c00002",
+          "change_type": "modified",
+          "title": "Modified Passage p00002",
+          "explanation": "Wording changed from “Demo organisations must retain records for 10 days.” to “Demo organisations must retain records for 30 days.”.",
+          "old_unit": {
+            "unit_id": "u-8896d2b671198d12",
+            "passage_id": "p00002",
+            "page": null,
+            "label": "Passage p00002"
+          },
+          "new_unit": {
+            "unit_id": "u-707b04f9872b76d9",
+            "passage_id": "p00002",
+            "page": null,
+            "label": "Passage p00002"
+          },
+          "evidence_grade": "confirmed",
+          "citations": [
+            {
+              "version_id": "2eaf9f3f-5f04-4d72-bc58-95532c3ee805",
+              "passage_id": "p00002",
+              "quote": "Demo organisations must retain records for 10 days.",
+              "url": "/evidence/2eaf9f3f-5f04-4d72-bc58-95532c3ee805?passage=p00002",
+              "page": null
+            },
+            {
+              "version_id": "5f75edf8-0b6f-4cda-8ffa-8100786fed21",
+              "passage_id": "p00002",
+              "quote": "Demo organisations must retain records for 30 days.",
+              "url": "/evidence/5f75edf8-0b6f-4cda-8ffa-8100786fed21?passage=p00002",
+              "page": null
+            }
+          ]
+        }
+      ],
+      "organization_applicability": {
+        "status": "may_apply",
+        "explanation": "Test-only reason.",
+        "evidence_grade": "possible",
+        "citations": [
+          {
+            "version_id": "5f75edf8-0b6f-4cda-8ffa-8100786fed21",
+            "passage_id": "p00002",
+            "quote": "Demo organisations must retain records for 30 days.",
+            "url": "/evidence/5f75edf8-0b6f-4cda-8ffa-8100786fed21?passage=p00002",
+            "page": null
+          }
+        ]
+      },
+      "business_areas": [
+        "Operations"
+      ],
+      "important_dates": [
+        {
+          "kind": "relative_period",
+          "label": "Period mentioned",
+          "date": null,
+          "mention": "10 days",
+          "version_side": "old",
+          "change_id": "c00002",
+          "status": "uncertain",
+          "evidence_grade": "needs_review",
+          "citations": [
+            {
+              "version_id": "2eaf9f3f-5f04-4d72-bc58-95532c3ee805",
+              "passage_id": "p00002",
+              "quote": "Demo organisations must retain records for 10 days.",
+              "url": "/evidence/2eaf9f3f-5f04-4d72-bc58-95532c3ee805?passage=p00002",
+              "page": null
+            }
+          ]
+        },
+        {
+          "kind": "relative_period",
+          "label": "Period mentioned",
+          "date": null,
+          "mention": "30 days",
+          "version_side": "new",
+          "change_id": "c00002",
+          "status": "uncertain",
+          "evidence_grade": "needs_review",
+          "citations": [
+            {
+              "version_id": "5f75edf8-0b6f-4cda-8ffa-8100786fed21",
+              "passage_id": "p00002",
+              "quote": "Demo organisations must retain records for 30 days.",
+              "url": "/evidence/5f75edf8-0b6f-4cda-8ffa-8100786fed21?passage=p00002",
+              "page": null
+            }
+          ]
+        }
+      ],
+      "date_review": {
+        "method": "date-mentions-v1",
+        "scope": "selected_material_evidence",
+        "legal_meaning_status": "not_reviewed",
+        "scanned_passages": 2,
+        "detected_mentions": 2,
+        "displayed_mentions": 2,
+        "display_limited": false
+      },
+      "uncertainties": [
+        "Organization applicability is a review hypothesis unless confirmed against the cited legal scope.",
+        "No responsible owner was established from the legal text or organization profile."
+      ],
+      "evidence_grade": "supported",
+      "evidence_coverage": {
+        "reviewed_material_items": 1,
+        "material_items": 1,
+        "limited": false,
+        "scope": "The complete exact diff remains saved for inspection. AI received the bounded dossier of 1 substantive change units; 0 formatting or renumbering units were kept out of model context."
+      },
+      "actions": [
+        {
+          "action_key": "act_3dbcde64011051def597",
+          "action_type": "legal_review",
+          "title": "Review the changed passage.",
+          "text": "Review the changed passage.",
+          "rationale": "Test-only reason.",
+          "owner_role": "Not assigned",
+          "affected_area": "Operations",
+          "priority": "medium",
+          "due_basis": "not_reviewed",
+          "due_date": null,
+          "applicability_condition": "Confirm that the cited change applies to the organization before acting.",
+          "related_change_ids": [
+            "c00002"
+          ],
+          "evidence_grade": "supported",
+          "review_suggestion": true,
+          "citations": [
+            {
+              "version_id": "5f75edf8-0b6f-4cda-8ffa-8100786fed21",
+              "passage_id": "p00002",
+              "quote": "Demo organisations must retain records for 30 days.",
+              "url": "/evidence/5f75edf8-0b6f-4cda-8ffa-8100786fed21?passage=p00002",
+              "page": null
+            }
+          ]
+        }
+      ],
+      "citations": [
+        {
+          "version_id": "5f75edf8-0b6f-4cda-8ffa-8100786fed21",
+          "passage_id": "p00002",
+          "quote": "Demo organisations must retain records for 30 days.",
+          "url": "/evidence/5f75edf8-0b6f-4cda-8ffa-8100786fed21?passage=p00002",
+          "page": null
+        }
+      ],
+      "impact": "medium"
+    },
+    "coverage": {
+      "included_passages": 2,
+      "available_passages": 2,
+      "included_characters": 102,
+      "limited": false,
+      "complete": true,
+      "changed_items": 1,
+      "scope": "The complete exact diff remains saved for inspection. AI received the bounded dossier of 1 substantive change units; 0 formatting or renumbering units were kept out of model context.",
+      "configured_context_characters": 24000,
+      "exceeds_configured_context": false,
+      "material_items": 1,
+      "reviewed_material_items": 1,
+      "suppressed_non_material_items": 0,
+      "analysis_call_budget": 3,
+      "audit_complete": true,
+      "batched": false,
+      "batch_count": 1,
+      "batch_input_character_limit": 21500,
+      "largest_batch_input_characters": 851,
+      "processed_passages": 2,
+      "processed_characters": 102,
+      "excerpted_passages": 0,
+      "provider_calls": 1
+    },
+    "analysis_plan": {
+      "schema_version": "analysis-plan-v1",
+      "state": "completed",
+      "task": "impact_report",
+      "intent": "organization_impact",
+      "output_locale": "en-CH",
+      "comparison_id": "b9a6bb5c-256b-42f6-8ce9-eabd88b4ff94",
+      "selected_change_ids": [
+        "c00002"
+      ],
+      "change_decisions": [
+        {
+          "change_id": "c00002",
+          "decision": "included",
+          "reason": "material_or_uncertain_within_fixed_context_budget",
+          "significance": "substantive"
+        }
+      ],
+      "context_fingerprint": "e5b58d3693fccbd48cf119ed5a549c9c9538b64b91b6827c943bac0b2540f1b2",
+      "limits": {
+        "provider_call_budget": 5,
+        "batch_generation_limit": 3,
+        "configured_context_characters": 24000,
+        "reserved_output_tokens_per_call": 1600
+      },
+      "estimates": {
+        "input_characters": 851,
+        "input_tokens": 284,
+        "output_tokens": 1600,
+        "planned_generation_calls": 1
+      },
+      "execution": {
+        "strategy": "single_complete_dossier",
+        "provider": "custom",
+        "model": "apertus-1.5b-q4km",
+        "batch_count": 1,
+        "local_first": false,
+        "profile_revision": 1
+      },
+      "coverage": {
+        "reviewed_material_items": 1,
+        "material_items": 1,
+        "suppressed_non_material_items": 0,
+        "limited": false,
+        "scope": "The complete exact diff remains saved for inspection. AI received the bounded dossier of 1 substantive change units; 0 formatting or renumbering units were kept out of model context."
+      },
+      "shared_general_change": {
+        "source": "persisted_semantic_diff",
+        "summary": "1 material or uncertain legal units; 0 structural and 0 formatting-only differences excluded.",
+        "classification_counts": {
+          "substantive": 1,
+          "structural": 0,
+          "formatting": 0,
+          "uncertain": 0
+        },
+        "semantic_counts": {
+          "substantive": 1,
+          "added": 0,
+          "removed": 0,
+          "moved": 0,
+          "renumbered": 0,
+          "formatting_only": 0,
+          "uncertain": 0
+        },
+        "cluster_ids": [
+          "sc-cc1d970692d936f8"
+        ],
+        "fingerprint": "6995156b63dc1d8612ed2ca32945ba0205cf6975c83773c5adae2758abe96f1f"
+      },
+      "actual": {
+        "provider_calls": 0,
+        "queue_wait_ms": 0,
+        "inference_duration_ms": 0,
+        "token_counts": {},
+        "validation": {
+          "accepted": false,
+          "repair_count": 0,
+          "events": []
+        },
+        "coverage_limited": false,
+        "result_url": "/compare/b9a6bb5c-256b-42f6-8ce9-eabd88b4ff94"
+      }
+    },
+    "provenance": {
+      "backend": "custom",
+      "model": "apertus-1.5b-q4km",
+      "model_revision": null,
+      "artifact_sha256": null,
+      "quantization": null,
+      "runtime_version": null,
+      "hardware_profile": null,
+      "hardware": {
+        "cuda_devices": [],
+        "ram_bytes": null
+      },
+      "context": {
+        "configured_chars": 24000,
+        "runtime_tokens": null
+      },
+      "generation": {
+        "max_tokens": 1600,
+        "temperature": 0.1,
+        "top_p": 1.0,
+        "presence_penalty": 0.0,
+        "reasoning_effort": "default"
+      },
+      "queue_wait_ms": 0,
+      "inference_duration_ms": 0,
+      "token_counts": {},
+      "provider_calls": 0,
+      "attempts": [],
+      "validation": {
+        "accepted": false,
+        "repair_count": 0,
+        "events": []
+      }
+    },
+    "error": null,
+    "model": "apertus-1.5b-q4km",
+    "prompt_revision": 1,
+    "use_count": 1,
+    "last_used_at": "2026-09-05T16:47:22.898632+00:00",
+    "created_at": "2026-09-05T16:47:22.898632+00:00",
+    "stale": false,
+    "action_decisions": {
+      "current": {},
+      "history": []
+    }
+  },
+  "analysis_job": null
+}

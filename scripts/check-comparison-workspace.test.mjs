@@ -41,7 +41,10 @@ test("wide comparison keeps evidence primary and companion content viewport-stab
     /\.analysis-column > \.companion-tab-panel\s*\{[\s\S]*?overflow-y:\s*auto[\s\S]*?overscroll-behavior:\s*contain/,
   );
   assert.match(comparison, /id="comparison-evidence"/);
-  assert.match(comparison, /className="analysis-column"/);
+  assert.match(
+    read("apps/web/components/comparison-panel.tsx"),
+    /className="analysis-column"/,
+  );
 });
 
 test("tablet uses a drawer and mobile uses a full-screen task surface", () => {
@@ -55,7 +58,7 @@ test("tablet uses a drawer and mobile uses a full-screen task surface", () => {
   );
   assert.match(css, /\.comparison-task-tabs\s*\{[\s\S]*?display:\s*flex/);
   assert.match(comparison, /data-mobile-surface=\{mobileSurface\}/);
-  assert.match(comparison, /className="comparison-drawer-backdrop"/);
+  assert.match(comparison, /<ComparisonPanel/);
 });
 
 test("compact summary limits action preview and discloses detail", () => {
@@ -87,7 +90,10 @@ test("saved citations jump in place while companion tab state is retained", () =
 
 test("durable AI result links open the matching comparison task", () => {
   assert.match(comparison, /HASH_COMPANION_TAB\.get\(/);
-  assert.match(comparison, /linkedTask \? `#\$\{linkedTask\}` : window\.location\.hash/);
+  assert.match(
+    comparison,
+    /linkedTask \? `#\$\{linkedTask\}` : window\.location\.hash/,
+  );
   assert.match(comparison, /searchParams\.get\("task"\)/);
   assert.match(comparison, /target\.searchParams\.set\("task"/);
   assert.match(comparison, /window\.addEventListener\("hashchange"/);

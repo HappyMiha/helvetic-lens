@@ -1149,6 +1149,14 @@ summary {
   align-items: start;
 }
 .analysis-column {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  max-width: none;
+  width: 100%;
+  left: auto;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: 0;
@@ -4010,4 +4018,12 @@ ins {
   .marvin-companion {
     display: none;
   }
+}
+
+/* A closed responsive panel must stay hidden even when its layout uses grid. */
+dialog.analysis-column:not([open]) {
+  display: none;
+}
+.analysis-column::backdrop {
+  background: rgb(20 31 22 / 32%);
 }

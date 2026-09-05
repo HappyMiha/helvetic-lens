@@ -60,6 +60,7 @@ import { AIHistory } from "./ai-history";
 import { AnalysisModeNotice } from "./analysis-mode-notice";
 import { ReportDates } from "./report-dates";
 import { Shell } from "./shell";
+import { ComparisonPanel } from "./comparison-panel";
 import { useAuth } from "./auth-gate";
 import { storedLocale, translate, type Locale, useI18n } from "@/lib/i18n";
 
@@ -226,7 +227,11 @@ const localizedValues: Record<ComparisonLocale, Record<string, string>> = {
 };
 
 function localLabel(value: string, locale: ComparisonLocale) {
-  return localizedValues[locale][value] || translate(`${locale}-CH` as Locale, `status.${value}`) || label(value);
+  return (
+    localizedValues[locale][value] ||
+    translate(`${locale}-CH` as Locale, `status.${value}`) ||
+    label(value)
+  );
 }
 
 function completedAnalysis(job: Job): Analysis | null {
@@ -297,7 +302,10 @@ export function ComparisonView({ id }: { id: string }) {
     }
     window.addEventListener(ASSISTANT_QUESTION_EVENT, openAssistantQuestion);
     return () =>
-      window.removeEventListener(ASSISTANT_QUESTION_EVENT, openAssistantQuestion);
+      window.removeEventListener(
+        ASSISTANT_QUESTION_EVENT,
+        openAssistantQuestion,
+      );
   }, [id]);
   const identityBlocked = ["mismatch", "unknown"].includes(
     data?.identity?.effective_status || data?.identity?.status || "",
@@ -1017,17 +1025,10 @@ export function ComparisonView({ id }: { id: string }) {
                 )}
               </section>
             </div>
-            {mobileSurface === "companion" && (
-              <button
-                type="button"
-                className="comparison-drawer-backdrop"
-                aria-label={t("common.close")}
-                onClick={() => setMobileSurface("evidence")}
-              />
-            )}
-            <aside
-              className="analysis-column"
-              aria-label={t("compare.currentReport")}
+            <ComparisonPanel
+              label={t("compare.currentReport")}
+              open={mobileSurface === "companion"}
+              onClose={openEvidence}
             >
               <div className="companion-nav-wrap">
                 <ComparisonWorkspaceTabs
@@ -1039,7 +1040,7 @@ export function ComparisonView({ id }: { id: string }) {
                   type="button"
                   className="companion-close"
                   aria-label={t("common.close")}
-                  onClick={() => setMobileSurface("evidence")}
+                  onClick={openEvidence}
                 >
                   <XCircle size={18} />
                 </button>
@@ -1054,7 +1055,13 @@ export function ComparisonView({ id }: { id: string }) {
                 <div className="panel-header">
                   <div className="flex items-center gap-2">
                     <Sparkles size={18} className="text-primary" />
-                    <h2>{t(analysis?.result?.response_mode === "selected_evidence" ? "aiMode.selected" : "compare.currentReport")}</h2>
+                    <h2>
+                      {t(
+                        analysis?.result?.response_mode === "selected_evidence"
+                          ? "aiMode.selected"
+                          : "compare.currentReport",
+                      )}
+                    </h2>
                   </div>
                   {analysis?.result && (
                     <Status value={analysis.result.impact} />
@@ -1115,7 +1122,9 @@ export function ComparisonView({ id }: { id: string }) {
                   )}
                   {analysis?.status === "succeeded" && analysis.result ? (
                     <>
-                      <AnalysisModeNotice mode={analysis.result.response_mode} />
+                      <AnalysisModeNotice
+                        mode={analysis.result.response_mode}
+                      />
                       <div className="impact-report-heading">
                         <span className="eyebrow">
                           {t("compare.whatChanged")}
@@ -1279,9 +1288,16 @@ export function ComparisonView({ id }: { id: string }) {
                           </div>
                         </div>
                       )}
-                      <ReportDates report={analysis.result} renderCitations={(values) => (
-                        <ComparisonCitations values={values} items={data.diff.items} onEvidence={jump} />
-                      )} />
+                      <ReportDates
+                        report={analysis.result}
+                        renderCitations={(values) => (
+                          <ComparisonCitations
+                            values={values}
+                            items={data.diff.items}
+                            onEvidence={jump}
+                          />
+                        )}
+                      />
                       {!!analysis.result.uncertainties?.length && (
                         <details className="impact-uncertainties">
                           <summary>{t("compare.assumptionsUnknowns")}</summary>
@@ -1292,10 +1308,13 @@ export function ComparisonView({ id }: { id: string }) {
                           </ul>
                         </details>
                       )}
-                      {analysis.result.response_mode !== "selected_evidence" && <ActionPreview
-                        actions={analysis.result.actions}
-                        onOpen={() => openCompanion("actions")}
-                      />}
+                      {analysis.result.response_mode !==
+                        "selected_evidence" && (
+                        <ActionPreview
+                          actions={analysis.result.actions}
+                          onOpen={() => openCompanion("actions")}
+                        />
+                      )}
                       <details className="impact-details provenance-disclosure">
                         <summary>
                           <ListChecks size={14} /> {t("compare.provenance")}
@@ -1403,7 +1422,7 @@ export function ComparisonView({ id }: { id: string }) {
                 evidenceItems={data.diff.items}
                 onEvidence={jump}
               />
-            </aside>
+            </ComparisonPanel>
           </div>
         </>
       )}
@@ -1630,7 +1649,10 @@ function ActionsPanel({
                             label(action.priority)
                           : t("compare.notRecorded")}{" "}
                         · {t("compare.due")}:{" "}
-                        {action.due_date || (action.due_basis === "not_reviewed" ? t("status.not_reviewed") : action.due_basis)}
+                        {action.due_date ||
+                          (action.due_basis === "not_reviewed"
+                            ? t("status.not_reviewed")
+                            : action.due_basis)}
                       </p>
                     )}
                     {action.applicability_condition && (
