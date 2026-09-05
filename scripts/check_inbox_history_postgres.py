@@ -16,6 +16,10 @@ from fastapi.testclient import TestClient
 from helvetic_lens.config import Settings
 from helvetic_lens.main import create_app
 from helvetic_lens.models import OrganizationRelationCandidate
+from pytest import MonkeyPatch
+from test_digest_event_pages import (
+    test_equal_time_keysets_ignore_new_admissions_and_advance_empty_filtered_pages,
+)
 from test_digest_periods import (
     test_period_sql_excludes_large_history_future_other_sources_and_private_states,
 )
@@ -28,7 +32,7 @@ from test_inbox_history_bounds import (
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("history", "periods"), default="history")
+    parser.add_argument("--suite", choices=("history", "periods", "pages"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -49,6 +53,11 @@ def main():
         with TestClient(app) as client:
             service = app.state.service
             harness = (client, fetcher, service, model)
+            if args.suite == "pages":
+                with MonkeyPatch.context() as patch:
+                    test_equal_time_keysets_ignore_new_admissions_and_advance_empty_filtered_pages(harness, patch)
+                print("PostgreSQL: 121 equal-time event keys traversed without duplication or omission; empty presentation pages advance; a concurrently admitted event waits for the next traversal. No AI or mail calls.")
+                return
             if args.suite == "periods":
                 test_period_sql_excludes_large_history_future_other_sources_and_private_states(harness)
                 print("PostgreSQL: 10,000 archived events excluded before payload hydration; half-open period, source filters, private states, tenant isolation and column-only source options passed. No AI or mail calls.")

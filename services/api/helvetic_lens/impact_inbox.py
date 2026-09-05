@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from collections.abc import Iterator
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 
 from sqlalchemy import func, or_, select
@@ -48,6 +49,8 @@ class ImpactInboxFilters:
     detected_before: datetime | None = None
     sources: tuple[str, ...] = ()
     excluded_states: tuple[str, ...] = ()
+    event_ids: tuple[str, ...] | None = None
+    admitted_before: datetime | None = None
 
 
 class ImpactInboxReader:
@@ -322,6 +325,10 @@ class ImpactInboxReader:
             query = query.where(RegulatoryEvent.detected_at >= filters.detected_from)
         if filters.detected_before is not None:
             query = query.where(RegulatoryEvent.detected_at < filters.detected_before)
+        if filters.event_ids is not None:
+            query = query.where(RegulatoryEvent.id.in_(filters.event_ids))
+        if filters.admitted_before is not None:
+            query = query.where(OrganizationRelationCandidate.created_at < filters.admitted_before)
         if filters.sources:
             query = query.where(or_(RegulatoryEvent.connector.in_(filters.sources),
                                     RegulatoryEvent.authority.in_(filters.sources)))
@@ -343,6 +350,40 @@ class ImpactInboxReader:
             maintain_column_froms=True,
         ).distinct()
         return sorted({value for row in session.execute(query) for value in row if value})
+
+    def iter_groups(self, session: Session, filters: ImpactInboxFilters, *, page_size: int = 50) -> Iterator[dict]:
+        """Visit event groups in stable keyset pages; no offset or full-history list.
+
+        New deliveries wait for the next traversal, including relations added to
+        an already selected event. Existing evidence/state is read as it is now;
+        this is not a long-running database snapshot.
+        """
+        if not 1 <= page_size <= 50:
+            raise ValueError("Choose an event page size between 1 and 50.")
+        filters = replace(filters, admitted_before=filters.admitted_before or datetime.now(UTC))
+        keys = self._deliveries(filters).with_only_columns(
+            RegulatoryEvent.id, RegulatoryEvent.detected_at, maintain_column_froms=True,
+        ).distinct().order_by(RegulatoryEvent.detected_at.desc(), RegulatoryEvent.id.desc())
+        before = None
+        while True:
+            query = keys
+            if before is not None:
+                detected_at, event_id = before
+                query = query.where(or_(
+                    RegulatoryEvent.detected_at < detected_at,
+                    (RegulatoryEvent.detected_at == detected_at) & (RegulatoryEvent.id < event_id),
+                ))
+            rows = list(session.execute(query.limit(page_size)))
+            if not rows:
+                return
+            page = self.page(session, replace(filters, event_ids=tuple(row.id for row in rows)))
+            yield from page["items"]
+            # Advance by selected keys, even when later presentation filters or a
+            # concurrent removal leave this page empty. Never skip an event's laws.
+            before = (rows[-1].detected_at, rows[-1].id)
+            del page
+            if len(rows) < page_size:
+                return
 
     def page(self, session: Session, filters: ImpactInboxFilters) -> dict:
         query = self._deliveries(filters)

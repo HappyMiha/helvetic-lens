@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import hmac
+from collections.abc import Iterable
 from datetime import UTC, datetime, timedelta
 from html import escape
 
@@ -151,11 +152,15 @@ def inbox_filters(preference: DigestPreference, period_start: datetime, period_e
 
 
 def filtered_summary(page: dict, preference: DigestPreference, period_start: datetime, period_end: datetime) -> dict:
+    return summarize_groups(page.get("items", []), preference, period_start, period_end)
+
+
+def summarize_groups(groups: Iterable[dict], preference: DigestPreference, period_start: datetime, period_end: datetime) -> dict:
     selected = []
     truncated = False
     severities = set(preference.severities or [])
     sources = set(preference.sources or [])
-    for group in page.get("items", []):
+    for group in groups:
         detected = datetime.fromisoformat(group["detected_at"].replace("Z", "+00:00"))
         if not _aware(period_start) <= detected < _aware(period_end) or group.get("read_state") in {"dismissed", "muted"}:
             continue
@@ -314,10 +319,10 @@ def deliver(database: Database, settings: Settings, delivery_id: str) -> dict:
         user = session.get(User, delivery.user_id)
         if not preference or not user or not user.active:
             raise DomainError("The digest recipient is no longer active.", 409, "digest_recipient_inactive")
-        page = ImpactInboxReader(delivery.organization_id, delivery.user_id).page(
+        groups = ImpactInboxReader(delivery.organization_id, delivery.user_id).iter_groups(
             session, inbox_filters(preference, delivery.period_start, delivery.period_end)
         )
-        delivery.summary = filtered_summary(page, preference, delivery.period_start, delivery.period_end)
+        delivery.summary = summarize_groups(groups, preference, delivery.period_start, delivery.period_end)
         delivery.item_count = len(delivery.summary["events"])
         if not delivery.item_count:
             delivery.status = "skipped"

@@ -2,6 +2,13 @@
 
 The source-to-diff workflow, Settings page, and live Apertus path are verified.
 
+## Digest event keyset pages — 5 September 2026 (HappyDucky02)
+
+- **37 focused tests pass** across event pages/periods/delivery, inbox/history and relation analysis, including seven new paging regressions. A 260-event synthetic period with 120 earlier nonmatching severity groups stops after four 50-ID pages once the 51st eligible group is found. The summary retains 50 events, every law for a selected event stays together and invalid page sizes are rejected.
+- SQLite and isolated **PostgreSQL 16.14** checks traverse 121 equal-time event IDs without duplication/omission, advance across empty presentation pages and exclude a newly admitted backdated event until the next traversal. PostgreSQL runner: `scripts/check_inbox_history_postgres.py --suite pages`; its task-owned container was removed afterwards.
+- Ruff/whitespace checks pass; no schema migration or external API/UI shape change. Tests use synthetic evidence and model/mail doubles. No existing service or production data was changed.
+- Bounds apply to event pages retained in memory, not total CPU/SQL/worker duration or the number of related laws per event. Public inbox pagination, batched lookups, durable continuation, actionable truncation and intended-host workload gates remain open. The admission ceiling is not a frozen snapshot of mutable evidence/private state or a policy for backdated historical admissions.
+
 ## Saved digest periods and SQL eligibility — 5 September 2026 (HappyDucky02)
 
 - **30 focused tests pass** across digest periods/delivery, impact inbox, history selection and relation analysis. Seven new cases cover half-open saved periods, retry after a test-only mail failure, success idempotency, empty preview source discovery and exact 50/51-event truncation. Existing Starlette deprecation warning remains.

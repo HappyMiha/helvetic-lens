@@ -1095,7 +1095,7 @@ class HelveticLens:
             period_end = utcnow()
             period_start = period_end - digests.FREQUENCIES[effective.frequency]
             reader = ImpactInboxReader(self.organization_id, user_id)
-            inbox = reader.page(
+            groups = reader.iter_groups(
                 session, digests.inbox_filters(effective, period_start, period_end)
             )
             deliveries = list(
@@ -1109,7 +1109,7 @@ class HelveticLens:
             source_options = reader.source_options(session)
             return {
                 "preference": digests.serialize_preference(preference),
-                "preview": digests.filtered_summary(inbox, effective, period_start, period_end),
+                "preview": digests.summarize_groups(groups, effective, period_start, period_end),
                 "source_options": source_options,
                 "delivery_mode": self.environment_settings.auth_email_mode,
                 "deliveries": [digests.serialize_delivery(item) for item in deliveries],

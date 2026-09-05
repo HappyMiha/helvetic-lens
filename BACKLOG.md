@@ -1915,6 +1915,13 @@ Implemented digest-period slice — 5 September 2026 (HappyDucky02):
 - Thirty focused regressions pass, including a 10,000-old-event SQLite/PostgreSQL check with only three selected delivery/event payloads, period boundaries, private-state/organization isolation and failed-mail retry using a test double. This does not bound an arbitrarily busy selected period: cursor selection, durable continuation, visible/actionable truncation and intended-host capacity verification remain open.
 
 
+Implemented digest event-page slice — 5 September 2026 (HappyDucky02):
+
+- Preview and delivery consume event-centered keyset pages of at most 50 event IDs, ordered by detection time/ID. All affected laws for an event stay together. The summary retains at most 50 events and stops on the 51st eligible event instead of hydrating the full selected period.
+- A traversal-start admission ceiling excludes newly admitted event/law deliveries until the next traversal. Equal timestamps and pages emptied by presentation filters advance without repeating or skipping selected keys. Existing state/evidence remain live reads, not an immutable snapshot.
+- Thirty-seven focused tests pass, including seven new paging cases; PostgreSQL also verifies 121 equal-time keys plus a concurrent new admission. Interactive inbox pagination, per-event law fanout/batched lookups, durable work continuation, actionable truncation, late-admission catch-up and target-host capacity gates remain open. A severity filter can still require visiting every event in a period, though only one bounded event page is retained at a time.
+
+
 <a id="hl-100"></a>
 
 ### HL-100 — Require substantive evidence before claiming relevance or impact
