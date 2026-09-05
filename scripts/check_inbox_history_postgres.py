@@ -17,6 +17,11 @@ from helvetic_lens.config import Settings
 from helvetic_lens.main import create_app
 from helvetic_lens.models import OrganizationRelationCandidate
 from pytest import MonkeyPatch
+from test_corpus_evidence import (
+    test_native_connector_roundtrip_reads_saved_text_and_safe_original_without_legacy_copy,
+    test_native_evidence_cannot_bypass_scope_even_in_privileged_session,
+    test_relation_delivery_grants_source_evidence_without_direct_watch_or_topic_admission,
+)
 from test_digest_event_pages import (
     test_equal_time_keysets_ignore_new_admissions_and_advance_empty_filtered_pages,
 )
@@ -81,7 +86,7 @@ from test_topic_reviews import (
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link"), default="history")
+    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -102,6 +107,18 @@ def main():
         with TestClient(app) as client:
             service = app.state.service
             harness = (client, fetcher, service, model)
+            if args.suite == "native-evidence":
+                test_native_connector_roundtrip_reads_saved_text_and_safe_original_without_legacy_copy(harness)
+                print("PostgreSQL: native connector ingestion, saved text and safe original response work without creating legacy copies.")
+                return
+            if args.suite == "native-evidence-private":
+                test_native_evidence_cannot_bypass_scope_even_in_privileged_session(harness, "private")
+                print("PostgreSQL: private native work remains inaccessible despite an organization event admission.")
+                return
+            if args.suite == "native-evidence-relation":
+                test_relation_delivery_grants_source_evidence_without_direct_watch_or_topic_admission(harness)
+                print("PostgreSQL: relation-delivered source evidence opens without a direct watch; delivery removal revokes access.")
+                return
             if args.suite in {"feed-evidence", "feed-private-evidence"}:
                 test_topic_only_artifact_is_exact_visible_version_without_body_hydration(harness, "foreign_version" if args.suite == "feed-private-evidence" else None)
                 print("PostgreSQL: exact event artifact lookup respects private version ownership without document-body hydration.")

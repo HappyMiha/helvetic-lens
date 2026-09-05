@@ -16,6 +16,7 @@ from redis.exceptions import RedisError
 from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
+from . import corpus_evidence
 from .assistant_contract import (
     AssistantChatInput,
     AssistantContextInput,
@@ -1487,6 +1488,19 @@ def create_app(
     @app.delete("/api/versions/{version_id}")
     def delete_version(version_id: str):
         return service.delete_version(version_id)
+
+    @app.get("/api/regulatory-versions/{version_id}")
+    def native_evidence(version_id: str):
+        with service.db.session() as session:
+            return corpus_evidence.detail(session, service.organization_id, version_id, service.settings)
+
+    @app.get("/api/regulatory-versions/{version_id}/artifact")
+    def native_artifact(version_id: str):
+        with service.db.session() as session:
+            path, mime, filename = corpus_evidence.artifact(session, service.organization_id, version_id, service.settings)
+        return FileResponse(path, media_type=mime, filename=filename,
+                            content_disposition_type="inline" if mime == "application/pdf" else "attachment",
+                            headers={"Content-Security-Policy": "sandbox", "X-Content-Type-Options": "nosniff"})
 
     @app.get("/api/versions/{version_id}")
     def evidence(version_id: str):

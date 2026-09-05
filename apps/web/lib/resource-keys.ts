@@ -193,6 +193,11 @@ export const resources = {
       priority: "interactive",
     }),
 
+  corpusVersion: <T = unknown>(id: string) =>
+    key<T>(`comparison:corpus-version:${id}`, `/regulatory-versions/${id}`, {
+      owner: "comparison", tags: ["evidence", "corpus"], varyByLocale: false, staleMs: 15_000,
+    }),
+
   version: <T = Version>(id: string) =>
     key<T>(`comparison:version:${id}`, `/versions/${id}`, {
       owner: "comparison",

@@ -18,19 +18,23 @@ import type { Passage, Version } from "@/lib/types";
 import { ErrorNote, Loading, Status } from "./common";
 import { Shell } from "./shell";
 
-type Evidence = Version & { law_name: string; passages: Passage[] };
+type Evidence = Omit<Version, "law_id" | "artifact_url"> & { law_id: string | null; artifact_url: string | null; law_name: string; passages: Passage[]; plain_text?: string | null };
 const PAGE_SIZE = 60;
 
 export function EvidenceView({
   id,
   passageId,
+  native = false,
 }: {
   id: string;
   passageId: string;
+  native?: boolean;
 }) {
   const { t, dateTime, number } = useI18n();
-  const { data, error } = useResource(resources.version<Evidence>(id));
+  const { data, error } = useResource(native ? resources.corpusVersion<Evidence>(id) : resources.version<Evidence>(id));
   const [page, setPage] = useState(0);
+  const route = (native ? "/corpus-evidence/" : "/evidence/") + encodeURIComponent(id);
+  const safeSource = data?.source_url && /^https?:\/\//i.test(data.source_url) ? data.source_url : null;
   const targetIndex =
     data?.passages.findIndex((passage) => passage.id === passageId) ?? -1;
   const missingTarget = !!data && !!passageId && targetIndex < 0;
@@ -50,9 +54,9 @@ export function EvidenceView({
   const sourceLanguage = data?.identity_json?.language || undefined;
   return (
     <Shell section={t("evidence.section")}>
-      <Link className="back-link" href={data ? "/laws/" + data.law_id : "/"}>
+      <Link className="back-link" href={data?.law_id ? "/laws/" + data.law_id : "/"}>
         <ArrowLeft size={14} />
-        {t("evidence.back")}
+        {t(native ? "nav.today" : "evidence.back")}
       </Link>
       <ErrorNote message={error} />
       {!data ? (
@@ -69,7 +73,7 @@ export function EvidenceView({
                 {t("evidence.snapshotNotice")}
               </p>
             </div>
-            <Button asChild variant="outline">
+            {data.artifact_url ? <Button asChild variant="outline">
               <a
                 href={
                   data.artifact_url +
@@ -87,11 +91,11 @@ export function EvidenceView({
                   ? t("evidence.openPdf")
                   : t("evidence.downloadOriginal")}
               </a>
-            </Button>
+            </Button> : <p className="muted max-w-md" role="status">{t("nativeEvidence.noArtifact")}</p>}
           </div>
           <section className="panel">
             <div className="evidence-metadata">
-              <Status value={data.origin} />
+              {native ? <span>{t("nativeEvidence.record")}</span> : <Status value={data.origin} />}
               {data.synthetic && (
                 <span className="synthetic-label">{t("evidence.synthetic")}</span>
               )}
@@ -105,15 +109,15 @@ export function EvidenceView({
                 {t("evidence.contentMeta", { type: data.content_type, passages: number(data.passage_count) })}
               </span>
             </div>
-            {data.origin !== "live" && (
+            {(native || data.origin !== "live") && (
               <div className="info-note m-5">
-                {t("evidence.importNotice")}
+                {t(native ? "nativeEvidence.notice" : "evidence.importNotice")}
               </div>
             )}
-            {data.source_url && (
+            {safeSource && (
               <a
                 className="text-link mx-6 my-4 break-all"
-                href={data.source_url}
+                href={safeSource || undefined}
                 target="_blank"
                 rel="noreferrer"
               >
@@ -129,13 +133,14 @@ export function EvidenceView({
                   }
                 />
                 <Button asChild variant="outline" className="mt-3">
-                  <Link href={"/evidence/" + id}>
+                  <Link href={route}>
                     {t("evidence.readComplete")}
                   </Link>
                 </Button>
               </div>
             ) : (
               <>
+                {!data.passages.length && <div className="p-6 whitespace-pre-wrap break-words" data-native-text>{data.plain_text || t("nativeEvidence.noText")}</div>}
                 <div className="evidence-passages">
                   {data.passages
                     .slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
@@ -151,7 +156,7 @@ export function EvidenceView({
                       >
                         <div className="passage-meta">
                           <Link
-                            href={"/evidence/" + id + "?passage=" + passage.id}
+                            href={route + "?passage=" + encodeURIComponent(passage.id)}
                           >
                             <BookOpen size={12} />
                             {passage.id}
@@ -159,7 +164,7 @@ export function EvidenceView({
                               ? ` · ${t("evidence.referenced")}`
                               : ""}
                           </Link>
-                          {passage.page ? (
+                          {passage.page && data.artifact_url && data.content_type === "application/pdf" ? (
                             <a
                               href={data.artifact_url + "#page=" + passage.page}
                               target="_blank"
@@ -179,7 +184,7 @@ export function EvidenceView({
                 <div className="pagination">
                   <span>
                     {t("evidence.range", {
-                      start: number(page * PAGE_SIZE + 1),
+                      start: number(data.passages.length ? page * PAGE_SIZE + 1 : 0),
                       end: number(Math.min((page + 1) * PAGE_SIZE, data.passages.length)),
                       total: number(data.passages.length),
                     })}

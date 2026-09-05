@@ -91,6 +91,7 @@ def test_topic_only_artifact_is_exact_visible_version_without_body_hydration(har
         corpus_version.expression_id = expression.id
         corpus_version.text = "Large source body " * 50000
         corpus_version.passages = [{"text": "Large passage " * 50000}]
+        native_version_id = corpus_version.id
         event.document_version_id = corpus_version.id
         event.expression_id = expression.id
         org = Organization(name="Private artifact", slug="private-feed-artifact")
@@ -117,7 +118,10 @@ def test_topic_only_artifact_is_exact_visible_version_without_body_hydration(har
         card = client.get("/api/interest-feed", params={"event": ids[0]}).json()["items"][0]
     finally:
         sa_event.remove(Session, "loaded_as_persistent", record)
-    assert card["source_artifact_url"] == (f"/evidence/{version_id}" if invalid is None else None)
+    expected = f"/evidence/{version_id}" if invalid is None else f"/corpus-evidence/{native_version_id}" if invalid == "missing_legacy" else None
+    assert card["source_artifact_url"] == expected
+    if invalid == "missing_legacy":
+        assert client.get(f"/api/regulatory-versions/{native_version_id}").status_code == 200
     assert card["document_language"] == (None if invalid == "other_expression" else "en")
     assert not set(loaded) & {Version, Law, RegulatoryDocumentVersion}
     assert model.calls == []

@@ -114,6 +114,11 @@ class InterestFeedReader(ImpactInboxReader):
             .join(Law, Law.id == Version.law_id)
             .where(RegulatoryEvent.id.in_(ids), RegulatoryExpression.work_id == RegulatoryEvent.work_id,
                    visible(Version, self.organization_id), visible(Law, self.organization_id))).all())
+        native_versions = dict(session.execute(select(RegulatoryEvent.id, RegulatoryDocumentVersion.id)
+            .join(RegulatoryDocumentVersion, RegulatoryDocumentVersion.id == RegulatoryEvent.document_version_id)
+            .join(RegulatoryExpression, RegulatoryExpression.id == RegulatoryDocumentVersion.expression_id)
+            .where(RegulatoryEvent.id.in_(ids), RegulatoryExpression.work_id == RegulatoryEvent.work_id,
+                   RegulatoryDocumentVersion.legacy_version_id.is_(None))).all())
         languages = dict(session.execute(select(RegulatoryEvent.id, RegulatoryExpression.language)
             .join(RegulatoryExpression, RegulatoryExpression.id == RegulatoryEvent.expression_id)
             .where(RegulatoryEvent.id.in_(ids), RegulatoryExpression.work_id == RegulatoryEvent.work_id)).all())
@@ -152,7 +157,8 @@ class InterestFeedReader(ImpactInboxReader):
                 "source": event.connector or event.authority, "authority": event.authority,
                 "detected_at": _iso(event.detected_at), "official_dates": dates.get(event.id, []),
                 "source_url": event.source_url or work.stable_official_url,
-                "source_artifact_url": f"/evidence/{artifacts[event.id]}" if event.id in artifacts else None,
+                "source_artifact_url": (f"/evidence/{artifacts[event.id]}" if event.id in artifacts
+                                        else f"/corpus-evidence/{native_versions[event.id]}" if event.id in native_versions else None),
                 "read_state": states.get(event.id, "unread"),
                 "severity": law["severity"] if law else "unknown",
                 "law_impacts": law["items"] if law else [],

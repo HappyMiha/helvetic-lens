@@ -22,7 +22,7 @@ export function FeedEvidenceContext({ item }: { item: FeedEvidence }) {
   const dateKinds: Record<string, string> = { published_at: t("feedEvidence.published_at"), decision_date: t("feedEvidence.decision_date"), effective_from: t("feedEvidence.effective_from"), effective_to: t("feedEvidence.effective_to") };
   const precisions: Record<string, string> = { day: t("feedEvidence.precision.day"), month: t("feedEvidence.precision.month"), year: t("feedEvidence.precision.year"), instant: t("feedEvidence.precision.instant"), unknown: t("feedEvidence.precision.unknown") };
   // Only the server's saved-version route, never an arbitrary response URL.
-  const saved = item.source_artifact_url?.match(/^\/evidence\/[a-zA-Z0-9-]+$/) ? item.source_artifact_url : undefined;
+  const saved = item.source_artifact_url?.match(/^\/(?:evidence|corpus-evidence)\/[a-zA-Z0-9-]+$/) ? item.source_artifact_url : undefined;
   return <details className="text-sm my-3 rounded-lg border px-3 scroll-mt-24" data-feed-evidence>
     <summary className="cursor-pointer min-h-[44px] flex items-center">{t("feedEvidence.context")}</summary>
     <dl className="grid gap-3 sm:grid-cols-2 py-3">

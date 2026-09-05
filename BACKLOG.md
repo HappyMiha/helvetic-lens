@@ -1487,6 +1487,19 @@ coverage/status normalization, AI briefs/notifications and the remaining HL-076
 criteria stay open.
 
 
+**Implemented 6 September 2026 (native source evidence):** Native-only connector
+versions now open in the shared evidence viewer, with saved passage deep links,
+PDF page navigation, safe original download and text-only/metadata-only/missing
+file states. Today exposes the route without creating legacy document copies.
+Access follows visible work plus exact event admission, relation delivery or a
+visible active/paused watch; private legacy bindings cannot be bypassed. File
+responses do not hydrate text/passages and are constrained to the artifact store.
+Actual synthetic connector persistence/API tests, isolated PostgreSQL and ten
+localized browser journeys pass. See `docs/NATIVE_EVIDENCE.md`. Older surfaces'
+native links, server-side large-document paging, target capacity and independent
+usability/native-language acceptance remain open with the other HL-076 work.
+
+
 Acceptance criteria:
 
 - Build feed items from persisted regulatory events, watched-law relations, and topic matches without copying the underlying evidence or creating separate competing histories.

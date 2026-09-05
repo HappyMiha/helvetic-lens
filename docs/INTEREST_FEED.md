@@ -72,8 +72,9 @@ when only a topic matches. A scalar join checks the version's expression belongs
 to that event's work and the mapped legacy Version and Law are visible. It never
 substitutes the monitored law's newest version, materializes original document
 bodies, or calls a model. Existing `/evidence/{version}` authorization still applies.
-Native-only corpus versions without that viewer mapping display an explicit
-no-linked-copy message; this does not claim their source content was never saved.
+Native-only corpus versions without a legacy binding now link directly to
+`/corpus-evidence/{id}`; see `NATIVE_EVIDENCE.md`. The viewer distinguishes saved
+passages, text-only/metadata-only records and an unavailable original.
 The publisher link may show newer content. A missing file is handled by the
 existing evidence viewer; the feed does not probe storage on every read.
 
@@ -90,7 +91,7 @@ existing evidence viewer; the feed does not probe storage on every read.
   topic coverage/source settings but does not claim sources are healthy/current.
 - Work lifecycle status is distinct from an event date. Recorded jurisdiction,
   provenance/date precision and exact mapped saved-version links are now exposed.
-  Native-only corpus artifact viewing, fully normalized jurisdiction/status labels
+  Native evidence is viewable; fully normalized jurisdiction/status labels
   and live coverage remain open; existing timeline/review routes are retained.
 - Draft translations and browser geometry checks do not replace native-language
   or real-user usability review. There is no new deployment or data migration.

@@ -3416,6 +3416,40 @@ const feedProvenanceMessages: Record<Locale, Messages> = {
 };
 for (const locale of locales) Object.assign(catalogTarget(locale), feedProvenanceMessages[locale]);
 
+const nativeEvidenceMessages: Record<Locale, Messages> = {
+  "en-CH": {
+    "nativeEvidence.noArtifact": "The original file is unavailable. Any saved extracted text remains below.",
+    "nativeEvidence.record": "Saved connector record",
+    "nativeEvidence.notice": "This is saved source evidence, not a fresh website check or proof of current legal status.",
+    "nativeEvidence.noText": "No extracted text is available for this saved record. Inspect the original file, if available, or the source."
+  },
+  "de-CH": {
+    "nativeEvidence.noArtifact": "Die Originaldatei ist nicht verfügbar. Gespeicherter extrahierter Text bleibt unten zugänglich.",
+    "nativeEvidence.record": "Gespeicherter Konnektoreintrag",
+    "nativeEvidence.notice": "Dies ist ein gespeicherter Quellenbeleg, keine neue Website-Prüfung und kein Nachweis des aktuellen Rechtsstands.",
+    "nativeEvidence.noText": "Für diesen Eintrag ist kein extrahierter Text verfügbar. Prüfen Sie, falls vorhanden, die Originaldatei oder die Quelle."
+  },
+  "fr-CH": {
+    "nativeEvidence.noArtifact": "Le fichier original est indisponible. Le texte extrait enregistré reste accessible ci-dessous.",
+    "nativeEvidence.record": "Enregistrement du connecteur",
+    "nativeEvidence.notice": "Il s’agit d’une preuve enregistrée, pas d’une nouvelle vérification du site ni d’une preuve du statut juridique actuel.",
+    "nativeEvidence.noText": "Aucun texte extrait n’est disponible pour cet enregistrement. Consultez le fichier original, s’il existe, ou la source."
+  },
+  "it-CH": {
+    "nativeEvidence.noArtifact": "Il file originale non è disponibile. Il testo estratto salvato rimane accessibile qui sotto.",
+    "nativeEvidence.record": "Record del connettore salvato",
+    "nativeEvidence.notice": "Questa è una prova salvata, non una nuova verifica del sito né una conferma dello stato giuridico attuale.",
+    "nativeEvidence.noText": "Non è disponibile testo estratto per questo record. Consulta il file originale, se disponibile, o la fonte."
+  },
+  "rm-CH": {
+    "nativeEvidence.noArtifact": "La datoteca originala n’è betg disponibla. Il text extratg memorisà resta accessibel sutvart.",
+    "nativeEvidence.record": "Endataziun dal connectur memorisada",
+    "nativeEvidence.notice": "Quai è ina cumprova memorisada, betg ina nova controlla da la pagina ni ina cumprova dal stadi giuridic actual.",
+    "nativeEvidence.noText": "Nagin text extratg è disponibel per questa endataziun. Consultai la datoteca originala, sche disponibla, u la funtauna."
+  }
+};
+for (const locale of locales) Object.assign(catalogTarget(locale), nativeEvidenceMessages[locale]);
+
 const topicReviewMessages: Record<Locale, Messages> = {
   "en-CH": {
     "topicReview.matches": "Saved topic matches",
