@@ -2,6 +2,13 @@
 
 The source-to-diff workflow, Settings page, and live Apertus path are verified.
 
+## Resumable digest preparation and recipient revalidation — 5 September 2026 (HappyDucky02)
+
+- Final affected API/queue run: **88 passed** in 138.33 seconds, including 14 new resumable-digest regressions. A failure injected before checkpoint commit rolls back the page; completed pages survive cancel/retry; a completed selection prevents a full rescan after mail failure. Tests cover fair outbox dispatch, preference changes during/after preparation, opt-out, current private-state/admission checks, foreign/corrupt checkpoints, stale worker ownership, cancellation before dispatch, revoked membership/disabled user and monotonic delivery watermarks.
+- The final isolated **PostgreSQL 16.14** run (`scripts/check_inbox_history_postgres.py --suite resume`) exercises real worker/job/outbox persistence with valid organization members: yield after 50 keys, dispatch the second recipient first, resume to 61 events, record one send through a mail double and preserve success idempotency. Task-owned PostgreSQL containers were removed. No production data/service or actual recipient mailbox was used.
+- Ruff and whitespace checks pass. This slice changes backend worker behavior without a schema migration or frontend contract/layout change; the prior coverage-notice production build remains the frontend evidence. Existing Starlette test-client warning remains.
+- Worker execution now bounds preparation by event page, not by per-event law fanout, database CPU or mail-transport duration. Sparse web previews are still synchronous traversals. SMTP acceptance followed by process/transport failure before the database commit remains an ambiguity window; no exactly-once email or target-host capacity claim is made. See `docs/INBOX_READS.md` for these boundaries and remaining HL-099 work.
+
 ## Visible digest selection limits — 5 September 2026 (HappyDucky02)
 
 - **61 focused API tests pass**, including 24 new eligible-law count, legacy-summary and localized text/HTML email tests. Per-event law counts apply after severity filtering; exactly five laws do not trigger overflow. No model or actual email delivery is used.

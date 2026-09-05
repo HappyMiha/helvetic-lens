@@ -5,11 +5,14 @@ from __future__ import annotations
 import base64
 import hashlib
 import hmac
+import json
 from collections.abc import Iterable
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from html import escape
 
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from . import jobs
 from .auth_mail import AuthMailer
@@ -17,7 +20,7 @@ from .config import DomainError, Settings
 from .db import Database, utcnow
 from .impact_inbox import ImpactInboxFilters, ImpactInboxReader
 from .locales import normalize_locale
-from .models import DigestDelivery, DigestPreference, User
+from .models import DigestDelivery, DigestPreference, Job, OrganizationMembership, User
 
 SEVERITIES = {"high", "medium", "low", "none", "unknown"}
 FREQUENCIES = {"daily": timedelta(days=1), "weekly": timedelta(days=7)}
@@ -330,26 +333,130 @@ def enqueue_due(database: Database, settings: Settings, limit: int = 100) -> dic
     return {"due": len(preferences), "queued": queued}
 
 
-def deliver(database: Database, settings: Settings, delivery_id: str) -> dict:
+PREPARATION_VERSION = "digest-preparation-v1"
+
+
+def _preference_fingerprint(preference: DigestPreference) -> str:
+    return hashlib.sha256(json.dumps({
+        "enabled": preference.enabled, "frequency": preference.frequency,
+        "sources": sorted(preference.sources or []), "severities": sorted(preference.severities or []),
+    }, sort_keys=True).encode()).hexdigest()
+
+
+def _selection_context(delivery: DigestDelivery) -> dict:
+    return {"version": PREPARATION_VERSION, "delivery_id": delivery.id,
+            "organization_id": delivery.organization_id, "user_id": delivery.user_id,
+            "preference_id": delivery.preference_id,
+            "period_start": _iso(delivery.period_start), "period_end": _iso(delivery.period_end)}
+
+
+def _validate_selection(delivery: DigestDelivery, checkpoint: dict) -> None:
+    if any(checkpoint.get(key) != value for key, value in _selection_context(delivery).items()):
+        raise DomainError("The digest checkpoint does not match this delivery.", 409, "digest_checkpoint_invalid")
+    try:
+        datetime.fromisoformat(checkpoint["admitted_before"])
+        ids = checkpoint["event_ids"]
+        if not isinstance(ids, list) or len(ids) > 51 or len(set(ids)) != len(ids):
+            raise ValueError("Invalid selected event IDs")
+        if not all(isinstance(value, str) and 0 < len(value) <= 36 for value in ids):
+            raise ValueError("Invalid selected event ID")
+        if not all(type(checkpoint[key]) is int and checkpoint[key] >= 0 for key in ("processed", "batches", "restarts")):
+            raise ValueError("Invalid preparation counters")
+        if type(checkpoint["complete"]) is not bool:
+            raise ValueError("Invalid preparation state")
+        if checkpoint.get("cursor"):
+            datetime.fromisoformat(checkpoint["cursor"]["detected_at"])
+            if not isinstance(checkpoint["cursor"]["id"], str):
+                raise ValueError("Invalid event cursor")
+    except (KeyError, TypeError, ValueError) as exc:
+        raise DomainError("The digest checkpoint cannot be resumed.", 409, "digest_checkpoint_invalid") from exc
+
+
+def _recipient(session: Session, delivery: DigestDelivery, *, lock: bool = False) -> User:
+    user_query = select(User).where(User.id == delivery.user_id, User.active.is_(True))
+    member_query = select(OrganizationMembership.id).where(
+        OrganizationMembership.organization_id == delivery.organization_id,
+        OrganizationMembership.user_id == delivery.user_id,
+    )
+    user = session.scalar(user_query.with_for_update() if lock else user_query)
+    member = session.scalar(member_query.with_for_update() if lock else member_query)
+    if not user or not member:
+        raise DomainError("The digest recipient no longer has access to this organization.", 409, "digest_recipient_inactive")
+    return user
+
+
+def prepare_batch(session: Session, delivery_id: str, checkpoint: dict | None = None) -> dict:
+    """Prepare <=50 event keys. Caller commits cursor and queue yield atomically."""
+    delivery = session.scalar(select(DigestDelivery).where(DigestDelivery.id == delivery_id).with_for_update())
+    if not delivery:
+        raise DomainError("The digest delivery was not found.", 404, "not_found")
+    preference = session.get(DigestPreference, delivery.preference_id)
+    if not preference:
+        raise DomainError("The digest preference was not found.", 404, "not_found")
+    _recipient(session, delivery)
+    if checkpoint is not None and not isinstance(checkpoint, dict):
+        raise DomainError("The digest checkpoint cannot be resumed.", 409, "digest_checkpoint_invalid")
+    checkpoint = dict(checkpoint or {})
+    if checkpoint:
+        _validate_selection(delivery, checkpoint)
+    fingerprint = _preference_fingerprint(preference)
+    if not checkpoint or checkpoint.get("preference_fingerprint") != fingerprint:
+        checkpoint = {**_selection_context(delivery), "admitted_before": _iso(utcnow()),
+                      "preference_fingerprint": fingerprint, "cursor": None, "event_ids": [],
+                      "processed": 0, "batches": 0, "complete": False,
+                      "restarts": checkpoint.get("restarts", 0) + bool(checkpoint)}
+    if checkpoint["complete"] or delivery.status == "succeeded" or not preference.enabled:
+        return {**checkpoint, "complete": True}
+    reader = ImpactInboxReader(delivery.organization_id, delivery.user_id)
+    filters = replace(inbox_filters(preference, delivery.period_start, delivery.period_end),
+                      admitted_before=datetime.fromisoformat(checkpoint["admitted_before"]))
+    page = reader.event_page(session, filters, cursor=checkpoint["cursor"])
+    summary = filtered_summary(page, preference, delivery.period_start, delivery.period_end)
+    ids = list(dict.fromkeys(checkpoint["event_ids"] + [item["event_id"] for item in summary["events"]]))[:51]
+    return {**checkpoint, "event_ids": ids, "cursor": page["cursor"],
+            "processed": checkpoint["processed"] + page["scanned"], "batches": checkpoint["batches"] + 1,
+            "complete": len(ids) == 51 or not page["has_more"]}
+
+
+def deliver(database: Database, settings: Settings, delivery_id: str, *, selection: dict | None = None,
+            job_id: str | None = None, worker: str | None = None) -> dict | None:
     with database.session() as session:
-        delivery = session.get(DigestDelivery, delivery_id)
+        if job_id:
+            owned_job = session.scalar(select(Job).where(Job.id == job_id).with_for_update())
+            if not owned_job or owned_job.type != "digest_delivery" or owned_job.target_id != delivery_id or owned_job.state != "running" or owned_job.lease_owner != worker:
+                return None
+            if owned_job.cancel_requested:
+                raise jobs.JobCancelled()
+        delivery = session.scalar(select(DigestDelivery).where(DigestDelivery.id == delivery_id).with_for_update())
         if not delivery:
             raise DomainError("The digest delivery was not found.", 404, "not_found")
         if delivery.status == "succeeded":
             return serialize_delivery(delivery)
-        preference = session.get(DigestPreference, delivery.preference_id)
-        user = session.get(User, delivery.user_id)
-        if not preference or not user or not user.active:
-            raise DomainError("The digest recipient is no longer active.", 409, "digest_recipient_inactive")
-        groups = ImpactInboxReader(delivery.organization_id, delivery.user_id).iter_groups(
-            session, inbox_filters(preference, delivery.period_start, delivery.period_end)
-        )
+        preference = session.scalar(select(DigestPreference).where(DigestPreference.id == delivery.preference_id).with_for_update())
+        if not preference:
+            raise DomainError("The digest preference was not found.", 404, "not_found")
+        user = _recipient(session, delivery, lock=True)
+        if not preference.enabled:
+            delivery.status, delivery.error = "skipped", "Email digest disabled by recipient."
+            session.commit()
+            return serialize_delivery(delivery)
+        filters = inbox_filters(preference, delivery.period_start, delivery.period_end)
+        reader = ImpactInboxReader(delivery.organization_id, delivery.user_id)
+        if selection is not None:
+            _validate_selection(delivery, selection)
+            if not selection.get("complete") or selection.get("preference_fingerprint") != _preference_fingerprint(preference):
+                raise DomainError("Digest preferences changed; preparation will restart before sending.", 409, "digest_preferences_changed")
+            filters = replace(filters, event_ids=tuple(selection["event_ids"]),
+                              admitted_before=datetime.fromisoformat(selection["admitted_before"]))
+        # Recheck current access, personal state and saved conclusions for at most
+        # 51 selected events. A completed preparation is never a permission cache.
+        groups = reader.iter_groups(session, filters)
         delivery.summary = summarize_groups(groups, preference, delivery.period_start, delivery.period_end)
         delivery.item_count = len(delivery.summary["events"])
         if not delivery.item_count:
             delivery.status = "skipped"
             delivery.error = None
-            preference.last_sent_at = delivery.period_end
+            preference.last_sent_at = max(_aware(preference.last_sent_at), _aware(delivery.period_end)) if preference.last_sent_at else delivery.period_end
             session.commit()
             return serialize_delivery(delivery)
         subject, body, html = render_message(settings, delivery, user)
@@ -365,6 +472,8 @@ def deliver(database: Database, settings: Settings, delivery_id: str) -> dict:
         except DomainError as exc:
             delivery.status = "failed"
             delivery.error = exc.message[:1000]
+            if job_id:
+                owned_job.heartbeat_at = utcnow()
             session.commit()
             raise
         if mode == "disabled":
@@ -374,6 +483,8 @@ def deliver(database: Database, settings: Settings, delivery_id: str) -> dict:
             delivery.status = "succeeded"
             delivery.error = None
             delivery.sent_at = utcnow()
-        preference.last_sent_at = delivery.period_end
+        preference.last_sent_at = max(_aware(preference.last_sent_at), _aware(delivery.period_end)) if preference.last_sent_at else delivery.period_end
+        if job_id:
+            owned_job.heartbeat_at = utcnow()
         session.commit()
         return serialize_delivery(delivery)

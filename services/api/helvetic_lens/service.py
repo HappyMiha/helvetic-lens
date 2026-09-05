@@ -3698,12 +3698,32 @@ class HelveticLens:
                 result_id = result_json["id"]
                 result_url = f"/impact?candidate={target_id}"
             elif job_type == "digest_delivery":
-                mark(0, 1, "running")
-                result_json = await asyncio.to_thread(
-                    digests.deliver, self.db, self.environment_settings, target_id
-                )
-                mark(1, 1, "succeeded")
+                with self.write_guard, self.db.session() as session:
+                    batch_job = session.scalar(select(Job).where(Job.id == job_id).with_for_update())
+                    if batch_job.state != "running" or batch_job.lease_owner != worker:
+                        return self.job_detail(job_id)
+                    if batch_job.cancel_requested:
+                        raise durable_jobs.JobCancelled()
+                    selection = digests.prepare_batch(session, target_id, (batch_job.payload or {}).get("checkpoint"))
+                    batch_job.payload = {**(batch_job.payload or {}), "checkpoint": selection}
+                    batch_job.result_type, batch_job.result_id, batch_job.result_url = "digest_delivery", target_id, "/digests"
+                    batch_job.result_json = {"preparation": {key: selection[key] for key in ("processed", "batches", "complete", "restarts")},
+                                             "selected_events": len(selection["event_ids"])}
+                    durable_jobs.progress(session, job_id, current=1 if selection["complete"] else 0, total=2,
+                                          step_position=1, step_state="succeeded" if selection["complete"] else "pending",
+                                          step_details=batch_job.result_json)
+                    if not selection["complete"]:
+                        durable_jobs.yield_batch(session, batch_job)
+                    session.commit()
+                if not selection["complete"]:
+                    return self.job_detail(job_id)
                 mark(1, 2, "running")
+                result_json = await asyncio.to_thread(
+                    digests.deliver, self.db, self.environment_settings, target_id,
+                    selection=selection, job_id=job_id, worker=worker,
+                )
+                if result_json is None:
+                    return self.job_detail(job_id)
                 mark(2, 2, "succeeded")
                 result_type = "digest_delivery"
                 result_id = target_id

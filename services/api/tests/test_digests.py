@@ -14,7 +14,7 @@ from helvetic_lens.db import utcnow
 from helvetic_lens.digests import deliver, enqueue_due, preference_token
 from helvetic_lens.impact_inbox import ImpactInboxFilters, ImpactInboxReader
 from helvetic_lens.main import create_app
-from helvetic_lens.models import DigestDelivery, DigestPreference, User
+from helvetic_lens.models import DigestDelivery, DigestPreference, OrganizationMembership, User
 
 
 def test_saved_digest_uses_inbox_without_changing_personal_read_state(harness):
@@ -28,6 +28,8 @@ def test_saved_digest_uses_inbox_without_changing_personal_read_state(harness):
             locale="de-CH",
         )
         session.add(user)
+        session.flush()
+        session.add(OrganizationMembership(organization_id=service.organization_id, user_id=user.id, role="viewer"))
         session.commit()
         user_id = user.id
 
@@ -96,6 +98,8 @@ def test_delivery_failure_is_saved_without_changing_inbox_state(harness, monkeyp
     with service.db.session(include_all_organizations=True) as session:
         user = User(email="failed-digest@example.ch", password_hash="test", name="Failure")
         session.add(user)
+        session.flush()
+        session.add(OrganizationMembership(organization_id=service.organization_id, user_id=user.id, role="viewer"))
         session.commit()
         user_id = user.id
     service.save_digest_preference(

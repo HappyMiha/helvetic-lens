@@ -23,6 +23,9 @@ from test_digest_event_pages import (
 from test_digest_periods import (
     test_period_sql_excludes_large_history_future_other_sources_and_private_states,
 )
+from test_digest_resume import (
+    test_digest_yield_is_atomic_fair_and_finishes_without_new_model_calls,
+)
 from test_inbox_history_bounds import (
     check_history_index_roundtrip,
     test_large_history_reads_only_latest_and_current_payloads,
@@ -32,7 +35,7 @@ from test_inbox_history_bounds import (
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("history", "periods", "pages"), default="history")
+    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -53,6 +56,11 @@ def main():
         with TestClient(app) as client:
             service = app.state.service
             harness = (client, fetcher, service, model)
+            if args.suite == "resume":
+                with MonkeyPatch.context() as patch:
+                    test_digest_yield_is_atomic_fair_and_finishes_without_new_model_calls(harness, patch)
+                print("PostgreSQL: digest preparation yields after 50 events, dispatches another recipient first, resumes to 61 without duplicate events and sends once through a mail double. No AI or real email calls.")
+                return
             if args.suite == "pages":
                 with MonkeyPatch.context() as patch:
                     test_equal_time_keysets_ignore_new_admissions_and_advance_empty_filtered_pages(harness, patch)

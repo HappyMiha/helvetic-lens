@@ -22,7 +22,17 @@ The summary repeats the period/state/source/severity checks and marks `truncated
 
 The traversal fixes an admission-time ceiling (`OrganizationRelationCandidate.created_at < traversal_start`); newly admitted events or law deliveries wait for the next traversal. The cursor advances through selected keys even when presentation filtering removes every group. Existing evidence/state changes are not frozen. Arbitrarily backdated admission timestamps or edits to event detection timestamps are outside this traversal guarantee. The public inbox API remains unchanged and is not yet paginated.
 
-This bounds retained event pages, not every dimension of work: one event can affect many watched laws; related entity/review/history lookups are still per item, and SQL DISTINCT/sorting can inspect many candidate rows. A durable job checkpoint and bounded execution budget remain required before claiming bounded worker occupancy or restart-without-rescan.
+This bounds retained event pages, not every dimension of work: one event can affect many watched laws; related entity/review/history lookups are still per item, and SQL DISTINCT/sorting can inspect many candidate rows. Worker preparation now checkpoints one 50-event page per execution; per-event law fanout, query cost and SMTP duration still need workload validation before claiming a hard wall-clock or memory bound.
+
+## Durable digest preparation
+
+`digest_delivery` jobs prepare one page (at most 50 event keys plus a scalar overflow sentinel) per worker execution. A versioned checkpoint in the existing Job JSON binds the delivery, organization, recipient, period and preference fingerprint. It stores the admission ceiling, keyset cursor, inspected/page counts and at most 51 selected event IDs; it does not duplicate source/evidence bodies. Checkpoint and outbox yield commit together under the owned job lock. Failed page work rolls back, while completed pages survive retry/cancel-and-resume. Successful yields reset only the consecutive failure budget and rejoin the queue behind earlier waiting work.
+
+A completed selection skips period rescanning on email retries. Before dispatch, the worker refreshes only those IDs against current organization admissions, personal read/mute state, source/severity filters and saved conclusions. Newly ineligible selected items are removed without filling their places from already scanned history; this is bounded revalidation, not a frozen corpus snapshot. Preference changes restart preparation for the same saved period and capture a fresh admission ceiling; repeated preference editing can postpone completion. Preview still streams in one request and has no durable worker checkpoint.
+
+The dispatch transaction verifies the current lease/type/target, cancellation, enabled subscription, active account and organization membership. Locks serialize duplicate delivery attempts and recipient/preference changes around mail dispatch. Completed successful deliveries are not resent by an ordinary retry. An older delayed delivery cannot rewind `last_sent_at`. SMTP remains an external side effect: a crash/ambiguous transport response after SMTP accepts a message but before the database commit can still duplicate a retry despite the stable Message-ID. These tests do not claim exactly-once mail delivery.
+
+No schema migration is required. Existing queued jobs without checkpoints initialize on first execution. The two existing job stages remain selection and delivery; inspection/batch/selected counts are saved as diagnostic progress, with no invented total-corpus percentage. Invalid or foreign checkpoints fail instead of silently skipping evidence.
 
 ## Verification
 
@@ -32,12 +42,14 @@ This bounds retained event pages, not every dimension of work: one event can aff
 
 `--suite pages` verifies 121 equal-time event keys on PostgreSQL, pages emptied by severity filtering, and a newly admitted backdated event excluded until the next traversal. SQLite additionally verifies a 260-event corpus stops after four 50-key pages when the first 120 groups do not match severity, one event retains multiple related laws, invalid page sizes are rejected and the summarizer never consumes beyond the 51st eligible event.
 
+`--suite resume` separately exercises the actual PostgreSQL worker/outbox lifecycle with two opted-in organization members: 50-event yield, fair dispatch of the other recipient, continuation to 61 events and one recorded send via a mail double. SQLite tests inject rollback before checkpoint commit, cancel/retry, failed mail, final preference races, stale leases, revoked membership/admission, disabled users/subscriptions and out-of-order delivery completion.
+
 SQLite regressions additionally exercise empty/legacy/current results, another organization's access, and a newer attempt inserted at the query boundary. This is regression evidence, not an independent concurrency or capacity benchmark on HappySnowman.
 
 ## Still required
 
 - Move organization event/candidate filtering and grouping into bounded SQL or a maintained read projection; the current `page` method still loads the whole organization's candidate set.
 - Batch entity/review lookups and share an event-centered cursor contract with the future Today feed, with pages no larger than 50.
-- Provide durable continuation, execution budgets for digest work. Period/source/private-state filtering and event keysets now limit retained event pages; per-event law fanout and total work for sparse severity matches still need bounds.
+- Bound per-event law fanout and measure query/dispatch wall-clock work; worker preparation now yields each 50-event page, while sparse interactive previews can still traverse the full selected period.
 - Preserve deep links, personal state, stale-evidence states and grouped law/topic relationships during that transition.
 - Run the representative 100k-event/20-reader and overlapping sync/AI/digest workload on the intended host. The 500 ms p95 target and memory/SQL workload gates remain unverified.

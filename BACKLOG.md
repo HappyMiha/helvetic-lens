@@ -1929,6 +1929,13 @@ Implemented digest coverage notices — 5 September 2026 (HappyDucky02):
 - The link opens the full saved inbox; it is not a frozen-period continuation or proof that unprocessed/backdated events were delivered. Durable checkpoints, public inbox pagination/batched reads, intended-host capacity and native-speaker review remain open.
 
 
+Implemented resumable digest worker slice — 5 September 2026 (HappyDucky02):
+
+- Delivery preparation now processes at most 50 event keys per execution, saves a versioned recipient/organization/period/preference-bound checkpoint with at most 51 selected IDs, and atomically yields through the existing job/outbox. Completed pages survive rollback/retry/cancellation without full period rescans or new model calls. Other waiting recipients keep their queue position.
+- Final dispatch rechecks selected evidence eligibility, private state, active membership/account, enabled subscription and worker lease. Preference changes restart the same saved period; failed mail reuses completed selection. Delayed older deliveries no longer rewind the scheduling watermark. Schema migration is unnecessary.
+- Eighty-eight affected API/queue tests pass, including 14 new recovery/recipient gates; a separate PostgreSQL worker/outbox fairness-and-resume scenario also passes. The progress/transport contract and remaining limitations are documented in `docs/INBOX_READS.md`. Interactive preview/public inbox pagination, batching of per-law lookups, large per-event fanout, late admission policy and intended-host 100k-event/20-reader/overlap gates remain open. Stable Message-ID plus row locks does not make SMTP exactly once after an ambiguous send/crash.
+
+
 <a id="hl-100"></a>
 
 ### HL-100 — Require substantive evidence before claiming relevance or impact

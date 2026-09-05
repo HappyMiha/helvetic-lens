@@ -16,6 +16,7 @@ from helvetic_lens.models import (
     DigestDelivery,
     DigestPreference,
     Organization,
+    OrganizationMembership,
     OrganizationRelationCandidate,
     RegulatoryEvent,
     RegulatoryEventUserState,
@@ -57,6 +58,8 @@ def recipient(service, email="period-reader@example.ch"):
     with service.db.session(include_all_organizations=True) as session:
         user = User(email=email, password_hash="test-only", name="Period reader")
         session.add(user)
+        session.flush()
+        session.add(OrganizationMembership(organization_id=service.organization_id, user_id=user.id, role="viewer"))
         session.commit()
         return user.id
 

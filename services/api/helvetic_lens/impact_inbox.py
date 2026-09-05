@@ -351,39 +351,40 @@ class ImpactInboxReader:
         ).distinct()
         return sorted({value for row in session.execute(query) for value in row if value})
 
-    def iter_groups(self, session: Session, filters: ImpactInboxFilters, *, page_size: int = 50) -> Iterator[dict]:
-        """Visit event groups in stable keyset pages; no offset or full-history list.
-
-        New deliveries wait for the next traversal, including relations added to
-        an already selected event. Existing evidence/state is read as it is now;
-        this is not a long-running database snapshot.
-        """
+    def event_page(self, session: Session, filters: ImpactInboxFilters, *, cursor: dict | None = None, page_size: int = 50) -> dict:
+        """Read one event keyset page, including a scalar overflow sentinel."""
         if not 1 <= page_size <= 50:
             raise ValueError("Choose an event page size between 1 and 50.")
         filters = replace(filters, admitted_before=filters.admitted_before or datetime.now(UTC))
         keys = self._deliveries(filters).with_only_columns(
             RegulatoryEvent.id, RegulatoryEvent.detected_at, maintain_column_froms=True,
         ).distinct().order_by(RegulatoryEvent.detected_at.desc(), RegulatoryEvent.id.desc())
-        before = None
+        if cursor:
+            detected_at, event_id = datetime.fromisoformat(cursor["detected_at"]), cursor["id"]
+            keys = keys.where(or_(
+                RegulatoryEvent.detected_at < detected_at,
+                (RegulatoryEvent.detected_at == detected_at) & (RegulatoryEvent.id < event_id),
+            ))
+        keys = list(session.execute(keys.limit(page_size + 1)))
+        selected = keys[:page_size]
+        page = self.page(session, replace(filters, event_ids=tuple(row.id for row in selected))) if selected else {"items": []}
+        return {
+            **page, "scanned": len(selected), "has_more": len(keys) > page_size,
+            "admitted_before": _iso(filters.admitted_before),
+            "cursor": {"detected_at": _iso(selected[-1].detected_at), "id": selected[-1].id} if selected else cursor,
+        }
+
+    def iter_groups(self, session: Session, filters: ImpactInboxFilters, *, page_size: int = 50) -> Iterator[dict]:
+        """Visit bounded event pages without retaining a full-history list."""
+        cursor = None
         while True:
-            query = keys
-            if before is not None:
-                detected_at, event_id = before
-                query = query.where(or_(
-                    RegulatoryEvent.detected_at < detected_at,
-                    (RegulatoryEvent.detected_at == detected_at) & (RegulatoryEvent.id < event_id),
-                ))
-            rows = list(session.execute(query.limit(page_size)))
-            if not rows:
-                return
-            page = self.page(session, replace(filters, event_ids=tuple(row.id for row in rows)))
+            page = self.event_page(session, filters, cursor=cursor, page_size=page_size)
             yield from page["items"]
-            # Advance by selected keys, even when later presentation filters or a
-            # concurrent removal leave this page empty. Never skip an event's laws.
-            before = (rows[-1].detected_at, rows[-1].id)
-            del page
-            if len(rows) < page_size:
+            if not page["has_more"]:
                 return
+            cursor = page["cursor"]
+            filters = replace(filters, admitted_before=datetime.fromisoformat(page["admitted_before"]))
+            del page
 
     def page(self, session: Session, filters: ImpactInboxFilters) -> dict:
         query = self._deliveries(filters)
