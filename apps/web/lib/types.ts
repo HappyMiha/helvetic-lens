@@ -1166,7 +1166,32 @@ export type MonitoringTopic = {
     error?: string | null;
   };
 };
+export type TopicSourceCoverage = {
+  captured_at: string;
+  timezone: "Europe/Zurich";
+  scope: "selected_packs_saved_operational_state";
+  enabled_pack_count: number;
+  items: {
+    id: string;
+    name: Record<string, string>;
+    subscription_enabled: boolean;
+    subscription_state: string;
+    unknown_stream_count: number;
+    streams: {
+      connector: string; stream: string; publisher: string;
+      localized_copy: Record<string, { summary: string; boundary: string }>;
+      catalogue_state: string;
+      configured: boolean; enabled: boolean;
+      interval_seconds: number | null; jitter_seconds: number | null;
+      window_start: string | null; window_end: string | null;
+      next_run_at: string | null; next_attempt_past_due: boolean;
+      last_reported_health: string; last_success_at: string | null;
+      last_run_status: string | null;
+    }[];
+  }[];
+};
 export type MonitoringTopicPreview = {
+  source_coverage?: TopicSourceCoverage;
   matching_topics?: {
     items: { id: string; name: string; status: "active" | "paused"; current_revision: number }[];
     match_count: number;

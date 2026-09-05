@@ -62,7 +62,8 @@ HL-077 remains IN PROGRESS: this slice creates contextual **topics** and links
 existing watches. It does not yet unify new law-watch/source-pack subscription
 choices, detect semantically equivalent topics beyond the same-rule warning, show predicted cadence/volume,
 submit a viewer proposal to administrators, or add per-answer/global-assistant
-entry points. Source degradation/cadence need explicit contextual presentation;
-the existing bounded preview's coverage disclaimer is not that full requirement.
+entry points. Selected-source operational readiness and configured cadence are now shown by
+the explicit preview (see `MONITORING_TOPICS.md`). This records subscriptions,
+schedules and health without predicting actual future delivery or volume.
 No production deployment, migration, live source/model call or message is required
 by this implementation. Native-language and independent user acceptance stay open.

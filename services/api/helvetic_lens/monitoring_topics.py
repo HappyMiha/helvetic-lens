@@ -615,6 +615,7 @@ def matching_rule_topics(session: Session, plan: dict, *, exclude_topic_id: str 
 def preview(session: Session, data: dict) -> dict:
     # Local import avoids the plan-lifecycle/matcher dependency cycle. This is
     # exactly the scorer used by live ingestion and saved-history activation.
+    from .topic_coverage import snapshot as coverage_snapshot
     from .topic_matching import RULE_REVISION, score_event
 
     plan = normalize_plan(data, session)
@@ -660,6 +661,7 @@ def preview(session: Session, data: dict) -> dict:
             "confidence": confidence,
         })
     return {
+        "source_coverage": coverage_snapshot(session, plan["source_pack_ids"], now=captured_at),
         "matching_topics": matching_rule_topics(session, plan, exclude_topic_id=data.get("exclude_topic_id")),
         "candidate_count": len(candidates),
         "count_is_complete": not scan_truncated,

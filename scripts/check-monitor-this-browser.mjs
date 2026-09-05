@@ -32,6 +32,7 @@ async function waitFor(check, message) {
 }
 let locale = "en-CH", role = "organization_admin", user = "qa", saved = null;
 const title = "Synthetic privacy development";
+const coverageStream = {connector: "fedlex", stream: "rss-de", publisher: "Synthetic official publisher", localized_copy: {"en-CH": {summary: "Saved source metadata", boundary: "Bounded official source evidence."}}, catalogue_state: "partial", configured: true, enabled: true, interval_seconds: 7200, jitter_seconds: 120, window_start: "07:00", window_end: "20:00", next_run_at: "2026-09-05T08:00:00Z", next_attempt_past_due: true, last_reported_health: "degraded", last_success_at: "2026-09-04T08:00:00Z", last_run_status: "partial"};
 const existing = {id: "qa-existing-topic", status: "paused", current_revision: 1, created_at: "2026-09-06T08:00:00Z", updated_at: "2026-09-06T08:00:00Z", revisions: [],
   plan: {name: "Synthetic existing topic with a deliberately long descriptive name for narrow screens", goal: "Privacy", concepts: ["privacy"], synonyms: [], exclusions: [], jurisdictions: ["CH"], languages: ["en"], source_pack_ids: ["fedlex-legislation"], document_kinds: ["act"], event_kinds: ["amended"], importance_floor: "low"}};
 
@@ -60,6 +61,7 @@ try {
         source_url: "https://example.invalid/official-source", evidence_url: "/corpus-evidence/qa-native", watches: [{law_id: "qa-law", name: "Already monitored document", active: false, url: "/laws/qa-law"}], more_watches: false};
     } else if (url.pathname === "/api/source-packs") body = {items: [{id: "fedlex-legislation", name: {en: "Synthetic enabled sources"}, subscription: {enabled: true}}]};
     else if (url.pathname === "/api/monitoring-topics/preview") body = {candidate_count: 0, scanned_event_count: 0, scanned_event_limit: 500, items: [], count_is_complete: true, sample_captured_at: "2026-09-06T08:00:00Z",
+      source_coverage: {captured_at: "2026-09-06T08:00:00Z", timezone: "Europe/Zurich", scope: "selected_packs_saved_operational_state", enabled_pack_count: role === "viewer" ? 0 : 1, items: [{id: "fedlex-legislation", name: {"en-CH": "Synthetic official sources"}, subscription_enabled: role !== "viewer", subscription_state: role === "viewer" ? "inactive" : "partial", unknown_stream_count: 0, streams: [coverageStream, {...coverageStream, stream: "rss-fr", enabled: false, next_attempt_past_due: false, last_reported_health: "healthy"}, {...coverageStream, stream: "missing", configured: false, enabled: false, interval_seconds: null, jitter_seconds: null, next_run_at: null, next_attempt_past_due: false, last_success_at: null, last_reported_health: "unknown", last_run_status: null, window_start: null, window_end: null}]}]},
       matching_topics: {items: [{id: existing.id, name: existing.plan.name, status: existing.status, current_revision: 1}], match_count: 12, scanned_count: 500, scan_limit: 500, count_is_complete: false, display_truncated: true, basis: "same_matching_rules_v1"}};
     else if (url.pathname === "/api/monitoring-topics" && request.method === "POST") {
       assert.equal(role, "organization_admin", "Viewer must not activate monitoring");
@@ -102,6 +104,20 @@ try {
     assert.equal(creates().length, before, "Preview activated monitoring");
     assert.equal(previews().at(-1).body.concepts[0], "privacy");
     assert.deepEqual(previews().at(-1).body.source_pack_ids, ["fedlex-legislation"]);
+    assert.ok(await evaluate(cdp, `!!document.querySelector('[data-topic-source-readiness]') && !!document.querySelector('[data-topic-source-attention]')`), "Source readiness missing before activation");
+    assert.equal(await evaluate(cdp, `!!document.querySelector('[data-topic-sources-inactive]')`), role === "viewer");
+    assert.equal(await evaluate(cdp, `document.body.innerText.includes('topicSources.')`), false);
+    await click('[data-topic-source-pack] summary');
+    assert.equal(await evaluate(cdp, `document.querySelectorAll('[data-topic-source-stream]').length`), 3);
+    assert.ok(await evaluate(cdp, `document.querySelector('[data-topic-source-readiness]').innerText.includes('Europe/Zurich') && document.querySelector('[data-topic-source-readiness]').innerText.includes('120')`), "Saved custom interval/window missing");
+    assert.ok(await evaluate(cdp, `document.querySelector('[data-topic-source-next]').textContent.includes('10:00')`), "Scheduled attempt must include its Zurich time, not only date");
+    if (locale === "en-CH" && role === "organization_admin") {
+      await evaluate(cdp, `document.querySelector('[data-topic-source-readiness]').scrollIntoView({block:'start'})`);
+      await sleep(200);
+      const shot = await cdp.send("Page.captureScreenshot", {format: "png"});
+      await writeFile(join(root, ".tmp", `topic-source-readiness-${width}.png`), Buffer.from(shot.data, "base64"));
+    }
+    await click('[data-topic-source-pack] summary');
     assert.ok(await evaluate(cdp, `!!document.querySelector('[data-topic-duplicates] a[href="#topic-qa-existing-topic"]') && !!document.getElementById('topic-qa-existing-topic')`), "Existing topic warning/target missing");
     assert.ok(await evaluate(cdp, `document.querySelector('[data-topic-duplicates]').innerText.includes('500')`), "Limited check must be disclosed");
     assert.equal(await evaluate(cdp, `document.body.innerText.includes('topicDuplicates.')`), false);
@@ -147,7 +163,7 @@ try {
   assert.ok(await evaluate(cdp, `!document.querySelector('[data-monitor-use]')`));
   assert.equal(requests.some(r => r.path.includes('/draft') || (r.path === '/api/source-packs' && r.method !== 'GET')), false);
   assert.deepEqual(exceptions, []);
-  console.log("Monitor-this production UI: 20 five-locale mobile/desktop admin/viewer journeys pass explicit context copy, existing-watch/evidence links, manual concepts, enabled-pack scope, preview without activation, duplicate links and bounded-check disclosure, required pointer/keyboard review reset on repeated preview, explicit authorized save/direct link, viewer read-only duplicate warning and reload/restore without activation and unavailable-context recovery. All APIs intercepted; no real monitoring or inference.");
+  console.log("Monitor-this production UI: 20 five-locale mobile/desktop admin/viewer journeys pass explicit context copy, existing-watch/evidence links, manual concepts, enabled-pack scope, preview without activation, saved source schedules/health/subscription boundaries and disclosure controls, duplicate links and bounded-check disclosure, required pointer/keyboard review reset on repeated preview, explicit authorized save/direct link, viewer read-only duplicate warning and reload/restore without activation and unavailable-context recovery. All APIs intercepted; no real monitoring or inference.");
 } catch (error) {
   console.error({ locale, role, user, requests: requests.slice(-10), exceptions, form: cdp ? await evaluate(cdp, `JSON.stringify({inputs: Array.from(document.querySelectorAll(".monitoring-topic-builder input")).map(el=>({name:el.name,value:el.value,valid:el.checkValidity()})),text:document.body.innerText.slice(-1800)})`).catch(()=>"unavailable") : "none", page: cdp ? await evaluate(cdp, "JSON.stringify({url:location.href,ready:document.readyState,html:document.documentElement.outerHTML.slice(0,1800)})").catch(() => "unavailable") : "no browser" });
   throw error;

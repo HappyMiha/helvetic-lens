@@ -12,6 +12,51 @@ Preview reports the actual inspected count, capture time, detected-time range, r
 
 When an AI draft is explicitly confirmed, the resulting revision records provider, model, and prompt revision. A manual revision keeps those fields empty. Topic creation accepts an organization-scoped idempotency key; retries return the same topic. Optimistic revision checks prevent overwriting a concurrent edit.
 
+## Selected-source readiness
+
+The same explicit preview returns `source_coverage`, a saved operational view of
+only the plan's selected packs. It separates the organization's subscription from
+shared connector schedules and recorded source health. A disabled subscription
+may still have old admitted examples: preview and topic activation do not activate
+source packs or prove delivery of future events. The Sources link uses the existing
+administrator subscription/viewer request workflow.
+
+For each known stream, the preview shows its actual persisted interval/jitter,
+allowed hours, next scheduled attempt, last successful sync, last reported health
+and latest recorded run status. Missing schedules, paused schedules, no successes,
+partial runs and unknown stream definitions are explicit. A past next-run timestamp
+is reported as past due, never as proof of a running worker or current outage.
+Dates include localized time in Europe/Zurich. Static localized source capability
+boundaries remain separate from recorded runtime health; neither guarantees full
+coverage, current liveness, notification latency or future match volume.
+
+The initial review shows subscription totals and attention counts; individual pack
+and stream details are disclosed on demand. Users can still save a topic while
+sources are inactive, with a visible warning. Viewers can review readiness in their
+personal draft but cannot activate shared monitoring. The snapshot resets with the
+existing preview on edits/recovery; it is refreshed by another explicit preview,
+not inferred from a possibly older catalogue load.
+
+`topic_coverage.snapshot` uses four scalar queries for one or all current packs:
+selected definitions, explicitly organization-scoped subscriptions, selected
+schedules with the latest status scalar subquery, and selected connector states.
+It does not seed schedules or read error bodies, cursors, policy JSON, job payloads,
+other organization subscriptions or full run histories. Known stream keys are
+bounded by the capability catalogue and plans by twenty packs. Unknown keys are
+counted as unknown rather than silently advertised as supported. This is a saved
+read view, not an atomic multi-table historical snapshot or a 100-user throughput
+benchmark; underlying latest-run query cost on mature histories remains part of
+capacity verification.
+
+Verification: six `test_topic_coverage.py` cases exercise no-schedule/no-write
+preview, actual custom schedules, old success versus current degraded/partial
+state, paused scheduling, privileged subscription isolation, four-query/scalar
+bounds across all 23 current streams, unknown streams and the twenty-pack guard.
+Four isolated PostgreSQL suites cover empty/state/scope/bounds. The contextual
+browser suite covers twenty localized role/viewport journeys with readiness
+warnings, opening/closing details, custom intervals/windows and explicit Zurich
+hours. No live source requests, inference, schema or production changes.
+
 ## Duplicate review before saving
 
 Preview also returns `matching_topics`: a separate check of up to 500 most recently

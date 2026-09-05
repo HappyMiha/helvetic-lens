@@ -44,6 +44,7 @@ import { ErrorNote, Loading, Status, SuccessNote } from "./common";
 import { Shell } from "./shell";
 import { TopicSavedMatches } from "./topic-match-review";
 import { TopicHistoryStatus } from "./topic-history-status";
+import { TopicSourceReadiness } from "./topic-source-readiness";
 import { TopicDuplicateReview } from "./topic-duplicate-review";
 import { TopicPreviewCoverage } from "./topic-preview-coverage";
 import { Button } from "./ui/button";
@@ -992,6 +993,9 @@ function TopicEditor({
                   model: aiDraft.model,
                 })}
               </div>
+            )}
+            {preview?.source_coverage && (
+              <TopicSourceReadiness coverage={preview.source_coverage} />
             )}
             {preview?.matching_topics && (
               <TopicDuplicateReview

@@ -1539,7 +1539,7 @@ personal 24-hour browser-tab draft and preview saved candidates; shared writes,
 AI drafting and history activation remain forbidden. Five-language/mobile-browser,
 API and scratch PostgreSQL evidence is recorded in `docs/MONITORING_CONTEXT.md`.
 Remaining: complete law/topic/pack choice, broader semantic-equivalence suggestions,
-contextual cadence/degradation, viewer admin-request workflow, and cited-answer /
+measured delivery/coverage guarantees beyond saved source readiness, viewer admin-request workflow, and cited-answer /
 global-assistant entries. Personal tab recovery is not cross-device draft storage;
 this is not completion of HL-077 or independent usability/native review.
 
@@ -1555,6 +1555,20 @@ is an advisory snapshot, not semantic topic merging or a concurrent uniqueness
 constraint; renamed descriptions do not hide identical rules. See
 `docs/MONITORING_TOPICS.md` and the verification record. No model calls or implicit
 monitoring changes. HL-077 and independent acceptance remain open.
+
+**Implemented 6 September 2026 (selected-source readiness):** The explicit topic
+preview now includes organization subscriptions plus actual saved shared-source
+intervals, jitter, permitted hours, next scheduled attempt, last successful sync,
+recorded health and latest run status. Missing/paused schedules, no success,
+inactive subscriptions, partial/degraded state and unknown streams are visible.
+Collapsed packs show attention counts; details include localized Zurich timestamps
+and source capability boundaries. Saving a topic never enables source packs.
+Four scalar queries cover one or all 23 known streams without diagnostic bodies,
+job payloads or other-organization subscriptions. API, isolated PostgreSQL and
+five-language role/mobile browser evidence is recorded in `docs/VERIFICATION.md`.
+This is saved operational evidence, not live health, promised notification cadence,
+complete language/source coverage or predicted future volume. Remaining HL-077
+choices/assistant entry points and independent acceptance remain open.
 
 Acceptance criteria:
 

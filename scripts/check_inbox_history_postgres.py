@@ -83,6 +83,12 @@ from test_relation_version_freshness import (
     test_changed_or_removed_version_invalidates_current_without_rewriting_history,
     test_final_digest_read_drops_obsolete_ai_severity_without_sending,
 )
+from test_topic_coverage import (
+    test_custom_schedule_partial_health_and_old_success_are_separate_saved_facts,
+    test_one_and_all_packs_use_four_scalar_queries_without_diagnostic_hydration,
+    test_privileged_preview_does_not_borrow_other_organization_subscription,
+    test_unscheduled_unsubscribed_preview_remains_read_only_without_inference,
+)
 from test_topic_duplicates import (
     test_privileged_query_still_checks_both_topic_and_revision_owners,
     test_rule_warning_is_read_only_case_order_insensitive_and_excludes_self,
@@ -98,7 +104,7 @@ from test_topic_reviews import (
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("topic-duplicates", "topic-duplicates-scope", "topic-duplicates-bounds", "history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked", "monitoring-context", "monitoring-context-activate"), default="history")
+    parser.add_argument("--suite", choices=("topic-coverage-empty", "topic-coverage-state", "topic-coverage-scope", "topic-coverage-bounds", "topic-duplicates", "topic-duplicates-scope", "topic-duplicates-bounds", "history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked", "monitoring-context", "monitoring-context-activate"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -119,6 +125,14 @@ def main():
         with TestClient(app) as client:
             service = app.state.service
             harness = (client, fetcher, service, model)
+            if args.suite.startswith("topic-coverage"):
+                check = {"topic-coverage-empty": test_unscheduled_unsubscribed_preview_remains_read_only_without_inference,
+                         "topic-coverage-state": test_custom_schedule_partial_health_and_old_success_are_separate_saved_facts,
+                         "topic-coverage-scope": test_privileged_preview_does_not_borrow_other_organization_subscription,
+                         "topic-coverage-bounds": test_one_and_all_packs_use_four_scalar_queries_without_diagnostic_hydration}[args.suite]
+                check(harness)
+                print("PostgreSQL: saved topic source readiness, no-write preview, owner scope or scalar bounds passed.")
+                return
             if args.suite.startswith("topic-duplicates"):
                 check = {"topic-duplicates": test_rule_warning_is_read_only_case_order_insensitive_and_excludes_self,
                          "topic-duplicates-scope": test_privileged_query_still_checks_both_topic_and_revision_owners,
