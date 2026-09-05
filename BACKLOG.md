@@ -139,7 +139,7 @@ Keep the proven stack and add only the infrastructure now justified by public us
 | [HL-091](#hl-091) | P0       | PLANNED  | HL-031, HL-060, HL-093                                 | Capability-based local explanations versus explicit extractive mode |
 | [HL-092](#hl-092) | P0       | PLANNED  | HL-061, HL-091                                         | Truthful structured reports, dates, applicability and useful actions |
 | [HL-093](#hl-093) | P0       | IN PROGRESS  | HL-059, HL-062, HL-075                                 | Independent semantic gold set and honest quality metrics            |
-| [HL-094](#hl-094) | P0       | PLANNED  | HL-030, HL-075                                         | Fair resumable matching and preview/production parity               |
+| [HL-094](#hl-094) | P0       | IN PROGRESS  | HL-030, HL-075                                         | Fair resumable matching and preview/production parity               |
 | [HL-095](#hl-095) | P1       | PLANNED  | HL-037, HL-066, HL-074                                 | Progressive topic, registry and recovery controls                   |
 | [HL-096](#hl-096) | P1       | PLANNED  | HL-063, HL-068                                         | Coherent visual system and readable scalable evidence               |
 | [HL-097](#hl-097) | P0       | IN PROGRESS  | HL-065, HL-068, HL-070                                 | Visible AI controls and accessible populated journeys               |
@@ -1763,7 +1763,7 @@ Acceptance criteria:
 
 ### HL-094 — Replace silent matching truncation with fair resumable batches
 
-**Priority:** P0. **Status:** PLANNED. **Dependencies:** HL-030, HL-075. **Owner role:** backend/queues.
+**Priority:** P0. **Status:** IN PROGRESS. **Dependencies:** HL-030, HL-075. **Owner role:** backend/queues.
 
 Problem: current hard caps protect workers but may exclude entitled organizations/topics/history without a durable next batch.
 
@@ -1776,6 +1776,15 @@ Acceptance criteria:
 - Reuse the same normalization/scorer for preview and activation on identical data. Preview clearly states its sample/window and does not promise unseen results.
 - Resume after worker/API/Redis interruption and topic revision changes; supersede stale work safely. Record pending, completed, excluded-by-plan and degraded coverage.
 - Show monitoring-from date, processed-through watermark and unfinished history in the interest detail and feed empty state. A source outage or unfinished backlog cannot become “nothing relevant happened.”
+
+Implemented slice — 5 September 2026 (HappyDucky02):
+
+- Historical topic checks now process 500 saved organization-visible events **per execution**, save an admission-time/ID cursor and capture cutoff, and yield the same durable job back through the transactional outbox until no eligible history remains. Matches, counters, checkpoint and continuation commit together; a failed batch rolls back and resumes from the previous checkpoint without model calls.
+- Topic-specific replay targets its owner directly, including an owner beyond the global 100-organization shortlist. A locked plan stays consistent during a batch; edited/paused plans supersede older work. Successful batches do not consume the consecutive-failure budget. Cancellation/retry retains checked progress; lease recovery skips active transaction locks.
+- Topic cards show checked/remaining/matched/excluded counts, capture time, incomplete legacy checks and recovery in DE/FR/IT/RM/EN. The existing organization-scoped cache refreshes progress without page reload. An administrator can resume a failed/cancelled check or replace a formerly truncated legacy check; read-only viewers cannot enqueue it. Unknown legacy totals and an empty saved corpus never become evidence that nothing happened.
+- A composite organization/admission-time/ID index supports keyset continuation. Tests cover 501 events, tied timestamps, duplicate delivery, transactional failure, cancellation, revision changes, owner scoping, fair outbox yielding, exclusions and removal of unchecked admissions. The PostgreSQL smoke gate additionally checks migration round-trip and real transaction locks.
+
+Remaining before HL-094 can be marked DONE: resumable **live** fan-out beyond 100 organizations / 50 topics / 20 matches; shared preview/production scoring; complete coverage/degradation and monitoring-from semantics in the unified interest feed. A completed saved-history snapshot is not a guarantee that a connector collected a complete website, and admission timestamps are not official publication/effective dates. Late source events follow live ingestion; do not infer full live coverage from this slice.
 
 <a id="hl-095"></a>
 

@@ -14,6 +14,7 @@ from . import jobs as durable_jobs
 from .config import DomainError
 from .db import utcnow
 from .models import (
+    Job,
     MonitoringTopic,
     MonitoringTopicDraft,
     MonitoringTopicRevision,
@@ -284,6 +285,7 @@ def _topic_payload(session: Session, topic: MonitoringTopic, *, history: bool = 
         "updated_at": _iso(topic.updated_at),
         "archived_at": _iso(topic.archived_at),
         "plan": _revision_payload(current),
+        "history_scan": history_scan(session, topic),
     }
     if history:
         result["revisions"] = [
@@ -350,20 +352,77 @@ def _add_revision(
 def _enqueue_match_backfill(
     session: Session, topic: MonitoringTopic, *, organization_id: str | None = None
 ):
+    from .topic_matching import HISTORY_REVISION, RULE_REVISION
+
     job, _ = durable_jobs.enqueue(
         session,
         job_type="topic_match_backfill",
         target_type="monitoring_topic",
         target_id=topic.id,
         queue="ingest",
-        idempotency_key=f"topic-match:{topic.id}:{topic.current_revision}",
+        idempotency_key=f"{HISTORY_REVISION}:{RULE_REVISION}:{topic.id}:{topic.current_revision}",
         payload={"topic_id": topic.id, "revision": topic.current_revision},
         priority=5,
         progress_total=1,
-        steps=[("Match a bounded saved-event window", {})],
+        steps=[("Match saved events in resumable batches", {})],
         organization_id=organization_id,
     )
     return durable_jobs.serialize(session, job)
+
+
+def _history_job(session: Session, topic: MonitoringTopic) -> Job | None:
+    return session.scalar(
+        select(Job).where(
+            Job.type == "topic_match_backfill", Job.target_id == topic.id,
+            Job.payload["revision"].as_integer() == topic.current_revision,
+        ).order_by(Job.created_at.desc(), Job.id.desc()).limit(1)
+    )
+
+
+def history_scan(session: Session, topic: MonitoringTopic) -> dict:
+    """Progress refers to saved organization-visible events, never whole-site coverage."""
+    job = _history_job(session, topic)
+    if not job:
+        return {"status": "not_started", "job_id": None, "revision": topic.current_revision}
+    result = job.result_json or {}
+    checkpoint = (job.payload or {}).get("checkpoint") or {}
+    if job.state == "succeeded":
+        status = "legacy_limited" if result.get("has_more") else result.get("status", "unknown")
+        if status == "bounded_complete":
+            status = "complete"  # Older full windows have no checkpoint/counter detail.
+    else:
+        status = job.state
+    return {
+        "status": status, "job_id": job.id, "revision": topic.current_revision,
+        "captured_at": checkpoint.get("captured_at"),
+        "processed": checkpoint.get("processed", result.get("processed")),
+        "remaining": checkpoint.get("remaining"),
+        "matched": sum(checkpoint.get(key, 0) for key in ("matched", "updated", "reused")),
+        "excluded": checkpoint.get("excluded"),
+        "exclusion_reason": result.get("exclusion_reason") or "no_match_under_revision",
+        "removed_since_capture": checkpoint.get("removed_since_capture", 0),
+        "batches": checkpoint.get("batches", 0),
+        "updated_at": _iso(job.updated_at),
+        "error": job.error_detail,
+    }
+
+
+def request_history_scan(session: Session, topic_id: str) -> dict:
+    topic = session.scalar(select(MonitoringTopic).where(MonitoringTopic.id == topic_id).with_for_update())
+    if not topic:
+        raise DomainError("The monitoring topic was not found.", 404, "monitoring_topic_not_found")
+    if topic.status != "active":
+        raise DomainError("Resume this topic before scanning its saved history.", 409, "monitoring_topic_inactive")
+    job = _history_job(session, topic)
+    if job and job.state not in durable_jobs.TERMINAL_STATES:
+        pass  # An existing worker or pending outbox already owns this revision.
+    elif job and job.state in {"failed", "cancelled"}:
+        durable_jobs.retry(session, job.id)
+    elif not job or (job.result_json or {}).get("has_more") or (job.result_json or {}).get("status") == "superseded":
+        _enqueue_match_backfill(session, topic)
+    # A complete snapshot is reusable; new arrivals use live event matching.
+    session.commit()
+    return _topic_payload(session, topic, history=True)
 
 
 def create_topic(

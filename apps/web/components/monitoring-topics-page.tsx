@@ -8,6 +8,7 @@ import type { MonitoringTopic, MonitoringTopicDraft, MonitoringTopicPlan, Monito
 import { useAuth } from "./auth-gate";
 import { ErrorNote, Loading, Status, SuccessNote } from "./common";
 import { Shell } from "./shell";
+import { TopicHistoryStatus } from "./topic-history-status";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
@@ -207,6 +208,19 @@ export function MonitoringTopicsPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  async function resumeHistory(topic: MonitoringTopic) {
+    setBusy(topic.id);
+    setError("");
+    try {
+      await api(`/monitoring-topics/${topic.id}/history-scan`, { method: "POST" });
+      await invalidateResources(resources.monitoringTopics(true));
+    } catch (cause) {
+      setError(errorText(cause));
+    } finally {
+      setBusy("");
+    }
+  }
+
   return (
     <Shell section={t("nav.topics")} wide>
       <div className="page-heading">
@@ -262,7 +276,7 @@ export function MonitoringTopicsPage() {
         <div className="flex items-end justify-between mb-4"><div><span className="eyebrow">{t("topics.savedEyebrow")}</span><h2 className="m-0">{t("topics.saved")}</h2></div><span className="muted text-sm">{topics.data?.length || 0}</span></div>
         {topics.loading && !topics.data && <Loading text={t("topics.loading")} />}
         {!topics.loading && topics.data?.length === 0 && <div className="empty-state card"><Radar /><h3>{t("topics.empty")}</h3><p className="muted">{t("topics.emptyBody")}</p></div>}
-        <div className="grid gap-4 xl:grid-cols-2">{topics.data?.map((topic) => <article className="card p-5" key={topic.id}><div className="flex items-start justify-between gap-4"><div><div className="flex flex-wrap gap-2 mb-2"><Status value={topic.status} /><span className="status-badge status-neutral">{t("topics.revision", { revision: topic.current_revision })}</span></div><h3 className="m-0">{topic.plan.name}</h3><p className="muted mt-2">{topic.plan.goal}</p></div></div><dl className="source-facts mt-4"><div><dt>{t("topics.concepts")}</dt><dd>{topic.plan.concepts.join(", ")}</dd></div><div><dt>{t("topics.sourcePacks")}</dt><dd>{topic.plan.source_pack_ids.join(", ")}</dd></div><div><dt>{t("topics.updatedAt")}</dt><dd>{dateTime(topic.updated_at)}</dd></div></dl><details className="mt-4"><summary className="cursor-pointer font-semibold">{t("topics.history")}</summary><ol className="mt-2 space-y-2 text-sm">{topic.revisions?.map((revision) => <li key={revision.id}>{t("topics.historyItem", { revision: revision.revision || 0, status: revision.status || "active", date: dateTime(revision.created_at) })}</li>) || <li>{t("topics.openToLoad")}</li>}</ol></details>{canManage && topic.status !== "archived" && <div className="flex flex-wrap gap-2 mt-5"><Button size="sm" variant="outline" onClick={() => edit(topic)}><Edit3 /> {t("topics.edit")}</Button>{topic.status === "active" ? <Button size="sm" variant="outline" disabled={busy === topic.id} onClick={() => void status(topic, "paused")}><Pause /> {t("topics.pause")}</Button> : <Button size="sm" variant="outline" disabled={busy === topic.id} onClick={() => void status(topic, "active")}><Play /> {t("topics.resume")}</Button>}<Button size="sm" variant="ghost" disabled={busy === topic.id} onClick={() => void status(topic, "archived")}><Archive /> {t("topics.archive")}</Button></div>}</article>)}</div>
+        <div className="grid gap-4 xl:grid-cols-2">{topics.data?.map((topic) => <article className="card p-5" key={topic.id}><div className="flex items-start justify-between gap-4"><div><div className="flex flex-wrap gap-2 mb-2"><Status value={topic.status} /><span className="status-badge status-neutral">{t("topics.revision", { revision: topic.current_revision })}</span></div><h3 className="m-0">{topic.plan.name}</h3><p className="muted mt-2">{topic.plan.goal}</p></div></div><dl className="source-facts mt-4"><div><dt>{t("topics.concepts")}</dt><dd>{topic.plan.concepts.join(", ")}</dd></div><div><dt>{t("topics.sourcePacks")}</dt><dd>{topic.plan.source_pack_ids.join(", ")}</dd></div><div><dt>{t("topics.updatedAt")}</dt><dd>{dateTime(topic.updated_at)}</dd></div></dl><TopicHistoryStatus topic={topic} capturedAtLabel={topic.history_scan?.captured_at ? dateTime(topic.history_scan.captured_at) : undefined} renderResume={canManage ? () => <Button variant="outline" disabled={Boolean(busy)} onClick={() => resumeHistory(topic)}><RotateCcw /> {t("topicHistory.resume")}</Button> : undefined} /><details className="mt-4"><summary className="cursor-pointer font-semibold">{t("topics.history")}</summary><ol className="mt-2 space-y-2 text-sm">{topic.revisions?.map((revision) => <li key={revision.id}>{t("topics.historyItem", { revision: revision.revision || 0, status: revision.status || "active", date: dateTime(revision.created_at) })}</li>) || <li>{t("topics.openToLoad")}</li>}</ol></details>{canManage && topic.status !== "archived" && <div className="flex flex-wrap gap-2 mt-5"><Button size="sm" variant="outline" onClick={() => edit(topic)}><Edit3 /> {t("topics.edit")}</Button>{topic.status === "active" ? <Button size="sm" variant="outline" disabled={busy === topic.id} onClick={() => void status(topic, "paused")}><Pause /> {t("topics.pause")}</Button> : <Button size="sm" variant="outline" disabled={busy === topic.id} onClick={() => void status(topic, "active")}><Play /> {t("topics.resume")}</Button>}<Button size="sm" variant="ghost" disabled={busy === topic.id} onClick={() => void status(topic, "archived")}><Archive /> {t("topics.archive")}</Button></div>}</article>)}</div>
       </section>
     </Shell>
   );

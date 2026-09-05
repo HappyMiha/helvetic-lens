@@ -266,3 +266,4 @@ def test_viewer_can_inspect_but_cannot_create_or_change_topics(tmp_path):
         )
         assert blocked.status_code == 403
         assert blocked.json()["code"] == "viewer_read_only"
+        assert client.post("/api/monitoring-topics/any-topic/history-scan", headers=headers).status_code == 403

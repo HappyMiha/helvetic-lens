@@ -6,7 +6,7 @@ import hashlib
 import json
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import Text, cast, or_, select, text
+from sqlalchemy import Text, cast, func, or_, select, text
 from sqlalchemy.orm import Session
 
 from .config import DomainError, Settings
@@ -27,6 +27,7 @@ from .relation_candidates import legal_references, normalized_title_tokens
 from .source_packs import definition_matches
 
 RULE_REVISION = "topic-match-v1"
+HISTORY_REVISION = "topic-history-v1"
 
 
 def _iso(value: datetime | None) -> str | None:
@@ -246,6 +247,14 @@ def generate_for_events(
     """Match only organizations already entitled to each event, under hard caps."""
 
     now = utcnow()
+    # A topic-specific replay belongs only to that topic's organization. Global
+    # fan-out caps must not exclude its owner or enumerate other organizations.
+    topic_organization = None
+    if topic_id:
+        topic = session.get(MonitoringTopic, topic_id)
+        if not topic:
+            raise DomainError("The monitoring topic was not found.", 404, "monitoring_topic_not_found")
+        topic_organization = topic.organization_id
     result = {
         "events": 0,
         "organizations_considered": 0,
@@ -272,7 +281,10 @@ def generate_for_events(
         organization_rows = list(
             session.scalars(
                 select(RegulatoryEventState.organization_id)
-                .where(RegulatoryEventState.event_id == event.id)
+                .where(
+                    RegulatoryEventState.event_id == event.id,
+                    *([RegulatoryEventState.organization_id == topic_organization] if topic_organization else []),
+                )
                 .order_by(RegulatoryEventState.organization_id)
                 .limit(settings.topic_match_organizations_per_event + 1)
                 .execution_options(include_all_organizations=True)
@@ -366,26 +378,88 @@ def run_backfill(
     topic_id: str,
     revision: int,
     settings: Settings,
+    *,
+    checkpoint: dict | None = None,
+    captured_at: datetime | None = None,
 ) -> dict:
-    topic = session.get(MonitoringTopic, topic_id)
+    # Keep one immutable plan for this batch even if an administrator edits it.
+    topic = session.scalar(select(MonitoringTopic).where(MonitoringTopic.id == topic_id).with_for_update())
     if not topic:
         raise DomainError("The monitoring topic was not found.", 404, "monitoring_topic_not_found")
-    if topic.status != "active" or topic.current_revision != revision:
-        return {"status": "superseded", "matched": 0, "reused": 0, "has_more": False}
-    rows = list(
-        session.scalars(
-            select(RegulatoryEvent)
-            .join(RegulatoryEventState, RegulatoryEventState.event_id == RegulatoryEvent.id)
-            .where(RegulatoryEventState.organization_id == topic.organization_id)
-            .order_by(RegulatoryEvent.detected_at.desc(), RegulatoryEvent.id.desc())
-            .limit(settings.topic_match_backfill_limit + 1)
+    checkpoint = dict(checkpoint or {})
+    if checkpoint and (
+        checkpoint.get("version") != HISTORY_REVISION
+        or checkpoint.get("topic_id") != topic.id
+        or checkpoint.get("organization_id") != topic.organization_id
+        or checkpoint.get("revision") != revision
+    ):
+        raise DomainError("The saved history checkpoint does not match this topic.", 409, "topic_checkpoint_invalid")
+    reason = (
+        "revision_changed" if topic.current_revision != revision
+        else f"topic_{topic.status}" if topic.status != "active"
+        else "matching_rule_changed" if checkpoint and checkpoint.get("rule_revision") != RULE_REVISION
+        else None
+    )
+    if reason:
+        return {"processed": 0, "remaining": 0, "matched": 0, "updated": 0, "reused": 0,
+                **checkpoint, "status": "superseded", "exclusion_reason": reason,
+                "has_more": False, "ai_calls": 0, "checkpoint": checkpoint}
+
+    if not checkpoint:
+        checkpoint = {
+            "version": HISTORY_REVISION, "rule_revision": RULE_REVISION,
+            "topic_id": topic.id, "organization_id": topic.organization_id, "revision": revision,
+            "captured_at": _iso(captured_at or utcnow()), "cursor": None,
+            "processed": 0, "matched": 0, "updated": 0, "reused": 0,
+            "excluded": 0, "batches": 0,
+        }
+    through = datetime.fromisoformat(checkpoint["captured_at"])
+    statement = (
+        select(RegulatoryEventState, RegulatoryEvent)
+        .join(RegulatoryEvent, RegulatoryEvent.id == RegulatoryEventState.event_id)
+        .where(
+            RegulatoryEventState.organization_id == topic.organization_id,
+            RegulatoryEventState.created_at <= through,
         )
     )
-    has_more = len(rows) > settings.topic_match_backfill_limit
-    result = generate_for_events(
-        session, rows[: settings.topic_match_backfill_limit], settings, topic_id=topic.id
+    if "eligible_events" not in checkpoint:
+        checkpoint["eligible_events"] = session.scalar(select(func.count()).select_from(statement.subquery()))
+    cursor = checkpoint.get("cursor")
+    if cursor:
+        after = datetime.fromisoformat(cursor["created_at"])
+        statement = statement.where(or_(
+            RegulatoryEventState.created_at > after,
+            (RegulatoryEventState.created_at == after) & (RegulatoryEventState.id > cursor["id"]),
+        ))
+    rows = list(session.execute(
+        statement.order_by(RegulatoryEventState.created_at, RegulatoryEventState.id)
+        .limit(settings.topic_match_backfill_limit + 1)
+    ))
+    selected = rows[:settings.topic_match_backfill_limit]
+    result = generate_for_events(session, [event for _state, event in selected], settings, topic_id=topic.id)
+    for key in ("matched", "updated", "reused"):
+        checkpoint[key] += result[key]
+    checkpoint["processed"] += len(selected)
+    checkpoint["excluded"] += len(selected) - result["matched"] - result["updated"] - result["reused"]
+    checkpoint["batches"] += 1
+    if selected:
+        last = selected[-1][0]
+        checkpoint["cursor"] = {"created_at": _iso(last.created_at), "id": last.id}
+        # Count actual remaining visible scope, not just a limit+1 sentinel.
+        after = last.created_at
+        remaining_statement = statement.where(or_(
+            RegulatoryEventState.created_at > after,
+            (RegulatoryEventState.created_at == after) & (RegulatoryEventState.id > last.id),
+        ))
+        remaining = session.scalar(select(func.count()).select_from(remaining_statement.subquery()))
+    else:
+        remaining = 0
+    checkpoint["remaining"] = remaining
+    checkpoint["removed_since_capture"] = max(
+        0, checkpoint["eligible_events"] - checkpoint["processed"] - remaining
     )
-    return {"status": "bounded_complete", "has_more": has_more, **result}
+    return {**checkpoint, "status": "pending" if remaining else "complete", "has_more": bool(remaining),
+            "ai_calls": 0, "checkpoint": checkpoint}
 
 
 def list_matches(session: Session, topic_id: str, *, limit: int = 100) -> list[dict]:

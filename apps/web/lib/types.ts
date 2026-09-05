@@ -1135,6 +1135,21 @@ export type MonitoringTopic = {
   plan: MonitoringTopicPlan;
   revisions?: MonitoringTopicPlan[];
   reused?: boolean;
+  history_scan?: {
+    status: string;
+    job_id: string | null;
+    revision: number;
+    captured_at?: string | null;
+    processed?: number | null;
+    remaining?: number | null;
+    matched?: number | null;
+    excluded?: number | null;
+    exclusion_reason?: string;
+    removed_since_capture?: number;
+    batches?: number;
+    updated_at?: string;
+    error?: string | null;
+  };
 };
 export type MonitoringTopicPreview = {
   candidate_count: number;

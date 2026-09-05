@@ -4,10 +4,12 @@ node_modules
 **/.venv
 **/.uv-cache
 .tmp
+**/.tmp-*
 reports
 **/__pycache__
 **/.pytest_cache
 **/.pytest-*
+**/pytest-cache-*
 **/.test-*
 **/.hl*-*
 data

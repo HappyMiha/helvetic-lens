@@ -292,6 +292,26 @@ def defer_for_model(session: Session, job_id: str, detail: str, delay: int = 10)
     return job
 
 
+def yield_batch(session: Session, job: Job) -> Job:
+    """Release successful checkpointed work to the outbox in this transaction.
+
+    The caller commits output and checkpoint with this transition. A successful
+    batch resets the consecutive failure budget; further batches are not retries.
+    """
+    if job.cancel_requested:
+        return cancel(session, job.id)
+    if job.state != "running":
+        raise ValueError("Only a running job can yield a completed batch")
+    now = utcnow()
+    job.state = "queued"
+    job.attempts = 0
+    job.available_at = job.heartbeat_at = job.updated_at = now
+    job.lease_owner = None
+    job.error_code = job.error_detail = None
+    _enqueue_outbox(session, job)
+    return job
+
+
 def cancel(session: Session, job_id: str) -> Job:
     job = session.get(Job, job_id)
     if not job:
@@ -343,7 +363,8 @@ def retry(session: Session, job_id: str) -> Job:
         step.progress_current = 0
         step.error_detail = None
         step.started_at = step.finished_at = None
-    job.progress_current = succeeded_steps
+    if job.type != "topic_match_backfill" or not (job.payload or {}).get("checkpoint"):
+        job.progress_current = succeeded_steps
     _enqueue_outbox(session, job)
     return job
 
@@ -357,7 +378,7 @@ def reconcile(session: Session, lease_seconds: int) -> dict:
         select(Job).where(
             Job.state == "running",
             Job.heartbeat_at < stale_lease,
-        )
+        ).with_for_update(skip_locked=True)
     ):
         job.lease_owner = None
         if job.attempts >= job.max_attempts:
@@ -371,6 +392,7 @@ def reconcile(session: Session, lease_seconds: int) -> dict:
         recovered += 1
     for job in session.scalars(
         select(Job).where(Job.state == "dispatched", Job.dispatched_at < stale_dispatch)
+        .with_for_update(skip_locked=True)
     ):
         job.state, job.available_at, job.updated_at = "queued", now, now
         _enqueue_outbox(session, job)

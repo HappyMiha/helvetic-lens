@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import postcss from "postcss";
 import tailwindcss from "@tailwindcss/postcss";
 import { Cdp, evaluate, pollJson, sleep } from "./browser-cdp.mjs";
-import { analysisModeFixtures } from "./analysis-mode-fixtures.mjs";
+import { analysisModeFixtures, renderLocalizedComponent } from "./analysis-mode-fixtures.mjs";
 import { reportDateFixtures } from "./report-date-fixtures.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -67,6 +67,15 @@ const markup = `<div class="comparison-layout" data-mobile-surface="companion">
       .replace("<p ", `<p data-contrast="Mode body ${locale} ${mode}" `)).join("\n")}
     ${reportDateFixtures().map(({ html, locale, state }) => html
       .replaceAll(/<(h3|p|strong|span|summary|blockquote)([ >])/g, `<$1 data-contrast="Dates ${locale} ${state}"$2`)).join("\n")}
+    ${["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"].flatMap(locale =>
+      ["queued", "legacy_limited", "failed", "complete"].map(state => renderLocalizedComponent(
+        "topic-history-status.tsx", "TopicHistoryStatus", locale, {
+          topic: { status: "active", history_scan: { status: state, job_id: "fixture", revision: 1,
+            captured_at: "2026-09-05T10:00:00Z", processed: state === "complete" ? 501 : 500,
+            remaining: state === "legacy_limited" ? null : state === "complete" ? 0 : 1,
+            matched: 490, excluded: 10 } },
+          capturedAtLabel: "5 September 2026 12:00",
+        }).replaceAll(/<(h3|p|span|time)([ >])/g, `<$1 data-contrast="Topic history ${locale} ${state}"$2`))).join("\n")}
   </div></section></aside></div>`;
 
 // Composite transparent ancestor surfaces before WCAG relative luminance.
@@ -152,6 +161,7 @@ try {
     await audit("default");
     const overflowingDates = await evaluate(cdp, `Array.from(document.querySelectorAll('[data-date-review]')).filter(el => el.scrollWidth > el.clientWidth + 1).length`);
     assert.equal(overflowingDates, 0, `Date sections must fit their pane at ${width}px`);
+    assert.equal(await evaluate(cdp, `Array.from(document.querySelectorAll('[data-topic-history]')).filter(el => el.scrollWidth > el.clientWidth + 1).length`), 0, `History progress must fit its pane at ${width}px`);
     await evaluate(cdp, `document.querySelectorAll('[data-date-review] details').forEach(el => el.open = true)`);
     await audit("date sources expanded");
     const { root: documentNode } = await cdp.send("DOM.getDocument");

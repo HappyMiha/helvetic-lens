@@ -672,6 +672,7 @@ class RegulatoryEventState(Base):
     __tablename__ = "regulatory_event_states"
     __table_args__ = (
         UniqueConstraint("organization_id", "event_id", name="uq_regulatory_event_state_org_event"),
+        Index("ix_regulatory_event_state_history", "organization_id", "created_at", "id"),
     )
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)

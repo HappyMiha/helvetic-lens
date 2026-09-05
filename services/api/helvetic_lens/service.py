@@ -1457,6 +1457,10 @@ class HelveticLens:
         with self.db.session() as session:
             return monitoring_topics.get_topic(session, topic_id)
 
+    def request_topic_history_scan(self, topic_id: str) -> dict:
+        with self.write_guard, self.db.session() as session:
+            return monitoring_topics.request_history_scan(session, topic_id)
+
     def monitoring_topic_matches(self, topic_id: str, *, limit: int = 100) -> list[dict]:
         with self.db.session() as session:
             return topic_matching.list_matches(session, topic_id, limit=limit)
@@ -3736,19 +3740,38 @@ class HelveticLens:
                 result_id = target_id
                 result_url = "/sources#source-packs"
             elif job_type == "topic_match_backfill":
-                mark(0, 1, "running")
                 with self.write_guard, self.db.session() as session:
+                    batch_job = session.scalar(select(Job).where(Job.id == job_id).with_for_update())
+                    if batch_job.state != "running" or batch_job.lease_owner != worker:
+                        return self.job_detail(job_id)
+                    if batch_job.cancel_requested:
+                        raise durable_jobs.JobCancelled()
                     result_json = topic_matching.run_backfill(
                         session,
                         target_id,
                         int(payload.get("revision") or 0),
                         self.settings,
+                        checkpoint=(batch_job.payload or {}).get("checkpoint"),
+                        captured_at=batch_job.started_at,
                     )
+                    batch_job.payload = {**(batch_job.payload or {}), "checkpoint": result_json["checkpoint"]}
+                    batch_job.result_type, batch_job.result_id, batch_job.result_url = "monitoring_topic", target_id, "/topics"
+                    batch_job.result_json = result_json
+                    durable_jobs.progress(
+                        session, job_id, current=result_json.get("processed", 0),
+                        total=result_json.get("processed", 0) + result_json.get("remaining", 0),
+                        step_position=1, step_state="pending" if result_json["has_more"] else "succeeded",
+                        step_details={"status": result_json["status"], "batches": result_json.get("batches", 0)},
+                    )
+                    if result_json["has_more"]:
+                        durable_jobs.yield_batch(session, batch_job)
+                    else:
+                        durable_jobs.complete(session, job_id, result_type="monitoring_topic",
+                                              result_id=target_id, result_url="/topics", result_json=result_json)
+                        # Superseded or empty scans must not appear to have examined more events.
+                        batch_job.progress_current = result_json.get("processed", 0)
                     session.commit()
-                mark(1, 1, "succeeded")
-                result_type = "monitoring_topic"
-                result_id = target_id
-                result_url = "/topics"
+                return self.job_detail(job_id)
             else:
                 raise DomainError("This durable job type is not supported by the worker.", 422, "job_type_unknown")
         except durable_jobs.JobCancelled:

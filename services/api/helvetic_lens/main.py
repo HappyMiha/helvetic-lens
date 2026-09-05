@@ -1057,6 +1057,10 @@ def create_app(
     ):
         return service.monitoring_topic_matches(topic_id, limit=limit)
 
+    @app.post("/api/monitoring-topics/{topic_id}/history-scan")
+    def request_topic_history_scan(topic_id: str):
+        return service.request_topic_history_scan(topic_id)
+
     @app.post("/api/monitoring-topics/preview")
     def preview_monitoring_topic(data: MonitoringTopicPlanInput):
         return service.preview_monitoring_topic(data.model_dump())
