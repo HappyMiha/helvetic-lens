@@ -67,12 +67,17 @@ from test_relation_version_freshness import (
     test_changed_or_removed_version_invalidates_current_without_rewriting_history,
     test_final_digest_read_drops_obsolete_ai_severity_without_sending,
 )
+from test_topic_reviews import (
+    test_postgres_concurrent_reviews_do_not_overwrite_or_duplicate,
+    test_review_hides_topic_feed_match_but_preserves_evidence_and_personal_state,
+    test_review_migration_roundtrip_preserves_existing_match_evidence,
+)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch"), default="history")
+    parser.add_argument("--suite", choices=("history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -93,6 +98,18 @@ def main():
         with TestClient(app) as client:
             service = app.state.service
             harness = (client, fetcher, service, model)
+            if args.suite == "topic-reviews":
+                test_review_hides_topic_feed_match_but_preserves_evidence_and_personal_state(harness)
+                print("PostgreSQL: shared topic review excludes/restores the exact feed match while retaining evidence and personal state.")
+                return
+            if args.suite == "topic-review-migration":
+                test_review_migration_roundtrip_preserves_existing_match_evidence(harness)
+                print("PostgreSQL: topic-review migration roundtrip preserves existing match evidence and restores history index.")
+                return
+            if args.suite in {"topic-review-race", "topic-review-retry"}:
+                test_postgres_concurrent_reviews_do_not_overwrite_or_duplicate(harness, args.suite == "topic-review-retry")
+                print("PostgreSQL: concurrent topic review sessions preserve one decision without overwriting or duplicate retries.")
+                return
             if args.suite == "feed-watch":
                 test_direct_watched_document_event_is_retained_without_topics_or_relation_candidates(harness)
                 print("PostgreSQL: direct active-watch updates stay in the feed without any topic or law-relation candidate; paused watches stop admitting them.")

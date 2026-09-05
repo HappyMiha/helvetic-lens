@@ -54,8 +54,9 @@ The UI invalidates scoped feed/inbox/digest reads without a document reload.
 - Current topics only; paused/revised/expired matches remain in topic history.
 - One event page is bounded; all interests for its selected events are returned.
   Very large per-event fan-out still needs separate paging (HL-099/HL-076).
-- Shared review and independent organization AI briefs remain existing/future
-  flows, not synthesized by the daily feed. Topic notices are not yet digests.
+- Shared topic relevance review is a separate evidence-bound flow linked from
+  Today and saved matches in Topics; see `TOPIC_MATCH_REVIEWS.md`. Independent
+  organization AI briefs remain separate work. Topic notices are not yet digests.
 - Coverage is explicitly limited to saved, evaluated evidence. The UI links to
   topic coverage/source settings but does not claim sources are healthy/current.
 - Work lifecycle status is distinct from an event date. A complete localized

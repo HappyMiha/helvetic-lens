@@ -247,6 +247,20 @@ export const resources = {
     });
   },
 
+  topicMatchReviews: <T = unknown>(id: string, cursor = "") => {
+    const path = `/topic-matches/${encodeURIComponent(id)}/reviews` + (cursor ? `?cursor=${encodeURIComponent(cursor)}` : "");
+    return key<T>(`monitoring:${path}`, path, {
+      tags: ["topic-matches", "monitoring"], staleMs: 15_000, pollMs: 15_000,
+    });
+  },
+
+  topicMatchesPage: <T = unknown>(id: string, cursor = "") => {
+    const path = `/monitoring-topics/${encodeURIComponent(id)}/matches/page` + (cursor ? `?cursor=${encodeURIComponent(cursor)}` : "");
+    return key<T>(`monitoring:${path}`, path, {
+      tags: ["topic-matches", "topics", "monitoring"], staleMs: 15_000, pollMs: 15_000,
+    });
+  },
+
   interestFeed: <T = unknown>(query = "") => {
     const path = withQuery("/interest-feed", query);
     return key<T>(`monitoring:${path}`, path, {

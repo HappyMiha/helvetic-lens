@@ -200,6 +200,14 @@ class DigestUnsubscribeInput(Input):
     token: str = Field(min_length=40, max_length=200)
 
 
+class TopicMatchReviewInput(Input):
+    decision: Literal["confirmed", "rejected"]
+    note: str = Field(min_length=3, max_length=2000)
+    request_key: str = Field(min_length=12, max_length=100)
+    expected_evaluation_fingerprint: str = Field(pattern=r"^[a-f0-9]{64}$")
+    expected_review_id: str | None = Field(default=None, min_length=1, max_length=36)
+
+
 class RelationReviewInput(Input):
     decision: Literal["confirmed", "rejected", "annotated"]
     note: str = Field(min_length=3, max_length=2000)
@@ -1056,6 +1064,19 @@ def create_app(
         topic_id: str, limit: int = Query(default=100, ge=1, le=200)
     ):
         return service.monitoring_topic_matches(topic_id, limit=limit)
+
+    @app.get("/api/monitoring-topics/{topic_id}/matches/page")
+    def topic_matches_page(topic_id: str, cursor: str = Query(default="", max_length=36), limit: int = Query(default=20, ge=1, le=50)):
+        return service.topic_matches_page(topic_id, cursor=cursor, limit=limit)
+
+    @app.get("/api/topic-matches/{match_id}/reviews")
+    def topic_match_reviews(match_id: str, cursor: str = Query(default="", max_length=36), limit: int = Query(default=20, ge=1, le=50)):
+        return service.topic_match_review_detail(match_id, cursor=cursor, limit=limit)
+
+    @app.post("/api/topic-matches/{match_id}/reviews", status_code=201)
+    def review_topic_match(match_id: str, data: TopicMatchReviewInput, request: Request):
+        identity = request.state.identity
+        return service.review_topic_match(match_id, actor_user_id=identity.user_id if identity else None, **data.model_dump())
 
     @app.post("/api/monitoring-topics/{topic_id}/history-scan")
     def request_topic_history_scan(topic_id: str):

@@ -86,6 +86,11 @@ def test_invited_viewer_sees_shared_workspace_but_cannot_mutate(tmp_path):
         )
         assert feed_state.status_code == 404
         assert feed_state.json()["code"] == "not_found"
+        assert viewer.post(
+            "/api/topic-matches/00000000-0000-0000-0000-000000000000/reviews",
+            json={"decision": "confirmed", "note": "Reviewed source", "request_key": "viewer-review-request",
+                  "expected_evaluation_fingerprint": "a" * 64}, headers=csrf(viewer),
+        ).status_code == 403
         assert (
             viewer.post(
                 "/api/relation-candidates/00000000-0000-0000-0000-000000000000/reanalyse-jobs",

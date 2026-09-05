@@ -745,6 +745,7 @@ def describe_matches(session: Session, records: list[TopicEventMatch]) -> list[d
         validity = (
             "plan_changed" if revision.revision != topic.current_revision
             else f"topic_{topic.status}" if topic.status != "active"
+            else "expired" if item.expires_at and datetime.fromisoformat(_iso(item.expires_at)) <= utcnow()
             else "unchecked" if not item.evaluation_fingerprint
             else "rule_changed" if item.evaluated_rule_fingerprint != f"{RULE_REVISION}:{revision.revision}"
             else "evidence_changed" if item.evaluation_fingerprint != _evaluation_fingerprint(session, event, revision, definitions, fingerprints[event.id])
@@ -775,6 +776,8 @@ def describe_matches(session: Session, records: list[TopicEventMatch]) -> list[d
             "last_match_confidence": item.confidence_band,
             "decision": item.decision_status, "decision_is_current": decision_current,
             "review_evidence": review,
+            "review_id": review.get("review_id") if review else None,
+            "evaluation_fingerprint": item.evaluation_fingerprint,
             "validity": validity, "is_current": validity == "matching",
             "evaluated_at": _iso(item.evaluated_at),
             "matched_at": _iso(item.matched_at), "expires_at": _iso(item.expires_at),

@@ -41,6 +41,7 @@ import {
 import { useAuth } from "./auth-gate";
 import { ErrorNote, Loading, Status, SuccessNote } from "./common";
 import { Shell } from "./shell";
+import { TopicSavedMatches } from "./topic-match-review";
 import { TopicHistoryStatus } from "./topic-history-status";
 import { TopicPreviewCoverage } from "./topic-preview-coverage";
 import { Button } from "./ui/button";
@@ -999,6 +1000,7 @@ function TopicEditor({ draftScope }: { draftScope: string | null }) {
                     : undefined
                 }
               />
+              <TopicSavedMatches topicId={topic.id} />
               <details className="mt-4">
                 <summary className="cursor-pointer font-semibold">
                   {t("topics.history")}

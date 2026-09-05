@@ -184,6 +184,8 @@ def test_zurich_calendar_filters_separate_detection_from_official_dates(harness,
         session.add(RegulatoryDate(entity_type="event", entity_id=ids[1], kind="published_at", date_value="1999", precision="year", provenance="official_metadata"))
         session.commit()
     monkeypatch.setattr(interest_feed, "datetime", FixedDatetime)
+    from helvetic_lens import topic_matching
+    monkeypatch.setattr(topic_matching, "utcnow", lambda: captured)
     today_page = client.get("/api/interest-feed?period=today").json()
     assert {item["event_id"] for item in today_page["items"]} == set(ids[1:])
     assert client.get("/api/interest-feed?period=yesterday").json()["items"][0]["event_id"] == ids[0]

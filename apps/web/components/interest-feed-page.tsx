@@ -97,6 +97,7 @@ export function InterestFeedPage() {
           <ul className="space-y-3">{item.topic_matches.map(topic => <li key={topic.id}>
             <Link href={topic.url} className="underline min-h-[44px] inline-flex items-center">{topic.name}</Link>
             <p className="text-sm mt-0">{t("topics.matchReason", { reasons: [...new Set(topic.reasons.flatMap(reason => reason.values || (reason.value ? [reason.value] : [])))].join(" · ") })}</p><p className="text-sm muted">{t("feed.confidence")}: <Status value={topic.confidence} /></p>
+            <Link className="underline inline-flex min-h-[44px] items-center text-sm" href={`/topic-review?match=${encodeURIComponent(topic.id)}`}>{t("topicReview.open")}</Link>
           </li>)}</ul>
         </section>}
         {item.law_impacts.length > 0 && <section className="border-t mt-3 pt-4"><h3 className="text-base font-semibold">{t("registry.monitored")}</h3>

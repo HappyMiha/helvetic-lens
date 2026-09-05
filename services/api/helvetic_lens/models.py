@@ -423,6 +423,27 @@ class TopicEventMatch(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class TopicMatchReview(Base):
+    """Append-only organization decision bound to the exact evaluated proposal."""
+
+    __tablename__ = "topic_match_reviews"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "request_key", name="uq_topic_match_review_request"),
+        Index("ix_topic_match_review_history", "organization_id", "match_id", "created_at", "id"),
+        CheckConstraint("decision IN ('confirmed', 'rejected')", name="ck_topic_match_review_decision"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    match_id: Mapped[str] = mapped_column(ForeignKey("topic_event_matches.id"), index=True)
+    actor_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    request_key: Mapped[str] = mapped_column(String(100))
+    request_fingerprint: Mapped[str] = mapped_column(String(64))
+    decision: Mapped[str] = mapped_column(String(20))
+    note: Mapped[str] = mapped_column(Text)
+    snapshot_json: Mapped[dict] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class Law(Base):
     __tablename__ = "laws"
     __table_args__ = (
@@ -1365,6 +1386,7 @@ ORGANIZATION_SCOPED_MODELS = (
     MonitoringTopicRevision,
     MonitoringTopicDraft,
     TopicEventMatch,
+    TopicMatchReview,
     Observation,
     IdentityDecision,
     Scan,

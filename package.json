@@ -33,7 +33,8 @@
     "check:comparison:browser": "node scripts/check-comparison-browser.mjs",
     "check:shell:browser": "node scripts/check-shell-browser.mjs",
     "check:topics:browser": "node scripts/check-topic-editor-browser.mjs",
-    "check:feed:browser": "node scripts/check-interest-feed-browser.mjs"
+    "check:feed:browser": "node scripts/check-interest-feed-browser.mjs",
+    "check:topic-reviews:browser": "node scripts/check-topic-reviews-browser.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.2.0",

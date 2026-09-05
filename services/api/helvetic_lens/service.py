@@ -19,7 +19,7 @@ from sqlalchemy import delete, func, inspect, or_, select
 from sqlalchemy.orm import Session
 
 from . import analysis as ai
-from . import digests, monitoring_topics, source_packs, synchronization, topic_matching
+from . import digests, monitoring_topics, source_packs, synchronization, topic_matching, topic_reviews
 from . import jobs as durable_jobs
 from . import relation_analysis as relation_ai
 from .ai_metrics import summarize_ai_triage_metrics
@@ -1478,6 +1478,18 @@ class HelveticLens:
     def request_topic_history_scan(self, topic_id: str) -> dict:
         with self.write_guard, self.db.session() as session:
             return monitoring_topics.request_history_scan(session, topic_id)
+
+    def topic_matches_page(self, topic_id: str, **options) -> dict:
+        with self.db.session() as session:
+            return topic_reviews.matches_page(session, self.organization_id, topic_id, **options)
+
+    def topic_match_review_detail(self, match_id: str, **options) -> dict:
+        with self.db.session() as session:
+            return topic_reviews.detail(session, self.organization_id, match_id, **options)
+
+    def review_topic_match(self, match_id: str, **values) -> dict:
+        with self.write_guard, self.db.session() as session:
+            return topic_reviews.save(session, self.organization_id, match_id, **values)
 
     def monitoring_topic_matches(self, topic_id: str, *, limit: int = 100) -> list[dict]:
         with self.db.session() as session:

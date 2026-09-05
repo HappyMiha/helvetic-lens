@@ -21,6 +21,7 @@ from .models import (
     OutboxMessage,
     RegulatoryDocumentVersion,
     TopicEventMatch,
+    TopicMatchReview,
     Version,
 )
 
@@ -95,6 +96,7 @@ def cleanup_operational_data(
                 select(TopicEventMatch.id).where(
                     TopicEventMatch.expires_at <= now,
                     TopicEventMatch.decision_status.in_(("pending", "rejected", "muted")),
+                    ~select(TopicMatchReview.id).where(TopicMatchReview.match_id == TopicEventMatch.id).exists(),
                 )
             )
         )

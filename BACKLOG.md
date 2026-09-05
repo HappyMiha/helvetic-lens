@@ -1455,11 +1455,24 @@ remain intact. Five-locale mobile/desktop journeys and PostgreSQL checks are
 recorded in `docs/VERIFICATION.md`; contract/limits: `docs/INTEREST_FEED.md`.
 
 Still open: grouping separate event IDs describing one publisher development,
-shared topic-review UI/audit and notifications, organization AI briefs (HL-089),
+topic notifications, organization AI briefs (HL-089),
 fully surfaced jurisdiction/provenance and live coverage diagnostics, interest
 fan-out pagination, event-specific deep links/artifacts beyond existing timeline
 and review routes, and independent user/native-language evaluation. This slice
 is not completion of HL-076 or a claim of complete website monitoring.
+
+**Implemented 5 September 2026 (shared topic relevance review):** Today links to
+an evidence-bound review page; Topics also exposes paginated saved matches so a
+rejected proposal remains recoverable. Organization admins can confirm/reject
+relevance with a required rationale. Append-only history records date, server-side
+actor, topic revision and exact evaluated evidence; viewers can inspect it.
+Expected evidence/prior-review checks and PostgreSQL row locks reject stale or
+competing decisions. Same-key retries reuse the receipt. Corrected evidence needs
+a new decision; personal reading state is unchanged. Cleanup retains matches
+with review history. Five-language UI and isolated PostgreSQL/migration checks
+are recorded in `docs/VERIFICATION.md`; see `docs/TOPIC_MATCH_REVIEWS.md`.
+This closes the shared topic-review implementation gap, not the remaining HL-076
+criteria or independent usability/native-language gates.
 
 
 Acceptance criteria:
