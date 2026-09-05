@@ -9,6 +9,7 @@ import { useAuth } from "./auth-gate";
 import { ErrorNote, Loading, Status, SuccessNote } from "./common";
 import { Shell } from "./shell";
 import { TopicHistoryStatus } from "./topic-history-status";
+import { TopicPreviewCoverage } from "./topic-preview-coverage";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
@@ -267,8 +268,8 @@ export function MonitoringTopicsPage() {
         <section className="card p-5 mb-6" aria-live="polite">
           <span className="eyebrow">{t("topics.previewEyebrow")}</span>
           <h2>{t("topics.previewCount", { count: preview.candidate_count })}</h2>
-          <p className="muted">{t("topics.previewBoundary", { limit: preview.scanned_event_limit })}</p>
-          {preview.items.length === 0 ? <p>{t("topics.noCandidates")}</p> : <div className="space-y-3">{preview.items.map((item) => <article className="rounded-lg border p-4" key={item.event_id}><div className="flex flex-wrap items-center gap-2"><Status value={item.event_type} /><Status value={item.importance} /></div><h3 className="mt-3 mb-1">{item.title}</h3><p className="muted text-sm">{item.authority} · {dateTime(item.detected_at)}</p><p className="text-sm">{t("topics.matchReason", { reasons: item.reason_signals.filter((signal) => signal.type !== "source_pack").map((signal) => signal.value).join(", ") })}</p><p className="text-xs muted">{t("topics.notLegalRelation")}</p></article>)}</div>}
+          <TopicPreviewCoverage preview={preview} capturedAtLabel={preview.sample_captured_at ? dateTime(preview.sample_captured_at) : undefined} />
+          {preview.items.length === 0 ? <p>{t("topics.noCandidates")}</p> : <div className="space-y-3">{preview.items.map((item) => <article className="rounded-lg border p-4" key={item.event_id}><div className="flex flex-wrap items-center gap-2"><Status value={item.event_type} /><Status value={item.importance} /></div><h3 className="mt-3 mb-1">{item.title}</h3><p className="muted text-sm">{item.authority} · {dateTime(item.detected_at)}</p><p className="text-sm">{t("topics.matchReason", { reasons: item.reason_signals.filter((signal) => signal.type !== "source_pack").flatMap((signal) => signal.values || (signal.value ? [signal.value] : [])).join(", ") })}</p><p className="text-xs muted">{t("topics.notLegalRelation")}</p></article>)}</div>}
         </section>
       )}
 

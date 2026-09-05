@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import re
 from datetime import UTC, datetime
 
@@ -19,11 +18,11 @@ from .models import (
     MonitoringTopicDraft,
     MonitoringTopicRevision,
     RegulatoryEvent,
+    RegulatoryEventState,
     RegulatoryExpression,
     RegulatoryWork,
     SourcePackDefinition,
 )
-from .source_packs import definition_matches
 
 PREVIEW_SCAN_LIMIT = 500
 PREVIEW_RESULT_LIMIT = 10
@@ -552,83 +551,65 @@ def change_status(
     }
 
 
-def _values(raw: object) -> set[str]:
-    if isinstance(raw, str):
-        return {raw.casefold()}
-    if isinstance(raw, list):
-        return {str(item).casefold() for item in raw}
-    return set()
-
-
 def preview(session: Session, data: dict) -> dict:
+    # Local import avoids the plan-lifecycle/matcher dependency cycle. This is
+    # exactly the scorer used by live ingestion and saved-history activation.
+    from .topic_matching import RULE_REVISION, score_event
+
     plan = normalize_plan(data, session)
-    pack_definitions = list(
-        session.scalars(
-            select(SourcePackDefinition).where(SourcePackDefinition.id.in_(plan["source_pack_ids"]))
-        )
+    captured_at = utcnow()
+    definitions = {item.id: item for item in session.scalars(
+        select(SourcePackDefinition).where(SourcePackDefinition.active.is_(True))
+    )}
+    # A transient rule object is never added to the session or persisted. Its
+    # validated fields are identical to those saved on activation.
+    rules = MonitoringTopicRevision(
+        importance_floor=plan["importance_floor"],
+        **{f"{key}_json": plan[key] for key in (
+            "concepts", "synonyms", "exclusions", "jurisdictions", "languages",
+            "source_pack_ids", "document_kinds", "event_kinds",
+        )},
     )
-    rows = list(
-        session.execute(
-            select(RegulatoryEvent, RegulatoryWork, RegulatoryExpression)
-            .join(RegulatoryWork, RegulatoryWork.id == RegulatoryEvent.work_id)
-            .outerjoin(RegulatoryExpression, RegulatoryExpression.id == RegulatoryEvent.expression_id)
-            .order_by(RegulatoryEvent.detected_at.desc(), RegulatoryEvent.id.desc())
-            .limit(PREVIEW_SCAN_LIMIT + 1)
-        )
-    )
+    rows = list(session.execute(
+        select(RegulatoryEvent, RegulatoryWork, RegulatoryExpression)
+        .join(RegulatoryEventState, RegulatoryEventState.event_id == RegulatoryEvent.id)
+        .join(RegulatoryWork, RegulatoryWork.id == RegulatoryEvent.work_id)
+        .outerjoin(RegulatoryExpression, RegulatoryExpression.id == RegulatoryEvent.expression_id)
+        .where(RegulatoryEventState.organization_id == session.info["organization_id"],
+               RegulatoryEventState.created_at <= captured_at)
+        .order_by(RegulatoryEvent.detected_at.desc(), RegulatoryEvent.id.desc())
+        .limit(PREVIEW_SCAN_LIMIT + 1)
+    ))
     scan_truncated = len(rows) > PREVIEW_SCAN_LIMIT
+    selected = rows[:PREVIEW_SCAN_LIMIT]
     candidates: list[dict] = []
-    terms = [(value, "concept") for value in plan["concepts"]] + [
-        (value, "synonym") for value in plan["synonyms"]
-    ]
-    for event, work, expression in rows[:PREVIEW_SCAN_LIMIT]:
-        stream = str((event.evidence_json or {}).get("stream", ""))
-        if not any(definition_matches(item, event.connector, stream) for item in pack_definitions):
+    for event, work, expression in selected:
+        scored = score_event(session, event, work, expression, rules, definitions)
+        if not scored:
             continue
-        if work.kind not in plan["document_kinds"] or event.event_type not in plan["event_kinds"]:
-            continue
-        if IMPORTANCE_RANK.get(event.impact, 1) < IMPORTANCE_RANK[plan["importance_floor"]]:
-            continue
-        metadata = work.metadata_json or {}
-        evidence = event.evidence_json or {}
-        jurisdictions = _values(metadata.get("jurisdiction") or metadata.get("jurisdictions") or evidence.get("jurisdiction") or "CH")
-        if jurisdictions.isdisjoint(value.casefold() for value in plan["jurisdictions"]):
-            continue
-        language = (expression.language if expression else evidence.get("language")) or ""
-        if language and language.casefold() not in {value.casefold() for value in plan["languages"]}:
-            continue
-        haystack = " ".join(
-            [work.title, expression.title if expression else "", json.dumps(metadata, ensure_ascii=False), json.dumps(evidence, ensure_ascii=False)]
-        ).casefold()
-        if any(value.casefold() in haystack for value in plan["exclusions"]):
-            continue
-        matched = [(value, kind) for value, kind in terms if value.casefold() in haystack]
-        if not matched:
-            continue
-        candidates.append(
-            {
-                "event_id": event.id,
-                "work_id": work.id,
-                "title": expression.title if expression and expression.title else work.title,
-                "event_type": event.event_type,
-                "document_kind": work.kind,
-                "authority": event.authority,
-                "detected_at": _iso(event.detected_at),
-                "source_url": event.source_url or work.stable_official_url,
-                "importance": event.impact,
-                "match_type": "topic_candidate",
-                "legal_relation_confirmed": False,
-                "reason_signals": [
-                    {"type": kind, "value": value} for value, kind in matched[:5]
-                ]
-                + [{"type": "source_pack", "value": item.id} for item in pack_definitions if definition_matches(item, event.connector, stream)],
-            }
-        )
+        confidence, signals = scored
+        candidates.append({
+            "event_id": event.id, "work_id": work.id,
+            "title": expression.title if expression and expression.title else work.title,
+            "event_type": event.event_type, "document_kind": work.kind,
+            "authority": event.authority, "detected_at": _iso(event.detected_at),
+            "source_url": event.source_url or work.stable_official_url,
+            "importance": event.impact, "match_type": "topic_candidate",
+            "legal_relation_confirmed": False, "reason_signals": signals,
+            "confidence": confidence,
+        })
     return {
         "candidate_count": len(candidates),
         "count_is_complete": not scan_truncated,
         "scanned_event_limit": PREVIEW_SCAN_LIMIT,
+        "scanned_event_count": len(selected),
+        "sample_captured_at": _iso(captured_at),
+        "sample_detected_from": _iso(selected[-1][0].detected_at) if selected else None,
+        "sample_detected_through": _iso(selected[0][0].detected_at) if selected else None,
+        "visibility_scope": "organization_saved_events",
+        "rule_revision": RULE_REVISION,
+        "display_truncated": len(candidates) > PREVIEW_RESULT_LIMIT,
         "representative_limit": PREVIEW_RESULT_LIMIT,
         "items": candidates[:PREVIEW_RESULT_LIMIT],
-        "explanation": "Deterministic preview over saved events only; no AI inference and no confirmed legal relation.",
+        "explanation": "Same deterministic scorer as activation, over this organization’s saved-event sample only; no AI inference, source-completeness guarantee or confirmed legal relation.",
     }

@@ -76,6 +76,15 @@ const markup = `<div class="comparison-layout" data-mobile-surface="companion">
             matched: 490, excluded: 10 } },
           capturedAtLabel: "5 September 2026 12:00",
         }).replaceAll(/<(h3|p|span|time)([ >])/g, `<$1 data-contrast="Topic history ${locale} ${state}"$2`))).join("\n")}
+    ${["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"].flatMap(locale =>
+      ["limited", "complete", "empty"].map(state => renderLocalizedComponent(
+        "topic-preview-coverage.tsx", "TopicPreviewCoverage", locale, {
+          preview: { count_is_complete: state !== "limited", scanned_event_count: state === "empty" ? 0 : 500,
+            scanned_event_limit: 500, candidate_count: state === "empty" ? 0 : 120,
+            items: state === "empty" ? [] : Array(10).fill({}), display_truncated: state !== "empty",
+            sample_captured_at: "2026-09-05T10:00:00Z" },
+          capturedAtLabel: "5 September 2026 12:00",
+        }).replaceAll(/<(p|time)([ >])/g, `<$1 data-contrast="Topic preview ${locale} ${state}"$2`))).join("\n")}
   </div></section></aside></div>`;
 
 // Composite transparent ancestor surfaces before WCAG relative luminance.
@@ -162,6 +171,7 @@ try {
     const overflowingDates = await evaluate(cdp, `Array.from(document.querySelectorAll('[data-date-review]')).filter(el => el.scrollWidth > el.clientWidth + 1).length`);
     assert.equal(overflowingDates, 0, `Date sections must fit their pane at ${width}px`);
     assert.equal(await evaluate(cdp, `Array.from(document.querySelectorAll('[data-topic-history]')).filter(el => el.scrollWidth > el.clientWidth + 1).length`), 0, `History progress must fit its pane at ${width}px`);
+    assert.equal(await evaluate(cdp, `Array.from(document.querySelectorAll('[data-topic-preview-coverage]')).filter(el => el.scrollWidth > el.clientWidth + 1).length`), 0, `Preview coverage must fit its pane at ${width}px`);
     await evaluate(cdp, `document.querySelectorAll('[data-date-review] details').forEach(el => el.open = true)`);
     await audit("date sources expanded");
     const { root: documentNode } = await cdp.send("DOM.getDocument");

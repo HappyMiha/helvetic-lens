@@ -156,7 +156,7 @@ def _candidate_revisions(
     )
 
 
-def _score(
+def score_event(
     session: Session,
     event: RegulatoryEvent,
     work: RegulatoryWork,
@@ -370,7 +370,7 @@ def generate_for_events(
             result["topics_considered"] += len(candidates)
             ranked: list[tuple[int, MonitoringTopic, MonitoringTopicRevision, str, list[dict]]] = []
             for topic, revision in candidates:
-                scored = _score(session, event, work, expression, revision, definitions)
+                scored = score_event(session, event, work, expression, revision, definitions)
                 if scored:
                     confidence, signals = scored
                     ranked.append((0 if confidence == "high" else 1, topic, revision, confidence, signals))
@@ -512,7 +512,7 @@ def run_live_batch(
     )}
     expression = session.get(RegulatoryExpression, event.expression_id) if event.expression_id else None
     for topic, revision in rows:
-        scored = _score(session, event, work, expression, revision, definitions)
+        scored = score_event(session, event, work, expression, revision, definitions)
         if scored:
             confidence, signals = scored
             outcome = _persist_match(session, event, work, topic, revision, confidence, signals, settings)

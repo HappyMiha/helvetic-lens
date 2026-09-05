@@ -14,6 +14,7 @@ from helvetic_lens.models import (
     MonitoringTopicRevision,
     Organization,
     OrganizationMembership,
+    RegulatoryEventState,
 )
 from helvetic_lens.regulatory_corpus import DocumentInput, EventInput, ExpressionInput, IdentifierInput
 
@@ -79,6 +80,7 @@ def add_candidate(service, *, title="Naturalisation Act amendment", stream="rss-
                 impact="medium",
             ),
         )
+        session.add(RegulatoryEventState(event_id=event.id))
         session.commit()
         return event.id
 
@@ -164,7 +166,6 @@ def test_preview_is_bounded_explained_and_never_claims_a_legal_relation(harness)
     assert result["items"][0]["legal_relation_confirmed"] is False
     assert {item["type"] for item in result["items"][0]["reason_signals"]} >= {
         "concept",
-        "source_pack",
     }
 
 

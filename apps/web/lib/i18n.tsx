@@ -2560,6 +2560,55 @@ const topicJobMessages: Record<Locale, Messages> = {
 };
 for (const locale of locales) Object.assign(catalogTarget(locale), topicJobMessages[locale]);
 
+const topicPreviewMessages: Record<Locale, Messages> = {
+  "en-CH": {
+    "topics.previewCount": "{count} matches in the checked sample",
+    "topics.noCandidates": "No match in the checked sample. This does not mean there are no relevant developments. You can save this plan for future matching.",
+    "topicPreview.checked": "Checked {count} saved events (sample limit: {limit}).",
+    "topicPreview.limited": "More saved events remain outside this sample. Activating the topic schedules a resumable history check.",
+    "topicPreview.scope": "Only saved events available to your organization are checked. This preview does not fetch websites or prove complete source coverage. Manage available source packs in Sources.",
+    "topicPreview.checkedAt": "Checked at:",
+    "topicPreview.shown": "Showing {shown} of {total} matches found in this sample."
+  },
+  "de-CH": {
+    "topics.previewCount": "{count} Treffer in der geprüften Stichprobe",
+    "topics.noCandidates": "Kein Treffer in der geprüften Stichprobe. Das bedeutet nicht, dass es keine relevanten Entwicklungen gibt. Sie können den Plan für künftige Treffer speichern.",
+    "topicPreview.checked": "{count} gespeicherte Ereignisse geprüft (Stichprobenlimit: {limit}).",
+    "topicPreview.limited": "Weitere gespeicherte Ereignisse liegen ausserhalb dieser Stichprobe. Die Aktivierung plant eine fortsetzbare Prüfung der Historie ein.",
+    "topicPreview.scope": "Geprüft werden nur gespeicherte Ereignisse, die Ihrer Organisation zur Verfügung stehen. Diese Vorschau ruft keine Websites ab und belegt keine vollständige Quellenabdeckung. Quellenpakete verwalten Sie unter Quellen.",
+    "topicPreview.checkedAt": "Geprüft am:",
+    "topicPreview.shown": "{shown} von {total} Treffern aus dieser Stichprobe werden angezeigt."
+  },
+  "fr-CH": {
+    "topics.previewCount": "{count} correspondances dans l’échantillon vérifié",
+    "topics.noCandidates": "Aucune correspondance dans l’échantillon vérifié. Cela ne signifie pas qu’il n’existe aucune évolution pertinente. Vous pouvez enregistrer ce plan pour les résultats futurs.",
+    "topicPreview.checked": "{count} événements enregistrés vérifiés (limite de l’échantillon: {limit}).",
+    "topicPreview.limited": "D’autres événements enregistrés restent hors de cet échantillon. L’activation programme une vérification reprenable de l’historique.",
+    "topicPreview.scope": "Seuls les événements enregistrés disponibles pour votre organisation sont vérifiés. Cet aperçu ne consulte pas les sites et ne prouve pas une couverture complète. Gérez les packs disponibles dans Sources.",
+    "topicPreview.checkedAt": "Vérifié le:",
+    "topicPreview.shown": "Affichage de {shown} correspondances sur les {total} trouvées dans cet échantillon."
+  },
+  "it-CH": {
+    "topics.previewCount": "{count} corrispondenze nel campione verificato",
+    "topics.noCandidates": "Nessuna corrispondenza nel campione verificato. Questo non significa che non esistano sviluppi rilevanti. Puoi salvare il piano per risultati futuri.",
+    "topicPreview.checked": "Verificati {count} eventi salvati (limite del campione: {limit}).",
+    "topicPreview.limited": "Altri eventi salvati restano fuori da questo campione. L’attivazione programma una verifica riprendibile dello storico.",
+    "topicPreview.scope": "Vengono verificati solo gli eventi salvati disponibili per la tua organizzazione. Questa anteprima non consulta i siti e non dimostra una copertura completa. Gestisci i pacchetti disponibili in Fonti.",
+    "topicPreview.checkedAt": "Verificato il:",
+    "topicPreview.shown": "Visualizzate {shown} delle {total} corrispondenze trovate in questo campione."
+  },
+  "rm-CH": {
+    "topics.previewCount": "{count} correspundenzas en l’emprova examinada",
+    "topics.noCandidates": "Nagina correspundenza en l’emprova examinada. Quai na signifitga betg ch’i na dettia nagins svilups relevants. Vus pudais memorisar quest plan per resultats futurs.",
+    "topicPreview.checked": "{count} eveniments memorisads examinads (limit da l’emprova: {limit}).",
+    "topicPreview.limited": "Ulteriurs eveniments memorisads èn ordaifer questa emprova. L’activaziun planisescha ina examinaziun cuntinuabla da l’istorgia.",
+    "topicPreview.scope": "Vegnan examinads mo eveniments memorisads disponibels per Vossa organisaziun. Questa prevista na consultescha naginas paginas web e na cumprova nagina cuvrida cumpletta. Administrai ils pachets disponibels sut Funtaunas.",
+    "topicPreview.checkedAt": "Examinà ils:",
+    "topicPreview.shown": "Vegnan mussadas {shown} da {total} correspundenzas chattadas en questa emprova."
+  }
+};
+for (const locale of locales) Object.assign(catalogTarget(locale), topicPreviewMessages[locale]);
+
 const catalog: Record<Locale, Messages> = { "de-CH": de, "fr-CH": fr, "it-CH": it, "rm-CH": rm, "en-CH": en };
 const localeCookie = "helvetic_lens_locale";
 

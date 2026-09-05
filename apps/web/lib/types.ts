@@ -1155,6 +1155,13 @@ export type MonitoringTopicPreview = {
   candidate_count: number;
   count_is_complete: boolean;
   scanned_event_limit: number;
+  scanned_event_count?: number;
+  sample_captured_at?: string;
+  sample_detected_from?: string | null;
+  sample_detected_through?: string | null;
+  visibility_scope?: "organization_saved_events";
+  rule_revision?: string;
+  display_truncated?: boolean;
   representative_limit: number;
   explanation: string;
   items: {
@@ -1169,7 +1176,8 @@ export type MonitoringTopicPreview = {
     importance: string;
     match_type: "topic_candidate";
     legal_relation_confirmed: false;
-    reason_signals: { type: string; value: string }[];
+    confidence?: "high" | "medium" | "low";
+    reason_signals: { type: string; value?: string; values?: string[]; tokens?: string[] }[];
   }[];
 };
 export type MonitoringTopicDraft = {

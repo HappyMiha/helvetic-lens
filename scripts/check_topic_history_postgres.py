@@ -39,12 +39,15 @@ from test_topic_live import (
     seed_topics,
     test_51_matching_topics_resume_after_write_limit_and_retain_metadata_matches,
 )
+from test_topic_preview_parity import (
+    test_preview_history_and_live_share_decision_reasons_and_confidence,
+)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("history", "live"), default="history")
+    parser.add_argument("--suite", choices=("history", "live", "preview"), default="history")
     args = parser.parse_args()
     value = args.database_url
     url = make_url(value)
@@ -78,6 +81,13 @@ def main():
         app = create_app(settings, fetcher=fetcher, model_client=model)
         with TestClient(app) as client:
             service = app.state.service
+            if args.suite == "preview":
+                test_preview_history_and_live_share_decision_reasons_and_confidence(
+                    (client, fetcher, service, model), "Federal publication",
+                    {"concepts": ["RS 141.0"], "synonyms": []}, True, "official_identifier",
+                )
+                print("PostgreSQL: scoped preview and history/live activation share exact official-reference signals and confidence, with zero AI calls.")
+                return
             regression = (
                 test_51_matching_topics_resume_after_write_limit_and_retain_metadata_matches
                 if args.suite == "live" else test_501_events_resume_through_outbox_without_duplicates_or_model_calls

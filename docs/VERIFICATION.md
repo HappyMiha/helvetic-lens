@@ -2,6 +2,15 @@
 
 The source-to-diff workflow, Settings page, and live Apertus path are verified.
 
+## Topic preview and activation parity — 5 September 2026 (HappyDucky02)
+
+- Preview now scores only the current organization's admitted saved events using the same deterministic scorer as historical and live matching. Normalized official references, lexical and metadata signals, exclusions, jurisdiction, language, source pack and event/document-kind rules agree across all three paths. Public corpus records admitted only to another organization do not appear. Preview creates no records, jobs or AI calls.
+- **516 Windows-compatible API tests pass**, including 13 preview parity regressions. A 501-event case distinguishes the 500-event preview sample, ten displayed results and all 501 events processed on activation. The unchanged Linux-only release-manager module requiring `fcntl` was excluded; the existing Starlette deprecation warning remains. This is not an Ubuntu or target-host load certification.
+- A disposable **PostgreSQL 16.14** database passed `scripts/check_topic_history_postgres.py --suite preview`, verifying organization scope and identical official-reference reasons/confidence across preview, history and live processing. The task-owned test container was removed afterwards.
+- `npm run typecheck` passes: 1,572 recognized production translation keys, the five-language value audit, 27 shell checks, 22 resource/delivery checks and 60 rendered component checks (including 20 new preview cases). Limited, complete, empty and older-API previews render in DE/FR/IT/RM/EN without unresolved placeholders or invented coverage counts.
+- The actual Chrome/PostCSS contrast check passed **6,700 rendered samples**, with a minimum **4.79:1** ratio for assessed text and no preview overflow at 390, 768, 1,024 and 1,440 pixels. Disabled text is excluded from contrast assessment. The Next.js production build, Python Ruff checks and `git diff --check` also pass.
+- No production services or databases were changed and no paid provider was called. Preview explicitly describes its saved-event scope, sample cutoff and separate display limit; it does not promise complete external-source coverage. Feed-wide freshness/degradation and the validity of previously matched evidence remain open HL-094 work.
+
 ## Resumable live topic matching — 5 September 2026 (HappyDucky02)
 
 - Connector fan-out now commits organization-owned live matching jobs/outbox records instead of running a permanently capped shortlist. PostgreSQL organization pagination reaches the 101st owner; live topic batches continue beyond 50 considered topics and 20 matching results. The unchanged deterministic scorer and shared evidence writer make zero model requests.
