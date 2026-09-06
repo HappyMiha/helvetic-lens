@@ -51,6 +51,54 @@ unavailable and does not itself run inference. Re-enabling a detached companion
 does not reattach it as a side effect. UI labels and explanations cover all five
 product locales; independent native-language review is still required.
 
+## Reading and deleting personal history
+
+**My Marvin conversations** is available in the workspace navigation and from the
+chat's privacy notice at `/assistant-history`. It works while Marvin is paused or
+detached. The companion is not mounted on this reading page: opening history does
+not initialize a context, poll a model, submit a draft or run inference. History
+waits for the authenticated/development identity; changing user, organization or
+locale discards the old page state and aborts its reads. There is no shared client
+cache of private conversation bodies.
+
+The list requests 20 metadata records at a time (API maximum 50), newest activity
+first, with a timestamp/ID cursor. It transfers counts and labels rather than
+message, handoff or draft bodies. Reading a selected conversation uses GET and
+does not update its last-activity time. That time reflects the existing open,
+draft, handoff and chat operations, not only new messages. The cutoff excludes
+later activity; it is not an immutable snapshot. Refresh shows the latest state.
+No unbounded total-count query or new database migration is introduced. Large
+tenant query plans and index/capacity tuning remain separate measured work.
+
+Each context retains its latest 40 messages (individual messages, not 40 pairs),
+20 cited-Ask handoffs and one draft. Older messages/handoffs roll off when writing
+new ones. There is currently no time-based expiry for the conversation record.
+Users can read and explicitly confirm deletion of their own conversation, even
+with a viewer role. Organization administrators have no special access to another
+person's private conversation through these APIs. Organization and principal are
+checked independently of the cursor; a cursor grants no access. The development
+mode without login intentionally uses one shared anonymous principal, so it does
+not provide separation between multiple anonymous browser users.
+
+DELETE removes the personal conversation record. Shared Ask/Impact answers,
+saved monitoring proposals, topics, watches, documents and their evidence are
+independent and remain unchanged. Existing integration/administrative logs and
+backups are not erased by deleting a conversation; this is not a comprehensive
+data-erasure workflow. Administrative audit records retain the operation and ID,
+not a copy of the deleted conversation body. Reopening the context later can
+create a new empty record. In-flight chat must look up its original ID again
+before saving: after deletion it returns not-found rather than recreating history.
+This does not cancel GPU work that was already accepted.
+
+After successful deletion the current tab removes the matching owned comparison
+draft. An identifier-only browser storage notification lets other open same-origin
+Marvin tabs remove that draft, detach that conversation, stop old speech and abort
+pending context requests. This notification is best effort if browser storage is
+unavailable. Other browsers/devices, closed/suspended contexts, offline copies,
+legacy unowned drafts and manually copied text are not remotely erased; refresh
+or remove those copies separately. The notice contains only the latest deletion's
+identifiers, not its text. General pause/tone preferences still do not live-sync.
+
 ## Verification and remaining work
 
 `npm run check:marvin:lifecycle:browser` runs the production frontend against
@@ -62,7 +110,18 @@ rejects the formerly observed disabled-companion startup requests. The new suite
 is part of the required accessibility chain, with no rule exclusions.
 
 See the dated [verification record](VERIFICATION.md) for actual completed runs.
-HL-083–HL-085 still require the broader intent/retention/deletion UX, explicit
-record-context selection contract, durable in-flight chat and useful-task metrics.
+`npm run check:marvin:history:browser` exercises the production history page in
+all five languages on desktop/mobile, with keyboard navigation, pagination,
+read-only loading, deletion confirmation/cancellation/retry, empty/error states
+and an identity switch while a private detail read is held. It is also in the
+required accessibility chain. API tests exercise tenant/principal ownership,
+viewer CSRF enforcement, metadata-only paging, shared-record preservation and
+deletion during a model response. `scripts/check_assistant_history_postgres.py`
+accepts only explicitly named empty localhost scratch databases for those
+PostgreSQL checks. It is not a deployment script.
+
+HL-083–HL-085 still require broader intent execution, explicit record-context
+selection, durable in-flight chat and useful-task metrics. Time-based retention,
+comprehensive data erasure and cross-device cancellation are not delivered here.
 This change does not claim independent privacy certification, real speech quality,
 model usefulness, GPU or 100-user capacity, or cross-tab live preference sync.

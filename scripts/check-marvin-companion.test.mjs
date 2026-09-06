@@ -17,7 +17,7 @@ const i18n = read("apps/web/lib/i18n.tsx");
 test("the contextual companion is mounted for signed-in and local development workspaces", () => {
   assert.match(
     shell,
-    /\{\(session\?\.authenticated \|\| session\?\.anonymous_development\) && \(\s*<MarvinCompanion/,
+    /\{pathname !== "\/assistant-history" &&\s*\(session\?\.authenticated \|\| session\?\.anonymous_development\) && \(\s*<MarvinCompanion/,
   );
   assert.match(
     shell,

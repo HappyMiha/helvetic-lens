@@ -16,7 +16,14 @@ from redis.exceptions import RedisError
 from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-from . import corpus_evidence, feed_readiness, onboarding, relation_candidates, relation_reprocessing
+from . import (
+    assistant_history,
+    corpus_evidence,
+    feed_readiness,
+    onboarding,
+    relation_candidates,
+    relation_reprocessing,
+)
 from .assistant_contract import (
     AssistantChatInput,
     AssistantContextInput,
@@ -784,6 +791,7 @@ def create_app(
         return {
             "id": record.id,
             "route": record.route,
+            "title": record.title,
             "entity": (
                 {"kind": record.entity_kind, "id": record.entity_id, "label": record.title}
                 if record.entity_kind and record.entity_id
@@ -793,8 +801,8 @@ def create_app(
             "draft": record.draft,
             "handoffs": record.handoffs_json[-20:],
             "messages": (record.messages_json or [])[-40:],
-            "created_at": record.created_at.isoformat(),
-            "updated_at": record.updated_at.isoformat(),
+            "created_at": assistant_history.iso(record.created_at),
+            "updated_at": assistant_history.iso(record.updated_at),
             "visibility": "personal",
         }
 
@@ -907,6 +915,31 @@ def create_app(
                 record.updated_at = utcnow()
                 session.commit()
             return assistant_conversation_record(record)
+
+    @app.get("/api/assistant/conversations")
+    def list_assistant_conversations(
+        request: Request, cursor: str = Query(default="", max_length=2048),
+        limit: int = Query(default=20, ge=1, le=50),
+    ):
+        _, principal = assistant_principal(request)
+        with service.db.session() as session:
+            return assistant_history.page(session, service.organization_id, principal, cursor=cursor, limit=limit)
+
+    @app.get("/api/assistant/conversations/{conversation_id}")
+    def read_assistant_conversation(conversation_id: str, request: Request):
+        with service.db.session() as session:
+            return assistant_conversation_record(personal_assistant_conversation(session, conversation_id, request))
+
+    @app.delete("/api/assistant/conversations/{conversation_id}")
+    def delete_assistant_conversation(conversation_id: str, request: Request):
+        with service.db.session() as session:
+            record = personal_assistant_conversation(session, conversation_id, request)
+            # Delete only private state. Shared Ask history, proposals, evidence and
+            # monitors are independent records. An in-flight chat must re-read its
+            # original ID before saving, so it cannot recreate a deleted conversation.
+            session.delete(record)
+            session.commit()
+        return {"deleted": True, "id": conversation_id, "visibility": "personal"}
 
     @app.patch("/api/assistant/conversations/{conversation_id}")
     def update_assistant_draft(

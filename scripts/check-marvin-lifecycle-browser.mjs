@@ -694,8 +694,40 @@ try {
     "Late history overwrote the current user edit",
   );
   await check("typed-draft-survives-restore", "#marvin-question");
+  const deletion = {
+    id: conversation.id,
+    organization,
+    user,
+    comparison: fixture.id,
+  };
+  // A real same-origin second window writes the notification. The companion
+  // receives the browser's storage event, never a test-only application callback.
+  await evaluate(
+    cdp,
+    `(() => {
+    const other = window.open('about:blank');
+    if (!other) throw new Error('Could not open second storage context');
+    other.localStorage.setItem('helvetic_lens_marvin_last_deletion', JSON.stringify(${JSON.stringify(deletion)}));
+    other.close();
+  })()`,
+  );
+  await waitFor(
+    () => evaluate(cdp, "!document.querySelector('#marvin-question')"),
+    "Deleted conversation stayed attached in the other tab",
+  );
+  assert.equal(
+    await evaluate(
+      cdp,
+      `sessionStorage.getItem('helvetic_lens_companion_draft_v1:' + JSON.stringify([${JSON.stringify(organization)},${JSON.stringify(user)},${JSON.stringify(fixture.id)}]))`,
+    ),
+    null,
+  );
+  await check(
+    "deleted-conversation-detaches-other-tab",
+    ".marvin-context-chip.is-detached",
+  );
   assert.deepEqual(exceptions, []);
-  audit.finish(67);
+  audit.finish(68);
   console.log(
     "Marvin lifecycle: 10 locale/viewport journeys preserve pause and detach across navigation/reload/resume; seven pending-response/account/draft boundaries, saved clearing and typing during restore pass. Speech and all APIs synthetic; no live data or inference.",
   );

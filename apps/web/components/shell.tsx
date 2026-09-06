@@ -37,6 +37,7 @@ import { ErrorNote } from "./common";
 import { BrandLockup } from "./brand";
 import { LanguageSelector, useI18n } from "@/lib/i18n";
 import { MarvinCompanion } from "./marvin-companion";
+import { marvinHistoryCopy } from "@/lib/marvin-history-copy";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "./ui/dialog";
 
 type NavigationItemProps = {
@@ -179,11 +180,12 @@ export function Shell({
   const pathname = usePathname();
   const { data: health, error } = useResource(resources.health());
   const { session, canManage, isPlatformAdmin } = useAuth();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [workspaceBusy, setWorkspaceBusy] = useState("");
   const [workspaceError, setWorkspaceError] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const historyCopy = marvinHistoryCopy[locale];
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   const organizations = session?.organizations || [];
@@ -289,6 +291,13 @@ export function Shell({
         <Users size={17} />
         {t("nav.profile")}
       </NavigationItem>
+      <NavigationItem
+        active={pathname === "/assistant-history"}
+        href="/assistant-history"
+      >
+        <History size={17} />
+        {historyCopy.title}
+      </NavigationItem>
     </>
   );
 
@@ -356,14 +365,18 @@ export function Shell({
     [pathname === "/connectors", "nav.sync"],
     [pathname === "/models", "nav.models"],
   ].find(([active]) => active);
-  const mobileOverflowActive = Boolean(mobileOverflowRoute);
-  const mobileOverflowLabel = mobileOverflowRoute
-    ? t(mobileOverflowRoute[1] as string)
-    : t("nav.more");
+  const mobileOverflowActive =
+    Boolean(mobileOverflowRoute) || pathname === "/assistant-history";
+  const mobileOverflowLabel =
+    pathname === "/assistant-history"
+      ? historyCopy.title
+      : mobileOverflowRoute
+        ? t(mobileOverflowRoute[1] as string)
+        : t("nav.more");
 
   return (
     <div
-      className={`shell ${assistantOpen ? "assistant-open" : ""}`}
+      className={`shell ${assistantOpen && pathname !== "/assistant-history" ? "assistant-open" : ""}`}
       data-navigation-modal={mobileMenuOpen ? "true" : undefined}
     >
       <a className="skip-link" href="#main-content">
@@ -532,7 +545,9 @@ export function Shell({
                 <MoreHorizontal size={16} />
                 <span className="mobile-nav-more-label">
                   {mobileOverflowActive
-                    ? mobileOverflowLabel
+                    ? pathname === "/assistant-history"
+                      ? t("companion.name")
+                      : mobileOverflowLabel
                     : t("mobileNav.more")}
                 </span>
               </button>
@@ -619,14 +634,15 @@ export function Shell({
           </footer>
         </div>
       </main>
-      {(session?.authenticated || session?.anonymous_development) && (
-        <MarvinCompanion
-          key={`${session?.organization?.id || "local-development"}:${session?.user?.id || "local-development"}`}
-          localAiReady={Boolean(health?.apertus.configured)}
-          onOpenChange={setAssistantOpen}
-          open={assistantOpen}
-        />
-      )}
+      {pathname !== "/assistant-history" &&
+        (session?.authenticated || session?.anonymous_development) && (
+          <MarvinCompanion
+            key={`${session?.organization?.id || "local-development"}:${session?.user?.id || "local-development"}`}
+            localAiReady={Boolean(health?.apertus.configured)}
+            onOpenChange={setAssistantOpen}
+            open={assistantOpen}
+          />
+        )}
     </div>
   );
 }

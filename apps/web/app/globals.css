@@ -4107,3 +4107,25 @@ select.interest-feed-control { min-height: 44px; }
 .marvin-resume::before { display: none; }
 .marvin-settings small { color: var(--foreground); }
 .model-unavailable > p, .model-unavailable > span, .model-unavailable a { color: var(--foreground); }
+/* Personal history uses the reading column on mobile, never a narrow chat rail. */
+.marvin-history { max-width: 1100px; margin-inline: auto; color: var(--foreground); }
+.marvin-history .page-header { flex-wrap: wrap; gap: 1rem; }
+.marvin-history-privacy, .marvin-history-empty, .marvin-history-detail { padding: 1.25rem; margin-block: 1rem; }
+.marvin-history-privacy summary { cursor: pointer; font-weight: 600; }
+.marvin-history p { margin-block: .65rem; line-height: 1.6; }
+.marvin-history-list { list-style: none; padding: 0; display: grid; gap: .8rem; }
+.marvin-history-list > li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.25rem; min-width: 0; }
+.marvin-history-list > li > div { min-width: 0; overflow-wrap: anywhere; }
+.marvin-history h2 { font-size: 1.15rem; font-weight: 650; overflow-wrap: anywhere; }
+.marvin-history h3 { font-size: 1rem; font-weight: 650; margin-block: 1rem; }
+.marvin-history-pager, .marvin-history-detail header { display: flex; gap: .75rem; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-block: 1rem; }
+.marvin-history-detail ol { list-style: none; padding: 0; }
+.marvin-history-detail li { padding-block: .75rem; border-top: 1px solid var(--border); }
+.marvin-history-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.marvin-history-notice { font-size: .8rem; line-height: 1.5; color: var(--foreground); }
+.marvin-history-notice a { text-decoration: underline; font-weight: 600; }
+@media (max-width: 640px) {
+  .marvin-history-list > li { flex-direction: column; align-items: stretch; }
+  .marvin-history button { white-space: normal; height: auto; min-height: 44px; }
+  .marvin-history-detail, .marvin-history-privacy { padding: 1rem; }
+}

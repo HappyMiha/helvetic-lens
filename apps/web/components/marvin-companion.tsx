@@ -6,6 +6,13 @@ import { MonitorThis } from "@/components/monitor-this";
 import { MarvinPanel } from "@/components/marvin-panel";
 import { useAuth } from "./auth-gate";
 import { marvinPrivacyCopy } from "@/lib/marvin-privacy-copy";
+import { marvinHistoryCopy } from "@/lib/marvin-history-copy";
+import {
+  clearDeletedDraft,
+  MARVIN_DELETION_STORAGE,
+  MARVIN_HISTORY_DELETED,
+  type MarvinDeletion,
+} from "@/lib/marvin-history-events";
 import { usePathname } from "next/navigation";
 import {
   ArrowUpRight,
@@ -839,6 +846,47 @@ export function MarvinCompanion({
     setPreferences((current) => ({ ...current, ...next }));
   }
 
+  useEffect(() => {
+    function discard(value: MarvinDeletion) {
+      if (
+        value?.organization !==
+          (session?.organization?.id || "local-development") ||
+        value?.user !== (session?.user?.id || "local-development")
+      )
+        return;
+      clearDeletedDraft(value);
+      if (value.id !== conversationId) return;
+      contextAbort.current?.abort();
+      chatRequestId.current++;
+      handoffRequestId.current++;
+      voiceRef.current?.stop();
+      setPreferences((current) => ({ ...current, contextAttached: false }));
+      setQuestionDraft("");
+      setChatDraft("");
+      setChatMessages([]);
+      setRecentQuestions([]);
+      setConversationId(null);
+      setConversationLoaded(false);
+      setBubbleVisible(false);
+    }
+    const local = (event: Event) =>
+      discard((event as CustomEvent<MarvinDeletion>).detail);
+    const remote = (event: StorageEvent) => {
+      if (event.key !== MARVIN_DELETION_STORAGE || !event.newValue) return;
+      try {
+        discard(JSON.parse(event.newValue));
+      } catch {
+        /* Ignore malformed browser data. */
+      }
+    };
+    window.addEventListener(MARVIN_HISTORY_DELETED, local);
+    window.addEventListener("storage", remote);
+    return () => {
+      window.removeEventListener(MARVIN_HISTORY_DELETED, local);
+      window.removeEventListener("storage", remote);
+    };
+  }, [conversationId, session?.organization?.id, session?.user?.id]);
+
   function updateQuestionDraft(value: string) {
     draftTouched.current = true;
     setQuestionDraft(value);
@@ -1116,6 +1164,15 @@ export function MarvinCompanion({
                 className="marvin-chat"
                 aria-label={t("companion.chatTitle")}
               >
+                <p className="marvin-history-notice">
+                  {marvinHistoryCopy[locale].short}{" "}
+                  <Link
+                    href="/assistant-history"
+                    onClick={() => onOpenChange(false)}
+                  >
+                    {marvinHistoryCopy[locale].title}
+                  </Link>
+                </p>
                 <div className="marvin-chat-heading">
                   <span>
                     <MessageCircle size={15} />
