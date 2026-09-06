@@ -688,93 +688,132 @@ class RegistryReader:
         session.commit()
         return {"event_id": event_id, "read": read, "read_at": _iso(state.updated_at) if read else None}
 
-    def timeline(self, session: Session, law_id: str) -> dict:
-        law = session.get(Law, law_id)
-        watch = session.scalar(select(DocumentWatch).where(DocumentWatch.law_id == law_id))
-        if not law or not watch:
+    def _timeline_header(self, session: Session, law_id: str):
+        row = session.execute(
+            select(
+                Law.id, Law.provider, Law.url,
+                DocumentWatch.active, DocumentWatch.last_checked, DocumentWatch.last_result,
+                RegulatoryWork.id.label("work_id"), RegulatoryWork.kind,
+                RegulatoryWork.authority, RegulatoryWork.lifecycle_status,
+                RegulatoryWork.stable_official_url,
+            )
+            .select_from(DocumentWatch)
+            .join(Law, and_(Law.id == DocumentWatch.law_id, visible(Law, self.organization_id)))
+            .outerjoin(LegacyDocumentMapping, and_(
+                LegacyDocumentMapping.law_id == Law.id,
+                visible(LegacyDocumentMapping, self.organization_id),
+            ))
+            .outerjoin(RegulatoryWork, and_(
+                RegulatoryWork.id == LegacyDocumentMapping.work_id,
+                visible(RegulatoryWork, self.organization_id),
+            ))
+            .where(DocumentWatch.organization_id == self.organization_id, Law.id == law_id)
+        ).first()
+        if row is None:
             raise DomainError("The requested record was not found.", 404, "not_found")
-        mapping = session.scalar(select(LegacyDocumentMapping).where(LegacyDocumentMapping.law_id == law_id))
-        work = session.get(RegulatoryWork, mapping.work_id) if mapping and mapping.work_id else None
-        identifiers = (
-            session.scalars(select(RegulatoryIdentifier).where(RegulatoryIdentifier.work_id == work.id)).all()
-            if work
-            else []
-        )
-        expressions = (
-            session.scalars(select(RegulatoryExpression).where(RegulatoryExpression.work_id == work.id)).all()
-            if work
-            else []
-        )
-        normalized_versions = (
-            session.scalars(
-                select(RegulatoryDocumentVersion).where(
-                    RegulatoryDocumentVersion.expression_id.in_([item.id for item in expressions])
-                )
-            ).all()
-            if expressions
-            else []
-        )
-        events = (
-            session.scalars(
-                select(RegulatoryEvent)
-                .where(RegulatoryEvent.work_id == work.id)
-                .order_by(RegulatoryEvent.detected_at.desc())
-            ).all()
-            if work
-            else []
-        )
-        relations = (
-            session.scalars(
-                select(RegulatoryRelation)
-                .where(
-                    or_(
-                        RegulatoryRelation.subject_work_id == work.id,
-                        RegulatoryRelation.object_work_id == work.id,
-                    )
-                )
-                .order_by(RegulatoryRelation.created_at.desc())
-            ).all()
-            if work
-            else []
-        )
-        versions = session.scalars(
-            select(Version).where(Version.law_id == law_id).order_by(Version.created_at.desc())
-        ).all()
-        comparisons = session.scalars(
-            select(Comparison).where(Comparison.law_id == law_id).order_by(Comparison.created_at.desc())
-        ).all()
-        observations = session.scalars(
-            select(Observation).where(Observation.law_id == law_id).order_by(Observation.created_at.desc())
-        ).all()
-        relation_rows = []
-        for item in relations:
-            outgoing = item.subject_work_id == (work.id if work else None)
-            other_work_id = item.object_work_id if outgoing else item.subject_work_id
-            other_work = session.get(RegulatoryWork, other_work_id)
-            other_mapping = session.scalar(
-                select(LegacyDocumentMapping).where(LegacyDocumentMapping.work_id == other_work_id)
+        return row
+
+    def _timeline_relations(self, session: Session, work_id: str) -> list[dict]:
+        # Only link to a timeline this organization can actually open. Rank aliases
+        # once, not by issuing a new mapping/law lookup for every relation.
+        watched_aliases = (
+            select(
+                LegacyDocumentMapping.work_id, Law.id.label("law_id"),
+                func.row_number().over(
+                    partition_by=LegacyDocumentMapping.work_id,
+                    order_by=(DocumentWatch.active.desc(), DocumentWatch.created_at, DocumentWatch.id),
+                ).label("rank"),
             )
-            other_law = session.get(Law, other_mapping.law_id) if other_mapping else None
-            relation_rows.append(
-                {
-                    "id": item.id,
-                    "direction": "outgoing" if outgoing else "incoming",
-                    "type": item.relation_type,
-                    "state": item.state,
-                    "other_work_id": other_work_id,
-                    "other_title": other_work.title if other_work else "Unknown regulatory work",
-                    "other_law_id": other_law.id if other_law else None,
-                    "other_timeline_url": f"/laws/{other_law.id}" if other_law else None,
-                    "provenance": item.provenance_method,
-                    "reciprocal_label": (
-                        "successor"
-                        if item.relation_type == "replaces" and not outgoing
-                        else "predecessor"
-                        if item.relation_type == "replaces"
-                        else None
-                    ),
-                }
+            .select_from(DocumentWatch)
+            .join(Law, and_(Law.id == DocumentWatch.law_id, visible(Law, self.organization_id)))
+            .join(LegacyDocumentMapping, and_(
+                LegacyDocumentMapping.law_id == Law.id,
+                visible(LegacyDocumentMapping, self.organization_id),
+            ))
+            .where(DocumentWatch.organization_id == self.organization_id)
+            .subquery()
+        )
+        other = RegulatoryWork
+        outgoing = RegulatoryRelation.subject_work_id == work_id
+        other_id = case((outgoing, RegulatoryRelation.object_work_id), else_=RegulatoryRelation.subject_work_id)
+        rows = session.execute(
+            select(
+                RegulatoryRelation.id, RegulatoryRelation.relation_type,
+                RegulatoryRelation.state, RegulatoryRelation.provenance_method,
+                outgoing.label("outgoing"), other.id.label("other_id"), other.title,
+                watched_aliases.c.law_id,
             )
+            .join(other, and_(other.id == other_id, visible(other, self.organization_id)))
+            .outerjoin(watched_aliases, and_(watched_aliases.c.work_id == other.id, watched_aliases.c.rank == 1))
+            .where(or_(outgoing, RegulatoryRelation.object_work_id == work_id))
+            .order_by(RegulatoryRelation.created_at.desc(), RegulatoryRelation.id.desc())
+        )
+        return [
+            {
+                "id": item.id,
+                "direction": "outgoing" if item.outgoing else "incoming",
+                "type": item.relation_type,
+                "state": item.state,
+                "other_work_id": item.other_id,
+                "other_title": item.title,
+                "other_law_id": item.law_id,
+                "other_timeline_url": f"/laws/{item.law_id}" if item.law_id else None,
+                "provenance": item.provenance_method,
+                "reciprocal_label": (
+                    "predecessor" if item.outgoing else "successor"
+                ) if item.relation_type == "replaces" else None,
+            }
+            for item in rows
+        ]
+
+    def timeline(self, session: Session, law_id: str) -> dict:
+        header = self._timeline_header(session, law_id)
+        work_id = header.work_id
+        identifiers = session.execute(
+            select(RegulatoryIdentifier.scheme, RegulatoryIdentifier.value, RegulatoryIdentifier.source_url)
+            .where(RegulatoryIdentifier.work_id == work_id)
+            .order_by(RegulatoryIdentifier.scheme, RegulatoryIdentifier.value, RegulatoryIdentifier.id)
+        ).all() if work_id else []
+        expressions = session.execute(
+            select(RegulatoryExpression.id, RegulatoryExpression.language, RegulatoryExpression.title,
+                   RegulatoryExpression.official_url)
+            .where(RegulatoryExpression.work_id == work_id)
+            .order_by(RegulatoryExpression.language, RegulatoryExpression.id)
+        ).all() if work_id else []
+        normalized_versions = session.scalar(
+            select(func.count(RegulatoryDocumentVersion.id))
+            .join(RegulatoryExpression, RegulatoryExpression.id == RegulatoryDocumentVersion.expression_id)
+            .where(
+                RegulatoryExpression.work_id == work_id,
+                or_(
+                    RegulatoryDocumentVersion.legacy_version_id.is_(None),
+                    select(Version.id).where(
+                        Version.id == RegulatoryDocumentVersion.legacy_version_id,
+                        visible(Version, self.organization_id),
+                    ).exists(),
+                ),
+            )
+        ) if work_id else 0
+        events = session.execute(
+            select(RegulatoryEvent.id, RegulatoryEvent.detected_at, RegulatoryEvent.event_type,
+                   RegulatoryEvent.provenance_method, RegulatoryEvent.source_url)
+            .where(RegulatoryEvent.work_id == work_id)
+        ).all() if work_id else []
+        versions = session.execute(
+            select(Version.id, Version.created_at, Version.declared_date, Version.origin)
+            .where(Version.law_id == law_id, visible(Version, self.organization_id))
+        ).all()
+        comparisons = session.execute(
+            select(Comparison.id, Comparison.created_at, Comparison.mode)
+            .where(Comparison.law_id == law_id, visible(Comparison, self.organization_id))
+        ).all()
+        observations = session.execute(
+            select(Observation.origin, Observation.source_url, Observation.created_at)
+            .where(Observation.law_id == law_id, Observation.organization_id == self.organization_id)
+            .order_by(Observation.created_at.desc(), Observation.id.desc())
+            .limit(100)
+        ).all()
+        relation_rows = self._timeline_relations(session, work_id) if work_id else []
         timeline = [
             {
                 "id": f"event:{item.id}",
@@ -811,16 +850,16 @@ class RegistryReader:
         timeline.sort(key=lambda item: (item["at"] or "", item["id"]), reverse=True)
         return {
             "monitoring": {
-                "active": watch.active,
-                "last_checked": _iso(watch.last_checked),
-                "last_result": watch.last_result,
+                "active": header.active,
+                "last_checked": _iso(header.last_checked),
+                "last_result": header.last_result,
             },
             "work": {
-                "id": work.id if work else None,
-                "kind": work.kind if work else "unclassified_document",
-                "authority": work.authority if work else law.provider,
-                "lifecycle": (work.lifecycle_status if work else None) or "unknown",
-                "stable_official_url": work.stable_official_url if work else law.url,
+                "id": work_id,
+                "kind": header.kind if work_id else "unclassified_document",
+                "authority": header.authority if work_id else header.provider,
+                "lifecycle": header.lifecycle_status or "unknown",
+                "stable_official_url": header.stable_official_url if work_id else header.url,
             },
             "identifiers": [
                 {"scheme": item.scheme, "value": item.value, "source_url": item.source_url}
@@ -830,11 +869,11 @@ class RegistryReader:
                 {"id": item.id, "language": item.language, "title": item.title, "url": item.official_url}
                 for item in expressions
             ],
-            "normalized_versions": len(normalized_versions),
+            "normalized_versions": normalized_versions,
             "relations": relation_rows,
             "source_provenance": [
                 {"origin": item.origin, "source_url": item.source_url, "observed_at": _iso(item.created_at)}
-                for item in observations[:100]
+                for item in observations
             ],
             "timeline": timeline,
         }

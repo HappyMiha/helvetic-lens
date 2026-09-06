@@ -124,7 +124,7 @@ from test_topic_reviews import (
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("relation-endpoints-source", "relation-endpoints-target", "relation-endpoints-reverse", "relation-endpoints-digest", "official-relation-fields", "official-relation-links", "official-relation-retry", "official-relation-digest", "registry-details", "registry-detail-scope", "registry-detail-dates", "monitored-pages", "monitored-search", "monitored-read", "monitored-scope", "monitored-dates", "monitored-comparison", "monitored-migration", "registry-watches", "registry-events", "registry-search", "registry-dates", "registry-scope", "registry-migration", "digest-quiet-resume", "digest-quiet-unsubscribe", "digest-quiet-boundary", "digest-quiet-save", "digest-local-schedule", "digest-schedule-migration", "feed-topic-sparse", "feed-topic-scope", "feed-watch-pages", "feed-watch-scope", "evidence-pages", "evidence-pages-native", "evidence-text-pages", "source-review", "source-review-scope", "source-review-migration", "milestone-native", "milestone-migration", "milestone-race", "feed-readiness-history", "feed-readiness-bounds", "feed-readiness-sources", "onboarding-state", "onboarding-migration", "onboarding-race", "assistant-context", "assistant-context-private", "answer-context", "answer-context-private", "topic-coverage-empty", "topic-coverage-state", "topic-coverage-scope", "topic-coverage-bounds", "topic-duplicates", "topic-duplicates-scope", "topic-duplicates-bounds", "history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked", "monitoring-context", "monitoring-context-activate"), default="history")
+    parser.add_argument("--suite", choices=("timeline-large", "timeline-relations", "timeline-private", "timeline-law", "timeline-watch", "timeline-mapping", "timeline-work", "relation-endpoints-source", "relation-endpoints-target", "relation-endpoints-reverse", "relation-endpoints-digest", "official-relation-fields", "official-relation-links", "official-relation-retry", "official-relation-digest", "registry-details", "registry-detail-scope", "registry-detail-dates", "monitored-pages", "monitored-search", "monitored-read", "monitored-scope", "monitored-dates", "monitored-comparison", "monitored-migration", "registry-watches", "registry-events", "registry-search", "registry-dates", "registry-scope", "registry-migration", "digest-quiet-resume", "digest-quiet-unsubscribe", "digest-quiet-boundary", "digest-quiet-save", "digest-local-schedule", "digest-schedule-migration", "feed-topic-sparse", "feed-topic-scope", "feed-watch-pages", "feed-watch-scope", "evidence-pages", "evidence-pages-native", "evidence-text-pages", "source-review", "source-review-scope", "source-review-migration", "milestone-native", "milestone-migration", "milestone-race", "feed-readiness-history", "feed-readiness-bounds", "feed-readiness-sources", "onboarding-state", "onboarding-migration", "onboarding-race", "assistant-context", "assistant-context-private", "answer-context", "answer-context-private", "topic-coverage-empty", "topic-coverage-state", "topic-coverage-scope", "topic-coverage-bounds", "topic-duplicates", "topic-duplicates-scope", "topic-duplicates-bounds", "history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked", "monitoring-context", "monitoring-context-activate"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -145,6 +145,23 @@ def main():
         with TestClient(app) as client:
             service = app.state.service
             harness = (client, fetcher, service, model)
+            if args.suite.startswith("timeline-"):
+                from test_registry_timeline_projections import (
+                    test_large_timeline_preserves_all_entries_without_hydrating_saved_bodies,
+                    test_timeline_header_explicit_scope_and_legacy_fallback,
+                    test_timeline_private_history_and_observation_scope,
+                    test_timeline_relation_fanout_uses_one_scoped_alias_query,
+                )
+                if args.suite == "timeline-large":
+                    test_large_timeline_preserves_all_entries_without_hydrating_saved_bodies(harness)
+                elif args.suite == "timeline-relations":
+                    test_timeline_relation_fanout_uses_one_scoped_alias_query(harness)
+                elif args.suite == "timeline-private":
+                    test_timeline_private_history_and_observation_scope(harness)
+                else:
+                    test_timeline_header_explicit_scope_and_legacy_fallback(harness, args.suite.removeprefix("timeline-"))
+                print("PostgreSQL:", args.suite, "passed; scalar timeline reads without provider/mail calls.")
+                return
             if args.suite.startswith("relation-endpoints-"):
                 from test_relation_endpoints import (
                     test_incoming_replacement_uses_official_subject_as_successor,

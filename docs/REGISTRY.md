@@ -166,3 +166,43 @@ those complete lists and their response size need paging/measurement rather than
 silent truncation. Query-plan cost, live cursor movement, full timelines and the
 intended-host concurrency tests remain HL-099 work. No schema migration, AI call,
 working-data change or production deployment accompanies this slice.
+
+
+## Scalar saved timelines — 6 September 2026
+
+`GET /api/laws/{id}/timeline` and the same timeline nested in law detail now read
+only displayed scalar metadata. Native version totals use SQL counting, not a
+load of every normalized text/passages object. Saved event/version/comparison
+entries preserve their IDs, URLs and UTC chronological order; equal timestamps
+use the existing typed ID tie-break. The existing source-provenance preview selects
+its newest 100 records in SQL with a timestamp/ID tie-break rather than loading
+all observations and slicing in Python. Identifiers/expressions have stable order.
+
+The header explicitly requires a visible law and this organization's active or
+paused watch. Invisible/missing mappings or works use the legacy document
+fallback, without exposing corpus identifiers, events or relationships. Version
+and comparison metadata retains owner visibility, observation metadata retains
+organization visibility, and native counts exclude versions linked to an
+invisible legacy version. These predicates also apply in privileged sessions.
+
+Relationships use one scalar query with a ranked alias join instead of one
+work/mapping/law lookup per edge. Invisible other works are excluded. A timeline
+link selects this organization's visible watched alias (active first, then stable
+watch creation/ID); a public work without such a watch still has a title/relationship
+but no inaccessible timeline link. Both directions and the original relation
+state/provenance remain visible. Navigation does not promote proposed/rejected
+relationships or establish semantic impact.
+
+Regression fixtures include 151 new versions/comparisons/events, 501 observations,
+large text/JSON bodies, 50 visible related works plus a private work, private
+law/watch/mapping/work/history cases and an unmapped fallback. The mapped reader
+uses nine SELECTs and no ORM object loads, including for 50 relationships; fallback
+uses four. Seven isolated PostgreSQL scenarios also pass. No schema migration,
+source request, inference or working database change is needed.
+
+This is not complete timeline pagination: all visible scalar timeline entries,
+identifiers, expressions and relationships are still returned. The separate
+`law_detail` version/comparison lists and `law_summary` currently retain their own
+payload-loading behavior. Full UI/API history paging, those projections, metadata
+response-size bounds, query-planner cost and target-host concurrency remain open;
+no whole-law-page memory or 100-user capacity guarantee is claimed.
