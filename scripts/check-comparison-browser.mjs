@@ -76,6 +76,14 @@ for (let index=1; index<200; index++) {
     old_parts:[{kind:'removed',text:`Before ${text}`}],new_parts:[{kind:'added',text:`After ${text}`}],
   });
 }
+// A real changed number beyond the old 260-character prefix preview.
+const late = fixture.diff.items.find(item => item.id === 'qa-change-1');
+const prefix = 'Unchanged introductory wording. '.repeat(30) + 'Retention period: ';
+for (const side of ['old','new']) {
+  const value = side === 'old' ? '10' : '30';
+  late[side].text = prefix + value + ' days.';
+  late[`${side}_parts`] = [{kind:'equal',text:prefix},{kind:side === 'old' ? 'removed' : 'added',text:value},{kind:'equal',text:' days.'}];
+}
 // Saved extraction headings are attached to exact old/new passage IDs.
 for (let index=1;index<200;index++) {
   for (const side of ['old','new']) {
@@ -244,6 +252,12 @@ try {
       assert.equal((await groups()).length,5,'Material cards must be bounded before interaction');
       assert.equal(await evaluate(cdp, `document.querySelector('[data-material-page]').options.length`),40);
       assert.equal(await evaluate(cdp, `document.querySelectorAll('[data-material-group] details[open]').length`),0);
+      assert.deepEqual(await evaluate(cdp, `(() => {
+        const card=document.querySelector('[data-material-group="qa-material-1"]');
+        return [card.querySelector('del')?.textContent,card.querySelector('ins')?.textContent,
+          card.querySelector('[data-material-before]').textContent.includes('Retention period: 10 days.'),
+          card.querySelector('[data-material-after]').textContent.includes('Retention period: 30 days.')];
+      })()`),['10','30',true,true],'Late actual change must be visible without opening the long article');
       const origin = await evaluate(cdp, 'performance.timeOrigin');
       if (locale === 'en-CH' && width === 390) {
         const seen = new Set();
@@ -282,7 +296,7 @@ try {
       await waitFor(() => evaluate(cdp, `!!document.querySelector('[data-material-empty]') && !document.querySelector('[data-material-group]')`),'Missing honest empty search state');
       await evaluate(cdp, `document.querySelector('[data-material-clear]').click()`);
       await waitFor(async () => (await groups()).length === 5,'Clear search did not restore overview');
-      assert.ok(await evaluate(cdp, `!document.querySelector('[data-material-reader]').innerText.includes('materialPage.')`),'Untranslated reading controls');
+      assert.ok(await evaluate(cdp, `!document.querySelector('[data-material-reader]').innerText.match(/material(?:Page|Delta)\./)`),'Untranslated reading controls');
       assert.ok(await evaluate(cdp, `Array.from(document.querySelectorAll('[data-material-reader] button,[data-material-reader] input,[data-material-reader] select')).every(node=>node.getBoundingClientRect().height >= 44)`),'Reading controls need touch targets');
       assert.ok(await evaluate(cdp, `parseFloat(getComputedStyle(document.querySelector('.material-delta p')).fontSize) >= 16`));
       assert.equal(await evaluate(cdp,'performance.timeOrigin'),origin,'Material navigation reloaded the document');

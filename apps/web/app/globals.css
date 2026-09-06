@@ -4080,3 +4080,7 @@ select.interest-feed-control { min-height: 44px; }
 .material-reader-controls, .material-reader label { min-width: 0; overflow-wrap: anywhere; }
 .material-reader button { white-space: normal; height: auto; max-width: 100%; padding: .5rem .75rem; }
 .material-reader input, .material-reader select { min-width: 0; max-width: 100%; }
+
+.material-delta ins { color: var(--foreground); background: var(--secondary); text-decoration: underline; text-decoration-thickness: 2px; }
+.material-delta del { color: var(--foreground); text-decoration: line-through; text-decoration-thickness: 2px; }
+.material-reader .semantic-cluster-heading h4 { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }

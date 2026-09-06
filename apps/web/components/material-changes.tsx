@@ -3,6 +3,7 @@
 import { useMemo, useRef } from "react";
 import { Button } from "./ui/button";
 import { useI18n } from "@/lib/i18n";
+import { materialDelta, type DeltaPart } from "@/lib/material-delta";
 import { materialLabels } from "@/lib/material-headings";
 import type { Change, Comparison } from "@/lib/types";
 
@@ -76,17 +77,19 @@ export function MaterialChanges({clusters, changes, units, state, onStateChange,
     <div className="semantic-clusters">
       {shown.map(({cluster,index,items,before,after}) => {
         const first = items[0];
+        const delta = materialDelta(first);
         const oldName = names(before), newName = names(after);
         const unitHeading = oldName && newName && oldName !== newName ? `${oldName} → ${newName}` : newName || oldName;
         return <article key={cluster.id} data-material-group={cluster.id}>
           <div className="semantic-cluster-heading"><h4 data-material-heading>{unitHeading || t("compare.changeGroup", {number:number(index + 1)})}</h4><span>{t("compare.exactChangeCount", {count:number(cluster.change_ids.length)})}</span></div>
           {unitHeading && <p className="muted">{t("materialUnit.provenance")}</p>}
           <p>{cluster.classifications.map(value => classifications[value] || t("materialPage.uncertain")).join(" · ")}</p>
-          <p className="muted">{t("materialPage.sample")}</p>
+          <p className="muted" data-material-delta-note>{delta.focused ? t("materialDelta.focused", {count:number(delta.fragments)}) : t("materialDelta.fallback")}</p>
           <div className="material-delta">
-            <div><strong>{t("compare.before")}</strong><p>{first?.old?.text.slice(0,260) || t("compare.noEarlierUnit")}</p></div>
-            <div><strong>{t("compare.after")}</strong><p>{first?.new?.text.slice(0,260) || t("compare.noCurrentUnit")}</p></div>
+            <div><strong>{t("compare.before")}</strong><p data-material-before><DeltaText parts={delta.old} missing={t("compare.noEarlierUnit")} omission={t("materialDelta.omission")} /></p></div>
+            <div><strong>{t("compare.after")}</strong><p data-material-after><DeltaText parts={delta.new} missing={t("compare.noCurrentUnit")} omission={t("materialDelta.omission")} /></p></div>
           </div>
+          {delta.limited && <p className="muted">{t("materialDelta.limited")}</p>}
           {cluster.ambiguous && <span className="needs-review-label">{t("compare.needsReview")}</span>}
           <details><summary>{t("materialPage.technical")}</summary><p className="semantic-cluster-units">{cluster.id} · {cluster.old_unit_ids.join(", ")} → {cluster.new_unit_ids.join(", ")}</p></details>
           {first && <Button variant="outline" data-material-evidence onClick={() => onEvidence(first.id)}>{t("compare.viewEvidence")}</Button>}
@@ -100,4 +103,13 @@ export function MaterialChanges({clusters, changes, units, state, onStateChange,
       })}
     </div>
   </section>;
+}
+
+
+function DeltaText({parts,missing,omission}:{parts:DeltaPart[];missing:string;omission:string}) {
+  if(!parts.some(part=>part.text)) return <>{missing}</>;
+  return <>{parts.map((part,index)=> part.kind === "added" ? <ins key={index}>{part.text}</ins>
+    : part.kind === "removed" ? <del key={index}>{part.text}</del>
+    : part.kind === "omission" ? <span key={index} aria-label={omission}>{part.text}</span>
+    : <span key={index}>{part.text}</span>)}</>;
 }

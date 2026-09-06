@@ -1,6 +1,14 @@
 # Verification record
 
 
+## Focused saved-word excerpts — 6 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl-096-focused-deltas`. Material cards show the first actual saved changed fragment with aligned before/after context and insertion/deletion markup. A changed deadline at the end of a long article is no longer hidden by its unchanged prefix. Saved parts must reconstruct and align with the exact passages; invalid/missing parts use an explicitly labelled plain excerpt. Each side is bounded to 248 source code points plus omission markers; the caption counts fragments only in the first exact change. Full exact evidence and other group changes remain reachable. No inference, re-diff, API mutation or database migration. [Contract](MATERIAL_READING.md#focused-saved-word-excerpts-6-september-2026).
+- **Eight new helper regressions pass**: late deadline, insertion/deletion with shared context, entire one-sided passage, additional omitted fragments, malformed or misaligned parts, unchanged/missing evidence, Unicode bounds and unchanged input. Production build passes **1,905 localization keys, 27 shell, 22 resource/delivery and 146 report/navigation checks**, TypeScript and Next compilation.
+- Populated isolated browser suite passes **15 five-language × 390/768/1024px journeys**, desktop transitions, 200-group paging/search, six legacy exact-row pages, exact-evidence focus/return and 320px doubled-text reflow. Each locale/width explicitly checks that the saved `10 → 30` deadline after 900+ unchanged characters appears as actual del/ins text. Existing contrast suite passes **8,060 samples, minimum 4.79:1**; this is scoped regression evidence, not a complete accessibility audit. Generated mobile screenshot inspected; awkward singular/plural preview copy was corrected before final rebuild and rerun. API responses intercepted throughout, no real inference or data changes.
+- HL-096 remains **IN PROGRESS**. This preview does not rank legal significance or summarize the whole group. Complete response/search-memory size, very large group selectors, broader density/layout consolidation, native-language/physical-device/screen-reader checks and independent user acceptance remain open. No production deployment.
+
+
 ## Saved legal-unit headings — 6 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl-096-legal-headings`. Material groups now reuse saved before/after legal hierarchy rather than raw unit IDs or guessed article numbers. The read-only helper verifies passage attachment on each side, omits anonymous positions, retains distinct old/new numbering and disambiguates repeated article numbers with chapter ancestry. It displays three distinct labels plus an additional count while searching all labels. Extraction provenance and neutral fallback remain explicit. [Contract](MATERIAL_READING.md#saved-legal-unit-headings-6-september-2026).

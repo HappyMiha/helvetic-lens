@@ -66,3 +66,30 @@ The helper tests cover ancestry, absent labels, wrong-side attachment, renumberi
 deduplication, multi-chapter ambiguity, preview limits and malformed input. The
 200-group browser fixture checks localized before/after headings and search by
 the displayed article label while preserving exact citations, paging and reflow.
+
+
+## Focused saved-word excerpts (6 September 2026)
+
+Material cards now center their short before/after preview on the first changed
+fragment of the first exact change, instead of taking the start of the article.
+The existing saved word-diff parts must reconstruct each saved passage exactly
+and have aligned equal runs. No second diff or model call is performed. Added words
+use insertion markup and removed words use deletion markup, so color alone is not
+the indicator. If parts are absent, inconsistent or unchanged, a labelled plain
+saved-text excerpt replaces highlighting; the full exact evidence stays available.
+
+Each side contains up to 64 preceding, 120 changed and 64 following Unicode code
+points. Explicit ellipses mark skipped text and a notice explains the limit. The
+caption counts changed fragments in this first exact change, not the whole group.
+Other group changes remain accessible in the exact-change selector. This is neither
+an AI summary nor a claim that the first fragment is the most important change.
+Source wording, full-text search, stored evidence and report history are unchanged.
+
+Eight helper tests cover late deadlines, insertion/deletion, one-sided passages,
+multiple fragments, invalid saved alignment, unchanged/missing data, Unicode bounds
+and immutable input. The populated browser fixture requires a 10-to-30-day change
+after 900+ unchanged characters to appear as actual del/ins text in all five locales
+and all three compact widths. Existing paging, exact evidence, desktop transitions
+and text reflow checks remain mandatory. Broader legal significance, extraction
+quality, native-language review and actual reading comfort still need independent
+verification; HL-096 remains in progress.
