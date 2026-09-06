@@ -549,6 +549,13 @@ export type Change = {
   old_parts: { text: string; kind: string }[];
   new_parts: { text: string; kind: string }[];
 };
+export type SavedLegalUnit = {
+  id: string;
+  type: string;
+  label: string | null;
+  path: string[];
+  passage_ids: string[];
+};
 export type Comparison = {
   id: string;
   law_id: string;
@@ -587,6 +594,7 @@ export type Comparison = {
       old_position?: number | null;
       new_position?: number | null;
     }[];
+    legal_units?: {old: SavedLegalUnit[]; new: SavedLegalUnit[]};
     change_clusters?: {
       id: string;
       classifications: string[];

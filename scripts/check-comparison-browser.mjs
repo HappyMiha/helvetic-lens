@@ -76,6 +76,19 @@ for (let index=1; index<200; index++) {
     old_parts:[{kind:'removed',text:`Before ${text}`}],new_parts:[{kind:'added',text:`After ${text}`}],
   });
 }
+// Saved extraction headings are attached to exact old/new passage IDs.
+for (let index=1;index<200;index++) {
+  for (const side of ['old','new']) {
+    const label=index === 199 ? (side === 'old' ? '199bis' : '200ter') : String(index);
+    fixture.diff.legal_units[side].push({id:`qa-${side}-unit-${index}`,type:'article',label,
+      path:[`article:${label}`],passage_ids:[`qa-${side === 'old' ? 'before' : 'after'}-${index}`]});
+    if(index === 199){
+      const item=fixture.diff.items.find(item=>item.id===`qa-change-${index}`);
+      item[side].text=item[side].text.replace('Art. 199.',`Art. ${label}.`);
+      item[`${side}_parts`][0].text=item[side].text;
+    }
+  }
+}
 fixture.diff.items.push({...structuredClone(originalChange),id:'qa-extra-change',
   old:{id:'qa-extra-old',page:null,text:'SECOND_CHANGE_ONLY previous rule'},
   new:{id:'qa-extra-new',page:null,text:'SECOND_CHANGE_ONLY current rule'},
@@ -255,6 +268,10 @@ try {
       await setInput('[data-material-search]','ONLY_LAST_199');
       await waitFor(async () => (await groups()).length === 1 && (await groups())[0] === 'qa-material-199','Search must include saved text outside the first page');
       assert.ok(await evaluate(cdp, `document.querySelector('[data-material-group] .needs-review-label') !== null`));
+      const articleWord = {'en-CH':'Article','de-CH':'Artikel','fr-CH':'Article','it-CH':'Articolo','rm-CH':'Artitgel'}[locale];
+      assert.equal(await evaluate(cdp, `document.querySelector('[data-material-heading]').innerText`),`${articleWord} 199bis → ${articleWord} 200ter`,'Saved two-sided legal headings lost or untranslated');
+      await setInput('[data-material-search]',`${articleWord} 200ter`);
+      await waitFor(async () => (await groups()).length === 1 && (await groups())[0] === 'qa-material-199','Saved legal heading was not searchable');
       await setInput('[data-material-search]','SECOND_CHANGE_ONLY');
       await waitFor(async () => (await groups()).length === 1 && (await groups())[0] === 'qa-material-199','Search ignored a non-leading exact change');
       await setInput('[data-material-group] select','qa-extra-change','HTMLSelectElement');

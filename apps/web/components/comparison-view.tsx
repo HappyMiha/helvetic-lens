@@ -903,7 +903,7 @@ export function ComparisonView({ id }: { id: string }) {
                 )}
                 {filter === "substantive" &&
                 data.diff.change_clusters?.length ? (
-                  <MaterialChanges clusters={data.diff.change_clusters} changes={data.diff.items}
+                  <MaterialChanges clusters={data.diff.change_clusters} changes={data.diff.items} units={data.diff.legal_units}
                     state={materialState} onStateChange={setMaterialState} onEvidence={jump} />
                 ) : (
                   <div className="diff-rows">

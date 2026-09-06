@@ -35,8 +35,34 @@ empty/clear search, exact-evidence focus and return, 44px controls, localization
 320px reflow with doubled root text size, and existing comparison overlay/citation
 journeys. This is Chromium emulation, not a physical-device or screen-reader sign-off.
 
-HL-096 remains in progress. Legal-unit headings where authoritative labels exist,
+HL-096 remains in progress. Independent verification of extracted legal-unit labels,
 full visual-token/density consolidation, richer concise deltas, all representative
 feed/assistant layouts, complete zoom/real-browser coverage and observed user
 reading comfort require further work. This slice does not rewrite legacy extraction,
 assert useful AI reasoning, or finish the product design audit.
+
+
+## Saved legal-unit headings (6 September 2026)
+
+Group headings now use the existing saved `diff.legal_units` projection. A unit
+must be listed by the group on the correct before/after side and its passage ID
+must belong to an exact change on that side. Recognized title/chapter/section/
+article/paragraph/letter/number labels come from the saved hierarchy. Anonymous
+`passage:87` positions and opaque IDs never become legal article numbers. Missing,
+unattached, malformed or unrecognized labels retain the neutral group heading.
+
+Article ancestry and subdivisions are preferred to a long full hierarchy. Repeated
+continuations are deduplicated; if the same short article label belongs to different
+saved chapter paths, those ancestors remain visible to distinguish them. Different
+before/after labels are shown separately with an arrow, preserving renumbering.
+Three distinct labels per side are shown with an explicit additional count; search
+still covers every saved label, including labels beyond that preview. Labels are
+localized in all five UI languages while the saved number is preserved.
+
+The interface explicitly identifies these as extraction labels and links to the
+exact evidence. It does not claim independently verified official headings, parse
+new document content, rewrite stored diffs, invoke AI or repair historical noise.
+The helper tests cover ancestry, absent labels, wrong-side attachment, renumbering,
+deduplication, multi-chapter ambiguity, preview limits and malformed input. The
+200-group browser fixture checks localized before/after headings and search by
+the displayed article label while preserving exact citations, paging and reflow.
