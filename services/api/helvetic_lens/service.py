@@ -19,7 +19,15 @@ from sqlalchemy import delete, func, inspect, or_, select
 from sqlalchemy.orm import Session
 
 from . import analysis as ai
-from . import digests, monitoring_topics, source_packs, synchronization, topic_matching, topic_reviews
+from . import (
+    digests,
+    monitoring_topics,
+    onboarding,
+    source_packs,
+    synchronization,
+    topic_matching,
+    topic_reviews,
+)
 from . import jobs as durable_jobs
 from . import relation_analysis as relation_ai
 from .ai_metrics import summarize_ai_triage_metrics
@@ -1173,6 +1181,7 @@ class HelveticLens:
                 else preference.next_delivery_at if enabled else None
             )
             preference.updated_at = now
+            onboarding.record(session, self.organization_id, user_id, "notifications_saved", "digest_preferences")
             session.commit()
         return self.digest_overview(user_id, preview_page=preview_page)
 
@@ -2018,7 +2027,7 @@ class HelveticLens:
             session.commit()
         return result
 
-    async def add_law(self, data: dict):
+    async def add_law(self, data: dict, *, actor_user_id: str | None = None, record_onboarding: bool = False):
         url = canonical_url(data["url"])
         provider = data.get("provider", "native")
         shared_official = self.is_shared_official_url(url) and not data.get("synthetic", False)
@@ -2046,6 +2055,8 @@ class HelveticLens:
                     last_result="baseline_reused",
                 )
                 session.add(watch)
+                if record_onboarding:
+                    onboarding.record(session, self.organization_id, actor_user_id, "interest_saved", "document", existing.id)
                 session.commit()
                 return self.law_summary(session, existing, watch)
         fetched = await self.fetcher.fetch(url, provider)
@@ -2090,6 +2101,8 @@ class HelveticLens:
                 last_checked=utcnow(),
             )
             session.add(watch)
+            if record_onboarding:
+                onboarding.record(session, self.organization_id, actor_user_id, "interest_saved", "document", law.id)
             session.commit()
             return self.law_summary(session, law, watch)
 

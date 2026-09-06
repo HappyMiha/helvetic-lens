@@ -4235,6 +4235,60 @@ const feedRecoveryMessages: Record<Locale, Record<string, string>> = {
 };
 for (const locale of locales) Object.assign(catalogTarget(locale), feedRecoveryMessages[locale]);
 
+const onboardingProgressMessages: Record<Locale, Record<string, string>> = {
+  "en-CH": {
+    "onboardingProgress.title": "Your recorded steps",
+    "onboardingProgress.boundary": "These are your first recorded actions in this organization, not completion checkmarks. They remain after later edits or removal. Displaying evidence does not prove understanding or useful insight.",
+    "onboardingProgress.interest": "Saved a topic or document watch",
+    "onboardingProgress.notifications": "Saved notification preferences, including opting out",
+    "onboardingProgress.evidence": "Displayed saved, non-sample source text",
+    "onboardingProgress.recorded": "First recorded:",
+    "onboardingProgress.notRecorded": "No action recorded yet. Earlier use may predate this feature.",
+    "onboardingProgress.displayNotice": "Visible non-sample source text can be recorded in your personal getting-started guide. Prefetching or downloading alone is not counted."
+  },
+  "de-CH": {
+    "onboardingProgress.title": "Ihre aufgezeichneten Schritte",
+    "onboardingProgress.boundary": "Dies sind Ihre ersten aufgezeichneten Handlungen in dieser Organisation, keine Erledigt-Häkchen. Sie bleiben nach Änderungen oder Löschungen erhalten. Angezeigte Belege beweisen weder Verständnis noch nützliche Erkenntnisse.",
+    "onboardingProgress.interest": "Ein Thema oder eine Dokumentbeobachtung gespeichert",
+    "onboardingProgress.notifications": "Benachrichtigungsoptionen gespeichert, auch bei Abwahl",
+    "onboardingProgress.evidence": "Gespeicherten Quellentext ohne Beispieldaten angezeigt",
+    "onboardingProgress.recorded": "Erstmals aufgezeichnet:",
+    "onboardingProgress.notRecorded": "Noch keine Handlung aufgezeichnet. Frühere Nutzung kann vor Einführung dieser Funktion liegen.",
+    "onboardingProgress.displayNotice": "Sichtbarer Quellentext ohne Beispieldaten kann in Ihrem persönlichen Wegweiser aufgezeichnet werden. Vorladen oder Herunterladen allein zählt nicht."
+  },
+  "fr-CH": {
+    "onboardingProgress.title": "Vos étapes enregistrées",
+    "onboardingProgress.boundary": "Ce sont vos premières actions enregistrées dans cette organisation, pas des cases de fin de parcours. Elles restent après une modification ou suppression. Afficher une preuve ne démontre ni compréhension ni utilité.",
+    "onboardingProgress.interest": "Sujet ou suivi de document enregistré",
+    "onboardingProgress.notifications": "Préférences de notification enregistrées, y compris le refus",
+    "onboardingProgress.evidence": "Texte de source enregistré, hors exemple, affiché",
+    "onboardingProgress.recorded": "Premier enregistrement :",
+    "onboardingProgress.notRecorded": "Aucune action enregistrée. Une utilisation antérieure peut précéder cette fonction.",
+    "onboardingProgress.displayNotice": "Le texte de source visible, hors exemple, peut être enregistré dans votre guide personnel. Le préchargement ou le téléchargement seul ne compte pas."
+  },
+  "it-CH": {
+    "onboardingProgress.title": "I tuoi passaggi registrati",
+    "onboardingProgress.boundary": "Sono le prime azioni registrate in questa organizzazione, non conferme di completamento. Restano dopo modifiche o eliminazioni. Visualizzare una prova non dimostra comprensione o utilità.",
+    "onboardingProgress.interest": "Tema o monitoraggio di documento salvato",
+    "onboardingProgress.notifications": "Preferenze di notifica salvate, inclusa la rinuncia",
+    "onboardingProgress.evidence": "Testo di fonte salvato, non dimostrativo, visualizzato",
+    "onboardingProgress.recorded": "Prima registrazione:",
+    "onboardingProgress.notRecorded": "Nessuna azione registrata. L’utilizzo precedente potrebbe essere anteriore a questa funzione.",
+    "onboardingProgress.displayNotice": "Il testo di fonte visibile e non dimostrativo può essere registrato nella tua guida personale. Il solo precaricamento o download non conta."
+  },
+  "rm-CH": {
+    "onboardingProgress.title": "Tes pass registrads",
+    "onboardingProgress.boundary": "Quai èn tias emprimas acziuns registradas en questa organisaziun, betg confermas da cumplettaziun. Ellas restan suenter midadas u stizzadas. Mussar ina cumprova na demussa ni chapientscha ni utilitad.",
+    "onboardingProgress.interest": "Tema u monitoring d’in document memorisà",
+    "onboardingProgress.notifications": "Preferenzas da notificaziun memorisadas, era la renunzia",
+    "onboardingProgress.evidence": "Text da funtauna memorisà, betg d’exempel, mussà",
+    "onboardingProgress.recorded": "Emprima registraziun:",
+    "onboardingProgress.notRecorded": "Anc nagina acziun registrada. In diever anteriur po preceder questa funcziun.",
+    "onboardingProgress.displayNotice": "Text da funtauna visibel e betg d’exempel po vegnir registrà en tes guid persunal. Be prechargiar u telechargiar na quinta betg."
+  }
+};
+for (const locale of locales) Object.assign(catalogTarget(locale), onboardingProgressMessages[locale]);
+
 function supported(value: string | null | undefined): Locale | null {
   if (!value) return null;
   const exact = locales.find((item) => item.toLowerCase() === value.replace("_", "-").toLowerCase());

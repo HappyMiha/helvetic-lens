@@ -423,6 +423,7 @@ def create_app(
             "/api/digests/send",
             "/api/source-pack-requests",
             "/api/onboarding",
+            "/api/onboarding/evidence-displayed",
             "/api/monitoring-topics/preview",
             "/api/assistant/context",
             "/api/assistant/remark",
@@ -802,6 +803,12 @@ def create_app(
         _, principal = assistant_principal(request)
         with service.db.session() as session:
             return onboarding.read(session, service.organization_id, principal)
+
+    @app.post("/api/onboarding/evidence-displayed")
+    def record_evidence_display(data: onboarding.EvidenceDisplayInput, request: Request):
+        user_id, _ = assistant_principal(request)
+        with service.db.session() as session:
+            return onboarding.evidence_displayed(session, service.organization_id, user_id, data.kind, data.id)
 
     @app.patch("/api/onboarding")
     def save_onboarding(data: onboarding.OnboardingInput, request: Request):
@@ -1457,8 +1464,9 @@ def create_app(
         return service.regulatory_timeline(law_id)
 
     @app.post("/api/laws", status_code=201)
-    async def add_law(data: LawInput):
-        return await service.add_law(data.model_dump())
+    async def add_law(data: LawInput, request: Request):
+        identity = request.state.identity
+        return await service.add_law(data.model_dump(), actor_user_id=identity.user_id if identity else None, record_onboarding=True)
 
     @app.get("/api/laws/{law_id}")
     def law_detail(law_id: str):

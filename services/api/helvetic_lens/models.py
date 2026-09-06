@@ -67,6 +67,23 @@ class UserOnboarding(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class OnboardingMilestone(Base):
+    """First observed personal actions, not proof of comprehension or completion."""
+    __tablename__ = "onboarding_milestones"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "principal_key", "kind", name="uq_onboarding_milestone_principal_kind"),
+        CheckConstraint("kind IN ('interest_saved', 'notifications_saved', 'evidence_displayed')", name="ck_onboarding_milestone_kind"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    principal_key: Mapped[str] = mapped_column(String(80))
+    user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    kind: Mapped[str] = mapped_column(String(30))
+    object_kind: Mapped[str] = mapped_column(String(30))
+    object_id: Mapped[str | None] = mapped_column(String(36))
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class AccountToken(Base):
     __tablename__ = "account_tokens"
     __table_args__ = (
@@ -1392,6 +1409,7 @@ class OutboxMessage(Base):
 # Central policy used by the session boundary. Keeping this list beside the
 # models makes a newly persisted tenant-owned record difficult to forget.
 ORGANIZATION_SCOPED_MODELS = (
+    OnboardingMilestone,
     UserOnboarding,
     OrganizationMembership,
     OrganizationInvitation,

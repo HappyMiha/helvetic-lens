@@ -30,7 +30,7 @@ export default function OnboardingPage() {
 }
 
 function Guide() {
-  const { t } = useI18n();
+  const { t, dateTime } = useI18n();
   const { canManage } = useAuth();
   const router = useRouter();
   const resource = useResource(resources.onboarding());
@@ -145,6 +145,24 @@ function Guide() {
           >
             {t("gettingStarted.later")}
           </Button>
+          <section className="rounded-2xl border bg-card p-5" aria-labelledby="recorded-progress" data-onboarding-milestones>
+            <h2 id="recorded-progress" className="text-xl font-semibold">{t("onboardingProgress.title")}</h2>
+            <p className="text-sm text-muted-foreground mt-2">{t("onboardingProgress.boundary")}</p>
+            <ul className="mt-3 space-y-3">
+              {([
+                ["interest_saved", "onboardingProgress.interest"],
+                ["notifications_saved", "onboardingProgress.notifications"],
+                ["evidence_displayed", "onboardingProgress.evidence"],
+              ] as const).map(([kind, key]) => {
+                const recorded = resource.data?.milestones?.find(item => item.kind === kind);
+                return <li key={kind} data-milestone-kind={kind} className="rounded-lg border p-3">
+                  <strong className="block">{t(key)}</strong>
+                  {recorded ? <p data-milestone-recorded className="mt-1 text-sm">{t("onboardingProgress.recorded")} <time dateTime={recorded.recorded_at}>{dateTime(recorded.recorded_at, {dateStyle:"medium", timeStyle:"short"})}</time></p> :
+                    <p className="mt-1 text-sm text-muted-foreground">{t("onboardingProgress.notRecorded")}</p>}
+                </li>;
+              })}
+            </ul>
+          </section>
           <section
             className="rounded-2xl border bg-card p-5 sm:p-7"
             aria-labelledby="guide-steps"

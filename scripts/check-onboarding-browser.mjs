@@ -31,7 +31,7 @@ async function waitFor(check, message) {
   throw new Error(message);
 }
 let locale = "en-CH", role = "organization_admin", user = "qa", state, failSave = false;
-function fresh(available = false) { return {state: "new", intent: null, started_at: null, deferred_at: null, updated_at: null, visibility: "personal", completion_verified: false, organization_setup: {source_package_enabled: available, active_document_watch: available, active_topic: false}}; }
+function fresh(available = false) { return {state: "new", intent: null, started_at: null, deferred_at: null, updated_at: null, visibility: "personal", completion_verified: false, milestones: [], organization_setup: {source_package_enabled: available, active_document_watch: available, active_topic: false}}; }
 try {
   await waitFor(async () => (await fetch(base)).ok, "Isolated production UI failed to start");
   let debugPort;
@@ -81,12 +81,20 @@ try {
     await open();
     assert.equal(changes().length,before,"Opening guide mutated shared or personal data");
     assert.ok(await evaluate(cdp, `document.querySelector('[data-onboarding-guide] a[href="/sources#source-packs"]') !== null`));
+    assert.equal(await evaluate(cdp, `document.querySelectorAll('[data-milestone-recorded]').length`),0);
+    state={...state,milestones:["interest_saved","notifications_saved","evidence_displayed"].map(kind=>({kind,object_kind:"test",recorded_at:"2026-09-06T10:00:00Z"}))};
+    await open();
+    assert.equal(await evaluate(cdp, `document.querySelectorAll('[data-milestone-recorded]').length`),3);
+    assert.ok(await evaluate(cdp, `!document.querySelector('[data-onboarding-milestones]').innerText.includes('onboardingProgress.')`));
+    assert.equal(changes().length,before,"Reading recorded milestones wrote data");
     const availableText = await evaluate(cdp, `document.querySelector('[data-organization-availability="sources"]').textContent`);
     state = {...state, organization_setup:{source_package_enabled:!state.organization_setup.source_package_enabled,active_document_watch:false,active_topic:false}};
     await open();
     assert.notEqual(await evaluate(cdp, `document.querySelector('[data-organization-availability="sources"]').textContent`),availableText,"Organization availability not refreshed");
     if (locale === "en-CH" && permission === "viewer") {
       await mkdir(join(root,".tmp"),{recursive:true});
+      await evaluate(cdp, `document.querySelector('[data-onboarding-milestones]').scrollIntoView({block:'start'})`);
+      await sleep(100);
       const shot=await cdp.send("Page.captureScreenshot",{format:"png"});
       await writeFile(join(root,".tmp",`onboarding-${width}.png`),Buffer.from(shot.data,"base64"));
     }

@@ -3,14 +3,24 @@
 from datetime import UTC
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
-from sqlalchemy import select
+from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
-from .corpus_access import visible
+from .config import DomainError
+from .corpus_access import accessible_versions, visible
 from .db import utcnow
-from .models import DocumentWatch, Law, MonitoringTopic, SourcePackSubscription, UserOnboarding
+from .models import (
+    DocumentWatch,
+    Law,
+    MonitoringTopic,
+    OnboardingMilestone,
+    RegulatoryDocumentVersion,
+    SourcePackSubscription,
+    UserOnboarding,
+    Version,
+)
 
 
 class OnboardingInput(BaseModel):
@@ -69,7 +79,19 @@ def read(session, organization_id, principal_key):
             return None
         return (value.replace(tzinfo=UTC) if value.tzinfo is None else value).isoformat()
 
+    milestones = session.execute(
+        select(OnboardingMilestone.kind, OnboardingMilestone.object_kind, OnboardingMilestone.recorded_at)
+        .where(
+            OnboardingMilestone.organization_id == organization_id,
+            OnboardingMilestone.principal_key == principal_key,
+        )
+        .order_by(OnboardingMilestone.recorded_at, OnboardingMilestone.kind)
+    ).all()
     return {
+        "milestones": [
+            {"kind": item.kind, "object_kind": item.object_kind, "recorded_at": timestamp(item.recorded_at)}
+            for item in milestones
+        ],
         "state": "new" if state is None else "deferred" if state.deferred_at else "started",
         "intent": state.intent if state else None,
         "started_at": timestamp(state.started_at) if state else None,
@@ -118,3 +140,54 @@ def save(session, organization_id, principal_key, user_id, action):
         record.updated_at = now
     session.commit()
     return read(session, organization_id, principal_key)
+
+
+class EvidenceDisplayInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["version", "native_version"]
+    id: str = Field(min_length=1, max_length=36)
+
+
+def record(session, organization_id, user_id, kind, object_kind, object_id=None):
+    """Join the caller's transaction: never commit business data independently."""
+    insert = pg_insert if session.bind.dialect.name == "postgresql" else sqlite_insert
+    principal = f"user:{user_id}" if user_id else "anonymous-development"
+    session.execute(
+        insert(OnboardingMilestone)
+        .values(
+            organization_id=organization_id,
+            principal_key=principal,
+            user_id=user_id,
+            kind=kind,
+            object_kind=object_kind,
+            object_id=object_id,
+            recorded_at=utcnow(),
+        )
+        .on_conflict_do_nothing(index_elements=["organization_id", "principal_key", "kind"])
+    )
+
+
+def evidence_displayed(session, organization_id, user_id, kind, version_id):
+    # Check current access with scalar fields, never trust a browser completion flag.
+    if kind == "native_version":
+        query = accessible_versions(organization_id).where(RegulatoryDocumentVersion.id == version_id)
+        row = session.execute(
+            query.with_only_columns(
+                RegulatoryDocumentVersion.id,
+                RegulatoryDocumentVersion.metadata_json["synthetic"].as_string(),
+                func.length(func.trim(RegulatoryDocumentVersion.text)),
+            )
+        ).first()
+    else:
+        row = session.execute(
+            select(Version.id, Version.synthetic, func.length(func.trim(Version.text)))
+            .join(Law, Law.id == Version.law_id)
+            .where(Version.id == version_id, visible(Version, organization_id), visible(Law, organization_id))
+        ).first()
+    if row is None:
+        raise DomainError("The saved source evidence is unavailable in this organization.", 404, "not_found")
+    if row[1] not in (None, False, 0, "false") or not row[2]:
+        return {"recorded": False, "reason": "sample_or_empty_evidence"}
+    record(session, organization_id, user_id, "evidence_displayed", kind, version_id)
+    session.commit()
+    return {"recorded": True}

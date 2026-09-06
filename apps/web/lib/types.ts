@@ -1415,6 +1415,7 @@ export type MonitoringContext = {
 };
 
 export type OnboardingState = {
+  milestones: Array<{kind: "interest_saved" | "notifications_saved" | "evidence_displayed"; object_kind: string; recorded_at: string}>;
   state: "new" | "deferred" | "started";
   intent: "topic" | "law" | "explore" | null;
   started_at: string | null;

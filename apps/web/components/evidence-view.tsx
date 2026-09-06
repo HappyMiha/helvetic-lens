@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -17,6 +17,7 @@ import { useI18n } from "@/lib/i18n";
 import type { Passage, Version } from "@/lib/types";
 import { ErrorNote, Loading, Status } from "./common";
 import { Shell } from "./shell";
+import { useEvidenceMilestone } from "@/lib/evidence-milestone";
 
 type Evidence = Omit<Version, "law_id" | "artifact_url"> & { law_id: string | null; artifact_url: string | null; law_name: string; passages: Passage[]; plain_text?: string | null };
 const PAGE_SIZE = 60;
@@ -47,6 +48,9 @@ export function EvidenceView({
         .getElementById("passage-" + passageId)
         ?.scrollIntoView({ block: "center" });
   }, [page, targetIndex, passageId]);
+  const displayedEvidence = useRef<HTMLElement>(null);
+  useEvidenceMilestone(displayedEvidence, id, native, Boolean(data && !error && !missingTarget && !data.synthetic &&
+    (data.passages.some(passage => passage.text.trim()) || data.plain_text?.trim())), page);
   const pages = Math.max(
     1,
     Math.ceil((data?.passages.length || 0) / PAGE_SIZE),
@@ -93,7 +97,7 @@ export function EvidenceView({
               </a>
             </Button> : <p className="muted max-w-md" role="status">{t("nativeEvidence.noArtifact")}</p>}
           </div>
-          <section className="panel">
+          <section className="panel" ref={displayedEvidence}>
             <div className="evidence-metadata">
               {native ? <span>{t("nativeEvidence.record")}</span> : <Status value={data.origin} />}
               {data.synthetic && (
@@ -125,6 +129,7 @@ export function EvidenceView({
                 <ArrowUpRight size={13} />
               </a>
             )}
+            <p className="text-sm muted mx-6">{t("onboardingProgress.displayNotice")}</p>
             {missingTarget ? (
               <div className="p-6">
                 <ErrorNote
@@ -140,7 +145,7 @@ export function EvidenceView({
               </div>
             ) : (
               <>
-                {!data.passages.length && <div className="p-6 whitespace-pre-wrap break-words" data-native-text>{data.plain_text || t("nativeEvidence.noText")}</div>}
+                {!data.passages.length && <div className="p-6 whitespace-pre-wrap break-words" data-native-text data-evidence-display-text={data.plain_text ? true : undefined}>{data.plain_text || t("nativeEvidence.noText")}</div>}
                 <div className="evidence-passages">
                   {data.passages
                     .slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
@@ -177,7 +182,7 @@ export function EvidenceView({
                             <span>{label(data.origin)}</span>
                           )}
                         </div>
-                        <p>{passage.text}</p>
+                        <p data-evidence-display-text={passage.text.trim() ? true : undefined}>{passage.text}</p>
                       </article>
                     ))}
                 </div>

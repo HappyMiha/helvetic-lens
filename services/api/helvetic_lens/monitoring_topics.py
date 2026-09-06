@@ -467,6 +467,8 @@ def create_topic(
     if draft:
         draft.used_at = utcnow()
     backfill_job = _enqueue_match_backfill(session, topic)
+    from .onboarding import record as record_onboarding
+    record_onboarding(session, topic.organization_id, actor_user_id, "interest_saved", "topic", topic.id)
     session.commit()
     return {
         **_topic_payload(session, topic, history=True),
