@@ -3854,6 +3854,80 @@ const monitorAssistantMessages: Record<Locale, Messages> = {
 };
 for (const locale of locales) Object.assign(catalogTarget(locale), monitorAssistantMessages[locale]);
 
+const monitorChoiceMessages: Record<Locale, Messages> = {
+  "en-CH": {
+    "monitorChoice.title": "What would you like to monitor?",
+    "monitorChoice.topic": "A topic",
+    "monitorChoice.topicHelp": "Find related developments across selected sources. Review terms, scope and saved matches before saving.",
+    "monitorChoice.topicAction": "Set up a topic",
+    "monitorChoice.document": "One law or document",
+    "monitorChoice.documentHelp": "Save a snapshot of one document URL, then compare later versions. This does not discover related news.",
+    "monitorChoice.documentAction": "Preview a document",
+    "monitorChoice.documentRole": "An organization administrator can add a shared document watch.",
+    "monitorChoice.pack": "A source package",
+    "monitorChoice.packHelp": "Include a group of sources in the organization radar. Review coverage and cadence before enabling; this is not a topic or law watch.",
+    "monitorChoice.packAction": "Review source packages",
+    "monitorChoice.boundary": "Choosing a path does not activate monitoring. Each path has its own review and explicit save or activation."
+  },
+  "de-CH": {
+    "monitorChoice.title": "Was möchten Sie beobachten?",
+    "monitorChoice.topic": "Ein Thema",
+    "monitorChoice.topicHelp": "Verwandte Entwicklungen in gewählten Quellen finden. Begriffe, Umfang und gespeicherte Treffer vor dem Speichern prüfen.",
+    "monitorChoice.topicAction": "Thema einrichten",
+    "monitorChoice.document": "Ein Erlass oder Dokument",
+    "monitorChoice.documentHelp": "Eine Fassung einer Dokument-URL speichern und spätere Fassungen vergleichen. Damit werden keine verwandten Nachrichten gesucht.",
+    "monitorChoice.documentAction": "Dokumentvorschau",
+    "monitorChoice.documentRole": "Ein Organisationsadministrator kann eine gemeinsame Dokumentbeobachtung hinzufügen.",
+    "monitorChoice.pack": "Ein Quellenpaket",
+    "monitorChoice.packHelp": "Eine Quellengruppe in das Organisationsradar aufnehmen. Abdeckung und Rhythmus vor der Aktivierung prüfen; dies ist keine Themen- oder Erlassbeobachtung.",
+    "monitorChoice.packAction": "Quellenpakete prüfen",
+    "monitorChoice.boundary": "Die Wahl eines Wegs aktiviert noch keine Beobachtung. Jeder Weg hat eine eigene Prüfung und ein ausdrückliches Speichern oder Aktivieren."
+  },
+  "fr-CH": {
+    "monitorChoice.title": "Que souhaitez-vous suivre ?",
+    "monitorChoice.topic": "Un thème",
+    "monitorChoice.topicHelp": "Trouver des évolutions liées dans les sources choisies. Examiner les termes, le périmètre et les résultats enregistrés avant de sauvegarder.",
+    "monitorChoice.topicAction": "Configurer un thème",
+    "monitorChoice.document": "Une loi ou un document",
+    "monitorChoice.documentHelp": "Enregistrer une version d’un document à une URL, puis comparer les versions ultérieures. Cela ne recherche pas d’actualités liées.",
+    "monitorChoice.documentAction": "Aperçu du document",
+    "monitorChoice.documentRole": "Un administrateur de l’organisation peut ajouter un suivi de document partagé.",
+    "monitorChoice.pack": "Un ensemble de sources",
+    "monitorChoice.packHelp": "Inclure un groupe de sources dans le radar de l’organisation. Examiner couverture et fréquence avant activation ; ce n’est pas un suivi de thème ou de loi.",
+    "monitorChoice.packAction": "Examiner les ensembles de sources",
+    "monitorChoice.boundary": "Choisir un parcours n’active aucun suivi. Chaque parcours prévoit un examen puis un enregistrement ou une activation explicite."
+  },
+  "it-CH": {
+    "monitorChoice.title": "Che cosa vuoi monitorare?",
+    "monitorChoice.topic": "Un tema",
+    "monitorChoice.topicHelp": "Trova sviluppi collegati nelle fonti scelte. Esamina termini, ambito e risultati salvati prima di salvare.",
+    "monitorChoice.topicAction": "Configura un tema",
+    "monitorChoice.document": "Una legge o un documento",
+    "monitorChoice.documentHelp": "Salva una versione di un documento a un URL, poi confronta le versioni successive. Non cerca notizie collegate.",
+    "monitorChoice.documentAction": "Anteprima del documento",
+    "monitorChoice.documentRole": "Un amministratore dell’organizzazione può aggiungere un monitoraggio condiviso del documento.",
+    "monitorChoice.pack": "Un pacchetto di fonti",
+    "monitorChoice.packHelp": "Includi un gruppo di fonti nel radar dell’organizzazione. Esamina copertura e frequenza prima di attivarlo; non è un monitoraggio di temi o leggi.",
+    "monitorChoice.packAction": "Esamina i pacchetti di fonti",
+    "monitorChoice.boundary": "Scegliere un percorso non attiva il monitoraggio. Ogni percorso richiede una verifica e un salvataggio o un’attivazione espliciti."
+  },
+  "rm-CH": {
+    "monitorChoice.title": "Tge vuls ti survegliar?",
+    "monitorChoice.topic": "In tema",
+    "monitorChoice.topicHelp": "Chatta svilups colliads en las funtaunas tschernidas. Examinescha terms, cuverta e resultats memorisads avant da memorisar.",
+    "monitorChoice.topicAction": "Endrizzar in tema",
+    "monitorChoice.document": "Ina lescha u in document",
+    "monitorChoice.documentHelp": "Memorisescha ina versiun d’in document dad ina URL e cumpareglia versiuns posteriuras. Quai na tschertga betg novitads colliadas.",
+    "monitorChoice.documentAction": "Prevista dal document",
+    "monitorChoice.documentRole": "In administratur da l’organisaziun po agiuntar ina surveglianza communabla d’in document.",
+    "monitorChoice.pack": "In pachet da funtaunas",
+    "monitorChoice.packHelp": "Includa ina gruppa da funtaunas en il radar da l’organisaziun. Examinescha cuverta e frequenza avant l’activaziun; quai n’è betg ina surveglianza da temas u leschas.",
+    "monitorChoice.packAction": "Examinar pachets da funtaunas",
+    "monitorChoice.boundary": "Tscherner ina via n’activescha nagina surveglianza. Mintga via pretenda ina controlla ed ina memorisaziun u activaziun explicita."
+  }
+};
+for (const locale of locales) Object.assign(catalogTarget(locale), monitorChoiceMessages[locale]);
+
 function supported(value: string | null | undefined): Locale | null {
   if (!value) return null;
   const exact = locales.find((item) => item.toLowerCase() === value.replace("_", "-").toLowerCase());

@@ -32,6 +32,43 @@ Only the existing explicit administrator activation creates the shared topic,
 with the same idempotency key/retry lifecycle. Success links directly to the saved
 topic. Changing a plan invalidates its old preview as before.
 
+## Choose the monitoring type
+
+The Topics page and every resolved contextual entry now offer three explicit
+paths. This is a shared entry chooser, not another event store or an automatic
+model action:
+
+- **Topic:** focus the existing manual editor or explicitly copy the saved context.
+  Terms and coverage stay user-chosen, followed by bounded saved-match/source
+  readiness/duplicate review and the existing authorized, idempotent save.
+- **One law or document:** open the existing AddDocumentDialog. A valid HTTP(S)
+  source URL and its document title are initial editable values; generic chat
+  messages without a source leave both fields blank. URLs with credentials or
+  other schemes are not prefilled. No fetch happens on opening. The existing
+  explicit preview enables saving, then the created document page opens directly.
+  An already active or paused contextual watch offers its existing page instead
+  of another creation action. The dialog also retains its URL-duplicate check.
+  Viewers can open existing watches but cannot add a shared document.
+- **Source package:** navigate to `/sources#source-packs` to inspect the existing
+  catalogue's coverage, languages, cadence and current subscription state. After
+  asynchronous loading, that section receives focus below the sticky header once,
+  without stealing focus again on subscription refresh. Activation remains an
+  explicit admin action; viewers use the existing structured request workflow.
+  A package supplies sources to the radar; it is not itself a topic or law watch.
+
+Leaving a dirty topic draft through these paths uses the existing explicit
+accept/cancel confirmation. Navigation never enables a package, fetches a
+source, saves a document, creates a topic or invokes inference. The existing
+preview/activation endpoints and authorization policies are reused, not replaced.
+
+`npm run check:monitoring-choices:browser` covers 30 intercepted journeys over five
+locales, 390/1280/1440px and both roles, including actual preview/save/direct-link
+and package activation/request actions against synthetic APIs. This does not prove
+a deployed live-source end-to-end journey, source availability, shared cross-kind
+transaction/idempotency, independent native copy or physical-device accessibility.
+The new chooser does not carry a topic draft into the source-package request or
+preserve permanent origin metadata on the resulting document/package.
+
 ## From a saved cited answer
 
 Ask and AI history now offer the same Monitor this topic action beside succeeded,
@@ -63,9 +100,9 @@ record counters, explicit owner guards and malformed/unsupported cases. Separate
 PostgreSQL checks cover JSON projection and private-version denial. Browser checks
 exercise Ask/history button eligibility, actual navigation to the original question,
 explicit editable goal copy, no question text in URLs, both roles and five locales.
-The personal Marvin message entry is described below. Common new law/topic/pack
-choice, durable origin metadata on the saved topic and unbounded historical-turn
-deep links remain separate work.
+The personal Marvin message entry is described below. The shared chooser above
+now offers all three paths; durable origin metadata on the saved topic and
+unbounded historical-turn deep links remain separate work.
 
 ## From a personal Marvin message
 
@@ -103,8 +140,8 @@ this slice does not redesign that existing lifecycle or retention policy.
 across five locales, 390/1440px and admin/viewer roles. API and PostgreSQL tests
 cover privacy, bounded retention and no inference/shared writes. This is not a
 native-language, physical-device or independent research sign-off. Durable topic
-origin metadata, older message recovery, and common law/topic/pack selection
-remain separate work.
+origin metadata and older message recovery remain separate work. The shared
+chooser above now offers law, topic and package paths.
 
 ## Viewer behavior
 
@@ -132,10 +169,11 @@ The UI hides activation/edit controls and disables AI drafting for viewers.
 - Scratch PostgreSQL runner suites `monitoring-context` and
   `monitoring-context-activate` verify the actual SQL/API flow in empty local DBs.
 
-HL-077 remains IN PROGRESS: this slice creates contextual **topics** and links
-existing watches. It does not yet unify new law-watch/source-pack subscription
-choices, detect semantically equivalent topics beyond the same-rule warning, show predicted cadence/volume,
-or submit a viewer proposal to administrators. Saved cited Ask/history answers and
+HL-077 remains IN PROGRESS: the shared chooser now links contextual topics,
+document previews/existing watches and source-package review. Consistent richer
+metadata/cadence across all previews, broader semantic-equivalence suggestions
+beyond the same-rule warning, predicted volume, and structured viewer topic
+requests remain open. Saved cited Ask/history answers and
 personal Marvin messages now have their own contextual entry. Selected-source operational readiness and configured cadence are now shown by
 the explicit preview (see `MONITORING_TOPICS.md`). This records subscriptions,
 schedules and health without predicting actual future delivery or volume.

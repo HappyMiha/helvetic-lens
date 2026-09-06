@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -124,7 +124,7 @@ function SourcePacks({
   if (!data) return null;
   const text = (values: Record<string, string>) => values[locale] || values["en-CH"];
   return (
-    <section id="source-packs" className="source-packs panel mb-6">
+    <section id="source-packs" tabIndex={-1} className="source-packs panel mb-6">
       <div className="panel-header items-start gap-4">
         <div>
           <span className="eyebrow">{t("sourcePacks.eyebrow")}</span>
@@ -228,6 +228,19 @@ export function Workspace({
   const sourcePacks = useResource(
     view === "sources" ? resources.sourcePacks() : null,
   );
+  const focusedPacks = useRef(false);
+  useEffect(() => {
+    if (view !== "sources" || !sourcePacks.data || focusedPacks.current || window.location.hash !== "#source-packs") return;
+    const frame = requestAnimationFrame(() => {
+      const section = document.getElementById("source-packs");
+      if (!section) return;
+      focusedPacks.current = true;
+      section.style.scrollMarginTop = `${(section.closest("main")?.querySelector(".topbar")?.getBoundingClientRect().height || 0) + 16}px`;
+      section.scrollIntoView({ block: "start" });
+      section.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [view, sourcePacks.data]);
   const scans = useResource(resources.scans());
   const jobs = useResource(resources.jobs());
   const [form, setForm] = useState<DocumentForm | null>(null);

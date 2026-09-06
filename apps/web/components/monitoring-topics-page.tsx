@@ -45,6 +45,7 @@ import { Shell } from "./shell";
 import { TopicSavedMatches } from "./topic-match-review";
 import { TopicHistoryStatus } from "./topic-history-status";
 import { TopicSourceReadiness } from "./topic-source-readiness";
+import { MonitoringSetupChoices } from "./monitoring-setup-choices";
 import { TopicDuplicateReview } from "./topic-duplicate-review";
 import { TopicPreviewCoverage } from "./topic-preview-coverage";
 import { Button } from "./ui/button";
@@ -621,6 +622,8 @@ function TopicEditor({
           )}
         </SuccessNote>
       )}
+      {!context && <MonitoringSetupChoices onTopic={focusEditor}
+        topicDisabled={!!busy || !!recovery || !draftLoaded} onLeave={confirmDiscard} />}
       {context && (
         <section data-monitor-context className="card p-5 mb-5 break-words">
           <h2>{t("monitorThis.title")}</h2>
@@ -637,6 +640,8 @@ function TopicEditor({
                   <p className="text-sm">{origin.data.kind === "assistant" ? t("monitorThis.messageBoundary") : t("monitorThis.questionBoundary")}</p>
                 </div>
               )}
+              <MonitoringSetupChoices context={origin.data} onTopic={useContext}
+                topicDisabled={!!busy || !!recovery || !draftLoaded} onLeave={confirmDiscard} />
               <p>{t("monitorThis.summary")}</p>
               <details className="text-sm mb-3">
                 <summary className="cursor-pointer min-h-11 content-center">
@@ -645,14 +650,6 @@ function TopicEditor({
                 <p>{t("monitorThis.help")}</p>
               </details>
               <div className="flex flex-wrap gap-3">
-                <Button
-                  data-monitor-use
-                  type="button"
-                  onClick={useContext}
-                  disabled={!!busy || !!recovery || !draftLoaded}
-                >
-                  {t("monitorThis.use")}
-                </Button>
                 {officialContextUrl(origin.data.source_url) && (
                   <a
                     className="underline min-h-11 inline-flex items-center"

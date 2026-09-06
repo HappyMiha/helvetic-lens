@@ -1538,7 +1538,7 @@ remain separate actions, with a direct link after success. Viewers can keep a
 personal 24-hour browser-tab draft and preview saved candidates; shared writes,
 AI drafting and history activation remain forbidden. Five-language/mobile-browser,
 API and scratch PostgreSQL evidence is recorded in `docs/MONITORING_CONTEXT.md`.
-Remaining: complete law/topic/pack choice, broader semantic-equivalence suggestions,
+Remaining: consistent cross-path preview metadata/cadence, broader semantic-equivalence suggestions,
 measured delivery/coverage guarantees beyond saved source readiness and viewer
 admin-request workflow. Saved cited answers and personal Marvin messages now have
 contextual entries. Personal tab recovery is not cross-device draft storage;
@@ -1595,6 +1595,21 @@ API tests, scratch PostgreSQL and five-locale mobile/desktop browser evidence ar
 recorded in `docs/VERIFICATION.md`. This uses the existing 40-message retention,
 not permanent chat-origin storage or autonomous intent detection. Common
 law/topic/pack choice and independent/native acceptance remain open.
+
+**Implemented 6 September 2026 (monitoring-type choice):** the common contextual
+entry and blank Topics page now distinguish a topic, one document and a source
+package. Topic setup retains its reviewed rules and explicit save. Document setup
+reuses the existing preview-before-save dialog, opens the created document, and
+links existing active/paused watches rather than offering duplicate creation.
+Package setup opens the asynchronously loaded catalogue at its focused section;
+admins activate explicitly and viewers use its existing structured request. No
+source/model calls or monitoring mutations happen merely by choosing a path.
+Dirty topic drafts use explicit leave confirmation. Thirty five-locale browser
+journeys cover 390/1280/1440px and both roles; 55 existing context/Marvin/comparison
+journeys and 31 relevant API regressions pass. See `docs/VERIFICATION.md`.
+The chooser reuses separate reviewed workflows, not a new shared cross-kind
+transaction. Richer consistent preview metadata/cadence, broader duplicate
+semantics and independent/native acceptance remain open.
 
 Acceptance criteria:
 
