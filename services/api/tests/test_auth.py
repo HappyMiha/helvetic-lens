@@ -80,6 +80,9 @@ def test_registration_creates_private_workspace_and_revocable_cookie_session(tmp
             headers=_csrf(client),
         )
         assert added.status_code == 201, added.text
+        assert client.get("/api/auth/session").json()["onboarding_required"] is True
+        chosen = client.patch("/api/onboarding", json={"action": "law"}, headers=_csrf(client))
+        assert chosen.status_code == 200
         assert client.get("/api/auth/session").json()["onboarding_required"] is False
 
         conversation = client.post(

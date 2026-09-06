@@ -49,6 +49,24 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class UserOnboarding(Base):
+    """Personal starting intent; never inferred completion from shared documents."""
+    __tablename__ = "user_onboarding"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "principal_key", name="uq_onboarding_org_principal"),
+        CheckConstraint("intent IS NULL OR intent IN ('topic', 'law', 'explore')", name="ck_onboarding_intent"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    principal_key: Mapped[str] = mapped_column(String(80))
+    user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    intent: Mapped[str | None] = mapped_column(String(20))
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    deferred_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class AccountToken(Base):
     __tablename__ = "account_tokens"
     __table_args__ = (
@@ -1374,6 +1392,7 @@ class OutboxMessage(Base):
 # Central policy used by the session boundary. Keeping this list beside the
 # models makes a newly persisted tenant-owned record difficult to forget.
 ORGANIZATION_SCOPED_MODELS = (
+    UserOnboarding,
     OrganizationMembership,
     OrganizationInvitation,
     DigestPreference,

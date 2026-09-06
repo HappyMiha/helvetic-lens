@@ -1,5 +1,6 @@
 import type {
   AIHistoryPage,
+  OnboardingState,
   ApertusSettings,
   Comparison,
   ConnectorSchedulePage,
@@ -82,6 +83,15 @@ export function legacyResourceKey<T>(path: string): ResourceKey<T> {
 }
 
 export const resources = {
+  onboarding: () =>
+    key<OnboardingState>("onboarding:personal", "/onboarding", {
+      scope: "session",
+      owner: "auth",
+      tags: ["onboarding"],
+      varyByLocale: false,
+      staleMs: 0,
+    }),
+
   authSession: <T = unknown>() =>
     key<T>("auth:session", "/auth/session", {
       scope: "session",

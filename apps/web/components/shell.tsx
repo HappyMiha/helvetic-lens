@@ -264,6 +264,10 @@ export function Shell({
 
   const workspaceItems = (
     <>
+      <NavigationItem active={pathname === "/onboarding"} href="/onboarding">
+        <CircleHelp size={17} />
+        {t("gettingStarted.title")}
+      </NavigationItem>
       <NavigationItem active={pathname === "/matrix"} href="/matrix">
         <LayoutGrid size={17} />
         {t("nav.matrix")}
@@ -337,6 +341,7 @@ export function Shell({
   );
 
   const mobileOverflowRoute = [
+    [pathname === "/onboarding", "gettingStarted.title"],
     [pathname === "/topics", "nav.topics"],
     [pathname === "/sources", "nav.sources"],
     [pathname === "/matrix", "nav.matrix"],

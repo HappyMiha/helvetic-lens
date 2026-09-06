@@ -118,7 +118,7 @@ Keep the proven stack and add only the infrastructure now justified by public us
 | [HL-070](#hl-070) | P0       | DONE     | HL-065, HL-066, HL-068, HL-069                         | Working mobile information architecture at 390 px                   |
 | [HL-071](#hl-071) | P0       | DONE     | HL-038–HL-043, HL-050, HL-055                          | Versioned source capability catalogue and honest coverage           |
 | [HL-072](#hl-072) | P0       | DONE     | HL-033, HL-035, HL-042, HL-071                         | Organization source packs and Swiss Federal Starter                 |
-| [HL-073](#hl-073) | P0       | PLANNED  | HL-034, HL-035, HL-066, HL-070, HL-072, HL-074, HL-077 | Stateful onboarding, contextual help, and useful empty states       |
+| [HL-073](#hl-073) | P0       | IN PROGRESS  | HL-034, HL-035, HL-066, HL-070, HL-072, HL-074, HL-077 | Stateful onboarding, contextual help, and useful empty states       |
 | [HL-074](#hl-074) | P0       | DONE     | HL-033, HL-035, HL-036, HL-042, HL-071, HL-072         | Durable monitoring topics and editable monitoring plans             |
 | [HL-075](#hl-075) | P0       | DONE     | HL-044, HL-051, HL-074                                 | Bounded topic matching with persisted evidence                      |
 | [HL-076](#hl-076) | P0       | IN PROGRESS | HL-037, HL-046, HL-067, HL-075, HL-094, HL-099         | Unified interest feed; HL-089 enriches cards asynchronously          |
@@ -1369,6 +1369,10 @@ Completed on 4 September 2026. A versioned global catalogue now supplies a Swiss
 <a id="hl-073"></a>
 
 ### HL-073 — Add stateful onboarding, contextual help, and useful empty states
+
+**6 September 2026 implementation slice — personal intent and returnable guide:** `/onboarding` now persists an explicit topic/law/explore choice or deferral per user and organization, independently of any shared `DocumentWatch`. A new workspace-menu entry returns to it. The five-language guide links existing package review, monitoring, notification preferences and saved evidence; invited viewers can inspect existing organizational setup and use the existing administrator-request flow. Choosing an intent does not activate a source, create a watch/topic, subscribe to mail or call AI. GET is passive; CSRF-protected personal PATCH is allowed for viewers, with database uniqueness and PostgreSQL first-use concurrency coverage. See [personal onboarding](docs/PERSONAL_ONBOARDING.md) and [verification](docs/VERIFICATION.md).
+
+**Still open:** durable milestones for actually saving an interest/reviewing a package/preference/opening first evidence (the current guide deliberately does not claim these completed); differentiated no-subscription/sync/no-match/filter/degraded/quiet recovery across the journey; deeper first-value integration; independent five-language/user observation proving unassisted first interest plus evidence in under five minutes. Intent selection and organization row availability are not evidence of first value. This slice does not close HL-073.
 
 Guide a new user from an empty organization to one inspectable, relevant item without requiring a manual or exact source URL.
 

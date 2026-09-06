@@ -1413,3 +1413,18 @@ export type MonitoringContext = {
     url: string;
   }>;
 };
+
+export type OnboardingState = {
+  state: "new" | "deferred" | "started";
+  intent: "topic" | "law" | "explore" | null;
+  started_at: string | null;
+  deferred_at: string | null;
+  updated_at: string | null;
+  visibility: "personal";
+  completion_verified: false;
+  organization_setup: {
+    source_package_enabled: boolean;
+    active_document_watch: boolean;
+    active_topic: boolean;
+  };
+};

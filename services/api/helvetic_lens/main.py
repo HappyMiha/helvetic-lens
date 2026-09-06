@@ -16,7 +16,7 @@ from redis.exceptions import RedisError
 from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-from . import corpus_evidence
+from . import corpus_evidence, onboarding
 from .assistant_contract import (
     AssistantChatInput,
     AssistantContextInput,
@@ -34,7 +34,6 @@ from .models import (
     AdministrativeAudit,
     AssistantConversation,
     Comparison,
-    DocumentWatch,
     Job,
     Law,
     MonitoringTopic,
@@ -423,6 +422,7 @@ def create_app(
             "/api/digests/unsubscribe",
             "/api/digests/send",
             "/api/source-pack-requests",
+            "/api/onboarding",
             "/api/monitoring-topics/preview",
             "/api/assistant/context",
             "/api/assistant/remark",
@@ -580,7 +580,7 @@ def create_app(
             except DomainError:
                 pass
         with service.db.organization_context(identity.organization_id), service.db.session() as session:
-            onboarding_required = not bool(session.scalar(select(DocumentWatch.id).limit(1)))
+            onboarding_required = onboarding.needed(session, identity.organization_id, f"user:{identity.user_id}")
         response = JSONResponse(
             status_code=201,
             content={**identity.public(), "onboarding_required": onboarding_required},
@@ -596,7 +596,7 @@ def create_app(
             auth.login, email=data.email, password=data.password
         )
         with service.db.organization_context(identity.organization_id), service.db.session() as session:
-            onboarding_required = not bool(session.scalar(select(DocumentWatch.id).limit(1)))
+            onboarding_required = onboarding.needed(session, identity.organization_id, f"user:{identity.user_id}")
         response = JSONResponse(content={**identity.public(), "onboarding_required": onboarding_required})
         set_auth_cookies(response, session_token, csrf_token)
         return response
@@ -672,7 +672,7 @@ def create_app(
                 ),
             }
         with service.db.session() as session:
-            onboarding_required = not bool(session.scalar(select(DocumentWatch.id).limit(1)))
+            onboarding_required = onboarding.needed(session, identity.organization_id, f"user:{identity.user_id}")
         return {
             **identity.public(),
             "organizations": auth.organizations(identity),
@@ -796,6 +796,18 @@ def create_app(
         if not record:
             raise DomainError("Assistant conversation not found.", 404, "not_found")
         return record
+
+    @app.get("/api/onboarding")
+    def get_onboarding(request: Request):
+        _, principal = assistant_principal(request)
+        with service.db.session() as session:
+            return onboarding.read(session, service.organization_id, principal)
+
+    @app.patch("/api/onboarding")
+    def save_onboarding(data: onboarding.OnboardingInput, request: Request):
+        user_id, principal = assistant_principal(request)
+        with service.db.session() as session:
+            return onboarding.save(session, service.organization_id, principal, user_id, data.action)
 
     @app.post("/api/assistant/context")
     def assistant_context(data: AssistantContextInput, request: Request):
