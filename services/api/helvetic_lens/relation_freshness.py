@@ -2,7 +2,7 @@
 
 from sqlalchemy import String, cast, false, func, select, true
 
-from . import relation_analysis
+from . import relation_analysis, relation_candidates
 from .config import Settings
 from .models import (
     OrganizationRelationCandidate,
@@ -70,6 +70,8 @@ def current_analysis_predicate(settings: Settings, prompts: PromptSettings, runt
             delivery.id == model.organization_candidate_id,
             delivery.organization_id == model.organization_id,
             candidate.id == model.candidate_id,
+            candidate.rule_revision == relation_candidates.RULE_REVISION,
+            candidate.status != "rejected",
             *(
                 func.coalesce(getattr(RegulatoryRelation, field), "")
                 == model.analysis_plan["execution"]["official_relation_binding"][field].as_string()

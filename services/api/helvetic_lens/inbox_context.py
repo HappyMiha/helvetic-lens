@@ -63,6 +63,8 @@ def load_context(
             RelationCandidate.target_work_id,
             RelationCandidate.relation_id,
             RelationCandidate.why_json,
+            RelationCandidate.status,
+            RelationCandidate.rule_revision,
         ),
     )
     events = records(

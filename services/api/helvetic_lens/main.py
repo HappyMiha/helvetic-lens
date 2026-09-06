@@ -16,7 +16,7 @@ from redis.exceptions import RedisError
 from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-from . import corpus_evidence, feed_readiness, onboarding
+from . import corpus_evidence, feed_readiness, onboarding, relation_candidates, relation_reprocessing
 from .assistant_contract import (
     AssistantChatInput,
     AssistantContextInput,
@@ -281,6 +281,11 @@ class MonitoringTopicDraftInput(Input):
 class MonitoringTopicStatusInput(Input):
     status: Literal["active", "paused", "archived"]
     expected_revision: int = Field(ge=1)
+
+
+class RelationReprocessingInput(Input):
+    dry_run: bool = Field(default=True, strict=True)
+    request_id: uuid.UUID = Field(default_factory=uuid.uuid4)
 
 
 def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
@@ -1209,6 +1214,16 @@ def create_app(
     async def sync_federal_criminal_court(stream: str):
         return service.enqueue_connector_sync("federal-criminal-court", stream)
 
+    @app.get("/api/admin/relation-reprocessing")
+    def relation_reprocessing_options():
+        return {"rule_revision": relation_candidates.RULE_REVISION, "batch_size": relation_reprocessing.BATCH_SIZE,
+                "default_dry_run": True, "ai_calls": 0, "scope": "retained_candidates"}
+
+    @app.post("/api/admin/relation-reprocessing", status_code=202)
+    async def start_relation_reprocessing(data: RelationReprocessingInput):
+        job = service.enqueue_relation_reprocessing(str(data.request_id), dry_run=data.dry_run)
+        return await service.execute_job(job["id"]) if settings.job_execution_mode == "inline" else job
+
     @app.get("/api/admin/connectors")
     def connector_schedules():
         return service.connector_schedule_status()
@@ -1718,23 +1733,36 @@ def create_app(
     def scan_detail(scan_id: str):
         return service.scan_detail(scan_id)
 
+    def platform_job_access(request: Request) -> bool:
+        identity = request.state.identity
+        return bool(identity.platform_admin) if identity else settings.allow_anonymous_dev
+
+    def check_job_access(request: Request, job_id: str):
+        job = service.job_detail(job_id)
+        if job["type"] == relation_reprocessing.JOB_TYPE and not platform_job_access(request):
+            raise DomainError("A platform administrator must access this maintenance job.", 403, "platform_admin_required")
+        return job
+
     @app.get("/api/jobs")
     def jobs(
+        request: Request,
         limit: int = Query(default=50, ge=1, le=200),
         workload: Literal["all", "ai"] = "all",
     ):
-        return service.jobs(limit, workload=workload)
+        return service.jobs(limit, workload=workload, include_platform=platform_job_access(request))
 
     @app.get("/api/jobs/{job_id}")
-    def job(job_id: str):
-        return service.job_detail(job_id)
+    def job(job_id: str, request: Request):
+        return check_job_access(request, job_id)
 
     @app.post("/api/jobs/{job_id}/cancel")
-    def cancel_job(job_id: str):
+    def cancel_job(job_id: str, request: Request):
+        check_job_access(request, job_id)
         return service.cancel_job(job_id)
 
     @app.post("/api/jobs/{job_id}/retry")
-    async def retry_job(job_id: str):
+    async def retry_job(job_id: str, request: Request):
+        check_job_access(request, job_id)
         result = service.retry_job(job_id)
         if settings.job_execution_mode == "inline":
             return await service.execute_job(job_id)
