@@ -1528,8 +1528,12 @@ def create_app(
         return await service.add_law(data.model_dump(), actor_user_id=identity.user_id if identity else None, record_onboarding=True)
 
     @app.get("/api/laws/{law_id}", dependencies=[Depends(runtime_cache_scope)])
-    def law_detail(law_id: str):
-        return service.law_detail(law_id)
+    def law_detail(law_id: str, paged_history: bool = False):
+        return service.law_detail(law_id, paged_history=paged_history)
+
+    @app.get("/api/laws/{law_id}/history/{kind}")
+    def law_history_page(law_id: str, kind: Literal["versions", "comparisons", "observations"], cursor: str = Query(default="", max_length=2048), limit: int = Query(default=20, ge=1, le=50)):
+        return service.law_history_page(law_id, kind, cursor=cursor, limit=limit)
 
     @app.patch("/api/laws/{law_id}", dependencies=[Depends(runtime_cache_scope)])
     def update_law(law_id: str, data: LawUpdate):

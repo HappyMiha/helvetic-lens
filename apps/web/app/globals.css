@@ -4095,3 +4095,9 @@ select.interest-feed-control { min-height: 44px; }
 .material-delta ins { color: var(--foreground); background: var(--secondary); text-decoration: underline; text-decoration-thickness: 2px; }
 .material-delta del { color: var(--foreground); text-decoration: line-through; text-decoration-thickness: 2px; }
 .material-reader .semantic-cluster-heading h4 { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+
+.document-history .count-pill, .document-history .observations summary,
+.document-history .observations, .document-history .observations td,
+.document-history .observations th, [data-history-controls] { color: var(--foreground); }
+[data-history-controls] button { min-height: 44px; height: auto; white-space: normal; text-align: start; }
+#history-versions, #history-comparisons, #history-observations { scroll-margin-top: 100px; }

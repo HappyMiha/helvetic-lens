@@ -13,6 +13,8 @@ import type {
   Job,
   Law,
   LawDetail,
+  LawHistoryKind,
+  LawHistoryPage,
   LocalModelInventory,
   MonitoringTopic,
   MonitoringContext,
@@ -122,10 +124,15 @@ export const resources = {
     }),
 
   law: (id: string) =>
-    key<LawDetail>(`monitoring:law:${id}`, `/laws/${id}`, {
+    key<LawDetail>(`monitoring:law:${id}`, `/laws/${id}?paged_history=true`, {
       tags: ["law", `law:${id}`, "monitoring"],
       staleMs: 4_000,
       pollMs: 4_000,
+    }),
+
+  documentHistory: <K extends LawHistoryKind>(id: string, kind: K, cursor: string) =>
+    key<LawHistoryPage<K>>(`monitoring:document-history:${id}:${kind}:${cursor}`, `/laws/${id}/history/${kind}?cursor=${encodeURIComponent(cursor)}&limit=20`, {
+      tags: ["law", `law:${id}`, "monitoring"], staleMs: 15_000,
     }),
 
   lawHistory: (id: string) =>

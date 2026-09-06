@@ -539,6 +539,7 @@ class EvidenceRevisionEpoch(Base):
 class Version(Base):
     __tablename__ = "versions"
     __table_args__ = (
+        Index("ix_versions_law_saved_page", "law_id", "created_at", "id"),
         Index(
             "uq_public_version_content",
             "law_id",
@@ -933,6 +934,7 @@ class LegacyDocumentMapping(Base):
 
 class Observation(Base):
     __tablename__ = "observations"
+    __table_args__ = (Index("ix_observations_org_law_saved_page", "organization_id", "law_id", "created_at", "id"),)
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
     law_id: Mapped[str] = mapped_column(ForeignKey("laws.id"), index=True)
@@ -950,6 +952,7 @@ class Observation(Base):
 class Comparison(Base):
     __tablename__ = "comparisons"
     __table_args__ = (
+        Index("ix_comparisons_law_saved_page", "law_id", "created_at", "id"),
         UniqueConstraint("old_version_id", "new_version_id", "mode", name="uq_comparison_pair"),
     )
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)

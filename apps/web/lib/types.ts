@@ -487,7 +487,11 @@ export type Law = {
   change_counts: Counts | null;
   analysis: Analysis | null;
 };
+export type HistoryPageInfo = { total: number; as_of: string; limit: number; first_cursor: string; next_cursor: string | null };
+export type LawHistoryKind = "versions" | "comparisons" | "observations";
+export type LawHistoryPage<K extends LawHistoryKind> = HistoryPageInfo & { items: LawDetail[K] };
 export type LawDetail = Law & {
+  history_pages?: Record<LawHistoryKind, HistoryPageInfo>;
   regulatory_timeline: {
     monitoring: {
       active: boolean;

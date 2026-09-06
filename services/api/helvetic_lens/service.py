@@ -2254,19 +2254,28 @@ class HelveticLens:
             "analysis": analysis,
         }
 
-    def law_detail(self, law_id: str):
+    def law_detail(self, law_id: str, *, paged_history: bool = False):
         with self.db.session() as session:
             law = get(session, Law, law_id)
             watch = self.watch(session, law_id, required=False)
             if watch is None:
                 raise DomainError("The requested record was not found.", 404, "not_found")
+            pages = {kind: law_history.page(session, self.organization_id, law_id, kind) for kind in law_history.READERS} if paged_history else None
             return {
                 **self.law_summary(session, law, watch),
                 "regulatory_timeline": RegistryReader(self.organization_id).timeline(session, law_id),
-                "versions": law_history.versions(session, self.organization_id, law_id),
-                "observations": law_history.observations(session, self.organization_id, law_id),
-                "comparisons": law_history.comparisons(session, self.organization_id, law_id),
+                **({**{kind: value["items"] for kind, value in pages.items()},
+                    "history_pages": {kind: {key: item for key, item in value.items() if key != "items"} for kind, value in pages.items()}}
+                   if pages is not None else {
+                       "versions": law_history.versions(session, self.organization_id, law_id),
+                       "observations": law_history.observations(session, self.organization_id, law_id),
+                       "comparisons": law_history.comparisons(session, self.organization_id, law_id),
+                   }),
             }
+
+    def law_history_page(self, law_id: str, kind: law_history.HistoryKind, *, cursor="", limit=20):
+        with self.db.session() as session:
+            return law_history.page(session, self.organization_id, law_id, kind, cursor=cursor, limit=limit)
 
     def delete_law(self, law_id: str):
         artifact_keys: set[str] = set()

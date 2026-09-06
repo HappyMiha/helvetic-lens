@@ -684,7 +684,14 @@ class AuthService:
             if (_aware(record.last_seen_at) + timedelta(minutes=5)) < now:
                 record.last_seen_at = now
                 session.commit()
-            return self._identity(session, record)
+            try:
+                return self._identity(session, record)
+            except DomainError as error:
+                if error.status == 401 and error.code == "session_invalid":
+                    # A removed membership invalidates this cookie just like an
+                    # expired session. Public sign-in/session routes must stay usable.
+                    return None
+                raise
 
     def verify_csrf(self, identity: Identity, cookie_token: str, header_token: str):
         if (
