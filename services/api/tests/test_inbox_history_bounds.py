@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 from alembic.config import Config
+from conftest import saved_relation_binding
 from sqlalchemy import event, insert, inspect
 from test_relation_analysis import relation_delivery
 
@@ -28,7 +29,7 @@ def history_rows(service, delivery_id, count=10_000):
             "organization_id": delivery.organization_id, "organization_candidate_id": delivery.id,
             "candidate_id": candidate.id, "event_id": candidate.event_id,
             "target_work_id": candidate.target_work_id, "cache_key": "0" * 64,
-            "analysis_plan": {"execution": {"version_binding": relation_analysis.version_binding(candidate.source_version_id, candidate.target_version_id), "profile_revision": 1, "configuration_fingerprint": relation_analysis.configuration_fingerprint(service.settings), "prompt_fingerprint": relation_analysis.relation_prompt_fingerprint(service.prompt_settings)}},
+            "analysis_plan": {"execution": {"version_binding": relation_analysis.version_binding(candidate.source_version_id, candidate.target_version_id), "official_relation_binding": saved_relation_binding(session, candidate), "profile_revision": 1, "configuration_fingerprint": relation_analysis.configuration_fingerprint(service.settings), "prompt_fingerprint": relation_analysis.relation_prompt_fingerprint(service.prompt_settings)}},
             "model": "test-only", "status": "succeeded", "created_at": utcnow() - timedelta(hours=1),
             "evidence_json": [{"text": "Synthetic archived evidence. " * 30}],
         }

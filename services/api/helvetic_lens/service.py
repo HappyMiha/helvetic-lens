@@ -128,7 +128,13 @@ from .prompt_settings import (
 )
 from .registry import RegistryFilters, RegistryReader
 from .regulatory_corpus import RegulatoryCorpus
-from .relation_freshness import uses_configuration, uses_profile, uses_prompts, uses_versions
+from .relation_freshness import (
+    uses_configuration,
+    uses_official_relation,
+    uses_profile,
+    uses_prompts,
+    uses_versions,
+)
 from .source_capabilities import capability_catalogue
 
 logger = logging.getLogger(__name__)
@@ -4164,6 +4170,10 @@ class HelveticLens:
             )
         evidence, coverage = relation_ai.select_evidence(rows, self.settings.apertus_context_chars)
         relation_fingerprint = relation.evidence_fingerprint if relation else None
+        relation_binding = (
+            {field: getattr(relation, field) for field in relation_ai.RELATION_BINDING_FIELDS}
+            if relation else None
+        )
         key = relation_ai.cache_key(
             organization_candidate_id=delivery.id,
             event_id=event.id,
@@ -4176,6 +4186,7 @@ class HelveticLens:
             prompts=self.prompt_settings,
             runtime_fingerprint=runtime_fingerprint,
             output_locale=output_locale,
+            relation_binding=relation_binding,
         )
         plan = relation_ai.build_plan(
             organization_candidate_id=delivery.id,
@@ -4188,6 +4199,7 @@ class HelveticLens:
             settings=self.settings,
             prompts=self.prompt_settings,
             output_locale=output_locale,
+            relation_binding=relation_binding,
         )
         plan["runtime_fingerprint"] = runtime_fingerprint
         return {
@@ -4454,8 +4466,16 @@ class HelveticLens:
     def relation_analysis_history(self, organization_candidate_id: str) -> dict:
         with self.db.session() as session:
             delivery = get(session, OrganizationRelationCandidate, organization_candidate_id)
-            version_ids = session.execute(select(RelationCandidate.source_version_id, RelationCandidate.target_version_id)
-                                          .where(RelationCandidate.id == delivery.candidate_id)).one()
+            version_ids = session.execute(
+                select(
+                    RelationCandidate.source_version_id,
+                    RelationCandidate.target_version_id,
+                    *(getattr(RegulatoryRelation, field) for field in relation_ai.RELATION_BINDING_FIELDS),
+                )
+                .outerjoin(RegulatoryRelation, RegulatoryRelation.id == RelationCandidate.relation_id)
+                .where(RelationCandidate.id == delivery.candidate_id)
+            ).one()
+            relation_binding = dict(zip(relation_ai.RELATION_BINDING_FIELDS, version_ids[2:]))
             records = list(
                 session.scalars(
                     select(RelationImpactAnalysis)
@@ -4477,7 +4497,8 @@ class HelveticLens:
                         or not uses_profile(record.analysis_plan, profile_revision)
                         or not uses_configuration(record.analysis_plan, self.settings)
                         or not uses_prompts(record.analysis_plan, self.prompt_settings)
-                        or not uses_versions(record.analysis_plan, *version_ids)
+                        or not uses_versions(record.analysis_plan, *version_ids[:2])
+                        or not uses_official_relation(record.analysis_plan, relation_binding)
                     ),
                 }
                 for record in records

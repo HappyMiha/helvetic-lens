@@ -20,7 +20,7 @@ from .extraction import normalize
 from .prompt_settings import PromptSettings
 
 SCHEMA_VERSION = "relation-impact-v3"
-PLANNER_VERSION = "relation-impact-plan-v2"
+PLANNER_VERSION = "relation-impact-plan-v3"
 MAX_PROVIDER_CALLS = 5
 MAX_ACTIONS = 5
 DEFAULT_OUTPUT_LOCALE = "en-CH"
@@ -189,6 +189,17 @@ def version_binding(source_version_id: str | None, target_version_id: str | None
     return {"source": source_version_id or "", "target": target_version_id or ""}
 
 
+RELATION_BINDING_FIELDS = (
+    "id", "state", "relation_type", "authority", "provenance_method", "evidence_fingerprint",
+    "subject_work_id", "object_work_id", "source_version_id",
+)
+
+
+def official_relation_binding(relation: dict | None) -> dict:
+    """Explicit empty values distinguish no linked relation from missing provenance."""
+    return {field: (relation or {}).get(field) or "" for field in RELATION_BINDING_FIELDS}
+
+
 def relation_prompt_fingerprint(prompts: PromptSettings) -> str:
     """Only instructions consumed by relation analysis, including its repair retry."""
     return _fingerprint({"impact": prompts.impact_instructions, "repair": prompts.repair_instructions})
@@ -220,6 +231,7 @@ def cache_key(
     prompts: PromptSettings,
     runtime_fingerprint: str | None,
     output_locale: str = DEFAULT_OUTPUT_LOCALE,
+    relation_binding: dict | None = None,
 ) -> str:
     return _fingerprint(
         {
@@ -231,6 +243,7 @@ def cache_key(
             "source_version_id": source_version_id,
             "target_version_id": target_version_id,
             "relation_fingerprint": relation_fingerprint,
+            "official_relation_binding": official_relation_binding(relation_binding),
             "evidence": [
                 {
                     "id": row["evidence_id"],
@@ -266,6 +279,7 @@ def build_plan(
     settings: Settings,
     prompts: PromptSettings,
     output_locale: str = DEFAULT_OUTPUT_LOCALE,
+    relation_binding: dict | None = None,
 ) -> dict:
     characters = sum(len(row["text"]) for row in evidence)
     return {
@@ -298,6 +312,7 @@ def build_plan(
             "local_first": settings.apertus_provider == "docker",
             "profile_revision": profile_revision,
             "version_binding": version_binding(source_version_id, target_version_id),
+            "official_relation_binding": official_relation_binding(relation_binding),
             "configuration_fingerprint": configuration_fingerprint(settings),
             "prompt_fingerprint": relation_prompt_fingerprint(prompts),
             "generation_parameters": generation_parameters(settings),

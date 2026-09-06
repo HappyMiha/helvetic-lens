@@ -4,6 +4,7 @@ import base64
 from datetime import timedelta
 
 import pytest
+from conftest import saved_relation_binding
 from sqlalchemy import event as sa_event
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -151,7 +152,7 @@ def test_watched_law_filter_keeps_legacy_event_severity_order_and_complete_law_g
         session.add(RelationImpactAnalysis(organization_candidate_id=first, candidate_id=candidate.id,
                                           event_id=candidate.event_id, target_work_id=candidate.target_work_id,
                                           cache_key="0"*64, model="test-only", status="succeeded",
-                                          analysis_plan={"execution": {"version_binding": relation_analysis.version_binding(candidate.source_version_id, candidate.target_version_id), "profile_revision": 1, "configuration_fingerprint": relation_analysis.configuration_fingerprint(service.settings), "prompt_fingerprint": relation_analysis.relation_prompt_fingerprint(service.prompt_settings)}},
+                                          analysis_plan={"execution": {"version_binding": relation_analysis.version_binding(candidate.source_version_id, candidate.target_version_id), "official_relation_binding": saved_relation_binding(session, candidate), "profile_revision": 1, "configuration_fingerprint": relation_analysis.configuration_fingerprint(service.settings), "prompt_fingerprint": relation_analysis.relation_prompt_fingerprint(service.prompt_settings)}},
                                           result={"schema_version": relation_analysis.SCHEMA_VERSION, "supported": True,
                                                   "potential_severity": "high", "explanation": "Synthetic tested result"}))
         session.commit()

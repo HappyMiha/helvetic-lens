@@ -160,7 +160,7 @@ explicit/scheduled analysis.
 
 This binding does **not** yet detect content/metadata corrections under an unchanged
 version ID, changed legacy fallback evidence while the candidate ID remains absent,
-official-relation changes, a newer corpus version before candidate refresh, or
+a newer corpus version before candidate refresh, or
 runtime artifact replacement. Nor does it restart an entire digest
 traversal for every candidate mutation; late/newly relevant events may wait for a
 later traversal. Complete evidence freshness and catch-up remain separate backlog
@@ -170,6 +170,47 @@ This is revision-based invalidation, not a semantic test of profile similarity;
 unmanaged database edits that bypass the profile revision are outside this contract.
 
 Changing any dependency creates a new durable job and history record when analysis is explicitly requested or scheduled. Reusing an identical request increments saved use metadata without another provider call.
+
+## Official-relation corrections on reads — 6 September 2026
+
+Planner v3 records `execution.official_relation_binding`, shared with request/cache
+identity. It contains the linked relation's ID, state, type, authority, provenance
+method, evidence fingerprint, subject/object work IDs and source version ID.
+Proposed/rejected relations are recorded as such; storing their state does not
+turn them into authoritative facts. An explicit all-empty binding records no
+linked relation, distinct from missing provenance.
+
+History, legacy/paged inbox and their shared digest selectors compare these
+scalar fields to the current relation attached to the same organization candidate.
+Corrected fields, attachment/detachment or a missing binding make an old successful
+AI report history-only. Original report text, citations, provenance and failed
+attempts remain inspectable. Returning to exactly the same inputs permits reuse
+when the other freshness checks also pass; a failed analysis against corrected
+inputs cannot revive an old conclusion. Request identity includes all these fields,
+so a type/authority correction changes the next explicit request even if evidence
+text or its fingerprint did not change.
+
+Older reports without this binding conservatively become stale. There is no
+background migration, bulk inference, notification or history rewrite. A new
+explicit/scheduled request uses planner v3 and saves the needed provenance.
+Prepared digests repeat current selection before delivery and exclude obsolete
+AI-only severity. Official/deterministic urgency remains independent of the AI
+report. This does not restart all prior digest traversal for a newly eligible event.
+
+The SQL predicate performs a correlated relation-ID join before bounded history
+hydration. History reads nine scalar relation fields alongside candidate version
+IDs, without loading the relation evidence body solely to decide freshness.
+Regression evidence includes changed/rejected/proposed relations, all bound fields,
+attachment/detachment, missing provenance, restored input reuse, failed/fresh
+requests, and a prepared digest whose only matching importance was obsolete AI.
+
+Remaining limits: evidence JSON edited without updating its fingerprint, broader
+same-version content/metadata corrections, legacy fallback evidence, local runtime
+artifact replacement and candidate refresh/reprocessing lag are not solved here.
+Endpoint/direction consistency between a corrected relation and a stale candidate
+must also be validated before presenting new official relevance claims; binding
+fields for old-report freshness is not that semantic validation. No independent
+entailment/relevance or target-host capacity claim follows from these regressions.
 
 ## Verification
 

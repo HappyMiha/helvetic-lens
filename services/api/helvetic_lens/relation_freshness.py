@@ -4,7 +4,13 @@ from sqlalchemy import String, cast, func, select
 
 from . import relation_analysis
 from .config import Settings
-from .models import OrganizationRelationCandidate, Profile, RelationCandidate, RelationImpactAnalysis
+from .models import (
+    OrganizationRelationCandidate,
+    Profile,
+    RegulatoryRelation,
+    RelationCandidate,
+    RelationImpactAnalysis,
+)
 from .prompt_settings import PromptSettings
 
 
@@ -34,28 +40,59 @@ def uses_versions(plan: dict | None, source_version_id: str | None, target_versi
     return isinstance(binding, dict) and all(binding.get(key) == value for key, value in expected.items())
 
 
+def uses_official_relation(plan: dict | None, relation: dict | None) -> bool:
+    execution = plan.get("execution") if isinstance(plan, dict) else None
+    binding = execution.get("official_relation_binding") if isinstance(execution, dict) else None
+    expected = relation_analysis.official_relation_binding(relation)
+    return isinstance(binding, dict) and all(binding.get(key) == value for key, value in expected.items())
+
+
 def current_analysis_predicate(settings: Settings, prompts: PromptSettings):
     """A correlated scalar predicate keeps tenant identity inside the SQL check."""
     model = RelationImpactAnalysis
-    matching_profile = select(Profile.id).where(
-        Profile.organization_id == model.organization_id,
-        cast(Profile.revision, String) == model.analysis_plan["execution"]["profile_revision"].as_string(),
-    ).correlate(model).exists()
+    matching_profile = (
+        select(Profile.id)
+        .where(
+            Profile.organization_id == model.organization_id,
+            cast(Profile.revision, String)
+            == model.analysis_plan["execution"]["profile_revision"].as_string(),
+        )
+        .correlate(model)
+        .exists()
+    )
     candidate, delivery = RelationCandidate, OrganizationRelationCandidate
-    matching_versions = select(candidate.id).join(delivery, delivery.candidate_id == candidate.id).where(
-        delivery.id == model.organization_candidate_id,
-        delivery.organization_id == model.organization_id,
-        candidate.id == model.candidate_id,
-        func.coalesce(candidate.source_version_id, "") == model.analysis_plan["execution"]["version_binding"]["source"].as_string(),
-        func.coalesce(candidate.target_version_id, "") == model.analysis_plan["execution"]["version_binding"]["target"].as_string(),
-    ).correlate(model).exists()
+    matching_inputs = (
+        select(candidate.id)
+        .join(delivery, delivery.candidate_id == candidate.id)
+        .outerjoin(RegulatoryRelation, RegulatoryRelation.id == candidate.relation_id)
+        .where(
+            delivery.id == model.organization_candidate_id,
+            delivery.organization_id == model.organization_id,
+            candidate.id == model.candidate_id,
+            *(
+                func.coalesce(getattr(RegulatoryRelation, field), "")
+                == model.analysis_plan["execution"]["official_relation_binding"][field].as_string()
+                for field in relation_analysis.RELATION_BINDING_FIELDS
+            ),
+            func.coalesce(candidate.source_version_id, "")
+            == model.analysis_plan["execution"]["version_binding"]["source"].as_string(),
+            func.coalesce(candidate.target_version_id, "")
+            == model.analysis_plan["execution"]["version_binding"]["target"].as_string(),
+        )
+        .correlate(model)
+        .exists()
+    )
     return (
         (model.status == "succeeded")
         & (model.result["schema_version"].as_string() == relation_analysis.SCHEMA_VERSION)
         & matching_profile
-        & matching_versions
-        & (model.analysis_plan["execution"]["configuration_fingerprint"].as_string()
-           == relation_analysis.configuration_fingerprint(settings))
-        & (model.analysis_plan["execution"]["prompt_fingerprint"].as_string()
-           == relation_analysis.relation_prompt_fingerprint(prompts))
+        & matching_inputs
+        & (
+            model.analysis_plan["execution"]["configuration_fingerprint"].as_string()
+            == relation_analysis.configuration_fingerprint(settings)
+        )
+        & (
+            model.analysis_plan["execution"]["prompt_fingerprint"].as_string()
+            == relation_analysis.relation_prompt_fingerprint(prompts)
+        )
     )

@@ -2183,6 +2183,8 @@ Implemented bounded interactive digest preview — 5 September 2026 (HappyDucky0
 
 ### HL-100 — Require substantive evidence before claiming relevance or impact
 
+**Implemented 6 September 2026 (official-relation corrections):** Planner v3 binds relation identity/state/type/authority/provenance/evidence fingerprint and subject/object/source-version IDs in both request identity and saved plans. History, inbox and final digest reads reject missing or changed bindings without inference or rewriting saved reports/citations. Corrected inputs produce a distinct explicit request; failed retries cannot revive the old report. Older reports lacking this provenance become history-only. Scalar SQL checks preserve bounded history selection; see `docs/RELATION_IMPACT_ANALYSIS.md` and `docs/VERIFICATION.md`. **Still open:** full same-version/evidence/runtime freshness, stale-candidate endpoint/direction validation before new official claims, historical reprocessing, digest catch-up and independent quality gates. HL-100 remains **IN PROGRESS**.
+
 **Priority:** P0. **Status:** IN PROGRESS. **Dependencies:** HL-044, HL-045, HL-093. **Owner role:** retrieval/AI/backend.
 
 Problem: generic title overlap can become citable `candidate_fact`; a template can retain an unsupported High severity, creating apparent certainty without a substantive bridge.

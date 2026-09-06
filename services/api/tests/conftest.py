@@ -271,3 +271,14 @@ def run_scan(client, ids, baseline=None):
     response = client.post("/api/scans", json={"law_ids": ids, "baseline_version_id": baseline})
     assert response.status_code == 202, response.text
     return client.get("/api/scans/" + response.json()["id"]).json()
+
+
+def saved_relation_binding(session, candidate):
+    """Give synthetic current-history rows the same explicit input snapshot as real plans."""
+    from helvetic_lens.models import RegulatoryRelation
+    from helvetic_lens.relation_analysis import RELATION_BINDING_FIELDS, official_relation_binding
+
+    relation = session.get(RegulatoryRelation, candidate.relation_id) if candidate.relation_id else None
+    return official_relation_binding(
+        {field: getattr(relation, field) for field in RELATION_BINDING_FIELDS} if relation else None
+    )
