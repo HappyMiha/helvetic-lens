@@ -1,5 +1,6 @@
 "use client";
 
+import { FeedWatchList } from "./feed-watch-list";
 import { FeedEmptyState } from "./feed-empty-state";
 import { MonitorThis } from "./monitor-this";
 import { useState } from "react";
@@ -23,6 +24,7 @@ type FeedEvent = FeedEvidence & {
   severity: string; read_state: string;
   topic_matches: Array<{ id: string; name: string; url: string; confidence: string;
     reasons: Array<{ type: string; value?: string; values?: string[] }> }>;
+  monitored_documents_next_cursor?: string | null;
   monitored_documents: Array<{ watch_id: string; name: string; url: string }>;
   law_impacts: Array<{ organization_candidate_id: string; law_title: string; status: string;
     severity: string; potential_effect: string; suggested_next_step: string; links: { timeline: string } }>;
@@ -99,9 +101,9 @@ export function InterestFeedPage() {
         <MonitorThis kind="event" id={item.event_id} />
         {sourceLink(item.source_url) && <a href={sourceLink(item.source_url)} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center underline font-semibold">{t("common.officialSource")}</a>}
         <Link data-feed-permalink className="underline inline-flex min-h-[44px] items-center ml-4" href={href({ event: item.event_id, cursor: "", period: "", state: "" })}>{t("feedEvidence.openEvent")}</Link>
-        {item.monitored_documents?.length > 0 && <section className="border-t mt-3 pt-4"><h3 className="text-base font-semibold">{t("registry.monitored")}</h3>
-          <ul>{item.monitored_documents.map(document => <li key={document.watch_id}><Link href={document.url} className="underline min-h-[44px] inline-flex items-center">{document.name}</Link></li>)}</ul>
-        </section>}
+        {item.monitored_documents?.length > 0 && <FeedWatchList
+          key={`${item.event_id}:${query}`} eventId={item.event_id}
+          items={item.monitored_documents} nextCursor={item.monitored_documents_next_cursor || null} />}
         {item.topic_matches.length > 0 && <section className="border-t mt-3 pt-4">
           <h3 className="text-base font-semibold">{t("nav.topics")}</h3><p className="text-sm muted">{t("feed.topicBoundary")}</p>
           <ul className="space-y-3">{item.topic_matches.map(topic => <li key={topic.id}>

@@ -1,5 +1,14 @@
 # Verification record
 
+
+## Direct-watch feed pages — 6 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl-099-feed-watch-pages`. Feed cards return five direct-watch links and explicit continuation. One SQL window query bounds scalar preview rows per selected work; the new endpoint uses stable watch-ID keyset pages (20 default, 50 maximum), organization/principal/event-bound cursors and repeated work/law/mapping/watch visibility checks. The UI replaces pages in place, retains the current list during errors, and supports retry/back/preview. [Contract and limits](INTEREST_FEED.md#direct-watch-pages-6-september-2026).
+- **35 API regressions pass in 44.89 seconds** across watch paging, existing interest feed and evidence context. The final seven dedicated cases additionally pass in **7.57 seconds**, including cross-event cursor rejection and complete watch revocation. A 1,001-watch fixture traverses every link exactly once, with at most 50 per page, no full Law/DocumentWatch/LegacyDocumentMapping ORM hydration, and no model calls. Other cases cover renamed/paused/late/foreign watches, private mappings/laws/work, principal scope and invalid inputs. The first test run exposed a missing required reader constructor configuration; it was fixed before the passing runs.
+- Two **PostgreSQL 16.14** scratch suites pass: `feed-watch-pages` and `feed-watch-scope`. Each used its own empty, labelled ephemeral loopback container; both were removed. Working and production data were untouched.
+- Production build passes **1,855 localization keys, 27 shell, 22 resource/delivery and 130 report/navigation checks**, TypeScript and Next compilation. The production browser suite passes **10 five-language × 390/1440px journeys**, including synthetic watch-page 503, retained preview, retry to 20 links, back, no full-document reload and no horizontal overflow. All application API requests intercepted; the mobile screenshot was inspected. These tests do not establish native-language acceptance or independent usability.
+- Ruff and whitespace checks pass. Database window-ranking cost, topic-match/related-law fan-out and intended-host concurrency gates remain open. This is bounded direct-watch transfer and Python hydration, not a claim that the entire feed is bounded or that HL-099/076 are complete. No inference, mail, migration or deployment.
+
 ## Server-paged saved evidence — 6 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl-099-evidence-pages`. Native/legacy viewers use separate page resources instead of transferring the whole document. Exact saved citations resolve in SQL; pages contain at most 50 saved passages or 16,000 unnumbered-text characters. Existing access policies, full APIs and originals remain intact. Current text stays visible during delayed/failed next-page loads. [Contract and limits](EVIDENCE_PAGES.md).

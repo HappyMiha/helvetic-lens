@@ -296,6 +296,13 @@ export const resources = {
     });
   },
 
+  feedWatches: <T>(event: string, cursor: string) => {
+    const path = `/interest-feed/events/${encodeURIComponent(event)}/watches?${new URLSearchParams({cursor})}`;
+    return key<T>(`monitoring:${path}`, path, {
+      tags: ["impact-inbox", "monitoring"], staleMs: 15_000, varyByLocale: false,
+    });
+  },
+
   interestFeed: <T = unknown>(query = "") => {
     const path = withQuery("/interest-feed", query);
     return key<T>(`monitoring:${path}`, path, {

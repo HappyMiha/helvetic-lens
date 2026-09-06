@@ -2064,6 +2064,8 @@ Acceptance criteria:
 
 ### HL-099 — Bound inbox/feed reads and digest work on a mature corpus
 
+**6 September 2026 — direct-watch fan-out:** Today now shows five direct document links per event with explicit bounded next/previous pages, rather than materializing every watch at once. A batched scalar SQL preview and keyset endpoint retain every accessible watch, recheck organization/work/law/mapping access, exclude late additions and preserve the current UI page on retry. SQLite/PostgreSQL 1,001-watch traversal and five-language mobile/desktop checks are recorded in `docs/VERIFICATION.md` and `docs/INTEREST_FEED.md`. Topic-match/related-law fan-out, SQL ranking cost and intended-host capacity gates remain open; HL-099 and HL-076 stay **IN PROGRESS**.
+
 **6 September 2026 — server-paged evidence reading:** native and legacy viewers now fetch at most 50 saved passages per request, or 16,000 characters for unnumbered text. SQL resolves an exact cited passage directly, returns bounded content without hydrating full version objects, and repeats the existing access policy. The browser retains the current page while loading/retrying another; original APIs/files and complete persisted AI/comparison evidence are unchanged. Large 10,001-passage, Unicode reconstruction, PostgreSQL and five-locale browser checks are recorded in [evidence pages](docs/EVIDENCE_PAGES.md). This closes the dedicated saved-evidence viewer paging gap in HL-076/096; per-event interest fan-out, whole-registry paging, database JSON parsing cost and target-host capacity remain open.
 
 

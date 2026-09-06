@@ -1367,6 +1367,12 @@ def create_app(
         identity = request.state.identity
         return service.interest_feed(identity.user_id if identity else None, period=period, state=state, cursor=cursor, limit=limit, event=event)
 
+    @app.get("/api/interest-feed/events/{event_id}/watches")
+    def interest_feed_watches(event_id: str, request: Request, cursor: str = Query(default="", max_length=4096),
+                              limit: int = Query(default=20, ge=1, le=50)):
+        identity = request.state.identity
+        return service.interest_feed_watches(event_id, identity.user_id if identity else None, cursor=cursor, limit=limit)
+
     @app.patch("/api/interest-feed/events/{event_id}/state")
     def set_interest_feed_state(event_id: str, data: ImpactInboxStateInput, request: Request):
         identity = request.state.identity

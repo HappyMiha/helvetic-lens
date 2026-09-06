@@ -30,11 +30,12 @@ async function waitFor(check, message) {
   }
   throw new Error(message);
 }
-let locale = "en-CH", readingState = "unread";
+let locale = "en-CH", readingState = "unread", failWatchPage = true;
 const event = title => ({ event_id: title, title, source: "fedlex", type: "amended", document_kind: "act", lifecycle_status: null,
   detected_at: "2026-09-05T08:00:00Z", official_dates: [{ kind: "effective_from", value: "2027", precision: "year", provenance: "official_metadata", source_url: "https://example.invalid/date-source" }], read_state: readingState, severity: "unknown",
   source_url: "https://www.fedlex.admin.ch/eli/cc/synthetic", source_artifact_url: "/evidence/synthetic-version",
   jurisdictions: ["CH", "CH-ZH"], document_language: "de", provenance_method: "official_metadata", connector_health_at_detection: "degraded",
+  monitored_documents_next_cursor: "watch-page-2",
   monitored_documents: [{ watch_id: "own-watch", name: "Direct monitored document", url: "/laws/own-law" }], topic_matches: [
     { id: "topic-a", name: "Synthetic citizenship interest", url: "/topics#topic-a", confidence: "high", reasons: [{ type: "concept", value: "citizenship" }] },
     { id: "topic-b", name: "Synthetic naturalisation interest", url: "/topics#topic-b", confidence: "medium", reasons: [{ type: "concept", value: "naturalisation" }] },
@@ -57,6 +58,11 @@ try {
     if (url.pathname === "/api/auth/session") body = { authenticated: true, user: { id: "qa", email: "qa@example.invalid", name: "QA", locale }, organization: { id: "qa-org", name: "Isolated QA" }, role: "viewer" };
     else if (url.pathname === "/api/health") body = { status: "ok", database: "sqlite", apertus: { configured: false, model: "qa" }, firecrawl: { configured: false }, private_sources_enabled: false };
     else if (url.pathname === "/api/jobs") body = [];
+    else if (url.pathname.endsWith("/watches")) {
+      await sleep(250);
+      if (failWatchPage) { failWatchPage = false; code = 503; body = {detail: "Synthetic watch page unavailable"}; }
+      else body = {items: Array.from({length:20}, (_, i) => ({watch_id:`watch-more-${i}`,name:`Additional monitored document ${i}`,url:`/laws/additional-${i}`})),next_cursor:null};
+    }
     else if (url.pathname.startsWith("/api/interest-feed/events/") && request.method === "PATCH") {
       readingState = JSON.parse(request.postData).state; body = { state: readingState };
     } else if (url.pathname === "/api/interest-feed") {
@@ -79,13 +85,25 @@ try {
   };
   for (locale of ["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"]) {
     for (const width of [390, 1440]) {
-      readingState = "unread";
+      readingState = "unread"; failWatchPage = true;
       await cdp.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 500 });
       await navigate(`?locale=${locale}`);
       await waitFor(() => evaluate(cdp, `document.body.innerText.includes('Newest saved event')`), "Initial event missing");
       assert.equal(await evaluate(cdp, `document.querySelectorAll('[data-feed-event]').length`), 1);
       assert.ok(await evaluate(cdp, `document.body.innerText.includes('Synthetic citizenship interest') && document.body.innerText.includes('Synthetic naturalisation interest') && document.body.innerText.includes('Synthetic citizenship act') && document.body.innerText.includes('Direct monitored document')`));
       assert.ok(await evaluate(cdp, `!!document.querySelector('a[href="/topics#topic-a"]') && !!document.querySelector('a[href="/impact?candidate=candidate-a"]')`));
+      const docMarker = await evaluate(cdp, "window.__feedDocument");
+      await evaluate(cdp, `document.querySelector('[data-watch-next]').click()`);
+      await waitFor(() => evaluate(cdp, `document.querySelector('[data-feed-watches]').innerText.includes('Synthetic watch page unavailable')`), "Page error missing");
+      assert.ok(await evaluate(cdp, `document.querySelector('[data-feed-watches]').innerText.includes('Direct monitored document')`), "Error removed current page");
+      await evaluate(cdp, `document.querySelector('[data-watch-next]').click()`);
+      await waitFor(() => evaluate(cdp, `document.querySelector('[data-feed-watches]').innerText.includes('Additional monitored document 19')`), "Retry failed");
+      assert.equal(await evaluate(cdp, `document.querySelectorAll('[data-feed-watches] li').length`), 20);
+      assert.equal(await evaluate(cdp, "window.__feedDocument"), docMarker, "Watch paging reloaded document");
+      assert.ok(await evaluate(cdp, `document.documentElement.scrollWidth <= innerWidth + 1`), "Watch page overflow");
+      assert.ok(await evaluate(cdp, `!document.querySelector('[data-feed-watches]').innerText.includes('feedWatches.')`), "Watch copy untranslated");
+      await evaluate(cdp, `document.querySelector('[data-watch-back]').click()`);
+      await waitFor(() => evaluate(cdp, `document.querySelector('[data-feed-watches]').innerText.includes('Direct monitored document')`), "Back lost preview");
       await evaluate(cdp, `document.querySelector('[data-feed-evidence] summary').click()`);
       assert.ok(await evaluate(cdp, `document.querySelector('[data-feed-evidence]').innerText.includes('CH-ZH') && document.querySelector('[data-feed-date] time').innerText === '2027'`), "Recorded scope/date precision missing");
       assert.ok(await evaluate(cdp, `!!document.querySelector('[data-feed-evidence] a[href="/evidence/synthetic-version"]') && !!document.querySelector('[data-feed-date] a[href="https://example.invalid/date-source"]')`), "Exact evidence links missing");
@@ -125,7 +143,7 @@ try {
   await waitFor(() => evaluate(cdp, `!location.search.includes('cursor=') && location.search.includes('state=unread') && document.body.innerText.includes('Newest saved event')`), "Recovery discarded filters");
   assert.equal(requests.some(path => /\/(analyse|ask|model)($|[/?-])/.test(path)), false, "Viewing the feed started AI work");
   assert.deepEqual(exceptions, [], "Runtime exceptions in the real page");
-  console.log("Interest feed production UI: 10 journeys (5 locales x 390/1440px), one card/two topics/one law, recorded scope/date precision and exact saved evidence links, event permalink/recovery, private read state without reload, next/back, sparse continuation, filter reset and cursor recovery passed. All API calls intercepted; no live provider or data mutation.");
+  console.log("Interest feed production UI: 10 journeys (5 locales x 390/1440px), one card/two topics/one law, recorded scope/date precision and exact saved evidence links, event permalink/recovery, private read state without reload, direct-watch pages with failure/retry/back and no document reload, next/back, sparse continuation, filter reset and cursor recovery passed. All API calls intercepted; no live provider or data mutation.");
 } catch (error) {
   console.error({ requests, exceptions, page: cdp ? await evaluate(cdp, "JSON.stringify({url:location.href,ready:document.readyState,html:document.documentElement.outerHTML.slice(0,1800)})").catch(() => "unavailable") : "no browser" });
   throw error;

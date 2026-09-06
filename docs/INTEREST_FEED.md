@@ -17,8 +17,8 @@ this current-relevance shortlist.
 The second stage rechecks topic rule/evidence fingerprints and decision currency.
 A stale, rejected or muted *current* topic decision cannot deliver a current topic
 card. A retained old review does not pretend to confirm corrected evidence.
-One event ID yields one card with all eligible topics, direct watches and watched
-law impacts. Topic confidence measures matching confidence, not legal severity.
+One event ID yields one card with eligible topics and watched law impacts.
+Direct watches use a five-item preview with explicit paged continuation. Topic confidence measures matching confidence, not legal severity.
 Missing AI analysis remains unknown/awaiting, never low impact. Existing relation
 analysis freshness checks apply; original history/citations are not rewritten.
 
@@ -83,8 +83,8 @@ existing evidence viewer; the feed does not probe storage on every read.
 
 - Grouping is by saved event ID, not semantic publisher story or language edition.
 - Current topics only; paused/revised/expired matches remain in topic history.
-- One event page is bounded; all interests for its selected events are returned.
-  Very large per-event fan-out still needs separate paging (HL-099/HL-076).
+- Direct watches are now bounded per event with complete continuation. Topic
+  matches and related-law impacts still need separate fan-out paging (HL-099/HL-076).
 - Shared topic relevance review is a separate evidence-bound flow linked from
   Today and saved matches in Topics; see `TOPIC_MATCH_REVIEWS.md`. Independent
   organization AI briefs remain separate work. Topic notices are not yet digests.
@@ -105,3 +105,32 @@ existing evidence viewer; the feed does not probe storage on every read.
 - Empty local PostgreSQL only: `scripts/check_inbox_history_postgres.py` suites
   `feed`, `feed-pages`, `feed-watch`. This harness refuses existing tables and
   databases other than the explicitly named disposable `hl099_regression`.
+
+## Direct-watch pages (6 September 2026)
+
+A card returns at most five `monitored_documents` plus an optional
+`monitored_documents_next_cursor`. One batched SQL window query returns at most
+six scalar rows per selected work (five plus a continuation probe), without
+hydrating Law, DocumentWatch or LegacyDocumentMapping objects. This bounds
+transferred rows and Python objects, **not the database's work to rank all eligible
+rows**. Topics and related-law impacts remain separate unbounded fan-out work.
+
+`GET /api/interest-feed/events/{event_id}/watches?cursor=...&limit=20` returns
+at most 50 scalar links, `has_more`, `next_cursor`, `captured_at`, and `ai_calls:0`.
+Without a cursor it opens the first page. Order is the stable watch ID, not title;
+a rename cannot shift pagination. The cursor is bound to the organization,
+principal and exact event, and preserves the admission watermark from the feed
+preview. It is not an authorization token: every read independently checks work,
+law, mapping and active organization watch access. Removed/paused/private watches
+disappear, and later watches are excluded until refreshing. If no accessible
+watch remains, the endpoint returns 404. Lists are live, not historical snapshots.
+
+The five-language mobile/desktop UI replaces one document page at a time instead
+of accumulating a growing list. It retains the current page during a failed next
+request, offers retry, previous and preview controls, and never reloads the whole
+page. Resource keys and asynchronous updates respect session/organization scope.
+No inference, email, source synchronization or database migration is introduced.
+
+Checks: `test_feed_watch_pages.py`; disposable PostgreSQL runner suites
+`feed-watch-pages` and `feed-watch-scope`; `check-interest-feed-browser.mjs`.
+Native-language and intended-hardware concurrency reviews remain open.

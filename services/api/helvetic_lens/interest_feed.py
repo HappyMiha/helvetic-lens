@@ -11,7 +11,7 @@ import json
 from datetime import UTC, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from .config import DomainError
@@ -123,11 +123,16 @@ class InterestFeedReader(ImpactInboxReader):
             dates.setdefault(fact.entity_id, []).append({"kind": fact.kind, "value": fact.date_value,
                                                        "precision": fact.precision, "provenance": fact.provenance,
                                                        "source_url": fact.source_url})
+        # Bound returned watch rows per selected work, including one continuation probe.
+        ranked = self._watches(captured).where(
+            LegacyDocumentMapping.work_id.in_({event.work_id for event in events})
+        ).add_columns(func.row_number().over(
+            partition_by=LegacyDocumentMapping.work_id, order_by=DocumentWatch.id
+        ).label("position")).subquery()
         watches: dict[str, list] = {}
-        for watch in session.execute(self._watches(captured).where(
-                LegacyDocumentMapping.work_id.in_({event.work_id for event in events})).order_by(DocumentWatch.display_name, DocumentWatch.id)):
-            watches.setdefault(watch.work_id, []).append({"watch_id": watch.id, "law_id": watch.law_id,
-                                                         "name": watch.display_name, "url": f"/laws/{watch.law_id}"})
+        for watch in session.execute(select(ranked).where(ranked.c.position <= 6)
+                                     .order_by(ranked.c.work_id, ranked.c.id)):
+            watches.setdefault(watch.work_id, []).append(self._watch_item(watch))
         result = []
         for event in events:
             work = works.get(event.work_id)
@@ -149,11 +154,56 @@ class InterestFeedReader(ImpactInboxReader):
                 "read_state": states.get(event.id, "unread"),
                 "severity": law["severity"] if law else "unknown",
                 "law_impacts": law["items"] if law else [],
-                "monitored_documents": watches.get(event.work_id, []),
+                "monitored_documents": watches.get(event.work_id, [])[:5],
+                "monitored_documents_next_cursor": self._watch_cursor(
+                    event.id, captured, watches[event.work_id][4]["watch_id"]
+                ) if len(watches.get(event.work_id, [])) > 5 else None,
                 "topic_matches": sorted(relevant, key=lambda item: (item["name"], item["topic_id"])),
                 "ai_coverage": law["coverage"] if law else {"analysed": 0, "total": 0},
             })
         return result
+
+    @staticmethod
+    def _watch_item(watch):
+        return {"watch_id": watch.id, "law_id": watch.law_id,
+                "name": watch.display_name, "url": f"/laws/{watch.law_id}"}
+
+    def _watch_cursor(self, event_id, captured, after):
+        payload = {"v": 1, "scope": [self.organization_id, self.principal, event_id],
+                   "captured": _iso(captured), "after": after}
+        return base64.urlsafe_b64encode(json.dumps(payload).encode()).decode().rstrip("=")
+
+    def watch_page(self, session: Session, event_id: str, *, cursor: str = "", limit: int = 20) -> dict:
+        if not 1 <= limit <= 50 or not isinstance(event_id, str) or not 1 <= len(event_id) <= 36:
+            raise DomainError("Choose a saved event and a page size from 1 to 50.", 422, "invalid_feed_filter")
+        captured, after = datetime.now(UTC), ""
+        if cursor:
+            try:
+                if len(cursor) > 4096:
+                    raise ValueError()
+                data = json.loads(base64.b64decode(cursor + "=" * (-len(cursor) % 4), altchars=b"-_", validate=True))
+                if data["v"] != 1 or data["scope"] != [self.organization_id, self.principal, event_id]:
+                    raise ValueError()
+                captured, after = datetime.fromisoformat(data["captured"]), data["after"]
+                if captured.tzinfo is None or not isinstance(after, str) or not 1 <= len(after) <= 36:
+                    raise ValueError()
+            except (ValueError, KeyError, TypeError, UnicodeError, RecursionError) as exc:
+                raise DomainError("Reopen the document list for this event and account.", 422, "invalid_feed_cursor") from exc
+        # Direct watch access is sufficient; do not materialize all topic/impact cards
+        # just to authorize a scalar watch page. Work and every watch are rechecked.
+        work_id = session.scalar(select(RegulatoryEvent.work_id)
+            .join(RegulatoryWork, RegulatoryWork.id == RegulatoryEvent.work_id)
+            .where(RegulatoryEvent.id == event_id, RegulatoryEvent.detected_at <= captured,
+                   visible(RegulatoryWork, self.organization_id)))
+        query = self._watches(captured).where(LegacyDocumentMapping.work_id == work_id)
+        if work_id is None or session.execute(query.limit(1)).first() is None:
+            raise DomainError("This event has no accessible monitored documents.", 404, "not_found")
+        rows = list(session.execute(query.where(DocumentWatch.id > after)
+                                    .order_by(DocumentWatch.id).limit(limit + 1)))
+        more, rows = len(rows) > limit, rows[:limit]
+        return {"items": [self._watch_item(row) for row in rows], "has_more": more,
+                "next_cursor": self._watch_cursor(event_id, captured, rows[-1].id) if more else None,
+                "captured_at": _iso(captured), "ai_calls": 0}
 
     def feed(self, session: Session, *, period: str = "all", state: str = "", cursor: str = "", limit: int = 20, event: str = "") -> dict:
         if period not in {"all", "today", "yesterday", "week", "month"} or state not in {"", "unread", "read", "dismissed", "muted"} or not 1 <= limit <= 50:
