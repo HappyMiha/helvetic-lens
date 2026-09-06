@@ -7,6 +7,8 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { createServer } from "node:net";
 import { Cdp, evaluate, pollJson, sleep } from "./browser-cdp.mjs";
+import { AccessibilityAudit } from "./browser-accessibility.mjs";
+const accessibility = new AccessibilityAudit("topics");
 
 const root = resolve(import.meta.dirname, "..");
 const chrome = [
@@ -271,6 +273,7 @@ try {
           ),
         "Required saved-topic/locale fixture missing",
       );
+      await accessibility.check(cdp, `editor-${locale}-${width}`, ".monitoring-topic-builder");
       assert.ok(
         await evaluate(
           cdp,
@@ -317,6 +320,7 @@ try {
           ),
         "Invalid hidden scope was not exposed with an error",
       );
+      await accessibility.check(cdp, `validation-${locale}-${width}`, ".monitoring-topic-builder [role=alert]");
       assert.equal(
         previewRequests().length,
         count,
@@ -343,6 +347,7 @@ try {
           ),
         "Manual no-AI preview failed",
       );
+      await accessibility.check(cdp, `preview-${locale}-${width}`, "[data-topic-preview]");
       const sent = previewRequests().at(-1).body;
       assert.deepEqual(sent.concepts, ["privacy", "naturalisation"]);
       assert.deepEqual(sent.source_pack_ids, ["fedlex-legislation"]);
@@ -818,6 +823,7 @@ try {
   assert.equal(dialogs.filter((d) => d.type === "confirm").length, 40);
   assert.equal(dialogs.filter((d) => d.type === "beforeunload").length, 13);
   assert.deepEqual(exceptions, []);
+  accessibility.finish(30);
   console.log(
     "Topic production UI: 10 required five-locale/mobile-desktop journeys passed; progressive scope, localized choices, polling-safe selections, no-AI preview/explicit activation, idempotency, hidden-scope recovery, busy protection, deep-list edit focus, retained failed draft, 40 localized discard decisions, native reload cancellation and 10 accepted reload/explicit restore journeys with no automatic writes; activation retry key recovery, storage denial, actual client navigation/Back, account/organization isolation and explicit discard. All APIs synthetic; no real monitoring/model call.",
   );

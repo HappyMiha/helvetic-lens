@@ -7,6 +7,8 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { createServer } from "node:net";
 import { Cdp, evaluate, pollJson, sleep } from "./browser-cdp.mjs";
+import { AccessibilityAudit } from "./browser-accessibility.mjs";
+const accessibility = new AccessibilityAudit("inbox");
 
 const root = resolve(import.meta.dirname, "..");
 const chrome = [process.env.CHROME_BIN, "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", "/usr/bin/google-chrome", "/usr/bin/chromium"].filter(Boolean).find(existsSync);
@@ -90,11 +92,13 @@ try {
   for (const width of [390, 768, 1024, 1440]) {
     await cdp.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 500 });
     await sleep(150);
+    await accessibility.check(cdp, `populated-${width}`, "[data-inbox-navigation]");
     assert.ok(await evaluate(cdp, `document.documentElement.scrollWidth <= innerWidth + 1`), `Page overflows at ${width}px`);
     assert.equal(await evaluate(cdp, `Array.from(document.querySelectorAll('[data-inbox-navigation] a')).filter(el => el.getBoundingClientRect().height < 44).length`), 0);
   }
   assert.equal(requests.some(path => path.split("?")[0] === "/api/impact-inbox"), false, "The UI must never fetch the legacy full-history inbox");
   assert.deepEqual(exceptions, [], "Runtime exceptions in the real page");
+  accessibility.finish(4);
   console.log("Inbox production UI: next/back navigation, independent law options, sparse pages, candidate deep links, filter reset, invalid-cursor recovery, 390/768/1024/1440px layout passed. Every API call was intercepted; no live backend/model or data mutation.");
 } catch (error) {
   console.error({ requests, exceptions, page: cdp ? await evaluate(cdp, "JSON.stringify({url:location.href,ready:document.readyState,html:document.documentElement.outerHTML.slice(0,1800)})").catch(() => "unavailable") : "no browser" });

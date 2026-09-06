@@ -7,6 +7,8 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { createServer } from "node:net";
 import { Cdp, evaluate, pollJson, sleep } from "./browser-cdp.mjs";
+import { AccessibilityAudit } from "./browser-accessibility.mjs";
+const accessibility = new AccessibilityAudit("onboarding");
 
 const root = resolve(import.meta.dirname, "..");
 const chrome = [process.env.CHROME_BIN, "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", "/usr/bin/google-chrome", "/usr/bin/chromium"].filter(Boolean).find(existsSync);
@@ -79,6 +81,7 @@ try {
     await cdp.send("Emulation.setDeviceMetricsOverride", {width,height:900,deviceScaleFactor:1,mobile:width<500});
     let before=changes().length;
     await open();
+    await accessibility.check(cdp, `guide-${locale}-${width}-${role}`, "[data-onboarding-guide]");
     assert.equal(changes().length,before,"Opening guide mutated shared or personal data");
     assert.ok(await evaluate(cdp, `document.querySelector('[data-onboarding-guide] a[href="/sources#source-packs"]') !== null`));
     assert.equal(await evaluate(cdp, `document.querySelectorAll('[data-milestone-recorded]').length`),0);
@@ -103,6 +106,7 @@ try {
     await waitFor(()=>evaluate(cdp, `document.body.innerText.includes('Synthetic save unavailable') && !document.querySelector('[data-onboarding-choice="topic"]').disabled`),"Save failure not recoverable");
     assert.equal(await evaluate(cdp,'location.pathname'),'/onboarding');
     assert.equal(state.state,"new");
+    await accessibility.check(cdp, `save-error-${locale}-${width}-${role}`, "[data-onboarding-guide]");
     failSave=false;
     for (const [action, destination] of [["topic","/topics"],["law","/discover"],["explore","/"],["later","/"]]) {
       before=changes().length;
@@ -117,6 +121,7 @@ try {
     assert.equal(state.intent,"explore","Deferral lost prior intent");
   }
   assert.deepEqual(exceptions,[]);
+  accessibility.finish(40);
   console.log("Personal onboarding production UI: 20 five-language 390/1440px admin/viewer journeys pass passive entry, organization availability, all three choices, defer/resume, failed-save retry, exact personal PATCH and no hidden shared activation. API interception only; no live model/source/email calls.");
 } catch (error) {
   console.error({locale,role,user,requests:requests.slice(-12),exceptions,text:cdp ? await evaluate(cdp,'document.body.innerText.slice(-2400)').catch(()=> 'unavailable') : 'none'});

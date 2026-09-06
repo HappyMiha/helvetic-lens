@@ -35,6 +35,49 @@ accessibility scans, native-language review, screen readers, Firefox/Safari and
 physical mobile software-keyboard/audio checks remain separate HL-097 gates.
 
 
+## Required automated accessibility journeys — 6 September 2026
+
+After `npm run build`, run `npm run check:accessibility`. It executes the actual
+production-UI suites for Topics, comparison/AI panels, saved original evidence,
+inbox, onboarding and Marvin. Each suite injects the pinned local `axe-core`
+development dependency into its isolated browser; it is not loaded by the product
+or sent to a provider. All application APIs remain intercepted fixture responses.
+
+The shared runner checks the full rendered document at each named checkpoint.
+There are no rule, element or severity exclusions. A missing visible fixture,
+duplicate checkpoint, wrong checkpoint total, execution error, or critical/serious
+violation fails the suite. The combined command fails if any required suite fails.
+Existing keyboard, focus, API-request and state assertions still run alongside it.
+
+Required checkpoint totals:
+
+| Suite | States sampled | Checkpoints |
+| --- | --- | ---: |
+| Topics | Populated editor, exposed validation, preview; five locales, phone/desktop | 30 |
+| Comparison | Marvin/Ask handoffs, material evidence, report, expanded history; five locales, phone/tablet/desktop | 125 |
+| Original evidence | Saved later-page citation; five locales, phone/desktop | 10 |
+| Inbox | Populated recovered page; English, four widths | 4 |
+| Onboarding | Initial choices and failed-save recovery; five locales, phone/desktop, reader/admin | 40 |
+| Marvin | Open saved personal conversation; five locales, four widths, reader/admin | 40 |
+
+`test-results/accessibility/<suite>.json` records every checkpoint's actual locale,
+viewport, engine version, rule failures, affected selectors and incomplete checks.
+These are checkpoint evidence files, not proof the surrounding interaction suite
+finished: require the combined command's successful exit as well. Moderate/minor
+findings and incomplete checks remain recorded for review, even when the severity
+gate passes. They must not be relabelled as successful checks.
+
+The initial scans found unreadable legacy muted colors in shared navigation,
+metadata, status labels, evidence links and Marvin. These now use the semantic
+muted foreground; the synthetic-data badge retains a darker amber foreground.
+Shared buttons transition colors instead of opacity when re-enabled, so an active
+button does not temporarily retain its disabled, low-contrast appearance.
+
+This is not every route/state or a WCAG certification. All-locale inbox scanning,
+more error/dialog combinations, manual screen-reader and physical-device input,
+native-language usability, Firefox/Safari and unresolved nonblocking/incomplete
+findings remain open. See the current verification record for concrete results.
+
 ## Marvin to cited Ask — 6 September 2026
 
 On a comparison, Marvin's explicit **Open cited Ask** action transfers the trimmed

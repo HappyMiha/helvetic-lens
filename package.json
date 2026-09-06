@@ -31,6 +31,7 @@
     "lint:api": "uv run --project services/api ruff check services/api",
     "demo:source": "python scripts/demo_source.py",
     "check:comparison:browser": "node scripts/check-comparison-browser.mjs",
+    "check:accessibility": "npm run check:topics:browser && npm run check:comparison:browser && npm run check:native-evidence:browser && npm run check:inbox:browser && npm run check:onboarding:browser && npm run check:marvin:monitor:browser",
     "check:shell:browser": "node scripts/check-shell-browser.mjs",
     "check:topics:browser": "node scripts/check-topic-editor-browser.mjs",
     "check:feed:browser": "node scripts/check-interest-feed-browser.mjs",
@@ -43,6 +44,7 @@
     "check:native-evidence:browser": "node scripts/check-native-evidence-browser.mjs"
   },
   "devDependencies": {
+    "axe-core": "4.13.0",
     "concurrently": "^9.2.0",
     "prettier": "^3.9.6"
   },

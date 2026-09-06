@@ -7,6 +7,8 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { createServer } from "node:net";
 import { Cdp, evaluate, pollJson, sleep } from "./browser-cdp.mjs";
+import { AccessibilityAudit } from "./browser-accessibility.mjs";
+const accessibility = new AccessibilityAudit("marvin");
 
 const root = resolve(import.meta.dirname, "..");
 const chrome = [process.env.CHROME_BIN, "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", "/usr/bin/google-chrome", "/usr/bin/chromium"].filter(Boolean).find(existsSync);
@@ -145,6 +147,7 @@ try {
     await waitFor(() => evaluate(cdp, `document.querySelectorAll('[data-marvin-monitor]').length === 2`), "Saved user messages missing monitoring action while model is stopped");
     assert.equal(await evaluate(cdp, `document.querySelectorAll('.is-assistant [data-marvin-monitor]').length`), 0, "Assistant replies must not be proposed as monitoring goals");
     await checkPanelFocus(width);
+    await accessibility.check(cdp, `conversation-${locale}-${width}-${role}`, ".marvin-chat");
     if (width === 1024) {
       const point = await evaluate(cdp, `(() => { const r=document.querySelector('[data-marvin-close]').getBoundingClientRect(); return {x:r.x+r.width/2,y:r.y+r.height/2}; })()`);
       await cdp.send("Input.dispatchMouseEvent", {type:"mousePressed", x:point.x, y:point.y, button:"left", clickCount:1});
@@ -191,6 +194,7 @@ try {
   }
   assert.equal(requests.some(r => r.path.includes('/messages') || r.path.includes('/remark') || r.path.includes('/preview') || r.path.includes('/draft') || (r.path === '/api/monitoring-topics' && r.method !== 'GET')), false, "Navigation spent inference or changed monitoring");
   assert.deepEqual(exceptions, []);
+  accessibility.finish(40);
   console.log("Marvin monitoring production UI: 40 five-locale phone/tablet/desktop admin/viewer journeys pass responsive modal focus, forward/reverse Tab, Escape ownership, restored opener, draft-preserving resize/close, released scrolling and explicit personal-user-message entry with local AI stopped, no assistant-reply CTA, drawer closure, private-text-free URLs, manual editable goal copy, empty matching terms, different-message cache isolation and dirty-draft protection. All APIs intercepted; no live model or shared monitoring writes.");
 } catch (error) {
   console.error({locale, role, user, requests: requests.slice(-10), exceptions, text: cdp ? await evaluate(cdp, "document.body.innerText.slice(-2500)").catch(()=>"unavailable") : "none"});

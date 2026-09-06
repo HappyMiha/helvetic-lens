@@ -7,6 +7,8 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { createServer } from "node:net";
 import { Cdp, evaluate, pollJson, sleep } from "./browser-cdp.mjs";
+import { AccessibilityAudit } from "./browser-accessibility.mjs";
+const accessibility = new AccessibilityAudit("native-evidence");
 
 const root = resolve(import.meta.dirname, "..");
 const chrome = [process.env.CHROME_BIN, "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", "/usr/bin/google-chrome", "/usr/bin/chromium"].filter(Boolean).find(existsSync);
@@ -105,6 +107,7 @@ try {
       await evaluate(cdp, `sessionStorage.removeItem('qa-hidden'); document.dispatchEvent(new Event('visibilitychange'))`);
       await waitFor(() => Promise.resolve(milestones.length === before + 1), "Visible evidence not recorded");
       assert.deepEqual(milestones.at(-1), {kind:"native_version",id:"synthetic-version"});
+      await accessibility.check(cdp, `saved-passage-${locale}-${width}`, "#passage-p100");
       failNextPage=true;
       await evaluate(cdp, `document.querySelectorAll('.pagination button')[1].click()`);
       assert.ok(await evaluate(cdp, `!!document.querySelector('#passage-p100')`), "Old evidence disappeared while next page was loading");
@@ -162,6 +165,7 @@ try {
   assert.deepEqual(milestones.at(-1), {kind:"version",id:"synthetic-version"});
   assert.ok(!requests.some(path=>/^\/api\/(regulatory-versions|versions)\/synthetic-version(?:\?|$)/.test(path)), "Viewer fetched full legacy/native document");
   assert.deepEqual(exceptions, [], "Runtime exceptions in the real page");
+  accessibility.finish(10);
   console.log("Native evidence production UI: 10 five-locale 390/1440px journeys pass later-page citations, PDF links, next/back, missing-passage recovery, text-only/metadata-only states, unavailable original and unsafe-source omission; legacy viewer smoke also passes. Milestones exclude controlled-background visibility, missing targets, demos and empty evidence, resume on visible text and avoid pagination duplicates. Server paging avoids full-document requests, keeps evidence visible on delayed/failed page changes, retries without reload and preserves every unnumbered-text character. All APIs intercepted; no source/model/mail calls.");
 } catch (error) {
   console.error({ requests, exceptions, page: cdp ? await evaluate(cdp, "JSON.stringify({url:location.href,ready:document.readyState,html:document.documentElement.outerHTML.slice(0,1800)})").catch(() => "unavailable") : "no browser" });

@@ -7,6 +7,8 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { createServer } from "node:net";
 import { Cdp, evaluate, pollJson, sleep } from "./browser-cdp.mjs";
+import { AccessibilityAudit } from "./browser-accessibility.mjs";
+const accessibility = new AccessibilityAudit("comparison");
 
 const root = resolve(import.meta.dirname, "..");
 const chrome = [
@@ -270,9 +272,11 @@ try {
     await cdp.send("Input.insertText", {text:question});
     await waitFor(() => evaluate(cdp, `!document.querySelector('.marvin-ask-form button[type=submit]').disabled`), "Handoff disabled with a question");
     const before = writes.filter(r => r.path.endsWith('/handoffs')).length;
+    await accessibility.check(cdp, `marvin-${language}-${width}-${offline}`, '.marvin-ask-form');
     await click('.marvin-ask-form button[type=submit]');
     await waitFor(() => evaluate(cdp, `!document.querySelector('.marvin-drawer[open]') && document.querySelector('#apertus-question')?.value === ${JSON.stringify(question)}`), "Handoff lost or altered question");
     await waitFor(() => evaluate(cdp, `document.activeElement.id === 'apertus-question'`), "Handoff did not focus Ask");
+    await accessibility.check(cdp, `ask-${language}-${width}-${offline}`, '#apertus-question');
     if (offline && !contextRace) {
       assert.equal(heldHandoffs.length, 1, 'Slow-history request was not exercised');
       await cdp.send('Fetch.fulfillRequest', {requestId:heldHandoffs.shift(), responseCode:503, responseHeaders:[{name:'Content-Type',value:'application/json'}], body:Buffer.from(JSON.stringify({detail:'Synthetic personal history unavailable'})).toString('base64')});
@@ -330,6 +334,7 @@ try {
         "Required populated comparison/locale missing",
       );
       assert.equal(await modal(), false);
+      await accessibility.check(cdp, `evidence-${locale}-${width}`, '.comparison-evidence-pane');
       const groups = () => evaluate(cdp, `Array.from(document.querySelectorAll('[data-material-group]')).map(node => node.dataset.materialGroup)`);
       const setInput = async (selector,value,tag='HTMLInputElement') => evaluate(cdp, `(() => {const node=document.querySelector(${JSON.stringify(selector)}); Object.getOwnPropertyDescriptor(${tag}.prototype,'value').set.call(node,${JSON.stringify(value)}); node.dispatchEvent(new Event('input',{bubbles:true})); node.dispatchEvent(new Event('change',{bubbles:true}));})()`);
       assert.equal((await groups()).length,5,'Material cards must be bounded before interaction');
@@ -544,6 +549,7 @@ try {
         citationCount > 0,
         "Required populated citation fixture missing",
       );
+      await accessibility.check(cdp, `report-${locale}-${width}`, '.analysis-column .comparison-citations');
       await evaluate(
         cdp,
         `document.querySelector('.analysis-column .comparison-citations button').click()`,
@@ -569,6 +575,7 @@ try {
       );
       await clickTab("history");
       await evaluate(cdp, `document.querySelectorAll('#companion-history .ai-history-item').forEach(item => item.open = true)`);
+      await accessibility.check(cdp, `history-${locale}-${width}`, '#companion-history');
       assert.equal(await evaluate(cdp, `document.querySelectorAll('#companion-history [data-monitor-answer]').length`), 1, "History must not offer failed/unsupported/uncited answers");
       if (width === 390) {
         await evaluate(cdp, `document.querySelector('.companion-close').click()`);
@@ -606,6 +613,7 @@ try {
     [],
     "Runtime errors in required populated comparison",
   );
+  accessibility.finish(125);
   assert.ok(
     requests.some((path) => path.startsWith(`/api/comparisons/${fixture.id}`)),
     "No comparison fixture was used",
