@@ -218,6 +218,11 @@ export const resources = {
       priority: "interactive",
     }),
 
+  evidencePage: <T = unknown>(id: string, native: boolean, offset: number, passage: string) =>
+    key<T>(`evidence:page:${native}:${id}:${offset}:${passage}`, `/${native ? "regulatory-versions" : "versions"}/${encodeURIComponent(id)}/page?offset=${offset}&limit=50&passage=${encodeURIComponent(passage)}`, {
+      owner:"comparison", tags:["evidence", "version", `version:${id}`, ...(native ? ["corpus"] : [])], varyByLocale:false, staleMs:15_000,
+    }),
+
   corpusVersion: <T = unknown>(id: string) =>
     key<T>(`comparison:corpus-version:${id}`, `/regulatory-versions/${id}`, {
       owner: "comparison", tags: ["evidence", "corpus"], varyByLocale: false, staleMs: 15_000,

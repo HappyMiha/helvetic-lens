@@ -1539,6 +1539,20 @@ def create_app(
     def delete_version(version_id: str):
         return service.delete_version(version_id)
 
+    @app.get("/api/regulatory-versions/{version_id}/page")
+    def native_evidence_page(version_id: str, offset: int = 0, limit: int = 50, passage: str = ""):
+        from .evidence_pages import detail
+        with service.db.session() as session:
+            return detail(session, service.organization_id, version_id, service.settings,
+                          native=True, offset=offset, limit=limit, passage=passage)
+
+    @app.get("/api/versions/{version_id}/page")
+    def legacy_evidence_page(version_id: str, offset: int = 0, limit: int = 50, passage: str = ""):
+        from .evidence_pages import detail
+        with service.db.session() as session:
+            return detail(session, service.organization_id, version_id, service.settings,
+                          offset=offset, limit=limit, passage=passage)
+
     @app.get("/api/regulatory-versions/{version_id}")
     def native_evidence(version_id: str):
         with service.db.session() as session:

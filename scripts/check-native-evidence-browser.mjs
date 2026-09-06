@@ -30,14 +30,15 @@ async function waitFor(check, message) {
   }
   throw new Error(message);
 }
-let locale = "en-CH", mode = "passages";
+let locale = "en-CH", mode = "passages", failNextPage = false;
 const passages = Array.from({ length: 125 }, (_, index) => ({ id: `p${index + 1}`, text: `Synthetic saved passage ${index + 1}`, page: Math.floor(index / 25) + 1 }));
+const plainEvidence = "Saved text without passage identifiers\n".repeat(850);
 function evidence(native) {
   return { id: "synthetic-version", law_id: native ? null : "synthetic-law", law_name: "Synthetic saved connector document", native,
     origin: native ? "official_connector" : "live", created_at: "2026-09-05T08:00:00Z", source_url: mode === "empty" ? "javascript:alert(1)" : "https://example.invalid/official-source",
     content_type: "application/pdf", artifact_url: mode === "passages" ? `/api/${native ? "regulatory-versions" : "versions"}/synthetic-version/artifact` : null,
     declared_date: null, synthetic: mode === "sample", identity_json: { language: "de" }, passages: ["passages", "sample"].includes(mode) ? passages : [], passage_count: mode === "passages" ? 125 : 0,
-    plain_text: mode === "text" ? "Saved text without passage identifiers" : null };
+    plain_text: mode === "text" ? plainEvidence : null };
 }
 try {
   await waitFor(async () => (await fetch(base)).ok, "Isolated production UI failed to start");
@@ -61,7 +62,22 @@ try {
       assert.equal(request.method, "POST"); milestones.push(JSON.parse(request.postData)); body={recorded:true};
     }
     else if (url.pathname === "/api/jobs") body = [];
-    else if (/^\/api\/(regulatory-versions|versions)\/synthetic-version$/.test(url.pathname)) body = evidence(url.pathname.includes("regulatory-versions"));
+    else if (/^\/api\/(regulatory-versions|versions)\/synthetic-version\/page$/.test(url.pathname)) {
+      await sleep(100);
+      if(failNextPage && url.searchParams.get("offset")==="100") {
+        failNextPage=false;
+        await cdp.send("Fetch.fulfillRequest",{requestId,responseCode:503,responseHeaders:[{name:"Content-Type",value:"application/json"}],body:Buffer.from(JSON.stringify({detail:"Synthetic page failure"})).toString("base64")});
+        return;
+      }
+      body=evidence(url.pathname.includes("regulatory-versions"));
+      const target=url.searchParams.get("passage"), index=target ? body.passages.findIndex(p=>p.id===target) : -1;
+      let offset=Number(url.searchParams.get("offset")||0);
+      const total=body.passages.length || (body.plain_text||"").length, size=body.passages.length ? 50 : 16000;
+      if(index>=0) offset=Math.floor(index/size)*size;
+      const end=Math.min(offset+size,total), mode=body.passages.length ? "passages" : "text";
+      body={...body,passages:body.passages.slice(offset,end),plain_text:body.plain_text?.slice(offset,end),pagination:{offset,end,total,size,mode,next_offset:end<total?end:null,previous_offset:offset?Math.max(0,offset-size):null,target_found:target?index>=0:null}};
+      assert.ok(body.passages.length<=50,"Fixture returned an unbounded page");
+    }
     else { code = 503; body = { detail: "Unconfigured synthetic QA endpoint" }; }
     await cdp.send("Fetch.fulfillRequest", { requestId, responseCode: code, responseHeaders: [{ name: "Content-Type", value: "application/json" }], body: Buffer.from(JSON.stringify(body)).toString("base64") }).catch(() => {});
   });
@@ -89,6 +105,11 @@ try {
       await evaluate(cdp, `sessionStorage.removeItem('qa-hidden'); document.dispatchEvent(new Event('visibilitychange'))`);
       await waitFor(() => Promise.resolve(milestones.length === before + 1), "Visible evidence not recorded");
       assert.deepEqual(milestones.at(-1), {kind:"native_version",id:"synthetic-version"});
+      failNextPage=true;
+      await evaluate(cdp, `document.querySelectorAll('.pagination button')[1].click()`);
+      assert.ok(await evaluate(cdp, `!!document.querySelector('#passage-p100')`), "Old evidence disappeared while next page was loading");
+      await waitFor(()=>evaluate(cdp, `document.body.innerText.includes('Synthetic page failure') && !document.querySelectorAll('.pagination button')[1].disabled`),"Failed page not recoverable");
+      assert.ok(await evaluate(cdp, `!!document.querySelector('#passage-p100')`));
       await evaluate(cdp, `document.querySelectorAll('.pagination button')[1].click()`);
       await waitFor(() => evaluate(cdp, `!!document.querySelector('#passage-p125')`), "Next evidence page missing");
       await evaluate(cdp, `document.querySelectorAll('.pagination button')[0].click()`);
@@ -114,6 +135,15 @@ try {
       assert.equal(await evaluate(cdp, `document.querySelectorAll('a[href*="/artifact"]').length`), 0, "Missing original has a fake download link");
       await evaluate(cdp, `document.querySelector('[data-evidence-display-text]').scrollIntoView({block:'center'})`);
       await waitFor(() => Promise.resolve(milestones.length === before + 2), "Saved unnumbered text display not recorded");
+      const textParts=[await evaluate(cdp, `document.querySelector('[data-native-text]').textContent`)];
+      while(!(await evaluate(cdp, `document.querySelectorAll('.pagination button')[1].disabled`))) {
+        const oldText=textParts.at(-1);
+        await evaluate(cdp, `document.querySelectorAll('.pagination button')[1].click()`);
+        await waitFor(()=>evaluate(cdp, `!document.querySelector('section[aria-busy="true"]') && document.querySelector('[data-native-text]').textContent !== ${JSON.stringify(oldText)}`),"Text page did not advance");
+        textParts.push(await evaluate(cdp, `document.querySelector('[data-native-text]').textContent`));
+      }
+      assert.equal(textParts.join(""),plainEvidence,"Unnumbered text lost characters across pages");
+      assert.ok(textParts.every(part=>part.length<=16000));
       mode = "empty";
       await navigate("/corpus-evidence/synthetic-version");
       await waitFor(() => evaluate(cdp, `!!document.querySelector('[data-native-text]')`), "Metadata-only state missing");
@@ -130,8 +160,9 @@ try {
   assert.ok(await evaluate(cdp, `!!document.querySelector('a[href="/laws/synthetic-law"]') && !!document.querySelector('a[href="/api/versions/synthetic-version/artifact#page=4"]')`));
   await waitFor(() => Promise.resolve(milestones.length === beforeLegacy + 1), "Legacy display not recorded");
   assert.deepEqual(milestones.at(-1), {kind:"version",id:"synthetic-version"});
+  assert.ok(!requests.some(path=>/^\/api\/(regulatory-versions|versions)\/synthetic-version(?:\?|$)/.test(path)), "Viewer fetched full legacy/native document");
   assert.deepEqual(exceptions, [], "Runtime exceptions in the real page");
-  console.log("Native evidence production UI: 10 five-locale 390/1440px journeys pass later-page citations, PDF links, next/back, missing-passage recovery, text-only/metadata-only states, unavailable original and unsafe-source omission; legacy viewer smoke also passes. Milestones exclude controlled-background visibility, missing targets, demos and empty evidence, resume on visible text and avoid pagination duplicates. All APIs intercepted; no source/model/mail calls.");
+  console.log("Native evidence production UI: 10 five-locale 390/1440px journeys pass later-page citations, PDF links, next/back, missing-passage recovery, text-only/metadata-only states, unavailable original and unsafe-source omission; legacy viewer smoke also passes. Milestones exclude controlled-background visibility, missing targets, demos and empty evidence, resume on visible text and avoid pagination duplicates. Server paging avoids full-document requests, keeps evidence visible on delayed/failed page changes, retries without reload and preserves every unnumbered-text character. All APIs intercepted; no source/model/mail calls.");
 } catch (error) {
   console.error({ requests, exceptions, page: cdp ? await evaluate(cdp, "JSON.stringify({url:location.href,ready:document.readyState,html:document.documentElement.outerHTML.slice(0,1800)})").catch(() => "unavailable") : "no browser" });
   throw error;

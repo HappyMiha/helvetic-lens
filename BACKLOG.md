@@ -2064,6 +2064,9 @@ Acceptance criteria:
 
 ### HL-099 — Bound inbox/feed reads and digest work on a mature corpus
 
+**6 September 2026 — server-paged evidence reading:** native and legacy viewers now fetch at most 50 saved passages per request, or 16,000 characters for unnumbered text. SQL resolves an exact cited passage directly, returns bounded content without hydrating full version objects, and repeats the existing access policy. The browser retains the current page while loading/retrying another; original APIs/files and complete persisted AI/comparison evidence are unchanged. Large 10,001-passage, Unicode reconstruction, PostgreSQL and five-locale browser checks are recorded in [evidence pages](docs/EVIDENCE_PAGES.md). This closes the dedicated saved-evidence viewer paging gap in HL-076/096; per-event interest fan-out, whole-registry paging, database JSON parsing cost and target-host capacity remain open.
+
+
 **Priority:** P0. **Status:** IN PROGRESS. **Dependencies:** HL-030, HL-036, HL-046. **Owner role:** backend/database.
 
 Problem: the current inbox loads whole organization candidate/history sets, performs per-item lookups and filters in Python; digest rendering inherits that cost.

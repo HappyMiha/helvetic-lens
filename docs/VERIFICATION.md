@@ -1,5 +1,14 @@
 # Verification record
 
+## Server-paged saved evidence — 6 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl-099-evidence-pages`. Native/legacy viewers use separate page resources instead of transferring the whole document. Exact saved citations resolve in SQL; pages contain at most 50 saved passages or 16,000 unnumbered-text characters. Existing access policies, full APIs and originals remain intact. Current text stays visible during delayed/failed next-page loads. [Contract and limits](EVIDENCE_PAGES.md).
+- **48 API regressions pass in 71.86 seconds**, one PostgreSQL-only skip, across new evidence pages, corpus evidence, workflow and personal display milestones. The final optimized JSON query additionally passes all six new paging cases in 7.29 seconds. These seed 10,001 passages plus large full text for both storage models, check exact late targets and last-page counts, assert zero full ORM version hydration and a small selected response, reconstruct all Unicode characters, and reject invalid parameters/private evidence. Tests use synthetic saved documents; no live model calls.
+- Three **PostgreSQL 16.14** suites pass: legacy/native JSON paging and unnumbered Unicode text paging. Both large-passage suites pass again after replacing repeated per-index extraction with one SQL JSON expansion. All five separately created, labelled, ephemeral loopback databases were removed; no working/production data or migration changes.
+- Production build passes **1,850 localization keys, 27 shell, 22 resource/delivery and 130 report/navigation checks**, TypeScript and Next compilation. Production browser checks cover ten five-locale 390/1440px native journeys plus legacy smoke: direct citations, actual server page requests, no full-version fetches, retained old text during a failed next request, retry/back, PDF links, missing/sample/empty states and personal display boundaries. The final harness also reconstructs multi-page unnumbered text. All APIs intercepted. These checks do not establish native-language acceptance, physical-device performance or target-host concurrency.
+- Ruff/whitespace checks pass. Database-side JSON parsing still scales with document size, and passage count is not a strict byte cap for unusually large individual passages. The independent capacity and broader HL-099 acceptance gates remain open; no production deployment.
+
+
 ## Personal source selection review — 6 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl-073-source-review`. The Sources section provides an explicit private save of the displayed catalogue/package revisions and enabled flags, separate from source activation/request controls. The guide retains the latest acknowledged selection and first/latest dates and identifies changed selection. A separate one-row-per-principal table avoids inventing an onboarding intent or completed state. [Contract](PERSONAL_ONBOARDING.md).

@@ -11,7 +11,7 @@ import {
   Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { label, useResource } from "@/lib/api";
+import { errorText, fetchResource, label, resourceScopeEpoch, useResource } from "@/lib/api";
 import { resources } from "@/lib/resource-keys";
 import { useI18n } from "@/lib/i18n";
 import type { Passage, Version } from "@/lib/types";
@@ -19,8 +19,8 @@ import { ErrorNote, Loading, Status } from "./common";
 import { Shell } from "./shell";
 import { useEvidenceMilestone } from "@/lib/evidence-milestone";
 
-type Evidence = Omit<Version, "law_id" | "artifact_url"> & { law_id: string | null; artifact_url: string | null; law_name: string; passages: Passage[]; plain_text?: string | null };
-const PAGE_SIZE = 60;
+type Evidence = Omit<Version, "law_id" | "artifact_url"> & { law_id: string | null; artifact_url: string | null; law_name: string; passages: Passage[]; plain_text?: string | null; pagination: {offset:number;end:number;total:number;size:number;mode:"passages"|"text";next_offset:number|null;previous_offset:number|null;target_found:boolean|null} };
+
 
 export function EvidenceView({
   id,
@@ -32,29 +32,39 @@ export function EvidenceView({
   native?: boolean;
 }) {
   const { t, dateTime, number } = useI18n();
-  const { data, error } = useResource(native ? resources.corpusVersion<Evidence>(id) : resources.version<Evidence>(id));
-  const [page, setPage] = useState(0);
+  const [offset, setOffset] = useState<number | null>(null);
+  useEffect(() => setOffset(null), [id, passageId]);
+  const { data, error, reload } = useResource(resources.evidencePage<Evidence>(id, native, offset ?? 0, offset === null ? passageId : ""));
+  const [changing, setChanging] = useState(false);
+  const [pageError, setPageError] = useState("");
+  const generation = useRef(0);
+  useEffect(() => { generation.current++; setChanging(false); setPageError(""); return () => { generation.current++; }; }, [id, native, passageId]);
+  async function changePage(next: number | null) {
+    if (next === null || changing) return;
+    const current = generation.current, epoch = resourceScopeEpoch("session");
+    setChanging(true); setPageError("");
+    try {
+      await fetchResource(resources.evidencePage<Evidence>(id, native, next, ""));
+      if (current === generation.current && epoch === resourceScopeEpoch("session")) setOffset(next);
+    } catch (cause) {
+      if (current === generation.current && epoch === resourceScopeEpoch("session")) setPageError(errorText(cause));
+    } finally {
+      if (current === generation.current && epoch === resourceScopeEpoch("session")) setChanging(false);
+    }
+  }
+  const page = data ? Math.floor(data.pagination.offset / data.pagination.size) : 0;
   const route = (native ? "/corpus-evidence/" : "/evidence/") + encodeURIComponent(id);
   const safeSource = data?.source_url && /^https?:\/\//i.test(data.source_url) ? data.source_url : null;
   const targetIndex =
     data?.passages.findIndex((passage) => passage.id === passageId) ?? -1;
-  const missingTarget = !!data && !!passageId && targetIndex < 0;
+  const missingTarget = data?.pagination.target_found === false;
   useEffect(() => {
-    if (targetIndex >= 0) setPage(Math.floor(targetIndex / PAGE_SIZE));
-  }, [targetIndex]);
-  useEffect(() => {
-    if (targetIndex >= 0 && page === Math.floor(targetIndex / PAGE_SIZE))
-      document
-        .getElementById("passage-" + passageId)
-        ?.scrollIntoView({ block: "center" });
-  }, [page, targetIndex, passageId]);
+    if (targetIndex >= 0) document.getElementById("passage-" + passageId)?.scrollIntoView({block:"center"});
+  }, [data, targetIndex, passageId]);
   const displayedEvidence = useRef<HTMLElement>(null);
   useEvidenceMilestone(displayedEvidence, id, native, Boolean(data && !error && !missingTarget && !data.synthetic &&
     (data.passages.some(passage => passage.text.trim()) || data.plain_text?.trim())), page);
-  const pages = Math.max(
-    1,
-    Math.ceil((data?.passages.length || 0) / PAGE_SIZE),
-  );
+  const pages = data ? Math.max(1, Math.ceil(data.pagination.total / data.pagination.size)) : 1;
   const sourceLanguage = data?.identity_json?.language || undefined;
   return (
     <Shell section={t("evidence.section")}>
@@ -63,6 +73,7 @@ export function EvidenceView({
         {t(native ? "nav.today" : "evidence.back")}
       </Link>
       <ErrorNote message={error} />
+      {error && <div className="flex gap-2 my-4"><Button variant="outline" onClick={()=>void reload()}>{t("gettingStarted.retry")}</Button><Button variant="outline" onClick={()=>setOffset(0)}>{t("evidence.readComplete")}</Button></div>}
       {!data ? (
         !error && <Loading text={t("evidence.opening")} />
       ) : (
@@ -97,7 +108,7 @@ export function EvidenceView({
               </a>
             </Button> : <p className="muted max-w-md" role="status">{t("nativeEvidence.noArtifact")}</p>}
           </div>
-          <section className="panel" ref={displayedEvidence}>
+          <section className="panel" ref={displayedEvidence} aria-busy={changing}>
             <div className="evidence-metadata">
               {native ? <span>{t("nativeEvidence.record")}</span> : <Status value={data.origin} />}
               {data.synthetic && (
@@ -147,9 +158,7 @@ export function EvidenceView({
               <>
                 {!data.passages.length && <div className="p-6 whitespace-pre-wrap break-words" data-native-text data-evidence-display-text={data.plain_text ? true : undefined}>{data.plain_text || t("nativeEvidence.noText")}</div>}
                 <div className="evidence-passages">
-                  {data.passages
-                    .slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
-                    .map((passage) => (
+                  {data.passages.map((passage) => (
                       <article
                         lang={sourceLanguage}
                         id={"passage-" + passage.id}
@@ -186,12 +195,14 @@ export function EvidenceView({
                       </article>
                     ))}
                 </div>
+                <ErrorNote message={pageError} />
+                {changing && <p role="status" className="muted mx-6">{t("evidence.opening")}</p>}
                 <div className="pagination">
                   <span>
-                    {t("evidence.range", {
-                      start: number(data.passages.length ? page * PAGE_SIZE + 1 : 0),
-                      end: number(Math.min((page + 1) * PAGE_SIZE, data.passages.length)),
-                      total: number(data.passages.length),
+                    {t(data.pagination.mode === "text" ? "evidencePages.textRange" : "evidence.range", {
+                      start: number(data.pagination.total ? data.pagination.offset + 1 : 0),
+                      end: number(data.pagination.end),
+                      total: number(data.pagination.total),
                     })}
                   </span>
                   <div className="flex gap-2 items-center">
@@ -199,8 +210,8 @@ export function EvidenceView({
                       size="icon-sm"
                       variant="outline"
                       aria-label={t("evidence.previous")}
-                      disabled={page === 0}
-                      onClick={() => setPage((value) => value - 1)}
+                      disabled={changing || data.pagination.previous_offset === null}
+                      onClick={() => void changePage(data.pagination.previous_offset)}
                     >
                       <ChevronLeft />
                     </Button>
@@ -211,8 +222,8 @@ export function EvidenceView({
                       size="icon-sm"
                       variant="outline"
                       aria-label={t("evidence.next")}
-                      disabled={page >= pages - 1}
-                      onClick={() => setPage((value) => value + 1)}
+                      disabled={changing || data.pagination.next_offset === null}
+                      onClick={() => void changePage(data.pagination.next_offset)}
                     >
                       <ChevronRight />
                     </Button>

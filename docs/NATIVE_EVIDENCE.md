@@ -37,7 +37,7 @@ appear in the document JSON. Source links in the viewer accept HTTP(S) only.
 ## Viewer behavior and provenance
 
 - Saved passage IDs and PDF page links are retained exactly. A cited passage on
-  a later 60-passage display page is brought into view. Missing passage IDs show
+  a later 50-passage server page is brought into view. Missing passage IDs show
   an explicit error and a link to read the complete saved record.
 - Missing/unavailable originals never produce a fabricated download link or
   hide retained extracted text. Text without saved passage IDs is displayed as
@@ -49,9 +49,10 @@ appear in the document JSON. Source links in the viewer accept HTTP(S) only.
 - The source may have changed; the stored original/quoted passage is the evidence.
   The API does not regenerate, re-fetch, analyse or silently repair source content.
 
-This reuses the existing viewer's per-document response and client-side display
-pagination. It does **not** introduce server-side passage paging or establish
-100-reader/large-document capacity; those HL-099/target-host gates remain open.
+Both native and legacy viewers now use server-side passage paging (6 September
+2026); see [evidence page contract](EVIDENCE_PAGES.md). The full original API
+remains compatible. This does not establish target-host capacity or bounded
+database-side JSON parsing cost; those HL-099/hardware gates remain open.
 The three event surfaces share `corpus_access.event_evidence_links` with the same
 SQL access policy as the viewer/original download. Each lookup returns only exact
 event/version IDs, never text or passage bodies, and accepts at most 100 distinct

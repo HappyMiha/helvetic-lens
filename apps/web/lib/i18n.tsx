@@ -4348,6 +4348,9 @@ const sourceReviewMessages: Record<Locale, Record<string, string>> = {
 };
 for (const locale of locales) Object.assign(catalogTarget(locale), sourceReviewMessages[locale]);
 
+const evidencePageMessages: Record<Locale, Record<string, string>> = {"en-CH": {"evidencePages.textRange": "Characters {start}–{end} of {total}"}, "de-CH": {"evidencePages.textRange": "Zeichen {start}–{end} von {total}"}, "fr-CH": {"evidencePages.textRange": "Caractères {start}–{end} sur {total}"}, "it-CH": {"evidencePages.textRange": "Caratteri {start}–{end} di {total}"}, "rm-CH": {"evidencePages.textRange": "Caracters {start}–{end} da {total}"}};
+for (const locale of locales) Object.assign(catalogTarget(locale), evidencePageMessages[locale]);
+
 function supported(value: string | null | undefined): Locale | null {
   if (!value) return null;
   const exact = locales.find((item) => item.toLowerCase() === value.replace("_", "-").toLowerCase());
