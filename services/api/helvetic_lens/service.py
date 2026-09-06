@@ -1078,6 +1078,10 @@ class HelveticLens:
         with self.db.session() as session:
             return InterestFeedReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings).feed(session, **filters)
 
+    def interest_feed_topics(self, event_id: str, user_id: str | None, **filters) -> dict:
+        with self.db.session() as session:
+            return InterestFeedReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings).topic_page(session, event_id, **filters)
+
     def interest_feed_watches(self, event_id: str, user_id: str | None, **filters) -> dict:
         with self.db.session() as session:
             return InterestFeedReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings).watch_page(session, event_id, **filters)

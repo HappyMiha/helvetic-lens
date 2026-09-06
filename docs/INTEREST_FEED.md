@@ -17,8 +17,8 @@ this current-relevance shortlist.
 The second stage rechecks topic rule/evidence fingerprints and decision currency.
 A stale, rejected or muted *current* topic decision cannot deliver a current topic
 card. A retained old review does not pretend to confirm corrected evidence.
-One event ID yields one card with eligible topics and watched law impacts.
-Direct watches use a five-item preview with explicit paged continuation. Topic confidence measures matching confidence, not legal severity.
+One event ID yields one card with current topics and watched law impacts.
+Topics and direct watches use five-item previews with explicit paged continuation. Topic confidence measures matching confidence, not legal severity.
 Missing AI analysis remains unknown/awaiting, never low impact. Existing relation
 analysis freshness checks apply; original history/citations are not rewritten.
 
@@ -83,8 +83,9 @@ existing evidence viewer; the feed does not probe storage on every read.
 
 - Grouping is by saved event ID, not semantic publisher story or language edition.
 - Current topics only; paused/revised/expired matches remain in topic history.
-- Direct watches are now bounded per event with complete continuation. Topic
-  matches and related-law impacts still need separate fan-out paging (HL-099/HL-076).
+- Direct watches and topic output are bounded per event with complete continuation.
+  Related-law impacts still need fan-out paging. Topic freshness checks use bounded
+  batches but may scan many stale candidates before finding a valid page (HL-099/HL-076).
 - Shared topic relevance review is a separate evidence-bound flow linked from
   Today and saved matches in Topics; see `TOPIC_MATCH_REVIEWS.md`. Independent
   organization AI briefs remain separate work. Topic notices are not yet digests.
@@ -134,3 +135,41 @@ No inference, email, source synchronization or database migration is introduced.
 Checks: `test_feed_watch_pages.py`; disposable PostgreSQL runner suites
 `feed-watch-pages` and `feed-watch-scope`; `check-interest-feed-browser.mjs`.
 Native-language and intended-hardware concurrency reviews remain open.
+
+## Current-topic pages (6 September 2026)
+
+A card includes at most five `topic_matches`, with a `topic_matches_next_cursor`
+when more current matches exist. The existing exact evidence/rule/current-revision
+checks remain mandatory; a stale match or a current rejected/muted review never
+becomes a current feed interest. This also applies to later pages.
+
+`GET /api/interest-feed/events/{id}/topics` accepts an optional cursor and
+`limit=1..50` (default 20). It returns `items`, `next_cursor`, `has_more`,
+`captured_at` and `ai_calls:0`. The cursor binds the organization, principal,
+exact event and **topic** list type; a watch-list cursor is not interchangeable.
+Ordering is by saved match ID, so renames do not shift navigation. Every read
+rechecks work visibility and the organization's event admission, followed by
+current topic/revision visibility and evidence currency. An admitted event with
+no remaining current matches returns an empty page. A revoked admission returns
+404. This is a live authorized list, not an immutable historical transcript.
+
+The feed batches candidate selection across its selected events with a SQL
+window. Preview rounds read at most 20 candidates per pending event, and detail
+rounds at most 51 for one event. `describe_matches` receives at most 100 records
+at a time. Once enough valid matches plus a continuation probe are found, that
+event stops scanning. Rounds continue past stale candidates so valid later topics
+are not silently dropped. **Total freshness work remains proportional to the
+stale candidates scanned**; this is bounded batch hydration and response count,
+not a constant-query/runtime guarantee. Ranking cost and unusually large individual
+saved evidence/review fields remain further capacity work. Related-law fan-out
+has not been changed by this slice.
+
+Both document and topic lists share one resource-scoped paging hook: no eager
+detail fetch, no accumulated infinite list, retained current page on failed next
+request, retry/back/preview controls and no full-page navigation. Topic items keep
+matching reasons, confidence and exact shared-review links. No inference, email,
+source synchronization, migration or production deployment.
+
+Checks: `test_feed_topic_pages.py`, existing feed/watch/review regressions;
+PostgreSQL suites `feed-topic-sparse` and `feed-topic-scope`; production browser
+journeys in `check-interest-feed-browser.mjs` with all API requests intercepted.

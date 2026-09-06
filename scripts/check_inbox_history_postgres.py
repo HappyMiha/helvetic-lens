@@ -41,6 +41,10 @@ from test_feed_evidence import (
     test_exact_event_link_reaches_old_event_and_remains_scoped,
     test_topic_only_artifact_is_exact_visible_version_without_body_hydration,
 )
+from test_feed_topic_pages import (
+    test_sparse_topic_batches_never_hide_later_valid_matches,
+    test_topic_page_scope_revocation_and_cursor_kind,
+)
 from test_feed_watch_pages import (
     test_large_watch_fanout_is_complete_bounded_and_does_not_hydrate_laws,
     test_watch_cursor_rechecks_visibility_and_excludes_late_watches,
@@ -116,7 +120,7 @@ from test_topic_reviews import (
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("feed-watch-pages", "feed-watch-scope", "evidence-pages", "evidence-pages-native", "evidence-text-pages", "source-review", "source-review-scope", "source-review-migration", "milestone-native", "milestone-migration", "milestone-race", "feed-readiness-history", "feed-readiness-bounds", "feed-readiness-sources", "onboarding-state", "onboarding-migration", "onboarding-race", "assistant-context", "assistant-context-private", "answer-context", "answer-context-private", "topic-coverage-empty", "topic-coverage-state", "topic-coverage-scope", "topic-coverage-bounds", "topic-duplicates", "topic-duplicates-scope", "topic-duplicates-bounds", "history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked", "monitoring-context", "monitoring-context-activate"), default="history")
+    parser.add_argument("--suite", choices=("feed-topic-sparse", "feed-topic-scope", "feed-watch-pages", "feed-watch-scope", "evidence-pages", "evidence-pages-native", "evidence-text-pages", "source-review", "source-review-scope", "source-review-migration", "milestone-native", "milestone-migration", "milestone-race", "feed-readiness-history", "feed-readiness-bounds", "feed-readiness-sources", "onboarding-state", "onboarding-migration", "onboarding-race", "assistant-context", "assistant-context-private", "answer-context", "answer-context-private", "topic-coverage-empty", "topic-coverage-state", "topic-coverage-scope", "topic-coverage-bounds", "topic-duplicates", "topic-duplicates-scope", "topic-duplicates-bounds", "history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked", "monitoring-context", "monitoring-context-activate"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -274,6 +278,14 @@ def main():
             if args.suite in {"topic-review-race", "topic-review-retry"}:
                 test_postgres_concurrent_reviews_do_not_overwrite_or_duplicate(harness, args.suite == "topic-review-retry")
                 print("PostgreSQL: concurrent topic review sessions preserve one decision without overwriting or duplicate retries.")
+                return
+            if args.suite == "feed-topic-sparse":
+                test_sparse_topic_batches_never_hide_later_valid_matches(harness)
+                print("PostgreSQL: topic paging traverses 120 stale candidates and excludes rejected/currently invalid matches.")
+                return
+            if args.suite == "feed-topic-scope":
+                test_topic_page_scope_revocation_and_cursor_kind(harness)
+                print("PostgreSQL: topic pages bind principal/event/type and recheck revoked admission.")
                 return
             if args.suite == "feed-watch-pages":
                 test_large_watch_fanout_is_complete_bounded_and_does_not_hydrate_laws(harness)

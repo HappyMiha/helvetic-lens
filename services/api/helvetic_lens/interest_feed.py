@@ -90,20 +90,7 @@ class InterestFeedReader(ImpactInboxReader):
         ids = tuple(item.id for item in events)
         laws = {item["event_id"]: item for item in self.page(session, ImpactInboxFilters(
             event_ids=ids, admitted_before=captured))["items"]}
-        records = list(session.scalars(self._topics(captured).where(TopicEventMatch.event_id.in_(ids))))
-        matches = [match for start in range(0, len(records), 100)
-                   for match in describe_matches(session, records[start:start + 100])]
-        names = dict(session.execute(select(MonitoringTopicRevision.id, MonitoringTopicRevision.name).where(
-            MonitoringTopicRevision.id.in_(self._topics(captured).where(TopicEventMatch.event_id.in_(ids))
-                                         .with_only_columns(TopicEventMatch.topic_revision_id)))).all())
-        topics: dict[str, list] = {}
-        for match in matches:
-            if not match["is_current"] or (match["decision_is_current"] and match["decision"] in {"rejected", "muted"}):
-                continue
-            topics.setdefault(match["event_id"], []).append({
-                **match, "name": names[match["topic_revision_id"]],
-                "url": f"/topics#topic-{match['topic_id']}",
-            })
+        topics = self._topic_pages(session, ids, captured, limit=5)
         works = {item.id: item for item in session.scalars(select(RegulatoryWork).where(
             RegulatoryWork.id.in_({item.work_id for item in events}), visible(RegulatoryWork, self.organization_id)))}
         evidence_links = event_evidence_links(session, self.organization_id, ids)
@@ -137,7 +124,7 @@ class InterestFeedReader(ImpactInboxReader):
         for event in events:
             work = works.get(event.work_id)
             law = laws.get(event.id)
-            relevant = topics.get(event.id, [])
+            relevant = topics.get(event.id, {}).get("items", [])
             if not work or (not law and not relevant and not watches.get(event.work_id)):
                 continue
             result.append({
@@ -158,10 +145,81 @@ class InterestFeedReader(ImpactInboxReader):
                 "monitored_documents_next_cursor": self._watch_cursor(
                     event.id, captured, watches[event.work_id][4]["watch_id"]
                 ) if len(watches.get(event.work_id, [])) > 5 else None,
-                "topic_matches": sorted(relevant, key=lambda item: (item["name"], item["topic_id"])),
+                "topic_matches": relevant,
+                "topic_matches_next_cursor": topics.get(event.id, {}).get("next_cursor"),
                 "ai_coverage": law["coverage"] if law else {"analysed": 0, "total": 0},
             })
         return result
+
+    def _topic_cursor(self, event_id, captured, after):
+        payload = {"v": 1, "scope": [self.organization_id, self.principal, event_id, "topics"],
+                   "captured": _iso(captured), "after": after}
+        return base64.urlsafe_b64encode(json.dumps(payload).encode()).decode().rstrip("=")
+
+    def _topic_pages(self, session: Session, event_ids, captured, *, after="", limit=20):
+        # Batch across events rather than one lookup chain per card. Recheck saved
+        # evidence in bounded batches; stale candidates cannot become current topics.
+        pending = dict.fromkeys(event_ids, after)
+        accepted = {event_id: [] for event_id in event_ids}
+        batch_size = max(20, limit + 1)
+        while pending:
+            ranked = self._topics(captured).where(or_(*[
+                (TopicEventMatch.event_id == event_id) & (TopicEventMatch.id > position)
+                for event_id, position in pending.items()
+            ])).with_only_columns(TopicEventMatch.id, TopicEventMatch.event_id,
+                func.row_number().over(partition_by=TopicEventMatch.event_id,
+                                       order_by=TopicEventMatch.id).label("position")).subquery()
+            records = list(session.scalars(select(TopicEventMatch).join(ranked, ranked.c.id == TopicEventMatch.id)
+                .where(ranked.c.position <= batch_size).order_by(TopicEventMatch.event_id, TopicEventMatch.id)))
+            seen = {}
+            for record in records:
+                seen.setdefault(record.event_id, []).append(record.id)
+            for start in range(0, len(records), 100):
+                batch = records[start:start + 100]
+                names = dict(session.execute(select(MonitoringTopicRevision.id, MonitoringTopicRevision.name)
+                    .where(MonitoringTopicRevision.organization_id == self.organization_id,
+                           MonitoringTopicRevision.id.in_({row.topic_revision_id for row in batch}))).all())
+                for match in describe_matches(session, batch):
+                    if (not match["is_current"] or (match["decision_is_current"]
+                            and match["decision"] in {"rejected", "muted"})):
+                        continue
+                    destination = accepted[match["event_id"]]
+                    if len(destination) <= limit:
+                        destination.append({**match, "name": names[match["topic_revision_id"]],
+                                            "url": f"/topics#topic-{match['topic_id']}"})
+            pending = {event_id: seen[event_id][-1] for event_id in pending
+                       if len(accepted[event_id]) <= limit and len(seen.get(event_id, [])) == batch_size}
+        return {event_id: {"items": rows[:limit],
+                "next_cursor": self._topic_cursor(event_id, captured, rows[limit - 1]["id"])
+                    if len(rows) > limit else None}
+                for event_id, rows in accepted.items()}
+
+    def topic_page(self, session: Session, event_id: str, *, cursor: str = "", limit: int = 20) -> dict:
+        if not 1 <= limit <= 50 or not isinstance(event_id, str) or not 1 <= len(event_id) <= 36:
+            raise DomainError("Choose a saved event and a page size from 1 to 50.", 422, "invalid_feed_filter")
+        captured, after = datetime.now(UTC), ""
+        if cursor:
+            try:
+                if len(cursor) > 4096:
+                    raise ValueError()
+                data = json.loads(base64.b64decode(cursor + "=" * (-len(cursor) % 4), altchars=b"-_", validate=True))
+                if data["v"] != 1 or data["scope"] != [self.organization_id, self.principal, event_id, "topics"]:
+                    raise ValueError()
+                captured, after = datetime.fromisoformat(data["captured"]), data["after"]
+                if captured.tzinfo is None or not isinstance(after, str) or not 1 <= len(after) <= 36:
+                    raise ValueError()
+            except (ValueError, KeyError, TypeError, UnicodeError, RecursionError) as exc:
+                raise DomainError("Reopen the topic list for this event and account.", 422, "invalid_feed_cursor") from exc
+        accessible = session.scalar(select(RegulatoryEvent.id)
+            .join(RegulatoryWork, RegulatoryWork.id == RegulatoryEvent.work_id)
+            .join(RegulatoryEventState, RegulatoryEventState.event_id == RegulatoryEvent.id)
+            .where(RegulatoryEvent.id == event_id, RegulatoryEvent.detected_at <= captured,
+                   RegulatoryEventState.organization_id == self.organization_id,
+                   RegulatoryEventState.created_at < captured, visible(RegulatoryWork, self.organization_id)))
+        if not accessible:
+            raise DomainError("This event is not available for this organization.", 404, "not_found")
+        page = self._topic_pages(session, [event_id], captured, after=after, limit=limit)[event_id]
+        return {**page, "has_more": bool(page["next_cursor"]), "captured_at": _iso(captured), "ai_calls": 0}
 
     @staticmethod
     def _watch_item(watch):

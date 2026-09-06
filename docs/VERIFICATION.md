@@ -1,6 +1,15 @@
 # Verification record
 
 
+## Current-topic feed pages — 6 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl-099-feed-topic-pages`. Today returns five current topics plus explicit continuation. SQL batches candidate selection across events, validates groups of at most 100 saved matches, and continues past stale evidence/current rejections instead of silently dropping valid later matches. The detail endpoint accepts at most 50 matches per page, binds event/principal/organization/list type, and rechecks admission and visibility. Topic and watch navigation share one scoped asynchronous hook. [Contract and limits](INTEREST_FEED.md#current-topic-pages-6-september-2026).
+- **49 API regressions pass in 63.97 seconds**, two PostgreSQL-only review cases skipped in SQLite, across topic paging, existing feed/watch pages and shared topic reviews. The six dedicated new cases separately pass in 7.18 seconds. A 201-topic fixture returns all matching IDs exactly once through continuation, while the first preview describes only 20 candidates. A 131-topic fixture skips 120 stale and one currently rejected record, then returns every remaining current match; invalidating those removes the topic-only card. Other checks reject cross-event/watch-list/principal/org cursors, revoked admission and invalid page inputs. No live AI calls. The initial fixture copied a unique topic idempotency key; corrected fixtures use distinct keys before the passing runs.
+- Two **PostgreSQL 16.14** suites pass: `feed-topic-sparse` and `feed-topic-scope`, each in a separately labelled empty ephemeral loopback database. Both task containers removed. Working and production data untouched.
+- Build passes **1,860 localization keys, 27 shell, 22 resource/delivery and 130 report/navigation checks**, TypeScript and Next compilation. Production-browser checks pass **10 five-language × 390/1440px journeys** covering both watch and topic page failures, retained old content, retry, 20-row next page, exact topic-review links, previous page, no full document reload and no horizontal overflow. All API requests intercepted. Native-language/user acceptance remains open.
+- Ruff and whitespace checks pass. Total validation work still scales with stale candidates; SQL window ranking and large individual evidence fields are not constant-cost. Related-law fan-out and intended-host concurrency remain open. No inference, emails, migration or deployment, and no claim that HL-076/099 are complete.
+
+
 ## Direct-watch feed pages — 6 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl-099-feed-watch-pages`. Feed cards return five direct-watch links and explicit continuation. One SQL window query bounds scalar preview rows per selected work; the new endpoint uses stable watch-ID keyset pages (20 default, 50 maximum), organization/principal/event-bound cursors and repeated work/law/mapping/watch visibility checks. The UI replaces pages in place, retains the current list during errors, and supports retry/back/preview. [Contract and limits](INTEREST_FEED.md#direct-watch-pages-6-september-2026).

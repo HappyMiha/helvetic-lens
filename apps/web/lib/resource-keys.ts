@@ -296,6 +296,13 @@ export const resources = {
     });
   },
 
+  feedTopics: <T>(event: string, cursor: string) => {
+    const path = `/interest-feed/events/${encodeURIComponent(event)}/topics?${new URLSearchParams({cursor})}`;
+    return key<T>(`monitoring:${path}`, path, {
+      tags: ["impact-inbox", "monitoring", "topics"], staleMs: 15_000, varyByLocale: false,
+    });
+  },
+
   feedWatches: <T>(event: string, cursor: string) => {
     const path = `/interest-feed/events/${encodeURIComponent(event)}/watches?${new URLSearchParams({cursor})}`;
     return key<T>(`monitoring:${path}`, path, {
