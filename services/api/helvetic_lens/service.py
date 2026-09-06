@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 from . import analysis as ai
 from . import (
     digests,
+    law_history,
     monitoring_topics,
     onboarding,
     source_packs,
@@ -2186,30 +2187,9 @@ class HelveticLens:
             return {
                 **self.law_summary(session, law, watch),
                 "regulatory_timeline": RegistryReader(self.organization_id).timeline(session, law_id),
-                "versions": [
-                    version_summary(v)
-                    for v in session.scalars(
-                        select(Version).where(Version.law_id == law_id).order_by(Version.created_at.desc())
-                    )
-                ],
-                "observations": [
-                    as_dict(o, {"artifact_key"})
-                    for o in session.scalars(
-                        select(Observation)
-                        .where(Observation.law_id == law_id)
-                        .order_by(Observation.created_at.desc())
-                        .limit(100)
-                    )
-                ],
-                "comparisons": [
-                    as_dict(c, {"diff"}) | {"counts": c.diff["counts"]}
-                    for c in session.scalars(
-                        select(Comparison)
-                        .where(Comparison.law_id == law_id)
-                        .order_by(Comparison.created_at.desc())
-                        .limit(50)
-                    )
-                ],
+                "versions": law_history.versions(session, self.organization_id, law_id),
+                "observations": law_history.observations(session, self.organization_id, law_id),
+                "comparisons": law_history.comparisons(session, self.organization_id, law_id),
             }
 
     def delete_law(self, law_id: str):

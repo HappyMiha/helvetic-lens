@@ -124,7 +124,7 @@ from test_topic_reviews import (
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("timeline-large", "timeline-relations", "timeline-private", "timeline-law", "timeline-watch", "timeline-mapping", "timeline-work", "relation-endpoints-source", "relation-endpoints-target", "relation-endpoints-reverse", "relation-endpoints-digest", "official-relation-fields", "official-relation-links", "official-relation-retry", "official-relation-digest", "registry-details", "registry-detail-scope", "registry-detail-dates", "monitored-pages", "monitored-search", "monitored-read", "monitored-scope", "monitored-dates", "monitored-comparison", "monitored-migration", "registry-watches", "registry-events", "registry-search", "registry-dates", "registry-scope", "registry-migration", "digest-quiet-resume", "digest-quiet-unsubscribe", "digest-quiet-boundary", "digest-quiet-save", "digest-local-schedule", "digest-schedule-migration", "feed-topic-sparse", "feed-topic-scope", "feed-watch-pages", "feed-watch-scope", "evidence-pages", "evidence-pages-native", "evidence-text-pages", "source-review", "source-review-scope", "source-review-migration", "milestone-native", "milestone-migration", "milestone-race", "feed-readiness-history", "feed-readiness-bounds", "feed-readiness-sources", "onboarding-state", "onboarding-migration", "onboarding-race", "assistant-context", "assistant-context-private", "answer-context", "answer-context-private", "topic-coverage-empty", "topic-coverage-state", "topic-coverage-scope", "topic-coverage-bounds", "topic-duplicates", "topic-duplicates-scope", "topic-duplicates-bounds", "history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked", "monitoring-context", "monitoring-context-activate"), default="history")
+    parser.add_argument("--suite", choices=("law-history-large", "law-history-scope", "law-history-empty", "law-history-null", "law-history-int", "law-history-fraction", "timeline-large", "timeline-relations", "timeline-private", "timeline-law", "timeline-watch", "timeline-mapping", "timeline-work", "relation-endpoints-source", "relation-endpoints-target", "relation-endpoints-reverse", "relation-endpoints-digest", "official-relation-fields", "official-relation-links", "official-relation-retry", "official-relation-digest", "registry-details", "registry-detail-scope", "registry-detail-dates", "monitored-pages", "monitored-search", "monitored-read", "monitored-scope", "monitored-dates", "monitored-comparison", "monitored-migration", "registry-watches", "registry-events", "registry-search", "registry-dates", "registry-scope", "registry-migration", "digest-quiet-resume", "digest-quiet-unsubscribe", "digest-quiet-boundary", "digest-quiet-save", "digest-local-schedule", "digest-schedule-migration", "feed-topic-sparse", "feed-topic-scope", "feed-watch-pages", "feed-watch-scope", "evidence-pages", "evidence-pages-native", "evidence-text-pages", "source-review", "source-review-scope", "source-review-migration", "milestone-native", "milestone-migration", "milestone-race", "feed-readiness-history", "feed-readiness-bounds", "feed-readiness-sources", "onboarding-state", "onboarding-migration", "onboarding-race", "assistant-context", "assistant-context-private", "answer-context", "answer-context-private", "topic-coverage-empty", "topic-coverage-state", "topic-coverage-scope", "topic-coverage-bounds", "topic-duplicates", "topic-duplicates-scope", "topic-duplicates-bounds", "history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked", "monitoring-context", "monitoring-context-activate"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -145,6 +145,24 @@ def main():
         with TestClient(app) as client:
             service = app.state.service
             harness = (client, fetcher, service, model)
+            if args.suite.startswith("law-history-"):
+                from test_law_history_metadata import (
+                    test_law_detail_large_history_is_metadata_compatible_without_historical_body_loads,
+                    test_law_history_keeps_scope_in_privileged_sessions,
+                    test_saved_page_statistics_and_unicode_match_existing_metadata,
+                )
+                if args.suite == "law-history-large":
+                    test_law_detail_large_history_is_metadata_compatible_without_historical_body_loads(harness)
+                elif args.suite == "law-history-scope":
+                    test_law_history_keeps_scope_in_privileged_sessions(harness)
+                else:
+                    pages, expected = {
+                        "law-history-empty": ([], 0), "law-history-null": ([None, 0, None], 0),
+                        "law-history-int": ([2, None, 12, 3], 12), "law-history-fraction": ([1, 2.5], 2.5),
+                    }[args.suite]
+                    test_saved_page_statistics_and_unicode_match_existing_metadata(harness, pages, expected)
+                print("PostgreSQL:", args.suite, "passed; exact metadata and scoped history without model/mail calls.")
+                return
             if args.suite.startswith("timeline-"):
                 from test_registry_timeline_projections import (
                     test_large_timeline_preserves_all_entries_without_hydrating_saved_bodies,

@@ -206,3 +206,36 @@ identifiers, expressions and relationships are still returned. The separate
 payload-loading behavior. Full UI/API history paging, those projections, metadata
 response-size bounds, query-planner cost and target-host concurrency remain open;
 no whole-law-page memory or 100-user capacity guarantee is claimed.
+
+
+## Law-detail history metadata — 6 September 2026
+
+The separate `versions`, `comparisons` and `observations` arrays returned by
+`GET /api/laws/{id}` now use three scalar history queries. Version summaries retain
+their existing metadata and exact evidence/artifact links, with SQL character,
+passage and maximum numeric page counts instead of transferring full text and
+passage arrays to Python. Empty arrays and null/missing page numbers count as zero;
+valid numeric pages, including historical fractional values, retain their maximum.
+Comparison rows select only their existing metadata and saved `diff.counts` rather
+than whole deterministic diffs. Observation rows preserve their existing metadata
+while omitting artifact storage keys. Timestamp/ID ordering makes equal-time
+preview membership stable. No saved documents, extraction or AI reports change.
+
+All three readers explicitly join this organization's watch and visible law,
+then enforce version/comparison ownership or observation organization. Paused
+watches remain readable; unmonitored/foreign laws or foreign history are excluded
+even in an unscoped administrative database session. API serialization remains
+compatible with the previous metadata shape.
+
+The populated HTTP regression checks 152 version summaries, the existing 50
+comparison preview and 100 observation preview against their previous serializers.
+Only the current version and selected summary comparison are loaded as ORM bodies;
+historical version/diff bodies and observation ORM objects are absent. Dedicated
+history readers execute three queries with zero ORM hydration. Unicode character
+counts and empty/null/integer/fractional-page cases run on SQLite and PostgreSQL.
+
+The old 50-comparison/100-observation previews and complete version list remain;
+this does not add paging or imply complete preview coverage. Metadata JSON itself
+may be large, and SQL must inspect saved text/JSON for the counters. Full response
+bounds, paged history navigation, separately selected `law_summary` bodies/analysis
+history and intended-host planner/capacity measurements remain HL-099 work.
