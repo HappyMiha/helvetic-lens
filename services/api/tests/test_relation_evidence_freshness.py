@@ -49,6 +49,36 @@ def correct(service, saved, name, **values):
 @pytest.mark.parametrize(
     "name,field,value",
     [
+        ("source_version", "text", "Corrected source in the same ORM session."),
+        ("source_work", "title", "Corrected work in the same ORM session."),
+        ("event", "evidence_json", {"correction": "ORM update"}),
+        ("candidate", "why_json", ["Corrected candidate"]),
+        ("official_relation", "evidence_json", {"correction": "ORM relation"}),
+    ],
+)
+def test_trigger_generated_revision_is_fresh_after_orm_commit(harness, name, field, value):
+    _, _, service, _ = harness
+    _, saved = analyse(harness, confirmed=name == "official_relation")
+    binding = saved["analysis_plan"]["execution"]["evidence_binding"]
+    model = MODELS[name]
+    with service.db.session() as session:
+        record = session.get(model, binding[name + "_id"])
+        previous = record.evidence_revision
+        setattr(record, field, value)
+        session.commit()
+        # No explicit refresh: expire_on_commit=False must not hide a DB trigger.
+        assert record.evidence_revision == previous + 1
+        assert record.evidence_revision == session.scalar(
+            select(model.evidence_revision).where(model.id == record.id)
+        )
+        setattr(record, field, value)
+        session.commit()
+        assert record.evidence_revision == previous + 1
+
+
+@pytest.mark.parametrize(
+    "name,field,value",
+    [
         ("source_version", "text", "Corrected source text with unchanged content_hash."),
         ("target_version", "passages", [{"id": "corrected", "text": "Corrected exception."}]),
         ("source_version", "source_url", "https://example.invalid/corrected-source"),
