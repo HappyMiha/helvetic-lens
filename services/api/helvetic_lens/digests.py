@@ -18,7 +18,7 @@ from . import jobs
 from .auth_mail import AuthMailer
 from .config import DomainError, Settings
 from .db import Database, utcnow
-from .digest_schedule import next_local_delivery
+from .digest_schedule import next_local_delivery, quiet_until
 from .impact_inbox import ImpactInboxFilters, ImpactInboxReader
 from .locales import normalize_locale
 from .model_settings import resolved_settings
@@ -34,6 +34,8 @@ from .models import (
 )
 from .prompt_settings import resolved_prompt_settings
 from .relation_analysis import configuration_fingerprint, relation_prompt_fingerprint
+
+QUIET_WAIT = "Waiting for the recipient's quiet hours to end."
 
 SEVERITIES = {"high", "medium", "low", "none", "unknown"}
 FREQUENCIES = {"daily": timedelta(days=1), "weekly": timedelta(days=7)}
@@ -167,6 +169,7 @@ def serialize_delivery(delivery: DigestDelivery) -> dict:
         "item_count": delivery.item_count,
         "summary": delivery.summary or {},
         "error": delivery.error,
+        "deferred_reason": "quiet_hours" if delivery.status == "queued" and delivery.error == QUIET_WAIT else None,
         "sent_at": _iso(delivery.sent_at),
         "created_at": _iso(delivery.created_at),
     }
@@ -499,6 +502,19 @@ def prepare_batch(session: Session, delivery_id: str, checkpoint: dict | None = 
             "complete": len(ids) == 51 or not page["has_more"]}
 
 
+def _defer_quiet(session, preference, delivery, job=None):
+    wake = quiet_until(utcnow(), preference.schedule_json)
+    if wake is None:
+        return False
+    if job is None:
+        raise DomainError("Digest delivery is inside the recipient's quiet hours; use the durable queue.", 409, "digest_quiet_hours")
+    delivery.status, delivery.error = "queued", QUIET_WAIT
+    jobs.defer_until(session, job, wake, code="digest_quiet_hours",
+                     detail=f"Quiet hours: delivery can resume after {wake.isoformat()}.")
+    session.commit()
+    return True
+
+
 def deliver(database: Database, settings: Settings, delivery_id: str, *, selection: dict | None = None,
             job_id: str | None = None, worker: str | None = None, analysis_settings: Settings | None = None) -> dict | None:
     with database.session() as session:
@@ -521,6 +537,8 @@ def deliver(database: Database, settings: Settings, delivery_id: str, *, selecti
             delivery.status, delivery.error = "skipped", "Email digest disabled by recipient."
             session.commit()
             return serialize_delivery(delivery)
+        if _defer_quiet(session, preference, delivery, owned_job if job_id else None):
+            return None
         filters = inbox_filters(preference, delivery.period_start, delivery.period_end)
         reader = _reader(session, delivery, analysis_settings or settings)
         if selection is not None:
@@ -543,6 +561,8 @@ def deliver(database: Database, settings: Settings, delivery_id: str, *, selecti
             session.commit()
             return serialize_delivery(delivery)
         subject, body, html = render_message(settings, delivery, user)
+        if _defer_quiet(session, preference, delivery, owned_job if job_id else None):
+            return None
         try:
             mode = AuthMailer(settings).send_message(
                 user.email,

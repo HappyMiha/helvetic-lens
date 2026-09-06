@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -140,6 +140,9 @@ def claim(session: Session, job_id: str, worker: str) -> Job | None:
     now = utcnow()
     if job.cancel_requested:
         job.state, job.finished_at, job.updated_at = "cancelled", now, now
+        return None
+    # A duplicate broker delivery must not reclaim policy-delayed work early.
+    if job.error_code == "digest_quiet_hours" and job.available_at.replace(tzinfo=UTC) > now:
         return None
     if job.attempts >= job.max_attempts:
         job.state, job.finished_at, job.updated_at = "failed", now, now
@@ -291,6 +294,26 @@ def defer_for_model(session: Session, job_id: str, detail: str, delay: int = 10)
         step.started_at = None
         step.error_detail = _bounded_error(detail)
     _enqueue_outbox(session, job)
+    return job
+
+
+def defer_until(session: Session, job: Job, available_at: datetime, *, code: str, detail: str) -> Job:
+    """Release owned work for a policy delay without consuming a failure attempt."""
+    if job.cancel_requested:
+        return cancel(session, job.id)
+    if job.state != "running":
+        raise ValueError("Only a running job can be deferred")
+    now = utcnow()
+    job.state, job.available_at = "queued", available_at
+    job.attempts = max(0, job.attempts - 1)
+    job.lease_owner = None
+    job.heartbeat_at = job.updated_at = now
+    job.error_code, job.error_detail = code, _bounded_error(detail)
+    for step in session.scalars(select(JobStep).where(JobStep.job_id == job.id, JobStep.state == "running")):
+        step.state, step.started_at, step.error_detail = "pending", None, _bounded_error(detail)
+    message = _enqueue_outbox(session, job)
+    # A direct/inline claim can leave an older pending outbox record behind.
+    message.available_at = available_at
     return job
 
 

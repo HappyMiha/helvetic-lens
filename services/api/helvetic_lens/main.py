@@ -188,6 +188,8 @@ class ImpactInboxStateInput(Input):
 
 
 class DigestScheduleInput(Input):
+    quiet_start: str | None = Field(default=None, pattern=r"^(?:[01][0-9]|2[0-3]):[0-5][0-9]$")
+    quiet_end: str | None = Field(default=None, pattern=r"^(?:[01][0-9]|2[0-3]):[0-5][0-9]$")
     timezone: str = Field(default="Europe/Zurich", min_length=1, max_length=64)
     time: str | None = Field(default=None, pattern=r"^(?:[01][0-9]|2[0-3]):[0-5][0-9]$")
 
@@ -1457,10 +1459,12 @@ def create_app(
     @app.put("/api/digests/preferences")
     def save_digest_preference(data: DigestPreferenceInput, request: Request, preview_page: bool = False):
         identity = request.state.identity
+        values = data.model_dump()
+        values["schedule"] = data.schedule.model_dump(exclude_unset=True) if data.schedule else None
         return service.save_digest_preference(
             identity.user_id if identity else None,
             preview_page=preview_page,
-            **data.model_dump(),
+            **values,
         )
 
     @app.post("/api/digests/send", status_code=202)

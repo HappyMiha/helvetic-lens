@@ -39,6 +39,8 @@ export function DigestsPage() {
   const previewHeading = useRef<HTMLHeadingElement>(null);
   const [enabled, setEnabled] = useState(false);
   const [frequency, setFrequency] = useState<"daily" | "weekly">("weekly");
+  const [quietStart, setQuietStart] = useState("");
+  const [quietEnd, setQuietEnd] = useState("");
   const [localTime, setLocalTime] = useState("");
   const [timeZone, setTimeZone] = useState("Europe/Zurich");
   const [selectedSeverities, setSelectedSeverities] = useState<string[]>([]);
@@ -54,6 +56,8 @@ export function DigestsPage() {
       setEnabled(resource.data.preference.enabled);
       setFrequency(resource.data.preference.frequency);
       setLocalTime(resource.data.preference.schedule?.time || "");
+      setQuietStart(resource.data.preference.schedule?.quiet_start || "");
+      setQuietEnd(resource.data.preference.schedule?.quiet_end || "");
       setTimeZone(resource.data.preference.schedule?.timezone || "Europe/Zurich");
       setSelectedSeverities(resource.data.preference.severities);
       setSelectedSources(resource.data.preference.sources);
@@ -105,7 +109,7 @@ export function DigestsPage() {
           body: JSON.stringify({
             enabled,
             frequency,
-            schedule: {timezone: timeZone, time: localTime || null},
+            schedule: {timezone: timeZone, time: localTime || null, quiet_start: quietStart || null, quiet_end: quietEnd || null},
             severities: selectedSeverities,
             sources: selectedSources,
           }),
@@ -214,6 +218,17 @@ export function DigestsPage() {
                   onChange={event => setTimeZone(event.target.value)} maxLength={64} />
                 <datalist id="digest-timezones">{["Europe/Zurich", "UTC", "Europe/London", "America/New_York", "Asia/Tokyo"].map(zone => <option key={zone} value={zone} />)}</datalist>
               </label>
+              <fieldset data-digest-quiet className="grid gap-3">
+                <legend className="font-semibold text-sm">{t("digestQuiet.title")}</legend>
+                <label className="grid gap-2 text-sm">{t("digestQuiet.start")}
+                  <input data-quiet-start type="time" className="input min-w-0 w-full" value={quietStart} onChange={event => setQuietStart(event.target.value)} />
+                </label>
+                <label className="grid gap-2 text-sm">{t("digestQuiet.end")}
+                  <input data-quiet-end type="time" className="input min-w-0 w-full" value={quietEnd} onChange={event => setQuietEnd(event.target.value)} />
+                </label>
+                <p className="text-xs muted m-0">{t("digestQuiet.help")}</p>
+                {(quietStart || quietEnd) && <Button variant="outline" onClick={() => {setQuietStart(""); setQuietEnd("");}}>{t("digestQuiet.clear")}</Button>}
+              </fieldset>
               <p className="text-xs muted m-0">{t("digestSchedule.help")}</p>
               {localTime && <Button variant="outline" onClick={() => setLocalTime("")}>{t("digestSchedule.clear")}</Button>}
             </div>
@@ -458,6 +473,7 @@ export function DigestsPage() {
                         {t("digests.items", { count: delivery.item_count })}
                       </span>
                     </div>
+                    {delivery.deferred_reason === "quiet_hours" && <p className="muted" data-digest-quiet-wait>{t("digestQuiet.waiting")}</p>}
                     <DigestCoverageNotice summary={delivery.summary} />
                   </div>
                 ))

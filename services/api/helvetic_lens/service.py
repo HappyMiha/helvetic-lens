@@ -1171,7 +1171,6 @@ class HelveticLens:
         if any(value not in digests.SEVERITIES for value in severities):
             raise DomainError("Choose supported severity filters.", 422, "digest_severity_invalid")
         from .digest_schedule import validate_schedule
-        requested_schedule = validate_schedule(schedule) if schedule is not None else None
         clean_sources = list(dict.fromkeys(value.strip()[:120] for value in sources if value.strip()))
         with self.write_guard, self.db.session() as session:
             preference = session.scalar(
@@ -1181,10 +1180,11 @@ class HelveticLens:
             if not preference:
                 preference = DigestPreference(user_id=user_id)
                 session.add(preference)
+            requested_schedule = validate_schedule({**(preference.schedule_json or {}), **schedule}) if schedule is not None else None
             schedule_changed = preference.frequency != frequency or not preference.enabled
             if requested_schedule is not None:
-                previous_clock = preference.schedule_json if (preference.schedule_json or {}).get("time") else None
-                requested_clock = requested_schedule if requested_schedule.get("time") else None
+                previous_clock = {key: preference.schedule_json.get(key) for key in ("timezone", "time")} if (preference.schedule_json or {}).get("time") else None
+                requested_clock = {key: requested_schedule.get(key) for key in ("timezone", "time")} if requested_schedule.get("time") else None
                 schedule_changed = schedule_changed or previous_clock != requested_clock
                 preference.schedule_json = requested_schedule
             preference.enabled = enabled

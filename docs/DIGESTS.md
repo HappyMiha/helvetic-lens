@@ -45,9 +45,8 @@ to an explicitly labelled UTC display if the browser lacks that timezone.
 Beat checks every minute and retains the existing bounded due selection, locks,
 unique period and durable-job keys. This is a scheduled attempt, not a delivery
 SLA: stopped workers, backlog or SMTP failures can delay email. **Send now** stays
-an explicit immediate command. Existing queued jobs/periods are not rewritten by
-schedule edits, and unsubscribe still prevents delivery. Quiet-hours enforcement
-at final dispatch is not implemented here; it remains part of HL-078/079.
+an explicit command but respects the quiet hours below. Existing queued jobs/periods
+are not rewritten by schedule edits, and unsubscribe still prevents delivery.
 
 Migration `ff72eb61754d` adds nullable `digest_preferences.schedule_json`; existing
 preferences, opted-in status, due instants and delivery history are preserved.
@@ -57,4 +56,40 @@ the normal deployment process; development publication does not run it on prod.
 Checks: `test_digest_schedule.py`, digest preview/resume/delivery regressions,
 PostgreSQL scratch suites `digest-local-schedule` and `digest-schedule-migration`,
 and five-language mobile/desktop browser flows. Topic inclusion, expanded filters,
-quiet hours, organization policy and notification-noise measurement remain open.
+organization policy and notification-noise measurement remain open.
+
+
+## Optional recipient quiet hours (HL-079, 6 September 2026)
+
+The same saved schedule accepts `quiet_start` and `quiet_end` as distinct HH:MM
+values, in the chosen timezone. Both null disables the policy; one missing/null
+side of a new pair, equal endpoints or invalid clocks are rejected. Existing
+clients omitting these fields preserve saved quiet hours. Updating only quiet
+hours does not postpone the next scheduled period. No new migration is needed.
+
+Intervals include the start and exclude the end, and may cross midnight. The
+worker checks actual local time before delivery preparation and again immediately
+before handing the message to SMTP. Both scheduled and explicit **Send now** jobs
+obey this rule. A delay releases the durable job and sets its transactional outbox
+wake-up time to the next allowed UTC minute; it does not sleep in a worker, create
+another digest or consume a failure attempt. Early duplicate broker messages do
+not reclaim quiet-delayed work. Completed preparation remains checkpointed; on
+resume the recipient, opt-in, current access and selected evidence are checked
+again. No inference is triggered by delivery.
+
+DST tests cover missing local endpoints and both occurrences of repeated hours.
+The policy is evaluated at each real instant: a clock rollback may re-enter quiet
+hours after an earlier allowed interval. Already accepted SMTP messages cannot be
+recalled. A changed or removed policy is checked at the existing job's planned
+wake-up, not by eagerly rescheduling every pending job; a longer new quiet period
+can defer it again. Queue delays remain possible. This is personal email-digest
+policy, not a quiet-hours guarantee for all future notification channels.
+
+The five-language form provides both time fields and an explicit clear action.
+History distinguishes queued quiet-hour waits from failures. Tests include UTC/DST
+boundaries, old-client API preservation, atomic invalid saves, no early dispatch,
+one resumed send, unsubscribe and a boundary crossed while rendering. Scratch
+PostgreSQL suites: `digest-quiet-resume`, `digest-quiet-unsubscribe`,
+`digest-quiet-boundary`, `digest-quiet-save`. Topic inclusion and broader filters,
+organization limits, immediate notification eligibility and user-measured noise
+remain open under HL-079.

@@ -6,7 +6,7 @@ export type Health = {
   private_sources_enabled: boolean;
 };
 export type DigestPreference = {
-  schedule?: {timezone: string; time: string | null};
+  schedule?: {timezone: string; time: string | null; quiet_start?: string | null; quiet_end?: string | null};
   id?: string;
   enabled: boolean;
   frequency: "daily" | "weekly";
@@ -40,6 +40,7 @@ export type DigestOverview = {
   source_options: string[];
   delivery_mode: "disabled" | "development" | "smtp";
   deliveries: Array<{
+    deferred_reason?: "quiet_hours" | null;
     id: string;
     frequency: string;
     period_start: string;

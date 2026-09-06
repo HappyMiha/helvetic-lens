@@ -82,7 +82,7 @@ function response(cursor = "") {
     preference,
     source_options: ["fedlex"],
     delivery_mode: "disabled",
-    deliveries: [],
+    deliveries: [{id:"synthetic-quiet-delivery",status:"queued",deferred_reason:"quiet_hours",item_count:0,created_at:"2026-09-05T08:00:00Z",summary:{events:[]}}],
     preview: {
       events:
         index < 2
@@ -270,9 +270,11 @@ try {
       );
       await evaluate(cdp, `(() => {
         const set = (selector,value) => {const input=document.querySelector(selector); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,value); input.dispatchEvent(new Event('input',{bubbles:true})); input.dispatchEvent(new Event('change',{bubbles:true}));};
-        set('[data-digest-time]','08:15'); set('[data-digest-zone]','Europe/Zurich');
+        set('[data-quiet-start]','22:00'); set('[data-quiet-end]','07:00'); set('[data-digest-time]','08:15'); set('[data-digest-zone]','Europe/Zurich');
       })()`);
       assert.ok(await evaluate(cdp, `!document.querySelector('[data-digest-schedule]').innerText.includes('digestSchedule.')`), "Untranslated schedule copy");
+      assert.ok(await evaluate(cdp, `document.querySelector('[data-digest-quiet-wait]').innerText.length > 20 && !document.querySelector('[data-digest-quiet-wait]').innerText.includes('digestQuiet.')`));
+      assert.ok(await evaluate(cdp, `!document.querySelector('[data-digest-quiet]').innerText.includes('digestQuiet.')`));
       await click("main fieldset input[type=checkbox]");
       assert.equal((await form()).enabled, true);
       await click("[data-digest-next]");
@@ -340,7 +342,7 @@ try {
       assert.deepEqual(JSON.parse(saved.body), {
         enabled: true,
         frequency: "weekly",
-        schedule: {timezone:"Europe/Zurich",time:"08:15"},
+        schedule: {timezone:"Europe/Zurich",time:"08:15",quiet_start:"22:00",quiet_end:"07:00"},
         severities: ["high"],
         sources: [],
       });
