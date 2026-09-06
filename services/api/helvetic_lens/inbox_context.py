@@ -19,6 +19,7 @@ from .models import (
     RegulatoryWork,
     RelationCandidate,
 )
+from .relation_identity import relation_direction
 
 
 @dataclass
@@ -113,6 +114,8 @@ def load_context(
             RegulatoryRelation.state,
             RegulatoryRelation.relation_type,
             RegulatoryRelation.provenance_method,
+            RegulatoryRelation.subject_work_id,
+            RegulatoryRelation.object_work_id,
         ),
     )
     comparisons = {}
@@ -144,6 +147,7 @@ def load_context(
         and candidate.relation_id in relations
         and relations[candidate.relation_id].state == "confirmed"
         and relations[candidate.relation_id].relation_type == "replaces"
+        and relation_direction(relations[candidate.relation_id], candidate.source_work_id, candidate.target_work_id)
     }
     successors = {}
     if replacement_sources:

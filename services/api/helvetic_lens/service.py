@@ -135,6 +135,7 @@ from .relation_freshness import (
     uses_prompts,
     uses_versions,
 )
+from .relation_identity import relation_direction
 from .source_capabilities import capability_catalogue
 
 logger = logging.getLogger(__name__)
@@ -1384,7 +1385,8 @@ class HelveticLens:
                 if candidate.relation_id
                 else None
             )
-            if not relation or relation.state != "confirmed" or relation.relation_type != "replaces":
+            if (not relation or relation.state != "confirmed" or relation.relation_type != "replaces"
+                    or not relation_direction(relation, candidate.source_work_id, candidate.target_work_id)):
                 raise DomainError(
                     "Only a confirmed official replacement can add a successor.",
                     409,
@@ -4039,8 +4041,12 @@ class HelveticLens:
                 "provenance_method": relation.provenance_method,
                 "evidence_fingerprint": relation.evidence_fingerprint,
                 "evidence": relation.evidence_json,
+                "subject_work_id": relation.subject_work_id,
+                "object_work_id": relation.object_work_id,
+                "direction": relation_direction(relation, source_work.id, target_work.id),
             }
             if relation and relation.state == "confirmed"
+                and relation_direction(relation, source_work.id, target_work.id)
             else None
         )
         rows = []

@@ -18,8 +18,9 @@ from .analysis import (
 from .config import DomainError, Settings
 from .extraction import normalize
 from .prompt_settings import PromptSettings
+from .relation_identity import relation_direction
 
-SCHEMA_VERSION = "relation-impact-v3"
+SCHEMA_VERSION = "relation-impact-v4"
 PLANNER_VERSION = "relation-impact-plan-v3"
 MAX_PROVIDER_CALLS = 5
 MAX_ACTIONS = 5
@@ -356,6 +357,11 @@ def finalize_result(
     candidate: dict,
     output_locale: str = DEFAULT_OUTPUT_LOCALE,
 ) -> dict:
+    if official_relation and (
+        official_relation.get("state") != "confirmed"
+        or not relation_direction(official_relation, source_work.get("id"), target_work.get("id"))
+    ):
+        official_relation = None
     by_number = {row["row_number"]: row for row in evidence}
 
     def citations(numbers: list[int], *, required: bool) -> list[dict]:

@@ -27,6 +27,7 @@ from .models import (
 )
 from .prompt_settings import PromptSettings
 from .relation_freshness import current_analysis_predicate
+from .relation_identity import relation_direction
 
 
 def _iso(value: datetime | None) -> str | None:
@@ -189,6 +190,9 @@ class ImpactInboxReader:
     ) -> dict:
         watch, law_id, target = self._watch_context(context, delivery, candidate)
         relation = context.relations.get(candidate.relation_id) if candidate.relation_id else None
+        direction = relation_direction(relation, candidate.source_work_id, candidate.target_work_id)
+        if not direction:
+            relation = None
         review, latest_review, review_history_count = review_history
         current, latest, history_count = analysis_history
         status = self._status(relation, review, current, latest)
@@ -221,21 +225,19 @@ class ImpactInboxReader:
         if official and official.relation_type == "replaces":
             successor_law_id, successor_monitored = context.successors.get(candidate.source_work_id, (None, False))
             source_work = context.works[candidate.source_work_id]
+            source_card = {
+                "work_id": source_work.id, "law_id": successor_law_id, "title": source_work.title,
+                "url": source_work.stable_official_url, "monitored": successor_monitored,
+                "timeline": f"/laws/{successor_law_id}" if successor_law_id else None,
+            }
+            target_card = {
+                "work_id": target.id, "law_id": law_id, "title": watch.display_name,
+                "url": target.stable_official_url, "monitored": bool(watch.active),
+                "timeline": f"/laws/{law_id}",
+            }
             replacement = {
-                "predecessor": {
-                    "work_id": target.id,
-                    "law_id": law_id,
-                    "title": watch.display_name,
-                    "timeline": f"/laws/{law_id}",
-                },
-                "successor": {
-                    "work_id": source_work.id,
-                    "law_id": successor_law_id,
-                    "title": source_work.title,
-                    "url": source_work.stable_official_url,
-                    "monitored": successor_monitored,
-                    "timeline": f"/laws/{successor_law_id}" if successor_law_id else None,
-                },
+                "predecessor": target_card if direction == "outgoing" else source_card,
+                "successor": source_card if direction == "outgoing" else target_card,
             }
         return {
             "organization_candidate_id": delivery.id,
@@ -261,6 +263,9 @@ class ImpactInboxReader:
                     "id": official.id,
                     "type": official.relation_type,
                     "provenance": official.provenance_method,
+                    "subject_work_id": official.subject_work_id,
+                    "object_work_id": official.object_work_id,
+                    "direction": direction,
                 }
                 if official
                 else None

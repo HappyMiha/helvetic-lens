@@ -207,10 +207,35 @@ requests, and a prepared digest whose only matching importance was obsolete AI.
 Remaining limits: evidence JSON edited without updating its fingerprint, broader
 same-version content/metadata corrections, legacy fallback evidence, local runtime
 artifact replacement and candidate refresh/reprocessing lag are not solved here.
-Endpoint/direction consistency between a corrected relation and a stale candidate
-must also be validated before presenting new official relevance claims; binding
-fields for old-report freshness is not that semantic validation. No independent
+Endpoint/direction consistency is checked by the follow-up below; freshness
+binding alone does not validate a new official claim. No independent
 entailment/relevance or target-host capacity claim follows from these regressions.
+
+## Exact pair and direction — 6 September 2026
+
+A linked relation is authoritative only when confirmed and its subject/object are
+exactly the candidate's two distinct source/target work IDs, in either direction.
+Missing, unrelated or self endpoints are not official evidence for that candidate.
+The model context omits their official evidence row, and result finalization
+independently checks the pair before accepting an official-row bridge. A valid
+source/target passage pair can still support a possible review lead; these identity
+checks do not prove semantic entailment.
+
+The official object records both endpoint IDs and `outgoing`/`incoming` relative
+to the candidate source. A `replaces` subject is always the successor, regardless
+of which endpoint produced the event. Inbox labels, links and monitored state
+follow that direction. An invalid pair cannot supply official confirmation,
+replacement-derived urgency or the monitor-successor action. The action rejects
+before fetching or creating a watch. Explicit event importance and independent
+human review remain separate. Prepared digests reselect before delivery and drop
+items whose only matching urgency came from the now-invalid replacement.
+
+Result schema v4 invalidates older successful reports through the existing
+history/current-selection gates; planner v3 and its relation binding stay in use.
+No migration, automatic reanalysis or history/citation rewrite is performed.
+An explicit request gets the current schema identity and can reuse a subsequent
+identical completed request. Candidate refresh/reprocessing and same-version,
+evidence-fingerprint and runtime-artifact corrections remain separate work.
 
 ## Verification
 

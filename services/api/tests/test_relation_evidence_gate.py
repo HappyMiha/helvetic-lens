@@ -130,7 +130,8 @@ def test_generic_high_fallback_is_unassessed_and_keeps_actual_candidate_reason(l
 def test_only_matching_confirmed_official_relation_can_be_used_without_passage_pair():
     value = draft()
     value["citation_rows"] = value["actions"][0]["citation_rows"] = [6]
-    official = {"id": "official-1", "state": "confirmed", "type": "amends"}
+    official = {"id": "official-1", "state": "confirmed", "type": "amends",
+                "subject_work_id": "source", "object_work_id": "target"}
     report = finish(value, official=official)
     assert report["supported"] and report["actions"]
     assert report["official_relation"] == official

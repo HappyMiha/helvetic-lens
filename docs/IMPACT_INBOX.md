@@ -24,6 +24,17 @@ Viewers may read the inbox and change their personal event state. Organization a
 
 Each affected-law row links to the monitored-law timeline, latest comparison when one exists, exact official relation or cited analysis evidence, source artifact, official source, and all saved analysis attempts. A confirmed `replaces` relation exposes reciprocal predecessor/successor labels. Adding the successor creates or reactivates its watch; it never removes the predecessor or its history.
 
+### Endpoint consistency
+
+Official confirmation and replacement-derived urgency require the relation to
+connect the exact two distinct works in this candidate. A corrected relation that
+now connects other works no longer supplies these claims or the successor action;
+shared history and independent human decisions remain intact. For `replaces`, the
+subject is the successor and the object the predecessor, including when the event
+concerns the predecessor and the watched law is already its successor. Existing
+monitoring is reused. The notice only claims the successor is monitored, not that
+both works have active watches. Final digest selection uses the same checks.
+
 ## API
 
 - `GET /api/impact-inbox` with `source`, `severity`, `item_type`, `watched_law`, and `state` filters.
