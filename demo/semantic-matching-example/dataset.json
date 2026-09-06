@@ -1,0 +1,155 @@
+{
+  "schema_version": "hl093.matching-dataset.v1",
+  "id": "synthetic-matching-walkthrough",
+  "revision": "test-v1",
+  "provenance": "synthetic_fixture",
+  "authors": [
+    "synthetic-example-author"
+  ],
+  "cases": [
+    {
+      "id": "case-0000",
+      "family": "case-0000",
+      "split": "development",
+      "locale": "de-CH",
+      "source_type": "fedlex",
+      "features": [
+        "literal_match"
+      ],
+      "input": {
+        "path": "input-0.json",
+        "sha256": "58e259866e83ffa2939dd5f44cf6e76c2c7fff9734f4f1aa547ff9cb123adea8"
+      },
+      "sources": [
+        {
+          "id": "event",
+          "public_url": "https://example.invalid/synthetic/case-0000",
+          "artifact": {
+            "path": "source-0.txt",
+            "sha256": "daaa1060cdfe17495f9902f14b71ee4a3fde222147f7534f5f81cc2d07336a61"
+          }
+        }
+      ]
+    },
+    {
+      "id": "case-0001",
+      "family": "case-0001",
+      "split": "development",
+      "locale": "fr-CH",
+      "source_type": "fedlex",
+      "features": [
+        "negative"
+      ],
+      "input": {
+        "path": "input-1.json",
+        "sha256": "81280bc5066ba1cf1510951ddca12f3b9bb659e68a40064ddd4b40a626f1f99a"
+      },
+      "sources": [
+        {
+          "id": "event",
+          "public_url": "https://example.invalid/synthetic/case-0001",
+          "artifact": {
+            "path": "source-1.txt",
+            "sha256": "f19f32f08b51a068a596977a8b88490ae02a9aa68acf53fc6a678f1a6a79fcfa"
+          }
+        }
+      ]
+    },
+    {
+      "id": "case-0002",
+      "family": "case-0002",
+      "split": "development",
+      "locale": "it-CH",
+      "source_type": "fedlex",
+      "features": [
+        "literal_match"
+      ],
+      "input": {
+        "path": "input-2.json",
+        "sha256": "0d76b51eebf2e0be138d959f4100650f971b2f2bcf28965e08e74aa0cd717350"
+      },
+      "sources": [
+        {
+          "id": "event",
+          "public_url": "https://example.invalid/synthetic/case-0002",
+          "artifact": {
+            "path": "source-2.txt",
+            "sha256": "390ea239739d0e7699d303649689581913716d10c7745061316b7cb835ea3f24"
+          }
+        }
+      ]
+    },
+    {
+      "id": "case-0003",
+      "family": "case-0003",
+      "split": "development",
+      "locale": "rm-CH",
+      "source_type": "fedlex",
+      "features": [
+        "negative"
+      ],
+      "input": {
+        "path": "input-3.json",
+        "sha256": "425470545881dddf2cb1d58bea14270c007f1f58267b4319a546f2bbde508684"
+      },
+      "sources": [
+        {
+          "id": "event",
+          "public_url": "https://example.invalid/synthetic/case-0003",
+          "artifact": {
+            "path": "source-3.txt",
+            "sha256": "babfcf6f9ee1b49c8546fc1899177ee6cfb5b3756c168f13edf6c5c3605e547f"
+          }
+        }
+      ]
+    },
+    {
+      "id": "case-0004",
+      "family": "case-0004",
+      "split": "held_out",
+      "locale": "en-CH",
+      "source_type": "fedlex",
+      "features": [
+        "literal_match"
+      ],
+      "input": {
+        "path": "input-4.json",
+        "sha256": "c56b2e8e98024b3f064cca29f3f309070b13708a55fa685105e58d56dd565be1"
+      },
+      "sources": [
+        {
+          "id": "event",
+          "public_url": "https://example.invalid/synthetic/case-0004",
+          "artifact": {
+            "path": "source-4.txt",
+            "sha256": "9229ebd764c646c95854ec3e1ee55287e38b7f952eb22ba0ab4eb8e4d854be39"
+          }
+        }
+      ]
+    },
+    {
+      "id": "case-0005",
+      "family": "case-0005",
+      "split": "held_out",
+      "locale": "de-CH",
+      "source_type": "fedlex",
+      "features": [
+        "negative"
+      ],
+      "input": {
+        "path": "input-5.json",
+        "sha256": "31e00502ab03a10963dd5240de285d810ab69b232c3f78adad350e1c8457993a"
+      },
+      "sources": [
+        {
+          "id": "event",
+          "public_url": "https://example.invalid/synthetic/case-0005",
+          "artifact": {
+            "path": "source-5.txt",
+            "sha256": "e3d72e54a5a5186aedea818186ee20e50cf6f291097c4179f8e8328c08f52357"
+          }
+        }
+      ]
+    }
+  ]
+}

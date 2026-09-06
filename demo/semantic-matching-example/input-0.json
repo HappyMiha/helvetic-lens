@@ -1,0 +1,62 @@
+{
+  "schema_version": "hl093.matching-input.v1",
+  "plan": {
+    "name": "Synthetic monitoring",
+    "goal": "Follow retention rules for our records.",
+    "concepts": [
+      "retention"
+    ],
+    "synonyms": [],
+    "exclusions": [],
+    "jurisdictions": [
+      "CH"
+    ],
+    "languages": [
+      "de",
+      "fr",
+      "it",
+      "rm",
+      "en"
+    ],
+    "source_pack_ids": [
+      "test-law-pack"
+    ],
+    "document_kinds": [
+      "act"
+    ],
+    "event_kinds": [
+      "amended"
+    ],
+    "importance_floor": "low"
+  },
+  "work": {
+    "title": "Synthetic record retention change 0",
+    "kind": "act",
+    "authority": "fedlex",
+    "metadata": {
+      "jurisdiction": "CH"
+    }
+  },
+  "event": {
+    "event_type": "amended",
+    "connector": "fedlex",
+    "impact": "medium",
+    "evidence": {
+      "stream": "rss",
+      "language": "de"
+    }
+  },
+  "identifiers": [],
+  "packs": [
+    {
+      "id": "test-law-pack",
+      "revision": "synthetic-v1",
+      "streams": [
+        [
+          "fedlex",
+          "rss"
+        ]
+      ]
+    }
+  ]
+}

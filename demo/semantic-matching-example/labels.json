@@ -1,0 +1,8 @@
+{
+  "schema_version": "hl093.matching-labels.v1",
+  "dataset_sha256": "20152320b6b1e946d51870a5100af0f43b433482e54f4cababb435dc467136b4",
+  "frozen_at": "2026-09-01T10:00:00Z",
+  "review_reference": "No independent review: intentionally unlabelled synthetic walkthrough.",
+  "reviewers": [],
+  "labels": []
+}

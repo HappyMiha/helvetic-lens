@@ -1,2 +1,6 @@
 .githooks/* text eol=lf
 scripts/setup-git-workflow.sh text eol=lf
+
+# Evaluation manifests bind exact bytes; checkout must not rewrite their hashes.
+demo/semantic-matching-example/*.json -text
+demo/semantic-matching-example/*.txt -text

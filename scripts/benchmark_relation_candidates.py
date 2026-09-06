@@ -11,4 +11,4 @@ from helvetic_lens.candidate_benchmark import run_benchmark
 
 result = run_benchmark(ROOT / "demo" / "relation-candidate-benchmark.json")
 print(json.dumps(result, ensure_ascii=False, indent=2))
-raise SystemExit(1 if result["pgvector_enabled"] else 0)
+raise SystemExit(1 if result["semantic_trial_recommended"] else 0)

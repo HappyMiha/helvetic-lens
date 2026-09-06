@@ -50,24 +50,27 @@ def run_benchmark(fixture: Path) -> dict:
     tp = sum(row["expected"] and row["predicted"] for row in rows)
     fp = sum(not row["expected"] and row["predicted"] for row in rows)
     fn = sum(row["expected"] and not row["predicted"] for row in rows)
-    recall = tp / (tp + fn) if tp + fn else 1.0
-    precision = tp / (tp + fp) if tp + fp else 1.0
-    enabled = recall < MIN_RECALL or precision < MIN_PRECISION
+    recall = tp / (tp + fn) if tp + fn else None
+    precision = tp / (tp + fp) if tp + fp else None
+    trial = recall is None or precision is None or recall < MIN_RECALL or precision < MIN_PRECISION
     return {
         "fixture_revision": "hl051-labelled-v1",
+        "validation_kind": "unreviewed_title_regression",
+        "independent_quality_review": "not_performed",
         "cases": len(rows),
         "positives": sum(row["expected"] for row in rows),
         "negatives": sum(not row["expected"] for row in rows),
-        "recall": round(recall, 4),
-        "precision": round(precision, 4),
+        "recall": round(recall, 4) if recall is not None else None,
+        "precision": round(precision, 4) if precision is not None else None,
         "false_negatives": [row["id"] for row in rows if row["expected"] and not row["predicted"]],
         "false_positives": [row["id"] for row in rows if not row["expected"] and row["predicted"]],
-        "latency_ms": {"mean": round(statistics.mean(timings), 4), "p95": round(sorted(timings)[max(0, int(len(timings) * 0.95) - 1)], 4)},
+        "latency_ms": {"mean": round(statistics.mean(timings), 4) if timings else None, "p95": round(sorted(timings)[max(0, int(len(timings) * 0.95) - 1)], 4) if timings else None},
         "peak_python_bytes": peak,
         "additional_disk_bytes": 0,
         "embedding_requests": 0,
-        "evidence_policy_compliance": 1.0,
-        "pgvector_enabled": enabled,
-        "decision": "benchmark_gap_requires_semantic_trial" if enabled else "keep_pgvector_disabled",
+        "evidence_policy_compliance": None,
+        "pgvector_enabled": False,
+        "semantic_trial_recommended": trial,
+        "decision": "benchmark_gap_requires_semantic_trial" if trial else "keep_pgvector_disabled",
         "rows": rows,
     }
