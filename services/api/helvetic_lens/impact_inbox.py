@@ -28,6 +28,7 @@ from .models import (
 from .prompt_settings import PromptSettings
 from .relation_freshness import current_analysis_predicate
 from .relation_identity import relation_direction
+from .relation_runtime import RelationRuntimeObservation, current_fingerprint
 
 
 def _iso(value: datetime | None) -> str | None:
@@ -57,7 +58,8 @@ class ImpactInboxFilters:
 
 
 class ImpactInboxReader:
-    def __init__(self, organization_id: str, user_id: str | None, *, settings: Settings, prompts: PromptSettings):
+    def __init__(self, organization_id: str, user_id: str | None, *, settings: Settings, prompts: PromptSettings, runtime: RelationRuntimeObservation | None = None):
+        self.runtime_fingerprint = current_fingerprint(settings, organization_id, runtime)
         self.prompts = prompts
         self.settings = settings
         self.organization_id = organization_id
@@ -66,7 +68,7 @@ class ImpactInboxReader:
 
     @staticmethod
     def _latest_analyses(
-        session: Session, organization_candidate_id: str, *, settings: Settings, prompts: PromptSettings
+        session: Session, organization_candidate_id: str, *, settings: Settings, prompts: PromptSettings, runtime_fingerprint: str | None = None
     ) -> tuple[RelationImpactAnalysis | None, RelationImpactAnalysis | None, int]:
         history = select(RelationImpactAnalysis).where(
             RelationImpactAnalysis.organization_candidate_id == organization_candidate_id
@@ -82,7 +84,7 @@ class ImpactInboxReader:
             & (RelationImpactAnalysis.id <= latest.id),
         )
         history = history.where(through_latest)
-        current = session.scalar(history.where(current_analysis_predicate(settings, prompts)).limit(1))
+        current = session.scalar(history.where(current_analysis_predicate(settings, prompts, runtime_fingerprint)).limit(1))
         # Count in SQL; never transfer/materialize the historical JSON/evidence
         # payloads just to find two records or display the history count.
         count = session.scalar(select(func.count()).select_from(RelationImpactAnalysis).where(
@@ -123,7 +125,7 @@ class ImpactInboxReader:
 
     def _page_histories(self, session: Session, candidate_ids: list[str]) -> tuple[dict, dict]:
         analyses = self._history_selection(session, RelationImpactAnalysis, candidate_ids,
-                                          current_analysis_predicate(self.settings, self.prompts))
+                                          current_analysis_predicate(self.settings, self.prompts, self.runtime_fingerprint))
         reviews = self._history_selection(session, OrganizationRelationReview, candidate_ids,
                                          OrganizationRelationReview.decision.in_(("confirmed", "rejected")))
         return analyses, reviews

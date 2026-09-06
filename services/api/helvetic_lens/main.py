@@ -1257,7 +1257,7 @@ def create_app(
     def regulatory_work_detail(work_id: str):
         return service.regulatory_work_detail(work_id)
 
-    @app.get("/api/relation-candidates/{organization_candidate_id}/analyses")
+    @app.get("/api/relation-candidates/{organization_candidate_id}/analyses", dependencies=[Depends(runtime_cache_scope)])
     def relation_candidate_analyses(organization_candidate_id: str):
         return service.relation_analysis_history(organization_candidate_id)
 
@@ -1396,7 +1396,7 @@ def create_app(
         identity = request.state.identity
         return service.set_interest_feed_state(event_id, data.state, identity.user_id if identity else None)
 
-    @app.get("/api/impact-inbox")
+    @app.get("/api/impact-inbox", dependencies=[Depends(runtime_cache_scope)])
     def impact_inbox(
         request: Request,
         source: str = Query(default="", max_length=80),
@@ -1417,7 +1417,7 @@ def create_app(
             identity.user_id if identity else None,
         )
 
-    @app.get("/api/impact-inbox/page")
+    @app.get("/api/impact-inbox/page", dependencies=[Depends(runtime_cache_scope)])
     def impact_inbox_page(
         request: Request,
         source: str = Query(default="", max_length=80),
@@ -1455,12 +1455,12 @@ def create_app(
             event_id, data.state, identity.user_id if identity else None
         )
 
-    @app.get("/api/digests")
+    @app.get("/api/digests", dependencies=[Depends(runtime_cache_scope)])
     def digest_overview(request: Request, preview_page: bool = False, cursor: str = Query(default="", max_length=2048)):
         identity = request.state.identity
         return service.digest_overview(identity.user_id if identity else None, preview_page=preview_page, cursor=cursor)
 
-    @app.put("/api/digests/preferences")
+    @app.put("/api/digests/preferences", dependencies=[Depends(runtime_cache_scope)])
     def save_digest_preference(data: DigestPreferenceInput, request: Request, preview_page: bool = False):
         identity = request.state.identity
         values = data.model_dump()

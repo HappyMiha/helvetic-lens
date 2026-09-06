@@ -295,3 +295,56 @@ evidence-fingerprint and runtime-artifact corrections remain separate work.
 ## Verification
 
 The API suite covers background priority, stage persistence, the five-call ceiling, exact evidence links, repeat-cache reuse, profile invalidation, successful/failed history, one repair followed by rejection of invalid citations, unsupported results with zero actions, and protection of confirmed official relations. The migration creates an organization-scoped analysis table with foreign keys and status constraints.
+
+
+## Observed local runtime freshness — 6 September 2026
+
+Relation queue selection, generation and current reads share the same gateway
+observation used by comparison Ask/Impact. The gateway's `/v1/runtime` response
+supplies the validated runtime cache identity; model-manager inventory is still
+used for startup/warm-up, never as proof of which model generated a report.
+
+The `relation-runtime-v2` fingerprint includes the provider/endpoint/served model
+and, for Docker, the runtime cache identity and capability-policy fingerprint.
+The runtime identity includes immutable weights/revision, tokenizer, chat template,
+runtime digest and hardware profile, served alias, context/output budget and token
+measurement protocol. Complete immutable identity can reuse a result after a
+restart. Without complete identity, reuse is limited to the same deployment binding.
+Neither mechanism independently certifies model quality, semantic entailment or a
+provider's honesty. Cloud conclusions retain configuration/prompt freshness; we do
+not attest immutable remote weights behind a cloud model name.
+
+A relation operation makes one bounded runtime metadata observation (two-second
+probe ceiling, outside write transactions), then uses the existing pinned request
+and response-header verification. A queued known binding must still match at
+execution; otherwise the job reports `runtime_binding_changed` before generation.
+Request a new analysis to use the new runtime. Old inventory-based queued bindings
+also need a new request. An unverified/stopped local model can still enter the
+existing durable warm-up path; matching pending offline requests coalesce. A
+completed unbound request is never reused as proof of today's running model.
+Background fanout shares one observation per recipient organization in its batch.
+
+Current relation history, both inbox routes and digest previews perform a bounded
+metadata probe, not inference. Missing/changed local identity makes existing AI
+conclusions stale: original text, sources and timestamps remain readable, but AI
+severity/actions are not current. Pure citation reads do not probe. Correlated SQL
+selection checks the fingerprint before hydrating the selected history records.
+Historical results without the new fingerprint remain history-only locally; there
+is no migration, relabelling, automatic reassessment or cloud approval change.
+
+Digest runtime observations carry the recipient organization and public
+configuration fingerprint. The final reader resolves the current organization
+configuration itself and refuses observations from another organization or old
+configuration. Each preparation checkpoint records the runtime fingerprint; a
+change restarts selection. The worker observes again before the final delivery
+transaction and rejects a now-obsolete selection. An unavailable runtime fails
+preparation/delivery without advancing `last_sent_at`. No model generation or
+credential decryption is added to digest readers. Existing explicit event urgency
+and human/official relation judgments remain independent of AI freshness.
+
+These are point-in-time observations, not a distributed lock over a model during
+an entire read/send operation. A subsequent gateway change belongs to the next
+observation; actual generation additionally has request/response binding checks.
+The change does not solve late candidate refresh, historical reassessment or
+catch-up delivery of an event after an earlier period was already consumed. Those
+remain explicit HL-100 work, along with independent semantic and hardware tests.

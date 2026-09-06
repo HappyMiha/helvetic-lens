@@ -34,6 +34,7 @@ from .models import (
 )
 from .prompt_settings import resolved_prompt_settings
 from .relation_analysis import configuration_fingerprint, relation_prompt_fingerprint
+from .relation_runtime import RelationRuntimeObservation, require_fingerprint
 
 QUIET_WAIT = "Waiting for the recipient's quiet hours to end."
 
@@ -449,7 +450,7 @@ def _recipient(session: Session, delivery: DigestDelivery, *, lock: bool = False
     return user
 
 
-def _reader(session: Session, delivery: DigestDelivery, settings: Settings) -> ImpactInboxReader:
+def _reader(session: Session, delivery: DigestDelivery, settings: Settings, runtime: RelationRuntimeObservation | None = None) -> ImpactInboxReader:
     # Only public configuration is inspected; no credential decryption or inference.
     values = session.scalar(select(ApertusConfiguration.values).where(
         ApertusConfiguration.organization_id == delivery.organization_id))
@@ -462,10 +463,10 @@ def _reader(session: Session, delivery: DigestDelivery, settings: Settings) -> I
             PlatformPromptConfiguration.id == "default")).first()
     # An existing empty override still wins, exactly as organization_runtime does.
     prompts = resolved_prompt_settings(PromptConfiguration(values=prompt_record[1]) if prompt_record is not None else None)
-    return ImpactInboxReader(delivery.organization_id, delivery.user_id, settings=effective, prompts=prompts)
+    return ImpactInboxReader(delivery.organization_id, delivery.user_id, settings=effective, prompts=prompts, runtime=runtime)
 
 
-def prepare_batch(session: Session, delivery_id: str, checkpoint: dict | None = None, *, settings: Settings) -> dict:
+def prepare_batch(session: Session, delivery_id: str, checkpoint: dict | None = None, *, settings: Settings, runtime: RelationRuntimeObservation | None = None) -> dict:
     """Prepare <=50 event keys. Caller commits cursor and queue yield atomically."""
     delivery = session.scalar(select(DigestDelivery).where(DigestDelivery.id == delivery_id).with_for_update())
     if not delivery:
@@ -480,14 +481,16 @@ def prepare_batch(session: Session, delivery_id: str, checkpoint: dict | None = 
     if checkpoint:
         _validate_selection(delivery, checkpoint)
     fingerprint = _preference_fingerprint(preference)
-    reader = _reader(session, delivery, settings)
+    reader = _reader(session, delivery, settings, runtime)
+    runtime_fingerprint = require_fingerprint(reader.settings, delivery.organization_id, runtime)
     configuration = configuration_fingerprint(reader.settings)
     prompt = relation_prompt_fingerprint(reader.prompts)
     if (not checkpoint or checkpoint.get("preference_fingerprint") != fingerprint
             or checkpoint.get("configuration_fingerprint") != configuration
-            or checkpoint.get("prompt_fingerprint") != prompt):
+            or checkpoint.get("prompt_fingerprint") != prompt
+            or checkpoint.get("runtime_fingerprint") != runtime_fingerprint):
         checkpoint = {**_selection_context(delivery), "admitted_before": _iso(utcnow()),
-                      "preference_fingerprint": fingerprint, "configuration_fingerprint": configuration, "prompt_fingerprint": prompt, "cursor": None, "event_ids": [],
+                      "preference_fingerprint": fingerprint, "configuration_fingerprint": configuration, "prompt_fingerprint": prompt, "runtime_fingerprint": runtime_fingerprint, "cursor": None, "event_ids": [],
                       "processed": 0, "batches": 0, "complete": False,
                       "restarts": checkpoint.get("restarts", 0) + bool(checkpoint)}
     if checkpoint["complete"] or delivery.status == "succeeded" or not preference.enabled:
@@ -516,7 +519,7 @@ def _defer_quiet(session, preference, delivery, job=None):
 
 
 def deliver(database: Database, settings: Settings, delivery_id: str, *, selection: dict | None = None,
-            job_id: str | None = None, worker: str | None = None, analysis_settings: Settings | None = None) -> dict | None:
+            job_id: str | None = None, worker: str | None = None, analysis_settings: Settings | None = None, runtime: RelationRuntimeObservation | None = None) -> dict | None:
     with database.session() as session:
         if job_id:
             owned_job = session.scalar(select(Job).where(Job.id == job_id).with_for_update())
@@ -540,13 +543,15 @@ def deliver(database: Database, settings: Settings, delivery_id: str, *, selecti
         if _defer_quiet(session, preference, delivery, owned_job if job_id else None):
             return None
         filters = inbox_filters(preference, delivery.period_start, delivery.period_end)
-        reader = _reader(session, delivery, analysis_settings or settings)
+        reader = _reader(session, delivery, analysis_settings or settings, runtime)
+        runtime_fingerprint = require_fingerprint(reader.settings, delivery.organization_id, runtime)
         if selection is not None:
             _validate_selection(delivery, selection)
             if (not selection.get("complete") or selection.get("preference_fingerprint") != _preference_fingerprint(preference)
                     or selection.get("configuration_fingerprint") != configuration_fingerprint(reader.settings)
-                    or selection.get("prompt_fingerprint") != relation_prompt_fingerprint(reader.prompts)):
-                raise DomainError("Digest preferences, model configuration or analysis prompts changed; preparation will restart before sending.", 409, "digest_preferences_changed")
+                    or selection.get("prompt_fingerprint") != relation_prompt_fingerprint(reader.prompts)
+                    or selection.get("runtime_fingerprint") != runtime_fingerprint):
+                raise DomainError("Digest preferences, model configuration, runtime or analysis prompts changed; preparation will restart before sending.", 409, "digest_preferences_changed")
             filters = replace(filters, event_ids=tuple(selection["event_ids"]),
                               admitted_before=datetime.fromisoformat(selection["admitted_before"]))
         # Recheck current access, personal state and saved conclusions for at most

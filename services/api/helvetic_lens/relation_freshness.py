@@ -1,6 +1,6 @@
 """Read-time assessment freshness without inference or archived-payload hydration."""
 
-from sqlalchemy import String, cast, func, select
+from sqlalchemy import String, cast, false, func, select, true
 
 from . import relation_analysis
 from .config import Settings
@@ -48,7 +48,7 @@ def uses_official_relation(plan: dict | None, relation: dict | None) -> bool:
     return isinstance(binding, dict) and all(binding.get(key) == value for key, value in expected.items())
 
 
-def current_analysis_predicate(settings: Settings, prompts: PromptSettings):
+def current_analysis_predicate(settings: Settings, prompts: PromptSettings, runtime_fingerprint: str | None = None):
     """A correlated scalar predicate keeps tenant identity inside the SQL check."""
     model = RelationImpactAnalysis
     matching_profile = (
@@ -83,8 +83,12 @@ def current_analysis_predicate(settings: Settings, prompts: PromptSettings):
         .correlate(model)
         .exists()
     )
+    runtime_matches = true()
+    if settings.apertus_provider == "docker":
+        runtime_matches = (model.analysis_plan["runtime_fingerprint"].as_string() == runtime_fingerprint) if runtime_fingerprint is not None else false()
     return (
-        (model.status == "succeeded")
+        runtime_matches
+        & (model.status == "succeeded")
         & (model.result["schema_version"].as_string() == relation_analysis.SCHEMA_VERSION)
         & matching_profile
         & matching_inputs

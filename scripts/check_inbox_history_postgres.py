@@ -124,7 +124,7 @@ from test_topic_reviews import (
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("evidence-revisions-private", "evidence-revisions-prepare", "evidence-revisions-text", "evidence-revisions-metadata", "evidence-revisions-official", "evidence-revisions-noop", "evidence-revisions-legacy", "evidence-revisions-migration", "evidence-revisions-race", "evidence-revisions-digest", "law-history-large", "law-history-scope", "law-history-empty", "law-history-null", "law-history-int", "law-history-fraction", "timeline-large", "timeline-relations", "timeline-private", "timeline-law", "timeline-watch", "timeline-mapping", "timeline-work", "relation-endpoints-source", "relation-endpoints-target", "relation-endpoints-reverse", "relation-endpoints-digest", "official-relation-fields", "official-relation-links", "official-relation-retry", "official-relation-digest", "registry-details", "registry-detail-scope", "registry-detail-dates", "monitored-pages", "monitored-search", "monitored-read", "monitored-scope", "monitored-dates", "monitored-comparison", "monitored-migration", "registry-watches", "registry-events", "registry-search", "registry-dates", "registry-scope", "registry-migration", "digest-quiet-resume", "digest-quiet-unsubscribe", "digest-quiet-boundary", "digest-quiet-save", "digest-local-schedule", "digest-schedule-migration", "feed-topic-sparse", "feed-topic-scope", "feed-watch-pages", "feed-watch-scope", "evidence-pages", "evidence-pages-native", "evidence-text-pages", "source-review", "source-review-scope", "source-review-migration", "milestone-native", "milestone-migration", "milestone-race", "feed-readiness-history", "feed-readiness-bounds", "feed-readiness-sources", "onboarding-state", "onboarding-migration", "onboarding-race", "assistant-context", "assistant-context-private", "answer-context", "answer-context-private", "topic-coverage-empty", "topic-coverage-state", "topic-coverage-scope", "topic-coverage-bounds", "topic-duplicates", "topic-duplicates-scope", "topic-duplicates-bounds", "history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked", "monitoring-context", "monitoring-context-activate"), default="history")
+    parser.add_argument("--suite", choices=("runtime-concurrent", "runtime-current", "runtime-stale", "runtime-offline", "runtime-digest", "runtime-scope", "runtime-worker-change", "evidence-revisions-private", "evidence-revisions-prepare", "evidence-revisions-text", "evidence-revisions-metadata", "evidence-revisions-official", "evidence-revisions-noop", "evidence-revisions-legacy", "evidence-revisions-migration", "evidence-revisions-race", "evidence-revisions-digest", "law-history-large", "law-history-scope", "law-history-empty", "law-history-null", "law-history-int", "law-history-fraction", "timeline-large", "timeline-relations", "timeline-private", "timeline-law", "timeline-watch", "timeline-mapping", "timeline-work", "relation-endpoints-source", "relation-endpoints-target", "relation-endpoints-reverse", "relation-endpoints-digest", "official-relation-fields", "official-relation-links", "official-relation-retry", "official-relation-digest", "registry-details", "registry-detail-scope", "registry-detail-dates", "monitored-pages", "monitored-search", "monitored-read", "monitored-scope", "monitored-dates", "monitored-comparison", "monitored-migration", "registry-watches", "registry-events", "registry-search", "registry-dates", "registry-scope", "registry-migration", "digest-quiet-resume", "digest-quiet-unsubscribe", "digest-quiet-boundary", "digest-quiet-save", "digest-local-schedule", "digest-schedule-migration", "feed-topic-sparse", "feed-topic-scope", "feed-watch-pages", "feed-watch-scope", "evidence-pages", "evidence-pages-native", "evidence-text-pages", "source-review", "source-review-scope", "source-review-migration", "milestone-native", "milestone-migration", "milestone-race", "feed-readiness-history", "feed-readiness-bounds", "feed-readiness-sources", "onboarding-state", "onboarding-migration", "onboarding-race", "assistant-context", "assistant-context-private", "answer-context", "answer-context-private", "topic-coverage-empty", "topic-coverage-state", "topic-coverage-scope", "topic-coverage-bounds", "topic-duplicates", "topic-duplicates-scope", "topic-duplicates-bounds", "history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked", "monitoring-context", "monitoring-context-activate"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -145,6 +145,35 @@ def main():
         with TestClient(app) as client:
             service = app.state.service
             harness = (client, fetcher, service, model)
+            if args.suite.startswith("runtime-"):
+                from test_relation_runtime import (
+                    configure_local_relation,
+                    test_concurrent_offline_requests_coalesce_across_worker_guards,
+                    test_digest_preparation_restarts_and_final_delivery_rejects_changed_runtime,
+                    test_digest_worker_observes_again_before_delivery,
+                    test_offline_reads_keep_history_and_citations_but_never_promote_or_reuse_finished_job,
+                    test_runtime_observation_cannot_cross_organization_or_configuration,
+                    test_same_identity_restart_reuses_job_and_keeps_original_provenance,
+                    test_same_name_different_runtime_hides_old_conclusion_without_new_inference,
+                )
+                with MonkeyPatch.context() as patch:
+                    bound = configure_local_relation(harness, patch)
+                    if args.suite == "runtime-concurrent":
+                        test_concurrent_offline_requests_coalesce_across_worker_guards(bound)
+                    elif args.suite == "runtime-current":
+                        test_same_identity_restart_reuses_job_and_keeps_original_provenance(bound)
+                    elif args.suite == "runtime-stale":
+                        test_same_name_different_runtime_hides_old_conclusion_without_new_inference(bound, "tokenizer_sha256")
+                    elif args.suite == "runtime-offline":
+                        test_offline_reads_keep_history_and_citations_but_never_promote_or_reuse_finished_job(bound)
+                    elif args.suite == "runtime-digest":
+                        test_digest_preparation_restarts_and_final_delivery_rejects_changed_runtime(bound, patch)
+                    elif args.suite == "runtime-worker-change":
+                        test_digest_worker_observes_again_before_delivery(bound, patch, True)
+                    else:
+                        test_runtime_observation_cannot_cross_organization_or_configuration(bound)
+                print("PostgreSQL:", args.suite, "passed with synthetic HTTP/model/mail only.")
+                return
             if args.suite.startswith("evidence-revisions-"):
                 from test_relation_evidence_freshness import (
                     test_correction_during_generation_is_saved_as_stale_history,

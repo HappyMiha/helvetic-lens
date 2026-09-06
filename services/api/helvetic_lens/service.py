@@ -138,6 +138,7 @@ from .relation_freshness import (
 )
 from .relation_identity import relation_direction
 from .relation_inputs import capture_inputs, uses_inputs
+from .relation_runtime import observe_runtime, require_fingerprint, uses_runtime
 from .source_capabilities import capability_catalogue
 
 logger = logging.getLogger(__name__)
@@ -470,14 +471,14 @@ class HelveticLens:
             yield None
 
     @asynccontextmanager
-    async def runtime_cache_scope(self):
+    async def runtime_cache_scope(self, *, refresh: bool = False):
         """One bounded observation per operation; ordinary history needs none."""
         client = self.model_client
         if not isinstance(client, ai.ModelClient):
             yield
             return
         captured = self._cache_runtime_context.get()
-        if captured and captured[0] == client.connection_identity() and captured[2] is client and captured[3] == self.organization_id:
+        if not refresh and captured and captured[0] == client.connection_identity() and captured[2] is client and captured[3] == self.organization_id:
             yield
             return
         with client.runtime_scope():
@@ -1156,31 +1157,31 @@ class HelveticLens:
 
     def interest_feed(self, user_id: str | None, **filters) -> dict:
         with self.db.session() as session:
-            return InterestFeedReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings).feed(session, **filters)
+            return InterestFeedReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings, runtime=self.relation_runtime_observation()).feed(session, **filters)
 
     def interest_feed_topics(self, event_id: str, user_id: str | None, **filters) -> dict:
         with self.db.session() as session:
-            return InterestFeedReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings).topic_page(session, event_id, **filters)
+            return InterestFeedReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings, runtime=self.relation_runtime_observation()).topic_page(session, event_id, **filters)
 
     def interest_feed_watches(self, event_id: str, user_id: str | None, **filters) -> dict:
         with self.db.session() as session:
-            return InterestFeedReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings).watch_page(session, event_id, **filters)
+            return InterestFeedReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings, runtime=self.relation_runtime_observation()).watch_page(session, event_id, **filters)
 
     def set_interest_feed_state(self, event_id: str, state: str, user_id: str | None) -> dict:
         with self.write_guard, self.db.session() as session:
-            return InterestFeedReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings).set_feed_state(session, event_id, state)
+            return InterestFeedReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings, runtime=self.relation_runtime_observation()).set_feed_state(session, event_id, state)
 
     def impact_inbox(self, filters: ImpactInboxFilters, user_id: str | None) -> dict:
         with self.db.session() as session:
-            return ImpactInboxReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings).page(session, filters)
+            return ImpactInboxReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings, runtime=self.relation_runtime_observation()).page(session, filters)
 
     def impact_inbox_page(self, filters: ImpactInboxFilters, user_id: str | None, *, cursor: str = "", limit: int = 50) -> dict:
         with self.db.session() as session:
-            return ImpactInboxReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings).paginated(session, filters, cursor=cursor, limit=limit)
+            return ImpactInboxReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings, runtime=self.relation_runtime_observation()).paginated(session, filters, cursor=cursor, limit=limit)
 
     def impact_inbox_law_options(self, query: str, selected: str) -> dict:
         with self.db.session() as session:
-            return ImpactInboxReader(self.organization_id, None, settings=self.settings, prompts=self.prompt_settings).law_options(session, query=query, selected=selected)
+            return ImpactInboxReader(self.organization_id, None, settings=self.settings, prompts=self.prompt_settings, runtime=self.relation_runtime_observation()).law_options(session, query=query, selected=selected)
 
     def impact_matrix(self, output_locale: str) -> dict:
         with self.db.session() as session:
@@ -1209,7 +1210,7 @@ class HelveticLens:
             )
             period_end = utcnow()
             period_start = period_end - digests.FREQUENCIES[effective.frequency]
-            reader = ImpactInboxReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings)
+            reader = ImpactInboxReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings, runtime=self.relation_runtime_observation())
             if cursor and not preview_page:
                 raise DomainError("A cursor requires paged preview mode.", 422, "invalid_digest_cursor")
             if preview_page:
@@ -1335,7 +1336,7 @@ class HelveticLens:
         self, event_id: str, state: str, user_id: str | None
     ) -> dict:
         with self.write_guard, self.db.session() as session:
-            return ImpactInboxReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings).set_state(
+            return ImpactInboxReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings, runtime=self.relation_runtime_observation()).set_state(
                 session, event_id, state
             )
 
@@ -3827,13 +3828,15 @@ class HelveticLens:
                 result_id = result_json["id"]
                 result_url = f"/impact?candidate={target_id}"
             elif job_type == "digest_delivery":
+                async with self.runtime_cache_scope():
+                    digest_runtime = self.relation_runtime_observation()
                 with self.write_guard, self.db.session() as session:
                     batch_job = session.scalar(select(Job).where(Job.id == job_id).with_for_update())
                     if batch_job.state != "running" or batch_job.lease_owner != worker:
                         return self.job_detail(job_id)
                     if batch_job.cancel_requested:
                         raise durable_jobs.JobCancelled()
-                    selection = digests.prepare_batch(session, target_id, (batch_job.payload or {}).get("checkpoint"), settings=self.settings)
+                    selection = digests.prepare_batch(session, target_id, (batch_job.payload or {}).get("checkpoint"), settings=self.settings, runtime=digest_runtime)
                     batch_job.payload = {**(batch_job.payload or {}), "checkpoint": selection}
                     batch_job.result_type, batch_job.result_id, batch_job.result_url = "digest_delivery", target_id, "/digests"
                     batch_job.result_json = {"preparation": {key: selection[key] for key in ("processed", "batches", "complete", "restarts")},
@@ -3847,9 +3850,11 @@ class HelveticLens:
                 if not selection["complete"]:
                     return self.job_detail(job_id)
                 mark(1, 2, "running")
+                async with self.runtime_cache_scope(refresh=True):
+                    digest_runtime = self.relation_runtime_observation()
                 result_json = await asyncio.to_thread(
                     digests.deliver, self.db, self.environment_settings, target_id,
-                    selection=selection, job_id=job_id, worker=worker, analysis_settings=self.settings,
+                    selection=selection, job_id=job_id, worker=worker, analysis_settings=self.settings, runtime=digest_runtime,
                 )
                 if result_json is None:
                     return self.job_detail(job_id)
@@ -4037,28 +4042,14 @@ class HelveticLens:
             session.commit()
             return {"deleted": result.rowcount or 0}
 
-    async def relation_runtime_fingerprint(self) -> str:
-        runtime: dict = {
-            "provider": self.settings.apertus_provider,
-            "model": self.settings.apertus_model,
-            "endpoint": self.settings.apertus_base_url,
-        }
-        if self.settings.apertus_provider == "docker":
-            try:
-                inventory = await self.model_manager.inventory()
-                deployment = inventory.get("deployment") or {}
-                runtime.update(
-                    {
-                        "model_revision": deployment.get("model_revision"),
-                        "artifact_sha256": deployment.get("artifact_sha256"),
-                        "quantization": deployment.get("quantization"),
-                        "runtime_image": deployment.get("runtime_image"),
-                        "hardware_profile": deployment.get("hardware_profile"),
-                    }
-                )
-            except DomainError as exc:
-                runtime["inventory_error"] = exc.code
-        return hashlib.sha256(json.dumps(runtime, sort_keys=True).encode()).hexdigest()
+    def relation_runtime_observation(self):
+        return observe_runtime(self.settings, self.organization_id, self.cache_runtime_identity())
+
+    def _required_relation_runtime(self, expected: str | None = None) -> str:
+        current = require_fingerprint(self.settings, self.organization_id, self.relation_runtime_observation())
+        if expected is not None and expected != current:
+            raise DomainError("The local runtime or model connection changed after this analysis was queued. Request a new analysis for the current runtime.", 409, "runtime_binding_changed")
+        return current
 
     @staticmethod
     def _relation_text_tokens(*values: object) -> set[str]:
@@ -4309,7 +4300,23 @@ class HelveticLens:
         force: bool = False,
         output_locale: str = relation_ai.DEFAULT_OUTPUT_LOCALE,
     ) -> dict:
-        runtime_fingerprint = runtime_fingerprint or await self.relation_runtime_fingerprint()
+        async with self.runtime_cache_scope():
+            # A stopped model may still queue for the worker's existing warm-up
+            # path. Unverified queues have unique keys, never completed reuse.
+            fingerprint = (self._required_relation_runtime(runtime_fingerprint)
+                           if runtime_fingerprint is not None else self.relation_runtime_observation().fingerprint)
+            return await self._enqueue_relation_analysis(
+                organization_candidate_id, fingerprint, force=force, output_locale=output_locale,
+            )
+
+    async def _enqueue_relation_analysis(
+        self,
+        organization_candidate_id: str,
+        runtime_fingerprint: str | None,
+        *,
+        force: bool = False,
+        output_locale: str = relation_ai.DEFAULT_OUTPUT_LOCALE,
+    ) -> dict:
         with self.write_guard, self.db.session() as session:
             context = self._relation_analysis_context(
                 session, organization_candidate_id, runtime_fingerprint, output_locale
@@ -4320,11 +4327,27 @@ class HelveticLens:
                     503,
                     "model_not_configured",
                 )
-            request_key = (
-                f"relation-impact:{context['cache_key']}:{secrets.token_hex(8)}"
-                if force
-                else f"relation-impact:{context['cache_key']}"
-            )
+            request_key = f"relation-impact:{context['cache_key']}"
+            if force:
+                request_key += f":{secrets.token_hex(8)}"
+            elif runtime_fingerprint is None:
+                # Serialize the unknown-runtime key lookup across API processes.
+                # This is metadata-only; no probe/generation runs under the lock.
+                session.scalar(select(OrganizationRelationCandidate.id).where(
+                    OrganizationRelationCandidate.id == organization_candidate_id,
+                    OrganizationRelationCandidate.organization_id == self.organization_id,
+                ).with_for_update())
+                # Coalesce offline retries while a matching request is pending.
+                # A completed unverified request cannot stand for today's model.
+                pending_prefix = f"{request_key}:unverified:"
+                previous = session.execute(select(Job.idempotency_key, Job.state).where(
+                    Job.organization_id == self.organization_id,
+                    Job.type == "relation_impact_analysis",
+                    Job.target_id == organization_candidate_id,
+                    Job.idempotency_key.startswith(pending_prefix),
+                ).order_by(Job.created_at.desc(), Job.id.desc()).limit(1)).first()
+                request_key = (previous.idempotency_key if previous and previous.state != "succeeded"
+                               else pending_prefix + secrets.token_hex(8))
             job, reused = durable_jobs.enqueue(
                 session,
                 job_type="relation_impact_analysis",
@@ -4364,34 +4387,38 @@ class HelveticLens:
         queued = 0
         waiting_for_configuration = 0
         failed = 0
-        runtime_by_organization: dict[str, str] = {}
+        by_organization: dict[str, list[str]] = {}
         for organization_id, delivery_id in deliveries:
+            by_organization.setdefault(organization_id, []).append(delivery_id)
+        for organization_id, delivery_ids in by_organization.items():
             try:
                 with self.db.organization_context(organization_id), self.organization_runtime():
-                    runtime_fingerprint = runtime_by_organization.get(organization_id)
-                    if runtime_fingerprint is None:
-                        runtime_fingerprint = await self.relation_runtime_fingerprint()
-                        runtime_by_organization[organization_id] = runtime_fingerprint
-                    await self.enqueue_relation_analysis(delivery_id, runtime_fingerprint)
-                    queued += 1
-            except DomainError as exc:
-                if exc.code == "model_not_configured":
-                    waiting_for_configuration += 1
-                else:
-                    failed += 1
-                    logger.warning(
-                        "Could not enqueue relation analysis %s for organization %s: %s",
-                        delivery_id,
-                        organization_id,
-                        exc.code,
-                    )
+                    async with self.runtime_cache_scope():
+                        for delivery_id in delivery_ids:
+                            try:
+                                await self.enqueue_relation_analysis(delivery_id)
+                                queued += 1
+                            except DomainError as exc:
+                                if exc.code == "model_not_configured":
+                                    waiting_for_configuration += 1
+                                else:
+                                    failed += 1
+                                    logger.warning(
+                                        "Could not enqueue relation analysis %s for organization %s: %s",
+                                        delivery_id,
+                                        organization_id,
+                                        exc.code,
+                                    )
+                            except Exception:
+                                failed += 1
+                                logger.exception(
+                                    "Could not enqueue relation analysis %s for organization %s",
+                                    delivery_id,
+                                    organization_id,
+                                )
             except Exception:
-                failed += 1
-                logger.exception(
-                    "Could not enqueue relation analysis %s for organization %s",
-                    delivery_id,
-                    organization_id,
-                )
+                failed += len(delivery_ids)
+                logger.exception("Could not prepare relation runtime for organization %s", organization_id)
         return {
             "candidates": len(deliveries),
             "queued": queued,
@@ -4407,7 +4434,20 @@ class HelveticLens:
         force: bool = False,
         output_locale: str = relation_ai.DEFAULT_OUTPUT_LOCALE,
     ) -> dict:
-        runtime_fingerprint = runtime_fingerprint or await self.relation_runtime_fingerprint()
+        async with self.runtime_cache_scope():
+            fingerprint = self._required_relation_runtime(runtime_fingerprint)
+            return await self._analyse_relation_candidate(
+                organization_candidate_id, fingerprint, force=force, output_locale=output_locale,
+            )
+
+    async def _analyse_relation_candidate(
+        self,
+        organization_candidate_id: str,
+        runtime_fingerprint: str,
+        *,
+        force: bool = False,
+        output_locale: str = relation_ai.DEFAULT_OUTPUT_LOCALE,
+    ) -> dict:
         lock = self.analysis_locks.setdefault(f"relation:{organization_candidate_id}", asyncio.Lock())
         async with lock:
             settings, model_client = self.settings, self.model_client
@@ -4541,6 +4581,7 @@ class HelveticLens:
                 }
 
     def relation_analysis_history(self, organization_candidate_id: str) -> dict:
+        runtime_fingerprint = self.relation_runtime_observation().fingerprint
         with self.db.session() as session:
             delivery = get(session, OrganizationRelationCandidate, organization_candidate_id)
             evidence_binding = capture_inputs(session, delivery.candidate_id)
@@ -4578,6 +4619,7 @@ class HelveticLens:
                         or not uses_versions(record.analysis_plan, *version_ids[:2])
                         or not uses_official_relation(record.analysis_plan, relation_binding)
                         or not uses_inputs(record.analysis_plan, evidence_binding)
+                        or not uses_runtime(record.analysis_plan, self.settings, runtime_fingerprint)
                     ),
                 }
                 for record in records
