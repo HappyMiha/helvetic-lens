@@ -1,4 +1,5 @@
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -309,11 +310,30 @@ def test_baseline_has_no_socket_or_external_database_access(monkeypatch):
 
 
 def test_cli_schema_export_and_checked_in_unreviewed_walkthrough(tmp_path):
-    command = [sys.executable, str(ROOT / "scripts/evaluate_semantic_matching.py")]
-    schema = subprocess.run([*command, "schemas"], capture_output=True, text=True, cwd=ROOT, timeout=30)
+    # Exercise real Git provenance without depending on the host checkout's .git
+    # pointer (a production worktree is mounted read-only without host Git metadata).
+    checkout = tmp_path / "cli-checkout"
+    package_dir = checkout / "services/api/helvetic_lens"
+    package_dir.mkdir(parents=True)
+    for source in (ROOT / "services/api/helvetic_lens").glob("*.py"):
+        shutil.copy(source, package_dir / source.name)
+    (checkout / "scripts").mkdir()
+    shutil.copy(ROOT / "scripts/evaluate_semantic_matching.py", checkout / "scripts")
+    shutil.copy(ROOT / ".gitattributes", checkout)
+    shutil.copy(ROOT / ".gitignore", checkout)
+    shutil.copytree(ROOT / "demo/semantic-matching-example", checkout / "demo/semantic-matching-example")
+    for arguments in (
+        ["init"],
+        ["add", "."],
+        ["-c", "user.name=CLI test", "-c", "user.email=cli-test@example.invalid", "commit", "-m", "Frozen CLI test input"],
+    ):
+        subprocess.run(["git", *arguments], cwd=checkout, check=True, capture_output=True, timeout=30)
+    expected_revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=checkout, text=True).strip()
+    command = [sys.executable, str(checkout / "scripts/evaluate_semantic_matching.py")]
+    schema = subprocess.run([*command, "schemas"], capture_output=True, text=True, cwd=checkout, timeout=30)
     assert schema.returncode == 0, schema.stderr
     assert set(json.loads(schema.stdout)["schemas"]) == {"Dataset", "Labels", "Predictions", "MatchingInput"}
-    example = ROOT / "demo/semantic-matching-example"
+    example = checkout / "demo/semantic-matching-example"
     output = tmp_path / "baseline.json"
     baseline = subprocess.run(
         [
@@ -330,11 +350,13 @@ def test_cli_schema_export_and_checked_in_unreviewed_walkthrough(tmp_path):
         ],
         capture_output=True,
         text=True,
-        cwd=ROOT,
+        cwd=checkout,
         timeout=30,
     )
     assert baseline.returncode == 0, baseline.stderr
     data = json.loads(output.read_text())
+    assert data["system_revision"] == expected_revision
+    assert data["working_tree_dirty"] is False
     assert len(data["rows"]) == 2 and all(row["status"] == "ok" for row in data["rows"])
     assert {row["relevant"] for row in data["rows"]} == {True, False}
     evaluation = subprocess.run(
@@ -352,7 +374,7 @@ def test_cli_schema_export_and_checked_in_unreviewed_walkthrough(tmp_path):
         ],
         capture_output=True,
         text=True,
-        cwd=ROOT,
+        cwd=checkout,
         timeout=30,
     )
     assert evaluation.returncode == 1, evaluation.stderr

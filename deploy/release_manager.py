@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import fcntl
+import hashlib
 import json
 import os
 import re
@@ -23,10 +24,6 @@ from typing import Any
 SCHEMA_VERSION = 1
 DEFAULT_BASE_DIR = Path("/srv/helvetic-lens")
 DEFAULT_REPOSITORY = "https://github.com/HappyMiha/helvetic-lens.git"
-UV_IMAGE = (
-    "ghcr.io/astral-sh/uv@"
-    "sha256:4f5d923c9dcea037f57bda425dd209f3ec643da2f0b74227f68d09dab0b3bb36"
-)
 WRITER_SERVICES = (
     "cloudflared",
     "web",
@@ -441,6 +438,15 @@ class ReleaseManager:
 
     def _run_api_quality_gate(self, release_dir: Path, command: str, step: str) -> None:
         self.cache_dir.mkdir(parents=True, exist_ok=True, mode=0o755)
+        context = release_dir / "deploy" / "api-quality"
+        # Build from a tiny, secret-free context, and cache by the reviewed recipe.
+        recipe_hash = hashlib.sha256((context / "Dockerfile").read_bytes()).hexdigest()[:16]
+        image = f"helvetic-lens-api-quality:{recipe_hash}"
+        self._run(
+            ["/usr/bin/docker", "build", "--tag", image, str(context)],
+            step=step,
+            timeout=600,
+        )
         self._run(
             [
                 "/usr/bin/docker",
@@ -468,7 +474,7 @@ class ReleaseManager:
                 f"{self.cache_dir}:/cache",
                 "-w",
                 "/workspace",
-                UV_IMAGE,
+                image,
                 "uv",
                 "run",
                 "--frozen",

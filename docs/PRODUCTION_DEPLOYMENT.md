@@ -139,6 +139,22 @@ Install the manager and its user cron entry from the trusted production checkout
 
 Each new remote commit is checked out by its full SHA under `/srv/helvetic-lens/releases`; the development checkout is never pulled or reset. Before production is interrupted, the candidate must pass environment validation, Compose validation, API lint, the complete API test suite, and the production image build (including the web checks and Next.js build). The manager then stops public entry points and writers, creates a locked backup on `HELVETIC_LENS_BACKUP_DIR`, runs the one-shot migration, starts the exact release images, and verifies both `/api/ready` and `/login` over the public HTTPS URL.
 
+API quality gates build `deploy/api-quality/Dockerfile`, a test-only image based on
+the pinned uv/Python image with Git installed. Tests run as the host's unprivileged
+UID, with the candidate mounted read-only and only the dependency cache writable.
+Host Git metadata, credentials, production data and Docker sockets are not mounted.
+Git-dependent evaluation tests create their own temporary repository and verify
+real commit provenance there. Do not skip them or add Git to the production API
+image to repair a missing test dependency.
+
+When an older installed release manager cannot pass a gate because its test runner
+lacks a new dependency, updating `main` alone cannot bootstrap the new manager:
+its normal self-update happens only after success. First verify and commit the
+manager change, then hold `deploy-control/deployment.lock`, preserve the installed
+manager for recovery, and install the reviewed `deploy/release_manager.py` into
+`deploy-control`. Release the lock so the next poll uses the corrected runner.
+This control-plane update does not stop application services or bypass any gate.
+
 If startup or public verification fails, the manager keeps writers stopped, restores the pre-deploy database and evidence backup when the candidate may have migrated data, and restarts the previous immutable release. An active local model is captured before the maintenance window and restored to a ready, warmed state after both a successful deployment and a rollback. A failed commit is retried after 15 minutes; a newer commit is evaluated on the next poll. The running release manager updates its installed copy only after a successful deployment.
 
 Sanitized status is written atomically to `HELVETIC_LENS_DEPLOY_STATE_DIR` (default `/srv/helvetic-lens/deploy-state`) and mounted read-only into the API. Full host logs stay outside the web surface in that directory's `logs` subdirectory. Production secrets remain only in `.env.production` and the protected backup.

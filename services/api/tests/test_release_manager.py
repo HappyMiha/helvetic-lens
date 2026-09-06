@@ -56,3 +56,24 @@ def test_only_a_live_allowlisted_model_is_preserved_for_a_release():
     )
     assert manager._active_model_id({"model_id": "apertus-8b-q4km", "state": "stopped"}) is None
     assert manager._active_model_id({"model_id": "../../secret", "state": "ready"}) is None
+
+
+def test_quality_gate_builds_test_tools_without_mounting_host_git_or_production_data(tmp_path):
+    manager = release_manager.ReleaseManager.__new__(release_manager.ReleaseManager)
+    manager.cache_dir = tmp_path / "cache"
+    calls = []
+    manager._run = lambda command, **options: calls.append((command, options))
+    manager._run_api_quality_gate(ROOT, "--project services/api pytest -q", "api_tests")
+
+    build, execution = calls
+    context = ROOT / "deploy/api-quality"
+    assert build[0][:3] == ["/usr/bin/docker", "build", "--tag"]
+    assert build[0][-1] == str(context)
+    image = build[0][3]
+    assert image.startswith("helvetic-lens-api-quality:")
+    assert image in execution[0]
+    mounts = [execution[0][i + 1] for i, value in enumerate(execution[0]) if value == "-v"]
+    assert mounts == [f"{ROOT}:/workspace:ro", f"{manager.cache_dir}:/cache"]
+    assert "--user" in execution[0] and "--frozen" in execution[0]
+    assert all(options["step"] == "api_tests" for _, options in calls)
+    assert "--no-install-recommends git" in (context / "Dockerfile").read_text()
