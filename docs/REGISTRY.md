@@ -132,3 +132,37 @@ last-check time can move a watch above an earlier cursor. Refresh starts from th
 latest state; snapshot/reconciliation semantics remain an explicit HL-099 gate.
 No 100-user capacity, complete mature-corpus bound or production deployment is
 claimed by this slice.
+
+
+## Shared visible-page details — 6 September 2026
+
+Discover now expands selected-page linked laws, expressions and official dates in
+three scalar queries, independent of whether the page contains one or 50 events.
+A SQL union combines direct, incoming and outgoing work links before mapping them
+to the current organization's visible watched laws. Duplicate, self and
+bidirectional relation paths do not duplicate a watch. Watch IDs define stable
+link order. Existing paused-watch and relation-state inclusion is unchanged;
+these navigation links still do not establish a legal-impact conclusion.
+
+Both registry views share date collection. Each returned row keeps its own work,
+expression, event and (for Discover) selected normalized-version date facts. Facts
+are matched by **entity type plus ID**, not ID alone: UUID uniqueness is per table,
+so a saved version with the same ID as a work must not contribute an unrelated
+version date to that work. The API still returns date precision, provenance and
+source URL, without loading the diagnostic evidence JSON. Shared dates are read
+once, then assembled separately for each visible row.
+
+Three dedicated regressions exercise 50 independent source works, 150 relation
+paths plus a self-edge, direct/related watches, all four date scopes, an unselected
+version whose ID collides with a work ID, privileged foreign watch/law/mapping
+access, repeated events on one work and an empty page. SQL instrumentation checks
+exactly three detail queries for one and 50 events and zero ORM object loads;
+empty details issue no query. Wider registry/evidence tests and separate
+PostgreSQL scenarios are recorded in `VERIFICATION.md`.
+
+This closes the per-row detail-query multiplication, not every corpus-size bound.
+A single work may still have many related watches, expressions or date facts;
+those complete lists and their response size need paging/measurement rather than
+silent truncation. Query-plan cost, live cursor movement, full timelines and the
+intended-host concurrency tests remain HL-099 work. No schema migration, AI call,
+working-data change or production deployment accompanies this slice.

@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import and_, case, func, or_, select
+from sqlalchemy import and_, case, func, or_, select, tuple_, union
 from sqlalchemy.orm import Session
 
 from .config import DomainError
@@ -128,70 +128,115 @@ class RegistryReader:
         self.principal_key = f"user:{user_id}" if user_id else "anonymous-development"
 
     @staticmethod
-    def _dates(session: Session, entity_ids: list[str]) -> dict[str, list[dict]]:
-        if not entity_ids:
-            return {}
-        result: dict[str, list[dict]] = {}
-        for item in session.execute(
-            select(
-                RegulatoryDate.kind,
-                RegulatoryDate.date_value,
-                RegulatoryDate.precision,
-                RegulatoryDate.provenance,
-                RegulatoryDate.source_url,
-            ).where(RegulatoryDate.entity_id.in_(entity_ids))
-        ):
-            result.setdefault(item.kind, []).append(
-                {
-                    "value": item.date_value,
-                    "precision": item.precision,
-                    "provenance": item.provenance,
-                    "source_url": item.source_url,
-                }
+    def _page_dates(session: Session, rows: list[dict], *, include_version: bool = False) -> dict:
+        """Select shared expression/date values once for the returned page only."""
+        work_ids = list({row["work_id"] for row in rows if row["work_id"]})
+        expressions = {}
+        if work_ids:
+            for work_id, expression_id in session.execute(
+                select(RegulatoryExpression.work_id, RegulatoryExpression.id).where(
+                    RegulatoryExpression.work_id.in_(work_ids)
+                )
+            ):
+                expressions.setdefault(work_id, []).append(expression_id)
+        row_entities = {}
+        for row in rows:
+            work_id = row["work_id"]
+            ids = (
+                [("work", work_id), *(("expression", value) for value in expressions.get(work_id, []))]
+                if work_id
+                else []
             )
+            if row["event_id"]:
+                ids.append(("event", row["event_id"]))
+            if include_version and row.get("document_version_id"):
+                ids.append(("version", row["document_version_id"]))
+            row_entities[row["id"]] = list(dict.fromkeys(ids))
+        entity_ids = {entity_id for ids in row_entities.values() for entity_id in ids}
+        dates = {}
+        if entity_ids:
+            for item in session.execute(
+                select(
+                    RegulatoryDate.entity_type,
+                    RegulatoryDate.entity_id,
+                    RegulatoryDate.kind,
+                    RegulatoryDate.date_value,
+                    RegulatoryDate.precision,
+                    RegulatoryDate.provenance,
+                    RegulatoryDate.source_url,
+                )
+                .where(tuple_(RegulatoryDate.entity_type, RegulatoryDate.entity_id).in_(entity_ids))
+                .order_by(RegulatoryDate.id)
+            ):
+                dates.setdefault((item.entity_type, item.entity_id), []).append(
+                    (
+                        item.kind,
+                        dict(
+                            value=item.date_value,
+                            precision=item.precision,
+                            provenance=item.provenance,
+                            source_url=item.source_url,
+                        ),
+                    )
+                )
+        result = {}
+        for row_id, ids in row_entities.items():
+            values = {}
+            for entity_id in ids:
+                for kind, value in dates.get(entity_id, []):
+                    values.setdefault(kind, []).append(value)
+            result[row_id] = values
         return result
 
-    def _linked_laws(self, session: Session, work_id: str) -> list[dict]:
-        related = {work_id}
-        for relation in session.execute(
+    def _linked_laws(self, session: Session, work_ids: list[str]) -> dict[str, list[dict]]:
+        if not work_ids:
+            return {}
+        # Union de-duplicates direct/self/bidirectional relation paths before watch expansion.
+        edges = union(
+            select(
+                RegulatoryWork.id.label("source_work_id"), RegulatoryWork.id.label("target_work_id")
+            ).where(RegulatoryWork.id.in_(work_ids), visible(RegulatoryWork, self.organization_id)),
             select(RegulatoryRelation.subject_work_id, RegulatoryRelation.object_work_id).where(
-                or_(
-                    RegulatoryRelation.subject_work_id == work_id,
-                    RegulatoryRelation.object_work_id == work_id,
-                )
+                RegulatoryRelation.subject_work_id.in_(work_ids)
+            ),
+            select(RegulatoryRelation.object_work_id, RegulatoryRelation.subject_work_id).where(
+                RegulatoryRelation.object_work_id.in_(work_ids)
+            ),
+        ).subquery()
+        query = (
+            select(
+                edges.c.source_work_id,
+                DocumentWatch.law_id,
+                DocumentWatch.id.label("watch_id"),
+                DocumentWatch.display_name,
+                DocumentWatch.active,
             )
-        ):
-            related.add(relation.subject_work_id)
-            related.add(relation.object_work_id)
-        law_ids = list(
-            session.scalars(
-                select(LegacyDocumentMapping.law_id).where(
-                    LegacyDocumentMapping.work_id.in_(related),
+            .join(
+                LegacyDocumentMapping,
+                and_(
+                    LegacyDocumentMapping.work_id == edges.c.target_work_id,
                     visible(LegacyDocumentMapping, self.organization_id),
+                ),
+            )
+            .join(Law, and_(Law.id == LegacyDocumentMapping.law_id, visible(Law, self.organization_id)))
+            .join(
+                DocumentWatch,
+                and_(DocumentWatch.law_id == Law.id, DocumentWatch.organization_id == self.organization_id),
+            )
+            .order_by(edges.c.source_work_id, DocumentWatch.id)
+        )
+        result = {}
+        for item in session.execute(query):
+            result.setdefault(item.source_work_id, []).append(
+                dict(
+                    law_id=item.law_id,
+                    watch_id=item.watch_id,
+                    name=item.display_name,
+                    active=item.active,
+                    timeline_url=f"/laws/{item.law_id}",
                 )
             )
-        )
-        if not law_ids:
-            return []
-        watches = session.scalars(
-            select(DocumentWatch)
-            .join(Law, Law.id == DocumentWatch.law_id)
-            .where(
-                DocumentWatch.law_id.in_(law_ids),
-                DocumentWatch.organization_id == self.organization_id,
-                visible(Law, self.organization_id),
-            )
-        ).all()
-        return [
-            {
-                "law_id": watch.law_id,
-                "watch_id": watch.id,
-                "name": watch.display_name,
-                "active": watch.active,
-                "timeline_url": f"/laws/{watch.law_id}",
-            }
-            for watch in watches
-        ]
+        return result
 
     def _event_statement(self, filters, custom_start, custom_end):
         # Scalar projection: a list must never hydrate event evidence or work metadata.
@@ -359,28 +404,18 @@ class RegistryReader:
         return rows
 
     def _event_details(self, session: Session, rows: list[dict]):
-        # Hydrate descriptive links/dates only for returned rows, never the lookahead.
-        linked_by_work = {}
-        expressions_by_work = {}
+        # Expand only selected rows, sharing scalar queries across the page.
+        work_ids = list({row["work_id"] for row in rows})
+        linked_by_work = self._linked_laws(session, work_ids)
+        dates = self._page_dates(session, rows, include_version=True)
         for row in rows:
-            work_id = row["work_id"]
-            if work_id not in linked_by_work:
-                linked_by_work[work_id] = self._linked_laws(session, work_id)
-                expressions_by_work[work_id] = list(
-                    session.scalars(
-                        select(RegulatoryExpression.id).where(RegulatoryExpression.work_id == work_id)
-                    )
-                )
-            linked = linked_by_work[work_id]
-            entity_ids = [work_id, row["event_id"], *expressions_by_work[work_id]]
-            version_id = row.pop("document_version_id")
-            if version_id:
-                entity_ids.append(version_id)
+            linked = linked_by_work.get(row["work_id"], [])
+            row.pop("document_version_id")
             row.update(
                 law_id=linked[0]["law_id"] if linked else None,
                 why=f"{row['event_type'].replace('_', ' ').title()} reported by {row.pop('provenance_method').replace('_', ' ')}.",
                 linked_laws=linked,
-                official_dates=self._dates(session, entity_ids),
+                official_dates=dates[row["id"]],
                 source_url=row["source_url"] or row.pop("stable_official_url"),
                 evidence_url=None,
                 timeline_url=linked[0]["timeline_url"] if linked else None,
@@ -519,50 +554,9 @@ class RegistryReader:
         comparisons = dict(
             session.execute(select(ranked.c.law_id, ranked.c.id).where(ranked.c.rank == 1)).all()
         )
-        expressions = {}
-        work_ids = list({row["work_id"] for row in rows if row["work_id"]})
-        if work_ids:
-            for work_id, expression_id in session.execute(
-                select(RegulatoryExpression.work_id, RegulatoryExpression.id).where(
-                    RegulatoryExpression.work_id.in_(work_ids)
-                )
-            ):
-                expressions.setdefault(work_id, []).append(expression_id)
-        entity_ids = set(work_ids)
-        entity_ids.update(row["event_id"] for row in rows if row["event_id"])
-        entity_ids.update(expression_id for ids in expressions.values() for expression_id in ids)
-        dates = {}
-        if entity_ids:
-            for item in session.execute(
-                select(
-                    RegulatoryDate.entity_id,
-                    RegulatoryDate.kind,
-                    RegulatoryDate.date_value,
-                    RegulatoryDate.precision,
-                    RegulatoryDate.provenance,
-                    RegulatoryDate.source_url,
-                ).where(RegulatoryDate.entity_id.in_(entity_ids))
-            ):
-                dates.setdefault(item.entity_id, []).append(
-                    (
-                        item.kind,
-                        dict(
-                            value=item.date_value,
-                            precision=item.precision,
-                            provenance=item.provenance,
-                            source_url=item.source_url,
-                        ),
-                    )
-                )
+        dates = self._page_dates(session, rows)
         for row in rows:
-            work_id, law_id = row["work_id"], row["law_id"]
-            entity_ids = [work_id, *expressions.get(work_id, [])] if work_id else []
-            if row["event_id"]:
-                entity_ids.append(row["event_id"])
-            official_dates = {}
-            for entity_id in dict.fromkeys(entity_ids):
-                for kind, value in dates.get(entity_id, []):
-                    official_dates.setdefault(kind, []).append(value)
+            law_id = row["law_id"]
             version_id, comparison_id = row.pop("current_version_id"), comparisons.get(law_id)
             row.update(
                 why="Latest saved activity for a document in this organization's watchlist.",
@@ -575,7 +569,7 @@ class RegistryReader:
                         timeline_url=f"/laws/{law_id}",
                     )
                 ],
-                official_dates=official_dates,
+                official_dates=dates[row["id"]],
                 source_url=row["source_url"] or row.pop("law_url"),
                 evidence_url=f"/evidence/{version_id}" if version_id else None,
                 timeline_url=f"/laws/{law_id}",
