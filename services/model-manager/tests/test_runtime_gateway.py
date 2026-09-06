@@ -234,3 +234,47 @@ async def test_real_assistant_client_uses_gateway_binding_end_to_end(gateway, mo
     assert len(runner_calls) == 1
     assert json.loads(runner_calls[0].content)["model"] == snapshot["served_model_id"]
     assert_released(module, manager)
+
+
+@pytest.mark.asyncio
+async def test_real_analysis_client_carries_one_binding_through_gateway(gateway, monkeypatch):
+    from helvetic_lens.analysis import InferenceBudget, ModelClient
+    from helvetic_lens.config import DomainError, Settings
+    from helvetic_lens.runtime_binding import RuntimeSnapshot
+
+    module, manager, snapshot = gateway
+    assert RuntimeSnapshot.model_validate(snapshot).identity.model_id == "apertus-test"
+    real_client = httpx.AsyncClient
+    asgi = httpx.ASGITransport(app=module.app)
+    runner_calls, probes = [], []
+
+    async def route(request):
+        if request.url.host == "synthetic-manager":
+            if request.url.path == "/v1/runtime":
+                probes.append(request)
+            return await asgi.handle_async_request(request)
+        runner_calls.append(request)
+        assert manager.inference_leases
+        assert json.loads(request.content)["model"] == snapshot["served_model_id"]
+        return httpx.Response(200, json={"choices": [{"message": {"content": "synthetic analysis reply"}}]})
+
+    monkeypatch.setattr(
+        httpx, "AsyncClient", lambda **kwargs: real_client(transport=httpx.MockTransport(route), **kwargs),
+    )
+    settings = Settings(_env_file=None, apertus_provider="docker", apertus_model=snapshot["served_model_id"])
+    settings.apertus_base_url = "http://synthetic-manager/openai/v1"
+    client = ModelClient(settings)
+    token = client.begin_trace()
+    budget = InferenceBudget(3)
+    for wording in ("synthetic batch", "synthetic synthesis"):
+        assert await client.complete("system", wording, budget=budget) == "synthetic analysis reply"
+    manager.stop_model("apertus-test")
+    with pytest.raises(DomainError) as error:
+        await client.complete("system", "must not reach runner", budget=budget)
+    trace = client.end_trace(token)
+    assert error.value.code == "runtime_binding_changed"
+    assert len(probes) == 1 and len(runner_calls) == 2
+    capture = trace[0]["runtime_binding"]
+    assert capture["binding_fingerprint"] == snapshot["binding_fingerprint"]
+    assert capture["hardware"] == RuntimeSnapshot.model_validate(snapshot).hardware.model_dump()
+    assert_released(module, manager)

@@ -7,6 +7,7 @@ import pytest
 from conftest import add_law, import_old
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
+from runtime_fixtures import local_runtime
 
 from helvetic_lens.analysis import InferenceBudget, ModelClient
 from helvetic_lens.config import DomainError
@@ -229,9 +230,12 @@ def test_local_docker_provider_derives_endpoint_lists_models_and_never_sends_rem
 
     def respond(request):
         requests.append(request)
+        if request.url.path == "/v1/runtime":
+            return httpx.Response(200, json=local_runtime())
         if request.url.path.endswith("/chat/completions"):
             return httpx.Response(
                 200,
+                headers={"x-helvetic-runtime-binding": local_runtime()["binding_fingerprint"]},
                 json={"choices": [{"message": {"content": '{"status":"ok"}'}}]},
             )
         return httpx.Response(
@@ -277,6 +281,7 @@ def test_local_docker_provider_derives_endpoint_lists_models_and_never_sends_rem
         "required": ["status"],
     }
     assert "authorization" not in requests[-1].headers
+    assert requests[-1].headers["x-helvetic-runtime-binding"] == local_runtime()["binding_fingerprint"]
 
     saved_local = client.patch(
         "/api/settings/apertus",
@@ -431,6 +436,8 @@ def test_context_limit_failure_is_actionable_and_is_not_retried(harness, monkeyp
 
     def respond(request):
         requests.append(request)
+        if request.url.path == "/v1/runtime":
+            return httpx.Response(200, json=local_runtime())
         return httpx.Response(
             500,
             json={
@@ -455,10 +462,11 @@ def test_context_limit_failure_is_actionable_and_is_not_retried(harness, monkeyp
     assert response.status_code == 422
     assert response.json()["code"] == "model_context_exceeded"
     assert "Local models" in response.json()["detail"]
-    assert len(requests) == 1
+    assert [request.method for request in requests] == ["GET", "POST"]
     logs = client.get("/api/integration-logs?provider=docker").json()
-    assert logs["total"] == 1
-    assert logs["items"][0]["status"] == "error"
+    assert logs["total"] == 2
+    assert sorted(item["status"] for item in logs["items"]) == ["error", "success"]
+    assert sum(item["operation"] == "chat_completion" for item in logs["items"]) == 1
 
 
 @pytest.mark.asyncio

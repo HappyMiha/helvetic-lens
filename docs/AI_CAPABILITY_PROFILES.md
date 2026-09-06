@@ -10,17 +10,27 @@ are useful or correct.
 
 HL-091 now has a strict, versioned registry reader, independent-review artifact
 integrity checker, provider-independent decision resolver and read-only CLI.
-The shipped registry is deliberately empty. **This slice does not yet change
-Impact/Ask runtime routing, the planner, settings, cache or history.** Those still
-need the coordinated integration described below. The resolver's
+The shipped registry is deliberately empty. **Capability-based Impact/Ask mode
+selection, request token measurement, settings and cache freshness still need
+coordinated integration.** The resolver's
 `generated_explanation` decision is a permission for a verified scope, not an
 assertion that the current application has used that mode.
 
 The local manager now exposes [observed launch inputs and deployment binding](LOCAL_INFERENCE.md#deployment-binding--6-september-2026).
-Its gateway enforces pins during admission and inference; Marvin's local client
-already uses them. This prevents per-request model substitution and supplies the
-identity needed by the future Impact/Ask integration. It does not approve a
-model or migrate the analysis pipeline automatically.
+Its gateway enforces pins during admission and inference. Marvin's local client
+uses them, and each new Impact/Ask inference trace now captures one runtime and
+uses that pin across batches, synthesis, transport retries and JSON repair.
+History and the completed plan retain the captured snapshot instead of a later
+inventory lookup. This prevents accepting responses from a different deployment;
+it does not approve a model or change the current provider-based wire adapter.
+
+Saved `runtime_identity_fingerprint` values bind the complete immutable identity,
+served alias and launch context/output defaults, excluding the per-start ID.
+They remain absent when immutable identity is unavailable. These values are
+inputs for the next cache migration, **not a claim that existing cached answers,
+completed-job reuse, comparison summaries or matrix freshness already check the
+running model**. All of those consumers must move together; old history must
+remain inspectable without requiring a live model.
 
 The existing GTX 1070 structured-output benchmark is not an explanatory quality
 review. Neither it nor a successful HTTP/JSON response promotes Apertus 1.5B,

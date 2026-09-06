@@ -4,6 +4,7 @@ import json
 import re
 import time
 from contextvars import ContextVar, Token
+from dataclasses import dataclass, field
 from typing import Annotated, Literal
 
 import httpx
@@ -15,6 +16,7 @@ from .extraction import normalize
 from .integration_logs import IntegrationLogger, response_snapshot
 from .models import Comparison, Profile, Version
 from .prompt_settings import PromptSettings, default_prompt_settings, prompt_fingerprint
+from .runtime_binding import RuntimeSnapshot
 from .selected_evidence import selected_evidence_copy
 
 PROMPT_VERSION = "helvetic-lens-v11-evidenced-date-mentions"
@@ -236,21 +238,104 @@ class AnswerSynthesis(StructuredOutput):
     citation_numbers: list[CitationNumber] = Field(default_factory=list)
 
 
+@dataclass
+class RuntimeBindingState:
+    connection: tuple[str, str, str]
+    lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    snapshot: RuntimeSnapshot | None = None
+    error: DomainError | None = None
+
+
 class ModelClient:
     def __init__(self, settings: Settings, integration_logger: IntegrationLogger | None = None):
         self.settings = settings
         self.integration_logger = integration_logger
         self._trace: ContextVar[list[dict] | None] = ContextVar("model_trace", default=None)
         self._priority: ContextVar[str] = ContextVar("model_priority", default="interactive")
+        self._runtime_binding: ContextVar[RuntimeBindingState | None] = ContextVar("model_runtime_binding", default=None)
 
-    def begin_trace(self, priority: str = "interactive") -> tuple[Token, Token]:
-        return self._trace.set([]), self._priority.set(priority)
+    def connection_identity(self) -> tuple[str, str, str]:
+        return self.settings.apertus_provider, self.settings.apertus_base_url.rstrip("/"), self.settings.apertus_model
 
-    def end_trace(self, token: tuple[Token, Token]) -> list[dict]:
+    def begin_trace(self, priority: str = "interactive") -> tuple[Token, Token, Token]:
+        return (
+            self._trace.set([]), self._priority.set(priority),
+            self._runtime_binding.set(RuntimeBindingState(self.connection_identity())),
+        )
+
+    def end_trace(self, token: tuple[Token, Token, Token]) -> list[dict]:
         events = list(self._trace.get() or [])
         self._trace.reset(token[0])
         self._priority.reset(token[1])
+        self._runtime_binding.reset(token[2])
         return events
+
+    async def bound_runtime(self, budget: InferenceBudget | None = None) -> RuntimeSnapshot | None:
+        state = self._runtime_binding.get() or RuntimeBindingState(self.connection_identity())
+        if state.connection != self.connection_identity():
+            self.trace_event({"runtime_resolution_error": "runtime_binding_changed"})
+            raise DomainError("The model connection changed during this analysis. Start a new analysis.", 409, "runtime_binding_changed")
+        if self.settings.apertus_provider != "docker":
+            return None
+        async with state.lock:
+            if state.connection != self.connection_identity():
+                self.trace_event({"runtime_resolution_error": "runtime_binding_changed"})
+                raise DomainError("The model connection changed during this analysis. Start a new analysis.", 409, "runtime_binding_changed")
+            if state.error is not None:
+                raise state.error
+            if state.snapshot is not None:
+                return state.snapshot
+            base = self.settings.apertus_base_url.rstrip("/")
+            started = time.monotonic()
+            response: httpx.Response | None = None
+            url = base.removesuffix("/openai/v1") + "/v1/runtime"
+            headers = self.headers()
+            try:
+                if not base.endswith("/openai/v1"):
+                    raise DomainError(
+                        "Local Docker analysis requires the model-manager gateway ending in /openai/v1.",
+                        503, "model_runtime_unavailable",
+                    )
+                timeout = min(
+                    float(self.settings.apertus_timeout_seconds),
+                    budget.deadline - time.monotonic() if budget is not None else 30.0,
+                )
+                if timeout <= 0:
+                    raise DomainError("The analysis time budget expired before its runtime could be verified.", 504, "model_budget_exhausted")
+                async with httpx.AsyncClient(timeout=timeout, trust_env=False) as client:
+                    response = await client.get(url, headers=headers)
+                if state.connection != self.connection_identity():
+                    raise DomainError("The model connection changed while resolving its runtime. Start a new analysis.", 409, "runtime_binding_changed")
+                if response.status_code != 200:
+                    raise DomainError("The local model runtime is unavailable. Check Local models before retrying.", 503, "model_runtime_unavailable")
+                snapshot = RuntimeSnapshot.model_validate(response.json())
+                if snapshot.served_model_id != self.settings.apertus_model:
+                    raise DomainError("The configured local model is not the model currently running. Refresh Local models.", 409, "runtime_binding_changed")
+                state.snapshot = snapshot
+                self.trace_event({
+                    "runtime_binding": snapshot.model_dump(mode="json"),
+                    "runtime_identity_fingerprint": snapshot.identity_fingerprint(),
+                    "runtime_probe_ms": round((time.monotonic() - started) * 1000, 2),
+                })
+            except (DomainError, httpx.HTTPError, ValueError, TypeError) as exc:
+                error = exc if isinstance(exc, DomainError) else DomainError(
+                    "The local model did not provide a usable runtime binding. Check Local models before retrying.",
+                    503, "model_runtime_unavailable",
+                )
+                state.error = error
+                self.trace_event({"runtime_resolution_error": error.code})
+                self.log_exchange(
+                    operation="runtime_binding", method="GET", url=url, request_headers=headers,
+                    request_body=None, response=response, started=started, status="error", error=error.message,
+                )
+                if error is exc:
+                    raise
+                raise error from exc
+            self.log_exchange(
+                operation="runtime_binding", method="GET", url=url, request_headers=headers,
+                request_body=None, response=response, started=started, status="success",
+            )
+            return state.snapshot
 
     def trace_event(self, event: dict) -> None:
         events = self._trace.get()
@@ -527,7 +612,10 @@ class ModelClient:
             }
         elif self.settings.apertus_json_mode:
             payload["response_format"] = {"type": "json_object"}
+        runtime = await self.bound_runtime(budget)
         url, headers = self.endpoint("chat/completions"), self.headers()
+        if runtime is not None:
+            headers["X-Helvetic-Runtime-Binding"] = runtime.binding_fingerprint
         total_attempts = self.settings.apertus_request_retries + 1
         retryable_statuses = {408, 425, 429, 500, 502, 503, 504}
 
@@ -572,6 +660,11 @@ class ModelClient:
                         json=payload,
                         timeout=max(1.0, request_timeout),
                     )
+                    if runtime is not None and response.status_code == 409:
+                        raise DomainError(
+                            "The local model deployment changed during analysis. No result from a different deployment was accepted; start a new analysis.",
+                            409, "runtime_binding_changed",
+                        )
                     # Retrying an unchanged oversized prompt can never succeed and can
                     # occupy every local llama.cpp slot. Surface the actionable error
                     # immediately while keeping transient 5xx retries intact.
@@ -585,6 +678,8 @@ class ModelClient:
                         await pause(attempt, response)
                         continue
                     self.raise_for_provider_error(response, operation="chat completions")
+                    if runtime is not None and response.headers.get("x-helvetic-runtime-binding") != runtime.binding_fingerprint:
+                        raise DomainError("The local runner response does not match this analysis's deployment.", 409, "runtime_binding_changed")
                     envelope = response.json()
                     content = self.message_content(envelope)
                     self.trace_event(
@@ -594,6 +689,7 @@ class ModelClient:
                             "duration_ms": round((time.monotonic() - started) * 1000, 2),
                             "queue_wait_ms": float(response.headers.get("x-helvetic-queue-wait-ms", 0) or 0),
                             "slot": response.headers.get("x-helvetic-slot"),
+                            **({"runtime_binding": runtime.binding_fingerprint} if runtime is not None else {}),
                             "usage": envelope.get("usage", {}) if isinstance(envelope, dict) else {},
                         }
                     )
@@ -1285,6 +1381,12 @@ def complete_analysis_plan(
         "inference_duration_ms": provenance.get("inference_duration_ms", 0),
         "token_counts": provenance.get("token_counts", {}),
         "validation": provenance.get("validation", {}),
+        "runtime_binding": {
+            "state": provenance.get("runtime_binding_state", "not_captured"),
+            "deployment_id": (provenance.get("runtime_binding") or {}).get("deployment_id"),
+            "binding_fingerprint": (provenance.get("runtime_binding") or {}).get("binding_fingerprint"),
+            "identity_fingerprint": provenance.get("runtime_identity_fingerprint"),
+        },
         "coverage_limited": bool(coverage.get("limited")),
         "result_url": result_url,
     }

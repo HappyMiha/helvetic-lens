@@ -69,13 +69,47 @@ API and model-manager code together when an operator next updates the system;
 the new client intentionally does not silently downgrade against an older
 manager lacking this contract. This change was not deployed to production.
 
-**Remaining HL-091 boundary:** Impact/Ask still need to carry a resolved
-[capability decision](AI_CAPABILITY_PROFILES.md) and binding through their full
-plan, retries, batches, synthesis, cache and saved history. An unpinned legacy
-client is protected during its individual call, but not across multiple calls.
-The reported launch context/output defaults are not measurements of a complete
-serialized prompt and are not explanatory quality approval. Real tokenizer
-accounting and independent per-model/task/locale evaluation remain open.
+### Analysis execution binding — 6 September 2026
+
+Every new local Impact/Ask inference trace now resolves the active snapshot from
+the same configured gateway before sending document evidence. A shared async
+lock performs one probe for concurrent batches. The trace retains that snapshot
+across batches, synthesis, transport retries and the existing one JSON repair;
+it never switches deployments mid-analysis. An unavailable or inconsistent
+snapshot fails before a generation POST. A stopped/replaced deployment or an
+absent/mismatched successful-response pin fails without a binding-change retry.
+Other provider transports are unchanged; no automatic cloud fallback was added.
+
+The probe appears separately in integration logs and does not consume a model
+call. It uses the remaining analysis deadline. A cancelled probe releases its
+lock; another waiting batch may resolve a snapshot when no generation has yet
+been accepted. Separate traces keep separate bindings. A standalone `complete`
+call without a trace pins just that call and its transport retries; callers
+orchestrating multiple calls must use `begin_trace`/`end_trace` for the full run.
+The existing Impact, Ask and relation-analysis services already do so.
+
+History records the whitelisted launch snapshot, including captured hardware,
+with `runtime_binding_state` and `runtime_identity_fingerprint`. Completed plan
+metadata records the execution pin and identity fingerprint too. Saving a result
+does not probe current inventory or label old output as if a replacement model
+produced it. Missing metadata stays unknown. A failed response cannot become a
+successful answer merely because HTTP returned 200. Existing structured-output
+validation and citation checks remain required after the transport check.
+
+The stable identity fingerprint includes immutable model/artifact/tokenizer/
+template/runtime/hardware identity, served alias and launch context/output
+defaults. Restarting the same inputs changes the execution pin but not this
+identity fingerprint; an incomplete immutable identity has no reusable identity
+fingerprint. Runtime snapshots are not independent hardware or image attestation.
+
+**Remaining HL-091 boundary:** [Capability decisions](AI_CAPABILITY_PROFILES.md)
+still need to drive planning and adapter selection. Cache lookup, completed-job
+deduplication, report/matrix freshness and reuse have not yet adopted runtime
+identity; this slice does not claim they invalidate an old model's result.
+Reported context/output defaults do not measure a serialized prompt and do not
+approve explanatory quality. Real tokenizer accounting and independent
+per-model/task/locale evaluation remain open. An unpinned legacy client remains
+protected only during its individual call. No production deployment occurred.
 
 Every saved Impact and Ask record carries backend, model ID, immutable revision, artifact SHA-256, quantization, pinned runtime image, hardware profile and devices, configured/runtime context, generation settings, aggregate gateway queue wait, inference duration, token usage when returned, individual attempts, and structured validation/repair events.
 

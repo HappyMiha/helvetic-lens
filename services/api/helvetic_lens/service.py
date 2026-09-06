@@ -444,15 +444,26 @@ class HelveticLens:
             self._model_client_context.set(next_client)
 
     async def inference_provenance(self, settings: Settings, trace: list[dict]) -> dict:
-        deployment, hardware = {}, {}
-        if settings.apertus_provider == "docker":
-            try:
-                inventory = await self.model_manager.inventory()
-                deployment = inventory.get("deployment") or {}
-                hardware = inventory.get("hardware") or {}
-            except DomainError as exc:
-                deployment = {"state": "unavailable", "error_code": exc.code}
+        # Provenance belongs to the requests just made, not whichever model is
+        # running when results are saved. Never relabel history from a later probe.
+        captured = next(
+            (event for event in trace if isinstance(event.get("runtime_binding"), dict)), {},
+        ) if settings.apertus_provider == "docker" else {}
+        deployment = captured.get("runtime_binding") or {}
+        hardware = deployment.get("hardware") or {}
         calls = [event for event in trace if event.get("outcome")]
+        binding_state = "not_captured" if settings.apertus_provider == "docker" else "not_applicable"
+        if deployment:
+            binding_state = "captured"
+            succeeded = [event for event in calls if event.get("outcome") == "success"]
+            if succeeded and all(event.get("runtime_binding") == deployment.get("binding_fingerprint") for event in succeeded):
+                binding_state = "verified_responses"
+        if any(
+            event.get("error_code") == "runtime_binding_changed"
+            or event.get("runtime_resolution_error") == "runtime_binding_changed"
+            for event in trace
+        ):
+            binding_state = "changed"
         usage: dict[str, int] = {}
         for event in calls:
             for key, value in (event.get("usage") or {}).items():
@@ -462,6 +473,9 @@ class HelveticLens:
         return {
             "backend": settings.apertus_provider,
             "model": settings.apertus_model,
+            "runtime_binding": deployment or None,
+            "runtime_binding_state": binding_state,
+            "runtime_identity_fingerprint": captured.get("runtime_identity_fingerprint"),
             "model_revision": deployment.get("model_revision"),
             "artifact_sha256": deployment.get("artifact_sha256"),
             "quantization": deployment.get("quantization"),
@@ -473,7 +487,7 @@ class HelveticLens:
             },
             "context": {
                 "configured_chars": settings.apertus_context_chars,
-                "runtime_tokens": deployment.get("context_size"),
+                "runtime_tokens": deployment.get("context_window_tokens"),
             },
             "generation": {
                 "max_tokens": settings.apertus_max_tokens,
