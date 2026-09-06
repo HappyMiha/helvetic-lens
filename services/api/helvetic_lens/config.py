@@ -91,6 +91,9 @@ class Settings(BaseSettings):
     apertus_product_id: str = Field(default="", pattern=r"^\d*$")
     apertus_base_url: str = ""
     apertus_model: str = "apertus-1.5b-q4km"
+    apertus_explanation_profile: str = Field(default="", max_length=200, pattern=r"^[a-zA-Z0-9._/-]*$")
+    ai_capability_registry: Path = Path(__file__).with_name("ai-capability-profiles.json")
+    ai_capability_evidence_root: Path = Path(__file__).parent
     apertus_api_key: SecretStr = SecretStr("")
     apertus_timeout_seconds: int = Field(default=90, ge=5, le=300)
     apertus_request_retries: int = Field(default=2, ge=0, le=5)

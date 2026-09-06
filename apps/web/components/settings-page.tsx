@@ -32,6 +32,7 @@ import { ErrorNote, Loading, SuccessNote } from "./common";
 import { Shell } from "./shell";
 import { useAuth } from "./auth-gate";
 import { useI18n } from "@/lib/i18n";
+import { CapabilityProfileSelect } from "./capability-profile-select";
 
 type KeyAction = "keep" | "replace" | "remove" | "environment";
 type Provider = "custom" | "docker" | "infomaniak";
@@ -56,6 +57,7 @@ function draftValues(settings: ApertusSettings) {
     product_id: settings.product_id,
     base_url: settings.base_url,
     model: settings.model,
+    explanation_profile: settings.explanation_profile ?? "",
     timeout_seconds: String(settings.timeout_seconds),
     request_retries: String(settings.request_retries),
     batch_concurrency: String(settings.batch_concurrency),
@@ -673,6 +675,11 @@ function ApertusForm({
               </label>
             </>
           )}
+          <CapabilityProfileSelect
+            settings={initial}
+            value={draft.explanation_profile}
+            onChange={(value) => update("explanation_profile", value)}
+          />
           {draft.provider === "docker" ? (
             <div className="rounded-lg border p-4 min-w-0 text-sm">
               <div className="flex items-center gap-2 font-semibold mb-2">

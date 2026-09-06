@@ -64,7 +64,7 @@ the translations with native users.
 
 After `npm run build`, run `npm run check:accessibility`. It executes the actual
 production-UI suites for Topics, comparison/AI panels, saved original evidence,
-inbox, onboarding and Marvin. Each suite injects the pinned local `axe-core`
+inbox, onboarding, Marvin and capability settings. Each suite injects the pinned local `axe-core`
 development dependency into its isolated browser; it is not loaded by the product
 or sent to a provider. All application APIs remain intercepted fixture responses.
 
@@ -86,6 +86,7 @@ Required checkpoint totals:
 | Inbox | Populated recovered page; five locales, four widths | 20 |
 | Onboarding | Initial choices and failed-save recovery; five locales, phone/desktop, reader/admin | 40 |
 | Marvin | Open saved personal conversation; five locales, four widths, reader/admin | 40 |
+| Capability settings | Installed, empty, invalid and missing review profiles; five locales, phone/desktop; additional keyboard selection/save/reload and read-only checks | 40 |
 
 `test-results/accessibility/<suite>.json` records every checkpoint's actual locale,
 viewport, engine version, rule failures, affected selectors and incomplete checks.
@@ -93,13 +94,18 @@ These are checkpoint evidence files, not proof the surrounding interaction suite
 finished: require the combined command's successful exit as well. All findings and
 incomplete checks remain recorded for review, including on a failed run. Other
 incomplete results may remain when the gate passes and must not
-be relabelled as successful checks. The six required suites now total 265 checkpoints.
+be relabelled as successful checks. The seven required suites now total 305 checkpoints.
 
 The initial scans found unreadable legacy muted colors in shared navigation,
 metadata, status labels, evidence links and Marvin. These now use the semantic
 muted foreground; the synthetic-data badge retains a darker amber foreground.
 Shared buttons transition colors instead of opacity when re-enabled, so an active
 button does not temporarily retain its disabled, low-contrast appearance.
+
+The capability-settings sweep also exposed legacy `.field-help` text at 3.84:1.
+It now uses the same semantic muted foreground. Profile selection does not itself
+contact a model or approve its quality; all profile/review fixtures in this suite
+are synthetic. The five-language help still needs native-language acceptance.
 
 This is not every route/state or a WCAG certification. More localized inbox
 error/dialog combinations, manual screen-reader and physical-device input,

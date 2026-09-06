@@ -178,6 +178,7 @@ class CapabilityDecision(Contract):
         "profile_not_selected", "profile_unknown", "profile_not_approved",
         "runtime_identity_unavailable", "runtime_identity_mismatch",
         "scope_not_reviewed", "reviewed_scope",
+        "registry_invalid", "measurement_unavailable",
     ]
     profile_id: str | None
     profile_revision: int | None

@@ -59,6 +59,11 @@ def record_id(result):
     return result.get("record_id") or result["id"]
 
 
+def assert_execution_identity(actual, observed):
+    assert len(actual["capability_policy"]) == 64
+    assert {key: value for key, value in actual.items() if key != "capability_policy"} == RuntimeSnapshot.model_validate(observed).cache_identity()
+
+
 @pytest.mark.parametrize("field", [
     "model_id", "model_revision", "artifact_sha256", "tokenizer_sha256",
     "chat_template_sha256", "runtime_sha256", "hardware_profile",
@@ -86,7 +91,7 @@ def test_exact_runtime_reuses_answer_across_restart_but_new_revision_does_not(bo
     assert first.status_code == 200, first.text
     first = first.json()
     assert first["cached"] is False
-    assert first["analysis_plan"]["runtime_cache_identity"] == RuntimeSnapshot.model_validate(state["runtime"]).cache_identity()
+    assert_execution_identity(first["analysis_plan"]["runtime_cache_identity"], state["runtime"])
     state["runtime"] = local_runtime(generation="b")
     repeated = run(client, comparison, kind).json()
     assert repeated["cached"] is True and record_id(repeated) == record_id(first)
@@ -229,7 +234,7 @@ def test_model_change_while_queued_cannot_poison_original_job_cache_key(bound_ap
         old_job = session.get(Job, queued["id"])
         assert old_job.idempotency_key == f"superseded:{old_job.id}"
         assert old_job.correlation["superseded_idempotency_key"].startswith("ask:" if kind.startswith("ask") else "impact:")
-        assert old_job.payload["runtime_cache_identity"] == RuntimeSnapshot.model_validate(local_runtime()).cache_identity()
+        assert_execution_identity(old_job.payload["runtime_cache_identity"], local_runtime())
     # No duplicate generation occurs merely by queueing or inspecting old work.
     assert sum(call.method == "POST" for call in state["calls"]) == 1
 

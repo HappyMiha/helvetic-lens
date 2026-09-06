@@ -5,6 +5,7 @@ from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
 
+from .capability_execution import public_capability_profiles
 from .config import DomainError, Settings, infomaniak_base_url, local_docker_base_url
 from .extraction import canonical_url
 from .models import ApertusConfiguration
@@ -14,6 +15,7 @@ PUBLIC_FIELDS = (
     "product_id",
     "base_url",
     "model",
+    "explanation_profile",
     "timeout_seconds",
     "request_retries",
     "batch_concurrency",
@@ -32,6 +34,7 @@ class ApertusSettingsInput(BaseModel):
     product_id: str = Field(default="", max_length=30, pattern=r"^\d*$")
     base_url: str = Field(default="", max_length=2000)
     model: str = Field(min_length=1, max_length=300)
+    explanation_profile: str = Field(default="", max_length=200, pattern=r"^[a-zA-Z0-9._/-]*$")
     timeout_seconds: int = Field(default=90, ge=5, le=300)
     request_retries: int = Field(default=2, ge=0, le=5)
     batch_concurrency: int = Field(default=1, ge=1, le=4)
@@ -136,6 +139,7 @@ def resolved_settings(
 
 def public_settings(settings: Settings, record: ApertusConfiguration | None) -> dict:
     return {
+        **public_capability_profiles(settings),
         **{name: getattr(settings, f"apertus_{name}") for name in PUBLIC_FIELDS},
         "configured": settings.model_configured,
         "api_key_configured": bool(settings.apertus_api_key.get_secret_value()),

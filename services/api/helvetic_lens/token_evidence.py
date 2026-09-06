@@ -103,7 +103,10 @@ async def fit_numbered_evidence(client, system: str, payload: dict, schema: dict
             citations["maxItems"] = min(10, len(allowed))
             measured = await client.count_prompt(system, json.dumps(candidate, ensure_ascii=False), response_schema=wire_schema, budget=budget)
             probes.append(measured.model_dump(mode="json"))
-            if measured.fits:
+            fits = client.evidence_fits(measured)
+            if client.active_capability is not None and client.active_capability.budget is not None:
+                probes[-1]["reviewed_budget_fits"] = fits
+            if fits:
                 spans = []
                 for row in active:
                     number = row[number_index]
@@ -122,6 +125,8 @@ async def fit_numbered_evidence(client, system: str, payload: dict, schema: dict
                         key: candidate[key] for key in ("evidence", "deterministic_diff", "document_context") if key in candidate
                     }, ensure_ascii=False)),
                     "measurements": probes,
+                    "reviewed_budget": client.active_capability.budget.model_dump(mode="json")
+                    if client.active_capability is not None and client.active_capability.budget is not None else None,
                 })
                 # Preserve indices so original numeric references cannot silently
                 # point at a different saved passage after allocation.
@@ -134,6 +139,12 @@ async def fit_numbered_evidence(client, system: str, payload: dict, schema: dict
                     break
                 shortened = True
                 # active rows are references into rows; their windows now changed.
+        if client.active_capability is not None and client.active_capability.budget is not None:
+            raise DomainError(
+                "The evidence request cannot fit within the independently reviewed task budget, even with a minimal window. "
+                "Reduce custom instructions or company context, or use a profile reviewed with a larger budget. No explanation was generated.",
+                422, "capability_budget_exceeded",
+            )
         raise DomainError(
             "The local prompt still cannot fit with a minimal evidence window. Reduce custom instructions, "
             "company context or output length, or choose a larger verified context. The complete saved comparison remains available.",

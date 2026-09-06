@@ -448,17 +448,31 @@ class HelveticLens:
         captured = self._cache_runtime_context.get()
         connection = (self.settings.apertus_provider, self.settings.apertus_base_url.rstrip("/"), self.settings.apertus_model)
         if (
-            captured and captured[0] == connection and captured[1] is not None
+            captured and captured[0] == connection
             and captured[2] is self.model_client and captured[3] == self.organization_id
         ):
-            return captured[1].cache_identity()
+            return {
+                **(captured[1].cache_identity() if captured[1] is not None else {}),
+                "capability_policy": self.model_client.capability_state().fingerprint,
+            }
         return None
+
+    def model_capability(self, task: str, locale: str):
+        return self.model_client.capability_for(task, locale) if isinstance(self.model_client, ai.ModelClient) else None
+
+    @contextmanager
+    def model_capability_scope(self, task: str, locale: str):
+        if isinstance(self.model_client, ai.ModelClient):
+            with self.model_client.capability_scope(task, locale) as decision:
+                yield decision
+        else:
+            yield None
 
     @asynccontextmanager
     async def runtime_cache_scope(self):
         """One bounded observation per operation; ordinary history needs none."""
         client = self.model_client
-        if self.settings.apertus_provider != "docker" or not isinstance(client, ai.ModelClient):
+        if not isinstance(client, ai.ModelClient):
             yield
             return
         captured = self._cache_runtime_context.get()
@@ -472,6 +486,7 @@ class HelveticLens:
                 # Saved history remains readable; a generation attempt will
                 # retain and surface this same resolution error, without retry.
                 snapshot = None
+            client.capability_state()
             token = self._cache_runtime_context.set((client.connection_identity(), snapshot, client, self.organization_id))
             try:
                 yield
@@ -515,6 +530,9 @@ class HelveticLens:
                 event["prompt_token_measurement"] for event in trace if event.get("prompt_token_measurement")
             ],
             "evidence_allocations": [event["evidence_allocation"] for event in trace if event.get("evidence_allocation")],
+            "capability_decision": next((event["capability_decision"] for event in trace if event.get("capability_decision")), None),
+            "capability_error": next((event["capability_error"] for event in trace if event.get("capability_error")), None),
+            "reviewed_prompt_budgets": [event["reviewed_prompt_budget"] for event in trace if event.get("reviewed_prompt_budget")],
             "model_revision": deployment.get("model_revision"),
             "artifact_sha256": deployment.get("artifact_sha256"),
             "quantization": deployment.get("quantization"),
@@ -3657,7 +3675,9 @@ class HelveticLens:
                     )
                     profile = get(session, Profile, self.tenant_record_id)
                     plan, _ = ai.build_impact_plan(
-                        self.settings, comparison, old, new, profile
+                        self.settings, comparison, old, new, profile,
+                        output_locale=payload.get("output_locale") or "en-CH",
+                        capability=self.model_capability("impact_report", payload.get("output_locale") or "en-CH"),
                     )
                     group_total = max(1, int(plan["execution"]["batch_count"]))
 
@@ -4587,6 +4607,7 @@ class HelveticLens:
                 new,
                 profile,
                 output_locale=output_locale,
+                capability=self.model_capability("impact_report", output_locale),
             )
             group_total = max(1, int(plan["execution"]["batch_count"]))
             job, reused = durable_jobs.enqueue(
@@ -4745,7 +4766,8 @@ class HelveticLens:
         output_locale: str = ai.DEFAULT_OUTPUT_LOCALE,
     ):
         async with self.runtime_cache_scope():
-            return await self._analyse(comparison_id, progress_callback, output_locale)
+            with self.model_capability_scope("impact_report", output_locale):
+                return await self._analyse(comparison_id, progress_callback, output_locale)
 
     async def _analyse(
         self,
@@ -4786,6 +4808,8 @@ class HelveticLens:
                     .limit(1)
                 )
                 if cached:
+                    if isinstance(model_client, ai.ModelClient):
+                        model_client.check_capability()
                     cached.use_count += 1
                     cached.last_used_at = utcnow()
                     session.commit()
@@ -4797,6 +4821,7 @@ class HelveticLens:
                     new,
                     profile,
                     output_locale=output_locale,
+                    capability=self.model_capability("impact_report", output_locale),
                 )
                 analysis_plan["runtime_cache_identity"] = self.cache_runtime_identity()
                 if (
@@ -4838,6 +4863,8 @@ class HelveticLens:
                         progress_callback,
                         output_locale,
                     )
+                    if isinstance(model_client, ai.ModelClient):
+                        model_client.check_capability()
                     status, error = "succeeded", None
                 except Exception as exc:
                     result, coverage, status = None, {}, "failed"
@@ -4885,7 +4912,9 @@ class HelveticLens:
         output_locale: str | None = None, progress_callback=None,
     ):
         async with self.runtime_cache_scope():
-            return await self._ask(comparison_id, question, history, output_locale, progress_callback)
+            locale = ai.classify_question_intent(question, output_locale)["locale"]
+            with self.model_capability_scope("ask", locale):
+                return await self._ask(comparison_id, question, history, output_locale, progress_callback)
 
     async def _ask(
         self,
@@ -4939,6 +4968,7 @@ class HelveticLens:
                 history,
                 impact_report,
                 output_locale,
+                capability=self.model_capability("ask", ai.classify_question_intent(question, output_locale)["locale"]),
             )
             analysis_plan["runtime_cache_identity"] = self.cache_runtime_identity()
         if progress_callback:
@@ -4954,6 +4984,8 @@ class HelveticLens:
                     .limit(1)
                 )
                 if cached:
+                    if isinstance(model_client, ai.ModelClient):
+                        model_client.check_capability()
                     cached.use_count += 1
                     cached.last_used_at = utcnow()
                     session.commit()
@@ -4996,6 +5028,8 @@ class HelveticLens:
                     )
                     if progress_callback:
                         await progress_callback("generated")
+                    if isinstance(model_client, ai.ModelClient):
+                        model_client.check_capability()
                 except Exception as exc:
                     trace = (
                         model_client.end_trace(trace_token)

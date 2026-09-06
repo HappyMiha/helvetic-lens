@@ -69,6 +69,15 @@ export type ApertusSettings = {
   product_id: string;
   base_url: string;
   model: string;
+  explanation_profile?: string;
+  explanation_registry_valid?: boolean;
+  explanation_profiles?: {
+    id: string;
+    revision: number;
+    status: "approved" | "candidate" | "revoked";
+    model_id: string;
+    scopes: { task: "ask" | "impact_report"; locale: "de-CH" | "fr-CH" | "it-CH" | "rm-CH" | "en-CH" }[];
+  }[];
   timeout_seconds: number;
   request_retries: number;
   batch_concurrency: number;

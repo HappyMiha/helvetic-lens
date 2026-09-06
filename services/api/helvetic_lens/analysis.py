@@ -11,6 +11,13 @@ from typing import Annotated, Literal
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from .ai_capabilities import CapabilityDecision
+from .capability_execution import (
+    CapabilityState,
+    capture_capabilities,
+    check_capability_freshness,
+    within_reviewed_budget,
+)
 from .config import DomainError, Settings
 from .date_mentions import scan_date_mentions
 from .extraction import normalize
@@ -246,6 +253,7 @@ class RuntimeBindingState:
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     snapshot: RuntimeSnapshot | None = None
     error: DomainError | None = None
+    capabilities: CapabilityState | None = None
 
 
 class ModelClient:
@@ -255,6 +263,42 @@ class ModelClient:
         self._trace: ContextVar[list[dict] | None] = ContextVar("model_trace", default=None)
         self._priority: ContextVar[str] = ContextVar("model_priority", default="interactive")
         self._runtime_binding: ContextVar[RuntimeBindingState | None] = ContextVar("model_runtime_binding", default=None)
+        self._capability: ContextVar[CapabilityDecision | None] = ContextVar("model_capability", default=None)
+
+    def capability_state(self) -> CapabilityState:
+        state = self._runtime_binding.get()
+        if state is None:
+            return capture_capabilities(self.settings, None)
+        if state.capabilities is None:
+            state.capabilities = capture_capabilities(self.settings, state.snapshot)
+        return state.capabilities
+
+    def capability_for(self, task: str, locale: str) -> CapabilityDecision:
+        return self.capability_state().decision(task, locale)
+
+    @property
+    def active_capability(self) -> CapabilityDecision | None:
+        return self._capability.get()
+
+    @contextmanager
+    def capability_scope(self, task: str, locale: str):
+        decision = self.capability_for(task, locale)
+        token = self._capability.set(decision)
+        try:
+            yield decision
+        finally:
+            self._capability.reset(token)
+
+    def check_capability(self):
+        if self.active_capability is not None:
+            try:
+                check_capability_freshness(self.settings, self.capability_state())
+            except DomainError:
+                self.trace_event({"capability_error": "capability_changed"})
+                raise
+
+    def evidence_fits(self, measurement: PromptTokenMeasurement) -> bool:
+        return within_reviewed_budget(measurement, self.active_capability)
 
     def connection_identity(self) -> tuple[str, str, str]:
         return self.settings.apertus_provider, self.settings.apertus_base_url.rstrip("/"), self.settings.apertus_model
@@ -269,6 +313,8 @@ class ModelClient:
             })
         if state.error is not None:
             events.append({"runtime_resolution_error": state.error.code})
+        if self.active_capability is not None:
+            events.append({"capability_decision": self.active_capability.model_dump(mode="json")})
         return (
             self._trace.set(events), self._priority.set(priority),
             self._runtime_binding.set(state),
@@ -632,6 +678,8 @@ class ModelClient:
             "max_completion_tokens" if self.settings.apertus_provider == "infomaniak" else "max_tokens"
         )
         payload[token_field] = self.settings.apertus_max_tokens
+        if self.active_capability is not None and self.active_capability.budget is not None:
+            payload[token_field] = min(payload[token_field], self.active_capability.budget.output_tokens)
         if self.settings.apertus_reasoning_effort != "default":
             payload["reasoning_effort"] = self.settings.apertus_reasoning_effort
         if self.settings.apertus_provider == "docker" and response_schema is not None:
@@ -666,7 +714,8 @@ class ModelClient:
                 422, "token_budget_invalid",
             ) from exc
 
-    async def count_prompt(self, system: str, user: str, *, response_schema: dict, budget: InferenceBudget | None = None) -> PromptTokenMeasurement:
+    async def count_prompt(self, system: str, user: str, *, response_schema: dict | None, budget: InferenceBudget | None = None) -> PromptTokenMeasurement:
+        self.check_capability()
         runtime = await self.bound_runtime(budget)
         if runtime is None or runtime.prompt_budget_schema is None:
             raise DomainError("This runtime does not support measured evidence planning.", 422, "token_budget_unavailable")
@@ -699,6 +748,7 @@ class ModelClient:
                     raise ValueError("Inconsistent count response")
             except ValueError as exc:
                 raise DomainError("The local token count body disagrees with its verified measurement.", 422, "token_budget_invalid") from exc
+            self.check_capability()
             return measured
         except (httpx.HTTPError, TimeoutError) as exc:
             error = "Local prompt token counting was unavailable; no generation was started."
@@ -719,8 +769,18 @@ class ModelClient:
         self, system: str, user: str, *, response_schema: dict | None = None,
         budget: InferenceBudget | None = None,
     ) -> str:
+        self.check_capability()
         payload = self.chat_payload(system, user, response_schema=response_schema)
         runtime = await self.bound_runtime(budget)
+        if self.active_capability is not None and self.active_capability.budget is not None:
+            measured = await self.count_prompt(system, user, response_schema=response_schema, budget=budget)
+            self.trace_event({"reviewed_prompt_budget": {
+                "measurement": measured.model_dump(mode="json"),
+                "decision_fingerprint": self.active_capability.fingerprint,
+                "fits": self.evidence_fits(measured),
+            }})
+            if not self.evidence_fits(measured):
+                raise DomainError("This request exceeds the independently reviewed task budget. No explanation was generated.", 422, "capability_budget_exceeded")
         url, headers = self.endpoint("chat/completions"), self.headers()
         if runtime is not None:
             headers["X-Helvetic-Runtime-Binding"] = runtime.binding_fingerprint
@@ -756,6 +816,7 @@ class ModelClient:
                     )
 
                 try:
+                    self.check_capability()
                     remaining = budget.claim() if budget is not None else None
                     request_timeout = (
                         min(float(self.settings.apertus_timeout_seconds), remaining)
@@ -783,6 +844,8 @@ class ModelClient:
                                 "The local response exceeded its verified token budget. No answer was accepted.",
                                 422, "token_budget_invalid",
                             )
+                        if response.is_success and not self.evidence_fits(measured):
+                            raise DomainError("The returned request measurement exceeds its reviewed task budget. No explanation was accepted.", 422, "capability_budget_exceeded")
                         # No outcome: counting is metadata, not a generation call
                         # or billable usage returned by the model.
                         self.trace_event({"prompt_token_measurement": measured.model_dump(mode="json")})
@@ -799,6 +862,7 @@ class ModelClient:
                         await pause(attempt, response)
                         continue
                     self.raise_for_provider_error(response, operation="chat completions")
+                    self.check_capability()
                     if runtime is not None and response.headers.get("x-helvetic-runtime-binding") != runtime.binding_fingerprint:
                         raise DomainError("The local runner response does not match this analysis's deployment.", 409, "runtime_binding_changed")
                     envelope = response.json()
@@ -909,6 +973,7 @@ def cache_key(
         # Unknown runtime never matches a previously bound generated answer.
         runtime_state["evidence_planner"] = "measured-evidence-v1"
         runtime_state["local_runtime"] = runtime_identity or {"scope": "unverified"}
+    runtime_state["capability_policy"] = (runtime_identity or {}).get("capability_policy", "uncaptured")
     diff_state = {
         "schema_version": comparison.diff.get("schema_version"),
         "algorithm": comparison.diff.get("algorithm"),
@@ -1263,6 +1328,16 @@ def _ask_system_prompt(prompts: PromptSettings, context_rule: str) -> str:
     )
 
 
+def selected_evidence_mode(settings: Settings, capability: CapabilityDecision | None = None) -> bool:
+    # Production API operations supply a captured decision. The fallback is for
+    # low-level callers/test doubles that do not publish capability-bound output.
+    return capability.mode == "selected_evidence" if capability is not None else settings.apertus_provider == "docker"
+
+
+def reviewed_output_limit(settings: Settings, capability: CapabilityDecision | None) -> int:
+    return min(settings.apertus_max_tokens, capability.budget.output_tokens) if capability and capability.budget else settings.apertus_max_tokens
+
+
 def build_impact_plan(
     settings: Settings,
     comparison: Comparison,
@@ -1270,6 +1345,7 @@ def build_impact_plan(
     new: Version,
     profile: Profile | None = None,
     output_locale: str = DEFAULT_OUTPUT_LOCALE,
+    *, capability: CapabilityDecision | None = None,
 ) -> tuple[dict, tuple]:
     """Create the persisted, inspectable plan before any Impact model call."""
 
@@ -1284,9 +1360,9 @@ def build_impact_plan(
     estimated_characters = sum(int(batch.get("estimated_input_characters", 0)) for batch in batches)
     if not evidence:
         planned_calls, strategy = 0, "deterministic_no_substantive_change"
-    elif settings.apertus_provider == "docker":
-        planned_calls, strategy = len(batches), "local_bounded_batches"
-    elif len(batches) == 1:
+    elif selected_evidence_mode(settings, capability):
+        planned_calls, strategy = len(batches), "selected_evidence_batches" if capability else "local_bounded_batches"
+    elif len(batches) == 1 and capability is None:
         planned_calls, strategy = 1, "single_complete_dossier"
     else:
         planned_calls, strategy = len(batches) + 1, "bounded_batches_then_synthesis"
@@ -1307,6 +1383,7 @@ def build_impact_plan(
         json.dumps(shared_change, sort_keys=True).encode()
     ).hexdigest()
     plan = {
+        "capability_decision": capability.model_dump(mode="json") if capability else None,
         "schema_version": "analysis-plan-v1",
         "state": "planned",
         "task": "impact_report",
@@ -1328,12 +1405,13 @@ def build_impact_plan(
             "provider_call_budget": MAX_IMPACT_HTTP_REQUESTS,
             "batch_generation_limit": MAX_IMPACT_BATCHES,
             "configured_context_characters": settings.apertus_context_chars,
-            "reserved_output_tokens_per_call": settings.apertus_max_tokens,
+            "reserved_output_tokens_per_call": reviewed_output_limit(settings, capability),
+            "reviewed_token_budget": capability.budget.model_dump(mode="json") if capability and capability.budget else None,
         },
         "estimates": {
             "input_characters": estimated_characters,
             "input_tokens": _token_estimate(estimated_characters),
-            "output_tokens": planned_calls * settings.apertus_max_tokens,
+            "output_tokens": planned_calls * reviewed_output_limit(settings, capability),
             "planned_generation_calls": planned_calls,
         },
         "execution": {
@@ -1367,6 +1445,7 @@ def build_ask_plan(
     history: list[dict] | None = None,
     impact_report: dict | None = None,
     output_locale: str | None = None,
+    *, capability: CapabilityDecision | None = None,
 ) -> dict:
     """Persist intent and a bounded context plan before any model request."""
 
@@ -1424,7 +1503,7 @@ def build_ask_plan(
         )
     if not evidence:
         planned_calls = 0
-    elif settings.apertus_provider == "docker" or len(batches) == 1:
+    elif selected_evidence_mode(settings, capability) or len(batches) == 1:
         planned_calls = len(batches)
     else:
         planned_calls = len(batches) + 1
@@ -1436,6 +1515,7 @@ def build_ask_plan(
     )
     estimated_characters = sum(int(batch.get("estimated_input_characters", 0)) for batch in batches)
     return {
+        "capability_decision": capability.model_dump(mode="json") if capability else None,
         "schema_version": "analysis-plan-v1",
         "state": "planned",
         "task": "ask",
@@ -1468,12 +1548,13 @@ def build_ask_plan(
             "provider_call_budget": MAX_ASK_HTTP_REQUESTS,
             "router_call_budget": 0,
             "configured_context_characters": settings.apertus_context_chars,
-            "reserved_output_tokens_per_call": settings.apertus_max_tokens,
+            "reserved_output_tokens_per_call": reviewed_output_limit(settings, capability),
+            "reviewed_token_budget": capability.budget.model_dump(mode="json") if capability and capability.budget else None,
         },
         "estimates": {
             "input_characters": estimated_characters,
             "input_tokens": _token_estimate(estimated_characters),
-            "output_tokens": planned_calls * settings.apertus_max_tokens,
+            "output_tokens": planned_calls * reviewed_output_limit(settings, capability),
             "planned_generation_calls": planned_calls,
         },
         "execution": {
@@ -1508,6 +1589,8 @@ def complete_analysis_plan(
         "inference_duration_ms": provenance.get("inference_duration_ms", 0),
         "token_counts": provenance.get("token_counts", {}),
         "prompt_token_measurements": provenance.get("prompt_token_measurements", []),
+        "capability_decision": provenance.get("capability_decision"),
+        "reviewed_prompt_budgets": provenance.get("reviewed_prompt_budgets", []),
         "evidence_allocation": coverage.get("token_allocation"),
         "selected_change_ids": coverage.get("selected_change_ids"),
         "selected_evidence_ids": coverage.get("selected_evidence_ids"),
@@ -2842,10 +2925,11 @@ async def structured_completion(
 ) -> dict:
     """Validate structured output and make one constrained repair attempt when it is invalid."""
 
-    local_docker = getattr(getattr(client, "settings", None), "apertus_provider", None) == "docker"
-    if local_docker and schema is ImpactDigest:
+    capability = client.active_capability if isinstance(client, ModelClient) else None
+    limited = capability.mode == "selected_evidence" if capability else getattr(getattr(client, "settings", None), "apertus_provider", None) == "docker"
+    if limited and schema is ImpactDigest:
         wire_schema = LocalImpactSignal
-    elif local_docker and schema is AnswerDigest:
+    elif limited and schema is AnswerDigest:
         wire_schema = LocalAnswerSignal
     else:
         wire_schema = schema
@@ -2871,17 +2955,17 @@ async def structured_completion(
 
     if wire_schema is LocalImpactSignal:
         system += (
-            " For the local runner, return only citation_rows and impact. The server will build extractive "
+            " For selected-evidence mode, return only citation_rows and impact. The server will build extractive "
             "summary text from those validated saved rows."
         )
     elif wire_schema is LocalAnswerSignal:
         system += (
-            " For the local runner, return only citation_rows and supported. Select the saved rows that "
+            " For selected-evidence mode, return only citation_rows and supported. Select the saved rows that "
             "answer the question; the server will render their exact text."
         )
 
     allowed_numbers = None
-    if allocation is not None and isinstance(client, ModelClient) and wire_schema in {LocalImpactSignal, LocalAnswerSignal}:
+    if allocation is not None and isinstance(client, ModelClient) and schema in {ImpactDigest, AnswerDigest}:
         runtime = await client.bound_runtime(budget)
         if runtime is not None and runtime.prompt_budget_schema is not None:
             payload, allowed_numbers, response_schema = await fit_numbered_evidence(
@@ -3011,10 +3095,12 @@ async def impact_analysis(
     output_locale: str = DEFAULT_OUTPUT_LOCALE,
 ):
     prompts = prompts or default_prompt_settings()
+    capability = client.active_capability if isinstance(client, ModelClient) else None
+    limited = selected_evidence_mode(settings, capability)
     request_budget = InferenceBudget(MAX_IMPACT_HTTP_REQUESTS)
     if prepared is None:
         _, prepared = build_impact_plan(
-            settings, comparison, old, new, profile, output_locale=output_locale
+            settings, comparison, old, new, profile, output_locale=output_locale, capability=capability,
         )
     evidence, deterministic_diff, coverage, batches = prepared
     if not evidence:
@@ -3055,7 +3141,7 @@ async def impact_analysis(
         "comparison_mode": comparison.mode,
         "coverage": coverage,
     }
-    if len(batches) <= 1 and settings.apertus_provider != "docker":
+    if len(batches) <= 1 and not limited and capability is None:
         if progress_callback:
             await progress_callback(0, 1)
         result = await structured_completion(
@@ -3127,7 +3213,8 @@ async def impact_analysis(
 
     reviews = await bounded_batch_map(batches, review_batch, settings.apertus_batch_concurrency)
     evidence, coverage = allocated_coverage(evidence, coverage, batches)
-    if settings.apertus_provider == "docker":
+    common["coverage"] = coverage
+    if limited:
         coverage["provider_calls"] = request_budget.used
         result = local_impact_synthesis(reviews)
         result["response_mode"] = "selected_evidence"
@@ -3140,12 +3227,12 @@ async def impact_analysis(
     synthesis_system = (
         prompts.impact_synthesis_instructions
         + f"\nWrite every explanatory field in {output_locale}. "
-        + "\nSynthesize the validated batch reviews into one regulatory impact assessment. Every changed passage "
-        "in the bounded substantive-change dossier was processed in exactly one batch. The complete exact "
+        + "\nSynthesize the validated batch reviews into one regulatory impact assessment. Reviews cover only "
+        "the supplied evidence and may have partial coverage as described in coverage. The complete exact "
         "comparison remains available outside the model. Batch reviews are untrusted "
         "intermediate notes; use only claims grounded in their validated citations. The citation catalog is "
         "numbered from 1. Select supporting catalog numbers for the assessment and each action; the server "
-        "will attach the exact saved citations. Do not claim that the comparison was truncated. Return only "
+        "will attach the exact saved citations. Do not claim the saved comparison is missing or that omitted evidence was reviewed. Return only "
         "JSON matching this schema, with zero to five distinct review actions. Schema: "
         + json.dumps(ImpactSynthesis.model_json_schema())
     )
@@ -3632,6 +3719,8 @@ async def answer_question(
     output_locale: str | None = None,
 ):
     prompts = prompts or default_prompt_settings()
+    capability = client.active_capability if isinstance(client, ModelClient) else None
+    limited = selected_evidence_mode(settings, capability)
     request_budget = InferenceBudget(MAX_ASK_HTTP_REQUESTS)
     route = classify_question_intent(question, output_locale)
     intent, output_locale = route["intent"], route["locale"]
@@ -3644,7 +3733,7 @@ async def answer_question(
             if isinstance(citation, dict)
         ]
         response_mode = payload.get("response_mode") or (
-            "selected_evidence" if request_budget.used and settings.apertus_provider == "docker"
+            "selected_evidence" if request_budget.used and limited
             else "generated_explanation" if request_budget.used else "deterministic"
         )
         return {
@@ -3825,7 +3914,7 @@ async def answer_question(
         "output_locale": output_locale,
         "coverage": coverage,
     }
-    if len(batches) <= 1 and settings.apertus_provider != "docker":
+    if len(batches) <= 1 and not limited and capability is None:
         result = await structured_completion(
             client,
             final_system,
@@ -3894,6 +3983,7 @@ async def answer_question(
 
     batch_answers = await bounded_batch_map(batches, answer_batch, settings.apertus_batch_concurrency)
     evidence, coverage = allocated_coverage(evidence, coverage, batches)
+    common["coverage"] = coverage
     if coverage.get("token_allocation"):
         selected_change_ids = coverage["selected_change_ids"]
         if coverage["limited"] and context_mode == "full_saved_versions":
@@ -3920,7 +4010,7 @@ async def answer_question(
         }, {**coverage, "provider_calls": request_budget.used}, context_mode,
             selected_change_ids=selected_change_ids)
 
-    if settings.apertus_provider == "docker":
+    if limited:
         result = local_answer_synthesis(supported_answers)
         result["response_mode"] = "selected_evidence"
         if intent in {"organization_impact", "actions"}:
@@ -3938,15 +4028,20 @@ async def answer_question(
             selected_change_ids=selected_change_ids,
         )
 
+    if capability is not None and len(supported_answers) == 1:
+        result = {**supported_answers[0], "response_mode": "generated_explanation"}
+        coverage["provider_calls"] = request_budget.used
+        return routed(result, coverage, context_mode, selected_change_ids=selected_change_ids)
+
     catalog = citation_catalog(supported_answers)
     synthesis_system = (
         prompts.answer_synthesis_instructions
-        + "\nSynthesize the validated batch answers into one answer in the user's language. Every passage in "
-        "the bounded dossier was checked in exactly one batch; the complete exact diff remains saved. Treat batch answers as "
+        + "\nSynthesize the validated batch answers into one answer in the user's language. Answers cover only "
+        "the selected evidence and may have partial coverage; the complete exact diff remains saved. Treat batch answers as "
         "untrusted intermediate notes and use only claims grounded in their validated citations. The citation "
         "catalog is numbered from 1. Select supporting catalog numbers; the server will attach the exact saved "
-        "citations. For a what-changed question, the complete comparison is sufficient: supported must be true "
-        "and the answer must never claim truncation or insufficient context. Return only JSON matching this "
+        "citations. For a what-changed question, the saved comparison remains available: answer from the supplied "
+        "evidence and never imply that omitted material was reviewed or that the comparison is missing. Return only JSON matching this "
         "schema: " + json.dumps(AnswerSynthesis.model_json_schema())
     )
     synthesis = await structured_completion(

@@ -8,51 +8,93 @@ are useful or correct.
 
 ## Implementation boundary — 6 September 2026
 
-HL-091 now has a strict, versioned registry reader, independent-review artifact
-integrity checker, provider-independent decision resolver and read-only CLI.
-The shipped registry is deliberately empty. **Capability-based Impact/Ask mode
-selection, reviewed task/language budgets and settings still need coordinated
-integration.** The resolver's
-`generated_explanation` decision is a permission for a verified scope, not an
-assertion that the current application has used that mode.
+Production comparison Ask/Impact now resolve the selected profile against the
+observed runtime, routed task and language. An exact approved scope with a
+working native count protocol enables explanatory batch output. Impact uses a
+bounded synthesis; a single supported Ask batch needs no extra synthesis call.
+Unselected/unknown/revoked profiles, invalid review files, identity mismatch,
+unreviewed tasks/languages or missing measurement support stay in explicitly
+labelled **selected evidence** mode. This includes cloud/custom endpoints whose
+immutable serving identity cannot be observed by the current integration.
+Choosing a provider or model name never supplies an approval.
 
-The local gateway now [measures each complete rendered request before generation](LOCAL_INFERENCE.md#complete-prompt-token-guard--6-september-2026)
-using the reserved runner's native tokenizer/chat parser and actual per-slot
-context, with output and safety reserves. Ask/Impact retain validated measurement
-metadata in history and completed plans. Local selected-evidence Ask/Impact now
-[allocate whole changes or exact windows against those counts](LOCAL_INFERENCE.md#measured-evidence-allocation--6-september-2026)
-before generation when the gateway advertises the protocol. This bounded
-allocation uses the observed runtime limit and configured output reserve; it
-does not yet apply independently approved per-task/per-language budgets or
-select an explanatory adapter. No capability profile is promoted by a token fit.
+The shipped registry is deliberately empty. **No real model/task/language is
+promoted by this implementation.** Synthetic approvals exercise the execution
+path only. Independent HL-093 explanatory evaluation on each exact model,
+hardware and task/language remains required; existing GTX 1070 JSON/transport
+benchmarks do not establish useful legal explanations or target-server capacity.
 
-The local manager now exposes [observed launch inputs and deployment binding](LOCAL_INFERENCE.md#deployment-binding--6-september-2026).
-Its gateway enforces pins during admission and inference. Marvin's local client
-uses them, and each new Impact/Ask inference trace now captures one runtime and
-uses that pin across batches, synthesis, transport retries and JSON repair.
-History and the completed plan retain the captured snapshot instead of a later
-inventory lookup. This prevents accepting responses from a different deployment;
-it does not approve a model or change the current provider-based wire adapter.
+The adapter decision controls newly generated output. Deterministic no-change
+and clarification responses need no inference. Reusing a current, same-language
+impact report also needs no new Ask call: it retains the source report's response
+mode, citations and report ID, while the trace does not invent an Ask approval.
+Changing/revoking its profile makes the report stale and unavailable for current
+report reuse. Historical records are never relabelled or deleted.
 
-Saved `runtime_identity_fingerprint` values bind the complete immutable identity,
-served alias and launch context/output defaults, excluding the per-start ID.
-They remain absent when immutable identity is unavailable. Impact/Ask cache
-keys, completed-job reuse, comparison/law summaries, matrix freshness and saved
-report selection now share the observed runtime cache scope. A fully identified
-runtime can reuse results after an identical restart; a partially identified
-runtime can reuse only within the same deployment pin. An unavailable runtime
-cannot confirm a previously bound result as current. Historical records remain
-inspectable without a live-model request. [Cache contract](LOCAL_INFERENCE.md#runtime-aware-cache-and-history--6-september-2026).
+## Execution, budgets and freshness
 
-This migration covers execution identity, **not capability approval freshness**.
-No profile is promoted, and the unused capability resolver's decision/review
-fingerprint has not yet been integrated into planner modes or cache keys. That
-must happen together with provider-independent adapter selection.
+The existing [deployment binding](LOCAL_INFERENCE.md#deployment-binding--6-september-2026)
+and [complete prompt guard](LOCAL_INFERENCE.md#complete-prompt-token-guard--6-september-2026)
+remain in force. The same captured capability decision accompanies planning,
+measured numbered-evidence selection, generation, synthesis, transport retry and
+one constrained JSON/citation repair. Output reserve is the smaller of configured
+and reviewed output limits. Native counts include the full wire prompt, schema,
+instructions and template; character estimates remain preliminary estimates.
 
-The existing GTX 1070 structured-output benchmark is not an explanatory quality
-review. Neither it nor a successful HTTP/JSON response promotes Apertus 1.5B,
-Apertus 8B or a cloud model. HL-093 independent evaluation and target-hardware
-acceptance remain open. No new model has been downloaded or started.
+A reviewed request must fit both native and evaluated limits: input and output
+must fit their individual reviewed limits, and input + output + the larger safety
+reserve must fit the smaller of reviewed and actual per-slot context. No measured
+count is rewritten to manufacture a fit. Numbered batch evidence is reduced in
+whole changes/windows using the existing bounded allocator. Every approved
+completion, including synthesis and repair, gets a count-only preflight; the
+existing gateway independently counts again under its inference lease. Synthesis
+or repair that cannot fit fails explicitly rather than silently dropping evidence
+or retrying unchanged input. Counting does not consume generation calls, but its
+network waits remain within the operation deadline. Ask ≤3 / Impact ≤5 provider
+generation-attempt ceilings are unchanged.
+
+The verified registry, selected profile and runtime identity form a versioned
+policy fingerprint. It participates in API cache keys, current-report selection,
+comparison/law/matrix freshness and completed/queued job reuse. Registry review
+integrity and the captured fingerprint are rechecked before/after counting,
+before each generation attempt, after the reply and before accepting a new
+result. Mid-operation changes fail as `capability_changed` and remain recorded in
+history. The registry is a trusted operator-managed file, not a transactional
+revocation service; an update after a completed operation makes that result stale
+on the next current-data read. Unrelated registry edits also invalidate reuse
+conservatively. An unchanged fully identified restart can still reuse results.
+
+Plans expose the selected decision and effective output/reviewed token limits.
+History retains the captured decision, review reference/fingerprint, actual
+measured budget checks and allocation/partial coverage. Worker execution resolves
+its current approval rather than trusting the profile present when it was queued;
+reconciled job keys cannot make a result from another policy current. Failed
+attempts and earlier conclusions remain inspectable without live inference.
+
+This policy covers the public comparison Ask/Impact service paths. Relation
+assessments and Marvin remain separate tasks; raw connection tests/benchmarks do
+not publish capability-approved legal conclusions. Low-level deterministic test
+doubles keep their existing adapters. No automatic model download, model switch,
+cloud fallback or promotion is performed.
+
+## Selecting and installing profiles
+
+Organization integration settings expose an optional **Explanation profile**
+selector with five-language help, task/language scope and reviewed/candidate/
+withdrawn status. The existing admin/viewer access rules apply. A saved profile
+missing from the server is visibly retained until the user changes it; a failed
+registry verification cannot produce a selectable approval. Metadata does not
+expose review-file paths or reviewer details. The API accepts a profile ID, never
+approval records or filesystem settings.
+
+Operators install the trusted registry and its independently reviewed artifacts.
+The defaults are the shipped `ai-capability-profiles.json` and its API package
+directory. Server-only `AI_CAPABILITY_REGISTRY` / `AI_CAPABILITY_EVIDENCE_ROOT`
+can select read-only mounted paths; these paths must exist inside **both API and
+worker** environments. Validate them with the read-only CLI below before a
+reviewed deployment. `APERTUS_EXPLANATION_PROFILE` supplies an optional environment
+default; a saved organization setting overrides it. Selecting a profile is not
+attestation and does not change the model actually running.
 
 ## Registry and evidence contract
 
@@ -82,7 +124,7 @@ model swap or cloud fallback. The caller must explicitly select a profile.
 Each grant records tested input, output and safety token budgets. Their sum must
 fit the recorded context window; booleans and numeric strings are rejected as
 token counts. These are **declared evaluated limits**, not token measurements
-of a current request. The later runtime integration must count the complete
+of a current request. The runtime integration counts the complete
 serialized prompt with the bound tokenizer, including chat-template overhead,
 before comparing it to those limits. Character estimates cannot certify a fit.
 
@@ -133,27 +175,19 @@ The caller must use the registry returned by the verified loader; constructing a
 model object directly is an explicitly trusted in-process operation, not a
 substitute for checking evidence.
 
-## Remaining runtime integration
+## Remaining acceptance work
 
-Before enabling this policy in the product:
-
-1. Feed the existing bound local runner identity and measured request context
-   into capability selection, including tokenizer/template/image digests.
-   Preserve the existing disappearance/switch protection between planning and
-   inference. Unknown remote identities stay limited.
-2. Resolve the explicitly selected trusted profile for the routed task/locale.
-   Keep transport-specific authentication and wire-format handling separate.
-3. Carry the same resolved decision and token budget through planning, structured
-   response adaptation, synthesis, final response mode and saved provenance.
-   Do not let a client object choose another mode based on its provider string.
-4. Bind decision fingerprints to cache/history freshness. Supersede old results
-   without deleting them; retain deterministic/offline results and truthful
-   limited-mode labels in all five locales.
-5. Test changed/revoked identities during execution, measured prompt limits,
-   cancellation, one repair and existing Ask ≤3 / Impact ≤5 request ceilings.
-   Independently evaluate each actual promoted task/locale deployment under
-   HL-093 before claiming explanatory quality.
-
-The contract tests use synthetic review files and synthetic immutable identities.
-They prove gate behavior and read-only handling, not legal usefulness or model
-performance.
+- Independently evaluate and review actual task/language/deployment profiles under
+  HL-093 before installing any approved grant. Hashes prove integrity, not review
+  independence or semantic quality. Evaluate usefulness, grounded explanations,
+  dates, applicability and non-duplicated actions; correct JSON is not sufficient.
+- Establish target GTX 1070 / dual GTX 1080 context, latency and capacity evidence.
+  No promotion or 100-user readiness follows from synthetic HTTP/native tests.
+- Character-based candidate preparation and conservative measured halving are
+  not optimal relevance/packing. Synthesis/repair may still exceed a reviewed
+  budget and stop visibly; this implementation does not silently truncate them.
+- Remote observed-identity attestation and relation-assessment quality policy
+  remain separate work. The current cloud bonus stays in selected-evidence mode
+  for comparison Ask/Impact when its serving identity is unavailable.
+- Five-language UI checks are automated; native-language/domain and real-user
+  acceptance remain independent work, including Romansh copy review.
