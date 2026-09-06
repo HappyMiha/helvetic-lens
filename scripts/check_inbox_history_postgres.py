@@ -68,6 +68,10 @@ from test_monitoring_answer_context import (
     test_answer_context_checks_all_owners_even_in_privileged_session,
     test_saved_answer_context_keeps_question_and_comparison_without_new_inference_or_writes,
 )
+from test_monitoring_assistant_context import (
+    test_personal_context_fails_closed_for_wrong_owner_role_or_unavailable_message,
+    test_personal_message_context_reads_selected_user_text_without_sharing_or_inference,
+)
 from test_monitoring_context import (
     test_context_to_topic_preview_and_explicit_activation_reuses_existing_lifecycle,
     test_native_event_context_uses_saved_title_and_artifact_without_automatic_monitoring,
@@ -108,7 +112,7 @@ from test_topic_reviews import (
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("answer-context", "answer-context-private", "topic-coverage-empty", "topic-coverage-state", "topic-coverage-scope", "topic-coverage-bounds", "topic-duplicates", "topic-duplicates-scope", "topic-duplicates-bounds", "history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked", "monitoring-context", "monitoring-context-activate"), default="history")
+    parser.add_argument("--suite", choices=("assistant-context", "assistant-context-private", "answer-context", "answer-context-private", "topic-coverage-empty", "topic-coverage-state", "topic-coverage-scope", "topic-coverage-bounds", "topic-duplicates", "topic-duplicates-scope", "topic-duplicates-bounds", "history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked", "monitoring-context", "monitoring-context-activate"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -129,6 +133,14 @@ def main():
         with TestClient(app) as client:
             service = app.state.service
             harness = (client, fetcher, service, model)
+            if args.suite == "assistant-context":
+                test_personal_message_context_reads_selected_user_text_without_sharing_or_inference(harness)
+                print("PostgreSQL: selected personal message context preserves privacy without monitoring writes or inference.")
+                return
+            if args.suite == "assistant-context-private":
+                test_personal_context_fails_closed_for_wrong_owner_role_or_unavailable_message(harness, "other_user")
+                print("PostgreSQL: another principal cannot read the personal message even in a privileged organization session.")
+                return
             if args.suite == "answer-context":
                 test_saved_answer_context_keeps_question_and_comparison_without_new_inference_or_writes(harness)
                 print("PostgreSQL: saved cited answer context preserves question and comparison without extra inference or writes.")

@@ -7,16 +7,21 @@ import { Button } from "./ui/button";
 export function MonitorThis({
   kind,
   id,
+  messageId,
+  onNavigate,
 }: {
-  kind: "event" | "law" | "comparison" | "answer";
+  kind: "event" | "law" | "comparison" | "answer" | "assistant";
   id: string;
+  messageId?: string;
+  onNavigate?: () => void;
 }) {
   const { t, locale } = useI18n();
   return (
     <Button asChild variant="outline" size="sm">
       <Link
         data-monitor-this
-        href={`/topics?${new URLSearchParams({ from: kind, record: id, locale })}`}
+        href={`/topics?${new URLSearchParams({ from: kind, record: id, ...(messageId ? { message: messageId } : {}), locale })}`}
+        onClick={onNavigate}
       >
         <Radar size={16} />
         {t("monitorThis.open")}

@@ -1,5 +1,5 @@
 """Read-only contextual entry into the existing explicit monitoring-plan workflow."""
-from datetime import UTC
+from datetime import UTC, datetime
 
 from sqlalchemy import func, select
 
@@ -7,6 +7,7 @@ from .config import DomainError
 from .corpus_access import event_evidence_links, visible
 from .models import (
     AskRecord,
+    AssistantConversation,
     Comparison,
     DocumentWatch,
     Law,
@@ -100,3 +101,42 @@ def _answer_context(session, organization_id, record_id):
             "question": row.question[:2000], "answer_created_at": created_at.isoformat(),
             "comparison_id": row.comparison_id,
             "reference_url": f"/compare/{row.comparison_id}?task=ask"}
+
+
+def assistant_message_context(session, organization_id, principal_key, conversation_id, message_id):
+    """Explicit personal-message handoff; assistant replies never become rules."""
+    unavailable = DomainError("The saved personal message is unavailable.", 404, "not_found")
+    if not principal_key or not message_id:
+        raise unavailable
+    row = session.execute(select(
+        AssistantConversation.messages_json, AssistantConversation.route,
+        AssistantConversation.entity_kind, AssistantConversation.entity_id,
+    ).where(AssistantConversation.id == conversation_id,
+            AssistantConversation.organization_id == organization_id,
+            AssistantConversation.principal_key == principal_key)).first()
+    if row is None or not isinstance(row.messages_json, list) or len(row.messages_json) > 40:
+        raise unavailable
+    matches = [item for item in row.messages_json if isinstance(item, dict) and item.get("id") == message_id]
+    if len(matches) != 1:
+        raise unavailable
+    message = matches[0]
+    question = message.get("content")
+    if message.get("role") != "user" or not isinstance(question, str) or not question.strip() or len(question) > 2000:
+        raise unavailable
+    try:
+        created_at = datetime.fromisoformat(message["created_at"])
+    except (KeyError, TypeError, ValueError):
+        raise unavailable from None
+    if created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=UTC)
+    # Use current authorized document metadata rather than the chat's cached title.
+    # Other route contexts carry only the selected user's own message, no job/topic data.
+    if row.entity_kind in {"law", "comparison"}:
+        context = describe(session, organization_id, row.entity_kind, row.entity_id)
+    else:
+        context = {"title": question.strip()[:240], "source_url": None,
+                   "reference_url": None, "evidence_url": None, "watches": [],
+                   "watch_limit": 20, "more_watches": False}
+    return {**context, "kind": "assistant", "id": conversation_id, "message_id": message_id,
+            "question": question, "message_created_at": created_at.isoformat(),
+            "visibility": "personal", "requires_confirmation": True, "ai_calls": 0}

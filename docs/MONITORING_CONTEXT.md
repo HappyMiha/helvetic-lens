@@ -63,8 +63,48 @@ record counters, explicit owner guards and malformed/unsupported cases. Separate
 PostgreSQL checks cover JSON projection and private-version denial. Browser checks
 exercise Ask/history button eligibility, actual navigation to the original question,
 explicit editable goal copy, no question text in URLs, both roles and five locales.
-Global assistant entries, common new law/topic/pack choice, durable origin metadata
-on the saved topic and unbounded historical-turn deep links remain separate work.
+The personal Marvin message entry is described below. Common new law/topic/pack
+choice, durable origin metadata on the saved topic and unbounded historical-turn
+deep links remain separate work.
+
+## From a personal Marvin message
+
+Each displayed saved **user** message in Marvin has a Monitor this topic action.
+Assistant replies, spontaneous remarks and unsent text do not. Navigation closes
+Marvin and carries only conversation/message identifiers, never private prose.
+The topic editor shows the selected message/date and a five-language privacy note:
+the conversation stays personal; explicitly saving a topic makes the chosen,
+editable name/goal visible to the organization. Matching terms remain blank and
+required. This action works even when the local model is stopped. It is manual
+intent selection, not semantic detection of a monitoring request.
+
+`GET /api/monitoring-context?kind=assistant&id=<conversation>&message=<message>`
+requires the current principal and organization. Another member or administrator
+cannot read somebody else's personal conversation through this endpoint. It
+selects one existing conversation's bounded message JSON (at most 40 retained
+messages), not its draft/handoffs or an ORM conversation object. Only the selected
+nonempty user message (at most 2,000 characters), its recorded date and authorized
+context metadata are returned; no assistant replies/transcript are serialized.
+A missing/expired/duplicate/invalid message fails closed. A law/comparison context
+re-resolves current authorized metadata and existing watches, not the chat's cached
+title. Other routes carry the personal message alone, with no fabricated source,
+legal claim or entity link. There is no arbitrary historical-chat deep link.
+
+The resource key includes both IDs and uses session scope, reset on account or
+workspace changes. Selecting another message in the same conversation cannot
+reuse the first message's cached content. Context navigation does not overwrite a
+current draft; explicit replacement uses the existing accept/cancel confirmation.
+Viewers retain personal drafts and preview, but cannot activate shared topics.
+No model call, topic write or chat mutation occurs in the context endpoint. The
+existing Marvin component still opens/updates its route conversation as before;
+this slice does not redesign that existing lifecycle or retention policy.
+
+`npm run check:marvin:monitor:browser` checks 20 intercepted production-UI journeys
+across five locales, 390/1440px and admin/viewer roles. API and PostgreSQL tests
+cover privacy, bounded retention and no inference/shared writes. This is not a
+native-language, physical-device or independent research sign-off. Durable topic
+origin metadata, older message recovery, and common law/topic/pack selection
+remain separate work.
 
 ## Viewer behavior
 
@@ -95,8 +135,8 @@ The UI hides activation/edit controls and disables AI drafting for viewers.
 HL-077 remains IN PROGRESS: this slice creates contextual **topics** and links
 existing watches. It does not yet unify new law-watch/source-pack subscription
 choices, detect semantically equivalent topics beyond the same-rule warning, show predicted cadence/volume,
-submit a viewer proposal to administrators, or add global-assistant
-entry points. Saved cited Ask/history answers now have their own contextual entry. Selected-source operational readiness and configured cadence are now shown by
+or submit a viewer proposal to administrators. Saved cited Ask/history answers and
+personal Marvin messages now have their own contextual entry. Selected-source operational readiness and configured cadence are now shown by
 the explicit preview (see `MONITORING_TOPICS.md`). This records subscriptions,
 schedules and health without predicting actual future delivery or volume.
 No production deployment, migration, live source/model call or message is required

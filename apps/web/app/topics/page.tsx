@@ -8,7 +8,8 @@ export default async function TopicsRoute({
   const params = await searchParams;
   const kind = typeof params.from === "string" ? params.from : "";
   const id = typeof params.record === "string" ? params.record : "";
+  const messageId = typeof params.message === "string" ? params.message : undefined;
   return (
-    <MonitoringTopicsPage context={kind || id ? { kind, id } : undefined} />
+    <MonitoringTopicsPage context={kind || id ? { kind, id, messageId } : undefined} />
   );
 }

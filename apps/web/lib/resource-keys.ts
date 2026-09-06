@@ -151,11 +151,12 @@ export const resources = {
       pollMs: 2_000,
     }),
 
-  monitoringContext: (kind: string, id: string) =>
+  monitoringContext: (kind: string, id: string, messageId?: string) =>
     key<MonitoringContext>(
-      `monitoring:context:${kind}:${id}`,
-      `/monitoring-context?${new URLSearchParams({ kind, id })}`,
+      `monitoring:context:${kind}:${id}:${messageId || ""}`,
+      `/monitoring-context?${new URLSearchParams({ kind, id, ...(messageId ? { message: messageId } : {}) })}`,
       {
+        scope: kind === "assistant" ? "session" : "organization",
         tags: ["monitoring-context", "laws", "corpus", "impact-inbox"],
         staleMs: 0,
       },

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { MonitorThis } from "@/components/monitor-this";
 import { usePathname } from "next/navigation";
 import {
   ArrowUpRight,
@@ -955,6 +956,12 @@ export function MarvinCompanion({
                           : t("companion.you")}
                       </span>
                       <p>{item.content}</p>
+                      {item.role === "user" && conversationLoaded && conversationId && (
+                        <div className="mt-2" data-marvin-monitor>
+                          <MonitorThis kind="assistant" id={conversationId} messageId={item.id}
+                            onNavigate={() => onOpenChange(false)} />
+                        </div>
+                      )}
                       {item.role === "assistant" && (
                         <div className="marvin-chat-actions">
                           <button

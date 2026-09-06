@@ -1060,9 +1060,14 @@ def create_app(
         )
 
     @app.get("/api/monitoring-context")
-    def monitoring_context(kind: Literal["event", "law", "comparison", "answer"], id: str = Query(min_length=1, max_length=36)):
-        from .monitoring_context import describe
+    def monitoring_context(request: Request, kind: Literal["event", "law", "comparison", "answer", "assistant"],
+                           id: str = Query(min_length=1, max_length=36),
+                           message: str | None = Query(default=None, min_length=1, max_length=36)):
+        from .monitoring_context import assistant_message_context, describe
         with service.db.session() as session:
+            if kind == "assistant":
+                _, principal = assistant_principal(request)
+                return assistant_message_context(session, service.organization_id, principal, id, message)
             return describe(session, service.organization_id, kind, id)
 
     @app.get("/api/monitoring-topics")

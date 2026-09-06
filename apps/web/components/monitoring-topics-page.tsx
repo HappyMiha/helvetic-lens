@@ -200,7 +200,7 @@ function officialContextUrl(value?: string | null) {
   }
 }
 
-type EntryContext = { kind: string; id: string };
+type EntryContext = { kind: string; id: string; messageId?: string };
 
 export function MonitoringTopicsPage({ context }: { context?: EntryContext }) {
   const { session } = useAuth();
@@ -229,7 +229,7 @@ function TopicEditor({
   const { t, locale } = useI18n();
   const { canManage } = useAuth();
   const origin = useResource(
-    context ? resources.monitoringContext(context.kind, context.id) : null,
+    context ? resources.monitoringContext(context.kind, context.id, context.messageId) : null,
   );
   const topics = useResource(resources.monitoringTopics(true));
   const packs = useResource(resources.sourcePacks());
@@ -307,7 +307,7 @@ function TopicEditor({
       ...initialPlan,
       source_pack_ids: defaultPackIds,
       name: origin.data.title.slice(0, 240),
-      goal: (origin.data.question
+      goal: (origin.data.kind === "assistant" ? origin.data.question || "" : origin.data.question
         ? t("monitorThis.questionGoal", { title: origin.data.title, question: origin.data.question })
         : t("monitorThis.goal", { title: origin.data.title })).slice(0, 3000),
     });
@@ -631,10 +631,10 @@ function TopicEditor({
               <p className="font-semibold">{origin.data.title}</p>
               {origin.data.question && (
                 <div className="rounded-lg border p-3 mb-3" data-monitor-saved-question>
-                  <p className="font-medium">{t("monitorThis.savedQuestion")}</p>
+                  <p className="font-medium">{origin.data.kind === "assistant" ? t("monitorThis.savedMessage") : t("monitorThis.savedQuestion")}</p>
                   <p>{origin.data.question}</p>
-                  {origin.data.answer_created_at && <p className="text-sm muted">{dateTime(origin.data.answer_created_at)}</p>}
-                  <p className="text-sm">{t("monitorThis.questionBoundary")}</p>
+                  {(origin.data.answer_created_at || origin.data.message_created_at) && <p className="text-sm muted">{dateTime(origin.data.answer_created_at || origin.data.message_created_at)}</p>}
+                  <p className="text-sm">{origin.data.kind === "assistant" ? t("monitorThis.messageBoundary") : t("monitorThis.questionBoundary")}</p>
                 </div>
               )}
               <p>{t("monitorThis.summary")}</p>

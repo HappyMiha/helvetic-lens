@@ -3830,6 +3830,30 @@ const monitorAnswerMessages: Record<Locale, Messages> = {
 };
 for (const locale of locales) Object.assign(catalogTarget(locale), monitorAnswerMessages[locale]);
 
+const monitorAssistantMessages: Record<Locale, Messages> = {
+  "en-CH": {
+    "monitorThis.savedMessage": "Your saved message to Marvin",
+    "monitorThis.messageBoundary": "This message is personal. Copy only what you want to monitor into an editable draft. When an administrator saves the topic, its name and goal become visible to the organization. Marvin’s replies and the rest of the conversation are not shared. Choose matching terms and review sources before activation."
+  },
+  "de-CH": {
+    "monitorThis.savedMessage": "Ihre gespeicherte Nachricht an Marvin",
+    "monitorThis.messageBoundary": "Diese Nachricht ist persönlich. Kopieren Sie nur das gewünschte Monitoring-Ziel in einen bearbeitbaren Entwurf. Speichert ein Administrator das Thema, werden Name und Ziel für die Organisation sichtbar. Marvins Antworten und der übrige Gesprächsverlauf werden nicht geteilt. Wählen Sie Suchbegriffe und prüfen Sie die Quellen vor der Aktivierung."
+  },
+  "fr-CH": {
+    "monitorThis.savedMessage": "Votre message enregistré à Marvin",
+    "monitorThis.messageBoundary": "Ce message est personnel. Copiez uniquement ce que vous souhaitez suivre dans un brouillon modifiable. Lorsqu’un administrateur enregistre le thème, son nom et son objectif deviennent visibles pour l’organisation. Les réponses de Marvin et le reste de la conversation ne sont pas partagés. Choisissez les termes et examinez les sources avant activation."
+  },
+  "it-CH": {
+    "monitorThis.savedMessage": "Il tuo messaggio salvato a Marvin",
+    "monitorThis.messageBoundary": "Questo messaggio è personale. Copia solo ciò che vuoi monitorare in una bozza modificabile. Quando un amministratore salva il tema, nome e obiettivo diventano visibili all’organizzazione. Le risposte di Marvin e il resto della conversazione non vengono condivisi. Scegli i termini ed esamina le fonti prima dell’attivazione."
+  },
+  "rm-CH": {
+    "monitorThis.savedMessage": "Tes messadi memorisà a Marvin",
+    "monitorThis.messageBoundary": "Quest messadi è persunal. Copiescha mo quai che ti vuls survegliar en in sboz modifitgabel. Sche in administratur memorisescha il tema, daventan il num e la finamira visibels per l’organisaziun. Las respostas da Marvin ed il rest dal discurs na vegnan betg cundividids. Tscherna terms ed examinescha las funtaunas avant l’activaziun."
+  }
+};
+for (const locale of locales) Object.assign(catalogTarget(locale), monitorAssistantMessages[locale]);
+
 function supported(value: string | null | undefined): Locale | null {
   if (!value) return null;
   const exact = locales.find((item) => item.toLowerCase() === value.replace("_", "-").toLowerCase());

@@ -1539,8 +1539,9 @@ personal 24-hour browser-tab draft and preview saved candidates; shared writes,
 AI drafting and history activation remain forbidden. Five-language/mobile-browser,
 API and scratch PostgreSQL evidence is recorded in `docs/MONITORING_CONTEXT.md`.
 Remaining: complete law/topic/pack choice, broader semantic-equivalence suggestions,
-measured delivery/coverage guarantees beyond saved source readiness, viewer admin-request workflow, and
-global-assistant entries. Saved cited answers now have contextual entries. Personal tab recovery is not cross-device draft storage;
+measured delivery/coverage guarantees beyond saved source readiness and viewer
+admin-request workflow. Saved cited answers and personal Marvin messages now have
+contextual entries. Personal tab recovery is not cross-device draft storage;
 this is not completion of HL-077 or independent usability/native review.
 
 **Implemented 6 September 2026 (same-rule duplicate review):** The common topic
@@ -1581,6 +1582,19 @@ browser navigation, API and PostgreSQL evidence is in `docs/VERIFICATION.md`.
 The return link targets the saved comparison's Ask panel, not an arbitrary old
 turn outside its existing display window. Global assistant entries, common new
 law/topic/pack choices and independent/native acceptance remain open.
+
+**Implemented 6 September 2026 (personal Marvin message entry):** saved user
+messages in the global companion now open a personal contextual topic draft via
+conversation/message IDs, including with the local runtime stopped. Assistant
+replies are never treated as rules. The current principal and organization are
+checked server-side, plus visible document metadata where attached. The editor
+shows what will become shared only on explicit authorized topic save. Different
+messages have separate cache identities; dirty drafts require explicit replacement
+approval. Viewers retain private drafts, with no shared activation. Sixty affected
+API tests, scratch PostgreSQL and five-locale mobile/desktop browser evidence are
+recorded in `docs/VERIFICATION.md`. This uses the existing 40-message retention,
+not permanent chat-origin storage or autonomous intent detection. Common
+law/topic/pack choice and independent/native acceptance remain open.
 
 Acceptance criteria:
 
