@@ -13,6 +13,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { errorText, fetchResource, label, resourceScopeEpoch, useResource } from "@/lib/api";
 import { resources } from "@/lib/resource-keys";
+import { useAuth } from "./auth-gate";
+import { registryScope, readRegistryPosition } from "@/lib/registry-position";
 import { useI18n } from "@/lib/i18n";
 import type { Passage, Version } from "@/lib/types";
 import { ErrorNote, Loading, Status } from "./common";
@@ -32,6 +34,18 @@ export function EvidenceView({
   native?: boolean;
 }) {
   const { t, dateTime, number } = useI18n();
+  const {session}=useAuth();
+  const scope=registryScope(session?.user?.id,session?.organization?.id,session?.anonymous_development);
+  const returnIdentity=JSON.stringify([scope,id,native,passageId]);
+  const [returnPosition,setReturnPosition]=useState<{identity:string;route:string}|null>(null);
+  const registryReturn=returnPosition?.identity===returnIdentity ? returnPosition.route : null;
+  useEffect(()=>{
+    setReturnPosition(null);
+    try {
+      const position=readRegistryPosition(window.sessionStorage,scope);
+      if(position?.target===window.location.pathname+window.location.search+window.location.hash) setReturnPosition({identity:returnIdentity,route:position.route});
+    } catch { /* Navigation works normally when browser storage is disabled. */ }
+  },[scope,returnIdentity]);
   const [offset, setOffset] = useState<number | null>(null);
   useEffect(() => setOffset(null), [id, passageId]);
   const { data, error, reload } = useResource(resources.evidencePage<Evidence>(id, native, offset ?? 0, offset === null ? passageId : ""));
@@ -68,9 +82,9 @@ export function EvidenceView({
   const sourceLanguage = data?.identity_json?.language || undefined;
   return (
     <Shell section={t("evidence.section")}>
-      <Link className="back-link" href={data?.law_id ? "/laws/" + data.law_id : "/"}>
+      <Link className="back-link" data-registry-return={registryReturn ? "" : undefined} href={registryReturn || (data?.law_id ? "/laws/" + data.law_id : "/")}>
         <ArrowLeft size={14} />
-        {t(native ? "nav.today" : "evidence.back")}
+        {t(registryReturn ? "registryReturn.back" : native ? "nav.today" : "evidence.back")}
       </Link>
       <ErrorNote message={error} />
       {error && <div className="flex gap-2 my-4"><Button variant="outline" onClick={()=>void reload()}>{t("gettingStarted.retry")}</Button><Button variant="outline" onClick={()=>setOffset(0)}>{t("evidence.readComplete")}</Button></div>}

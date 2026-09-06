@@ -1,9 +1,9 @@
 "use client";
 
 import { MonitorThis } from "./monitor-this";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api, dateTime, errorText, label, useResource } from "@/lib/api";
 import { resources } from "@/lib/resource-keys";
+import { registryScope, readRegistryPosition, saveRegistryPosition, clearRegistryPosition } from "@/lib/registry-position";
 import { registryDateRange, registryPeriods } from "@/lib/registry-filters";
 import { ErrorNote, Loading, Status } from "./common";
 import { Shell } from "./shell";
@@ -199,7 +200,12 @@ export function RegistryPage({
 }) {
   const params = useSearchParams();
   const router = useRouter();
-  const { canManage } = useAuth();
+  const { canManage, session } = useAuth();
+  const pathname = usePathname();
+  const returnScope = registryScope(session?.user?.id,session?.organization?.id,session?.anonymous_development);
+  const currentRoute = pathname + (params.toString() ? `?${params.toString()}` : "");
+  const restored = useRef("");
+  const [returnMissing, setReturnMissing] = useState(false);
   const { t } = useI18n();
   const requestedView = params.get("view");
   const legacyView =
@@ -229,6 +235,34 @@ export function RegistryPage({
   endpointParameters.set("view", view);
   const endpoint = "/registry?" + endpointParameters.toString();
   const resource = useResource(resources.registry<RegistryResponse>(endpoint));
+
+  function remember(row:string,target:string) {
+    try {saveRegistryPosition(window.sessionStorage,returnScope,currentRoute,row,target);} catch { /* Storage can be disabled. */ }
+  }
+  useEffect(()=>setReturnMissing(false),[currentRoute,returnScope]);
+  useEffect(() => {
+    if(resource.loading || resource.error || !resource.data || !returnScope) return;
+    let position;
+    try {position=readRegistryPosition(window.sessionStorage,returnScope);} catch {return;}
+    if(!position || position.route!==currentRoute) return;
+    const key=JSON.stringify([returnScope,currentRoute,position.savedAt]);
+    if(restored.current===key) return;
+    const row=Array.from(document.querySelectorAll<HTMLElement>("[data-registry-row]")).find(node=>node.dataset.registryRow===position.row);
+    if(!row) {
+      restored.current=key; setReturnMissing(true);
+      try {clearRegistryPosition(window.sessionStorage,returnScope);} catch { /* optional */ }
+      return;
+    }
+    const link=Array.from(row.querySelectorAll<HTMLAnchorElement>("a")).find(node=>node.getAttribute("href")===position.target);
+    let second=0;
+    const first=requestAnimationFrame(()=>{second=requestAnimationFrame(()=>{
+      restored.current=key;
+      (link || row).focus({preventScroll:true});
+      (link || row).scrollIntoView({block:"center",behavior:"instant"});
+      try {clearRegistryPosition(window.sessionStorage,returnScope);} catch { /* optional */ }
+    });});
+    return ()=>{cancelAnimationFrame(first);cancelAnimationFrame(second);};
+  },[currentRoute,returnScope,resource.loading,resource.error,resource.data]);
 
   useEffect(() => setQuery(params.get("q") || ""), [params]);
 
@@ -334,42 +368,35 @@ export function RegistryPage({
         </div>
       </div>
 
-      <div
+      <nav
         className="flex flex-wrap gap-2 mb-5"
-        role="tablist"
         aria-label={t("registry.views")}
       >
         <Button asChild variant={view === "monitored" ? "default" : "outline"}>
           <Link
-            aria-controls="registry-results"
-            aria-selected={view === "monitored"}
+            aria-current={view === "monitored" ? "page" : undefined}
             href={routeFor("monitored")}
             id="registry-monitored-tab"
-            role="tab"
           >
             <BookOpen size={16} /> {t("registry.monitored")}
           </Link>
         </Button>
         <Button asChild variant={view === "events" ? "default" : "outline"}>
           <Link
-            aria-controls="registry-results"
-            aria-selected={view === "events"}
+            aria-current={view === "events" ? "page" : undefined}
             href={routeFor("events")}
             id="registry-events-tab"
-            role="tab"
           >
             <Clock3 size={16} /> {t("registry.events")}
           </Link>
         </Button>
-      </div>
+      </nav>
 
       <div
         aria-labelledby={
           view === "events" ? "registry-events-tab" : "registry-monitored-tab"
         }
         id="registry-results"
-        role="tabpanel"
-        tabIndex={0}
       >
         <section
           className="card p-5 mb-5"
@@ -526,6 +553,7 @@ export function RegistryPage({
           )}
         </section>
 
+        {returnMissing && <p role="status" className="card p-4" data-registry-return-missing>{t("registryReturn.missing")}</p>}
         <ErrorNote message={actionError || resource.error} />
         {resource.loading && !resource.data && (
           <Loading text={t("registry.loading")} />
@@ -560,7 +588,7 @@ export function RegistryPage({
               </div>
               <div className="space-y-3">
                 {group.items.map((row) => (
-                  <article className="card p-5" key={row.id}>
+                  <article className="card p-5" key={row.id} data-registry-row={row.id} tabIndex={-1}>
                     <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                       <div className="min-w-0">
                         <div className="flex flex-wrap gap-2 mb-2">
@@ -609,14 +637,14 @@ export function RegistryPage({
                     <div className="flex flex-wrap gap-2">
                       {row.timeline_url && (
                         <Button asChild size="sm">
-                          <Link href={row.timeline_url}>
+                          <Link href={row.timeline_url} onNavigate={()=>remember(row.id,row.timeline_url!)}>
                             {t("common.timeline")} <ArrowRight size={14} />
                           </Link>
                         </Button>
                       )}
                       {row.comparison_url && (
                         <Button asChild size="sm" variant="outline">
-                          <Link href={row.comparison_url}>
+                          <Link href={row.comparison_url} onNavigate={()=>remember(row.id,row.comparison_url!)}>
                             {t("common.comparison")}
                           </Link>
                         </Button>
@@ -624,7 +652,7 @@ export function RegistryPage({
                       {(row.record_type === "event" ? row.event_id : row.law_id) && <MonitorThis kind={row.record_type === "event" ? "event" : "law"} id={row.record_type === "event" ? row.event_id! : row.law_id!} />}
                       {row.evidence_url && (
                         <Button asChild size="sm" variant="outline">
-                          <Link href={row.evidence_url}>
+                          <Link href={row.evidence_url} onNavigate={()=>remember(row.id,row.evidence_url!)}>
                             {t("common.evidence")}
                           </Link>
                         </Button>

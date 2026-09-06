@@ -115,16 +115,16 @@ test("workspace selector performs only an authorized organization switch", () =>
   assert.match(shell, /helvetic:navigation-committed/);
 });
 
-test("Monitoring and Discover use canonical routes and complete tab semantics", () => {
+test("Monitoring and Discover use canonical route links with current-page semantics", () => {
   assert.match(registry, /["']\/registry["']/);
   assert.match(registry, /["']\/discover["']/);
   assert.ok(
-    registry.match(/role="tab"/g)?.length === 2,
-    "both registry view controls must be tabs",
+    registry.match(/aria-current=/g)?.length === 2,
+    "both route links must expose the current page",
   );
   assert.ok(
-    registry.match(/aria-selected=/g)?.length === 2,
-    "both tabs must expose their selected state",
+    !/role="tab(?:list|panel)?"|aria-selected=/.test(registry),
+    "route links must not promise a tab keyboard interaction",
   );
 });
 

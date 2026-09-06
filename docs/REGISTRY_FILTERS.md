@@ -45,8 +45,54 @@ advanced values, cursor reset and viewer/admin control visibility. All API calls
 are intercepted; no real registry mutation, source collection or AI is performed.
 The existing four API registry tests also pass unchanged.
 
-Remaining HL-095 work includes relevance/feed semantics, evidence-return scroll
-position, topic route/history/crash draft recovery, comprehensive source health
+Remaining HL-095 work includes relevance/feed semantics, complete topic route/history/crash
+draft recovery, comprehensive source health
 and identity-mismatch recovery, physical mobile input and independent usability /
 native-language review. The underlying registry read model still needs its own
 large-corpus performance work; hiding advanced filters does not improve SQL cost.
+
+
+## Return to a registry record (6 September 2026)
+
+Opening saved evidence, a timeline or a comparison from a registry row records one
+short-lived reading marker in this browser tab. It contains the exact registry or
+Discover URL (including filters/search/cursor/locale), row ID and destination, scoped
+to the current user and organization. It contains no document text or AI answer.
+Only ordinary same-tab Next navigation records it; opening an external source or
+using a modified/new-tab link does not overwrite the current reading position.
+
+On return to exactly that result URL, the loaded row's original link receives focus
+and scrolls into view below/above viewport navigation. Centering the link itself
+also works for a card taller than the viewport. If that link changed, the matching
+row receives focus. A marker is consumed once to avoid repeated jumps on refresh.
+If the successfully returned page no longer includes the row, a localized notice
+explains its absence without changing filters or selecting another record. A load
+error does not consume the marker, so retry/reload can still restore the position.
+
+Both saved-evidence viewers additionally offer **Back to your results** when their
+exact destination matches the same scoped marker. Otherwise their existing back
+link remains unchanged. Timeline and comparison pages keep their existing navigation;
+native browser Back from those registry departures can restore the original row.
+No arbitrary return URL is accepted: only the two registry routes and local evidence,
+timeline or comparison destinations pass validation. This is navigation convenience,
+not an authorization boundary; existing API permissions still control returned data.
+
+The marker expires after 30 minutes, is overwritten by the next departure, and never
+becomes server-side or cross-device history. Storage denial leaves ordinary links
+and browser Back usable without automatic row restoration. A restored browser tab
+or a browser-managed duplicated tab may retain session storage; this is not durable
+backup or a promise of isolated browser duplication. Existing resource caching still
+applies; a reading marker does not freeze a result snapshot or certify freshness.
+
+Monitoring/Discover controls now use a labelled navigation landmark, real links and
+`aria-current="page"`. They no longer claim tab/tab-panel keyboard semantics for
+separate routed pages. The normal forward Tab order is tested in the actual browser.
+
+Verification adds seven storage/validation cases and 20 populated round-trip journeys
+(five locales × mobile/desktop × both registry routes), each opening record 20 and
+returning with both the evidence link and native Back. The final record has a title
+long enough to exceed a screen; focus must remain visible without a document reload.
+The suite preserves filters/cursor, consumes the marker and checks a removed record
+on a newly fetched page. The original 20 registry/filter journeys and ten paginated
+saved-evidence journeys remain required. These are isolated Chromium fixtures, not
+physical-device, screen-reader, native-language or independent user acceptance.

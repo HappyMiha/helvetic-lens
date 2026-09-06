@@ -65,6 +65,7 @@ async function waitFor(check, message) {
 
 let locale = "en-CH";
 let role = "viewer";
+let returnJourney=false, hideReturnRow=false;
 const row = {
   id: "qa-row",
   event_id: "qa-event",
@@ -142,12 +143,14 @@ try {
           : [
               {
                 name: url.searchParams.has("start") ? "Custom range" : "Today",
-                items: [row],
+                items: returnJourney ? Array.from({length:20},(_,i)=>({...row,id:`qa-return-${i}`,event_id:`qa-event-${i}`,title:`Record ${i}: ${row.title.repeat(i===19?12:1)}`,evidence_url:`/corpus-evidence/qa-native-${i}`})).filter(item=>!hideReturnRow || item.id!=="qa-return-19") : [row],
               },
             ],
-        count: empty ? 0 : 1,
+        count: empty ? 0 : returnJourney ? 20 : 1,
         next_cursor: url.searchParams.has("cursor") ? null : "next",
       };
+    } else if (/^\/api\/regulatory-versions\/qa-native-\d+\/page$/.test(url.pathname)) {
+      body={id:url.pathname.split('/')[3],law_id:null,law_name:'Synthetic return evidence',native:true,origin:'official_connector',created_at:'2026-09-06T08:00:00Z',source_url:'https://example.invalid/source',content_type:'text/html',artifact_url:null,declared_date:null,synthetic:true,identity_json:{language:'de'},passages:[{id:'p1',text:'Synthetic saved evidence for registry return.',page:1}],passage_count:1,plain_text:null,pagination:{offset:0,end:1,total:1,size:50,mode:'passages',next_offset:null,previous_offset:null,target_found:null}};
     } else {
       code = 503;
       body = { detail: "Synthetic endpoint unavailable" };
@@ -436,9 +439,48 @@ try {
     ).length,
     0,
   );
+  returnJourney=true;
+  for (locale of ["de-CH","fr-CH","it-CH","rm-CH","en-CH"])
+    for(const width of [390,1440])
+      for(const path of ['/registry','/discover']) {
+        const route=`${path}?locale=${locale}&read=unread&cursor=return-page`;
+        await cdp.send('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<500});
+        await cdp.send('Page.navigate',{url:base+route});
+        await waitFor(()=>evaluate(cdp,`document.querySelectorAll('[data-registry-row]').length===20`),'Required long registry missing');
+        assert.equal(await evaluate(cdp,`document.querySelectorAll('main [role="tab"],main [role="tabpanel"]').length`),0,'Page navigation must not claim tab keyboard behavior');
+        assert.equal(await evaluate(cdp,`document.querySelector('main nav a[aria-current="page"]').pathname`),path);
+        await evaluate(cdp,`document.querySelector('#registry-monitored-tab').focus()`);
+        await cdp.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9});
+        await cdp.send('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9});
+        assert.equal(await evaluate(cdp,'document.activeElement.id'),'registry-events-tab','Navigation links lost their normal Tab order');
+        const selector='[data-registry-row="qa-return-19"] a[href="/corpus-evidence/qa-native-19"]';
+        const before=await evaluate(cdp,'performance.timeOrigin');
+        await click(selector);
+        await waitFor(()=>evaluate(cdp,`!!document.querySelector('[data-registry-return]') && document.body.innerText.includes('Synthetic return evidence')`),'Evidence return link missing');
+        assert.equal(await evaluate(cdp,`document.querySelector('[data-registry-return]').getAttribute('href')`),route,'Filters/cursor were lost in explicit return link');
+        await click('[data-registry-return]');
+        await waitFor(()=>evaluate(cdp,`document.activeElement?.closest('[data-registry-row]')?.dataset.registryRow==='qa-return-19'`),'Explicit return did not focus the originating row');
+        assert.equal(await evaluate(cdp,'location.pathname+location.search'),route);
+        assert.equal(await evaluate(cdp,'performance.timeOrigin'),before,'Return unexpectedly reloaded the document');
+        assert.ok(await evaluate(cdp,`(()=>{const r=document.activeElement.getBoundingClientRect();return r.top>90 && r.bottom<innerHeight-75})()`),'Restored link is hidden by sticky navigation');
+        assert.equal(await evaluate(cdp,`sessionStorage.getItem('helvetic.registry-position.v1')`),null,'Return marker was not consumed');
+        await click(selector);
+        await waitFor(()=>evaluate(cdp,`location.pathname==='/corpus-evidence/qa-native-19'`),'Second evidence navigation failed');
+        await evaluate(cdp,'history.back()');
+        await waitFor(()=>evaluate(cdp,`location.pathname===${JSON.stringify(path)} && document.activeElement?.closest('[data-registry-row]')?.dataset.registryRow==='qa-return-19'`),'Native Back lost row focus');
+      }
+  // A removed row in a newly fetched page must not send the reader elsewhere.
+  await click('[data-registry-row="qa-return-19"] a[href="/corpus-evidence/qa-native-19"]');
+  await waitFor(()=>evaluate(cdp,`!!document.querySelector('[data-registry-return]')`),'Missing evidence departure marker');
+  const returnRoute=await evaluate(cdp,`document.querySelector('[data-registry-return]').getAttribute('href')`);
+  hideReturnRow=true;
+  await cdp.send('Page.navigate',{url:base+returnRoute});
+  await waitFor(()=>evaluate(cdp,`!!document.querySelector('[data-registry-return-missing]')`),'Removed record lacked honest return notice');
+  assert.equal(await evaluate(cdp,'location.pathname+location.search'),returnRoute,'Missing record rewrote filters');
+  assert.equal(await evaluate(cdp,`document.querySelectorAll('[data-registry-row]').length`),19);
   assert.deepEqual(exceptions, []);
   console.log(
-    "Registry production UI: 20 required localized journeys (five locales x mobile/desktop x Monitoring/Discover), progressive controls, date presets, chips, URL/back state, empty recovery, unknown deep-link values, cursor reset and viewer/admin controls pass. All APIs intercepted; no production data, AI or messages touched.",
+    "Registry production UI: 20 required localized journeys (five locales x mobile/desktop x Monitoring/Discover), progressive controls, date presets, chips, URL/back state, empty recovery, unknown deep-link values, cursor reset and viewer/admin controls pass. Twenty additional long-list evidence round trips retain filtered cursors, exact focus and native Back; missing-row recovery is explicit. All APIs intercepted; no production data, AI or messages touched.",
   );
 } catch (error) {
   console.error({
