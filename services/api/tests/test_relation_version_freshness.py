@@ -15,6 +15,7 @@ from helvetic_lens.models import (
     RelationImpactAnalysis,
 )
 from helvetic_lens.relation_analysis import version_binding
+from helvetic_lens.relation_inputs import capture_inputs
 
 
 def change_version(service, saved, side, *, remove=False):
@@ -58,7 +59,8 @@ def test_changed_or_removed_version_invalidates_current_without_rewriting_histor
         assert record.use_count == 1 and session.scalar(select(func.count()).select_from(Job)) == jobs_before
         setattr(session.get(RelationCandidate, saved["candidate_id"]), f"{side}_version_id", old_id)
         session.commit()
-    assert client.get(f"/api/relation-candidates/{delivery}/analyses").json()["current"]["id"] == saved["id"]
+    # Reverting an identifier does not revert its correction history/revision.
+    assert client.get(f"/api/relation-candidates/{delivery}/analyses").json()["current"] is None
     assert len(model.calls) == 1
 
 
@@ -96,7 +98,7 @@ def test_explicit_metadata_only_binding_is_not_missing_provenance(harness):
         candidate = session.get(RelationCandidate, saved["candidate_id"])
         candidate.source_version_id = candidate.target_version_id = None
         record = session.get(RelationImpactAnalysis, saved["id"])
-        record.analysis_plan = {**record.analysis_plan, "execution": {**record.analysis_plan["execution"], "version_binding": version_binding(None, None)}}
+        record.analysis_plan = {**record.analysis_plan, "execution": {**record.analysis_plan["execution"], "version_binding": version_binding(None, None), "evidence_binding": capture_inputs(session, candidate.id)}}
         record.result = {**record.result, "supported": False, "potential_severity": "unknown", "actions": []}
         session.commit()
     assert client.get(f"/api/relation-candidates/{delivery}/analyses").json()["current"]["id"] == saved["id"]

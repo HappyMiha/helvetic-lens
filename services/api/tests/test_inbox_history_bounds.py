@@ -2,14 +2,15 @@
 
 from datetime import timedelta
 from pathlib import Path
+from runpy import run_path
 
 import pytest
-from alembic.config import Config
+from alembic.migration import MigrationContext
+from alembic.operations import Operations
 from conftest import saved_relation_binding
 from sqlalchemy import event, insert, inspect
 from test_relation_analysis import relation_delivery
 
-from alembic import command
 from helvetic_lens import relation_analysis
 from helvetic_lens.db import utcnow
 from helvetic_lens.impact_inbox import ImpactInboxReader
@@ -19,6 +20,7 @@ from helvetic_lens.models import (
     RelationCandidate,
     RelationImpactAnalysis,
 )
+from helvetic_lens.relation_inputs import capture_inputs
 
 
 def history_rows(service, delivery_id, count=10_000):
@@ -29,7 +31,7 @@ def history_rows(service, delivery_id, count=10_000):
             "organization_id": delivery.organization_id, "organization_candidate_id": delivery.id,
             "candidate_id": candidate.id, "event_id": candidate.event_id,
             "target_work_id": candidate.target_work_id, "cache_key": "0" * 64,
-            "analysis_plan": {"execution": {"version_binding": relation_analysis.version_binding(candidate.source_version_id, candidate.target_version_id), "official_relation_binding": saved_relation_binding(session, candidate), "profile_revision": 1, "configuration_fingerprint": relation_analysis.configuration_fingerprint(service.settings), "prompt_fingerprint": relation_analysis.relation_prompt_fingerprint(service.prompt_settings)}},
+            "analysis_plan": {"execution": {"version_binding": relation_analysis.version_binding(candidate.source_version_id, candidate.target_version_id), "official_relation_binding": saved_relation_binding(session, candidate), "evidence_binding": capture_inputs(session, candidate.id), "profile_revision": 1, "configuration_fingerprint": relation_analysis.configuration_fingerprint(service.settings), "prompt_fingerprint": relation_analysis.relation_prompt_fingerprint(service.prompt_settings)}},
             "model": "test-only", "status": "succeeded", "created_at": utcnow() - timedelta(hours=1),
             "evidence_json": [{"text": "Synthetic archived evidence. " * 30}],
         }
@@ -100,16 +102,16 @@ def test_empty_legacy_and_current_history_keep_selection_and_tenant_scope(harnes
 
 def check_history_index_roundtrip(service, delivery_id):
     directory = Path(__file__).resolve().parents[1]
-    config = Config(str(directory / "alembic.ini"))
-    config.set_main_option("script_location", str(directory / "alembic"))
+    migration = run_path(str(directory / "alembic/versions/fa27c61d3098_relation_analysis_history_index.py"))
     with service.db.session() as session:
         before = ImpactInboxReader._latest_analyses(session, delivery_id, settings=service.settings, prompts=service.prompt_settings)
         expected = (before[0].id, before[1].id, before[2])
     with service.db.engine.begin() as connection:
-        config.attributes["connection"] = connection
-        command.downgrade(config, "f9c208b5a431")
-        assert "ix_relation_analysis_org_candidate_time" not in {item["name"] for item in inspect(connection).get_indexes("relation_impact_analyses")}
-        command.upgrade(config, "head")
+        # Isolate this index roundtrip; do not roll back later evidence migrations.
+        with Operations.context(MigrationContext.configure(connection)):
+            migration["downgrade"]()
+            assert "ix_relation_analysis_org_candidate_time" not in {item["name"] for item in inspect(connection).get_indexes("relation_impact_analyses")}
+            migration["upgrade"]()
         assert "ix_relation_analysis_org_candidate_time" in {item["name"] for item in inspect(connection).get_indexes("relation_impact_analyses")}
     with service.db.session() as session:
         after = ImpactInboxReader._latest_analyses(session, delivery_id, settings=service.settings, prompts=service.prompt_settings)

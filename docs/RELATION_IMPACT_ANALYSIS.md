@@ -29,7 +29,7 @@ Mandatory facts enter first. Remaining passages are ranked deterministically and
 
 ## Validated result
 
-The persisted `relation-impact-v3` contract accepts `supported=false`, with no proposed relation or actions. A model-authored negative may have no citations; a downgraded unassessed result retains its selected evidence for inspection, never as proof of a positive impact. A supported result contains:
+The persisted `relation-impact-v4` contract accepts `supported=false`, with no proposed relation or actions. A model-authored negative may have no citations; a downgraded unassessed result retains its selected evidence for inspection, never as proof of a positive impact. A supported result contains:
 
 - a proposed `potentially_impacts`, `implements`, `cites`, or `interprets` relation;
 - potential severity, kept separate from evidence strength;
@@ -47,12 +47,67 @@ When official metadata already confirms a relation, `result.official_relation` k
 
 ## History and cache boundaries
 
+### Same-ID evidence corrections (HL-100, 6 September 2026)
+
+Planner `relation-impact-plan-v4` binds the actual candidate, event, both works,
+both saved corpus versions, the target's accessible legacy version and any linked
+official relation to their database evidence revisions. This is independent of a
+document ID or a caller-maintained content hash. Correcting passages, source URLs,
+work scope/lifecycle, event facts, retrieval reasons or official evidence under the
+same IDs makes previous assessments history-only. Their original timestamps,
+result and citation snapshots are retained; no read silently rewrites a report or
+starts inference. The next explicit/scheduled request receives a distinct cache
+and durable-job identity. A failed new attempt cannot revive the prior assessment.
+
+Migration `c3a5be941872` adds six revision columns and SQLite/PostgreSQL triggers.
+The triggers compare the stored evidence-bearing fields and advance the revision
+on an actual change, including bulk/direct SQL updates outside ORM callbacks.
+Health, analysis state, usage and fetching/update timestamps are excluded. Assigning
+the same stored value does not advance a revision. JSON formatting/order changes
+can conservatively advance it; this is a correction identity, not semantic
+equivalence. Reverting changed text or IDs does not roll the revision backward.
+The target's legacy revision is conservatively bound whenever an accessible legacy
+link exists, including when native passages currently make fallback unnecessary.
+Foreign private legacy IDs/revisions are excluded even in privileged sessions.
+
+A separate migration epoch binds the counter incarnation. Downgrade/re-upgrade
+cannot accidentally revive an old report because a fresh counter again equals
+one. The epoch is a lifecycle marker, not an external attestation. Database
+administrators can still alter history, disable triggers or restore an old backup;
+this is not a defense against a hostile database administrator. Operator deployment
+must apply the migration with the matching API code. Do not run it on production
+as a side effect of publishing this commit. Old reports lacking the new binding
+remain inspectable but cannot establish current applicability; no bulk reanalysis
+or notification is created by the migration.
+
+Preparation compares compact bindings before and after collecting the dossier.
+A concurrent correction returns `409 relation_evidence_changed` before creating
+a job or sending a prompt; the caller can retry against the corrected evidence.
+A correction during generation retains the result as stale history and leaves the
+candidate pending for an explicit reassessment. Normal fresh reads recheck the
+binding. These checks do not lock all source/settings changes globally throughout
+an HTTP response or establish model-runtime freshness.
+
+Inbox selection compares scalar revisions in SQL before hydrating only selected
+history payloads; it does not read/hash all historical documents in Python. Both
+legacy/paged inbox readers and final digest selection use this predicate. An
+AI-only severity from corrected evidence cannot authorize delivery, while
+independently recorded official urgency remains available. Relation-history reads
+reuse one compact binding for the candidate; pagination of that endpoint's full
+retained history is a separate remaining read-boundary task.
+
+Remaining HL-100 work includes actual runtime/artifact freshness on reads,
+candidate refresh/backfill, independent relevance/entailment acceptance and
+historical digest catch-up. Revision integrity does not establish factual support
+or the usefulness of an AI explanation.
+
 `GET /api/relation-candidates/{organization_candidate_id}/analyses` returns every successful and failed attempt, the latest attempt, and the latest valid current report. A failed reanalysis therefore cannot replace a previous valid conclusion.
 
 An identical successful result is reused only when all of these inputs match:
 
 - organization delivery and event identity;
 - source and target version identity;
+- evidence revision bindings and their migration epoch;
 - selected evidence IDs, contents, and authority flags;
 - official-relation evidence fingerprint;
 - organization profile revision;

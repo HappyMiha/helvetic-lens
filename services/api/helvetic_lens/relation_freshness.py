@@ -12,6 +12,7 @@ from .models import (
     RelationImpactAnalysis,
 )
 from .prompt_settings import PromptSettings
+from .relation_inputs import matching_inputs_predicate
 
 
 def uses_profile(plan: dict | None, revision: int | None) -> bool:
@@ -87,6 +88,7 @@ def current_analysis_predicate(settings: Settings, prompts: PromptSettings):
         & (model.result["schema_version"].as_string() == relation_analysis.SCHEMA_VERSION)
         & matching_profile
         & matching_inputs
+        & matching_inputs_predicate(model)
         & (
             model.analysis_plan["execution"]["configuration_fingerprint"].as_string()
             == relation_analysis.configuration_fingerprint(settings)

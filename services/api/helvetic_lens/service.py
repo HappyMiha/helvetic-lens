@@ -137,6 +137,7 @@ from .relation_freshness import (
     uses_versions,
 )
 from .relation_identity import relation_direction
+from .relation_inputs import capture_inputs, uses_inputs
 from .source_capabilities import capability_catalogue
 
 logger = logging.getLogger(__name__)
@@ -4072,6 +4073,7 @@ class HelveticLens:
         output_locale: str = relation_ai.DEFAULT_OUTPUT_LOCALE,
     ) -> dict:
         delivery = get(session, OrganizationRelationCandidate, organization_candidate_id)
+        input_snapshot = capture_inputs(session, delivery.candidate_id)
         candidate = get(session, RelationCandidate, delivery.candidate_id)
         event = get(session, RegulatoryEvent, candidate.event_id)
         source_work = get(session, RegulatoryWork, candidate.source_work_id)
@@ -4236,6 +4238,13 @@ class HelveticLens:
             {field: getattr(relation, field) for field in relation_ai.RELATION_BINDING_FIELDS}
             if relation else None
         )
+        evidence_binding = capture_inputs(session, candidate.id)
+        if evidence_binding != input_snapshot:
+            raise DomainError(
+                "The saved evidence changed while preparing this analysis. Retry with the corrected evidence.",
+                409,
+                "relation_evidence_changed",
+            )
         key = relation_ai.cache_key(
             organization_candidate_id=delivery.id,
             event_id=event.id,
@@ -4249,6 +4258,7 @@ class HelveticLens:
             runtime_fingerprint=runtime_fingerprint,
             output_locale=output_locale,
             relation_binding=relation_binding,
+            evidence_binding=evidence_binding,
         )
         plan = relation_ai.build_plan(
             organization_candidate_id=delivery.id,
@@ -4262,6 +4272,7 @@ class HelveticLens:
             prompts=self.prompt_settings,
             output_locale=output_locale,
             relation_binding=relation_binding,
+            evidence_binding=evidence_binding,
         )
         plan["runtime_fingerprint"] = runtime_fingerprint
         return {
@@ -4520,14 +4531,19 @@ class HelveticLens:
                     provenance=provenance,
                     result_url=f"/impact?candidate={organization_candidate_id}",
                 )
-                delivery.status = "analysed" if status == "succeeded" else "pending"
+                evidence_current = uses_inputs(context["plan"], capture_inputs(session, record.candidate_id))
+                delivery.status = "analysed" if status == "succeeded" and evidence_current else "pending"
                 delivery.updated_at = utcnow()
                 session.commit()
-                return self._relation_analysis_dict(record, cached=False)
+                return {
+                    **self._relation_analysis_dict(record, cached=False),
+                    "stale": status == "succeeded" and not evidence_current,
+                }
 
     def relation_analysis_history(self, organization_candidate_id: str) -> dict:
         with self.db.session() as session:
             delivery = get(session, OrganizationRelationCandidate, organization_candidate_id)
+            evidence_binding = capture_inputs(session, delivery.candidate_id)
             version_ids = session.execute(
                 select(
                     RelationCandidate.source_version_id,
@@ -4561,6 +4577,7 @@ class HelveticLens:
                         or not uses_prompts(record.analysis_plan, self.prompt_settings)
                         or not uses_versions(record.analysis_plan, *version_ids[:2])
                         or not uses_official_relation(record.analysis_plan, relation_binding)
+                        or not uses_inputs(record.analysis_plan, evidence_binding)
                     ),
                 }
                 for record in records

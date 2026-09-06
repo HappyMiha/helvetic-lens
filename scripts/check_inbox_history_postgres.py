@@ -124,7 +124,7 @@ from test_topic_reviews import (
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("law-history-large", "law-history-scope", "law-history-empty", "law-history-null", "law-history-int", "law-history-fraction", "timeline-large", "timeline-relations", "timeline-private", "timeline-law", "timeline-watch", "timeline-mapping", "timeline-work", "relation-endpoints-source", "relation-endpoints-target", "relation-endpoints-reverse", "relation-endpoints-digest", "official-relation-fields", "official-relation-links", "official-relation-retry", "official-relation-digest", "registry-details", "registry-detail-scope", "registry-detail-dates", "monitored-pages", "monitored-search", "monitored-read", "monitored-scope", "monitored-dates", "monitored-comparison", "monitored-migration", "registry-watches", "registry-events", "registry-search", "registry-dates", "registry-scope", "registry-migration", "digest-quiet-resume", "digest-quiet-unsubscribe", "digest-quiet-boundary", "digest-quiet-save", "digest-local-schedule", "digest-schedule-migration", "feed-topic-sparse", "feed-topic-scope", "feed-watch-pages", "feed-watch-scope", "evidence-pages", "evidence-pages-native", "evidence-text-pages", "source-review", "source-review-scope", "source-review-migration", "milestone-native", "milestone-migration", "milestone-race", "feed-readiness-history", "feed-readiness-bounds", "feed-readiness-sources", "onboarding-state", "onboarding-migration", "onboarding-race", "assistant-context", "assistant-context-private", "answer-context", "answer-context-private", "topic-coverage-empty", "topic-coverage-state", "topic-coverage-scope", "topic-coverage-bounds", "topic-duplicates", "topic-duplicates-scope", "topic-duplicates-bounds", "history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked", "monitoring-context", "monitoring-context-activate"), default="history")
+    parser.add_argument("--suite", choices=("evidence-revisions-private", "evidence-revisions-prepare", "evidence-revisions-text", "evidence-revisions-metadata", "evidence-revisions-official", "evidence-revisions-noop", "evidence-revisions-legacy", "evidence-revisions-migration", "evidence-revisions-race", "evidence-revisions-digest", "law-history-large", "law-history-scope", "law-history-empty", "law-history-null", "law-history-int", "law-history-fraction", "timeline-large", "timeline-relations", "timeline-private", "timeline-law", "timeline-watch", "timeline-mapping", "timeline-work", "relation-endpoints-source", "relation-endpoints-target", "relation-endpoints-reverse", "relation-endpoints-digest", "official-relation-fields", "official-relation-links", "official-relation-retry", "official-relation-digest", "registry-details", "registry-detail-scope", "registry-detail-dates", "monitored-pages", "monitored-search", "monitored-read", "monitored-scope", "monitored-dates", "monitored-comparison", "monitored-migration", "registry-watches", "registry-events", "registry-search", "registry-dates", "registry-scope", "registry-migration", "digest-quiet-resume", "digest-quiet-unsubscribe", "digest-quiet-boundary", "digest-quiet-save", "digest-local-schedule", "digest-schedule-migration", "feed-topic-sparse", "feed-topic-scope", "feed-watch-pages", "feed-watch-scope", "evidence-pages", "evidence-pages-native", "evidence-text-pages", "source-review", "source-review-scope", "source-review-migration", "milestone-native", "milestone-migration", "milestone-race", "feed-readiness-history", "feed-readiness-bounds", "feed-readiness-sources", "onboarding-state", "onboarding-migration", "onboarding-race", "assistant-context", "assistant-context-private", "answer-context", "answer-context-private", "topic-coverage-empty", "topic-coverage-state", "topic-coverage-scope", "topic-coverage-bounds", "topic-duplicates", "topic-duplicates-scope", "topic-duplicates-bounds", "history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked", "monitoring-context", "monitoring-context-activate"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -145,6 +145,43 @@ def main():
         with TestClient(app) as client:
             service = app.state.service
             harness = (client, fetcher, service, model)
+            if args.suite.startswith("evidence-revisions-"):
+                from test_relation_evidence_freshness import (
+                    test_correction_during_generation_is_saved_as_stale_history,
+                    test_correction_during_preparation_does_not_bind_old_text_to_new_revision,
+                    test_digest_final_read_drops_corrected_ai_evidence_without_sending,
+                    test_evidence_migration_roundtrip_preserves_history_without_counter_resurrection,
+                    test_foreign_legacy_revision_is_not_exposed_in_binding,
+                    test_legacy_fallback_corrections_cannot_hide_behind_corpus_version_id,
+                    test_same_id_correction_invalidates_all_current_reads,
+                    test_same_value_and_operational_updates_preserve_revision_and_cached_analysis,
+                )
+                variant = args.suite.removeprefix("evidence-revisions-")
+                if variant in {"text", "metadata", "official"}:
+                    name, field, value = {
+                        "text": ("source_version", "text", "Corrected source text; the old hash is unchanged"),
+                        "metadata": ("target_work", "metadata_json", {"scope": "Corrected scope"}),
+                        "official": ("official_relation", "evidence_json", {"notice": "Corrected official evidence"}),
+                    }[variant]
+                    test_same_id_correction_invalidates_all_current_reads(harness, name, field, value)
+                elif variant == "noop":
+                    test_same_value_and_operational_updates_preserve_revision_and_cached_analysis(harness)
+                elif variant == "legacy":
+                    test_legacy_fallback_corrections_cannot_hide_behind_corpus_version_id(harness)
+                elif variant == "private":
+                    test_foreign_legacy_revision_is_not_exposed_in_binding(harness)
+                elif variant == "migration":
+                    test_evidence_migration_roundtrip_preserves_history_without_counter_resurrection(harness)
+                else:
+                    with MonkeyPatch.context() as patch:
+                        if variant == "prepare":
+                            test_correction_during_preparation_does_not_bind_old_text_to_new_revision(harness, patch)
+                        elif variant == "race":
+                            test_correction_during_generation_is_saved_as_stale_history(harness, patch)
+                        else:
+                            test_digest_final_read_drops_corrected_ai_evidence_without_sending(harness, patch)
+                print("PostgreSQL:", args.suite, "passed without actual inference or sending mail.")
+                return
             if args.suite.startswith("law-history-"):
                 from test_law_history_metadata import (
                     test_law_detail_large_history_is_metadata_compatible_without_historical_body_loads,

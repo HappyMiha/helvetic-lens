@@ -55,8 +55,12 @@ def test_corrected_official_fields_make_saved_report_history_only(harness, field
         candidate = session.get(RelationCandidate, saved["candidate_id"])
         setattr(session.get(RegulatoryRelation, candidate.relation_id), field, original)
         session.commit()
-    assert client.get(f"/api/relation-candidates/{delivery}/analyses").json()["current"]["id"] == saved["id"]
+    # A reverted value is a new evidence revision, not a rollback of its history.
+    assert client.get(f"/api/relation-candidates/{delivery}/analyses").json()["current"] is None
     assert len(model.calls) == 1
+    fresh = client.post(f"/api/relation-candidates/{delivery}/analyse-jobs").json()["result"]["data"]
+    assert fresh["id"] != saved["id"] and len(model.calls) == 2
+    assert client.get(f"/api/relation-candidates/{delivery}/analyses").json()["current"]["id"] == fresh["id"]
 
 
 def test_detached_relation_and_missing_binding_are_not_current(harness):

@@ -527,6 +527,14 @@ class Law(Base):
     last_error: Mapped[str | None] = mapped_column(Text)
 
 
+class EvidenceRevisionEpoch(Base):
+    """A migration incarnation prevents counter reuse after rollback/re-upgrade."""
+
+    __tablename__ = "evidence_revision_epochs"
+    id: Mapped[str] = mapped_column(String(20), primary_key=True)
+    epoch: Mapped[str] = mapped_column(String(36))
+
+
 class Version(Base):
     __tablename__ = "versions"
     __table_args__ = (
@@ -550,6 +558,7 @@ class Version(Base):
             sqlite_where=text("owner_organization_id IS NOT NULL"),
         ),
     )
+    evidence_revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     owner_organization_id: Mapped[str | None] = mapped_column(ForeignKey("organizations.id"), index=True)
     law_id: Mapped[str] = mapped_column(ForeignKey("laws.id"), index=True)
@@ -598,6 +607,7 @@ class RegulatoryWork(Base):
             name="ck_regulatory_work_kind",
         ),
     )
+    evidence_revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     owner_organization_id: Mapped[str | None] = mapped_column(ForeignKey("organizations.id"), index=True)
     kind: Mapped[str] = mapped_column(String(40), index=True)
@@ -649,6 +659,7 @@ class RegulatoryDocumentVersion(Base):
         UniqueConstraint("expression_id", "version_key", name="uq_regulatory_document_version_key"),
         UniqueConstraint("legacy_version_id", name="uq_regulatory_document_version_legacy"),
     )
+    evidence_revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     expression_id: Mapped[str] = mapped_column(ForeignKey("regulatory_expressions.id"), index=True)
     version_key: Mapped[str] = mapped_column(String(700))
@@ -730,6 +741,7 @@ class RegulatoryEvent(Base):
             name="ck_regulatory_event_impact",
         ),
     )
+    evidence_revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     work_id: Mapped[str] = mapped_column(ForeignKey("regulatory_works.id"), index=True)
     expression_id: Mapped[str | None] = mapped_column(ForeignKey("regulatory_expressions.id"))
@@ -803,6 +815,7 @@ class RegulatoryRelation(Base):
             name="ck_regulatory_relation_state",
         ),
     )
+    evidence_revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     subject_work_id: Mapped[str] = mapped_column(ForeignKey("regulatory_works.id"), index=True)
     object_work_id: Mapped[str] = mapped_column(ForeignKey("regulatory_works.id"), index=True)
@@ -829,6 +842,7 @@ class RelationCandidate(Base):
             name="ck_relation_candidate_status",
         ),
     )
+    evidence_revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     event_id: Mapped[str] = mapped_column(ForeignKey("regulatory_events.id"), index=True)
     source_work_id: Mapped[str] = mapped_column(ForeignKey("regulatory_works.id"), index=True)

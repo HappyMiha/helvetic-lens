@@ -21,7 +21,7 @@ from .prompt_settings import PromptSettings
 from .relation_identity import relation_direction
 
 SCHEMA_VERSION = "relation-impact-v4"
-PLANNER_VERSION = "relation-impact-plan-v3"
+PLANNER_VERSION = "relation-impact-plan-v4"
 MAX_PROVIDER_CALLS = 5
 MAX_ACTIONS = 5
 DEFAULT_OUTPUT_LOCALE = "en-CH"
@@ -233,6 +233,7 @@ def cache_key(
     runtime_fingerprint: str | None,
     output_locale: str = DEFAULT_OUTPUT_LOCALE,
     relation_binding: dict | None = None,
+    evidence_binding: dict | None = None,
 ) -> str:
     return _fingerprint(
         {
@@ -245,6 +246,7 @@ def cache_key(
             "target_version_id": target_version_id,
             "relation_fingerprint": relation_fingerprint,
             "official_relation_binding": official_relation_binding(relation_binding),
+            "evidence_binding": evidence_binding,
             "evidence": [
                 {
                     "id": row["evidence_id"],
@@ -281,6 +283,7 @@ def build_plan(
     prompts: PromptSettings,
     output_locale: str = DEFAULT_OUTPUT_LOCALE,
     relation_binding: dict | None = None,
+    evidence_binding: dict | None = None,
 ) -> dict:
     characters = sum(len(row["text"]) for row in evidence)
     return {
@@ -314,6 +317,7 @@ def build_plan(
             "profile_revision": profile_revision,
             "version_binding": version_binding(source_version_id, target_version_id),
             "official_relation_binding": official_relation_binding(relation_binding),
+            "evidence_binding": evidence_binding,
             "configuration_fingerprint": configuration_fingerprint(settings),
             "prompt_fingerprint": relation_prompt_fingerprint(prompts),
             "generation_parameters": generation_parameters(settings),

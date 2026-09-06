@@ -19,6 +19,7 @@ from helvetic_lens.models import (
     RelationImpactAnalysis,
     new_id,
 )
+from helvetic_lens.relation_inputs import capture_inputs
 
 
 def history_corpus(harness, count=50, archive=100):
@@ -36,7 +37,7 @@ def history_corpus(harness, count=50, archive=100):
             if kind == 0:
                 continue
             common = {"organization_id": service.organization_id, "organization_candidate_id": delivery.id, "created_at": stamp}
-            analysis = {**common, "analysis_plan": {"execution": {"version_binding": relation_analysis.version_binding(candidate.source_version_id, candidate.target_version_id), "official_relation_binding": saved_relation_binding(session, candidate), "profile_revision": 1, "configuration_fingerprint": relation_analysis.configuration_fingerprint(service.settings), "prompt_fingerprint": relation_analysis.relation_prompt_fingerprint(service.prompt_settings)}}, "candidate_id": candidate.id, "event_id": candidate.event_id, "target_work_id": candidate.target_work_id,
+            analysis = {**common, "analysis_plan": {"execution": {"version_binding": relation_analysis.version_binding(candidate.source_version_id, candidate.target_version_id), "official_relation_binding": saved_relation_binding(session, candidate), "evidence_binding": capture_inputs(session, candidate.id), "profile_revision": 1, "configuration_fingerprint": relation_analysis.configuration_fingerprint(service.settings), "prompt_fingerprint": relation_analysis.relation_prompt_fingerprint(service.prompt_settings)}}, "candidate_id": candidate.id, "event_id": candidate.event_id, "target_work_id": candidate.target_work_id,
                         "cache_key": "0"*64, "model": "test-only", "evidence_json": [{"text": "Synthetic archived evidence "*30}]}
             analyses, reviews = [], []
             for j in range(archive+1):
