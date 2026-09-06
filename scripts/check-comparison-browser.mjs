@@ -62,6 +62,31 @@ const fixture = JSON.parse(
     "utf8",
   ),
 );
+// A populated 200-group fixture is mandatory, not conditional on live data.
+const originalCluster = fixture.diff.change_clusters[0];
+const originalChange = fixture.diff.items.find(item => item.id === originalCluster.change_ids[0]);
+fixture.diff.change_clusters = Array.from({length:200}, (_,index) => index === 0 ? originalCluster : {
+  ...structuredClone(originalCluster), id:`qa-material-${index}`, change_ids:[`qa-change-${index}`],
+  old_unit_ids:[`qa-old-unit-${index}`], new_unit_ids:[`qa-new-unit-${index}`], ambiguous:index === 199,
+});
+for (let index=1; index<200; index++) {
+  const text = `Art. ${index}. Synthetic multilingual retention obligation: Aufbewahrungspflicht et conservation des pièces justificatives. ${index === 199 ? 'ONLY_LAST_199' : ''} ${'A very long saved legal passage. '.repeat(18)}`;
+  fixture.diff.items.push({...structuredClone(originalChange), id:`qa-change-${index}`,
+    old:{id:`qa-before-${index}`,page:null,text:`Before ${text}`},new:{id:`qa-after-${index}`,page:null,text:`After ${text}`},
+    old_parts:[{kind:'removed',text:`Before ${text}`}],new_parts:[{kind:'added',text:`After ${text}`}],
+  });
+}
+fixture.diff.items.push({...structuredClone(originalChange),id:'qa-extra-change',
+  old:{id:'qa-extra-old',page:null,text:'SECOND_CHANGE_ONLY previous rule'},
+  new:{id:'qa-extra-new',page:null,text:'SECOND_CHANGE_ONLY current rule'},
+  old_parts:[{kind:'removed',text:'SECOND_CHANGE_ONLY previous rule'}],
+  new_parts:[{kind:'added',text:'SECOND_CHANGE_ONLY current rule'}],
+});
+fixture.diff.change_clusters[199].change_ids.push('qa-extra-change');
+fixture.diff.classification_counts.substantive = 201;
+fixture.diff.material_count = 201;
+fixture.diff.counts.modified = 201;
+let comparisonFixture = fixture;
 const savedAnswer = {id: "qa-saved-answer", type: "question", status: "succeeded", question: "Which record duties changed?", created_at: "2026-09-06T08:00:00Z", last_used_at: null, use_count: 1, model: "synthetic", prompt_revision: 1, coverage: {},
   comparison: {id: fixture.id, mode: fixture.mode, before: {id: fixture.old_version_id, artifact_url: `/api/versions/${fixture.old_version_id}/artifact`}, after: {id: fixture.new_version_id, artifact_url: `/api/versions/${fixture.new_version_id}/artifact`}},
   result: {supported: true, answer: "Synthetic supported answer.", citations: fixture.analysis.result.citations}};
@@ -116,7 +141,7 @@ try {
         firecrawl: { configured: false },
         private_sources_enabled: false,
       };
-    else if (url.pathname === `/api/comparisons/${fixture.id}`) body = fixture;
+    else if (url.pathname === `/api/comparisons/${fixture.id}`) body = comparisonFixture;
     else if (url.pathname.endsWith("/ai-history"))
       body = { items: historyItems, total: historyItems.length };
     else if (url.pathname === "/api/monitoring-context") body = {kind: "answer", id: savedAnswer.id, title: fixture.law.name, question: savedAnswer.question, answer_created_at: savedAnswer.created_at, reference_url: `/compare/${fixture.id}?task=ask`, requires_confirmation: true, ai_calls: 0, watches: []};
@@ -187,7 +212,7 @@ try {
       `Comparison task did not become modal: ${await evaluate(cdp, "JSON.stringify({width:innerWidth,dialog:document.querySelector('dialog.analysis-column')?.outerHTML.slice(0,600),tabs:document.querySelector('.comparison-task-tabs')?.outerHTML})")}`,
     );
   };
-  for (const selectedLocale of ["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"]) {
+  for (const selectedLocale of ["en-CH", "de-CH", "fr-CH", "it-CH", "rm-CH"]) {
     locale = selectedLocale;
     for (const width of [390, 768, 1024]) {
       await resize(width);
@@ -201,6 +226,62 @@ try {
         "Required populated comparison/locale missing",
       );
       assert.equal(await modal(), false);
+      const groups = () => evaluate(cdp, `Array.from(document.querySelectorAll('[data-material-group]')).map(node => node.dataset.materialGroup)`);
+      const setInput = async (selector,value,tag='HTMLInputElement') => evaluate(cdp, `(() => {const node=document.querySelector(${JSON.stringify(selector)}); Object.getOwnPropertyDescriptor(${tag}.prototype,'value').set.call(node,${JSON.stringify(value)}); node.dispatchEvent(new Event('input',{bubbles:true})); node.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+      assert.equal((await groups()).length,5,'Material cards must be bounded before interaction');
+      assert.equal(await evaluate(cdp, `document.querySelector('[data-material-page]').options.length`),40);
+      assert.equal(await evaluate(cdp, `document.querySelectorAll('[data-material-group] details[open]').length`),0);
+      const origin = await evaluate(cdp, 'performance.timeOrigin');
+      if (locale === 'en-CH' && width === 390) {
+        const seen = new Set();
+        for(let page=0;page<40;page++) {
+          await setInput('[data-material-page]',String(page),'HTMLSelectElement');
+          await waitFor(async () => (await groups())[0] === (page === 0 ? originalCluster.id : `qa-material-${page*5}`),'Material page did not change');
+          for(const id of await groups()) {assert.ok(!seen.has(id),'Repeated group'); seen.add(id);}
+          assert.equal((await groups()).length,5);
+        }
+        assert.equal(seen.size,200,'Every saved group must remain reachable');
+      } else {
+        await setInput('[data-material-page]','39','HTMLSelectElement');
+        await waitFor(async () => (await groups())[0] === 'qa-material-195','Last material page unavailable');
+      }
+      assert.ok(await evaluate(cdp, `document.activeElement === document.querySelector('[data-material-reader] h3')`),'Page movement must focus the reading heading');
+      await sleep(200);
+      assert.ok(await evaluate(cdp, `document.querySelector('[data-material-reader] h3').getBoundingClientRect().top >= document.querySelector('.comparison-task-tabs').getBoundingClientRect().bottom`),'Sticky navigation covered the focused heading');
+      await evaluate(cdp, `document.querySelector('[data-material-evidence]').click()`);
+      await waitFor(() => evaluate(cdp, `document.activeElement?.id === 'qa-change-195'`),'Later material group lost exact evidence focus');
+      await evaluate(cdp, `document.querySelector('.diff-toolbar .segmented button').click()`);
+      await waitFor(async () => (await groups())[0] === 'qa-material-195','Returning from exact evidence lost material page');
+      await setInput('[data-material-search]','ONLY_LAST_199');
+      await waitFor(async () => (await groups()).length === 1 && (await groups())[0] === 'qa-material-199','Search must include saved text outside the first page');
+      assert.ok(await evaluate(cdp, `document.querySelector('[data-material-group] .needs-review-label') !== null`));
+      await setInput('[data-material-search]','SECOND_CHANGE_ONLY');
+      await waitFor(async () => (await groups()).length === 1 && (await groups())[0] === 'qa-material-199','Search ignored a non-leading exact change');
+      await setInput('[data-material-group] select','qa-extra-change','HTMLSelectElement');
+      await waitFor(() => evaluate(cdp, `document.activeElement?.id === 'qa-extra-change'`),'Secondary exact change was unreachable');
+      await evaluate(cdp, `document.querySelector('.diff-toolbar .segmented button').click()`);
+      await waitFor(() => evaluate(cdp, `document.querySelector('[data-material-search]')?.value === 'SECOND_CHANGE_ONLY'`),'Evidence return lost search');
+      await setInput('[data-material-search]','no-such-test-phrase');
+      await waitFor(() => evaluate(cdp, `!!document.querySelector('[data-material-empty]') && !document.querySelector('[data-material-group]')`),'Missing honest empty search state');
+      await evaluate(cdp, `document.querySelector('[data-material-clear]').click()`);
+      await waitFor(async () => (await groups()).length === 5,'Clear search did not restore overview');
+      assert.ok(await evaluate(cdp, `!document.querySelector('[data-material-reader]').innerText.includes('materialPage.')`),'Untranslated reading controls');
+      assert.ok(await evaluate(cdp, `Array.from(document.querySelectorAll('[data-material-reader] button,[data-material-reader] input,[data-material-reader] select')).every(node=>node.getBoundingClientRect().height >= 44)`),'Reading controls need touch targets');
+      assert.ok(await evaluate(cdp, `parseFloat(getComputedStyle(document.querySelector('.material-delta p')).fontSize) >= 16`));
+      assert.equal(await evaluate(cdp,'performance.timeOrigin'),origin,'Material navigation reloaded the document');
+      if(locale === 'en-CH' && width === 390) {
+        await evaluate(cdp, `document.querySelector('[data-material-reader]').scrollIntoView()`);
+        await sleep(350);
+        await capture('material-390');
+        await resize(320);
+        await evaluate(cdp, `document.documentElement.style.fontSize='32px'; document.querySelector('[data-material-reader]').scrollIntoView()`);
+        await capture('material-320-text-zoom');
+        assert.ok(await evaluate(cdp, `document.querySelector('[data-material-reader]').scrollWidth <= document.querySelector('[data-material-reader]').clientWidth + 1`),'Material text zoom/reflow overflow');
+        await capture('material-320-text-zoom');
+        await evaluate(cdp, `document.documentElement.style.fontSize='';`);
+        await resize(width);
+      }
+
       await clickTab("ask");
       await waitFor(() => evaluate(cdp, `document.querySelectorAll('#companion-ask [data-monitor-answer]').length === 1`), "Only the succeeded cited answer should offer monitoring");
       assert.ok(await evaluate(cdp, `document.querySelector('#companion-ask [data-monitor-answer] a').getAttribute('href').includes('record=qa-saved-answer')`));
@@ -389,6 +470,23 @@ try {
       if (locale === "en-CH") await capture(`monitor-from-answer-${width}`);
     }
   }
+  // Legacy saved comparisons may have material rows but no cluster metadata.
+  comparisonFixture = structuredClone(fixture);
+  comparisonFixture.diff.change_clusters = [];
+  await resize(390);
+  await cdp.send('Page.navigate',{url:`${base}/compare/${fixture.id}`});
+  await waitFor(() => evaluate(cdp, `document.querySelectorAll('.diff-row').length === 40 && !!document.querySelector('.pagination')`),'Legacy material rows lost their pager');
+  const legacyIds = new Set();
+  for(let page=0;page<6;page++) {
+    const ids=await evaluate(cdp, `Array.from(document.querySelectorAll('.diff-row')).map(node=>node.id)`);
+    for(const id of ids){assert.ok(!legacyIds.has(id));legacyIds.add(id);}
+    if(page<5){
+      await evaluate(cdp, `document.querySelector('.pagination button:last-child').click()`);
+      await waitFor(async()=> (await evaluate(cdp, `document.querySelector('.diff-row')?.id`)) !== ids[0],'Legacy next page did not change');
+    }
+  }
+  assert.equal(legacyIds.size,201,'Legacy material rows must all remain reachable');
+  assert.ok(await evaluate(cdp, `document.querySelector('.pagination button:last-child').disabled`));
   assert.deepEqual(
     exceptions,
     [],
@@ -399,7 +497,7 @@ try {
     "No comparison fixture was used",
   );
   console.log(
-    "Comparison production UI: 15 populated locale/overlay-width journeys passed; modal focus isolation, forward/back Tab, Escape/close and return focus, draft persistence through close/desktop resize, nonmodal desktop and cited evidence focus, saved-answer-only monitoring buttons in Ask/history and history-to-topic navigation retaining the saved question without implicit copy/activation. All API calls intercepted; no live model or data mutation. Physical keyboard/mobile, screen-reader and other-browser review remain separate.",
+    "Comparison production UI: 200-group navigation/search/evidence/return and 320px text-zoom check, plus 15 populated locale/overlay-width journeys passed; modal focus isolation, forward/back Tab, Escape/close and return focus, draft persistence through close/desktop resize, nonmodal desktop and cited evidence focus, saved-answer-only monitoring buttons in Ask/history and history-to-topic navigation retaining the saved question without implicit copy/activation. All API calls intercepted; no live model or data mutation. Physical keyboard/mobile, screen-reader and other-browser review remain separate.",
   );
 } catch (error) {
   console.error({

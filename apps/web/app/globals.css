@@ -4059,3 +4059,24 @@ dialog.analysis-column:not([open]) {
 
 /* Keep personal feed controls usable above the global compact select style. */
 select.interest-feed-control { min-height: 44px; }
+
+/* Material reading uses the shared palette and a bounded five-group surface. */
+.material-reader { min-width: 0; }
+.material-reader-controls { padding: 1.125rem; display: grid; gap: .75rem; }
+.material-reader-controls h3, .material-reader-controls p { margin: 0; }
+.material-reader, .material-reader h3 { scroll-margin-top: 160px; }
+.material-reader .semantic-clusters article { background: var(--card); color: var(--foreground); min-width: 0; padding: 1rem; }
+.material-reader .semantic-clusters p { font-size: 1rem; line-height: 1.65; overflow-wrap: anywhere; }
+.material-reader .semantic-cluster-heading { flex-wrap: wrap; }
+.material-reader .semantic-cluster-heading h4 { margin: 0; font-size: 1.125rem; }
+.material-reader .semantic-cluster-heading span { font-size: .875rem; text-transform: none; }
+.material-reader .semantic-cluster-units { color: var(--muted-foreground); }
+.material-reader summary { cursor: pointer; min-height: 44px; display: list-item; padding-block: .75rem; }
+.material-reader button, .material-reader input, .material-reader select { min-height: 44px; font-size: 1rem; }
+.material-delta { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 1rem; }
+.material-delta > div { min-width: 0; }
+@media (max-width: 640px) { .material-delta { grid-template-columns: minmax(0,1fr); } }
+
+.material-reader-controls, .material-reader label { min-width: 0; overflow-wrap: anywhere; }
+.material-reader button { white-space: normal; height: auto; max-width: 100%; padding: .5rem .75rem; }
+.material-reader input, .material-reader select { min-width: 0; max-width: 100%; }

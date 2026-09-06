@@ -141,7 +141,7 @@ Keep the proven stack and add only the infrastructure now justified by public us
 | [HL-093](#hl-093) | P0       | IN PROGRESS  | HL-059, HL-062, HL-075                                 | Independent semantic gold set and honest quality metrics            |
 | [HL-094](#hl-094) | P0       | IN PROGRESS  | HL-030, HL-075                                         | Fair resumable matching and preview/production parity               |
 | [HL-095](#hl-095) | P1       | IN PROGRESS | HL-037, HL-066, HL-074                                 | Progressive topic, registry and recovery controls                   |
-| [HL-096](#hl-096) | P1       | PLANNED  | HL-063, HL-068                                         | Coherent visual system and readable scalable evidence               |
+| [HL-096](#hl-096) | P1       | IN PROGRESS  | HL-063, HL-068                                         | Coherent visual system and readable scalable evidence               |
 | [HL-097](#hl-097) | P0       | IN PROGRESS  | HL-065, HL-068, HL-070                                 | Visible AI controls and accessible populated journeys               |
 | [HL-098](#hl-098) | P0       | PLANNED  | HL-036, HL-071, HL-072                                 | Verified source coverage and versioned legacy-artifact repair       |
 | [HL-099](#hl-099) | P0       | IN PROGRESS | HL-030, HL-036, HL-046                                 | Bounded event read model and period-limited digest queries           |
@@ -2005,11 +2005,13 @@ Acceptance criteria:
 
 ### HL-096 — Unify visual language and make evidence comfortable to read
 
-**Priority:** P1. **Status:** PLANNED. **Dependencies:** HL-063, HL-068. **Owner role:** design/frontend.
+**Priority:** P1. **Status:** IN PROGRESS. **Dependencies:** HL-063, HL-068. **Owner role:** design/frontend.
 
 Problem: mixed themes, tiny metadata, raw IDs and unlimited material cards undermine clarity despite the improved shell.
 
 Deliverable: documented typography/color/spacing/density tokens and representative populated comparison/feed/assistant layouts.
+
+**Implemented 6 September 2026 (bounded material reading):** Material-first renders five groups with a page picker and full saved-text search, including matches outside the current page. Labelled before/after excerpts, uncertain-match warnings and expandable technical IDs replace the unbounded tiny-text list. Every exact change remains reachable; citation jumps focus the exact pager and returning preserves material search/page. Controls wrap at text zoom, target 44px and focus below sticky navigation. The mandatory 200-group, five-language Chromium fixture and build/contrast evidence are in `docs/VERIFICATION.md`; contract/limits in `docs/MATERIAL_READING.md`. This bounds rendered group cards, not the full API payload or browser search index. Remaining acceptance includes authoritative legal-unit headings, wider token/density/layout consolidation, full zoom/cross-browser coverage and observed user reading comfort. No production deployment or evidence/AI-history mutation.
 
 Acceptance criteria:
 

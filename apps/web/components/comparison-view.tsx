@@ -1,5 +1,6 @@
 "use client";
 
+import { MaterialChanges } from "./material-changes";
 import { MonitorThis, MonitorSavedAnswer } from "./monitor-this";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -261,6 +262,8 @@ export function ComparisonView({ id }: { id: string }) {
   const [filter, setFilter] = useState("substantive"),
     [context, setContext] = useState(false),
     [page, setPage] = useState(0);
+  const [materialState, setMaterialState] = useState({query: "", page: 0});
+  useEffect(() => setMaterialState({query:"",page:0}), [id]);
   const [jumpTarget, setJumpTarget] = useState(""),
     [jumpRevision, setJumpRevision] = useState(0),
     [analysisJobs, setAnalysisJobs] = useState<Partial<Record<Locale, Job>>>(
@@ -900,64 +903,8 @@ export function ComparisonView({ id }: { id: string }) {
                 )}
                 {filter === "substantive" &&
                 data.diff.change_clusters?.length ? (
-                  <div className="semantic-clusters">
-                    {data.diff.change_clusters.map((cluster, index) => {
-                      const clusterItems = cluster.change_ids
-                        .map((changeId) =>
-                          changes.find((item) => item.id === changeId),
-                        )
-                        .filter((item): item is Change => !!item);
-                      const first = clusterItems[0];
-                      return (
-                        <article key={cluster.id}>
-                          <div className="semantic-cluster-heading">
-                            <span>
-                              {t("compare.changeGroup", {
-                                number: number(index + 1),
-                              })}
-                            </span>
-                            <strong>
-                              {t("compare.exactChangeCount", {
-                                count: number(cluster.change_ids.length),
-                              })}
-                            </strong>
-                          </div>
-                          <p>
-                            {cluster.classifications.map(label).join(" · ")}
-                          </p>
-                          <p className="semantic-cluster-units">
-                            {t("compare.before")}:{" "}
-                            {cluster.old_unit_ids[0] ||
-                              t("compare.noEarlierUnit")}{" "}
-                            · {t("compare.after")}:{" "}
-                            {cluster.new_unit_ids[0] ||
-                              t("compare.noCurrentUnit")}
-                          </p>
-                          <p>
-                            {(
-                              first?.new?.text ||
-                              first?.old?.text ||
-                              t("compare.savedUnitChange")
-                            ).slice(0, 260)}
-                          </p>
-                          {cluster.ambiguous && (
-                            <span className="needs-review-label">
-                              {t("compare.needsReview")}
-                            </span>
-                          )}
-                          {first && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => jump(first.id)}
-                            >
-                              <FileText size={13} /> {t("compare.viewEvidence")}
-                            </Button>
-                          )}
-                        </article>
-                      );
-                    })}
-                  </div>
+                  <MaterialChanges clusters={data.diff.change_clusters} changes={data.diff.items}
+                    state={materialState} onStateChange={setMaterialState} onEvidence={jump} />
                 ) : (
                   <div className="diff-rows">
                     {visible.map((item) => (
@@ -985,7 +932,7 @@ export function ComparisonView({ id }: { id: string }) {
                     ))}
                   </div>
                 )}
-                {filter !== "substantive" && items.length > 0 && (
+                {(filter !== "substantive" || !data.diff.change_clusters?.length) && items.length > 0 && (
                   <div className="pagination">
                     <span>
                       {t("evidence.range", {
