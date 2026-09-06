@@ -124,7 +124,7 @@ from test_topic_reviews import (
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("registry-watches", "registry-events", "registry-search", "registry-dates", "registry-scope", "registry-migration", "digest-quiet-resume", "digest-quiet-unsubscribe", "digest-quiet-boundary", "digest-quiet-save", "digest-local-schedule", "digest-schedule-migration", "feed-topic-sparse", "feed-topic-scope", "feed-watch-pages", "feed-watch-scope", "evidence-pages", "evidence-pages-native", "evidence-text-pages", "source-review", "source-review-scope", "source-review-migration", "milestone-native", "milestone-migration", "milestone-race", "feed-readiness-history", "feed-readiness-bounds", "feed-readiness-sources", "onboarding-state", "onboarding-migration", "onboarding-race", "assistant-context", "assistant-context-private", "answer-context", "answer-context-private", "topic-coverage-empty", "topic-coverage-state", "topic-coverage-scope", "topic-coverage-bounds", "topic-duplicates", "topic-duplicates-scope", "topic-duplicates-bounds", "history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked", "monitoring-context", "monitoring-context-activate"), default="history")
+    parser.add_argument("--suite", choices=("monitored-pages", "monitored-search", "monitored-read", "monitored-scope", "monitored-dates", "monitored-comparison", "monitored-migration", "registry-watches", "registry-events", "registry-search", "registry-dates", "registry-scope", "registry-migration", "digest-quiet-resume", "digest-quiet-unsubscribe", "digest-quiet-boundary", "digest-quiet-save", "digest-local-schedule", "digest-schedule-migration", "feed-topic-sparse", "feed-topic-scope", "feed-watch-pages", "feed-watch-scope", "evidence-pages", "evidence-pages-native", "evidence-text-pages", "source-review", "source-review-scope", "source-review-migration", "milestone-native", "milestone-migration", "milestone-race", "feed-readiness-history", "feed-readiness-bounds", "feed-readiness-sources", "onboarding-state", "onboarding-migration", "onboarding-race", "assistant-context", "assistant-context-private", "answer-context", "answer-context-private", "topic-coverage-empty", "topic-coverage-state", "topic-coverage-scope", "topic-coverage-bounds", "topic-duplicates", "topic-duplicates-scope", "topic-duplicates-bounds", "history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked", "monitoring-context", "monitoring-context-activate"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -145,6 +145,31 @@ def main():
         with TestClient(app) as client:
             service = app.state.service
             harness = (client, fetcher, service, model)
+            if args.suite.startswith("monitored-"):
+                from test_registry_monitored_pages import (
+                    test_monitored_comparison_links_choose_latest_visible_scalar_id,
+                    test_monitored_current_user_read_state_ignores_older_event_and_foreign_principal,
+                    test_monitored_dates_use_zurich_and_creation_fallback,
+                    test_monitored_keysets_batch_details_without_hydrating_saved_bodies,
+                    test_monitored_latest_event_index_roundtrip_preserves_events,
+                    test_monitored_privileged_scope_never_borrows_foreign_law_mapping_or_work,
+                    test_monitored_sparse_literal_search_and_legacy_defaults,
+                )
+                checks = {
+                    "monitored-pages": test_monitored_keysets_batch_details_without_hydrating_saved_bodies,
+                    "monitored-read": test_monitored_current_user_read_state_ignores_older_event_and_foreign_principal,
+                    "monitored-scope": test_monitored_privileged_scope_never_borrows_foreign_law_mapping_or_work,
+                    "monitored-dates": test_monitored_dates_use_zurich_and_creation_fallback,
+                    "monitored-comparison": test_monitored_comparison_links_choose_latest_visible_scalar_id,
+                    "monitored-migration": test_monitored_latest_event_index_roundtrip_preserves_events,
+                }
+                if args.suite == "monitored-search":
+                    with MonkeyPatch.context() as patch:
+                        test_monitored_sparse_literal_search_and_legacy_defaults(harness, patch)
+                else:
+                    checks[args.suite](harness)
+                print("PostgreSQL:", args.suite, "passed without model calls.")
+                return
             if args.suite.startswith("registry-"):
                 from test_registry_event_pages import (
                     test_equal_time_registry_pages_do_not_hydrate_event_or_work_payloads,

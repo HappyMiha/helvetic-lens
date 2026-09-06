@@ -85,3 +85,50 @@ query planner may still inspect many eligible records. This is not the intended-
 100k-event/20-reader test, the ≤500 ms p95 gate, or a deployment/migration of a
 working database. Cursor results reflect current saved filters/visibility; this
 slice adds no cross-request snapshot or late/backdated-admission policy.
+
+
+## Monitored-document SQL pages — 6 September 2026
+
+`view=monitored` now joins each organization watch to a visible law and optional
+visible mapping/work. A correlated scalar selection chooses the latest event for
+that work by `(detected_at, id)` before applying event filters. No matching event
+means the existing `last_checked`, then watch `created_at`, fallback is used;
+missing language expressions remain `und`. Paused watches remain visible.
+
+Both registry views share candidate traversal: SQL filters/order, at most 100
+scalar candidates per query, page plus one matching lookahead, and complete
+Unicode literal search through successive batches. The public 1–100 limit and
+row shape remain compatible. A cursor from the other view is rejected with the
+existing invalid-cursor response. Read markers refer to the latest event and the
+current organization/user; an older event's marker does not mark a new event read.
+
+Only selected-page law IDs enter the scalar latest-comparison window query.
+Comparison timestamps use ID as a deterministic tie breaker and exclude foreign
+private comparisons. Expression IDs and official-date values are selected in
+batches for returned rows, not once per document. No full comparison diff,
+version text, work metadata, event evidence or watch/state ORM objects are needed
+to construct a monitoring page. Existing source, current-version evidence,
+comparison and timeline links retain their meanings.
+
+Migration `b294ad830761` adds `(work_id, detected_at, id)` index
+`ix_regulatory_event_work_latest`, supporting per-work latest-event selection.
+It neither changes data nor replaces the global event-list index. Applying this
+migration to a working deployment remains a separate operator action.
+
+The tests traverse 231 watches against 231 equal-time events (100/100/31 pages),
+assert five bounded candidate selects and three date/three comparison batch
+queries, and reject full-object/large-JSON hydration. Additional cases cover
+sparse literal search and unmapped defaults, user/tenant state, private
+law/mapping/work fallbacks, the 25-hour Zurich autumn day, comparison visibility
+and tie breaking, and populated index migration. See the verification record for
+final SQLite/PostgreSQL results.
+
+Limits: ordering watches by derived latest activity can still require significant
+SQL work as the watchlist grows. Language/expression/date fan-out and visible-law
+comparison ranking need intended-host measurement. The document timeline and
+Discover's related-law/date expansion are separate remaining work. This is a
+**live saved-state list**, not a cross-request snapshot: a new event or changed
+last-check time can move a watch above an earlier cursor. Refresh starts from the
+latest state; snapshot/reconciliation semantics remain an explicit HL-099 gate.
+No 100-user capacity, complete mature-corpus bound or production deployment is
+claimed by this slice.
