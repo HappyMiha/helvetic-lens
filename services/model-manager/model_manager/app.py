@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import time
 from dataclasses import dataclass
@@ -52,31 +53,37 @@ class FairAdmission:
         candidates = unrepresented or self.waiting
         return min(candidates, key=lambda value: self._rank(value, now))
 
-    async def acquire(self, organization: str, priority: str, timeout: float = 300):
+    async def acquire(self, organization: str, priority: str, timeout: float = 300, expected_binding: str | None = None):
         async with self.condition:
             self.sequence += 1
             item = WaitingRequest(organization, priority, self.sequence, time.monotonic())
             self.waiting.append(item)
             deadline = time.monotonic() + timeout
-            while True:
-                targets = manager.inference_targets()
-                available = next(
-                    (target for target in targets if target["slot"] not in self.owners),
-                    None,
-                )
-                winner = self._winner(time.monotonic())
-                if available and winner is item:
+            try:
+                while True:
+                    if expected_binding is not None:
+                        manager.check_runtime_binding(expected_binding)
+                    targets = manager.inference_targets()
+                    available = next(
+                        (target for target in targets if target["slot"] not in self.owners),
+                        None,
+                    )
+                    winner = self._winner(time.monotonic())
+                    if available and winner is item:
+                        self.waiting.remove(item)
+                        self.owners[available["slot"]] = organization
+                        return available, (time.monotonic() - item.queued_at) * 1000
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        raise TimeoutError("Local inference admission timed out.")
+                    try:
+                        await asyncio.wait_for(self.condition.wait(), timeout=min(remaining, 2))
+                    except TimeoutError:
+                        pass
+            finally:
+                if item in self.waiting:
                     self.waiting.remove(item)
-                    self.owners[available["slot"]] = organization
-                    return available, (time.monotonic() - item.queued_at) * 1000
-                remaining = deadline - time.monotonic()
-                if remaining <= 0:
-                    self.waiting.remove(item)
-                    raise TimeoutError("Local inference admission timed out.")
-                try:
-                    await asyncio.wait_for(self.condition.wait(), timeout=min(remaining, 2))
-                except TimeoutError:
-                    pass
+                    self.condition.notify_all()
 
     async def release(self, target: dict, organization: str):
         async with self.condition:
@@ -141,6 +148,11 @@ async def inventory():
     return payload
 
 
+@app.get("/v1/runtime")
+def runtime_binding():
+    return manager.runtime_snapshot()
+
+
 @app.get("/v1/profiles/{profile_id}")
 def workload_profile(profile_id: str):
     return manager.describe_profile(profile_id)
@@ -199,15 +211,29 @@ async def proxy_local(
 ):
     if priority not in {"interactive", "background"}:
         priority = "background"
+    body = await request.body()
+    requested_model = None
+    if path == "chat/completions":
+        try:
+            payload = json.loads(body)
+            requested_model = payload.get("model") if isinstance(payload, dict) else None
+        except (ValueError, UnicodeDecodeError):
+            requested_model = None
+        if not isinstance(requested_model, str) or not requested_model.strip():
+            raise ModelManagerError("A chat request must specify a model ID.", 400, "invalid_model_request")
+    expected_binding = request.headers.get("x-helvetic-runtime-binding")
     try:
-        target, queue_wait_ms = await admission.acquire(organization[:80], priority)
+        target, queue_wait_ms = await admission.acquire(
+            organization[:80], priority, expected_binding=expected_binding,
+        )
     except TimeoutError:
         return JSONResponse(
             status_code=504,
             content={"error": {"code": 504, "message": "Local inference queue timed out."}},
         )
+    lease = None
     try:
-        body = await request.body()
+        lease, snapshot = manager.reserve_inference(target, expected_binding, requested_model)
         headers = {"content-type": request.headers.get("content-type", "application/json")}
         async with httpx.AsyncClient(timeout=300, trust_env=False) as client:
             response = await client.request(
@@ -221,6 +247,9 @@ async def proxy_local(
             "x-helvetic-queue-wait-ms": f"{queue_wait_ms:.2f}",
             "x-helvetic-slot": target["slot"],
         }
+        if snapshot["binding_fingerprint"]:
+            returned_headers["x-helvetic-runtime-binding"] = snapshot["binding_fingerprint"]
+            returned_headers["x-helvetic-deployment-id"] = snapshot["deployment_id"]
         return Response(response.content, status_code=response.status_code, headers=returned_headers)
     except httpx.RequestError as exc:
         return JSONResponse(
@@ -228,7 +257,9 @@ async def proxy_local(
             content={"error": {"code": 502, "message": f"Local runner transport failed: {type(exc).__name__}"}},
         )
     finally:
-        await admission.release(target, organization[:80])
+        if lease is not None:
+            manager.release_inference(lease)
+        await asyncio.shield(admission.release(target, organization[:80]))
 
 
 @app.api_route("/openai/v1/chat/completions", methods=["POST"])

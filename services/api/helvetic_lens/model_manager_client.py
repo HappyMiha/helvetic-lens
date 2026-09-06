@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 import httpx
 
 from .config import DomainError, Settings
@@ -12,7 +14,9 @@ class ModelManagerClient:
         self.base_url = settings.model_manager_url.rstrip("/")
         self.timeout = httpx.Timeout(15, read=90)
 
-    async def _request(self, method: str, path: str, **kwargs) -> dict:
+    async def _request(
+        self, method: str, path: str, *, expected_runtime_binding: str | None = None, **kwargs,
+    ) -> dict:
         try:
             async with httpx.AsyncClient(timeout=self.timeout, trust_env=False) as client:
                 response = await client.request(method, self.base_url + path, **kwargs)
@@ -32,10 +36,19 @@ class ModelManagerClient:
                 response.status_code,
                 error.get("code") or "model_manager_error",
             )
+        if expected_runtime_binding is not None and response.headers.get("x-helvetic-runtime-binding") != expected_runtime_binding:
+            raise DomainError(
+                "The local runner response does not match the requested deployment.",
+                409, "runtime_binding_changed",
+            )
         return response.json()
 
     async def inventory(self) -> dict:
         return await self._request("GET", "/v1/inventory")
+
+    async def runtime(self) -> dict:
+        """Read the active deployment binding without starting or selecting a model."""
+        return await self._request("GET", "/v1/runtime")
 
     async def profile(self, profile_id: str) -> dict:
         return await self._request("GET", f"/v1/profiles/{profile_id}")
@@ -58,6 +71,32 @@ class ModelManagerClient:
                 "assistant_local_unavailable",
                 {"state": profile.get("state"), "model": selected.get("display_name")},
             )
+        runtime = await self.runtime()
+        runtime = runtime if isinstance(runtime, dict) else {}
+        binding = runtime.get("binding_fingerprint")
+        deployment_id = runtime.get("deployment_id")
+        if (
+            runtime.get("schema_version") != "local-runtime-binding-v1"
+            or runtime.get("available") is not True
+            or not isinstance(binding, str) or not re.fullmatch(r"[a-f0-9]{64}", binding)
+            or not isinstance(deployment_id, str) or not re.fullmatch(r"[a-f0-9]{32}", deployment_id)
+        ):
+            raise DomainError(
+                "The local assistant deployment cannot be verified. Refresh its runtime before retrying.",
+                503, "assistant_local_unavailable",
+            )
+        selected = profile.get("selected_model") or {}
+        expected_model = {
+            "served_model_id": selected.get("served_model_id"),
+            "model_id": selected.get("id"),
+            "model_revision": selected.get("immutable_revision"),
+            "artifact_sha256": selected.get("artifact_sha256"),
+        }
+        if any(not isinstance(value, str) or not value or runtime.get(key) != value for key, value in expected_model.items()):
+            raise DomainError(
+                "The local assistant model changed. Refresh its runtime before retrying.",
+                409, "runtime_binding_changed",
+            )
         generation = profile.get("generation") or {}
         payload = {
             "model": profile["selected_model"]["served_model_id"],
@@ -74,9 +113,11 @@ class ModelManagerClient:
         response = await self._request(
             "POST",
             "/openai/v1/chat/completions",
+            expected_runtime_binding=binding,
             headers={
                 "X-Helvetic-Organization": organization_id,
                 "X-Helvetic-Priority": profile.get("policy", {}).get("priority", "interactive"),
+                "X-Helvetic-Runtime-Binding": binding,
             },
             json=payload,
         )
@@ -94,7 +135,7 @@ class ModelManagerClient:
                 502,
                 "assistant_response_invalid",
             )
-        return {"content": content, "profile": profile}
+        return {"content": content, "profile": profile, "runtime_binding": binding}
 
     async def probe(self) -> dict:
         return await self._request("POST", "/v1/hardware/probe")

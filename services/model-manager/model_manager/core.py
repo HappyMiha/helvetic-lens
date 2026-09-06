@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import threading
@@ -11,6 +13,7 @@ import urllib.error
 import urllib.request
 from datetime import UTC, datetime
 from pathlib import Path
+from uuid import uuid4
 
 GPU_RUNTIME_HEADROOM_BYTES = 2 * 1024**3
 
@@ -50,6 +53,7 @@ class ModelManager:
         self.runner: subprocess.Popen[str] | None = None
         self.runners: list[dict] = []
         self.runner_model_id: str | None = None
+        self.inference_leases: set[str] = set()
         self.logs: list[str] = []
         self.state = self._load_state()
         self._reconcile_after_restart()
@@ -451,15 +455,111 @@ class ModelManager:
 
     def inference_targets(self) -> list[dict]:
         with self.lock:
+            deployment = self.state.get("deployment") or {}
             return [
                 {
                     "slot": runner["slot"],
                     "url": f"http://127.0.0.1:{runner['port']}",
                     "device": runner.get("device"),
+                    "deployment_id": deployment.get("deployment_id"),
                 }
                 for runner in self.runners
                 if runner.get("state") == "ready" and runner["process"].poll() is None
             ]
+
+    def _observed_identity(self, entry: dict, profile: dict, artifact_sha256: str) -> tuple[dict | None, dict]:
+        """Hash launch inputs; a pinned image remains a trusted launcher assertion.
+
+        GGUF embeds the tokenizer, so its whole verified artifact conservatively
+        binds tokenizer changes too. No model capability is inferred here.
+        """
+        if not re.fullmatch(r"[a-f0-9]{40}|[a-f0-9]{64}", entry["immutable_revision"]):
+            return None, {"reason": "immutable_model_revision_unavailable"}
+        if not re.fullmatch(r".+@sha256:[a-f0-9]{64}", self.runtime_image):
+            return None, {"reason": "pinned_runtime_image_unavailable"}
+        try:
+            executable_sha256 = self._hash_file(self.llama_server)
+            template_sha256 = self._hash_file(Path(entry["chat_template"]))
+        except OSError:
+            return None, {"reason": "runtime_input_unreadable"}
+        runtime_manifest = {
+            "schema_version": "local-runtime-manifest-v1",
+            "image": self.runtime_image,
+            "executable_sha256": executable_sha256,
+        }
+        identity = {
+            "model_id": entry["id"],
+            "model_revision": entry["immutable_revision"],
+            "artifact_sha256": artifact_sha256,
+            "tokenizer_sha256": artifact_sha256,
+            "chat_template_sha256": template_sha256,
+            "runtime_sha256": hashlib.sha256(
+                json.dumps(runtime_manifest, sort_keys=True, separators=(",", ":")).encode()
+            ).hexdigest(),
+            "hardware_profile": profile["name"],
+        }
+        return identity, {
+            "reason": "launch_inputs_recorded",
+            "tokenizer_binding": "whole_gguf_artifact",
+            "runtime_manifest": runtime_manifest,
+            "image_provenance": "trusted_launcher_assertion",
+        }
+
+    def runtime_snapshot(self) -> dict:
+        with self.lock:
+            deployment = self.state.get("deployment") or {}
+            available = bool(self.inference_targets())
+            return copy.deepcopy({
+                "schema_version": "local-runtime-binding-v1",
+                "available": available,
+                "deployment_id": deployment.get("deployment_id") if available else None,
+                "binding_fingerprint": deployment.get("binding_fingerprint") if available else None,
+                "identity": deployment.get("identity") if available else None,
+                "identity_evidence": deployment.get("identity_evidence") if available else None,
+                "model_id": deployment.get("model_id") if available else None,
+                "model_revision": deployment.get("model_revision") if available else None,
+                "artifact_sha256": deployment.get("artifact_sha256") if available else None,
+                "served_model_id": deployment.get("served_model_id") if available else None,
+                "context_window_tokens": deployment.get("context_size") if available else None,
+                "default_output_tokens": deployment.get("generation", {}).get("max_tokens") if available else None,
+            })
+
+    def check_runtime_binding(self, expected: str):
+        snapshot = self.runtime_snapshot()
+        if not expected or not snapshot["available"] or expected != snapshot["binding_fingerprint"]:
+            raise ModelManagerError(
+                "The local model deployment changed or stopped. Replan the request before retrying.",
+                409, "runtime_binding_changed",
+            )
+
+    def reserve_inference(self, target: dict, expected_binding: str | None, requested_model: str | None) -> tuple[str, dict]:
+        """Atomically bind a selected slot and prevent manager-driven replacement."""
+        with self.lock:
+            if expected_binding is not None:
+                self.check_runtime_binding(expected_binding)
+            current = next((item for item in self.inference_targets() if item == target), None)
+            if current is None:
+                raise ModelManagerError("The selected local runner is no longer available.", 409, "runtime_binding_changed")
+            snapshot = self.runtime_snapshot()
+            if requested_model is not None and requested_model != snapshot["served_model_id"]:
+                raise ModelManagerError(
+                    "The requested model is not the model currently served by this deployment.",
+                    409, "runtime_model_mismatch",
+                )
+            lease = uuid4().hex
+            self.inference_leases.add(lease)
+            return lease, snapshot
+
+    def release_inference(self, lease: str):
+        with self.lock:
+            self.inference_leases.discard(lease)
+
+    def _require_idle_runtime(self):
+        if self.inference_leases:
+            raise ModelManagerError(
+                "The local model is serving a request. Wait for it to finish before stopping or replacing it.",
+                409, "model_busy",
+            )
 
     def _ensure_download_allowed(self, entry: dict):
         if not self._license_accepted(entry):
@@ -606,6 +706,8 @@ class ModelManager:
                 self.logs = self.logs[-200:]
         return_code = process.poll()
         with self.lock:
+            if not any(item is runner for item in self.runners):
+                return
             model_id = self.runner_model_id
             runner["state"] = "error"
             runner["error"] = f"llama.cpp exited unexpectedly with code {return_code}."
@@ -673,10 +775,24 @@ class ModelManager:
                 if self.runner_model_id == model_id:
                     return self.describe(model_id)
                 raise ModelManagerError("Stop the active model before starting another one.", 409, "model_active")
+            self._require_idle_runtime()
             requirements = entry["requirements"]
             profile = self.select_profile(entry, profile_name)
+            # A former download checksum does not prove today's file is intact.
+            artifact_sha256 = self._hash_file(self._artifact_path(entry))
+            if artifact_sha256 != entry["sha256"]:
+                self._model_state(model_id).update(
+                    state="error", error="The installed model failed launch-time SHA-256 verification.",
+                    verified_at=None, artifact_sha256=None,
+                )
+                self._save_state()
+                raise ModelManagerError("The installed model failed launch-time SHA-256 verification.", 422, "checksum_mismatch")
+            identity, identity_evidence = self._observed_identity(entry, profile, artifact_sha256)
             self._model_state(model_id).update(state="starting", error=None)
             self.state["deployment"] = {
+                "deployment_id": uuid4().hex,
+                "identity": identity,
+                "identity_evidence": identity_evidence,
                 "model_id": model_id,
                 "served_model_id": entry["served_model_id"],
                 "model_revision": entry["immutable_revision"],
@@ -692,6 +808,15 @@ class ModelManager:
                 "generation": {"max_tokens": 700, "parallel_per_runner": 1},
                 "started_at": now_iso(),
             }
+            binding = {
+                key: self.state["deployment"][key] for key in (
+                    "deployment_id", "identity", "model_id", "model_revision", "artifact_sha256",
+                    "served_model_id", "hardware_profile", "context_size", "generation",
+                )
+            }
+            self.state["deployment"]["binding_fingerprint"] = hashlib.sha256(
+                json.dumps(binding, sort_keys=True, separators=(",", ":")).encode()
+            ).hexdigest()
             self._save_state()
             self.runner_model_id = model_id
             self.runners = []
@@ -767,7 +892,7 @@ class ModelManager:
         while time.monotonic() < deadline:
             with self.lock:
                 process = runner["process"]
-                if self.runner_model_id != model_id:
+                if self.runner_model_id != model_id or not any(item is runner for item in self.runners):
                     return
                 if process.poll() is not None:
                     error = f"llama.cpp exited with code {process.returncode}."
@@ -777,6 +902,8 @@ class ModelManager:
                     if response.status == 200:
                         self._warm_up(runner["port"], served_model_id)
                         with self.lock:
+                            if not any(item is runner for item in self.runners):
+                                return
                             runner["state"] = "ready"
                             runner["error"] = None
                             self._sync_deployment_state(model_id)
@@ -785,6 +912,8 @@ class ModelManager:
                 error = f"Local runtime warm-up failed: {exc}"
                 time.sleep(1)
         with self.lock:
+            if not any(item is runner for item in self.runners):
+                return
             runner.update(state="error", error=error)
             self._sync_deployment_state(model_id)
 
@@ -793,6 +922,7 @@ class ModelManager:
         with self.lock:
             if self.runner_model_id != model_id or not self.runners:
                 return self.describe(model_id)
+            self._require_idle_runtime()
             for runner in self.runners:
                 process = runner["process"]
                 if process.poll() is None:

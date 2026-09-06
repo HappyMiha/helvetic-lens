@@ -16,6 +16,12 @@ need the coordinated integration described below. The resolver's
 `generated_explanation` decision is a permission for a verified scope, not an
 assertion that the current application has used that mode.
 
+The local manager now exposes [observed launch inputs and deployment binding](LOCAL_INFERENCE.md#deployment-binding--6-september-2026).
+Its gateway enforces pins during admission and inference; Marvin's local client
+already uses them. This prevents per-request model substitution and supplies the
+identity needed by the future Impact/Ask integration. It does not approve a
+model or migrate the analysis pipeline automatically.
+
 The existing GTX 1070 structured-output benchmark is not an explanatory quality
 review. Neither it nor a successful HTTP/JSON response promotes Apertus 1.5B,
 Apertus 8B or a cloud model. HL-093 independent evaluation and target-hardware
@@ -33,7 +39,7 @@ change which approval wins.
 Each profile binds the exact observed runtime identity:
 
 - model ID and immutable 40- or 64-digit hexadecimal model revision;
-- model-artifact, tokenizer, chat-template and runtime-image SHA-256 digests;
+- model-artifact, tokenizer, chat-template and runtime-manifest SHA-256 digests;
 - the hardware profile on which the declared budget was evaluated.
 
 Floating `main`, `latest` or marketing version labels cannot be immutable
