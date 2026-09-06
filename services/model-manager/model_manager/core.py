@@ -526,6 +526,7 @@ class ModelManager:
                 "served_model_id": deployment.get("served_model_id") if available else None,
                 "context_window_tokens": deployment.get("context_size") if available else None,
                 "default_output_tokens": deployment.get("generation", {}).get("max_tokens") if available else None,
+                "prompt_budget_schema": "local-prompt-budget-v1" if available else None,
             })
 
     def check_runtime_binding(self, expected: str):

@@ -167,6 +167,32 @@ def test_rejected_answer_retry_preserves_failed_history(bound_app):
     assert next(item for item in history if item["id"] == failure["id"]) == failure
 
 
+@pytest.mark.parametrize("kind", ["ask", "analyse"])
+def test_new_count_protocol_cannot_reuse_unmeasured_answer_with_same_model_identity(bound_app, kind):
+    client, _, _, comparison, state = bound_app
+    first = run(client, comparison, kind)
+    assert first.status_code == 200
+    path = f"/api/comparisons/{comparison['id']}/ai-history"
+    original = client.get(path).json()["items"][0]
+    before = RuntimeSnapshot.model_validate(state["runtime"])
+    state["runtime"]["prompt_budget_schema"] = "local-prompt-budget-v1"
+    after = RuntimeSnapshot.model_validate(state["runtime"])
+    assert before.identity_fingerprint() == after.identity_fingerprint()
+    assert before.binding_fingerprint == after.binding_fingerprint
+    assert before.cache_identity() != after.cache_identity()
+    # This deliberately old transport cannot return a verified count despite
+    # advertising it. The new attempt must fail, never relabel the old answer.
+    attempted = run(client, comparison, kind)
+    assert attempted.status_code == (422 if kind == "ask" else 200)
+    history = client.get(path).json()["items"]
+    assert len(history) == 2 and history[0]["status"] == "failed"
+    assert "token measurement does not match this request" in history[0]["error"]
+    assert history[0]["provenance"]["provider_calls"] == 0
+    assert history[0]["provenance"]["evidence_allocations"][0]["status"] == "failed"
+    assert next(item for item in history if item["id"] == original["id"]) == original
+    assert state["calls"][-1].url.path.endswith("/input_tokens")
+
+
 @pytest.mark.parametrize("kind", ["ask-jobs", "analyse-jobs"])
 def test_completed_jobs_reuse_only_matching_runtime(bound_app, kind):
     client, _, _, comparison, state = bound_app

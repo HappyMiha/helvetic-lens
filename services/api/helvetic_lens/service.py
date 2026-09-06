@@ -514,6 +514,7 @@ class HelveticLens:
             "prompt_token_measurements": [
                 event["prompt_token_measurement"] for event in trace if event.get("prompt_token_measurement")
             ],
+            "evidence_allocations": [event["evidence_allocation"] for event in trace if event.get("evidence_allocation")],
             "model_revision": deployment.get("model_revision"),
             "artifact_sha256": deployment.get("artifact_sha256"),
             "quantization": deployment.get("quantization"),

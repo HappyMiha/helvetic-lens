@@ -5,7 +5,12 @@ import sys
 
 import httpx
 import pytest
-from helvetic_lens.analysis import InferenceBudget, ModelClient
+from helvetic_lens.analysis import (
+    AnswerDigest,
+    InferenceBudget,
+    ModelClient,
+    structured_completion,
+)
 from test_runtime_binding import runtime as runtime_fixture
 from test_runtime_binding import start
 
@@ -295,4 +300,73 @@ async def test_real_analysis_client_carries_one_binding_through_gateway(gateway,
     capture = trace[0]["runtime_binding"]
     assert capture["binding_fingerprint"] == snapshot["binding_fingerprint"]
     assert capture["hardware"] == RuntimeSnapshot.model_validate(snapshot).hardware.model_dump()
+    assert_released(module, manager)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ["fit", "restart", "oversized_repair"])
+async def test_measured_allocator_uses_real_gateway_and_rechecks_final_generation(gateway, runtime, monkeypatch, mode):
+    from helvetic_lens.config import DomainError, Settings
+
+    module, manager, snapshot = gateway
+    assert snapshot["prompt_budget_schema"] == "local-prompt-budget-v1"
+    real_client = httpx.AsyncClient
+    asgi = httpx.ASGITransport(app=module.app)
+    counts, generated = [], []
+    evidence = [{
+        "version_id": side, "passage_id": f"p{index}", "text": f"Synthetic {side} rule {index}.",
+        "change_id": f"c{index}", "change_kind": "modified", "side": side,
+    } for index in range(4) for side in ("old", "new")]
+    columns = ["row_number", "change_id", "text"]
+    payload = {"evidence": {"columns": columns, "rows": [[number, item["change_id"], item["text"]] for number, item in enumerate(evidence, 1)]}}
+
+    async def route(request):
+        if request.url.host == "synthetic-manager":
+            if mode == "restart" and request.url.path == "/openai/v1/chat/completions":
+                # Replacement between allocation and decoding; no lease is held
+                # outside a gateway request. The previous pin must reject it.
+                manager.stop_model("apertus-test")
+                start(runtime)
+            return await asgi.handle_async_request(request)
+        if request.url.path == "/props":
+            return runner_metadata(request)
+        wire = json.loads(request.content)
+        supplied = json.loads(wire["messages"][-1]["content"])
+        assert manager.inference_leases
+        if request.url.path.endswith("/input_tokens"):
+            count = 5000 if "repair" in supplied else 350 + 600 * len(supplied["evidence"]["rows"])
+            counts.append((wire, count))
+            return httpx.Response(200, json={"object": "response.input_tokens", "input_tokens": count})
+        assert counts[-1][0] == wire
+        assert counts[-1][1] + wire["max_tokens"] + 128 <= 4096
+        generated.append(wire)
+        content = {"supported": True, "citation_rows": [999 if mode == "oversized_repair" else 1]}
+        return httpx.Response(200, json={"choices": [{"message": {"content": json.dumps(content)}}]})
+
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **kwargs: real_client(transport=httpx.MockTransport(route), **kwargs))
+    configuration = Settings(_env_file=None, apertus_provider="docker", apertus_model=snapshot["served_model_id"], apertus_max_tokens=700)
+    configuration.apertus_base_url = "http://synthetic-manager/openai/v1"
+    client = ModelClient(configuration)
+    token = client.begin_trace()
+    budget = InferenceBudget(3)
+    allocation = {}
+    attempt = structured_completion(
+        client, "Use only the synthetic supplied rows.", payload, AnswerDigest, evidence,
+        validate_citations=False, numeric_reference_count=8, numeric_reference_evidence=evidence,
+        budget=budget, allocation=allocation,
+    )
+    if mode == "fit":
+        result = await attempt
+        assert result["citation_rows"] == [1]
+    else:
+        with pytest.raises(DomainError) as error:
+            await attempt
+        assert error.value.code == ("runtime_binding_changed" if mode == "restart" else "model_context_exceeded")
+    trace = client.end_trace(token)
+    assert allocation["row_numbers"] == [1, 2, 3, 4]
+    assert allocation["count_probes"] == 2
+    assert len(generated) == (0 if mode == "restart" else 1)
+    if mode == "oversized_repair":
+        assert trace[-1].get("outcome") == "error"
+        assert any(not event["prompt_token_measurement"]["fits"] for event in trace if event.get("prompt_token_measurement"))
     assert_released(module, manager)

@@ -220,12 +220,87 @@ all six counts matched (49, 50, 51, 56, 51, 55); oversized input counted 1837.
 This validates the protocol for that fixture/runtime/template, not every model,
 semantic quality, dynamic/custom templates, GPU performance or 100-user capacity.
 
-**Still open:** use exact preflight results in capability-aware evidence planning,
-carry reviewed task/language budgets and approval-decision freshness through the
-entire analysis, and provide explanatory evaluation. Current character-based
-evidence planning may still choose an input the final guard rejects; it is never
-called a measured token allocation. Ask/Impact generation call caps remain 3/5.
-No deployment or model promotion is authorized by this code change.
+**Still open:** apply reviewed task/language budgets and approval-decision
+freshness through capability-aware mode selection and explanatory evaluation.
+The selected-evidence allocation added below can now reduce an oversized
+candidate; the final guard remains necessary for every generation and repair.
+Ask/Impact generation call caps remain 3/5. No deployment or model promotion is
+authorized by these code changes.
+
+### Measured evidence allocation — 6 September 2026
+
+The current local selected-evidence Ask/Impact adapter now uses the count-only
+gateway before generation when `/v1/runtime` advertises
+`prompt_budget_schema: local-prompt-budget-v1`. This uses the existing saved
+comparison and bounded character-planned dossier as candidates; it does not
+refetch a document, rewrite a diff, download a model or send data to a cloud
+fallback. Non-local adapters are unchanged. Older gateways that do not advertise
+the protocol retain their previous path without being labelled measured.
+
+Each batch tries its complete candidate evidence first. If the exact full wire
+request does not fit, a deterministic reduction keeps complete change groups
+(both earlier/current sides together), preferring modified groups and then
+their original order. It halves the retained groups until one remains, then
+halves exact source windows down to an 80-character floor per long passage.
+Paired windows are anchored around their first differing text; already-selected
+windows are never expanded outside their current source range. At most eight
+count probes run per batch, each with a ten-second maximum and the remaining
+overall analysis deadline. Counts do not decode text or consume generation-call
+allowances, but do use the shared gateway queue and appear separately as
+`prompt_token_count` integration requests. No new inference batches are added.
+
+The final full messages and response schema sent for counting match the chosen
+generation request. The gateway rechecks the full request under its execution
+lease. Count body, request hash, output reserve, runtime pin, deployment and
+context are validated; unavailable or inconsistent counting does not silently
+fall back to a character estimate. An advertised measured runtime must also
+return measurement metadata on a successful generation. An oversized fixed
+prompt fails with guidance to reduce custom/company instructions or output
+length, or choose a larger verified context. The full comparison stays readable.
+
+Row numbers are never reassigned. The response schema enumerates only retained
+row numbers, and server validation rejects any omitted row even when its number
+is within the original range. Exact source offsets are carried through citation
+materialization. The single repair attempt retains the same evidence and allowed
+rows. Its extra instructions/invalid response may exceed context; the final
+gateway guard then rejects it without decoding, rather than changing evidence
+mid-repair or starting more attempts. The allocator does not reserve an arbitrary
+future repair response in advance or guarantee that every repair will fit.
+
+`coverage.token_allocation` and completed-plan `actual.evidence_allocation` save
+the versioned allocation: native probe measurements, included/omitted original
+row numbers and exact version/passage/change IDs with window start/length.
+Executed coverage counts and IDs reflect only the supplied rows/windows; partial
+coverage is explicit and a whole-version Ask is relabelled targeted when reduced.
+The old largest-batch character estimate is retained under `planned_...`; the
+active field describes the selected evidence/context envelope, still not a
+token count or the full system prompt. Failed allocation manifests remain in
+`provenance.evidence_allocations`. Planned candidate IDs remain separately from
+the actual selection. Counts are diagnostics, not billable generation usage.
+
+Local cache identity includes the planner version and advertised count protocol.
+Upgrading that protocol cannot relabel an earlier unmeasured cached answer even
+if the immutable model identity and deployment pin are unchanged. Successful
+identical requests still reuse their saved result and manifest without counting
+or generating again; earlier history remains immutable.
+
+**Limits:** this is conservative bounded selection, not optimal token packing,
+semantic relevance ranking or an approved legal explanation. The preliminary
+character planner can omit candidates before this stage; retaining its entire
+candidate does not prove full-document coverage. Halving can leave spare context,
+and an exact window can omit important surrounding meaning. The interface must
+continue to call this selected evidence with partial-coverage guidance. Reviewed
+capability/task/language budgets, explanatory quality and target-GPU capacity
+remain separate open gates under HL-091/093/099.
+
+`scripts/check_local_evidence_tokens.py` exercises the production allocator and
+chat-body builder against native counts on a separately managed localhost runner.
+It requires API dependencies and `services/model-manager` on `PYTHONPATH`, and
+accepts `--base-url` plus a served `--model` alias. It sends synthetic count-only
+requests, uses fixture pins (not production deployment attestations), never
+generates text, and leaves runner lifecycle to the caller. See the verification
+record for the isolated five-language CPU run and the separate real API → ASGI
+gateway integration tests that exercise execution pins, leases and repair.
 
 Every saved Impact and Ask record carries backend, model ID, immutable revision, artifact SHA-256, quantization, pinned runtime image, hardware profile and devices, configured/runtime context, generation settings, aggregate gateway queue wait, inference duration, token usage when returned, individual attempts, and structured validation/repair events.
 

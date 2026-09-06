@@ -19,6 +19,7 @@ from .models import Comparison, Profile, Version
 from .prompt_settings import PromptSettings, default_prompt_settings, prompt_fingerprint
 from .runtime_binding import PromptTokenMeasurement, RuntimeSnapshot, request_fingerprint
 from .selected_evidence import selected_evidence_copy
+from .token_evidence import allocated_coverage, fit_numbered_evidence
 
 PROMPT_VERSION = "helvetic-lens-v11-evidenced-date-mentions"
 IMPACT_REPORT_SCHEMA_VERSION = "impact-report-v4"
@@ -605,14 +606,13 @@ class ModelClient:
                 return text
         raise ValueError("empty reply")
 
-    async def complete(
+    def chat_payload(
         self,
         system: str,
         user: str,
         *,
         response_schema: dict | None = None,
-        budget: InferenceBudget | None = None,
-    ) -> str:
+    ) -> dict:
         if not self.settings.model_configured:
             raise DomainError(
                 "Apertus is not connected. Open Settings to add the API base URL and model ID; source monitoring and diffs remain available.",
@@ -644,6 +644,82 @@ class ModelClient:
             }
         elif self.settings.apertus_json_mode:
             payload["response_format"] = {"type": "json_object"}
+        return payload
+
+    @staticmethod
+    def prompt_measurement(response: httpx.Response, runtime: RuntimeSnapshot, payload: dict) -> PromptTokenMeasurement:
+        try:
+            measured = PromptTokenMeasurement.model_validate_json(response.headers.get("x-helvetic-token-budget", ""))
+            if (
+                measured.binding_fingerprint != runtime.binding_fingerprint
+                or measured.deployment_id != runtime.deployment_id
+                or measured.request_sha256 != request_fingerprint(payload)
+                or measured.reserved_output_tokens != payload.get("max_tokens", payload.get("max_completion_tokens"))
+                or measured.context_window_tokens > runtime.context_window_tokens
+                or response.headers.get("x-helvetic-runtime-binding") != runtime.binding_fingerprint
+            ):
+                raise ValueError("Token measurement disagrees with the bound request")
+            return measured
+        except (ValueError, TypeError) as exc:
+            raise DomainError(
+                "The local token measurement does not match this request. No answer was accepted.",
+                422, "token_budget_invalid",
+            ) from exc
+
+    async def count_prompt(self, system: str, user: str, *, response_schema: dict, budget: InferenceBudget | None = None) -> PromptTokenMeasurement:
+        runtime = await self.bound_runtime(budget)
+        if runtime is None or runtime.prompt_budget_schema is None:
+            raise DomainError("This runtime does not support measured evidence planning.", 422, "token_budget_unavailable")
+        payload = self.chat_payload(system, user, response_schema=response_schema)
+        url, headers = self.endpoint("chat/completions/input_tokens"), self.headers()
+        headers["X-Helvetic-Runtime-Binding"] = runtime.binding_fingerprint
+        timeout = min(10.0, float(self.settings.apertus_timeout_seconds))
+        if budget is not None:
+            timeout = min(timeout, budget.deadline - time.monotonic())
+        if timeout <= 0:
+            raise DomainError("The evidence planning time budget was exhausted.", 504, "model_budget_exhausted")
+        response = None
+        started = time.monotonic()
+        error = None
+        try:
+            async with asyncio.timeout(timeout), httpx.AsyncClient(timeout=timeout, trust_env=False) as connection:
+                response = await connection.post(url, headers=headers, json=payload)
+            if response.status_code == 409:
+                raise DomainError("The local model changed during evidence planning.", 409, "runtime_binding_changed")
+            self.raise_for_provider_error(response, operation="prompt token counting")
+            measured = self.prompt_measurement(response, runtime, payload)
+            try:
+                counted = response.json()
+                if (
+                    not isinstance(counted, dict)
+                    or counted.get("object") != "response.input_tokens"
+                    or type(counted.get("input_tokens")) is not int
+                    or counted["input_tokens"] != measured.input_tokens
+                ):
+                    raise ValueError("Inconsistent count response")
+            except ValueError as exc:
+                raise DomainError("The local token count body disagrees with its verified measurement.", 422, "token_budget_invalid") from exc
+            return measured
+        except (httpx.HTTPError, TimeoutError) as exc:
+            error = "Local prompt token counting was unavailable; no generation was started."
+            self.trace_event({"operation": "prompt_token_count", "error_code": "token_budget_unavailable"})
+            raise DomainError(error, 422, "token_budget_unavailable") from exc
+        except DomainError as exc:
+            error = exc.message
+            self.trace_event({"operation": "prompt_token_count", "error_code": exc.code})
+            raise
+        finally:
+            self.log_exchange(
+                operation="prompt_token_count", method="POST", url=url, request_headers=headers,
+                request_body=payload, response=response, started=started,
+                status="error" if error or response is None else "success", error=error,
+            )
+
+    async def complete(
+        self, system: str, user: str, *, response_schema: dict | None = None,
+        budget: InferenceBudget | None = None,
+    ) -> str:
+        payload = self.chat_payload(system, user, response_schema=response_schema)
         runtime = await self.bound_runtime(budget)
         url, headers = self.endpoint("chat/completions"), self.headers()
         if runtime is not None:
@@ -697,23 +773,16 @@ class ModelClient:
                             "The local model deployment changed during analysis. No result from a different deployment was accepted; start a new analysis.",
                             409, "runtime_binding_changed",
                         )
-                    if runtime is not None and response.headers.get("x-helvetic-token-budget"):
-                        try:
-                            measured = PromptTokenMeasurement.model_validate_json(response.headers["x-helvetic-token-budget"])
-                            if (
-                                measured.binding_fingerprint != runtime.binding_fingerprint
-                                or measured.deployment_id != runtime.deployment_id
-                                or measured.request_sha256 != request_fingerprint(payload)
-                                or measured.reserved_output_tokens != payload[token_field]
-                                or measured.context_window_tokens > runtime.context_window_tokens
-                                or (response.is_success and not measured.fits)
-                            ):
-                                raise ValueError("Token measurement disagrees with the bound request")
-                        except (ValueError, TypeError) as exc:
+                    if runtime is not None and (
+                        response.headers.get("x-helvetic-token-budget")
+                        or (runtime.prompt_budget_schema is not None and response.is_success)
+                    ):
+                        measured = self.prompt_measurement(response, runtime, payload)
+                        if response.is_success and not measured.fits:
                             raise DomainError(
-                                "The local token measurement does not match this request. No answer was accepted.",
+                                "The local response exceeded its verified token budget. No answer was accepted.",
                                 422, "token_budget_invalid",
-                            ) from exc
+                            )
                         # No outcome: counting is metadata, not a generation call
                         # or billable usage returned by the model.
                         self.trace_event({"prompt_token_measurement": measured.model_dump(mode="json")})
@@ -838,6 +907,7 @@ def cache_key(
     }
     if settings.apertus_provider == "docker":
         # Unknown runtime never matches a previously bound generated answer.
+        runtime_state["evidence_planner"] = "measured-evidence-v1"
         runtime_state["local_runtime"] = runtime_identity or {"scope": "unverified"}
     diff_state = {
         "schema_version": comparison.diff.get("schema_version"),
@@ -1438,6 +1508,9 @@ def complete_analysis_plan(
         "inference_duration_ms": provenance.get("inference_duration_ms", 0),
         "token_counts": provenance.get("token_counts", {}),
         "prompt_token_measurements": provenance.get("prompt_token_measurements", []),
+        "evidence_allocation": coverage.get("token_allocation"),
+        "selected_change_ids": coverage.get("selected_change_ids"),
+        "selected_evidence_ids": coverage.get("selected_evidence_ids"),
         "validation": provenance.get("validation", {}),
         "runtime_binding": {
             "state": provenance.get("runtime_binding_state", "not_captured"),
@@ -2765,6 +2838,7 @@ async def structured_completion(
     numeric_reference_evidence: list[dict] | None = None,
     repair_instructions: str | None = None,
     budget: InferenceBudget | None = None,
+    allocation: dict | None = None,
 ) -> dict:
     """Validate structured output and make one constrained repair attempt when it is invalid."""
 
@@ -2805,6 +2879,14 @@ async def structured_completion(
             " For the local runner, return only citation_rows and supported. Select the saved rows that "
             "answer the question; the server will render their exact text."
         )
+
+    allowed_numbers = None
+    if allocation is not None and isinstance(client, ModelClient) and wire_schema in {LocalImpactSignal, LocalAnswerSignal}:
+        runtime = await client.bound_runtime(budget)
+        if runtime is not None and runtime.prompt_budget_schema is not None:
+            payload, allowed_numbers, response_schema = await fit_numbered_evidence(
+                client, system, payload, response_schema, evidence, budget, allocation,
+            )
 
     def evidence_snippets(numbers: list[int], max_chars: int) -> str:
         supplied = payload.get("evidence", {})
@@ -2863,16 +2945,20 @@ async def structured_completion(
 
     user = json.dumps(payload, ensure_ascii=False)
     raw = await client.complete(system, user, response_schema=response_schema, budget=budget)
-    try:
+
+    def validated(value):
         parsed = parse_response(
-            normalize_wire_response(raw),
-            schema,
-            evidence,
-            require_supported=require_supported,
-            validate_citations=validate_citations,
+            normalize_wire_response(value), schema, evidence,
+            require_supported=require_supported, validate_citations=validate_citations,
             numeric_reference_count=numeric_reference_count,
             numeric_reference_evidence=numeric_reference_evidence,
         )
+        if allowed_numbers is not None and not set(parsed.get("citation_rows", [])).issubset(allowed_numbers):
+            raise DomainError("The answer cited a saved row that was excluded from this measured request.", 422, "invalid_citation")
+        return parsed
+
+    try:
+        parsed = validated(raw)
     except DomainError as error:
         if error.code not in {"invalid_model_output", "invalid_citation"}:
             raise
@@ -2886,6 +2972,7 @@ async def structured_completion(
                 "valid_numeric_reference_range": (
                     [1, numeric_reference_count] if numeric_reference_count is not None else None
                 ),
+                **({"valid_row_numbers": sorted(allowed_numbers)} if allowed_numbers is not None else {}),
             },
         }
         repair_system = (
@@ -2902,15 +2989,7 @@ async def structured_completion(
             response_schema=response_schema,
             budget=budget,
         )
-        parsed = parse_response(
-            normalize_wire_response(repaired),
-            schema,
-            evidence,
-            require_supported=require_supported,
-            validate_citations=validate_citations,
-            numeric_reference_count=numeric_reference_count,
-            numeric_reference_evidence=numeric_reference_evidence,
-        )
+        parsed = validated(repaired)
         if hasattr(client, "trace_event"):
             client.trace_event({"validation": "accepted", "repair": True, "initial_error": error.code})
         return parsed
@@ -3037,6 +3116,7 @@ async def impact_analysis(
             numeric_reference_evidence=batch["evidence"],
             repair_instructions=prompts.repair_instructions,
             budget=request_budget,
+            allocation=batch.setdefault("token_allocation", {}),
         )
         result = materialize_digest_citations(result, batch["evidence"])
         if progress_callback:
@@ -3046,6 +3126,7 @@ async def impact_analysis(
         return {"batch_index": index, **prompt_safe_result(result)}
 
     reviews = await bounded_batch_map(batches, review_batch, settings.apertus_batch_concurrency)
+    evidence, coverage = allocated_coverage(evidence, coverage, batches)
     if settings.apertus_provider == "docker":
         coverage["provider_calls"] = request_budget.used
         result = local_impact_synthesis(reviews)
@@ -3806,11 +3887,17 @@ async def answer_question(
             numeric_reference_evidence=batch["evidence"],
             repair_instructions=prompts.repair_instructions,
             budget=request_budget,
+            allocation=batch.setdefault("token_allocation", {}),
         )
         result = materialize_digest_citations(result, batch["evidence"])
         return {"batch_index": index, **prompt_safe_result(result)}
 
     batch_answers = await bounded_batch_map(batches, answer_batch, settings.apertus_batch_concurrency)
+    evidence, coverage = allocated_coverage(evidence, coverage, batches)
+    if coverage.get("token_allocation"):
+        selected_change_ids = coverage["selected_change_ids"]
+        if coverage["limited"] and context_mode == "full_saved_versions":
+            context_mode = "targeted_passages"
     supported_answers = [answer for answer in batch_answers if answer["supported"]]
     if not supported_answers:
         if complete_diff_intent:

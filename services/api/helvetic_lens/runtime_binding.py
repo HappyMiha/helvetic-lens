@@ -42,6 +42,7 @@ class RuntimeSnapshot(Snapshot):
     identity: RuntimeIdentity | None = None
     context_window_tokens: int = Field(ge=1, le=1048576)
     default_output_tokens: int = Field(ge=1, le=1048576)
+    prompt_budget_schema: Literal["local-prompt-budget-v1"] | None = None
     quantization: str | None = Field(default=None, max_length=60)
     runtime_image: str | None = Field(default=None, max_length=500)
     hardware_profile: str | None = Field(default=None, max_length=200)
@@ -84,6 +85,7 @@ class RuntimeSnapshot(Snapshot):
             "schema_version": "local-runtime-cache-v1",
             "scope": "immutable_identity" if identity else "deployment",
             "fingerprint": identity or self.binding_fingerprint,
+            "evidence_planning": self.prompt_budget_schema or "unmeasured",
         }
 
 

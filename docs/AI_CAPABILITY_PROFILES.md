@@ -11,7 +11,7 @@ are useful or correct.
 HL-091 now has a strict, versioned registry reader, independent-review artifact
 integrity checker, provider-independent decision resolver and read-only CLI.
 The shipped registry is deliberately empty. **Capability-based Impact/Ask mode
-selection, measured-token evidence allocation and settings still need coordinated
+selection, reviewed task/language budgets and settings still need coordinated
 integration.** The resolver's
 `generated_explanation` decision is a permission for a verified scope, not an
 assertion that the current application has used that mode.
@@ -19,9 +19,12 @@ assertion that the current application has used that mode.
 The local gateway now [measures each complete rendered request before generation](LOCAL_INFERENCE.md#complete-prompt-token-guard--6-september-2026)
 using the reserved runner's native tokenizer/chat parser and actual per-slot
 context, with output and safety reserves. Ask/Impact retain validated measurement
-metadata in history and completed plans. This is a final request guard; the
-planner still needs to allocate evidence against exact counts and approved
-per-task/per-language budgets. No capability profile is promoted by a token fit.
+metadata in history and completed plans. Local selected-evidence Ask/Impact now
+[allocate whole changes or exact windows against those counts](LOCAL_INFERENCE.md#measured-evidence-allocation--6-september-2026)
+before generation when the gateway advertises the protocol. This bounded
+allocation uses the observed runtime limit and configured output reserve; it
+does not yet apply independently approved per-task/per-language budgets or
+select an explanatory adapter. No capability profile is promoted by a token fit.
 
 The local manager now exposes [observed launch inputs and deployment binding](LOCAL_INFERENCE.md#deployment-binding--6-september-2026).
 Its gateway enforces pins during admission and inference. Marvin's local client
