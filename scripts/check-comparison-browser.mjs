@@ -56,6 +56,9 @@ let cdp;
 const requests = [],
   exceptions = [];
 let locale = "en-CH";
+let handoffOffline = false;
+const writes = [];
+const heldHandoffs = [];
 const fixture = JSON.parse(
   await readFile(
     join(root, "scripts/fixtures/comparison-synthetic.json"),
@@ -145,6 +148,7 @@ try {
   cdp.on("Fetch.requestPaused", async ({ requestId, request }) => {
     const url = new URL(request.url);
     requests.push(url.pathname + url.search);
+    if (request.method !== "GET") writes.push({path: url.pathname, method: request.method, body: request.postData ? JSON.parse(request.postData) : null});
     let body = {},
       code = 200;
     if (url.pathname === "/api/auth/session")
@@ -162,6 +166,18 @@ try {
         firecrawl: { configured: false },
         private_sources_enabled: false,
       };
+    else if (url.pathname === "/api/assistant/context") body = {context: {entity: {label: fixture.law.name}}, persona: {quip_allowed: false}};
+    else if (url.pathname === "/api/assistant/runtime") body = {display_name: "Local QA", ready: false, state: "stopped", selected_model: {display_name: "Synthetic"}, policy: {cloud_fallback: false, single_runtime: true}};
+    else if (url.pathname === "/api/assistant/conversations" || url.pathname === "/api/assistant/conversations/qa-conversation") body = {id: "qa-conversation", draft: "", handoffs: [], messages: [], visibility: "personal"};
+    else if (url.pathname === "/api/assistant/conversations/qa-conversation/handoffs") {
+      if (handoffOffline) {
+        // Do not respond until the draft is already usable in Ask. A slow
+        // personal-history service must not hold the local UI transition hostage.
+        heldHandoffs.push(requestId);
+        return;
+      }
+      body = {id: "qa-conversation", handoffs: [{id: "qa-handoff", question: JSON.parse(request.postData).question}]};
+    }
     else if (url.pathname === `/api/comparisons/${fixture.id}`) body = comparisonFixture;
     else if (url.pathname.endsWith("/ai-history"))
       body = { items: historyItems, total: historyItems.length };
@@ -233,6 +249,73 @@ try {
       `Comparison task did not become modal: ${await evaluate(cdp, "JSON.stringify({width:innerWidth,dialog:document.querySelector('dialog.analysis-column')?.outerHTML.slice(0,600),tabs:document.querySelector('.comparison-task-tabs')?.outerHTML})")}`,
     );
   };
+  // Actual sibling-panel handoff, including unavailable personal history. The
+  // local model is stopped: transferring a draft must not require inference.
+  const click = async selector => {
+    const point = await evaluate(cdp, `(() => { const el=document.querySelector(${JSON.stringify(selector)});el.scrollIntoView({block:'center'});const r=el.getBoundingClientRect();const x=r.x+r.width/2,y=r.y+r.height/2;return {x,y,visible:el.contains(document.elementFromPoint(x,y))}; })()`);
+    assert.ok(point.visible, `Handoff control is not reachable: ${selector}`);
+    for (const type of ["mousePressed", "mouseReleased"]) await cdp.send("Input.dispatchMouseEvent", {type,x:point.x,y:point.y,button:"left",clickCount:1});
+  };
+  for (const language of ["en-CH", "de-CH", "fr-CH", "it-CH", "rm-CH"]) for (const width of [390,768,1024,1440]) for (const offline of [false,true]) {
+    locale = language; handoffOffline = offline;
+    const contextRace = offline && language === 'en-CH' && width === 390;
+    await resize(width);
+    await cdp.send("Page.navigate", {url:`${base}/compare/${fixture.id}`});
+    await waitFor(() => evaluate(cdp, `!!document.querySelector('.comparison-layout') && !!document.querySelector('.marvin-trigger') && document.documentElement.lang === ${JSON.stringify(locale)}`), "Handoff comparison not ready");
+    const origin = await evaluate(cdp, 'performance.timeOrigin');
+    await click('.marvin-trigger');
+    await waitFor(() => evaluate(cdp, `!!document.querySelector('#marvin-question') && document.querySelector('.marvin-drawer')?.open`), "Marvin comparison question missing");
+    const question = `Welche Frist änderte sich?\nPourquoi est-ce important? Perché? Pertge? ${language}/${width}/${offline}`.padEnd(width === 1440 ? 2000 : 100, 'é');
+    await click('#marvin-question');
+    await cdp.send("Input.insertText", {text:question});
+    await waitFor(() => evaluate(cdp, `!document.querySelector('.marvin-ask-form button[type=submit]').disabled`), "Handoff disabled with a question");
+    const before = writes.filter(r => r.path.endsWith('/handoffs')).length;
+    await click('.marvin-ask-form button[type=submit]');
+    await waitFor(() => evaluate(cdp, `!document.querySelector('.marvin-drawer[open]') && document.querySelector('#apertus-question')?.value === ${JSON.stringify(question)}`), "Handoff lost or altered question");
+    await waitFor(() => evaluate(cdp, `document.activeElement.id === 'apertus-question'`), "Handoff did not focus Ask");
+    if (offline && !contextRace) {
+      assert.equal(heldHandoffs.length, 1, 'Slow-history request was not exercised');
+      await cdp.send('Fetch.fulfillRequest', {requestId:heldHandoffs.shift(), responseCode:503, responseHeaders:[{name:'Content-Type',value:'application/json'}], body:Buffer.from(JSON.stringify({detail:'Synthetic personal history unavailable'})).toString('base64')});
+      await sleep(100);
+      assert.ok(await evaluate(cdp, `document.activeElement.id === 'apertus-question' && !document.querySelector('.marvin-drawer[open]')`), 'Late history error stole focus or reopened Marvin');
+    }
+    const handoffs = writes.filter(r => r.path.endsWith('/handoffs'));
+    assert.equal(handoffs.length, before + 1, 'Personal handoff must save once');
+    assert.deepEqual(handoffs.at(-1).body, {question});
+    assert.equal(await modal(), width <= 1350);
+    assert.equal(await evaluate(cdp, 'performance.timeOrigin'), origin, 'Handoff reloaded the page');
+    if (width <= 1350) {
+      assert.equal(await evaluate(cdp, `document.querySelector('main.main').style.overflow`), 'hidden', 'Marvin cleanup unlocked the active Ask panel');
+      await press('Escape');
+      await waitFor(async () => !(await modal()), 'Handoff Ask did not close');
+      assert.ok(await evaluate(cdp, `document.activeElement.matches('.marvin-trigger')`), 'Handoff close lost the persistent opener');
+      assert.notEqual(await evaluate(cdp, `document.documentElement.style.overflow`), 'hidden');
+      assert.notEqual(await evaluate(cdp, `document.querySelector('main.main').style.overflow`), 'hidden');
+      await clickTab('ask');
+      assert.equal(await evaluate(cdp, `document.querySelector('#apertus-question').value`), question, 'Closing Ask lost the transferred draft');
+    }
+    if (contextRace) {
+      // Reset the real attached context while the old save is pending. The
+      // question form stays testable after reattachment: old history must not
+      // overwrite the new personal conversation's empty handoff list.
+      await press('Escape');
+      await waitFor(async () => !(await modal()), 'Ask did not close before context reset');
+      await click('.marvin-trigger');
+      await waitFor(() => evaluate(cdp, `!!document.querySelector('#marvin-question')`), 'Marvin did not reopen');
+      await click('.marvin-context-chip');
+      await waitFor(() => evaluate(cdp, `!document.querySelector('#marvin-question')`), 'Context did not detach');
+      await click('.marvin-context-chip');
+      await waitFor(() => evaluate(cdp, `!!document.querySelector('#marvin-question') && !!document.querySelector('.marvin-chat')`), 'Context did not reattach');
+      await sleep(100);
+      assert.equal(heldHandoffs.length, 1);
+      await cdp.send('Fetch.fulfillRequest', {requestId:heldHandoffs.shift(), responseCode:200, responseHeaders:[{name:'Content-Type',value:'application/json'}], body:Buffer.from(JSON.stringify({id:'qa-conversation',handoffs:[{id:'late-old-handoff',question}]})).toString('base64')});
+      await sleep(100);
+      assert.equal(await evaluate(cdp, `!!document.querySelector('.marvin-recent-questions')`), false, 'Old personal handoff overwrote the new context');
+    }
+  }
+  assert.equal(writes.some(r => /\/(ask-jobs|messages|remark|analysis-jobs)$/.test(r.path)), false, 'Handoff spent inference without submitting Ask');
+  assert.equal(heldHandoffs.length, 0);
+  handoffOffline = false;
   for (const selectedLocale of ["en-CH", "de-CH", "fr-CH", "it-CH", "rm-CH"]) {
     locale = selectedLocale;
     for (const width of [390, 768, 1024]) {
@@ -528,7 +611,7 @@ try {
     "No comparison fixture was used",
   );
   console.log(
-    "Comparison production UI: 200-group navigation/search/evidence/return and 320px text-zoom check, plus 15 populated locale/overlay-width journeys passed; modal focus isolation, forward/back Tab, Escape/close and return focus, draft persistence through close/desktop resize, nonmodal desktop and cited evidence focus, saved-answer-only monitoring buttons in Ask/history and history-to-topic navigation retaining the saved question without implicit copy/activation. All API calls intercepted; no live model or data mutation. Physical keyboard/mobile, screen-reader and other-browser review remain separate.",
+    "Comparison production UI: 40 real Marvin-to-Ask handoffs (five locales, four widths, available/held personal history) preserve exact multiline/2000-character drafts, focus, scroll locks and no-inference behavior; delayed failure and post-context-reset success do not steal focus or overwrite new context. 200-group navigation/search/evidence/return and 320px text-zoom check, plus 15 populated locale/overlay-width journeys pass modal focus isolation, forward/back Tab, Escape/close and return focus, draft persistence, nonmodal desktop, cited evidence focus and saved-answer monitoring navigation. All API calls intercepted; no live model or data mutation. Physical keyboard/mobile, screen-reader and other-browser review remain separate.",
   );
 } catch (error) {
   console.error({

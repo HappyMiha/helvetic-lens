@@ -35,6 +35,33 @@ accessibility scans, native-language review, screen readers, Firefox/Safari and
 physical mobile software-keyboard/audio checks remain separate HL-097 gates.
 
 
+## Marvin to cited Ask — 6 September 2026
+
+On a comparison, Marvin's explicit **Open cited Ask** action transfers the trimmed
+question to the comparison question field, closes Marvin and focuses that field.
+It does not submit the AI question, reload the document or depend on a running
+local model. At overlay widths the comparison retains its own scroll lock while
+Marvin releases his; dismissing Ask returns focus to the persistent opener and
+restores scrolling. The transferred draft survives closing/reopening Ask.
+
+Personal handoff history saves in the background, with a ten-second request
+deadline and no automatic retry. An unavailable or slow history service does not
+prevent editing/submitting the transferred draft. Failed/timed-out saves are not
+presented as saved history; the draft remains in Ask, but this is not a durable
+offline history queue. A response from an earlier handoff or detached/changed
+context cannot replace the current personal history. No provider request is sent
+until the user explicitly submits Ask.
+
+The mandatory comparison browser suite adds five locales × four widths × available
+or held personal-history responses (40 real handoffs), including 2,000-character
+multilingual drafts, focused Ask before the held response is released, late error
+handling, and an old successful response after detach/reattach of page context.
+It also checks exact request payload, one personal save, no implicit AI submission,
+no full reload, close/reopen draft and focus/scroll behavior. All APIs are synthetic
+and intercepted; no real data or model is used. These journeys complement the
+existing populated comparison/evidence and Marvin-monitoring suites, without
+claiming every modal combination, screen-reader or physical-device acceptance.
+
 ## Marvin panel focus — 6 September 2026
 
 Marvin's open panel is a named native dialog. At widths up to 1350 px it opens

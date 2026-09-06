@@ -310,7 +310,7 @@ export function MarvinCompanion({
   const [recentQuestions, setRecentQuestions] = useState<
     AssistantConversationResponse["handoffs"]
   >([]);
-  const [handoffPending, setHandoffPending] = useState(false);
+  const handoffRequestId = useRef(0);
   const [contextAttached, setContextAttached] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [serverQuipAllowed, setServerQuipAllowed] = useState(false);
@@ -421,6 +421,8 @@ export function MarvinCompanion({
     });
     return () => {
       active = false;
+      // A late save belongs to the previous page/personal conversation.
+      handoffRequestId.current++;
     };
   }, [comparisonId, contextAttached, entity, hydrated, locale, pathname]);
 
@@ -736,21 +738,9 @@ export function MarvinCompanion({
     event.preventDefault();
     const question = questionDraft.trim();
     if (!comparisonId || !question) return;
-    setHandoffPending(true);
-    if (conversationId) {
-      try {
-        const saved = await api<AssistantConversationResponse>(
-          `/assistant/conversations/${conversationId}/handoffs`,
-          {
-            method: "POST",
-            body: JSON.stringify({ question }),
-          },
-        );
-        setRecentQuestions(saved.handoffs);
-      } catch {
-        // The cited Ask workflow remains available if personal history is offline.
-      }
-    }
+    const requestId = ++handoffRequestId.current;
+    // This is a local draft transfer, not an AI request. Personal history must
+    // never delay opening Ask or keep its question inaccessible during an outage.
     window.sessionStorage.removeItem(DRAFT_KEY_PREFIX + comparisonId);
     setQuestionDraft("");
     window.dispatchEvent(
@@ -759,7 +749,22 @@ export function MarvinCompanion({
       }),
     );
     onOpenChange(false);
-    setHandoffPending(false);
+    if (conversationId) {
+      try {
+        const saved = await api<AssistantConversationResponse>(
+          `/assistant/conversations/${conversationId}/handoffs`,
+          {
+            method: "POST",
+            body: JSON.stringify({ question }),
+            signal: AbortSignal.timeout(10_000),
+          },
+        );
+        if (requestId === handoffRequestId.current)
+          setRecentQuestions(saved.handoffs);
+      } catch {
+        // The cited Ask workflow remains available if personal history is offline.
+      }
+    }
   }
 
   async function chatWithMarvin(event: React.FormEvent) {
@@ -1044,14 +1049,10 @@ export function MarvinCompanion({
                 />
                 <small>{t("companion.draftPrivacy")}</small>
                 <button
-                  disabled={!questionDraft.trim() || handoffPending}
+                  disabled={!questionDraft.trim()}
                   type="submit"
                 >
-                  {handoffPending ? (
-                    <Loader2 className="animate-spin" size={15} />
-                  ) : (
-                    <Send size={15} />
-                  )}
+                  <Send size={15} />
                   {t("companion.openCitedAsk")}
                 </button>
                 {recentQuestions.length > 0 && (
