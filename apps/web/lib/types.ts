@@ -1414,7 +1414,13 @@ export type MonitoringContext = {
   }>;
 };
 
+export type PersonalSourceReview = {
+  snapshot: {catalogue_revision: string; packs: {id: string; revision: string; enabled: boolean}[]};
+  first_reviewed_at: string; reviewed_at: string; current: boolean;
+};
+
 export type OnboardingState = {
+  source_review: PersonalSourceReview | null;
   milestones: Array<{kind: "interest_saved" | "notifications_saved" | "evidence_displayed"; object_kind: string; recorded_at: string}>;
   state: "new" | "deferred" | "started";
   intent: "topic" | "law" | "explore" | null;

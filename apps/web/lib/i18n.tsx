@@ -4289,6 +4289,65 @@ const onboardingProgressMessages: Record<Locale, Record<string, string>> = {
 };
 for (const locale of locales) Object.assign(catalogTarget(locale), onboardingProgressMessages[locale]);
 
+const sourceReviewMessages: Record<Locale, Record<string, string>> = {
+  "en-CH": {
+    "sourceReview.title": "Your source choice",
+    "sourceReview.body": "Review the packages and coverage limits above. Continue with the current organization selection, including leaving it empty. This saves only your personal review: it does not activate sources, send a request or guarantee fresh coverage.",
+    "sourceReview.enabled": "Enabled",
+    "sourceReview.disabled": "Not enabled",
+    "sourceReview.none": "No package is enabled. Package-based topic coverage is not ready; a directly watched document can still be monitored. Use the controls above to activate a package or request one.",
+    "sourceReview.saved": "Current selection reviewed on",
+    "sourceReview.changed": "The source selection has changed since your review on",
+    "sourceReview.continue": "Save my source choice",
+    "sourceReview.reload": "Reload source selection"
+  },
+  "de-CH": {
+    "sourceReview.title": "Ihre Quellenauswahl",
+    "sourceReview.body": "Prüfen Sie die Pakete und Abdeckungsgrenzen oben. Sie können mit der aktuellen Auswahl der Organisation fortfahren, auch wenn sie leer ist. Gespeichert wird nur Ihre persönliche Prüfung: Es werden keine Quellen aktiviert oder Anfragen gesendet; aktuelle Abdeckung wird nicht garantiert.",
+    "sourceReview.enabled": "Aktiviert",
+    "sourceReview.disabled": "Nicht aktiviert",
+    "sourceReview.none": "Kein Paket ist aktiviert. Die paketbasierte Themenabdeckung ist noch nicht bereit; ein direkt beobachtetes Dokument kann weiterhin überwacht werden. Aktivieren oder beantragen Sie oben ein Paket.",
+    "sourceReview.saved": "Aktuelle Auswahl geprüft am",
+    "sourceReview.changed": "Die Quellenauswahl hat sich seit Ihrer Prüfung geändert, am",
+    "sourceReview.continue": "Meine Quellenauswahl speichern",
+    "sourceReview.reload": "Quellenauswahl neu laden"
+  },
+  "fr-CH": {
+    "sourceReview.title": "Votre choix de sources",
+    "sourceReview.body": "Examinez les packs et les limites de couverture ci-dessus. Continuez avec la sélection actuelle de votre organisation, même vide. Seul votre examen personnel est enregistré : aucune source n’est activée, aucune demande envoyée et aucune couverture à jour garantie.",
+    "sourceReview.enabled": "Activé",
+    "sourceReview.disabled": "Non activé",
+    "sourceReview.none": "Aucun pack n’est activé. La couverture des thèmes par packs n’est pas prête ; un document suivi directement peut toujours être surveillé. Activez ou demandez un pack ci-dessus.",
+    "sourceReview.saved": "Sélection actuelle examinée le",
+    "sourceReview.changed": "La sélection a changé depuis votre examen du",
+    "sourceReview.continue": "Enregistrer mon choix de sources",
+    "sourceReview.reload": "Recharger la sélection"
+  },
+  "it-CH": {
+    "sourceReview.title": "La tua scelta delle fonti",
+    "sourceReview.body": "Esamina i pacchetti e i limiti di copertura sopra. Continua con la selezione attuale dell’organizzazione, anche vuota. Viene salvata solo la tua revisione personale: nessuna fonte viene attivata, nessuna richiesta inviata e non si garantisce una copertura aggiornata.",
+    "sourceReview.enabled": "Attivato",
+    "sourceReview.disabled": "Non attivato",
+    "sourceReview.none": "Nessun pacchetto è attivato. La copertura dei temi tramite pacchetti non è pronta; un documento seguito direttamente può comunque essere monitorato. Attiva o richiedi un pacchetto sopra.",
+    "sourceReview.saved": "Selezione attuale esaminata il",
+    "sourceReview.changed": "La selezione è cambiata dalla tua revisione del",
+    "sourceReview.continue": "Salva la mia scelta delle fonti",
+    "sourceReview.reload": "Ricarica la selezione"
+  },
+  "rm-CH": {
+    "sourceReview.title": "Tia tscherna da funtaunas",
+    "sourceReview.body": "Controllescha ils pachets e las limitas da cuvrida sura. Cuntinuescha cun la tscherna actuala da l’organisaziun, era sch’ella è vida. Mo tia controlla persunala vegn memorisada: naginas funtaunas vegnan activadas, naginas dumondas tramessas e nagina cuvrida actuala garantida.",
+    "sourceReview.enabled": "Activà",
+    "sourceReview.disabled": "Betg activà",
+    "sourceReview.none": "Nagin pachet n’è activà. La cuvrida da temas cun pachets n’è anc betg pronta; in document observà directamain po vinavant vegnir surveglià. Activescha u dumonda in pachet sura.",
+    "sourceReview.saved": "Tscherna actuala controllada ils",
+    "sourceReview.changed": "La tscherna è sa midada dapi tia controlla dals",
+    "sourceReview.continue": "Memorisar mia tscherna da funtaunas",
+    "sourceReview.reload": "Chargiar danovamain la tscherna"
+  }
+};
+for (const locale of locales) Object.assign(catalogTarget(locale), sourceReviewMessages[locale]);
+
 function supported(value: string | null | undefined): Locale | null {
   if (!value) return null;
   const exact = locales.find((item) => item.toLowerCase() === value.replace("_", "-").toLowerCase());

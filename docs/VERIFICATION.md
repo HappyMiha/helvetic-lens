@@ -1,5 +1,14 @@
 # Verification record
 
+## Personal source selection review — 6 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl-073-source-review`. The Sources section provides an explicit private save of the displayed catalogue/package revisions and enabled flags, separate from source activation/request controls. The guide retains the latest acknowledged selection and first/latest dates and identifies changed selection. A separate one-row-per-principal table avoids inventing an onboarding intent or completed state. [Contract](PERSONAL_ONBOARDING.md).
+- **34 API tests pass in 39.36 seconds** across source review, source packages, recorded milestones and personal onboarding; two PostgreSQL-only cases explicitly skipped in SQLite. Cases include passive entry, empty choice without jobs/subscriptions/requests, stable retry dates, changed catalogue/definition/subscription/removal, duplicate rejection without overwrite, actual viewer CSRF/identity protections, cross-organization reads even in a privileged session, and additive migration down/up preserving prior intent. No live source/model/mail calls.
+- **PostgreSQL 16.14** scratch suites `source-review`, `source-review-scope` and `source-review-migration` pass on three separately created, empty, labelled, ephemeral, loopback-only databases. All task containers were removed. Working and production data were untouched. These tests check ordinary idempotence and migration/scope; no new simultaneous-write stress result is claimed for this slice.
+- Production build passes **1,849 localization keys, 27 shell, 22 resource/delivery and 130 report/navigation checks**, TypeScript and Next compilation. The extended production-browser suite passes **30 five-language × 390/1280/1440px × admin/viewer journeys** through document/topic/package choice, explicit preview/activation/request boundaries, personal review conflict/retry, disabled duplicate save, JSONB-style reordered object fields, changed revision and return to the guide. All APIs are intercepted synthetic responses. Final copy labels the action as saving rather than promising navigation; the mobile layout was inspected. These checks do not establish native-language or independent user acceptance.
+- Ruff and whitespace checks pass. HL-073 remains in progress for further recovery/first-value integration and independent observation. Code publication does not authorize production deployment or migrations.
+
+
 ## Personal recorded-action milestones — 6 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl-073-recorded-milestones`. Adds first personal interest, notification-choice and saved-text-display timestamps. Topic/document and preference milestones share their existing transaction; passive GETs do not write progress. The viewer reports only visible non-sample text; the server checks current access and scalar text/metadata again. Three unique kinds bound storage. [Contract and remaining scope](PERSONAL_ONBOARDING.md).

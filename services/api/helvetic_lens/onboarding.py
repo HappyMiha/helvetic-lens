@@ -8,6 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
+from . import source_review
 from .config import DomainError
 from .corpus_access import accessible_versions, visible
 from .db import utcnow
@@ -88,6 +89,7 @@ def read(session, organization_id, principal_key):
         .order_by(OnboardingMilestone.recorded_at, OnboardingMilestone.kind)
     ).all()
     return {
+        "source_review": source_review.read(session, organization_id, principal_key),
         "milestones": [
             {"kind": item.kind, "object_kind": item.object_kind, "recorded_at": timestamp(item.recorded_at)}
             for item in milestones

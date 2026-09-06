@@ -84,6 +84,18 @@ class OnboardingMilestone(Base):
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class PersonalSourceReview(Base):
+    __tablename__ = "personal_source_reviews"
+    __table_args__ = (UniqueConstraint("organization_id", "principal_key", name="uq_source_review_principal"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    principal_key: Mapped[str] = mapped_column(String(80))
+    user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    snapshot_json: Mapped[dict] = mapped_column(JSON)
+    first_reviewed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    reviewed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class AccountToken(Base):
     __tablename__ = "account_tokens"
     __table_args__ = (
@@ -1409,6 +1421,7 @@ class OutboxMessage(Base):
 # Central policy used by the session boundary. Keeping this list beside the
 # models makes a newly persisted tenant-owned record difficult to forget.
 ORGANIZATION_SCOPED_MODELS = (
+    PersonalSourceReview,
     OnboardingMilestone,
     UserOnboarding,
     OrganizationMembership,

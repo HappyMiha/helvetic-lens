@@ -424,6 +424,7 @@ def create_app(
             "/api/source-pack-requests",
             "/api/onboarding",
             "/api/onboarding/evidence-displayed",
+            "/api/onboarding/source-review",
             "/api/monitoring-topics/preview",
             "/api/assistant/context",
             "/api/assistant/remark",
@@ -803,6 +804,12 @@ def create_app(
         _, principal = assistant_principal(request)
         with service.db.session() as session:
             return onboarding.read(session, service.organization_id, principal)
+
+    @app.post("/api/onboarding/source-review")
+    def review_sources(data: onboarding.source_review.SourceReviewInput, request: Request):
+        user_id, principal = assistant_principal(request)
+        with service.db.session() as session:
+            return onboarding.source_review.save(session, service.organization_id, principal, user_id, data)
 
     @app.post("/api/onboarding/evidence-displayed")
     def record_evidence_display(data: onboarding.EvidenceDisplayInput, request: Request):

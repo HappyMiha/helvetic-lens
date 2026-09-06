@@ -148,6 +148,10 @@ function Guide() {
           <section className="rounded-2xl border bg-card p-5" aria-labelledby="recorded-progress" data-onboarding-milestones>
             <h2 id="recorded-progress" className="text-xl font-semibold">{t("onboardingProgress.title")}</h2>
             <p className="text-sm text-muted-foreground mt-2">{t("onboardingProgress.boundary")}</p>
+            {resource.data.source_review && <p className="mt-3 text-sm" data-onboarding-source-review>
+              {t(resource.data.source_review.current ? "sourceReview.saved" : "sourceReview.changed")} {dateTime(resource.data.source_review.reviewed_at)} {" "}
+              <Link className="underline" href="/sources#source-packs">{t("sourceReview.title")}</Link>
+            </p>}
             <ul className="mt-3 space-y-3">
               {([
                 ["interest_saved", "onboardingProgress.interest"],

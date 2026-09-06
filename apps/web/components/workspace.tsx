@@ -57,6 +57,7 @@ import { DurableJobsPanel } from "./durable-jobs-panel";
 import { ScanPanel } from "./scan-panel";
 import { Shell } from "./shell";
 import { useAuth } from "./auth-gate";
+import { PersonalSourceChoice } from "./personal-source-review";
 import { useI18n } from "@/lib/i18n";
 
 type DocumentForm = {
@@ -207,6 +208,7 @@ function SourcePacks({
             );
           })}
         </div>
+        <PersonalSourceChoice data={data} changing={!!busy} />
       </div>
     </section>
   );
