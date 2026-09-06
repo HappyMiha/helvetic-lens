@@ -53,7 +53,7 @@ def test_timeout_keeps_diff_retry_only_analysis_and_profile_invalidates_cache(ha
     result = client.post(route).json()
     assert result["status"] == "succeeded" and result["cached"] is False
     report = result["result"]
-    assert report["schema_version"] == "impact-report-v4"
+    assert report["schema_version"] == "impact-report-v5"
     assert report["headline"] and report["materiality"] == report["impact"]
     assert report["material_changes"][0]["old_unit"]["passage_id"]
     assert report["material_changes"][0]["new_unit"]["passage_id"]
@@ -604,7 +604,9 @@ def test_impact_report_merges_duplicate_actions_and_combines_exact_changes():
     assert report["actions"][0]["due_basis"] == "not_reviewed"
     assert report["actions"][0]["due_date"] is None
     assert report["actions"][0]["review_suggestion"] is True
-    assert report["organization_applicability"]["evidence_grade"] == "possible"
+    assert report["organization_applicability"]["evidence_grade"] == "needs_review"
+    assert report["organization_applicability"]["status"] == "unknown"
+    assert report["decision_review"]["basis"] == "legacy_compatibility"
     assert report["evidence_grade"] in {"supported", "needs_review"}
 
 

@@ -24,6 +24,7 @@ import { ErrorNote, Loading, Status } from "./common";
 import { AnalysisModeNotice } from "./analysis-mode-notice";
 import { MonitorSavedAnswer } from "./monitor-this";
 import { ReportDates } from "./report-dates";
+import { ActionReviewNotice, DecisionReview } from "./decision-review";
 import { localeNames, type Locale, useI18n } from "@/lib/i18n";
 
 export function AIHistory({
@@ -316,6 +317,12 @@ function HistoryItem({
                 ))}
               </ol>
             )}
+            <DecisionReview report={impact} renderCitations={(values) => (
+              <HistoryCitations values={values} items={evidenceItems} onEvidence={onEvidence} />
+            )} />
+            {impact.response_mode !== "selected_evidence" && <ActionReviewNotice report={impact} renderCitations={(values) => (
+              <HistoryCitations values={values} items={evidenceItems} onEvidence={onEvidence} />
+            )} />}
             <ReportDates report={impact} renderCitations={(values) => (
               <HistoryCitations values={values} items={evidenceItems} onEvidence={onEvidence} />
             )} />

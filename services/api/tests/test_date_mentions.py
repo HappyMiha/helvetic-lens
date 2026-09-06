@@ -120,7 +120,7 @@ def test_report_dates_cached_and_historical_values_remain_immutable(harness, pro
     first = client.post(route + "/analyse").json()
     assert first["status"] == "succeeded", first
     report = first["result"]
-    assert report["schema_version"] == "impact-report-v4"
+    assert report["schema_version"] == "impact-report-v5"
     assert {entry["mention"] for entry in report["important_dates"]} >= {
         "30 days",
         "60 days",
@@ -165,6 +165,6 @@ def test_report_dates_cached_and_historical_values_remain_immutable(harness, pro
     assert answer_from_impact_report("actions", "en-CH", {"result": legacy}) is None
     replacement = client.post(route + "/analyse").json()
     assert replacement["id"] != first["id"]
-    assert replacement["result"]["schema_version"] == "impact-report-v4"
+    assert replacement["result"]["schema_version"] == "impact-report-v5"
     with service.db.session() as session:
         assert session.get(Analysis, first["id"]).result == legacy

@@ -73,7 +73,7 @@ def test_selection_cannot_establish_impact_applicability_actions_or_absent_dates
         "citations": [citation],
     }
     report = finalize_impact_report(result, comparison, evidence, {}, output_locale=locale)
-    assert report["schema_version"] == "impact-report-v4"
+    assert report["schema_version"] == "impact-report-v5"
     assert report["response_mode"] == "selected_evidence"
     assert report["assessment_status"] == "not_assessed"
     assert report["impact"] == report["materiality"] == "unknown"

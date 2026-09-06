@@ -286,9 +286,28 @@ export type Impact = {
   impact: "high" | "medium" | "low" | "unknown";
   reason: string;
   business_areas: string[];
-  schema_version?: "impact-report-v2" | "impact-report-v3" | "impact-report-v4";
+  schema_version?: "impact-report-v2" | "impact-report-v3" | "impact-report-v4" | "impact-report-v5";
   response_mode?: ResponseMode;
   assessment_status?: "assessed" | "not_assessed" | "not_required";
+  decision_review?: {
+    contract: "decision-draft-v1";
+    basis: "model_interpretation" | "not_reviewed" | "legacy_compatibility";
+    available_changes: number;
+    explained_changes: number;
+    merged_actions: number;
+    limited?: boolean;
+  };
+  official_status?: {
+    status: "proposal" | "enacted" | "repealed" | "mixed" | "unknown";
+    basis: "model_interpretation" | "not_reviewed";
+    explanation: string;
+    citations: Citation[];
+  };
+  action_review?: {
+    status: "review_actions" | "no_action_now" | "not_reviewed";
+    explanation: string;
+    citations: Citation[];
+  };
   output_locale?: string;
   headline?: string;
   materiality?: "high" | "medium" | "low" | "unknown";
@@ -298,6 +317,7 @@ export type Impact = {
     change_type: "added" | "removed" | "modified";
     title: string;
     explanation: string;
+    explanation_basis?: "saved_comparison" | "model_interpretation";
     old_unit: {
       unit_id: string | null;
       passage_id: string | null;
@@ -316,6 +336,7 @@ export type Impact = {
   organization_applicability?: {
     status: "applies" | "may_apply" | "unlikely" | "unknown";
     explanation: string;
+    conditions?: string[];
     evidence_grade: "confirmed" | "supported" | "possible" | "needs_review";
     citations: Citation[];
   };
@@ -362,6 +383,7 @@ export type Impact = {
     related_change_ids?: string[];
     evidence_grade?: "confirmed" | "supported" | "possible" | "needs_review";
     review_suggestion?: true;
+    obligation_anchor?: { quote: string; citation: Citation } | null;
   }[];
   citations: Citation[];
 };

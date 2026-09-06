@@ -61,6 +61,7 @@ import { ErrorNote, Loading, Status } from "./common";
 import { AIHistory } from "./ai-history";
 import { AnalysisModeNotice } from "./analysis-mode-notice";
 import { ReportDates } from "./report-dates";
+import { ActionReviewNotice, ChangeExplanationBasis, DecisionReview } from "./decision-review";
 import { Shell } from "./shell";
 import { ComparisonPanel } from "./comparison-panel";
 import { useAuth } from "./auth-gate";
@@ -1146,6 +1147,7 @@ export function ComparisonView({ id }: { id: string }) {
                                         t("compare.noCurrentUnit")}
                                     </p>
                                     <p>{change.explanation}</p>
+                                    <ChangeExplanationBasis basis={change.explanation_basis} />
                                     <p className="material-card-meta">
                                       {t("compare.organizationRelevance")}:{" "}
                                       {localLabel(
@@ -1237,6 +1239,9 @@ export function ComparisonView({ id }: { id: string }) {
                           </div>
                         </div>
                       )}
+                      <DecisionReview report={analysis.result} renderCitations={(values) => (
+                        <ComparisonCitations values={values} items={data.diff.items} onEvidence={jump} />
+                      )} />
                       <ReportDates
                         report={analysis.result}
                         renderCitations={(values) => (
@@ -1261,6 +1266,9 @@ export function ComparisonView({ id }: { id: string }) {
                         "selected_evidence" && (
                         <ActionPreview
                           actions={analysis.result.actions}
+                          review={<ActionReviewNotice report={analysis.result} renderCitations={(values) => (
+                            <ComparisonCitations values={values} items={data.diff.items} onEvidence={jump} />
+                          )} />}
                           onOpen={() => openCompanion("actions")}
                         />
                       )}
@@ -1501,22 +1509,19 @@ function ComparisonWorkspaceTabs({
 
 function ActionPreview({
   actions,
+  review,
   onOpen,
 }: {
   actions: Impact["actions"];
+  review: React.ReactNode;
   onOpen: () => void;
 }) {
   const { t } = useI18n();
   if (!actions.length)
-    return (
-      <div className="action-empty">
-        <span className="eyebrow">{t("compare.knowWhatToDo")}</span>
-        <strong>{t("compare.noAction")}</strong>
-        <p>{t("compare.noActionBody")}</p>
-      </div>
-    );
+    return review;
   return (
     <div className="action-preview">
+      {review}
       <div className="action-preview-heading">
         <div>
           <span className="eyebrow">{t("compare.reviewPlan")}</span>
@@ -1638,11 +1643,9 @@ function ActionsPanel({
               ))}
             </ol>
           ) : (
-            <div className="action-empty">
-              <span className="eyebrow">{t("compare.knowWhatToDo")}</span>
-              <strong>{t("compare.noAction")}</strong>
-              <p>{t("compare.noActionBody")}</p>
-            </div>
+            <ActionReviewNotice report={analysis.result} renderCitations={(values) => (
+              <ComparisonCitations values={values} items={items} onEvidence={onEvidence} />
+            )} />
           )
         ) : (
           <div className="action-empty">

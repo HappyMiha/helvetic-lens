@@ -26,12 +26,16 @@ export function renderLocalizedComponent(file, name, locale, props) {
   vm.runInNewContext(component, {
     exports,
     require: (module) => module === "@/lib/i18n"
-      ? { useI18n: () => ({ t: (key, values) => {
+      ? { useI18n: () => ({ locale, t: (key, values) => {
         const text = scope.globalThis.translate(locale, key, values);
         if (!text) throw new Error(`Missing ${locale}: ${key}`);
         return text;
       } }) }
-      : require(module),
+      : module === "@/lib/decision-copy" ? (() => {
+        const copy = { exports: {} };
+        vm.runInNewContext(compile(fs.readFileSync(path.join(root, "apps/web/lib/decision-copy.ts"), "utf8")), copy);
+        return copy.exports;
+      })() : require(module),
   });
   return renderToStaticMarkup(createElement(exports[name], props));
 }

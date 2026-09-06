@@ -7,6 +7,7 @@ import json
 import httpx
 import pytest
 from conftest import add_law, import_old
+from decision_fixtures import decision_draft
 from runtime_fixtures import local_runtime
 from test_ai_capabilities import artifacts as artifacts_fixture
 from test_analysis_runtime_binding import transport
@@ -63,12 +64,9 @@ def approved_app(harness, artifacts, monkeypatch):
         if state["wrong_first"] and len(state["generated"]) == 1:
             number = 999
         if data["task"] == "impact_synthesis":
-            result = {
-                "summary": "Synthetic explanation: the retention period changed.", "impact": "low",
-                "reason": "Review the new period against the organization's practice.", "business_areas": [],
-                "actions": [{"text": "Review the retention schedule against the cited new period.", "citation_numbers": [1]}],
-                "citation_numbers": [1],
-            }
+            result = decision_draft(data)
+            if state.get("draft_transform"):
+                result = state["draft_transform"](result, data)
         elif data["task"] == "impact_batch":
             result = {"impact": "low", "citation_rows": [number]}
             if state["rich"]:

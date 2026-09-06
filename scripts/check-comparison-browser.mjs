@@ -596,6 +596,53 @@ try {
       if (locale === "en-CH") await capture(`monitor-from-answer-${width}`);
     }
   }
+  // Real v5 components, explicit action decisions and immutable v4 history.
+  for (const language of ["en-CH", "de-CH", "fr-CH", "it-CH", "rm-CH"]) {
+    locale = language;
+    for (const width of [390, 1024]) for (const state of ["review_actions", "no_action_now", "not_reviewed"]) {
+      comparisonFixture = structuredClone(fixture);
+      const report = comparisonFixture.analysis.result;
+      const citations = report.citations.slice(0, 2);
+      Object.assign(report, {
+        schema_version: "impact-report-v5", response_mode: "generated_explanation", output_locale: locale,
+        decision_review: { contract: "decision-draft-v1", basis: "model_interpretation", explained_changes: 1, available_changes: 2, merged_actions: 1 },
+        organization_applicability: { status: "may_apply", evidence_grade: "possible", explanation: "Synthetic scope interpretation.", conditions: ["Only if the organization stores the cited records."], citations },
+        official_status: { status: "proposal", basis: "model_interpretation", explanation: "Synthetic proposal interpretation, not an enacted obligation.", citations },
+        action_review: { status: state, explanation: "Synthetic decision reasoning; check organizational scope.", citations },
+      });
+      if (state !== "review_actions") report.actions = [];
+      report.material_changes[0].explanation_basis = 'model_interpretation';
+      report.material_changes.push({...structuredClone(report.material_changes[0]), change_id:'qa-change-1', explanation_basis:'saved_comparison'});
+      const historical = { ...structuredClone(savedAnswer), id: "qa-legacy-report", type: "impact", result: structuredClone(fixture.analysis.result) };
+      historyItems.push(historical);
+      await resize(width);
+      await cdp.send("Page.navigate", {url: `${base}/compare/${fixture.id}`});
+      await waitFor(() => evaluate(cdp, `!!document.querySelector('.comparison-task-tabs')`), "Report decision page not ready");
+      await clickTab("summary");
+      await waitFor(() => evaluate(cdp, `!!document.querySelector('#companion-summary [data-official-status="proposal"]')`), "Status interpretation missing");
+      assert.ok(await evaluate(cdp, `document.querySelector('#companion-summary [data-decision-review]').innerText.includes('Only if the organization stores the cited records.')`), "Applicability condition hidden");
+      assert.equal(await evaluate(cdp, `document.querySelector('#companion-summary [data-action-review]')?.dataset.actionReview`), state);
+      await evaluate(cdp, `document.querySelector('#companion-summary [data-explanation-basis]').closest('details').open = true`);
+      assert.ok(await evaluate(cdp, `!!document.querySelector('#companion-summary [data-explanation-basis="saved_comparison"]')`));
+      await click('#companion-summary [data-official-status] summary');
+      assert.ok(await evaluate(cdp, `document.querySelector('#companion-summary [data-official-status] details').open`));
+      await accessibility.check(cdp, `decision-${locale}-${width}-${state}`, '#companion-summary [data-decision-review]');
+      await click('#companion-summary [data-official-status] .comparison-citations button');
+      await waitFor(async () => !(await modal()), "Decision source did not return to saved evidence");
+      assert.ok(await evaluate(cdp, `document.activeElement.closest('.comparison-evidence-pane') !== null`));
+      await clickTab('history');
+      await evaluate(cdp, `document.querySelectorAll('#companion-history .ai-history-item').forEach(item => item.open = true)`);
+      await waitFor(() => evaluate(cdp, `!!document.querySelector('#companion-history [data-decision-review="legacy"]')`), "Historical report lacks legacy warning");
+      assert.ok(await evaluate(cdp, `document.documentElement.scrollWidth <= innerWidth + 1`), "Decision/history content overflow");
+      assert.deepEqual(historical.result, fixture.analysis.result, "Reading history mutated saved report");
+      if(locale === 'en-CH' && width === 390 && state === 'not_reviewed') {
+        await clickTab('summary');
+        await evaluate(cdp, `document.querySelector('#companion-summary [data-decision-review]').scrollIntoView({block:'start'})`);
+        await capture('decision-review-390');
+      }
+      historyItems.pop();
+    }
+  }
   // Legacy saved comparisons may have material rows but no cluster metadata.
   comparisonFixture = structuredClone(fixture);
   comparisonFixture.diff.change_clusters = [];
@@ -618,12 +665,13 @@ try {
     [],
     "Runtime errors in required populated comparison",
   );
-  accessibility.finish(125);
+  accessibility.finish(155);
   assert.ok(
     requests.some((path) => path.startsWith(`/api/comparisons/${fixture.id}`)),
     "No comparison fixture was used",
   );
   console.log(
+    "30 structured decision-review journeys (five locales, two overlay widths, three action states) expose scope conditions, per-change interpretation/source basis, proposal status, source jumps and unchanged legacy-history warnings.",
     "Comparison production UI: 40 real Marvin-to-Ask handoffs (five locales, four widths, available/held personal history) preserve exact multiline/2000-character drafts, focus, scroll locks and no-inference behavior; delayed failure and post-context-reset success do not steal focus or overwrite new context. 200-group navigation/search/evidence/return and 320px text-zoom check, plus 15 populated locale/overlay-width journeys pass modal focus isolation, forward/back Tab, Escape/close and return focus, draft persistence, nonmodal desktop, cited evidence focus and saved-answer monitoring navigation. All API calls intercepted; no live model or data mutation. Physical keyboard/mobile, screen-reader and other-browser review remain separate.",
   );
 } catch (error) {
