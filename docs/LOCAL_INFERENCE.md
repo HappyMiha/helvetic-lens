@@ -150,12 +150,82 @@ completed Ask and Impact jobs identify reused results as cached.
 
 **Remaining HL-091 boundary:** [Capability decisions](AI_CAPABILITY_PROFILES.md)
 still need to drive planning, adapter selection and approval-aware freshness.
-Reported context/output defaults do not measure a serialized prompt and do not
-approve explanatory quality. Real tokenizer accounting and independent
-per-model/task/locale evaluation remain open. Relation-assessment cache policy
+Reported context/output defaults alone do not measure a serialized prompt and do not
+approve explanatory quality. The request guard below measures the bound prompt;
+planner allocation against reviewed per-model/task/locale limits and independent
+evaluation remain open. Relation-assessment cache policy
 is separate from these comparison Ask/Impact keys. An unpinned legacy client
 remains protected only during its individual call. No production deployment,
 100-user throughput or target-hardware latency is claimed.
+
+### Complete prompt token guard — 6 September 2026
+
+Every chat request through the private model-manager gateway now passes a
+non-generating preflight **after admission and under the same deployment lease
+as generation**. It reads the reserved runner's `/props` for actual per-slot
+context and posts the **unchanged full chat body** to
+`/v1/chat/completions/input_tokens`. Thus messages, citation instructions, repair
+text, schema/template options and the model's chat rendering are not reduced to
+an evidence-character estimate. The tokenizer counts the rendered prompt; a
+schema used only as a decoding grammar is not incorrectly counted as prompt text.
+
+The gateway requires:
+
+```text
+measured input + positive requested output reserve + 128 safety tokens
+    <= min(actual runner slot context, configured launch context)
+```
+
+Omitted output limits reserve the manager launch default (700). Conflicting
+`max_tokens`, `max_completion_tokens` and `n_predict` limits, unlimited/non-integer
+values and multiple responses are rejected. Each managed process has one slot;
+unexpected multi-slot properties fail closed instead of confusing total and
+per-slot context. Both metadata calls share a ten-second wall-clock deadline.
+No request is truncated, model switched, context expanded or fallback provider
+contacted. Tokenizer failure/absence/malformed output returns a specific 422
+before generation. An oversized prompt returns `context_length_exceeded` without
+entering decoding. API clients do not retry these unchanged failures. Each
+transport retry and structured repair is checked again on the pinned runtime.
+
+The private `/openai/v1/chat/completions/input_tokens` route permits count-only
+planning/diagnostics and returns `fits: false` for oversized inputs; it never
+generates text. It uses the same admission/model-alias/pin/lease protections.
+This route does not itself select passages or approve a capability profile.
+
+`X-Helvetic-Token-Budget` contains the versioned measurement, output/safety/context
+reserves, canonical full-request hash and deployment identity. Ask/Impact validate
+received metadata against their payload and execution pin, retain it in history
+and the completed plan, and expose it in existing integration-log response
+headers. Preflight counts are separate from model-reported usage and do not add
+generation calls. Failed oversized attempts retain the measurement too. For
+compatibility, an older gateway without this metadata is **unmeasured**, not
+silently assigned an estimate; only the updated gateway enforces this guard.
+Historical records and successful caches are not relabelled as newly measured.
+
+Implementation uses the pinned llama.cpp revision
+[`b96806d96061049a5b574269b049bf6241d63d46`](https://github.com/ggml-org/llama.cpp/blob/b96806d96061049a5b574269b049bf6241d63d46/tools/server/server-context.cpp#L4967).
+Its count handler applies the same chat parser as generation and tokenizes with
+special-token insertion/parsing enabled. The [documented API](https://github.com/ggml-org/llama.cpp/blob/b96806d96061049a5b574269b049bf6241d63d46/tools/server/README.md#post-v1chatcompletionsinput_tokens-token-counting)
+is available in the already pinned Docker image; no tokenizer dependency or
+runtime image update is needed.
+
+`scripts/check_local_prompt_tokens.py` starts its own CPU-only loopback child in
+a disposable, network-disabled container. Mount the existing GGUF, template,
+script and current `services/model-manager` package read-only, set `PYTHONPATH`
+to that package's parent, and pass `--model` and `--template`. It checks five
+synthetic language prompts and a JSON repair prompt against actual completion
+`usage.prompt_tokens`, then counts oversized input without generation. The
+6 September run used Apertus 1.5B Q4_K_M, build `b10752-b96806d96`, context 1024;
+all six counts matched (49, 50, 51, 56, 51, 55); oversized input counted 1837.
+This validates the protocol for that fixture/runtime/template, not every model,
+semantic quality, dynamic/custom templates, GPU performance or 100-user capacity.
+
+**Still open:** use exact preflight results in capability-aware evidence planning,
+carry reviewed task/language budgets and approval-decision freshness through the
+entire analysis, and provide explanatory evaluation. Current character-based
+evidence planning may still choose an input the final guard rejects; it is never
+called a measured token allocation. Ask/Impact generation call caps remain 3/5.
+No deployment or model promotion is authorized by this code change.
 
 Every saved Impact and Ask record carries backend, model ID, immutable revision, artifact SHA-256, quantization, pinned runtime image, hardware profile and devices, configured/runtime context, generation settings, aggregate gateway queue wait, inference duration, token usage when returned, individual attempts, and structured validation/repair events.
 

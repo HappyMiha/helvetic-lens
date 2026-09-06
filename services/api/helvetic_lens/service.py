@@ -511,6 +511,9 @@ class HelveticLens:
             "runtime_binding": deployment or None,
             "runtime_binding_state": binding_state,
             "runtime_identity_fingerprint": captured.get("runtime_identity_fingerprint"),
+            "prompt_token_measurements": [
+                event["prompt_token_measurement"] for event in trace if event.get("prompt_token_measurement")
+            ],
             "model_revision": deployment.get("model_revision"),
             "artifact_sha256": deployment.get("artifact_sha256"),
             "quantization": deployment.get("quantization"),

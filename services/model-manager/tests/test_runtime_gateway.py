@@ -5,6 +5,7 @@ import sys
 
 import httpx
 import pytest
+from helvetic_lens.analysis import InferenceBudget, ModelClient
 from test_runtime_binding import runtime as runtime_fixture
 from test_runtime_binding import start
 
@@ -26,9 +27,21 @@ def gateway(runtime, monkeypatch, tmp_path):
 
 def clients(module, monkeypatch, handler):
     real_client = httpx.AsyncClient
-    transport = httpx.MockTransport(handler)
+    async def route(request):
+        metadata = runner_metadata(request)
+        return metadata if metadata is not None else await handler(request)
+
+    transport = httpx.MockTransport(route)
     monkeypatch.setattr(module.httpx, "AsyncClient", lambda **kwargs: real_client(transport=transport, **kwargs))
     return real_client(transport=httpx.ASGITransport(app=module.app), base_url="http://synthetic-manager")
+
+
+def runner_metadata(request):
+    if request.url.path == "/props":
+        return httpx.Response(200, json={"default_generation_settings": {"n_ctx": 4096}, "total_slots": 1})
+    if request.url.path.endswith("/input_tokens"):
+        return httpx.Response(200, json={"object": "response.input_tokens", "input_tokens": 32})
+    return None
 
 
 def assert_released(module, manager):
@@ -220,6 +233,9 @@ async def test_real_assistant_client_uses_gateway_binding_end_to_end(gateway, mo
     async def route(request):
         if request.url.host == "synthetic-manager":
             return await asgi.handle_async_request(request)
+        metadata = runner_metadata(request)
+        if metadata is not None:
+            return metadata
         runner_calls.append(request)
         assert manager.inference_leases
         return httpx.Response(200, json={"choices": [{"message": {"content": "synthetic end-to-end reply"}}]})
@@ -238,7 +254,6 @@ async def test_real_assistant_client_uses_gateway_binding_end_to_end(gateway, mo
 
 @pytest.mark.asyncio
 async def test_real_analysis_client_carries_one_binding_through_gateway(gateway, monkeypatch):
-    from helvetic_lens.analysis import InferenceBudget, ModelClient
     from helvetic_lens.config import DomainError, Settings
     from helvetic_lens.runtime_binding import RuntimeSnapshot
 
@@ -253,6 +268,9 @@ async def test_real_analysis_client_carries_one_binding_through_gateway(gateway,
             if request.url.path == "/v1/runtime":
                 probes.append(request)
             return await asgi.handle_async_request(request)
+        metadata = runner_metadata(request)
+        if metadata is not None:
+            return metadata
         runner_calls.append(request)
         assert manager.inference_leases
         assert json.loads(request.content)["model"] == snapshot["served_model_id"]

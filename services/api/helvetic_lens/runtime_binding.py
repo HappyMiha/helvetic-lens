@@ -85,3 +85,31 @@ class RuntimeSnapshot(Snapshot):
             "scope": "immutable_identity" if identity else "deployment",
             "fingerprint": identity or self.binding_fingerprint,
         }
+
+
+class PromptTokenMeasurement(Snapshot):
+    schema_version: Literal["local-prompt-budget-v1"]
+    method: Literal["llama_cpp_chat_input_tokens"]
+    request_sha256: Digest
+    binding_fingerprint: Digest
+    deployment_id: Annotated[str, Field(pattern=r"^[a-f0-9]{32}$")]
+    input_tokens: int = Field(ge=1)
+    reserved_output_tokens: int = Field(ge=1, le=1048576)
+    safety_tokens: int = Field(ge=128, le=1048576)
+    context_window_tokens: int = Field(ge=1, le=1048576)
+    runner_context_tokens: int = Field(ge=1, le=1048576)
+    fits: bool
+
+    @model_validator(mode="after")
+    def consistent_budget(self):
+        if self.context_window_tokens > self.runner_context_tokens:
+            raise ValueError("The budget exceeds the observed runner context")
+        if self.fits != (self.input_tokens + self.reserved_output_tokens + self.safety_tokens <= self.context_window_tokens):
+            raise ValueError("Inconsistent token budget decision")
+        return self
+
+
+def request_fingerprint(payload: dict) -> str:
+    return hashlib.sha256(json.dumps(
+        payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True, allow_nan=False,
+    ).encode()).hexdigest()

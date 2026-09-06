@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 
 from .core import ModelManager, ModelManagerError
+from .prompt_budget import measure_prompt
 
 
 class Acceptance(BaseModel):
@@ -213,7 +214,8 @@ async def proxy_local(
         priority = "background"
     body = await request.body()
     requested_model = None
-    if path == "chat/completions":
+    is_chat = path in {"chat/completions", "chat/completions/input_tokens"}
+    if is_chat:
         try:
             payload = json.loads(body)
             requested_model = payload.get("model") if isinstance(payload, dict) else None
@@ -235,26 +237,47 @@ async def proxy_local(
     try:
         lease, snapshot = manager.reserve_inference(target, expected_binding, requested_model)
         headers = {"content-type": request.headers.get("content-type", "application/json")}
-        async with httpx.AsyncClient(timeout=300, trust_env=False) as client:
-            response = await client.request(
-                request.method,
-                target["url"] + "/v1/" + path,
-                content=body or None,
-                headers=headers,
-            )
         returned_headers = {
-            "content-type": response.headers.get("content-type", "application/json"),
             "x-helvetic-queue-wait-ms": f"{queue_wait_ms:.2f}",
             "x-helvetic-slot": target["slot"],
         }
         if snapshot["binding_fingerprint"]:
             returned_headers["x-helvetic-runtime-binding"] = snapshot["binding_fingerprint"]
             returned_headers["x-helvetic-deployment-id"] = snapshot["deployment_id"]
+        async with httpx.AsyncClient(timeout=300, trust_env=False) as client:
+            if is_chat:
+                measured = await measure_prompt(client, target, snapshot, payload, body)
+                returned_headers["x-helvetic-token-budget"] = json.dumps(measured, separators=(",", ":"))
+                if path.endswith("/input_tokens"):
+                    return JSONResponse(content={
+                        "object": "response.input_tokens", "input_tokens": measured["input_tokens"],
+                        "token_budget": measured,
+                    }, headers=returned_headers)
+                if not measured["fits"]:
+                    message = (
+                        f"The local request needs {measured['input_tokens']} input tokens, "
+                        f"{measured['reserved_output_tokens']} output tokens and {measured['safety_tokens']} safety tokens, "
+                        f"but the context window holds {measured['context_window_tokens']}. "
+                        "No generation was started; reduce the evidence or output limit, or select a larger verified context."
+                    )
+                    return JSONResponse(status_code=422, content={
+                        "detail": message, "code": "context_length_exceeded",
+                        "error": {"code": "context_length_exceeded", "message": message},
+                        "token_budget": measured,
+                    }, headers=returned_headers)
+            response = await client.request(
+                request.method,
+                target["url"] + "/v1/" + path,
+                content=body or None,
+                headers=headers,
+            )
+        returned_headers["content-type"] = response.headers.get("content-type", "application/json")
         return Response(response.content, status_code=response.status_code, headers=returned_headers)
     except httpx.RequestError as exc:
         return JSONResponse(
             status_code=502,
             content={"error": {"code": 502, "message": f"Local runner transport failed: {type(exc).__name__}"}},
+            headers=returned_headers,
         )
     finally:
         if lease is not None:
@@ -270,6 +293,17 @@ async def chat_completions(
 ):
     return await proxy_local(
         request, "chat/completions", x_helvetic_organization, x_helvetic_priority
+    )
+
+
+@app.post("/openai/v1/chat/completions/input_tokens")
+async def count_chat_tokens(
+    request: Request,
+    x_helvetic_organization: str = Header(default="default"),
+    x_helvetic_priority: str = Header(default="interactive"),
+):
+    return await proxy_local(
+        request, "chat/completions/input_tokens", x_helvetic_organization, x_helvetic_priority,
     )
 
 

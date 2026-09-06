@@ -11,10 +11,17 @@ are useful or correct.
 HL-091 now has a strict, versioned registry reader, independent-review artifact
 integrity checker, provider-independent decision resolver and read-only CLI.
 The shipped registry is deliberately empty. **Capability-based Impact/Ask mode
-selection, request token measurement and settings still need coordinated
+selection, measured-token evidence allocation and settings still need coordinated
 integration.** The resolver's
 `generated_explanation` decision is a permission for a verified scope, not an
 assertion that the current application has used that mode.
+
+The local gateway now [measures each complete rendered request before generation](LOCAL_INFERENCE.md#complete-prompt-token-guard--6-september-2026)
+using the reserved runner's native tokenizer/chat parser and actual per-slot
+context, with output and safety reserves. Ask/Impact retain validated measurement
+metadata in history and completed plans. This is a final request guard; the
+planner still needs to allocate evidence against exact counts and approved
+per-task/per-language budgets. No capability profile is promoted by a token fit.
 
 The local manager now exposes [observed launch inputs and deployment binding](LOCAL_INFERENCE.md#deployment-binding--6-september-2026).
 Its gateway enforces pins during admission and inference. Marvin's local client
@@ -127,9 +134,10 @@ substitute for checking evidence.
 
 Before enabling this policy in the product:
 
-1. Obtain actual immutable runner identity, including tokenizer/template/image
-   digests and active context settings; handle disappearance or a model switch
-   between planning and inference. Unknown remote identities stay limited.
+1. Feed the existing bound local runner identity and measured request context
+   into capability selection, including tokenizer/template/image digests.
+   Preserve the existing disappearance/switch protection between planning and
+   inference. Unknown remote identities stay limited.
 2. Resolve the explicitly selected trusted profile for the routed task/locale.
    Keep transport-specific authentication and wire-format handling separate.
 3. Carry the same resolved decision and token budget through planning, structured

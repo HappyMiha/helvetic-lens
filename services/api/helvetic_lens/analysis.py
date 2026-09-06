@@ -17,7 +17,7 @@ from .extraction import normalize
 from .integration_logs import IntegrationLogger, response_snapshot
 from .models import Comparison, Profile, Version
 from .prompt_settings import PromptSettings, default_prompt_settings, prompt_fingerprint
-from .runtime_binding import RuntimeSnapshot
+from .runtime_binding import PromptTokenMeasurement, RuntimeSnapshot, request_fingerprint
 from .selected_evidence import selected_evidence_copy
 
 PROMPT_VERSION = "helvetic-lens-v11-evidenced-date-mentions"
@@ -429,6 +429,17 @@ class ModelClient:
 
     def raise_for_provider_error(self, response: httpx.Response, *, operation: str) -> None:
         provider = self.provider_name
+        if self.settings.apertus_provider == "docker" and response.status_code == 422:
+            try:
+                code = response.json().get("code")
+            except (ValueError, TypeError, AttributeError):
+                code = None
+            if code in {"token_budget_unavailable", "invalid_output_token_limit", "invalid_response_count"}:
+                raise DomainError(
+                    "The local request was stopped before generation because its token budget could not be verified. "
+                    "Check the local runtime and positive output token limit; the saved comparison remains available.",
+                    422, code,
+                )
         if self.is_context_limit_error(response):
             if self.settings.apertus_provider == "docker":
                 message = (
@@ -686,6 +697,26 @@ class ModelClient:
                             "The local model deployment changed during analysis. No result from a different deployment was accepted; start a new analysis.",
                             409, "runtime_binding_changed",
                         )
+                    if runtime is not None and response.headers.get("x-helvetic-token-budget"):
+                        try:
+                            measured = PromptTokenMeasurement.model_validate_json(response.headers["x-helvetic-token-budget"])
+                            if (
+                                measured.binding_fingerprint != runtime.binding_fingerprint
+                                or measured.deployment_id != runtime.deployment_id
+                                or measured.request_sha256 != request_fingerprint(payload)
+                                or measured.reserved_output_tokens != payload[token_field]
+                                or measured.context_window_tokens > runtime.context_window_tokens
+                                or (response.is_success and not measured.fits)
+                            ):
+                                raise ValueError("Token measurement disagrees with the bound request")
+                        except (ValueError, TypeError) as exc:
+                            raise DomainError(
+                                "The local token measurement does not match this request. No answer was accepted.",
+                                422, "token_budget_invalid",
+                            ) from exc
+                        # No outcome: counting is metadata, not a generation call
+                        # or billable usage returned by the model.
+                        self.trace_event({"prompt_token_measurement": measured.model_dump(mode="json")})
                     # Retrying an unchanged oversized prompt can never succeed and can
                     # occupy every local llama.cpp slot. Surface the actionable error
                     # immediately while keeping transient 5xx retries intact.
@@ -1406,6 +1437,7 @@ def complete_analysis_plan(
         "queue_wait_ms": provenance.get("queue_wait_ms", 0),
         "inference_duration_ms": provenance.get("inference_duration_ms", 0),
         "token_counts": provenance.get("token_counts", {}),
+        "prompt_token_measurements": provenance.get("prompt_token_measurements", []),
         "validation": provenance.get("validation", {}),
         "runtime_binding": {
             "state": provenance.get("runtime_binding_state", "not_captured"),
