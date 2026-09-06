@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { MonitorThis } from "@/components/monitor-this";
+import { MarvinPanel } from "@/components/marvin-panel";
 import { usePathname } from "next/navigation";
 import {
   ArrowUpRight,
@@ -703,13 +704,6 @@ export function MarvinCompanion({
   useEffect(() => {
     if (!open) return;
     setBubbleVisible(false);
-    function closeOnEscape(event: KeyboardEvent) {
-      if (event.key !== "Escape") return;
-      onOpenChange(false);
-      triggerRef.current?.focus();
-    }
-    document.addEventListener("keydown", closeOnEscape);
-    return () => document.removeEventListener("keydown", closeOnEscape);
   }, [onOpenChange, open]);
 
   useEffect(() => {
@@ -836,7 +830,7 @@ export function MarvinCompanion({
       data-speaking={speaking}
     >
       {open && (
-        <section className="marvin-drawer">
+        <MarvinPanel label={t("companion.panelLabel")} onClose={() => onOpenChange(false)} fallbackFocusRef={triggerRef}>
           <header className="marvin-drawer-header">
             <div className="marvin-identity">
               <RobotPortrait compact />
@@ -847,6 +841,7 @@ export function MarvinCompanion({
             </div>
             <button
               aria-label={t("companion.close")}
+              data-marvin-close
               className="marvin-icon-button"
               onClick={() => {
                 onOpenChange(false);
@@ -1258,7 +1253,7 @@ export function MarvinCompanion({
               </div>
             )}
           </div>
-        </section>
+        </MarvinPanel>
       )}
 
       {!open && bubbleVisible && (

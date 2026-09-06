@@ -3372,6 +3372,12 @@ ins {
   padding: 0;
 }
 .marvin-drawer {
+  margin: 0;
+  padding: 0;
+  left: auto;
+  color: inherit;
+  height: auto;
+  max-height: none;
   background: #fbfcf8;
   border: 1px solid #ccd5ca;
   border-radius: 18px;
@@ -3387,6 +3393,8 @@ ins {
   width: 390px;
   z-index: 73;
 }
+.marvin-drawer:not([open]) { display: none; }
+.marvin-drawer::backdrop { background: rgb(25 37 29 / 30%); }
 .marvin-drawer-header {
   align-items: center;
   background: #25332c;
@@ -3420,9 +3428,9 @@ ins {
   border-radius: 9px;
   color: #fff;
   display: flex;
-  height: 38px;
+  height: 44px;
   justify-content: center;
-  width: 38px;
+  width: 44px;
 }
 .marvin-drawer-body {
   display: grid;

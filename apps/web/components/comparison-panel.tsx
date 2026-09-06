@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
+import { lockOverlayScroll } from "@/lib/overlay-scroll";
 
 // Match the existing comparison drawer breakpoint. Keep the same subtree mounted
 // in both modes: switching viewport must not reset an Ask draft or pending job.
@@ -44,12 +45,7 @@ export function ComparisonPanel({
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null;
-    const main = panel.closest<HTMLElement>("main.main");
-    const root = document.documentElement;
-    const rootOverflow = root.style.overflow;
-    const mainOverflow = main?.style.overflow;
-    root.style.overflow = "hidden";
-    if (main) main.style.overflow = "hidden";
+    const releaseScroll = lockOverlayScroll();
     // Native modal isolation also makes navigation and Marvin behind it inert.
     panel.showModal();
     (
@@ -58,8 +54,7 @@ export function ComparisonPanel({
     ).focus({ preventScroll: true });
     return () => {
       panel.close();
-      root.style.overflow = rootOverflow;
-      if (main) main.style.overflow = mainOverflow || "";
+      releaseScroll();
       if (previous?.isConnected && previous.getClientRects().length)
         previous.focus({ preventScroll: true });
     };

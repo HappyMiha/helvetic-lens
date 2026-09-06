@@ -2034,6 +2034,8 @@ Acceptance criteria:
 
 ### HL-097 — Restore visible AI controls and accessible complete journeys
 
+**Implemented 6 September 2026 (Marvin focus and overlay ownership):** Marvin is now a named modal dialog at overlay widths up to 1350 px and nonmodal on desktop. It owns Tab/Escape, restores the opener, keeps the focused draft across resize/close and offers a 44 px close control. Removed the global Escape listener that could dismiss unrelated layers. Marvin/comparison share reference-counted root/main scroll ownership, with out-of-order/route-replacement cleanup checks. The populated five-language browser suite now covers 40 reader/admin journeys at four widths and verifies the actual drawer closes during monitoring navigation. A synthetic native child exercises nested Escape, without claiming every real nested product flow. See [focus contract](docs/NAVIGATION_ACCESSIBILITY.md#marvin-panel-focus--6-september-2026) and verification record. **Remaining:** real cross-feature nested journeys, whole-route serious/critical accessibility scans, physical-device/software-keyboard/audio, assistive-technology, native-language and Firefox/Safari review. HL-097 remains **IN PROGRESS**.
+
 **Priority:** P0. **Status:** IN PROGRESS. **Dependencies:** HL-065, HL-068, HL-070. **Owner role:** frontend/accessibility QA.
 
 Problem: a current surface-token regression makes enabled AI tabs almost invisible; responsive overlays and test coverage do not prove keyboard/screen-reader usability.

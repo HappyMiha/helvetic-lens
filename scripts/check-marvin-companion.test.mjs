@@ -106,7 +106,11 @@ test("Marvin chat stays local, personal, voiced, and evidence-bound", () => {
 });
 
 test("the companion remains keyboard, mobile, and reduced-motion aware", () => {
-  assert.match(companion, /event\.key !== "Escape"/);
+  const panel = readFileSync(resolve(root, "apps/web/components/marvin-panel.tsx"), "utf8");
+  assert.match(panel, /onCancel=/);
+  assert.match(panel, /panel\.showModal\(\)/);
+  assert.match(panel, /event\.key === "Escape"/);
+  assert.doesNotMatch(companion, /document\.addEventListener\("keydown", closeOnEscape\)/);
   assert.match(companion, /aria-expanded=\{open\}/);
   assert.match(companion, /aria-label=\{t\("companion\.panelLabel"\)\}/);
   assert.match(
