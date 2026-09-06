@@ -81,6 +81,37 @@ def test_starter_catalogue_is_seeded_from_exact_capability_streams(harness):
         assert session.scalar(select(func.count()).select_from(SourcePackDefinition)) == 6
 
 
+def test_source_pack_catalogue_skips_unknown_capability_streams(harness):
+    client, _, service, _ = harness
+    with service.db.session(include_all_organizations=True) as session:
+        definition = session.get(SourcePackDefinition, "fedlex-legislation")
+        assert definition is not None
+        definition.filters_json = {
+            **definition.filters_json,
+            "streams": [
+                *(definition.filters_json or {}).get("streams", []),
+                ["curated-official", "lugano-ticino-tech"],
+            ],
+        }
+        session.commit()
+
+    response = client.get("/api/source-packs")
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    fedlex = next(item for item in payload["items"] if item["id"] == "fedlex-legislation")
+    assert fedlex["capabilities"]
+    assert fedlex["filters"]["streams"] == [
+        ["fedlex", "rss-de"],
+        ["fedlex", "rss-fr"],
+        ["fedlex", "rss-it"],
+        ["fedlex", "reconcile-cc"],
+        ["fedlex", "reconcile-oc"],
+        ["fedlex", "reconcile-fga"],
+        ["curated-official", "lugano-ticino-tech"],
+    ]
+    assert all(cap["stream"] != "lugano-ticino-tech" for cap in fedlex["capabilities"])
+
+
 def test_activation_backfills_shared_events_without_copying_the_corpus(harness):
     client, _, service, _ = harness
     event_id = _fedlex_event(service)

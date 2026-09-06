@@ -215,6 +215,14 @@ def _stream_keys(definition: SourcePackDefinition) -> set[tuple[str, str]]:
     return {tuple(item) for item in (definition.filters_json or {}).get("streams", [])}
 
 
+def _resolved_capabilities(keys: set[tuple[str, str]]) -> list[dict]:
+    return [
+        source.serialize()
+        for source in (SOURCE_CAPABILITY_INDEX.get(key) for key in keys)
+        if source is not None
+    ]
+
+
 def _subscription_payload(record: SourcePackSubscription | None) -> dict:
     if not record:
         return {
@@ -263,7 +271,7 @@ def catalogue(session: Session, schedule_items: list[dict]) -> dict:
     items = []
     for definition in definitions:
         keys = _stream_keys(definition)
-        capabilities = [SOURCE_CAPABILITY_INDEX[key].serialize() for key in keys]
+        capabilities = _resolved_capabilities(keys)
         current_schedules = [schedules[key] for key in keys if key in schedules]
         gaps = list(dict.fromkeys(gap for item in capabilities for gap in item["known_gaps"]))
         successful = [item.get("last_success_at") for item in current_schedules if item.get("last_success_at")]
