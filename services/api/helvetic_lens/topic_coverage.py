@@ -24,7 +24,7 @@ def _aware(value: datetime) -> datetime:
     return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
 
 
-def snapshot(session: Session, pack_ids: list[str], *, now: datetime) -> dict:
+def snapshot(session: Session, pack_ids: list[str], *, now: datetime, organization_id: str | None = None) -> dict:
     # Caller supplies an already validated plan (maximum twenty pack IDs).
     if len(pack_ids) > 20:
         raise ValueError("Topic coverage accepts at most twenty source packs.")
@@ -35,7 +35,7 @@ def snapshot(session: Session, pack_ids: list[str], *, now: datetime) -> dict:
     subscriptions = {row.pack_id: row for row in session.execute(select(
         SourcePackSubscription.pack_id, SourcePackSubscription.enabled, SourcePackSubscription.state,
     ).where(SourcePackSubscription.pack_id.in_(pack_ids),
-            SourcePackSubscription.organization_id == session.info["organization_id"]))}
+            SourcePackSubscription.organization_id == (organization_id or session.info["organization_id"])))}
     pack_keys = {row.id: {tuple(item) for item in (row.filters_json or {}).get("streams", [])}
                  for row in definitions}
     keys = sorted({key for values in pack_keys.values() for key in values if key in SOURCE_CAPABILITY_INDEX})

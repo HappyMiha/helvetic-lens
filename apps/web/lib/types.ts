@@ -1428,3 +1428,12 @@ export type OnboardingState = {
     active_topic: boolean;
   };
 };
+
+export type FeedReadiness = {
+  captured_at: string; active_document_watch: boolean;
+  topics: Array<{id: string; name: string; url: string; monitoring_from: string | null; history_status: string;
+    captured_at: string | null; processed_through: string | null; processed: number | null; remaining: number | null}>;
+  more_topics: boolean; enabled_pack_count_shown: number; more_packs: boolean;
+  sources_pending: boolean; sources_need_attention: boolean;
+  source_freshness_verified: false; quiet_period_verified: false;
+};

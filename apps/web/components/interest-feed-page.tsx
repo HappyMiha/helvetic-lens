@@ -1,5 +1,6 @@
 "use client";
 
+import { FeedEmptyState } from "./feed-empty-state";
 import { MonitorThis } from "./monitor-this";
 import { useState } from "react";
 import Link from "next/link";
@@ -82,7 +83,10 @@ export function InterestFeedPage() {
     <ErrorNote message={feed.error || failure} />
     <p role="status" className="text-sm">{notice}</p>
     {feed.loading && !feed.data && <Loading />}
-    {feed.data?.items.length === 0 && <p className="card p-6">{t("feed.empty")}</p>}
+    {!feed.error && feed.data?.items.length === 0 && <FeedEmptyState more={feed.data.has_more}
+      nextHref={feed.data.next_cursor ? href({cursor: feed.data.next_cursor}) : undefined}
+      filtered={Boolean(params.get("state") || (params.get("period") && params.get("period") !== "all"))}
+      linked={Boolean(params.get("event"))} />}
     <div className="space-y-5">
       {feed.data?.items.map(item => <article key={item.event_id} data-feed-event={item.event_id} className="interest-feed-event rounded-xl border bg-white p-4 sm:p-6 min-w-0 break-words">
         <div className="flex flex-wrap items-center gap-2 text-sm"><Status value={item.read_state} /><span>{item.source}</span><span>{translate(locale, `topics.kind.${item.document_kind}`) || label(item.document_kind)}</span><span>{translate(locale, `topics.kind.${item.type}`) || label(item.type)}</span></div>

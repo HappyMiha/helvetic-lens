@@ -36,6 +36,7 @@
     "check:feed:browser": "node scripts/check-interest-feed-browser.mjs",
     "check:topic-reviews:browser": "node scripts/check-topic-reviews-browser.mjs",
     "check:marvin:monitor:browser": "node scripts/check-marvin-monitor-browser.mjs",
+    "check:feed-recovery:browser": "node scripts/check-feed-recovery-browser.mjs",
     "check:onboarding:browser": "node scripts/check-onboarding-browser.mjs",
     "check:monitoring-choices:browser": "node scripts/check-monitoring-choices-browser.mjs",
     "check:monitor-this:browser": "node scripts/check-monitor-this-browser.mjs",

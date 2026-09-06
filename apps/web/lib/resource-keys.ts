@@ -1,5 +1,6 @@
 import type {
   AIHistoryPage,
+  FeedReadiness,
   OnboardingState,
   ApertusSettings,
   Comparison,
@@ -83,6 +84,9 @@ export function legacyResourceKey<T>(path: string): ResourceKey<T> {
 }
 
 export const resources = {
+  feedReadiness: () => key<FeedReadiness>("feed:readiness", "/interest-feed/readiness", {
+    tags: ["impact-inbox", "monitoring", "source-packs"], staleMs: 10_000, varyByLocale: false,
+  }),
   onboarding: () =>
     key<OnboardingState>("onboarding:personal", "/onboarding", {
       scope: "session",

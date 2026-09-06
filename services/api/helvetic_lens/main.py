@@ -3,7 +3,7 @@ import re
 import time
 import uuid
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Annotated, Literal
 
 from fastapi import FastAPI, File, Form, Query, Request, UploadFile
@@ -16,7 +16,7 @@ from redis.exceptions import RedisError
 from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-from . import corpus_evidence, onboarding
+from . import corpus_evidence, feed_readiness, onboarding
 from .assistant_contract import (
     AssistantChatInput,
     AssistantContextInput,
@@ -1340,6 +1340,11 @@ def create_app(
             ),
             identity.user_id if identity else None,
         )
+
+    @app.get("/api/interest-feed/readiness")
+    def interest_feed_readiness():
+        with service.db.session() as session:
+            return feed_readiness.read(session, service.organization_id, now=datetime.now(UTC))
 
     @app.get("/api/interest-feed")
     def interest_feed(request: Request, event: str = Query(default="", max_length=36), period: str = Query(default="all", max_length=20),
