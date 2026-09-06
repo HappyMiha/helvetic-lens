@@ -36,7 +36,7 @@ test("spontaneous observations are bounded and never inspect form content", () =
     companion,
     /api<AssistantContextResponse>\("\/assistant\/context"/,
   );
-  assert.match(companion, /api<AssistantRuntime>\("\/assistant\/runtime"\)/);
+  assert.match(companion, /api<AssistantRuntime>\("\/assistant\/runtime",/);
   assert.match(companion, /api<AssistantRemarkResponse>/);
   assert.match(companion, /provenance\.cloud_fallback === false/);
   assert.match(companion, /GENERATED_REMARK_KEYS\.has\(response\.key\)/);
@@ -59,7 +59,9 @@ test("tone and spontaneous controls stay on-device", () => {
 });
 
 test("comparison questions use a private draft and the existing cited Ask flow", () => {
-  assert.match(companion, /DRAFT_KEY_PREFIX \+ comparisonId/);
+  assert.match(companion, /DRAFT_KEY_PREFIX\s*\+\s*JSON\.stringify/);
+  assert.match(companion, /session\?\.organization\?\.id/);
+  assert.match(companion, /session\?\.user\?\.id/);
   assert.match(companion, /window\.sessionStorage/);
   assert.match(companion, /new CustomEvent\(ASSISTANT_QUESTION_EVENT/);
   assert.doesNotMatch(companion, /\/ask-jobs/);
@@ -67,13 +69,13 @@ test("comparison questions use a private draft and the existing cited Ask flow",
   assert.match(comparison, /setCompanionTab\("ask"\)/);
   assert.match(comparison, /setQuestion\(detail\.question\)/);
   assert.match(comparison, /getElementById\("apertus-question"\)\?\.focus/);
-  assert.match(companion, /setContextAttached\(\(value\) => !value\)/);
+  assert.match(companion, /contextAttached: !contextAttached/);
   assert.match(
     companion,
-    /contextAttached\s*\?\s*api<AssistantContextResponse>/,
+    /if \(!contextActive\) return cleanup/,
   );
   assert.match(companion, /comparisonId && contextAttached/);
-  assert.match(companion, /useResource<Job\[]>\(resources\.assistantJobs\(\)/);
+  assert.match(companion, /contextActive \? resources\.assistantJobs\(jobIdentity\) : null/);
   assert.match(companion, /ASSISTANT_JOB_TYPES/);
   assert.match(companion, /job\.progress\.current/);
   assert.match(companion, /jobResultHref\(job\)/);

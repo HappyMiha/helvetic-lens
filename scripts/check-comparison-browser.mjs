@@ -312,7 +312,11 @@ try {
       await waitFor(() => evaluate(cdp, `!!document.querySelector('#marvin-question') && !!document.querySelector('.marvin-chat')`), 'Context did not reattach');
       await sleep(100);
       assert.equal(heldHandoffs.length, 1);
-      await cdp.send('Fetch.fulfillRequest', {requestId:heldHandoffs.shift(), responseCode:200, responseHeaders:[{name:'Content-Type',value:'application/json'}], body:Buffer.from(JSON.stringify({id:'qa-conversation',handoffs:[{id:'late-old-handoff',question}]})).toString('base64')});
+      await cdp.send('Fetch.fulfillRequest', {requestId:heldHandoffs.shift(), responseCode:200, responseHeaders:[{name:'Content-Type',value:'application/json'}], body:Buffer.from(JSON.stringify({id:'qa-conversation',handoffs:[{id:'late-old-handoff',question}]})).toString('base64')}).catch(error => {
+        // Detachment now aborts the old context's request. Chrome may already
+        // have removed it; every other interception error remains a failure.
+        if (!/Invalid InterceptionId/.test(error.message)) throw error;
+      });
       await sleep(100);
       assert.equal(await evaluate(cdp, `!!document.querySelector('.marvin-recent-questions')`), false, 'Old personal handoff overwrote the new context');
     }

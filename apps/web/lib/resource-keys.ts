@@ -209,8 +209,8 @@ export const resources = {
       priority: "interactive",
     }),
 
-  assistantJobs: () =>
-    key<Job[]>("assistant:jobs", "/jobs?workload=ai&limit=50", {
+  assistantJobs: (identity: string) =>
+    key<Job[]>(`assistant:jobs:${identity}`, "/jobs?workload=ai&limit=50", {
       tags: ["jobs", "assistant-jobs"],
       staleMs: 2_000,
       pollMs: 2_000,

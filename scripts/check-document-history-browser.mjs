@@ -379,14 +379,8 @@ try {
         const initializationWrites = requests
           .slice(start)
           .filter((r) => r.method !== "GET");
-        assert.ok(
-          initializationWrites.every((r) =>
-            ["/api/assistant/context", "/api/assistant/conversations"].includes(
-              r.path,
-            ),
-          ),
-          "Unexpected mutation during document entry",
-        );
+        assert.deepEqual(initializationWrites, [], "Document entry must not initialize the disabled companion");
+        assert.equal(requests.slice(start).some(r => r.path.startsWith('/api/assistant/')), false, "Disabled companion sent an entry request");
         assert.equal(
           await evaluate(
             cdp,
@@ -518,7 +512,7 @@ try {
   assert.deepEqual(exceptions, []);
   audit.finish(83);
   console.log(
-    "History journeys: five locales, mobile/desktop, admin/viewer, complete pages, pinned selection/current version, keyboard/focus, error/retry, loading and no history-triggered mutations; existing companion entry initialization recorded separately; synthetic APIs only.",
+    "History journeys: five locales, mobile/desktop, admin/viewer, complete pages, pinned selection/current version, keyboard/focus, error/retry, loading and no history-triggered mutations; disabled companion sends no entry requests; synthetic APIs only.",
   );
 } catch (error) {
   console.error({

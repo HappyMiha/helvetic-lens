@@ -474,6 +474,7 @@ export function Shell({
           </span>
           <div className="flex items-center gap-5">
             <LanguageSelector compact />
+            <span id="marvin-resume-slot" />
             <span className="hidden sm:inline text-xs">
               <span className={`status-dot ${error ? "!bg-red-500" : ""}`} />
               {error
@@ -620,6 +621,7 @@ export function Shell({
       </main>
       {(session?.authenticated || session?.anonymous_development) && (
         <MarvinCompanion
+          key={`${session?.organization?.id || "local-development"}:${session?.user?.id || "local-development"}`}
           localAiReady={Boolean(health?.apertus.configured)}
           onOpenChange={setAssistantOpen}
           open={assistantOpen}

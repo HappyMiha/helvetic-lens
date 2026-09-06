@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { createPortal } from "react-dom";
 import { MonitorThis } from "@/components/monitor-this";
 import { MarvinPanel } from "@/components/marvin-panel";
+import { useAuth } from "./auth-gate";
+import { marvinPrivacyCopy } from "@/lib/marvin-privacy-copy";
 import { usePathname } from "next/navigation";
 import {
   ArrowUpRight,
@@ -24,7 +27,11 @@ import { api, useResource } from "@/lib/api";
 import { ASSISTANT_QUESTION_EVENT } from "@/lib/assistant-events";
 import { translate, useI18n } from "@/lib/i18n";
 import { jobResultHref } from "@/lib/job-links";
-import { MarvinVoice, RemarkDelivery, type VoiceState } from "@/lib/marvin-delivery";
+import {
+  MarvinVoice,
+  RemarkDelivery,
+  type VoiceState,
+} from "@/lib/marvin-delivery";
 import { resources } from "@/lib/resource-keys";
 import type { Job } from "@/lib/types";
 
@@ -32,6 +39,7 @@ type Tone = "neutral" | "dry" | "very_dry";
 
 type CompanionPreferences = {
   enabled: boolean;
+  contextAttached: boolean;
   sound: boolean;
   spontaneous: boolean;
   tone: Tone;
@@ -56,6 +64,7 @@ const ASSISTANT_JOB_TYPES = new Set([
 ]);
 const DEFAULT_PREFERENCES: CompanionPreferences = {
   enabled: true,
+  contextAttached: true,
   sound: true,
   spontaneous: true,
   tone: "very_dry",
@@ -247,6 +256,8 @@ function readPreferences(): CompanionPreferences {
     ) as Partial<CompanionPreferences> | null;
     return {
       enabled: saved?.enabled ?? DEFAULT_PREFERENCES.enabled,
+      contextAttached:
+        saved?.contextAttached ?? DEFAULT_PREFERENCES.contextAttached,
       sound: saved?.sound ?? DEFAULT_PREFERENCES.sound,
       spontaneous: saved?.spontaneous ?? DEFAULT_PREFERENCES.spontaneous,
       tone:
@@ -290,6 +301,8 @@ export function MarvinCompanion({
 }) {
   const pathname = usePathname();
   const { locale, t } = useI18n();
+  const { session } = useAuth();
+  const privacyCopy = marvinPrivacyCopy[locale];
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [preferences, setPreferences] =
     useState<CompanionPreferences>(DEFAULT_PREFERENCES);
@@ -297,6 +310,8 @@ export function MarvinCompanion({
   const [bubbleVisible, setBubbleVisible] = useState(false);
   const [bubbleKey, setBubbleKey] = useState<string | null>(null);
   const [questionDraft, setQuestionDraft] = useState("");
+  const [questionRevision, setQuestionRevision] = useState(0);
+  const draftTouched = useRef(false);
   const [chatDraft, setChatDraft] = useState("");
   const [chatError, setChatError] = useState(false);
   const [chatMessages, setChatMessages] = useState<
@@ -311,7 +326,10 @@ export function MarvinCompanion({
     AssistantConversationResponse["handoffs"]
   >([]);
   const handoffRequestId = useRef(0);
-  const [contextAttached, setContextAttached] = useState(true);
+  const contextAttached = preferences.contextAttached;
+  const contextActive = hydrated && preferences.enabled && contextAttached;
+  const contextAbort = useRef<AbortController | null>(null);
+  const chatRequestId = useRef(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [serverQuipAllowed, setServerQuipAllowed] = useState(false);
   const [contextLabel, setContextLabel] = useState<string | null>(null);
@@ -328,11 +346,25 @@ export function MarvinCompanion({
   const comparisonId = pathname.startsWith("/compare/")
     ? pathname.slice("/compare/".length)
     : "";
-  const jobsResource = useResource<Job[]>(resources.assistantJobs(), {
-    pollMs: open ? 2_000 : 10_000,
-    staleMs: open ? 1_000 : 5_000,
-    priority: "interactive",
-  });
+  const draftKey =
+    DRAFT_KEY_PREFIX +
+    JSON.stringify([
+      session?.organization?.id || "local-development",
+      session?.user?.id || "local-development",
+      comparisonId,
+    ]);
+  const jobIdentity = JSON.stringify([
+    session?.organization?.id || "local-development",
+    session?.user?.id || "local-development",
+  ]);
+  const jobsResource = useResource<Job[]>(
+    contextActive ? resources.assistantJobs(jobIdentity) : null,
+    {
+      pollMs: open ? 2_000 : 10_000,
+      staleMs: open ? 1_000 : 5_000,
+      priority: "interactive",
+    },
+  );
   const aiJobs = useMemo(
     () =>
       (jobsResource.data || []).filter((job) =>
@@ -351,20 +383,47 @@ export function MarvinCompanion({
 
   useEffect(() => {
     setPreferences(readPreferences());
-    try { deliveryRef.current = new RemarkDelivery(window.sessionStorage); }
-    catch { deliveryRef.current = new RemarkDelivery(); }
+    try {
+      deliveryRef.current = new RemarkDelivery(window.sessionStorage);
+    } catch {
+      deliveryRef.current = new RemarkDelivery();
+    }
     setHydrated(true);
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
     let active = true;
+    const controller = new AbortController();
+    contextAbort.current = controller;
     setServerQuipAllowed(false);
     setContextLabel(null);
     setConversationId(null);
     setConversationLoaded(false);
     setRecentQuestions([]);
     setChatMessages([]);
+    setRuntime(null);
+    setQuestionDraft("");
+    setQuestionRevision(0);
+    draftTouched.current = false;
+    setChatDraft("");
+    setChatPending(false);
+    setChatError(false);
+    const cleanup = () => {
+      active = false;
+      controller.abort();
+      handoffRequestId.current++;
+      chatRequestId.current++;
+      voiceRef.current?.stop();
+    };
+    if (!contextActive) return cleanup;
+    const localDraft = () => {
+      if (!comparisonId) return "";
+      try {
+        return window.sessionStorage.getItem(draftKey) || "";
+      } catch {
+        return "";
+      }
+    };
     const contextPayload = {
       schema_version: "assistant-context.v1",
       intent: "explain_screen",
@@ -373,19 +432,19 @@ export function MarvinCompanion({
       locale,
     };
     Promise.allSettled([
-      contextAttached
-        ? api<AssistantContextResponse>("/assistant/context", {
-            method: "POST",
-            body: JSON.stringify(contextPayload),
-          })
-        : Promise.resolve(null),
-      api<AssistantRuntime>("/assistant/runtime"),
-      contextAttached
-        ? api<AssistantConversationResponse>("/assistant/conversations", {
-            method: "POST",
-            body: JSON.stringify(contextPayload),
-          })
-        : Promise.resolve(null),
+      api<AssistantContextResponse>("/assistant/context", {
+        method: "POST",
+        body: JSON.stringify(contextPayload),
+        signal: controller.signal,
+      }),
+      api<AssistantRuntime>("/assistant/runtime", {
+        signal: controller.signal,
+      }),
+      api<AssistantConversationResponse>("/assistant/conversations", {
+        method: "POST",
+        body: JSON.stringify(contextPayload),
+        signal: controller.signal,
+      }),
     ]).then(([contextResult, runtimeResult, conversationResult]) => {
       if (!active) return;
       setServerQuipAllowed(
@@ -407,24 +466,15 @@ export function MarvinCompanion({
         setConversationId(conversationResult.value.id);
         setRecentQuestions(conversationResult.value.handoffs);
         setChatMessages(conversationResult.value.messages || []);
-        setQuestionDraft(
-          conversationResult.value.draft ||
-            window.sessionStorage.getItem(DRAFT_KEY_PREFIX + comparisonId) ||
-            "",
-        );
+        if (!draftTouched.current)
+          setQuestionDraft(conversationResult.value.draft || localDraft());
         setConversationLoaded(true);
       } else if (comparisonId) {
-        setQuestionDraft(
-          window.sessionStorage.getItem(DRAFT_KEY_PREFIX + comparisonId) || "",
-        );
+        if (!draftTouched.current) setQuestionDraft(localDraft());
       }
     });
-    return () => {
-      active = false;
-      // A late save belongs to the previous page/personal conversation.
-      handoffRequestId.current++;
-    };
-  }, [comparisonId, contextAttached, entity, hydrated, locale, pathname]);
+    return cleanup;
+  }, [comparisonId, contextActive, draftKey, entity, locale, pathname]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -475,14 +525,21 @@ export function MarvinCompanion({
   const speak = useCallback(
     (copy: string, force = false) => {
       if (!preferences.voice && !force) return;
-      if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
+      if (
+        !("speechSynthesis" in window) ||
+        !("SpeechSynthesisUtterance" in window)
+      ) {
         setVoiceState("unavailable");
         return;
       }
-      voiceRef.current ??= new MarvinVoice(window.speechSynthesis, window.SpeechSynthesisUtterance, (state) => {
-        setVoiceState(state);
-        setSpeaking(state === "speaking");
-      });
+      voiceRef.current ??= new MarvinVoice(
+        window.speechSynthesis,
+        window.SpeechSynthesisUtterance,
+        (state) => {
+          setVoiceState(state);
+          setSpeaking(state === "speaking");
+        },
+      );
       voiceRef.current.speak(copy, locale);
     },
     [locale, preferences.voice],
@@ -493,7 +550,12 @@ export function MarvinCompanion({
       trigger: "arrival" | "activity" | "deep_scroll",
       fallbackKey: string,
     ) => {
-      if (document.visibilityState !== "visible" || open || !deliveryRef.current?.reserve(pathname)) return;
+      if (
+        document.visibilityState !== "visible" ||
+        open ||
+        !deliveryRef.current?.reserve(pathname)
+      )
+        return;
       const requestId = ++remarkRequestId.current;
       let selectedKey = fallbackKey;
       if (contextAttached && runtime?.ready && preferences.tone !== "neutral") {
@@ -502,6 +564,7 @@ export function MarvinCompanion({
             "/assistant/remark",
             {
               method: "POST",
+              signal: contextAbort.current?.signal,
               body: JSON.stringify({
                 schema_version: "assistant-context.v1",
                 intent: "explain_screen",
@@ -525,11 +588,19 @@ export function MarvinCompanion({
           // The translated deterministic remark is the honest offline fallback.
         }
       }
-      if (requestId !== remarkRequestId.current || document.visibilityState !== "visible") return;
+      if (
+        requestId !== remarkRequestId.current ||
+        document.visibilityState !== "visible"
+      )
+        return;
       // The model may repeatedly choose the same key. Prefer context, then unused lines.
       const freshKey = deliveryRef.current.choose([
-        fallbackKey, selectedKey, context.quipKey,
-        ...[...GENERATED_REMARK_KEYS].filter((key) => key !== "companion.generated.progress"),
+        fallbackKey,
+        selectedKey,
+        context.quipKey,
+        ...[...GENERATED_REMARK_KEYS].filter(
+          (key) => key !== "companion.generated.progress",
+        ),
       ]);
       if (!freshKey) return;
       setBubbleKey(freshKey);
@@ -554,21 +625,36 @@ export function MarvinCompanion({
   );
 
   useEffect(() => {
-    if (!conversationId || !conversationLoaded || !comparisonId) return;
+    if (
+      !contextActive ||
+      !conversationId ||
+      !conversationLoaded ||
+      !comparisonId ||
+      questionRevision === 0
+    )
+      return;
+    const signal = contextAbort.current?.signal;
     const timer = window.setTimeout(() => {
       void api<AssistantConversationResponse>(
         `/assistant/conversations/${conversationId}`,
         {
           method: "PATCH",
           body: JSON.stringify({ draft: questionDraft }),
+          signal,
         },
       ).catch(() => undefined);
     }, 500);
     return () => window.clearTimeout(timer);
-  }, [comparisonId, conversationId, conversationLoaded, questionDraft]);
+  }, [
+    contextActive,
+    comparisonId,
+    conversationId,
+    conversationLoaded,
+    questionDraft,
+    questionRevision,
+  ]);
 
   useEffect(() => {
-    setContextAttached(true);
     setSettingsOpen(false);
   }, [pathname]);
 
@@ -576,8 +662,17 @@ export function MarvinCompanion({
     const current = new Map(aiJobs.map((job) => [job.id, job.state]));
     const previous = knownAiJobStates.current;
     knownAiJobStates.current = current;
-    if (!previous || open || !hydrated || !preferences.enabled || !preferences.spontaneous ||
-        preferences.tone === "neutral" || !contextAttached || document.visibilityState !== "visible") return;
+    if (
+      !previous ||
+      open ||
+      !hydrated ||
+      !preferences.enabled ||
+      !preferences.spontaneous ||
+      preferences.tone === "neutral" ||
+      !contextAttached ||
+      document.visibilityState !== "visible"
+    )
+      return;
     const completed = aiJobs.find(
       (job) =>
         TERMINAL_JOB_STATES.has(job.state) &&
@@ -595,8 +690,19 @@ export function MarvinCompanion({
     setBubbleVisible(true);
     playSigh();
     speak(t(key));
-  }, [aiJobs, open, hydrated, preferences.enabled, preferences.spontaneous, preferences.tone,
-    contextAttached, pathname, playSigh, speak, t]);
+  }, [
+    aiJobs,
+    open,
+    hydrated,
+    preferences.enabled,
+    preferences.spontaneous,
+    preferences.tone,
+    contextAttached,
+    pathname,
+    playSigh,
+    speak,
+    t,
+  ]);
 
   useEffect(() => {
     setBubbleVisible(false);
@@ -604,7 +710,14 @@ export function MarvinCompanion({
     setBubbleKey(null);
     interactionCount.current = 0;
     deepScrollSeen.current = false;
-  }, [pathname, open, preferences.enabled, preferences.spontaneous, preferences.tone, contextAttached]);
+  }, [
+    pathname,
+    open,
+    preferences.enabled,
+    preferences.spontaneous,
+    preferences.tone,
+    contextAttached,
+  ]);
 
   useEffect(() => {
     if (
@@ -727,21 +840,32 @@ export function MarvinCompanion({
   }
 
   function updateQuestionDraft(value: string) {
+    draftTouched.current = true;
     setQuestionDraft(value);
+    setQuestionRevision((revision) => revision + 1);
     if (!comparisonId) return;
-    if (value)
-      window.sessionStorage.setItem(DRAFT_KEY_PREFIX + comparisonId, value);
-    else window.sessionStorage.removeItem(DRAFT_KEY_PREFIX + comparisonId);
+    try {
+      if (value) window.sessionStorage.setItem(draftKey, value);
+      else window.sessionStorage.removeItem(draftKey);
+    } catch {
+      /* Keep the draft in memory when storage is unavailable. */
+    }
   }
 
   async function handQuestionToCitedAsk(event: React.FormEvent) {
     event.preventDefault();
     const question = questionDraft.trim();
-    if (!comparisonId || !question) return;
+    if (!contextActive || !comparisonId || !question) return;
     const requestId = ++handoffRequestId.current;
     // This is a local draft transfer, not an AI request. Personal history must
     // never delay opening Ask or keep its question inaccessible during an outage.
-    window.sessionStorage.removeItem(DRAFT_KEY_PREFIX + comparisonId);
+    try {
+      window.sessionStorage.removeItem(draftKey);
+    } catch {
+      /* Storage is optional. */
+    }
+    draftTouched.current = true;
+    setQuestionRevision(0);
     setQuestionDraft("");
     window.dispatchEvent(
       new CustomEvent(ASSISTANT_QUESTION_EVENT, {
@@ -756,7 +880,10 @@ export function MarvinCompanion({
           {
             method: "POST",
             body: JSON.stringify({ question }),
-            signal: AbortSignal.timeout(10_000),
+            signal: AbortSignal.any([
+              contextAbort.current!.signal,
+              AbortSignal.timeout(10_000),
+            ]),
           },
         );
         if (requestId === handoffRequestId.current)
@@ -770,7 +897,8 @@ export function MarvinCompanion({
   async function chatWithMarvin(event: React.FormEvent) {
     event.preventDefault();
     const message = chatDraft.trim();
-    if (!conversationId || !message || chatPending) return;
+    if (!contextActive || !conversationId || !message || chatPending) return;
+    const requestId = ++chatRequestId.current;
     setChatPending(true);
     setChatError(false);
     setChatDraft("");
@@ -787,8 +915,10 @@ export function MarvinCompanion({
         {
           method: "POST",
           body: JSON.stringify({ message, tone: preferences.tone }),
+          signal: contextAbort.current?.signal,
         },
       );
+      if (requestId !== chatRequestId.current) return;
       setChatMessages(saved.messages || []);
       const answer = [...(saved.messages || [])]
         .reverse()
@@ -798,32 +928,77 @@ export function MarvinCompanion({
         speak(answer.content);
       }
     } catch {
+      if (requestId !== chatRequestId.current) return;
       setChatMessages((current) =>
         current.filter((item) => item.id !== optimistic.id),
       );
       setChatDraft(message);
       setChatError(true);
     } finally {
-      setChatPending(false);
+      if (requestId === chatRequestId.current) setChatPending(false);
     }
   }
 
-  if (!hydrated || !preferences.enabled) return null;
+  if (!hydrated) return null;
+  if (!preferences.enabled) {
+    const slot = document.getElementById("marvin-resume-slot");
+    return slot
+      ? createPortal(
+          <aside
+            className="marvin-companion"
+            aria-label={t("companion.panelLabel")}
+            data-marvin-paused
+          >
+            <button
+              type="button"
+              className="marvin-trigger marvin-resume"
+              aria-label={privacyCopy.resume}
+              ref={triggerRef}
+              title={privacyCopy.paused}
+              onClick={() => {
+                updatePreferences({ enabled: true });
+                onOpenChange(true);
+              }}
+            >
+              <Bot size={18} aria-hidden="true" />{" "}
+              <span className="hidden sm:inline">{privacyCopy.resume}</span>
+            </button>
+          </aside>,
+          slot,
+        )
+      : null;
+  }
 
   const showQuip = preferences.tone !== "neutral";
   const runtimeReady = runtime?.ready ?? localAiReady;
   const voiceControls = (
     <div className="marvin-voice-controls">
-      <button type="button" onClick={() => {
-        if (speaking) { voiceRef.current?.stop(); return; }
-        updatePreferences({ voice: true });
-        speak(t(bubbleKey || "companion.voicePreview"), true);
-      }}>
+      <button
+        type="button"
+        onClick={() => {
+          if (speaking) {
+            voiceRef.current?.stop();
+            return;
+          }
+          updatePreferences({ voice: true });
+          speak(t(bubbleKey || "companion.voicePreview"), true);
+        }}
+      >
         {speaking ? <VolumeX size={15} /> : <Volume2 size={15} />}
-        {t(speaking ? "companion.stopVoice" : preferences.voice ? "companion.speakAgain" : "companion.enableVoice")}
+        {t(
+          speaking
+            ? "companion.stopVoice"
+            : preferences.voice
+              ? "companion.speakAgain"
+              : "companion.enableVoice",
+        )}
       </button>
-      {voiceState === "blocked" && <small role="status">{t("companion.voiceBlocked")}</small>}
-      {voiceState === "unavailable" && <small role="status">{t("companion.voiceUnavailable")}</small>}
+      {voiceState === "blocked" && (
+        <small role="status">{t("companion.voiceBlocked")}</small>
+      )}
+      {voiceState === "unavailable" && (
+        <small role="status">{t("companion.voiceUnavailable")}</small>
+      )}
     </div>
   );
 
@@ -835,7 +1010,11 @@ export function MarvinCompanion({
       data-speaking={speaking}
     >
       {open && (
-        <MarvinPanel label={t("companion.panelLabel")} onClose={() => onOpenChange(false)} fallbackFocusRef={triggerRef}>
+        <MarvinPanel
+          label={t("companion.panelLabel")}
+          onClose={() => onOpenChange(false)}
+          fallbackFocusRef={triggerRef}
+        >
           <header className="marvin-drawer-header">
             <div className="marvin-identity">
               <RobotPortrait compact />
@@ -870,7 +1049,9 @@ export function MarvinCompanion({
                 className={`marvin-context-chip ${
                   contextAttached ? "" : "is-detached"
                 }`}
-                onClick={() => setContextAttached((value) => !value)}
+                onClick={() =>
+                  updatePreferences({ contextAttached: !contextAttached })
+                }
                 type="button"
               >
                 <Eye size={13} />
@@ -956,12 +1137,18 @@ export function MarvinCompanion({
                           : t("companion.you")}
                       </span>
                       <p>{item.content}</p>
-                      {item.role === "user" && conversationLoaded && conversationId && (
-                        <div className="mt-2" data-marvin-monitor>
-                          <MonitorThis kind="assistant" id={conversationId} messageId={item.id}
-                            onNavigate={() => onOpenChange(false)} />
-                        </div>
-                      )}
+                      {item.role === "user" &&
+                        conversationLoaded &&
+                        conversationId && (
+                          <div className="mt-2" data-marvin-monitor>
+                            <MonitorThis
+                              kind="assistant"
+                              id={conversationId}
+                              messageId={item.id}
+                              onNavigate={() => onOpenChange(false)}
+                            />
+                          </div>
+                        )}
                       {item.role === "assistant" && (
                         <div className="marvin-chat-actions">
                           <button
@@ -1048,10 +1235,7 @@ export function MarvinCompanion({
                   value={questionDraft}
                 />
                 <small>{t("companion.draftPrivacy")}</small>
-                <button
-                  disabled={!questionDraft.trim()}
-                  type="submit"
-                >
+                <button disabled={!questionDraft.trim()} type="submit">
                   <Send size={15} />
                   {t("companion.openCitedAsk")}
                 </button>
@@ -1251,6 +1435,21 @@ export function MarvinCompanion({
                   <BellOff size={15} />
                   {t("companion.disable")}
                 </button>
+                <button
+                  className="marvin-disable"
+                  type="button"
+                  data-marvin-pause
+                  onClick={() => {
+                    updatePreferences({ enabled: false });
+                    onOpenChange(false);
+                    voiceRef.current?.stop();
+                    void audioContextRef.current?.suspend();
+                    requestAnimationFrame(() => triggerRef.current?.focus());
+                  }}
+                >
+                  <BellOff size={15} /> {privacyCopy.pause}
+                </button>
+                <small>{privacyCopy.paused}</small>
               </div>
             )}
           </div>

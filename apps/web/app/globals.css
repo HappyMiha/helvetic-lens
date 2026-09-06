@@ -4101,3 +4101,9 @@ select.interest-feed-control { min-height: 44px; }
 .document-history .observations th, [data-history-controls] { color: var(--foreground); }
 [data-history-controls] button { min-height: 44px; height: auto; white-space: normal; text-align: start; }
 #history-versions, #history-comparisons, #history-observations { scroll-margin-top: 100px; }
+
+#marvin-resume-slot:empty { display: none; }
+.marvin-trigger.marvin-resume { position: static; width: auto; height: auto; min-width: 44px; min-height: 44px; gap: 8px; padding: 8px; border: 1px solid var(--border); border-radius: 12px; background: var(--background); color: var(--foreground); white-space: normal; text-align: start; }
+.marvin-resume::before { display: none; }
+.marvin-settings small { color: var(--foreground); }
+.model-unavailable > p, .model-unavailable > span, .model-unavailable a { color: var(--foreground); }
