@@ -492,6 +492,10 @@ def serialize(session: Session, job: Job) -> dict:
             "question": str(payload.get("question") or "")[:2000],
             "output_locale": payload.get("output_locale"),
         }
+    maintenance = None
+    if job.type == "relation_candidate_reprocess":
+        payload = job.payload or {}
+        maintenance = {name: payload.get(name) for name in ("dry_run", "rule_revision", "captured_at")}
     return {
         "id": job.id,
         "organization_id": job.organization_id,
@@ -507,6 +511,7 @@ def serialize(session: Session, job: Job) -> dict:
         "queue_position": queue_position,
         "cancel_requested": job.cancel_requested,
         "request": request,
+        "maintenance": maintenance,
         "error": {"code": job.error_code, "detail": job.error_detail} if job.error_detail else None,
         "result": {
             "type": job.result_type,

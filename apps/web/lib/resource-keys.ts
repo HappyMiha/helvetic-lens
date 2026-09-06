@@ -432,6 +432,15 @@ export const resources = {
       pollMs: 10_000,
     }),
 
+  relationReprocessingOptions: () =>
+    key<{ rule_revision: string; batch_size: number }>("platform:relation-reprocessing", "/admin/relation-reprocessing", {
+      scope: "platform", owner: "administration", tags: ["administration"], staleMs: 5_000, pollMs: 5_000,
+    }),
+  relationReprocessingJobs: () =>
+    key<Job[]>("administration:relation-reprocessing-jobs", "/jobs?job_type=relation_candidate_reprocess&limit=20", {
+      owner: "administration", tags: ["jobs", "administration"], staleMs: 2_000, pollMs: 2_000,
+    }),
+
   deployments: () =>
     key<ProductionDeploymentStatus>("platform:deployments", "/admin/deployments", {
       scope: "platform",

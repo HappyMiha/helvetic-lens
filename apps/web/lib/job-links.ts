@@ -3,6 +3,7 @@ import type { Job } from "@/lib/types";
 const comparisonTasks = new Set(["ask", "impact", "actions", "history"]);
 
 export function jobResultHref(job: Job): string {
+  if (job.type === "relation_candidate_reprocess") return `/admin/relation-reprocessing?job=${encodeURIComponent(job.id)}`;
   const fallback =
     job.target_type === "comparison"
       ? `/compare/${job.target_id}`

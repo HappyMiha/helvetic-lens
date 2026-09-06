@@ -2903,11 +2903,13 @@ class HelveticLens:
         with self.db.session() as session:
             return durable_jobs.serialize(session, get(session, Job, job_id))
 
-    def jobs(self, limit: int = 50, *, workload: str = "all", include_platform: bool = False):
+    def jobs(self, limit: int = 50, *, workload: str = "all", include_platform: bool = False, job_type: str | None = None):
         with self.db.session() as session:
             statement = select(Job)
             if not include_platform:
                 statement = statement.where(Job.type != relation_reprocessing.JOB_TYPE)
+            if job_type is not None:
+                statement = statement.where(Job.type == job_type)
             if workload == "ai":
                 statement = statement.where(
                     Job.type.in_(("ask", "impact_analysis", "relation_impact_analysis"))
@@ -3612,15 +3614,22 @@ class HelveticLens:
             session.commit()
             return durable_jobs.serialize(session, job)
 
-    def enqueue_relation_reprocessing(self, request_id: str, *, dry_run: bool = True):
+    def enqueue_relation_reprocessing(self, request_id: str, *, dry_run: bool = True, rule_revision: str | None = None):
         with self.write_guard, self.db.session() as session:
             # Concurrent retries of the same explicit maintenance intent share
             # one durable job even across API worker processes.
             session.scalar(select(Organization.id).where(Organization.id == self.organization_id).with_for_update())
+            requested_rule = rule_revision or relation_candidates.RULE_REVISION
+            request_key = f"relation-reprocess:{requested_rule}:{int(dry_run)}:{request_id}"
+            if requested_rule != relation_candidates.RULE_REVISION:
+                previous = session.scalar(select(Job).where(Job.organization_id == self.organization_id, Job.idempotency_key == request_key))
+                if previous:
+                    return durable_jobs.serialize(session, previous)
+                raise DomainError("The retrieval rule changed before this request was accepted. Start a new preview.", 409, "relation_reprocess_rule_changed")
             job, _ = durable_jobs.enqueue(
                 session, job_type=relation_reprocessing.JOB_TYPE, target_type="relation_candidate_rules",
                 target_id=relation_candidates.RULE_REVISION, queue="maintenance",
-                idempotency_key=f"relation-reprocess:{relation_candidates.RULE_REVISION}:{int(dry_run)}:{request_id}",
+                idempotency_key=request_key,
                 payload={"schema_version": relation_reprocessing.SCHEMA, "rule_revision": relation_candidates.RULE_REVISION,
                          "dry_run": dry_run, "captured_at": utcnow().isoformat()},
                 steps=[("Recheck retained candidates without AI", {"dry_run": dry_run})],

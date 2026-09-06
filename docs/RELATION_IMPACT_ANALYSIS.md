@@ -384,8 +384,8 @@ examples are also hidden from ordinary users on generic job list/detail/cancel/
 retry routes, including after the initiating user's platform role is revoked.
 Job ownership still follows the initiating organization. The explicit anonymous
 development allowance is unchanged; it must not be enabled for public deployment.
-There is no dedicated maintenance screen in this increment. Production uses the
-existing durable `maintenance` queue/outbox; inline test mode executes one batch
+The administrator screen described below uses these same routes. Production uses
+the existing durable `maintenance` queue/outbox; inline test mode executes one batch
 per invocation and needs another invocation to continue a larger run.
 
 The job captures an admission timestamp, counts eligible rows once and scans
@@ -420,5 +420,64 @@ run a semantic model, create new deliveries, send notifications or reassess old
 reports automatically. A retained refreshed pair can be explicitly analysed using
 the existing AI flow; a rejected or old-rule pair receives a clear reprocessing
 error before inference. No deployment/startup/migration triggers this job. New-pair
-backfill, catch-up digest delivery, administrator UI, independent relevance/claim
+backfill, catch-up digest delivery, independent relevance/claim
 evaluation and target-hardware capacity remain separate work.
+
+### Administrator reprocessing page
+
+Open **Platform admin → Recheck saved leads** at
+`/admin/relation-reprocessing`. The page is available in DE/FR/IT/RM/EN and is
+restricted to platform administrators, including its data subscriptions. Start
+with **Preview changes**, inspect the retained/rejected/skipped/changed counts and
+expand up to ten labelled examples. These labels describe saved documents and
+retrieval decisions, not new model conclusions. Source titles/reasons remain in
+their saved language; they are not translated by inference.
+
+Only a successfully completed preview with the currently displayed rule and at
+least one actual change enables **Review and apply**. The inline confirmation
+states the platform-wide scope, possible differences from the earlier preview,
+history invalidation and the fact that cancellation preserves completed batches.
+It requires an explicit acknowledgement before the apply button is enabled.
+No-change previews retain usable AI results and need no apply operation. An old
+rule, superseded job or unreadable/inconsistent result requires a fresh preview
+or recovery rather than an optimistic apply.
+
+The result URL contains the saved job ID. Reloading or leaving/reopening the page
+does not start another job. The history lists the latest 20 maintenance jobs in
+the initiating organization, independently of newer unrelated jobs, with mode,
+state and a precise timestamp in Europe/Zurich. Other platform administrators in
+the same organization can inspect those jobs through the same authorized routes.
+History is intentionally a bounded recent list, not a complete cross-organization
+audit browser. A saved direct URL can still reopen an older accessible job.
+
+While a run is active, its counts refresh in place without reloading the page.
+Cancel and resume use the existing durable checkpoint; they do not undo or repeat
+committed batches. A stopped/superseded run remains visibly distinct from a fully
+completed one. Examples show saved source/target titles, old/new retrieval scores
+and the recorded rule explanation. Scores are retrieval signals, not confidence
+in a legal conclusion. Generic job result links also return to this page.
+
+UI cancellation/resume uses the narrowly scoped
+`POST /api/admin/relation-reprocessing/jobs/<id>/cancel` and `/retry` routes. They
+require a platform administrator, the current organization, a maintenance job and
+the existing CSRF token. A platform administrator can therefore manage this
+platform operation even when their organization membership is read-only, without
+gaining mutation rights over unrelated organization jobs.
+
+Before submission the browser stores only a UUID, mode and original rule revision
+in session storage scoped to user and organization. If the reply is lost, **Recover
+submitted request** resends that same identity, including after a reload. It never
+automatically retries an apply while opening the page. The server accepts an
+optional `rule_revision` with the maintenance POST: replaying an already accepted
+old-rule request returns its original job; an unknown request for an obsolete
+rule fails with `relation_reprocess_rule_changed` before creating work. A new
+preview is then required. Session storage must be available to start a new UI
+request. Clearing browser storage or closing the browser session can lose this
+local recovery pointer; inspect recent runs or a saved result URL before starting
+another operation. The durable job itself is not stored in the browser.
+
+No page read, preview, apply or recovery action invokes AI, sends notifications,
+downloads models, or deploys code. The page is an operator tool for the existing
+retained-pair maintenance path, not a new-pair discovery or AI-reassessment tool.
+Five-language rendering and automated keyboard/responsive checks do not replace
+independent native-language, assistive-technology or real-operator usability review.

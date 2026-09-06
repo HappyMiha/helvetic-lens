@@ -286,6 +286,7 @@ class MonitoringTopicStatusInput(Input):
 class RelationReprocessingInput(Input):
     dry_run: bool = Field(default=True, strict=True)
     request_id: uuid.UUID = Field(default_factory=uuid.uuid4)
+    rule_revision: str | None = Field(default=None, min_length=1, max_length=160)
 
 
 def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
@@ -1221,8 +1222,18 @@ def create_app(
 
     @app.post("/api/admin/relation-reprocessing", status_code=202)
     async def start_relation_reprocessing(data: RelationReprocessingInput):
-        job = service.enqueue_relation_reprocessing(str(data.request_id), dry_run=data.dry_run)
+        job = service.enqueue_relation_reprocessing(str(data.request_id), dry_run=data.dry_run, rule_revision=data.rule_revision)
         return await service.execute_job(job["id"]) if settings.job_execution_mode == "inline" else job
+
+    @app.post("/api/admin/relation-reprocessing/jobs/{job_id}/{action}")
+    async def manage_relation_reprocessing(job_id: str, action: Literal["cancel", "retry"]):
+        job = service.job_detail(job_id)
+        if job["type"] != relation_reprocessing.JOB_TYPE:
+            raise DomainError("This is not a retained-candidate maintenance job.", 404, "not_found")
+        if action == "cancel":
+            return service.cancel_job(job_id)
+        result = service.retry_job(job_id)
+        return await service.execute_job(job_id) if settings.job_execution_mode == "inline" else result
 
     @app.get("/api/admin/connectors")
     def connector_schedules():
@@ -1748,8 +1759,11 @@ def create_app(
         request: Request,
         limit: int = Query(default=50, ge=1, le=200),
         workload: Literal["all", "ai"] = "all",
+        job_type: Literal["relation_candidate_reprocess"] | None = None,
     ):
-        return service.jobs(limit, workload=workload, include_platform=platform_job_access(request))
+        if job_type and not platform_job_access(request):
+            raise DomainError("A platform administrator must access this maintenance job.", 403, "platform_admin_required")
+        return service.jobs(limit, workload=workload, include_platform=platform_job_access(request), job_type=job_type)
 
     @app.get("/api/jobs/{job_id}")
     def job(job_id: str, request: Request):

@@ -152,6 +152,8 @@ def run_batch(session, payload: dict) -> dict:
                     if len(checkpoint.examples) < 10:
                         checkpoint.examples.append({"candidate_id": id_, "event_id": candidate.event_id,
                             "target_work_id": candidate.target_work_id, "outcome": outcome,
+                            "source_title": (session.scalar(select(RegulatoryWork.title).where(RegulatoryWork.id == candidate.source_work_id)) or "")[:300],
+                            "target_title": (session.scalar(select(RegulatoryWork.title).where(RegulatoryWork.id == candidate.target_work_id)) or "")[:300],
                             "old_rule_revision": candidate.rule_revision, "old_score": candidate.score,
                             "new_score": values["score"], "reason": values["why_json"]})
                     if not payload["dry_run"]:

@@ -23,6 +23,7 @@ import { Button } from "./ui/button";
 import { label, resources, useResource } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import type { PlatformStatus } from "@/lib/types";
+import { reprocessingCopy } from "@/lib/reprocessing-copy";
 
 function bytes(value = 0) {
   return `${(value / 1024 ** 3).toFixed(value < 1024 ** 3 ? 2 : 1)} GB`;
@@ -46,7 +47,7 @@ const links = [
 ] as const;
 
 export function PlatformAdminPage() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { isPlatformAdmin } = useAuth();
   const status = useResource<PlatformStatus>(
     isPlatformAdmin ? resources.platformStatus<PlatformStatus>() : null,
@@ -69,6 +70,9 @@ export function PlatformAdminPage() {
         <ErrorNote message={t("admin.denied")} />
       ) : (
         <>
+          <Link href="/admin/relation-reprocessing" className="card block p-5 mb-5 hover:border-primary">
+            <strong className="block mb-2">{reprocessingCopy[locale].title}</strong><span className="text-sm muted">{reprocessingCopy[locale].body}</span>
+          </Link>
           <ErrorNote message={status.error} />
           {status.loading && !status.data ? (
             <Loading text={t("admin.loading")} />

@@ -667,6 +667,7 @@ export type Scan = {
   job?: Job | null;
 };
 export type Job = {
+  maintenance?: { dry_run: boolean; rule_revision: string; captured_at: string } | null;
   id: string;
   type: string;
   target_type: string;
