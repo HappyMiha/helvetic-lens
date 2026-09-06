@@ -12,6 +12,7 @@ from datetime import UTC, datetime
 from sqlalchemy import case, func, or_, select
 from sqlalchemy.orm import Session, aliased
 
+from . import relation_candidates
 from .config import DomainError, Settings
 from .inbox_context import InboxContext, load_context
 from .models import (
@@ -198,6 +199,9 @@ class ImpactInboxReader:
         review, latest_review, review_history_count = review_history
         current, latest, history_count = analysis_history
         status = self._status(relation, review, current, latest)
+        excluded = candidate.status == "rejected" and candidate.rule_revision == relation_candidates.RULE_REVISION
+        if excluded and not (relation and relation.state == "confirmed") and not review:
+            status = "no_supported_impact"
         result = (current.result or {}) if current else {}
         citations = result.get("citations") or []
         actions = result.get("actions") or []
@@ -214,6 +218,8 @@ class ImpactInboxReader:
             effect = result.get("explanation") or "An organization administrator confirmed this review lead."
         elif review and review.decision == "rejected":
             effect = review.note or "An organization administrator rejected this proposed impact."
+        elif excluded:
+            effect = "Current retrieval rules no longer support this lead. This is not a legal no-impact judgment; saved history remains available."
         else:
             effect = result.get("explanation") or (
                 "Saved metadata produced a bounded candidate. Local analysis has not yet supplied a valid conclusion."

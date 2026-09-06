@@ -143,6 +143,28 @@ def score_candidate(
     return CandidateScore(score, components, tuple(why))
 
 
+
+def current_candidate(rule_revision: str, status: str) -> bool:
+    return rule_revision == RULE_REVISION and status != "rejected"
+
+
+def score_pair(source, event, target, relation=None) -> CandidateScore | None:
+    """One retrieval policy for live discovery and historical pair rechecks."""
+    from .relation_identity import relation_direction
+
+    if relation and relation.state == "confirmed" and relation_direction(relation, source.id, target.id):
+        return CandidateScore(1.0, {"confirmed_relation": 1.0},
+                              (f"Confirmed {relation.relation_type} relation from {relation.provenance_method}.",))
+    source_norms, source_articles = _references(source.title, source.metadata_json, event.evidence_json)
+    target_norms, target_articles = _references(target.title, target.metadata_json)
+    return score_candidate(
+        source.title, target.title,
+        source_authority=source.authority, target_authority=target.authority,
+        source_kind=source.kind, target_kind=target.kind,
+        shared_norms=len(source_norms & target_norms), shared_articles=len(source_articles & target_articles),
+    )
+
+
 def _latest_version(session: Session, work_id: str) -> RegulatoryDocumentVersion | None:
     return session.scalar(
         select(RegulatoryDocumentVersion)
@@ -244,24 +266,7 @@ def generate_for_events(
             if not target:
                 continue
             relation = exact_by_target.get(target_id)
-            target_norms, target_articles = _references(target.title, target.metadata_json)
-            if relation:
-                scored = CandidateScore(
-                    1.0,
-                    {"confirmed_relation": 1.0},
-                    (f"Confirmed {relation.relation_type} relation from {relation.provenance_method}.",),
-                )
-            else:
-                scored = score_candidate(
-                    source.title,
-                    target.title,
-                    source_authority=source.authority,
-                    target_authority=target.authority,
-                    source_kind=source.kind,
-                    target_kind=target.kind,
-                    shared_norms=len(source_norms & target_norms),
-                    shared_articles=len(source_articles & target_articles),
-                )
+            scored = score_pair(source, event, target, relation)
             if scored:
                 ranked.append((scored.score, target, relation, scored))
         ranked.sort(key=lambda item: (-item[0], item[1].id))

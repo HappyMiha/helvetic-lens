@@ -24,6 +24,8 @@ from . import (
     law_history,
     monitoring_topics,
     onboarding,
+    relation_candidates,
+    relation_reprocessing,
     source_packs,
     synchronization,
     topic_matching,
@@ -2901,9 +2903,11 @@ class HelveticLens:
         with self.db.session() as session:
             return durable_jobs.serialize(session, get(session, Job, job_id))
 
-    def jobs(self, limit: int = 50, *, workload: str = "all"):
+    def jobs(self, limit: int = 50, *, workload: str = "all", include_platform: bool = False):
         with self.db.session() as session:
             statement = select(Job)
+            if not include_platform:
+                statement = statement.where(Job.type != relation_reprocessing.JOB_TYPE)
             if workload == "ai":
                 statement = statement.where(
                     Job.type.in_(("ask", "impact_analysis", "relation_impact_analysis"))
@@ -3608,6 +3612,23 @@ class HelveticLens:
             session.commit()
             return durable_jobs.serialize(session, job)
 
+    def enqueue_relation_reprocessing(self, request_id: str, *, dry_run: bool = True):
+        with self.write_guard, self.db.session() as session:
+            # Concurrent retries of the same explicit maintenance intent share
+            # one durable job even across API worker processes.
+            session.scalar(select(Organization.id).where(Organization.id == self.organization_id).with_for_update())
+            job, _ = durable_jobs.enqueue(
+                session, job_type=relation_reprocessing.JOB_TYPE, target_type="relation_candidate_rules",
+                target_id=relation_candidates.RULE_REVISION, queue="maintenance",
+                idempotency_key=f"relation-reprocess:{relation_candidates.RULE_REVISION}:{int(dry_run)}:{request_id}",
+                payload={"schema_version": relation_reprocessing.SCHEMA, "rule_revision": relation_candidates.RULE_REVISION,
+                         "dry_run": dry_run, "captured_at": utcnow().isoformat()},
+                steps=[("Recheck retained candidates without AI", {"dry_run": dry_run})],
+                max_attempts=self.settings.job_max_attempts,
+            )
+            session.commit()
+            return durable_jobs.serialize(session, job)
+
     async def execute_job(self, job_id: str, worker: str = "inline"):
         with self.write_guard, self.db.session() as session:
             job = durable_jobs.claim(session, job_id, worker)
@@ -3879,6 +3900,30 @@ class HelveticLens:
                 result_type = "connector_run"
                 result_id = payload.get("run_id")
                 result_url = "/connectors"
+            elif job_type == relation_reprocessing.JOB_TYPE:
+                with self.write_guard, self.db.session(include_all_organizations=True) as session:
+                    batch_job = session.scalar(select(Job).where(
+                        Job.id == job_id, Job.organization_id == self.organization_id,
+                    ).with_for_update())
+                    if not batch_job or batch_job.state != "running" or batch_job.lease_owner != worker:
+                        return self.job_detail(job_id)
+                    if batch_job.cancel_requested:
+                        raise durable_jobs.JobCancelled()
+                    result_json = relation_reprocessing.run_batch(session, dict(batch_job.payload or {}))
+                    batch_job.payload = {**batch_job.payload, "checkpoint": result_json["checkpoint"]}
+                    batch_job.result_json = result_json
+                    batch_job.result_type, batch_job.result_id, batch_job.result_url = "relation_candidate_rules", target_id, "/activity"
+                    durable_jobs.progress(session, job_id, current=result_json["processed"],
+                        total=result_json["eligible"] or result_json["processed"], step_position=1,
+                        step_state="pending" if result_json["has_more"] else "succeeded")
+                    if result_json["has_more"]:
+                        durable_jobs.yield_batch(session, batch_job)
+                    else:
+                        durable_jobs.complete(session, job_id, result_type="relation_candidate_rules",
+                            result_id=target_id, result_url="/activity", result_json=result_json)
+                        batch_job.progress_current = result_json["processed"]
+                    session.commit()
+                return self.job_detail(job_id)
             elif job_type == "source_pack_backfill":
                 mark(0, 1, "running")
                 with self.write_guard, self.db.session() as session:
@@ -4066,6 +4111,8 @@ class HelveticLens:
         delivery = get(session, OrganizationRelationCandidate, organization_candidate_id)
         input_snapshot = capture_inputs(session, delivery.candidate_id)
         candidate = get(session, RelationCandidate, delivery.candidate_id)
+        if not relation_candidates.current_candidate(candidate.rule_revision, candidate.status):
+            raise DomainError("Current retrieval rules do not support this saved candidate. A platform administrator can recheck retained candidates before a new AI assessment.", 409, "relation_candidate_needs_reprocessing")
         event = get(session, RegulatoryEvent, candidate.event_id)
         source_work = get(session, RegulatoryWork, candidate.source_work_id)
         target_work = get(session, RegulatoryWork, candidate.target_work_id)
@@ -4589,12 +4636,13 @@ class HelveticLens:
                 select(
                     RelationCandidate.source_version_id,
                     RelationCandidate.target_version_id,
+                    RelationCandidate.rule_revision, RelationCandidate.status,
                     *(getattr(RegulatoryRelation, field) for field in relation_ai.RELATION_BINDING_FIELDS),
                 )
                 .outerjoin(RegulatoryRelation, RegulatoryRelation.id == RelationCandidate.relation_id)
                 .where(RelationCandidate.id == delivery.candidate_id)
             ).one()
-            relation_binding = dict(zip(relation_ai.RELATION_BINDING_FIELDS, version_ids[2:]))
+            relation_binding = dict(zip(relation_ai.RELATION_BINDING_FIELDS, version_ids[4:]))
             records = list(
                 session.scalars(
                     select(RelationImpactAnalysis)
@@ -4613,6 +4661,7 @@ class HelveticLens:
                     **self._relation_analysis_dict(record),
                     "stale": record.status == "succeeded" and (
                         not relation_ai.result_uses_current_rules(record.result)
+                        or not relation_candidates.current_candidate(*version_ids[2:4])
                         or not uses_profile(record.analysis_plan, profile_revision)
                         or not uses_configuration(record.analysis_plan, self.settings)
                         or not uses_prompts(record.analysis_plan, self.prompt_settings)

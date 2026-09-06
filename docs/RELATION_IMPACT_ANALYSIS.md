@@ -345,6 +345,80 @@ and human/official relation judgments remain independent of AI freshness.
 These are point-in-time observations, not a distributed lock over a model during
 an entire read/send operation. A subsequent gateway change belongs to the next
 observation; actual generation additionally has request/response binding checks.
-The change does not solve late candidate refresh, historical reassessment or
-catch-up delivery of an event after an earlier period was already consumed. Those
-remain explicit HL-100 work, along with independent semantic and hardware tests.
+The runtime change alone does not solve late candidate refresh, historical
+reassessment or catch-up delivery of an event after an earlier period was already
+consumed. The retained-pair maintenance path below addresses explicit candidate
+refresh; the other boundaries remain open along with independent semantic and
+hardware tests.
+
+## Controlled retained-candidate reprocessing — 6 September 2026
+
+Updating retrieval rules must not silently preserve an obsolete candidate as
+current evidence. Relation history, inbox/digest selection and new AI requests now
+require the deployed candidate rule revision and a non-rejected candidate. Earlier
+successful reports remain readable with their original text, citations, versions
+and timestamps; they cannot supply current AI severity or actions. Existing
+official-relation urgency, explicit event importance and organization reviews
+remain independent.
+
+The platform administrator can explicitly recheck **retained candidate pairs**:
+
+1. Read `GET /api/admin/relation-reprocessing` for the deployed rule revision,
+   25-candidate batch size and default preview mode.
+2. Submit `POST /api/admin/relation-reprocessing` with
+   `{"dry_run": true, "request_id": "<new UUID>"}`. The default is preview when
+   `dry_run` is omitted. Use the existing authenticated session and CSRF header.
+3. Read `GET /api/jobs/<returned job ID>` until the job finishes. Its result shows
+   the captured cutoff, processed/eligible counts, retained/rejected/skipped and
+   changed counts, and up to ten changed examples with old/new scores and reasons.
+   These are retrieval decisions, not legal conclusions or independent labels.
+4. To apply, explicitly submit another request with `dry_run: false`. Preview and
+   apply are separate runs against then-current metadata, not an approved frozen
+   change set. Repeating the same UUID, mode and rule returns the same job within
+   the initiating organization; use a new UUID for a fresh recheck.
+5. Existing `POST /api/jobs/<id>/cancel` and `/retry` stop or resume the job. Retry
+   preserves the cutoff and committed cursor; it does not restart prior batches.
+
+These API routes require a platform administrator. Maintenance jobs and their
+examples are also hidden from ordinary users on generic job list/detail/cancel/
+retry routes, including after the initiating user's platform role is revoked.
+Job ownership still follows the initiating organization. The explicit anonymous
+development allowance is unchanged; it must not be enabled for public deployment.
+There is no dedicated maintenance screen in this increment. Production uses the
+existing durable `maintenance` queue/outbox; inline test mode executes one batch
+per invocation and needs another invocation to continue a larger run.
+
+The job captures an admission timestamp, counts eligible rows once and scans
+candidate IDs in increasing order, hydrating at most 25 candidates per batch.
+Later-created rows are excluded; deleted rows are reported at exhaustion. The
+source/target work metadata, saved event references, exact confirmed relation and
+latest saved version IDs feed the same scoring policy as live discovery. Neither
+full document text, passage arrays nor historical AI payloads are needed. Existing
+database evidence revisions invalidate old analysis bindings when a candidate
+changes. A currently valid pair remains a no-op even on its first recheck: a
+bookkeeping marker alone cannot invalidate its usable report. Subsequent identical
+applies also preserve the evidence revision and reuse of saved AI answers.
+
+Missing/inconsistent work/event/version inputs and reserved terminal states set
+outside this maintenance path are counted as skipped, not silently repaired.
+Expired candidates are not renewed. A lead rejected by this job may be retained
+by a future rule; rejection means only that current retrieval rules do not support
+the pair. Its inbox explanation explicitly says this is **not a legal no-impact
+judgment**. No candidate, official/proposed relation, delivery, organization review
+or historical analysis is deleted; this job changes candidate metadata only.
+
+Candidate updates and their checkpoint commit together. A failed batch rolls both
+back; cancellation retains earlier committed batches. Row locks serialize repeated
+enqueue intents and concurrent edits of the same candidate. Successful batches
+yield through the existing outbox without spending the failure-retry budget. A
+different deployed rule supersedes the remaining run; a new explicit preview is
+required. Malformed checkpoints fail visibly rather than silently restarting.
+
+This is not a transaction-wide snapshot of the corpus: each batch uses currently
+saved metadata, which can change again afterward. It does not discover new pairs,
+run a semantic model, create new deliveries, send notifications or reassess old
+reports automatically. A retained refreshed pair can be explicitly analysed using
+the existing AI flow; a rejected or old-rule pair receives a clear reprocessing
+error before inference. No deployment/startup/migration triggers this job. New-pair
+backfill, catch-up digest delivery, administrator UI, independent relevance/claim
+evaluation and target-hardware capacity remain separate work.

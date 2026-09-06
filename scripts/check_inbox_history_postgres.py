@@ -124,7 +124,7 @@ from test_topic_reviews import (
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("runtime-concurrent", "runtime-current", "runtime-stale", "runtime-offline", "runtime-digest", "runtime-scope", "runtime-worker-change", "evidence-revisions-private", "evidence-revisions-prepare", "evidence-revisions-text", "evidence-revisions-metadata", "evidence-revisions-official", "evidence-revisions-noop", "evidence-revisions-legacy", "evidence-revisions-migration", "evidence-revisions-race", "evidence-revisions-digest", "law-history-large", "law-history-scope", "law-history-empty", "law-history-null", "law-history-int", "law-history-fraction", "timeline-large", "timeline-relations", "timeline-private", "timeline-law", "timeline-watch", "timeline-mapping", "timeline-work", "relation-endpoints-source", "relation-endpoints-target", "relation-endpoints-reverse", "relation-endpoints-digest", "official-relation-fields", "official-relation-links", "official-relation-retry", "official-relation-digest", "registry-details", "registry-detail-scope", "registry-detail-dates", "monitored-pages", "monitored-search", "monitored-read", "monitored-scope", "monitored-dates", "monitored-comparison", "monitored-migration", "registry-watches", "registry-events", "registry-search", "registry-dates", "registry-scope", "registry-migration", "digest-quiet-resume", "digest-quiet-unsubscribe", "digest-quiet-boundary", "digest-quiet-save", "digest-local-schedule", "digest-schedule-migration", "feed-topic-sparse", "feed-topic-scope", "feed-watch-pages", "feed-watch-scope", "evidence-pages", "evidence-pages-native", "evidence-text-pages", "source-review", "source-review-scope", "source-review-migration", "milestone-native", "milestone-migration", "milestone-race", "feed-readiness-history", "feed-readiness-bounds", "feed-readiness-sources", "onboarding-state", "onboarding-migration", "onboarding-race", "assistant-context", "assistant-context-private", "answer-context", "answer-context-private", "topic-coverage-empty", "topic-coverage-state", "topic-coverage-scope", "topic-coverage-bounds", "topic-duplicates", "topic-duplicates-scope", "topic-duplicates-bounds", "history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked", "monitoring-context", "monitoring-context-activate"), default="history")
+    parser.add_argument("--suite", choices=("reprocess-noop", "reprocess-terminal", "reprocess-concurrent", "reprocess-positive", "reprocess-negative", "reprocess-batches", "reprocess-rollback", "reprocess-rule-change", "reprocess-admissions", "reprocess-versions", "runtime-concurrent", "runtime-current", "runtime-stale", "runtime-offline", "runtime-digest", "runtime-scope", "runtime-worker-change", "evidence-revisions-private", "evidence-revisions-prepare", "evidence-revisions-text", "evidence-revisions-metadata", "evidence-revisions-official", "evidence-revisions-noop", "evidence-revisions-legacy", "evidence-revisions-migration", "evidence-revisions-race", "evidence-revisions-digest", "law-history-large", "law-history-scope", "law-history-empty", "law-history-null", "law-history-int", "law-history-fraction", "timeline-large", "timeline-relations", "timeline-private", "timeline-law", "timeline-watch", "timeline-mapping", "timeline-work", "relation-endpoints-source", "relation-endpoints-target", "relation-endpoints-reverse", "relation-endpoints-digest", "official-relation-fields", "official-relation-links", "official-relation-retry", "official-relation-digest", "registry-details", "registry-detail-scope", "registry-detail-dates", "monitored-pages", "monitored-search", "monitored-read", "monitored-scope", "monitored-dates", "monitored-comparison", "monitored-migration", "registry-watches", "registry-events", "registry-search", "registry-dates", "registry-scope", "registry-migration", "digest-quiet-resume", "digest-quiet-unsubscribe", "digest-quiet-boundary", "digest-quiet-save", "digest-local-schedule", "digest-schedule-migration", "feed-topic-sparse", "feed-topic-scope", "feed-watch-pages", "feed-watch-scope", "evidence-pages", "evidence-pages-native", "evidence-text-pages", "source-review", "source-review-scope", "source-review-migration", "milestone-native", "milestone-migration", "milestone-race", "feed-readiness-history", "feed-readiness-bounds", "feed-readiness-sources", "onboarding-state", "onboarding-migration", "onboarding-race", "assistant-context", "assistant-context-private", "answer-context", "answer-context-private", "topic-coverage-empty", "topic-coverage-state", "topic-coverage-scope", "topic-coverage-bounds", "topic-duplicates", "topic-duplicates-scope", "topic-duplicates-bounds", "history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked", "monitoring-context", "monitoring-context-activate"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -145,6 +145,42 @@ def main():
         with TestClient(app) as client:
             service = app.state.service
             harness = (client, fetcher, service, model)
+            if args.suite.startswith("reprocess-"):
+                from test_relation_reprocessing import (
+                    test_batches_resume_after_cancel_and_never_hydrate_archived_documents,
+                    test_changed_code_rule_is_stale_before_reprocessing_and_preview_is_non_destructive,
+                    test_changed_selected_document_version_invalidates_result_without_loading_body,
+                    test_concurrent_request_id_reuses_one_maintenance_job,
+                    test_current_unchanged_pair_keeps_usable_report_without_bookkeeping_invalidation,
+                    test_failed_batch_rolls_back_changes_and_cursor_together,
+                    test_generic_old_lead_is_rejected_without_deleting_history_or_notifications,
+                    test_new_rule_supersedes_partial_job_without_touching_remaining_candidates,
+                    test_operator_terminal_candidate_is_counted_but_not_rewritten,
+                    test_resume_excludes_late_admissions_and_reports_deleted_candidates,
+                )
+                with MonkeyPatch.context() as patch:
+                    if args.suite == "reprocess-noop":
+                        test_current_unchanged_pair_keeps_usable_report_without_bookkeeping_invalidation(harness)
+                    elif args.suite == "reprocess-terminal":
+                        test_operator_terminal_candidate_is_counted_but_not_rewritten(harness, "rejected")
+                    elif args.suite == "reprocess-concurrent":
+                        test_concurrent_request_id_reuses_one_maintenance_job(harness)
+                    elif args.suite == "reprocess-positive":
+                        test_changed_code_rule_is_stale_before_reprocessing_and_preview_is_non_destructive(harness, patch)
+                    elif args.suite == "reprocess-negative":
+                        test_generic_old_lead_is_rejected_without_deleting_history_or_notifications(harness)
+                    elif args.suite == "reprocess-batches":
+                        test_batches_resume_after_cancel_and_never_hydrate_archived_documents(harness, patch)
+                    elif args.suite == "reprocess-rollback":
+                        test_failed_batch_rolls_back_changes_and_cursor_together(harness, patch)
+                    elif args.suite == "reprocess-rule-change":
+                        test_new_rule_supersedes_partial_job_without_touching_remaining_candidates(harness, patch)
+                    elif args.suite == "reprocess-versions":
+                        test_changed_selected_document_version_invalidates_result_without_loading_body(harness)
+                    else:
+                        test_resume_excludes_late_admissions_and_reports_deleted_candidates(harness)
+                print("PostgreSQL:", args.suite, "passed without model, source or mail calls.")
+                return
             if args.suite.startswith("runtime-"):
                 from test_relation_runtime import (
                     configure_local_relation,
