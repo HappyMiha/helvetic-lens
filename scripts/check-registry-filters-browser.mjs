@@ -66,6 +66,7 @@ async function waitFor(check, message) {
 let locale = "en-CH";
 let role = "viewer";
 let returnJourney=false, hideReturnRow=false;
+let registryFailure="", registryDelay=false;
 const row = {
   id: "qa-row",
   event_id: "qa-event",
@@ -135,6 +136,8 @@ try {
       };
     else if (url.pathname === "/api/jobs") body = [];
     else if (url.pathname === "/api/registry") {
+      const failure=registryFailure;
+      if(registryDelay) await sleep(350);
       const empty = url.searchParams.get("q") === "no-results";
       body = {
         view: url.searchParams.get("view"),
@@ -147,8 +150,9 @@ try {
               },
             ],
         count: empty ? 0 : returnJourney ? 20 : 1,
-        next_cursor: url.searchParams.has("cursor") ? null : "next",
+        next_cursor: empty || url.searchParams.has("cursor") ? null : "next",
       };
+      if(failure) {code=503;body={detail:failure};}
     } else if (/^\/api\/regulatory-versions\/qa-native-\d+\/page$/.test(url.pathname)) {
       body={id:url.pathname.split('/')[3],law_id:null,law_name:'Synthetic return evidence',native:true,origin:'official_connector',created_at:'2026-09-06T08:00:00Z',source_url:'https://example.invalid/source',content_type:'text/html',artifact_url:null,declared_date:null,synthetic:true,identity_json:{language:'de'},passages:[{id:'p1',text:'Synthetic saved evidence for registry return.',page:1}],passage_count:1,plain_text:null,pagination:{offset:0,end:1,total:1,size:50,mode:'passages',next_offset:null,previous_offset:null,target_found:null}};
     } else {
@@ -478,9 +482,65 @@ try {
   await waitFor(()=>evaluate(cdp,`!!document.querySelector('[data-registry-return-missing]')`),'Removed record lacked honest return notice');
   assert.equal(await evaluate(cdp,'location.pathname+location.search'),returnRoute,'Missing record rewrote filters');
   assert.equal(await evaluate(cdp,`document.querySelectorAll('[data-registry-row]').length`),19);
+  returnJourney=false; hideReturnRow=false; role='viewer';
+  row.kind='unclassified_document'; row.lifecycle='in_force';
+  for(locale of ['de-CH','fr-CH','it-CH','rm-CH','en-CH'])
+    for(const width of [390,1440]) {
+      const path=width===390?'/registry':'/discover';
+      const route=`${path}?locale=${locale}&q=recovery&cursor=saved-page`;
+      await cdp.send('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<500});
+      registryFailure='Synthetic unavailable registry';
+      await cdp.send('Page.navigate',{url:base+route});
+      await waitFor(()=>evaluate(cdp,`!!document.querySelector('[data-registry-load-error]')`),'Initial load failure lacks recovery');
+      assert.equal(await evaluate(cdp,`document.querySelectorAll('main article,main .empty-state').length`),0,'Failure looked like a successful empty result');
+      assert.equal(await evaluate(cdp,`document.querySelector('[data-registry-load-error] details').open`),false,'Raw technical error should be disclosed on demand');
+      const timeOrigin=await evaluate(cdp,'performance.timeOrigin');
+      const requestCount=()=>requests.filter(r=>r.path.startsWith('/api/registry?')).length;
+      const beforeRetry=requestCount(); registryFailure=''; registryDelay=true;
+      await click('[data-registry-refresh]');
+      assert.ok(await evaluate(cdp,`document.querySelector('[data-registry-refresh]').disabled`),'Retry does not expose its pending state');
+      await evaluate(cdp,`document.querySelector('[data-registry-refresh]').click()`);
+      await waitFor(()=>evaluate(cdp,`!!document.querySelector('main article') && !document.querySelector('[data-registry-load-error]') && !document.querySelector('[data-registry-refresh]').disabled`),'Retry failed to restore results');
+      registryDelay=false;
+      assert.equal(requestCount(),beforeRetry+1,'Pending retry issued duplicate requests');
+      assert.equal(await evaluate(cdp,'location.pathname+location.search'),route,'Retry changed the result query');
+      assert.equal(await evaluate(cdp,'performance.timeOrigin'),timeOrigin,'Retry reloaded the document');
+      assert.ok(await evaluate(cdp,`!document.querySelector('main article').innerText.includes('unclassified_document') && !document.querySelector('main article').innerText.includes('in force')`),'Record metadata still exposes raw lifecycle/type enums');
+      assert.ok(await evaluate(cdp,`!!document.querySelector('[data-registry-source-health]') && !!document.querySelector('[data-registry-health-help]')`),'Recorded source status lacks its scope explanation');
+      registryFailure='Synthetic refresh failed';
+      await click('[data-registry-refresh]');
+      await waitFor(()=>evaluate(cdp,`!!document.querySelector('[data-registry-load-error]')`),'Refresh error not shown');
+      assert.equal(await evaluate(cdp,`document.querySelectorAll('main article').length`),1,'A refresh failure erased readable saved results');
+      registryFailure='';
+      await click('[data-registry-first-page]');
+      await waitFor(()=>evaluate(cdp,`!new URLSearchParams(location.search).has('cursor') && !document.querySelector('[data-registry-load-error]')`),'First-page recovery failed');
+      assert.equal(await evaluate(cdp,`new URLSearchParams(location.search).get('q')`),'recovery','First-page recovery cleared search');
+      registryFailure='Synthetic filtered request failed';
+      await click('[data-registry-refresh]');
+      await waitFor(()=>evaluate(cdp,`!!document.querySelector('[data-registry-error-clear]')`),'Error filter recovery missing');
+      registryFailure='';
+      await click('[data-registry-error-clear]');
+      await waitFor(()=>evaluate(cdp,`!new URLSearchParams(location.search).has('q') && !document.querySelector('[data-registry-load-error]')`),'Filter clearing failed');
+      assert.equal(await evaluate(cdp,'location.pathname'),path); assert.equal(await evaluate(cdp,`new URLSearchParams(location.search).get('locale')`),locale);
+      await cdp.send('Page.navigate',{url:`${base}${path}?locale=${locale}&q=no-results`});
+      await waitFor(()=>evaluate(cdp,`!!document.querySelector('main .empty-state')`),'Successful empty fixture missing');
+      registryFailure='Synthetic empty refresh failed';
+      await click('[data-registry-refresh]');
+      await waitFor(()=>evaluate(cdp,`!!document.querySelector('[data-registry-load-error]')`),'Empty refresh failure missing');
+      assert.equal(await evaluate(cdp,`document.querySelectorAll('main .empty-state').length`),0,'Failed empty refresh claimed no developments');
+      assert.ok(await evaluate(cdp,`document.documentElement.scrollWidth<=innerWidth+1`),'Recovery controls overflow the viewport');
+      assert.ok(await evaluate(cdp,`!document.querySelector('main').innerText.includes('registryRecovery.')`),'Recovery labels untranslated');
+      if(locale==='en-CH') {
+        await evaluate(cdp,`document.querySelector('[data-registry-load-error]').scrollIntoView({block:'center'})`);
+        await mkdir(join(root,'test-results/registry-filters'),{recursive:true});
+        await writeFile(join(root,`test-results/registry-filters/recovery-${width}.png`),Buffer.from((await cdp.send('Page.captureScreenshot',{format:'png'})).data,'base64'));
+      }
+      registryFailure='';
+    }
+  assert.equal(requests.filter(r=>r.path.startsWith('/api/registry')&&r.method!=='GET').length,0,'Read recovery mutated registry data');
   assert.deepEqual(exceptions, []);
   console.log(
-    "Registry production UI: 20 required localized journeys (five locales x mobile/desktop x Monitoring/Discover), progressive controls, date presets, chips, URL/back state, empty recovery, unknown deep-link values, cursor reset and viewer/admin controls pass. Twenty additional long-list evidence round trips retain filtered cursors, exact focus and native Back; missing-row recovery is explicit. All APIs intercepted; no production data, AI or messages touched.",
+    "Registry production UI: 20 required localized journeys (five locales x mobile/desktop x Monitoring/Discover), progressive controls, date presets, chips, URL/back state, empty recovery, unknown deep-link values, cursor reset and viewer/admin controls pass. Twenty additional long-list evidence round trips retain filtered cursors, exact focus and native Back; missing-row recovery is explicit. Ten error-recovery journeys verify initial/cached/empty failures, deduplicated same-query retry, first-page/filter recovery and recorded-health explanations. All APIs intercepted; no production data, AI or messages touched.",
   );
 } catch (error) {
   console.error({

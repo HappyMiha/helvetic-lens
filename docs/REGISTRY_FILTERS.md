@@ -96,3 +96,39 @@ The suite preserves filters/cursor, consumes the marker and checks a removed rec
 on a newly fetched page. The original 20 registry/filter journeys and ten paginated
 saved-evidence journeys remain required. These are isolated Chromium fixtures, not
 physical-device, screen-reader, native-language or independent user acceptance.
+
+
+## Failed loads and recorded source health (6 September 2026)
+
+A failed initial request is not rendered as an empty result. The recovery panel
+explains that the latest list could not be checked, with provider/error details in
+an optional disclosure. A stable Refresh/Try again control repeats the same resource
+request without navigation, preserving search, filters and cursor. Pending reloads
+are disabled/deduplicated by the existing resource store. Returning to the first
+page is explicit and preserves filters; clearing filters is a separate action.
+
+After a failed refresh, previously loaded rows stay available to inspect, labelled
+as unrefreshed. An earlier successful zero-result response receives its own warning
+rather than repeating the ordinary empty-result message. The loaded timestamp is
+explicitly the UI result-load time, never an official publication or source-update
+time. An in-flight refresh has a visible status and does not claim success early.
+No scan, source activation, inference or read-state mutation is triggered by refresh.
+
+Row document kinds, lifecycle states, languages and recorded health use the existing
+five-language vocabulary; language names remain native names. Unrecognized metadata
+has a neutral fallback rather than exposing a raw enum as a label. Official dates,
+provenance and arbitrary server-authored descriptions are not newly translated.
+
+The row's connector-health field is taken from the persisted event by RegistryReader
+(and is unknown for watches without an event). The UI therefore explicitly labels it
+as **recorded source status**, with one list-level explanation that it is not a live
+health check or evidence of complete source coverage. Refreshing the list does not
+refresh the connector. This is not a substitute for the future current-health,
+coverage/degradation, identity-mismatch and administrator-repair journeys.
+
+Ten additional isolated browser journeys (five locales × mobile/desktop) exercise
+initial failure, delayed same-query retry, duplicate-click suppression, retained
+rows after refresh failure, explicit first-page/filter recovery, stale empty results,
+localized metadata/health explanations and responsive controls. All registry recovery
+requests are GETs; the existing filter and reading-return journeys still run. This
+verifies client recovery, not the availability or completeness of actual sources.

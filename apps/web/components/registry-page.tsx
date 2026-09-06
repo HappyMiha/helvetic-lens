@@ -13,6 +13,7 @@ import {
   Eye,
   FileSearch,
   Search,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -155,6 +156,11 @@ function filterValue(key: string, value: string, t: (key: string) => string) {
     return t(`status.${value}`);
   if (value === "fedlex") return "Fedlex";
   return t(VALUE_LABELS[value] || "registryFilters.unavailable");
+}
+
+function recordValue(key:string,value:string,t:(key:string)=>string) {
+  return value && FILTERS.find(([name])=>name===key)?.[2].some(option=>option===value)
+    ? filterValue(key,value,t) : t("registryRecovery.unknownMetadata");
 }
 
 const GROUP_LABELS: Record<string, string> = {
@@ -554,11 +560,29 @@ export function RegistryPage({
         </section>
 
         {returnMissing && <p role="status" className="card p-4" data-registry-return-missing>{t("registryReturn.missing")}</p>}
-        <ErrorNote message={actionError || resource.error} />
+        <ErrorNote message={actionError} />
+        {resource.error && <section className="card p-5 mb-4" role="alert" data-registry-load-error>
+          <h2 className="text-lg mt-0">{t("registryRecovery.failed")}</h2>
+          <p>{t(resource.data ? resource.data.count ? "registryRecovery.retained" : "registryRecovery.retainedEmpty" : "registryRecovery.unavailable")}</p>
+          <p className="muted">{t("registryRecovery.help")}</p>
+          <details><summary className="min-h-11 py-3 cursor-pointer">{t("registryRecovery.details")}</summary><p className="break-words">{resource.error}</p></details>
+          <div className="flex flex-wrap gap-2">
+            {params.get("cursor") && <Button variant="outline" className="min-h-11 h-auto whitespace-normal" data-registry-first-page onClick={()=>update({cursor:""},false)}>{t("registryRecovery.firstPage")}</Button>}
+            {activeCount>0 && <Button variant="outline" className="min-h-11 h-auto whitespace-normal" data-registry-error-clear onClick={clearFilters}>{t("registryFilters.clearEmpty")}</Button>}
+          </div>
+        </section>}
+        <div className="flex flex-wrap items-center gap-3 mb-4" data-registry-refresh-bar>
+          <Button variant="outline" className="min-h-11" data-registry-refresh disabled={resource.validating || resource.loading} onClick={()=>void resource.reload()}>
+            <RefreshCw size={16} aria-hidden="true" /> {t(resource.validating ? "registryRecovery.refreshing" : resource.error ? "gettingStarted.retry" : "registryRecovery.refresh")}
+          </Button>
+          <p role="status" className="text-sm muted m-0" data-registry-load-state>
+            {resource.validating ? t("registryRecovery.refreshing") : resource.error ? t("registryRecovery.notCurrent") : resource.updatedAt ? t("registryRecovery.loadedAt",{date:dateTime(new Date(resource.updatedAt).toISOString())}) : t("registry.loading")}
+          </p>
+        </div>
         {resource.loading && !resource.data && (
           <Loading text={t("registry.loading")} />
         )}
-        {!resource.loading && resource.data?.count === 0 && (
+        {!resource.loading && !resource.error && resource.data?.count === 0 && (
           <section className="empty-state card">
             <FileSearch size={28} />
             <h2>{t("registry.empty")}</h2>
@@ -575,6 +599,7 @@ export function RegistryPage({
             )}
           </section>
         )}
+        {!!resource.data?.count && <p className="text-sm muted" data-registry-health-help>{t("registryRecovery.healthHelp")}</p>}
         <div className="space-y-6">
           {resource.data?.groups.map((group) => (
             <section key={group.name}>
@@ -603,8 +628,8 @@ export function RegistryPage({
                         </div>
                         <h3 className="text-lg m-0 mb-1">{row.title}</h3>
                         <p className="muted m-0 text-sm">
-                          {row.authority} · {label(row.kind)} ·{" "}
-                          {row.languages.join(", ")} · {label(row.lifecycle)}
+                          {row.authority} · {recordValue("kind",row.kind,t)} ·{" "}
+                          {row.languages.map(value=>recordValue("language",value,t)).join(", ") || t("registryRecovery.unknownMetadata")} · {recordValue("lifecycle",row.lifecycle,t)}
                         </p>
                         {row.kind === "official_notice" && (
                           <p className="muted m-0 mt-2 text-xs">
@@ -618,8 +643,8 @@ export function RegistryPage({
                             date: dateTime(row.detected_at),
                           })}
                         </strong>
-                        <div className="muted">
-                          {row.connector} · {label(row.connector_health)}
+                        <div className="muted" data-registry-source-health>
+                          {row.connector} · {t("registryRecovery.recordedHealth",{status:recordValue("health",row.connector_health,t)})}
                         </div>
                       </div>
                     </div>
