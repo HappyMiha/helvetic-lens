@@ -124,7 +124,7 @@ from test_topic_reviews import (
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("digest-quiet-resume", "digest-quiet-unsubscribe", "digest-quiet-boundary", "digest-quiet-save", "digest-local-schedule", "digest-schedule-migration", "feed-topic-sparse", "feed-topic-scope", "feed-watch-pages", "feed-watch-scope", "evidence-pages", "evidence-pages-native", "evidence-text-pages", "source-review", "source-review-scope", "source-review-migration", "milestone-native", "milestone-migration", "milestone-race", "feed-readiness-history", "feed-readiness-bounds", "feed-readiness-sources", "onboarding-state", "onboarding-migration", "onboarding-race", "assistant-context", "assistant-context-private", "answer-context", "answer-context-private", "topic-coverage-empty", "topic-coverage-state", "topic-coverage-scope", "topic-coverage-bounds", "topic-duplicates", "topic-duplicates-scope", "topic-duplicates-bounds", "history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked", "monitoring-context", "monitoring-context-activate"), default="history")
+    parser.add_argument("--suite", choices=("registry-watches", "registry-events", "registry-search", "registry-dates", "registry-scope", "registry-migration", "digest-quiet-resume", "digest-quiet-unsubscribe", "digest-quiet-boundary", "digest-quiet-save", "digest-local-schedule", "digest-schedule-migration", "feed-topic-sparse", "feed-topic-scope", "feed-watch-pages", "feed-watch-scope", "evidence-pages", "evidence-pages-native", "evidence-text-pages", "source-review", "source-review-scope", "source-review-migration", "milestone-native", "milestone-migration", "milestone-race", "feed-readiness-history", "feed-readiness-bounds", "feed-readiness-sources", "onboarding-state", "onboarding-migration", "onboarding-race", "assistant-context", "assistant-context-private", "answer-context", "answer-context-private", "topic-coverage-empty", "topic-coverage-state", "topic-coverage-scope", "topic-coverage-bounds", "topic-duplicates", "topic-duplicates-scope", "topic-duplicates-bounds", "history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked", "monitoring-context", "monitoring-context-activate"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -145,6 +145,29 @@ def main():
         with TestClient(app) as client:
             service = app.state.service
             harness = (client, fetcher, service, model)
+            if args.suite.startswith("registry-"):
+                from test_registry_event_pages import (
+                    test_equal_time_registry_pages_do_not_hydrate_event_or_work_payloads,
+                    test_event_sql_bounds_zurich_dates_and_preserves_selected_date_metadata,
+                    test_privileged_event_page_still_scopes_work_visibility_and_personal_read_state,
+                    test_registry_keyset_index_migration_preserves_populated_events,
+                    test_related_watch_filter_agrees_with_details_and_excludes_foreign_watches,
+                    test_sparse_unicode_search_crosses_batches_and_only_expands_visible_details,
+                )
+                checks = {
+                    "registry-watches": test_related_watch_filter_agrees_with_details_and_excludes_foreign_watches,
+                    "registry-events": test_equal_time_registry_pages_do_not_hydrate_event_or_work_payloads,
+                    "registry-dates": test_event_sql_bounds_zurich_dates_and_preserves_selected_date_metadata,
+                    "registry-scope": test_privileged_event_page_still_scopes_work_visibility_and_personal_read_state,
+                    "registry-migration": test_registry_keyset_index_migration_preserves_populated_events,
+                }
+                if args.suite == "registry-search":
+                    with MonkeyPatch.context() as patch:
+                        test_sparse_unicode_search_crosses_batches_and_only_expands_visible_details(harness, patch)
+                else:
+                    checks[args.suite](harness)
+                print("PostgreSQL:", args.suite, "passed without event/work JSON hydration or model calls.")
+                return
             if args.suite.startswith("evidence-pages") or args.suite == "evidence-text-pages":
                 from test_evidence_pages import (
                     test_large_evidence_exact_target_and_sql_pages_without_full_orm_load,

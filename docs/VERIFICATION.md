@@ -1,5 +1,14 @@
 # Verification record
 
+## Registry event SQL pages — 6 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl-099-registry-event-pages`, based on `86416b3`. Replaced full-history ORM hydration in `view=events` with scalar SQL filtering and timestamp/ID keysets. At most 100 candidates per select; retain one page plus matching lookahead. Unicode literal search scans successive bounded batches rather than dropping later matches. Dates/links expand only returned rows; exact evidence access is unchanged. [Contract and explicit limits](REGISTRY.md#event-list-sql-paging--6-september-2026).
+- **33 tests pass** across `test_registry_event_pages.py`, `test_registry.py`, `test_evidence_navigation.py` and `test_corpus_evidence.py`. Six new scenarios cover 231 equal-time records without skips/duplicates or JSON hydration, a sparse Unicode/literal-wildcard search beyond 200 newer candidates, a 23-hour Zurich calendar range and official dates, privileged tenant/personal-read isolation, both directions of related paused watches with foreign exclusion, and populated index downgrade/upgrade. The first implementation incorrectly treated global relation/event/expression models as owner-scoped; model inspection corrected that before the final tests. One existing Starlette/httpx deprecation warning remains.
+- All **six scenarios pass independently on PostgreSQL 16.15**, using the empty-local-database guard in `scripts/check_inbox_history_postgres.py` (`registry-events`, `registry-search`, `registry-dates`, `registry-scope`, `registry-watches`, `registry-migration`). Disposable loopback containers with temporary data only; no working databases, provider calls, messages or deployments. The populated migration preserves all event IDs and verifies the exact composite-index columns after downgrade/upgrade.
+- Ruff and `git diff --check` pass. No frontend contract/UI changes and no new browser/build claim for this backend slice. The previous registry browser evidence remains recorded separately.
+- HL-099 stays **IN PROGRESS**: monitored-document and timeline materialization, per-visible-work lookups/fan-out, total no-match search/planner cost, cross-request snapshot/late-admission semantics and intended-host concurrency/capacity gates remain open. The index supports ordering but does not guarantee the planner avoids every scan or establish 100-user capacity.
+
+
 
 ## Registry failure recovery — 6 September 2026 (HappyDucky02)
 

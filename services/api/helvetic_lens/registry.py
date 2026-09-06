@@ -6,14 +6,14 @@ import base64
 import json
 import unicodedata
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session
 
 from .config import DomainError
-from .corpus_access import event_evidence_links
+from .corpus_access import event_evidence_links, visible
 from .models import (
     Comparison,
     DocumentWatch,
@@ -88,7 +88,7 @@ def _decode_cursor(value: str) -> tuple[datetime, str]:
     try:
         payload = value + "=" * (-len(value) % 4)
         timestamp, item_id = json.loads(base64.urlsafe_b64decode(payload).decode())
-        return datetime.fromisoformat(timestamp), str(item_id)
+        return aware_utc(datetime.fromisoformat(timestamp)), str(item_id)
     except (ValueError, TypeError, json.JSONDecodeError) as exc:
         raise DomainError("The registry cursor is invalid.", 422, "invalid_registry_cursor") from exc
 
@@ -132,7 +132,8 @@ class RegistryReader:
             item.event_id: item
             for item in session.scalars(
                 select(RegulatoryEventUserState).where(
-                    RegulatoryEventUserState.principal_key == self.principal_key
+                    RegulatoryEventUserState.organization_id == self.organization_id,
+                    RegulatoryEventUserState.principal_key == self.principal_key,
                 )
             )
         }
@@ -142,7 +143,15 @@ class RegistryReader:
         if not entity_ids:
             return {}
         result: dict[str, list[dict]] = {}
-        for item in session.scalars(select(RegulatoryDate).where(RegulatoryDate.entity_id.in_(entity_ids))):
+        for item in session.execute(
+            select(
+                RegulatoryDate.kind,
+                RegulatoryDate.date_value,
+                RegulatoryDate.precision,
+                RegulatoryDate.provenance,
+                RegulatoryDate.source_url,
+            ).where(RegulatoryDate.entity_id.in_(entity_ids))
+        ):
             result.setdefault(item.kind, []).append(
                 {
                     "value": item.date_value,
@@ -155,8 +164,8 @@ class RegistryReader:
 
     def _linked_laws(self, session: Session, work_id: str) -> list[dict]:
         related = {work_id}
-        for relation in session.scalars(
-            select(RegulatoryRelation).where(
+        for relation in session.execute(
+            select(RegulatoryRelation.subject_work_id, RegulatoryRelation.object_work_id).where(
                 or_(
                     RegulatoryRelation.subject_work_id == work_id,
                     RegulatoryRelation.object_work_id == work_id,
@@ -167,12 +176,23 @@ class RegistryReader:
             related.add(relation.object_work_id)
         law_ids = list(
             session.scalars(
-                select(LegacyDocumentMapping.law_id).where(LegacyDocumentMapping.work_id.in_(related))
+                select(LegacyDocumentMapping.law_id).where(
+                    LegacyDocumentMapping.work_id.in_(related),
+                    visible(LegacyDocumentMapping, self.organization_id),
+                )
             )
         )
         if not law_ids:
             return []
-        watches = session.scalars(select(DocumentWatch).where(DocumentWatch.law_id.in_(law_ids))).all()
+        watches = session.scalars(
+            select(DocumentWatch)
+            .join(Law, Law.id == DocumentWatch.law_id)
+            .where(
+                DocumentWatch.law_id.in_(law_ids),
+                DocumentWatch.organization_id == self.organization_id,
+                visible(Law, self.organization_id),
+            )
+        ).all()
         return [
             {
                 "law_id": watch.law_id,
@@ -184,53 +204,188 @@ class RegistryReader:
             for watch in watches
         ]
 
-    def _event_rows(self, session: Session) -> list[dict]:
-        states = self._states(session)
-        rows = []
-        for event, work in session.execute(
-            select(RegulatoryEvent, RegulatoryWork).join(
-                RegulatoryWork, RegulatoryWork.id == RegulatoryEvent.work_id
+    def _event_statement(self, filters, custom_start, custom_end):
+        # Scalar projection: a list must never hydrate event evidence or work metadata.
+        read = (
+            select(RegulatoryEventUserState.id)
+            .where(
+                RegulatoryEventUserState.organization_id == self.organization_id,
+                RegulatoryEventUserState.principal_key == self.principal_key,
+                RegulatoryEventUserState.event_id == RegulatoryEvent.id,
+                RegulatoryEventUserState.state == "read",
             )
+            .correlate(RegulatoryEvent)
+            .exists()
+        )
+        related = (
+            select(RegulatoryRelation.id)
+            .where(
+                or_(
+                    and_(
+                        RegulatoryRelation.subject_work_id == RegulatoryWork.id,
+                        RegulatoryRelation.object_work_id == LegacyDocumentMapping.work_id,
+                    ),
+                    and_(
+                        RegulatoryRelation.object_work_id == RegulatoryWork.id,
+                        RegulatoryRelation.subject_work_id == LegacyDocumentMapping.work_id,
+                    ),
+                ),
+            )
+            .correlate(RegulatoryWork, LegacyDocumentMapping)
+            .exists()
+        )
+        watched = (
+            select(DocumentWatch.id)
+            .join(Law, Law.id == DocumentWatch.law_id)
+            .join(LegacyDocumentMapping, LegacyDocumentMapping.law_id == Law.id)
+            .where(
+                DocumentWatch.organization_id == self.organization_id,
+                visible(Law, self.organization_id),
+                visible(LegacyDocumentMapping, self.organization_id),
+                or_(LegacyDocumentMapping.work_id == RegulatoryWork.id, related),
+            )
+            .correlate(RegulatoryWork)
+            .exists()
+        )
+        lifecycle = func.coalesce(func.nullif(RegulatoryWork.lifecycle_status, ""), "unknown")
+        statement = (
+            select(
+                RegulatoryEvent.id.label("event_id"),
+                RegulatoryEvent.work_id,
+                RegulatoryEvent.document_version_id,
+                RegulatoryEvent.event_type,
+                RegulatoryEvent.detected_at,
+                RegulatoryEvent.connector,
+                RegulatoryEvent.connector_health,
+                RegulatoryEvent.impact,
+                RegulatoryEvent.analysis_state,
+                RegulatoryEvent.provenance_method,
+                RegulatoryEvent.source_url,
+                RegulatoryWork.title,
+                RegulatoryWork.authority,
+                RegulatoryWork.kind,
+                RegulatoryWork.stable_official_url,
+                lifecycle.label("lifecycle"),
+                read.label("read"),
+                watched.label("watched"),
+            )
+            .join(RegulatoryWork, RegulatoryWork.id == RegulatoryEvent.work_id)
+            .where(visible(RegulatoryWork, self.organization_id))
+        )
+        for value, column in (
+            (filters.authority, RegulatoryWork.authority),
+            (filters.connector, RegulatoryEvent.connector),
+            (filters.kind, RegulatoryWork.kind),
+            (filters.lifecycle, lifecycle),
+            (filters.impact, RegulatoryEvent.impact),
+            (filters.health, RegulatoryEvent.connector_health),
         ):
-            expressions = session.scalars(
-                select(RegulatoryExpression).where(RegulatoryExpression.work_id == work.id)
-            ).all()
-            entity_ids = [work.id, event.id, *(item.id for item in expressions)]
-            if event.document_version_id:
-                entity_ids.append(event.document_version_id)
-            dates = self._dates(session, entity_ids)
-            linked = self._linked_laws(session, work.id)
-            state = states.get(event.id)
-            rows.append(
-                {
-                    "id": f"event:{event.id}",
-                    "record_type": "event",
-                    "event_id": event.id,
-                    "event_type": event.event_type,
-                    "detected_at": _iso(event.detected_at),
-                    "work_id": work.id,
-                    "law_id": linked[0]["law_id"] if linked else None,
-                    "title": work.title or "Untitled regulatory document",
-                    "authority": work.authority,
-                    "connector": event.connector,
-                    "connector_health": event.connector_health,
-                    "kind": work.kind,
-                    "languages": sorted({item.language for item in expressions}),
-                    "lifecycle": work.lifecycle_status or "unknown",
-                    "impact": event.impact,
-                    "analysis_state": event.analysis_state,
-                    "read": bool(state and state.state == "read"),
-                    "watched": bool(linked),
-                    "why": f"{event.event_type.replace('_', ' ').title()} reported by {event.provenance_method.replace('_', ' ')}.",
-                    "linked_laws": linked,
-                    "official_dates": dates,
-                    "source_url": event.source_url or work.stable_official_url,
-                    "evidence_url": None,
-                    "timeline_url": linked[0]["timeline_url"] if linked else None,
-                    "comparison_url": None,
-                }
+            if value:
+                statement = statement.where(column == value)
+        if filters.read:
+            statement = statement.where(read if filters.read == "read" else ~read)
+        if filters.watched:
+            statement = statement.where(watched if filters.watched == "watched" else ~watched)
+        if filters.language:
+            statement = statement.where(
+                select(RegulatoryExpression.id)
+                .where(
+                    RegulatoryExpression.work_id == RegulatoryWork.id,
+                    RegulatoryExpression.language == filters.language,
+                )
+                .correlate(RegulatoryWork)
+                .exists()
             )
+        if custom_start:
+            statement = statement.where(
+                RegulatoryEvent.detected_at
+                >= datetime.combine(custom_start, time.min, ZURICH).astimezone(UTC)
+            )
+        if custom_end and custom_end < date.max:
+            statement = statement.where(
+                RegulatoryEvent.detected_at
+                < datetime.combine(custom_end + timedelta(days=1), time.min, ZURICH).astimezone(UTC)
+            )
+        return statement.order_by(RegulatoryEvent.detected_at.desc(), RegulatoryEvent.id.desc())
+
+    def _event_rows(self, session: Session, filters: RegistryFilters, custom_start, custom_end) -> list[dict]:
+        statement = self._event_statement(filters, custom_start, custom_end)
+        cursor = None
+        if filters.cursor:
+            at, row_id = _decode_cursor(filters.cursor)
+            if not row_id.startswith("event:"):
+                raise DomainError("The registry cursor is invalid.", 422, "invalid_registry_cursor")
+            cursor = (at, row_id.removeprefix("event:"))
+        rows = []
+        while len(rows) <= filters.limit:
+            query = statement
+            if cursor:
+                query = query.where(
+                    or_(
+                        RegulatoryEvent.detected_at < cursor[0],
+                        and_(RegulatoryEvent.detected_at == cursor[0], RegulatoryEvent.id < cursor[1]),
+                    )
+                )
+            size = 100 if filters.query else min(100, filters.limit + 1 - len(rows))
+            batch = session.execute(query.limit(size)).mappings().all()
+            if not batch:
+                break
+            work_ids = list({row["work_id"] for row in batch})
+            languages = {}
+            for work_id, language in session.execute(
+                select(RegulatoryExpression.work_id, RegulatoryExpression.language)
+                .where(RegulatoryExpression.work_id.in_(work_ids))
+                .distinct()
+            ):
+                languages.setdefault(work_id, []).append(language)
+            for item in batch:
+                row = dict(item)
+                row.update(
+                    id=f"event:{item['event_id']}",
+                    record_type="event",
+                    title=item["title"] or "Untitled regulatory document",
+                    detected_at=_iso(item["detected_at"]),
+                    languages=sorted(languages.get(item["work_id"], [])),
+                )
+                # Preserve Unicode/accent-insensitive literal search on every candidate.
+                if self._matches(row, filters):
+                    rows.append(row)
+                    if len(rows) > filters.limit:
+                        break
+            cursor = (aware_utc(batch[-1]["detected_at"]), batch[-1]["event_id"])
+            if len(batch) < size:
+                break
         return rows
+
+    def _event_details(self, session: Session, rows: list[dict]):
+        # Hydrate descriptive links/dates only for returned rows, never the lookahead.
+        linked_by_work = {}
+        expressions_by_work = {}
+        for row in rows:
+            work_id = row["work_id"]
+            if work_id not in linked_by_work:
+                linked_by_work[work_id] = self._linked_laws(session, work_id)
+                expressions_by_work[work_id] = list(
+                    session.scalars(
+                        select(RegulatoryExpression.id).where(RegulatoryExpression.work_id == work_id)
+                    )
+                )
+            linked = linked_by_work[work_id]
+            entity_ids = [work_id, row["event_id"], *expressions_by_work[work_id]]
+            version_id = row.pop("document_version_id")
+            if version_id:
+                entity_ids.append(version_id)
+            row.update(
+                law_id=linked[0]["law_id"] if linked else None,
+                why=f"{row['event_type'].replace('_', ' ').title()} reported by {row.pop('provenance_method').replace('_', ' ')}.",
+                linked_laws=linked,
+                official_dates=self._dates(session, entity_ids),
+                source_url=row["source_url"] or row.pop("stable_official_url"),
+                evidence_url=None,
+                timeline_url=linked[0]["timeline_url"] if linked else None,
+                comparison_url=None,
+            )
+            row.pop("stable_official_url", None)
 
     def _monitored_rows(self, session: Session) -> list[dict]:
         rows = []
@@ -312,14 +467,16 @@ class RegistryReader:
     @staticmethod
     def _matches(row: dict, filters: RegistryFilters) -> bool:
         query = search_text(filters.query)
-        haystack = search_text(" ".join(
-            [
-                row.get("title") or "",
-                row.get("authority") or "",
-                row.get("event_type") or "",
-                *(row.get("languages") or []),
-            ]
-        ))
+        haystack = search_text(
+            " ".join(
+                [
+                    row.get("title") or "",
+                    row.get("authority") or "",
+                    row.get("event_type") or "",
+                    *(row.get("languages") or []),
+                ]
+            )
+        )
         return (
             (not query or query in haystack)
             and (not filters.authority or row["authority"] == filters.authority)
@@ -340,7 +497,11 @@ class RegistryReader:
         custom_end = _parse_day(filters.end, "end")
         if custom_start and custom_end and custom_start > custom_end:
             raise DomainError("The start date must precede the end date.", 422, "invalid_registry_date")
-        rows = self._monitored_rows(session) if filters.view == "monitored" else self._event_rows(session)
+        rows = (
+            self._monitored_rows(session)
+            if filters.view == "monitored"
+            else self._event_rows(session, filters, custom_start, custom_end)
+        )
         rows = [row for row in rows if self._matches(row, filters)]
         rows = [
             row
@@ -362,10 +523,13 @@ class RegistryReader:
             ]
         selected = rows[: filters.limit]
         if filters.view == "events":
+            self._event_details(session, selected)
             # Only resolve links for the visible page, without loading version bodies.
             for start in range(0, len(selected), 100):
-                batch = selected[start:start + 100]
-                links = event_evidence_links(session, self.organization_id, [row["event_id"] for row in batch])
+                batch = selected[start : start + 100]
+                links = event_evidence_links(
+                    session, self.organization_id, [row["event_id"] for row in batch]
+                )
                 for row in batch:
                     row["evidence_url"] = links.get(row["event_id"])
         for row in selected:
@@ -473,9 +637,7 @@ class RegistryReader:
             other_work_id = item.object_work_id if outgoing else item.subject_work_id
             other_work = session.get(RegulatoryWork, other_work_id)
             other_mapping = session.scalar(
-                select(LegacyDocumentMapping).where(
-                    LegacyDocumentMapping.work_id == other_work_id
-                )
+                select(LegacyDocumentMapping).where(LegacyDocumentMapping.work_id == other_work_id)
             )
             other_law = session.get(Law, other_mapping.law_id) if other_mapping else None
             relation_rows.append(

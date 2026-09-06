@@ -25,7 +25,7 @@ When the connector has not supplied an official date, the UI displays `unknown`.
 
 `GET /api/registry` accepts `view=monitored|events`, `q`, `limit`, `cursor`, `start`, `end`, and filters for authority, connector, document kind, language, lifecycle, impact, watched state, read state, and connector health. Results use a stable descending `(detected_at, id)` order and an opaque cursor. The response includes both a flat page and time-grouped rows for direct rendering.
 
-`PATCH /api/registry/events/{event_id}/read` stores read state per organization. A read marker from one workspace cannot affect another workspace.
+`PATCH /api/registry/events/{event_id}/read` stores read state per organization and user (or the explicit anonymous-development principal). A read marker from one workspace cannot affect another workspace.
 
 Each row explains what happened, why it is visible, its analysis and connector states, linked monitored laws, official dates, and the available evidence, comparison, timeline, and source actions.
 
@@ -45,3 +45,43 @@ Legacy direct-URL watches remain usable through their explicit provisional corpu
 ## Verification
 
 Automated tests cover midnight and daylight-saving boundaries, custom ranges, filters, stable cursor pagination, organization-scoped read state, watched and unwatched events, timeline composition, and the rule that registry reads make no model calls. The production Next.js build and a migrated PostgreSQL Compose deployment exercise the same endpoints used by the browser.
+
+
+## Event-list SQL paging — 6 September 2026
+
+`view=events` now applies ownership, authority, connector, kind, lifecycle, impact,
+recorded health, language, watched/read state and Zurich date boundaries in SQL.
+Descending `(detected_at, id)` keysets select at most 100 scalar candidates per
+query; the public API retains its existing 1–100 page-size contract. Only the
+returned page plus one matching lookahead is retained. The composite
+`ix_regulatory_event_registry_page` index supports this order; migration
+`a183fc729650` adds it without changing saved events.
+
+Literal Unicode/accent-insensitive substring search retains the existing Python
+normalization. It traverses 100-candidate SQL batches until the requested page
+and lookahead are found or the eligible history is exhausted. A sparse match after
+200 newer nonmatches is still reachable. This bounds candidate materialization,
+**not total database work or latency for sparse/no-match searches**.
+
+The candidate projection excludes event evidence, work/expression metadata and
+full per-user state objects. Languages are selected for each candidate batch.
+Related watched laws, expression IDs and official-date values are expanded only
+for returned rows; evidence links retain the existing exact-version access checks.
+Watched/read predicates explicitly constrain the organization, and read state
+also constrains the user. Existing relation directions and paused-watch inclusion
+are preserved: a link is not a new assertion of legal relevance or confirmed impact.
+
+Six dedicated regressions run on SQLite and independent empty PostgreSQL 16.15
+scratch databases: 231 equal-time events traversed 100/100/31, sparse literal
+search, the 23-hour Zurich spring day, privileged-session tenant/user isolation,
+related watches in both directions including foreign-watch exclusion, and populated
+index downgrade/upgrade. SQL instrumentation rejects event/work JSON hydration;
+no model calls occur. Existing registry/evidence tests also remain green.
+
+Remaining HL-099 work: the monitored-document view and document timeline still
+materialize their older read models; per-visible-work lookups and exceptionally
+large relation/watch/date/expression fan-out need further batching/paging. The
+query planner may still inspect many eligible records. This is not the intended-host
+100k-event/20-reader test, the ≤500 ms p95 gate, or a deployment/migration of a
+working database. Cursor results reflect current saved filters/visibility; this
+slice adds no cross-request snapshot or late/backdated-admission policy.

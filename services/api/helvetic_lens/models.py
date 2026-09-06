@@ -709,6 +709,7 @@ class RegulatoryDate(Base):
 class RegulatoryEvent(Base):
     __tablename__ = "regulatory_events"
     __table_args__ = (
+        Index("ix_regulatory_event_registry_page", "detected_at", "id"),
         UniqueConstraint("authority", "dedupe_key", name="uq_regulatory_event_dedupe"),
         CheckConstraint(
             "event_type IN ('created', 'new_version', 'amended', 'repealed', 'replaced', "
