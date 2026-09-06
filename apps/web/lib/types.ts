@@ -6,6 +6,7 @@ export type Health = {
   private_sources_enabled: boolean;
 };
 export type DigestPreference = {
+  schedule?: {timezone: string; time: string | null};
   id?: string;
   enabled: boolean;
   frequency: "daily" | "weekly";

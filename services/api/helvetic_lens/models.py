@@ -163,6 +163,7 @@ class DigestPreference(Base):
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
     enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     frequency: Mapped[str] = mapped_column(String(20), default="weekly")
+    schedule_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     severities: Mapped[list] = mapped_column(JSON, default=list)
     sources: Mapped[list] = mapped_column(JSON, default=list)
     next_delivery_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)

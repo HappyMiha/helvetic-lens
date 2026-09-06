@@ -187,7 +187,13 @@ class ImpactInboxStateInput(Input):
     state: Literal["unread", "read", "dismissed", "muted"]
 
 
+class DigestScheduleInput(Input):
+    timezone: str = Field(default="Europe/Zurich", min_length=1, max_length=64)
+    time: str | None = Field(default=None, pattern=r"^(?:[01][0-9]|2[0-3]):[0-5][0-9]$")
+
+
 class DigestPreferenceInput(Input):
+    schedule: DigestScheduleInput | None = None
     enabled: bool
     frequency: Literal["daily", "weekly"]
     severities: list[Literal["high", "medium", "low", "none", "unknown"]] = Field(

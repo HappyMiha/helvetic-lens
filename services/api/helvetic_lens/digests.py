@@ -18,6 +18,7 @@ from . import jobs
 from .auth_mail import AuthMailer
 from .config import DomainError, Settings
 from .db import Database, utcnow
+from .digest_schedule import next_local_delivery
 from .impact_inbox import ImpactInboxFilters, ImpactInboxReader
 from .locales import normalize_locale
 from .model_settings import resolved_settings
@@ -106,8 +107,8 @@ def _aware(value: datetime) -> datetime:
     return value.replace(tzinfo=UTC) if value.tzinfo is None else value
 
 
-def next_delivery(now: datetime, frequency: str) -> datetime:
-    return _aware(now) + FREQUENCIES[frequency]
+def next_delivery(now: datetime, frequency: str, schedule: dict | None = None) -> datetime:
+    return next_local_delivery(now, frequency, schedule)
 
 
 def _application_url(settings: Settings, value: str | None) -> str | None:
@@ -138,6 +139,7 @@ def serialize_preference(preference: DigestPreference | None) -> dict:
         return {
             "enabled": False,
             "frequency": "weekly",
+            "schedule": {"timezone": "Europe/Zurich", "time": None},
             "severities": [],
             "sources": [],
             "next_delivery_at": None,
@@ -147,6 +149,7 @@ def serialize_preference(preference: DigestPreference | None) -> dict:
         "id": preference.id,
         "enabled": preference.enabled,
         "frequency": preference.frequency,
+        "schedule": preference.schedule_json or {"timezone": "Europe/Zurich", "time": None},
         "severities": preference.severities or [],
         "sources": preference.sources or [],
         "next_delivery_at": _iso(preference.next_delivery_at),
@@ -385,7 +388,7 @@ def enqueue_due(database: Database, settings: Settings, limit: int = 100) -> dic
                 steps=[("Build saved impact summary", {}), ("Deliver opted-in email", {})],
             )
             queued += int(not reused)
-            preference.next_delivery_at = next_delivery(period_end, preference.frequency)
+            preference.next_delivery_at = next_delivery(period_end, preference.frequency, preference.schedule_json)
             preference.updated_at = now
         session.commit()
     return {"due": len(preferences), "queued": queued}

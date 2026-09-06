@@ -46,7 +46,7 @@ celery_app.conf.update(
         },
         "schedule-user-digests": {
             "task": "helvetic_lens.schedule_digests",
-            "schedule": 3600.0,
+            "schedule": 60.0,
         },
     },
 )

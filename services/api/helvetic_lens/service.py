@@ -1161,6 +1161,7 @@ class HelveticLens:
         frequency: str,
         severities: list[str],
         sources: list[str],
+        schedule: dict | None = None,
         preview_page: bool = False,
     ) -> dict:
         if not user_id:
@@ -1169,6 +1170,8 @@ class HelveticLens:
             raise DomainError("Choose a daily or weekly digest.", 422, "digest_frequency_invalid")
         if any(value not in digests.SEVERITIES for value in severities):
             raise DomainError("Choose supported severity filters.", 422, "digest_severity_invalid")
+        from .digest_schedule import validate_schedule
+        requested_schedule = validate_schedule(schedule) if schedule is not None else None
         clean_sources = list(dict.fromkeys(value.strip()[:120] for value in sources if value.strip()))
         with self.write_guard, self.db.session() as session:
             preference = session.scalar(
@@ -1179,12 +1182,17 @@ class HelveticLens:
                 preference = DigestPreference(user_id=user_id)
                 session.add(preference)
             schedule_changed = preference.frequency != frequency or not preference.enabled
+            if requested_schedule is not None:
+                previous_clock = preference.schedule_json if (preference.schedule_json or {}).get("time") else None
+                requested_clock = requested_schedule if requested_schedule.get("time") else None
+                schedule_changed = schedule_changed or previous_clock != requested_clock
+                preference.schedule_json = requested_schedule
             preference.enabled = enabled
             preference.frequency = frequency
             preference.severities = list(dict.fromkeys(severities))
             preference.sources = clean_sources[:20]
             preference.next_delivery_at = (
-                digests.next_delivery(now, frequency)
+                digests.next_delivery(now, frequency, preference.schedule_json)
                 if enabled and (schedule_changed or preference.next_delivery_at is None)
                 else preference.next_delivery_at if enabled else None
             )

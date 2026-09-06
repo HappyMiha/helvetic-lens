@@ -34,6 +34,10 @@ from test_digest_preview_pages import (
 from test_digest_resume import (
     test_digest_yield_is_atomic_fair_and_finishes_without_new_model_calls,
 )
+from test_digest_schedule import (
+    test_local_schedule_save_retry_legacy_omission_and_clear,
+    test_schedule_migration_preserves_existing_preferences,
+)
 from test_evidence_navigation import (
     test_event_surfaces_share_exact_evidence_and_revocation_guards,
 )
@@ -120,7 +124,7 @@ from test_topic_reviews import (
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("--suite", choices=("feed-topic-sparse", "feed-topic-scope", "feed-watch-pages", "feed-watch-scope", "evidence-pages", "evidence-pages-native", "evidence-text-pages", "source-review", "source-review-scope", "source-review-migration", "milestone-native", "milestone-migration", "milestone-race", "feed-readiness-history", "feed-readiness-bounds", "feed-readiness-sources", "onboarding-state", "onboarding-migration", "onboarding-race", "assistant-context", "assistant-context-private", "answer-context", "answer-context-private", "topic-coverage-empty", "topic-coverage-state", "topic-coverage-scope", "topic-coverage-bounds", "topic-duplicates", "topic-duplicates-scope", "topic-duplicates-bounds", "history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked", "monitoring-context", "monitoring-context-activate"), default="history")
+    parser.add_argument("--suite", choices=("digest-local-schedule", "digest-schedule-migration", "feed-topic-sparse", "feed-topic-scope", "feed-watch-pages", "feed-watch-scope", "evidence-pages", "evidence-pages-native", "evidence-text-pages", "source-review", "source-review-scope", "source-review-migration", "milestone-native", "milestone-migration", "milestone-race", "feed-readiness-history", "feed-readiness-bounds", "feed-readiness-sources", "onboarding-state", "onboarding-migration", "onboarding-race", "assistant-context", "assistant-context-private", "answer-context", "answer-context-private", "topic-coverage-empty", "topic-coverage-state", "topic-coverage-scope", "topic-coverage-bounds", "topic-duplicates", "topic-duplicates-scope", "topic-duplicates-bounds", "history", "periods", "pages", "resume", "inbox", "options", "batches", "context", "links", "successors", "preview", "profile", "configuration", "configuration-digest", "prompts", "prompts-digest", "versions", "versions-digest", "feed", "feed-pages", "feed-watch", "topic-reviews", "topic-review-migration", "topic-review-race", "topic-review-retry", "feed-evidence", "feed-private-evidence", "feed-event-link", "native-evidence", "native-evidence-private", "native-evidence-relation", "evidence-navigation", "evidence-navigation-legacy", "evidence-navigation-private", "evidence-navigation-revoked", "monitoring-context", "monitoring-context-activate"), default="history")
     args = parser.parse_args()
     url = make_url(args.database_url)
     if url.get_backend_name() != "postgresql" or url.host not in {"127.0.0.1", "localhost"} or url.database != "hl099_regression":
@@ -278,6 +282,14 @@ def main():
             if args.suite in {"topic-review-race", "topic-review-retry"}:
                 test_postgres_concurrent_reviews_do_not_overwrite_or_duplicate(harness, args.suite == "topic-review-retry")
                 print("PostgreSQL: concurrent topic review sessions preserve one decision without overwriting or duplicate retries.")
+                return
+            if args.suite == "digest-local-schedule":
+                test_local_schedule_save_retry_legacy_omission_and_clear(harness)
+                print("PostgreSQL: local digest schedule save/retry/legacy omission/clear remain stable.")
+                return
+            if args.suite == "digest-schedule-migration":
+                test_schedule_migration_preserves_existing_preferences(harness)
+                print("PostgreSQL: optional schedule migration preserves existing digest preferences and due time.")
                 return
             if args.suite == "feed-topic-sparse":
                 test_sparse_topic_batches_never_hide_later_valid_matches(harness)

@@ -268,6 +268,11 @@ try {
         1,
         "A sparse page must not automatically exhaust the period",
       );
+      await evaluate(cdp, `(() => {
+        const set = (selector,value) => {const input=document.querySelector(selector); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,value); input.dispatchEvent(new Event('input',{bubbles:true})); input.dispatchEvent(new Event('change',{bubbles:true}));};
+        set('[data-digest-time]','08:15'); set('[data-digest-zone]','Europe/Zurich');
+      })()`);
+      assert.ok(await evaluate(cdp, `!document.querySelector('[data-digest-schedule]').innerText.includes('digestSchedule.')`), "Untranslated schedule copy");
       await click("main fieldset input[type=checkbox]");
       assert.equal((await form()).enabled, true);
       await click("[data-digest-next]");
@@ -318,7 +323,7 @@ try {
         ),
         firstText,
       );
-      await click("main fieldset button");
+      await click("[data-digest-save]");
       await waitFor(
         async () =>
           (await ready()) &&
@@ -330,10 +335,12 @@ try {
         "Saved preferences did not produce a new bounded preview",
       );
       assert.equal((await form()).enabled, true);
+      assert.equal(await evaluate(cdp, `document.querySelector('[data-digest-time]').value`), '08:15', 'Paging/save replaced local time');
       const saved = requests.slice(start).find((r) => r.method === "PUT");
       assert.deepEqual(JSON.parse(saved.body), {
         enabled: true,
         frequency: "weekly",
+        schedule: {timezone:"Europe/Zurich",time:"08:15"},
         severities: ["high"],
         sources: [],
       });
@@ -409,7 +416,7 @@ try {
   );
   assert.deepEqual(exceptions, []);
   console.log(
-    "Digest production UI: 10 journeys (DE/FR/IT/RM/EN x 390/1440px); bounded sparse next/back, captured period, focus, unsaved choices, explicit save, stale-cursor recovery and touch targets pass. All API calls intercepted; no mail, inference or production data touched.",
+    "Digest production UI: 10 journeys (DE/FR/IT/RM/EN x 390/1440px); bounded sparse next/back, captured period, focus, unsaved choices and local delivery clock, explicit schedule save, stale-cursor recovery and touch targets pass. All API calls intercepted; no mail, inference or production data touched.",
   );
 } catch (error) {
   console.error({

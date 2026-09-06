@@ -124,7 +124,7 @@ Keep the proven stack and add only the infrastructure now justified by public us
 | [HL-076](#hl-076) | P0       | IN PROGRESS | HL-037, HL-046, HL-067, HL-075, HL-094, HL-099         | Unified interest feed; HL-089 enriches cards asynchronously          |
 | [HL-077](#hl-077) | P1       | IN PROGRESS | HL-035, HL-066, HL-074                                 | Contextual “Monitor this”; integrate HL-076 as its feed arrives      |
 | [HL-078](#hl-078) | P1       | PLANNED  | HL-052, HL-076, HL-077                                 | In-app notification centre over the existing delivery state         |
-| [HL-079](#hl-079) | P1       | PLANNED  | HL-052, HL-075, HL-076                                 | Topic matches in existing digests                                   |
+| [HL-079](#hl-079) | P1       | IN PROGRESS  | HL-052, HL-075, HL-076                                 | Topic matches in existing digests                                   |
 | [HL-080](#hl-080) | P1       | PLANNED  | HL-038, HL-071, HL-072                                 | Cantonal source-pack framework and one verified pilot               |
 | [HL-081](#hl-081) | P2       | PLANNED  | HL-080                                                 | Evidence-gated expansion to the next two cantonal packs             |
 | [HL-082](#hl-082) | P2       | PLANNED  | HL-038, HL-050, HL-071, HL-074–HL-076                  | Separate opt-in public-discourse signal pilot                       |
@@ -1646,6 +1646,8 @@ Acceptance criteria:
 <a id="hl-079"></a>
 
 ### HL-079 — Add topic matches to existing digests
+
+**6 September 2026 — IN PROGRESS (local clock):** Personal digests now support an optional validated IANA timezone and local delivery time. Daily/weekly due dates follow local calendar days through DST gaps/overlaps; the minute scheduler reuses existing durable job/period deduplication. Old interval schedules and omitted fields preserve existing choices/due instants. The five-language UI displays the saved next attempt and clarifies queue delays and the absence of quiet-hours enforcement. Additive nullable migration, SQLite/PostgreSQL and browser evidence are in `docs/VERIFICATION.md` and `docs/DIGESTS.md`. Topic inclusion, broader filters, organization limits, quiet hours and measured immediate-notification/noise gates remain open; this is not completion of HL-079 or production deployment.
 
 Extend the completed HL-052 email/web digest with topic matches while keeping its delivery, unsubscribe, and history contracts intact.
 

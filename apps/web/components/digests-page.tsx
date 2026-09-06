@@ -39,6 +39,8 @@ export function DigestsPage() {
   const previewHeading = useRef<HTMLHeadingElement>(null);
   const [enabled, setEnabled] = useState(false);
   const [frequency, setFrequency] = useState<"daily" | "weekly">("weekly");
+  const [localTime, setLocalTime] = useState("");
+  const [timeZone, setTimeZone] = useState("Europe/Zurich");
   const [selectedSeverities, setSelectedSeverities] = useState<string[]>([]);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [busy, setBusy] = useState("");
@@ -51,6 +53,8 @@ export function DigestsPage() {
       initialized.current = true;
       setEnabled(resource.data.preference.enabled);
       setFrequency(resource.data.preference.frequency);
+      setLocalTime(resource.data.preference.schedule?.time || "");
+      setTimeZone(resource.data.preference.schedule?.timezone || "Europe/Zurich");
       setSelectedSeverities(resource.data.preference.severities);
       setSelectedSources(resource.data.preference.sources);
     }
@@ -59,6 +63,11 @@ export function DigestsPage() {
       previewHeading.current?.focus();
     }
   }, [resource.data]);
+
+  const savedZone = resource.data?.preference.schedule?.time ? resource.data.preference.schedule.timezone : "Europe/Zurich";
+  let displayZone = savedZone;
+  try { new Intl.DateTimeFormat(locale, {timeZone: displayZone}); }
+  catch { displayZone = "UTC"; } // Older browser timezone databases may lag the server.
 
   function restartPreview() {
     focusPreview.current = true;
@@ -96,6 +105,7 @@ export function DigestsPage() {
           body: JSON.stringify({
             enabled,
             frequency,
+            schedule: {timezone: timeZone, time: localTime || null},
             severities: selectedSeverities,
             sources: selectedSources,
           }),
@@ -194,6 +204,19 @@ export function DigestsPage() {
                 <option value="weekly">{t("digests.weekly")}</option>
               </select>
             </label>
+            <div data-digest-schedule className="grid gap-3 min-w-0">
+              <label className="grid gap-2 text-sm font-semibold">{t("digestSchedule.time")}
+                <input data-digest-time type="time" className="input min-w-0 w-full" value={localTime}
+                  onChange={event => setLocalTime(event.target.value)} />
+              </label>
+              <label className="grid gap-2 text-sm font-semibold">{t("digestSchedule.zone")}
+                <input data-digest-zone className="input min-w-0 w-full" list="digest-timezones" value={timeZone}
+                  onChange={event => setTimeZone(event.target.value)} maxLength={64} />
+                <datalist id="digest-timezones">{["Europe/Zurich", "UTC", "Europe/London", "America/New_York", "Asia/Tokyo"].map(zone => <option key={zone} value={zone} />)}</datalist>
+              </label>
+              <p className="text-xs muted m-0">{t("digestSchedule.help")}</p>
+              {localTime && <Button variant="outline" onClick={() => setLocalTime("")}>{t("digestSchedule.clear")}</Button>}
+            </div>
             <fieldset className="grid gap-2">
               <legend className="text-sm font-semibold mb-2">
                 {t("digests.severity")}
@@ -243,7 +266,7 @@ export function DigestsPage() {
               <div className="note">{t("digests.emailDisabled")}</div>
             )}
             <div className="flex flex-wrap gap-2">
-              <Button onClick={save} disabled={!!busy}>
+              <Button data-digest-save onClick={save} disabled={!!busy}>
                 {t("common.save")}
               </Button>
               <Button
@@ -259,7 +282,7 @@ export function DigestsPage() {
               <CalendarClock size={13} className="inline mr-1" />
               {resource.data.preference.next_delivery_at
                 ? t("digests.next", {
-                    date: dateTime(resource.data.preference.next_delivery_at),
+                    date: dateTime(resource.data.preference.next_delivery_at, {timeZone: displayZone, dateStyle: "medium", timeStyle: "short"}) + ` (${displayZone})`,
                   })
                 : t("digests.off")}
             </p>
