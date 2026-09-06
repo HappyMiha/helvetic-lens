@@ -102,14 +102,60 @@ defaults. Restarting the same inputs changes the execution pin but not this
 identity fingerprint; an incomplete immutable identity has no reusable identity
 fingerprint. Runtime snapshots are not independent hardware or image attestation.
 
+### Runtime-aware cache and history — 6 September 2026
+
+Impact and Ask keys now include the observed local runtime identity alongside
+the existing evidence, settings, profile, prompts, language and question inputs.
+With complete immutable identity, identical restarts reuse the saved answer
+without generation. If immutable inputs are incomplete, reuse is scoped to the
+exact deployment pin and stops at a restart. Revision, artifact, tokenizer,
+template, runtime manifest, hardware profile, alias or launch context/output
+changes invalidate the relevant cache scope. Old local keys without this
+observation are not silently upgraded; records and citations remain unchanged.
+
+One operation uses a single runtime observation for cache selection and any
+subsequent inference. The observation has a two-second wall-clock deadline,
+does not send document text and does not spend a generation call. Inference
+retains that same execution pin. Runtime state is local to the operation,
+client and organization; cancellation/exit restores its contexts. Comparison,
+law list/detail and matrix endpoints perform one observation per request, not
+per displayed document. No cross-process TTL cache is claimed. Freshness is as
+of that observation, not a promise that a model cannot be changed after an HTTP
+response or cached-result selection. Gateway checks still protect actual calls.
+
+Unavailable observation leaves saved reports unconfirmed and their history
+readable. Dedicated AI-history and job-detail reads do not probe the model.
+Direct service callers that need current local freshness use
+`runtime_cache_scope`; without one, reads cannot assert a bound report is current.
+The UI's stale-report guidance covers both changed and unconfirmed settings,
+and cached-answer guidance says no new answer was generated, rather than
+incorrectly claiming there was no metadata request at all. Existing custom and
+Infomaniak transport keys are unchanged.
+
+Completed background jobs validate their actual saved result's organization,
+comparison and cache key before reuse. A model may change while work waits in
+the queue: the worker resolves its actual runtime when it starts, and that
+result cannot subsequently masquerade under the earlier enqueue key. When an
+old completed job cannot be reused, its ID, steps and result remain inspectable;
+its logical idempotency key moves to `superseded:<job-id>`, with the original key
+retained in correlation metadata. A new job can then own the requested key.
+Pending work still deduplicates. Requested cache scope is retained in job
+payloads; the executed scope is retained in result plans and provenance.
+The worker's existing readiness inventory read is separate from this snapshot.
+
+Ask retries append a new history record instead of resetting a failed record
+to pending and deleting its error/provenance. Valid successful reuse increments
+use counters and never relabels the original model or generation date. Both
+completed Ask and Impact jobs identify reused results as cached.
+
 **Remaining HL-091 boundary:** [Capability decisions](AI_CAPABILITY_PROFILES.md)
-still need to drive planning and adapter selection. Cache lookup, completed-job
-deduplication, report/matrix freshness and reuse have not yet adopted runtime
-identity; this slice does not claim they invalidate an old model's result.
+still need to drive planning, adapter selection and approval-aware freshness.
 Reported context/output defaults do not measure a serialized prompt and do not
 approve explanatory quality. Real tokenizer accounting and independent
-per-model/task/locale evaluation remain open. An unpinned legacy client remains
-protected only during its individual call. No production deployment occurred.
+per-model/task/locale evaluation remain open. Relation-assessment cache policy
+is separate from these comparison Ask/Impact keys. An unpinned legacy client
+remains protected only during its individual call. No production deployment,
+100-user throughput or target-hardware latency is claimed.
 
 Every saved Impact and Ask record carries backend, model ID, immutable revision, artifact SHA-256, quantization, pinned runtime image, hardware profile and devices, configured/runtime context, generation settings, aggregate gateway queue wait, inference duration, token usage when returned, individual attempts, and structured validation/repair events.
 

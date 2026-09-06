@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from typing import Annotated, Literal
 
-from fastapi import FastAPI, File, Form, Query, Request, UploadFile
+from fastapi import Depends, FastAPI, File, Form, Query, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -1051,7 +1051,11 @@ def create_app(
     async def discover(source_id: str):
         return await service.discover(source_id)
 
-    @app.get("/api/laws")
+    async def runtime_cache_scope():
+        async with service.runtime_cache_scope():
+            yield
+
+    @app.get("/api/laws", dependencies=[Depends(runtime_cache_scope)])
     def laws():
         return service.list_laws()
 
@@ -1435,7 +1439,7 @@ def create_app(
     def impact_inbox_law_options(q: str = Query(default="", max_length=300), selected: str = Query(default="", max_length=36)):
         return service.impact_inbox_law_options(q, selected)
 
-    @app.get("/api/impact-matrix")
+    @app.get("/api/impact-matrix", dependencies=[Depends(runtime_cache_scope)])
     def impact_matrix(
         request: Request,
         output_locale: Literal["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"] | None = None,
@@ -1497,11 +1501,11 @@ def create_app(
         identity = request.state.identity
         return await service.add_law(data.model_dump(), actor_user_id=identity.user_id if identity else None, record_onboarding=True)
 
-    @app.get("/api/laws/{law_id}")
+    @app.get("/api/laws/{law_id}", dependencies=[Depends(runtime_cache_scope)])
     def law_detail(law_id: str):
         return service.law_detail(law_id)
 
-    @app.patch("/api/laws/{law_id}")
+    @app.patch("/api/laws/{law_id}", dependencies=[Depends(runtime_cache_scope)])
     def update_law(law_id: str, data: LawUpdate):
         with service.write_guard, service.db.session() as session:
             law = get(session, Law, law_id)
@@ -1619,7 +1623,7 @@ def create_app(
     def compare(data: CompareInput):
         return service.create_comparison(data.old_version_id, data.new_version_id)
 
-    @app.get("/api/comparisons/{comparison_id}")
+    @app.get("/api/comparisons/{comparison_id}", dependencies=[Depends(runtime_cache_scope)])
     def comparison_detail(comparison_id: str, request: Request):
         return service.comparison_detail(comparison_id, selected_locale(request))
 
@@ -1656,14 +1660,14 @@ def create_app(
             comparison_id, output_locale=selected_locale(request, data.output_locale if data else None)
         )
 
-    @app.post("/api/comparisons/{comparison_id}/analyse-jobs", status_code=202)
+    @app.post("/api/comparisons/{comparison_id}/analyse-jobs", status_code=202, dependencies=[Depends(runtime_cache_scope)])
     async def analyse_job(
         comparison_id: str, request: Request, data: AnalysisInput | None = None
     ):
         job = service.enqueue_analysis(
             comparison_id, selected_locale(request, data.output_locale if data else None)
         )
-        if settings.job_execution_mode == "inline":
+        if settings.job_execution_mode == "inline" and job["state"] != "succeeded":
             return await service.execute_job(job["id"])
         return job
 
@@ -1680,7 +1684,7 @@ def create_app(
     def ask_jobs(comparison_id: str, limit: int = Query(default=20, ge=1, le=50)):
         return service.ask_jobs(comparison_id, limit)
 
-    @app.post("/api/comparisons/{comparison_id}/ask-jobs", status_code=202)
+    @app.post("/api/comparisons/{comparison_id}/ask-jobs", status_code=202, dependencies=[Depends(runtime_cache_scope)])
     async def ask_job(comparison_id: str, data: QuestionInput, request: Request):
         job = service.enqueue_ask(
             comparison_id,

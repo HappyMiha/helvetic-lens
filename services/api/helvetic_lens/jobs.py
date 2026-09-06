@@ -67,6 +67,7 @@ def enqueue(
     max_attempts: int = 3,
     steps: list[tuple[str, dict]] | None = None,
     organization_id: str | None = None,
+    reuse_succeeded: Callable[[Job], bool] | None = None,
 ) -> tuple[Job, bool]:
     if queue not in QUEUES:
         raise ValueError(f"Unknown durable queue: {queue}")
@@ -75,8 +76,14 @@ def enqueue(
         select(Job).where(
             Job.organization_id == organization_id,
             Job.idempotency_key == idempotency_key,
-        )
+        ).with_for_update()
     )
+    if existing and existing.state == "succeeded" and reuse_succeeded is not None and not reuse_succeeded(existing):
+        # Retain the completed job/result while freeing its logical cache key.
+        existing.correlation = {**(existing.correlation or {}), "superseded_idempotency_key": existing.idempotency_key}
+        existing.idempotency_key = f"superseded:{existing.id}"
+        session.flush()
+        existing = None
     if existing:
         return existing, True
     correlation = current_correlation()

@@ -7,7 +7,7 @@ import secrets
 import shutil
 import threading
 import time
-from contextlib import contextmanager
+from contextlib import asynccontextmanager, contextmanager
 from contextvars import ContextVar
 from datetime import UTC, date, datetime
 from pathlib import PurePosixPath
@@ -185,6 +185,7 @@ class HelveticLens:
         organization_name: str = "Legacy workspace",
     ):
         self._runtime_active = ContextVar(f"helvetic_lens_runtime_{id(self)}", default=False)
+        self._cache_runtime_context = ContextVar(f"helvetic_lens_cache_runtime_{id(self)}", default=None)
         self._settings_context = ContextVar(f"helvetic_lens_settings_{id(self)}", default=None)
         self._model_client_context = ContextVar(f"helvetic_lens_model_{id(self)}", default=None)
         self._prompt_context = ContextVar(f"helvetic_lens_prompts_{id(self)}", default=None)
@@ -442,6 +443,40 @@ class HelveticLens:
         if self._runtime_active.get():
             self._settings_context.set(settings)
             self._model_client_context.set(next_client)
+
+    def cache_runtime_identity(self) -> dict | None:
+        captured = self._cache_runtime_context.get()
+        connection = (self.settings.apertus_provider, self.settings.apertus_base_url.rstrip("/"), self.settings.apertus_model)
+        if (
+            captured and captured[0] == connection and captured[1] is not None
+            and captured[2] is self.model_client and captured[3] == self.organization_id
+        ):
+            return captured[1].cache_identity()
+        return None
+
+    @asynccontextmanager
+    async def runtime_cache_scope(self):
+        """One bounded observation per operation; ordinary history needs none."""
+        client = self.model_client
+        if self.settings.apertus_provider != "docker" or not isinstance(client, ai.ModelClient):
+            yield
+            return
+        captured = self._cache_runtime_context.get()
+        if captured and captured[0] == client.connection_identity() and captured[2] is client and captured[3] == self.organization_id:
+            yield
+            return
+        with client.runtime_scope():
+            try:
+                snapshot = await client.bound_runtime(probe_timeout=2.0)
+            except DomainError:
+                # Saved history remains readable; a generation attempt will
+                # retain and surface this same resolution error, without retry.
+                snapshot = None
+            token = self._cache_runtime_context.set((client.connection_identity(), snapshot, client, self.organization_id))
+            try:
+                yield
+            finally:
+                self._cache_runtime_context.reset(token)
 
     async def inference_provenance(self, settings: Settings, trace: list[dict]) -> dict:
         # Provenance belongs to the requests just made, not whichever model is
@@ -1131,6 +1166,7 @@ class HelveticLens:
                 settings=self.settings,
                 prompts=self.prompt_settings,
                 output_locale=output_locale,
+                runtime_identity=self.cache_runtime_identity(),
             ).page(session)
 
     def digest_overview(self, user_id: str | None, *, preview_page: bool = False, cursor: str = "") -> dict:
@@ -2446,7 +2482,8 @@ class HelveticLens:
         latest_attempt = attempts[0]
         profile = get(session, Profile, self.tenant_record_id)
         current_key = ai.cache_key(
-            comparison, profile, self.settings, self.prompt_settings, output_locale
+            comparison, profile, self.settings, self.prompt_settings, output_locale,
+            runtime_identity=self.cache_runtime_identity(),
         )
         analysis = next(
             (item for item in attempts if item.status == "succeeded" and item.cache_key == current_key),
@@ -2549,7 +2586,8 @@ class HelveticLens:
             identity = self.refresh_comparison_identity(session, comparison)
             profile = get(session, Profile, self.tenant_record_id)
             current_key = ai.cache_key(
-                comparison, profile, self.settings, self.prompt_settings, output_locale
+                comparison, profile, self.settings, self.prompt_settings, output_locale,
+                runtime_identity=self.cache_runtime_identity(),
             )
             analysis_job = session.scalar(
                 select(Job)
@@ -4535,7 +4573,8 @@ class HelveticLens:
             self.ensure_complete_diff(session, comparison, old, new)
             profile = get(session, Profile, self.tenant_record_id)
             key = ai.cache_key(
-                comparison, profile, self.settings, self.prompt_settings, output_locale
+                comparison, profile, self.settings, self.prompt_settings, output_locale,
+                runtime_identity=self.cache_runtime_identity(),
             )
             plan, _ = ai.build_impact_plan(
                 self.settings,
@@ -4553,7 +4592,8 @@ class HelveticLens:
                 target_id=comparison_id,
                 queue="ai_background",
                 idempotency_key=f"impact:{key}",
-                payload={"comparison_id": comparison_id, "output_locale": output_locale},
+                reuse_succeeded=lambda job: self.reusable_ai_job(session, job, Analysis, key),
+                payload={"comparison_id": comparison_id, "output_locale": output_locale, "runtime_cache_identity": self.cache_runtime_identity()},
                 progress_total=3,
                 max_attempts=self.settings.job_max_attempts,
                 steps=[
@@ -4572,8 +4612,17 @@ class HelveticLens:
             )
             if inference_step and inference_step.state == "pending":
                 inference_step.progress_total = group_total
+            reused_completed = reused and job.state == "succeeded"
+            if reused_completed and job.result_id:
+                record = session.get(Analysis, job.result_id)
+                if record:
+                    record.use_count += 1
+                    record.last_used_at = utcnow()
             session.commit()
-            return durable_jobs.serialize(session, job)
+            serialized = durable_jobs.serialize(session, job)
+            if reused_completed and serialized.get("result"):
+                serialized["result"]["data"] = {**(serialized["result"].get("data") or {}), "cached": True}
+            return serialized
 
     def enqueue_ask(
         self,
@@ -4607,6 +4656,7 @@ class HelveticLens:
                 history,
                 impact_report,
                 output_locale,
+                runtime_identity=self.cache_runtime_identity(),
             )
             job, reused = durable_jobs.enqueue(
                 session,
@@ -4616,11 +4666,13 @@ class HelveticLens:
                 queue="ai_interactive",
                 priority=8,
                 idempotency_key=f"ask:{key}",
+                reuse_succeeded=lambda job: self.reusable_ai_job(session, job, AskRecord, key),
                 payload={
                     "comparison_id": comparison_id,
                     "question": question.strip(),
                     "history": history[-4:],
                     "output_locale": output_locale,
+                    "runtime_cache_identity": self.cache_runtime_identity(),
                 },
                 progress_total=3,
                 max_attempts=self.settings.job_max_attempts,
@@ -4647,8 +4699,18 @@ class HelveticLens:
                 }
             return serialized
 
-    @staticmethod
+    def reusable_ai_job(self, session: Session, job: Job, record_type, key: str) -> bool:
+        if self.settings.apertus_provider == "docker" and self.cache_runtime_identity() is None:
+            return False
+        record = session.get(record_type, job.result_id) if job.result_id else None
+        return bool(
+            record and record.status == "succeeded" and record.cache_key == key
+            and record.organization_id == job.organization_id == self.organization_id
+            and record.comparison_id == job.target_id
+        )
+
     def current_impact_report(
+        self,
         session: Session,
         comparison: Comparison,
         profile: Profile,
@@ -4657,7 +4719,8 @@ class HelveticLens:
         output_locale: str | None = None,
     ) -> dict | None:
         current_key = ai.cache_key(
-            comparison, profile, settings, prompts, output_locale or ai.DEFAULT_OUTPUT_LOCALE
+            comparison, profile, settings, prompts, output_locale or ai.DEFAULT_OUTPUT_LOCALE,
+            runtime_identity=self.cache_runtime_identity(),
         )
         record = session.scalar(
             select(Analysis)
@@ -4674,6 +4737,13 @@ class HelveticLens:
         return {"id": record.id, "result": record.result}
 
     async def analyse(
+        self, comparison_id: str, progress_callback=None,
+        output_locale: str = ai.DEFAULT_OUTPUT_LOCALE,
+    ):
+        async with self.runtime_cache_scope():
+            return await self._analyse(comparison_id, progress_callback, output_locale)
+
+    async def _analyse(
         self,
         comparison_id: str,
         progress_callback=None,
@@ -4704,7 +4774,7 @@ class HelveticLens:
                         409,
                         f"document_identity_{identity['effective_status']}",
                     )
-                key = ai.cache_key(comparison, profile, settings, prompts, output_locale)
+                key = ai.cache_key(comparison, profile, settings, prompts, output_locale, runtime_identity=self.cache_runtime_identity())
                 cached = session.scalar(
                     select(Analysis)
                     .where(Analysis.cache_key == key, Analysis.status == "succeeded")
@@ -4724,6 +4794,7 @@ class HelveticLens:
                     profile,
                     output_locale=output_locale,
                 )
+                analysis_plan["runtime_cache_identity"] = self.cache_runtime_identity()
                 if (
                     analysis_plan["estimates"]["planned_generation_calls"]
                     and not settings.model_configured
@@ -4801,10 +4872,18 @@ class HelveticLens:
                         self.settings,
                         self.prompt_settings,
                         output_locale,
+                        runtime_identity=self.cache_runtime_identity(),
                     ),
                 }
 
     async def ask(
+        self, comparison_id: str, question: str, history: list[dict],
+        output_locale: str | None = None, progress_callback=None,
+    ):
+        async with self.runtime_cache_scope():
+            return await self._ask(comparison_id, question, history, output_locale, progress_callback)
+
+    async def _ask(
         self,
         comparison_id: str,
         question: str,
@@ -4843,6 +4922,7 @@ class HelveticLens:
                 history,
                 impact_report,
                 output_locale,
+                runtime_identity=self.cache_runtime_identity(),
             )
             analysis_plan = ai.build_ask_plan(
                 settings,
@@ -4856,6 +4936,7 @@ class HelveticLens:
                 impact_report,
                 output_locale,
             )
+            analysis_plan["runtime_cache_identity"] = self.cache_runtime_identity()
         if progress_callback:
             await progress_callback("evidence_selected")
         lock_key = comparison_id + ":" + key
@@ -4873,33 +4954,20 @@ class HelveticLens:
                     cached.last_used_at = utcnow()
                     session.commit()
                     return self.ask_result(cached, cached=True)
-                record = session.scalar(
-                    select(AskRecord)
-                    .where(AskRecord.cache_key == key)
-                    .order_by(AskRecord.created_at.desc())
-                    .limit(1)
+                # A retry preserves the failed attempt and its original model,
+                # error, evidence and timestamps instead of rewriting history.
+                record = AskRecord(
+                    comparison_id=comparison_id,
+                    cache_key=key,
+                    question=question.strip(),
+                    history=history[-4:],
+                    model=settings.apertus_model,
+                    prompt_revision=prompt_revision,
+                    context_mode=prompts.ask_context_mode,
+                    analysis_plan=analysis_plan,
+                    last_used_at=utcnow(),
                 )
-                if record:
-                    record.status = "pending"
-                    record.error = None
-                    record.result = {}
-                    record.coverage = {}
-                    record.provenance = {}
-                    record.analysis_plan = analysis_plan
-                    record.last_used_at = utcnow()
-                else:
-                    record = AskRecord(
-                        comparison_id=comparison_id,
-                        cache_key=key,
-                        question=question.strip(),
-                        history=history[-4:],
-                        model=settings.apertus_model,
-                        prompt_revision=prompt_revision,
-                        context_mode=prompts.ask_context_mode,
-                        analysis_plan=analysis_plan,
-                        last_used_at=utcnow(),
-                    )
-                    session.add(record)
+                session.add(record)
                 session.commit()
                 record_id = record.id
             with correlation_context(comparison_id=comparison.id, ask_record_id=record_id):

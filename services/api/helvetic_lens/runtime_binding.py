@@ -76,3 +76,12 @@ class RuntimeSnapshot(Snapshot):
             "default_output_tokens": self.default_output_tokens,
         }
         return hashlib.sha256(json.dumps(state, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+    def cache_identity(self) -> dict[str, str]:
+        """Reuse identical immutable inputs, or only this partially known launch."""
+        identity = self.identity_fingerprint()
+        return {
+            "schema_version": "local-runtime-cache-v1",
+            "scope": "immutable_identity" if identity else "deployment",
+            "fingerprint": identity or self.binding_fingerprint,
+        }

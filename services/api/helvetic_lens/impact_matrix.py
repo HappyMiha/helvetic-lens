@@ -41,11 +41,13 @@ class ImpactMatrixReader:
         settings: Any,
         prompts: Any,
         output_locale: str,
+        runtime_identity: dict | None = None,
     ):
         self.profile_id = profile_id
         self.settings = settings
         self.prompts = prompts
         self.output_locale = output_locale
+        self.runtime_identity = runtime_identity
 
     @staticmethod
     def _latest_by_law(comparisons: list[Comparison]) -> dict[str, Comparison]:
@@ -76,6 +78,7 @@ class ImpactMatrixReader:
             self.settings,
             self.prompts,
             self.output_locale,
+            runtime_identity=self.runtime_identity,
         )
         current = next(
             (

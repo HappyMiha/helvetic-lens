@@ -255,6 +255,25 @@ async def test_cancelled_probe_releases_lock_for_remaining_batch(monkeypatch):
     assert len([event for event in trace if isinstance(event.get("runtime_binding"), dict)]) == 1
 
 
+@pytest.mark.asyncio
+async def test_slow_runtime_probe_has_wall_clock_deadline_and_does_not_retry(monkeypatch):
+    calls = []
+
+    async def handler(request):
+        calls.append(request)
+        await asyncio.Future()
+
+    transport(monkeypatch, handler)
+    model = ModelClient(settings())
+    with model.runtime_scope():
+        with pytest.raises(DomainError) as error:
+            await asyncio.wait_for(model.bound_runtime(probe_timeout=0.01), 1)
+        assert error.value.code == "model_runtime_unavailable"
+        with pytest.raises(DomainError):
+            await model.complete("system", "must not be transmitted")
+    assert [call.method for call in calls] == ["GET"]
+
+
 def test_runtime_provenance_whitelists_metadata_and_rejects_inconsistent_identity():
     snapshot = local_runtime()
     snapshot["unknown_provider_metadata"] = "must not persist"

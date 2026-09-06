@@ -3,6 +3,7 @@ import hashlib
 import json
 import re
 import time
+from contextlib import contextmanager
 from contextvars import ContextVar, Token
 from dataclasses import dataclass, field
 from typing import Annotated, Literal
@@ -258,10 +259,28 @@ class ModelClient:
         return self.settings.apertus_provider, self.settings.apertus_base_url.rstrip("/"), self.settings.apertus_model
 
     def begin_trace(self, priority: str = "interactive") -> tuple[Token, Token, Token]:
+        state = self._runtime_binding.get() or RuntimeBindingState(self.connection_identity())
+        events = []
+        if state.snapshot is not None:
+            events.append({
+                "runtime_binding": state.snapshot.model_dump(mode="json"),
+                "runtime_identity_fingerprint": state.snapshot.identity_fingerprint(),
+            })
+        if state.error is not None:
+            events.append({"runtime_resolution_error": state.error.code})
         return (
-            self._trace.set([]), self._priority.set(priority),
-            self._runtime_binding.set(RuntimeBindingState(self.connection_identity())),
+            self._trace.set(events), self._priority.set(priority),
+            self._runtime_binding.set(state),
         )
+
+    @contextmanager
+    def runtime_scope(self):
+        """Bind cache selection and subsequent generation to one observation."""
+        token = self._runtime_binding.set(RuntimeBindingState(self.connection_identity()))
+        try:
+            yield
+        finally:
+            self._runtime_binding.reset(token)
 
     def end_trace(self, token: tuple[Token, Token, Token]) -> list[dict]:
         events = list(self._trace.get() or [])
@@ -270,7 +289,7 @@ class ModelClient:
         self._runtime_binding.reset(token[2])
         return events
 
-    async def bound_runtime(self, budget: InferenceBudget | None = None) -> RuntimeSnapshot | None:
+    async def bound_runtime(self, budget: InferenceBudget | None = None, *, probe_timeout: float = 30.0) -> RuntimeSnapshot | None:
         state = self._runtime_binding.get() or RuntimeBindingState(self.connection_identity())
         if state.connection != self.connection_identity():
             self.trace_event({"runtime_resolution_error": "runtime_binding_changed"})
@@ -298,12 +317,14 @@ class ModelClient:
                     )
                 timeout = min(
                     float(self.settings.apertus_timeout_seconds),
+                    probe_timeout,
                     budget.deadline - time.monotonic() if budget is not None else 30.0,
                 )
                 if timeout <= 0:
                     raise DomainError("The analysis time budget expired before its runtime could be verified.", 504, "model_budget_exhausted")
-                async with httpx.AsyncClient(timeout=timeout, trust_env=False) as client:
-                    response = await client.get(url, headers=headers)
+                async with asyncio.timeout(timeout):
+                    async with httpx.AsyncClient(timeout=timeout, trust_env=False) as client:
+                        response = await client.get(url, headers=headers)
                 if state.connection != self.connection_identity():
                     raise DomainError("The model connection changed while resolving its runtime. Start a new analysis.", 409, "runtime_binding_changed")
                 if response.status_code != 200:
@@ -317,7 +338,7 @@ class ModelClient:
                     "runtime_identity_fingerprint": snapshot.identity_fingerprint(),
                     "runtime_probe_ms": round((time.monotonic() - started) * 1000, 2),
                 })
-            except (DomainError, httpx.HTTPError, ValueError, TypeError) as exc:
+            except (DomainError, httpx.HTTPError, ValueError, TypeError, TimeoutError) as exc:
                 error = exc if isinstance(exc, DomainError) else DomainError(
                     "The local model did not provide a usable runtime binding. Check Local models before retrying.",
                     503, "model_runtime_unavailable",
@@ -768,6 +789,7 @@ def cache_key(
     settings: Settings,
     prompts: PromptSettings | None = None,
     output_locale: str = DEFAULT_OUTPUT_LOCALE,
+    *, runtime_identity: dict | None = None,
 ) -> str:
     prompts = prompts or default_prompt_settings()
     runtime_state = {
@@ -783,6 +805,9 @@ def cache_key(
         "reasoning_effort": settings.apertus_reasoning_effort,
         "json_mode": settings.apertus_json_mode,
     }
+    if settings.apertus_provider == "docker":
+        # Unknown runtime never matches a previously bound generated answer.
+        runtime_state["local_runtime"] = runtime_identity or {"scope": "unverified"}
     diff_state = {
         "schema_version": comparison.diff.get("schema_version"),
         "algorithm": comparison.diff.get("algorithm"),
@@ -851,6 +876,7 @@ def ask_cache_key(
     history: list[dict],
     impact_report: dict | None = None,
     output_locale: str | None = None,
+    *, runtime_identity: dict | None = None,
 ) -> str:
     def normalized(value: object) -> str:
         return " ".join(str(value or "").split()).casefold()
@@ -858,7 +884,7 @@ def ask_cache_key(
     route = classify_question_intent(question, output_locale)
     report_result = (impact_report or {}).get("result") or {}
     context = {
-        "analysis": cache_key(comparison, profile, settings, prompts, route["locale"]),
+        "analysis": cache_key(comparison, profile, settings, prompts, route["locale"], runtime_identity=runtime_identity),
         "router": ASK_ROUTER_VERSION,
         "intent": route["intent"],
         "output_locale": route["locale"],

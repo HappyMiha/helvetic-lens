@@ -329,7 +329,7 @@ def test_ask_job_is_immediately_recoverable_and_duplicate_submission_reuses_it(h
     assert len(client.get(f"/api/comparisons/{comparison['id']}/ask-jobs").json()) == 1
 
 
-def test_retrying_ask_reuses_the_failed_history_record(harness):
+def test_retrying_ask_preserves_the_failed_history_record(harness):
     client, _, service, model = harness
     law = add_law(client)
     old = import_old(client, law["id"])["version"]
@@ -366,9 +366,11 @@ def test_retrying_ask_reuses_the_failed_history_record(harness):
         ]
         if item["type"] == "question"
     ]
-    assert len(completed_history) == 1
-    assert completed_history[0]["id"] == failed_history[0]["id"]
-    assert completed_history[0]["status"] == "succeeded"
+    assert len(completed_history) == 2
+    assert next(item for item in completed_history if item["id"] == failed_history[0]["id"]) == failed_history[0]
+    successful = next(item for item in completed_history if item["status"] == "succeeded")
+    assert successful["id"] != failed_history[0]["id"]
+    assert completed["result"]["id"] == successful["id"]
 
 
 def test_resubmitting_cancelled_impact_job_requeues_same_persisted_work(harness):

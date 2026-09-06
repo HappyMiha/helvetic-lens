@@ -11,8 +11,8 @@ are useful or correct.
 HL-091 now has a strict, versioned registry reader, independent-review artifact
 integrity checker, provider-independent decision resolver and read-only CLI.
 The shipped registry is deliberately empty. **Capability-based Impact/Ask mode
-selection, request token measurement, settings and cache freshness still need
-coordinated integration.** The resolver's
+selection, request token measurement and settings still need coordinated
+integration.** The resolver's
 `generated_explanation` decision is a permission for a verified scope, not an
 assertion that the current application has used that mode.
 
@@ -26,11 +26,18 @@ it does not approve a model or change the current provider-based wire adapter.
 
 Saved `runtime_identity_fingerprint` values bind the complete immutable identity,
 served alias and launch context/output defaults, excluding the per-start ID.
-They remain absent when immutable identity is unavailable. These values are
-inputs for the next cache migration, **not a claim that existing cached answers,
-completed-job reuse, comparison summaries or matrix freshness already check the
-running model**. All of those consumers must move together; old history must
-remain inspectable without requiring a live model.
+They remain absent when immutable identity is unavailable. Impact/Ask cache
+keys, completed-job reuse, comparison/law summaries, matrix freshness and saved
+report selection now share the observed runtime cache scope. A fully identified
+runtime can reuse results after an identical restart; a partially identified
+runtime can reuse only within the same deployment pin. An unavailable runtime
+cannot confirm a previously bound result as current. Historical records remain
+inspectable without a live-model request. [Cache contract](LOCAL_INFERENCE.md#runtime-aware-cache-and-history--6-september-2026).
+
+This migration covers execution identity, **not capability approval freshness**.
+No profile is promoted, and the unused capability resolver's decision/review
+fingerprint has not yet been integrated into planner modes or cache keys. That
+must happen together with provider-independent adapter selection.
 
 The existing GTX 1070 structured-output benchmark is not an explanatory quality
 review. Neither it nor a successful HTTP/JSON response promotes Apertus 1.5B,
