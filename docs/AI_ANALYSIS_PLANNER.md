@@ -1,5 +1,11 @@
 # Fixed-budget AI analysis planner
 
+The [reviewed capability-profile contract](AI_CAPABILITY_PROFILES.md) now defines
+the replacement for provider-based reasoning assumptions. Its registry checker
+and resolver are implemented, but **the runtime/planner below has not yet been
+migrated to that policy**. No explanatory profile is currently approved. Do not
+interpret an integrity-check pass as runtime enablement or semantic evaluation.
+
 Helvetic Lens plans every Impact and Ask run before it contacts a model. The saved `AnalysisPlan` is the audit record for what the application intended to review, why each semantic change was included or excluded, the configured context and output limits, estimated tokens, and the hard provider-call budget.
 
 The deterministic comparison remains complete and is never replaced by the AI dossier. The planner selects material and uncertain legal units, groups related evidence into bounded batches, and records limited coverage when all eligible units cannot fit. Formatting-only and structural noise remains available in **All exact changes**, but it does not spend inference time. A comparison containing only that noise returns a saved low-impact result with zero model calls.
