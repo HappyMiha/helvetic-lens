@@ -547,7 +547,7 @@ export function ImpactInboxPage() {
           </article>
         ))}
       </div>
-      {resource.data && resource.data.total_events > 0 && <InboxPageNavigation page={resource.data} newestHref={newestHref} nextHref={nextHref} busy={resource.loading} />}
+      {resource.data && resource.data.total_events > 0 && <InboxPageNavigation position="bottom" page={resource.data} newestHref={newestHref} nextHref={nextHref} busy={resource.loading} />}
     </Shell>
   );
 }

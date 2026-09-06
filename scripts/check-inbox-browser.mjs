@@ -25,6 +25,7 @@ const profile = await mkdtemp(join(tmpdir(), "helvetic-inbox-browser-"));
 const browser = spawn(chrome, ["--headless=new", "--no-first-run", "--no-default-browser-check", "--remote-debugging-port=0", `--user-data-dir=${profile}`, "about:blank"], { stdio: "ignore", windowsHide: true });
 let cdp;
 const requests = [], exceptions = [];
+let locale = "en-CH";
 async function waitFor(check, message) {
   for (let i = 0; i < 150; i++) {
     if (await check().catch(() => false)) return;
@@ -49,7 +50,7 @@ try {
     const url = new URL(request.url);
     requests.push(url.pathname + url.search);
     let body = {}, code = 200;
-    if (url.pathname === "/api/auth/session") body = { authenticated: true, user: { id: "qa", email: "qa@example.invalid", name: "QA", locale: "en-CH" }, organization: { id: "qa-org", name: "Isolated QA" }, role: "viewer" };
+    if (url.pathname === "/api/auth/session") body = { authenticated: true, user: { id: "qa", email: "qa@example.invalid", name: "QA", locale }, organization: { id: "qa-org", name: "Isolated QA" }, role: "viewer" };
     else if (url.pathname === "/api/health") body = { status: "ok", database: "sqlite", apertus: { configured: false, model: "qa" }, firecrawl: { configured: false }, private_sources_enabled: false };
     else if (url.pathname === "/api/jobs") body = [];
     else if (url.pathname === "/api/impact-inbox/law-options") body = { items: [{ id: "law", watch_id: "watch", title: "Synthetic monitored law" }, { id: "other", watch_id: "other-watch", title: "Law from another page" }], selected: null, has_more: true };
@@ -68,7 +69,7 @@ try {
   const navigate = async query => {
     const navigation = await cdp.send("Page.navigate", { url: `${base}/impact${query}` });
     assert.ok(!navigation.errorText, JSON.stringify(navigation));
-    await waitFor(() => evaluate(cdp, `!!document.querySelector('[data-inbox-navigation]') && document.body.innerText.includes('On this page')`), "Inbox failed to render");
+    await waitFor(() => evaluate(cdp, `!!document.querySelector('[data-inbox-navigation]') && document.documentElement.lang === ${JSON.stringify(locale)}`), "Inbox failed to render");
   };
   await navigate("");
   await waitFor(() => evaluate(cdp, `!!document.querySelector('a[href="/corpus-evidence/qa-native"]')`), "Native saved-source link missing from inbox");
@@ -89,16 +90,25 @@ try {
   await waitFor(() => evaluate(cdp, `document.body.innerText.includes('Invalid cursor')`), "Cursor recovery error missing");
   await evaluate(cdp, `document.querySelector('[data-inbox-navigation] a').click()`);
   await waitFor(() => evaluate(cdp, `!location.search.includes('cursor=') && location.search.includes('state=unread') && document.body.innerText.includes('Newest saved event')`), "Cursor recovery discarded filters");
-  for (const width of [390, 768, 1024, 1440]) {
+  for (const language of ["en-CH", "de-CH", "fr-CH", "it-CH", "rm-CH"]) for (const width of [390, 768, 1024, 1440]) {
+    locale = language;
     await cdp.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 500 });
-    await sleep(150);
-    await accessibility.check(cdp, `populated-${width}`, "[data-inbox-navigation]");
+    await navigate("?state=unread");
+    await waitFor(() => evaluate(cdp, `document.querySelectorAll('[data-inbox-navigation]').length === 2 && document.body.innerText.includes('Newest saved event')`), 'Populated pagination fixture missing');
+    await accessibility.check(cdp, `populated-${locale}-${width}`, "[data-inbox-navigation]");
+    const labels = await evaluate(cdp, `Array.from(document.querySelectorAll('[data-inbox-navigation]')).map(nav=>nav.getAttribute('aria-label'))`);
+    assert.equal(labels.length, 2, 'Both pagination controls must remain available');
+    assert.ok(labels.every(label => label && !label.includes('inboxPaging.')));
+    assert.equal(new Set(labels).size, 2, 'Top/bottom navigation names must be distinct');
+    assert.equal(await evaluate(cdp, `document.querySelectorAll('[data-inbox-navigation] [role=status]').length`), 1, 'Page counts must announce once, not twice');
+    const tree = await cdp.send('Accessibility.getFullAXTree');
+    for (const label of labels) assert.ok(tree.nodes.some(node=>!node.ignored && node.role?.value === 'navigation' && node.name?.value === label), 'Pagination name missing from accessibility tree');
     assert.ok(await evaluate(cdp, `document.documentElement.scrollWidth <= innerWidth + 1`), `Page overflows at ${width}px`);
     assert.equal(await evaluate(cdp, `Array.from(document.querySelectorAll('[data-inbox-navigation] a')).filter(el => el.getBoundingClientRect().height < 44).length`), 0);
   }
   assert.equal(requests.some(path => path.split("?")[0] === "/api/impact-inbox"), false, "The UI must never fetch the legacy full-history inbox");
   assert.deepEqual(exceptions, [], "Runtime exceptions in the real page");
-  accessibility.finish(4);
+  accessibility.finish(20);
   console.log("Inbox production UI: next/back navigation, independent law options, sparse pages, candidate deep links, filter reset, invalid-cursor recovery, 390/768/1024/1440px layout passed. Every API call was intercepted; no live backend/model or data mutation.");
 } catch (error) {
   console.error({ requests, exceptions, page: cdp ? await evaluate(cdp, "JSON.stringify({url:location.href,ready:document.readyState,html:document.documentElement.outerHTML.slice(0,1800)})").catch(() => "unavailable") : "no browser" });

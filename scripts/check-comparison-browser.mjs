@@ -335,6 +335,11 @@ try {
       );
       assert.equal(await modal(), false);
       await accessibility.check(cdp, `evidence-${locale}-${width}`, '.comparison-evidence-pane');
+      const overviewName = await evaluate(cdp, `document.querySelector('.triage-summary').getAttribute('aria-label')`);
+      const overviewTree = await cdp.send('Accessibility.getFullAXTree');
+      assert.ok(overviewTree.nodes.some(node => !node.ignored && node.role?.value === 'group' && node.name?.value === overviewName), 'Named change overview missing from accessibility tree');
+      const omission = await evaluate(cdp, `document.querySelector('[data-material-omission] .sr-only')?.textContent.trim()`);
+      assert.ok(omission && overviewTree.nodes.some(node => !node.ignored && node.role?.value === 'StaticText' && node.name?.value?.trim() === omission), 'Omitted wording must be explained in the accessibility tree');
       const groups = () => evaluate(cdp, `Array.from(document.querySelectorAll('[data-material-group]')).map(node => node.dataset.materialGroup)`);
       const setInput = async (selector,value,tag='HTMLInputElement') => evaluate(cdp, `(() => {const node=document.querySelector(${JSON.stringify(selector)}); Object.getOwnPropertyDescriptor(${tag}.prototype,'value').set.call(node,${JSON.stringify(value)}); node.dispatchEvent(new Event('input',{bubbles:true})); node.dispatchEvent(new Event('change',{bubbles:true}));})()`);
       assert.equal((await groups()).length,5,'Material cards must be bounded before interaction');

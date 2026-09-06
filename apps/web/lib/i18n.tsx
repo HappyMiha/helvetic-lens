@@ -2626,7 +2626,8 @@ for (const locale of locales) Object.assign(catalogTarget(locale), topicPreviewM
 const inboxPagingMessages: Record<Locale, Messages> = {
   "en-CH": {
     "inboxPaging.refresh": "Refresh this page",
-    "inboxPaging.navigation": "Inbox pages",
+    "inboxPaging.navigationTop": "Event pages, above results",
+    "inboxPaging.navigationBottom": "Event pages, below results",
     "inboxPaging.scope": "On this page",
     "inboxPaging.counts": "{shown} events shown from {scanned} checked on this page.",
     "inboxPaging.emptyPage": "No events on this page match the filters. Continue to older events.",
@@ -2640,7 +2641,8 @@ const inboxPagingMessages: Record<Locale, Messages> = {
   },
   "de-CH": {
     "inboxPaging.refresh": "Diese Seite aktualisieren",
-    "inboxPaging.navigation": "Postfachseiten",
+    "inboxPaging.navigationTop": "Ereignisseiten, oberhalb der Ergebnisse",
+    "inboxPaging.navigationBottom": "Ereignisseiten, unterhalb der Ergebnisse",
     "inboxPaging.scope": "Auf dieser Seite",
     "inboxPaging.counts": "{shown} Ereignisse angezeigt, {scanned} auf dieser Seite geprüft.",
     "inboxPaging.emptyPage": "Auf dieser Seite entspricht kein Ereignis den Filtern. Gehen Sie zu älteren Ereignissen.",
@@ -2654,7 +2656,8 @@ const inboxPagingMessages: Record<Locale, Messages> = {
   },
   "fr-CH": {
     "inboxPaging.refresh": "Actualiser cette page",
-    "inboxPaging.navigation": "Pages de la boîte de réception",
+    "inboxPaging.navigationTop": "Pages des événements, au-dessus des résultats",
+    "inboxPaging.navigationBottom": "Pages des événements, sous les résultats",
     "inboxPaging.scope": "Sur cette page",
     "inboxPaging.counts": "{shown} événements affichés sur {scanned} examinés sur cette page.",
     "inboxPaging.emptyPage": "Aucun événement de cette page ne correspond aux filtres. Passez aux événements plus anciens.",
@@ -2668,7 +2671,8 @@ const inboxPagingMessages: Record<Locale, Messages> = {
   },
   "it-CH": {
     "inboxPaging.refresh": "Aggiorna questa pagina",
-    "inboxPaging.navigation": "Pagine della posta degli impatti",
+    "inboxPaging.navigationTop": "Pagine degli eventi, sopra i risultati",
+    "inboxPaging.navigationBottom": "Pagine degli eventi, sotto i risultati",
     "inboxPaging.scope": "In questa pagina",
     "inboxPaging.counts": "{shown} eventi mostrati su {scanned} esaminati in questa pagina.",
     "inboxPaging.emptyPage": "Nessun evento di questa pagina corrisponde ai filtri. Passa agli eventi precedenti.",
@@ -2682,7 +2686,8 @@ const inboxPagingMessages: Record<Locale, Messages> = {
   },
   "rm-CH": {
     "inboxPaging.refresh": "Actualisar questa pagina",
-    "inboxPaging.navigation": "Paginas da la posta dals effects",
+    "inboxPaging.navigationTop": "Paginas dals eveniments, sur ils resultats",
+    "inboxPaging.navigationBottom": "Paginas dals eveniments, sut ils resultats",
     "inboxPaging.scope": "Sin questa pagina",
     "inboxPaging.counts": "{shown} eveniments mussads da {scanned} examinads sin questa pagina.",
     "inboxPaging.emptyPage": "Nagin eveniment da questa pagina correspunda als filters. Cuntinuai cun eveniments pli vegls.",

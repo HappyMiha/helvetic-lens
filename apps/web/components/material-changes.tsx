@@ -110,6 +110,6 @@ function DeltaText({parts,missing,omission}:{parts:DeltaPart[];missing:string;om
   if(!parts.some(part=>part.text)) return <>{missing}</>;
   return <>{parts.map((part,index)=> part.kind === "added" ? <ins key={index}>{part.text}</ins>
     : part.kind === "removed" ? <del key={index}>{part.text}</del>
-    : part.kind === "omission" ? <span key={index} aria-label={omission}>{part.text}</span>
+    : part.kind === "omission" ? <span key={index} data-material-omission><span aria-hidden="true">{part.text}</span><span className="sr-only">{` ${omission} `}</span></span>
     : <span key={index}>{part.text}</span>)}</>;
 }

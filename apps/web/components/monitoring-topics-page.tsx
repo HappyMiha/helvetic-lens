@@ -640,7 +640,7 @@ function TopicEditor({
                   <p className="text-sm">{origin.data.kind === "assistant" ? t("monitorThis.messageBoundary") : t("monitorThis.questionBoundary")}</p>
                 </div>
               )}
-              <MonitoringSetupChoices context={origin.data} onTopic={useContext}
+              <MonitoringSetupChoices context={origin.data} headingLevel={3} onTopic={useContext}
                 topicDisabled={!!busy || !!recovery || !draftLoaded} onLeave={confirmDiscard} />
               <p>{t("monitorThis.summary")}</p>
               <details className="text-sm mb-3">

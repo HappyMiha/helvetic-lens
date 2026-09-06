@@ -748,7 +748,7 @@ export function ComparisonView({ id }: { id: string }) {
                   </div>
                 </div>
                 {data.diff.classification_counts && (
-                  <div className="triage-summary" aria-label={ui.overview}>
+                  <div className="triage-summary" role="group" aria-label={ui.overview}>
                     <div>
                       <span>{ui.material}</span>
                       <strong>

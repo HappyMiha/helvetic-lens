@@ -35,6 +35,31 @@ accessibility scans, native-language review, screen readers, Firefox/Safari and
 physical mobile software-keyboard/audio checks remain separate HL-097 gates.
 
 
+## Semantic structure and names — 6 September 2026
+
+Monitoring choices now use a level-two section heading with level-three choices
+when placed directly on Topics. Inside a saved context's existing level-two
+section, the caller explicitly requests level three with level-four choices.
+The three choices and their names remain real headings; the fix does not hide
+them from assistive technology or suppress the heading-order check.
+
+The upper and lower event pagination landmarks have distinct localized names
+(above/below results), including when the shared navigation is used by the feed.
+Only the upper page-count paragraph is a live status region, preventing duplicate
+announcements of the same count. Both visible pagination controls remain available.
+The deterministic comparison overview is a named `group`, so its existing label
+has a supported accessible role.
+Omitted excerpt segments retain their visible ellipsis but expose the localized
+omission description as visually hidden text. An unroled span's unsupported
+`aria-label` is no longer used to communicate that evidence was abbreviated.
+
+Browser regressions inspect the actual Chromium accessibility tree for both
+pagination landmarks and the comparison group, preserve complete heading outlines
+in standalone/context flows, and check a single count-announcement region. Inbox
+now requires five locales × four widths, not only the English layout sample.
+These checks are not equivalent to testing a real screen reader or approving
+the translations with native users.
+
 ## Required automated accessibility journeys — 6 September 2026
 
 After `npm run build`, run `npm run check:accessibility`. It executes the actual
@@ -45,8 +70,10 @@ or sent to a provider. All application APIs remain intercepted fixture responses
 
 The shared runner checks the full rendered document at each named checkpoint.
 There are no rule, element or severity exclusions. A missing visible fixture,
-duplicate checkpoint, wrong checkpoint total, execution error, or critical/serious
-violation fails the suite. The combined command fails if any required suite fails.
+duplicate checkpoint, wrong checkpoint total, execution error, or any reported
+violation fails the suite. Unresolved `aria-prohibited-attr` results also fail,
+including those axe classifies as incomplete. The combined command fails if any
+required suite fails.
 Existing keyboard, focus, API-request and state assertions still run alongside it.
 
 Required checkpoint totals:
@@ -56,16 +83,17 @@ Required checkpoint totals:
 | Topics | Populated editor, exposed validation, preview; five locales, phone/desktop | 30 |
 | Comparison | Marvin/Ask handoffs, material evidence, report, expanded history; five locales, phone/tablet/desktop | 125 |
 | Original evidence | Saved later-page citation; five locales, phone/desktop | 10 |
-| Inbox | Populated recovered page; English, four widths | 4 |
+| Inbox | Populated recovered page; five locales, four widths | 20 |
 | Onboarding | Initial choices and failed-save recovery; five locales, phone/desktop, reader/admin | 40 |
 | Marvin | Open saved personal conversation; five locales, four widths, reader/admin | 40 |
 
 `test-results/accessibility/<suite>.json` records every checkpoint's actual locale,
 viewport, engine version, rule failures, affected selectors and incomplete checks.
 These are checkpoint evidence files, not proof the surrounding interaction suite
-finished: require the combined command's successful exit as well. Moderate/minor
-findings and incomplete checks remain recorded for review, even when the severity
-gate passes. They must not be relabelled as successful checks.
+finished: require the combined command's successful exit as well. All findings and
+incomplete checks remain recorded for review, including on a failed run. Other
+incomplete results may remain when the gate passes and must not
+be relabelled as successful checks. The six required suites now total 265 checkpoints.
 
 The initial scans found unreadable legacy muted colors in shared navigation,
 metadata, status labels, evidence links and Marvin. These now use the semantic
@@ -73,9 +101,9 @@ muted foreground; the synthetic-data badge retains a darker amber foreground.
 Shared buttons transition colors instead of opacity when re-enabled, so an active
 button does not temporarily retain its disabled, low-contrast appearance.
 
-This is not every route/state or a WCAG certification. All-locale inbox scanning,
-more error/dialog combinations, manual screen-reader and physical-device input,
-native-language usability, Firefox/Safari and unresolved nonblocking/incomplete
+This is not every route/state or a WCAG certification. More localized inbox
+error/dialog combinations, manual screen-reader and physical-device input,
+native-language usability, Firefox/Safari and unresolved incomplete
 findings remain open. See the current verification record for concrete results.
 
 ## Marvin to cited Ask — 6 September 2026

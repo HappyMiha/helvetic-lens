@@ -274,6 +274,7 @@ try {
         "Required saved-topic/locale fixture missing",
       );
       await accessibility.check(cdp, `editor-${locale}-${width}`, ".monitoring-topic-builder");
+      assert.deepEqual(await evaluate(cdp, `Array.from(document.querySelector('[data-monitor-choices]').querySelectorAll('h2,h3,h4')).map(node=>node.tagName)`), ['H2','H3','H3','H3'], 'Standalone monitoring hierarchy is incomplete');
       assert.ok(
         await evaluate(
           cdp,

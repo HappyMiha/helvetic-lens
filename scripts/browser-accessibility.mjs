@@ -31,12 +31,12 @@ export class AccessibilityAudit {
     const dir = resolve(import.meta.dirname, "../test-results/accessibility");
     await mkdir(dir, {recursive:true});
     await writeFile(resolve(dir, `${this.suite}.json`), JSON.stringify({suite:this.suite, checkpoints:this.checkpoints}, null, 2));
-    const blocking = result.violations.filter(rule => ["critical", "serious"].includes(rule.impact));
+    const blocking = [...result.violations, ...result.incomplete.filter(rule => rule.id === "aria-prohibited-attr")];
     assert.deepEqual(blocking.map(rule => ({id:rule.id, impact:rule.impact, nodes:rule.nodes.map(node => ({target:node.target, failure:node.failureSummary}))})), [], `Accessibility findings at ${this.suite}/${name}; full results: test-results/accessibility/${this.suite}.json`);
   }
 
   finish(expected) {
     assert.equal(this.checkpoints.length, expected, `Missing required accessibility checkpoints: ${this.suite}`);
-    console.log(`${this.suite}: ${this.checkpoints.length} full-document axe checkpoints passed critical/serious gate; lesser findings and incomplete checks retained in JSON, not certified accessible.`);
+    console.log(`${this.suite}: ${this.checkpoints.length} full-document axe checkpoints passed all reported violation severities and the unresolved prohibited-ARIA gate; other incomplete checks retained in JSON, not certified accessible.`);
   }
 }

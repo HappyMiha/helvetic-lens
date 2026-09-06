@@ -171,6 +171,7 @@ try {
     assert.ok(await evaluate(cdp, `location.search.includes('message=qa-message') && !location.search.includes('privacy') && !location.search.includes('workplace')`));
     assert.equal(await evaluate(cdp, `document.querySelector('[name="topic-name"]').value`), "", "Navigation silently copied private text");
     assert.ok(await evaluate(cdp, `document.querySelector('[data-monitor-saved-question]').innerText.includes('Monitor privacy updates') && !document.querySelector('[data-monitor-context]').innerText.includes('Synthetic assistant reply')`));
+    assert.deepEqual(await evaluate(cdp, `Array.from(document.querySelector('[data-monitor-context] [data-monitor-choices]').querySelectorAll('h2,h3,h4')).map(node=>node.tagName)`), ['H3','H4','H4','H4'], 'Context monitoring hierarchy is incomplete');
     assert.equal(await evaluate(cdp, `document.body.innerText.includes('monitorThis.')`), false);
     await click('[data-monitor-use]');
     await waitFor(() => evaluate(cdp, `document.querySelector('[name="topic-goal"]').value === 'Monitor privacy updates'`), "User explicitly selected message but goal was changed");
