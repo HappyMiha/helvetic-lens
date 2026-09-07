@@ -2,13 +2,9 @@
 
 **See what changed. Understand what matters.**
 
-**License: [Elastic License 2.0 (ELv2)](LICENSE)** · Source-available.
-Free internal use, including within commercial organizations; copying and
-modification are allowed subject to the license. Providing a hosted or managed
-service to third parties with access to a substantial set of portal features
-requires a separate agreement, whether access is paid or free. ELv2 does not
-require publishing modifications and does not prohibit every paid activity.
-See the [licensing guide and contact](docs/LICENSING.md) and
+**License: [Apache License 2.0](LICENSE)** · OSI-approved permissive license.
+Use, copy, and distribution are allowed under Apache-2.0 terms, including
+commercial use. See the [licensing guide](docs/LICENSING.md) and
 [third-party notices](THIRD_PARTY_NOTICES.md).
 
 Helvetic Lens lets users connect regulatory websites, add specific laws or documents to a watchlist, import earlier versions, and run real checks against current source content. It turns detected differences into visual comparisons and saved impact summaries with links back to the evidence. The implemented Swiss legal registry also discovers supported official laws, parliamentary business, court decisions, and possible effects on monitored documents. The next product work connects these foundations into a daily interest feed with reusable relevance explanations and notifications; usefulness and answer quality still require independent user and domain review.

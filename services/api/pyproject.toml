@@ -2,7 +2,7 @@
 name = "helvetic-lens-api"
 version = "0.1.0"
 description = "Regulatory source monitoring and evidence-backed version comparisons"
-license = "Elastic-2.0"
+license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md"]
 requires-python = ">=3.11"
 dependencies = [
