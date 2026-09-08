@@ -646,9 +646,10 @@ failure receipt untouched if denied. Lowering a limit does not cancel existing
 jobs; it prevents additional admission until usage falls below the new value.
 
 This is not a cap on metadata/token-measurement calls or other task types, nor a
-replacement for per-request measured token/call limits. Global token accounting,
-durable dispatch tenant rotation/background aging and target-host latency remain
-separate work. Admission jobs may wait; all saved evidence stays readable.
+replacement for per-request measured token/call limits. Global token accounting
+and target-host latency remain separate work. Durable tenant rotation and aging
+now use the bounded handoff described in `ARCHITECTURE.md`. Admission jobs may
+wait; all saved evidence stays readable.
 
 Today shows a localized failure explanation, cumulative attempts, exact job
 details and an explicit retry for organization admins. Viewers can inspect the

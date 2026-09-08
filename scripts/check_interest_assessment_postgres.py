@@ -15,6 +15,14 @@ from conftest import FakeFetcher, ScriptedModel
 from fastapi.testclient import TestClient
 from helvetic_lens.config import Settings
 from helvetic_lens.main import create_app
+from test_ai_dispatch import (
+    test_concurrent_dispatchers_cannot_fill_same_window_twice,
+    test_postgres_busy_dispatcher_does_not_wait_on_its_lock,
+    test_scoped_dispatch_does_not_select_another_tenant_head,
+    test_sequence_migration_preserves_existing_jobs_and_outbox,
+    test_tenant_turns_survive_restart_equal_clock_and_large_noisy_prefix,
+    test_unclaimed_window_keeps_background_in_db_and_does_not_block_cpu,
+)
 from test_digest_briefs import (
     test_preview_and_actual_delivery_reuse_same_saved_assessment,
     test_recipient_locale_is_reloaded_at_send_not_from_preparation,
@@ -152,6 +160,12 @@ def execute_relation(harness, scenario):
 
 
 SUITES = {
+    "fair-dispatch-scope": test_scoped_dispatch_does_not_select_another_tenant_head,
+    "fair-dispatch-tenants": test_tenant_turns_survive_restart_equal_clock_and_large_noisy_prefix,
+    "fair-dispatch-window": test_unclaimed_window_keeps_background_in_db_and_does_not_block_cpu,
+    "fair-dispatch-race": test_concurrent_dispatchers_cannot_fill_same_window_twice,
+    "fair-dispatch-lock": test_postgres_busy_dispatcher_does_not_wait_on_its_lock,
+    "fair-dispatch-migration": test_sequence_migration_preserves_existing_jobs_and_outbox,
     "global-capacity-mixed-race": lambda harness: execute_local(harness, test_concurrent_retry_and_new_tenant_share_one_remaining_slot),
     "global-capacity-concurrency": lambda harness: execute_local(harness, test_concurrent_organizations_cannot_overbook_and_rollback_releases_capacity),
     "global-capacity-defer": lambda harness: execute_local(harness, test_full_host_defers_worker_without_losing_event_then_resumes),

@@ -1498,6 +1498,7 @@ class Job(Base):
     leased_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     dispatched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    dispatch_sequence: Mapped[int | None] = mapped_column(BigInteger, index=True)
     available_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
     cancel_requested: Mapped[bool] = mapped_column(Boolean, default=False)
     error_code: Mapped[str | None] = mapped_column(String(80))

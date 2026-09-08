@@ -1,5 +1,41 @@
 # Verification record
 
+## Fair durable AI dispatch and bounded broker handoff — 9 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl089-fair-ai-dispatch`, based on `7eb31ef`.
+  Implemented shared AI handoff window, ready-work priority aging, tenant-head
+  selection before pagination and persisted logical tenant turn order. Nullable
+  indexed `Job.dispatch_sequence` migration preserves existing jobs/outbox data;
+  original job priority and messages are not rewritten. Non-AI work retains a
+  bounded dispatch path. AI queue position is honestly nullable under dynamic order.
+- **98 passed, 3 skipped in 164.61s** across fair dispatch, generic/durable jobs,
+  automatic brief admission, policies and host capacity. Existing SQLite skips
+  require PostgreSQL semantics. A subsequently added scoped-query isolation case
+  passed separately (**1 passed, 1.17s**). Earlier 34-job and 8-new-case runs overlap
+  this final combined run; they are not additional coverage counts. All changed
+  Python modules, migration and QA scripts pass Ruff; `git diff --check` passes.
+- **Six real PostgreSQL scenarios passed** using guarded scratch DB suites
+  `fair-dispatch-tenants`, `fair-dispatch-window`, `fair-dispatch-race`,
+  `fair-dispatch-lock`, `fair-dispatch-migration`, `fair-dispatch-scope`.
+  A new tenant gets a turn despite 110 pending jobs of another tenant; order
+  survives a new Database instance at an identical clock. Four simultaneous
+  dispatchers hand off exactly one job, a busy advisory lock does not block,
+  CPU dispatch proceeds while AI is full, and scoped heads cannot expose another
+  tenant. Downgrade/upgrade preserves preexisting job/outbox rows.
+- **Real Redis 7.4/Celery/Kombu gate passed**, with 21 synthetic envelopes acked:
+  the prior 18 priority/FIFO checks plus actual migrated SQL dispatch → `_send`
+  → broker → consumer ack. One background envelope fills the window; a new
+  question stays in SQL until that envelope is claimed, then overtakes the
+  remaining background job. Aging raises that job's outgoing priority to 9
+  (wire 0) without changing saved requested priority 2. No task/model executed.
+  The script retains its empty-loopback-QA-DB guard and does not flush keys.
+- Only disposable PostgreSQL/Redis and temporary SQLite were used, with synthetic
+  provider fixtures. No real model, mail, application broker/database or production
+  deployment. No frontend files changed and no new frontend build is claimed.
+  At-least-once duplicate envelopes after crash/cancel remain possible; the bound
+  is on live durable unclaimed jobs. This is not preemption, equal GPU-time service,
+  measured query/latency capacity or independent target-hardware acceptance.
+
 ## Cross-organization brief generation capacity — 9 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl089-global-admission`, based on `bb8b187`.

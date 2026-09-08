@@ -157,11 +157,53 @@ the highest priority. Redis/Kombu consumes lower wire priorities first, so `_sen
 maps the saved value to `9 - priority`; all ten transport levels are explicitly
 enabled. Without this boundary, an Ask job at 8 could lose to a background brief
 at 2. Round-robin selection remains within a priority level across queues, and
-FIFO remains within one queue/priority. This fixes broker ordering, not global
-admission capacity, durable tenant fairness or a latency guarantee. An active
-generation cannot be preempted; queued DB outbox work still needs dispatch, and
-strict broker priorities can starve background work under sustained interactive
-load. The gateway's aging cannot fix starvation before a request reaches it.
+FIFO remains within one queue/priority. Broker ordering alone does not establish
+tenant fairness or latency. An active generation cannot be preempted, and gateway
+aging cannot fix starvation before a request reaches it. The bounded durable
+handoff below addresses the pre-gateway backlog rather than flooding Redis.
+
+**Durable AI dispatch (9 September 2026):** Both AI queues share
+`JOB_AI_DISPATCH_WINDOW` (default 1, range 1–16): the number of durable jobs marked
+`dispatched` but not yet claimed by a worker. A running job no longer occupies this
+handoff window; measured model-manager slots still govern inference. Most queued
+work stays in PostgreSQL, where a newly accepted question can overtake unserved
+background work. Do not increase the window merely to hide a busy model: more
+prefetched work weakens responsiveness. With the default one active handoff, a
+new question may still wait behind the running generation and the already handed
+off job; neither is preempted.
+
+The dispatcher first ranks ready jobs within each organization, then chooses
+organization heads by effective priority, least-recent successful tenant turn,
+eligibility time and stable identity. The head selection happens before the
+candidate limit, so 110 pending jobs of one tenant cannot hide a second tenant
+behind a 100-row prefix. Equal-priority organizations rotate across ticks and
+process restarts through indexed `Job.dispatch_sequence`, a logical sequence
+allocated under the dispatch lock; equal clocks do not destroy that order.
+Each waiting minute adds one priority point, capped at 9. Aging starts at the
+later job/outbox eligibility time, so deliberate retry delay is not rewarded.
+Only the outgoing broker priority is raised; the requested job priority remains.
+At most one head per organization is selected per tick. Turn fairness counts jobs,
+not equal GPU seconds or tokens.
+
+PostgreSQL dispatchers take nonblocking transaction advisory lock
+`(1212958030, 8902)`, distinct from admission capacity. A busy dispatcher skips its
+tick rather than waiting while another caller may own job locks. SQLite starts a
+write transaction with a zero-row UPDATE before reading the handoff count. The
+existing job-first/outbox-second `SKIP LOCKED` order remains; broker failures
+retain retry backoff and do not allocate a turn. Non-AI dispatch retains its
+ordinary bounded path even when the AI window is full. AI API responses return
+`queue_position: null`; an exact FIFO number would be misleading under this policy.
+
+Migration `da0c145b7ed8` adds a nullable indexed sequence without rewriting jobs,
+payloads, historical priorities or broker messages. Apply the migration and update
+dispatchers in a separately authorized deployment; mixed old/new publishers do
+not share the new bound. Existing `dispatched` jobs count toward the window and
+are allowed to drain without flushing Redis. Cancelled/reconciled messages and a
+broker-accepted send followed by DB rollback can still leave duplicate envelopes:
+delivery remains at-least-once, with existing job claims/leases fencing execution.
+The window bounds live durable handoffs, not a strict physical Redis message
+count after crashes. CPU scheduling, database query latency, model duration and
+target-host load still require measurement; this is not a 100-user latency claim.
 
 Publisher and consumer configuration must be updated together in a separately
 authorized deployment. Already-published messages keep their original wire

@@ -63,7 +63,7 @@ def _send(topic: str, queue: str, payload: dict, priority: int):
 def dispatch_outbox():
     database = Database(settings)
     with database.session(include_all_organizations=True) as session:
-        result = jobs.dispatch(session, _send)
+        result = jobs.dispatch(session, _send, ai_window=settings.job_ai_dispatch_window)
         session.commit()
     database.engine.dispose()
     return result

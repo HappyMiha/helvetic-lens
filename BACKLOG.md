@@ -1436,6 +1436,20 @@ Completed on 4 September 2026. New normalized events now enter topic matching on
 
 ### HL-089 — Enrich matched developments with one persisted AI relevance brief
 
+**9 September 2026 — fair durable AI handoff:** Both AI queues now retain most
+pending work in PostgreSQL and cap dispatched-but-unclaimed work (default one).
+Ready tenant heads are selected before pagination, ordered by priority and saved
+tenant turns; waiting work ages toward priority 9. A new question can overtake
+unserved background backlog without flooding Redis. The logical dispatch sequence
+survives restarts/equal clocks; concurrent dispatchers share a nonblocking lock.
+Existing jobs/messages, backoff, cancellation and at-least-once claim fences are
+preserved. Misleading AI FIFO positions are no longer displayed. SQLite/PostgreSQL
+races, migration, a 110-job noisy-tenant case and actual Redis handoff passed.
+This completes basic durable tenant rotation/aging and broker backpressure,
+**not** GPU-time fairness, measured target-host latency, global token accounting,
+feedback/quality controls or independent model/language/hardware/pilot gates.
+HL-089 remains **IN PROGRESS**; see architecture and verification for exact limits.
+
 **9 September 2026 — global generation admission:** Added host-wide bounds for
 durable brief generation in addition to organization quotas: initially 16 pending
 jobs and 200 new admissions per rolling 24h, configurable consistently across
