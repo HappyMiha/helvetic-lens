@@ -974,6 +974,7 @@ export type DeploymentStep = {
   started_at: string;
   finished_at?: string | null;
   duration_seconds?: number | null;
+  error?: string | null;
 };
 export type DeploymentChange = {
   sha: string;
@@ -1004,6 +1005,30 @@ export type DeploymentRun = {
     error?: string;
   };
   error: string | null;
+  error_step?: string | null;
+  activated_sha?: string | null;
+  host?: string | null;
+  environment?: string | null;
+  interrupted_at?: string | null;
+  compare_url?: string | null;
+  details_truncated?: boolean;
+  release_notes?: {
+    kind: string;
+    previous_sha: string | null;
+    target_sha: string | null;
+    text: string | null;
+    captured_at: string | null;
+    repository_notes_available: boolean;
+    changes_may_be_truncated: boolean;
+    text_truncated: boolean;
+  } | null;
+};
+export type DeploymentHistoryPage = {
+  items: Pick<DeploymentRun, "id" | "kind" | "status" | "target_sha" | "previous_sha" | "activated_sha" | "started_at" | "finished_at" | "duration_seconds" | "host" | "environment">[];
+  next_cursor: string | null;
+  mode: "journal" | "legacy";
+  archive_started_at: string | null;
+  legacy_retention_unknown: boolean;
 };
 export type ProductionDeploymentStatus = {
   schema_version: number;

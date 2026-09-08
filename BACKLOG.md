@@ -8,10 +8,10 @@ This backlog implements the product described in [README.md](README.md): a local
 
 ## Scope and priorities
 
-**8 September 2026 — explicit next task (user request):** after the current
-HL-089 structured-brief/storage foundation is tested and pushed, implement
-[HL-102 deployment history](#hl-102) before resuming the remaining HL-089 work.
-This reprioritization does not mark the complete AI-enrichment feature done.
+**8 September 2026 — user-prioritized work:** the HL-089 structured-brief/storage
+foundation was pushed as `1e80667`; [HL-102 deployment history](#hl-102) follows it.
+After HL-102, resume the remaining HL-089 integration. The AI-enrichment feature
+is not marked done by its foundation commit.
 
 - **P0 — critical trust, accessibility, release foundation or capacity gate.** The public beta cannot open without it.
 - **P1 — required public-beta product capability.** P1 is required for the agreed local-AI-first product, even when it can follow the P0 foundation.
@@ -2300,7 +2300,16 @@ Acceptance criteria:
 
 ### HL-102 — Browse actual deployment history, errors and deployed release notes
 
-**P1 — PLANNED; next implementation task explicitly requested on 8 September 2026.**
+**P1 — IMPLEMENTED, locally verified 8 September 2026 (HappyDucky02).**
+The host manager now checkpoints every recorded attempt into a permanent journal;
+the admin UI pages all retained records and opens phases, sanitized errors,
+rollback details, exact version/times and pinned commit release notes. Interruption
+and rejected ancestry are distinct from success; old discarded entries and absent
+legacy metadata are explicitly unavailable. **27 API/access tests, 14 Linux
+release-manager tests and the production build pass.** Browser verification covers
+five locales on mobile/desktop; [evidence and operational limits](docs/DEPLOYMENT_HISTORY.md).
+This implementation does not claim recovery of discarded history, detection of
+manual deployments outside the manager, or an actual production rollout.
 
 Extend the existing Deployment page and host release-manager evidence, not Git
 push history. A published commit is not proof that a deployment happened.

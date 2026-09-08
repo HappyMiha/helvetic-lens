@@ -1280,6 +1280,16 @@ def create_app(
     def deployment_status():
         return service.deployment_status()
 
+    @app.get("/api/admin/deployments/history")
+    def deployment_history(status: str = "", cursor: str | None = None, limit: int = Query(20, ge=1, le=50)):
+        from .deployment_history import history_page
+        return history_page(service.environment_settings.deployment_status_path, status=status, cursor=cursor, limit=limit)
+
+    @app.get("/api/admin/deployments/history/{run_id}")
+    def deployment_history_detail(run_id: str):
+        from .deployment_history import history_detail
+        return history_detail(service.environment_settings.deployment_status_path, run_id)
+
     @app.get("/api/admin/prompts")
     def platform_prompts():
         return service.platform_prompt_configuration()

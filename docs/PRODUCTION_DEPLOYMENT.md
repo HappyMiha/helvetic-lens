@@ -1,5 +1,10 @@
 # Production single-server deployment
 
+Platform administrators can inspect actual release-manager attempts on
+`/deployments`, including permanent paginated history, phase errors and pinned
+commit release notes. See [deployment history](DEPLOYMENT_HISTORY.md) for journal
+storage, legacy retention limits, access control and rollout boundaries.
+
 This is the public single-host baseline for Helvetic Lens. It expects Linux, Docker Engine with Compose, the NVIDIA driver and NVIDIA Container Toolkit, 32 GB RAM, and the two planned GTX 1080 GPUs. The host remains one failure domain: maintenance, a motherboard or disk failure, and a PostgreSQL outage stop the product. This layout provides recoverability and bounded exposure, not high availability.
 
 ## Prepare the host

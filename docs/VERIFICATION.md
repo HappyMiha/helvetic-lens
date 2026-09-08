@@ -1,5 +1,51 @@
 # Verification record
 
+## Complete deployment attempt history — 8 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl-102-deployment-history`, based on fresh `1e80667`.
+  The host release manager checkpoints every attempt into a persistent SQLite
+  journal independently of application PostgreSQL. The platform-admin page now
+  has outcome filters, cursor pages and expandable exact-run details: requested
+  versus verified activated revisions, saved commit summaries, timing, phases,
+  sanitized errors and rollback outcomes. The latest report and commit list start
+  collapsed. [Contract and retention limits](DEPLOYMENT_HISTORY.md).
+- **27 API/access/configuration tests passed in 11.27 seconds** across
+  `test_deployment_history.py`, `test_deployments.py`,
+  `test_organization_access.py` and `test_production_deployment.py`. These cover
+  equal-time cursor traversal, new-record boundaries, filter/archive identity,
+  exact details, legacy fallback, quoted-secret redaction, malformed records and
+  anonymous/organization-admin/platform-admin access. No inference is involved.
+- **14 Linux release-manager tests passed in 1.26 seconds**, using the actual
+  writer and pipeline with external commands replaced. They verify 81 records
+  survive a three-entry legacy window, immutable terminal records, checkpoints,
+  success, test/health failures, failed rollback, interrupted runs and rejected
+  ancestry. The disposable container used a small read-only QA snapshot and no
+  network, credentials or working deployment data; it was removed after testing.
+  Windows cannot import the manager's Linux `fcntl` dependency, so no shim or
+  platform check bypass was used to claim these tests passed on Windows.
+- **Final production Next.js build passed**, including localization, existing
+  shell/resource/report checks and TypeScript compilation. **Ten final browser
+  journeys passed** (five locales at 390/1440 pixels), including the collapsed
+  latest report, exact date/time, expandable commits, saved notes, failure-detail
+  retry, filters/pages, real pointer access, minimum 44px buttons and non-admin
+  boundaries. All API traffic was intercepted; no deployment write was made.
+  The full-document axe run reports **20 checkpoints, zero violations and 20
+  incomplete results** retained for manual review. It is not accessibility or
+  native-language certification; the full application suite was not rerun.
+  The final mobile screenshot was visually inspected for readable stacked detail.
+- Initial browser checks exposed scroll-region semantics and small controls,
+  corrected before the final build. A synthetic assistant endpoint returning an
+  invalid successful response was replaced with an explicit offline response;
+  existing assistant context requests remain intercepted, not hidden as real
+  inference. Ruff and whitespace checks pass. Ignored evidence is under
+  `test-results/deployment-history-*` and `test-results/accessibility/`.
+- No production rollout, working Docker rebuild, database migration or production
+  log recovery occurred. Historical records already discarded by the old rolling
+  limit cannot be restored; manual deployments outside the release manager are
+  not automatically captured. Notes are labelled saved commit summaries, with
+  the existing 50-commit limit disclosed and exact comparison links when known.
+  The manager update needs the existing authorized installation/release process.
+
 ## Shared interest brief contract and storage — 8 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl-089-interest-assessments`, based on fresh `a4aac7f`.

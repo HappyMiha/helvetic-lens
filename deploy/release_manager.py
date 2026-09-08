@@ -10,6 +10,8 @@ import json
 import os
 import re
 import shutil
+import socket
+import sqlite3
 import subprocess
 import sys
 import time
@@ -176,6 +178,8 @@ class ReleaseManager:
         for secret in sorted(self.secrets, key=len, reverse=True):
             result = result.replace(secret, "[redacted]")
         result = re.sub(r"(https?://[^:/\s]+:)[^@\s]+@", r"\1[redacted]@", result)
+        result = re.sub(r"(?i)\bBearer\s+[^\s\"'<>]+", "Bearer [redacted]", result)
+        result = re.sub(r"(?i)((?:password|secret|token|api[_-]?key|authorization)[\"']?\s*[:=]\s*)(?:\"[^\"]*\"|'[^']*'|[^\s,;]+)", r"\1[redacted]", result)
         return result
 
     def _log(self, message: str) -> None:
@@ -296,8 +300,62 @@ class ReleaseManager:
 
     def _save_status(self) -> None:
         atomic_json(self.status_path, self.status)
+        run = self.status.get("last_run")
+        if isinstance(run, dict) and run.get("id"):
+            self._archive_run(run)
+
+    def _archive_run(self, run: dict[str, Any]) -> None:
+        """Keep every attempt independently of the legacy 30-entry snapshot.
+
+        SQLite is a host-side journal using only the Python standard library.
+        The API opens it read-only; application PostgreSQL is not required for
+        recording failures that happen while the application itself is down.
+        """
+        self.state_dir.mkdir(parents=True, exist_ok=True)
+        path = self.state_dir / "history.sqlite3"
+        def sanitized(value):
+            if isinstance(value, str):
+                return self._redact(value)
+            if isinstance(value, dict):
+                return {key: sanitized(item) for key, item in value.items()}
+            if isinstance(value, list):
+                return [sanitized(item) for item in value]
+            return value
+
+        with sqlite3.connect(path, timeout=10) as archive:
+            archive.execute("BEGIN IMMEDIATE")
+            archive.execute("""CREATE TABLE IF NOT EXISTS runs (
+                id TEXT PRIMARY KEY, started_at TEXT NOT NULL, status TEXT NOT NULL,
+                summary TEXT NOT NULL, detail TEXT NOT NULL)""")
+            archive.execute("CREATE INDEX IF NOT EXISTS runs_chronology ON runs(started_at DESC, id DESC)")
+            archive.execute("CREATE INDEX IF NOT EXISTS runs_status ON runs(status, started_at DESC, id DESC)")
+            archive.execute("CREATE TABLE IF NOT EXISTS metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
+            def save(record):
+                if not isinstance(record, dict) or not isinstance(record.get("id"), str):
+                    return
+                record = sanitized(record)
+                summary = {key: record.get(key) for key in (
+                    "id", "kind", "status", "target_sha", "previous_sha", "activated_sha",
+                    "release", "started_at", "finished_at", "duration_seconds", "host", "environment",
+                    "error_step", "interrupted_at",
+                )}
+                archive.execute("""INSERT INTO runs(id, started_at, status, summary, detail)
+                    VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET
+                    status=excluded.status, summary=excluded.summary, detail=excluded.detail
+                    WHERE runs.status IN ('deploying', 'running')""",
+                    (record["id"], record.get("started_at") or "", record.get("status") or "unknown",
+                     json.dumps(summary, ensure_ascii=False), json.dumps(record, ensure_ascii=False)))
+            if not archive.execute("SELECT value FROM metadata WHERE key='archive_started_at'").fetchone():
+                for previous in self._history():
+                    save(previous)
+                archive.execute("INSERT INTO metadata VALUES ('archive_started_at', ?)", (timestamp(),))
+                archive.execute("INSERT INTO metadata VALUES ('archive_id', ?)", (str(uuid.uuid4()),))
+                archive.execute("INSERT INTO metadata VALUES ('legacy_retention_unknown', 'true')")
+            save(run)
+        path.chmod(0o644)  # Read-only API mount; no environment secrets in this journal.
 
     def _save_history(self, run: dict[str, Any]) -> None:
+        self._archive_run(run)
         history = [run, *[item for item in self._history() if item.get("id") != run.get("id")]]
         atomic_json(self.history_path, history[: self.history_limit])
 
@@ -313,8 +371,10 @@ class ReleaseManager:
         started = time.monotonic()
         try:
             yield
-        except Exception:
+        except Exception as error:
             item["status"] = "failed"
+            item["error"] = self._redact(str(error))[:8_000]
+            item["error_truncated"] = len(self._redact(str(error))) > 8_000
             raise
         else:
             item["status"] = "succeeded"
@@ -674,11 +734,13 @@ class ReleaseManager:
     def _record_poll_failure(self, error: Exception) -> None:
         checked_at = timestamp()
         deployed = self._load_deployed()
+        rejected = isinstance(error, DeploymentError) and error.step in {"verify_remote", "verify_history"}
+        rejected_target = self.status.get("remote", {}).get("sha") if rejected and error.step == "verify_history" else None
         run = {
             "id": str(uuid.uuid4()),
-            "status": "failed",
+            "status": "rejected" if rejected else "failed",
             "kind": "poll",
-            "target_sha": None,
+            "target_sha": rejected_target,
             "previous_sha": deployed.get("sha"),
             "release": None,
             "started_at": checked_at,
@@ -690,6 +752,10 @@ class ReleaseManager:
             "model_id": None,
             "rollback": {"status": "not_required"},
             "error": self._redact(str(error))[:8_000],
+            "error_step": error.step if isinstance(error, DeploymentError) else "poll",
+            "host": socket.gethostname(),
+            "environment": "production",
+            "activated_sha": None,
         }
         self.status = self._base_status(deployed)
         self.status["service"].update(state="error", last_checked_at=checked_at)
@@ -718,6 +784,19 @@ class ReleaseManager:
             lock_stream.close()
 
     def _poll_locked(self) -> None:
+        # The host lock is held, so a saved unfinished run belongs to a previous
+        # process. Record observation time, not a fabricated completion timestamp.
+        previous_run = self.status.get("last_run")
+        if isinstance(previous_run, dict) and previous_run.get("status") in {"deploying", "running"}:
+            previous_run = json.loads(json.dumps(previous_run))
+            previous_run.update(status="interrupted", interrupted_at=timestamp(),
+                                error="The release manager restarted before this attempt recorded a final outcome.")
+            for phase in previous_run.get("steps", []):
+                if phase.get("status") == "running":
+                    phase.update(status="interrupted", interrupted_at=previous_run["interrupted_at"])
+            self.status["last_run"] = previous_run
+            self._save_status()
+            self._save_history(previous_run)
         repository = self._git("remote", "get-url", self.remote, step="verify_remote")
         if normalize_remote(repository) != normalize_remote(self.expected_repository):
             raise DeploymentError(
@@ -752,7 +831,7 @@ class ReleaseManager:
         last_finished = parse_iso(last_run.get("finished_at"))
         retry_at = last_finished + timedelta(seconds=self.retry_seconds) if last_finished else None
         if (
-            last_run.get("status") == "failed"
+            last_run.get("status") in {"failed", "rollback_failed"}
             and last_run.get("target_sha") == target_sha
             and retry_at
             and now() < retry_at
@@ -803,6 +882,19 @@ class ReleaseManager:
             "rollback": {"status": "not_required"},
             "error": None,
             "log_id": self.log_path.name,
+            "host": socket.gethostname(),
+            "environment": "production",
+            "activated_sha": None,
+            "repository": normalize_remote(repository),
+        }
+        self.run_record["release_notes"] = {
+            "kind": "commit_summary",
+            "previous_sha": previous_sha,
+            "target_sha": target_sha,
+            "captured_at": timestamp(),
+            "text": "\n".join("- " + change["subject"] for change in self.run_record["changes"]),
+            "repository_notes_available": False,
+            "changes_may_be_truncated": len(self.run_record["changes"]) == 50,
         }
         self.status["service"]["state"] = "deploying"
         self.status["last_run"] = self.run_record
@@ -929,6 +1021,7 @@ class ReleaseManager:
         except (DeploymentError, OSError, ValueError, json.JSONDecodeError) as exc:
             error = exc if isinstance(exc, DeploymentError) else DeploymentError("deployment", str(exc))
             self.run_record["error"] = self._redact(error.detail)[:8_000]
+            self.run_record["error_step"] = error.step
             if quiesced and previous_dir and target_dir:
                 self.run_record["rollback"] = self._restore_previous(
                     previous_dir,
@@ -939,7 +1032,9 @@ class ReleaseManager:
                     target_started,
                     active_model_id,
                 )
-            self.run_record["status"] = "failed"
+            self.run_record["status"] = (
+                "rollback_failed" if self.run_record["rollback"].get("status") == "failed" else "failed"
+            )
             self.run_record["finished_at"] = timestamp()
             self.run_record["duration_seconds"] = round((now() - run_started).total_seconds(), 1)
             self.status["service"].update(
@@ -953,6 +1048,7 @@ class ReleaseManager:
             raise error
 
         self.run_record["status"] = "succeeded"
+        self.run_record["activated_sha"] = target_sha
         self.run_record["finished_at"] = timestamp()
         self.run_record["duration_seconds"] = round((now() - run_started).total_seconds(), 1)
         self.status["service"].update(state="idle", next_retry_at=None)

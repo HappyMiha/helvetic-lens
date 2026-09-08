@@ -24,6 +24,8 @@ import type {
   Profile,
   PromptSettings,
   ProductionDeploymentStatus,
+  DeploymentHistoryPage,
+  DeploymentRun,
   Scan,
   Source,
   SourceCapabilityCatalogue,
@@ -467,6 +469,16 @@ export const resources = {
       tags: ["deployments", "runtime", "administration"],
       staleMs: 10_000,
       pollMs: 10_000,
+    }),
+
+  deploymentHistory: (status = "", cursor = "") =>
+    key<DeploymentHistoryPage>(`platform:deployment-history:${JSON.stringify([status, cursor])}`,
+      `/admin/deployments/history?${new URLSearchParams({status, cursor, limit: "20"})}`, {
+        scope: "platform", owner: "administration", tags: ["deployments"], staleMs: 5_000, pollMs: cursor ? undefined : 10_000,
+      }),
+  deploymentRun: (id: string) =>
+    key<DeploymentRun>(`platform:deployment-run:${id}`, `/admin/deployments/history/${encodeURIComponent(id)}`, {
+      scope: "platform", owner: "administration", tags: ["deployments"], staleMs: 5_000, pollMs: 10_000,
     }),
 
   integrationLogs: <T = unknown>(query = "") => {
