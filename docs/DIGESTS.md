@@ -143,3 +143,40 @@ HL-079 remains **IN PROGRESS** for explicit topic/law/source-pack/event-type
 preference selection, organization policy, measured notification noise and any
 future immediate-delivery option. These additions extend currently enabled
 digests; they never opt a user into email or send one during development checks.
+
+## Offline local AI (HL-079/HL-089, 9 September 2026)
+
+The saved-source digest no longer requires an available local model. When its
+runtime cannot be verified, preview and delivery expose `ai_runtime_unverified`.
+Saved AI conclusions are withheld by the existing current-runtime/input/citation
+checks; prior assessments and their historical evidence are not deleted. This
+mode makes no generation, translation, token-counting or AI-admission request.
+The application/database and email transport must still be available.
+
+With no severity filter, or with Unknown included, delivery continues with saved
+source, topic and direct-watch facts and links to the current event/evidence view.
+Official deterministic relationships retain their independently established
+severity; absence of AI does not turn them into Low. Email text, HTML and preview
+explain the limitation in the requesting user/recipient's own language.
+
+If the user's nonempty severity filter excludes Unknown, the worker instead raises
+`digest_analysis_filter_unavailable` without advancing `last_sent_at`. Otherwise
+an empty/partial selection could silently consume a period containing an important
+but unassessed event. This is deliberately conservative even if some events have
+deterministic ratings. The preview explains that delivery is deferred and offers
+three remedies: restore local AI, include Unknown, or clear severity filters. No
+filter is changed automatically. Existing bounded queue retries still apply;
+exhausted work can be explicitly retried with its original delivery ID and period.
+Restoration does not generate fresh analysis merely to send the digest.
+
+`digest-interests-v2` invalidates earlier preparation/preview projections. A model
+transition between preparation and final send also requires re-selection; a
+checkpoint is neither a runtime attestation nor a permission cache. Recipient
+access, unsubscribe, quiet hours, current evidence, personal mutes and period
+deduplication are still checked. Once SMTP has accepted mail it cannot be recalled;
+this does not add an exactly-once guarantee across an SMTP/DB crash boundary.
+
+No schema migration or historical delivery rewrite. Tests use intercepted provider
+requests and captured mail, never external recipients. This completes the basic
+offline digest path, not broader filters, global capacity or independent pilot
+acceptance for HL-079/HL-089.

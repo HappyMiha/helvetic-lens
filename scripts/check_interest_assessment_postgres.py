@@ -19,6 +19,12 @@ from test_digest_briefs import (
     test_preview_and_actual_delivery_reuse_same_saved_assessment,
     test_recipient_locale_is_reloaded_at_send_not_from_preparation,
 )
+from test_digest_offline import (
+    test_filtered_offline_period_is_recoverable_without_false_empty_result,
+    test_offline_saved_brief_is_withheld_in_recipient_language,
+    test_offline_worker_sends_sources_once_without_reusing_old_ai,
+    test_runtime_transition_restarts_selection_before_sending,
+)
 from test_interest_admission import (
     test_65_current_interests_fail_as_a_whole_not_a_sample,
     test_changed_inputs_reject_fenced_inflight_completion,
@@ -118,6 +124,7 @@ from test_native_comparisons import (
     test_selection_does_not_commit_callers_transaction,
     test_tenant_selection_never_leaks_into_another_admitted_organization,
 )
+from test_relation_runtime import configure_local_relation
 
 
 def execute_local(harness, scenario, *, with_monkeypatch=False):
@@ -127,7 +134,17 @@ def execute_local(harness, scenario, *, with_monkeypatch=False):
         execution = execution_fixture.__wrapped__(harness, artifacts, patch)
         scenario(execution, patch) if with_monkeypatch else scenario(execution)
 
+def execute_relation(harness, scenario):
+    from pytest import MonkeyPatch
+    with MonkeyPatch.context() as patch:
+        scenario(configure_local_relation(harness, patch), patch)
+
+
 SUITES = {
+    "digest-offline-send": lambda harness: execute_relation(harness, lambda value, patch: test_offline_worker_sends_sources_once_without_reusing_old_ai(value, patch, [])),
+    "digest-offline-filter": lambda harness: execute_relation(harness, test_filtered_offline_period_is_recoverable_without_false_empty_result),
+    "digest-offline-transition": lambda harness: execute_relation(harness, lambda value, patch: test_runtime_transition_restarts_selection_before_sending(value, patch, False)),
+    "digest-offline-brief": lambda harness: execute_local(harness, lambda value, patch: test_offline_saved_brief_is_withheld_in_recipient_language(value, patch, "fr-CH"), with_monkeypatch=True),
     "digest-brief-roundtrip": lambda harness: execute_local(harness, test_preview_and_actual_delivery_reuse_same_saved_assessment, with_monkeypatch=True),
     "digest-brief-language": lambda harness: execute_local(harness, test_recipient_locale_is_reloaded_at_send_not_from_preparation, with_monkeypatch=True),
     "recovery-concurrency": lambda harness: execute_local(harness, test_concurrent_postgres_retries_have_one_receipt),

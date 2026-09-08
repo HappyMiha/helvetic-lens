@@ -40,7 +40,8 @@ export type DigestEvent = {
     evidence: string | null;
   }>;
 };
-export type DigestSummary = { events: DigestEvent[]; truncated: boolean };
+export type DigestSummary = { events: DigestEvent[]; truncated: boolean;
+  ai_runtime_unverified?: boolean; severity_filter_deferred?: boolean };
 export type DigestOverview = {
   preference: DigestPreference;
   preview: DigestSummary;

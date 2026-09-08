@@ -1,5 +1,7 @@
 import type { Locale } from "./i18n";
 type Copy = {
+  runtime_unavailable: string;
+  filter_deferred: string;
   brief_more: string;
   boundary: string;
   more: string;
@@ -12,6 +14,8 @@ type Copy = {
 };
 export const digestInterestCopy: Record<Locale, Copy> = {
   "en-CH": {
+    runtime_unavailable: "Local AI could not be verified. This digest uses saved sources; unverified AI conclusions are omitted. Monitoring continues.",
+    filter_deferred: "Your severity filter excludes unassessed items. Delivery is deferred and the period is retained. Restore local AI, include Unknown or clear severity filters.",
     brief_more: "Three reasons are shown. Open the event for the complete saved brief.",
     boundary:
       "Saved topic matches are not confirmed legal impacts. Unknown means impact has not been assessed.",
@@ -26,6 +30,8 @@ export const digestInterestCopy: Record<Locale, Copy> = {
       "This digest is limited to 50 events. Open Today for all current interests, or narrow your source and severity filters.",
   },
   "de-CH": {
+    runtime_unavailable: "Die lokale KI konnte nicht geprüft werden. Dieser Digest nutzt gespeicherte Quellen; ungeprüfte KI-Schlussfolgerungen werden ausgelassen. Die Überwachung läuft weiter.",
+    filter_deferred: "Ihr Schweregradfilter schliesst unbewertete Einträge aus. Der Versand wird verschoben und der Zeitraum bleibt erhalten. Stellen Sie die lokale KI wieder her, wählen Sie Unbekannt oder entfernen Sie die Schweregradfilter.",
     brief_more: "Drei Gründe werden angezeigt. Öffnen Sie das Ereignis für die vollständige Analyse.",
     boundary:
       "Gespeicherte Thementreffer sind keine bestätigten rechtlichen Auswirkungen. Unbekannt bedeutet, dass die Auswirkung nicht bewertet wurde.",
@@ -40,6 +46,8 @@ export const digestInterestCopy: Record<Locale, Copy> = {
       "Diese Zusammenfassung ist auf 50 Ereignisse begrenzt. Öffnen Sie Heute für alle aktuellen Interessen oder grenzen Sie Quellen und Schweregrade ein.",
   },
   "fr-CH": {
+    runtime_unavailable: "L’IA locale n’a pas pu être vérifiée. Cette synthèse utilise les sources enregistrées et omet les conclusions IA non vérifiées. La surveillance continue.",
+    filter_deferred: "Votre filtre de gravité exclut les éléments non évalués. L’envoi est différé et la période est conservée. Rétablissez l’IA locale, incluez Inconnu ou retirez les filtres de gravité.",
     brief_more: "Trois raisons sont affichées. Ouvrez l’événement pour l’analyse complète.",
     boundary:
       "Les correspondances thématiques enregistrées ne sont pas des impacts juridiques confirmés. Inconnu signifie que l’impact n’a pas été évalué.",
@@ -54,6 +62,8 @@ export const digestInterestCopy: Record<Locale, Copy> = {
       "Cette synthèse est limitée à 50 événements. Ouvrez Aujourd’hui pour tous les intérêts actuels ou affinez les sources et la gravité.",
   },
   "it-CH": {
+    runtime_unavailable: "Non è stato possibile verificare l’IA locale. Questo riepilogo usa le fonti salvate e omette le conclusioni IA non verificate. Il monitoraggio continua.",
+    filter_deferred: "Il filtro di gravità esclude gli elementi non valutati. L’invio è rinviato e il periodo conservato. Ripristina l’IA locale, includi Sconosciuto o rimuovi i filtri di gravità.",
     brief_more: "Sono mostrati tre motivi. Apri l’evento per l’analisi completa.",
     boundary:
       "Le corrispondenze tematiche salvate non sono impatti giuridici confermati. Sconosciuto significa che l’impatto non è stato valutato.",
@@ -68,6 +78,8 @@ export const digestInterestCopy: Record<Locale, Copy> = {
       "Questo riepilogo è limitato a 50 eventi. Apri Oggi per tutti gli interessi attuali o restringi fonti e gravità.",
   },
   "rm-CH": {
+    runtime_unavailable: "L’IA locala n’ha betg pudì vegnir verifitgada. Quest resum dovra funtaunas memorisadas ed ometta conclusiuns IA betg verifitgadas. La surveglianza cuntinuescha.",
+    filter_deferred: "Tes filter da grevezza excluda elements betg valitads. La spediziun vegn spustada e la perioda mantegnida. Restabilescha l’IA locala, includa Nunenconuschent u allontana ils filters da grevezza.",
     brief_more: "Trais motivs vegnan mussads. Avra l’eveniment per l’analisa cumpletta.",
     boundary:
       "Correspundenzas tematicas memorisadas n’èn betg effects giuridics confermads. Nunenconuschent signifitga che l’effect n’è betg vegnì valità.",

@@ -1862,6 +1862,19 @@ Acceptance criteria:
 
 ### HL-079 — Add topic matches to existing digests
 
+**9 September 2026 — offline local-AI delivery:** Source/topic/direct-watch digests
+now remain deliverable when the local model cannot be verified, with a visible
+five-language notice and no stale AI prose. This applies when severity selection
+is empty or includes Unknown. A severity filter excluding Unknown conservatively
+defers delivery and retains the period; it never silently treats unassessed events
+as Low or changes the user's filters. Restoring the model permits the same queued
+delivery to resume; exhausted retries remain explicitly retryable. Runtime changes
+between preparation and sending restart selection. PostgreSQL recovery, synthetic
+captured-mail, five-language browser and build evidence is in `docs/VERIFICATION.md`.
+No migration, real mail or production deployment. Broader preference selection,
+organization policy, capacity and independent notification-noise evidence remain
+open; HL-079 and HL-089 are still **IN PROGRESS**.
+
 **8 September 2026 — current-interest delivery:** Preview, resumable selection and final delivery now reuse the same topic/direct-watch eligibility and evidence checks as Today, alongside saved law impacts. Events are grouped once; topic confidence never becomes impact severity. Five-language previews/emails show saved matching terms, explicit five-interest limits and exact event/review links; the full-list link now reaches Today. Unknown-severity selection is explained even for an empty preview. Old preparations restart on the new projection; final send rechecks paused/revised/rejected/expired/revoked evidence and personal state. No new inference or read-state mutation. See [delivery contract](docs/DIGESTS.md#current-topic-and-direct-watch-interests-hl-079-8-september-2026) and verification. **Still open:** explicit topic/law/pack/type filters, organization policy, noise/user evidence and any immediate-delivery option. HL-079 remains **IN PROGRESS**.
 
 **6 September 2026 — IN PROGRESS (recipient quiet hours):** Opt-in local start/end times now gate actual digest delivery, including delayed jobs and Send now. A quiet-period boundary crossed during rendering defers the same job to the next allowed UTC minute, retaining preparation and failure-attempt budget. Early duplicate claims do not bypass the wait; unsubscribe and current evidence are rechecked on resume. Five-language controls and history explain the wait. Older clients preserve the saved pair and invalid edits roll back; quiet-only changes preserve cadence. Already deferred jobs retain their wake-up until reevaluation, and already accepted SMTP cannot be recalled. SQLite, isolated PostgreSQL and mobile/desktop browser evidence is in `docs/VERIFICATION.md`. Topic inclusion, broader filters, organization policy and measured notification/noise gates remain open. No production migration, deployment or real email.

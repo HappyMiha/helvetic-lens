@@ -7,7 +7,7 @@ from .impact_inbox import ImpactInboxFilters, _iso
 from .interest_feed import InterestFeedReader
 from .models import RegulatoryEvent, RegulatoryEventUserState
 
-PROJECTION_VERSION = "digest-interests-v1"
+PROJECTION_VERSION = "digest-interests-v2"
 
 
 class DigestReader(InterestFeedReader):

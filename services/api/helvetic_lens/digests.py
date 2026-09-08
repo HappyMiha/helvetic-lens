@@ -36,7 +36,7 @@ from .models import (
 )
 from .prompt_settings import resolved_prompt_settings
 from .relation_analysis import configuration_fingerprint, relation_prompt_fingerprint
-from .relation_runtime import RelationRuntimeObservation, require_fingerprint
+from .relation_runtime import RelationRuntimeObservation
 
 QUIET_WAIT = "Waiting for the recipient's quiet hours to end."
 
@@ -225,6 +225,24 @@ def filtered_summary(page: dict, preference: DigestPreference, period_start: dat
     return summarize_groups(page.get("items", []), preference, period_start, period_end)
 
 
+def runtime_notice(reader: ImpactInboxReader, preference: DigestPreference) -> dict:
+    """Missing AI is a visible source-only mode, never a Low assessment."""
+    if reader.settings.apertus_provider != "docker" or reader.runtime_fingerprint is not None:
+        return {}
+    return {"ai_runtime_unverified": True,
+            "severity_filter_deferred": bool(preference.severities and "unknown" not in preference.severities)}
+
+
+def delivery_runtime(reader: ImpactInboxReader, preference: DigestPreference) -> str | None:
+    # A severity-only subscriber did not opt into unassessed items. Advancing
+    # their period from an incomplete selection would silently lose alerts.
+    if runtime_notice(reader, preference).get("severity_filter_deferred"):
+        raise DomainError("The local model is unavailable and this digest excludes unassessed items. "
+                          "The period is retained. Restore the model, include Unknown or clear severity filters.",
+                          503, "digest_analysis_filter_unavailable")
+    return reader.runtime_fingerprint
+
+
 def summarize_groups(groups: Iterable[dict], preference: DigestPreference, period_start: datetime, period_end: datetime) -> dict:
     selected = []
     truncated = False
@@ -304,6 +322,9 @@ def render_message(settings: Settings, delivery: DigestDelivery, user: User) -> 
     subject = message["subject"].format(count=len(events))
     lines = [message["heading"]]
     cards = []
+    runtime_notice_text = interest_message["runtime_unavailable"] if (delivery.summary or {}).get("ai_runtime_unverified") else ""
+    if runtime_notice_text:
+        lines.append("\n" + runtime_notice_text)
     limit_notice = interest_message["event_limit"] if (delivery.summary or {}).get("truncated") else ""
     if limit_notice:
         lines.append("\n" + limit_notice)
@@ -368,6 +389,7 @@ def render_message(settings: Settings, delivery: DigestDelivery, user: User) -> 
     lines.extend([f"\n{interest_message['open_list']}: {inbox_url}", f"{message['unsubscribe']}: {unsubscribe_url}"])
     html = (
         f'<html lang="{locale}"><body><h1>{escape(message["heading"])}</h1>'
+        + (f"<p>{escape(runtime_notice_text)}</p>" if runtime_notice_text else "")
         + (f"<p>{escape(limit_notice)}</p>" if limit_notice else "")
         + ("".join(cards) or f'<p>{escape(message["empty"])}</p>')
         + f'<p><a href="{inbox_url}">{escape(interest_message["open_list"])}</a></p>'
@@ -517,7 +539,7 @@ def prepare_batch(session: Session, delivery_id: str, checkpoint: dict | None = 
         _validate_selection(delivery, checkpoint)
     fingerprint = _preference_fingerprint(preference)
     reader = _reader(session, delivery, settings, runtime)
-    runtime_fingerprint = require_fingerprint(reader.settings, delivery.organization_id, runtime)
+    runtime_fingerprint = delivery_runtime(reader, preference)
     configuration = configuration_fingerprint(reader.settings)
     prompt = relation_prompt_fingerprint(reader.prompts)
     if (not checkpoint or checkpoint.get("projection_version") != PROJECTION_VERSION
@@ -582,7 +604,7 @@ def deliver(database: Database, settings: Settings, delivery_id: str, *, selecti
             return None
         filters = inbox_filters(preference, delivery.period_start, delivery.period_end)
         reader = _reader(session, delivery, analysis_settings or settings, runtime)
-        runtime_fingerprint = require_fingerprint(reader.settings, delivery.organization_id, runtime)
+        runtime_fingerprint = delivery_runtime(reader, preference)
         if selection is not None:
             _validate_selection(delivery, selection)
             if (not selection.get("complete") or selection.get("projection_version") != PROJECTION_VERSION
@@ -596,7 +618,8 @@ def deliver(database: Database, settings: Settings, delivery_id: str, *, selecti
         # Recheck current access, personal state and saved conclusions for at most
         # 51 selected events. A completed preparation is never a permission cache.
         groups = reader.iter_groups(session, filters)
-        delivery.summary = summarize_groups(groups, preference, delivery.period_start, delivery.period_end)
+        delivery.summary = {**summarize_groups(groups, preference, delivery.period_start, delivery.period_end),
+                            **runtime_notice(reader, preference)}
         delivery.item_count = len(delivery.summary["events"])
         if not delivery.item_count:
             delivery.status = "skipped"

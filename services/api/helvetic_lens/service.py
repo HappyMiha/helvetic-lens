@@ -1258,6 +1258,7 @@ class HelveticLens:
             locale = normalize_locale(output_locale or (user.locale if user else None), self.settings.default_locale).split("-")[0]
             preview = attach(session, self.organization_id, preview, locale, context=self.brief_read_context(),
                              configuration=self.brief_configuration(session))
+            preview.update(digests.runtime_notice(reader, effective))
             deliveries = list(
                 session.scalars(
                     select(DigestDelivery)

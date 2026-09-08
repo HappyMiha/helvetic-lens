@@ -2,6 +2,7 @@
 
 MESSAGES = {
     "en-CH": {
+        "runtime_unavailable": "Local AI could not be verified. This digest uses saved sources; unverified AI conclusions are omitted. Monitoring continues.",
         "boundary": "Saved topic matches are not confirmed legal impacts. Unknown means impact has not been assessed.",
         "more": "Up to five topics and five directly monitored documents are shown. Open the event for all current interests and evidence.",
         "reason": "Matched terms",
@@ -12,6 +13,7 @@ MESSAGES = {
         "event_limit": "This digest is limited to 50 events. Open Today for all current interests, or narrow your source and severity filters.",
     },
     "de-CH": {
+        "runtime_unavailable": "Die lokale KI konnte nicht geprüft werden. Dieser Digest nutzt gespeicherte Quellen; ungeprüfte KI-Schlussfolgerungen werden ausgelassen. Die Überwachung läuft weiter.",
         "boundary": "Gespeicherte Thementreffer sind keine bestätigten rechtlichen Auswirkungen. Unbekannt bedeutet, dass die Auswirkung nicht bewertet wurde.",
         "more": "Bis zu fünf Themen und fünf direkt überwachte Dokumente werden angezeigt. Öffnen Sie das Ereignis für alle aktuellen Interessen und Belege.",
         "reason": "Übereinstimmende Begriffe",
@@ -22,6 +24,7 @@ MESSAGES = {
         "event_limit": "Diese Zusammenfassung ist auf 50 Ereignisse begrenzt. Öffnen Sie Heute für alle aktuellen Interessen oder grenzen Sie Quellen und Schweregrade ein.",
     },
     "fr-CH": {
+        "runtime_unavailable": "L’IA locale n’a pas pu être vérifiée. Cette synthèse utilise les sources enregistrées et omet les conclusions IA non vérifiées. La surveillance continue.",
         "boundary": "Les correspondances thématiques enregistrées ne sont pas des impacts juridiques confirmés. Inconnu signifie que l’impact n’a pas été évalué.",
         "more": "Au maximum cinq sujets et cinq documents directement surveillés sont affichés. Ouvrez l’événement pour tous les intérêts actuels et les preuves.",
         "reason": "Termes correspondants",
@@ -32,6 +35,7 @@ MESSAGES = {
         "event_limit": "Cette synthèse est limitée à 50 événements. Ouvrez Aujourd’hui pour tous les intérêts actuels ou affinez les sources et la gravité.",
     },
     "it-CH": {
+        "runtime_unavailable": "Non è stato possibile verificare l’IA locale. Questo riepilogo usa le fonti salvate e omette le conclusioni IA non verificate. Il monitoraggio continua.",
         "boundary": "Le corrispondenze tematiche salvate non sono impatti giuridici confermati. Sconosciuto significa che l’impatto non è stato valutato.",
         "more": "Sono mostrati fino a cinque temi e cinque documenti monitorati direttamente. Apri l’evento per tutti gli interessi attuali e le prove.",
         "reason": "Termini corrispondenti",
@@ -42,6 +46,7 @@ MESSAGES = {
         "event_limit": "Questo riepilogo è limitato a 50 eventi. Apri Oggi per tutti gli interessi attuali o restringi fonti e gravità.",
     },
     "rm-CH": {
+        "runtime_unavailable": "L’IA locala n’ha betg pudì vegnir verifitgada. Quest resum dovra funtaunas memorisadas ed ometta conclusiuns IA betg verifitgadas. La surveglianza cuntinuescha.",
         "boundary": "Correspundenzas tematicas memorisadas n’èn betg effects giuridics confermads. Nunenconuschent signifitga che l’effect n’è betg vegnì valità.",
         "more": "Fin a tschintg temas e tschintg documents survegliads directamain vegnan mussads. Avra l’eveniment per tut ils interess actuals e las cumprovas.",
         "reason": "Noziuns correspundentas",

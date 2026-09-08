@@ -27,4 +27,18 @@ for (const locale of ["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"]) {
       assert.equal(render(summary), "");
     }
   });
+  test(`${locale}: offline source-only preview explains unavailable AI without inventing overflow`, () => {
+    const html = render({ events: [], ai_runtime_unverified: true, severity_filter_deferred: false });
+    assert.match(html, /data-digest-runtime="unverified"/);
+    assert.match(html, /href="\/"/);
+    assert.equal((html.match(/<p[ >]/g) || []).length, 1);
+    assert.doesNotMatch(html, /50|digests\.|runtime_unavailable|filter_deferred/);
+  });
+  test(`${locale}: an empty filtered preview explains why the period is retained`, () => {
+    const html = render({ events: [], ai_runtime_unverified: true, severity_filter_deferred: true });
+    assert.match(html, /data-digest-runtime="unverified"/);
+    assert.equal((html.match(/<p[ >]/g) || []).length, 2);
+    assert.doesNotMatch(html, /50|digests\.|runtime_unavailable|filter_deferred/);
+    assert.ok(html.length > render({ ai_runtime_unverified: true }).length + 50);
+  });
 }

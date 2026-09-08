@@ -1,5 +1,44 @@
 # Verification record
 
+## Offline source digests with retained filtered periods — 9 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl079-offline-digests`, based on `70ced09`. Optional
+  summary flags and projection `digest-interests-v2`; no migration, production
+  restart, real mail, model download or real inference.
+- **87 passed, 1 skipped in 169.49s** across `test_digest_offline.py`,
+  `test_relation_runtime.py`, `test_digest_resume.py`, `test_digest_topics.py` and
+  `test_digest_quiet.py`. The skip is the pre-existing PostgreSQL-only concurrent
+  relation enqueue test, not an offline-delivery failure. One existing
+  Starlette/httpx deprecation warning. Coverage includes no/Unknown/mixed severity
+  filters, old AI omission, persisted period recovery, both runtime transition
+  directions, no repeated mail, five recipient languages and no new inference or
+  token counting. Existing unsubscribe/private/mute/checkpoint/quiet-hour guards
+  remain covered by these regressions.
+- Isolated **PostgreSQL 17.11** loopback/tmpfs: suites `digest-offline-send`,
+  `digest-offline-filter`, `digest-offline-transition`, `digest-offline-brief` pass
+  through `scripts/check_interest_assessment_postgres.py`. Real SQL/worker/service
+  paths, synthetic provider and captured mail. A filtered failed attempt retains
+  its period; explicit retry after runtime recovery sends that original delivery.
+- **30 component checks** pass across DE/FR/IT/RM/EN. Production browser:
+  10 locale × 390/1440px journeys plus 20 source-only/filtered-offline states;
+  **40 full-document axe checkpoints** pass reported violations and prohibited
+  ARIA checks. Other incomplete checks remain recorded, not certified accessible.
+  Mobile filtered and desktop source-only screenshots visually inspected: readable
+  notice, reachable Today link, no horizontal overflow. APIs were intercepted;
+  no digest-send or AI-generation request. The initial sandboxed browser run
+  terminated before connecting CDP; its isolated rerun completed successfully.
+- Root `npm run build` passes the release localization, shell/resource/report,
+  type and production compilation gates. Ruff passes. Ignored evidence:
+  `test-results/offline-digest-build.txt`, `test-results/offline-digest-browser.txt`
+  and `test-results/digest-preview/offline-*.png`. Initial synthetic tests were
+  corrected to distinguish historical AI citations from current evidence and
+  create a saved variant in the tested recipient language before taking AI offline.
+- This supersedes the older all-digests runtime gate described below. A nonempty
+  filter excluding Unknown still deliberately defers, rather than consuming an
+  incomplete period. The older full Linux API baseline does not verify this code.
+  Broader filters/policy, real language/model/hardware quality, capacity and
+  independent user/pilot acceptance remain unfinished.
+
 ## Recipient-language saved briefs in digests — 8 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl089-digest-briefs`, based on `7fcb894`. No migration

@@ -69,6 +69,7 @@ let locale = "en-CH",
   revision = 1,
   invalid = false;
 let preference;
+let offlineMode = null;
 const defaultPreference = () => ({
   enabled: false,
   frequency: "weekly",
@@ -91,7 +92,7 @@ function response(cursor = "") {
           ? []
           : [
               {
-                brief: {
+                brief: offlineMode ? { status: "runtime_unverified", locale: locale.slice(0,2) } : {
                   status:"available", locale:locale.slice(0,2), assessment_id:"synthetic-saved-brief", saved_at:stamp,
                   what_happened:{text:"Synthetic saved AI brief <script>not executable</script>",evidence_ids:["e1"]},
                   importance:{text:"Synthetic organization relevance, not a legal conclusion.",level:"low",evidence_ids:["e1"]},
@@ -115,6 +116,8 @@ function response(cursor = "") {
               },
             ],
       truncated: false,
+      ai_runtime_unverified: offlineMode !== null,
+      severity_filter_deferred: offlineMode === "filtered",
       counts_scope: "page",
       scanned_event_count: index < 2 ? 50 : 21,
       period_start: "2026-08-29T08:00:00Z",
@@ -252,6 +255,7 @@ try {
     for (const width of [390, 1440]) {
       revision = 1;
       invalid = false;
+      offlineMode = null;
       preference = defaultPreference();
       await cdp.send("Emulation.setDeviceMetricsOverride", {
         width,
@@ -449,6 +453,21 @@ try {
           Buffer.from(shot.data, "base64"),
         );
       }
+      for (offlineMode of ["sources", "filtered"]) {
+        preference.severities = offlineMode === "filtered" ? ["high"] : ["unknown"];
+        await cdp.send("Page.navigate", { url: `${base}/digests?locale=${locale}` });
+        await waitFor(ready, "Offline preview failed to render");
+        assert.equal(await evaluate(cdp, `document.querySelectorAll('[data-digest-runtime] p').length`), offlineMode === "filtered" ? 2 : 1);
+        assert.ok(await evaluate(cdp, `document.querySelector('[data-digest-runtime]').innerText.length > 50`));
+        assert.ok(await evaluate(cdp, `document.documentElement.scrollWidth<=innerWidth+1`));
+        assert.equal(await evaluate(cdp, `document.querySelector('[data-digest-coverage] a').getAttribute('href')`), '/');
+        await accessibility.check(cdp, `digest-offline-${offlineMode}-${locale}-${width}`, '[data-digest-runtime]');
+        if (locale === "en-CH") {
+          await evaluate(cdp, `document.querySelector('[data-digest-runtime]').scrollIntoView({block:'center'})`);
+          const shot = await cdp.send("Page.captureScreenshot", {format:"png"});
+          await writeFile(join(root, `test-results/digest-preview/offline-${offlineMode}-${width}.png`), Buffer.from(shot.data,"base64"));
+        }
+      }
     }
   }
   assert.equal(
@@ -456,9 +475,9 @@ try {
     false,
   );
   assert.deepEqual(exceptions, []);
-  await accessibility.finish(20);
+  await accessibility.finish(40);
   console.log(
-    "Digest production UI: 10 journeys (DE/FR/IT/RM/EN x 390/1440px); bounded sparse next/back, captured period, focus, unsaved choices and local delivery clock, explicit schedule save, stale-cursor recovery and touch targets pass. All API calls intercepted; no mail, inference or production data touched.",
+    "Digest production UI: 10 journeys (DE/FR/IT/RM/EN x 390/1440px), plus 20 offline source/filter states; bounded sparse next/back, captured period, focus, unsaved choices and local delivery clock, explicit schedule save, stale-cursor recovery and touch targets pass. All API calls intercepted; no mail, inference or production data touched.",
   );
 } catch (error) {
   console.error({
