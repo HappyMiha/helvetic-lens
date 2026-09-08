@@ -97,6 +97,10 @@ def test_actual_release_pipeline_records_only_verified_activation_and_exact_atte
     host.env_file.write_text("HELVETIC_LENS_RELEASE=git-old\nTOKEN=test-secret-value\n")
     host._ensure_release = lambda sha: tmp_path
     def quality(_dir, _command, phase):
+        if phase == "api_tests":
+            assert "services/api/tests -vv --durations=25" in _command
+            assert "faulthandler_timeout=120" in _command
+            assert "-k " not in _command and "--ignore" not in _command
         if failure == phase:
             raise release_manager.DeploymentError(phase, "A synthetic test failed: test-secret-value")
     host._run_api_quality_gate = quality

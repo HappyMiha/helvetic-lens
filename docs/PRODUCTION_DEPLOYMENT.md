@@ -152,6 +152,40 @@ Git-dependent evaluation tests create their own temporary repository and verify
 real commit provenance there. Do not skip them or add Git to the production API
 image to repair a missing test dependency.
 
+### API test time budget and timeout diagnostics
+
+The full API gate has a finite **7,200-second** default budget. Host operators can
+set `HELVETIC_LENS_API_TEST_TIMEOUT_SECONDS` from 300 to 21,600 seconds in the
+release-manager process/cron environment; this is not an API-container setting.
+For a one-off operator run after installing the reviewed manager:
+
+```sh
+HELVETIC_LENS_API_TEST_TIMEOUT_SECONDS=7200 /usr/bin/python3 /srv/helvetic-lens/deploy-control/release_manager.py --poll
+```
+
+The gate still runs every API test, using the frozen dependency lock. Verbose test
+IDs, the 25 slowest durations and a Python stack dump after a test exceeds 120
+seconds aid diagnosis. The stack dump does not interrupt or pass a test. On a
+total timeout, captured output is redacted into the host log and its bounded last
+40 lines into the deployment error instead of losing it behind a Docker command.
+Subprocess output is captured until completion/timeout, not streamed to the UI.
+A timeout is always a failed gate; the running application is not stopped for it.
+
+Every QA container gets a unique `helvetic-api-qa-...` name, a purpose label and
+`--init`. Success, test failure, timeout and handled interruption all attempt to
+remove only that container, because terminating a Docker CLI can leave its
+container running. Cleanup failure remains visible and must be inspected on the
+host. An uncatchable host/process kill can still leave a container; compare its
+name, purpose label, running process and deployment record before removing it.
+Never use a blanket prune or remove database/document/backup volumes to repair
+this gate. Older unnamed containers need separate inspection; this change cannot
+identify them retroactively.
+
+The reported 1,800-second failure alone does not identify a hung test. The growing
+full suite may exceed the old budget; it still needs an actual run on the target
+host. If it fails again, use the last test ID/stack and duration evidence before
+raising the limit further. No tests should be skipped to obtain a green release.
+
 When an older installed release manager cannot pass a gate because its test runner
 lacks a new dependency, updating `main` alone cannot bootstrap the new manager:
 its normal self-update happens only after success. First verify and commit the

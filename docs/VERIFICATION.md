@@ -1,5 +1,38 @@
 # Verification record
 
+## Deployment API-test timeout diagnostics — 8 September 2026 (HappyDucky02)
+
+- User supplied a failed `api_tests` phase on release `be17fcc`: Docker CLI timed
+  out after the hard-coded 1,800 seconds. Inspection found `_run` discarded
+  `TimeoutExpired.output`, the QA container was unnamed, and no explicit cleanup
+  followed CLI timeout. This proves diagnostic/cleanup gaps, not which test on
+  HappySnowman was slow or hung.
+- Branch `codex/HappyDucky02/deploy-api-test-timeout`, based on `c59d523`. The gate
+  now keeps the complete test suite and frozen dependencies, with a two-hour
+  default bounded host override, verbose IDs, durations and a 120-second diagnostic
+  stack dump. Partial stdout/stderr survives timeout in redacted host logs/error
+  excerpts. Unique per-gate containers get targeted cleanup; cleanup failure does
+  not hide the original failure or mark an unverified cleanup successful.
+- **27 final Linux tests passed in 1.43 seconds**, covering the release manager and its
+  persisted history. One test executes a real child process that prints a test ID
+  and synthetic secrets then sleeps: its one-second timeout preserves the ID and
+  removes the secrets. Other tests cover cleanup command targeting on success,
+  failure, timeout and interruption; missing containers, failed cleanup, operator
+  budget validation and unchanged lint timeout. External Docker/deployment commands
+  in pipeline tests are replaced; this does not claim a real deployment passed.
+- **21 API deployment/history/configuration regressions passed** in 2.55 seconds.
+  The actual pipeline test also asserts that the complete API suite, verbose IDs
+  and diagnostic stack option remain in the gate without test selection/skips.
+- The isolated Linux container had no network, Docker socket, production data or
+  credentials. Only explicit read-only source/test copies were mounted; it ran as
+  UID 1000 with temporary `/tmp` and was removed. Ruff and diff checks pass.
+- The current Windows-compatible collection contains **1,704 tests** (0.95 seconds
+  to collect), excluding the two Linux-only manager files tested separately. This
+  is a suite-size observation, not a full-suite pass or a runtime measurement of
+  the failing `be17fcc` release. The user authorized production recovery, but
+  HappySnowman access/actual manager installation and target-host gate completion
+  are not yet verified. No production restart or cleanup has been claimed.
+
 ## Matching-triggered brief admission — 8 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl-089-matching-brief-admission`, based on `653b5cf`.

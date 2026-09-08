@@ -2420,6 +2420,16 @@ Acceptance criteria:
 
 ### HL-102 — Browse actual deployment history, errors and deployed release notes
 
+**8 September 2026 timeout follow-up:** The full API gate now has a bounded,
+operator-configurable two-hour default, verbose test IDs/slow-test diagnostics,
+and preserves redacted partial output when the command times out. Its unique QA
+container is cleaned on success/failure/timeout/interruption; cleanup uncertainty
+is visible without masking the original error. No test gate is skipped and no
+working Docker volume is pruned. Linux regression evidence is recorded below in
+`docs/VERIFICATION.md`; target-host rollout and the full production gate still
+need actual verification. An older installed manager must be updated under its
+deployment lock, because normal self-update occurs only after a successful release.
+
 **P1 — IMPLEMENTED, locally verified 8 September 2026 (HappyDucky02).**
 The host manager now checkpoints every recorded attempt into a permanent journal;
 the admin UI pages all retained records and opens phases, sanitized errors,

@@ -37,6 +37,19 @@ WRITER_SERVICES = (
     "model-manager",
 )
 SECRET_KEY_PARTS = ("PASSWORD", "SECRET", "TOKEN", "CREDENTIAL", "API_KEY")
+API_TEST_TIMEOUT_DEFAULT = 7200
+
+
+def api_test_timeout() -> int:
+    """Host operator budget; fail closed on a typo rather than disabling the gate."""
+    value = os.getenv("HELVETIC_LENS_API_TEST_TIMEOUT_SECONDS", str(API_TEST_TIMEOUT_DEFAULT))
+    try:
+        seconds = int(value)
+    except ValueError as exc:
+        raise ValueError("HELVETIC_LENS_API_TEST_TIMEOUT_SECONDS must be an integer") from exc
+    if not 300 <= seconds <= 21600:
+        raise ValueError("HELVETIC_LENS_API_TEST_TIMEOUT_SECONDS must be between 300 and 21600")
+    return seconds
 
 
 def now() -> datetime:
@@ -211,8 +224,19 @@ class ReleaseManager:
                 timeout=timeout,
                 check=False,
             )
-        except (OSError, subprocess.TimeoutExpired) as exc:
-            raise DeploymentError(step, f"Unable to run {step}: {exc}") from exc
+        except subprocess.TimeoutExpired as exc:
+            partial = exc.output or ""
+            if isinstance(partial, bytes):
+                partial = partial.decode("utf-8", errors="replace")
+            output = self._redact(partial)
+            if output:
+                self._log(output)
+            excerpt = "\n".join(output.strip().splitlines()[-40:])[-6500:]
+            detail = f"{step} exceeded its {timeout}-second time limit. This is not a passing test result."
+            detail += (f"\nLast captured output:\n{excerpt}" if excerpt else "\nNo command output was captured.")
+            raise DeploymentError(step, detail) from exc
+        except OSError as exc:
+            raise DeploymentError(step, self._redact(f"Unable to run {step}: {exc}")) from exc
         output = self._redact(completed.stdout or "")
         if output:
             self._log(output)
@@ -497,6 +521,7 @@ class ReleaseManager:
         return changes
 
     def _run_api_quality_gate(self, release_dir: Path, command: str, step: str) -> None:
+        timeout = api_test_timeout() if step == "api_tests" else 1800
         self.cache_dir.mkdir(parents=True, exist_ok=True, mode=0o755)
         context = release_dir / "deploy" / "api-quality"
         # Build from a tiny, secret-free context, and cache by the reviewed recipe.
@@ -507,42 +532,44 @@ class ReleaseManager:
             step=step,
             timeout=600,
         )
-        self._run(
-            [
-                "/usr/bin/docker",
-                "run",
-                "--rm",
-                "--user",
-                f"{os.getuid()}:{os.getgid()}",
-                "-e",
-                "HOME=/tmp",
-                "-e",
-                "UV_CACHE_DIR=/cache",
-                "-e",
-                "UV_PROJECT_ENVIRONMENT=/tmp/helvetic-lens-venv",
-                "-e",
-                "RUFF_CACHE_DIR=/tmp/ruff-cache",
-                "-e",
-                "PYTHONDONTWRITEBYTECODE=1",
-                "-e",
-                "HELVETIC_LENS_DATA_DIR=/tmp/helvetic-lens-data",
-                "-e",
-                "PYTHONPATH=/workspace",
-                "-v",
-                f"{release_dir}:/workspace:ro",
-                "-v",
-                f"{self.cache_dir}:/cache",
-                "-w",
-                "/workspace",
-                image,
-                "uv",
-                "run",
-                "--frozen",
-                *command.split(),
-            ],
-            step=step,
-            timeout=1800,
-        )
+        container = f"helvetic-api-qa-{uuid.uuid4().hex}"
+        run_command = [
+            "/usr/bin/docker", "run", "--rm", "--init", "--name", container,
+            "--label", "helvetic-lens.purpose=deployment-quality-gate",
+            "--user", f"{os.getuid()}:{os.getgid()}",
+            "-e", "HOME=/tmp",
+            "-e", "UV_CACHE_DIR=/cache",
+            "-e", "UV_PROJECT_ENVIRONMENT=/tmp/helvetic-lens-venv",
+            "-e", "RUFF_CACHE_DIR=/tmp/ruff-cache",
+            "-e", "PYTHONDONTWRITEBYTECODE=1",
+            "-e", "PYTHONUNBUFFERED=1",
+            "-e", "HELVETIC_LENS_DATA_DIR=/tmp/helvetic-lens-data",
+            "-e", "PYTHONPATH=/workspace",
+            "-v", f"{release_dir}:/workspace:ro",
+            "-v", f"{self.cache_dir}:/cache",
+            "-w", "/workspace", image, "uv", "run", "--frozen", *command.split(),
+        ]
+        failure = None
+        try:
+            self._run(run_command, step=step, timeout=timeout)
+        except BaseException as exc:
+            failure = exc
+            raise
+        finally:
+            # A timeout kills the Docker CLI, not necessarily its container.
+            # This UUID identifies only this gate; never prune the host or volumes.
+            try:
+                cleanup = self._run(["/usr/bin/docker", "rm", "--force", container],
+                    step=f"{step}_cleanup", check=False, timeout=60)
+                if cleanup.returncode and "No such container" not in (cleanup.stdout or ""):
+                    raise DeploymentError(step, "Could not confirm removal of the quality-gate container.")
+            except DeploymentError as cleanup_error:
+                self._log(f"Quality-gate cleanup needs attention: {cleanup_error}")
+                if failure is None:
+                    raise
+                if isinstance(failure, DeploymentError):
+                    failure.detail += f"\nCleanup could not be confirmed for test container {container}; inspect it on the host."
+                    failure.args = (failure.detail,)
 
     def _public_health(self) -> None:
         public_base = self.env_values.get("PUBLIC_BASE_URL", "").rstrip("/")
@@ -944,7 +971,7 @@ class ReleaseManager:
             with self.step("api_tests"):
                 self._run_api_quality_gate(
                     target_dir,
-                    "--project services/api pytest -p no:cacheprovider services/api/tests -q",
+                    "--project services/api pytest -p no:cacheprovider services/api/tests -vv --durations=25 -o faulthandler_timeout=120",
                     "api_tests",
                 )
 
