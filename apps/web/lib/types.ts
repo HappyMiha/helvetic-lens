@@ -489,10 +489,14 @@ export type Law = {
 };
 export type HistoryPageInfo = { total: number; as_of: string; limit: number; first_cursor: string; next_cursor: string | null };
 export type LawHistoryKind = "versions" | "comparisons" | "observations";
+export type RegulatoryTimelineKind = "timeline" | "identifiers" | "expressions" | "relations" | "source_provenance";
+export type RegulatoryTimeline = LawDetail["regulatory_timeline"];
+export type RegulatoryTimelinePage<K extends RegulatoryTimelineKind> = HistoryPageInfo & { items: RegulatoryTimeline[K] };
 export type LawHistoryPage<K extends LawHistoryKind> = HistoryPageInfo & { items: LawDetail[K] };
 export type LawDetail = Law & {
   history_pages?: Record<LawHistoryKind, HistoryPageInfo>;
   regulatory_timeline: {
+    pages?: Record<RegulatoryTimelineKind, HistoryPageInfo>;
     monitoring: {
       active: boolean;
       last_checked: string | null;
@@ -519,6 +523,8 @@ export type LawDetail = Law & {
       type: string;
       state: string;
       other_work_id: string;
+      other_title?: string;
+      other_timeline_url?: string | null;
       provenance: string;
     }[];
     source_provenance: {
@@ -529,6 +535,7 @@ export type LawDetail = Law & {
     timeline: {
       id: string;
       type: "event" | "version" | "comparison";
+      event_type?: string;
       at: string;
       label: string;
       detail: string;

@@ -15,6 +15,8 @@ import type {
   LawDetail,
   LawHistoryKind,
   LawHistoryPage,
+  RegulatoryTimelineKind,
+  RegulatoryTimelinePage,
   LocalModelInventory,
   MonitoringTopic,
   MonitoringContext,
@@ -132,6 +134,11 @@ export const resources = {
 
   documentHistory: <K extends LawHistoryKind>(id: string, kind: K, cursor: string) =>
     key<LawHistoryPage<K>>(`monitoring:document-history:${id}:${kind}:${cursor}`, `/laws/${id}/history/${kind}?cursor=${encodeURIComponent(cursor)}&limit=20`, {
+      tags: ["law", `law:${id}`, "monitoring"], staleMs: 15_000,
+      }),
+
+  regulatoryTimeline: <K extends RegulatoryTimelineKind>(id: string, kind: K, cursor: string) =>
+    key<RegulatoryTimelinePage<K>>(`monitoring:regulatory-timeline:${id}:${kind}:${cursor}`, `/laws/${id}/timeline/${kind}?cursor=${encodeURIComponent(cursor)}&limit=20`, {
       tags: ["law", `law:${id}`, "monitoring"], staleMs: 15_000,
     }),
 

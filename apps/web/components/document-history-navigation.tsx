@@ -7,7 +7,12 @@ import { invalidateResources, useResource } from "@/lib/api";
 import { resources } from "@/lib/resource-keys";
 import { documentHistoryCopy } from "@/lib/document-history-copy";
 import { useI18n } from "@/lib/i18n";
-import type { LawDetail, LawHistoryKind, LawHistoryPage } from "@/lib/types";
+import type {
+  HistoryPageInfo,
+  LawDetail,
+  LawHistoryKind,
+  LawHistoryPage,
+} from "@/lib/types";
 
 export function useDocumentHistory<K extends LawHistoryKind>(
   id: string,
@@ -66,7 +71,20 @@ export function useDocumentHistory<K extends LawHistoryKind>(
 export function DocumentHistoryNavigation({
   history,
 }: {
-  history: ReturnType<typeof useDocumentHistory>;
+  history: {
+    kind: string;
+    data: HistoryPageInfo | null | undefined;
+    items: unknown[];
+    loading: boolean;
+    error: string | null | undefined;
+    page: number;
+    canPrevious: boolean;
+    next: () => void;
+    previous: () => void;
+    retry: () => unknown;
+    restart: () => void;
+    emptyMessage?: string;
+  };
 }) {
   const { locale, number, dateTime } = useI18n();
   const copy = documentHistoryCopy[locale];
@@ -127,7 +145,7 @@ export function DocumentHistoryNavigation({
         </Button>
       </div>
       {!history.loading && !history.error && history.items.length === 0 && (
-        <p>{copy.empty}</p>
+        <p>{history.emptyMessage || copy.empty}</p>
       )}
     </div>
   );

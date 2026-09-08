@@ -12,6 +12,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import and_, case, func, or_, select, tuple_, union
 from sqlalchemy.orm import Session
 
+from . import timeline_pages
 from .config import DomainError
 from .corpus_access import event_evidence_links, visible
 from .models import (
@@ -19,13 +20,11 @@ from .models import (
     DocumentWatch,
     Law,
     LegacyDocumentMapping,
-    Observation,
     RegulatoryDate,
     RegulatoryDocumentVersion,
     RegulatoryEvent,
     RegulatoryEventUserState,
     RegulatoryExpression,
-    RegulatoryIdentifier,
     RegulatoryRelation,
     RegulatoryWork,
     Version,
@@ -713,7 +712,7 @@ class RegistryReader:
             raise DomainError("The requested record was not found.", 404, "not_found")
         return row
 
-    def _timeline_relations(self, session: Session, work_id: str) -> list[dict]:
+    def _timeline_relations_query(self, work_id: str):
         # Only link to a timeline this organization can actually open. Rank aliases
         # once, not by issuing a new mapping/law lookup for every relation.
         watched_aliases = (
@@ -736,9 +735,11 @@ class RegistryReader:
         other = RegulatoryWork
         outgoing = RegulatoryRelation.subject_work_id == work_id
         other_id = case((outgoing, RegulatoryRelation.object_work_id), else_=RegulatoryRelation.subject_work_id)
-        rows = session.execute(
+        return (
             select(
                 RegulatoryRelation.id, RegulatoryRelation.relation_type,
+                RegulatoryRelation.id.label("_key"), RegulatoryRelation.created_at.label("_at"),
+                RegulatoryRelation.created_at.label("_admitted"),
                 RegulatoryRelation.state, RegulatoryRelation.provenance_method,
                 outgoing.label("outgoing"), other.id.label("other_id"), other.title,
                 watched_aliases.c.law_id,
@@ -748,8 +749,9 @@ class RegistryReader:
             .where(or_(outgoing, RegulatoryRelation.object_work_id == work_id))
             .order_by(RegulatoryRelation.created_at.desc(), RegulatoryRelation.id.desc())
         )
-        return [
-            {
+    @staticmethod
+    def _timeline_relation_record(item):
+        return {
                 "id": item.id,
                 "direction": "outgoing" if item.outgoing else "incoming",
                 "type": item.relation_type,
@@ -762,24 +764,11 @@ class RegistryReader:
                 "reciprocal_label": (
                     "predecessor" if item.outgoing else "successor"
                 ) if item.relation_type == "replaces" else None,
-            }
-            for item in rows
-        ]
+        }
 
     def timeline(self, session: Session, law_id: str) -> dict:
         header = self._timeline_header(session, law_id)
         work_id = header.work_id
-        identifiers = session.execute(
-            select(RegulatoryIdentifier.scheme, RegulatoryIdentifier.value, RegulatoryIdentifier.source_url)
-            .where(RegulatoryIdentifier.work_id == work_id)
-            .order_by(RegulatoryIdentifier.scheme, RegulatoryIdentifier.value, RegulatoryIdentifier.id)
-        ).all() if work_id else []
-        expressions = session.execute(
-            select(RegulatoryExpression.id, RegulatoryExpression.language, RegulatoryExpression.title,
-                   RegulatoryExpression.official_url)
-            .where(RegulatoryExpression.work_id == work_id)
-            .order_by(RegulatoryExpression.language, RegulatoryExpression.id)
-        ).all() if work_id else []
         normalized_versions = session.scalar(
             select(func.count(RegulatoryDocumentVersion.id))
             .join(RegulatoryExpression, RegulatoryExpression.id == RegulatoryDocumentVersion.expression_id)
@@ -794,60 +783,9 @@ class RegistryReader:
                 ),
             )
         ) if work_id else 0
-        events = session.execute(
-            select(RegulatoryEvent.id, RegulatoryEvent.detected_at, RegulatoryEvent.event_type,
-                   RegulatoryEvent.provenance_method, RegulatoryEvent.source_url)
-            .where(RegulatoryEvent.work_id == work_id)
-        ).all() if work_id else []
-        versions = session.execute(
-            select(Version.id, Version.created_at, Version.declared_date, Version.origin)
-            .where(Version.law_id == law_id, visible(Version, self.organization_id))
-        ).all()
-        comparisons = session.execute(
-            select(Comparison.id, Comparison.created_at, Comparison.mode)
-            .where(Comparison.law_id == law_id, visible(Comparison, self.organization_id))
-        ).all()
-        observations = session.execute(
-            select(Observation.origin, Observation.source_url, Observation.created_at)
-            .where(Observation.law_id == law_id, Observation.organization_id == self.organization_id)
-            .order_by(Observation.created_at.desc(), Observation.id.desc())
-            .limit(100)
-        ).all()
-        relation_rows = self._timeline_relations(session, work_id) if work_id else []
-        timeline = [
-            {
-                "id": f"event:{item.id}",
-                "type": "event",
-                "at": _iso(item.detected_at),
-                "label": item.event_type.replace("_", " ").title(),
-                "detail": item.provenance_method.replace("_", " "),
-                "url": item.source_url,
-            }
-            for item in events
-        ]
-        timeline += [
-            {
-                "id": f"version:{item.id}",
-                "type": "version",
-                "at": _iso(item.created_at),
-                "label": "Immutable version saved",
-                "detail": item.declared_date or item.origin,
-                "url": f"/evidence/{item.id}",
-            }
-            for item in versions
-        ]
-        timeline += [
-            {
-                "id": f"comparison:{item.id}",
-                "type": "comparison",
-                "at": _iso(item.created_at),
-                "label": "Comparison created",
-                "detail": item.mode,
-                "url": f"/compare/{item.id}",
-            }
-            for item in comparisons
-        ]
-        timeline.sort(key=lambda item: (item["at"] or "", item["id"]), reverse=True)
+        captured = timeline_pages.utcnow()
+        pages = {kind: timeline_pages.page(session, self, law_id, kind, header=header, captured=captured)
+                 for kind in timeline_pages.KINDS}
         return {
             "monitoring": {
                 "active": header.active,
@@ -861,19 +799,8 @@ class RegistryReader:
                 "lifecycle": header.lifecycle_status or "unknown",
                 "stable_official_url": header.stable_official_url if work_id else header.url,
             },
-            "identifiers": [
-                {"scheme": item.scheme, "value": item.value, "source_url": item.source_url}
-                for item in identifiers
-            ],
-            "expressions": [
-                {"id": item.id, "language": item.language, "title": item.title, "url": item.official_url}
-                for item in expressions
-            ],
             "normalized_versions": normalized_versions,
-            "relations": relation_rows,
-            "source_provenance": [
-                {"origin": item.origin, "source_url": item.source_url, "observed_at": _iso(item.created_at)}
-                for item in observations
-            ],
-            "timeline": timeline,
+            **{kind: value["items"] for kind, value in pages.items()},
+            "pages": {kind: {key: value for key, value in page.items() if key != "items"}
+                      for kind, page in pages.items()},
         }

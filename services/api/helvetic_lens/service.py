@@ -1518,6 +1518,11 @@ class HelveticLens:
         with self.db.session() as session:
             return RegistryReader(self.organization_id).timeline(session, law_id)
 
+    def regulatory_timeline_page(self, law_id, kind, *, cursor="", limit=20):
+        from .timeline_pages import page
+        with self.db.session() as session:
+            return page(session, RegistryReader(self.organization_id), law_id, kind, cursor=cursor, limit=limit)
+
     def connector_statuses(self) -> list[dict]:
         saved = self.connector_runner.statuses()
         known = {item["connector"] for item in saved}

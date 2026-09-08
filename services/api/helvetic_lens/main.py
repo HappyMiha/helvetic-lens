@@ -1555,6 +1555,13 @@ def create_app(
     def regulatory_timeline(law_id: str):
         return service.regulatory_timeline(law_id)
 
+    @app.get("/api/laws/{law_id}/timeline/{kind}")
+    def regulatory_timeline_page(
+        law_id: str, kind: Literal["timeline", "identifiers", "expressions", "relations", "source_provenance"],
+        cursor: str = Query(default="", max_length=2048), limit: int = Query(default=20, ge=1, le=50),
+    ):
+        return service.regulatory_timeline_page(law_id, kind, cursor=cursor, limit=limit)
+
     @app.post("/api/laws", status_code=201)
     async def add_law(data: LawInput, request: Request):
         identity = request.state.identity

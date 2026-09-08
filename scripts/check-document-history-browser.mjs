@@ -109,6 +109,56 @@ function page(kind, index = 0) {
       (index + 1) * 20 < records[kind].length ? `${kind}:${index + 1}` : null,
   };
 }
+const timelineRecords = {
+  timeline: Array.from({ length: 55 }, (_, i) => ({
+    id: `event:${55 - i}`,
+    type: "event",
+    event_type: "new_version",
+    label: "New Version",
+    detail: "official metadata",
+    at: stamp,
+    url: `https://example.invalid/event/${55 - i}`,
+  })),
+  identifiers: Array.from({ length: 55 }, (_, i) => ({
+    scheme: "SR",
+    value: `Identifier ${55 - i}`,
+    source_url: `https://example.invalid/id/${55 - i}`,
+  })),
+  expressions: Array.from({ length: 55 }, (_, i) => ({
+    id: `expression-${55 - i}`,
+    language: "de",
+    title: `Expression ${55 - i}`,
+    url: `https://example.invalid/expression/${55 - i}`,
+  })),
+  relations: Array.from({ length: 55 }, (_, i) => ({
+    id: `relation-${55 - i}`,
+    direction: "incoming",
+    type: "replaces",
+    state: "confirmed",
+    other_work_id: `work-${55 - i}`,
+    other_title: `Related act ${55 - i}`,
+    other_timeline_url: `/laws/related-${55 - i}`,
+    provenance: "official_metadata",
+  })),
+  source_provenance: Array.from({ length: 55 }, (_, i) => ({
+    origin: "live",
+    observed_at: stamp,
+    source_url: `https://example.invalid/source/${55 - i}`,
+  })),
+};
+let emptyTimeline = false;
+function timelinePage(kind, index = 0) {
+  const records = emptyTimeline ? [] : timelineRecords[kind];
+  return {
+    items: records.slice(index * 20, (index + 1) * 20),
+    total: records.length,
+    limit: 20,
+    as_of: stamp,
+    first_cursor: `${kind}:0`,
+    next_cursor:
+      (index + 1) * 20 < records.length ? `${kind}:${index + 1}` : null,
+  };
+}
 function detail() {
   return {
     id: "history-law",
@@ -138,12 +188,16 @@ function detail() {
         lifecycle: "in_force",
         stable_official_url: null,
       },
-      identifiers: [],
-      expressions: [],
       normalized_versions: 45,
-      relations: [],
-      source_provenance: [],
-      timeline: [],
+      ...Object.fromEntries(
+        Object.keys(timelineRecords).map((k) => [k, timelinePage(k).items]),
+      ),
+      pages: Object.fromEntries(
+        Object.keys(timelineRecords).map((k) => {
+          const { items, ...info } = timelinePage(k);
+          return [k, info];
+        }),
+      ),
     },
   };
 }
@@ -224,6 +278,20 @@ async function historyPage(kind, index) {
     `${kind} page ${index + 1} not rendered`,
   );
 }
+async function regulatoryPage(kind, index) {
+  const first = timelinePage(kind, index).items[0];
+  const marker = first.source_url || first.url || first.other_timeline_url;
+  await waitFor(
+    () =>
+      evaluate(
+        cdp,
+        `(()=>{const list=document.querySelector('[data-timeline-rows=${kind}]');
+    return list?.getClientRects().length && list.children.length === ${timelinePage(kind, index).items.length}
+      && list.querySelector('a')?.getAttribute('href') === ${JSON.stringify(marker)};})()`,
+      ),
+    `${kind} timeline page ${index + 1} not rendered`,
+  );
+}
 async function check(name, heading = "history-versions") {
   await audit.check(cdp, name, `#${heading}`);
   assert.equal(
@@ -297,7 +365,10 @@ try {
     else if (url.pathname === "/api/laws/history-law") {
       assert.equal(url.searchParams.get("paged_history"), "true");
       body = detail();
-    } else if (url.pathname.startsWith("/api/laws/history-law/history/")) {
+    } else if (
+      url.pathname.startsWith("/api/laws/history-law/history/") ||
+      url.pathname.startsWith("/api/laws/history-law/timeline/")
+    ) {
       const kind = url.pathname.split("/").at(-1),
         cursor = url.searchParams.get("cursor");
       assert.ok(cursor?.startsWith(kind + ":"));
@@ -310,7 +381,10 @@ try {
         fail = false;
         code = 503;
         body = { detail: "Synthetic saved-history page unavailable" };
-      } else body = page(kind, Number(cursor.split(":")[1]));
+      } else
+        body = url.pathname.includes("/timeline/")
+          ? timelinePage(kind, Number(cursor.split(":")[1]))
+          : page(kind, Number(cursor.split(":")[1]));
     } else if (url.pathname === "/api/laws/history-law/ai-history")
       body = { items: [], total: 0 };
     else if (
@@ -379,8 +453,18 @@ try {
         const initializationWrites = requests
           .slice(start)
           .filter((r) => r.method !== "GET");
-        assert.deepEqual(initializationWrites, [], "Document entry must not initialize the disabled companion");
-        assert.equal(requests.slice(start).some(r => r.path.startsWith('/api/assistant/')), false, "Disabled companion sent an entry request");
+        assert.deepEqual(
+          initializationWrites,
+          [],
+          "Document entry must not initialize the disabled companion",
+        );
+        assert.equal(
+          requests
+            .slice(start)
+            .some((r) => r.path.startsWith("/api/assistant/")),
+          false,
+          "Disabled companion sent an entry request",
+        );
         assert.equal(
           await evaluate(
             cdp,
@@ -450,6 +534,53 @@ try {
         await click(next("observations"));
         await historyPage("observations", 3);
         await check(`${label}-old-observation`, "history-observations");
+        if (role === "viewer") {
+          for (const kind of Object.keys(timelineRecords)) {
+            await click(`[data-timeline-kind=${kind}]`, true);
+            await regulatoryPage(kind, 0);
+            await click(next(`regulatory-${kind}`), true);
+            await regulatoryPage(kind, 1);
+            await waitFor(
+              () =>
+                evaluate(
+                  cdp,
+                  `document.activeElement?.id === 'history-regulatory-${kind}'`,
+                ),
+              "Timeline heading focus missing",
+            );
+            await click(next(`regulatory-${kind}`));
+            await regulatoryPage(kind, 2);
+            assert.equal(
+              await evaluate(
+                cdp,
+                `document.querySelector(${JSON.stringify(next(`regulatory-${kind}`))}).disabled`,
+              ),
+              true,
+            );
+            await check(
+              `${label}-timeline-${kind}`,
+              `history-regulatory-${kind}`,
+            );
+            if (locale === "en-CH" && width === 390 && kind === "relations") {
+              await evaluate(
+                cdp,
+                "document.querySelector('[data-regulatory-timeline]').scrollIntoView({block:'start'})",
+              );
+              await writeFile(
+                join(root, "test-results/regulatory-timeline-mobile.png"),
+                Buffer.from(
+                  (await cdp.send("Page.captureScreenshot", { format: "png" }))
+                    .data,
+                  "base64",
+                ),
+              );
+            }
+            await click(previous(`regulatory-${kind}`));
+            await regulatoryPage(kind, 1);
+            await click(previous(`regulatory-${kind}`));
+            await regulatoryPage(kind, 0);
+          }
+        }
         assert.equal(
           await evaluate(cdp, "window.__historyPageToken"),
           token,
@@ -509,8 +640,59 @@ try {
   await click(`${controls("versions")} button:nth-child(3)`);
   await historyPage("versions", 1);
   await check("en-CH-recovered");
+  // Timeline retains the last readable page while a request is pending or fails.
+  const kind = "timeline",
+    nav = controls("regulatory-timeline");
+  await click("[data-timeline-kind=timeline]");
+  await regulatoryPage(kind, 0);
+  hold = true;
+  fail = true;
+  await click(next("regulatory-timeline"));
+  await waitFor(
+    () => Promise.resolve(!!releaseHeld),
+    "Timeline request was not held",
+  );
+  await regulatoryPage(kind, 0);
+  await check("timeline-loading-retained", "history-regulatory-timeline");
+  releaseHeld();
+  releaseHeld = null;
+  await waitFor(() => visible(`${nav} [role=alert]`), "Missing timeline error");
+  await regulatoryPage(kind, 0);
+  await check("timeline-error-retained", "history-regulatory-timeline");
+  await click(`${nav} button:nth-child(3)`);
+  await regulatoryPage(kind, 1);
+  await check("timeline-recovered", "history-regulatory-timeline");
+  await click("[data-timeline-kind=expressions]");
+  await regulatoryPage("expressions", 0);
+  await click("[data-timeline-kind=timeline]");
+  await regulatoryPage(kind, 1);
+  await click(`${nav} button:last-child`);
+  await regulatoryPage(kind, 0);
+  emptyTimeline = true;
+  await cdp.send("Page.navigate", {
+    url: `${base}/laws/history-law?locale=en-CH`,
+  });
+  await waitFor(
+    () =>
+      evaluate(
+        cdp,
+        "document.querySelector('[data-timeline-rows=timeline]')?.children.length===0",
+      ),
+    "Empty timeline missing",
+  );
+  for (const section of Object.keys(timelineRecords)) {
+    await click(`[data-timeline-kind=${section}]`);
+    await check(`timeline-empty-${section}`, `history-regulatory-${section}`);
+    assert.equal(
+      await evaluate(
+        cdp,
+        `document.querySelector(${JSON.stringify(next(`regulatory-${section}`))}).disabled`,
+      ),
+      true,
+    );
+  }
   assert.deepEqual(exceptions, []);
-  audit.finish(83);
+  audit.finish(141);
   console.log(
     "History journeys: five locales, mobile/desktop, admin/viewer, complete pages, pinned selection/current version, keyboard/focus, error/retry, loading and no history-triggered mutations; disabled companion sends no entry requests; synthetic APIs only.",
   );

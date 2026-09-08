@@ -4099,6 +4099,21 @@ select.interest-feed-control { min-height: 44px; }
 .document-history .count-pill, .document-history .observations summary,
 .document-history .observations, .document-history .observations td,
 .document-history .observations th, [data-history-controls] { color: var(--foreground); }
+
+/* Complete regulatory metadata stays readable on narrow document pages. */
+.regulatory-timeline { min-width: 0; overflow-wrap: anywhere; }
+.regulatory-timeline [data-timeline-rows] > li {
+  display: grid; gap: .45rem; padding: .9rem;
+  border: 1px solid var(--border); border-radius: .6rem;
+}
+.regulatory-timeline [data-timeline-rows] p { margin: 0; }
+.regulatory-timeline [data-timeline-rows] .text-link { width: fit-content; min-height: 44px; }
+.regulatory-timeline [data-timeline-kind] {
+  min-height: 44px; height: auto; white-space: normal; transition: none;
+}
+.regulatory-timeline [data-timeline-kind][aria-pressed="true"] {
+  background: #234bc9; color: #fff;
+}
 [data-history-controls] button { min-height: 44px; height: auto; white-space: normal; text-align: start; }
 #history-versions, #history-comparisons, #history-observations { scroll-margin-top: 100px; }
 
