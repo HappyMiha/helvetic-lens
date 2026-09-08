@@ -103,12 +103,12 @@ def test_mail_retry_reuses_completed_selection_and_refreshes_only_selected_ids(h
     _, _, service, _ = harness
     job, _, _ = setup_delivery(harness)
     execute(service, job["id"])
-    page = ImpactInboxReader.event_page
+    page = digests.DigestReader.event_page
     scans = []
     def record_page(self, session, filters, **options):
         scans.append(filters.event_ids)
         return page(self, session, filters, **options)
-    monkeypatch.setattr(ImpactInboxReader, "event_page", record_page)
+    monkeypatch.setattr(digests.DigestReader, "event_page", record_page)
     def fail_mail(*_args, **_kwargs):
         raise DomainError("Test-only SMTP failure", 503, "email_delivery_failed")
     monkeypatch.setattr(AuthMailer, "send_message", fail_mail)

@@ -1215,7 +1215,7 @@ class HelveticLens:
             )
             period_end = utcnow()
             period_start = period_end - digests.FREQUENCIES[effective.frequency]
-            reader = ImpactInboxReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings, runtime=self.relation_runtime_observation())
+            reader = digests.DigestReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings, runtime=self.relation_runtime_observation())
             if cursor and not preview_page:
                 raise DomainError("A cursor requires paged preview mode.", 422, "invalid_digest_cursor")
             if preview_page:

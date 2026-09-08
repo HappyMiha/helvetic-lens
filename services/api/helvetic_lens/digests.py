@@ -1,4 +1,4 @@
-"""Opt-in digests built only from the persisted organization impact inbox."""
+"""Opt-in digests over persisted organization interests, without inference."""
 
 from __future__ import annotations
 
@@ -18,6 +18,8 @@ from . import jobs
 from .auth_mail import AuthMailer
 from .config import DomainError, Settings
 from .db import Database, utcnow
+from .digest_interest_copy import MESSAGES as INTEREST_MESSAGES
+from .digest_reader import PROJECTION_VERSION, DigestReader
 from .digest_schedule import next_local_delivery, quiet_until
 from .impact_inbox import ImpactInboxFilters, ImpactInboxReader
 from .locales import normalize_locale
@@ -43,56 +45,46 @@ FREQUENCIES = {"daily": timedelta(days=1), "weekly": timedelta(days=7)}
 
 _MESSAGES = {
     "de-CH": {
-        "event_limit": "Diese Zusammenfassung ist auf 50 Ereignisse begrenzt. Öffnen Sie das Auswirkungs-Postfach für die vollständige gespeicherte Liste oder grenzen Sie die Quellen und Schweregrade ein.",
         "more_laws": "{shown} von {total} passenden überwachten Gesetzen werden angezeigt.",
         "subject": "Helvetic Lens: {count} Änderungen zur Prüfung",
         "heading": "Ihr regulatorischer Überblick",
         "empty": "Für diesen Zeitraum gibt es keine passenden neuen Hinweise.",
-        "open": "Impact-Inbox öffnen",
         "unsubscribe": "E-Mail-Digest abbestellen",
         "evidence": "Beleg öffnen",
         "severity": {"high": "hoch", "medium": "mittel", "low": "niedrig", "none": "keine", "unknown": "unklar"},
     },
     "fr-CH": {
-        "event_limit": "Cette synthèse est limitée à 50 événements. Ouvrez la boîte des impacts pour consulter la liste enregistrée complète, ou affinez les sources et les niveaux de gravité.",
         "more_laws": "{shown} lois surveillées correspondantes affichées sur {total}.",
         "subject": "Helvetic Lens : {count} changements à examiner",
         "heading": "Votre synthèse réglementaire",
         "empty": "Aucun nouvel élément correspondant pour cette période.",
-        "open": "Ouvrir la boîte d’impact",
         "unsubscribe": "Se désabonner du résumé e-mail",
         "evidence": "Ouvrir la preuve",
         "severity": {"high": "élevée", "medium": "moyenne", "low": "faible", "none": "aucune", "unknown": "incertaine"},
     },
     "it-CH": {
-        "event_limit": "Questo riepilogo è limitato a 50 eventi. Apri la posta degli impatti per l’elenco completo salvato, oppure restringi le fonti e i livelli di gravità.",
         "more_laws": "{shown} leggi monitorate corrispondenti mostrate su {total}.",
         "subject": "Helvetic Lens: {count} modifiche da esaminare",
         "heading": "Il tuo riepilogo normativo",
         "empty": "Nessun nuovo elemento corrispondente per questo periodo.",
-        "open": "Apri la casella impatti",
         "unsubscribe": "Annulla il riepilogo e-mail",
         "evidence": "Apri la prova",
         "severity": {"high": "alta", "medium": "media", "low": "bassa", "none": "nessuna", "unknown": "incerta"},
     },
     "rm-CH": {
-        "event_limit": "Questa resumaziun è limitada a 50 eveniments. Avra la posta dals effects per la glista cumpletta memorisada u restrenscha las funtaunas e las gradaziuns da gravitad.",
         "more_laws": "{shown} da {total} leschas survegliadas correspundentas vegnan mussadas.",
         "subject": "Helvetic Lens: {count} midadas da controllar",
         "heading": "Tia survista regulativa",
         "empty": "I na dat nagins novs avis adattads per questa perioda.",
-        "open": "Avrir la posta d’impacts",
         "unsubscribe": "Deabunar il resumaziun per e-mail",
         "evidence": "Avrir la cumprova",
         "severity": {"high": "auta", "medium": "mesauna", "low": "bassa", "none": "nagina", "unknown": "intschertezza"},
     },
     "en-CH": {
-        "event_limit": "This digest is limited to 50 events. Open the impact inbox for the full saved list, or narrow your source and severity filters.",
         "more_laws": "Showing {shown} of {total} matching watched laws.",
         "subject": "Helvetic Lens: {count} changes to review",
         "heading": "Your regulatory digest",
         "empty": "There are no matching new items for this period.",
-        "open": "Open impact inbox",
         "unsubscribe": "Unsubscribe from email digests",
         "evidence": "Open evidence",
         "severity": {"high": "high", "medium": "medium", "low": "low", "none": "none", "unknown": "unclear"},
@@ -190,7 +182,7 @@ def preview_page(session: Session, reader: ImpactInboxReader, preference: Digest
     They are navigation positions, not authorization or immutable result snapshots.
     """
     scope = hashlib.sha256(json.dumps([
-        reader.organization_id, reader.principal, _preference_fingerprint(preference),
+        reader.organization_id, reader.principal, _preference_fingerprint(preference), PROJECTION_VERSION,
     ]).encode()).hexdigest()
     end, after = utcnow(), None
     if cursor:
@@ -245,7 +237,11 @@ def summarize_groups(groups: Iterable[dict], preference: DigestPreference, perio
         if sources and group.get("source") not in sources and group.get("authority") not in sources:
             continue
         items = [item for item in group.get("items", []) if not severities or item["severity"] in severities]
-        if not items:
+        # Matching confidence is not impact severity. Unassessed topic/direct-watch
+        # developments respect the existing explicit unknown-severity filter.
+        topics = group.get("topic_matches", []) if not severities or "unknown" in severities else []
+        watches = group.get("monitored_documents", []) if not severities or "unknown" in severities else []
+        if not items and not topics and not watches:
             continue
         if len(selected) == 50:
             truncated = True
@@ -258,9 +254,24 @@ def summarize_groups(groups: Iterable[dict], preference: DigestPreference, perio
                 "severity": min(
                     (item["severity"] for item in items),
                     key=lambda value: {"high": 0, "medium": 1, "low": 2}.get(value, 3),
+                    default="unknown",
                 ),
                 "detected_at": group["detected_at"],
                 "source_url": group.get("source_url"),
+                "event_url": f"/?event={group['event_id']}",
+                "lifecycle_status": group.get("lifecycle_status"),
+                "topics": [{"topic_id": topic["topic_id"], "match_id": topic["id"],
+                            "name": topic["name"][:300], "confidence": topic["confidence"],
+                            "matched_at": topic["matched_at"],
+                            "terms": list(dict.fromkeys(
+                                value[:120] for signal in topic.get("reasons", [])
+                                for value in signal.get("values", [signal.get("value")])
+                                if isinstance(value, str)
+                            ))[:10]} for topic in topics[:5]],
+                "topics_truncated": bool(topics and group.get("topic_matches_next_cursor")),
+                "monitored_documents": [{"law_id": watch["law_id"], "name": watch["name"][:300]}
+                                         for watch in watches[:5]],
+                "monitored_documents_truncated": bool(watches and group.get("monitored_documents_next_cursor")),
                 "impact_count": len(items),
                 "impacts_truncated": len(items) > 5,
                 "impacts": [
@@ -282,8 +293,9 @@ def summarize_groups(groups: Iterable[dict], preference: DigestPreference, perio
 def render_message(settings: Settings, delivery: DigestDelivery, user: User) -> tuple[str, str, str]:
     locale = normalize_locale(user.locale, settings.default_locale)
     message = _MESSAGES[locale]
+    interest_message = INTEREST_MESSAGES[locale]
     events = (delivery.summary or {}).get("events", [])
-    inbox_url = settings.public_base_url + "/impact"
+    inbox_url = settings.public_base_url + "/"
     unsubscribe_url = (
         settings.public_base_url
         + "/unsubscribe?token="
@@ -292,7 +304,7 @@ def render_message(settings: Settings, delivery: DigestDelivery, user: User) -> 
     subject = message["subject"].format(count=len(events))
     lines = [message["heading"]]
     cards = []
-    limit_notice = message["event_limit"] if (delivery.summary or {}).get("truncated") else ""
+    limit_notice = interest_message["event_limit"] if (delivery.summary or {}).get("truncated") else ""
     if limit_notice:
         lines.append("\n" + limit_notice)
     for event in events:
@@ -318,6 +330,25 @@ def render_message(settings: Settings, delivery: DigestDelivery, user: User) -> 
                 f"<em>{escape(impact['next_step'])}</em>{evidence_link}</li>"
             )
         law_notice = ""
+        topics = event.get("topics", [])
+        if topics:
+            lines.append(interest_message["boundary"])
+            impacts.append(f'<li>{escape(interest_message["boundary"])}</li>')
+        for topic in topics:
+            reason = f'{interest_message["reason"]}: {" · ".join(topic["terms"])}'
+            lines.append(f'• {topic["name"]}: {reason}')
+            impacts.append(f'<li><strong>{escape(topic["name"])}</strong><br>{escape(reason)}</li>')
+        for document in event.get("monitored_documents", []):
+            line = f'{interest_message["documents"]}: {document["name"]}'
+            lines.append(line)
+            impacts.append(f'<li>{escape(line)}</li>')
+        if event.get("topics_truncated") or event.get("monitored_documents_truncated"):
+            lines.append(interest_message["more"])
+            impacts.append(f'<li>{escape(interest_message["more"])}</li>')
+        event_url = _application_url(settings, event.get("event_url"))
+        if event_url:
+            lines.append(f'{interest_message["open"]}: {event_url}')
+            impacts.append(f'<li><a href="{escape(event_url, quote=True)}">{escape(interest_message["open"])}</a></li>')
         if event.get("impacts_truncated") and isinstance(event.get("impact_count"), int):
             law_notice = message["more_laws"].format(shown=len(event["impacts"]), total=event["impact_count"])
             lines.append(law_notice)
@@ -330,12 +361,12 @@ def render_message(settings: Settings, delivery: DigestDelivery, user: User) -> 
         )
     if not events:
         lines.append("\n" + message["empty"])
-    lines.extend([f"\n{message['open']}: {inbox_url}", f"{message['unsubscribe']}: {unsubscribe_url}"])
+    lines.extend([f"\n{interest_message['open_list']}: {inbox_url}", f"{message['unsubscribe']}: {unsubscribe_url}"])
     html = (
         f'<html lang="{locale}"><body><h1>{escape(message["heading"])}</h1>'
         + (f"<p>{escape(limit_notice)}</p>" if limit_notice else "")
         + ("".join(cards) or f'<p>{escape(message["empty"])}</p>')
-        + f'<p><a href="{inbox_url}">{escape(message["open"])}</a></p>'
+        + f'<p><a href="{inbox_url}">{escape(interest_message["open_list"])}</a></p>'
         + f'<p><a href="{unsubscribe_url}">{escape(message["unsubscribe"])}</a></p>'
         + "</body></html>"
     )
@@ -463,7 +494,7 @@ def _reader(session: Session, delivery: DigestDelivery, settings: Settings, runt
             PlatformPromptConfiguration.id == "default")).first()
     # An existing empty override still wins, exactly as organization_runtime does.
     prompts = resolved_prompt_settings(PromptConfiguration(values=prompt_record[1]) if prompt_record is not None else None)
-    return ImpactInboxReader(delivery.organization_id, delivery.user_id, settings=effective, prompts=prompts, runtime=runtime)
+    return DigestReader(delivery.organization_id, delivery.user_id, settings=effective, prompts=prompts, runtime=runtime)
 
 
 def prepare_batch(session: Session, delivery_id: str, checkpoint: dict | None = None, *, settings: Settings, runtime: RelationRuntimeObservation | None = None) -> dict:
@@ -485,11 +516,13 @@ def prepare_batch(session: Session, delivery_id: str, checkpoint: dict | None = 
     runtime_fingerprint = require_fingerprint(reader.settings, delivery.organization_id, runtime)
     configuration = configuration_fingerprint(reader.settings)
     prompt = relation_prompt_fingerprint(reader.prompts)
-    if (not checkpoint or checkpoint.get("preference_fingerprint") != fingerprint
+    if (not checkpoint or checkpoint.get("projection_version") != PROJECTION_VERSION
+            or checkpoint.get("preference_fingerprint") != fingerprint
             or checkpoint.get("configuration_fingerprint") != configuration
             or checkpoint.get("prompt_fingerprint") != prompt
             or checkpoint.get("runtime_fingerprint") != runtime_fingerprint):
         checkpoint = {**_selection_context(delivery), "admitted_before": _iso(utcnow()),
+                      "projection_version": PROJECTION_VERSION,
                       "preference_fingerprint": fingerprint, "configuration_fingerprint": configuration, "prompt_fingerprint": prompt, "runtime_fingerprint": runtime_fingerprint, "cursor": None, "event_ids": [],
                       "processed": 0, "batches": 0, "complete": False,
                       "restarts": checkpoint.get("restarts", 0) + bool(checkpoint)}
@@ -547,7 +580,8 @@ def deliver(database: Database, settings: Settings, delivery_id: str, *, selecti
         runtime_fingerprint = require_fingerprint(reader.settings, delivery.organization_id, runtime)
         if selection is not None:
             _validate_selection(delivery, selection)
-            if (not selection.get("complete") or selection.get("preference_fingerprint") != _preference_fingerprint(preference)
+            if (not selection.get("complete") or selection.get("projection_version") != PROJECTION_VERSION
+                    or selection.get("preference_fingerprint") != _preference_fingerprint(preference)
                     or selection.get("configuration_fingerprint") != configuration_fingerprint(reader.settings)
                     or selection.get("prompt_fingerprint") != relation_prompt_fingerprint(reader.prompts)
                     or selection.get("runtime_fingerprint") != runtime_fingerprint):

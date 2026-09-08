@@ -1,5 +1,8 @@
 "use client";
 
+import { DigestInterests } from "./digest-interests";
+import { digestInterestCopy } from "@/lib/digest-interest-copy";
+
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { CalendarClock, ExternalLink, Mail, Send } from "lucide-react";
@@ -154,7 +157,7 @@ export function DigestsPage() {
         <div>
           <span className="eyebrow">{t("digests.eyebrow")}</span>
           <h1>{t("digests.title")}</h1>
-          <p className="muted m-0">{t("digests.body")}</p>
+          <p className="muted m-0">{digestInterestCopy[locale].selection}</p>
         </div>
         <Mail className="muted" size={28} />
       </div>
@@ -315,7 +318,7 @@ export function DigestsPage() {
               >
                 {t("digests.preview")}
               </h2>
-              <p className="text-sm muted">{t("digests.previewBody")}</p>
+                <p className="text-sm muted">{digestInterestCopy[locale].boundary}</p>
               <nav
                 aria-label={t("digestPage.navigation")}
                 className="rounded-lg border border-border p-4 text-sm mb-4"
@@ -440,6 +443,7 @@ export function DigestsPage() {
                           )}
                         </div>
                       ))}
+                      <DigestInterests event={event} />
                       {event.impacts_truncated &&
                         typeof event.impact_count === "number" && (
                           <p className="text-sm font-medium mt-3 mb-0">

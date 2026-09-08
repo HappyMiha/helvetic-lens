@@ -8,13 +8,13 @@ for (const locale of ["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"]) {
     const html = render({ events: [], truncated: true });
     assert.match(html, /data-digest-coverage="limited"/);
     assert.match(html, /50/);
-    assert.match(html, /href="\/impact"/);
+    assert.match(html, /href="\/"/);
     assert.doesNotMatch(html, /digests\.|\{(?:count|shown|total)\}/);
   });
   test(`${locale}: law-only overflow is visible without claiming 50 event overflow`, () => {
     const html = render({ events: [{ impacts_truncated: true }], truncated: false });
     assert.match(html, /data-digest-coverage="limited"/);
-    assert.match(html, /href="\/impact"/);
+    assert.match(html, /href="\/"/);
     assert.doesNotMatch(html, /50|digests\./);
   });
   test(`${locale}: combined overflow exposes both limits with one clear destination`, () => {

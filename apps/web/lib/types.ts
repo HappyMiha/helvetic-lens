@@ -16,6 +16,12 @@ export type DigestPreference = {
   last_sent_at: string | null;
 };
 export type DigestEvent = {
+  event_url?: string;
+  lifecycle_status?: string | null;
+  topics?: Array<{topic_id: string; match_id: string; name: string; confidence: string; matched_at: string; terms: string[]}>;
+  topics_truncated?: boolean;
+  monitored_documents?: Array<{law_id: string; name: string}>;
+  monitored_documents_truncated?: boolean;
   impact_count?: number;
   impacts_truncated?: boolean;
   event_id: string;

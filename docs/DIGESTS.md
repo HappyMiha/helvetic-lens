@@ -1,20 +1,22 @@
 # Personal digests
 
-Helvetic Lens digests are a delivery view over the persisted organization impact inbox. They do not run another model, create legal events, or maintain a parallel source of truth.
+Helvetic Lens digests are a delivery view over persisted organization interests:
+watched-law impacts, current topic matches and directly watched document events.
+They do not run another model, create legal events, or maintain a parallel source of truth.
 
 ## User flow
 
 Each signed-in user can open **Digests**, choose daily or weekly delivery, filter by impact severity and official source, and opt into email. The current web digest remains available when email is disabled. Preferences belong to the user inside the active organization, so the same account can choose different settings after switching organizations.
 
-**Send now** creates the same durable job as the scheduler and is limited to three requests per hour. The page shows the latest 20 delivery attempts and a preview built only from saved impact leads. Opening the page, sending a message, skipping an empty period, or failing delivery never changes impact-inbox read, dismissed, or muted state.
+**Send now** creates the same durable job as the scheduler and is limited to three requests per hour. The page shows the latest 20 delivery attempts and a preview built only from saved interests and impact leads. Opening the page, sending a message, skipping an empty period, or failing delivery never changes feed read, dismissed, or muted state.
 
-Every email contains links back to the saved comparison or relation evidence. A signed direct unsubscribe URL disables only that user's email digest for that organization; the web digest and all monitoring history stay available.
+Every event links to its exact Today context and current saved evidence; existing comparison/relation links are retained. A signed direct unsubscribe URL disables only that user's email digest for that organization; the web digest and all monitoring history stay available.
 
 ## Delivery contract
 
 - Celery Beat checks due preferences every minute and enqueues idempotent `digest_delivery` jobs on the maintenance queue.
 - A scheduled period has one delivery record and one job idempotency key. Worker retries use the durable job lease and retry policy.
-- Summaries include at most 50 regulatory events and five monitored-law effects per event. Dismissed and muted items are excluded.
+- Summaries include at most 50 regulatory events, five monitored-law effects, five current topic matches and five directly watched documents per event. Overflow is disclosed with a route to complete current event details. Dismissed and muted items are excluded.
 - Empty periods and installations without email transport are recorded as `skipped`, not as successful email.
 - SMTP credentials stay in server settings. Delivery records contain the bounded summary, status, timestamps, and a short error; integration logs do not receive document bodies or mail credentials.
 - Terminal delivery records are retained for `DIGEST_DELIVERY_RETENTION_DAYS` (180 by default) and then removed by the operational cleanup task. Legal evidence, impact history, and user read state are not deleted.
@@ -93,3 +95,51 @@ PostgreSQL suites: `digest-quiet-resume`, `digest-quiet-unsubscribe`,
 `digest-quiet-boundary`, `digest-quiet-save`. Topic inclusion and broader filters,
 organization limits, immediate notification eligibility and user-measured noise
 remain open under HL-079.
+
+## Current topic and direct-watch interests (HL-079, 8 September 2026)
+
+Preview, resumable preparation and final delivery now use `DigestReader`, a
+delivery adapter over the same current interest/evidence projection as Today.
+One event can contain both law impacts and matching topics without duplicate
+cards. Directly watched document events no longer require a relation candidate
+to appear. Source choices include topic/direct-watch candidate sources as well
+as law-impact sources; a source option does not certify that its evidence remains
+current or matches the selected period.
+
+The existing half-open detection period, source/severity filters and personal
+dismissed/muted exclusions still apply. A high-confidence topic match is **not**
+a high-impact conclusion. Topic-only and unassessed direct-watch entries have
+unknown impact: they require Unknown in the severity filter, or no severity
+selection. A qualifying law impact retains its actual severity. The UI explains
+this even when the selected severity leaves the preview empty.
+
+Each event summary retains up to five topics with saved match IDs, current names,
+matching terms, confidence and match time; it can also retain five directly
+watched documents. Topic terms are bounded to ten unique values of 120 characters.
+Names are bounded to 300 characters. Overflow is explicit, not a fake total.
+The event link opens all currently accessible interests and exact source evidence;
+the web preview additionally links to the individual saved topic review. Email
+text and HTML reuse these facts in all five locales and escape source-controlled
+names/terms. No AI request, legal event, review decision or personal read-state
+change is created by preview or delivery.
+
+Selection remains keyset-paged at at most 50 candidate events per worker step.
+Sparse stale batches advance instead of exhausting the whole period in one
+interactive request. The final step rechecks at most 51 selected event IDs against
+current topic revision/status/expiry/evidence, review decisions, admission, watched
+documents, recipient access and personal state. Changed or revoked matches cannot
+be sent merely because preparation previously accepted them. Existing completed
+preparations without `digest-interests-v1` restart before sending; preview cursors
+bind this projection version. Old saved delivery summaries still render without
+the optional interest fields. No migration or historical-summary rewrite occurs.
+
+Next/back and final-state checks are not an immutable snapshot or a promise to
+recall mail already accepted by SMTP. The feed's per-event law/topic validation
+costs still apply; a 50-key page does not prove bounded total database CPU at high
+fan-out. The existing HL-099 capacity/index work remains open. No target-host
+concurrency or independent notification-noise usability evidence is implied.
+
+HL-079 remains **IN PROGRESS** for explicit topic/law/source-pack/event-type
+preference selection, organization policy, measured notification noise and any
+future immediate-delivery option. These additions extend currently enabled
+digests; they never opt a user into email or send one during development checks.

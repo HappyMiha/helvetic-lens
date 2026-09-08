@@ -40,13 +40,13 @@ def test_email_text_and_html_expose_event_and_law_limits(locale, count, event_ov
     settings = Settings(_env_file=None, public_base_url="https://portal.example")
     user = User(email="test@example.ch", locale=locale, name="Test", password_hash="test")
     _, text, html = digests.render_message(settings, delivery, user)
-    event_notice = digests._MESSAGES[locale]["event_limit"]
+    event_notice = digests.INTEREST_MESSAGES[locale]["event_limit"]
     law_notice = digests._MESSAGES[locale]["more_laws"].format(shown=5, total=count)
     assert (event_notice in text) is event_overflow
     assert (event_notice in html) is event_overflow
     assert (law_notice in text) is (count > 5)
     assert (law_notice in html) is (count > 5)
-    assert "https://portal.example/impact" in text and 'href="https://portal.example/impact"' in html
+    assert "https://portal.example/" in text and 'href="https://portal.example/"' in html
     assert "Test &lt;event&gt;" in html and "Law &lt;test&gt;" in html
     assert "{shown}" not in text and "{total}" not in html
 

@@ -31,9 +31,9 @@ export function renderLocalizedComponent(file, name, locale, props) {
         if (!text) throw new Error(`Missing ${locale}: ${key}`);
         return text;
       } }) }
-      : module === "@/lib/decision-copy" ? (() => {
+      : ["@/lib/decision-copy", "@/lib/digest-interest-copy"].includes(module) ? (() => {
         const copy = { exports: {} };
-        vm.runInNewContext(compile(fs.readFileSync(path.join(root, "apps/web/lib/decision-copy.ts"), "utf8")), copy);
+        vm.runInNewContext(compile(fs.readFileSync(path.join(root, `apps/web/lib/${module.split('/').at(-1)}.ts`), "utf8")), copy);
         return copy.exports;
       })() : require(module),
   });

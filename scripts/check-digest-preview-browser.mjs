@@ -1,5 +1,7 @@
 // Real production UI with intercepted synthetic API responses. No live backend.
 import assert from "node:assert/strict";
+import { AccessibilityAudit } from "./browser-accessibility.mjs";
+const accessibility = new AccessibilityAudit("digest-interests");
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
@@ -70,7 +72,7 @@ let preference;
 const defaultPreference = () => ({
   enabled: false,
   frequency: "weekly",
-  severities: ["high"],
+  severities: ["unknown"],
   sources: [],
   next_delivery_at: null,
   last_sent_at: null,
@@ -92,10 +94,15 @@ function response(cursor = "") {
                 event_id: "synthetic-match",
                 title: "Synthetic matching event",
                 source: "fedlex",
-                severity: "high",
+                severity: "unknown",
                 detected_at: "2026-09-05T08:00:00Z",
                 source_url: null,
                 impacts: [],
+                event_url: "/?event=synthetic-match",
+                topics: [{topic_id:"topic-one",match_id:"match-one",name:"Saved naturalisation interest",confidence:"high",matched_at:"2026-09-05T08:00:00Z",terms:["citizenship","naturalisation"]}],
+                topics_truncated: true,
+                monitored_documents: [{law_id:"law-one",name:"Directly watched synthetic law"}],
+                monitored_documents_truncated: true,
               },
             ],
       truncated: false,
@@ -307,6 +314,18 @@ try {
           )),
         "Sparse continuation never reached its match",
       );
+      assert.ok(await evaluate(cdp, `document.querySelector('[data-digest-interests]').innerText.includes('citizenship')`), 'Saved matching reasons missing');
+      assert.equal(await evaluate(cdp, `document.querySelector('[data-digest-interests] a[href^="/topic-review"]').getAttribute('href')`), '/topic-review?match=match-one');
+      assert.ok(await evaluate(cdp, `Array.from(document.querySelectorAll('[data-digest-interests] a')).some(a=>a.getAttribute('href')==='/?event=synthetic-match')`));
+      assert.ok(await evaluate(cdp, `Array.from(document.querySelectorAll('[data-digest-interests] a')).every(a=>a.getBoundingClientRect().height>=44)`));
+      await accessibility.check(cdp, `digest-interests-${locale}-${width}`, '[data-digest-interests]');
+      if (locale === "en-CH") {
+        await mkdir(join(root, "test-results/digest-preview"), {recursive:true});
+        await evaluate(cdp, `document.querySelector('[data-digest-interests]').scrollIntoView({block:'center'})`);
+        await sleep(150);
+        const shot = await cdp.send("Page.captureScreenshot", {format:"png"});
+        await writeFile(join(root, `test-results/digest-preview/interests-${width}.png`), Buffer.from(shot.data,"base64"));
+      }
       assert.equal(
         await evaluate(
           cdp,
@@ -343,7 +362,7 @@ try {
         enabled: true,
         frequency: "weekly",
         schedule: {timezone:"Europe/Zurich",time:"08:15",quiet_start:"22:00",quiet_end:"07:00"},
-        severities: ["high"],
+        severities: ["unknown"],
         sources: [],
       });
       assert.equal(
@@ -417,6 +436,7 @@ try {
     false,
   );
   assert.deepEqual(exceptions, []);
+  await accessibility.finish(10);
   console.log(
     "Digest production UI: 10 journeys (DE/FR/IT/RM/EN x 390/1440px); bounded sparse next/back, captured period, focus, unsaved choices and local delivery clock, explicit schedule save, stale-cursor recovery and touch targets pass. All API calls intercepted; no mail, inference or production data touched.",
   );
