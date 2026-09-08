@@ -1,5 +1,32 @@
 # Verification record
 
+## Redis priority convention correction — 9 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl089-redis-priority`, based on `aa59ffa`. Inspection
+  of the installed Kombu Redis transport confirmed ascending `priority_steps`
+  consumption. The prior sender forwarded durable high-is-important values
+  unchanged, putting background value 2 ahead of Ask value 8. The sender now
+  inverts only at the broker boundary and enables all ten levels; persisted job
+  priorities, outbox payloads and historical records are unchanged.
+- **Real Redis 7.4.11**, Celery **5.6.3**, Kombu **5.6.2**, redis-py **6.4.0**:
+  `scripts/check_redis_priorities.py` passed ten descending business priority
+  levels, two AI queues (Ask → analysis → FIFO briefs → admission), and same-
+  priority FIFO. **18 synthetic envelopes** sent through the actual `_send` and
+  acknowledged by the real Kombu consumer. No Celery worker, task/model execution,
+  email or application broker/data used. Loopback QA port 56389, database 15.
+  The script also correctly rejected both its now-nonempty QA DB and the real
+  application broker address before publishing. It does not erase Redis keys.
+- **34 job/brief-job regressions passed in 67.83s**, with one existing
+  PostgreSQL-only concurrency skip and one Starlette/httpx warning. Ruff/diff
+  checks passed. No web changes; this does not claim a new web build or full
+  Linux/API/capacity run. Ignored evidence: `test-results/redis-priority-*.txt`.
+- The exact labelled disposable --rm Redis container is cleaned up after checks;
+  no application services are restarted. Deployment remains separate: publishers
+  and consumers need the new transport settings, while pre-existing envelopes
+  retain old wire priorities until consumed. Never flush production queues.
+- This proves broker order only. Nonpreemption, durable admission/dispatch fairness,
+  sustained-load background aging and target-host latency/capacity remain open.
+
 ## Current saved briefs in notification cards — 9 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl089-notification-briefs`, based on `8ce564b`.

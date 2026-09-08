@@ -1436,6 +1436,15 @@ Completed on 4 September 2026. New normalized events now enter topic matching on
 
 ### HL-089 — Enrich matched developments with one persisted AI relevance brief
 
+**9 September 2026 — broker priority correction:** Fixed the inverted Redis
+priority boundary: saved high-priority Ask jobs now precede lower-priority shared
+brief/admission envelopes. Actual Celery/Kombu with disposable Redis verifies all
+ten levels, two AI queues and equal-priority FIFO without running AI tasks. Existing
+jobs and historical messages are preserved. This is a prerequisite correction,
+**not** completion of global admission limits, tenant rotation, background aging
+at the durable queue or measured interactive latency. Those remain open along
+with independent quality/hardware/pilot gates; HL-089 remains **IN PROGRESS**.
+
 **8 September 2026 — IN PROGRESS (HappyDucky02):** implemented the internal complete
 brief contract and transactional `InterestEventAssessment`/reference storage.
 The engine validates every supplied interest and its primary citations, pins

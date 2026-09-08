@@ -25,6 +25,9 @@ celery_app.conf.update(
     task_acks_late=True,
     task_reject_on_worker_lost=True,
     worker_prefetch_multiplier=1,
+    # Redis consumes smaller priority numbers first. Preserve all ten levels;
+    # _send translates our durable convention (9 = highest) at this boundary.
+    broker_transport_options={"priority_steps": list(range(10)), "queue_order_strategy": "round_robin"},
     broker_connection_retry_on_startup=True,
     task_default_queue="maintenance",
     beat_schedule={
@@ -53,7 +56,7 @@ celery_app.conf.update(
 
 
 def _send(topic: str, queue: str, payload: dict, priority: int):
-    celery_app.send_task(topic, kwargs=payload, queue=queue, priority=priority)
+    celery_app.send_task(topic, kwargs=payload, queue=queue, priority=9 - max(0, min(9, priority)))
 
 
 @celery_app.task(name="helvetic_lens.dispatch_outbox")

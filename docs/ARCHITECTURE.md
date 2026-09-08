@@ -152,6 +152,29 @@ The initial figures are safe starting points, not capacity claims. The target-se
 
 Cancellation is cooperative. It stops future batches and preserves completed immutable evidence. A cancelled or failed AI job never changes a valid comparison into a failed comparison.
 
+**Redis priority boundary (9 September 2026):** Durable `Job.priority` uses 9 for
+the highest priority. Redis/Kombu consumes lower wire priorities first, so `_send`
+maps the saved value to `9 - priority`; all ten transport levels are explicitly
+enabled. Without this boundary, an Ask job at 8 could lose to a background brief
+at 2. Round-robin selection remains within a priority level across queues, and
+FIFO remains within one queue/priority. This fixes broker ordering, not global
+admission capacity, durable tenant fairness or a latency guarantee. An active
+generation cannot be preempted; queued DB outbox work still needs dispatch, and
+strict broker priorities can starve background work under sustained interactive
+load. The gateway's aging cannot fix starvation before a request reaches it.
+
+Publisher and consumer configuration must be updated together in a separately
+authorized deployment. Already-published messages keep their original wire
+priority until consumed; this change does not rewrite or delete Redis messages,
+PostgreSQL jobs or results. Do not flush application queues to apply it.
+
+`scripts/check_redis_priorities.py --redis-url redis://127.0.0.1:56389/15` checks
+the actual sender and Redis/Kombu consumer on an **empty disposable** broker at
+that exact loopback QA address. It acknowledges synthetic envelopes without
+executing tasks. It refuses a different broker address or nonempty database.
+Tests cover ten levels, both AI queues, interactive-before-background ordering
+and equal-priority FIFO. See the verification record for versions and limits.
+
 ## Local model architecture
 
 ### Clean-install behavior
