@@ -100,8 +100,8 @@ export const resources = {
       owner: "comparison", tags: ["native-baseline", `native-baseline:${id}`, "corpus"], staleMs: 15_000, varyByLocale: false,
     }),
   notifications: <T = unknown>(identity: string, cursor = "") => key<T>(`notifications:${identity}:unread:${cursor}`,
-    `/interest-feed?state=unread&limit=5&cursor=${encodeURIComponent(cursor)}`, {
-      tags: ["impact-inbox", "monitoring", "topics", "relation-analyses"],
+    `/interest-feed/notifications?state=unread&limit=5&cursor=${encodeURIComponent(cursor)}`, {
+      tags: ["impact-inbox", "monitoring", "topics", "relation-analyses", "profile", "settings"],
       staleMs: 1_000, pollMs: 60_000, priority: "background",
     }),
   feedReadiness: () => key<FeedReadiness>("feed:readiness", "/interest-feed/readiness", {

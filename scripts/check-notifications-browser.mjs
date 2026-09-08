@@ -34,7 +34,16 @@ async function waitFor(check, message) {
 }
 let locale="en-CH",role="viewer",user="qa",failure="",stateFailure=false;
 const readStates=new Map();
-const event = id => ({event_id:id,title:`Synthetic development ${id} — ${"A long multilingual regulatory heading ".repeat(3)}`,source:"Official synthetic source",detected_at:"2026-09-08T08:00:00Z"});
+const event = id => ({event_id:id,title:`Synthetic development ${id} — ${"A long multilingual regulatory heading ".repeat(3)}`,source:"Official synthetic source",detected_at:"2026-09-08T08:00:00Z",
+  brief:id === 'event-two' ? {status:'pending',locale:locale.slice(0,2)} : {
+    status:'available',locale:locale.slice(0,2),assessment_id:'saved-brief-'+id,saved_at:'2026-09-08T08:05:00Z',
+    what_happened:{text:'Saved brief <script>never execute</script>',evidence_ids:['source']},
+    importance:{text:'A synthetic low-importance assessment.',level:'low',evidence_ids:['source']},
+    why_in_radar:[{interest_id:'topic-one',name:'Saved topic',text:'Saved organization relevance.',evidence_ids:['source']}],
+    next_step:{text:'No action now; retain the source.',kind:'no_action_now',evidence_ids:['source']},
+    uncertainty:'Synthetic fixture only.',input_limitations:[],more_reasons:true,
+    evidence_links:{source:'/corpus-evidence/synthetic-version?passage=article-1'},
+  }});
 try {
   await waitFor(async () => (await fetch(base)).ok, "Isolated production UI failed to start");
   let debugPort;
@@ -54,7 +63,7 @@ try {
     if(path==="/api/auth/session") body={authenticated:true,user:{id:user,email:"qa@example.invalid",name:"QA",locale},organization:{id:"qa-org",name:"QA"},role};
     else if(path==="/api/health") body={status:"ok",database:"postgresql",apertus:{configured:false},firecrawl:{configured:false}};
     else if(["/api/laws","/api/scans","/api/jobs"].includes(path)) body=[];
-    else if(path==="/api/interest-feed") {
+    else if(path==="/api/interest-feed/notifications") {
       assert.equal(url.searchParams.get("limit"),"5");
       assert.equal(url.searchParams.get("state"),"unread");
       const cursor=url.searchParams.get("cursor")||"";
@@ -87,11 +96,18 @@ try {
     const before=requests.length;
     await cdp.send("Page.navigate",{url:`${base}/overview?locale=${locale}&qa=${user}`});
     await waitFor(()=>evaluate(cdp,`window.__qaNotificationDocument===${JSON.stringify(user)} && document.documentElement.lang===${JSON.stringify(locale)} && !!document.querySelector('[data-notifications-trigger]')`),"Notification entry missing");
-    assert.equal(requests.slice(before).filter(r=>r.path==='/api/interest-feed').length,0,'Closed centre fetched feed');
+    assert.equal(requests.slice(before).filter(r=>r.path==='/api/interest-feed/notifications').length,0,'Closed centre fetched notifications');
     await click('[data-notifications-trigger]');
     await waitFor(()=>evaluate(cdp,`document.querySelector('[data-notification-centre]').innerText.includes('Synthetic notification read failure')`),'First-load error missing');
     await click('[data-notification-retry]');
     await waitFor(()=>evaluate(cdp,`document.querySelectorAll('[data-notification-event]').length===2`),'First page missing');
+    assert.equal(await evaluate(cdp,`document.querySelector('[data-notification-brief] [lang]').lang`), locale.slice(0,2));
+    assert.ok(await evaluate(cdp,`document.querySelector('[data-notification-brief]').innerText.includes('Saved brief <script>never execute</script>')`));
+    assert.equal(await evaluate(cdp,`document.querySelectorAll('[data-notification-brief] script').length`),0);
+    assert.equal(await evaluate(cdp,`document.querySelector('[data-notification-brief] a').getAttribute('href')`),'/corpus-evidence/synthetic-version?passage=article-1');
+    await click('[data-notification-brief] summary');
+    assert.ok(await evaluate(cdp,`document.querySelector('[data-notification-brief] details').innerText.includes('Saved organization relevance.')`));
+    assert.equal(await evaluate(cdp,`document.querySelectorAll('[data-notification-brief][data-brief-status=pending]').length`),1);
     assert.ok(await evaluate(cdp,`Array.from(document.querySelectorAll('[data-notification-centre] button')).every(b=>b.getBoundingClientRect().height>=44)`),'Small notification targets');
     assert.equal(await evaluate(cdp,`document.querySelector('[data-notification-event] a').getAttribute('href')`),'/?event=event-one');
     await evaluate(cdp,`document.querySelector('[data-notification-centre] button[data-slot=dialog-close]').focus()`);
@@ -105,6 +121,7 @@ try {
     await click('[data-notification-next]');
     await waitFor(()=>evaluate(cdp,`!!document.querySelector('[data-notification-retry]')`),'Next-page failure missing');
     assert.equal(await evaluate(cdp,`document.querySelectorAll('[data-notification-event]').length`),2,'Failed page erased records');
+    assert.equal(await evaluate(cdp,`document.querySelectorAll('[data-notification-brief]').length`),0,'Failed refresh retained an apparently current AI conclusion');
     await accessibility.check(cdp,`notifications-${user}-retry`,'[data-notification-centre]');
     await click('[data-notification-retry]');
     await waitFor(()=>evaluate(cdp,`document.querySelector('[data-notification-event] a')?.getAttribute('href')==='/?event=old-event'`),'Wrong retry page');
@@ -150,6 +167,7 @@ try {
     }
   }
   assert.deepEqual(requests.filter(r=>r.method!=='GET' && !r.path.startsWith('/api/assistant/') && !r.path.startsWith('/api/interest-feed/events/')),[]);
+  assert.deepEqual(requests.filter(r=>r.path.includes('/brief')),[], 'Notification rendering made a per-event brief or generation request');
   assert.deepEqual(exceptions,[]);
   await accessibility.finish(80);
   console.log('20 notification journeys pass: five languages, mobile/desktop, viewer/admin, errors/retry, sparse continuation, personal read/dismiss state, pointer targets and close focus. APIs intercepted; no inference or real data writes.');

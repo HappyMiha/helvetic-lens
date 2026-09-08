@@ -26,12 +26,15 @@ import {
   DialogTrigger,
 } from "./ui/dialog";
 import { ErrorNote } from "./common";
+import { NotificationBrief } from "./notification-brief";
+import type { DigestBrief } from "@/lib/interest-brief";
 
 type Event = {
   event_id: string;
   title: string;
   source: string;
   detected_at: string;
+  brief?: DigestBrief;
 };
 type Page = { items: Event[]; next_cursor: string | null };
 
@@ -198,6 +201,7 @@ function Notifications({ onNavigate }: { onNavigate: () => void }) {
                 timeStyle: "short",
               })}
             </p>
+            <NotificationBrief brief={event.brief} eventTitle={event.title} eventUrl={`/?event=${encodeURIComponent(event.event_id)}`} onNavigate={onNavigate} stale={!!error} />
             <div className="flex flex-wrap gap-2 mt-3">
               <Button
                 data-notification-read

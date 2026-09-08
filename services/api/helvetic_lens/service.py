@@ -1175,6 +1175,20 @@ class HelveticLens:
         with self.db.session() as session:
             return InterestFeedReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings, runtime=self.relation_runtime_observation()).feed(session, **filters)
 
+    def interest_notifications(self, user_id: str | None, *, cursor: str = "", limit: int = 5, locale: str = "en") -> dict:
+        from .digest_briefs import attach
+        if locale not in {"de", "fr", "it", "rm", "en"} or not 1 <= limit <= 5:
+            raise DomainError("Invalid notification language or page size.", 422, "invalid_input")
+        with self.db.session() as session:
+            page = InterestFeedReader(self.organization_id, user_id, settings=self.settings,
+                prompts=self.prompt_settings, runtime=self.relation_runtime_observation()).feed(
+                    session, state="unread", cursor=cursor, limit=limit)
+            # Reuse the same bounded current-brief projection as digests. The page
+            # remains an event feed, not an AI-created notification history.
+            projected = attach(session, self.organization_id, {"events": page["items"]}, locale,
+                context=self.brief_read_context(), configuration=self.brief_configuration(session))
+            return {**page, "items": projected["events"]}
+
     def interest_feed_topics(self, event_id: str, user_id: str | None, **filters) -> dict:
         with self.db.session() as session:
             return InterestFeedReader(self.organization_id, user_id, settings=self.settings, prompts=self.prompt_settings, runtime=self.relation_runtime_observation()).topic_page(session, event_id, **filters)

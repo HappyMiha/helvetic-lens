@@ -1846,6 +1846,18 @@ Acceptance criteria:
 
 ### HL-078 — Add an in-app notification centre over the existing delivery state
 
+**9 September 2026 — saved AI relevance:** The five-event notification projection
+now reuses the same current saved brief as Today/digests in the requesting user's
+language. Summary, organization importance, expandable reasons/review/uncertainty
+and exact citations are shown without generation, translation, token counting or
+per-event model probes. Failed refresh hides cached AI prose; unavailable analysis
+keeps source navigation, and read/dismiss state stays personal. The same event is
+enriched in place on refresh rather than creating another alert. Contract and
+verification: `docs/NOTIFICATIONS.md`, `docs/VERIFICATION.md`. This closes the basic
+in-app reuse gap for HL-089, not global counts, broader preferences, fairness,
+independent language/model/hardware/accessibility quality or measured pilot noise.
+HL-078/HL-089 remain **IN PROGRESS**.
+
 **8 September 2026 — reading centre:** A desktop/mobile header bell opens a five-language unread-feed dialog with grouped event links, explicit personal read/dismiss actions, complete next/back/latest navigation and retry that preserves visible records. It reuses persisted feed state, never invokes AI, and polls every minute only while mounted/visible/online. Counts explicitly describe the page rather than inventing a global total; sparse batches retain continuation. See [contract and remaining work](docs/NOTIFICATIONS.md) and verification. **Still open:** exact durable global unread badge, full preferences and organization limits, operational notices, channel/quiet-hours policy and independent noise/usability evidence. HL-078 remains **IN PROGRESS**.
 
 Extend the completed HL-052 user preferences, read state, durable jobs, and delivery history so users can see meaningful persisted feed changes inside the product without inventing another event store or implying real-time coverage.

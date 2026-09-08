@@ -1457,6 +1457,13 @@ def create_app(
         identity = request.state.identity
         return service.interest_feed(identity.user_id if identity else None, period=period, state=state, cursor=cursor, limit=limit, event=event)
 
+    @app.get("/api/interest-feed/notifications", dependencies=[Depends(runtime_cache_scope)])
+    def interest_notifications(request: Request, cursor: str = Query(default="", max_length=4096),
+                               limit: int = Query(default=5, ge=1, le=5)):
+        identity = request.state.identity
+        return service.interest_notifications(identity.user_id if identity else None,
+            cursor=cursor, limit=limit, locale=selected_locale(request).split("-")[0])
+
     @app.get("/api/interest-feed/events/{event_id}/brief")
     async def interest_feed_brief(event_id: str, request: Request, locale: str | None = Query(default=None, max_length=2)):
         language = locale if locale is not None else selected_locale(request).split("-")[0]

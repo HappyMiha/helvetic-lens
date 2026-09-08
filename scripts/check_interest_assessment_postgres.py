@@ -124,6 +124,11 @@ from test_native_comparisons import (
     test_selection_does_not_commit_callers_transaction,
     test_tenant_selection_never_leaks_into_another_admitted_organization,
 )
+from test_notification_briefs import (
+    test_saved_notification_uses_current_user_language_once_per_page,
+    test_shared_brief_does_not_share_personal_read_or_dismiss_state,
+    test_unavailable_brief_does_not_hide_source_or_leak_saved_prose,
+)
 from test_relation_runtime import configure_local_relation
 
 
@@ -141,6 +146,9 @@ def execute_relation(harness, scenario):
 
 
 SUITES = {
+    "notification-brief-reuse": lambda harness: execute_local(harness, lambda value: test_saved_notification_uses_current_user_language_once_per_page(value, "fr")),
+    "notification-brief-personal": lambda harness: execute_local(harness, test_shared_brief_does_not_share_personal_read_or_dismiss_state),
+    "notification-brief-offline": lambda harness: execute_local(harness, lambda value: test_unavailable_brief_does_not_hide_source_or_leak_saved_prose(value, "offline")),
     "digest-offline-send": lambda harness: execute_relation(harness, lambda value, patch: test_offline_worker_sends_sources_once_without_reusing_old_ai(value, patch, [])),
     "digest-offline-filter": lambda harness: execute_relation(harness, test_filtered_offline_period_is_recoverable_without_false_empty_result),
     "digest-offline-transition": lambda harness: execute_relation(harness, lambda value, patch: test_runtime_transition_restarts_selection_before_sending(value, patch, False)),

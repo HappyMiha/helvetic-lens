@@ -1,5 +1,45 @@
 # Verification record
 
+## Current saved briefs in notification cards — 9 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl089-notification-briefs`, based on `8ce564b`.
+  The dedicated notification read endpoint composes at most five unread feed
+  events with the same validated saved-brief projection as digests. One metadata
+  observation per page; no new event, assessment, token count or generation job.
+  Request language controls the variant; no organization-language fallback.
+- **83 API tests passed in 151.79s** across notification briefs, interest feed,
+  saved-brief reader and digest briefs. After adding the multi-event pagination
+  regression, **15 notification tests passed in 28.54s**. Counts overlap and are
+  not a unique total. The latter run verifies two events share one observation
+  and one-item continuation preserves both IDs. HTTP tests validate the five-item
+  ceiling, malformed cursors and request-language variant. Missing language,
+  profile changes, offline model, failed/pending/corrupt output and revoked access
+  cannot expose current AI prose. Personal read/dismiss changes never affect the
+  other recipient's copy. Existing Starlette/httpx warning only.
+- Isolated PostgreSQL 17.11: `notification-brief-reuse`,
+  `notification-brief-personal`, `notification-brief-offline` pass using the
+  reproducible scratch runner. No live model or mail; exact saved assessment reuse
+  survives fresh sessions, with independent personal state. The label-verified
+  tmpfs/--rm QA container was stopped after tests; application services untouched.
+- Root `npm run build` passes localization/value, shell/resource/report, type and
+  production compilation gates. Ruff/diff checks pass. Production-browser
+  synthetic API: **20 five-locale × mobile/desktop × viewer/admin journeys**,
+  **80 full-document axe checkpoints** pass all reported violation severities
+  and the prohibited-ARIA gate. Initial browser run caught duplicate landmark
+  names; event-specific accessible names fixed them before the complete rerun.
+  Other incomplete accessibility checks remain recorded, not certified accessible.
+- Browser checks cover escaped AI text, exact saved citation href, expandable
+  organization reasons, pending state, removal of AI prose after failed refresh,
+  bounded paging/recovery, personal state, touch targets and dialog focus return.
+  No per-event brief read, generation or external-message call occurred. Mobile
+  390px and desktop 1440px screenshots were visually inspected. Ignored evidence:
+  `test-results/notification-brief-{api,build,browser}.txt` and
+  `test-results/notifications/{390,1440}.png`.
+- No migration, production activation or full Linux API-suite claim for this code.
+  Currentness is checked at read time, not continuously; high-fan-out SQL capacity,
+  global unread count, full preference/channel policy and independent native-
+  language/model/hardware/accessibility/user acceptance remain open.
+
 ## Offline source digests with retained filtered periods — 9 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl079-offline-digests`, based on `70ced09`. Optional
