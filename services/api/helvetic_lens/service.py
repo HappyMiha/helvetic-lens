@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 
 from . import analysis as ai
 from . import (
+    analysis_selection,
     digests,
     law_history,
     monitoring_topics,
@@ -2509,26 +2510,19 @@ class HelveticLens:
         comparison: Comparison,
         output_locale: str = ai.DEFAULT_OUTPUT_LOCALE,
     ):
-        attempts = list(
-            session.scalars(
-                select(Analysis)
-                .where(Analysis.comparison_id == comparison.id)
-                .order_by(Analysis.created_at.desc())
-                .limit(50)
-            )
-        )
-        if not attempts:
+        latest_attempt = analysis_selection.latest_attempt(session, self.organization_id, comparison.id)
+        if latest_attempt is None:
             return None
-        latest_attempt = attempts[0]
         profile = get(session, Profile, self.tenant_record_id)
         current_key = ai.cache_key(
             comparison, profile, self.settings, self.prompt_settings, output_locale,
             runtime_identity=self.cache_runtime_identity(),
         )
-        analysis = next(
-            (item for item in attempts if item.status == "succeeded" and item.cache_key == current_key),
-            next((item for item in attempts if item.status == "succeeded"), latest_attempt),
+        analysis = analysis_selection.report(
+            session, self.organization_id, comparison.id, current_key, latest_attempt,
         )
+        if analysis is None:
+            return None
         response = {
             **as_dict(analysis),
             "stale": analysis.cache_key != current_key,
@@ -2539,7 +2533,10 @@ class HelveticLens:
                 "id": latest_attempt.id,
                 "status": latest_attempt.status,
                 "error": latest_attempt.error,
-                "created_at": latest_attempt.created_at.isoformat(),
+                "created_at": (
+                    latest_attempt.created_at.replace(tzinfo=UTC)
+                    if latest_attempt.created_at.tzinfo is None else latest_attempt.created_at
+                ).isoformat(),
             }
         return response
 

@@ -22,6 +22,11 @@ The provider cannot select arbitrary evidence URLs or pages. The API materialize
 
 The impact cache boundary includes the comparison, semantic-diff fingerprint, organization profile revision, editable prompt fingerprint, prompt and report schema versions, provider/model runtime fingerprint, generation settings, and output locale. Successful and failed attempts remain in AI history. If a rerun fails, the comparison continues to show the last valid report and identifies the failed latest attempt.
 
+Current-report selection searches the complete accessible attempt history, including
+successful reports older than 50 later failures. It loads only the selected report
+body and keeps the latest attempt separately visible. See the [selection contract
+and verification limits](CURRENT_REPORT_SELECTION.md).
+
 The output locale is persisted for DE/FR/IT/RM/EN. New review labels, deterministic change descriptions and unassigned/unknown states use that locale; source quotations remain in their original language. Independent native-language review and remaining server-authored labels remain open. Historical v2/v3/v4 reports stay readable with their original content and timestamps; explicit reassessment produces v5 instead of silently modifying history.
 
 ## Explicit response modes (HL-091)
