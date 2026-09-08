@@ -113,6 +113,8 @@ fixture.diff.classification_counts.substantive = 201;
 fixture.diff.material_count = 201;
 fixture.diff.counts.modified = 201;
 let comparisonFixture = fixture;
+let actionHistoryMode = false, actionHistoryFailure = false, actionHistoryRole = "organization_admin";
+const actionHistoryRows = Array.from({length:31}, (_,i) => ({id:`qa-decision-${i}`, action_key:"qa-review-key", decision:"accepted", actor_label:`History reviewer ${i}`, rationale:"Synthetic recorded rationale", assigned_to:null, scheduled_for:null, created_at:"2026-09-01T10:00:00Z"})).reverse();
 const savedAnswer = {id: "qa-saved-answer", type: "question", status: "succeeded", question: "Which record duties changed?", created_at: "2026-09-06T08:00:00Z", last_used_at: null, use_count: 1, model: "synthetic", prompt_revision: 1, coverage: {},
   comparison: {id: fixture.id, mode: fixture.mode, before: {id: fixture.old_version_id, artifact_url: `/api/versions/${fixture.old_version_id}/artifact`}, after: {id: fixture.new_version_id, artifact_url: `/api/versions/${fixture.new_version_id}/artifact`}},
   result: {supported: true, answer: "Synthetic supported answer.", citations: fixture.analysis.result.citations}};
@@ -158,7 +160,7 @@ try {
         authenticated: true,
         user: { id: "qa", email: "qa@example.invalid", name: "QA", locale },
         organization: { id: "qa-org", name: "Isolated QA" },
-        role: "organization_admin",
+        role: actionHistoryRole,
       };
     else if (url.pathname === "/api/health")
       body = {
@@ -181,6 +183,17 @@ try {
       body = {id: "qa-conversation", handoffs: [{id: "qa-handoff", question: JSON.parse(request.postData).question}]};
     }
     else if (url.pathname === `/api/comparisons/${fixture.id}`) body = comparisonFixture;
+    else if (actionHistoryMode && url.pathname.endsWith("/decisions")) {
+      assert.equal(request.method, "GET", "History browsing must not mutate decisions");
+      if (actionHistoryFailure) {
+        actionHistoryFailure = false;
+        code = 503; body = {detail:"Synthetic history unavailable"};
+      } else {
+        const next = url.searchParams.get("cursor") === "qa-history-next";
+        body = {items: next ? actionHistoryRows.slice(20) : actionHistoryRows.slice(0,20), total:31,
+          as_of:"2026-09-08T09:00:00Z", first_cursor:"qa-history-first", next_cursor:next ? null : "qa-history-next"};
+      }
+    }
     else if (url.pathname.endsWith("/ai-history"))
       body = { items: historyItems, total: historyItems.length };
     else if (url.pathname === "/api/monitoring-context") body = {kind: "answer", id: savedAnswer.id, title: fixture.law.name, question: savedAnswer.question, answer_created_at: savedAnswer.created_at, reference_url: `/compare/${fixture.id}?task=ask`, requires_confirmation: true, ai_calls: 0, watches: []};
@@ -647,6 +660,56 @@ try {
       historyItems.pop();
     }
   }
+  // Every saved human decision remains reachable without a full-history payload.
+  actionHistoryMode = true;
+  for (const language of ["en-CH", "de-CH", "fr-CH", "it-CH", "rm-CH"]) {
+    locale = language;
+    for (const width of [390,1440]) for (const role of ["organization_admin","viewer"]) {
+      actionHistoryRole = role;
+      comparisonFixture = structuredClone(fixture);
+      comparisonFixture.analysis.result.actions = [{...fixture.analysis.result.actions[0], action_key:"qa-review-key"}];
+      comparisonFixture.analysis.action_decisions = {history_mode:"per_action", history:[], counts:{"qa-review-key":31}, current:{"qa-review-key":actionHistoryRows[0]}};
+      const writesBefore = writes.length;
+      await resize(width);
+      await cdp.send('Page.navigate',{url:`${base}/compare/${fixture.id}?task=actions`});
+      await waitFor(() => evaluate(cdp, `!!document.querySelector('[data-action-history] summary')`), 'Missing paged action history');
+      assert.equal(await evaluate(cdp, `document.querySelectorAll('.action-decision-buttons').length > 0`), role === "organization_admin");
+      await click('[data-action-history] summary');
+      await waitFor(() => evaluate(cdp, `document.querySelectorAll('[data-action-history] li').length === 20`), 'First history page missing');
+      assert.ok(await evaluate(cdp, `document.querySelector('[data-action-history]').innerText.includes('History reviewer 30')`));
+      assert.ok(await evaluate(cdp, `parseFloat(getComputedStyle(document.querySelector('[data-action-history] li')).fontSize) >= 14`), 'History text is too small');
+      assert.ok(await evaluate(cdp, `Array.from(document.querySelectorAll('[data-action-history] button')).every(b=>b.getBoundingClientRect().height>=44)`), 'History paging targets too small');
+      await accessibility.check(cdp, `action-history-${locale}-${width}-${role}-first`, '[data-action-history]');
+      actionHistoryFailure = true;
+      await click('[data-action-history] .flex button:nth-child(2)');
+      await waitFor(() => evaluate(cdp, `document.querySelector('[data-action-history]').innerText.includes('Synthetic history unavailable')`), 'Missing history error');
+      assert.equal(await evaluate(cdp, `document.querySelectorAll('[data-action-history] li').length`), 20, 'Failure erased saved page');
+      await accessibility.check(cdp, `action-history-${locale}-${width}-${role}-error`, '[data-action-history]');
+      await click('[data-action-history] div[aria-busy] > button');
+      await waitFor(() => evaluate(cdp, `document.querySelectorAll('[data-action-history] li').length === 11`), 'Retry did not preserve next-page request');
+      assert.ok(await evaluate(cdp, `document.querySelector('[data-action-history]').innerText.includes('History reviewer 0')`));
+      assert.ok(await evaluate(cdp, `document.querySelector('[data-action-history] .flex button:nth-child(2)').disabled`));
+      assert.ok(await evaluate(cdp, `document.activeElement === document.querySelector('[data-action-history] p[tabindex]')`), 'Page change did not focus page status');
+      await accessibility.check(cdp, `action-history-${locale}-${width}-${role}-older`, '[data-action-history]');
+      await click('[data-action-history] .flex button:first-child');
+      await waitFor(() => evaluate(cdp, `document.querySelectorAll('[data-action-history] li').length === 20`), 'Previous page missing');
+      assert.ok(await evaluate(cdp, `document.querySelector('[data-action-history] .flex button:first-child').disabled`));
+      await click('[data-action-history] .flex button:last-child');
+      await waitFor(() => evaluate(cdp, `document.querySelector('[data-action-history] [aria-busy]').getAttribute('aria-busy') === 'false'`), 'Latest history did not finish');
+      assert.ok(await evaluate(cdp, `document.documentElement.scrollWidth <= innerWidth + 1`), 'Action history overflow');
+      // Mounting a comparison initializes Marvin's page context and personal
+      // conversation. Neither is a history action or an inference request.
+      const navigationWrites = writes.slice(writesBefore);
+      assert.deepEqual(navigationWrites.map(r => `${r.method} ${r.path}`).sort(),
+        ['POST /api/assistant/context', 'POST /api/assistant/conversations'],
+        `History navigation sent an unexpected mutation/model request: ${JSON.stringify(navigationWrites.map(r => ({method:r.method,path:r.path})))}`);
+      if (locale === 'en-CH' && width === 390 && role === 'viewer') {
+        await evaluate(cdp, `document.querySelector('[data-action-history]').scrollIntoView({block:'start'})`);
+        await capture('action-history-mobile');
+      }
+    }
+  }
+  actionHistoryMode = false; actionHistoryRole = "organization_admin";
   // Legacy saved comparisons may have material rows but no cluster metadata.
   comparisonFixture = structuredClone(fixture);
   comparisonFixture.diff.change_clusters = [];
@@ -669,7 +732,7 @@ try {
     [],
     "Runtime errors in required populated comparison",
   );
-  accessibility.finish(155);
+  accessibility.finish(215);
   assert.ok(
     requests.some((path) => path.startsWith(`/api/comparisons/${fixture.id}`)),
     "No comparison fixture was used",

@@ -461,6 +461,8 @@ export type ActionDecision = {
   created_at: string;
 };
 export type ActionDecisionPage = {
+  history_mode?: "per_action";
+  counts?: Record<string, number>;
   current: Record<string, ActionDecision>;
   history: ActionDecision[];
 };

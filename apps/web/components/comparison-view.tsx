@@ -1,5 +1,6 @@
 "use client";
 
+import { ActionDecisionHistory } from "./action-decision-history";
 import { MaterialChanges } from "./material-changes";
 import { MonitorThis, MonitorSavedAnswer } from "./monitor-this";
 import { useEffect, useRef, useState } from "react";
@@ -44,6 +45,7 @@ import {
 } from "@/lib/assistant-events";
 import type {
   ActionDecision,
+  ActionDecisionPage,
   AIHistoryItem,
   AIHistoryPage,
   Analysis,
@@ -1625,6 +1627,7 @@ function ActionsPanel({
                         comparisonId={comparisonId}
                         analysisId={analysis.id}
                         action={action}
+                        historyCount={analysis.action_decisions?.history_mode === "per_action" ? (analysis.action_decisions.counts?.[action.action_key] || 0) : undefined}
                         current={
                           analysis.action_decisions?.current?.[
                             action.action_key
@@ -1895,6 +1898,7 @@ function ReviewActionControls({
   action,
   current,
   history,
+  historyCount,
   canManage,
 }: {
   comparisonId: string;
@@ -1902,6 +1906,7 @@ function ReviewActionControls({
   action: Impact["actions"][number];
   current?: ActionDecision;
   history: ActionDecision[];
+  historyCount?: number;
   canManage: boolean;
 }) {
   const { locale: productLocale, t, dateTime, number } = useI18n();
@@ -1944,11 +1949,8 @@ function ReviewActionControls({
     setBusy(decision);
     setError("");
     try {
-      const page = await api<{
-        current: Record<string, ActionDecision>;
-        history: ActionDecision[];
-      }>(
-        `/comparisons/${comparisonId}/analyses/${analysisId}/actions/${encodeURIComponent(action.action_key || "")}/decisions`,
+      const page = await api<ActionDecisionPage>(
+        `/comparisons/${comparisonId}/analyses/${analysisId}/actions/${encodeURIComponent(action.action_key || "")}/decisions?paged_actions=true`,
         {
           method: "POST",
           body: JSON.stringify({
@@ -2002,6 +2004,7 @@ function ReviewActionControls({
       {canManage && (
         <div
           className="action-decision-buttons"
+          role="group"
           aria-label={t("compare.actionDecision")}
         >
           <Button
@@ -2047,7 +2050,11 @@ function ReviewActionControls({
         </div>
       )}
       {error && <ErrorNote message={error} />}
-      {events.length > 1 && (
+      {historyCount !== undefined && <ActionDecisionHistory
+        comparisonId={comparisonId} analysisId={analysisId} actionKey={action.action_key || ""}
+        count={historyCount} revision={saved?.id} labelDecision={(value) => localLabel(value, locale)}
+      />}
+      {historyCount === undefined && events.length > 1 && (
         <details className="action-decision-history">
           <summary>
             {t("compare.recordedDecisions", { count: number(events.length) })}

@@ -1694,12 +1694,22 @@ def create_app(
         return service.create_comparison(data.old_version_id, data.new_version_id)
 
     @app.get("/api/comparisons/{comparison_id}", dependencies=[Depends(runtime_cache_scope)])
-    def comparison_detail(comparison_id: str, request: Request):
-        return service.comparison_detail(comparison_id, selected_locale(request))
+    def comparison_detail(comparison_id: str, request: Request, paged_actions: bool = False):
+        return service.comparison_detail(comparison_id, selected_locale(request), paged_actions=paged_actions)
 
     @app.get("/api/comparisons/{comparison_id}/ai-history")
     def comparison_ai_history(comparison_id: str, limit: int = Query(default=100, ge=1, le=500)):
         return service.ai_history(comparison_id=comparison_id, limit=limit)
+
+    @app.get("/api/comparisons/{comparison_id}/analyses/{analysis_id}/actions/{action_key}/decisions")
+    def action_decision_history(
+        comparison_id: str,
+        analysis_id: str,
+        action_key: str,
+        cursor: str = "",
+        limit: int = Query(default=20, ge=1, le=50),
+    ):
+        return service.action_history_page(comparison_id, analysis_id, action_key, cursor=cursor, limit=limit)
 
     @app.post(
         "/api/comparisons/{comparison_id}/analyses/{analysis_id}/actions/{action_key}/decisions"
@@ -1710,6 +1720,7 @@ def create_app(
         action_key: str,
         data: ActionDecisionInput,
         request: Request,
+        paged_actions: bool = False,
     ):
         identity = request.state.identity
         return service.decide_action(
@@ -1722,6 +1733,7 @@ def create_app(
             rationale=data.rationale,
             actor_user_id=identity.user_id if identity else None,
             actor_label=(identity.name if identity else "Local administrator"),
+            paged_actions=paged_actions,
         )
 
     @app.post("/api/comparisons/{comparison_id}/analyse")

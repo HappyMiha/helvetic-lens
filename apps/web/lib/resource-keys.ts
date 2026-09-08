@@ -251,7 +251,7 @@ export const resources = {
     }),
 
   comparison: (id: string) =>
-    key<Comparison>(`comparison:${id}`, `/comparisons/${id}`, {
+    key<Comparison>(`comparison:${id}`, `/comparisons/${id}?paged_actions=true`, {
       owner: "comparison",
       tags: ["comparison", `comparison:${id}`, "evidence"],
       staleMs: Number.POSITIVE_INFINITY,

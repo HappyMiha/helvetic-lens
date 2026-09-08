@@ -1871,6 +1871,18 @@ ins {
   line-height: 1.5;
   padding-left: 17px;
 }
+.action-decision-history[data-action-history] {
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+.action-decision-history[data-action-history] p {
+  font-size: inherit;
+}
+.action-decision-history[data-action-history] li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
 .report-provenance {
   border-top: 1px solid var(--border);
   display: grid;

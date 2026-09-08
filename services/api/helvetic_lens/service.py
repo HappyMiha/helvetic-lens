@@ -18,8 +18,8 @@ from redis.exceptions import RedisError
 from sqlalchemy import delete, func, inspect, or_, select
 from sqlalchemy.orm import Session
 
-from . import analysis as ai
 from . import (
+    action_history,
     analysis_selection,
     digests,
     law_history,
@@ -32,6 +32,7 @@ from . import (
     topic_matching,
     topic_reviews,
 )
+from . import analysis as ai
 from . import jobs as durable_jobs
 from . import relation_analysis as relation_ai
 from .ai_metrics import summarize_ai_triage_metrics
@@ -2494,6 +2495,8 @@ class HelveticLens:
         session: Session,
         comparison: Comparison | str,
         output_locale: str = ai.DEFAULT_OUTPUT_LOCALE,
+        *,
+        paged_actions: bool = False,
     ):
         comparison_id = comparison if isinstance(comparison, str) else comparison.id
         latest_attempt = analysis_selection.latest_attempt(session, self.organization_id, comparison_id)
@@ -2515,7 +2518,10 @@ class HelveticLens:
         response = {
             **as_dict(analysis),
             "stale": analysis.cache_key != current_key,
-            "action_decisions": self.action_decisions_for_analysis(session, analysis.id),
+            "action_decisions": (
+                action_history.summary(session, self.organization_id, comparison.id, analysis.id)
+                if paged_actions else self.action_decisions_for_analysis(session, analysis.id)
+            ),
         }
         if latest_attempt.id != analysis.id:
             response["latest_attempt"] = {
@@ -2535,7 +2541,7 @@ class HelveticLens:
             session.scalars(
                 select(ActionDecision)
                 .where(ActionDecision.analysis_id == analysis_id)
-                .order_by(ActionDecision.created_at.desc())
+                .order_by(ActionDecision.created_at.desc(), ActionDecision.id.desc())
             )
         )
         history = [as_dict(record) for record in records]
@@ -2556,6 +2562,7 @@ class HelveticLens:
         rationale: str | None,
         actor_user_id: str | None,
         actor_label: str,
+        paged_actions: bool = False,
     ) -> dict:
         if decision == "assigned" and not assigned_to:
             raise DomainError("Choose who should own this review action.", 422, "assignee_required")
@@ -2596,10 +2603,23 @@ class HelveticLens:
             )
             session.add(record)
             session.commit()
+            if paged_actions:
+                return action_history.summary(session, self.organization_id, comparison.id, analysis.id)
             return self.action_decisions_for_analysis(session, analysis.id)
 
+    def action_history_page(self, comparison_id, analysis_id, action_key, *, cursor="", limit=20):
+        with self.db.session() as session:
+            return action_history.page(
+                session, self.organization_id, comparison_id, analysis_id, action_key,
+                cursor=cursor, limit=limit,
+            )
+
     def comparison_detail(
-        self, comparison_id: str, output_locale: str = ai.DEFAULT_OUTPUT_LOCALE
+        self,
+        comparison_id: str,
+        output_locale: str = ai.DEFAULT_OUTPUT_LOCALE,
+        *,
+        paged_actions: bool = False,
     ):
         with self.write_guard, self.db.session() as session:
             comparison = get(session, Comparison, comparison_id)
@@ -2632,7 +2652,7 @@ class HelveticLens:
                 "new_version": version_summary(new),
                 "law": as_dict(law),
                 "identity": identity,
-                "analysis": self.latest_analysis(session, comparison, output_locale),
+                "analysis": self.latest_analysis(session, comparison, output_locale, paged_actions=paged_actions),
                 "analysis_job": (
                     durable_jobs.serialize(session, analysis_job) if analysis_job else None
                 ),

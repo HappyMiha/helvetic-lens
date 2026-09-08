@@ -18,6 +18,10 @@ Each new decision suggestion has a stable `action_key`, action type, title, conc
 
 ## Validation and history
 
+Human review decisions now have [complete per-action history pages](ACTION_HISTORY.md).
+The comparison UI keeps the current decision visible and loads older decisions
+on demand, without regenerating the report. Legacy API history remains supported.
+
 The provider cannot select arbitrary evidence URLs or pages. The API materializes those fields from the saved version and passage after validating the quoted text. The final report is validated again against the server-owned schema, and duplicate action keys fail validation.
 
 The impact cache boundary includes the comparison, semantic-diff fingerprint, organization profile revision, editable prompt fingerprint, prompt and report schema versions, provider/model runtime fingerprint, generation settings, and output locale. Successful and failed attempts remain in AI history. If a rerun fails, the comparison continues to show the last valid report and identifies the failed latest attempt.
