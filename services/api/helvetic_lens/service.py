@@ -2223,27 +2223,11 @@ class HelveticLens:
 
     def law_summary(self, session: Session, law: Law, watch: DocumentWatch | None = None):
         watch = watch or self.watch(session, law.id)
-        current = session.get(Version, law.current_version_id) if law.current_version_id else None
-        last_item = session.scalar(
-            select(ScanItem)
-            .where(
-                ScanItem.law_id == law.id,
-                ScanItem.comparison_id.is_not(None),
-            )
-            .order_by(ScanItem.created_at.desc())
-            .limit(1)
-        )
-        comparison = (
-            session.get(Comparison, last_item.comparison_id)
-            if last_item
-            else session.scalar(
-                select(Comparison)
-                .where(Comparison.law_id == law.id)
-                .order_by(Comparison.created_at.desc())
-                .limit(1)
-            )
-        )
-        analysis = self.latest_analysis(session, comparison) if comparison else None
+        current = law_history.versions(
+            session, self.organization_id, law.id, ids=[law.current_version_id],
+        ) if law.current_version_id else []
+        comparison = law_history.summary_comparison(session, self.organization_id, law.id)
+        analysis = self.latest_analysis(session, comparison.id) if comparison else None
         return {
             **as_dict(law, {"owner_organization_id"}),
             "name": watch.display_name,
@@ -2254,10 +2238,10 @@ class HelveticLens:
             "watch_id": watch.id,
             "selected_baseline_version_id": watch.selected_baseline_version_id,
             "corpus_scope": "shared_public" if law.owner_organization_id is None else "organization_private",
-            "current_version": version_summary(current) if current else None,
+            "current_version": current[0] if current else None,
             "comparison_id": comparison.id if comparison else None,
             "comparison_mode": comparison.mode if comparison else None,
-            "change_counts": comparison.diff["counts"] if comparison else None,
+            "change_counts": comparison.counts if comparison else None,
             "analysis": analysis,
         }
 
@@ -2508,12 +2492,16 @@ class HelveticLens:
     def latest_analysis(
         self,
         session: Session,
-        comparison: Comparison,
+        comparison: Comparison | str,
         output_locale: str = ai.DEFAULT_OUTPUT_LOCALE,
     ):
-        latest_attempt = analysis_selection.latest_attempt(session, self.organization_id, comparison.id)
+        comparison_id = comparison if isinstance(comparison, str) else comparison.id
+        latest_attempt = analysis_selection.latest_attempt(session, self.organization_id, comparison_id)
         if latest_attempt is None:
             return None
+        # Summary reads need the full diff only when a saved report needs a freshness check.
+        if isinstance(comparison, str):
+            comparison = get(session, Comparison, comparison_id)
         profile = get(session, Profile, self.tenant_record_id)
         current_key = ai.cache_key(
             comparison, profile, self.settings, self.prompt_settings, output_locale,

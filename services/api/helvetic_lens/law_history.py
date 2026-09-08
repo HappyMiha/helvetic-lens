@@ -10,7 +10,7 @@ from sqlalchemy import Float, case, cast, func, select
 from .config import DomainError
 from .corpus_access import visible
 from .db import utcnow
-from .models import Comparison, DocumentWatch, Law, Observation, Version
+from .models import Comparison, DocumentWatch, Law, Observation, Scan, ScanItem, Version
 
 
 def _fields(model, omitted):
@@ -96,6 +96,33 @@ def comparisons(session, organization_id, law_id, *, ids=None):
     ).order_by(Comparison.created_at.desc(), Comparison.id.desc())
     statement = statement.limit(50) if ids is None else statement.where(Comparison.id.in_(ids))
     return [_serialize(row) for row in session.execute(statement).mappings()]
+
+
+def summary_comparison(session, organization_id, law_id):
+    """Prefer the latest accessible scan comparison, then the latest saved one."""
+    base = _scoped(
+        select(Comparison.id, Comparison.mode, Comparison.diff["counts"].label("counts")),
+        Comparison,
+        organization_id,
+        law_id,
+    )
+    scanned = (
+        base.join(ScanItem, ScanItem.comparison_id == Comparison.id)
+        .join(Scan, Scan.id == ScanItem.scan_id)
+        .where(
+            ScanItem.organization_id == organization_id,
+            Scan.organization_id == organization_id,
+            ScanItem.law_id == law_id,
+        )
+        .order_by(ScanItem.created_at.desc(), ScanItem.id.desc())
+        .limit(1)
+    )
+    selected = session.execute(scanned).first()
+    if selected is None:
+        selected = session.execute(
+            base.order_by(Comparison.created_at.desc(), Comparison.id.desc()).limit(1)
+        ).first()
+    return selected
 
 
 def observations(session, organization_id, law_id, *, ids=None):

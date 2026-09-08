@@ -74,7 +74,7 @@ def test_paged_document_detail_opt_in_keeps_current_version_and_legacy_contract(
     assert response.status_code == 200, response.text
     value = response.json()
     assert value["current_version"]["id"] == original
-    assert {id_ for kind, id_ in loaded if kind == "Version"} == {original}
+    assert not any(kind == "Version" for kind, _ in loaded)
     for kind in law_history.READERS:
         assert len(value[kind]) == 20
         assert value["history_pages"][kind]["total"] > 50

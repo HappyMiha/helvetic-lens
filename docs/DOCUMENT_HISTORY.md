@@ -92,3 +92,33 @@ in DE/FR/IT/RM/EN, administrator/viewer roles, keyboard and 390/1440px layouts.
 See [the dated verification record](VERIFICATION.md) for completed runs and limits.
 Independent native-language, screen-reader, physical-device and target-hardware
 acceptance are not established by these tests.
+
+## Document summary metadata — HL-099, 8 September 2026
+
+The document detail and existing law-list summary now reuse the scalar version
+metadata reader for the current version too. They keep the same metadata, Unicode
+character count, passage/page statistics and evidence/original-file links without
+hydrating its text, passage array or artifact storage key. The reference must
+belong to this exact law and remain visible under its current watch/ownership.
+Missing, foreign-owned or wrong-law references yield no current-version metadata.
+
+The selected comparison is read as ID, mode and change counts. The latest valid
+scan-linked comparison retains priority over a newer manually saved comparison;
+otherwise the latest visible saved comparison is used. Saved timestamp and ID
+break ties deterministically. Scan item, scan organization, comparison law and
+comparison ownership must all match, including in privileged sessions. Invalid
+scan links cannot substitute another law's comparison.
+
+Only when this comparison has an accessible AI attempt does summary reading load
+its full diff to calculate the existing evidence/profile/prompt/runtime cache
+fingerprint. Current and stale saved reports therefore retain the same freshness
+rules, with no generation during reads. A document without AI history hydrates no
+Version or Comparison bodies. The large saved-history regression now asserts
+this stronger condition rather than allowing the formerly loaded current bodies.
+
+This does not remove the cost of database-side JSON statistics, hashing the
+selected diff for existing analyses, per-law compatibility-list queries, selected
+report payloads or complete action-decision histories. Complete response/byte and
+target-host concurrency gates remain open under HL-099. No schema migration,
+frontend change, reprocessing, evidence rewrite or production deployment is part
+of this change.

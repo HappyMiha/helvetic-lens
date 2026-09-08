@@ -99,8 +99,8 @@ def test_law_detail_large_history_is_metadata_compatible_without_historical_body
     assert (
         len(data["versions"]) == 152 and len(data["comparisons"]) == 50 and len(data["observations"]) == 100
     )
-    assert {id_ for kind, id_ in loaded if kind == "Version"} == {original}
-    assert len([item for item in loaded if item[0] == "Comparison"]) == 1
+    assert not any(kind == "Version" for kind, _ in loaded)
+    assert not any(kind == "Comparison" for kind, _ in loaded)
     assert not any(kind == "Observation" for kind, _ in loaded)
     assert data["current_version"]["id"] == original
     assert model.calls == [] and len(fetcher.calls) == before
