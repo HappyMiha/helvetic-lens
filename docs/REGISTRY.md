@@ -170,6 +170,9 @@ working-data change or production deployment accompanies this slice.
 
 ## Scalar saved timelines — 6 September 2026
 
+Historical implementation record; the complete paging contract below supersedes
+the unlimited arrays and observation preview described in this subsection.
+
 `GET /api/laws/{id}/timeline` and the same timeline nested in law detail now read
 only displayed scalar metadata. Native version totals use SQL counting, not a
 load of every normalized text/passages object. Saved event/version/comparison
@@ -206,6 +209,61 @@ identifiers, expressions and relationships are still returned. The separate
 payload-loading behavior. Full UI/API history paging, those projections, metadata
 response-size bounds, query-planner cost and target-host concurrency remain open;
 no whole-law-page memory or 100-user capacity guarantee is claimed.
+
+## Complete regulatory-timeline pages — 8 September 2026
+
+`GET /api/laws/{id}/timeline` now returns the first 20 records in each of five
+lists: `timeline`, `identifiers`, `expressions`, `relations` and `source_provenance`.
+The same bounded record is nested under `regulatory_timeline` in both qualified
+and unqualified law detail. Each list has a corresponding entry in `pages` with
+`total`, `limit`, `as_of`, `first_cursor` and nullable `next_cursor`.
+
+`GET /api/laws/{id}/timeline/{kind}?cursor=…&limit=20` returns that metadata plus
+`items`. All five kinds support complete continuation; the default is 20 and the
+allowed limit is 1–50. External consumers that previously treated these arrays as
+complete must now follow `next_cursor` until null. No unlimited timeline endpoint
+or silent preview-only history remains. The separate top-level document-history
+arrays retain their own [compatibility contract](DOCUMENT_HISTORY.md).
+
+The document page groups these lists behind five wrapping controls. Each list
+remembers its current page while another is selected. Previous preserves the
+original cutoff, Retry repeats a failed page, and Show latest starts a new
+traversal. A pending/error page retains the last readable records. Dates include
+seconds and the Swiss time zone; help explicitly distinguishes saved/detected
+timestamps from a law's effective date. Relationship titles and links remain
+scoped to accessible watched aliases. Paging, tab selection and exact evidence
+links do not scan, infer or change saved history. Strings cover DE/FR/IT/RM/EN;
+that does not constitute independent native-language review.
+
+Scalar SQL selects at most `limit + 1` records for the requested list. The combined
+timeline is a UNION of event, version and comparison metadata ordered by timestamp
+and typed ID, rather than loading all three histories into Python. Normalized
+versions use a scalar count. A mapped initial record executes 12 SELECTs and an
+unmapped legacy record five, with no saved-body ORM hydration; a mapped continuation
+uses header, count and bounded selection. This bounds returned row counts and
+Python materialization, not SQL sorting/counting work or individual metadata bytes.
+No migration or modification of saved evidence is required for this slice.
+
+The typed cursor binds organization, law, mapped work, list kind, limit, cutoff
+and the last timestamp/ID. Every continuation repeats the current watch/law/work
+and record visibility checks, including in privileged sessions. Paused watches
+remain readable. Invisible mappings/works fall back to document-only history;
+a cursor for the old mapped work is rejected. Cursors are not authorization tokens.
+
+Admission uses `created_at <= as_of`; event chronology separately uses `detected_at`.
+An event detected earlier but admitted after the cutoff waits for Show latest.
+Strict keysets survive deletion of the boundary record and same-time ties.
+This is not a transaction snapshot: corrections, deletion, access changes and
+deliberately backdated creation timestamps can change older pages/counts.
+
+Large SQLite/PostgreSQL fixtures traverse 151 new events/comparisons/versions,
+502 observations, 50 visible related works and 121 additional identifiers and
+expressions. Tests cover private state, stable ties, deleted boundaries, late
+admission, invalid cursors and both law-detail entry points. The production browser
+suite exercises complete list traversal, keyboard focus, list switching, loading,
+error/retry/latest and empty states. See [verification](VERIFICATION.md) for actual
+completed runs. Remaining HL-099 work includes full response-byte bounds, selected
+summary/analysis bodies, other list consumers and intended-host concurrency.
 
 
 ## Law-detail history metadata — 6 September 2026

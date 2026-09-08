@@ -37,7 +37,7 @@ button before any operation; viewers can browse without gaining mutation rights.
   `total`, `as_of`, `limit`, `first_cursor` and `next_cursor`.
 - `GET /api/laws/{id}/history/{kind}?limit=20&cursor=…` returns that metadata plus
   `items`; kind is `versions`, `comparisons` or `observations`. Limits are 1–50.
-- The original unqualified document detail remains compatible: all version
+- The original unqualified document detail retains these three arrays: all version
   summaries and the existing 50-comparison/100-observation previews. The web app
   opts into the new contract, rather than silently changing external consumers.
 
@@ -50,8 +50,10 @@ counts retain the existing SQL projections; other metadata fields are unchanged.
 
 The total count and sorting still have database cost proportional to indexed
 history, and individual metadata fields are not byte-capped. The law summary's
-current-version/selected-comparison reads and the separate regulatory timeline are
-not made fully bounded by this change. Target-host workload testing remains open.
+current-version/selected-comparison reads are not made fully bounded by this
+change. The separate regulatory timeline now has its own mandatory paging
+[contract](REGISTRY.md#complete-regulatory-timeline-pages--8-september-2026),
+including when nested in unqualified law detail. Target-host workload testing remains open.
 
 ## Cursor and access contract
 

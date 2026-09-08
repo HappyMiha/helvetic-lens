@@ -717,75 +717,101 @@ class RegistryReader:
         # once, not by issuing a new mapping/law lookup for every relation.
         watched_aliases = (
             select(
-                LegacyDocumentMapping.work_id, Law.id.label("law_id"),
-                func.row_number().over(
+                LegacyDocumentMapping.work_id,
+                Law.id.label("law_id"),
+                func.row_number()
+                .over(
                     partition_by=LegacyDocumentMapping.work_id,
                     order_by=(DocumentWatch.active.desc(), DocumentWatch.created_at, DocumentWatch.id),
-                ).label("rank"),
+                )
+                .label("rank"),
             )
             .select_from(DocumentWatch)
             .join(Law, and_(Law.id == DocumentWatch.law_id, visible(Law, self.organization_id)))
-            .join(LegacyDocumentMapping, and_(
-                LegacyDocumentMapping.law_id == Law.id,
-                visible(LegacyDocumentMapping, self.organization_id),
-            ))
+            .join(
+                LegacyDocumentMapping,
+                and_(
+                    LegacyDocumentMapping.law_id == Law.id,
+                    visible(LegacyDocumentMapping, self.organization_id),
+                ),
+            )
             .where(DocumentWatch.organization_id == self.organization_id)
             .subquery()
         )
         other = RegulatoryWork
         outgoing = RegulatoryRelation.subject_work_id == work_id
-        other_id = case((outgoing, RegulatoryRelation.object_work_id), else_=RegulatoryRelation.subject_work_id)
+        other_id = case(
+            (outgoing, RegulatoryRelation.object_work_id), else_=RegulatoryRelation.subject_work_id
+        )
         return (
             select(
-                RegulatoryRelation.id, RegulatoryRelation.relation_type,
-                RegulatoryRelation.id.label("_key"), RegulatoryRelation.created_at.label("_at"),
+                RegulatoryRelation.id,
+                RegulatoryRelation.relation_type,
+                RegulatoryRelation.id.label("_key"),
+                RegulatoryRelation.created_at.label("_at"),
                 RegulatoryRelation.created_at.label("_admitted"),
-                RegulatoryRelation.state, RegulatoryRelation.provenance_method,
-                outgoing.label("outgoing"), other.id.label("other_id"), other.title,
+                RegulatoryRelation.state,
+                RegulatoryRelation.provenance_method,
+                outgoing.label("outgoing"),
+                other.id.label("other_id"),
+                other.title,
                 watched_aliases.c.law_id,
             )
             .join(other, and_(other.id == other_id, visible(other, self.organization_id)))
-            .outerjoin(watched_aliases, and_(watched_aliases.c.work_id == other.id, watched_aliases.c.rank == 1))
+            .outerjoin(
+                watched_aliases, and_(watched_aliases.c.work_id == other.id, watched_aliases.c.rank == 1)
+            )
             .where(or_(outgoing, RegulatoryRelation.object_work_id == work_id))
             .order_by(RegulatoryRelation.created_at.desc(), RegulatoryRelation.id.desc())
         )
+
     @staticmethod
     def _timeline_relation_record(item):
         return {
-                "id": item.id,
-                "direction": "outgoing" if item.outgoing else "incoming",
-                "type": item.relation_type,
-                "state": item.state,
-                "other_work_id": item.other_id,
-                "other_title": item.title,
-                "other_law_id": item.law_id,
-                "other_timeline_url": f"/laws/{item.law_id}" if item.law_id else None,
-                "provenance": item.provenance_method,
-                "reciprocal_label": (
-                    "predecessor" if item.outgoing else "successor"
-                ) if item.relation_type == "replaces" else None,
+            "id": item.id,
+            "direction": "outgoing" if item.outgoing else "incoming",
+            "type": item.relation_type,
+            "state": item.state,
+            "other_work_id": item.other_id,
+            "other_title": item.title,
+            "other_law_id": item.law_id,
+            "other_timeline_url": f"/laws/{item.law_id}" if item.law_id else None,
+            "provenance": item.provenance_method,
+            "reciprocal_label": ("predecessor" if item.outgoing else "successor")
+            if item.relation_type == "replaces"
+            else None,
         }
 
     def timeline(self, session: Session, law_id: str) -> dict:
         header = self._timeline_header(session, law_id)
         work_id = header.work_id
-        normalized_versions = session.scalar(
-            select(func.count(RegulatoryDocumentVersion.id))
-            .join(RegulatoryExpression, RegulatoryExpression.id == RegulatoryDocumentVersion.expression_id)
-            .where(
-                RegulatoryExpression.work_id == work_id,
-                or_(
-                    RegulatoryDocumentVersion.legacy_version_id.is_(None),
-                    select(Version.id).where(
-                        Version.id == RegulatoryDocumentVersion.legacy_version_id,
-                        visible(Version, self.organization_id),
-                    ).exists(),
-                ),
+        normalized_versions = (
+            session.scalar(
+                select(func.count(RegulatoryDocumentVersion.id))
+                .join(
+                    RegulatoryExpression, RegulatoryExpression.id == RegulatoryDocumentVersion.expression_id
+                )
+                .where(
+                    RegulatoryExpression.work_id == work_id,
+                    or_(
+                        RegulatoryDocumentVersion.legacy_version_id.is_(None),
+                        select(Version.id)
+                        .where(
+                            Version.id == RegulatoryDocumentVersion.legacy_version_id,
+                            visible(Version, self.organization_id),
+                        )
+                        .exists(),
+                    ),
+                )
             )
-        ) if work_id else 0
+            if work_id
+            else 0
+        )
         captured = timeline_pages.utcnow()
-        pages = {kind: timeline_pages.page(session, self, law_id, kind, header=header, captured=captured)
-                 for kind in timeline_pages.KINDS}
+        pages = {
+            kind: timeline_pages.page(session, self, law_id, kind, header=header, captured=captured)
+            for kind in timeline_pages.KINDS
+        }
         return {
             "monitoring": {
                 "active": header.active,
@@ -801,6 +827,8 @@ class RegistryReader:
             },
             "normalized_versions": normalized_versions,
             **{kind: value["items"] for kind, value in pages.items()},
-            "pages": {kind: {key: value for key, value in page.items() if key != "items"}
-                      for kind, page in pages.items()},
+            "pages": {
+                kind: {key: value for key, value in page.items() if key != "items"}
+                for kind, page in pages.items()
+            },
         }
