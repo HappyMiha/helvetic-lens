@@ -36,6 +36,7 @@ from .config import DomainError, Settings
 from .db import utcnow
 from .impact_inbox import ImpactInboxFilters
 from .interest_policy import PolicyInput
+from .interest_requests import BriefRequest
 from .locales import locale_from_accept_language
 from .model_settings import ApertusSettingsInput
 from .models import (
@@ -471,6 +472,7 @@ def create_app(
             and path not in viewer_allowed_mutations
             and not viewer_assistant_state
             and not viewer_personal_state
+            and not (request.method == "POST" and path.startswith("/api/interest-feed/events/") and path.endswith("/brief/requests"))
         ):
             return JSONResponse(
                 status_code=403,
@@ -1459,6 +1461,11 @@ def create_app(
     async def interest_feed_brief(event_id: str, request: Request, locale: str | None = Query(default=None, max_length=2)):
         language = locale if locale is not None else selected_locale(request).split("-")[0]
         return await service.read_interest_brief(event_id, locale=language)
+
+    @app.post("/api/interest-feed/events/{event_id}/brief/requests", status_code=202)
+    def request_interest_brief(event_id: str, data: BriefRequest, request: Request):
+        locale = data.locale or selected_locale(request).split("-")[0]
+        return service.request_interest_brief(event_id, locale, data.request_id)
 
     @app.get("/api/interest-feed/events/{event_id}/topics")
     def interest_feed_topics(event_id: str, request: Request, cursor: str = Query(default="", max_length=4096),

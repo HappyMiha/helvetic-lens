@@ -7,6 +7,7 @@ import { invalidateResources, resourceTag, resources, useResource } from "@/lib/
 import { interestBriefCopy, type BriefClaim, type SavedInterestBrief } from "@/lib/interest-brief";
 import { ErrorNote, Loading } from "./common";
 import { Button } from "./ui/button";
+import { InterestBriefRequest } from "./interest-brief-request";
 
 export function FeedInterestBrief({eventId}: {eventId: string}) {
   const [open, setOpen] = useState(false);
@@ -47,7 +48,8 @@ function Content({eventId}: {eventId: string}) {
       <details><summary className="min-h-11 py-2 cursor-pointer font-semibold"><h4 className="inline">{copy.limitations}</h4></summary>
         <p>{result.uncertainty}</p><ul>{result.input_limitations.map((item, index) => <li key={index} lang="en">{item}</li>)}</ul></details>
     </section>}
-    <Button variant="outline" className="min-h-11 whitespace-normal" disabled={page.loading}
+    {data && !result && <InterestBriefRequest eventId={eventId} canRequest={data.status !== "failed"} />}
+    <Button data-refresh-brief variant="outline" className="min-h-11 whitespace-normal" disabled={page.loading}
       onClick={() => void invalidateResources(resourceTag(`interest-brief:${eventId}`)).catch(() => {})}>{copy.refresh}</Button>
   </div>;
 }

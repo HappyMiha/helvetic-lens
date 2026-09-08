@@ -24,7 +24,7 @@ EVENT_LIMITS = frozenset({"not_found", "interest_not_current", "interest_evidenc
     "interest_comparison_ambiguous", "document_identity_mismatch"})
 
 
-def enqueue_after_matching(session, settings, event_ids, trigger):
+def enqueue_after_matching(session, settings, event_ids, trigger, *, locales=None):
     """Caller commits the matching checkpoint and this outbox in one transaction."""
     organization_id = session.info["organization_id"]
     policy = interest_policy.read(session, organization_id, settings)
@@ -45,7 +45,7 @@ def enqueue_after_matching(session, settings, event_ids, trigger):
     trigger_key = fingerprint(trigger)
     policy_key = interest_policy.key(policy)
     admitted = []
-    for locale in interest_policy.member_locales(session, organization_id, policy["locale"]):
+    for locale in (locales or interest_policy.member_locales(session, organization_id, policy["locale"])):
         key = fingerprint({"version": 2, "events": ids, "trigger": trigger_key, "locale": locale,
                            "policy_key": policy_key})
         job, reused = jobs.enqueue(session, organization_id=organization_id, job_type=TYPE,

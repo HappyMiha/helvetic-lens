@@ -3699,6 +3699,13 @@ class HelveticLens:
                             "status": "not_current"}
                 return interest_brief_reader.read(session, self.organization_id, event_id, locale=locale, model=model)
 
+    def request_interest_brief(self, event_id, locale, request_id):
+        from .interest_requests import enqueue
+        with self.db.session() as session:
+            result = enqueue(session, self.organization_id, self.settings, event_id, locale, request_id)
+            session.commit()
+            return result
+
     def interest_brief_policy(self):
         from .interest_policy import public
         with self.db.session() as session:

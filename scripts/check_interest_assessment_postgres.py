@@ -88,6 +88,11 @@ from test_interest_policy import (
     test_matching_schedules_distinct_active_user_languages_not_admin_fallback,
     test_policy_migration_preserves_existing_organization,
 )
+from test_interest_requests import (
+    test_language_request_does_not_require_organization_fallback_locale,
+    test_postgres_concurrent_requests_coalesce,
+    test_request_is_cheap_coalesces_and_runs_through_durable_worker,
+)
 from test_native_comparison_views import (
     test_candidates_paginate_without_private_or_other_language_versions,
     test_http_save_complete_pair_page_exact_changes_and_clear,
@@ -114,6 +119,9 @@ def execute_local(harness, scenario):
         scenario(execution)
 
 SUITES = {
+    "request-concurrency": test_postgres_concurrent_requests_coalesce,
+    "request-roundtrip": lambda harness: execute_local(harness, test_request_is_cheap_coalesces_and_runs_through_durable_worker),
+    "request-language": lambda harness: execute_local(harness, test_language_request_does_not_require_organization_fallback_locale),
     "policy-languages": test_matching_schedules_distinct_active_user_languages_not_admin_fallback,
     "policy-variants": test_language_variants_do_not_supersede_each_other,
     "policy-persistence": test_api_bounds_conflict_noop_and_saved_persistence,

@@ -570,3 +570,42 @@ The five-locale responsive form preserves edits on failed saves, offers an expli
 reload after a revision conflict, and remains read-only for viewers. Independent
 native-language review (especially Romansh), real-model usefulness, global admission
 capacity/fairness, catch-up/refresh and downstream delivery reuse remain open.
+
+
+## Explicit request in the user's language
+
+When a saved current variant is missing, Today offers **Prepare in my language**.
+This is an explicit POST, never a side effect of reading, refreshing or opening a
+card. It also lets a user request an older development after changing language;
+it does not scan/backfill every historical event. Both admins and viewers may
+request under the organization's enabled policy. Viewers still cannot alter model,
+prompt or policy settings. Authentication, CSRF and admitted-event checks apply.
+
+`POST /api/interest-feed/events/{event_id}/brief/requests` accepts a UUID
+`request_id` and optional supported `locale`; the default is the user's saved
+language, then browser/default locale. The response is 202 with a durable admission
+`job`, `reused`, and `ai_calls: 0`. HTTP performs no runtime observation, token
+counting or inference. It reuses active explicit requests for the same tenant,
+event, language and policy revision. An identical original UUID reuses its job
+also after completion; a new explicit UUID permits a fresh admission check. A
+request coalesced onto another UUID's job is not an independent durable receipt.
+
+There are organization-wide request limits of eight nonterminal explicit
+admissions and forty created explicit admissions in a rolling 24 hours, checked
+under the organization lock. Reusing an existing request does not consume another
+slot. All subsequent generation still shares the existing organization generation
+limits (at most four pending and twenty new jobs/day). These intake limits do not
+claim global scheduling fairness or a hardware throughput guarantee.
+
+The existing worker validates current interests/evidence, model/language approval,
+complete token budget and policy before reserving generation. An exact successful
+assessment is reused; failed saved assessments are not silently regenerated.
+Different locale variants remain independent. Revocation or disablement stops
+old requests through the same durable guards; source evidence stays available.
+
+The UI follows admission then generation using existing job observation, disables
+repeat clicks while active, retains the UUID across uncertain HTTP failures and
+refreshes the saved card on completion without reloading the page. Failure retains
+source access and task details. The explicit action is not offered for a saved
+failed assessment; operator retry remains separate. Reading old events never
+substitutes another language or triggers bulk historical AI work.

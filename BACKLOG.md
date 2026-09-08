@@ -1604,6 +1604,18 @@ catch-up/refresh, notification/digest reuse, larger dossiers and independent
 model/language/hardware/user evaluation are not completed by this milestone.
 
 
+**Explicit personal-language preparation — 8 September 2026:** Today can queue
+an absent/outdated saved variant through “Prepare in my language”, including an
+older event after a preference change. The explicit, CSRF-protected action is
+available to members under the enabled organization policy, coalesces simultaneous
+requests and applies request quotas before worker-side approval/token checks.
+The card observes admission and generation in place, reuses exact saved successes,
+preserves source access and shows exact task details; page reads still never enqueue.
+SQLite/API, real PostgreSQL concurrency/roundtrip and five-locale browser evidence
+are recorded in `docs/VERIFICATION.md`. Bulk automatic catch-up, failed-assessment
+operator retry UX and independent model/user/hardware gates remain open.
+
+
 Turn a trustworthy topic or watched-law match into a concise, reusable explanation of why the development belongs in the organization's radar and whether it deserves attention. The feed event and its primary-source evidence exist independently of AI; enrichment must never block ingestion, hide a real development, or create a second event history.
 
 Acceptance criteria:

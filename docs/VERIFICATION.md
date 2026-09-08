@@ -1,5 +1,41 @@
 # Verification record
 
+## Explicit personal-language requests — 8 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl089-language-request` based on `72fb62a`. No schema
+  migration. A bounded POST creates/reuses a durable admission, returning without
+  runtime/token/model calls; the existing guarded worker handles actual inference.
+  Viewers can request under enabled organization policy but cannot edit it.
+- **43 combined tests passed, 2 PostgreSQL-only scenarios skipped in 70.48s**
+  across explicit requests, policy and automation. **7 final request tests passed,
+  1 PostgreSQL-only scenario skipped in 12.10s**, including authenticated viewer,
+  CSRF, disabled policy, forbidden settings writes and foreign event/job access.
+  Additional coverage verifies real durable execution, exact success reuse,
+  revoked evidence, separate languages, UUID retries and shared intake quotas.
+  Runtime/answer/approval fixtures are synthetic, not model-quality evidence.
+- PostgreSQL **17.11** disposable loopback/tmpfs container: **three suites passed**
+  for simultaneous independent connections coalescing into one job, complete
+  admission → generation → saved reader/reuse, and separate requested languages.
+  The harness refuses a nonempty or nonlocal database; schema resets applied only
+  inside the verified task-owned container. No production/application data used.
+- Production browser against intercepted synthetic APIs: **10 five-locale
+  390/1440px journeys**, **20 full-document axe checkpoints**. Verified no request
+  before an explicit click, HTTP failure with stable retry UUID, disabled button
+  during work, observation of admission then generation, source-linked result
+  refresh and retained page marker (no full reload). Final journeys also open
+  the exact task details in place; mobile active-state screenshot was inspected.
+  Ten existing saved-reader journeys with 20 additional axe checkpoints still
+  pass without creating work on reads. Native-language usefulness
+  and other incomplete axe checks remain unverified.
+- Root `npm run build` passes the real release localization/value, shell, resource
+  and report gates, TypeScript and production compilation. Ruff/diff checks pass.
+  Prior full Linux API evidence is a separate baseline and does not cover this
+  new route. No real inference, notification delivery or deployment was performed.
+- This closes the explicit per-event missing-language path, not bulk automatic
+  language catch-up, failed-assessment retry UX, global capacity/fairness, or the
+  remaining HL-089 independent model/language/hardware/user evidence gates.
+
+
 ## Organization AI policy and personal-language variants — 8 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl089-organization-policy`, based on `ca69b87` and
