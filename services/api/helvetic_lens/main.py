@@ -19,6 +19,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from . import (
     assistant_history,
     brief_feedback,
+    brief_reviews,
     corpus_evidence,
     feed_readiness,
     onboarding,
@@ -1482,6 +1483,19 @@ def create_app(
         _, principal = assistant_principal(request)
         with service.db.session() as session:
             return brief_feedback.read(session, service.organization_id, principal, str(assessment_id), cursor=cursor, limit=limit)
+
+    @app.get("/api/interest-briefs/{assessment_id}/reviews")
+    def get_brief_reviews(assessment_id: uuid.UUID,
+                          cursor: str = Query(default="", max_length=36), limit: int = Query(default=20, ge=1, le=50)):
+        with service.db.session() as session:
+            return brief_reviews.read(session, service.organization_id, str(assessment_id), cursor=cursor, limit=limit)
+
+    @app.post("/api/interest-briefs/{assessment_id}/reviews")
+    def save_brief_review(assessment_id: uuid.UUID, data: brief_reviews.ReviewInput, request: Request):
+        # The middleware permits personal feedback for viewers, not shared reviews.
+        user_id, _ = assistant_principal(request)
+        with service.db.session() as session:
+            return brief_reviews.save(session, service.organization_id, str(assessment_id), user_id, data)
 
     @app.post("/api/interest-briefs/{assessment_id}/feedback")
     def save_brief_feedback(assessment_id: uuid.UUID, data: brief_feedback.FeedbackInput, request: Request):

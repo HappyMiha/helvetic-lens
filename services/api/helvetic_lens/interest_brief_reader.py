@@ -90,6 +90,10 @@ def read(session, organization_id, event_id, *, locale="en", model=None):
         visible(Version, organization_id), visible(Law, organization_id))))
     links = {item.id: f"/{'evidence' if item.version_id in legacy_ids else 'corpus-evidence'}/{quote(item.version_id, safe='')}?passage={quote(item.unit_id, safe='')}"
              for item in dossier.evidence}
-    return {**response, "status": "available", "result": verified, "evidence_links": links,
+    from .brief_reviews import current
+    review = current(session, organization_id, record)
+    # Rejected prose remains inspectable as history, never a current recommendation.
+    status = "rejected" if review and review["decision"] == "rejected" else "available"
+    return {**response, "status": status, "review": review, "result": verified, "evidence_links": links,
             "interest_names": {item.id: item.name for item in dossier.interests},
             "provenance": {"provider_calls": calls, "execution": proof.model_dump(mode="json")}}

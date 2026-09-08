@@ -1372,6 +1372,26 @@ class RelationImpactAnalysis(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
 
 
+class InterestBriefReview(Base):
+    """Organization review of an exact brief, independent of private usefulness."""
+    __tablename__ = "interest_brief_reviews"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "request_key", name="uq_brief_review_request"),
+        CheckConstraint("decision IN ('confirmed', 'rejected', 'withdrawn')", name="ck_brief_review_decision"),
+        Index("ix_brief_review_history", "organization_id", "assessment_id", "created_at", "id"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"))
+    assessment_id: Mapped[str] = mapped_column(ForeignKey("interest_event_assessments.id"))
+    actor_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    request_key: Mapped[str] = mapped_column(String(36))
+    request_fingerprint: Mapped[str] = mapped_column(String(64))
+    target_fingerprint: Mapped[str] = mapped_column(String(64))
+    decision: Mapped[str] = mapped_column(String(20))
+    note: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class InterestBriefFeedback(Base):
     """Personal assessment usefulness; immutable history, never model training."""
     __tablename__ = "interest_brief_feedback"
@@ -1570,6 +1590,7 @@ class OutboxMessage(Base):
 # models makes a newly persisted tenant-owned record difficult to forget.
 ORGANIZATION_SCOPED_MODELS = (
     InterestBriefFeedback,
+    InterestBriefReview,
     InterestBriefPolicy,
     NativeDocumentComparison,
     NativeEventComparisonSelection,

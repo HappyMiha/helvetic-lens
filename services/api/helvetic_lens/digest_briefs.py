@@ -36,6 +36,14 @@ COPY = {
            {"high": "Auta", "medium": "Mesauna", "low": "Bassa", "undetermined": "Betg valitada"}],
 }
 
+REJECTED_COPY = {
+    "en": "An organization administrator rejected this brief's relevance. Source evidence remains available.",
+    "de": "Ein Organisationsadministrator hat die Relevanz dieser Analyse abgelehnt. Die Quellenbelege bleiben verfügbar.",
+    "fr": "Un administrateur de l’organisation a rejeté la pertinence de cette analyse. Les preuves restent disponibles.",
+    "it": "Un amministratore dell’organizzazione ha respinto la rilevanza di questa analisi. Le prove restano disponibili.",
+    "rm": "In administratur da l’organisaziun ha refusà la relevanza da questa analisa. Las cumprovas restan disponiblas.",
+}
+
 
 @dataclass(frozen=True)
 class BriefReadContext:
@@ -83,7 +91,7 @@ def render(brief, locale, application_url):
     lines, blocks = [labels[0]], [f"<h3>{escape(labels[0])}</h3>"]
     status = brief["status"] if brief.get("locale") == language else "not_scheduled"
     if status != "available":
-        label = labels[{"pending": 2, "failed": 3, "stale": 4}.get(status, 1)]
+        label = REJECTED_COPY[language] if status == "rejected" else labels[{"pending": 2, "failed": 3, "stale": 4}.get(status, 1)]
         return [*lines, label], "".join([*blocks, f"<p>{escape(label)}</p>"])
     stamp = f'{labels[11]}: {brief["saved_at"]}'
     lines.append(stamp)

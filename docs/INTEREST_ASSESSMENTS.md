@@ -1,5 +1,41 @@
 # Shared event relevance briefs
 
+## Organization relevance review — 9 September 2026
+
+The saved-brief panel now separates personal usefulness from a shared organization
+decision. An organization administrator can confirm/reject relevance or withdraw a
+previous decision, with a required 3–2,000-character explanation. All authorized
+members can inspect the dated shared history. Normal authentication, CSRF and role
+checks apply; platform administration alone does not grant a viewer organization
+write permission. Existing explicitly enabled anonymous development remains local
+development behavior, not a production account bypass.
+
+`InterestBriefReview` is append-only and ties each decision to the assessment ID and
+a digest of its exact input manifest/fingerprint, result and provenance. Actor,
+decision, note and timestamp are retained. Organization/assessment locks serialize
+competing admins; an expected previous review and target fingerprint reject stale
+intent. A UUID receipt replays the same request but refuses a changed decision or
+actor. An edited/repaired saved result does not inherit an old endorsement. Reviews
+of accessible historical successful assessments do not require live model access;
+that does not make the reviewed result current under today's configuration.
+
+The current reader still validates evidence, input and runtime before presenting
+prose. A matching rejected review produces status `rejected`; the validated original
+is retained in the explicit reader response for a collapsed historical inspection,
+not rendered as a current recommendation. Current digest and notification projections
+omit its AI claims and show a recipient-language rejection notice while retaining the
+source event. Withdrawal reuses the same valid saved assessment without generation.
+Previously sent messages and historical digest snapshots cannot be retracted by this
+action. No source event, topic match, evidence, personal feedback or past AI result
+is deleted or rewritten; thresholds and model behavior never change automatically.
+
+Migration `dc2e367d90fa` adds the shared review table after personal usefulness.
+Downgrade removes shared review history only; it preserves assessments and personal
+feedback. Review confirmation is an administrator's relevance decision, not proof
+of legal correctness or independently measured model quality. Aggregate evaluation,
+auditable threshold refinement and native-language/hardware/user acceptance remain
+separate unfinished work.
+
 HL-089 is **in progress**. The 8 September 2026 changes
 provides the generation contract, transactional storage, measured local execution
 and current-input admission, including material evidence from existing saved

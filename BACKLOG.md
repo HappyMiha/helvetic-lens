@@ -1436,6 +1436,19 @@ Completed on 4 September 2026. New normalized events now enter topic matching on
 
 ### HL-089 — Enrich matched developments with one persisted AI relevance brief
 
+**9 September 2026 — shared administrator relevance review:** Organization admins
+can confirm, reject or withdraw a decision on an exact saved brief, with a required
+shared explanation and dated history. Viewers can read that history, not edit it.
+Rejection withholds AI recommendations from current notification/digest projections;
+the source event remains and the validated original is explicitly inspectable as
+rejected history in Today. Withdrawal restores reuse without new inference. Saved
+content fingerprints, concurrent-decision checks and idempotent receipts prevent
+reviews from silently carrying over to edited prose. Original assessments, evidence,
+personal usefulness and monitoring rules remain unchanged. This closes the basic
+shared confirm/reject UI and reuse boundary, not legal validation, aggregate quality
+reporting, reviewed threshold adjustment or independent real-world acceptance.
+HL-089 remains **IN PROGRESS**; see the verification record for evidence and limits.
+
 **9 September 2026 — personal brief usefulness:** Each reader can mark an exact
 saved brief useful/not useful, add an optional explanation, withdraw that rating
 and inspect their dated, paged history. Feedback is private to the user and

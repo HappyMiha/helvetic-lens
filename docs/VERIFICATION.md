@@ -1,5 +1,41 @@
 # Verification record
 
+## Shared organization relevance review — 9 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl089-shared-brief-review`, based on `0dad903`.
+  Added exact-assessment administrator confirmation/rejection/withdrawal with
+  mandatory explanations, actor IDs, ordered history, expected-revision checks,
+  target-content fingerprints and request replay. Readers see shared decisions;
+  viewer mutation and missing CSRF are refused. Private usefulness stays separate.
+- **92 passed in 179.61s** across shared review, personal feedback, current reader,
+  digest and notification tests. Includes real authenticated role/tenant checks,
+  changed-prose invalidation, stale decisions, idempotent receipts, four competing
+  decisions, history order, original preservation and migration roundtrip. Five
+  language cases prove rejected claims are absent from current digest/notification
+  projections while source links remain; withdrawal restores the saved result with
+  exactly one original model generation. One existing Starlette/httpx warning remains.
+- **Two real PostgreSQL 17 suites passed:** `brief-review-race` and
+  `brief-review-migration` against a guarded disposable database. Only one of four
+  competing decisions is accepted; downgrade/upgrade retains original assessments
+  and personal feedback. No application or production database was used.
+- Root production build passes localization, shell/resource/report gates and
+  TypeScript. **Ten shared-review browser journeys** cover all five locales at
+  390/1440 pixels: confirm, reject, collapsed original inspection, withdraw, shared
+  history and read-only viewer. No full-page reload or model calls occur. All
+  **30 full-document axe checkpoints** pass the reported-violation/prohibited-ARIA
+  gate. The harness initially closed an already-open form on a second decision;
+  it now checks native open state before opening it rather than changing working UI.
+- Existing personal feedback **10 journeys / 30 axe checkpoints** and saved reader
+  **10 journeys / 20 scoped checkpoints** pass again, including error/stale states,
+  paged history and uncertain-response retry. Synthetic markup is displayed as text.
+  English mobile/desktop review screenshots were inspected. Automated incomplete
+  accessibility findings remain in artifacts; this is not native-language review,
+  accessibility certification, real-model evaluation or independent user acceptance.
+- Ruff and whitespace checks pass. Migration and code have not been deployed to
+  production; no real emails were sent. Rejection affects newly read/current delivery
+  projections, not already-sent email or immutable past digest snapshots. UI review
+  does not certify legal truth, adjust thresholds or complete HL-089 quality metrics.
+
 ## Personal saved-brief usefulness — 9 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl089-brief-usefulness`, based on `8c8590d`.

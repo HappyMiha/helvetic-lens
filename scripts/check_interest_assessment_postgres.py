@@ -29,6 +29,10 @@ from test_brief_feedback import (
     test_daily_allowance_is_atomic_across_different_assessments,
     test_feedback_migration_preserves_original_saved_assessment,
 )
+from test_brief_reviews import (
+    test_concurrent_admin_decisions_preserve_the_first_accepted_intent,
+    test_review_migration_preserves_assessment_and_personal_feedback,
+)
 from test_digest_briefs import (
     test_preview_and_actual_delivery_reuse_same_saved_assessment,
     test_recipient_locale_is_reloaded_at_send_not_from_preparation,
@@ -166,6 +170,8 @@ def execute_relation(harness, scenario):
 
 
 SUITES = {
+    "brief-review-race": lambda harness: execute_local(harness, test_concurrent_admin_decisions_preserve_the_first_accepted_intent),
+    "brief-review-migration": lambda harness: execute_local(harness, test_review_migration_preserves_assessment_and_personal_feedback),
     "brief-feedback-edit": lambda harness: execute_local(harness, test_concurrent_personal_edits_do_not_overwrite_each_other),
     "brief-feedback-replay": lambda harness: execute_local(harness, test_concurrent_request_replay_is_one_receipt),
     "brief-feedback-quota": lambda harness: execute_local(harness, test_daily_allowance_is_atomic_across_different_assessments),

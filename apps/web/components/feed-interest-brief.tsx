@@ -10,6 +10,8 @@ import { Button } from "./ui/button";
 import { BriefRecoveryHistory } from "./brief-recovery-history";
 import { InterestBriefRequest } from "./interest-brief-request";
 import { BriefFeedback } from "./brief-feedback";
+import { BriefReviewPanel } from "./brief-review";
+import {briefReviewCopy} from "@/lib/brief-review";
 
 export function FeedInterestBrief({eventId}: {eventId: string}) {
   const [open, setOpen] = useState(false);
@@ -26,7 +28,7 @@ function Content({eventId}: {eventId: string}) {
   const copy = interestBriefCopy[locale];
   const page = useResource(resources.interestBrief<SavedInterestBrief>(eventId, locale.slice(0, 2)));
   const data = !page.error && !page.loading ? page.data : undefined;
-  const result = data?.status === "available" ? data.result : null;
+  const result = data?.status === "available" || data?.status === "rejected" ? data.result : null;
   const refs = Object.keys(data?.evidence_links || {});
   function claim(value: BriefClaim) {
     return <><p>{value.text}</p><div className="flex flex-wrap gap-x-3">{value.evidence_ids.map(id =>
@@ -39,11 +41,14 @@ function Content({eventId}: {eventId: string}) {
     <ErrorNote message={page.error} />
     {data && <p className="text-sm muted">{t("briefPolicy.locale")}: <span lang={data.locale}>{({de:"Deutsch",fr:"Français",it:"Italiano",rm:"Rumantsch",en:"English"} as Record<string,string>)[data.locale] || data.locale}</span></p>}
     {data && <p role="status" data-brief-status={data.status} className="text-sm">{copy.status[data.status]}</p>}
+    {data?.review && data.status!=="rejected" && <p className="text-sm" data-brief-review-status>{briefReviewCopy[locale][data.review.decision]}</p>}
     {data?.error_code && <ErrorNote message={t(({
       invalid_model_output: "briefRecovery.invalidOutput", invalid_citation: "briefRecovery.invalidOutput",
       model_timeout: "briefRecovery.timeout", cancelled: "briefRecovery.cancelled",
     } as Record<string, string>)[data.error_code] || "briefRecovery.unavailable")} />}
-    {result && <section lang={data?.locale} className="space-y-4" data-brief-result>
+    {result && <details open={data?.status!=="rejected"} key={`${data?.assessment_id}:${data?.status}`} className="space-y-3">
+      <summary className="min-h-11 py-2 cursor-pointer font-semibold">{data?.status==="rejected" ? briefReviewCopy[locale].original : copy.title}</summary>
+      <section lang={data?.locale} className="space-y-4" data-brief-result>
       <p className="text-sm muted">{copy.saved}: {data?.saved_at ? dateTime(data.saved_at) : "—"}</p>
       <div className="font-semibold">{claim(result.what_happened)}</div>
       <div><h4 className="font-semibold">{copy.importance} · {copy.level[result.importance.level]}</h4>{claim(result.importance)}</div>
@@ -53,8 +58,9 @@ function Content({eventId}: {eventId: string}) {
       <div><h4 className="font-semibold">{copy.next}</h4>{claim(result.next_step)}</div>
       <details><summary className="min-h-11 py-2 cursor-pointer font-semibold"><h4 className="inline">{copy.limitations}</h4></summary>
         <p>{result.uncertainty}</p><ul>{result.input_limitations.map((item, index) => <li key={index} lang="en">{item}</li>)}</ul></details>
-    </section>}
+    </section></details>}
     {result && data?.assessment_id && <BriefFeedback key={data.assessment_id} assessmentId={data.assessment_id} />}
+    {result && data?.assessment_id && <BriefReviewPanel key={`review:${data.assessment_id}`} assessmentId={data.assessment_id} eventId={eventId} />}
     {data && !result && <InterestBriefRequest eventId={eventId} canRequest={data.status !== "failed"} recovery={data.recovery} />}
     {data?.recovery && <BriefRecoveryHistory recovery={data.recovery} />}
     <Button data-refresh-brief variant="outline" className="min-h-11 whitespace-normal" disabled={page.loading}

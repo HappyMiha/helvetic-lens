@@ -9,17 +9,19 @@ import {createServer} from "node:net";
 import {Cdp, evaluate, sleep} from "./browser-cdp.mjs";
 import {AccessibilityAudit} from "./browser-accessibility.mjs";
 const feedbackMode=process.argv.includes("--feedback");
-const root=resolve(import.meta.dirname,".."),audit=new AccessibilityAudit(feedbackMode?"brief-feedback":"interest-brief");
+const reviewMode=process.argv.includes("--reviews");
+const root=resolve(import.meta.dirname,".."),audit=new AccessibilityAudit(reviewMode?"brief-review":feedbackMode?"brief-feedback":"interest-brief");
 const chrome=[process.env.CHROME_BIN,"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe","/usr/bin/google-chrome","/usr/bin/chromium"].filter(Boolean).find(existsSync);assert.ok(chrome);
 const reserve=createServer();await new Promise(r=>reserve.listen(0,"127.0.0.1",r));const port=reserve.address().port;await new Promise(r=>reserve.close(r));
 const base=`http://127.0.0.1:${port}`,profile=await mkdtemp(join(tmpdir(),"helvetic-brief-browser-"));
 const server=spawn(process.execPath,[join(root,"node_modules/next/dist/bin/next"),"start","-H","127.0.0.1","-p",String(port)],{cwd:join(root,"apps/web"),stdio:"ignore",windowsHide:true});
 const browser=spawn(chrome,["--headless=new","--no-first-run","--no-default-browser-check","--remote-debugging-port=0",`--user-data-dir=${profile}`,"about:blank"],{stdio:"ignore",windowsHide:true});
 let cdp,locale="en-CH",status="available",failure=false,feedback=[],receipts=new Map(),feedbackFailure="";const requests=[],exceptions=[];
+let reviews=[],reviewerRole="organization_admin";
 async function waitFor(check,message){for(let i=0;i<180;i++){if(await check().catch(()=>false))return;await sleep(100);}throw new Error(message);}
 const event={event_id:"synthetic-event",title:"Synthetic saved regulatory development",type:"updated",document_kind:"law",lifecycle_status:null,source:"Synthetic publisher",detected_at:"2026-09-08T08:00:00Z",official_dates:[],read_state:"unread",topic_matches:[],monitored_documents:[],law_impacts:[]};
 const claim={text:"Synthetic saved explanation for review, not a legal conclusion.",evidence_ids:["ev1"]};
-function brief(){return {event_id:event.event_id,locale:locale.slice(0,2),status,assessment_id:"synthetic-assessment",saved_at:"2026-09-08T09:00:00Z",ai_calls:0,evidence_links:{ev1:"/corpus-evidence/synthetic-version?passage=p1"},interest_names:{topic1:"Synthetic monitoring topic"},result:status==="available"?{what_happened:claim,why_in_radar:[{...claim,interest_id:"topic1"}],importance:{...claim,level:"low"},next_step:{...claim,kind:"no_action_now"},uncertainty:"Synthetic uncertainty.",input_limitations:["Synthetic input boundary."]}:null};}
+function brief(){return {event_id:event.event_id,locale:locale.slice(0,2),status,review:reviews[0]||null,assessment_id:"synthetic-assessment",saved_at:"2026-09-08T09:00:00Z",ai_calls:0,evidence_links:{ev1:"/corpus-evidence/synthetic-version?passage=p1"},interest_names:{topic1:"Synthetic monitoring topic"},result:["available","rejected"].includes(status)?{what_happened:claim,why_in_radar:[{...claim,interest_id:"topic1"}],importance:{...claim,level:"low"},next_step:{...claim,kind:"no_action_now"},uncertainty:"Synthetic uncertainty.",input_limitations:["Synthetic input boundary."]}:null};}
 try{
  await waitFor(async()=>(await fetch(base)).ok,"Isolated UI not ready");
  let debugPort;await waitFor(async()=>{debugPort=(await readFile(join(profile,"DevToolsActivePort"),"utf8")).split("\n")[0];return debugPort;},"Chrome not ready");
@@ -27,10 +29,16 @@ try{
  await cdp.send("Page.enable");await cdp.send("Runtime.enable");cdp.on("Runtime.exceptionThrown",({exceptionDetails})=>exceptions.push(exceptionDetails.exception?.description||exceptionDetails.text));
  cdp.on("Fetch.requestPaused",async({requestId,request})=>{
   const path=new URL(request.url).pathname;requests.push({path,search:new URL(request.url).search,method:request.method});let body={},code=200;
-  if(path==="/api/auth/session")body={authenticated:true,user:{id:`qa-${locale}`,locale,name:"QA",email:"qa@example.invalid"},organization:{id:"qa-org",name:"QA"},role:"viewer",platform_admin:false};
+  if(path==="/api/auth/session")body={authenticated:true,user:{id:`qa-${locale}`,locale,name:"QA",email:"qa@example.invalid"},organization:{id:"qa-org",name:"QA"},role:reviewMode?reviewerRole:"viewer",platform_admin:false};
   else if(path==="/api/health")body={status:"ok",database:"postgresql",apertus:{configured:false},firecrawl:{configured:false}};
   else if(path==="/api/settings/interest-briefs")body={enabled:false};
   else if(path==="/api/interest-feed")body={items:[event],scanned_event_count:1,has_more:false,next_cursor:null};
+  else if(path.endsWith("/reviews")){
+   if(request.method==="POST"){
+    const data=JSON.parse(request.postData);assert.equal(reviewerRole,"organization_admin");assert.equal(data.expected_previous_id,reviews[0]?.id||null);
+    const row={id:`review-${reviews.length+1}`,assessment_id:"synthetic-assessment",actor_user_id:`qa-${locale}`,target_fingerprint:"a".repeat(64),decision:data.decision,note:data.note,created_at:"2026-09-09T12:00:00Z"};reviews.unshift(row);status=data.decision==="rejected"?"rejected":"available";body={review:row,reused:false};
+   }else body={assessment_id:"synthetic-assessment",locale:locale.slice(0,2),target_fingerprint:"a".repeat(64),latest:reviews[0]||null,matches_saved_assessment:reviews.length>0,items:reviews,next_cursor:null};
+  }
   else if(path.endsWith("/feedback")){
    if(request.method==="POST"){
     const data=JSON.parse(request.postData);
@@ -45,7 +53,7 @@ try{
  });await cdp.send("Fetch.enable",{patterns:[{urlPattern:"*/api/*"}]});
  async function click(selector){let point;await waitFor(async()=>{point=await evaluate(cdp,`(()=>{const e=document.querySelector(${JSON.stringify(selector)});if(!e||e.disabled)return null;e.scrollIntoView({block:'center'});const r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,ok:e.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))};})()`);return point?.ok;},`Unreachable ${selector}`);for(const type of ["mousePressed","mouseReleased"])await cdp.send("Input.dispatchMouseEvent",{type,x:point.x,y:point.y,button:"left",clickCount:1});}
  for(const width of [390,1440])for(locale of ["de-CH","fr-CH","it-CH","rm-CH","en-CH"]){
-  failure=false;status="available";feedback=[];receipts=new Map();feedbackFailure="";const start=requests.length;
+  failure=false;status="available";feedback=[];receipts=new Map();feedbackFailure="";reviews=[];reviewerRole="organization_admin";const start=requests.length;
   await cdp.send("Emulation.setDeviceMetricsOverride",{width,height:960,deviceScaleFactor:1,mobile:width===390});
   await cdp.send("Page.navigate",{url:`${base}/?locale=${locale}&qa=${width}`});
   await waitFor(()=>evaluate(cdp,`document.documentElement.lang===${JSON.stringify(locale)}&&!!document.querySelector('[data-feed-brief]')`),"Feed missing");
@@ -57,6 +65,36 @@ try{
   assert.ok(requests.slice(start).filter(r=>r.path.endsWith("/brief")).every(r=>new URLSearchParams(r.search).get("locale")===locale.slice(0,2)),"Brief request did not use viewer language");
   assert.ok(await evaluate(cdp,"Array.from(document.querySelectorAll('[data-brief-result] a')).every(a=>a.getAttribute('href')==='/corpus-evidence/synthetic-version?passage=p1')"));
   assert.ok(await evaluate(cdp,"document.documentElement.scrollWidth<=innerWidth+1"));
+  if(reviewMode){
+   assert.equal(requests.slice(start).filter(row=>row.path.endsWith("/reviews")).length,0,"Collapsed review fetched history");
+   for(const decision of ["confirmed","rejected","withdrawn"]){
+    if(!await evaluate(cdp,"document.querySelector('[data-brief-review]').open")) await click("[data-brief-review]>summary");
+    await waitFor(()=>evaluate(cdp,"!!document.querySelector('[data-review-saved]')"),"Review not loaded");
+    await click("[data-review-note]");await cdp.send("Input.insertText",{text:`Synthetic ${decision} explanation <img src=x onerror=window.__reviewXss=true>`});
+    await click(`[data-review-decision=${decision}]`);
+    await waitFor(()=>evaluate(cdp,decision==="rejected"?"!!document.querySelector('[data-brief-status=rejected]')":"!!document.querySelector('[data-brief-review-status]')&&!!document.querySelector('[data-brief-status=available]')"),`Review ${decision} missing`);
+    assert.equal(reviews[0].decision,decision);
+    if(decision==="rejected"){
+     assert.equal(await evaluate(cdp,"document.querySelector('[data-brief-result]').parentElement.open"),false,"Rejected prose remains expanded");
+     await click("details:has(>[data-brief-result])>summary");
+     assert.equal(await evaluate(cdp,"document.querySelector('[data-brief-result]').parentElement.open"),true);
+    }
+    await audit.check(cdp,`review-${decision}-${width}-${locale}`,"body");
+    assert.equal(await evaluate(cdp,"window.__briefMarker"),"retained");
+   }
+   reviewerRole="viewer";await cdp.send("Page.navigate",{url:`${base}/?locale=${locale}&qa=viewer-${width}`});
+   await waitFor(()=>evaluate(cdp,"!!document.querySelector('[data-feed-brief]')"),"Viewer feed missing");
+   await click("[data-feed-brief]>summary");await waitFor(()=>evaluate(cdp,"!!document.querySelector('[data-brief-review]')"),"Viewer review missing");
+   await click("[data-brief-review]>summary");await waitFor(()=>evaluate(cdp,"!!document.querySelector('[data-review-saved]')"),"Viewer history not loaded");
+   assert.equal(await evaluate(cdp,"!!document.querySelector('[data-review-note]')||!!document.querySelector('[data-review-decision]')"),false,"Viewer can edit shared decision");
+   await click("[data-review-history]>summary");
+   assert.equal(await evaluate(cdp,"document.querySelectorAll('[data-review-history] li').length"),3);
+   assert.equal(await evaluate(cdp,"!!window.__reviewXss"),false);
+   assert.ok(await evaluate(cdp,"document.documentElement.scrollWidth<=innerWidth+1"));
+   if(locale==="en-CH"){const shot=await cdp.send("Page.captureScreenshot",{format:"png"});await writeFile(join(root,`test-results/brief-review-${width}.png`),Buffer.from(shot.data,"base64"));}
+   assert.ok(requests.slice(start).filter(row=>row.method!=="GET").every(row=>row.path.endsWith("/reviews")||["/api/assistant/context","/api/assistant/conversations"].includes(row.path)));
+   continue;
+  }
   if(feedbackMode){
    assert.equal(requests.slice(start).filter(row=>row.path.endsWith("/feedback")).length,0);
    await click("[data-brief-feedback]>summary");
@@ -107,6 +145,6 @@ try{
   const shellInitialization=new Set(["/api/assistant/context","/api/assistant/conversations"]);
   assert.deepEqual(requests.slice(start).filter(r=>r.method!=="GET"&&!shellInitialization.has(r.path)),[],"Reader performed a mutation");
  }
- assert.deepEqual(exceptions,[]);audit.finish(feedbackMode?30:20);console.log(feedbackMode?"Ten five-locale desktop/mobile feedback journeys passed: save, conflict, retained draft, uncertain-reply replay, withdrawal, paged history, escaping and no page reload; no model calls.":"Ten five-locale desktop/mobile saved-brief journeys passed; no automatic generation or writes.");
+ assert.deepEqual(exceptions,[]);audit.finish(reviewMode||feedbackMode?30:20);console.log(reviewMode?"Ten five-locale desktop/mobile organization-review journeys passed: confirmation, rejection, collapsed original history, withdrawal, read-only viewer, shared history and no page reload; no model calls.":feedbackMode?"Ten five-locale desktop/mobile feedback journeys passed: save, conflict, retained draft, uncertain-reply replay, withdrawal, paged history, escaping and no page reload; no model calls.":"Ten five-locale desktop/mobile saved-brief journeys passed; no automatic generation or writes.");
 }catch(error){console.error({locale,status,exceptions,text:cdp?await evaluate(cdp,"document.body.innerText.slice(-2000)").catch(()=>"unavailable"):"none"});throw error;}
 finally{cdp?.close();for(const child of [browser,server]){const ended=new Promise(r=>child.once("exit",r));child.kill();await Promise.race([ended,sleep(2000)]);}assert.equal(dirname(resolve(profile)),resolve(tmpdir()));assert.ok(basename(profile).startsWith("helvetic-brief-browser-"));await rm(profile,{recursive:true,force:true,maxRetries:5,retryDelay:200});}
