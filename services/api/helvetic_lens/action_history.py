@@ -4,7 +4,7 @@ import base64
 from datetime import UTC
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
-from sqlalchemy import func, select
+from sqlalchemy import func, select, tuple_
 
 from .config import DomainError
 from .corpus_access import visible
@@ -141,8 +141,7 @@ def page(session, organization_id, comparison_id, analysis_id, action_key, *, cu
     query = base
     if position.at:
         query = query.where(
-            (ActionDecision.created_at < position.at)
-            | ((ActionDecision.created_at == position.at) & (ActionDecision.id < position.id))
+            tuple_(ActionDecision.created_at, ActionDecision.id) < tuple_(position.at, position.id)
         )
     rows = (
         session.execute(

@@ -1275,6 +1275,10 @@ class Analysis(Base):
 class ActionDecision(Base):
     __tablename__ = "action_decisions"
     __table_args__ = (
+        Index(
+            "ix_action_decision_scope_cursor",
+            "organization_id", "analysis_id", "comparison_id", "action_key", "created_at", "id",
+        ),
         CheckConstraint(
             "decision IN ('accepted', 'assigned', 'scheduled', 'dismissed', 'not_applicable')",
             name="ck_action_decision_value",
