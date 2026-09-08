@@ -448,6 +448,26 @@ reset and resave, with short organization locking on save/reset. Changing a
 prompt does not automatically enqueue replacement work; catch-up/refresh policy
 remains open. No database migration or inference capability approval is added.
 
+## Persisted model settings during work
+
+Service-created admission/generation runners compare their captured public model
+configuration with the current organization record before any runtime contact,
+after runtime observation, after token measurement, and before publication.
+Provider, endpoint/model, generation parameters, context/output limits and selected
+review profile are answer-affecting. Credentials, retries, timeout and transport
+concurrency do not by themselves invalidate a reusable answer. Runtime artifact
+and independent approval checks remain separate and mandatory.
+
+A stale service snapshot fails before spending tokens; a change during generation
+supersedes only that worker's exact running attempt. An old worker cannot overwrite
+a replacement attempt. Read paths recheck persisted settings around their bounded
+metadata observation, returning `not_current` without an answer if settings changed.
+History remains intact. No connection is held during model HTTP, no configuration
+is rewritten, no cloud fallback is enabled, and no replacement generation is
+implicitly started. A new job uses a fresh organization runtime. Embedded callers
+constructing LocalBriefRunner directly may provide their own configuration reader;
+without one, the runner checks the supplied client's live settings only.
+
 ## Verification
 
 The durable execution stage passed 162 combined regressions in 192.60 seconds,

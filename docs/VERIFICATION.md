@@ -1,5 +1,33 @@
 # Verification record
 
+## Persisted model configuration during shared briefs — 8 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl089-model-freshness`, based on `97e923f`.
+  Previously the runtime was re-observed but the request retained its old Settings
+  object after an administrator saved a different provider/model configuration.
+  Service-created runners now compare against fresh, explicitly scoped persisted
+  settings before runtime contact, after observation/measurement and at publication.
+  Reader checks surround its bounded metadata observation and return `not_current`
+  without an answer when that service snapshot became stale.
+- **125 combined regressions pass, 1 PostgreSQL-only test skipped**, in 221.07
+  seconds, covering configuration, execution, prompts, readers, durable jobs and
+  automatic admission. New tests edit the actual database without changing the
+  runner's old Settings object. They cover model/provider/profile/output limit/
+  sampling edits during runtime, token counting and generation; stale clients,
+  queued work, credential/transport-only reuse, reset to environment, privileged
+  scope, reused-session refresh and a newer worker's attempt token.
+- **43 final configuration/reader tests pass in 69.24 seconds** after the reader
+  status clarification; Ruff and diff checks pass.
+- Supersession touches only the exact running assessment/token. Existing successful
+  history remains intact. No generation is triggered by saves or reads; stale configuration
+  before admission prevents runtime contact, and no automatic fallback is added.
+  Public configuration hashes exclude credentials and transport-only knobs.
+- This is real SQLite/service/ModelClient code with synthetic local runtime and
+  approved-model fixtures, not actual model quality or a HappySnowman deployment.
+  No schema or frontend changes. PostgreSQL concurrency/target-host acceptance is
+  not claimed by this change. The earlier full Linux suite remains a separate
+  immutable baseline run and does not include either new prompt/configuration task.
+
 ## Shared brief prompt controls — 8 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl089-brief-prompts`, based on `5bf2227`.

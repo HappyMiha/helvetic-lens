@@ -146,6 +146,15 @@ class AssessmentStore:
                  provenance=provenance))
         return changed.rowcount == 1
 
+    def supersede(self, session, assessment_id: str, token: str) -> bool:
+        """Discard only this running attempt when saved configuration changes."""
+        changed = session.execute(update(InterestEventAssessment).where(
+            *self._scope(assessment_id), InterestEventAssessment.status == "running",
+            InterestEventAssessment.attempt_key == token,
+        ).values(status="superseded", error_code="interest_inputs_changed",
+                 finished_at=utcnow(), attempt_key=None))
+        return changed.rowcount == 1
+
     def fail(self, session, assessment_id: str, token: str, error_code: str) -> bool:
         # Raw provider errors may contain echoed credentials or prompts. Persist
         # a safe category; detailed redacted diagnostics belong to integration logs.

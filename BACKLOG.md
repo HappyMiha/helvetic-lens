@@ -1579,6 +1579,15 @@ Verification and limitations are recorded in `docs/VERIFICATION.md`.
 integration, official facts, larger dossiers and independent model/hardware/user
 approval. This milestone does not complete HL-089 or activate production AI.
 
+**Persisted model-configuration freshness — 8 September 2026:** Long-running
+service clients now recheck the organization's saved provider/model, generation
+limits/parameters and review profile before admission and publication. Concurrent
+edits stop old work without cloud fallback or automatic regeneration; a stale
+completion cannot replace another worker's attempt. Feed reads recheck around
+runtime metadata and preserve history while withholding non-current results.
+Credential/transport-only edits preserve semantic reuse. HL-089 remains open;
+see the verification record for tested paths and remaining external evidence.
+
 Turn a trustworthy topic or watched-law match into a concise, reusable explanation of why the development belongs in the organization's radar and whether it deserves attention. The feed event and its primary-source evidence exist independently of AI; enrichment must never block ingestion, hide a real development, or create a second event history.
 
 Acceptance criteria:

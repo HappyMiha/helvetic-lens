@@ -51,10 +51,24 @@ def _saved(record, *, cached=False):
             "provenance": record.provenance}
 
 
+def configuration_key(settings):
+    """Answer identity only: credentials and transport edits do not stale briefs."""
+    return fingerprint({"configuration": configuration_fingerprint(settings),
+                        "profile": settings.apertus_explanation_profile})
+
+
 class LocalBriefRunner:
-    def __init__(self, db, organization_id: str, client: ModelClient):
+    def __init__(self, db, organization_id: str, client: ModelClient, *, configuration_reader=None):
         self.db, self.organization_id, self.client = db, organization_id, client
         self.store = AssessmentStore(organization_id)
+        self.configuration_reader = configuration_reader
+
+    def check_configuration(self, session, captured):
+        current = (self.configuration_reader(session) if self.configuration_reader
+                   else configuration_key(self.client.settings))
+        if current != captured or configuration_key(self.client.settings) != captured:
+            raise DomainError("The saved model configuration changed; retry with current settings.",
+                              409, "interest_inputs_changed")
 
     async def schedule(self, event_id: str, *, locale="en", guard=None):
         """Measured admission only; persist a job/outbox without generating text."""
@@ -78,6 +92,7 @@ class LocalBriefRunner:
         started = time.monotonic()
         assessment_id = attempt_token = None
         saved_prompt = instructions is None
+        captured_configuration = configuration_key(self.client.settings)
         with self.db.organization_context(self.organization_id), self.client.runtime_scope():
             # Authorize before contacting the runtime, even in privileged tasks.
             with self.db.session() as session:
@@ -90,6 +105,7 @@ class LocalBriefRunner:
                            visible(RegulatoryWork, self.organization_id)))
                 if allowed is None:
                     raise DomainError("The event is not admitted to this organization.", 404, "not_found")
+                self.check_configuration(session, captured_configuration)
                 if saved_prompt:
                     instructions = current_instructions(session, self.organization_id)
             trace_token = self.client.begin_trace(priority="background")
@@ -102,6 +118,7 @@ class LocalBriefRunner:
                         with self.db.session() as session:
                             if guard:
                                 guard(session)
+                            self.check_configuration(session, captured_configuration)
                             if saved_prompt and current_instructions(session, self.organization_id) != instructions:
                                 raise DomainError("The saved brief prompt changed; retry with current instructions.",
                                                   409, "interest_inputs_changed")
@@ -132,6 +149,7 @@ class LocalBriefRunner:
                                 lock_organization(session, self.organization_id)
                             if guard:
                                 guard(session)
+                            self.check_configuration(session, captured_configuration)
                             if saved_prompt and current_instructions(session, self.organization_id) != instructions:
                                 raise DomainError("The saved brief prompt changed; retry with current instructions.",
                                                   409, "interest_inputs_changed")
@@ -173,6 +191,12 @@ class LocalBriefRunner:
                         with self.db.session() as session:
                             if guard:
                                 guard(session)
+                            try:
+                                self.check_configuration(session, captured_configuration)
+                            except DomainError:
+                                self.store.supersede(session, assessment_id, attempt_token)
+                                session.commit()
+                                return _saved(self.store.get(session, assessment_id))
                             publication_instructions = (current_instructions(session, self.organization_id)
                                                         if saved_prompt else instructions)
                             self.store.finish_current(session, assessment_id, attempt_token, current, result,

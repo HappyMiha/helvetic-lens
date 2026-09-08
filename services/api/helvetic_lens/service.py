@@ -3672,13 +3672,17 @@ class HelveticLens:
 
     async def read_interest_brief(self, event_id: str, *, locale="en"):
         from . import interest_brief_reader
-        from .interest_execution import _identity
+        from .interest_execution import _identity, configuration_key
         if locale not in {"de", "fr", "it", "rm", "en"}:
             raise DomainError("Unsupported brief language.", 422, "invalid_locale")
         with self.db.session() as session:
             if (interest_brief_reader.latest(session, self.organization_id, event_id, locale) is None
                     or self.settings.apertus_provider != "docker"):
                 return interest_brief_reader.read(session, self.organization_id, event_id, locale=locale)
+            configuration = configuration_key(self.model_client.settings)
+            if configuration != self.brief_configuration(session):
+                return {**interest_brief_reader.read(session, self.organization_id, event_id, locale=locale),
+                        "status": "not_current"}
         # At most one bounded metadata observation; never count tokens or generate.
         async with self.runtime_cache_scope():
             model = None
@@ -3690,16 +3694,35 @@ class HelveticLens:
                 except DomainError:
                     pass
             with self.db.session() as session:
+                if configuration != self.brief_configuration(session):
+                    return {**interest_brief_reader.read(session, self.organization_id, event_id, locale=locale),
+                            "status": "not_current"}
                 return interest_brief_reader.read(session, self.organization_id, event_id, locale=locale, model=model)
 
-    async def enqueue_interest_brief(self, event_id: str, *, locale="en"):
+    def brief_configuration(self, session):
+        from .interest_execution import configuration_key
+        record = session.scalar(select(ApertusConfiguration).where(
+            ApertusConfiguration.organization_id == self.organization_id
+        ).execution_options(populate_existing=True))
+        settings = resolved_settings(self.environment_settings, record)
+        if (self._provided_model_client and self.organization_id == self.default_organization_id
+                and record is None):
+            settings = self._fallback_settings
+        # No credential decryption, HTTP or settings mutation. Fingerprints contain
+        # answer-affecting public fields only, including the selected review profile.
+        return configuration_key(settings)
+
+    def interest_runner(self):
         from .interest_execution import LocalBriefRunner
-        return await LocalBriefRunner(self.db, self.organization_id, self.model_client).schedule(event_id, locale=locale)
+        return LocalBriefRunner(self.db, self.organization_id, self.model_client,
+                                configuration_reader=self.brief_configuration)
+
+    async def enqueue_interest_brief(self, event_id: str, *, locale="en"):
+        return await self.interest_runner().schedule(event_id, locale=locale)
 
     async def execute_job(self, job_id: str, worker: str = "inline"):
         from .interest_automation import TYPE as ADMISSION_JOB_TYPE
         from .interest_automation import AdmissionJobs
-        from .interest_execution import LocalBriefRunner
         from .interest_jobs import TYPE as BRIEF_JOB_TYPE
         from .interest_jobs import BriefJobs
         with self.db.session() as session:
@@ -3707,7 +3730,7 @@ class HelveticLens:
                 Job.organization_id == self.organization_id, Job.type.in_({BRIEF_JOB_TYPE, ADMISSION_JOB_TYPE})))
         if brief_type:
             executor = AdmissionJobs if brief_type == ADMISSION_JOB_TYPE else BriefJobs
-            return await executor(LocalBriefRunner(self.db, self.organization_id, self.model_client)).execute(job_id, worker)
+            return await executor(self.interest_runner()).execute(job_id, worker)
         with self.write_guard, self.db.session() as session:
             job = durable_jobs.claim(session, job_id, worker)
             session.commit()
