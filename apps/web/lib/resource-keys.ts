@@ -88,6 +88,11 @@ export function legacyResourceKey<T>(path: string): ResourceKey<T> {
 }
 
 export const resources = {
+  notifications: <T = unknown>(identity: string, cursor = "") => key<T>(`notifications:${identity}:unread:${cursor}`,
+    `/interest-feed?state=unread&limit=5&cursor=${encodeURIComponent(cursor)}`, {
+      tags: ["impact-inbox", "monitoring", "topics", "relation-analyses"],
+      staleMs: 1_000, pollMs: 60_000, priority: "background",
+    }),
   feedReadiness: () => key<FeedReadiness>("feed:readiness", "/interest-feed/readiness", {
     tags: ["impact-inbox", "monitoring", "source-packs"], staleMs: 10_000, varyByLocale: false,
   }),

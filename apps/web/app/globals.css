@@ -773,7 +773,7 @@ input[type="checkbox"] {
   align-items: center;
   gap: 12px;
   margin-top: 32px;
-  color: #748070;
+  color: var(--foreground);
   font-size: 11px;
 }
 .workflow-note .eyebrow {
@@ -4071,12 +4071,14 @@ dialog.analysis-column:not([open]) {
   outline-offset: 2px;
 }
 
-.shell[data-navigation-modal="true"] .marvin-companion {
+.shell[data-navigation-modal="true"] .marvin-companion,
+body:has([data-notification-centre][data-state="open"]) .marvin-companion {
   visibility: hidden;
   pointer-events: none;
 }
 
-.shell[data-navigation-modal="true"] .mobile-nav {
+.shell[data-navigation-modal="true"] .mobile-nav,
+body:has([data-notification-centre][data-state="open"]) .mobile-nav {
   z-index: 49;
 }
 

@@ -37,6 +37,7 @@ import { ErrorNote } from "./common";
 import { BrandLockup } from "./brand";
 import { LanguageSelector, useI18n } from "@/lib/i18n";
 import { MarvinCompanion } from "./marvin-companion";
+import { NotificationCentre } from "./notification-centre";
 import { marvinHistoryCopy } from "@/lib/marvin-history-copy";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "./ui/dialog";
 
@@ -485,7 +486,8 @@ export function Shell({
             {t("shell.workspace")} <span className="mx-3">/</span>
             <span className="text-foreground">{section}</span>
           </span>
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-2 sm:gap-5">
+            <NotificationCentre />
             <LanguageSelector compact />
             <span id="marvin-resume-slot" />
             <span className="hidden sm:inline text-xs">

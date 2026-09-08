@@ -123,7 +123,7 @@ Keep the proven stack and add only the infrastructure now justified by public us
 | [HL-075](#hl-075) | P0       | DONE     | HL-044, HL-051, HL-074                                 | Bounded topic matching with persisted evidence                      |
 | [HL-076](#hl-076) | P0       | IN PROGRESS | HL-037, HL-046, HL-067, HL-075, HL-094, HL-099         | Unified interest feed; HL-089 enriches cards asynchronously          |
 | [HL-077](#hl-077) | P1       | IN PROGRESS | HL-035, HL-066, HL-074                                 | Contextual “Monitor this”; integrate HL-076 as its feed arrives      |
-| [HL-078](#hl-078) | P1       | PLANNED  | HL-052, HL-076, HL-077                                 | In-app notification centre over the existing delivery state         |
+| [HL-078](#hl-078) | P1       | IN PROGRESS | HL-052, HL-076, HL-077                              | In-app notification centre over the existing delivery state         |
 | [HL-079](#hl-079) | P1       | IN PROGRESS  | HL-052, HL-075, HL-076                                 | Topic matches in existing digests                                   |
 | [HL-080](#hl-080) | P1       | PLANNED  | HL-038, HL-071, HL-072                                 | Cantonal source-pack framework and one verified pilot               |
 | [HL-081](#hl-081) | P2       | PLANNED  | HL-080                                                 | Evidence-gated expansion to the next two cantonal packs             |
@@ -1632,6 +1632,8 @@ Acceptance criteria:
 <a id="hl-078"></a>
 
 ### HL-078 — Add an in-app notification centre over the existing delivery state
+
+**8 September 2026 — reading centre:** A desktop/mobile header bell opens a five-language unread-feed dialog with grouped event links, explicit personal read/dismiss actions, complete next/back/latest navigation and retry that preserves visible records. It reuses persisted feed state, never invokes AI, and polls every minute only while mounted/visible/online. Counts explicitly describe the page rather than inventing a global total; sparse batches retain continuation. See [contract and remaining work](docs/NOTIFICATIONS.md) and verification. **Still open:** exact durable global unread badge, full preferences and organization limits, operational notices, channel/quiet-hours policy and independent noise/usability evidence. HL-078 remains **IN PROGRESS**.
 
 Extend the completed HL-052 user preferences, read state, durable jobs, and delivery history so users can see meaningful persisted feed changes inside the product without inventing another event store or implying real-time coverage.
 
