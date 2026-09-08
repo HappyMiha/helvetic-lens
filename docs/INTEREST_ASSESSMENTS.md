@@ -1,8 +1,10 @@
 # Shared event relevance briefs
 
 HL-089 is **in progress**, not enabled in the UI. The 8 September 2026 change
-provides the generation contract, transactional storage and current-input worker
-admission for complete saved passage sets that fit the contract. It does not yet
+provides the generation contract, transactional storage, measured local execution
+and current-input admission, including material evidence from existing saved
+legacy comparisons. Complete passage sets remain the fallback when no comparison
+exists and they fit the contract. It does not yet
 enqueue enrichment after matching or attach briefs to feed/digest notifications.
 The deterministic feed continues to work independently of this module.
 
@@ -111,7 +113,8 @@ identity or missing citable passages leaves the event unenriched; a metadata-onl
 retrieval lead cannot become a primary document conclusion. An artifact key
 identifies the archived original; admission does not read/verify its file bytes.
 
-This is a whole-saved-passage path, **not yet a material-change planner**. At most
+This whole-saved-passage fallback is **not a material-change planner**; the saved
+comparison path added below is distinct. At most
 64 evidence units fit the contract, with 16,000 characters per unit. Oversize or
 malformed inputs fail without truncation. Admission and execution share the same
 character-envelope preflight (including schema and repair allowance), and an
@@ -119,10 +122,11 @@ unapproved cloud route is rejected before creating queued assessment storage.
 Characters are not measured tokens; the worker must still bind the actual runtime
 and measured tokenizer/context/output allocation before model execution.
 
-The dossier explicitly tells the model that no complete before/after comparison
-or independently cited official status/date facts have been assembled yet. It
+Without an eligible saved comparison, the dossier explicitly tells the model
+that no complete before/after comparison has been assembled. Independently cited
+official status/date facts are not assembled in either path yet. It
 must not invent changes, enactment, repeal or deadlines from current wording.
-The v2 result also preserves these input limitations and the recorded event type
+The result also preserves these input limitations and the recorded event type
 as server-bound fields, independently of the model's uncertainty text.
 Binding those facts and a deterministic material comparison remains open; this
 slice does not claim a complete change explanation for every kind of event.
@@ -191,10 +195,63 @@ No route, matching trigger, notification renderer or page load invokes it yet.
 Official facts and before/after material planning remain separate prerequisites;
 the existing input limitations continue to be stored in every accepted result.
 
+### Complete saved-comparison material dossier — 8 September 2026
+
+For an event whose source has a legacy Version mapping, admission now uses its
+existing saved before/after comparison when the baseline is explicit or
+unambiguous. The organization's selected monitoring baseline takes precedence;
+without one, multiple distinct saved baselines are an actionable ambiguity, not
+an invitation to choose by import timestamp. Multiple modes for the same exact
+pair share the same baseline; one stable saved record is selected and validated.
+No baseline is inferred from effective dates, source filenames or model output.
+
+The planner audits the **entire persisted v6 diff** against both current saved
+passage collections: exact side records, positions, unique IDs, cardinalities,
+classification flags and complete counts. A changed, incomplete, old-schema or
+misbound comparison fails before generation, including corrections to an unchanged
+passage that would otherwise be omitted from AI input. This read path does not
+silently recompute or overwrite comparison history; a stale diff needs rebuilding.
+
+All substantive, added, removed and uncertain units are included, with explicit
+`before`/`after` versions. Enclosing title/chapter/section/article/numbered-clause
+context is taken from exact source positions, deduplicated and labelled `context`.
+Unchanged bulk and deterministic presentation-only moves, renumbering and wraps
+remain in the saved audit, with counts retained in the dossier. This is structural
+classification by the existing diff engine, not proof that movement has no legal
+consequence. Uncertain changes are not silently treated as formatting.
+
+A zero-material-change comparison has an empty change list and one explicitly
+labelled current-source context anchor; it never fabricates a changed paragraph.
+Every actual change and necessary parent context must fit the existing 64-evidence
+unit, character and measured-token budgets. Oversize material changes still fail
+as a whole, without ranked sampling or thousands of per-chunk requests. Monitored
+target laws currently remain whole saved passage sets, so those can still exceed
+the budget. Native-only catalogue versions still need an explicit persisted
+comparison/baseline contract; they do not acquire one by guessing chronology.
+
+Both legacy versions must belong to the visible same law already bound to the
+event's work. Imported baselines do not require a new native mirror just to read
+them: the existing Version/Law ownership rules apply. When a mirror exists it must
+agree with the exact expression; conflicting known artifact languages are rejected.
+Existing document-assignment checks reject mismatches and require current recorded
+confirmation for unknown assignments. Unknown language or title-based assignment
+is not an independent identity certification. Original identity and publisher URL
+are still required; this path does not verify archived file bytes.
+
+The v3 dossier/result retains the server-bound comparison ID, source versions,
+algorithm/diff fingerprint, full counts, material-pair references and context IDs.
+Validators reconcile counts with both complete version lengths and enforce each
+citation's side. These fields are not generated by the model. Current-input keys
+include all source passages and the full diff fingerprint, so an input correction
+or changed baseline supersedes a running brief. The real local execution adapter
+uses the compact complete-change request with the same preflight/repair budgets.
+The output explicitly distinguishes saved comparison order from legal chronology;
+official status/date binding remains absent rather than inferred from wording.
+
 Still required under HL-089:
 
-- Extend current-input admission with official facts and complete comparison/
-  material-unit planning and organizations with more
+- Extend current-input admission with official facts, native-source comparison
+  binding, complete large material/target-law planning and organizations with more
   interests than one dossier can fit.
 - Durable job IDs, automatic matching trigger, quotas, priority/fairness,
   cancellation recovery, backoff/dead-letter handling and guarded reactivation of
@@ -236,3 +293,9 @@ one repair and cancellation persistence. These use actual ModelClient and databa
 code with synthetic gateway responses and synthetic independent-review artifacts;
 they prove neither real semantic quality nor target-GPU performance. The shipped
 capability registry remains unapproved pending actual review.
+
+The material comparison integration passed 190 combined regressions, 34 final
+targeted cases and five PostgreSQL 17.11 scenarios. A 400-passage pair with one
+modified unit produced two exact source units in one actual ModelClient generation
+against a synthetic gateway response. This proves pipeline shape and binding,
+not actual tokenizer size, semantic quality, legal completeness or GPU latency.

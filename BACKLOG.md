@@ -10,8 +10,8 @@ This backlog implements the product described in [README.md](README.md): a local
 
 **8 September 2026 — user-prioritized work:** HL-089 structured-brief/storage
 foundation `1e80667` and [HL-102 deployment history](#hl-102) `68cd244` are pushed.
-HL-089 integration has resumed with current saved-input admission and measured
-local execution. The complete
+HL-089 integration has resumed with current saved-input admission, measured
+local execution and material evidence from complete saved comparisons. The complete
 AI-enrichment feature remains in progress, not done by its foundation commits.
 
 - **P0 — critical trust, accessibility, release foundation or capacity gate.** The public beta cannot open without it.
@@ -1477,6 +1477,21 @@ prompt policy, real-model review and target capacity remain required.
 **Verification:** 261 combined regressions, 33 final local-execution scenarios,
 and five PostgreSQL execution scenarios passed with synthetic runtime/model
 responses. No real model approval, production rollout or message delivery.
+
+**Material comparison integration — 8 September 2026:** the event dossier now
+uses complete existing saved legacy comparisons with an explicit/unambiguous
+baseline. Every persisted diff side/position/count is checked against both saved
+versions, then all material/uncertain changes and exact enclosing context are sent
+with before/after labels. Unchanged and presentation-only bulk stays in the audit;
+its counts remain visible in the v3 contract. A 400-passage pair with one modified
+unit reaches the local gateway as two material passages in one generation.
+Ambiguous baselines, stale/partial diffs, cross-tenant/known-language conflicts and
+oversized complete material sets fail without sampling. Native-only comparison
+binding, large material/target-law aggregation, official facts, scheduling/readers
+and independent semantic/latency evaluation remain open. No UI or automatic job
+trigger is claimed by this internal integration.
+**Verification:** 190 combined regressions, 34 final material scenarios and five
+PostgreSQL scenarios passed. Actual model quality/latency remains unverified.
 
 Turn a trustworthy topic or watched-law match into a concise, reusable explanation of why the development belongs in the organization's radar and whether it deserves attention. The feed event and its primary-source evidence exist independently of AI; enrichment must never block ingestion, hide a real development, or create a second event history.
 

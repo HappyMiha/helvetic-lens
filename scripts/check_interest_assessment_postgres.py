@@ -47,6 +47,13 @@ from test_interest_execution import (
     test_measured_complete_request_persisted_and_exact_reuse,
     test_single_repair_shared_budget_and_failure_is_not_retried_on_read,
 )
+from test_interest_material import (
+    test_conflicting_baselines_require_selection_not_import_time_guess,
+    test_material_plan_is_measured_and_generated_once_by_real_local_gateway,
+    test_old_comparison_mode_does_not_hide_complete_saved_pair,
+    test_saved_comparison_reaches_current_admission_generation_and_fenced_storage,
+    test_stale_comparison_during_generation_supersedes_without_publishing,
+)
 
 
 def execute_local(harness, scenario):
@@ -57,6 +64,11 @@ def execute_local(harness, scenario):
         scenario(execution)
 
 SUITES = {
+    "material-reuse": test_saved_comparison_reaches_current_admission_generation_and_fenced_storage,
+    "material-fence": test_stale_comparison_during_generation_supersedes_without_publishing,
+    "material-baseline": test_conflicting_baselines_require_selection_not_import_time_guess,
+    "material-existing-mode": test_old_comparison_mode_does_not_hide_complete_saved_pair,
+    "material-gateway": lambda harness: execute_local(harness, lambda value: test_material_plan_is_measured_and_generated_once_by_real_local_gateway(value, harness)),
     "execution-reuse": lambda harness: execute_local(harness, test_measured_complete_request_persisted_and_exact_reuse),
     "execution-transactions": lambda harness: execute_local(harness, test_database_connections_not_held_during_provider_calls),
     "execution-fence": lambda harness: execute_local(harness, lambda value: test_changed_saved_input_cannot_publish(value, "generate")),

@@ -21,7 +21,7 @@ from .analysis import InferenceBudget, structured_completion
 from .config import DomainError
 from .runtime_binding import PromptTokenMeasurement
 
-SCHEMA_VERSION = "interest-event-brief-v2"
+SCHEMA_VERSION = "interest-event-brief-v3"
 MAX_PROVIDER_CALLS = 2  # Initial generation and at most one repair, including retries.
 MAX_SECONDS = 120
 Identifier = Annotated[str, Field(min_length=1, max_length=160)]
@@ -42,6 +42,30 @@ class Evidence(Contract):
     source_kind: Literal["event", "monitored_law", "official_relation"]
     primary_source: bool
     text: str = Field(min_length=1, max_length=16000)
+    side: Literal["current", "before", "after"] = "current"
+    role: Literal["document", "material_change", "context"] = "document"
+
+
+class MaterialChange(Contract):
+    id: Identifier
+    classification: Literal["substantive", "added", "removed", "uncertain"]
+    before_ids: list[Identifier] = Field(max_length=1)
+    after_ids: list[Identifier] = Field(max_length=1)
+    context_ids: list[Identifier] = Field(default_factory=list, max_length=14)
+
+
+class SourceComparison(Contract):
+    id: Identifier
+    before_version_id: Identifier
+    after_version_id: Identifier
+    diff_fingerprint: str = Field(pattern=r"^[a-f0-9]{64}$")
+    algorithm: Literal["legal-unit-hierarchy-and-exact-audit-v6"]
+    complete: Literal[True] = True
+    old_passage_count: int = Field(ge=1)
+    new_passage_count: int = Field(ge=1)
+    counts: dict[Literal["added", "removed", "modified", "unchanged"], Annotated[int, Field(strict=True, ge=0)]]
+    presentation_only_count: int = Field(ge=0)
+    changes: list[MaterialChange] = Field(max_length=64)
 
 
 class Interest(Contract):
@@ -95,6 +119,7 @@ class Dossier(Contract):
     interests: list[Interest] = Field(min_length=1, max_length=64)
     evidence: list[Evidence] = Field(min_length=1, max_length=64)
     model: ModelIdentity
+    source_comparison: SourceComparison | None = None
     locale: Literal["de", "fr", "it", "rm", "en"] = "en"
 
     @model_validator(mode="after")
@@ -114,6 +139,36 @@ class Dossier(Contract):
             raise ValueError("An official status requires saved source evidence.")
         if not self.event.official_status and self.event.status_evidence_ids:
             raise ValueError("Status evidence requires an official status.")
+        if self.source_comparison:
+            comparison = self.source_comparison
+            supplied = {row.id: row for row in self.evidence}
+            if set(comparison.counts) != {"added", "removed", "modified", "unchanged"} or any(
+                type(number) is not int or number < 0 for number in comparison.counts.values()
+            ):
+                raise ValueError("Comparison counts must be complete and nonnegative.")
+            if len({row.id for row in comparison.changes}) != len(comparison.changes):
+                raise ValueError("Material change IDs must be unique.")
+            counts = comparison.counts
+            if (comparison.before_version_id == comparison.after_version_id
+                    or comparison.old_passage_count != counts["removed"] + counts["modified"] + counts["unchanged"]
+                    or comparison.new_passage_count != counts["added"] + counts["modified"] + counts["unchanged"]
+                    or len(comparison.changes) + comparison.presentation_only_count !=
+                    counts["added"] + counts["removed"] + counts["modified"]):
+                raise ValueError("Comparison coverage must account for both full saved versions.")
+            for change in comparison.changes:
+                if not change.before_ids and not change.after_ids:
+                    raise ValueError("A material change must retain its exact source evidence.")
+                for refs, side, version in ((change.before_ids, "before", comparison.before_version_id),
+                                             (change.after_ids, "after", comparison.after_version_id)):
+                    if any(ref not in primary or supplied[ref].side != side
+                           or supplied[ref].version_id != version or supplied[ref].role != "material_change"
+                           or supplied[ref].source_kind != "event" for ref in refs):
+                        raise ValueError("Material changes must cite the correct saved side and version.")
+                if any(ref not in primary or supplied[ref].source_kind != "event"
+                       or (supplied[ref].side, supplied[ref].version_id) not in {
+                           ("before", comparison.before_version_id), ("after", comparison.after_version_id)
+                       } for ref in change.context_ids):
+                    raise ValueError("Comparison context must belong to an exact saved side.")
         return self
 
 
@@ -181,6 +236,11 @@ specific human review step naming the object to review, or no_action_now with a
 reason; do not invent legal advice, obligations or deadlines. State uncertainty.
 Do not generate official status, dates, source URLs, quotes or personal relevance:
 the server supplies those. For what_happened cite a primary event source.
+When source_comparison is supplied, explain its complete material changes using
+the paired before/after evidence. Presentation-only moves, renumbering and line
+wrapping are not new duties. Uncertain alignment needs human review. A zero-change
+list means no material change was detected by the deterministic comparison, not
+proof of no legal impact. Saved comparison order is not an official effective date.
 Respect the event's explicit limitations. A saved current document alone does
 not establish a complete before/after comparison or the law's current status.
 Return only the JSON object required by the response schema."""
@@ -217,7 +277,7 @@ def manifest(dossier: Dossier, instructions: str = SYSTEM) -> dict:
                        "revision": row["revision"], "fingerprint": row["fingerprint"]}
                       for row in data["interests"]],
         "evidence": [{key: row[key] for key in
-                      ("id", "version_id", "artifact_id", "unit_id", "source_kind", "primary_source")}
+                      ("id", "version_id", "artifact_id", "unit_id", "source_kind", "primary_source", "side", "role")}
                      | {"content_hash": fingerprint(row["text"]), "url_hash": fingerprint(row["source_url"])}
                      for row in data["evidence"]],
     }
@@ -280,6 +340,7 @@ def finalize(draft: dict, dossier: Dossier) -> dict:
         "event_id": dossier.event.id,
         "event_url": f"/?event={quote(dossier.event.id, safe='')}",
         "event_type": dossier.event.event_type,
+        "source_comparison": dossier.source_comparison.model_dump(mode="json") if dossier.source_comparison else None,
         "input_limitations": list(dossier.event.limitations),
         "official_status": dossier.event.official_status,
         "status_evidence_ids": dossier.event.status_evidence_ids,

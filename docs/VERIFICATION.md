@@ -1,5 +1,52 @@
 # Verification record
 
+## Complete saved material comparisons for event briefs — 8 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl-089-material-dossier`, based on fresh `1284486`.
+  Current-input admission can now use a complete persisted legacy comparison
+  instead of all unchanged source passages. It checks every saved side/position,
+  exact passage records, IDs, counts, algorithm and material flags; includes every
+  material/uncertain change plus exact enclosing hierarchy context; and preserves
+  before/after labels, full audit counts and diff identity in the v3 contract.
+  The real measured local runner consumes this dossier without another AI stage.
+- **190 combined regressions passed in 155.27 seconds** across
+  `test_interest_material.py`, `test_interest_admission.py`,
+  `test_interest_assessment.py`, `test_interest_assessment_store.py`,
+  `test_interest_execution.py` and `test_diffing.py`. After adding the stale-mode
+  selection regression, **34 final material scenarios passed in 32.63 seconds**.
+  These exercise inserted-article renumbering, real line wraps, numbers and
+  removals/additions, exact ancestor context, 400-passage versions, full coverage
+  checks, malformed/stale input, no sampling on overflow, baseline ambiguity,
+  Version/Law ownership, known-language conflicts, assignment mismatch, side and
+  reference validation, stale completion, and actual ModelClient request budgeting.
+- **Five final PostgreSQL 17.11 scenarios passed** through the disposable runner:
+  `material-reuse`, `material-fence`, `material-baseline`, `material-gateway`,
+  `material-existing-mode`. Each used a freshly recreated empty DB in this task's
+  labelled tmpfs container, bound to a random localhost port. No working database
+  or production data was used. The QA container was stopped after verification.
+- In the 400-passage gateway scenario, one modified passage became two exact
+  before/after evidence units in a single generation; all 800 source passages
+  remained covered by the stored comparison audit. This is a structural/payload
+  result using a synthetic HTTP model reply and approval, not real token counts,
+  semantic quality, real model latency or a target-GPU benchmark.
+- Review found imported legacy baselines need not have a native corpus mirror.
+  Admission now applies existing Version/Law ownership and same-law binding to
+  those records without writing mirrors during reads. Any existing native mirror
+  must agree with the source expression. Another review found an obsolete mode
+  could hide a complete comparison for the same pair; admission now tries the
+  saved records for that exact pair, with a regression on SQLite and PostgreSQL.
+  It never chooses among different baselines by timestamp or rewrites a stale diff.
+- Ruff and whitespace checks pass. The PostgreSQL runner retains its established
+  import bootstrap (E402 excluded for that standalone script). The existing
+  Starlette/httpx deprecation warning remains. Logs are ignored under
+  `test-results/interest-material-*`. No UI/build/browser, original-file byte
+  verification, production migration/deployment, real inference or delivery claims.
+- HL-089 remains **IN PROGRESS**. Native-only persisted comparison/baseline
+  binding, full large material/target-law aggregation, official source fact binding,
+  durable queue/fairness/recovery, exact-current readers/delivery integration and
+  independent quality/hardware reviews remain open. Existing deterministic v6
+  classification is not proof that a moved/renumbered provision has no legal effect.
+
 ## Measured local organization-brief execution — 8 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl-089-local-execution`, based on fresh `da9203f`.

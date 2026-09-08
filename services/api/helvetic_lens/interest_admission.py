@@ -13,9 +13,12 @@ from sqlalchemy import or_, select
 
 from .config import DomainError
 from .corpus_access import accessible_versions, visible
+from .identity import assess_comparison_identity
 from .interest_assessment import Dossier, Event, Evidence, Interest, ProfileFact, fingerprint
 from .models import (
+    Comparison,
     DocumentWatch,
+    IdentityDecision,
     Law,
     LegacyDocumentMapping,
     MonitoringTopic,
@@ -156,7 +159,7 @@ def _laws(session, organization_id, event):
     return result
 
 
-def _document(session, organization_id, version_id, work_id, source_kind, expression_id=None):
+def _saved_document(session, organization_id, version_id, work_id, source_kind, expression_id=None):
     # Do not accept a version merely because its ID exists in a privileged worker
     # session. Grants AND every legacy parent AND exact work binding must match.
     row = session.execute(accessible_versions(organization_id).where(
@@ -186,21 +189,96 @@ def _document(session, organization_id, version_id, work_id, source_kind, expres
     passages = version.passages or []
     if not isinstance(passages, list) or not passages:
         _fail("interest_evidence_unavailable", "Saved citable document passages are required, not metadata-only discovery leads.")
-    if len(passages) > MAX_UNITS:
-        _fail("interest_context_exceeded", "This complete document needs material-unit planning; it was not sampled.")
-    evidence = []
     for passage in passages:
         if (not isinstance(passage, dict) or not isinstance(passage.get("id"), str)
                 or not isinstance(passage.get("text"), str) or not passage["text"].strip()):
             _fail("interest_evidence_unavailable", "A saved passage is malformed; source evidence needs repair.")
+    if len({row["id"] for row in passages}) != len(passages):
+        _fail("interest_evidence_unavailable", "Saved passage IDs are ambiguous; source evidence needs repair.")
+    return native, version, {"native_id": native.id, "native_revision": native.evidence_revision,
+                            "version_id": version.id, "revision": version.evidence_revision,
+                            "text_hash": fingerprint(version.text), "passage_hash": fingerprint(passages)}
+
+
+def _document(session, organization_id, version_id, work_id, source_kind, expression_id=None):
+    _, version, binding = _saved_document(session, organization_id, version_id, work_id, source_kind, expression_id)
+    if len(version.passages) > MAX_UNITS:
+        _fail("interest_context_exceeded", "This complete document needs material-unit planning; it was not sampled.")
+    evidence = []
+    for passage in version.passages:
         evidence.append(Evidence(id="ev_" + fingerprint([version.id, passage["id"], source_kind])[:32],
             version_id=version.id, artifact_id=version.artifact_key, unit_id=passage["id"],
             text=passage["text"], source_url=version.source_url, source_kind=source_kind, primary_source=True))
-    if len({item.id for item in evidence}) != len(evidence):
-        _fail("interest_evidence_unavailable", "Saved passage IDs are ambiguous; source evidence needs repair.")
-    return evidence, {"native_id": native.id, "native_revision": native.evidence_revision,
-                      "version_id": version.id, "revision": version.evidence_revision,
-                      "text_hash": fingerprint(version.text)}
+    return evidence, binding
+
+
+def _event_document(session, organization_id, event, watches):
+    from .interest_material import plan
+    native, after, source_binding = _saved_document(session, organization_id, event.document_version_id,
+        event.work_id, "event", event.expression_id)
+    comparison = None
+    if native.legacy_version_id:
+        query = select(Comparison).where(Comparison.new_version_id == after.id,
+            Comparison.law_id == after.law_id, visible(Comparison, organization_id))
+        baselines = {row.selected_baseline_version_id for row in watches if row.selected_baseline_version_id}
+        if len(baselines) > 1:
+            _fail("interest_comparison_ambiguous", "Monitoring has conflicting saved baselines; no comparison was guessed.")
+        if baselines:
+            query = query.where(Comparison.old_version_id == next(iter(baselines)))
+        # Two distinct pairs are enough to establish ambiguity. Never choose
+        # an earlier legal version by import timestamp or by model suggestion.
+        pairs = list(session.scalars(query.with_only_columns(Comparison.old_version_id).distinct().limit(2)))
+        if len(pairs) > 1:
+            _fail("interest_comparison_ambiguous", "Several saved baselines exist; select a monitoring baseline before change analysis.")
+        if pairs:
+            comparison = session.scalar(query.order_by(Comparison.id).limit(1))
+    if comparison is None:
+        evidence, binding = _document(session, organization_id, native.id, event.work_id, "event", event.expression_id)
+        return evidence, binding, None
+    # Imported legacy baselines are already viewable under Version/Law ownership
+    # but may not have a corpus mirror. Do not create one as a read side effect.
+    before = session.scalar(select(Version).join(Law, Law.id == Version.law_id).where(
+        Version.id == comparison.old_version_id, Version.law_id == after.law_id,
+        visible(Version, organization_id), visible(Law, organization_id)))
+    if before is None or not before.artifact_key or not before.source_url:
+        _fail("interest_evidence_unavailable", "The baseline or its saved original is unavailable to this organization.")
+    before_native = session.scalar(select(RegulatoryDocumentVersion).where(
+        RegulatoryDocumentVersion.legacy_version_id == before.id))
+    if before_native and before_native.expression_id != native.expression_id:
+        _fail("interest_evidence_unavailable", "The mapped baseline and current work/language identities disagree.")
+    languages = {(row.identity_json or {}).get("language") for row in (before, after)} - {None, "unknown", "und"}
+    if len(languages) > 1:
+        _fail("interest_evidence_unavailable", "The baseline and current version use different languages.")
+    if (not isinstance(before.passages, list) or not before.passages
+            or any(not isinstance(row, dict) or not isinstance(row.get("id"), str)
+                   or not isinstance(row.get("text"), str) or not row["text"].strip() for row in before.passages)):
+        _fail("interest_evidence_unavailable", "The baseline has no complete citable saved passages.")
+    before_binding = {"version_id": before.id, "revision": before.evidence_revision,
+                      "text_hash": fingerprint(before.text), "passage_hash": fingerprint(before.passages),
+                      "native": [before_native.id, before_native.evidence_revision] if before_native else None}
+    law = session.scalar(select(Law).where(Law.id == after.law_id, visible(Law, organization_id)))
+    identity = assess_comparison_identity(law, before, after)
+    if identity["status"] == "mismatch":
+        _fail("document_identity_mismatch", "These saved artifacts identify different legal works.")
+    for side, version in (("old", before), ("new", after)):
+        report = identity[side]
+        if report["status"] == "unknown" and not session.scalar(select(IdentityDecision.id).where(
+            IdentityDecision.organization_id == organization_id, IdentityDecision.version_id == version.id,
+            IdentityDecision.action == "confirm_assignment", IdentityDecision.identity_fingerprint == report["fingerprint"]).limit(1)):
+            _fail("document_identity_unknown", "The baseline assignment needs confirmation before change analysis.")
+    # Historical/monitoring/saved-version modes may retain several records for
+    # the same pair. An obsolete record must not hide a valid complete one.
+    for candidate in session.scalars(query.order_by(Comparison.id)):
+        try:
+            evidence, context = plan(candidate, before, after)
+            break
+        except DomainError as error:
+            if error.code != "interest_comparison_unavailable":
+                raise
+    else:
+        _fail("interest_comparison_unavailable", "No saved comparison covers both exact versions; rebuild it before AI analysis.")
+    return evidence, {"after": source_binding, "before": before_binding,
+                      "comparison": context.diff_fingerprint, "identity": identity["fingerprint"]}, context
 
 
 def assemble(session, organization_id: str, event_id: str, *, model, locale="en") -> Dossier:
@@ -232,7 +310,7 @@ def assemble(session, organization_id: str, event_id: str, *, model, locale="en"
     if not topics and not laws and not watches:
         _fail("interest_not_current", "No current admitted monitoring interest remains for this event.")
     try:
-        evidence, source_binding = _document(session, organization_id, event.document_version_id, event.work_id, "event", event.expression_id)
+        evidence, source_binding, comparison = _event_document(session, organization_id, event, watches)
         event_refs = [row.id for row in evidence]
         interests = [Interest(**row, evidence_ids=event_refs) for row in topics]
         for watch in watches:
@@ -259,13 +337,16 @@ def assemble(session, organization_id: str, event_id: str, *, model, locale="en"
         binding = {"event": event.evidence_revision, "event_version": event.document_version_id,
                    "event_evidence": event.evidence_json, "work": work.evidence_revision,
                    "source": source_binding, "targets": [value[1] for _, value in sorted(targets.items())]}
+        comparison_note = (
+            "All material changes from the complete saved comparison are supplied with exact before/after evidence. Unchanged and presentation-only passages are excluded from AI input, not from the saved audit. Saved comparison order does not establish legal effective dates."
+            if comparison else
+            "This dossier contains complete saved document passages, not a before/after comparison. Do not enumerate changes from a prior version.")
         return Dossier(organization_id=organization_id, event=Event(id=event.id, title=work.title, kind=work.kind,
-            event_type=event.event_type, input_fingerprint=fingerprint(binding), limitations=[
-                "This dossier contains complete saved document passages, not a before/after comparison. Do not enumerate changes from a prior version.",
+            event_type=event.event_type, input_fingerprint=fingerprint(binding), limitations=[comparison_note,
                 "No independently bound official status/date facts are supplied. Do not infer enactment, repeal or deadlines."]),
             profile_revision=profile.revision if profile else 1, profile_facts=facts,
             interests=sorted(interests, key=lambda item: item.id), evidence=sorted(evidence, key=lambda item: item.id),
-            model=model, locale=locale)
+            model=model, locale=locale, source_comparison=comparison)
     except ValidationError as error:
         # Pydantic errors can echo source text. Persist/display a category only.
         raise DomainError("The complete dossier exceeds its contract or contains invalid saved evidence; nothing was truncated.",
