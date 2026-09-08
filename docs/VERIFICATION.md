@@ -1,5 +1,39 @@
 # Verification record
 
+## Shared interest brief contract and storage — 8 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl-089-interest-assessments`, based on fresh `a4aac7f`.
+  Added the typed internal event dossier/brief engine, scoped assessment and
+  normalized reference tables, unique-input reservation, fenced completion and
+  bounded explicit retries. The engine permits low importance/no action, rejects
+  incomplete interest coverage or invalid citations, takes dates/status from saved
+  facts and has a shared two-call/120-second limit with one JSON repair. No source
+  passages, private history or raw provider errors are persisted in the manifest.
+  [Implementation boundary and remaining HL-089 work](INTEREST_ASSESSMENTS.md).
+- **104 combined tests passed in 90.67 seconds:** `test_interest_assessment.py`,
+  `test_interest_assessment_store.py`, `test_organization_isolation.py`,
+  `test_relation_analysis.py`, `test_interest_feed.py`, `test_digest_topics.py`.
+  The 52 new tests include all-five-locale instructions and four event kinds,
+  seven-interest completeness, low/unknown-profile importance, malformed/extra
+  fields, missing/duplicate interests, cross-interest/nonexistent citations,
+  forged profile/date/status, one repair only, no calls on overflow/unapproved
+  cloud, timeout/cancellation, caller mutation, immutable successes, stale-worker
+  rejection, private tenant policy and six-way transaction races. Test doubles
+  are not evidence of real-model reasoning or native-language correctness.
+- **Seven PostgreSQL 17.11 scenarios passed** via
+  `scripts/check_interest_assessment_postgres.py`: reuse, superseded, retry,
+  scope, concurrency, validation and migration. The runner refuses populated or
+  non-local/non-test databases. The populated migration roundtrip preserves
+  existing corpus/topic records; new table columns, unique input and reference
+  indexes match models. Scratch startup applies head `d7d9f1284ba5`.
+- Ruff and `git diff --check` pass. Per-suite ignored logs are under
+  `test-results/interest-assessment-*`. The database was a labelled, loopback-only,
+  tmpfs QA container, not a working service. No production deployment/database
+  changes, real inference, email or UI changes. Complete current-input assembly,
+  queue/admission/runtime wiring and reader presentation remain open; this is not
+  a claim that HL-089 is available to users. User-requested deployment history
+  HL-102 is now the explicit next task after publishing this foundation.
+
 ## Saved topics and direct watches in digests — 8 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl-079-topic-digest`, based on fresh `9a57d0c`. Preview, queued preparation and final delivery now use the current-interest reader with existing source/period/personal-state filters. Saved topic confidence is not promoted into impact severity. Summaries group one event across law/topic/direct-watch interests, disclose five-interest limits and link to exact current event/review evidence. Five-language text/HTML/web presentation and the full-list destination now include Today. Old projection checkpoints restart, while historical summaries remain compatible. [Contract and remaining HL-079 work](DIGESTS.md#current-topic-and-direct-watch-interests-hl-079-8-september-2026).

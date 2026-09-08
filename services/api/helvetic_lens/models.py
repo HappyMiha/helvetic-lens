@@ -1330,6 +1330,54 @@ class RelationImpactAnalysis(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
 
 
+class InterestEventAssessment(Base):
+    """One reusable organization brief for an exact saved-interest dossier."""
+
+    __tablename__ = "interest_event_assessments"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "event_id", "input_fingerprint", name="uq_interest_assessment_input"),
+        Index("ix_interest_assessment_history", "organization_id", "event_id", "created_at", "id"),
+        CheckConstraint("status IN ('queued', 'running', 'succeeded', 'failed', 'superseded')",
+                        name="ck_interest_assessment_status"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    event_id: Mapped[str] = mapped_column(ForeignKey("regulatory_events.id"), index=True)
+    input_fingerprint: Mapped[str] = mapped_column(String(64))
+    input_manifest: Mapped[dict] = mapped_column(JSON)
+    status: Mapped[str] = mapped_column(String(20), default="queued")
+    attempt_key: Mapped[str | None] = mapped_column(String(36))
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    result: Mapped[dict | None] = mapped_column(JSON)
+    provenance: Mapped[dict] = mapped_column(JSON, default=dict)
+    error_code: Mapped[str | None] = mapped_column(String(80))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class InterestAssessmentBinding(Base):
+    """Immutable historical IDs/hashes, not cascading live matching records.
+
+    The original interest can be removed later without erasing why a past brief
+    existed. Binding kinds distinguish evidence, topics, law candidates and watches.
+    """
+
+    __tablename__ = "interest_assessment_bindings"
+    __table_args__ = (
+        UniqueConstraint("assessment_id", "kind", "reference_id", name="uq_interest_assessment_binding"),
+        Index("ix_interest_binding_reference", "organization_id", "kind", "reference_id", "assessment_id"),
+        CheckConstraint("kind IN ('topic', 'law', 'direct_watch', 'evidence')", name="ck_interest_binding_kind"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    assessment_id: Mapped[str] = mapped_column(ForeignKey("interest_event_assessments.id", ondelete="CASCADE"))
+    kind: Mapped[str] = mapped_column(String(20))
+    reference_id: Mapped[str] = mapped_column(String(160))
+    revision: Mapped[str] = mapped_column(String(160))
+    fingerprint: Mapped[str] = mapped_column(String(64))
+
+
 class AskRecord(Base):
     __tablename__ = "ask_records"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
@@ -1492,6 +1540,8 @@ ORGANIZATION_SCOPED_MODELS = (
     Analysis,
     ActionDecision,
     RelationImpactAnalysis,
+    InterestEventAssessment,
+    InterestAssessmentBinding,
     AskRecord,
     AssistantConversation,
     Job,

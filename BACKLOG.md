@@ -8,6 +8,11 @@ This backlog implements the product described in [README.md](README.md): a local
 
 ## Scope and priorities
 
+**8 September 2026 — explicit next task (user request):** after the current
+HL-089 structured-brief/storage foundation is tested and pushed, implement
+[HL-102 deployment history](#hl-102) before resuming the remaining HL-089 work.
+This reprioritization does not mark the complete AI-enrichment feature done.
+
 - **P0 — critical trust, accessibility, release foundation or capacity gate.** The public beta cannot open without it.
 - **P1 — required public-beta product capability.** P1 is required for the agreed local-AI-first product, even when it can follow the P0 foundation.
 - **P2 — valuable follow-up after public beta.** Add after the core three sources, registry, and impact inbox are reliable.
@@ -1430,6 +1435,19 @@ Completed on 4 September 2026. New normalized events now enter topic matching on
 
 ### HL-089 — Enrich matched developments with one persisted AI relevance brief
 
+**8 September 2026 — IN PROGRESS (HappyDucky02):** implemented the internal complete
+brief contract and transactional `InterestEventAssessment`/reference storage.
+The engine validates every supplied interest and its primary citations, pins
+official status/dates to saved facts, ties importance to actual profile fields,
+allows low importance/no action, and uses one generation plus one repair under a
+shared call/time budget. Six concurrent reservations coalesce, stale workers
+cannot publish, exact completed inputs reuse without inference, and failed work
+requires bounded explicit retry. **104 combined regressions and seven PostgreSQL
+scenarios passed.** This foundation is not yet wired into matching jobs or UI;
+all-current-input admission/planning, measured runtime binding, fair scheduling,
+reader/delivery reuse, feedback and independent quality/hardware evaluation remain
+open. [Contract, proof and limits](docs/INTEREST_ASSESSMENTS.md).
+
 Turn a trustworthy topic or watched-law match into a concise, reusable explanation of why the development belongs in the organization's radar and whether it deserves attention. The feed event and its primary-source evidence exist independently of AI; enrichment must never block ingestion, hide a real development, or create a second event history.
 
 Acceptance criteria:
@@ -2277,6 +2295,42 @@ Acceptance criteria:
 - Fix the relation-action loop's candidate-variable shadowing and validate each suggested action against its actual input candidate/evidence.
 - Preserve a concise explainable negative/low-importance outcome. Freeze thresholds with HL-093 held-out precision/recall tests; do not improve precision by silently dropping high-value positives.
 - Re-evaluate previously affected candidates through bounded rule-revision jobs; mark old assessments stale/superseded and retain history. Inbox must not present a prior succeeded result as current after input/rule/profile changes. Reprocessing creates no duplicate notification.
+
+<a id="hl-102"></a>
+
+### HL-102 — Browse actual deployment history, errors and deployed release notes
+
+**P1 — PLANNED; next implementation task explicitly requested on 8 September 2026.**
+
+Extend the existing Deployment page and host release-manager evidence, not Git
+push history. A published commit is not proof that a deployment happened.
+
+Acceptance criteria:
+
+- Keep a durable record for every real deployment attempt, including failed,
+  successful, interrupted, rejected and rollback outcomes. Preserve the current
+  active release separately from attempt history; never label an unfinished
+  attempt successful because the process disappeared.
+- Show a paginated, filterable history with start/end time, environment/host,
+  previous and requested/actually activated commit or release, status and duration.
+  Older entries remain reachable; reads are bounded and do not silently truncate
+  the historical record or overwrite previous attempts.
+- Open each attempt's details: exact recorded phases, gate results, failure phase,
+  sanitized diagnostic output and actionable failure explanation. Distinguish
+  unavailable/truncated diagnostics from an empty successful log. Do not expose
+  environment secrets, credentials or unrestricted host filesystem paths.
+- On success, show release notes and what was actually deployed, pinned to the
+  previous active revision and verified activated revision. Preserve that snapshot
+  if main later moves; link to exact commits and distinguish repository-supplied
+  notes from a generated commit summary. Missing notes must be explicit.
+- Support existing release-manager status files and deployments without new
+  metadata honestly; do not fabricate historical phases, release notes or dates.
+- Keep the existing platform-admin access boundary; provide clear empty/loading/
+  error/retry states and usable desktop/mobile details in all five UI languages.
+- Verify real release-manager success/failure/interruption/rollback fixtures,
+  chronology/pagination, pinned release-note ranges, secret redaction, authorization
+  and responsive/accessibility journeys. Test isolated fixtures only: shipping
+  this feature is not authorization to deploy production or alter its state.
 
 <a id="hl-101"></a>
 
