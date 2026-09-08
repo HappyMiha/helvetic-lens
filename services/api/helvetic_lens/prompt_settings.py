@@ -52,6 +52,7 @@ class PromptSettings(BaseModel):
         max_length=12_000,
     )
     ask_context_mode: Literal["automatic", "changes_only"] = "automatic"
+    interest_brief_instructions: str = Field(default="", max_length=4000)
 
 
 class PromptSettingsInput(PromptSettings):

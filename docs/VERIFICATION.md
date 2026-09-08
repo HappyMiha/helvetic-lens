@@ -1,5 +1,38 @@
 # Verification record
 
+## Shared brief prompt controls — 8 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl089-brief-prompts`, based on `5bf2227`.
+  Organization/platform prompt settings now persist an optional 4,000-character
+  shared-brief focus. The exact composed request is measured, generated and
+  fingerprinted; saved changes fence queued work and in-flight publication.
+  Readers withdraw stale results without deleting history or generating work.
+- **96 regressions pass, 1 PostgreSQL-only scenario skipped** in 186.99 seconds
+  across prompt, execution, reader, job and relation-prompt freshness suites.
+  After adding the same organization lock to reset, **7 final prompt scenarios
+  pass in 10.61 seconds**. They cover effective platform/organization precedence,
+  older clients, empty/oversized API inputs, exact measured/wire prompts, reuse,
+  reset/history preservation and changes during runtime/count/generation/queue.
+  Test doubles provide model runtime/answers; this is not real-model quality.
+- The first targeted run exposed an actual reset/resave duplicate revision
+  failure. Revisions now advance past persisted history under the organization
+  lock; previous revisions remain intact. No schema migration is required.
+- Final production build, TypeScript, Ruff and diff checks pass. The real built
+  UI passes **10 mobile/desktop journeys across all five locales**, plus platform
+  save and viewer denial, with synthetic intercepted APIs. Save/error/retry/empty
+  override preserve the page, draft and correct 4,000-character display limit;
+  no AI endpoint is invoked. Ten full-document axe checkpoints report no
+  violations; incomplete checks remain in the audit JSON, not certified away.
+- Browser QA found and fixed an unlabeled duplicate complementary landmark;
+  manual screenshot inspection found and fixed the mismatched character counter.
+  Final mobile/desktop screenshots were inspected. Native-language validation,
+  real users, deployed end-to-end and target hardware remain unverified.
+- HL-089 remains open for policy/quota/locale UI, automatic refresh/catch-up,
+  delivery/history reuse, official facts, large dossiers and independent model
+  approval. No production restart, database modification or notification.
+  The ongoing full Linux API memory-fix run uses the earlier immutable `5bf2227`
+  code and does **not** validate these new prompt edits.
+
 ## Database retention behind the API gate — 8 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/api-migration-memory`, based on `3af161a`.

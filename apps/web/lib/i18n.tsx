@@ -4393,6 +4393,35 @@ for (const locale of locales) Object.assign(catalogTarget(locale), materialPageM
 const materialUnitMessages: Record<Locale, Messages> = {"en-CH": {"materialUnit.title": "Title", "materialUnit.chapter": "Chapter", "materialUnit.section": "Section", "materialUnit.article": "Article", "materialUnit.paragraph": "Paragraph", "materialUnit.littera": "Letter", "materialUnit.number": "Number", "materialUnit.provenance": "Labels from saved extraction; verify the exact evidence."}, "de-CH": {"materialUnit.title": "Titel", "materialUnit.chapter": "Kapitel", "materialUnit.section": "Abschnitt", "materialUnit.article": "Artikel", "materialUnit.paragraph": "Absatz", "materialUnit.littera": "Buchstabe", "materialUnit.number": "Ziffer", "materialUnit.provenance": "Bezeichnungen aus der gespeicherten Extraktion; prüfen Sie den genauen Beleg."}, "fr-CH": {"materialUnit.title": "Titre", "materialUnit.chapter": "Chapitre", "materialUnit.section": "Section", "materialUnit.article": "Article", "materialUnit.paragraph": "Alinéa", "materialUnit.littera": "Lettre", "materialUnit.number": "Chiffre", "materialUnit.provenance": "Libellés issus de l’extraction enregistrée ; vérifiez la preuve exacte."}, "it-CH": {"materialUnit.title": "Titolo", "materialUnit.chapter": "Capitolo", "materialUnit.section": "Sezione", "materialUnit.article": "Articolo", "materialUnit.paragraph": "Capoverso", "materialUnit.littera": "Lettera", "materialUnit.number": "Numero", "materialUnit.provenance": "Etichette dall’estrazione salvata; verifica la prova esatta."}, "rm-CH": {"materialUnit.title": "Titel", "materialUnit.chapter": "Chapitel", "materialUnit.section": "Secziun", "materialUnit.article": "Artitgel", "materialUnit.paragraph": "Alinea", "materialUnit.littera": "Litera", "materialUnit.number": "Cifra", "materialUnit.provenance": "Etichettas da l’extracziun memorisada; verifitgescha la cumprova exacta."}};
 for (const locale of locales) Object.assign(catalogTarget(locale), materialUnitMessages[locale]);
 
+const briefPromptMessages: Record<Locale, Messages> = {
+  "en-CH": {
+    "prompts.boundedCharacters": "{count} / {limit} characters",
+    "prompts.interestBrief": "Shared event briefs",
+    "prompts.interestBriefBody": "Optional review focus for developments matching your interests. Leave empty for built-in guidance (maximum 4,000 characters). Evidence checks stay active. Saving does not run AI; previous answers remain history and are reused only when the effective instructions match.",
+  },
+  "de-CH": {
+    "prompts.boundedCharacters": "{count} / {limit} Zeichen",
+    "prompts.interestBrief": "Gemeinsame Ereignisanalysen",
+    "prompts.interestBriefBody": "Optionaler Prüfschwerpunkt für Entwicklungen zu Ihren Interessen. Leer lassen für die integrierten Vorgaben (maximal 4’000 Zeichen). Belegprüfungen bleiben aktiv. Speichern startet keine KI; frühere Antworten bleiben im Verlauf und werden nur bei gleichen wirksamen Anweisungen wiederverwendet.",
+  },
+  "fr-CH": {
+    "prompts.boundedCharacters": "{count} / {limit} caractères",
+    "prompts.interestBrief": "Analyses partagées des événements",
+    "prompts.interestBriefBody": "Orientation facultative pour examiner les évolutions liées à vos intérêts. Laissez vide pour les consignes intégrées (4 000 caractères maximum). Les contrôles des preuves restent actifs. Enregistrer ne lance pas l’IA ; les réponses restent dans l’historique et ne sont réutilisées que si les consignes effectives correspondent.",
+  },
+  "it-CH": {
+    "prompts.boundedCharacters": "{count} / {limit} caratteri",
+    "prompts.interestBrief": "Analisi condivise degli eventi",
+    "prompts.interestBriefBody": "Indicazioni facoltative per esaminare gli sviluppi legati ai tuoi interessi. Lascia vuoto per le istruzioni integrate (massimo 4.000 caratteri). I controlli delle prove restano attivi. Il salvataggio non avvia l’IA; le risposte restano nella cronologia e vengono riutilizzate solo con le stesse istruzioni effettive.",
+  },
+  "rm-CH": {
+    "prompts.boundedCharacters": "{count} / {limit} caracters",
+    "prompts.interestBrief": "Analisas communablas dals eveniments",
+    "prompts.interestBriefBody": "Indicaziuns facultativas per examinar svilups liads a tes interess. Lascha vid per las instrucziuns integradas (maximalmain 4’000 caracters). Las cumprovas vegnan anc adina controlladas. Memorisar na lantscha betg l’IA; las respostas restan en la cronologia e vegnan reutilisadas mo cun las medemas instrucziuns effectivas.",
+  },
+};
+for (const locale of locales) Object.assign(catalogTarget(locale), briefPromptMessages[locale]);
+
 export function translate(locale: Locale, key: string, values: Values = {}): string | null {
   const message = catalog[locale][key];
   return message ? formatMessage(message, locale, values) : null;

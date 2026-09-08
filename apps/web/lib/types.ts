@@ -1416,6 +1416,7 @@ export type Answer = {
 };
 
 export type PromptSettings = {
+  interest_brief_instructions: string;
   impact_instructions: string;
   impact_synthesis_instructions: string;
   ask_instructions: string;

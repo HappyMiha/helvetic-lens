@@ -140,7 +140,7 @@ Keep the proven stack and add only the infrastructure now justified by public us
 | [HL-086](#hl-086) | P1       | PLANNED  | HL-035, HL-074, HL-075, HL-077, HL-083, HL-085         | Natural-language monitoring-topic flow through the assistant        |
 | [HL-087](#hl-087) | P1       | IN PROGRESS | HL-057, HL-085                                      | Proactive dry robot companion with safe five-language tone           |
 | [HL-088](#hl-088) | P0       | PLANNED  | HL-049, HL-057, HL-064, HL-065–HL-080, HL-083–HL-087, HL-089–HL-101 | Final daily-use acceptance, including independent pilot evidence |
-| [HL-089](#hl-089) | P0       | PLANNED  | HL-032, HL-045, HL-061, HL-075, HL-091, HL-092, HL-094, HL-100 | Persisted AI relevance briefs for matched developments       |
+| [HL-089](#hl-089) | P0       | IN PROGRESS  | HL-032, HL-045, HL-061, HL-075, HL-091, HL-092, HL-094, HL-100 | Persisted AI relevance briefs for matched developments       |
 | [HL-090](#hl-090) | P1       | PLANNED  | None                                                   | Target-user discovery and observed first-value prototypes           |
 | [HL-091](#hl-091) | P0       | IN PROGRESS | HL-031, HL-060, HL-093                              | Capability-based local explanations versus explicit extractive mode |
 | [HL-092](#hl-092) | P0       | IN PROGRESS | HL-061, HL-091                                      | Truthful structured reports, dates, applicability and useful actions |
@@ -1567,6 +1567,17 @@ task/locale approval. Verification is recorded in `docs/VERIFICATION.md`.
 delivery reuse, global admission capacity/fairness, large dossiers and independent
 model/language/hardware evaluation. This is not full HL-089 completion or production
 activation; [operator contract](docs/INTEREST_ASSESSMENTS.md) describes the limits.
+
+**Saved brief prompt controls — 8 September 2026:** Organization and platform
+admins can edit an optional 4,000-character review focus in the existing prompt
+page, with all five UI locales. Exact measurement, cache identity, queued work
+and publication use/revalidate the saved effective prompt. Empty/reset restores
+the appropriate default without erasing assessment or prompt history; reset and
+resave no longer collide on an old revision number. Save/read does not generate.
+Verification and limitations are recorded in `docs/VERIFICATION.md`.
+**Still open:** policy/locale/quota UI, catch-up/refresh, digest/delivery/history
+integration, official facts, larger dossiers and independent model/hardware/user
+approval. This milestone does not complete HL-089 or activate production AI.
 
 Turn a trustworthy topic or watched-law match into a concise, reusable explanation of why the development belongs in the organization's radar and whether it deserves attention. The feed event and its primary-source evidence exist independently of AI; enrichment must never block ingestion, hide a real development, or create a second event history.
 

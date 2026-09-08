@@ -19,7 +19,6 @@ from .interest_admission import current_key
 from .interest_assessment import (
     MAX_PROVIDER_CALLS,
     MAX_SECONDS,
-    SYSTEM,
     BriefDraft,
     ModelIdentity,
     fingerprint,
@@ -27,6 +26,7 @@ from .interest_assessment import (
     input_envelope,
 )
 from .interest_assessment_store import AssessmentStore
+from .interest_prompts import current_instructions
 from .models import RegulatoryEvent, RegulatoryEventState, RegulatoryWork
 from .relation_analysis import configuration_fingerprint
 
@@ -60,12 +60,12 @@ class LocalBriefRunner:
         """Measured admission only; persist a job/outbox without generating text."""
         return await self._run(event_id, locale=locale, schedule_only=True, guard=guard)
 
-    async def run(self, event_id: str, *, locale="en", instructions=SYSTEM,
+    async def run(self, event_id: str, *, locale="en", instructions=None,
                   expected=None, guard=None):
         return await self._run(event_id, locale=locale, instructions=instructions,
                                expected=expected, guard=guard)
 
-    async def _run(self, event_id: str, *, locale="en", instructions=SYSTEM,
+    async def _run(self, event_id: str, *, locale="en", instructions=None,
                    expected=None, guard=None, schedule_only=False):
         # Construct one runner per job. Keep mutable execution state inside this
         # call, so concurrent callers cannot exchange assessment IDs or tokens.
@@ -77,6 +77,7 @@ class LocalBriefRunner:
         budget = InferenceBudget(MAX_PROVIDER_CALLS, max_seconds=MAX_SECONDS)
         started = time.monotonic()
         assessment_id = attempt_token = None
+        saved_prompt = instructions is None
         with self.db.organization_context(self.organization_id), self.client.runtime_scope():
             # Authorize before contacting the runtime, even in privileged tasks.
             with self.db.session() as session:
@@ -89,6 +90,8 @@ class LocalBriefRunner:
                            visible(RegulatoryWork, self.organization_id)))
                 if allowed is None:
                     raise DomainError("The event is not admitted to this organization.", 404, "not_found")
+                if saved_prompt:
+                    instructions = current_instructions(session, self.organization_id)
             trace_token = self.client.begin_trace(priority="background")
             trace = []
             try:
@@ -99,6 +102,9 @@ class LocalBriefRunner:
                         with self.db.session() as session:
                             if guard:
                                 guard(session)
+                            if saved_prompt and current_instructions(session, self.organization_id) != instructions:
+                                raise DomainError("The saved brief prompt changed; retry with current instructions.",
+                                                  409, "interest_inputs_changed")
                             dossier, input_key = current_key(session, self.organization_id, event_id,
                                 model=identity, locale=locale, instructions=instructions)
                             if expected and input_key != expected[1]:
@@ -126,6 +132,9 @@ class LocalBriefRunner:
                                 lock_organization(session, self.organization_id)
                             if guard:
                                 guard(session)
+                            if saved_prompt and current_instructions(session, self.organization_id) != instructions:
+                                raise DomainError("The saved brief prompt changed; retry with current instructions.",
+                                                  409, "interest_inputs_changed")
                             record, _, current = self.store.prepare_current(session, event_id, model=identity,
                                 locale=locale, instructions=instructions,
                                 context_char_limit=self.client.settings.apertus_context_chars)
@@ -164,9 +173,11 @@ class LocalBriefRunner:
                         with self.db.session() as session:
                             if guard:
                                 guard(session)
+                            publication_instructions = (current_instructions(session, self.organization_id)
+                                                        if saved_prompt else instructions)
                             self.store.finish_current(session, assessment_id, attempt_token, current, result,
                                 model=fresh_identity, provider_calls=usage["provider_calls"],
-                                instructions=instructions, execution=execution)
+                                instructions=publication_instructions, execution=execution)
                             session.commit()
                             return _saved(self.store.get(session, assessment_id))
             except (Exception, asyncio.CancelledError) as error:

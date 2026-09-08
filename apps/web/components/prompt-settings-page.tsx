@@ -34,6 +34,7 @@ type EditablePrompt = Pick<
   | "answer_synthesis_instructions"
   | "repair_instructions"
   | "ask_context_mode"
+  | "interest_brief_instructions"
 >;
 
 const editors: {
@@ -41,6 +42,10 @@ const editors: {
   titleKey: string;
   descriptionKey: string;
 }[] = [
+  {
+    key: "interest_brief_instructions",
+    titleKey: "prompts.interestBrief", descriptionKey: "prompts.interestBriefBody",
+  },
   {
     key: "impact_instructions",
     titleKey: "prompts.impact", descriptionKey: "prompts.impactBody",
@@ -65,6 +70,7 @@ const editors: {
 
 function editable(settings: PromptSettings): EditablePrompt {
   return {
+    interest_brief_instructions: settings.interest_brief_instructions ?? "",
     impact_instructions: settings.impact_instructions,
     impact_synthesis_instructions: settings.impact_synthesis_instructions,
     ask_instructions: settings.ask_instructions,
@@ -179,6 +185,7 @@ function PromptForm({
         resourceTag("relation-analyses", "organization"),
         resourceTag("digests", "organization"),
         resourceTag("registry", "organization"),
+        resourceTag("monitoring", "organization"),
       );
     } catch (cause) {
       setError(errorText(cause));
@@ -212,6 +219,7 @@ function PromptForm({
         resourceTag("relation-analyses", "organization"),
         resourceTag("digests", "organization"),
         resourceTag("registry", "organization"),
+        resourceTag("monitoring", "organization"),
       );
     } catch (cause) {
       setError(errorText(cause));
@@ -290,21 +298,24 @@ function PromptForm({
                 <Textarea
                   id={editor.key}
                   rows={7}
-                  maxLength={12000}
-                  minLength={20}
-                  required
+                  maxLength={editor.key === "interest_brief_instructions" ? 4000 : 12000}
+                  minLength={editor.key === "interest_brief_instructions" ? undefined : 20}
+                  required={editor.key !== "interest_brief_instructions"}
                   value={draft[editor.key]}
                   onChange={(event) => update(editor.key, event.target.value)}
                 />
                 <p className="field-help">
-                  {t("prompts.characters", { count: number(draft[editor.key].length) })}
+                  {t("prompts.boundedCharacters", {
+                    count: number(draft[editor.key].length),
+                    limit: number(editor.key === "interest_brief_instructions" ? 4000 : 12000),
+                  })}
                 </p>
               </div>
             </section>
           ))}
         </div>
 
-        <aside className="grid gap-5 xl:sticky xl:top-6">
+        <aside aria-label={t("prompts.saved")} className="grid gap-5 xl:sticky xl:top-6">
           <section className="panel p-6">
             <Sparkles size={22} className="text-primary mb-4" />
             <h2>{t("prompts.saved")}</h2>

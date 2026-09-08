@@ -420,11 +420,33 @@ job error. Operator retry resumes the committed cursor and preserves outcomes.
 Successful admission means the batch was examined, not that every AI result was
 generated or useful. The saved feed reader exposes only exact-current successes.
 
-Still open: organization policy UI/locale selection, prompt controls, admission
+Still open: organization policy UI/locale selection, admission
 queue capacity and priority benchmarks, automatic refresh for edits outside a
 matching run, catch-up after enabling/changing policy, digest/notification reuse,
 large-dossier aggregation and independently approved model usefulness. No real
 model, production deployment or notification was enabled by this change.
+
+## Saved review focus
+
+Organization admins can edit the optional shared relevance-brief review focus on
+`/prompts`; platform admins set the inherited default on `/prompts?scope=platform`.
+The field accepts up to 4,000 characters. Empty means the built-in brief prompt;
+an organization override uses its own complete prompt configuration, while reset
+restores the platform default. Saving or resetting never calls the model.
+
+The additional focus is composed with the server-owned evidence/output contract,
+then used unchanged for exact token measurement and generation. It participates
+in the immutable assessment key. Changes withdraw old answers from the current
+reader without deleting history. Queued work and in-flight publication recheck
+the saved focus; stale work cannot publish a result as current. Existing identical
+built-in results remain reusable. This is not a promise that every model obeys
+custom instructions: schema, citation and evidence validation remain mandatory.
+
+Older API clients omitting the new field preserve the effective saved focus;
+explicit empty clears it. Organization prompt revisions remain monotonic after
+reset and resave, with short organization locking on save/reset. Changing a
+prompt does not automatically enqueue replacement work; catch-up/refresh policy
+remains open. No database migration or inference capability approval is added.
 
 ## Verification
 

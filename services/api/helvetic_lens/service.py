@@ -621,13 +621,20 @@ class HelveticLens:
             return {**result, "source": source}
 
     def save_prompt_settings(self, data: PromptSettingsInput):
+        from .interest_jobs import lock_organization
         with self.write_guard, self.db.session() as session:
+            lock_organization(session, self.organization_id)
             record = session.get(PromptConfiguration, self.tenant_record_id)
+            if "interest_brief_instructions" not in data.model_fields_set:
+                previous = record or session.get(PlatformPromptConfiguration, "default")
+                data = data.model_copy(update={"interest_brief_instructions":
+                    resolved_prompt_settings(previous).interest_brief_instructions})
             if record is None:
-                record = PromptConfiguration(id=self.tenant_record_id, revision=1)
+                record = PromptConfiguration(id=self.tenant_record_id, revision=0)
                 session.add(record)
-            else:
-                record.revision += 1
+            last_revision = session.scalar(select(func.max(PromptRevision.revision)).where(
+                PromptRevision.organization_id == self.organization_id)) or 0
+            record.revision = max(record.revision, last_revision) + 1
             record.values = data.model_dump()
             record.updated_at = utcnow()
             session.add(PromptRevision(revision=record.revision, values=record.values))
@@ -640,7 +647,9 @@ class HelveticLens:
             return public_prompt_settings(self.prompt_settings, record)
 
     def reset_prompt_settings(self):
+        from .interest_jobs import lock_organization
         with self.write_guard, self.db.session() as session:
+            lock_organization(session, self.organization_id)
             record = session.get(PromptConfiguration, self.tenant_record_id)
             if record:
                 session.delete(record)
@@ -665,6 +674,9 @@ class HelveticLens:
     def save_platform_prompt_settings(self, data: PromptSettingsInput):
         with self.write_guard, self.db.session(include_all_organizations=True) as session:
             record = session.get(PlatformPromptConfiguration, "default")
+            if "interest_brief_instructions" not in data.model_fields_set:
+                data = data.model_copy(update={"interest_brief_instructions":
+                    resolved_prompt_settings(record).interest_brief_instructions})
             if record is None:
                 record = PlatformPromptConfiguration(id="default", revision=1)
                 session.add(record)

@@ -360,6 +360,8 @@ def assemble(session, organization_id: str, event_id: str, *, model, locale="en"
 
 def current_key(session, organization_id, event_id, *, model, locale="en", instructions=None):
     """A fresh read key, never scheduling or inference. Caller handles unavailable states."""
-    from .interest_assessment import SYSTEM, manifest
+    from .interest_assessment import manifest
+    from .interest_prompts import current_instructions
     dossier = assemble(session, organization_id, event_id, model=model, locale=locale)
-    return dossier, fingerprint(manifest(dossier, SYSTEM if instructions is None else instructions))
+    return dossier, fingerprint(manifest(dossier,
+        current_instructions(session, organization_id) if instructions is None else instructions))
