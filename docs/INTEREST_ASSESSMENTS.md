@@ -6,7 +6,8 @@ and current-input admission, including material evidence from existing saved
 legacy comparisons. Complete passage sets remain the fallback when no comparison
 exists and they fit the contract. The feed now offers an on-demand saved-brief
 reader. Matching can now enqueue measured admission through explicit operator
-opt-in and independent local approval; digest attachment remains open.
+opt-in and independent local approval. Web previews and digest delivery now reuse
+validated saved briefs in the recipient's language (see the digest section below).
 The deterministic feed continues to work independently of this module.
 
 ## Contract and evidence
@@ -635,3 +636,39 @@ credentials are copied. Receipts remain visible with the saved current brief
 after a successful retry. This is retained manual-retry history, not a separate
 complete audit of every automatic transport/model attempt. Obsolete input results
 are still withheld by the saved reader, and there is no automatic retry on reads.
+
+## Saved briefs in web and email digests — 8 September 2026
+
+Digest preparation still selects deterministic source events independently of AI.
+The bounded web preview and final delivery project existing assessments only:
+same organization, current complete inputs, effective prompts/configuration,
+observed local runtime, reviewed task/language scope and validated source citations.
+They never count tokens, generate, translate, retry, enqueue or wait for a pending
+brief. Runtime metadata comes from the operation's existing bounded observation,
+not one probe per event. The ordinary feed and digest retain the same assessment ID.
+
+The web preview follows the requesting user's selected locale; email reloads the
+recipient's persisted locale at send time, after preparation and while checking
+membership. No organization-language override or fallback to another saved
+language is allowed. Missing, pending, failed, stale or unverifiable results have
+an explicit state and no AI importance/prose. They do not become Low. Existing
+deterministic severity/source/personal selection rules are unchanged: organization
+AI importance is displayed separately from legal-impact severity.
+
+A compact projection contains what happened, organization importance, up to
+three relevance reasons with saved interest names, the suggested review/no-action
+step, uncertainty, input limitations and exact saved-evidence links. If more
+reasons exist, both email and web explicitly link to the full event/brief; the
+original complete assessment is untouched. HTML and React escape all source/model
+prose. Email evidence links use the configured application origin; no model URL
+is accepted. The saved delivery summary retains the assessment ID, locale, saved
+timestamp and delivered projection for audit. Old delivery summaries without a
+brief remain readable; no retroactive generation or rewriting occurs.
+
+These are bounded read-time and send-time snapshots, not a live guarantee after
+an email has been sent. Existing digest job/recipient/quiet-hours/idempotency and
+local-runtime freshness gates remain in effect. In particular, the older digest
+runtime gate can still defer delivery when the local runtime is unobservable;
+this change does not claim an end-to-end offline-delivery fallback. Notification
+centre integration, enrichment wait policy, global fairness and independent
+model/language/hardware/pilot acceptance remain open under HL-089/HL-079.

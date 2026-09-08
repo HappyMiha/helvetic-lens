@@ -1,6 +1,7 @@
 "use client";
 
 import { DigestInterests } from "./digest-interests";
+import { DigestBrief } from "./digest-brief";
 import { digestInterestCopy } from "@/lib/digest-interest-copy";
 
 import { useEffect, useRef, useState } from "react";
@@ -444,6 +445,7 @@ export function DigestsPage() {
                         </div>
                       ))}
                       <DigestInterests event={event} />
+                      <DigestBrief brief={event.brief} eventUrl={event.event_url} />
                       {event.impacts_truncated &&
                         typeof event.impact_count === "number" && (
                           <p className="text-sm font-medium mt-3 mb-0">

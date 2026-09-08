@@ -1629,6 +1629,20 @@ This closes the basic failed-assessment operator retry UX above, not full
 automatic-attempt auditing, bulk catch-up, notifications or independent model,
 language, hardware and user evaluation. HL-089 remains **IN PROGRESS**.
 
+**Saved brief reuse in digests — 8 September 2026:** The web preview and final
+email delivery now reuse the same current validated assessment in the requesting
+user/recipient language, without generation, translation, token counting or new
+AI jobs. Each delivery retains the assessment reference and bounded projection;
+missing/pending/failed/stale states carry no invented conclusion. Source-linked
+what/why/importance/review text uses up to three reasons with an explicit link to
+the complete brief. Current input, tenant, configuration, approval and citation
+checks still apply; recipient language is reloaded after preparation. Existing
+source/severity/private filters are unchanged. API regressions, PostgreSQL
+roundtrip/language tests and five-locale browser evidence are recorded in
+`docs/VERIFICATION.md`. This closes basic web/email reuse, not notification-centre
+integration, end-to-end offline digest delivery, global fairness, bulk catch-up
+or independent model/language/hardware/user acceptance. HL-089 remains in progress.
+
 Turn a trustworthy topic or watched-law match into a concise, reusable explanation of why the development belongs in the organization's radar and whether it deserves attention. The feed event and its primary-source evidence exist independently of AI; enrichment must never block ingestion, hide a real development, or create a second event history.
 
 Acceptance criteria:

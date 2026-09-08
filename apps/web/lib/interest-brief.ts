@@ -1,6 +1,11 @@
 import type { Locale } from "./i18n";
 
 export type BriefClaim = { text: string; evidence_ids: string[] };
+export type DigestBrief = Pick<SavedInterestBrief, "status" | "locale" | "assessment_id" | "saved_at"> &
+  Partial<Omit<NonNullable<SavedInterestBrief["result"]>, "why_in_radar">> & {
+    why_in_radar?: Array<BriefClaim & {interest_id: string; name: string}>;
+    more_reasons?: boolean; evidence_links?: Record<string, string>;
+  };
 export type BriefRecovery = {job_id: string; job_state: string; attempts_used: number; attempt_limit: number;
   manual_retries_used: number; manual_retry_limit: number; retry_allowed: boolean;
   history: Array<{requested_at: string; actor_id: string | null; assessment_attempts: number;

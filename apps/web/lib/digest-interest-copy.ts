@@ -1,5 +1,6 @@
 import type { Locale } from "./i18n";
 type Copy = {
+  brief_more: string;
   boundary: string;
   more: string;
   reason: string;
@@ -11,6 +12,7 @@ type Copy = {
 };
 export const digestInterestCopy: Record<Locale, Copy> = {
   "en-CH": {
+    brief_more: "Three reasons are shown. Open the event for the complete saved brief.",
     boundary:
       "Saved topic matches are not confirmed legal impacts. Unknown means impact has not been assessed.",
     more: "Up to five topics and five directly monitored documents are shown. Open the event for all current interests and evidence.",
@@ -24,6 +26,7 @@ export const digestInterestCopy: Record<Locale, Copy> = {
       "This digest is limited to 50 events. Open Today for all current interests, or narrow your source and severity filters.",
   },
   "de-CH": {
+    brief_more: "Drei Gründe werden angezeigt. Öffnen Sie das Ereignis für die vollständige Analyse.",
     boundary:
       "Gespeicherte Thementreffer sind keine bestätigten rechtlichen Auswirkungen. Unbekannt bedeutet, dass die Auswirkung nicht bewertet wurde.",
     more: "Bis zu fünf Themen und fünf direkt überwachte Dokumente werden angezeigt. Öffnen Sie das Ereignis für alle aktuellen Interessen und Belege.",
@@ -37,6 +40,7 @@ export const digestInterestCopy: Record<Locale, Copy> = {
       "Diese Zusammenfassung ist auf 50 Ereignisse begrenzt. Öffnen Sie Heute für alle aktuellen Interessen oder grenzen Sie Quellen und Schweregrade ein.",
   },
   "fr-CH": {
+    brief_more: "Trois raisons sont affichées. Ouvrez l’événement pour l’analyse complète.",
     boundary:
       "Les correspondances thématiques enregistrées ne sont pas des impacts juridiques confirmés. Inconnu signifie que l’impact n’a pas été évalué.",
     more: "Au maximum cinq sujets et cinq documents directement surveillés sont affichés. Ouvrez l’événement pour tous les intérêts actuels et les preuves.",
@@ -50,6 +54,7 @@ export const digestInterestCopy: Record<Locale, Copy> = {
       "Cette synthèse est limitée à 50 événements. Ouvrez Aujourd’hui pour tous les intérêts actuels ou affinez les sources et la gravité.",
   },
   "it-CH": {
+    brief_more: "Sono mostrati tre motivi. Apri l’evento per l’analisi completa.",
     boundary:
       "Le corrispondenze tematiche salvate non sono impatti giuridici confermati. Sconosciuto significa che l’impatto non è stato valutato.",
     more: "Sono mostrati fino a cinque temi e cinque documenti monitorati direttamente. Apri l’evento per tutti gli interessi attuali e le prove.",
@@ -63,6 +68,7 @@ export const digestInterestCopy: Record<Locale, Copy> = {
       "Questo riepilogo è limitato a 50 eventi. Apri Oggi per tutti gli interessi attuali o restringi fonti e gravità.",
   },
   "rm-CH": {
+    brief_more: "Trais motivs vegnan mussads. Avra l’eveniment per l’analisa cumpletta.",
     boundary:
       "Correspundenzas tematicas memorisadas n’èn betg effects giuridics confermads. Nunenconuschent signifitga che l’effect n’è betg vegnì valità.",
     more: "Fin a tschintg temas e tschintg documents survegliads directamain vegnan mussads. Avra l’eveniment per tut ils interess actuals e las cumprovas.",

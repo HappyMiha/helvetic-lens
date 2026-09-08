@@ -1210,7 +1210,24 @@ class HelveticLens:
                 runtime_identity=self.cache_runtime_identity(),
             ).page(session)
 
-    def digest_overview(self, user_id: str | None, *, preview_page: bool = False, cursor: str = "") -> dict:
+    def brief_read_context(self):
+        """Reuse this operation's observed runtime; never probe per event/recipient."""
+        from .digest_briefs import BriefReadContext
+        from .interest_execution import _identity, configuration_key
+        models = {}
+        captured = self._cache_runtime_context.get()
+        client = self.model_client
+        if (isinstance(client, ai.ModelClient) and self.settings.apertus_provider == "docker"
+                and captured and captured[0] == client.connection_identity()
+                and captured[2] is client and captured[3] == self.organization_id):
+            for locale in ("de", "fr", "it", "rm", "en"):
+                try:
+                    models[locale] = _identity(client, captured[1], client.capability_for("interest_brief", f"{locale}-CH"))
+                except DomainError:
+                    pass
+        return BriefReadContext(self.organization_id, configuration_key(self.settings), models)
+
+    def digest_overview(self, user_id: str | None, *, preview_page: bool = False, cursor: str = "", output_locale: str | None = None) -> dict:
         if not user_id:
             raise DomainError("Sign in to configure digests.", 401, "authentication_required")
         with self.db.session() as session:
@@ -1235,6 +1252,12 @@ class HelveticLens:
             else:
                 groups = reader.iter_groups(session, digests.inbox_filters(effective, period_start, period_end))
                 preview = digests.summarize_groups(groups, effective, period_start, period_end)
+            from .digest_briefs import attach
+            from .locales import normalize_locale
+            user = session.get(User, user_id)
+            locale = normalize_locale(output_locale or (user.locale if user else None), self.settings.default_locale).split("-")[0]
+            preview = attach(session, self.organization_id, preview, locale, context=self.brief_read_context(),
+                             configuration=self.brief_configuration(session))
             deliveries = list(
                 session.scalars(
                     select(DigestDelivery)
@@ -1262,6 +1285,7 @@ class HelveticLens:
         sources: list[str],
         schedule: dict | None = None,
         preview_page: bool = False,
+        output_locale: str | None = None,
     ) -> dict:
         if not user_id:
             raise DomainError("Sign in to configure digests.", 401, "authentication_required")
@@ -1298,7 +1322,7 @@ class HelveticLens:
             preference.updated_at = now
             onboarding.record(session, self.organization_id, user_id, "notifications_saved", "digest_preferences")
             session.commit()
-        return self.digest_overview(user_id, preview_page=preview_page)
+        return self.digest_overview(user_id, preview_page=preview_page, output_locale=output_locale)
 
     def enqueue_digest_now(self, user_id: str | None) -> dict:
         if not user_id:
@@ -3998,9 +4022,11 @@ class HelveticLens:
                 mark(1, 2, "running")
                 async with self.runtime_cache_scope(refresh=True):
                     digest_runtime = self.relation_runtime_observation()
+                    brief_context = self.brief_read_context()
                 result_json = await asyncio.to_thread(
                     digests.deliver, self.db, self.environment_settings, target_id,
                     selection=selection, job_id=job_id, worker=worker, analysis_settings=self.settings, runtime=digest_runtime,
+                    brief_context=brief_context,
                 )
                 if result_json is None:
                     return self.job_detail(job_id)

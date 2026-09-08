@@ -1,5 +1,44 @@
 # Verification record
 
+## Recipient-language saved briefs in digests — 8 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl089-digest-briefs`, based on `7fcb894`. No migration
+  or production deployment. Web preview and durable email delivery reuse the same
+  validated assessment ID; no inference/token counting/AI-job admission on reads
+  or sends. Current configuration and organization-scoped runtime context are
+  rechecked; the existing saved reader validates complete inputs and citations.
+- **65 combined API tests passed in 122.35s** across digest briefs, topics,
+  resumable preparation and paged preview. **46 variant/reader tests passed in
+  85.98s**, including successful saved projection for all five synthetic approved
+  locales, one metadata observation per preview, missing-language non-fallback,
+  pending/failed state, corrupt citations and stale/foreign/revoked/offline read
+  contexts. **29 excerpt/digest/coverage regressions passed in 9.02s**. These runs
+  overlap; their counts must not be summed as unique coverage. One pre-existing
+  Starlette/httpx deprecation warning; no real model-quality claims.
+- PostgreSQL **17.11**, isolated loopback/tmpfs QA container: both durable
+  preview → worker → captured-mail → persisted-summary roundtrip and locale
+  change after preparation passed. Mail was captured by a test double; nothing
+  was sent. Evidence links and the same assessment ID survive a new DB session;
+  no duplicate assessment/generation job appears. QA container removed afterward.
+- Production-browser synthetic API: **10 DE/FR/IT/RM/EN × 390/1440px journeys**,
+  **20 full-document axe checkpoints**, covering escaped model text, per-language
+  presentation, exact evidence href, expandable relevance and bounded-reason
+  notice, alongside paging/focus/unsaved preference/quiet-hour regression checks.
+  No brief generation/request/send endpoint was called. Existing shell-only
+  assistant context/conversation bootstrap is allowed separately. Mobile and
+  desktop screenshots were visually inspected. Incomplete accessibility checks
+  and independent native-language evaluation remain open.
+- Root `npm run build` passes release i18n/value gates, TypeScript and production
+  compilation. Ruff/diff checks pass. Ignored evidence: `test-results/digest-brief-*`.
+  The first test iteration exposed a synthetic endpoint-normalization mismatch
+  and a TypeScript intersection issue; both were corrected before the passing
+  runs. Browser verification was corrected to distinguish shell bootstrap from
+  generation. No assertion was relaxed for a digest/model/send endpoint.
+- Full Linux API baseline evidence predates this code. Existing digest runtime
+  failure/defer behavior is not converted into an offline delivery fallback by
+  this change. HL-089/HL-079 still require notification integration, global
+  capacity and independent model, native-language, hardware and pilot evidence.
+
 ## Bounded failed-brief recovery — 8 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl089-brief-recovery`, based on `e936ff2`. No schema

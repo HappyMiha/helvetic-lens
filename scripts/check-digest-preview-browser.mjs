@@ -91,6 +91,15 @@ function response(cursor = "") {
           ? []
           : [
               {
+                brief: {
+                  status:"available", locale:locale.slice(0,2), assessment_id:"synthetic-saved-brief", saved_at:stamp,
+                  what_happened:{text:"Synthetic saved AI brief <script>not executable</script>",evidence_ids:["e1"]},
+                  importance:{text:"Synthetic organization relevance, not a legal conclusion.",level:"low",evidence_ids:["e1"]},
+                  next_step:{text:"No action now; retain this source for review.",kind:"no_action_now",evidence_ids:["e1"]},
+                  why_in_radar:[{interest_id:"match-one",name:"Saved naturalisation interest",text:"A saved explanation of the topic match.",evidence_ids:["e1"]}],
+                  more_reasons:true,uncertainty:"Synthetic fixture only.",input_limitations:[],
+                  evidence_links:{e1:"/corpus-evidence/synthetic-version?passage=article-1"},
+                },
                 event_id: "synthetic-match",
                 title: "Synthetic matching event",
                 source: "fedlex",
@@ -319,9 +328,20 @@ try {
       assert.ok(await evaluate(cdp, `Array.from(document.querySelectorAll('[data-digest-interests] a')).some(a=>a.getAttribute('href')==='/?event=synthetic-match')`));
       assert.ok(await evaluate(cdp, `Array.from(document.querySelectorAll('[data-digest-interests] a')).every(a=>a.getBoundingClientRect().height>=44)`));
       await accessibility.check(cdp, `digest-interests-${locale}-${width}`, '[data-digest-interests]');
+      assert.equal(await evaluate(cdp, `document.querySelector('[data-digest-brief] [lang]').lang`), locale.slice(0,2));
+      assert.ok(await evaluate(cdp, `document.querySelector('[data-digest-brief]').innerText.includes('Synthetic saved AI brief <script>not executable</script>')`));
+      assert.equal(await evaluate(cdp, `document.querySelectorAll('[data-digest-brief] script').length`), 0);
+      assert.equal(await evaluate(cdp, `document.querySelector('[data-digest-brief] a').getAttribute('href')`), '/corpus-evidence/synthetic-version?passage=article-1');
+      await click('[data-digest-brief] details summary');
+      assert.ok(await evaluate(cdp, `document.querySelector('[data-digest-brief] details').innerText.includes('Saved naturalisation interest')`));
+      assert.ok(await evaluate(cdp, `document.documentElement.scrollWidth<=innerWidth+1`));
+      await accessibility.check(cdp, `digest-brief-${locale}-${width}`, '[data-digest-brief]');
+      // Existing shell context/conversation bootstrap is not a generation call.
+      const shellSetup = new Set(['/api/assistant/context','/api/assistant/conversations']);
+      assert.equal(requests.slice(start).filter(r=>(r.method==='POST'&&!shellSetup.has(r.path))||r.path.includes('/brief')).length,0,'Digest reading must not generate, enqueue, or make per-event AI requests');
       if (locale === "en-CH") {
         await mkdir(join(root, "test-results/digest-preview"), {recursive:true});
-        await evaluate(cdp, `document.querySelector('[data-digest-interests]').scrollIntoView({block:'center'})`);
+        await evaluate(cdp, `document.querySelector('[data-digest-brief]').scrollIntoView({block:'center'})`);
         await sleep(150);
         const shot = await cdp.send("Page.captureScreenshot", {format:"png"});
         await writeFile(join(root, `test-results/digest-preview/interests-${width}.png`), Buffer.from(shot.data,"base64"));
@@ -436,7 +456,7 @@ try {
     false,
   );
   assert.deepEqual(exceptions, []);
-  await accessibility.finish(10);
+  await accessibility.finish(20);
   console.log(
     "Digest production UI: 10 journeys (DE/FR/IT/RM/EN x 390/1440px); bounded sparse next/back, captured period, focus, unsaved choices and local delivery clock, explicit schedule save, stale-cursor recovery and touch targets pass. All API calls intercepted; no mail, inference or production data touched.",
   );

@@ -311,6 +311,9 @@ def render_message(settings: Settings, delivery: DigestDelivery, user: User) -> 
         severity = message["severity"].get(event["severity"], event["severity"])
         lines.append(f"\n{event['title']} [{severity}] — {event['source']}")
         impacts = []
+        from .digest_briefs import render
+        brief_lines, brief_html = render(event.get("brief"), locale, lambda value: _application_url(settings, value))
+        lines.extend(brief_lines)
         for impact in event["impacts"]:
             evidence_url = _application_url(settings, impact.get("evidence"))
             comparison_url = _application_url(settings, impact.get("comparison"))
@@ -355,7 +358,8 @@ def render_message(settings: Settings, delivery: DigestDelivery, user: User) -> 
         cards.append(
             f"<section><h2>{escape(event['title'])}</h2>"
             f"<p>{escape(event['source'])} · {escape(severity)}</p>"
-            f"<ul>{''.join(impacts)}</ul>"
+            + brief_html
+            + f"<ul>{''.join(impacts)}</ul>"
             + (f"<p>{escape(law_notice)}</p>" if law_notice else "")
             + "</section>"
         )
@@ -552,7 +556,8 @@ def _defer_quiet(session, preference, delivery, job=None):
 
 
 def deliver(database: Database, settings: Settings, delivery_id: str, *, selection: dict | None = None,
-            job_id: str | None = None, worker: str | None = None, analysis_settings: Settings | None = None, runtime: RelationRuntimeObservation | None = None) -> dict | None:
+            job_id: str | None = None, worker: str | None = None, analysis_settings: Settings | None = None, runtime: RelationRuntimeObservation | None = None,
+            brief_context=None) -> dict | None:
     with database.session() as session:
         if job_id:
             owned_job = session.scalar(select(Job).where(Job.id == job_id).with_for_update())
@@ -599,6 +604,11 @@ def deliver(database: Database, settings: Settings, delivery_id: str, *, selecti
             preference.last_sent_at = max(_aware(preference.last_sent_at), _aware(delivery.period_end)) if preference.last_sent_at else delivery.period_end
             session.commit()
             return serialize_delivery(delivery)
+        from .digest_briefs import attach
+        from .interest_execution import configuration_key
+        delivery.summary = attach(session, delivery.organization_id, delivery.summary,
+               normalize_locale(user.locale, settings.default_locale).split("-")[0],
+               context=brief_context, configuration=configuration_key(reader.settings))
         subject, body, html = render_message(settings, delivery, user)
         if _defer_quiet(session, preference, delivery, owned_job if job_id else None):
             return None

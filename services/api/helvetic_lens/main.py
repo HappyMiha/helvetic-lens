@@ -1546,7 +1546,8 @@ def create_app(
     @app.get("/api/digests", dependencies=[Depends(runtime_cache_scope)])
     def digest_overview(request: Request, preview_page: bool = False, cursor: str = Query(default="", max_length=2048)):
         identity = request.state.identity
-        return service.digest_overview(identity.user_id if identity else None, preview_page=preview_page, cursor=cursor)
+        return service.digest_overview(identity.user_id if identity else None, preview_page=preview_page, cursor=cursor,
+                                       output_locale=selected_locale(request))
 
     @app.put("/api/digests/preferences", dependencies=[Depends(runtime_cache_scope)])
     def save_digest_preference(data: DigestPreferenceInput, request: Request, preview_page: bool = False):
@@ -1556,6 +1557,7 @@ def create_app(
         return service.save_digest_preference(
             identity.user_id if identity else None,
             preview_page=preview_page,
+            output_locale=selected_locale(request),
             **values,
         )
 

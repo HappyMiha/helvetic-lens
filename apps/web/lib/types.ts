@@ -16,6 +16,7 @@ export type DigestPreference = {
   last_sent_at: string | null;
 };
 export type DigestEvent = {
+  brief?: import("./interest-brief").DigestBrief;
   event_url?: string;
   lifecycle_status?: string | null;
   topics?: Array<{topic_id: string; match_id: string; name: string; confidence: string; matched_at: string; terms: string[]}>;

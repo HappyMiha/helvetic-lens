@@ -15,6 +15,10 @@ from conftest import FakeFetcher, ScriptedModel
 from fastapi.testclient import TestClient
 from helvetic_lens.config import Settings
 from helvetic_lens.main import create_app
+from test_digest_briefs import (
+    test_preview_and_actual_delivery_reuse_same_saved_assessment,
+    test_recipient_locale_is_reloaded_at_send_not_from_preparation,
+)
 from test_interest_admission import (
     test_65_current_interests_fail_as_a_whole_not_a_sample,
     test_changed_inputs_reject_fenced_inflight_completion,
@@ -116,14 +120,16 @@ from test_native_comparisons import (
 )
 
 
-def execute_local(harness, scenario):
+def execute_local(harness, scenario, *, with_monkeypatch=False):
     from pytest import MonkeyPatch
     with TemporaryDirectory(prefix="helvetic-synthetic-approval-") as directory, MonkeyPatch.context() as patch:
         artifacts = execution_artifacts.__wrapped__(Path(directory))
         execution = execution_fixture.__wrapped__(harness, artifacts, patch)
-        scenario(execution)
+        scenario(execution, patch) if with_monkeypatch else scenario(execution)
 
 SUITES = {
+    "digest-brief-roundtrip": lambda harness: execute_local(harness, test_preview_and_actual_delivery_reuse_same_saved_assessment, with_monkeypatch=True),
+    "digest-brief-language": lambda harness: execute_local(harness, test_recipient_locale_is_reloaded_at_send_not_from_preparation, with_monkeypatch=True),
     "recovery-concurrency": lambda harness: execute_local(harness, test_concurrent_postgres_retries_have_one_receipt),
     "recovery-roundtrip": lambda harness: execute_local(harness, test_explicit_retry_preserves_failure_and_reuses_job_without_immediate_inference),
     "recovery-limits": lambda harness: execute_local(harness, test_retry_cannot_reset_cumulative_assessment_or_manual_limits),
