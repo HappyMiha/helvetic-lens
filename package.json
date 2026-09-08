@@ -48,7 +48,8 @@
     "check:monitoring-choices:browser": "node scripts/check-monitoring-choices-browser.mjs",
     "check:monitor-this:browser": "node scripts/check-monitor-this-browser.mjs",
     "check:native-evidence:browser": "node scripts/check-native-evidence-browser.mjs",
-    "check:deployments:browser": "node scripts/check-deployment-history-browser.mjs"
+    "check:deployments:browser": "node scripts/check-deployment-history-browser.mjs",
+    "check:native-baseline:browser": "node scripts/check-native-baseline-browser.mjs"
   },
   "devDependencies": {
     "axe-core": "4.13.0",

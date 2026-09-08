@@ -277,17 +277,20 @@ closed rather than silently falling back. Publication rechecks the selection,
 source evidence and all ordinary dossier inputs. Oversized complete diffs can be
 saved for review but cannot be silently sampled to fit the 64-unit brief envelope.
 
-This is **not yet a user-facing baseline editor or automatic connector policy**.
-No source snapshot is automatically assigned a predecessor, and no new matching
-job or UI flow is enabled. An external mutation route must authorize the actor and
-expose the selection revision; an operational connector policy must separately
+The registry now links native events to `/native-comparison/{event_id}`. Its
+organization-authorized API exposes candidate snapshots, revision-guarded save/clear
+and paged material or all-passage comparisons. Organization viewers can inspect
+the saved comparison but cannot change the shared baseline; writes require the
+existing actor and CSRF checks. No source snapshot is automatically assigned a
+predecessor, and selecting a baseline does not launch AI or a matching job.
+An operational connector policy must separately
 justify any official predecessor relationship. Archived artifact bytes and legal
 identity/chronology still need their independent verification. Downgrading this
 migration removes its new selection/comparison tables, not the original corpus.
 
 Still required under HL-089:
 
-- Extend current-input admission with official facts, baseline selection UX and
+- Extend current-input admission with official facts and
   verified connector predecessor policy, complete large material/target-law planning and organizations with more
   interests than one dossier can fit.
 - Durable job IDs, automatic matching trigger, quotas, priority/fairness,

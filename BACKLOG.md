@@ -1502,14 +1502,28 @@ Admission requires both saved versions' current access, the same work and known
 language expression; it never infers a predecessor from ingestion order. Current
 material evidence reaches the measured local runner and exact result history;
 changed choices or source inputs block stale publication. An oversized complete
-comparison is saved but never sampled into an AI brief. The internal path does
-not yet provide a baseline editor, automatic connector predecessor policy or
-matching-job trigger. Those, official facts, large-set aggregation, queue/readers
+comparison is saved but never sampled into an AI brief. This storage stage did
+not yet provide a baseline editor (added in the follow-up below), automatic
+connector predecessor policy or matching-job trigger. The latter two, official facts, large-set aggregation, queue/readers
 and independent quality/hardware evaluation remain open.
 **Verification:** 200 combined regressions, 31 final targeted scenarios and eight
 isolated PostgreSQL 17.11 scenarios passed, including migration roundtrip, editor
 concurrency, caller rollback, tenant isolation, reuse and in-flight supersession. Model responses and runtime
 approvals remain synthetic; no production migration or deployment was performed.
+
+**Native baseline editor — 8 September 2026:** Registry events now open a dedicated
+comparison page with explicit shared baseline selection, exact evidence links,
+save/clear and complete material/all-passage pagination. Version candidates are
+limited to accessible saved snapshots of the same work/language expression.
+Revision and page-identity checks prevent mixing concurrent edits. Viewers can
+read but not change the selection. Five-language desktop/mobile flows include
+empty, stale, error/retry and conflict states; no AI call is triggered by selection.
+The UI can inspect comparisons larger than the AI envelope without weakening its
+64-unit admission limit. **Verification:** 92 combined regressions, 13 final
+targeted cases, four isolated PostgreSQL 17.11 scenarios, production build,
+typecheck and ten browser journeys with 20 full-document axe checkpoints passed.
+Incomplete accessibility observations and independent language/AI/hardware review
+remain open; HL-089 as a whole is still in progress.
 
 Turn a trustworthy topic or watched-law match into a concise, reusable explanation of why the development belongs in the organization's radar and whether it deserves attention. The feed event and its primary-source evidence exist independently of AI; enrichment must never block ingestion, hide a real development, or create a second event history.
 

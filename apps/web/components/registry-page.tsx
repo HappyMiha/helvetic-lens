@@ -674,6 +674,9 @@ export function RegistryPage({
                           </Link>
                         </Button>
                       )}
+                      {!row.comparison_url && row.event_id && row.evidence_url?.startsWith("/corpus-evidence/") && (
+                        <Button asChild size="sm" variant="outline" className="min-h-11"><Link href={`/native-comparison/${row.event_id}`} onNavigate={()=>remember(row.id,`/native-comparison/${row.event_id}`)}>{t("common.comparison")}</Link></Button>
+                      )}
                       {(row.record_type === "event" ? row.event_id : row.law_id) && <MonitorThis kind={row.record_type === "event" ? "event" : "law"} id={row.record_type === "event" ? row.event_id! : row.law_id!} />}
                       {row.evidence_url && (
                         <Button asChild size="sm" variant="outline">

@@ -190,6 +190,12 @@ class RegistryReadInput(Input):
     read: bool = True
 
 
+class NativeBaselineInput(Input):
+    before_version_id: str | None = Field(min_length=1, max_length=36)
+    after_version_id: str = Field(min_length=1, max_length=36)
+    expected_revision: int = Field(ge=0, strict=True)
+
+
 class ImpactInboxStateInput(Input):
     state: Literal["unread", "read", "dismissed", "muted"]
 
@@ -1551,6 +1557,30 @@ def create_app(
     @app.post("/api/digests/unsubscribe")
     def unsubscribe_digest(data: DigestUnsubscribeInput):
         return service.unsubscribe_digest(data.token)
+
+    @app.get("/api/registry/events/{event_id}/comparison")
+    def native_comparison_page(event_id: str, offset: int = Query(default=0, ge=0),
+                               limit: int = Query(default=20, ge=1, le=50), material_only: bool = True,
+                               comparison_id: str = Query(default="", max_length=36)):
+        from .native_comparison_views import page
+        with service.db.session() as session:
+            return page(session, service.organization_id, event_id, offset=offset, limit=limit,
+                        material_only=material_only, comparison_id=comparison_id)
+
+    @app.get("/api/registry/events/{event_id}/baselines")
+    def native_baseline_candidates(event_id: str, after: str = Query(default="", max_length=36),
+                                   limit: int = Query(default=30, ge=1, le=50)):
+        from .native_comparison_views import candidates
+        with service.db.session() as session:
+            return candidates(session, service.organization_id, event_id, after=after, limit=limit)
+
+    @app.put("/api/registry/events/{event_id}/comparison")
+    def native_select_baseline(event_id: str, data: NativeBaselineInput):
+        from .native_comparisons import select_baseline
+        with service.db.session() as session:
+            row = select_baseline(session, service.organization_id, event_id, **data.model_dump())
+            session.commit()
+            return {"revision": row.revision, "comparison_id": row.comparison_id}
 
     @app.patch("/api/registry/events/{event_id}/read")
     def mark_registry_event_read(

@@ -33,7 +33,7 @@ def ancestor_positions(passages):
     return result
 
 
-def plan(comparison, before, after):
+def audit(comparison, before, after):
     diff = comparison.diff
     if (not isinstance(diff, dict) or diff.get("schema_version") != DIFF_SCHEMA_VERSION
             or diff.get("algorithm") != "legal-unit-hierarchy-and-exact-audit-v6"
@@ -119,11 +119,16 @@ def plan(comparison, before, after):
         # Explicit context, never a fabricated change. Counts describe the full
         # audit; this one citable anchor is not presented as a whole-document read.
         add(after.passages[0], after, "after", "context")
-    if len(evidence) > 64 or len(changes) > 64:
-        raise DomainError("All material changes exceed the brief envelope; none were sampled or truncated.",
-                          409, "interest_context_exceeded")
-    context = SourceComparison(id=comparison.id, before_version_id=before.id, after_version_id=after.id,
+    context = dict(id=comparison.id, before_version_id=before.id, after_version_id=after.id,
         diff_fingerprint=fingerprint({key: value for key, value in diff.items() if key != "metrics"}),
         algorithm=diff["algorithm"], old_passage_count=len(before.passages), new_passage_count=len(after.passages),
         counts=counts, presentation_only_count=presentation, changes=changes)
     return list(evidence.values()), context
+
+
+def plan(comparison, before, after):
+    evidence, context = audit(comparison, before, after)
+    if len(evidence) > 64 or len(context["changes"]) > 64:
+        raise DomainError("All material changes exceed the brief envelope; none were sampled or truncated.",
+                          409, "interest_context_exceeded")
+    return evidence, SourceComparison(**context)

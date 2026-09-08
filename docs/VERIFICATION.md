@@ -1,5 +1,33 @@
 # Verification record
 
+## Native comparison editor — 8 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl-089-native-baseline-ui`, based on `48c4daf`.
+  Added organization-authorized candidate/read/save routes and the registry-linked
+  `/native-comparison/{event_id}` page. Explicit selection is shared within the
+  organization, guarded by revision/CSRF, and read-only for viewers. No model call,
+  automatic predecessor choice or legal chronology inference is introduced.
+- Complete saved comparisons are audited before displaying paged material/all
+  passages. Source access or fingerprint changes withdraw old excerpts. Large
+  comparisons remain browsable; the AI planner retains its separate 64-unit bound.
+- 92 combined API regressions passed in 105.24 seconds; 13 final targeted cases
+  passed in 16.89 seconds after extending language-candidate isolation coverage.
+  Four PostgreSQL 17.11 suites passed HTTP roundtrip, large comparison, candidate
+  isolation and revoked access. Their labelled loopback/tmpfs container was removed;
+  working databases and production were untouched.
+- Typecheck, production Next.js build, Ruff and diff checks passed. Ten Chromium
+  journeys at 390/1440 px across DE/FR/IT/RM/EN exercised selection, save without
+  reload, exact evidence links, pagination, conflict/reload/clear and viewer access.
+  Additional stale/empty/read-error recovery checks passed. Twenty full-document
+  axe checkpoints reported no violations; incomplete color-contrast observations
+  remain recorded, so this is not accessibility certification or native review.
+- Reviewed the final mobile screenshot. Browser/API inputs are synthetic fixtures,
+  not real-user research, model evaluation or verified legal provenance. No
+  production deployment/migration or notification was performed.
+- User-requested deployment history remains separately shipped in `68cd244` on
+  `origin/main`. Its 11 API regressions were rerun successfully; this does not
+  establish that the new release manager has been installed on HappySnowman.
+
 ## Explicit native comparison baselines — 8 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl-089-native-comparison`, based on freshly fetched

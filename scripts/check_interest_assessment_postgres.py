@@ -54,6 +54,12 @@ from test_interest_material import (
     test_saved_comparison_reaches_current_admission_generation_and_fenced_storage,
     test_stale_comparison_during_generation_supersedes_without_publishing,
 )
+from test_native_comparison_views import (
+    test_candidates_paginate_without_private_or_other_language_versions,
+    test_http_save_complete_pair_page_exact_changes_and_clear,
+    test_oversized_ai_dossier_still_has_complete_paged_comparison,
+    test_stale_comparison_returns_recoverable_state_without_old_passages,
+)
 from test_native_comparisons import (
     test_baseline_changes_and_clear_preserve_history_and_revision_tombstone,
     test_complete_large_native_pair_persists_and_reuses_without_import_order_guess,
@@ -74,6 +80,10 @@ def execute_local(harness, scenario):
         scenario(execution)
 
 SUITES = {
+    "native-ui-roundtrip": test_http_save_complete_pair_page_exact_changes_and_clear,
+    "native-ui-large": test_oversized_ai_dossier_still_has_complete_paged_comparison,
+    "native-ui-candidates": test_candidates_paginate_without_private_or_other_language_versions,
+    "native-ui-revocation": lambda harness: test_stale_comparison_returns_recoverable_state_without_old_passages(harness, "grant"),
     "native-complete": test_complete_large_native_pair_persists_and_reuses_without_import_order_guess,
     "native-selection": test_baseline_changes_and_clear_preserve_history_and_revision_tombstone,
     "native-rollback": test_selection_does_not_commit_callers_transaction,

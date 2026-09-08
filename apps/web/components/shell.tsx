@@ -194,6 +194,7 @@ export function Shell({
   const monitoringActive =
     pathname === "/registry" ||
     pathname.startsWith("/laws") ||
+    pathname.startsWith("/native-comparison/") ||
     pathname.startsWith("/compare");
   const administrationActive =
     pathname === "/logs" ||

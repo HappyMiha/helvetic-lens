@@ -90,6 +90,14 @@ export function legacyResourceKey<T>(path: string): ResourceKey<T> {
 }
 
 export const resources = {
+  nativeComparison: <T = unknown>(id: string, offset = 0, material = true, comparison = "") =>
+    key<T>(`native-comparison:${id}:${offset}:${material}:${comparison}`, `/registry/events/${encodeURIComponent(id)}/comparison?offset=${offset}&material_only=${material}&comparison_id=${encodeURIComponent(comparison)}`, {
+      owner: "comparison", tags: ["native-baseline", `native-baseline:${id}`], staleMs: 0, varyByLocale: false,
+    }),
+  nativeBaselines: <T = unknown>(id: string, after = "") =>
+    key<T>(`native-baselines:${id}:${after}`, `/registry/events/${encodeURIComponent(id)}/baselines?after=${encodeURIComponent(after)}`, {
+      owner: "comparison", tags: ["native-baseline", `native-baseline:${id}`, "corpus"], staleMs: 15_000, varyByLocale: false,
+    }),
   notifications: <T = unknown>(identity: string, cursor = "") => key<T>(`notifications:${identity}:unread:${cursor}`,
     `/interest-feed?state=unread&limit=5&cursor=${encodeURIComponent(cursor)}`, {
       tags: ["impact-inbox", "monitoring", "topics", "relation-analyses"],
