@@ -1454,6 +1454,10 @@ def create_app(
         identity = request.state.identity
         return service.interest_feed(identity.user_id if identity else None, period=period, state=state, cursor=cursor, limit=limit, event=event)
 
+    @app.get("/api/interest-feed/events/{event_id}/brief")
+    async def interest_feed_brief(event_id: str, locale: str = Query(default="en", max_length=2)):
+        return await service.read_interest_brief(event_id, locale=locale)
+
     @app.get("/api/interest-feed/events/{event_id}/topics")
     def interest_feed_topics(event_id: str, request: Request, cursor: str = Query(default="", max_length=4096),
                              limit: int = Query(default=20, ge=1, le=50)):

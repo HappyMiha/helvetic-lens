@@ -34,6 +34,12 @@ from test_interest_assessment_store import (
     test_revised_input_supersedes_inflight_work_and_old_worker_cannot_publish,
     test_unverified_result_cannot_be_persisted,
 )
+from test_interest_brief_reader import (
+    test_changed_current_binding_never_displays_saved_answer_as_current,
+    test_corrupted_saved_output_or_proof_is_not_displayed,
+    test_exact_shared_result_reuses_without_generation_or_jobs,
+    test_revoked_admission_denies_saved_answer_before_runtime_probe,
+)
 from test_interest_execution import (
     artifacts as execution_artifacts,
 )
@@ -91,6 +97,10 @@ def execute_local(harness, scenario):
         scenario(execution)
 
 SUITES = {
+    "reader-current": lambda harness: execute_local(harness, test_exact_shared_result_reuses_without_generation_or_jobs),
+    "reader-stale": lambda harness: execute_local(harness, lambda value: test_changed_current_binding_never_displays_saved_answer_as_current(value, "profile")),
+    "reader-invalid": lambda harness: execute_local(harness, lambda value: test_corrupted_saved_output_or_proof_is_not_displayed(value, "citation")),
+    "reader-revoked": lambda harness: execute_local(harness, test_revoked_admission_denies_saved_answer_before_runtime_probe),
     "jobs-exhausted": lambda harness: execute_local(harness, test_exhausted_crash_recovery_closes_unfinished_assessment),
     "jobs-threaded": lambda harness: execute_local(harness, test_separate_connections_coalesce_simultaneous_admission),
     "jobs-dispatch-lock": lambda harness: execute_local(harness, test_postgres_dispatch_skips_locked_job_without_locking_its_outbox),

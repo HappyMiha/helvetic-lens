@@ -1,11 +1,12 @@
 # Shared event relevance briefs
 
-HL-089 is **in progress**, not enabled in the UI. The 8 September 2026 change
+HL-089 is **in progress**. The 8 September 2026 changes
 provides the generation contract, transactional storage, measured local execution
 and current-input admission, including material evidence from existing saved
 legacy comparisons. Complete passage sets remain the fallback when no comparison
-exists and they fit the contract. It does not yet
-enqueue enrichment after matching or attach briefs to feed/digest notifications.
+exists and they fit the contract. The feed now offers an on-demand saved-brief
+reader; it does not yet enqueue enrichment after matching or attach briefs to
+digest notifications.
 The deterministic feed continues to work independently of this module.
 
 ## Contract and evidence
@@ -348,6 +349,35 @@ Automatic matching admission, priority/fairness policy, administrator prompt pol
 large-dossier planning, exact-current feed/digest readers and independent model/
 hardware evaluation remain required. No public route or matching trigger is enabled
 by this internal execution stage, and no shipped model profile was approved.
+
+## Exact-current saved brief reader — 8 September 2026
+
+`GET /api/interest-feed/events/{event_id}/brief?locale=en` authorizes the event for
+the current organization, including viewers, before probing runtime metadata.
+No saved history in the requested language means no probe. Otherwise the local
+runtime observation is bounded by the existing two-second deadline; no token
+measurement, completion, queue reservation or cloud call occurs on a read.
+
+The reader rebuilds the current dossier and requires its exact saved fingerprint.
+Changed source, interests, profile, locale or model approval cannot make an older
+answer current. Stored output is validated again against the dossier, including
+citations, official facts, runtime proof and bounded provider-call provenance.
+Unavailable, stale, pending, failed or unverifiable results do not expose old text
+as current. Historical records remain unchanged. Current saved-source grants
+determine native/legacy evidence links; model-generated URLs are never accepted.
+
+Each feed card has a collapsed, full-width panel. Only opening it reads a brief;
+there is no per-card background polling or automatic generation. Refresh rechecks
+currentness without reloading the page and hides previous text while checking or
+after failure. Five-language guidance distinguishes unavailable AI from low
+importance. Explanations, organization importance, exact citations and one review
+step are visible; per-interest reasons and limitations expand separately.
+Technical input limitations retain their original English language annotation.
+
+This is not automatic enrichment, a history browser or digest integration. No
+real model/task/language approval ships with this slice. Rebuilding a dossier on
+demand is not a measured 100-user capacity guarantee or a globally frozen database
+snapshot. Independent semantic, native-language and usability review remains open.
 
 ## Verification
 

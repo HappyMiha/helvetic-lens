@@ -1540,6 +1540,21 @@ queue integration, not a claim of completed automatic enrichment: matching polic
 exact-current readers/delivery reuse, priority/fairness/admin policy, large dossiers,
 official facts and independent real-model/hardware evaluation remain open.
 
+**Exact-current saved brief reader — 8 September 2026:** Feed cards now offer an
+on-demand full-width saved explanation with date, organization importance, one
+review step, expandable per-interest reasons/limits and exact native/legacy
+source links. Reads authorize the event and revalidate the current dossier,
+approved runtime and stored output; stale, unavailable or corrupt answers are
+not shown as current. Opening or refreshing never generates or queues work;
+no-history reads skip even the bounded runtime metadata probe. Five-language
+desktop/mobile states include pending, stale, offline/unverified and read errors.
+**Verification:** 70 combined regressions, 20 final targeted cases, four isolated
+PostgreSQL scenarios, typecheck/build and ten browser journeys with 20 full-document
+axe checkpoints passed. Incomplete accessibility checks remain recorded, not
+certified. **Still open:** automatic matching triggers, history/digest/delivery
+reuse, prompt/quota policy, official facts, large dossiers and independent model,
+language, usability and target-hardware evaluation. HL-089 remains in progress.
+
 Turn a trustworthy topic or watched-law match into a concise, reusable explanation of why the development belongs in the organization's radar and whether it deserves attention. The feed event and its primary-source evidence exist independently of AI; enrichment must never block ingestion, hide a real development, or create a second event history.
 
 Acceptance criteria:

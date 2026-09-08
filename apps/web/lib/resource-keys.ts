@@ -339,6 +339,11 @@ export const resources = {
     });
   },
 
+  interestBrief: <T>(event: string, locale: string) => {
+    const path = `/interest-feed/events/${encodeURIComponent(event)}/brief?${new URLSearchParams({locale})}`;
+    return key<T>(`monitoring:${path}`, path, {tags: [`interest-brief:${event}`, "monitoring", "profile", "settings"], staleMs: 0});
+  },
+
   interestFeed: <T = unknown>(query = "") => {
     const path = withQuery("/interest-feed", query);
     return key<T>(`monitoring:${path}`, path, {

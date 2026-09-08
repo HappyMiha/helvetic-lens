@@ -3658,6 +3658,28 @@ class HelveticLens:
             session.commit()
             return durable_jobs.serialize(session, job)
 
+    async def read_interest_brief(self, event_id: str, *, locale="en"):
+        from . import interest_brief_reader
+        from .interest_execution import _identity
+        if locale not in {"de", "fr", "it", "rm", "en"}:
+            raise DomainError("Unsupported brief language.", 422, "invalid_locale")
+        with self.db.session() as session:
+            if (interest_brief_reader.latest(session, self.organization_id, event_id, locale) is None
+                    or self.settings.apertus_provider != "docker"):
+                return interest_brief_reader.read(session, self.organization_id, event_id, locale=locale)
+        # At most one bounded metadata observation; never count tokens or generate.
+        async with self.runtime_cache_scope():
+            model = None
+            captured = self._cache_runtime_context.get()
+            if captured and self.settings.apertus_provider == "docker":
+                try:
+                    model = _identity(self.model_client, captured[1],
+                        self.model_client.capability_for("interest_brief", f"{locale}-CH"))
+                except DomainError:
+                    pass
+            with self.db.session() as session:
+                return interest_brief_reader.read(session, self.organization_id, event_id, locale=locale, model=model)
+
     async def enqueue_interest_brief(self, event_id: str, *, locale="en"):
         from .interest_execution import LocalBriefRunner
         return await LocalBriefRunner(self.db, self.organization_id, self.model_client).schedule(event_id, locale=locale)

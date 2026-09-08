@@ -1,6 +1,7 @@
 "use client";
 
 import { FeedTopicList } from "./feed-topic-list";
+import { FeedInterestBrief } from "./feed-interest-brief";
 import { FeedWatchList } from "./feed-watch-list";
 import { FeedEmptyState } from "./feed-empty-state";
 import { MonitorThis } from "./monitor-this";
@@ -100,6 +101,7 @@ export function InterestFeedPage() {
           <div><dt className="muted">{t("feed.officialStatus")}</dt><dd><Status value={item.lifecycle_status} /></dd></div>
         </dl>
         <FeedEvidenceContext item={item} />
+        <FeedInterestBrief key={`${item.event_id}:${query}`} eventId={item.event_id} />
         <MonitorThis kind="event" id={item.event_id} />
         {sourceLink(item.source_url) && <a href={sourceLink(item.source_url)} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center underline font-semibold">{t("common.officialSource")}</a>}
         <Link data-feed-permalink className="underline inline-flex min-h-[44px] items-center ml-4" href={href({ event: item.event_id, cursor: "", period: "", state: "" })}>{t("feedEvidence.openEvent")}</Link>

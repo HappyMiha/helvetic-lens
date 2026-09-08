@@ -1,5 +1,37 @@
 # Verification record
 
+## Exact-current saved brief reader — 8 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl-089-current-brief-reader`, based on `bbca13c`.
+  Added organization-authorized, exact-current saved-brief reads and a collapsed
+  full-width feed panel. No history means no runtime probe; saved results use one
+  bounded local metadata observation and never tokenize, generate or enqueue.
+- **70 combined API regressions passed** in 101.02 seconds. The final expanded
+  reader suite has **20 passing tests** in 30.27 seconds: source/profile/runtime/
+  approval/locale/cloud changes, malformed provenance and citations, revoked and
+  foreign event access, pending/failed states, HTTP validation and exact native/
+  legacy evidence routing. Existing generation remains one call after rereading;
+  historical records and job counts are preserved.
+- **Four PostgreSQL 17.11 scenarios passed** using the actual service: current,
+  stale profile, corrupt citation and revoked access. Only an isolated loopback
+  port 55524, tmpfs database was used; its verified QA container was removed.
+  Runtime metadata, approval and generation fixtures were synthetic throughout.
+- Typecheck and production build passed. `npm run check:interest-brief:browser`
+  passed ten real production-UI journeys at 390/1440 pixels across all five
+  locales. Opening is on demand; refresh preserves page identity and hides old
+  text on loading/failure/staleness. Exact evidence links and every non-current
+  state are checked. Mobile/desktop screenshots were visually inspected.
+- **20 full-document axe checkpoints passed** all reported violation severities
+  and the unresolved prohibited-ARIA gate. Other incomplete checks remain in
+  `test-results/accessibility/interest-brief.json`; this is not accessibility or
+  native-speaker certification. All API traffic was intercepted. The fixture
+  explicitly permits the existing Marvin context/conversation bootstrap POSTs
+  with synthetic failures; the brief reader itself issues no writes/inference.
+- Ruff/diff checks passed. No production rollout, real notifications, model
+  approval or real inference occurred. Automatic enrichment, broader historical/
+  delivery reuse, large-dossier planning and independent usefulness/language/
+  capacity evidence remain open; HL-089 is not marked complete.
+
 ## Durable shared brief execution — 8 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl-089-durable-brief-jobs`, based on fresh `be17fcc`.
