@@ -1064,6 +1064,14 @@ class ApertusConfiguration(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class InterestBriefPolicy(Base):
+    __tablename__ = "interest_brief_policies"
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), primary_key=True)
+    values: Mapped[dict] = mapped_column(JSON, default=dict)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class PromptConfiguration(Base):
     __tablename__ = "prompt_configuration"
     id: Mapped[str] = mapped_column(String(80), primary_key=True, default="default")
@@ -1540,6 +1548,7 @@ class OutboxMessage(Base):
 # Central policy used by the session boundary. Keeping this list beside the
 # models makes a newly persisted tenant-owned record difficult to forget.
 ORGANIZATION_SCOPED_MODELS = (
+    InterestBriefPolicy,
     NativeDocumentComparison,
     NativeEventComparisonSelection,
     PersonalSourceReview,

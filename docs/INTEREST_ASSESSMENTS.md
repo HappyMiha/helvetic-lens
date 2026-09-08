@@ -420,8 +420,7 @@ job error. Operator retry resumes the committed cursor and preserves outcomes.
 Successful admission means the batch was examined, not that every AI result was
 generated or useful. The saved feed reader exposes only exact-current successes.
 
-Still open: organization policy UI/locale selection, admission
-queue capacity and priority benchmarks, automatic refresh for edits outside a
+Still open: admission queue capacity and priority benchmarks, automatic refresh for edits outside a
 matching run, catch-up after enabling/changing policy, digest/notification reuse,
 large-dossier aggregation and independently approved model usefulness. No real
 model, production deployment or notification was enabled by this change.
@@ -525,3 +524,49 @@ savepoint auto-commit behavior is explicitly prevented by a real outer transacti
 two concurrent writers retain the revision guard. The PostgreSQL container used only tmpfs data
 and loopback port 55521, and was removed afterward. These remain synthetic model
 and provenance fixtures, not an operational connector policy or legal review.
+
+
+## Organization automatic-brief settings
+
+Organization admins manage `/settings` → **Automatic shared AI briefs**. The
+persisted policy selects enabled/disabled and lower per-organization generation allowances: 1–4 pending jobs and
+1–20 newly created jobs in a rolling 24 hours. Cancelled/failed new jobs still
+consume that daily allowance. These are bounds, not throughput promises. Existing
+environment enable/language settings remain the fallback until the first explicit
+organization save; the migration itself does not enable any tenant.
+
+GET/PATCH `/api/settings/interest-briefs` returns policy revision, usage and hard
+limits. Auth, tenant scope, admin-write and CSRF rules apply. Writes hold the
+organization lock and compare the supplied revision; concurrent editors receive
+409 instead of overwriting each other. Saving settings makes zero inference calls.
+
+A changed policy cancels outstanding admission cursors and policy-bound automatic
+generation. Workers recheck the exact saved revision/values before admission and
+publication; a completion from obsolete work is not published. Completed results
+remain in history. Explicit unbound/legacy generation jobs retain their lifecycle.
+No backfill, model approval, automatic cloud fallback or notification is triggered.
+New matching batches use the saved policy. Missing independent model approval still
+blocks generation even with the checkbox enabled.
+
+The feed requests the **user's selected language**. Without an explicit API locale,
+the authenticated user's preference is used, then browser/default locale. An admin
+cannot override users' language from the policy form. New matching batches enqueue
+one admission per distinct active member language (at most five), coalesced across
+users. In organizations without active members, the existing configured fallback
+language supports non-authenticated development/legacy operation; it is not a
+user-display override. The returned `language_jobs` list describes all admissions;
+legacy `job_id` remains the first admission ID.
+
+Saved variants are shared only within the same organization, inputs and language.
+French work cannot supersede a German queued/running result merely because its
+locale differs. All variants share the same organization quotas and require their
+own language-specific model approval. Each variant is a grounded assessment, not
+an unvalidated automatic translation. Changing the UI language never invokes the
+model. If that variant has not been saved or cannot be validated, the panel shows
+its explicit unavailable/pending state rather than silently substituting another
+language. Catch-up after a new member or a preference change remains future work.
+
+The five-locale responsive form preserves edits on failed saves, offers an explicit
+reload after a revision conflict, and remains read-only for viewers. Independent
+native-language review (especially Romansh), real-model usefulness, global admission
+capacity/fairness, catch-up/refresh and downstream delivery reuse remain open.

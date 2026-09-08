@@ -32,6 +32,7 @@ import { ErrorNote, Loading, SuccessNote } from "./common";
 import { Shell } from "./shell";
 import { useAuth } from "./auth-gate";
 import { useI18n } from "@/lib/i18n";
+import { InterestBriefPolicyCard } from "./interest-brief-policy";
 import { CapabilityProfileSelect } from "./capability-profile-select";
 
 type KeyAction = "keep" | "replace" | "remove" | "environment";
@@ -90,6 +91,7 @@ export function SettingsPage() {
         </div>
         <SlidersHorizontal className="muted" size={28} />
       </div>
+      <InterestBriefPolicyCard />
       <ErrorNote message={configuration.error} />
       {notice && <SuccessNote>{notice}</SuccessNote>}
       <div className={`grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px] items-start ${canManage ? "" : "viewer-settings"}`}>

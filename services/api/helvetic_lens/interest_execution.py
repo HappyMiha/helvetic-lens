@@ -70,9 +70,9 @@ class LocalBriefRunner:
             raise DomainError("The saved model configuration changed; retry with current settings.",
                               409, "interest_inputs_changed")
 
-    async def schedule(self, event_id: str, *, locale="en", guard=None):
+    async def schedule(self, event_id: str, *, locale="en", guard=None, policy_key=None):
         """Measured admission only; persist a job/outbox without generating text."""
-        return await self._run(event_id, locale=locale, schedule_only=True, guard=guard)
+        return await self._run(event_id, locale=locale, schedule_only=True, guard=guard, policy_key=policy_key)
 
     async def run(self, event_id: str, *, locale="en", instructions=None,
                   expected=None, guard=None):
@@ -80,7 +80,7 @@ class LocalBriefRunner:
                                expected=expected, guard=guard)
 
     async def _run(self, event_id: str, *, locale="en", instructions=None,
-                   expected=None, guard=None, schedule_only=False):
+                   expected=None, guard=None, schedule_only=False, policy_key=None):
         # Construct one runner per job. Keep mutable execution state inside this
         # call, so concurrent callers cannot exchange assessment IDs or tokens.
         if locale not in {"de", "fr", "it", "rm", "en"}:
@@ -106,6 +106,9 @@ class LocalBriefRunner:
                 if allowed is None:
                     raise DomainError("The event is not admitted to this organization.", 404, "not_found")
                 self.check_configuration(session, captured_configuration)
+                if policy_key:
+                    from .interest_policy import check
+                    check(session, self.organization_id, self.client.settings, policy_key, locale)
                 if saved_prompt:
                     instructions = current_instructions(session, self.organization_id)
             trace_token = self.client.begin_trace(priority="background")
@@ -161,7 +164,8 @@ class LocalBriefRunner:
                                                   409, "interest_inputs_changed")
                             if schedule_only:
                                 from .interest_jobs import enqueue
-                                result = enqueue(session, self.organization_id, record, locale)
+                                result = enqueue(session, self.organization_id, record, locale,
+                                    settings=self.client.settings, policy_key=policy_key)
                                 session.commit()
                                 return result
                             assessment_id = record.id

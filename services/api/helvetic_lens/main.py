@@ -35,6 +35,7 @@ from .auth_mail import AuthMailer
 from .config import DomainError, Settings
 from .db import utcnow
 from .impact_inbox import ImpactInboxFilters
+from .interest_policy import PolicyInput
 from .locales import locale_from_accept_language
 from .model_settings import ApertusSettingsInput
 from .models import (
@@ -1455,8 +1456,9 @@ def create_app(
         return service.interest_feed(identity.user_id if identity else None, period=period, state=state, cursor=cursor, limit=limit, event=event)
 
     @app.get("/api/interest-feed/events/{event_id}/brief")
-    async def interest_feed_brief(event_id: str, locale: str = Query(default="en", max_length=2)):
-        return await service.read_interest_brief(event_id, locale=locale)
+    async def interest_feed_brief(event_id: str, request: Request, locale: str | None = Query(default=None, max_length=2)):
+        language = locale if locale is not None else selected_locale(request).split("-")[0]
+        return await service.read_interest_brief(event_id, locale=language)
 
     @app.get("/api/interest-feed/events/{event_id}/topics")
     def interest_feed_topics(event_id: str, request: Request, cursor: str = Query(default="", max_length=4096),
@@ -1977,6 +1979,14 @@ def create_app(
     @app.post("/api/settings/apertus/reset")
     def reset_model_settings():
         return service.reset_model_settings()
+
+    @app.get("/api/settings/interest-briefs")
+    def interest_brief_policy():
+        return service.interest_brief_policy()
+
+    @app.patch("/api/settings/interest-briefs")
+    def save_interest_brief_policy(data: PolicyInput):
+        return service.save_interest_brief_policy(data)
 
     @app.get("/api/settings/prompts")
     def prompt_settings():

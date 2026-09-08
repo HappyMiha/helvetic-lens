@@ -82,10 +82,12 @@ class AssessmentStore:
                  InterestEventAssessment.event_id == dossier.event.id)
         existing = session.scalar(select(InterestEventAssessment).where(
             *scope, InterestEventAssessment.input_fingerprint == key))
-        # A newly admitted input invalidates only unfinished work. Completed
+        # A newly admitted input invalidates only unfinished work in this language.
+        # Different user-language variants must not cancel one another. Completed
         # results remain immutable history, reusable only by their exact key.
         session.execute(update(InterestEventAssessment).where(
             *scope, InterestEventAssessment.input_fingerprint != key,
+            InterestEventAssessment.input_manifest["locale"].as_string() == dossier.locale,
             InterestEventAssessment.status.in_(["queued", "running"]),
         ).values(status="superseded", finished_at=utcnow(), attempt_key=None))
         if existing is not None:

@@ -1531,3 +1531,12 @@ export type FeedReadiness = {
   sources_pending: boolean; sources_need_attention: boolean;
   source_freshness_verified: false; quiet_period_verified: false;
 };
+
+export type InterestBriefPolicy = {
+  enabled: boolean; locale: "de" | "fr" | "it" | "rm" | "en";
+  max_pending: number; max_daily: number; revision: number;
+  source: string; updated_at: string | null;
+  usage: { pending: number; last_24_hours: number };
+  hard_limits: { max_pending: number; max_daily: number };
+  ai_calls: number; cancel_requested?: number;
+};

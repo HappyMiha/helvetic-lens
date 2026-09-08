@@ -3699,6 +3699,18 @@ class HelveticLens:
                             "status": "not_current"}
                 return interest_brief_reader.read(session, self.organization_id, event_id, locale=locale, model=model)
 
+    def interest_brief_policy(self):
+        from .interest_policy import public
+        with self.db.session() as session:
+            return public(session, self.organization_id, self.settings)
+
+    def save_interest_brief_policy(self, data):
+        from .interest_policy import save
+        with self.db.session() as session:
+            result = save(session, self.organization_id, self.settings, data)
+            session.commit()
+            return result
+
     def brief_configuration(self, session):
         from .interest_execution import configuration_key
         record = session.scalar(select(ApertusConfiguration).where(

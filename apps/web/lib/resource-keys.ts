@@ -1,5 +1,6 @@
 import type {
   AIHistoryPage,
+  InterestBriefPolicy,
   FeedReadiness,
   OnboardingState,
   ApertusSettings,
@@ -418,6 +419,11 @@ export const resources = {
       owner: "organization",
       tags: ["organization-invitations", "organization"],
       varyByLocale: false,
+    }),
+
+  interestBriefPolicy: () =>
+    key<InterestBriefPolicy>("organization:interest-brief-policy", "/settings/interest-briefs", {
+      owner: "organization", tags: ["brief-policy", "organization"], varyByLocale: false,
     }),
 
   settings: () =>

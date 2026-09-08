@@ -4422,6 +4422,95 @@ const briefPromptMessages: Record<Locale, Messages> = {
 };
 for (const locale of locales) Object.assign(catalogTarget(locale), briefPromptMessages[locale]);
 
+const briefPolicyMessages: Record<Locale, Messages> = {
+  "en-CH": {
+    "briefPolicy.title": "Automatic shared AI briefs",
+    "briefPolicy.body": "One saved explanation per matched development, shared across your organization. It uses the configured local model and links to saved evidence.",
+    "briefPolicy.enabled": "Automatically analyse future matching developments",
+    "briefPolicy.locale": "Brief language",
+    "briefPolicy.userLanguages": "Briefs use each user's selected language. People in the same organization with the same language share a saved answer; administrators do not override their language.",
+    "briefPolicy.pending": "Maximum pending jobs",
+    "briefPolicy.daily": "Maximum new jobs per 24 hours",
+    "briefPolicy.usage": "In use: {pending} pending · {daily} created in the last 24 hours",
+    "briefPolicy.limits": "Saving changes stops queued or running automatic work. History stays intact. This does not backfill old events or approve a model; independent local model approval is still required. Server caps: 4 pending jobs and 20 new jobs per 24 hours.",
+    "briefPolicy.save": "Save automatic analysis settings",
+    "briefPolicy.saving": "Saving…",
+    "briefPolicy.reload": "Reload saved settings (discard edits)",
+    "briefPolicy.saved": "Settings saved. No analysis was started.",
+    "error.interest_policy_conflict": "Another administrator changed these settings. Reload before saving.",
+    "error.interest_policy_changed": "Automatic analysis settings changed; the old work has stopped."
+  },
+  "de-CH": {
+    "briefPolicy.title": "Automatische gemeinsame KI-Analysen",
+    "briefPolicy.body": "Eine gespeicherte Erklärung pro passender Entwicklung für Ihre Organisation. Sie verwendet das konfigurierte lokale Modell und verweist auf gespeicherte Belege.",
+    "briefPolicy.enabled": "Neue passende Entwicklungen automatisch analysieren",
+    "briefPolicy.locale": "Sprache der Analyse",
+    "briefPolicy.userLanguages": "Analysen verwenden die gewählte Sprache jedes Nutzers. Personen derselben Organisation mit derselben Sprache teilen eine gespeicherte Antwort; Administratoren überschreiben ihre Sprache nicht.",
+    "briefPolicy.pending": "Maximal ausstehende Aufträge",
+    "briefPolicy.daily": "Maximal neue Aufträge pro 24 Stunden",
+    "briefPolicy.usage": "Belegt: {pending} ausstehend · {daily} in den letzten 24 Stunden erstellt",
+    "briefPolicy.limits": "Änderungen stoppen wartende oder laufende automatische Aufträge. Der Verlauf bleibt erhalten. Alte Ereignisse werden nicht nachträglich analysiert; eine unabhängige Freigabe des lokalen Modells bleibt erforderlich. Servergrenzen: 4 ausstehende und 20 neue Aufträge pro 24 Stunden.",
+    "briefPolicy.save": "Automatische Analyse speichern",
+    "briefPolicy.saving": "Wird gespeichert…",
+    "briefPolicy.reload": "Gespeicherte Einstellungen laden (Änderungen verwerfen)",
+    "briefPolicy.saved": "Einstellungen gespeichert. Keine Analyse gestartet.",
+    "error.interest_policy_conflict": "Eine andere Administration hat diese Einstellungen geändert. Vor dem Speichern neu laden.",
+    "error.interest_policy_changed": "Die Einstellungen für automatische Analysen wurden geändert; die alte Arbeit wurde gestoppt."
+  },
+  "fr-CH": {
+    "briefPolicy.title": "Analyses IA automatiques partagées",
+    "briefPolicy.body": "Une explication enregistrée par évolution correspondante, partagée dans votre organisation. Elle utilise le modèle local configuré et renvoie aux preuves enregistrées.",
+    "briefPolicy.enabled": "Analyser automatiquement les nouvelles évolutions correspondantes",
+    "briefPolicy.locale": "Langue de l’analyse",
+    "briefPolicy.userLanguages": "Les analyses utilisent la langue choisie par chaque utilisateur. Les personnes d’une même organisation utilisant la même langue partagent une réponse enregistrée ; les administrateurs ne remplacent pas leur langue.",
+    "briefPolicy.pending": "Maximum de tâches en attente",
+    "briefPolicy.daily": "Maximum de nouvelles tâches par 24 heures",
+    "briefPolicy.usage": "Utilisation : {pending} en attente · {daily} créées durant les dernières 24 heures",
+    "briefPolicy.limits": "Les modifications arrêtent les tâches automatiques en attente ou en cours. L’historique est conservé. Les anciens événements ne sont pas analysés rétroactivement ; une validation indépendante du modèle local reste nécessaire. Limites du serveur : 4 tâches en attente et 20 nouvelles tâches par 24 heures.",
+    "briefPolicy.save": "Enregistrer l’analyse automatique",
+    "briefPolicy.saving": "Enregistrement…",
+    "briefPolicy.reload": "Recharger les paramètres enregistrés (annuler les modifications)",
+    "briefPolicy.saved": "Paramètres enregistrés. Aucune analyse lancée.",
+    "error.interest_policy_conflict": "Un autre administrateur a modifié ces paramètres. Rechargez-les avant d’enregistrer.",
+    "error.interest_policy_changed": "Les paramètres d’analyse automatique ont changé ; l’ancien travail a été arrêté."
+  },
+  "it-CH": {
+    "briefPolicy.title": "Analisi IA automatiche condivise",
+    "briefPolicy.body": "Una spiegazione salvata per ogni sviluppo corrispondente, condivisa nella tua organizzazione. Usa il modello locale configurato e rimanda alle prove salvate.",
+    "briefPolicy.enabled": "Analizza automaticamente i nuovi sviluppi corrispondenti",
+    "briefPolicy.locale": "Lingua dell’analisi",
+    "briefPolicy.userLanguages": "Le analisi usano la lingua scelta da ciascun utente. Le persone della stessa organizzazione con la stessa lingua condividono una risposta salvata; gli amministratori non cambiano la loro lingua.",
+    "briefPolicy.pending": "Numero massimo di attività in attesa",
+    "briefPolicy.daily": "Numero massimo di nuove attività in 24 ore",
+    "briefPolicy.usage": "Utilizzo: {pending} in attesa · {daily} create nelle ultime 24 ore",
+    "briefPolicy.limits": "Le modifiche interrompono le attività automatiche in attesa o in corso. La cronologia resta intatta. Gli eventi precedenti non vengono analizzati retroattivamente; resta necessaria una valutazione indipendente del modello locale. Limiti del server: 4 attività in attesa e 20 nuove attività in 24 ore.",
+    "briefPolicy.save": "Salva l’analisi automatica",
+    "briefPolicy.saving": "Salvataggio…",
+    "briefPolicy.reload": "Ricarica le impostazioni salvate (scarta le modifiche)",
+    "briefPolicy.saved": "Impostazioni salvate. Nessuna analisi avviata.",
+    "error.interest_policy_conflict": "Un altro amministratore ha modificato queste impostazioni. Ricaricale prima di salvare.",
+    "error.interest_policy_changed": "Le impostazioni dell’analisi automatica sono cambiate; il lavoro precedente è stato interrotto."
+  },
+  "rm-CH": {
+    "briefPolicy.title": "Analisas automaticas communablas da l’IA",
+    "briefPolicy.body": "Ina explicaziun memorisada per mintga svilup correspundent, communabla en tia organisaziun. Ella utilisescha il model local configurà e renviescha a cumprovas memorisadas.",
+    "briefPolicy.enabled": "Analisar automaticamain novs svilups correspundents",
+    "briefPolicy.locale": "Lingua da l’analisa",
+    "briefPolicy.userLanguages": "Las analisas dovran la lingua tschernida da mintga utilisader. Persunas da la medema organisaziun cun la medema lingua partan ina resposta memorisada; ils administraturs na midan betg lur lingua.",
+    "briefPolicy.pending": "Dumber maximal d’incumbensas pendentas",
+    "briefPolicy.daily": "Dumber maximal da novas incumbensas per 24 uras",
+    "briefPolicy.usage": "Utilisaziun: {pending} pendentas · {daily} creadas durant las ultimas 24 uras",
+    "briefPolicy.limits": "Midadas fermeschan incumbensas automaticas pendentas u en curs. La cronologia resta intacta. Eveniments vegls na vegnan betg analisads retroactivamain; ina valitaziun independenta dal model local resta necessaria. Limits dal server: 4 incumbensas pendentas e 20 novas per 24 uras.",
+    "briefPolicy.save": "Memorisar l’analisa automatica",
+    "briefPolicy.saving": "Memorisaziun…",
+    "briefPolicy.reload": "Rechargiar las configuraziuns memorisadas (scartar midadas)",
+    "briefPolicy.saved": "Configuraziuns memorisadas. Nagina analisa lantschada.",
+    "error.interest_policy_conflict": "In auter administratur ha midà questas configuraziuns. Rechargia avant che memorisar.",
+    "error.interest_policy_changed": "Las configuraziuns da l’analisa automatica èn midadas; la lavur precedenta è vegnida fermada."
+  }
+};
+for (const locale of locales) Object.assign(catalogTarget(locale), briefPolicyMessages[locale]);
+
 export function translate(locale: Locale, key: string, values: Values = {}): string | null {
   const message = catalog[locale][key];
   return message ? formatMessage(message, locale, values) : null;

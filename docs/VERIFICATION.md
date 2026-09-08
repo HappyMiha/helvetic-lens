@@ -1,5 +1,55 @@
 # Verification record
 
+## Organization AI policy and personal-language variants — 8 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl089-organization-policy`, based on `ca69b87` and
+  including the separately published release-build fix `df353da`. Added persisted
+  organization enable/quota settings, strict/revisioned API writes, tenant/admin/
+  CSRF checks, cancellation of obsolete automatic work, and publication fences.
+  Migration `d9fb034a6dc7` adds only the policy table; no tenant is enabled by it.
+- Corrected the initial proposed organization-language behavior after user review:
+  feed/API defaults follow the user, not an admin's organization locale. New
+  matching coalesces at most five active member-language admissions; variants
+  share the organization's existing quota, never a quota per user. The internal
+  legacy locale remains only a fallback when there are no active members. The
+  form has no language override. Different languages no longer supersede one
+  another's queued/running assessments; exact successful variants remain reusable.
+- **84 combined tests passed, 2 PostgreSQL-only tests skipped in 158.23 seconds**
+  across policy, assessment storage, automation, jobs and readers. **16 final
+  policy tests passed, 1 PostgreSQL-only test skipped in 24.11 seconds**, including
+  two authenticated users in the same organization with distinct preferences,
+  browser fallback, explicit locale, active/foreign-member filtering, duplicate
+  language coalescing, independent variant completion/reuse, saved quotas, API
+  permissions, cancellation during generation, history retention and migration.
+  The authenticated route test stubs the reader only; other tests use the real
+  store/reader/gateway with synthetic model outputs and approval evidence.
+- PostgreSQL **17.11** in disposable loopback/tmpfs containers: five initial suites
+  passed (persistence, concurrent editors, cancellation during generation, lower
+  allowance, migration downgrade/upgrade). After the user-language correction,
+  four suites passed (active member languages, independent saved variants,
+  cancellation, concurrent editors). These are nine executions of seven distinct
+  scenarios, not nine independent scenarios. Only each verified QA container's
+  synthetic schema was reset. Both owned containers were stopped/removed; the
+  running application/database and production were untouched.
+- Final real Next production UI with intercepted synthetic APIs: **20 admin/viewer
+  settings journeys** and **10 saved-brief journeys**, covering all five locales
+  at 390/1440 pixels, with **40 full-document axe checkpoints**. Save errors and
+  conflicts preserve edits; explicit reload restores saved limits; viewers cannot
+  edit; brief requests carry user locale and navigation does not invoke inference.
+  Mobile screenshots were visually inspected. Other axe incomplete findings and
+  native-language/human usability review remain unverified, not certified passed.
+- Root **`npm run build` passed** including localization/value audit, 31 shell,
+  22 resource and 198 report tests, TypeScript and production compilation. Ruff
+  and diff checks pass. The earlier 1,740-test Linux baseline did not contain this
+  task. No real-model quality, multilingual inference performance, HappySnowman
+  deployment, production migration or live notification delivery is claimed.
+- Still open: generating missing older variants after a preference/member change,
+  complete automatic refresh, global admission fairness/capacity, downstream
+  digest/history/delivery reuse, large dossiers, independent approved-model/language
+  and target-hardware/user evaluation. Missing language variants remain explicitly
+  unavailable; reading never silently generates or substitutes another language.
+
+
 ## Deployment web-build localization regression — 8 September 2026 (HappyDucky02)
 
 - The reported `97e923f` production attempt failed before activation in the web

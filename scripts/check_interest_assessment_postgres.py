@@ -79,6 +79,15 @@ from test_interest_material import (
     test_saved_comparison_reaches_current_admission_generation_and_fenced_storage,
     test_stale_comparison_during_generation_supersedes_without_publishing,
 )
+from test_interest_policy import (
+    test_api_bounds_conflict_noop_and_saved_persistence,
+    test_concurrent_policy_editors_cannot_overwrite_each_other,
+    test_disable_cancels_automatic_work_without_publishing,
+    test_language_variants_do_not_supersede_each_other,
+    test_lower_saved_allowance_applies_to_new_admission_and_rolls_back,
+    test_matching_schedules_distinct_active_user_languages_not_admin_fallback,
+    test_policy_migration_preserves_existing_organization,
+)
 from test_native_comparison_views import (
     test_candidates_paginate_without_private_or_other_language_versions,
     test_http_save_complete_pair_page_exact_changes_and_clear,
@@ -105,6 +114,13 @@ def execute_local(harness, scenario):
         scenario(execution)
 
 SUITES = {
+    "policy-languages": test_matching_schedules_distinct_active_user_languages_not_admin_fallback,
+    "policy-variants": test_language_variants_do_not_supersede_each_other,
+    "policy-persistence": test_api_bounds_conflict_noop_and_saved_persistence,
+    "policy-concurrency": test_concurrent_policy_editors_cannot_overwrite_each_other,
+    "policy-cancel": lambda harness: execute_local(harness, lambda value: test_disable_cancels_automatic_work_without_publishing(value, "generate")),
+    "policy-quota": lambda harness: execute_local(harness, lambda value: test_lower_saved_allowance_applies_to_new_admission_and_rolls_back(value, "max_pending")),
+    "policy-migration": test_policy_migration_preserves_existing_organization,
     "auto-roundtrip": lambda harness: execute_local(harness, test_matching_outbox_admission_generation_and_reader),
     "auto-backfill": test_backfill_admits_every_batch_atomically_without_ai,
     "auto-limit": lambda harness: execute_local(harness, test_limited_event_is_audited_then_later_event_admitted),

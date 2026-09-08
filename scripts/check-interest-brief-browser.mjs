@@ -25,7 +25,7 @@ try{
  const tab=await fetch(`http://127.0.0.1:${debugPort}/json/new?about:blank`,{method:"PUT"}).then(r=>r.json());cdp=new Cdp(tab.webSocketDebuggerUrl);
  await cdp.send("Page.enable");await cdp.send("Runtime.enable");cdp.on("Runtime.exceptionThrown",({exceptionDetails})=>exceptions.push(exceptionDetails.exception?.description||exceptionDetails.text));
  cdp.on("Fetch.requestPaused",async({requestId,request})=>{
-  const path=new URL(request.url).pathname;requests.push({path,method:request.method});let body={},code=200;
+  const path=new URL(request.url).pathname;requests.push({path,search:new URL(request.url).search,method:request.method});let body={},code=200;
   if(path==="/api/auth/session")body={authenticated:true,user:{id:`qa-${locale}`,locale,name:"QA",email:"qa@example.invalid"},organization:{id:"qa-org",name:"QA"},role:"viewer",platform_admin:false};
   else if(path==="/api/health")body={status:"ok",database:"postgresql",apertus:{configured:false},firecrawl:{configured:false}};
   else if(path==="/api/interest-feed")body={items:[event],scanned_event_count:1,has_more:false,next_cursor:null};
@@ -44,6 +44,8 @@ try{
   await evaluate(cdp,"window.__briefMarker='retained'");await click("[data-feed-brief]>summary");
   await waitFor(()=>evaluate(cdp,"!!document.querySelector('[data-brief-result]')"),"Saved result missing");
   assert.equal(await evaluate(cdp,"window.__briefMarker"),"retained");
+  assert.equal(await evaluate(cdp,"document.querySelector('[data-brief-result]').lang"),locale.slice(0,2));
+  assert.ok(requests.slice(start).filter(r=>r.path.endsWith("/brief")).every(r=>new URLSearchParams(r.search).get("locale")===locale.slice(0,2)),"Brief request did not use viewer language");
   assert.ok(await evaluate(cdp,"Array.from(document.querySelectorAll('[data-brief-result] a')).every(a=>a.getAttribute('href')==='/corpus-evidence/synthetic-version?passage=p1')"));
   assert.ok(await evaluate(cdp,"document.documentElement.scrollWidth<=innerWidth+1"));
   await audit.check(cdp,`available-${width}-${locale}`,"[data-feed-brief]");

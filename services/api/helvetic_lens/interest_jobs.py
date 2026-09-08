@@ -13,11 +13,10 @@ from . import jobs
 from .config import DomainError
 from .db import utcnow
 from .interest_assessment_store import AssessmentStore
+from .interest_policy import MAX_DAILY, MAX_PENDING
 from .models import InterestEventAssessment, Job, Organization
 
 TYPE = "interest_event_brief"
-MAX_PENDING = 4
-MAX_DAILY = 20
 HEARTBEAT_SECONDS = 2
 TRANSIENT = frozenset({"provider_unavailable", "model_timeout", "model_runtime_unavailable",
                        "token_budget_unavailable", "model_transport_error", "model_unreachable",
@@ -58,7 +57,7 @@ def close_unfinished(session, job):
     record.attempt_key, record.finished_at = None, utcnow()
 
 
-def enqueue(session, organization_id, record, locale):
+def enqueue(session, organization_id, record, locale, *, settings=None, policy_key=None):
     """Caller holds the org lock; admission, assessment and outbox commit together."""
     if record.organization_id != organization_id or record.status != "queued":
         raise DomainError("Assessment is not eligible for scheduling.", 409, "interest_not_current")
@@ -79,14 +78,18 @@ def enqueue(session, organization_id, record, locale):
         *scope, Job.state.not_in(jobs.TERMINAL_STATES)))
     daily = session.scalar(select(func.count()).select_from(Job).where(
         *scope, Job.created_at >= utcnow() - timedelta(hours=24)))
-    if pending >= MAX_PENDING or daily >= MAX_DAILY:
+    from .interest_policy import check, read
+    policy = (check(session, organization_id, settings, policy_key, locale) if policy_key
+              else read(session, organization_id, settings) if settings else
+              {"max_pending": MAX_PENDING, "max_daily": MAX_DAILY})
+    if pending >= min(policy["max_pending"], MAX_PENDING) or daily >= min(policy["max_daily"], MAX_DAILY):
         raise DomainError("Background brief allowance reached; saved source evidence remains available.",
                           429, "interest_queue_limit")
     job, _ = jobs.enqueue(session, organization_id=organization_id, job_type=TYPE,
         target_type="regulatory_event", target_id=record.event_id, queue="ai_background",
         idempotency_key=key, priority=2, max_attempts=3,
         payload={"assessment_id": record.id, "input_fingerprint": record.input_fingerprint,
-                 "locale": locale}, steps=[("Generate and validate shared relevance brief", {})])
+                 "locale": locale, **({"policy_key": policy_key} if policy_key else {})}, steps=[("Generate and validate shared relevance brief", {})])
     return {"id": record.id, "job_id": job.id, "status": record.status,
             "job_status": job.state, "cached": False}
 
@@ -133,6 +136,10 @@ class BriefJobs:
             if (current is None or current.state != "running" or current.cancel_requested
                     or _lease(current) != lease):
                 raise jobs.JobCancelled()
+            if "policy_key" in payload:
+                from .interest_policy import check
+                check(session, self.organization_id, self.runner.client.settings,
+                      payload["policy_key"], payload.get("locale"))
             return current
 
         async def heartbeat():
@@ -148,7 +155,8 @@ class BriefJobs:
             with self.db.session() as session:
                 guard(session)
                 record = self.store.get(session, payload.get("assessment_id"))
-                if (set(payload) != {"assessment_id", "input_fingerprint", "locale"}
+                if (set(payload) not in ({"assessment_id", "input_fingerprint", "locale"},
+                                        {"assessment_id", "input_fingerprint", "locale", "policy_key"})
                         or record is None or record.event_id != event_id
                         or record.input_fingerprint != payload["input_fingerprint"]
                         or record.input_manifest.get("locale") != payload["locale"]

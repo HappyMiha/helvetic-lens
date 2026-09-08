@@ -1588,6 +1588,22 @@ runtime metadata and preserve history while withholding non-current results.
 Credential/transport-only edits preserve semantic reuse. HL-089 remains open;
 see the verification record for tested paths and remaining external evidence.
 
+**Organization automatic-brief controls — 8 September 2026:** `/settings` now
+persists an admin-controlled enable switch and lower pending/daily generation
+allowances. Output follows each user’s language, never an organization override.
+Five-locale desktop/mobile UI includes usage,
+explicit save/reload, revision-conflict recovery and viewer read-only state.
+Policy changes cancel old automatic work and fence publication without deleting
+completed history; enabling neither backfills nor independently approves a model.
+Matching schedules distinct active member languages, sharing cached variants
+within each language rather than per user. Concurrent language variants no longer
+supersede one another; feed reads never silently substitute another language. SQLite/API regressions, isolated
+PostgreSQL scenarios and synthetic browser evidence are recorded in
+`docs/VERIFICATION.md`. HL-089 remains **IN PROGRESS**: global admission capacity,
+catch-up/refresh, notification/digest reuse, larger dossiers and independent
+model/language/hardware/user evaluation are not completed by this milestone.
+
+
 Turn a trustworthy topic or watched-law match into a concise, reusable explanation of why the development belongs in the organization's radar and whether it deserves attention. The feed event and its primary-source evidence exist independently of AI; enrichment must never block ingestion, hide a real development, or create a second event history.
 
 Acceptance criteria:

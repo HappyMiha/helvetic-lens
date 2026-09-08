@@ -19,7 +19,7 @@ export function FeedInterestBrief({eventId}: {eventId: string}) {
 }
 
 function Content({eventId}: {eventId: string}) {
-  const {locale, dateTime} = useI18n();
+  const {locale, dateTime, t} = useI18n();
   const copy = interestBriefCopy[locale];
   const page = useResource(resources.interestBrief<SavedInterestBrief>(eventId, locale.slice(0, 2)));
   const data = !page.error && !page.loading ? page.data : undefined;
@@ -34,6 +34,7 @@ function Content({eventId}: {eventId: string}) {
     <p className="text-sm muted">{copy.help}</p>
     {page.loading && <Loading />}
     <ErrorNote message={page.error} />
+    {data && <p className="text-sm muted">{t("briefPolicy.locale")}: <span lang={data.locale}>{({de:"Deutsch",fr:"Français",it:"Italiano",rm:"Rumantsch",en:"English"} as Record<string,string>)[data.locale] || data.locale}</span></p>}
     {data && <p role="status" data-brief-status={data.status} className="text-sm">{copy.status[data.status]}</p>}
     {result && <section lang={data?.locale} className="space-y-4" data-brief-result>
       <p className="text-sm muted">{copy.saved}: {data?.saved_at ? dateTime(data.saved_at) : "—"}</p>
