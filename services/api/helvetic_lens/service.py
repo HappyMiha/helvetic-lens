@@ -3685,14 +3685,17 @@ class HelveticLens:
         return await LocalBriefRunner(self.db, self.organization_id, self.model_client).schedule(event_id, locale=locale)
 
     async def execute_job(self, job_id: str, worker: str = "inline"):
+        from .interest_automation import TYPE as ADMISSION_JOB_TYPE
+        from .interest_automation import AdmissionJobs
         from .interest_execution import LocalBriefRunner
         from .interest_jobs import TYPE as BRIEF_JOB_TYPE
         from .interest_jobs import BriefJobs
         with self.db.session() as session:
-            is_brief = session.scalar(select(Job.id).where(Job.id == job_id,
-                Job.organization_id == self.organization_id, Job.type == BRIEF_JOB_TYPE))
-        if is_brief:
-            return await BriefJobs(LocalBriefRunner(self.db, self.organization_id, self.model_client)).execute(job_id, worker)
+            brief_type = session.scalar(select(Job.type).where(Job.id == job_id,
+                Job.organization_id == self.organization_id, Job.type.in_({BRIEF_JOB_TYPE, ADMISSION_JOB_TYPE})))
+        if brief_type:
+            executor = AdmissionJobs if brief_type == ADMISSION_JOB_TYPE else BriefJobs
+            return await executor(LocalBriefRunner(self.db, self.organization_id, self.model_client)).execute(job_id, worker)
         with self.write_guard, self.db.session() as session:
             job = durable_jobs.claim(session, job_id, worker)
             session.commit()

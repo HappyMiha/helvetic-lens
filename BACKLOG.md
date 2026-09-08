@@ -1555,6 +1555,19 @@ certified. **Still open:** automatic matching triggers, history/digest/delivery
 reuse, prompt/quota policy, official facts, large dossiers and independent model,
 language, usability and target-hardware evaluation. HL-089 remains in progress.
 
+**Matching-triggered admission — 8 September 2026:** Operator opt-in now connects
+completed live matching and every history batch to a transactional admission
+outbox. A fenced worker advances one event at a time, rechecks current local
+approval/evidence and reserves the existing measured generation job. Replays,
+crash recovery and duplicate delivery reuse work; per-event limitations are
+audited, while a full generation allowance defers without dropping the cursor.
+Matching and feed reads never generate. The default remains off pending real
+task/locale approval. Verification is recorded in `docs/VERIFICATION.md`.
+**Remaining:** organization policy/prompt UI, catch-up and refresh outside matching,
+delivery reuse, global admission capacity/fairness, large dossiers and independent
+model/language/hardware evaluation. This is not full HL-089 completion or production
+activation; [operator contract](docs/INTEREST_ASSESSMENTS.md) describes the limits.
+
 Turn a trustworthy topic or watched-law match into a concise, reusable explanation of why the development belongs in the organization's radar and whether it deserves attention. The feed event and its primary-source evidence exist independently of AI; enrichment must never block ingestion, hide a real development, or create a second event history.
 
 Acceptance criteria:

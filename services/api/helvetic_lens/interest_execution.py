@@ -56,9 +56,9 @@ class LocalBriefRunner:
         self.db, self.organization_id, self.client = db, organization_id, client
         self.store = AssessmentStore(organization_id)
 
-    async def schedule(self, event_id: str, *, locale="en"):
+    async def schedule(self, event_id: str, *, locale="en", guard=None):
         """Measured admission only; persist a job/outbox without generating text."""
-        return await self._run(event_id, locale=locale, schedule_only=True)
+        return await self._run(event_id, locale=locale, schedule_only=True, guard=guard)
 
     async def run(self, event_id: str, *, locale="en", instructions=SYSTEM,
                   expected=None, guard=None):

@@ -600,8 +600,11 @@ def run_live_batch(
     checkpoint["remaining"] = remaining
     checkpoint["removed_since_capture"] = max(0, checkpoint["eligible_topics"] - checkpoint["processed"] - remaining)
     session.flush()
+    from .interest_automation import enqueue_after_matching
+    admission = None if remaining else enqueue_after_matching(session, settings, [event.id],
+        {"kind": "live", "checkpoint": checkpoint})
     return {**checkpoint, "status": "pending" if remaining else "complete", "has_more": bool(remaining),
-            "ai_calls": 0, "checkpoint": checkpoint}
+            "ai_calls": 0, "checkpoint": checkpoint, "brief_admission": admission}
 
 
 def run_backfill(
@@ -690,8 +693,11 @@ def run_backfill(
     checkpoint["removed_since_capture"] = max(
         0, checkpoint["eligible_events"] - checkpoint["processed"] - remaining
     )
+    from .interest_automation import enqueue_after_matching
+    admission = enqueue_after_matching(session, settings, [event.id for _state, event in selected],
+        {"kind": "backfill", "checkpoint": checkpoint})
     return {**checkpoint, "status": "pending" if remaining else "complete", "has_more": bool(remaining),
-            "ai_calls": 0, "checkpoint": checkpoint}
+            "ai_calls": 0, "checkpoint": checkpoint, "brief_admission": admission}
 
 
 def list_matches(session: Session, topic_id: str, *, limit: int = 100) -> list[dict]:

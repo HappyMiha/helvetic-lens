@@ -404,7 +404,7 @@ def retry(session: Session, job_id: str) -> Job:
         step.progress_current = 0
         step.error_detail = None
         step.started_at = step.finished_at = None
-    if job.type not in {"topic_match_backfill", "topic_match_event"} or not (job.payload or {}).get("checkpoint"):
+    if job.type not in {"topic_match_backfill", "topic_match_event", "interest_brief_admission"} or not (job.payload or {}).get("checkpoint"):
         job.progress_current = succeeded_steps
     _enqueue_outbox(session, job)
     return job

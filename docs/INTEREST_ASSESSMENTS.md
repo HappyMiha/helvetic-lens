@@ -5,8 +5,8 @@ provides the generation contract, transactional storage, measured local executio
 and current-input admission, including material evidence from existing saved
 legacy comparisons. Complete passage sets remain the fallback when no comparison
 exists and they fit the contract. The feed now offers an on-demand saved-brief
-reader; it does not yet enqueue enrichment after matching or attach briefs to
-digest notifications.
+reader. Matching can now enqueue measured admission through explicit operator
+opt-in and independent local approval; digest attachment remains open.
 The deterministic feed continues to work independently of this module.
 
 ## Contract and evidence
@@ -88,8 +88,8 @@ The repository is **not** a public admission API. Workers can now use
 `interest_admission.assemble`, rather than supplying interest lists themselves.
 The raw storage primitives remain internal; an event-admission row alone is not
 enough to prove inputs current. Runtime resolution and durable execution are
-implemented below. Matching-trigger policy, administrator controls and reviewed
-model approval remain required before automatic execution is enabled.
+implemented below. The operator-controlled matching trigger is described below;
+administrator UI controls and reviewed model approval remain required for rollout.
 
 ### Current saved-input admission — 8 September 2026
 
@@ -378,6 +378,53 @@ This is not automatic enrichment, a history browser or digest integration. No
 real model/task/language approval ships with this slice. Rebuilding a dossier on
 demand is not a measured 100-user capacity guarantee or a globally frozen database
 snapshot. Independent semantic, native-language and usability review remains open.
+
+## Matching-triggered admission — 8 September 2026
+
+Set `INTEREST_BRIEF_AUTO_ENABLED=true` and `INTEREST_BRIEF_AUTO_LOCALE` to one of
+`de`, `fr`, `it`, `rm`, `en` consistently on the API, workers and scheduler. The
+default is off: this does not approve a model or enable cloud fallback. A local
+profile with independently reviewed `interest_brief` approval for the selected
+language and a running, measured runtime is still mandatory. These are operator
+environment settings, not yet organization controls in the admin UI.
+
+Live matching saves one admission job after exhausting its topic cursor. Each
+topic-history batch saves its complete event-ID set (at most the existing 5,000
+event batch bound), not just a preview. Matching output, checkpoint and admission
+outbox commit together; rollback/replay cannot lose or duplicate that handoff.
+The trigger fingerprint and explicit organization admission bind each batch.
+Matching does not contact the model, tokenize passages or generate text.
+
+An `interest_brief_admission` job processes one event per delivery, rechecking
+current evidence, policy, locale, runtime and approval before the existing
+measured runner reserves the separate generation job. It yields between events.
+Only IDs, fingerprints, cursor counts and sanitized per-event outcomes are kept;
+no passages, private conversations or credentials are copied into these jobs.
+Missing/expired interests, unavailable evidence, ambiguous baselines and oversized
+complete dossiers are recorded as limitations without preventing later events.
+Source evidence/feed matching remain available if AI admission fails.
+
+Lease owner, attempt and lease timestamp are fenced before and after token
+measurement; a heartbeat cancels blocked measurement on cancellation. A crash
+after generation reservation but before cursor commit reuses that reservation.
+Duplicate delivery cannot create another generation. Cancellation stops later
+admissions; already committed generation jobs retain their independent lifecycle.
+Failed saved assessments are reported, never automatically regenerated merely
+because another topic batch refers to them.
+
+Existing generation allowances remain four pending/twenty new jobs per day per
+organization. An allowance failure defers the same event five minutes without
+consuming a failure attempt or advancing its cursor. Transient runtime errors
+have bounded retry; invalid policy/approval/checkpoints terminate with an explicit
+job error. Operator retry resumes the committed cursor and preserves outcomes.
+Successful admission means the batch was examined, not that every AI result was
+generated or useful. The saved feed reader exposes only exact-current successes.
+
+Still open: organization policy UI/locale selection, prompt controls, admission
+queue capacity and priority benchmarks, automatic refresh for edits outside a
+matching run, catch-up after enabling/changing policy, digest/notification reuse,
+large-dossier aggregation and independently approved model usefulness. No real
+model, production deployment or notification was enabled by this change.
 
 ## Verification
 

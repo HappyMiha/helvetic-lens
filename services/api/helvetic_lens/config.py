@@ -72,6 +72,9 @@ class Settings(BaseSettings):
     topic_match_backfill_limit: int = Field(default=500, ge=1, le=5000)
     topic_match_retention_days: int = Field(default=180, ge=7, le=3650)
     topic_match_ai_candidates_per_event: int = Field(default=3, ge=0, le=10)
+    # Operator opt-in; independent local task/locale approval remains mandatory.
+    interest_brief_auto_enabled: bool = False
+    interest_brief_auto_locale: Literal["de", "fr", "it", "rm", "en"] = "en"
     data_dir: Path = Field(
         default=ROOT / "data",
         validation_alias=AliasChoices("HELVETIC_LENS_DATA_DIR", "REGWATCH_DATA_DIR"),

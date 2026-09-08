@@ -1,5 +1,33 @@
 # Verification record
 
+## Matching-triggered brief admission — 8 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl-089-matching-brief-admission`, based on `653b5cf`.
+  Opt-in live/history matching now commits a complete bounded event-ID batch and
+  admission outbox with its matching checkpoint. Matching makes no model calls.
+- **107 combined tests passed** in 180.27 seconds across automation, measured
+  execution, durable brief jobs, topic live/history and ordinary jobs. The one
+  SQLite skip is the existing PostgreSQL row-lock test, run separately below.
+  Initial new-fixture failure was a missing required detected date, corrected
+  without weakening a production constraint. Final rerun includes all assertions.
+- Actual service tests cover matching → outbox → measured admission → generation
+  → current feed reader; replayed batches reuse the one generation. Coverage also
+  includes rollback, complete history traversal, disabled/revoked approval/policy,
+  foreign scope, corrupt payload, allowance deferral, per-event limitations,
+  four duplicate deliveries, cancellation during measurement, same/new worker
+  lease replacement, crash recovery and partial-batch cancel/retry. Failed saved
+  output remains failed and does not cause automatic new generation.
+- **Seven PostgreSQL 17.11 scenarios passed**: roundtrip, backfill rollback and
+  traversal, later events after a limitation, crash recovery, same-owner lease
+  replacement, duplicate delivery and dispatcher skip-locked ordering. Only a
+  dedicated loopback port 55524/tmpfs QA database was reset; its container was
+  removed after verification. Ruff and whitespace checks passed.
+- Model/runtime/approval are synthetic; dispatch uses callbacks, not a live
+  Redis/Celery broker. This is not real model approval, performance/fairness
+  certification or production activation. No inference endpoint, production
+  database, user notification or Docker working volume was changed. Automatic
+  policy remains off by default and HL-089 remains in progress.
+
 ## Exact-current saved brief reader — 8 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl-089-current-brief-reader`, based on `bbca13c`.

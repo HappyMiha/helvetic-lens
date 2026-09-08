@@ -34,6 +34,14 @@ from test_interest_assessment_store import (
     test_revised_input_supersedes_inflight_work_and_old_worker_cannot_publish,
     test_unverified_result_cannot_be_persisted,
 )
+from test_interest_automation import (
+    test_admission_lease_and_policy_checked_after_measurement,
+    test_backfill_admits_every_batch_atomically_without_ai,
+    test_crash_after_admission_reuses_job_before_advancing_cursor,
+    test_duplicate_delivery_coalesces_measured_admission,
+    test_limited_event_is_audited_then_later_event_admitted,
+    test_matching_outbox_admission_generation_and_reader,
+)
 from test_interest_brief_reader import (
     test_changed_current_binding_never_displays_saved_answer_as_current,
     test_corrupted_saved_output_or_proof_is_not_displayed,
@@ -97,6 +105,12 @@ def execute_local(harness, scenario):
         scenario(execution)
 
 SUITES = {
+    "auto-roundtrip": lambda harness: execute_local(harness, test_matching_outbox_admission_generation_and_reader),
+    "auto-backfill": test_backfill_admits_every_batch_atomically_without_ai,
+    "auto-limit": lambda harness: execute_local(harness, test_limited_event_is_audited_then_later_event_admitted),
+    "auto-recovery": lambda harness: execute_local(harness, test_crash_after_admission_reuses_job_before_advancing_cursor),
+    "auto-lease": lambda harness: execute_local(harness, lambda value: test_admission_lease_and_policy_checked_after_measurement(value, "same_owner")),
+    "auto-duplicate": lambda harness: execute_local(harness, test_duplicate_delivery_coalesces_measured_admission),
     "reader-current": lambda harness: execute_local(harness, test_exact_shared_result_reuses_without_generation_or_jobs),
     "reader-stale": lambda harness: execute_local(harness, lambda value: test_changed_current_binding_never_displays_saved_answer_as_current(value, "profile")),
     "reader-invalid": lambda harness: execute_local(harness, lambda value: test_corrupted_saved_output_or_proof_is_not_displayed(value, "citation")),
