@@ -97,8 +97,22 @@
   `3af161a` source archive plus exactly the changed Database module and new test.
   It retains the full suite and frozen dependencies, UID 1000, read-only source,
   no Docker socket/secrets, and separate temporary data. Its 6 GiB limit has swap
-  disabled to avoid host thrashing. At this checkpoint it is still running;
-  completion and HappySnowman production recovery are not yet verified.
+  disabled to avoid host thrashing. **Completed: 1,740 passed, 7 skipped, one
+  existing Starlette/httpx deprecation warning, in 3,020.55 seconds (50m20s).**
+  The seven skips are PostgreSQL-specific concurrency cases (brief dispatch,
+  onboarding milestones, personal onboarding, relation reprocessing, offline
+  relation coalescing, and two topic-review cases); they are not represented as
+  passing in this SQLite full run. No tests were removed from collection.
+  The Docker command exited 0 and the QA container removed itself after completion.
+  Its sampled usage near 86%
+  was 3.953 GiB / 6 GiB; this is an observation, not a measured peak. The Windows
+  bind-mounted source, 2-CPU allocation and local Docker filesystem make elapsed
+  time unsuitable as a HappySnowman performance prediction.
+  Git blob hashes of the archived changed Database module and lifecycle tests
+  match `5bf2227`; all other code comes from `3af161a`. Newer prompt/model-settings
+  tasks have separate targeted evidence, not coverage by this immutable run.
+  HappySnowman installation, target-host gate and production recovery remain
+  unverified. Report artifact: `test-results/full-linux-api-memory-final.txt`.
 - Ruff and diff checks pass. The existing Starlette/httpx deprecation warning is
   visible and not suppressed; it is separate from the retained database graph.
 

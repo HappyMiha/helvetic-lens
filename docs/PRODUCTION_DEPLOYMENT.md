@@ -194,6 +194,14 @@ container's memory/swap and the captured stack as well as elapsed time; increasi
 the deadline alone does not fix memory pressure. Local regressions do not establish
 the cause of a particular remote failure without its host diagnostics.
 
+The complete frozen Linux API run of the `5bf2227` code baseline subsequently
+finished locally: 1,740 passed, seven PostgreSQL-only concurrency cases skipped,
+and one existing deprecation warning in 50m20s. It used a separate read-only source
+archive, UID 1000, 2 CPUs and 6 GiB with swap disabled; the disposable QA container
+removed itself. This is below the revised 7,200-second API-test deadline, but the
+Windows-mounted filesystem is not a target-server performance benchmark. It does
+not prove a successful deployment or validate commits added after that baseline.
+
 When an older installed release manager cannot pass a gate because its runner
 needs a correction, updating `main` alone cannot bootstrap the new manager:
 normal self-update happens only after success. Use the reviewed installer's

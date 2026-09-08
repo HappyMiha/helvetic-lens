@@ -2446,8 +2446,11 @@ not passed. A reproducible SQLAlchemy listener retention cycle kept disposed
 Database/sessionmaker/engine objects alive. Listeners now capture only the tenant
 ContextVar, and completed/failed migrations release their connection and compiled
 schema cache. New lifecycle regressions distinguish old from fixed code; tenant
-isolation and PostgreSQL checks pass. The repeated complete Linux run is still
-pending at this checkpoint; this is not evidence of a successful production deploy.
+isolation and PostgreSQL checks pass. The repeated complete frozen Linux run
+finished with **1,740 passed, 7 PostgreSQL-specific skips**, one existing warning,
+and no failures in 50m20s. The owned QA container removed itself. This verifies
+the immutable `5bf2227` API baseline locally, not newer changes or a successful
+production deployment; target-host recovery remains open.
 
 **8 September 2026 manager recovery follow-up:** The installer now supports a
 reviewed-commit, locked `--update-only` recovery with a backup and atomic
