@@ -1,6 +1,6 @@
 # Third-party notices
 
-The Elastic License 2.0 in this repository covers original Helvetic Lens code
+The Apache License 2.0 in this repository covers original Helvetic Lens code
 and documentation, not third-party software or content. Retain the licenses and
 copyright notices shipped with each dependency when distributing it.
 
@@ -84,8 +84,9 @@ project's license does not override them.
 - Next.js, React, Tailwind, Radix, icons, fonts, Python libraries, and their
   transitive dependencies retain their own copyrights and licenses.
 - PostgreSQL, Redis, Caddy, operating-system/container packages, CUDA, and
-  llama.cpp are separately licensed components, not relicensed as ELv2. In
-  particular, the Compose Redis 7.4 image has its own licensing terms.
+  llama.cpp are separately licensed components, not relicensed under the
+  repository license. In particular, the Compose Redis 7.4 image has its own
+  licensing terms.
 - Apertus/GGUF model weights and upstream chat templates retain the terms of
   their exact upstream revision. Model catalogue license/acceptance fields still
   apply; no model weights are licensed by the Helvetic Lens LICENSE file.

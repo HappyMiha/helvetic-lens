@@ -54,6 +54,8 @@ def without_pages(result):
 def seed_timeline(harness, count=151):
     client, _, service, _ = harness
     law = add_law(client)
+    # Keep HappySnowman's dynamic clock fix. Observations are stamped one day
+    # later, so both groups must predate the new history-page admission cutoff.
     stamp = utcnow() - timedelta(days=2)
     versions = [new_id() for _ in range(count)]
     events = [new_id() for _ in range(count)]
