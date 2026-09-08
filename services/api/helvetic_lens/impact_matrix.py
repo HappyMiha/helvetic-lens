@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections import Counter, defaultdict
+from collections import Counter
 from datetime import UTC, datetime
 from typing import Any
 
@@ -10,7 +10,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from . import analysis as ai
-from .models import Analysis, Comparison, DocumentWatch, Law, Profile
+from . import matrix_selection
+from .corpus_access import visible
+from .models import Comparison, DocumentWatch, Law, Profile
 
 IMPACTS = {"high", "medium", "low"}
 IMPACT_ORDER = {"high": 3, "medium": 2, "low": 1}
@@ -32,17 +34,19 @@ def _text(value: object, limit: int = 600) -> str | None:
 
 
 class ImpactMatrixReader:
-    """Build a bounded matrix without inference or persisted derived state."""
+    """Batch saved-history reads; the complete response still grows with watches."""
 
     def __init__(
         self,
         *,
+        organization_id: str,
         profile_id: str,
         settings: Any,
         prompts: Any,
         output_locale: str,
         runtime_identity: dict | None = None,
     ):
+        self.organization_id = organization_id
         self.profile_id = profile_id
         self.settings = settings
         self.prompts = prompts
@@ -50,69 +54,10 @@ class ImpactMatrixReader:
         self.runtime_identity = runtime_identity
 
     @staticmethod
-    def _latest_by_law(comparisons: list[Comparison]) -> dict[str, Comparison]:
-        latest: dict[str, Comparison] = {}
-        for comparison in comparisons:
-            latest.setdefault(comparison.law_id, comparison)
-        return latest
-
-    @staticmethod
-    def _attempts_by_comparison(analyses: list[Analysis]) -> dict[str, list[Analysis]]:
-        grouped: dict[str, list[Analysis]] = defaultdict(list)
-        for analysis in analyses:
-            grouped[analysis.comparison_id].append(analysis)
-        return grouped
-
-    def _report(
-        self,
-        comparison: Comparison | None,
-        profile: Profile,
-        attempts: list[Analysis],
-    ) -> tuple[str, Analysis | None, Analysis | None]:
-        if comparison is None or not attempts:
-            return "unanalysed", None, None
-        latest_attempt = attempts[0]
-        current_key = ai.cache_key(
-            comparison,
-            profile,
-            self.settings,
-            self.prompts,
-            self.output_locale,
-            runtime_identity=self.runtime_identity,
-        )
-        current = next(
-            (
-                attempt
-                for attempt in attempts
-                if attempt.status == "succeeded"
-                and attempt.cache_key == current_key
-                and isinstance(attempt.result, dict)
-            ),
-            None,
-        )
-        if current:
-            return "current", current, latest_attempt
-        previous = next(
-            (
-                attempt
-                for attempt in attempts
-                if attempt.status == "succeeded" and isinstance(attempt.result, dict)
-            ),
-            None,
-        )
-        if previous:
-            return "stale", previous, latest_attempt
-        if latest_attempt.status == "failed":
-            return "failed", latest_attempt, latest_attempt
-        return "unanalysed", None, latest_attempt
-
-    @staticmethod
     def _reason(result: dict) -> str | None:
         applicability = result.get("organization_applicability")
         return _text(
-            (applicability or {}).get("explanation")
-            if isinstance(applicability, dict)
-            else None
+            (applicability or {}).get("explanation") if isinstance(applicability, dict) else None
         ) or _text(result.get("reason"))
 
     def _row(
@@ -122,15 +67,11 @@ class ImpactMatrixReader:
         law: Law,
         comparison: Comparison | None,
         profile: Profile,
-        attempts: list[Analysis],
+        selection: tuple,
     ) -> dict:
-        report_state, report, latest_attempt = self._report(comparison, profile, attempts)
+        report_state, report, latest_attempt = selection
         result = report.result if report and isinstance(report.result, dict) else {}
-        report_areas = {
-            _area_key(area)
-            for area in result.get("business_areas", [])
-            if _area_key(area)
-        }
+        report_areas = {_area_key(area) for area in result.get("business_areas", []) if _area_key(area)}
         impact = result.get("impact") if result.get("impact") in IMPACTS else None
         reason = self._reason(result)
         cells = []
@@ -176,7 +117,11 @@ class ImpactMatrixReader:
         }
 
     def page(self, session: Session) -> dict:
-        profile = session.get(Profile, self.profile_id)
+        profile = session.scalar(
+            select(Profile).where(
+                Profile.id == self.profile_id, Profile.organization_id == self.organization_id
+            )
+        )
         if profile is None:
             return {
                 "output_locale": self.output_locale,
@@ -195,60 +140,53 @@ class ImpactMatrixReader:
         watches = list(
             session.scalars(
                 select(DocumentWatch)
-                .where(DocumentWatch.active.is_(True))
+                .where(DocumentWatch.active.is_(True), DocumentWatch.organization_id == self.organization_id)
                 .order_by(DocumentWatch.display_name, DocumentWatch.id)
             )
         )
-        law_ids = [watch.law_id for watch in watches]
-        laws = {
-            law.id: law
-            for law in (
-                session.scalars(select(Law).where(Law.id.in_(law_ids)))
-                if law_ids
-                else []
-            )
-        }
-        comparisons = list(
-            session.scalars(
-                select(Comparison)
-                .where(Comparison.law_id.in_(law_ids))
-                .order_by(Comparison.created_at.desc(), Comparison.id.desc())
-            )
-        ) if law_ids else []
-        latest_comparison = self._latest_by_law(comparisons)
-        comparison_ids = [comparison.id for comparison in latest_comparison.values()]
-        analyses = list(
-            session.scalars(
-                select(Analysis)
-                .where(Analysis.comparison_id.in_(comparison_ids))
-                .order_by(Analysis.created_at.desc(), Analysis.id.desc())
-            )
-        ) if comparison_ids else []
-        attempts = self._attempts_by_comparison(analyses)
-        rows = [
-            self._row(
-                watch=watch,
-                law=laws[watch.law_id],
-                comparison=latest_comparison.get(watch.law_id),
-                profile=profile,
-                attempts=attempts.get(
-                    latest_comparison[watch.law_id].id, []
+        rows = []
+        for offset in range(0, len(watches), matrix_selection.BATCH_SIZE):
+            batch = watches[offset : offset + matrix_selection.BATCH_SIZE]
+            law_ids = [watch.law_id for watch in batch]
+            laws = {
+                law.id: law
+                for law in session.scalars(
+                    select(Law).where(Law.id.in_(law_ids), visible(Law, self.organization_id))
                 )
-                if watch.law_id in latest_comparison
-                else [],
+            }
+            latest = matrix_selection.comparisons(session, self.organization_id, law_ids)
+            keys = {
+                item.id: ai.cache_key(
+                    item,
+                    profile,
+                    self.settings,
+                    self.prompts,
+                    self.output_locale,
+                    runtime_identity=self.runtime_identity,
+                )
+                for item in latest.values()
+            }
+            reports = matrix_selection.reports(session, self.organization_id, latest, keys)
+            rows.extend(
+                self._row(
+                    watch=watch,
+                    law=laws[watch.law_id],
+                    comparison=latest.get(watch.law_id),
+                    profile=profile,
+                    selection=reports.get(latest[watch.law_id].id, ("unanalysed", None, None))
+                    if watch.law_id in latest
+                    else ("unanalysed", None, None),
+                )
+                for watch in batch
+                if watch.law_id in laws
             )
-            for watch in watches
-            if watch.law_id in laws
-        ]
         rows.sort(
             key=lambda row: (
                 -IMPACT_ORDER.get(row["overall_impact"] or "", 0),
                 row["law_title"].casefold(),
             )
         )
-        cell_states = Counter(
-            cell["state"] for row in rows for cell in row["cells"]
-        )
+        cell_states = Counter(cell["state"] for row in rows for cell in row["cells"])
         report_states = Counter(row["report_state"] for row in rows)
         return {
             "output_locale": self.output_locale,

@@ -1189,6 +1189,7 @@ class HelveticLens:
     def impact_matrix(self, output_locale: str) -> dict:
         with self.db.session() as session:
             return ImpactMatrixReader(
+                organization_id=self.organization_id,
                 profile_id=self.tenant_record_id,
                 settings=self.settings,
                 prompts=self.prompt_settings,
