@@ -1,5 +1,22 @@
 # Verification record
 
+## Deployment web-build localization regression — 8 September 2026 (HappyDucky02)
+
+- The reported `97e923f` production attempt failed before activation in the web
+  Docker build: the root localization gate rejected unused `prompts.characters`.
+  The brief prompt introduced a variable 4,000-character counter but left the
+  existing 12,000-character catalogue entry unused. The form now uses the existing
+  localized entry for ordinary prompts and the bounded entry for shared briefs.
+  The localization gate remains enabled and unchanged.
+- Root `npm run build` passes, including localization/value audit, shell/resource/
+  report regressions and production Next build. A separate archive of `ca69b87`
+  plus **only** `prompt-settings-page.tsx` was built through the real web Dockerfile
+  successfully as `helvetic-lens-web-qa:prompts-i18n`. Thus the Docker result does
+  not depend on the unfinished organization-policy changes in the working tree.
+- This verifies the reported `build_images` blocker locally on Linux Docker. It
+  does not record a HappySnowman activation, rerun its API tests, or modify its
+  running release/data. The failed historical deployment record remains accurate.
+
 ## Persisted model configuration during shared briefs — 8 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl089-model-freshness`, based on `97e923f`.

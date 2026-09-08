@@ -305,7 +305,7 @@ function PromptForm({
                   onChange={(event) => update(editor.key, event.target.value)}
                 />
                 <p className="field-help">
-                  {t("prompts.boundedCharacters", {
+                  {t(editor.key === "interest_brief_instructions" ? "prompts.boundedCharacters" : "prompts.characters", {
                     count: number(draft[editor.key].length),
                     limit: number(editor.key === "interest_brief_instructions" ? 4000 : 12000),
                   })}
