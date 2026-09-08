@@ -7,6 +7,7 @@ import { invalidateResources, resourceTag, resources, useResource } from "@/lib/
 import { interestBriefCopy, type BriefClaim, type SavedInterestBrief } from "@/lib/interest-brief";
 import { ErrorNote, Loading } from "./common";
 import { Button } from "./ui/button";
+import { BriefRecoveryHistory } from "./brief-recovery-history";
 import { InterestBriefRequest } from "./interest-brief-request";
 
 export function FeedInterestBrief({eventId}: {eventId: string}) {
@@ -37,6 +38,10 @@ function Content({eventId}: {eventId: string}) {
     <ErrorNote message={page.error} />
     {data && <p className="text-sm muted">{t("briefPolicy.locale")}: <span lang={data.locale}>{({de:"Deutsch",fr:"Français",it:"Italiano",rm:"Rumantsch",en:"English"} as Record<string,string>)[data.locale] || data.locale}</span></p>}
     {data && <p role="status" data-brief-status={data.status} className="text-sm">{copy.status[data.status]}</p>}
+    {data?.error_code && <ErrorNote message={t(({
+      invalid_model_output: "briefRecovery.invalidOutput", invalid_citation: "briefRecovery.invalidOutput",
+      model_timeout: "briefRecovery.timeout", cancelled: "briefRecovery.cancelled",
+    } as Record<string, string>)[data.error_code] || "briefRecovery.unavailable")} />}
     {result && <section lang={data?.locale} className="space-y-4" data-brief-result>
       <p className="text-sm muted">{copy.saved}: {data?.saved_at ? dateTime(data.saved_at) : "—"}</p>
       <div className="font-semibold">{claim(result.what_happened)}</div>
@@ -48,7 +53,8 @@ function Content({eventId}: {eventId: string}) {
       <details><summary className="min-h-11 py-2 cursor-pointer font-semibold"><h4 className="inline">{copy.limitations}</h4></summary>
         <p>{result.uncertainty}</p><ul>{result.input_limitations.map((item, index) => <li key={index} lang="en">{item}</li>)}</ul></details>
     </section>}
-    {data && !result && <InterestBriefRequest eventId={eventId} canRequest={data.status !== "failed"} />}
+    {data && !result && <InterestBriefRequest eventId={eventId} canRequest={data.status !== "failed"} recovery={data.recovery} />}
+    {data?.recovery && <BriefRecoveryHistory recovery={data.recovery} />}
     <Button data-refresh-brief variant="outline" className="min-h-11 whitespace-normal" disabled={page.loading}
       onClick={() => void invalidateResources(resourceTag(`interest-brief:${eventId}`)).catch(() => {})}>{copy.refresh}</Button>
   </div>;

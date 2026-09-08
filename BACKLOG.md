@@ -1616,6 +1616,19 @@ are recorded in `docs/VERIFICATION.md`. Bulk automatic catch-up, failed-assessme
 operator retry UX and independent model/user/hardware gates remain open.
 
 
+**Bounded failed-brief recovery — 8 September 2026:** Organization admins can
+explicitly retry a failed saved brief from Today, with background progress and
+no full-page reload. Admission preserves the same job/assessment and refuses
+exhausted work before queueing: at most two manual retries and three cumulative
+assessment attempts. Retained retry receipts include the prior error code,
+timestamp, attempt count and requesting actor, surviving subsequent success.
+Policy, tenant and pending-job limits still apply; worker current-input and
+approval checks remain mandatory. SQLite/API, isolated PostgreSQL concurrency
+and five-locale browser verification are recorded in `docs/VERIFICATION.md`.
+This closes the basic failed-assessment operator retry UX above, not full
+automatic-attempt auditing, bulk catch-up, notifications or independent model,
+language, hardware and user evaluation. HL-089 remains **IN PROGRESS**.
+
 Turn a trustworthy topic or watched-law match into a concise, reusable explanation of why the development belongs in the organization's radar and whether it deserves attention. The feed event and its primary-source evidence exist independently of AI; enrichment must never block ingestion, hide a real development, or create a second event history.
 
 Acceptance criteria:

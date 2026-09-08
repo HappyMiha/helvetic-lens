@@ -5,10 +5,13 @@ import { api, errorText, invalidateResources, resourceTag, resources, useResourc
 import { useI18n } from "@/lib/i18n";
 import { ErrorNote, Status } from "./common";
 import { Button } from "./ui/button";
+import { useAuth } from "./auth-gate";
+import type { BriefRecovery } from "@/lib/interest-brief";
 import type { Job } from "@/lib/types";
 
-export function InterestBriefRequest({eventId, canRequest}: {eventId: string; canRequest: boolean}) {
+export function InterestBriefRequest({eventId, canRequest, recovery}: {eventId: string; canRequest: boolean; recovery?: BriefRecovery | null}) {
   const {locale, t} = useI18n();
+  const {canManage} = useAuth();
   const policy = useResource(resources.interestBriefPolicy());
   const [watchId, setWatchId] = useState<string | null>(null);
   const [lastId, setLastId] = useState<string | null>(null);
@@ -29,9 +32,14 @@ export function InterestBriefRequest({eventId, canRequest}: {eventId: string; ca
     setMessage(t(job.state === "succeeded" ? "briefRequest.finished" : "briefRequest.failed"));
     void invalidateResources(resourceTag(`interest-brief:${eventId}`)).catch(() => {});
   }, [progress.data, watchId, eventId, t]);
-  async function request() {
+  async function request(retry = false) {
     setBusy(true); setError("");
     try {
+      if (retry && recovery) {
+        const job = await api<Job>(`/jobs/${encodeURIComponent(recovery.job_id)}/retry`, {method: "POST"});
+        setWatchId(job.id); setLastId(job.id); setMessage(t("briefRequest.working"));
+        return;
+      }
       nonce.current ||= crypto.randomUUID();
       const result = await api<{job: Job}>(`/interest-feed/events/${encodeURIComponent(eventId)}/brief/requests`, {
         method: "POST", body: JSON.stringify({request_id: nonce.current, locale: locale.slice(0, 2)}),
@@ -47,7 +55,13 @@ export function InterestBriefRequest({eventId, canRequest}: {eventId: string; ca
     {policy.data?.enabled ? canRequest && <Button data-request-brief className="min-h-11 whitespace-normal" disabled={busy || !!watchId}
       onClick={() => void request()}>{t(busy || watchId ? "briefRequest.working" : "briefRequest.prepare")}</Button>
       : policy.data && <p className="text-sm muted">{t("error.interest_auto_disabled")}</p>}
-    {lastId && <RequestDetails key={lastId} jobId={lastId} />}
+    {recovery && !canRequest && <div className="space-y-2">
+      <p>{t("briefRecovery.attempts", {used: recovery.attempts_used, limit: recovery.attempt_limit})}</p>
+      {recovery.retry_allowed ? canManage ? <Button data-retry-brief className="min-h-11 whitespace-normal" disabled={busy || !!watchId || !policy.data?.enabled}
+        onClick={() => void request(true)}>{t(busy || watchId ? "briefRequest.working" : "briefRecovery.retry")}</Button>
+        : <p>{t("briefRecovery.admin")}</p> : <p>{t("briefRecovery.exhausted")}</p>}
+    </div>}
+    {(lastId || recovery?.job_id) && <RequestDetails key={lastId || recovery?.job_id} jobId={(lastId || recovery?.job_id)!} />}
   </div>;
 }
 

@@ -609,3 +609,29 @@ refreshes the saved card on completion without reloading the page. Failure retai
 source access and task details. The explicit action is not offered for a saved
 failed assessment; operator retry remains separate. Reading old events never
 substitutes another language or triggers bulk historical AI work.
+
+## Explicit failed-brief recovery
+
+Today shows a localized failure explanation, cumulative attempts, exact job
+details and an explicit retry for organization admins. Viewers can inspect the
+state/history but cannot invoke the existing admin-only job retry route.
+The button requires enabled organization policy. A retry queues background work
+even in inline development mode; the HTTP request never performs inference.
+
+The existing `/api/jobs/{job_id}/retry` path now validates the exact organization,
+event, assessment fingerprint, language and generation-job binding before
+resetting a failed brief. Organization locking coalesces concurrent retries.
+There are at most two manual retries and three cumulative assessment attempts;
+resetting the generic job counter cannot reset the assessment budget. Each
+assessment execution still allows at most one structured-output repair. Pending
+generation quotas and the exact saved policy revision apply to policy-bound jobs;
+legacy unbound jobs retain their existing lifecycle. Worker-side current evidence,
+model approval and publication fences remain authoritative.
+
+Before clearing the current failure, the same transaction appends a bounded
+receipt to the job step: requested time, actor ID, prior state/error code,
+assessment attempt count and previous finish time. No raw provider output or
+credentials are copied. Receipts remain visible with the saved current brief
+after a successful retry. This is retained manual-retry history, not a separate
+complete audit of every automatic transport/model attempt. Obsolete input results
+are still withheld by the saved reader, and there is no automatic retry on reads.

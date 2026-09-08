@@ -3630,8 +3630,13 @@ class HelveticLens:
                     f"model_{state}",
                 )
 
-    def retry_job(self, job_id: str):
+    def retry_job(self, job_id: str, *, actor_id=None):
         with self.write_guard, self.db.session() as session:
+            brief = session.scalar(select(Job.id).where(Job.id == job_id,
+                Job.organization_id == self.organization_id, Job.type == "interest_event_brief"))
+            if brief:
+                from .interest_recovery import prepare
+                prepare(session, self.organization_id, self.settings, job_id, actor_id)
             try:
                 job = durable_jobs.retry(session, job_id)
             except LookupError as exc:

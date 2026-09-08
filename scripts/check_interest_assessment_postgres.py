@@ -88,6 +88,11 @@ from test_interest_policy import (
     test_matching_schedules_distinct_active_user_languages_not_admin_fallback,
     test_policy_migration_preserves_existing_organization,
 )
+from test_interest_recovery import (
+    test_concurrent_postgres_retries_have_one_receipt,
+    test_explicit_retry_preserves_failure_and_reuses_job_without_immediate_inference,
+    test_retry_cannot_reset_cumulative_assessment_or_manual_limits,
+)
 from test_interest_requests import (
     test_language_request_does_not_require_organization_fallback_locale,
     test_postgres_concurrent_requests_coalesce,
@@ -119,6 +124,9 @@ def execute_local(harness, scenario):
         scenario(execution)
 
 SUITES = {
+    "recovery-concurrency": lambda harness: execute_local(harness, test_concurrent_postgres_retries_have_one_receipt),
+    "recovery-roundtrip": lambda harness: execute_local(harness, test_explicit_retry_preserves_failure_and_reuses_job_without_immediate_inference),
+    "recovery-limits": lambda harness: execute_local(harness, test_retry_cannot_reset_cumulative_assessment_or_manual_limits),
     "request-concurrency": test_postgres_concurrent_requests_coalesce,
     "request-roundtrip": lambda harness: execute_local(harness, test_request_is_cheap_coalesces_and_runs_through_durable_worker),
     "request-language": lambda harness: execute_local(harness, test_language_request_does_not_require_organization_fallback_locale),

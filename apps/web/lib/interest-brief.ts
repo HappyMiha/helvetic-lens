@@ -1,7 +1,12 @@
 import type { Locale } from "./i18n";
 
 export type BriefClaim = { text: string; evidence_ids: string[] };
+export type BriefRecovery = {job_id: string; job_state: string; attempts_used: number; attempt_limit: number;
+  manual_retries_used: number; manual_retry_limit: number; retry_allowed: boolean;
+  history: Array<{requested_at: string; actor_id: string | null; assessment_attempts: number;
+    previous_state: string; previous_error_code: string | null; previous_finished_at: string | null}>};
 export type SavedInterestBrief = {
+  recovery?: BriefRecovery | null; error_code?: string | null;
   status: "not_scheduled" | "pending" | "available" | "failed" | "stale" | "runtime_unverified" | "not_current" | "unavailable";
   assessment_id: string | null; saved_at: string | null; locale: string; ai_calls: number;
   evidence_links?: Record<string, string>; interest_names?: Record<string, string>;

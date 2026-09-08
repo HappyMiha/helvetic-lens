@@ -1,5 +1,38 @@
 # Verification record
 
+## Bounded failed-brief recovery — 8 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl089-brief-recovery`, based on `e936ff2`. No schema
+  migration or production mutation. Explicit admin retries reuse the same durable
+  job/assessment, retain prior failure receipts, and do not run inference inline.
+  Two manual retries/three cumulative assessment attempts remain enforced before
+  queueing; the existing worker still checks current inputs and model approval.
+- **46 tests passed, 2 PostgreSQL-only tests skipped in 93.61s** across recovery,
+  jobs and saved readers. **26 API/access/job/request regression tests passed,
+  1 PostgreSQL-only test skipped in 42.11s**. One existing Starlette/httpx warning.
+  Tests cover failure-to-success history, exhausted budgets, changed policy,
+  pending quotas and HTTP queueing without additional model calls. Model/runtime
+  fixtures are synthetic; these are not real-model quality measurements.
+- PostgreSQL **17.11** in a task-owned loopback/tmpfs container: three suites
+  passed for independent concurrent retries producing one receipt/job step,
+  failure/retry/success reader history and cumulative retry exhaustion. Resets
+  touched only the verified isolated QA schema. No application data used.
+- Final production browser: **20 recovery journeys** (admin/viewer, five locales,
+  390/1440px), **30 full-document axe checkpoints**; initial reads do not retry,
+  HTTP retry failure is recoverable, pending work disables duplicate clicks,
+  success preserves history/page state and exhaustion removes the retry action.
+  Mobile and desktop screenshots were visually inspected. Existing explicit
+  request journeys also pass (10 journeys, 20 axe checkpoints). Synthetic APIs
+  only; incomplete accessibility findings and native-language review remain open.
+- Root `npm run build`, including release i18n/value gates and TypeScript, passes;
+  Ruff and whitespace checks pass. Logs are in ignored
+  `test-results/interest-recovery-*.txt`. The prior complete Linux API suite is
+  separate baseline evidence and does not cover this new code. No production
+  deployment, actual AI generation or notification delivery was performed.
+- Retry receipts are not a complete automatic-attempt audit. HL-089 remains in
+  progress with bulk catch-up, downstream delivery reuse, global capacity and
+  independent model/language/hardware/user evidence still outstanding.
+
 ## Explicit personal-language requests — 8 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl089-language-request` based on `72fb62a`. No schema

@@ -65,6 +65,8 @@ def read(session, organization_id, event_id, *, locale="en", model=None):
     if record is None or record.status == "superseded":
         return {**response, "status": "stale"}
     response.update(assessment_id=record.id, saved_at=_iso(record.finished_at or record.created_at))
+    from .interest_recovery import describe
+    response["recovery"] = describe(session, organization_id, record)
     if record.status in {"queued", "running", "failed"}:
         return {**response, "status": "pending" if record.status != "failed" else "failed",
                 "error_code": record.error_code if record.status == "failed" else None}

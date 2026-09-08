@@ -1886,8 +1886,8 @@ def create_app(
     @app.post("/api/jobs/{job_id}/retry")
     async def retry_job(job_id: str, request: Request):
         check_job_access(request, job_id)
-        result = service.retry_job(job_id)
-        if settings.job_execution_mode == "inline":
+        result = service.retry_job(job_id, actor_id=request.state.identity.user_id if request.state.identity else None)
+        if settings.job_execution_mode == "inline" and result["type"] not in {"interest_event_brief", "interest_brief_admission"}:
             return await service.execute_job(job_id)
         return result
 
