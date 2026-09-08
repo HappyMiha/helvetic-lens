@@ -146,7 +146,7 @@ def claim(session: Session, job_id: str, worker: str) -> Job | None:
         return None
     now = utcnow()
     if job.cancel_requested:
-        job.state, job.finished_at, job.updated_at = "cancelled", now, now
+        cancel(session, job_id)
         return None
     # A duplicate broker delivery must not reclaim policy-delayed work early.
     if job.error_code == "digest_quiet_hours" and job.available_at.replace(tzinfo=UTC) > now:
@@ -155,6 +155,9 @@ def claim(session: Session, job_id: str, worker: str) -> Job | None:
         job.state, job.finished_at, job.updated_at = "failed", now, now
         job.error_code = "attempts_exhausted"
         job.error_detail = "The durable job exhausted its configured attempt limit."
+        if job.type == "interest_event_brief":
+            from .interest_jobs import close_unfinished
+            close_unfinished(session, job)
         return None
     job.state = "running"
     job.attempts += 1
@@ -272,6 +275,9 @@ def fail(session: Session, job_id: str, *, code: str, detail: str, retry_delay: 
         _enqueue_outbox(session, job)
     else:
         job.state, job.finished_at = "failed", now
+        if job.type == "interest_event_brief":
+            from .interest_jobs import close_unfinished
+            close_unfinished(session, job)
         for step in session.scalars(
             select(JobStep).where(JobStep.job_id == job_id, JobStep.state == "running")
         ):
@@ -353,6 +359,9 @@ def cancel(session: Session, job_id: str) -> Job:
     job.state, job.finished_at, job.updated_at = "cancelled", now, now
     job.lease_owner = None
     job.heartbeat_at = now
+    if job.type == "interest_event_brief":
+        from .interest_jobs import close_unfinished
+        close_unfinished(session, job)
     for step in session.scalars(
         select(JobStep).where(JobStep.job_id == job_id, JobStep.state.not_in(TERMINAL_STATES))
     ):
@@ -417,6 +426,9 @@ def reconcile(session: Session, lease_seconds: int) -> dict:
             job.state, job.finished_at = "failed", now
             job.error_code = "stale_lease_exhausted"
             job.error_detail = "The worker lease expired and the attempt limit was exhausted."
+            if job.type == "interest_event_brief":
+                from .interest_jobs import close_unfinished
+                close_unfinished(session, job)
         else:
             job.state, job.available_at = "retrying", now
             _enqueue_outbox(session, job)
@@ -434,20 +446,34 @@ def reconcile(session: Session, lease_seconds: int) -> dict:
 
 def dispatch(session: Session, sender: Callable[[str, str, dict, int], None], limit: int = 100) -> dict:
     now = utcnow()
-    messages = list(
-        session.scalars(
-            select(OutboxMessage)
+    candidates = list(
+        session.execute(
+            select(OutboxMessage.id, OutboxMessage.job_id)
             .where(OutboxMessage.state == "pending", OutboxMessage.available_at <= now)
             .order_by(OutboxMessage.created_at)
             .limit(limit)
-            .with_for_update(skip_locked=True)
         )
     )
     sent, failed = 0, 0
-    for message in messages:
-        job = session.get(Job, message.job_id)
-        if not job or job.state in TERMINAL_STATES:
+    for message_id, job_id in candidates:
+        # Match worker/recovery lock order: job first, then its outbox. Locking
+        # an outbox first can deadlock a worker checkpointing a retry under its
+        # job lock. A skipped active job is left for the next dispatcher tick.
+        job = session.scalar(select(Job).where(Job.id == job_id).with_for_update(skip_locked=True))
+        if job is None:
+            continue
+        message = session.scalar(select(OutboxMessage).where(
+            OutboxMessage.id == message_id, OutboxMessage.state == "pending",
+            OutboxMessage.available_at <= now).with_for_update(skip_locked=True))
+        if message is None:
+            continue
+        if job.state in TERMINAL_STATES or job.state == "running":
             message.state = "discarded"
+            continue
+        if job.state == "dispatched":
+            continue  # Reconciliation owns recovery of an unclaimed delivery.
+        if job.available_at.replace(tzinfo=UTC) > now:
+            message.available_at = job.available_at
             continue
         job.state, job.dispatched_at, job.updated_at = "dispatched", now, now
         session.flush()

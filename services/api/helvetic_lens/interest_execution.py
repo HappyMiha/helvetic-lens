@@ -1,8 +1,9 @@
-"""Internal local brief worker execution; no HTTP route, scheduler or cloud fallback.
+"""Internal measured local brief admission/execution; no public or cloud route.
 
 One observed runtime and reviewed task/locale scope, one complete measured
 request, at most two generation HTTP attempts. All inference is outside DB
-transactions. Durable job admission/recovery must wrap this before rollout.
+transactions. ``schedule`` binds durable work; matching policy and reader/delivery
+integration remain separate from this internal execution boundary.
 """
 
 import asyncio
@@ -55,7 +56,17 @@ class LocalBriefRunner:
         self.db, self.organization_id, self.client = db, organization_id, client
         self.store = AssessmentStore(organization_id)
 
-    async def run(self, event_id: str, *, locale="en", instructions=SYSTEM):
+    async def schedule(self, event_id: str, *, locale="en"):
+        """Measured admission only; persist a job/outbox without generating text."""
+        return await self._run(event_id, locale=locale, schedule_only=True)
+
+    async def run(self, event_id: str, *, locale="en", instructions=SYSTEM,
+                  expected=None, guard=None):
+        return await self._run(event_id, locale=locale, instructions=instructions,
+                               expected=expected, guard=guard)
+
+    async def _run(self, event_id: str, *, locale="en", instructions=SYSTEM,
+                   expected=None, guard=None, schedule_only=False):
         # Construct one runner per job. Keep mutable execution state inside this
         # call, so concurrent callers cannot exchange assessment IDs or tokens.
         if locale not in {"de", "fr", "it", "rm", "en"}:
@@ -69,6 +80,8 @@ class LocalBriefRunner:
         with self.db.organization_context(self.organization_id), self.client.runtime_scope():
             # Authorize before contacting the runtime, even in privileged tasks.
             with self.db.session() as session:
+                if guard:
+                    guard(session)
                 allowed = session.scalar(select(RegulatoryEvent.id)
                     .join(RegulatoryEventState, RegulatoryEventState.event_id == RegulatoryEvent.id)
                     .join(RegulatoryWork, RegulatoryWork.id == RegulatoryEvent.work_id)
@@ -84,9 +97,16 @@ class LocalBriefRunner:
                     with self.client.capability_scope("interest_brief", f"{locale}-CH") as decision:
                         identity = _identity(self.client, runtime, decision)
                         with self.db.session() as session:
+                            if guard:
+                                guard(session)
                             dossier, input_key = current_key(session, self.organization_id, event_id,
                                 model=identity, locale=locale, instructions=instructions)
+                            if expected and input_key != expected[1]:
+                                raise DomainError("Queued brief inputs changed; a new admission is required.",
+                                                  409, "interest_inputs_changed")
                             existing = self.store.exact(session, event_id, input_key)
+                            if expected and (existing is None or existing.id != expected[0]):
+                                raise DomainError("The queued assessment is no longer available.", 409, "interest_inputs_changed")
                             if existing and existing.status != "queued":
                                 # No token-count or generation calls on exact reuse,
                                 # concurrent running work, failure or supersession.
@@ -101,12 +121,22 @@ class LocalBriefRunner:
                                               422, "capability_budget_exceeded")
                         self.client.check_capability()
                         with self.db.session() as session:
+                            if schedule_only:
+                                from .interest_jobs import lock_organization
+                                lock_organization(session, self.organization_id)
+                            if guard:
+                                guard(session)
                             record, _, current = self.store.prepare_current(session, event_id, model=identity,
                                 locale=locale, instructions=instructions,
                                 context_char_limit=self.client.settings.apertus_context_chars)
                             if record.input_fingerprint != input_key:
                                 raise DomainError("The event inputs changed during token measurement; retry with current evidence.",
                                                   409, "interest_inputs_changed")
+                            if schedule_only:
+                                from .interest_jobs import enqueue
+                                result = enqueue(session, self.organization_id, record, locale)
+                                session.commit()
+                                return result
                             assessment_id = record.id
                             attempt_token = self.store.claim(session, record.id, input_key)
                             if not attempt_token:
@@ -132,6 +162,8 @@ class LocalBriefRunner:
                             "duration_ms": round((time.monotonic() - started) * 1000), "max_seconds": MAX_SECONDS,
                         }
                         with self.db.session() as session:
+                            if guard:
+                                guard(session)
                             self.store.finish_current(session, assessment_id, attempt_token, current, result,
                                 model=fresh_identity, provider_calls=usage["provider_calls"],
                                 instructions=instructions, execution=execution)

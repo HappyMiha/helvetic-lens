@@ -86,8 +86,9 @@ The repository is **not** a public admission API. Workers can now use
 `AssessmentStore.prepare_current` and `finish_current`, backed by
 `interest_admission.assemble`, rather than supplying interest lists themselves.
 The raw storage primitives remain internal; an event-admission row alone is not
-enough to prove inputs current. Runtime resolution, retry admission and durable
-job integration remain required before automatic execution is enabled.
+enough to prove inputs current. Runtime resolution and durable execution are
+implemented below. Matching-trigger policy, administrator controls and reviewed
+model approval remain required before automatic execution is enabled.
 
 ### Current saved-input admission — 8 September 2026
 
@@ -293,8 +294,8 @@ Still required under HL-089:
 - Extend current-input admission with official facts and
   verified connector predecessor policy, complete large material/target-law planning and organizations with more
   interests than one dossier can fit.
-- Durable job IDs, automatic matching trigger, quotas, priority/fairness,
-  cancellation recovery, backoff/dead-letter handling and guarded reactivation of
+- Automatic matching trigger, administrator quota policy, priority/fairness,
+  operational dead-letter review and guarded reactivation of
   a previously superseded fingerprint; no caller may bypass currentness checks.
 - Full per-attempt/token/runtime diagnostics and append-only feedback history.
 - Exact-key freshness across feed, notification, digest, history and assistant
@@ -303,7 +304,63 @@ Still required under HL-089:
   and evaluation of useful
   reasoning, grounding, output language, noise and target-hardware latency.
 
+## Durable local jobs — 8 September 2026
+
+`HelveticLens.enqueue_interest_brief` / `LocalBriefRunner.schedule` perform the
+actual runtime/capability/token admission without generating text. A short
+organization-serialized transaction saves the exact assessment and one existing
+`Job`/`OutboxMessage` together. Failed admission rolls back both. The payload holds
+only assessment ID, input fingerprint and locale; it contains no source text,
+prompts, credentials or personal notification state. Exact success reuses the
+saved result. Repeated admission coalesces; it does not automatically retry failed
+or cancelled work. The ordinary durable job controls remain the explicit retry path.
+
+New work uses `ai_background` and the existing local gateway's background priority.
+Admission permits at most four unfinished brief jobs per organization and twenty
+new jobs in a rolling 24 hours. Existing exact work does not consume another slot.
+A new input cancels unfinished jobs whose assessments were superseded, retaining
+their history. These conservative fixed limits are not a measured capacity claim
+or a complete fairness/high-confidence-priority policy for 100 organizations.
+
+The Celery service execution path recognizes `interest_event_brief` and delegates
+to `BriefJobs`. It validates the job/assessment/event/locale binding, observes the
+current approved runtime and reassembles the complete current input before any
+generation. A queued fingerprint cannot silently become a different dossier.
+Every claim/publication checks organization, worker, attempt and lease timestamp,
+including reuse of the same worker name. A two-second heartbeat detects cancellation
+or lost ownership and cancels an outstanding model await. No DB session is held
+across inference. Completion stores the assessment ID, not another copy of its text.
+
+Transient failures have bounded backoff and at most three durable attempts, each
+retaining the existing two-generation-call/120-second budget. Invalid output,
+unsupported evidence and approval failures terminate without automatic repeated
+generation. Even an explicit job retry cannot exceed three assessment generation
+attempts. Recovery fences a crashed worker's assessment token before trying again.
+Final failure, cancelled queued work and exhausted lease recovery close their exact
+unfinished assessment too; successful history is not rewritten.
+
+The common dispatcher now locks job before outbox, skips locked work, does not
+overwrite a running lease and respects the job's delay even if an older pending
+message was available earlier. This matches worker/recovery lock order and avoids
+an outbox/job lock inversion. Duplicate broker delivery remains harmless at claim.
+
+Automatic matching admission, priority/fairness policy, administrator prompt policy,
+large-dossier planning, exact-current feed/digest readers and independent model/
+hardware evaluation remain required. No public route or matching trigger is enabled
+by this internal execution stage, and no shipped model profile was approved.
+
 ## Verification
+
+The durable execution stage passed 162 combined regressions in 192.60 seconds,
+followed by 34 final job/execution regressions in 65.62 seconds after synchronizing
+terminal assessment state. The PostgreSQL-only row-lock test is skipped in SQLite,
+not simulated as passing. Nine final PostgreSQL 17.11 suites exercised roundtrip,
+crash recovery, dispatch/backoff, same-owner lease replacement, supersession,
+concurrent admissions, four separate connections, dispatcher lock ordering and
+exhausted recovery. Both disposable labelled loopback/tmpfs containers were removed.
+These use actual DB/local-gateway code with synthetic model approval/responses;
+there was no live Redis/Celery delivery, real model inference, production restart,
+notification, UI change or target-host performance certification.
 
 On HappyDucky02, 104 combined regressions passed in 90.67 seconds, including 52 new
 contract/storage scenarios. The fixed contract corpus spans all five locale

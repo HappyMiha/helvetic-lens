@@ -1,5 +1,35 @@
 # Verification record
 
+## Durable shared brief execution — 8 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl-089-durable-brief-jobs`, based on fresh `be17fcc`.
+  Measured local admission now persists assessment/job/outbox together; successful
+  inputs reuse, simultaneous admissions coalesce and quotas roll back rejected
+  reservations. Jobs retain only IDs/fingerprint/locale, not copied source text.
+- The real worker service routes brief jobs through a guarded runner. Tests cover
+  cancellation before and during inference, four duplicate deliveries, same/different
+  worker lease replacement, changed sources, invalid payload binding, privileged
+  cross-tenant rejection, crash recovery, exact successful reuse and bounded retries.
+  Final/cancelled/exhausted jobs close their exact unfinished assessment too.
+- Dispatcher now uses job-before-outbox locking, skips locked jobs, preserves
+  running leases and respects retry delay even with an older pending message.
+  Existing generic job tests pass alongside the new regressions.
+- **162 combined tests passed** in 192.60 seconds. After final terminal-state
+  synchronization, **34 targeted tests passed** in 65.62 seconds. One PostgreSQL-only
+  test is explicitly skipped in SQLite and verified on PostgreSQL, not waived.
+- **Nine final PostgreSQL 17.11 suites passed**: service execution/outbox roundtrip,
+  crash recovery, dispatch/backoff, lease replacement, supersession, concurrent
+  admission, four separate connections, locked-dispatch ordering and exhausted
+  recovery. Containers used only port 55523 on loopback and tmpfs test data, and
+  were removed. No existing DB was migrated or reset. Ruff/diff checks passed.
+- Actual database and ModelClient code use synthetic approvals/runtime/replies;
+  sender callbacks test dispatch without sending to a live Redis/Celery worker.
+  No model approval, real inference, notification or production rollout was made.
+  This backend slice makes no new browser, language, usability or capacity claim.
+- HL-089 remains open: automatic matching policy, exact-current feed/digest readers,
+  useful model evaluation, official facts, large dossiers, administrator prompt/
+  quota policy and measured fairness/capacity are not completed by this job adapter.
+
 ## Native comparison editor — 8 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl-089-native-baseline-ui`, based on `48c4daf`.

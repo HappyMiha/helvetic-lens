@@ -47,6 +47,17 @@ from test_interest_execution import (
     test_measured_complete_request_persisted_and_exact_reuse,
     test_single_repair_shared_budget_and_failure_is_not_retried_on_read,
 )
+from test_interest_jobs import (
+    test_changed_admission_cancels_stale_job_without_losing_history,
+    test_concurrent_admission_has_one_job_and_one_outbox,
+    test_crashed_lease_recovers_assessment_and_fences_old_token,
+    test_dispatch_does_not_steal_running_lease_or_bypass_backoff,
+    test_exhausted_crash_recovery_closes_unfinished_assessment,
+    test_lost_lease_cannot_finish_new_workers_job,
+    test_postgres_dispatch_skips_locked_job_without_locking_its_outbox,
+    test_schedule_outbox_execute_service_and_exact_reuse,
+    test_separate_connections_coalesce_simultaneous_admission,
+)
 from test_interest_material import (
     test_conflicting_baselines_require_selection_not_import_time_guess,
     test_material_plan_is_measured_and_generated_once_by_real_local_gateway,
@@ -80,6 +91,15 @@ def execute_local(harness, scenario):
         scenario(execution)
 
 SUITES = {
+    "jobs-exhausted": lambda harness: execute_local(harness, test_exhausted_crash_recovery_closes_unfinished_assessment),
+    "jobs-threaded": lambda harness: execute_local(harness, test_separate_connections_coalesce_simultaneous_admission),
+    "jobs-dispatch-lock": lambda harness: execute_local(harness, test_postgres_dispatch_skips_locked_job_without_locking_its_outbox),
+    "jobs-roundtrip": lambda harness: execute_local(harness, test_schedule_outbox_execute_service_and_exact_reuse),
+    "jobs-recovery": lambda harness: execute_local(harness, test_crashed_lease_recovers_assessment_and_fences_old_token),
+    "jobs-dispatch": lambda harness: execute_local(harness, test_dispatch_does_not_steal_running_lease_or_bypass_backoff),
+    "jobs-lease": lambda harness: execute_local(harness, lambda value: test_lost_lease_cannot_finish_new_workers_job(value, True)),
+    "jobs-supersession": lambda harness: execute_local(harness, test_changed_admission_cancels_stale_job_without_losing_history),
+    "jobs-concurrency": lambda harness: execute_local(harness, test_concurrent_admission_has_one_job_and_one_outbox),
     "native-ui-roundtrip": test_http_save_complete_pair_page_exact_changes_and_clear,
     "native-ui-large": test_oversized_ai_dossier_still_has_complete_paged_comparison,
     "native-ui-candidates": test_candidates_paginate_without_private_or_other_language_versions,

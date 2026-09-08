@@ -1525,6 +1525,21 @@ typecheck and ten browser journeys with 20 full-document axe checkpoints passed.
 Incomplete accessibility observations and independent language/AI/hardware review
 remain open; HL-089 as a whole is still in progress.
 
+**Durable local brief execution — 8 September 2026:** measured admission now saves
+an exact assessment plus one background job/outbox atomically. Duplicate admissions
+coalesce; superseded work is cancelled; conservative organization allowances bound
+new and pending work. The actual worker service executes the local runner with
+job/attempt/lease fences, cancellation heartbeat, bounded retries and crash recovery.
+Final job failure/cancellation closes unfinished assessment state. Source/model/input
+changes cannot silently replace the queued dossier; successful results remain shared
+history. Dispatcher locking now preserves running leases and retry delays.
+**Verification:** 162 combined regressions and 34 final targeted tests passed;
+the PostgreSQL-only lock test is deliberately skipped by SQLite and run separately.
+See the verification record for isolated PostgreSQL evidence. This is internal
+queue integration, not a claim of completed automatic enrichment: matching policy,
+exact-current readers/delivery reuse, priority/fairness/admin policy, large dossiers,
+official facts and independent real-model/hardware evaluation remain open.
+
 Turn a trustworthy topic or watched-law match into a concise, reusable explanation of why the development belongs in the organization's radar and whether it deserves attention. The feed event and its primary-source evidence exist independently of AI; enrichment must never block ingestion, hide a real development, or create a second event history.
 
 Acceptance criteria:
