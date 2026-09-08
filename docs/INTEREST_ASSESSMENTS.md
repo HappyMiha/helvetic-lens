@@ -613,6 +613,43 @@ substitutes another language or triggers bulk historical AI work.
 
 ## Explicit failed-brief recovery
 
+### Server-wide generation capacity — 9 September 2026
+
+Every new durable `interest_event_brief` job passes organization quotas and the
+shared host limit in the transaction that persists its assessment/job/outbox.
+`INTEREST_BRIEF_GLOBAL_MAX_PENDING` defaults to 16 (range 1–1000);
+`INTEREST_BRIEF_GLOBAL_MAX_DAILY` defaults to 200 (range 1–10000). Operators must
+apply identical values to all API/worker processes sharing the database. These
+are conservative configurable admission bounds, not measured hardware capacity.
+Organization administrators cannot override the host limits in prompt/profile
+settings. Changing these environment values requires a separate planned restart.
+
+Pending includes queued, dispatched, running, retrying and waiting-for-model
+generation jobs across organizations. Daily counts new generation jobs created
+in the preceding rolling 24 hours, including failed/cancelled/completed jobs.
+Finishing or cancelling releases pending capacity but does not refund daily
+admission. Exact job/result reuse creates no new admission. A bounded explicit
+retry of the same failed job reacquires pending capacity without charging a new
+daily job or resetting cumulative assessment/manual-retry budgets.
+
+PostgreSQL takes transaction advisory lock `(1212958030, 8901)` after the caller's
+organization write lock. Inside that critical section only aggregate cross-tenant
+counts are read; no other organization is locked and no tenant data/counts are
+returned. Job creation or retry commits before releasing the lock. SQLite's
+organization UPDATE already serializes writers. Rollback releases the lock and
+creates no assessment/outbox reservation. No inference/network wait holds it.
+
+Full capacity uses the existing `interest_queue_limit` state: the admission worker
+retains the current event checkpoint and defers five minutes without consuming
+its failure-attempt allowance. Manual retries remain explicit and leave the prior
+failure receipt untouched if denied. Lowering a limit does not cancel existing
+jobs; it prevents additional admission until usage falls below the new value.
+
+This is not a cap on metadata/token-measurement calls or other task types, nor a
+replacement for per-request measured token/call limits. Global token accounting,
+durable dispatch tenant rotation/background aging and target-host latency remain
+separate work. Admission jobs may wait; all saved evidence stays readable.
+
 Today shows a localized failure explanation, cumulative attempts, exact job
 details and an explicit retry for organization admins. Viewers can inspect the
 state/history but cannot invoke the existing admin-only job retry route.

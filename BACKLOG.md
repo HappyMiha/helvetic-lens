@@ -1436,6 +1436,18 @@ Completed on 4 September 2026. New normalized events now enter topic matching on
 
 ### HL-089 — Enrich matched developments with one persisted AI relevance brief
 
+**9 September 2026 — global generation admission:** Added host-wide bounds for
+durable brief generation in addition to organization quotas: initially 16 pending
+jobs and 200 new admissions per rolling 24h, configurable consistently across
+API/workers. PostgreSQL serializes cross-organization admission transactionally;
+SQLite uses the existing write lock. Manual retry reacquires pending capacity
+without resetting assessment/history budgets. Full capacity defers the same
+event/checkpoint without silently losing it. Eight-organization and mixed
+retry/new-admission PostgreSQL races pass. This completes the host-wide **brief
+generation admission** slice, not tenant rotation, starvation prevention, all-AI
+token accounting or measured 100-user capacity. Independent model/language/
+hardware/pilot gates remain open; HL-089 remains **IN PROGRESS**.
+
 **9 September 2026 — broker priority correction:** Fixed the inverted Redis
 priority boundary: saved high-priority Ask jobs now precede lower-priority shared
 brief/admission envelopes. Actual Celery/Kombu with disposable Redis verifies all

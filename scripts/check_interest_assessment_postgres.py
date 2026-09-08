@@ -58,6 +58,12 @@ from test_interest_brief_reader import (
     test_exact_shared_result_reuses_without_generation_or_jobs,
     test_revoked_admission_denies_saved_answer_before_runtime_probe,
 )
+from test_interest_capacity import (
+    test_concurrent_organizations_cannot_overbook_and_rollback_releases_capacity,
+    test_concurrent_retry_and_new_tenant_share_one_remaining_slot,
+    test_full_host_defers_worker_without_losing_event_then_resumes,
+    test_retry_reacquires_pending_capacity_without_resetting_history_or_daily_budget,
+)
 from test_interest_execution import (
     artifacts as execution_artifacts,
 )
@@ -146,6 +152,10 @@ def execute_relation(harness, scenario):
 
 
 SUITES = {
+    "global-capacity-mixed-race": lambda harness: execute_local(harness, test_concurrent_retry_and_new_tenant_share_one_remaining_slot),
+    "global-capacity-concurrency": lambda harness: execute_local(harness, test_concurrent_organizations_cannot_overbook_and_rollback_releases_capacity),
+    "global-capacity-defer": lambda harness: execute_local(harness, test_full_host_defers_worker_without_losing_event_then_resumes),
+    "global-capacity-retry": lambda harness: execute_local(harness, test_retry_reacquires_pending_capacity_without_resetting_history_or_daily_budget),
     "notification-brief-reuse": lambda harness: execute_local(harness, lambda value: test_saved_notification_uses_current_user_language_once_per_page(value, "fr")),
     "notification-brief-personal": lambda harness: execute_local(harness, test_shared_brief_does_not_share_personal_read_or_dismiss_state),
     "notification-brief-offline": lambda harness: execute_local(harness, lambda value: test_unavailable_brief_does_not_hide_source_or_leak_saved_prose(value, "offline")),

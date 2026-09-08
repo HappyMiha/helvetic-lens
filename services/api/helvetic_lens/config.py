@@ -75,6 +75,8 @@ class Settings(BaseSettings):
     # Operator opt-in; independent local task/locale approval remains mandatory.
     interest_brief_auto_enabled: bool = False
     interest_brief_auto_locale: Literal["de", "fr", "it", "rm", "en"] = "en"
+    interest_brief_global_max_pending: int = Field(default=16, ge=1, le=1000)
+    interest_brief_global_max_daily: int = Field(default=200, ge=1, le=10000)
     data_dir: Path = Field(
         default=ROOT / "data",
         validation_alias=AliasChoices("HELVETIC_LENS_DATA_DIR", "REGWATCH_DATA_DIR"),

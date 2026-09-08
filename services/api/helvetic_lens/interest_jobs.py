@@ -85,6 +85,8 @@ def enqueue(session, organization_id, record, locale, *, settings=None, policy_k
     if pending >= min(policy["max_pending"], MAX_PENDING) or daily >= min(policy["max_daily"], MAX_DAILY):
         raise DomainError("Background brief allowance reached; saved source evidence remains available.",
                           429, "interest_queue_limit")
+    from .interest_capacity import require_capacity
+    require_capacity(session, settings)
     job, _ = jobs.enqueue(session, organization_id=organization_id, job_type=TYPE,
         target_type="regulatory_event", target_id=record.event_id, queue="ai_background",
         idempotency_key=key, priority=2, max_attempts=3,

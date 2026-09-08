@@ -1,5 +1,32 @@
 # Verification record
 
+## Cross-organization brief generation capacity — 9 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl089-global-admission`, based on `bb8b187`.
+  New generation admission and explicit failed-job retry share a transaction-level
+  host-capacity guard; per-organization quotas, attempt history, outbox atomicity,
+  user language and exact-result reuse remain in place. Environment defaults and
+  their precise counting semantics are documented in `INTEREST_ASSESSMENTS.md`.
+- **81 passed, 3 skipped in 140.92s** across capacity, durable brief jobs,
+  automatic admission, policy and recovery regressions. The three skips are
+  existing PostgreSQL-only scenarios in the SQLite run. A subsequently added
+  mixed new-admission/manual-retry race passed separately (**1 passed, 2.25s**).
+  Ruff on every changed Python file/script and `git diff --check` passed.
+- **Four real PostgreSQL 17 scenarios passed** through the guarded disposable-DB
+  runner: `global-capacity-concurrency`, `global-capacity-defer`,
+  `global-capacity-retry`, `global-capacity-mixed-race`. Eight concurrent tenants
+  can create exactly three assessment/job/outbox triples at a host limit of three;
+  rollback consumes none, completed jobs still consume rolling daily admission,
+  and a simultaneous manual retry/new tenant compete for exactly one remaining
+  slot. Scoped reads remain scoped after the private aggregate query. Deferred
+  admission preserves its cursor and resumes; denied retry retains failure history.
+- QA used only synthetic evidence/runtime approval/HTTP and an isolated container
+  on loopback port 55523 with database `hl089_regression`. No real AI inference,
+  external message, application database/broker modification or production deploy.
+  No frontend files changed and no new frontend build is claimed. This proves
+  admission correctness, not fair tenant rotation, token accounting, sustainable
+  100-user load or independent model/language/hardware/pilot acceptance.
+
 ## Redis priority convention correction — 9 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl089-redis-priority`, based on `aa59ffa`. Inspection

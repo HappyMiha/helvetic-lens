@@ -63,6 +63,8 @@ def prepare(session, organization_id, settings, job_id, actor_id=None):
         Job.type == TYPE, Job.state.not_in(jobs.TERMINAL_STATES)))
     if pending >= policy["max_pending"]:
         raise DomainError("Background brief allowance reached.", 429, "interest_queue_limit")
+    from .interest_capacity import require_capacity
+    require_capacity(session, settings, new_job=False)
     receipt = {"requested_at": utcnow().isoformat(), "actor_id": actor_id,
         "assessment_attempts": record.attempts, "previous_state": job.state,
         "previous_error_code": record.error_code, "previous_finished_at": record.finished_at.isoformat() if record.finished_at else None}
