@@ -50,7 +50,8 @@
     "check:native-evidence:browser": "node scripts/check-native-evidence-browser.mjs",
     "check:deployments:browser": "node scripts/check-deployment-history-browser.mjs",
     "check:native-baseline:browser": "node scripts/check-native-baseline-browser.mjs",
-    "check:interest-brief:browser": "node scripts/check-interest-brief-browser.mjs"
+    "check:interest-brief:browser": "node scripts/check-interest-brief-browser.mjs",
+    "check:brief-feedback:browser": "node scripts/check-interest-brief-browser.mjs --feedback"
   },
   "devDependencies": {
     "axe-core": "4.13.0",

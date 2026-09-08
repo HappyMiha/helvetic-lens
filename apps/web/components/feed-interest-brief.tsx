@@ -9,6 +9,7 @@ import { ErrorNote, Loading } from "./common";
 import { Button } from "./ui/button";
 import { BriefRecoveryHistory } from "./brief-recovery-history";
 import { InterestBriefRequest } from "./interest-brief-request";
+import { BriefFeedback } from "./brief-feedback";
 
 export function FeedInterestBrief({eventId}: {eventId: string}) {
   const [open, setOpen] = useState(false);
@@ -53,6 +54,7 @@ function Content({eventId}: {eventId: string}) {
       <details><summary className="min-h-11 py-2 cursor-pointer font-semibold"><h4 className="inline">{copy.limitations}</h4></summary>
         <p>{result.uncertainty}</p><ul>{result.input_limitations.map((item, index) => <li key={index} lang="en">{item}</li>)}</ul></details>
     </section>}
+    {result && data?.assessment_id && <BriefFeedback key={data.assessment_id} assessmentId={data.assessment_id} />}
     {data && !result && <InterestBriefRequest eventId={eventId} canRequest={data.status !== "failed"} recovery={data.recovery} />}
     {data?.recovery && <BriefRecoveryHistory recovery={data.recovery} />}
     <Button data-refresh-brief variant="outline" className="min-h-11 whitespace-normal" disabled={page.loading}

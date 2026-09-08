@@ -18,6 +18,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from . import (
     assistant_history,
+    brief_feedback,
     corpus_evidence,
     feed_readiness,
     onboarding,
@@ -473,6 +474,7 @@ def create_app(
             and not viewer_assistant_state
             and not viewer_personal_state
             and not (request.method == "POST" and path.startswith("/api/interest-feed/events/") and path.endswith("/brief/requests"))
+            and not (request.method == "POST" and path.startswith("/api/interest-briefs/") and path.endswith("/feedback"))
         ):
             return JSONResponse(
                 status_code=403,
@@ -1473,6 +1475,19 @@ def create_app(
     def request_interest_brief(event_id: str, data: BriefRequest, request: Request):
         locale = data.locale or selected_locale(request).split("-")[0]
         return service.request_interest_brief(event_id, locale, data.request_id)
+
+    @app.get("/api/interest-briefs/{assessment_id}/feedback")
+    def get_brief_feedback(assessment_id: uuid.UUID, request: Request,
+                           cursor: str = Query(default="", max_length=36), limit: int = Query(default=20, ge=1, le=50)):
+        _, principal = assistant_principal(request)
+        with service.db.session() as session:
+            return brief_feedback.read(session, service.organization_id, principal, str(assessment_id), cursor=cursor, limit=limit)
+
+    @app.post("/api/interest-briefs/{assessment_id}/feedback")
+    def save_brief_feedback(assessment_id: uuid.UUID, data: brief_feedback.FeedbackInput, request: Request):
+        user_id, principal = assistant_principal(request)
+        with service.db.session() as session:
+            return brief_feedback.save(session, service.organization_id, principal, user_id, str(assessment_id), data)
 
     @app.get("/api/interest-feed/events/{event_id}/topics")
     def interest_feed_topics(event_id: str, request: Request, cursor: str = Query(default="", max_length=4096),

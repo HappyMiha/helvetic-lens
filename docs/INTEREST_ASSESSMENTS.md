@@ -12,6 +12,45 @@ The deterministic feed continues to work independently of this module.
 
 ## Contract and evidence
 
+### Personal usefulness feedback — 9 September 2026
+
+An available saved brief in Today has an expandable “Was this AI brief useful?”
+section in all five UI locales. Each signed-in member, including a viewer, can
+mark it useful/not useful, add an optional explanation up to 1,000 characters,
+or withdraw the rating. Feedback history is paged and remains open while changing
+pages. Opening the main brief does not fetch feedback until this section is opened.
+Saving stays on the same page; failures preserve the draft and an uncertain reply
+can be retried with the same request ID. The original saved explanation remains.
+
+`GET/POST /api/interest-briefs/{assessment_id}/feedback` binds every record to the
+exact successful assessment, organization and server-derived personal principal.
+The actor cannot be supplied in JSON. Existing authentication, organization
+membership and CSRF rules apply; anonymous access exists only in the already
+enabled anonymous-development workspace. Event/source access is checked on every
+read/write, even for a privileged database session. Another user—including an
+organization administrator—does not receive someone else's personal notes through
+this endpoint. The frontend cache key includes user/organization identity; unmount
+and session/organization epochs discard late write responses after context changes.
+
+`InterestBriefFeedback` is append-only. The request UUID is idempotent and bound to
+its content; an expected previous-feedback ID rejects stale-tab edits. The same
+organization transaction lock serializes edits and the 100-record rolling-24-hour
+per-principal allowance across different assessments. Withdrawal is another
+history record, not erasure or a quota refund. A logical monotonic timestamp within
+one personal assessment history keeps cursor ordering stable across equal clocks.
+Historical feedback remains attached to its original assessment/language; a new
+assessment starts without borrowing an old rating. It need not call a running
+model to read or save feedback about that accessible immutable assessment.
+
+No feedback operation invokes inference, updates the original result, shares
+personal state, changes topic matching/mutes/thresholds, or trains a model. These
+are subjective usefulness signals, not correctness labels or measured precision.
+There is not yet an aggregate evaluation dashboard or an admin confirm/reject
+workflow for the shared **AI assessment**. Existing topic-relevance review and
+personal event mute/read state remain separate. Independent user/native-language
+evaluation and an explicit audited policy for acting on feedback remain open.
+Migration `db1d256c8fe9` creates the separate history table; deployment is separate.
+
 `interest_assessment.Dossier` is an internal complete snapshot for one organization
 and one saved event. It includes every admitted interest, immutable revision and
 fingerprint bindings, material source units, official facts, organization profile

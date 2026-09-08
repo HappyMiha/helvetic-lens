@@ -23,6 +23,12 @@ from test_ai_dispatch import (
     test_tenant_turns_survive_restart_equal_clock_and_large_noisy_prefix,
     test_unclaimed_window_keeps_background_in_db_and_does_not_block_cpu,
 )
+from test_brief_feedback import (
+    test_concurrent_personal_edits_do_not_overwrite_each_other,
+    test_concurrent_request_replay_is_one_receipt,
+    test_daily_allowance_is_atomic_across_different_assessments,
+    test_feedback_migration_preserves_original_saved_assessment,
+)
 from test_digest_briefs import (
     test_preview_and_actual_delivery_reuse_same_saved_assessment,
     test_recipient_locale_is_reloaded_at_send_not_from_preparation,
@@ -160,6 +166,10 @@ def execute_relation(harness, scenario):
 
 
 SUITES = {
+    "brief-feedback-edit": lambda harness: execute_local(harness, test_concurrent_personal_edits_do_not_overwrite_each_other),
+    "brief-feedback-replay": lambda harness: execute_local(harness, test_concurrent_request_replay_is_one_receipt),
+    "brief-feedback-quota": lambda harness: execute_local(harness, test_daily_allowance_is_atomic_across_different_assessments),
+    "brief-feedback-migration": lambda harness: execute_local(harness, test_feedback_migration_preserves_original_saved_assessment),
     "fair-dispatch-scope": test_scoped_dispatch_does_not_select_another_tenant_head,
     "fair-dispatch-tenants": test_tenant_turns_survive_restart_equal_clock_and_large_noisy_prefix,
     "fair-dispatch-window": test_unclaimed_window_keeps_background_in_db_and_does_not_block_cpu,

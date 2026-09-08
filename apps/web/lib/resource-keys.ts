@@ -345,6 +345,11 @@ export const resources = {
     return key<T>(`monitoring:${path}`, path, {tags: [`interest-brief:${event}`, "monitoring", "profile", "settings"], staleMs: 0});
   },
 
+  briefFeedback: <T>(assessment: string, principal: string, cursor: string) => {
+    const path = `/interest-briefs/${encodeURIComponent(assessment)}/feedback?${new URLSearchParams({cursor})}`;
+    return key<T>(`feedback:${principal}:${path}`, path, {tags: [`brief-feedback:${assessment}`], staleMs: 0, varyByLocale: false});
+  },
+
   interestFeed: <T = unknown>(query = "") => {
     const path = withQuery("/interest-feed", query);
     return key<T>(`monitoring:${path}`, path, {

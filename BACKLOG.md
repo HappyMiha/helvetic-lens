@@ -1436,6 +1436,18 @@ Completed on 4 September 2026. New normalized events now enter topic matching on
 
 ### HL-089 — Enrich matched developments with one persisted AI relevance brief
 
+**9 September 2026 — personal brief usefulness:** Each reader can mark an exact
+saved brief useful/not useful, add an optional explanation, withdraw that rating
+and inspect their dated, paged history. Feedback is private to the user and
+organization, including for viewers; it never rewrites the shared assessment or
+monitoring thresholds and does not invoke AI. Concurrent edits conflict explicitly;
+an uncertain-response retry reuses its receipt rather than adding another vote.
+The five-locale desktop/mobile flow retains drafts, history expansion and page
+position. API isolation/CSRF, PostgreSQL concurrency/migration and browser gates
+passed (see verification record). Shared administrator review, quality reporting,
+measured usefulness and independent language/model/hardware/pilot acceptance
+remain open; HL-089 remains **IN PROGRESS**.
+
 **9 September 2026 — fair durable AI handoff:** Both AI queues now retain most
 pending work in PostgreSQL and cap dispatched-but-unclaimed work (default one).
 Ready tenant heads are selected before pagination, ordered by priority and saved

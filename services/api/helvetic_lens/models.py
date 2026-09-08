@@ -1372,6 +1372,26 @@ class RelationImpactAnalysis(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
 
 
+class InterestBriefFeedback(Base):
+    """Personal assessment usefulness; immutable history, never model training."""
+    __tablename__ = "interest_brief_feedback"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "principal_key", "request_key", name="uq_brief_feedback_request"),
+        CheckConstraint("decision IN ('useful', 'not_useful', 'withdrawn')", name="ck_brief_feedback_decision"),
+        Index("ix_brief_feedback_history", "organization_id", "assessment_id", "principal_key", "created_at", "id"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"))
+    assessment_id: Mapped[str] = mapped_column(ForeignKey("interest_event_assessments.id"))
+    principal_key: Mapped[str] = mapped_column(String(80))
+    actor_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    request_key: Mapped[str] = mapped_column(String(36))
+    request_fingerprint: Mapped[str] = mapped_column(String(64))
+    decision: Mapped[str] = mapped_column(String(20))
+    note: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class InterestEventAssessment(Base):
     """One reusable organization brief for an exact saved-interest dossier."""
 
@@ -1549,6 +1569,7 @@ class OutboxMessage(Base):
 # Central policy used by the session boundary. Keeping this list beside the
 # models makes a newly persisted tenant-owned record difficult to forget.
 ORGANIZATION_SCOPED_MODELS = (
+    InterestBriefFeedback,
     InterestBriefPolicy,
     NativeDocumentComparison,
     NativeEventComparisonSelection,

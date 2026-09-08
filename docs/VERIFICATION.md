@@ -1,5 +1,42 @@
 # Verification record
 
+## Personal saved-brief usefulness — 9 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl089-brief-usefulness`, based on `8c8590d`.
+  Added append-only useful/not-useful/withdrawn feedback tied to an exact successful
+  assessment, optional notes, private cursor history, optimistic concurrency and
+  request-id replay. The server derives the principal; normal authentication,
+  organization authorization and CSRF apply, including viewer writes. A rolling
+  100-record allowance is serialized across that user's assessments. No AI calls,
+  shared assessment rewriting or implicit monitoring/model adjustment occurs.
+- **40 passed in 65.74s** across feedback, saved-brief reader and organization
+  access. Coverage includes actual viewer sessions/CSRF, private history/cursors,
+  revoked access, invalid input, competing edits, replay, cross-assessment quota
+  races and migration preservation. One existing Starlette/httpx deprecation
+  warning remains. **Four real PostgreSQL 17 suites passed** in the isolated QA
+  database: `brief-feedback-edit`, `brief-feedback-replay`, `brief-feedback-quota`,
+  `brief-feedback-migration`. These use synthetic saved evidence/model fixtures.
+- Root `npm run build` passes all localization, shell, resource and report gates,
+  TypeScript and the production Next build. The actual production UI passes
+  **10 feedback journeys** (five locales at 390/1440 pixels), covering saved status,
+  retained conflict drafts, a server save followed by a lost reply and idempotent
+  retry, withdrawal, older history, escaped markup, no reload and no horizontal
+  overflow. History stays mounted while loading another page; the regression
+  initially caught its collapsing and now verifies visible old notes.
+- Feedback has **30 full-document axe checkpoints** with no reported violations
+  or prohibited unresolved ARIA; the existing reader regression also passes its
+  **10 journeys / 20 scoped checkpoints**, including stale/offline/error states
+  and no automatic generation. Other automated incomplete findings are retained,
+  not accessibility certification. English screenshots at both widths were
+  visually inspected. API traffic is intercepted synthetic data; no real model,
+  production data, mail or deployment was used. Changed Python passes Ruff and
+  the diff passes whitespace checks.
+- Migration `db1d256c8fe9` only adds the feedback table; its downgrade discards
+  feedback while preserving original assessments. Production migration was not
+  performed. Personal usefulness is subjective, not a correctness vote or measured
+  relevance score. Shared administrator review, quality analytics and independent
+  native-language, model, hardware and user acceptance remain unfinished.
+
 ## Fair durable AI dispatch and bounded broker handoff — 9 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl089-fair-ai-dispatch`, based on `7eb31ef`.
