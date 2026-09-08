@@ -30,7 +30,7 @@ from helvetic_lens.registry import RegistryReader
 def seed_timeline(harness, count=151):
     client, _, service, _ = harness
     law = add_law(client)
-    stamp = datetime(2026, 9, 6, 10, tzinfo=UTC)
+    stamp = datetime.now(UTC)
     versions = [new_id() for _ in range(count)]
     events = [new_id() for _ in range(count)]
     comparisons = [new_id() for _ in range(count)]
