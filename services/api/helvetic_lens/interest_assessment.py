@@ -20,7 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from .analysis import InferenceBudget, structured_completion
 from .config import DomainError
 
-SCHEMA_VERSION = "interest-event-brief-v1"
+SCHEMA_VERSION = "interest-event-brief-v2"
 MAX_PROVIDER_CALLS = 2  # Initial generation and at most one repair, including retries.
 MAX_SECONDS = 120
 Identifier = Annotated[str, Field(min_length=1, max_length=160)]
@@ -50,7 +50,7 @@ class Interest(Contract):
     fingerprint: str = Field(pattern=r"^[a-f0-9]{64}$")
     name: str = Field(min_length=1, max_length=300)
     reason_signals: list[ShortText] = Field(min_length=1, max_length=20)
-    evidence_ids: References
+    evidence_ids: list[Identifier] = Field(min_length=1, max_length=64)
 
 
 class ProfileFact(Contract):
@@ -69,9 +69,12 @@ class Event(Contract):
     id: Identifier
     title: str = Field(min_length=1, max_length=1000)
     kind: Identifier
+    event_type: Identifier | None = None
     official_status: str | None = Field(default=None, max_length=160)
     status_evidence_ids: list[Identifier] = Field(default_factory=list, max_length=10)
     official_dates: list[OfficialDate] = Field(default_factory=list, max_length=20)
+    input_fingerprint: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
+    limitations: list[ShortText] = Field(default_factory=list, max_length=10)
 
 
 class ModelIdentity(Contract):
@@ -156,6 +159,8 @@ specific human review step naming the object to review, or no_action_now with a
 reason; do not invent legal advice, obligations or deadlines. State uncertainty.
 Do not generate official status, dates, source URLs, quotes or personal relevance:
 the server supplies those. For what_happened cite a primary event source.
+Respect the event's explicit limitations. A saved current document alone does
+not establish a complete before/after comparison or the law's current status.
 Return only the JSON object required by the response schema."""
 
 
@@ -252,6 +257,8 @@ def finalize(draft: dict, dossier: Dossier) -> dict:
         "schema_version": SCHEMA_VERSION,
         "event_id": dossier.event.id,
         "event_url": f"/?event={quote(dossier.event.id, safe='')}",
+        "event_type": dossier.event.event_type,
+        "input_limitations": list(dossier.event.limitations),
         "official_status": dossier.event.official_status,
         "status_evidence_ids": dossier.event.status_evidence_ids,
         "official_dates": [row.model_dump(mode="json") for row in dossier.event.official_dates],
@@ -260,6 +267,22 @@ def finalize(draft: dict, dossier: Dossier) -> dict:
         "coverage": {"interests": len(interests), "explained_interests": len(reasons),
                      "supplied_evidence": len(dossier.evidence), "omitted_interests": 0},
     }
+
+
+def input_envelope(dossier: Dossier, *, context_char_limit: int, instructions: str = SYSTEM):
+    """Shared admission/execution preflight; characters are not tokenizer tokens."""
+    if dossier.model.route == "cloud" and not dossier.model.cloud_fallback_approved:
+        raise DomainError("Cloud enrichment requires explicit administrator approval.", 422, "cloud_not_approved")
+    payload = dossier.model_dump(mode="json", exclude={"model", "organization_id"})
+    system = instructions + f"\nWrite every explanatory field in {dossier.locale}."
+    characters = len(system) + len(json.dumps(payload, ensure_ascii=False))
+    characters += len(json.dumps(BriefDraft.model_json_schema(), ensure_ascii=False))
+    # Reserve schema/repair text in addition to the model's separately configured
+    # output-token allocation. Never cut off the tail of an interest collection.
+    if characters + 4000 > context_char_limit:
+        raise DomainError("The complete interest dossier exceeds the configured input budget; no interests were dropped.",
+                          422, "interest_context_exceeded")
+    return system, payload, characters
 
 
 async def generate(client, dossier: Dossier, *, context_char_limit: int,
@@ -273,17 +296,7 @@ async def generate(client, dossier: Dossier, *, context_char_limit: int,
     # Pydantic's frozen flag does not freeze nested Python lists. Own the input
     # snapshot across awaits so caller mutations cannot change citation bindings.
     dossier = Dossier.model_validate(dossier.model_dump(mode="json"))
-    if dossier.model.route == "cloud" and not dossier.model.cloud_fallback_approved:
-        raise DomainError("Cloud enrichment requires explicit administrator approval.", 422, "cloud_not_approved")
-    payload = dossier.model_dump(mode="json", exclude={"model", "organization_id"})
-    system = instructions + f"\nWrite every explanatory field in {dossier.locale}."
-    characters = len(system) + len(json.dumps(payload, ensure_ascii=False))
-    characters += len(json.dumps(BriefDraft.model_json_schema(), ensure_ascii=False))
-    # Reserve schema/repair text in addition to the model's separately configured
-    # output-token allocation. Never cut off the tail of an interest collection.
-    if characters + 4000 > context_char_limit:
-        raise DomainError("The complete interest dossier exceeds the configured input budget; no interests were dropped.",
-                          422, "interest_context_exceeded")
+    system, payload, characters = input_envelope(dossier, context_char_limit=context_char_limit, instructions=instructions)
     budget = InferenceBudget(MAX_PROVIDER_CALLS, max_seconds=max_seconds)
     started = time.monotonic()
     try:

@@ -15,6 +15,16 @@ from conftest import FakeFetcher, ScriptedModel
 from fastapi.testclient import TestClient
 from helvetic_lens.config import Settings
 from helvetic_lens.main import create_app
+from test_interest_admission import (
+    test_65_current_interests_fail_as_a_whole_not_a_sample,
+    test_changed_inputs_reject_fenced_inflight_completion,
+    test_foreign_worker_cannot_assemble_even_with_privileged_session,
+    test_full_traversal_continues_beyond_100_stale_candidates,
+    test_law_admission_excludes_inactive_or_foreign_evidence,
+    test_law_and_direct_watch_inputs_use_exact_legacy_evidence,
+    test_prepare_generate_finish_reuses_exact_brief_and_rechecks_inputs,
+    test_reused_session_reloads_external_edits_and_excludes_other_profiles,
+)
 from test_interest_assessment_store import (
     test_concurrent_reservations_and_claims_produce_one_assessment_and_one_owner,
     test_cross_org_reads_and_writes_are_rejected_even_in_privileged_session,
@@ -26,6 +36,14 @@ from test_interest_assessment_store import (
 )
 
 SUITES = {
+    "current-reuse": test_prepare_generate_finish_reuses_exact_brief_and_rechecks_inputs,
+    "current-law-watch": test_law_and_direct_watch_inputs_use_exact_legacy_evidence,
+    "current-scope": test_foreign_worker_cannot_assemble_even_with_privileged_session,
+    "current-sparse": test_full_traversal_continues_beyond_100_stale_candidates,
+    "current-overflow": test_65_current_interests_fail_as_a_whole_not_a_sample,
+    "current-refresh": test_reused_session_reloads_external_edits_and_excludes_other_profiles,
+    "current-fence": lambda harness: test_changed_inputs_reject_fenced_inflight_completion(harness, "new_interest"),
+    "current-rescore": lambda harness: test_law_admission_excludes_inactive_or_foreign_evidence(harness, "withdrawn_signals"),
     "reuse": test_persisted_brief_is_reused_without_inference_and_preserves_exact_source_bindings,
     "superseded": test_revised_input_supersedes_inflight_work_and_old_worker_cannot_publish,
     "retry": test_retry_is_explicit_bounded_and_does_not_store_provider_secrets,

@@ -1,5 +1,51 @@
 # Verification record
 
+## Current organization inputs for shared AI briefs — 8 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl-089-current-dossier`, based on fresh `68cd244`.
+  Added complete current topic/law/direct-watch assembly independently of UI
+  pagination and worker `prepare_current`/`finish_current` methods. Native/legacy
+  source ownership, work/language identity, current matching signals, profile,
+  model/prompt and exact evidence fingerprints are rechecked before reservation
+  and completion. The character envelope and cloud approval are checked before
+  queued storage. The v2 result preserves server-bound event type and input
+  limitations. [Contract and remaining integration](INTEREST_ASSESSMENTS.md).
+- **126 final API regressions passed in 111.16 seconds:**
+  `test_interest_admission.py`, `test_interest_assessment.py`,
+  `test_interest_assessment_store.py`, `test_interest_feed.py` and
+  `test_organization_isolation.py`. The **50 new scenarios** cover five locales,
+  seven interests with twelve full passages, 65-interest refusal without sampling,
+  traversal past 105 stale candidates, exact native/legacy evidence, missing or
+  malformed sources, cross-work/language/tenant rejection, expired/rejected/muted
+  matches, profile and runtime changes, stale completion, prompt changes, a new
+  interest during inference, budget/cloud refusal before persistence, empty
+  profile importance, and corrected metadata withdrawing law relevance. Model
+  output is a deterministic double, not semantic or language-quality evidence.
+- **Eight PostgreSQL 17.11 scenarios passed** through the extended disposable
+  runner: `current-reuse`, `current-law-watch`, `current-scope`, `current-sparse`,
+  `current-overflow`, `current-refresh`, `current-fence` and `current-rescore`.
+  Each used a fresh empty database in the explicitly labelled tmpfs QA container,
+  bound to a random loopback port. The runner refuses non-test or populated
+  databases. The container was stopped and its removal verified after testing.
+- Review found that a current rule label alone could retain stale law retrieval
+  signals. Admission now recomputes the established deterministic score/reasons
+  from current source/target facts without rewriting candidate history; a new
+  regression and PostgreSQL scenario prove withdrawal. An initial fixture assumed
+  the topic revision object was under `current_revision`; the test now reads its
+  actual `plan.id` contract. No production validation or test gate was disabled.
+- Ruff and whitespace checks pass. Logs are ignored under
+  `test-results/interest-admission-*`, with the final PostgreSQL run in
+  `interest-admission-postgres-verified.log`. No UI changes, browser/build claims,
+  schema migration, working Docker rebuild, actual inference, message delivery or
+  production deployment occurred.
+- HL-089 remains **IN PROGRESS**. This internal path includes all saved passages
+  only when they fit; it is not a material-diff planner, tokenizer measurement,
+  verified original-file byte read, globally frozen database snapshot or a
+  100-user capacity result. Official status/date binding, large-document planning,
+  actual runtime approval/token budgeting, durable scheduling and guarded retry,
+  exact-current reader/delivery integration and independent evaluation remain
+  required. Nothing starts automatically from matching or page reads yet.
+
 ## Complete deployment attempt history — 8 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl-102-deployment-history`, based on fresh `1e80667`.

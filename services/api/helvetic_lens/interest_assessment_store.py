@@ -24,6 +24,45 @@ class AssessmentStore:
         return (InterestEventAssessment.organization_id == self.organization_id,
                 InterestEventAssessment.id == assessment_id)
 
+    def prepare_current(self, session, event_id: str, *, model, context_char_limit: int, locale="en", instructions: str = SYSTEM):
+        """Worker admission from actual saved inputs, never client-supplied interests.
+
+        The caller binds the approved runtime and commits before any inference.
+        Whole-document inputs that cannot fit remain explicitly unscheduled.
+        """
+        from .interest_admission import assemble
+        from .interest_assessment import input_envelope
+        dossier = assemble(session, self.organization_id, event_id, model=model, locale=locale)
+        input_envelope(dossier, context_char_limit=context_char_limit, instructions=instructions)
+        record, created = self.prepare(session, dossier, instructions=instructions)
+        return record, created, dossier
+
+    def finish_current(self, session, assessment_id: str, token: str, dossier: Dossier,
+                       result: dict, *, model, provider_calls: int, instructions: str = SYSTEM) -> bool:
+        """Recheck current interests/evidence/profile/runtime before publishing.
+
+        Runtime is resolved afresh by the caller, not taken from the old dossier.
+        A lost/revised input invalidates only this worker's fenced running attempt.
+        Readers still compare an exact fresh key; this is not a global DB snapshot.
+        """
+        from .interest_admission import current_key
+        if dossier.organization_id != self.organization_id:
+            return False
+        try:
+            current, key = current_key(session, self.organization_id, dossier.event.id,
+                                       model=model, locale=dossier.locale, instructions=instructions)
+        except DomainError:
+            current, key = None, None
+        record = self.get(session, assessment_id)
+        if key != fingerprint(manifest(dossier, instructions)) or record is None or record.input_fingerprint != key:
+            session.execute(update(InterestEventAssessment).where(
+                *self._scope(assessment_id), InterestEventAssessment.status == "running",
+                InterestEventAssessment.attempt_key == token,
+            ).values(status="superseded", finished_at=utcnow(), attempt_key=None))
+            return False
+        return self.finish(session, assessment_id, token, current, result,
+                           provider_calls=provider_calls, instructions=instructions)
+
     def prepare(self, session, dossier: Dossier, *, instructions: str = SYSTEM):
         if dossier.organization_id != self.organization_id:
             raise DomainError("The dossier does not belong to this organization.", 404, "not_found")

@@ -8,10 +8,10 @@ This backlog implements the product described in [README.md](README.md): a local
 
 ## Scope and priorities
 
-**8 September 2026 — user-prioritized work:** the HL-089 structured-brief/storage
-foundation was pushed as `1e80667`; [HL-102 deployment history](#hl-102) follows it.
-After HL-102, resume the remaining HL-089 integration. The AI-enrichment feature
-is not marked done by its foundation commit.
+**8 September 2026 — user-prioritized work:** HL-089 structured-brief/storage
+foundation `1e80667` and [HL-102 deployment history](#hl-102) `68cd244` are pushed.
+HL-089 integration has resumed with current saved-input admission. The complete
+AI-enrichment feature remains in progress, not done by its foundation commits.
 
 - **P0 — critical trust, accessibility, release foundation or capacity gate.** The public beta cannot open without it.
 - **P1 — required public-beta product capability.** P1 is required for the agreed local-AI-first product, even when it can follow the P0 foundation.
@@ -1447,6 +1447,20 @@ scenarios passed.** This foundation is not yet wired into matching jobs or UI;
 all-current-input admission/planning, measured runtime binding, fair scheduling,
 reader/delivery reuse, feedback and independent quality/hardware evaluation remain
 open. [Contract, proof and limits](docs/INTEREST_ASSESSMENTS.md).
+
+**Current-input integration — 8 September 2026:** workers now have database-backed
+`prepare_current`/`finish_current` paths. They assemble all current topics, active
+direct watches and eligible law candidates independently of feed preview limits;
+check tenant/work/language/legacy evidence grants; reuse complete saved passage
+sets; and reject invalid, oversized or unapproved-cloud inputs before reservation.
+Publication rechecks membership, evidence, profile, locale, prompt and supplied
+runtime identity; changed input supersedes only the fenced attempt. Missing
+official facts and before/after comparison are explicit input limitations, not
+invented conclusions. Large-document material planning, measured runtime/token
+binding, durable scheduling, readers/delivery and independent evaluation remain
+open. This internal path is not yet automatically invoked by matching or the UI.
+**Verification:** 126 final API regressions (50 new) and eight PostgreSQL scenarios
+passed; no production database, real model or message delivery was used.
 
 Turn a trustworthy topic or watched-law match into a concise, reusable explanation of why the development belongs in the organization's radar and whether it deserves attention. The feed event and its primary-source evidence exist independently of AI; enrichment must never block ingestion, hide a real development, or create a second event history.
 

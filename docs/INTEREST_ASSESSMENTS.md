@@ -1,7 +1,8 @@
 # Shared event relevance briefs
 
 HL-089 is **in progress**, not enabled in the UI. The 8 September 2026 change
-provides the generation contract and transactional storage. It does not yet
+provides the generation contract, transactional storage and current-input worker
+admission for complete saved passage sets that fit the contract. It does not yet
 enqueue enrichment after matching or attach briefs to feed/digest notifications.
 The deterministic feed continues to work independently of this module.
 
@@ -79,16 +80,74 @@ The existing session policy also scopes both new tenant tables.
 
 ## Required next integration
 
-The repository is **not** a public admission API. Before prepare, retry and finish,
-the matching worker must assemble and revalidate all current topic/law/watch
-revisions, evidence visibility, event status, profile and approved runtime; it
-must exclude stale, muted, rejected, expired and below-threshold candidates.
-An event-admission row alone is not enough to prove those inputs are current.
+The repository is **not** a public admission API. Workers can now use
+`AssessmentStore.prepare_current` and `finish_current`, backed by
+`interest_admission.assemble`, rather than supplying interest lists themselves.
+The raw storage primitives remain internal; an event-admission row alone is not
+enough to prove inputs current. Runtime resolution, retry admission and durable
+job integration remain required before automatic execution is enabled.
+
+### Current saved-input admission — 8 September 2026
+
+Assembly traverses all current topic matches in 100-row candidate batches, not
+the feed's five-item preview. Saved evaluation/rule fingerprints, current topic
+revision, expiry and current rejected/muted decisions are rechecked by the same
+topic validity reader. Active direct watches and active, unexpired, current-rule
+law candidates are included alongside topics. Dismissed/expired deliveries,
+rejected organization reviews, paused watches and cross-work source versions do
+not qualify. More than 64 admitted interests fails explicitly, without a sampled
+brief. Traversal also continues after a whole batch of stale candidates.
+Law retrieval scores and reasons are recomputed from current saved facts without
+rewriting candidate history; a current rule label alone cannot preserve a lead
+whose actual source signals were corrected or withdrawn.
+
+Both native and legacy evidence require the current organization's grants, the
+correct work/language identity, accessible legacy parents, saved original-file
+identity, publisher URL and unambiguous passage IDs. All saved passages in each
+selected document are included; repeated law references reuse its evidence units.
+An old monitored-law version cannot be enriched after a newer version of that
+expression is saved: its candidate needs rechecking first. Missing originals'
+identity or missing citable passages leaves the event unenriched; a metadata-only
+retrieval lead cannot become a primary document conclusion. An artifact key
+identifies the archived original; admission does not read/verify its file bytes.
+
+This is a whole-saved-passage path, **not yet a material-change planner**. At most
+64 evidence units fit the contract, with 16,000 characters per unit. Oversize or
+malformed inputs fail without truncation. Admission and execution share the same
+character-envelope preflight (including schema and repair allowance), and an
+unapproved cloud route is rejected before creating queued assessment storage.
+Characters are not measured tokens; the worker must still bind the actual runtime
+and measured tokenizer/context/output allocation before model execution.
+
+The dossier explicitly tells the model that no complete before/after comparison
+or independently cited official status/date facts have been assembled yet. It
+must not invent changes, enactment, repeal or deadlines from current wording.
+The v2 result also preserves these input limitations and the recorded event type
+as server-bound fields, independently of the model's uncertainty text.
+Binding those facts and a deterministic material comparison remains open; this
+slice does not claim a complete change explanation for every kind of event.
+
+Profile facts include only this organization's description and business areas,
+never another profile, personal read/mute state, chats or subscriptions. Empty
+profile facts require undetermined importance. Input fingerprints include exact
+membership, names, source text/artifact identities and revisions, profile content,
+locale, prompt and caller-resolved model/runtime configuration. Reused ORM sessions
+reload committed external edits before assembly.
+
+Before publication `finish_current` reassembles the dossier and compares its key
+with both the generation input and reserved record. Changed or revoked inputs
+supersede only the matching running attempt; stale tokens cannot write results.
+Completed history stays immutable. The caller commits each short transaction and
+performs inference outside it. This is not a globally frozen database snapshot:
+readers must recompute an exact current key rather than asserting freshness from
+the `succeeded` status alone. Fresh assembly currently does per-law lookups and
+scans stale topic candidates; no bounded query-work or target capacity claim is made.
 
 Still required under HL-089:
 
-- Complete current-input assembly and measured material-unit planning, including
-  organizations with more interests than one dossier can fit.
+- Extend current-input admission with official facts and complete comparison/
+  material-unit planning, measured token budgets and organizations with more
+  interests than one dossier can fit.
 - Durable job IDs, automatic matching trigger, quotas, priority/fairness,
   cancellation recovery, backoff/dead-letter handling and guarded reactivation of
   a previously superseded fingerprint; no caller may bypass currentness checks.
@@ -113,3 +172,10 @@ pre-existing corpus/topic records and recreates the required constraints/indexes
 Downgrading deliberately removes the new assessment tables and their records.
 No working or production database was migrated, no external AI was called and
 no notifications were sent. No UI/build/browser improvement is claimed here.
+
+The current-input path additionally passed eight PostgreSQL 17.11 scenarios:
+current reuse, law/direct-watch evidence, tenant isolation, traversal beyond 100
+stale candidates, 65-interest refusal, reused-session refresh, an interest arriving
+during generation, and corrected metadata withdrawing law relevance. The scratch
+database was freshly recreated per scenario only in a labelled, loopback-only,
+tmpfs test container. The container was removed after verification.
