@@ -7,6 +7,7 @@ import json
 import pytest
 from pydantic import ValidationError
 
+from helvetic_lens.analysis import InferenceBudget
 from helvetic_lens.config import DomainError
 from helvetic_lens.interest_assessment import Dossier, finalize, fingerprint, generate, manifest
 
@@ -235,8 +236,17 @@ def test_hung_provider_is_cancelled_at_deadline():
             finally:
                 cancelled.append(True)
     with pytest.raises(DomainError) as error:
-        run(HungModel(), dossier(), max_seconds=0.01)
+        # Exercise outer cancellation, not a race with the independent request
+        # admission deadline during schema serialization on a loaded CI host.
+        run(HungModel(), dossier(), max_seconds=0.01, budget=InferenceBudget(2, max_seconds=30))
     assert error.value.code == "model_timeout" and cancelled == [True]
+
+
+def test_expired_request_budget_refuses_provider_before_outer_timeout():
+    model = Model()
+    with pytest.raises(DomainError) as error:
+        run(model, dossier(), max_seconds=30, budget=InferenceBudget(2, max_seconds=0))
+    assert error.value.code == "model_budget_exhausted" and model.calls == []
 
 
 def test_external_cancellation_is_not_converted_into_repair_or_success():

@@ -216,6 +216,11 @@ def _event_document(session, organization_id, event, watches):
     from .interest_material import plan
     native, after, source_binding = _saved_document(session, organization_id, event.document_version_id,
         event.work_id, "event", event.expression_id)
+    if not native.legacy_version_id:
+        from .native_comparisons import event_material
+        selected = event_material(session, organization_id, event)
+        if selected is not None:
+            return selected
     comparison = None
     if native.legacy_version_id:
         query = select(Comparison).where(Comparison.new_version_id == after.id,

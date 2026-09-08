@@ -1493,6 +1493,24 @@ trigger is claimed by this internal integration.
 **Verification:** 190 combined regressions, 34 final material scenarios and five
 PostgreSQL scenarios passed. Actual model quality/latency remains unverified.
 
+**Native comparison integration — 8 September 2026:** added internal explicit
+organization baseline selection for native connector documents. The complete v6
+diff and both source fingerprints are persisted; selection changes retain earlier
+pairs and use a revision check to prevent concurrent editors overwriting each other.
+Clearing leaves a revision tombstone; identical saves retain the reusable AI key.
+Admission requires both saved versions' current access, the same work and known
+language expression; it never infers a predecessor from ingestion order. Current
+material evidence reaches the measured local runner and exact result history;
+changed choices or source inputs block stale publication. An oversized complete
+comparison is saved but never sampled into an AI brief. The internal path does
+not yet provide a baseline editor, automatic connector predecessor policy or
+matching-job trigger. Those, official facts, large-set aggregation, queue/readers
+and independent quality/hardware evaluation remain open.
+**Verification:** 200 combined regressions, 31 final targeted scenarios and eight
+isolated PostgreSQL 17.11 scenarios passed, including migration roundtrip, editor
+concurrency, caller rollback, tenant isolation, reuse and in-flight supersession. Model responses and runtime
+approvals remain synthetic; no production migration or deployment was performed.
+
 Turn a trustworthy topic or watched-law match into a concise, reusable explanation of why the development belongs in the organization's radar and whether it deserves attention. The feed event and its primary-source evidence exist independently of AI; enrichment must never block ingestion, hide a real development, or create a second event history.
 
 Acceptance criteria:

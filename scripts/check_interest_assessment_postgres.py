@@ -54,6 +54,16 @@ from test_interest_material import (
     test_saved_comparison_reaches_current_admission_generation_and_fenced_storage,
     test_stale_comparison_during_generation_supersedes_without_publishing,
 )
+from test_native_comparisons import (
+    test_baseline_changes_and_clear_preserve_history_and_revision_tombstone,
+    test_complete_large_native_pair_persists_and_reuses_without_import_order_guess,
+    test_concurrent_editors_cannot_overwrite_each_other,
+    test_local_runner_uses_native_pair_once_and_persists_exact_comparison,
+    test_native_migration_roundtrip_preserves_saved_corpus,
+    test_native_selection_change_during_generation_cannot_publish,
+    test_selection_does_not_commit_callers_transaction,
+    test_tenant_selection_never_leaks_into_another_admitted_organization,
+)
 
 
 def execute_local(harness, scenario):
@@ -64,6 +74,14 @@ def execute_local(harness, scenario):
         scenario(execution)
 
 SUITES = {
+    "native-complete": test_complete_large_native_pair_persists_and_reuses_without_import_order_guess,
+    "native-selection": test_baseline_changes_and_clear_preserve_history_and_revision_tombstone,
+    "native-rollback": test_selection_does_not_commit_callers_transaction,
+    "native-concurrency": test_concurrent_editors_cannot_overwrite_each_other,
+    "native-migration": test_native_migration_roundtrip_preserves_saved_corpus,
+    "native-scope": test_tenant_selection_never_leaks_into_another_admitted_organization,
+    "native-gateway": lambda harness: execute_local(harness, test_local_runner_uses_native_pair_once_and_persists_exact_comparison),
+    "native-fence": lambda harness: execute_local(harness, test_native_selection_change_during_generation_cannot_publish),
     "material-reuse": test_saved_comparison_reaches_current_admission_generation_and_fenced_storage,
     "material-fence": test_stale_comparison_during_generation_supersedes_without_publishing,
     "material-baseline": test_conflicting_baselines_require_selection_not_import_time_guess,

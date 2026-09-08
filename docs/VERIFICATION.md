@@ -1,5 +1,49 @@
 # Verification record
 
+## Explicit native comparison baselines — 8 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl-089-native-comparison`, based on freshly fetched
+  `5d95405`. Added the `d8eaf2395cb6` migration, full saved native comparison
+  records and separate organization/event baseline selections. The internal
+  boundary checks admission, both version grants, exact work/known-language
+  expression, source fingerprints and original identity. It never chooses by
+  import time. Revision CAS prevents overwritten edits; cleared selections keep
+  a tombstone and old comparisons; unchanged saves preserve the reusable AI key.
+- The existing admission/planning/local execution path consumes the selected
+  complete diff, sends all material/uncertain evidence and context, stores its
+  exact comparison/side bindings and revalidates before publication. A 400-unit
+  pair with one change supplies two source units. Oversized material sets are
+  explicitly refused for AI, not sampled; the full comparison is still saved.
+- **200 combined regressions passed in 204.46 seconds** across native comparison,
+  current admission, brief contract/storage, measured local execution and legacy
+  material planning. **31 final native tests passed in 39.56 seconds**, including
+  the subsequently added caller-rollback regression and final SQLite transaction
+  fix. An earlier broad run found a 10-ms deadline test racing request admission;
+  tests now separately prove outer cancellation and an already-expired request
+  budget. Production budgets were not weakened. Only the existing Starlette/httpx
+  deprecation warning remains.
+- **Eight PostgreSQL 17.11 scenarios passed on final code:** `native-complete`,
+  `native-selection`, `native-concurrency`, `native-migration`, `native-scope`,
+  `native-gateway`, `native-fence`, `native-rollback`. Each used a fresh empty
+  `hl089_regression` DB through `scripts/check_interest_assessment_postgres.py` in
+  a labelled, loopback-only port-55521, tmpfs QA container. Both scratch containers
+  from this task were removed afterward; working containers were untouched.
+- The rollback test first exposed sqlite3's legacy SAVEPOINT/RELEASE implicit
+  commit. The implementation now begins a real outer write transaction before
+  its savepoint, so caller rollback removes both selection and comparison. The
+  complete diff is computed before acquiring that write transaction. Concurrent
+  selection and rollback behavior were verified on both database engines.
+- Ruff and `git diff --check` pass. The existing standalone PostgreSQL script
+  retains only its pre-existing `E402` bootstrap exception during Ruff checking.
+  No secrets, working database changes, external model calls, messages or
+  production deployment. Synthetic gateway responses/review artifacts prove
+  execution and fencing, not model/legal quality, translation or GPU latency.
+- This remains an internal integration: baseline editor/actor-authorized routes,
+  verified connector predecessor policy, official facts, large-set aggregation,
+  durable scheduling and reader/delivery integration remain open under HL-089.
+  No automatic native baseline, user-visible feature availability or full backlog
+  completion is claimed.
+
 ## Complete saved material comparisons for event briefs — 8 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl-089-material-dossier`, based on fresh `1284486`.

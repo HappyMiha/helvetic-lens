@@ -56,6 +56,7 @@ class MaterialChange(Contract):
 
 class SourceComparison(Contract):
     id: Identifier
+    basis: Literal["saved_version_pair", "organization_selected"] = "saved_version_pair"
     before_version_id: Identifier
     after_version_id: Identifier
     diff_fingerprint: str = Field(pattern=r"^[a-f0-9]{64}$")

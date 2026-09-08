@@ -248,10 +248,47 @@ uses the compact complete-change request with the same preflight/repair budgets.
 The output explicitly distinguishes saved comparison order from legal chronology;
 official status/date binding remains absent rather than inferred from wording.
 
+## Explicit native comparisons
+
+`native_comparisons.select_baseline` is an internal transaction boundary for an
+organization's explicitly chosen native before/after pair. It requires the event
+to be admitted, both versions to be accessible under the same canonical work and
+known-language expression, complete saved passages, original artifact identities
+and source URLs. Both must be native: mapped legacy sources continue through their
+existing assignment-confirmation path. Import time, discovery order, URL sorting,
+model output and metadata dates never choose a baseline or assert legal chronology.
+
+The `d8eaf2395cb6` migration adds organization-scoped `NativeDocumentComparison`
+and `NativeEventComparisonSelection` tables. Comparisons persist the entire v6 diff
+and both exact source fingerprints. A separate revision-checked selection points
+to a comparison; changing/clearing it retains earlier comparison records. A clear
+leaves a revision tombstone. Concurrent editors cannot silently overwrite a newer
+selection. Re-saving an identical pair does not change the input key or invalidate
+an existing reusable brief. Changed source inputs create a new saved comparison
+instead of rewriting the old one. Failed selection writes roll back their savepoint.
+
+Native event admission now follows that selection, checks current access and both
+source fingerprints, audits the complete persisted diff, and supplies all material
+changes plus exact ancestor context through the existing measured local runner.
+The result records `basis=organization_selected`, exact before/after version IDs
+and the comparison ID. Missing selection retains the existing explicit
+whole-document-only behavior; a stale or inaccessible selected comparison fails
+closed rather than silently falling back. Publication rechecks the selection,
+source evidence and all ordinary dossier inputs. Oversized complete diffs can be
+saved for review but cannot be silently sampled to fit the 64-unit brief envelope.
+
+This is **not yet a user-facing baseline editor or automatic connector policy**.
+No source snapshot is automatically assigned a predecessor, and no new matching
+job or UI flow is enabled. An external mutation route must authorize the actor and
+expose the selection revision; an operational connector policy must separately
+justify any official predecessor relationship. Archived artifact bytes and legal
+identity/chronology still need their independent verification. Downgrading this
+migration removes its new selection/comparison tables, not the original corpus.
+
 Still required under HL-089:
 
-- Extend current-input admission with official facts, native-source comparison
-  binding, complete large material/target-law planning and organizations with more
+- Extend current-input admission with official facts, baseline selection UX and
+  verified connector predecessor policy, complete large material/target-law planning and organizations with more
   interests than one dossier can fit.
 - Durable job IDs, automatic matching trigger, quotas, priority/fairness,
   cancellation recovery, backoff/dead-letter handling and guarded reactivation of
@@ -273,7 +310,7 @@ exercise reuse, stale completion, retry, tenant isolation and six-way concurrenc
 
 Seven isolated PostgreSQL 17.11 scenarios also passed: reuse, supersession, retry,
 privileged-session scope, concurrency, invalid-result rejection and migration
-roundtrip. The new Alembic head is `d7d9f1284ba5`; upgrade/downgrade preserves
+roundtrip. The foundation's Alembic revision is `d7d9f1284ba5`; upgrade/downgrade preserves
 pre-existing corpus/topic records and recreates the required constraints/indexes.
 Downgrading deliberately removes the new assessment tables and their records.
 No working or production database was migrated, no external AI was called and
@@ -299,3 +336,13 @@ targeted cases and five PostgreSQL 17.11 scenarios. A 400-passage pair with one
 modified unit produced two exact source units in one actual ModelClient generation
 against a synthetic gateway response. This proves pipeline shape and binding,
 not actual tokenizer size, semantic quality, legal completeness or GPU latency.
+
+Native comparisons passed 200 combined regressions, 31 final targeted scenarios
+and eight PostgreSQL 17.11 suites:
+complete 400-unit comparison, selection history/clear, concurrent editors,
+migration roundtrip, privileged tenant isolation, actual local-runner reuse and
+selection change during generation and caller-owned rollback. SQLite's legacy
+savepoint auto-commit behavior is explicitly prevented by a real outer transaction;
+two concurrent writers retain the revision guard. The PostgreSQL container used only tmpfs data
+and loopback port 55521, and was removed afterward. These remain synthetic model
+and provenance fixtures, not an operational connector policy or legal review.

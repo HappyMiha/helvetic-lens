@@ -685,6 +685,40 @@ class RegulatoryDocumentVersion(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class NativeDocumentComparison(Base):
+    """Immutable saved native pair; selection is separate from document chronology."""
+
+    __tablename__ = "native_document_comparisons"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "old_version_id", "new_version_id", "input_fingerprint",
+                         name="uq_native_comparison_input"),
+        CheckConstraint("old_version_id <> new_version_id", name="ck_native_comparison_distinct"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    old_version_id: Mapped[str] = mapped_column(ForeignKey("regulatory_document_versions.id"), index=True)
+    new_version_id: Mapped[str] = mapped_column(ForeignKey("regulatory_document_versions.id"), index=True)
+    input_fingerprint: Mapped[str] = mapped_column(String(64))
+    diff: Mapped[dict] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class NativeEventComparisonSelection(Base):
+    """An organization's explicit baseline choice, updated by revision CAS."""
+
+    __tablename__ = "native_event_comparison_selections"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "event_id", name="uq_native_event_comparison_org_event"),
+        CheckConstraint("revision >= 1", name="ck_native_selection_revision"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
+    event_id: Mapped[str] = mapped_column(ForeignKey("regulatory_events.id"), index=True)
+    comparison_id: Mapped[str | None] = mapped_column(ForeignKey("native_document_comparisons.id"))
+    revision: Mapped[int] = mapped_column(Integer)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class RegulatoryDate(Base):
     """A source-stated date. String storage preserves year/month/day precision."""
 
@@ -1506,6 +1540,8 @@ class OutboxMessage(Base):
 # Central policy used by the session boundary. Keeping this list beside the
 # models makes a newly persisted tenant-owned record difficult to forget.
 ORGANIZATION_SCOPED_MODELS = (
+    NativeDocumentComparison,
+    NativeEventComparisonSelection,
     PersonalSourceReview,
     OnboardingMilestone,
     UserOnboarding,
