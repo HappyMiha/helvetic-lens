@@ -116,7 +116,8 @@ revisions. A caller must obtain this identity from the serving runtime and
 verified artifacts; editable UI labels or request fields are not attestation.
 An unavailable identity leaves the decision in `selected_evidence` mode.
 
-Every approved grant is for exactly one task (`ask` or `impact_report`) and one
+Every approved grant is for exactly one task (`ask`, `impact_report`, or
+`interest_brief`) and one
 product locale (`de-CH`, `fr-CH`, `it-CH`, `rm-CH`, `en-CH`). There is no implicit
 English fallback, transfer between tasks, search for a more permissive profile,
 model swap or cloud fallback. The caller must explicitly select a profile.

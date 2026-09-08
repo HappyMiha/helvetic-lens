@@ -19,6 +19,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .analysis import InferenceBudget, structured_completion
 from .config import DomainError
+from .runtime_binding import PromptTokenMeasurement
 
 SCHEMA_VERSION = "interest-event-brief-v2"
 MAX_PROVIDER_CALLS = 2  # Initial generation and at most one repair, including retries.
@@ -142,6 +143,27 @@ class BriefDraft(Contract):
     affected_area_ids: list[Identifier] = Field(max_length=12)
     next_step: NextStep
     uncertainty: ShortText
+
+
+class BriefExecution(Contract):
+    """Whitelisted execution proof; never prompts, credentials or provider bodies."""
+    schema_version: Literal["interest-local-execution-v1"] = "interest-local-execution-v1"
+    runtime_fingerprint: str = Field(pattern=r"^[a-f0-9]{64}$")
+    capability_fingerprint: str = Field(pattern=r"^[a-f0-9]{64}$")
+    admission_measurement: PromptTokenMeasurement
+    generation_measurements: list[PromptTokenMeasurement] = Field(min_length=1, max_length=2)
+    duration_ms: int = Field(ge=0)
+    max_seconds: int = Field(ge=1, le=MAX_SECONDS)
+
+    @model_validator(mode="after")
+    def matching_launch(self):
+        admission = self.admission_measurement
+        if not admission.fits or any(
+            not row.fits or row.binding_fingerprint != admission.binding_fingerprint
+            or row.deployment_id != admission.deployment_id for row in self.generation_measurements
+        ):
+            raise ValueError("Execution measurements must refer to the admitted launch and fit its context.")
+        return self
 
 
 SYSTEM = """Explain one saved regulatory development for one organization.
@@ -286,7 +308,8 @@ def input_envelope(dossier: Dossier, *, context_char_limit: int, instructions: s
 
 
 async def generate(client, dossier: Dossier, *, context_char_limit: int,
-                   instructions: str = SYSTEM, max_seconds: int = MAX_SECONDS) -> tuple[dict, dict]:
+                   instructions: str = SYSTEM, max_seconds: int = MAX_SECONDS,
+                   budget: InferenceBudget | None = None) -> tuple[dict, dict]:
     """One complete generation + one repair; fail before inference if it won't fit.
 
     This conservative character envelope is not a token/context measurement.
@@ -297,7 +320,9 @@ async def generate(client, dossier: Dossier, *, context_char_limit: int,
     # snapshot across awaits so caller mutations cannot change citation bindings.
     dossier = Dossier.model_validate(dossier.model_dump(mode="json"))
     system, payload, characters = input_envelope(dossier, context_char_limit=context_char_limit, instructions=instructions)
-    budget = InferenceBudget(MAX_PROVIDER_CALLS, max_seconds=max_seconds)
+    if budget is not None and not 1 <= budget.max_requests <= MAX_PROVIDER_CALLS:
+        raise ValueError("The shared brief execution budget cannot exceed two provider requests.")
+    budget = budget or InferenceBudget(MAX_PROVIDER_CALLS, max_seconds=max_seconds)
     started = time.monotonic()
     try:
         result = await asyncio.wait_for(structured_completion(

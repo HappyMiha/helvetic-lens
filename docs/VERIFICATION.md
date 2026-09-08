@@ -1,5 +1,49 @@
 # Verification record
 
+## Measured local organization-brief execution — 8 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl-089-local-execution`, based on fresh `da9203f`.
+  The internal local runner authorizes current event access, binds an independently
+  approved `interest_brief` task/locale runtime, measures the complete wire request
+  before reservation, and uses one shared two-generation/120-second async budget.
+  It revalidates actual runtime, approval and saved inputs before fenced publication.
+  Exact completed/running inputs do not regenerate; cancellation/failure closes
+  the owned attempt. Successful storage records allowlisted token/runtime proof.
+- **261 combined regressions passed in 201.69 seconds** across
+  `test_interest_execution.py`, `test_interest_admission.py`,
+  `test_interest_assessment.py`, `test_interest_assessment_store.py`,
+  `test_ai_capabilities.py`, `test_analysis_runtime_binding.py`,
+  `test_prompt_token_measurements.py` and `test_capability_execution.py`.
+  After adding concurrency and identical-restart reuse coverage, the final
+  **33 local-execution scenarios passed in 47.65 seconds**. They use actual
+  ModelClient HTTP validation with MockTransport, real DB transactions and
+  explicitly synthetic runtime/review records; no real model was approved.
+- New scenarios cover exact admission/generation wire equality; physical and
+  reviewed context overflow; malformed measurements; task/locale/identity refusal;
+  no cloud fallback; one JSON/citation repair; a shared transport retry ceiling;
+  input changes before reservation and during inference; revoked approval;
+  changed model/configuration; cancellation/timeout; no DB connection held across
+  HTTP; bounded execution metadata; concurrent-call coalescing and context isolation;
+  and reuse after a restart of the same immutable runtime identity.
+- **Five PostgreSQL 17.11 scenarios passed:** `execution-reuse`,
+  `execution-transactions`, `execution-fence`, `execution-repair`,
+  `execution-cancel`. Each used a fresh empty database in the labelled loopback-only
+  tmpfs QA container. No working or production database was changed. The temporary
+  container was stopped after verification. Logs are ignored under
+  `test-results/interest-execution-*`.
+- One early negative fixture changed the nested artifact identity without its
+  matching runtime descriptor; it correctly failed as an invalid runtime rather
+  than an unapproved new runtime. The fixture now supplies a consistent changed
+  descriptor to exercise the intended approval test. No acceptance guard was loosened.
+- Ruff and whitespace checks pass. The standalone PostgreSQL runner retains its
+  explicit repository import bootstrap (Ruff E402 excluded for that script only).
+  Pytest reports the existing Starlette/httpx deprecation warning.
+- HL-089 remains **IN PROGRESS**: no public route, automatic queue/matching trigger,
+  reader/delivery integration, complete material-change planner, official-fact
+  binder, fair per-organization admission, hard-crash lease recovery or real-model
+  quality/hardware approval is claimed. Synchronous DB work is not covered by a
+  measured end-to-end latency SLA. No production deployment or notifications.
+
 ## Current organization inputs for shared AI briefs — 8 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl-089-current-dossier`, based on fresh `68cd244`.

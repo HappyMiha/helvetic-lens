@@ -12,7 +12,7 @@ from sqlalchemy import select, update
 
 from .config import DomainError
 from .db import utcnow
-from .interest_assessment import SYSTEM, BriefDraft, Dossier, finalize, fingerprint, manifest
+from .interest_assessment import SYSTEM, BriefDraft, BriefExecution, Dossier, finalize, fingerprint, manifest
 from .models import InterestAssessmentBinding, InterestEventAssessment, RegulatoryEventState
 
 
@@ -38,7 +38,8 @@ class AssessmentStore:
         return record, created, dossier
 
     def finish_current(self, session, assessment_id: str, token: str, dossier: Dossier,
-                       result: dict, *, model, provider_calls: int, instructions: str = SYSTEM) -> bool:
+                       result: dict, *, model, provider_calls: int, instructions: str = SYSTEM,
+                       execution: dict | None = None) -> bool:
         """Recheck current interests/evidence/profile/runtime before publishing.
 
         Runtime is resolved afresh by the caller, not taken from the old dossier.
@@ -61,7 +62,7 @@ class AssessmentStore:
             ).values(status="superseded", finished_at=utcnow(), attempt_key=None))
             return False
         return self.finish(session, assessment_id, token, current, result,
-                           provider_calls=provider_calls, instructions=instructions)
+                           provider_calls=provider_calls, instructions=instructions, execution=execution)
 
     def prepare(self, session, dossier: Dossier, *, instructions: str = SYSTEM):
         if dossier.organization_id != self.organization_id:
@@ -114,11 +115,19 @@ class AssessmentStore:
         return token if changed.rowcount == 1 else None
 
     def finish(self, session, assessment_id: str, token: str, dossier: Dossier,
-               result: dict, *, provider_calls: int, instructions: str = SYSTEM) -> bool:
+               result: dict, *, provider_calls: int, instructions: str = SYSTEM,
+               execution: dict | None = None) -> bool:
         if dossier.organization_id != self.organization_id:
             return False
         if type(provider_calls) is not int or not 0 < provider_calls <= 2:
             raise ValueError("A brief must have one or two measured provider calls.")
+        provenance = {"provider_calls": provider_calls, "provider_call_limit": 2}
+        if execution is not None:
+            verified_execution = BriefExecution.model_validate(execution)
+            if (verified_execution.runtime_fingerprint != dossier.model.runtime_fingerprint
+                    or len(verified_execution.generation_measurements) > provider_calls):
+                raise ValueError("Execution proof does not match the generated dossier.")
+            provenance["execution"] = verified_execution.model_dump(mode="json")
         # Revalidate even internal callers; don't persist extra model keys, URLs,
         # official facts, fabricated references, or arbitrary provenance/secrets.
         draft = {key: result[key] for key in BriefDraft.model_fields}
@@ -134,14 +143,17 @@ class AssessmentStore:
             InterestEventAssessment.attempt_key == token,
             InterestEventAssessment.input_fingerprint == key,
         ).values(status="succeeded", result=verified, finished_at=utcnow(), attempt_key=None,
-                 provenance={"provider_calls": provider_calls, "provider_call_limit": 2}))
+                 provenance=provenance))
         return changed.rowcount == 1
 
     def fail(self, session, assessment_id: str, token: str, error_code: str) -> bool:
         # Raw provider errors may contain echoed credentials or prompts. Persist
         # a safe category; detailed redacted diagnostics belong to integration logs.
         allowed = {"invalid_citation", "invalid_model_output", "model_timeout", "model_budget_exhausted",
-                   "interest_context_exceeded", "cloud_not_approved", "cancelled", "provider_unavailable"}
+                   "interest_context_exceeded", "cloud_not_approved", "cancelled", "provider_unavailable",
+                   "runtime_binding_changed", "model_runtime_unavailable", "token_budget_invalid",
+                   "token_budget_unavailable", "capability_changed", "capability_budget_exceeded",
+                   "interest_capability_unavailable"}
         safe_code = error_code if error_code in allowed else "provider_unavailable"
         changed = session.execute(update(InterestEventAssessment).where(
             *self._scope(assessment_id), InterestEventAssessment.status == "running",

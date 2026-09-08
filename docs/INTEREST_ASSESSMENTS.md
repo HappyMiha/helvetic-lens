@@ -143,10 +143,58 @@ readers must recompute an exact current key rather than asserting freshness from
 the `succeeded` status alone. Fresh assembly currently does per-law lookups and
 scans stale topic candidates; no bounded query-work or target capacity claim is made.
 
+### Measured local execution — 8 September 2026
+
+`LocalBriefRunner` now connects current-input admission and fenced storage to the
+real `ModelClient`. It authorizes the event before contacting inference, observes
+the actual local runtime, and requires an independently reviewed `interest_brief`
+grant for the exact immutable model/runtime/hardware identity and output locale.
+An Ask or impact-report grant does not approve organization relevance briefs.
+No production approval was added: synthetic approvals test the mechanism only.
+Unapproved profiles leave saved deterministic event evidence available.
+
+The complete system message, serialized dossier, response schema and generation
+parameters are measured through the local runtime's tokenizer endpoint before
+reserving new work. Both the physical context and the reviewed input/output/safety
+allocation must fit. ModelClient verifies the request hash and deployment pin,
+remeasures each generation (including repair), and validates its response budget.
+No omitted passages, silent cloud fallback or per-interest generation is used.
+Tokenizer requests are separate metadata calls, not counted as model generations.
+
+One shared two-generation budget includes transport retries and the single JSON/
+citation repair. A 120-second async deadline includes runtime probing and model
+calls. Database connections are not held while awaiting HTTP. Synchronous input
+assembly remains subject to the DB's own query/lock behaviour; this is not a
+measured end-to-end 120-second SLA or target-host capacity result. Background
+priority is sent to the gateway; per-organization fairness and durable job quotas
+are not implemented by this internal runner.
+
+Before publishing, the runner observes the runtime and approval again, then
+reassembles current organization inputs. Changed sources/configuration supersede
+the attempt; unavailable/revoked runtime approval fails it without accepting a
+result. Cancellation and timeout close the claimed attempt with a safe category.
+Hard process termination still requires durable lease/recovery integration.
+Concurrent callers reuse a running attempt. Successful exact inputs are reused
+after a current-runtime lookup, with no tokenizer or generation calls; restarting
+the same immutable model does not force regeneration. Failed or superseded records
+are not automatically retried by a read.
+
+Successful storage includes a bounded, validated execution proof: runtime and
+capability fingerprints, admission and generation token measurements, duration
+and call limits. It excludes raw prompts/provider bodies and rejects unexpected
+fields or measurements from a different launch. Transport diagnostics remain in
+the existing integration log. Failed attempts currently preserve the safe error
+category rather than a complete per-attempt execution ledger.
+
+This is an internal execution adapter, **not yet a scheduled product feature**.
+No route, matching trigger, notification renderer or page load invokes it yet.
+Official facts and before/after material planning remain separate prerequisites;
+the existing input limitations continue to be stored in every accepted result.
+
 Still required under HL-089:
 
 - Extend current-input admission with official facts and complete comparison/
-  material-unit planning, measured token budgets and organizations with more
+  material-unit planning and organizations with more
   interests than one dossier can fit.
 - Durable job IDs, automatic matching trigger, quotas, priority/fairness,
   cancellation recovery, backoff/dead-letter handling and guarded reactivation of
@@ -154,7 +202,8 @@ Still required under HL-089:
 - Full per-attempt/token/runtime diagnostics and append-only feedback history.
 - Exact-key freshness across feed, notification, digest, history and assistant
   readers, with honest pending/failed/not-scheduled presentation and bounded waits.
-- Administrator-only prompt/fallback policy integration and evaluation of useful
+- Administrator-only prompt/fallback policy integration, actual profile approval,
+  and evaluation of useful
   reasoning, grounding, output language, noise and target-hardware latency.
 
 ## Verification
@@ -179,3 +228,11 @@ stale candidates, 65-interest refusal, reused-session refresh, an interest arriv
 during generation, and corrected metadata withdrawing law relevance. The scratch
 database was freshly recreated per scenario only in a labelled, loopback-only,
 tmpfs test container. The container was removed after verification.
+
+The local execution adapter passed 261 combined regressions and 33 final targeted
+scenarios. Five additional PostgreSQL 17.11 executions verified complete measured
+request/reuse, no connection held across HTTP, changed-input publication fences,
+one repair and cancellation persistence. These use actual ModelClient and database
+code with synthetic gateway responses and synthetic independent-review artifacts;
+they prove neither real semantic quality nor target-GPU performance. The shipped
+capability registry remains unapproved pending actual review.

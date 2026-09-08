@@ -10,7 +10,8 @@ This backlog implements the product described in [README.md](README.md): a local
 
 **8 September 2026 — user-prioritized work:** HL-089 structured-brief/storage
 foundation `1e80667` and [HL-102 deployment history](#hl-102) `68cd244` are pushed.
-HL-089 integration has resumed with current saved-input admission. The complete
+HL-089 integration has resumed with current saved-input admission and measured
+local execution. The complete
 AI-enrichment feature remains in progress, not done by its foundation commits.
 
 - **P0 — critical trust, accessibility, release foundation or capacity gate.** The public beta cannot open without it.
@@ -1461,6 +1462,21 @@ binding, durable scheduling, readers/delivery and independent evaluation remain
 open. This internal path is not yet automatically invoked by matching or the UI.
 **Verification:** 126 final API regressions (50 new) and eight PostgreSQL scenarios
 passed; no production database, real model or message delivery was used.
+
+**Local execution integration — 8 September 2026:** `LocalBriefRunner` connects
+current dossiers and fenced storage to the real local gateway. It requires a
+distinct reviewed `interest_brief` task/locale grant and observed immutable runtime,
+measures the full request before admission, and shares two generation attempts
+across retries/one repair. Runtime, approval and current saved inputs are rechecked
+before publication. Exact reuse and concurrent running work do not regenerate;
+cancellation/failure is recorded. Successful results retain bounded token/runtime
+proof without raw provider payloads. All inference awaits are outside DB sessions.
+No shipped profile was approved and no matching/UI trigger was enabled. Material
+planning/official facts, durable queue/quotas/recovery, exact-current readers,
+prompt policy, real-model review and target capacity remain required.
+**Verification:** 261 combined regressions, 33 final local-execution scenarios,
+and five PostgreSQL execution scenarios passed with synthetic runtime/model
+responses. No real model approval, production rollout or message delivery.
 
 Turn a trustworthy topic or watched-law match into a concise, reusable explanation of why the development belongs in the organization's radar and whether it deserves attention. The feed event and its primary-source evidence exist independently of AI; enrichment must never block ingestion, hide a real development, or create a second event history.
 

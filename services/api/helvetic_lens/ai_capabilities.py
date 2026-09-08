@@ -16,7 +16,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validato
 
 Digest = Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")]
 Identifier = Annotated[str, Field(pattern=r"^[a-zA-Z0-9][a-zA-Z0-9._/-]{0,199}$")]
-Task = Literal["ask", "impact_report"]
+Task = Literal["ask", "impact_report", "interest_brief"]
 Locale = Literal["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"]
 MAX_ARTIFACT_BYTES = 1024 * 1024
 

@@ -34,8 +34,34 @@ from test_interest_assessment_store import (
     test_revised_input_supersedes_inflight_work_and_old_worker_cannot_publish,
     test_unverified_result_cannot_be_persisted,
 )
+from test_interest_execution import (
+    artifacts as execution_artifacts,
+)
+from test_interest_execution import (
+    execution as execution_fixture,
+)
+from test_interest_execution import (
+    test_changed_saved_input_cannot_publish,
+    test_database_connections_not_held_during_provider_calls,
+    test_interruption_closes_attempt_and_restores_context,
+    test_measured_complete_request_persisted_and_exact_reuse,
+    test_single_repair_shared_budget_and_failure_is_not_retried_on_read,
+)
+
+
+def execute_local(harness, scenario):
+    from pytest import MonkeyPatch
+    with TemporaryDirectory(prefix="helvetic-synthetic-approval-") as directory, MonkeyPatch.context() as patch:
+        artifacts = execution_artifacts.__wrapped__(Path(directory))
+        execution = execution_fixture.__wrapped__(harness, artifacts, patch)
+        scenario(execution)
 
 SUITES = {
+    "execution-reuse": lambda harness: execute_local(harness, test_measured_complete_request_persisted_and_exact_reuse),
+    "execution-transactions": lambda harness: execute_local(harness, test_database_connections_not_held_during_provider_calls),
+    "execution-fence": lambda harness: execute_local(harness, lambda value: test_changed_saved_input_cannot_publish(value, "generate")),
+    "execution-repair": lambda harness: execute_local(harness, lambda value: test_single_repair_shared_budget_and_failure_is_not_retried_on_read(value, 1)),
+    "execution-cancel": lambda harness: execute_local(harness, lambda value: test_interruption_closes_attempt_and_restores_context(value, "cancelled")),
     "current-reuse": test_prepare_generate_finish_reuses_exact_brief_and_rechecks_inputs,
     "current-law-watch": test_law_and_direct_watch_inputs_use_exact_legacy_evidence,
     "current-scope": test_foreign_worker_cannot_assemble_even_with_privileged_session,
