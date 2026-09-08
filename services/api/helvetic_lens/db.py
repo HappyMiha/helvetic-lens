@@ -55,13 +55,19 @@ class Database:
             self.engine,
             expire_on_commit=False,
         )
+        # SQLAlchemy keeps class-event listener values in a global weak-key
+        # registry. Capturing this Database would retain its sessionmaker class
+        # through the listener, defeating the weak key and leaking every engine
+        # and its reflected migration schema. The tenant ContextVar carries no
+        # reference back to the Database or sessionmaker.
+        organization_context = self._organization_id
 
         # Until authentication supplies the active organization in HL-034, each app
         # instance has one immutable tenant context. Tests can create two instances
         # over the same database to prove isolation without trusting a request header.
         @event.listens_for(self._session_factory, "after_begin")
         def remember_organization(session: Session, _transaction, _connection):
-            session.info.setdefault("organization_id", self.current_organization_id)
+            session.info.setdefault("organization_id", organization_context.get())
 
         @event.listens_for(self._session_factory, "before_flush")
         def assign_organization(session: Session, _flush_context, _instances):
@@ -69,7 +75,7 @@ class Database:
 
             from .models import ORGANIZATION_SCOPED_MODELS, Law
 
-            organization_id = session.info.setdefault("organization_id", self.current_organization_id)
+            organization_id = session.info.setdefault("organization_id", organization_context.get())
             for record in session.new:
                 if isinstance(record, ORGANIZATION_SCOPED_MODELS) and not record.organization_id:
                     record.organization_id = organization_id
@@ -91,7 +97,7 @@ class Database:
             from .models import ORGANIZATION_SCOPED_MODELS, SHARED_CORPUS_MODELS
 
             organization_id = execute_state.session.info.setdefault(
-                "organization_id", self.current_organization_id
+                "organization_id", organization_context.get()
             )
             statement = execute_state.statement
             for model in ORGANIZATION_SCOPED_MODELS:
@@ -137,6 +143,13 @@ class Database:
         directory = Path(__file__).resolve().parent.parent
         config = Config(str(directory / "alembic.ini"))
         config.set_main_option("script_location", str(directory / "alembic"))
-        with self.engine.begin() as connection:
-            config.attributes["connection"] = connection
-            command.upgrade(config, "head")
+        try:
+            with self.engine.begin() as connection:
+                config.attributes["connection"] = connection
+                command.upgrade(config, "head")
+        finally:
+            # Migration DML can cache reflected tables with listeners pointing
+            # back to the whole Alembic context. None of that compiled SQL is
+            # needed by application requests, including after a failed upgrade.
+            config.attributes.pop("connection", None)
+            self.engine.clear_compiled_cache()

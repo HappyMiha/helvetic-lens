@@ -186,6 +186,14 @@ full suite may exceed the old budget; it still needs an actual run on the target
 host. If it fails again, use the last test ID/stack and duration evidence before
 raising the limit further. No tests should be skipped to obtain a green release.
 
+The September 8 investigation also reproduced memory retention across repeated
+test application/database instances. Session listeners must not capture the
+Database/sessionmaker owner, and migration-only compiled schema state is cleared
+after each attempted upgrade. When diagnosing another timeout, inspect the QA
+container's memory/swap and the captured stack as well as elapsed time; increasing
+the deadline alone does not fix memory pressure. Local regressions do not establish
+the cause of a particular remote failure without its host diagnostics.
+
 When an older installed release manager cannot pass a gate because its runner
 needs a correction, updating `main` alone cannot bootstrap the new manager:
 normal self-update happens only after success. Use the reviewed installer's

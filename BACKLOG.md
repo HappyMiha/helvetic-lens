@@ -2420,6 +2420,15 @@ Acceptance criteria:
 
 ### HL-102 — Browse actual deployment history, errors and deployed release notes
 
+**8 September 2026 memory investigation:** A full Linux API run of `5edfaa5`
+reached 41% before resource exhaustion (6 GiB plus 2.36 GB swap); it was stopped,
+not passed. A reproducible SQLAlchemy listener retention cycle kept disposed
+Database/sessionmaker/engine objects alive. Listeners now capture only the tenant
+ContextVar, and completed/failed migrations release their connection and compiled
+schema cache. New lifecycle regressions distinguish old from fixed code; tenant
+isolation and PostgreSQL checks pass. The repeated complete Linux run is still
+pending at this checkpoint; this is not evidence of a successful production deploy.
+
 **8 September 2026 manager recovery follow-up:** The installer now supports a
 reviewed-commit, locked `--update-only` recovery with a backup and atomic
 replacement. It ignores uncommitted source edits and changes neither cron nor

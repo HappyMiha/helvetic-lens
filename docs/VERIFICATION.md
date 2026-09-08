@@ -1,5 +1,46 @@
 # Verification record
 
+## Database retention behind the API gate — 8 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/api-migration-memory`, based on `3af161a`.
+  The complete frozen Linux suite on `5edfaa5` collected 1,731 tests and advanced
+  to 41%, then hit its 6 GiB RAM allocation and 2,360,827,904 bytes of swap.
+  A 120-second stack dump showed SQLite schema migration preparation, not AI or
+  an external provider. No OOM kill occurred; repeated memory-limit pressure was
+  recorded. The owned QA run was interrupted and then stopped (exit 143); it is
+  **incomplete**, not green. No application container or production data was stopped.
+- A local GC reference-chain probe traced retained metadata through the engine's
+  compiled cache, Database, a listener closure, and SQLAlchemy SessionEvents'
+  global weak-key registry. Listener values captured Database, which pointed back
+  to their sessionmaker class key. Capturing only the tenant ContextVar removes
+  that retention cycle without changing organization selection. Migration
+  completion/failure also drops the temporary connection and compiled schema
+  cache; it does not change schema revisions or skip migrations.
+- **3 lifecycle tests pass on Windows (1.14 seconds) and Linux (3.92 seconds)**:
+  disposed Database/engine/session class weak references are released; the real
+  migration chain and repeated startup complete; failed migration schema and
+  connection objects are released while the engine remains usable. On the
+  immutable old source, two of these tests fail and one passes, confirming the
+  regression is detected rather than merely restating the implementation.
+- **15 combined lifecycle/authentication/organization-access/isolation tests pass**
+  (18.77 seconds). Five real PostgreSQL 17 suites also pass: `scope`,
+  `current-scope`, `migration`, `current-refresh`, `jobs-concurrency`.
+  PostgreSQL was a separately labelled localhost container with ephemeral data;
+  only its fixed-ID synthetic database was recreated between cases, then the
+  container was removed. No production database, real inference or delivery.
+- A repeated-create/close probe decreased GC-tracked objects after 25 apps from
+  2,010,306 to 710,581. At 75 fixed-code apps the count was 922,746. These are
+  diagnostic object counts, not a claim of zero growth or a production capacity
+  benchmark: framework caches and other allocations still exist.
+- The full repeated Linux run has **1,747 collected tests**, from an immutable
+  `3af161a` source archive plus exactly the changed Database module and new test.
+  It retains the full suite and frozen dependencies, UID 1000, read-only source,
+  no Docker socket/secrets, and separate temporary data. Its 6 GiB limit has swap
+  disabled to avoid host thrashing. At this checkpoint it is still running;
+  completion and HappySnowman production recovery are not yet verified.
+- Ruff and diff checks pass. The existing Starlette/httpx deprecation warning is
+  visible and not suppressed; it is separate from the retained database graph.
+
 ## Reviewed deployment-manager recovery — 8 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/deploy-manager-recovery`, based on `5edfaa5`.
