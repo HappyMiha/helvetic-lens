@@ -1,5 +1,32 @@
 # Verification record
 
+## Reviewed deployment-manager recovery — 8 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/deploy-manager-recovery`, based on `5edfaa5`.
+  Update-only installation reads a full reviewed commit from the trusted fetched
+  main history; it does not pull/reset a production checkout or execute the
+  candidate. The real deployment lock guards syntax validation, backup and
+  atomic replacement. Active deployments fail closed with exit 75.
+- **13 Linux tests passed in 1.28 seconds**, using actual shell, Git, Python
+  compilation, flock, file permissions and rename. Coverage includes exact
+  committed bytes despite broken working-tree edits, idempotence, contention
+  with Python's lock, wrong origin/unmerged revision/invalid syntax/symlink
+  rejection, invalid arguments, preserved unrelated cron entries, and recovery
+  after a simulated failed atomic rename. Only cron and the intentional rename
+  failure use fixture adapters; no user's scheduler is touched.
+- The isolated container ran as UID 1000 with a read-only filesystem/source
+  snapshot and ephemeral temporary directories. Two explicit source/test files
+  were mounted, without Docker socket, production data or credentials. An
+  ephemeral pinned pytest installation required package-download network access.
+  The test container was removed after completion.
+- Initial QA exposed Windows mixed line endings in the copied shell script.
+  The passing Linux snapshot uses LF; an explicit Git LF attribute and normalized
+  working file prevent that checkout problem. Ruff and diff checks pass.
+- The separate full Linux API run uses immutable commit `5edfaa5`; at this
+  checkpoint it is still running and is not claimed as a full-suite pass or
+  verification of this later installer change. HappySnowman access/installation,
+  production restart and target-host release success remain unverified.
+
 ## Deployment API-test timeout diagnostics — 8 September 2026 (HappyDucky02)
 
 - User supplied a failed `api_tests` phase on release `be17fcc`: Docker CLI timed

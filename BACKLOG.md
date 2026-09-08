@@ -2420,6 +2420,14 @@ Acceptance criteria:
 
 ### HL-102 — Browse actual deployment history, errors and deployed release notes
 
+**8 September 2026 manager recovery follow-up:** The installer now supports a
+reviewed-commit, locked `--update-only` recovery with a backup and atomic
+replacement. It ignores uncommitted source edits and changes neither cron nor
+application/data/release state. Thirteen real Linux shell/Git/lock tests pass.
+This closes the bootstrap gap where a manager fix could only install after its
+own failing gate succeeded. Actual HappySnowman access, installation and the
+target-host gate remain unverified; no production recovery is claimed.
+
 **8 September 2026 timeout follow-up:** The full API gate now has a bounded,
 operator-configurable two-hour default, verbose test IDs/slow-test diagnostics,
 and preserves redacted partial output when the command times out. Its unique QA

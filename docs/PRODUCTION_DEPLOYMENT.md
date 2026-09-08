@@ -186,13 +186,37 @@ full suite may exceed the old budget; it still needs an actual run on the target
 host. If it fails again, use the last test ID/stack and duration evidence before
 raising the limit further. No tests should be skipped to obtain a green release.
 
-When an older installed release manager cannot pass a gate because its test runner
-lacks a new dependency, updating `main` alone cannot bootstrap the new manager:
-its normal self-update happens only after success. First verify and commit the
-manager change, then hold `deploy-control/deployment.lock`, preserve the installed
-manager for recovery, and install the reviewed `deploy/release_manager.py` into
-`deploy-control`. Release the lock so the next poll uses the corrected runner.
-This control-plane update does not stop application services or bypass any gate.
+When an older installed release manager cannot pass a gate because its runner
+needs a correction, updating `main` alone cannot bootstrap the new manager:
+normal self-update happens only after success. Use the reviewed installer's
+`--update-only --revision <full SHA>` mode on the host. It checks the trusted
+origin and membership in fetched `origin/main`, reads committed code rather than
+working-tree edits, checks Python syntax without executing it, and acquires the
+same deployment lock. It preserves a backup before an atomic replacement.
+
+For a checkout whose installer is itself older, extract the reviewed installer
+from Git without changing the production checkout. Replace the placeholder with
+the full, reviewed 40-character commit SHA containing the fix:
+
+```sh
+SOURCE_ROOT=/srv/helvetic-lens/helvetic-lens
+REVIEWED_SHA='FULL_REVIEWED_40_CHARACTER_COMMIT_SHA'
+git -C "$SOURCE_ROOT" fetch origin
+installer=$(mktemp)
+git -C "$SOURCE_ROOT" show "$REVIEWED_SHA:deploy/install-auto-deploy.sh" > "$installer" &&
+  HELVETIC_LENS_SOURCE_REPO="$SOURCE_ROOT" sh "$installer" --update-only --revision "$REVIEWED_SHA"
+result=$?
+rm -f "$installer"
+test "$result" -eq 0
+```
+
+Exit 75 means a deployment is active: wait for it to finish and retry; do not
+remove the lock or manually hold it while invoking this installer. Update-only
+does not change cron, application containers, secrets, database, saved documents,
+backups or the active-release marker. The existing scheduler's next poll runs all
+quality gates with the corrected manager; it does not bypass a failed gate.
+Normal installation also uses this guarded committed-code replacement, then
+installs the marked cron entry while retaining unrelated entries.
 
 If startup or public verification fails, the manager keeps writers stopped, restores the pre-deploy database and evidence backup when the candidate may have migrated data, and restarts the previous immutable release. An active local model is captured before the maintenance window and restored to a ready, warmed state after both a successful deployment and a rollback. A failed commit is retried after 15 minutes; a newer commit is evaluated on the next poll. The running release manager updates its installed copy only after a successful deployment.
 
