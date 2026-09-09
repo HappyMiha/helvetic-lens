@@ -4,8 +4,11 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 
+from .basel_stadt_pilot import REVISION
+from .basel_stadt_pilot import capabilities as basel_capabilities
+
 CAPABILITY_SCHEMA_VERSION = "helvetic-lens.source-capability/v1"
-CAPABILITY_CATALOG_REVISION = "2026-09-04.1"
+CAPABILITY_CATALOG_REVISION = REVISION
 
 
 @dataclass(frozen=True)
@@ -346,6 +349,8 @@ SOURCE_CAPABILITIES = (
         for language in ("de", "fr", "it", "en")
     ),
 )
+
+SOURCE_CAPABILITIES = (*SOURCE_CAPABILITIES, *basel_capabilities(SourceCapability, CapabilityEvidence))
 
 SOURCE_CAPABILITY_INDEX = {
     (item.connector, item.stream): item for item in SOURCE_CAPABILITIES

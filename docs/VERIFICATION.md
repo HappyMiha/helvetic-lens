@@ -1,5 +1,35 @@
 # Verification record
 
+## Basel-Stadt cantonal pilot and first-use guide — 9 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl080-basel-stadt-onboarding`, based on `0c1adf0`.
+  [Scope, source selection and reproduction](BASEL_STADT_PILOT.md) and
+  [bounded live evidence](evidence/basel-stadt-live-2026-09-09.json).
+- The affected API regression selection contains 109 cases: 107 pass across the
+  final applicable runs, with two environment-gated PostgreSQL cases skipped.
+  The expanded run exposed the federal-only personal source-review snapshot and
+  an old five-pack coverage expectation; both were fixed and the affected 15
+  source-review/coverage cases passed again. Basel's 13 fixture cases cover the
+  actual job, fanout, preview, evidence and topic persistence path as well as
+  recovery, deduplication, correction, source drift and authorization boundaries.
+- `check_basel_stadt_postgres.py` passes in an empty disposable PostgreSQL 16
+  database, including two independent service instances competing to request the
+  first collection, exact artifact reopening and unsubscribed-tenant isolation.
+  The test database is separate from all application containers and volumes.
+- Live official-source acceptance passes: two starter laws, two exact saved
+  artifacts, privacy/building previews, topic creation with no AI, repeat without
+  duplicate versions, and bounded discovery/ingestion of both other streams.
+- `npm run build` passes its localization, shell, resource and report gates plus
+  the production Next.js build. Ruff passes for the API and both Python scripts.
+- Final `npm run check:basel:browser` passes 20 production-build journeys and 40
+  full-document axe checkpoints across all five locales, 390/1440 px and
+  administrator/viewer roles. It uses the actual `matching_topics.items` response
+  contract and checks failed-save idempotency. Synthetic API interception is
+  distinct from the separately recorded live-source/API persistence check.
+- No independent user study, native-language certification, production deployment
+  or complete cantonal coverage is claimed. HL-080 remains IN PROGRESS for those
+  field/operational boundaries; the implemented package is explicitly a pilot.
+
 ## Bounded optional diagnostic writes — 9 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl099-diagnostic-lock-bounds`, based on `38aa906`.

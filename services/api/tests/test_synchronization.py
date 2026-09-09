@@ -30,7 +30,7 @@ def test_default_schedules_are_persisted_and_visible(harness):
 
     assert response.status_code == 200
     payload = response.json()
-    assert len(payload["items"]) == 23
+    assert len(payload["items"]) == 26
     assert {(item["connector"], item["stream"]) for item in payload["items"]} >= {
         ("fedlex", "rss-de"),
         ("swiss-parliament", "recent"),

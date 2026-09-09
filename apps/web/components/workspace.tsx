@@ -1,5 +1,7 @@
 "use client";
 
+import { baselCopy } from "@/lib/basel-onboarding-copy";
+
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -159,6 +161,8 @@ function SourcePacks({
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h3 className="m-0">{text(pack.name)}</h3>
+                    {pack.parent_id !== data.starter.id && <p className="mt-2 font-semibold text-sm">{baselCopy[locale].separate}</p>}
+                    {pack.id === "basel-stadt-legislation" && <Link className="inline-block min-h-11 py-2 underline" href="/onboarding/basel-stadt">{baselCopy[locale].open}</Link>}
                     <p className="muted mt-2 mb-0 text-sm">{text(pack.description)}</p>
                   </div>
                   <Status value={pack.subscription.state} />

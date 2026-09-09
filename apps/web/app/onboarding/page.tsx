@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { baselCopy } from "@/lib/basel-onboarding-copy";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Compass, FileSearch, Radar } from "lucide-react";
 import { Shell } from "@/components/shell";
@@ -30,7 +31,7 @@ export default function OnboardingPage() {
 }
 
 function Guide() {
-  const { t, dateTime } = useI18n();
+  const { t, dateTime, locale } = useI18n();
   const { canManage } = useAuth();
   const router = useRouter();
   const resource = useResource(resources.onboarding());
@@ -89,6 +90,7 @@ function Guide() {
           {t("gettingStarted.body")}
         </p>
       </header>
+      <Link className="block rounded-xl border bg-card p-5 underline" href="/onboarding/basel-stadt">{baselCopy[locale].open}</Link>
       {resource.error && (
         <>
           <ErrorNote message={resource.error} />

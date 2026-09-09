@@ -8,6 +8,7 @@ from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
 from . import jobs as durable_jobs
+from .basel_stadt_pilot import PACKS, REVISION
 from .config import DomainError
 from .db import utcnow
 from .models import (
@@ -21,7 +22,7 @@ from .models import (
 )
 from .source_capabilities import SOURCE_CAPABILITY_INDEX
 
-SOURCE_PACK_CATALOGUE_REVISION = "2026-09-04.1"
+SOURCE_PACK_CATALOGUE_REVISION = REVISION
 STARTER_ID = "swiss-federal-starter"
 BACKFILL_LIMIT = 500
 LOCALES = ("de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH")
@@ -167,6 +168,8 @@ PACK_DEFINITIONS = (
 )
 
 
+PACK_DEFINITIONS = (*PACK_DEFINITIONS, *PACKS)
+
 def seed_definitions(session: Session) -> None:
     now = utcnow()
     children = [item["id"] for item in PACK_DEFINITIONS if item["parent_id"] == STARTER_ID]
@@ -264,7 +267,7 @@ def catalogue(session: Session, schedule_items: list[dict]) -> dict:
     definitions = list(
         session.scalars(
             select(SourcePackDefinition)
-            .where(SourcePackDefinition.parent_id == STARTER_ID, SourcePackDefinition.active.is_(True))
+            .where(SourcePackDefinition.parent_id.is_not(None), SourcePackDefinition.active.is_(True))
             .order_by(SourcePackDefinition.position)
         )
     )
@@ -304,8 +307,9 @@ def catalogue(session: Session, schedule_items: list[dict]) -> dict:
             }
         )
     root = session.get(SourcePackDefinition, STARTER_ID)
-    active_count = sum(item["subscription"]["enabled"] for item in items)
-    starter_state = "active" if items and active_count == len(items) else "partial" if active_count else "inactive"
+    federal_items = [item for item in items if item["parent_id"] == STARTER_ID]
+    active_count = sum(item["subscription"]["enabled"] for item in federal_items)
+    starter_state = "active" if federal_items and active_count == len(federal_items) else "partial" if active_count else "inactive"
     return {
         "catalogue_revision": SOURCE_PACK_CATALOGUE_REVISION,
         "starter": {
@@ -316,7 +320,7 @@ def catalogue(session: Session, schedule_items: list[dict]) -> dict:
             "expected_first_data": root.expected_first_data_json,
             "state": starter_state,
             "active_subpack_count": active_count,
-            "subpack_count": len(items),
+            "subpack_count": len(federal_items),
         },
         "items": items,
     }

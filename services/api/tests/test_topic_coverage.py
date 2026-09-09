@@ -133,10 +133,10 @@ def test_one_and_all_packs_use_four_scalar_queries_without_diagnostic_hydration(
             statements.clear()
             all_packs = snapshot(session, ids, now=NOW)
             assert len(statements) == 4
-        assert len(one["items"]) == 1 and len(all_packs["items"]) == 5
+        assert len(one["items"]) == 1 and len(all_packs["items"]) == 6
         for column in ("cursor_json", "source_contract_json", "policy_json", "error_detail", "health_message"):
             assert column not in " ".join(statements)
-        assert sum(len(item["streams"]) for item in all_packs["items"]) == 23
+        assert sum(len(item["streams"]) for item in all_packs["items"]) == 26
     finally:
         event.remove(service.db.engine, "before_cursor_execute", capture)
     assert model.calls == []

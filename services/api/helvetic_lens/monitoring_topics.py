@@ -662,6 +662,11 @@ def preview(session: Session, data: dict) -> dict:
             "legal_relation_confirmed": False, "reason_signals": signals,
             "confidence": confidence,
         })
+    from .corpus_access import event_evidence_links
+    evidence_links = event_evidence_links(session, session.info["organization_id"],
+                                          [item["event_id"] for item in candidates[:PREVIEW_RESULT_LIMIT]])
+    for item in candidates[:PREVIEW_RESULT_LIMIT]:
+        item["evidence_url"] = evidence_links.get(item["event_id"])
     return {
         "source_coverage": coverage_snapshot(session, plan["source_pack_ids"], now=captured_at),
         "matching_topics": matching_rule_topics(session, plan, exclude_topic_id=data.get("exclude_topic_id")),

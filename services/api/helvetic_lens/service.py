@@ -47,6 +47,7 @@ from .assistant_contract import (
     assistant_remark_schema,
     assistant_route_help,
 )
+from .basel_stadt_connector import BaselStadtConnector
 from .broad_official_connector import federal_news_connectors, finma_news_connectors
 from .config import DomainError, Settings
 from .connectors import CONNECTOR_CONTRACT_VERSION, ConnectorRunner
@@ -1937,6 +1938,11 @@ class HelveticLens:
             "error": result.error,
         }
 
+    async def sync_basel_stadt(self, stream: str) -> dict:
+        connector = BaselStadtConnector(self.settings, self.integration_logger, stream=stream)
+        result = await self.connector_runner.run_page(connector, stream=stream)
+        return {key: getattr(result, key) for key in ("connector", "stream", "status", "page_id", "persisted", "total", "next_cursor", "error")}
+
     async def sync_federal_criminal_court(self, stream: str) -> dict:
         connector = next(
             (
@@ -2030,7 +2036,9 @@ class HelveticLens:
         with self.write_guard, self.db.session(include_all_organizations=True) as session:
             synchronization.start_run(session, run_id)
             session.commit()
-        if connector == "fedlex":
+        if connector == "basel-stadt-legislation":
+            result = await self.sync_basel_stadt(stream)
+        elif connector == "fedlex":
             result = await self.sync_fedlex(stream)
         elif connector == "swiss-parliament":
             result = await self.sync_parliament(stream)

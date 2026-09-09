@@ -74,11 +74,12 @@ def test_starter_catalogue_is_seeded_from_exact_capability_streams(harness):
         "swiss-parliament",
         "federal-courts",
         "federal-policy-regulators",
+        "basel-stadt-legislation",
     }
     assert all(set(item["name"]) == {"de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"} for item in payload["items"])
-    assert sum(len(item["capabilities"]) for item in payload["items"]) == 23
+    assert sum(len(item["capabilities"]) for item in payload["items"]) == 26
     with service.db.session(include_all_organizations=True) as session:
-        assert session.scalar(select(func.count()).select_from(SourcePackDefinition)) == 6
+        assert session.scalar(select(func.count()).select_from(SourcePackDefinition)) == 8
 
 
 def test_source_pack_catalogue_skips_unknown_capability_streams(harness):

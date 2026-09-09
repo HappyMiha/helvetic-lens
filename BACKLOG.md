@@ -131,7 +131,7 @@ Keep the proven stack and add only the infrastructure now justified by public us
 | [HL-077](#hl-077) | P1       | IN PROGRESS | HL-035, HL-066, HL-074                                 | Contextual “Monitor this”; integrate HL-076 as its feed arrives      |
 | [HL-078](#hl-078) | P1       | IN PROGRESS | HL-052, HL-076, HL-077                              | In-app notification centre over the existing delivery state         |
 | [HL-079](#hl-079) | P1       | IN PROGRESS  | HL-052, HL-075, HL-076                                 | Topic matches in existing digests                                   |
-| [HL-080](#hl-080) | P1       | PLANNED  | HL-038, HL-071, HL-072                                 | Cantonal source-pack framework and one verified pilot               |
+| [HL-080](#hl-080) | P1       | IN PROGRESS  | HL-038, HL-071, HL-072                                 | Cantonal source-pack framework and one verified pilot               |
 | [HL-081](#hl-081) | P2       | PLANNED  | HL-080                                                 | Evidence-gated expansion to the next two cantonal packs             |
 | [HL-082](#hl-082) | P2       | PLANNED  | HL-038, HL-050, HL-071, HL-074–HL-076                  | Separate opt-in public-discourse signal pilot                       |
 | [HL-083](#hl-083) | P1       | IN PROGRESS | HL-035, HL-062, HL-074, HL-076, HL-077              | Local assistant intent, context, privacy, and action contract       |
@@ -2032,6 +2032,8 @@ Acceptance criteria:
 <a id="hl-080"></a>
 
 ### HL-080 — Create a cantonal source-pack framework and one verified pilot
+
+**9 September 2026 implementation — Basel-Stadt selected by the user:** a separate cantonal package now covers the German official OGD legislation dataset 100354, including its published municipal entries, with three bounded shared collector streams and explicit exclusions. `/onboarding/basel-stadt` connects source review, explicit activation/first-use collection, editable privacy/planning interests, deterministic preview, exact saved evidence and idempotent topic creation. Live source/artifact/repeat checks, fixture recovery/drift/isolation checks, PostgreSQL contention and five-locale desktop/mobile browser acceptance are recorded in [Basel-Stadt pilot](docs/BASEL_STADT_PILOT.md). **IN PROGRESS remains deliberate:** independent unaided user acceptance, native-language review, production observation and operational ownership are not established by automated implementation checks. No Swiss-wide coverage is claimed.
 
 Prove the data and UX contract for cantonal coverage before presenting a Swiss-wide canton selector.
 

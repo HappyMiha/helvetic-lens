@@ -55,6 +55,9 @@ class ScheduleDefinition:
 
 
 DEFAULT_SCHEDULES = (
+    ScheduleDefinition("basel-stadt-legislation", "starter-de", 86400, 60, "Two named first-use laws; no source-wide coverage claim", 0.2),
+    ScheduleDefinition("basel-stadt-legislation", "latest-de", 3600, 180, "50 newest version IDs, repeated overlap", 0.2),
+    ScheduleDefinition("basel-stadt-legislation", "catalogue-de", 900, 60, "complete descending version-ID cycle, 20 rows per page", 0.2),
     ScheduleDefinition("fedlex", "rss-de", 900, 90, "RSS watermark with connector overlap", 0.2),
     ScheduleDefinition("fedlex", "rss-fr", 900, 90, "RSS watermark with connector overlap", 0.2),
     ScheduleDefinition("fedlex", "rss-it", 900, 90, "RSS watermark with connector overlap", 0.2),

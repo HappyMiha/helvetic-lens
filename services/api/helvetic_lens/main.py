@@ -848,6 +848,11 @@ def create_app(
         with service.db.session() as session:
             return onboarding.read(session, service.organization_id, principal)
 
+    @app.post("/api/onboarding/basel-stadt/collect", status_code=202)
+    def collect_basel_starter():
+        from .basel_onboarding import collect
+        return collect(service)
+
     @app.post("/api/onboarding/source-review")
     def review_sources(data: onboarding.source_review.SourceReviewInput, request: Request):
         user_id, principal = assistant_principal(request)

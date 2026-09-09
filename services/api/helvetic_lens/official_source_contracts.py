@@ -10,6 +10,9 @@ from xml.etree import ElementTree
 
 from bs4 import BeautifulSoup
 
+from .basel_stadt_connector import DATASET as BASEL_DATASET
+from .basel_stadt_connector import MANIFEST as BASEL_MANIFEST
+from .basel_stadt_connector import validate_row
 from .config import DomainError, Settings
 from .connectors import (
     ConnectorHealthReport,
@@ -184,7 +187,15 @@ FINMA_CONTRACT = OfficialSourceContract(
     response_kind="finma_rss",
 )
 
+BASEL_STADT_CONTRACT = OfficialSourceContract(
+    manifest=BASEL_MANIFEST,
+    smoke_url=BASEL_DATASET + "/records?limit=1&order_by=v_id+desc",
+    response_kind="basel_ogd",
+    maximum_bytes=12_000_000,
+)
+
 OFFICIAL_SOURCE_CONTRACTS = (
+    BASEL_STADT_CONTRACT,
     FEDLEX_CONTRACT,
     PARLIAMENT_CONTRACT,
     FEDERAL_COURT_CONTRACT,
@@ -196,6 +207,12 @@ OFFICIAL_SOURCE_CONTRACTS = (
 
 def _validate_payload(kind: str, body: bytes) -> dict:
     try:
+        if kind == "basel_ogd":
+            payload = json.loads(body)
+            if not isinstance(payload, dict) or not isinstance(payload.get("results"), list) or not payload["results"]:
+                raise ValueError("Basel-Stadt catalogue is unexpectedly empty")
+            validate_row(payload["results"][0])
+            return {"format": "json", "dataset": "100354", "sample_only": True}
         if kind == "fedlex_rss":
             root = ElementTree.fromstring(body)
             tags = {node.tag.rsplit("}", 1)[-1].lower() for node in root.iter()}

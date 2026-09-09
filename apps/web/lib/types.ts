@@ -1303,6 +1303,7 @@ export type MonitoringTopicPreview = {
   explanation: string;
   items: {
     event_id: string;
+    evidence_url?: string | null;
     work_id: string;
     title: string;
     event_type: string;

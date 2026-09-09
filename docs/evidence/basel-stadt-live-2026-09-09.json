@@ -1,0 +1,55 @@
+{
+  "checked_at": "2026-09-09T05:52:00.408886+00:00",
+  "source": "https://data.bs.ch/explore/dataset/100354/",
+  "streams": {
+    "starter-de": {
+      "status": "persisted",
+      "persisted": 2,
+      "total": 2,
+      "next_cursor": {
+        "cycle": 1
+      },
+      "error": null
+    },
+    "latest-de": {
+      "discovery_pages": 2,
+      "items": 4,
+      "next_cursor": {
+        "cycle": 0,
+        "before": 262233,
+        "remaining": 46
+      },
+      "ingested_page_status": "persisted",
+      "ingested_items": 2
+    },
+    "catalogue-de": {
+      "discovery_pages": 2,
+      "items": 4,
+      "next_cursor": {
+        "cycle": 0,
+        "before": 262233,
+        "remaining": 50
+      },
+      "ingested_page_status": "persisted",
+      "ingested_items": 2
+    }
+  },
+  "artifacts": [
+    {
+      "title": "Gesetz über die Information und den Datenschutz",
+      "publisher_version": "https://www.gesetzessammlung.bs.ch/app/de/texts_of_law/153.260/versions/6649",
+      "bytes": 105465,
+      "sha256": "e91d426dab24a479d4ecef3a07d18a2f7d0781c7e9c8141e6fbbb3e0485ee693",
+      "reopened": true
+    },
+    {
+      "title": "Bau- und Planungsgesetz",
+      "publisher_version": "https://www.gesetzessammlung.bs.ch/app/de/texts_of_law/730.100/versions/6877",
+      "bytes": 312379,
+      "sha256": "b0172953fa66eedda8cdc44475e56ccbf109b0a5d547c11a5bb49202216f1c70",
+      "reopened": true
+    }
+  ],
+  "topic_saved_without_ai": true,
+  "starter_overlap_deduplicated": true
+}

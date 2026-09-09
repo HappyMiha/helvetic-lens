@@ -10,7 +10,7 @@ from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from .config import DomainError
 from .db import utcnow
 from .models import PersonalSourceReview, SourcePackDefinition, SourcePackSubscription
-from .source_packs import SOURCE_PACK_CATALOGUE_REVISION, STARTER_ID
+from .source_packs import SOURCE_PACK_CATALOGUE_REVISION
 
 
 class PackReview(BaseModel):
@@ -36,7 +36,7 @@ def snapshot(session, organization_id):
                 SourcePackSubscription.organization_id == organization_id,
             ),
         )
-        .where(SourcePackDefinition.parent_id == STARTER_ID, SourcePackDefinition.active.is_(True))
+        .where(SourcePackDefinition.parent_id.is_not(None), SourcePackDefinition.active.is_(True))
         .order_by(SourcePackDefinition.id)
         .limit(101)
     ).all()
