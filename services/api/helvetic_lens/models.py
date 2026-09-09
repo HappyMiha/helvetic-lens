@@ -1439,6 +1439,25 @@ class InterestEventAssessment(Base):
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class InterestAssessmentAttempt(Base):
+    """One fenced generation attempt; telemetry never replaces an AI result."""
+    __tablename__ = "interest_assessment_attempts"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "assessment_id", "number", name="uq_brief_attempt_number"),
+        Index("ix_brief_attempt_history", "organization_id", "assessment_id", "number"),
+        CheckConstraint("status IN ('running', 'succeeded', 'failed', 'superseded')", name="ck_brief_attempt_status"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"))
+    assessment_id: Mapped[str] = mapped_column(ForeignKey("interest_event_assessments.id", ondelete="CASCADE"))
+    number: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(20), default="running")
+    error_code: Mapped[str | None] = mapped_column(String(80))
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    measurement: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+
+
 class InterestAssessmentBinding(Base):
     """Immutable historical IDs/hashes, not cascading live matching records.
 
@@ -1630,6 +1649,7 @@ ORGANIZATION_SCOPED_MODELS = (
     ActionDecision,
     RelationImpactAnalysis,
     InterestEventAssessment,
+    InterestAssessmentAttempt,
     InterestAssessmentBinding,
     AskRecord,
     AssistantConversation,

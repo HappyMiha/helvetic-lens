@@ -21,7 +21,7 @@ const server=spawn(process.execPath,[join(root,"node_modules/next/dist/bin/next"
 const browser=spawn(chrome,["--headless=new","--no-first-run","--no-default-browser-check","--remote-debugging-port=0",`--user-data-dir=${profile}`,"about:blank"],{stdio:"ignore",windowsHide:true});
 let cdp,locale="en-CH",status="available",failure=false,feedback=[],receipts=new Map(),feedbackFailure="";const requests=[],exceptions=[];
 let reviews=[],reviewerRole="organization_admin";
-let historyStatus="historical",historyFailure=false;
+let historyStatus="historical",historyFailure=false,attemptFailure=false;
 async function waitFor(check,message){for(let i=0;i<180;i++){if(await check().catch(()=>false))return;await sleep(100);}throw new Error(message);}
 const event={event_id:"10000000-0000-4000-8000-000000000001",title:"Synthetic saved regulatory development",type:"updated",document_kind:"law",lifecycle_status:null,source:"Synthetic publisher",detected_at:"2026-09-08T08:00:00Z",official_dates:[],read_state:"unread",topic_matches:[],monitored_documents:[],law_impacts:[]};
 const claim={text:"Synthetic saved explanation for review, not a legal conclusion.",evidence_ids:["ev1"]};
@@ -37,6 +37,10 @@ try{
   else if(path==="/api/health")body={status:"ok",database:"postgresql",apertus:{configured:false},firecrawl:{configured:false}};
   else if(path==="/api/settings/interest-briefs")body={enabled:false};
   else if(path==="/api/integration-logs")body={items:[],total:0,providers:[],limit:50,offset:0};
+  else if(path.startsWith("/api/integration-logs/briefs/")&&path.endsWith("/attempts")){
+   if(attemptFailure){code=503;body={detail:"Synthetic attempt history failure"};}
+   else body={items:[{number:2,status:"succeeded",started_at:"2026-09-09T11:00:00Z",finished_at:"2026-09-09T11:00:02Z",error_code:null,measurement:{http_attempts_started:1,elapsed_run_ms:2000,measured_input_requests:1,measured_input_tokens:400,reported_output_requests:1,reported_output_tokens:0,observed_queue_requests:0,observed_queue_ms:null}},{number:1,status:"failed",started_at:"2026-09-09T10:00:00Z",finished_at:"2026-09-09T10:00:02Z",error_code:"model_timeout",measurement:null}]};
+  }
   else if(path==="/api/integration-logs/briefs"){
    const params=new URL(request.url).searchParams,failed=params.get("status")==="failed",older=params.get("cursor");
    if(failure){code=503;body={detail:"Synthetic diagnostic failure"};}
@@ -82,7 +86,18 @@ try{
    assert.equal(requests.slice(start).filter(r=>r.path.endsWith("/briefs")).length,0,"Collapsed diagnostics fetched data");
    await evaluate(cdp,"window.__diagnosticsMarker='retained'");await click("[data-brief-diagnostics]>summary");
    await waitFor(()=>evaluate(cdp,"!!document.querySelector('[data-brief-diagnostic=newest]')"),"Measurements missing");
+   assert.equal(requests.slice(start).filter(r=>r.path.endsWith("/attempts")).length,0,"Collapsed attempts fetched data");
+   await click("[data-brief-attempts]>summary");
+   await waitFor(()=>evaluate(cdp,"document.querySelectorAll('[data-brief-attempt]').length===2"),"Attempt history missing");
+   assert.equal(await evaluate(cdp,`document.querySelector('[data-brief-attempt="2"] dd strong').textContent`),"400");
+   assert.equal(await evaluate(cdp,`document.querySelectorAll('[data-brief-attempt="2"] dd strong')[1].textContent`),"0");
+   assert.notEqual(await evaluate(cdp,`document.querySelectorAll('[data-brief-attempt="2"] dd strong')[2].textContent`),"0");
    await audit.check(cdp,`diagnostics-recorded-${width}-${locale}`,"body");
+   if(locale==="en-CH"){const shot=await cdp.send("Page.captureScreenshot",{format:"png"});await writeFile(join(root,`test-results/brief-attempts-${width}.png`),Buffer.from(shot.data,"base64"));}
+   attemptFailure=true;await click("[data-attempt-refresh]");
+   await waitFor(()=>evaluate(cdp,"!!document.querySelector('[data-brief-attempts] [role=alert]')&&!document.querySelector('[data-brief-attempt]')"),"Attempt error did not hide stale measurements");
+   attemptFailure=false;await click("[data-attempt-refresh]");
+   await waitFor(()=>evaluate(cdp,"document.querySelectorAll('[data-brief-attempt]').length===2"),"Attempt history did not recover");
    await click("[data-diagnostic-older]");await waitFor(()=>evaluate(cdp,"!!document.querySelector('[data-brief-diagnostic=older]')"),"Older diagnostics missing");
    async function choose(selector,value){await evaluate(cdp,`(()=>{const e=document.querySelector(${JSON.stringify(selector)});Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(e,${JSON.stringify(value)});e.dispatchEvent(new Event('change',{bubbles:true}));})()`);}
    await choose("[data-diagnostic-state]","failed");await waitFor(()=>evaluate(cdp,"document.querySelector('[data-brief-diagnostic=newest]')?.querySelectorAll('dd').length===4"),"Failure measurements missing");

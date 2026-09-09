@@ -1,5 +1,37 @@
 # Shared event relevance briefs
 
+## Retained attempt measurements — 9 September 2026
+
+Migration `de40589fb21c` adds `interest_assessment_attempts` without reconstructing
+past attempts or modifying assessment answers, original context or retry receipts.
+Claim and attempt identity are one transaction. Successful, failed, superseded and
+terminal-job/recovery transitions close the owned attempt; later retries create a
+new numbered row. The existing maximum of three assessment attempts still applies.
+The internal fencing token is never returned to a reader.
+
+`GET /api/integration-logs/briefs/{assessment_id}/attempts` requires organization
+administrator access and explicit tenant/assessment scope, including for privileged
+database sessions. Existing anonymous-development behavior is unchanged. Integration
+logs load it only when the user expands an assessment's attempt history. It does
+not call a model, poll, enqueue, translate or alter any AI result. Read errors hide
+old displayed measurements until an explicit refresh succeeds.
+
+Runner cleanup writes a strictly validated scalar usage snapshot once, fenced to
+that attempt. It records HTTP attempts started, elapsed run time, measured prompt
+tokens, provider-reported completion tokens and explicitly observed queue waits.
+Each total has an observed-request count, so partial totals are not presented as
+complete costs. Missing queue headers differ from a measured zero. Elapsed time
+includes preparation and validation; it is not pure inference latency. Request
+starts do not prove billing. No prompt, response prose, credential, provider error
+body or model attachment is copied into this ledger.
+
+A crash before cleanup can leave measurement unknown; recovery still records the
+terminal outcome. Late cleanup may fill only its own missing snapshot, never a
+newer worker's record. Diagnostic persistence failures log a fixed warning and do
+not replace successful AI output or the original error/cancellation. Saved reads
+and cache reuse do not create fake generation attempts. This is not a billing
+ledger, aggregate dashboard or durable reader-reuse counter.
+
 ## Recorded diagnostics — 9 September 2026
 
 `GET /api/integration-logs/briefs` is organization-admin-only (with existing

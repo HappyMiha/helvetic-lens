@@ -1436,6 +1436,20 @@ Completed on 4 September 2026. New normalized events now enter topic matching on
 
 ### HL-089 — Enrich matched developments with one persisted AI relevance brief
 
+**9 September 2026 — retained generation-attempt ledger:** Each new claimed brief
+attempt now keeps its own number, timestamps, terminal outcome and safe failure
+category. Failed/aborted/recovered attempts survive a later successful retry.
+Organization admins can expand an assessment in Integration logs to inspect these
+records without inference. Measured input, provider-reported output and observed
+queue time include explicit request coverage; unknown usage after a crash or
+missing provider telemetry is not zero. Fenced, one-time telemetry writes cannot
+overwrite another attempt or invalidate an accepted answer. Historical attempts
+are not invented by migration. SQLite/PostgreSQL, retry/concurrency/migration and
+five-locale desktop/mobile evidence are recorded in VERIFICATION.md. **Still open:**
+durable reader-reuse observations, aggregate usage/queue reporting, complete cost
+accounting across unobserved failures and independent quality/hardware/user gates.
+HL-089 remains **IN PROGRESS**.
+
 **9 September 2026 — measured brief diagnostics:** Organization administrators
 can inspect recent assessments from Integration logs, with rolling 1/7/30/90-day
 and lifecycle filters, bounded cursor pages, model/language/attempt metadata,

@@ -903,6 +903,7 @@ class ModelClient:
                             "attempt": attempt,
                             "duration_ms": round((time.monotonic() - started) * 1000, 2),
                             "queue_wait_ms": float(response.headers.get("x-helvetic-queue-wait-ms", 0) or 0),
+                            "queue_wait_observed": "x-helvetic-queue-wait-ms" in response.headers,
                             "slot": response.headers.get("x-helvetic-slot"),
                             **({"runtime_binding": runtime.binding_fingerprint} if runtime is not None else {}),
                             "usage": envelope.get("usage", {}) if isinstance(envelope, dict) else {},

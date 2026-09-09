@@ -367,6 +367,10 @@ export const resources = {
     const path=`/integration-logs/briefs?${new URLSearchParams({days:String(days),status,cursor,limit:"20"})}`;
     return key<T>(`diagnostics:${path}`,path,{owner:"administration",tags:["brief-diagnostics"],staleMs:0,varyByLocale:false});
   },
+  briefAttempts: <T>(assessmentId:string) => {
+    const path=`/integration-logs/briefs/${encodeURIComponent(assessmentId)}/attempts`;
+    return key<T>(`attempts:${path}`,path,{owner:"administration",tags:["brief-diagnostics"],staleMs:0,varyByLocale:false});
+  },
 
   interestFeed: <T = unknown>(query = "") => {
     const path = withQuery("/interest-feed", query);

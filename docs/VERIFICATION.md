@@ -1,5 +1,46 @@
 # Verification record
 
+## Retained brief attempt ledger — 9 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl089-attempt-ledger`, based on `3ea406f`.
+  Restored unfinished work and completed a tenant-scoped, fenced attempt ledger,
+  additive migration, read-only admin API and lazy Integration logs disclosure.
+  Each attempt keeps its terminal outcome separately from later retries, with
+  strictly whitelisted measured-input/reported-output/observed-queue coverage.
+  Diagnostic write failures cannot discard accepted AI results. Unknown values
+  after crashes or absent headers remain unknown, not zero or estimated billing.
+- **111 API regressions passed, 1 PostgreSQL-only dispatcher test skipped, in
+  195.32s** across attempt/diagnostic/store/execution/job/settings suites. After
+  final tenant-scope and crash assertions, **16 targeted tests passed in 24.73s**.
+  Coverage includes invalid repair then successful retry, exact cache reuse,
+  cancellation/timeout, immutable old measurements, stale worker fencing,
+  cross-organization denial, admin/viewer/anonymous API boundaries, telemetry
+  write failure, recovered/exhausted worker crashes, missing versus zero queue
+  headers and preservation of answers/context through downgrade/upgrade.
+  Existing Starlette/httpx deprecation warning remains.
+- **Five PostgreSQL 17 scenarios passed on the final code** in the isolated
+  `hl089_regression` database: `brief-attempt-retry`, `brief-attempt-fence`,
+  `brief-attempt-migration`, `concurrency`, `superseded`. Concurrent claims create
+  one owner and one attempt; supersession closes the owned attempt. No application
+  database, production container or real model/provider was used.
+- Root **`npm run build` passed**, including i18n, shell/resource/report checks and
+  production Next compilation. Ruff and `git diff --check` passed.
+  **10 desktop/mobile browser journeys and 30 full-document axe checkpoints
+  passed** in DE/FR/IT/RM/EN at 390/1440px. Tests cover lazy attempt reads, separate
+  failed/successful records, measured zero versus missing usage, error hiding,
+  explicit refresh recovery, retained page state and no inference/write calls.
+  Inspected desktop/mobile screenshots; exact start time is localized. The first
+  browser run found an invalid numeric CSS selector in the test; corrected and
+  reran the final production build. Axe incomplete checks are retained, not waived
+  or treated as independent accessibility certification.
+- Evidence logs: `test-results/brief-attempt-final-api.txt`,
+  `brief-attempt-final-targeted.txt`, `brief-attempt-build.txt`,
+  `brief-attempt-browser.txt`, `pg-brief-attempt-*.txt`, `pg-concurrency.txt`,
+  `pg-superseded.txt`; screenshots `brief-attempts-390.png`/`1440.png`.
+  No historical usage backfill, complete billable-cost claim, durable reader reuse
+  counter, aggregate queue dashboard or independent model/language/hardware/user
+  acceptance is claimed. HL-089 remains in progress. No production deployment.
+
 ## Bounded brief diagnostics — 9 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl089-brief-diagnostics`, based on `1de0492`.

@@ -10,6 +10,7 @@ from uuid import uuid4
 
 from sqlalchemy import select, update
 
+from . import brief_attempts
 from .config import DomainError
 from .db import utcnow
 from .interest_assessment import SYSTEM, BriefDraft, BriefExecution, Dossier, finalize, fingerprint, manifest
@@ -56,10 +57,7 @@ class AssessmentStore:
             current, key = None, None
         record = self.get(session, assessment_id)
         if key != fingerprint(manifest(dossier, instructions)) or record is None or record.input_fingerprint != key:
-            session.execute(update(InterestEventAssessment).where(
-                *self._scope(assessment_id), InterestEventAssessment.status == "running",
-                InterestEventAssessment.attempt_key == token,
-            ).values(status="superseded", finished_at=utcnow(), attempt_key=None))
+            self.supersede(session, assessment_id, token)
             return False
         return self.finish(session, assessment_id, token, current, result,
                            provider_calls=provider_calls, instructions=instructions, execution=execution)
@@ -85,11 +83,19 @@ class AssessmentStore:
         # A newly admitted input invalidates only unfinished work in this language.
         # Different user-language variants must not cancel one another. Completed
         # results remain immutable history, reusable only by their exact key.
-        session.execute(update(InterestEventAssessment).where(
+        stale_filter = (
             *scope, InterestEventAssessment.input_fingerprint != key,
             InterestEventAssessment.input_manifest["locale"].as_string() == dossier.locale,
             InterestEventAssessment.status.in_(["queued", "running"]),
-        ).values(status="superseded", finished_at=utcnow(), attempt_key=None))
+        )
+        stale = list(session.execute(select(InterestEventAssessment.id, InterestEventAssessment.attempt_key)
+                                     .where(*stale_filter).order_by(InterestEventAssessment.id).with_for_update()))
+        changed_ids = set(session.scalars(update(InterestEventAssessment).where(*stale_filter)
+                        .values(status="superseded", finished_at=utcnow(), attempt_key=None)
+                        .returning(InterestEventAssessment.id)))
+        for previous in stale:
+            if previous.attempt_key and previous.id in changed_ids:
+                brief_attempts.close(session, self.organization_id, previous.id, previous.attempt_key, "superseded")
         if existing is not None:
             return existing, False
         record = InterestEventAssessment(organization_id=self.organization_id,
@@ -115,7 +121,10 @@ class AssessmentStore:
             InterestEventAssessment.input_fingerprint == input_fingerprint,
         ).values(status="running", attempt_key=token, started_at=utcnow(), finished_at=None,
                  attempts=InterestEventAssessment.attempts + 1, error_code=None))
-        return token if changed.rowcount == 1 else None
+        if changed.rowcount == 1:
+            brief_attempts.begin(session, self.organization_id, assessment_id, token)
+            return token
+        return None
 
     def finish(self, session, assessment_id: str, token: str, dossier: Dossier,
                result: dict, *, provider_calls: int, instructions: str = SYSTEM,
@@ -147,6 +156,8 @@ class AssessmentStore:
             InterestEventAssessment.input_fingerprint == key,
         ).values(status="succeeded", result=verified, finished_at=utcnow(), attempt_key=None,
                  provenance=provenance))
+        if changed.rowcount == 1:
+            brief_attempts.close(session, self.organization_id, assessment_id, token, "succeeded")
         return changed.rowcount == 1
 
     def supersede(self, session, assessment_id: str, token: str) -> bool:
@@ -156,6 +167,8 @@ class AssessmentStore:
             InterestEventAssessment.attempt_key == token,
         ).values(status="superseded", error_code="interest_inputs_changed",
                  finished_at=utcnow(), attempt_key=None))
+        if changed.rowcount == 1:
+            brief_attempts.close(session, self.organization_id, assessment_id, token, "superseded", "interest_inputs_changed")
         return changed.rowcount == 1
 
     def fail(self, session, assessment_id: str, token: str, error_code: str) -> bool:
@@ -171,6 +184,8 @@ class AssessmentStore:
             *self._scope(assessment_id), InterestEventAssessment.status == "running",
             InterestEventAssessment.attempt_key == token,
         ).values(status="failed", error_code=safe_code, finished_at=utcnow(), attempt_key=None))
+        if changed.rowcount == 1:
+            brief_attempts.close(session, self.organization_id, assessment_id, token, "failed", safe_code)
         return changed.rowcount == 1
 
     def retry(self, session, assessment_id: str, input_fingerprint: str) -> bool:

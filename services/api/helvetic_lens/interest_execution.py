@@ -8,10 +8,12 @@ integration remain separate from this internal execution boundary.
 
 import asyncio
 import json
+import logging
 import time
 
 from sqlalchemy import select
 
+from . import brief_attempts
 from .analysis import InferenceBudget, ModelClient
 from .config import DomainError
 from .corpus_access import visible
@@ -222,4 +224,14 @@ class LocalBriefRunner:
                 raise
             finally:
                 if trace_token is not None:
-                    self.client.end_trace(trace_token)
+                    trace = self.client.end_trace(trace_token)
+                if assessment_id and attempt_token:
+                    try:
+                        measurement = brief_attempts.summarize(trace, budget.used, round((time.monotonic()-started)*1000))
+                        with self.db.session() as session:
+                            brief_attempts.record(session, self.organization_id, assessment_id, attempt_token, measurement)
+                            session.commit()
+                    except Exception:
+                        # Missing telemetry remains explicit; it must not replace the
+                        # actual success/failure/cancellation with a diagnostic error.
+                        logging.getLogger(__name__).warning("Brief attempt telemetry could not be saved.")

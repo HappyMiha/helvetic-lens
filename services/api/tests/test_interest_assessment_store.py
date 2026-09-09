@@ -14,7 +14,12 @@ from test_interest_feed import seed
 from alembic import command
 from helvetic_lens.config import DomainError
 from helvetic_lens.interest_assessment_store import AssessmentStore
-from helvetic_lens.models import InterestAssessmentBinding, InterestEventAssessment, Organization
+from helvetic_lens.models import (
+    InterestAssessmentAttempt,
+    InterestAssessmentBinding,
+    InterestEventAssessment,
+    Organization,
+)
 
 
 def setup(harness):
@@ -76,6 +81,8 @@ def test_revised_input_supersedes_inflight_work_and_old_worker_cannot_publish(ha
     result, _ = run(Model(draft_for(value)), value)
     with service.db.session() as session:
         assert store.get(session, key).status == "superseded"
+        assert session.get(InterestAssessmentAttempt, token).status == "superseded"
+        assert session.get(InterestAssessmentAttempt, token).finished_at is not None
         assert not store.finish(session, key, token, value, result, provider_calls=1)
         assert not store.fail(session, key, token, "model_timeout")
         assert store.get(session, key).result is None
@@ -152,6 +159,9 @@ def test_concurrent_reservations_and_claims_produce_one_assessment_and_one_owner
     with service.db.session() as session:
         assert session.scalar(select(func.count()).select_from(InterestEventAssessment)) == 1
         assert session.scalar(select(func.count()).select_from(InterestAssessmentBinding)) == 4
+        attempts = list(session.scalars(select(InterestAssessmentAttempt)))
+        assert len(attempts) == 1 and attempts[0].id == next(token for token in tokens if token)
+        assert attempts[0].number == 1 and attempts[0].status == "running"
 
 
 def test_unverified_result_cannot_be_persisted(harness):

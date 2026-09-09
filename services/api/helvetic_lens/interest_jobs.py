@@ -54,6 +54,9 @@ def close_unfinished(session, job):
     changed_input = job.error_code in {"interest_inputs_changed", "interest_not_current", "interest_evidence_unavailable"}
     record.status = "superseded" if changed_input else "failed"
     record.error_code = "cancelled" if job.state == "cancelled" else "provider_unavailable"
+    if record.attempt_key:
+        from .brief_attempts import close
+        close(session, job.organization_id, record.id, record.attempt_key, record.status, record.error_code)
     record.attempt_key, record.finished_at = None, utcnow()
 
 

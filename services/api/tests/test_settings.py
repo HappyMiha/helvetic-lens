@@ -403,7 +403,8 @@ def test_transient_completion_failures_are_retried_and_each_attempt_is_logged(ha
 
 
 @pytest.mark.asyncio
-async def test_model_trace_captures_gateway_slot_queue_usage_and_validation(harness, monkeypatch):
+@pytest.mark.parametrize("queue_header", [None, "0", "12.5"])
+async def test_model_trace_captures_gateway_slot_queue_usage_and_validation(harness, monkeypatch, queue_header):
     _, _, service, _ = harness
     settings = service.settings.model_copy(
         update={"apertus_base_url": "https://inference.example/v1", "apertus_model": "test"}
@@ -412,7 +413,7 @@ async def test_model_trace_captures_gateway_slot_queue_usage_and_validation(harn
     def respond(request):
         return httpx.Response(
             200,
-            headers={"x-helvetic-slot": "gpu-1", "x-helvetic-queue-wait-ms": "12.5"},
+            headers={"x-helvetic-slot": "gpu-1", **({"x-helvetic-queue-wait-ms": queue_header} if queue_header is not None else {})},
             json={
                 "choices": [{"message": {"content": '{"status":"ok"}'}}],
                 "usage": {"prompt_tokens": 10, "completion_tokens": 4, "total_tokens": 14},
@@ -425,7 +426,8 @@ async def test_model_trace_captures_gateway_slot_queue_usage_and_validation(harn
     assert await model.complete("system", "user") == '{"status":"ok"}'
     model.trace_event({"validation": "accepted", "repair": False})
     trace = model.end_trace(token)
-    assert trace[0]["slot"] == "gpu-1" and trace[0]["queue_wait_ms"] == 12.5
+    assert trace[0]["slot"] == "gpu-1" and trace[0]["queue_wait_ms"] == float(queue_header or 0)
+    assert trace[0]["queue_wait_observed"] is (queue_header is not None)
     assert trace[0]["usage"]["total_tokens"] == 14
     assert trace[-1] == {"validation": "accepted", "repair": False}
 
