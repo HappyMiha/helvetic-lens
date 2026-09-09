@@ -1436,6 +1436,19 @@ Completed on 4 September 2026. New normalized events now enter topic matching on
 
 ### HL-089 — Enrich matched developments with one persisted AI relevance brief
 
+**9 September 2026 — explicit Marvin brief reuse:** A feed action opens the exact
+event's saved cited brief inside Marvin, using the existing current-input reader and
+the user's language. It does not paraphrase the answer through another model or
+start analysis. Event context is server-authorized, private conversations remain
+separate from shared assessments, and revoked event access blocks new chat. The
+reader offers no shared write/generation controls inside the assistant; stale,
+rejected, missing-language and unavailable states retain existing evidence rules.
+Changing page/user/organization clears the event selection; an explicit control
+returns to ordinary page context. Companion chat remains non-evidentiary navigation
+and conversation, not free-form event QA. This implements explicit assistant reuse,
+not arbitrary question answering, independent quality metrics or full HL-089 acceptance.
+
+
 **9 September 2026 — offline saved-brief history:** The feed now offers a separate,
 collapsed history panel in the user's language. Metadata is paged; an individual
 saved answer opens explicitly without contacting the current model. New assessments

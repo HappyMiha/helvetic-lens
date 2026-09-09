@@ -53,7 +53,8 @@
     "check:interest-brief:browser": "node scripts/check-interest-brief-browser.mjs",
     "check:brief-feedback:browser": "node scripts/check-interest-brief-browser.mjs --feedback",
     "check:brief-review:browser": "node scripts/check-interest-brief-browser.mjs --reviews",
-    "check:brief-history:browser": "node scripts/check-interest-brief-browser.mjs --history"
+    "check:brief-history:browser": "node scripts/check-interest-brief-browser.mjs --history",
+    "check:assistant-brief:browser": "node scripts/check-interest-brief-browser.mjs --assistant"
   },
   "devDependencies": {
     "axe-core": "4.13.0",

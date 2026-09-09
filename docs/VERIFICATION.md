@@ -1,5 +1,37 @@
 # Verification record
 
+## Saved brief reuse inside Marvin — 9 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl089-assistant-brief-reuse`, based on `15857e4`.
+  Added explicit feed-to-Marvin selection, server-validated event context and a
+  read-only shared brief panel. It uses the current reader and user's language,
+  preserving citations and stale/rejected/unavailable handling, without model
+  paraphrasing, translation, automatic analysis or copying shared prose into chat.
+- **59 API tests passed in 82.11s** across new event context, assistant contracts,
+  current brief reading and personal conversation history. New cases prove exact
+  saved-result reuse, zero extra token/generation calls, one private context on
+  repeated opens, absent-language handling without fallback, invalid route/entity
+  refusal and revoked admission blocking subsequent context/chat. Initial fixture
+  wiring used the generic ScriptedModel instead of the measured local client;
+  corrected before the complete passing run. One existing deprecation warning remains.
+- Root production build passes localization, shell/resource/report gates and
+  TypeScript. **10 assistant browser journeys / 30 full-document axe checkpoints**
+  cover five locales at 390/1440 pixels: explicit selection, exact evidence links,
+  stale/offline/error hiding, recovery, no reload, no overflow, returning to page
+  context and no automatic inference or shared writes. Existing saved-reader
+  **10 journeys / 20 full-document checkpoints** pass again. English mobile/desktop
+  screenshots were inspected. Other incomplete automated findings remain recorded;
+  this is not native-language review or independent accessibility/user acceptance.
+- Existing Marvin lifecycle regression also passes **10 locale/viewport journeys
+  and 68 full-document axe checkpoints**, including seven pending-response,
+  account and draft boundaries, pause/detach persistence, saved clearing and typing
+  during restore. APIs and speech are synthetic; this does not certify real voices.
+- No database schema change, production deployment, real-model invocation or
+  outgoing messages. Companion chat remains non-evidentiary navigation/small talk;
+  this does not implement arbitrary cited event question answering or complete
+  HL-089's measured quality, target-hardware and independent pilot gates.
+
+
 ## Offline saved-brief history — 9 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl089-brief-history`, based on `4cd6809`.

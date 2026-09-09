@@ -4,6 +4,8 @@ import Link from "next/link";
 import { createPortal } from "react-dom";
 import { MonitorThis } from "@/components/monitor-this";
 import { MarvinPanel } from "@/components/marvin-panel";
+import { SavedBriefContent } from "@/components/feed-interest-brief";
+import {ASSISTANT_BRIEF_EVENT,assistantBriefEventId,assistantBriefCopy} from "@/lib/assistant-brief";
 import { useAuth } from "./auth-gate";
 import { marvinPrivacyCopy } from "@/lib/marvin-privacy-copy";
 import { marvinHistoryCopy } from "@/lib/marvin-history-copy";
@@ -84,7 +86,7 @@ type AssistantContextResponse = {
 };
 
 type AssistantEntityRef = {
-  kind: "law" | "comparison";
+  kind: "law" | "comparison" | "regulatory_event";
   id: string;
 };
 
@@ -349,7 +351,11 @@ export function MarvinCompanion({
   const deliveryRef = useRef<RemarkDelivery | null>(null);
   const knownAiJobStates = useRef<Map<string, string> | null>(null);
   const context = useMemo(() => routeContext(pathname), [pathname]);
-  const entity = useMemo(() => routeEntity(pathname), [pathname]);
+  const selectionScope = JSON.stringify([pathname, session?.organization?.id, session?.user?.id]);
+  const [briefSelection,setBriefSelection] = useState<{eventId:string;scope:string}|null>(null);
+  const briefEventId = briefSelection?.scope === selectionScope ? briefSelection.eventId : null;
+  const entity = useMemo<AssistantEntityRef|null>(() => briefEventId ? {kind:"regulatory_event",id:briefEventId} : routeEntity(pathname), [pathname,briefEventId]);
+  useEffect(()=>setBriefSelection(null),[selectionScope]);
   const comparisonId = pathname.startsWith("/compare/")
     ? pathname.slice("/compare/".length)
     : "";
@@ -398,6 +404,18 @@ export function MarvinCompanion({
     setHydrated(true);
   }, []);
 
+  useEffect(()=>{
+    const receive=(event:Event)=>{
+      const eventId=assistantBriefEventId(event);
+      if(!eventId)return;
+      setBriefSelection({eventId,scope:selectionScope});
+      setPreferences(current=>({...current,enabled:true,contextAttached:true}));
+      onOpenChange(true);
+    };
+    window.addEventListener(ASSISTANT_BRIEF_EVENT,receive);
+    return ()=>window.removeEventListener(ASSISTANT_BRIEF_EVENT,receive);
+  },[selectionScope,onOpenChange]);
+
   useEffect(() => {
     let active = true;
     const controller = new AbortController();
@@ -434,7 +452,7 @@ export function MarvinCompanion({
     const contextPayload = {
       schema_version: "assistant-context.v1",
       intent: "explain_screen",
-      route: contractRoute(pathname),
+      route: briefEventId ? "/" : contractRoute(pathname),
       ...(entity ? { entity } : {}),
       locale,
     };
@@ -481,7 +499,7 @@ export function MarvinCompanion({
       }
     });
     return cleanup;
-  }, [comparisonId, contextActive, draftKey, entity, locale, pathname]);
+  }, [comparisonId, contextActive, draftKey, entity, locale, pathname,briefEventId]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -558,6 +576,7 @@ export function MarvinCompanion({
       fallbackKey: string,
     ) => {
       if (
+        entity?.kind === "regulatory_event" ||
         document.visibilityState !== "visible" ||
         open ||
         !deliveryRef.current?.reserve(pathname)
@@ -1087,6 +1106,12 @@ export function MarvinCompanion({
 
           <div className="marvin-drawer-body">
             {voiceControls}
+            {contextActive && open && briefEventId && <section data-marvin-saved-brief className="space-y-3 min-w-0 break-words">
+              {contextLabel && <h3 className="font-semibold">{contextLabel}</h3>}
+              <p className="text-sm">{assistantBriefCopy[locale].help}</p>
+              <button type="button" className="underline min-h-11" data-marvin-page-context onClick={()=>setBriefSelection(null)}>{assistantBriefCopy[locale].back}</button>
+              <SavedBriefContent key={`${selectionScope}:${briefEventId}:${locale}`} eventId={briefEventId} readOnly/>
+            </section>}
             <div className="marvin-status-row">
               <button
                 aria-label={
@@ -1139,7 +1164,7 @@ export function MarvinCompanion({
               </div>
             )}
 
-            {showQuip && contextAttached && (
+            {showQuip && contextAttached && !briefEventId && (
               <blockquote className="marvin-quip">
                 “{t(context.quipKey)}”
               </blockquote>
@@ -1148,7 +1173,7 @@ export function MarvinCompanion({
             {contextAttached && (
               <Link
                 className="marvin-primary-action"
-                href={context.actionHref}
+                href={briefEventId ? `/?event=${briefEventId}` : context.actionHref}
                 onClick={() => onOpenChange(false)}
               >
                 <span>

@@ -1,5 +1,29 @@
 # Shared event relevance briefs
 
+## Assistant reuse — 9 September 2026
+
+The feed's explicit “Open this brief with Marvin” action selects a validated UUID
+as `regulatory_event` assistant context on `/`. The context endpoint authorizes the
+event through current organization admission and visible work before returning a
+bounded title and exact feed deep link. Personal conversations use the event ID as
+their context key and are not copied into organization assessments. Sending a chat
+turn rechecks current event access before invoking the companion.
+
+The assistant panel shares the feed's current saved-brief resource and renderer,
+keyed by event, organization and user locale. There is no LLM paraphrase, automatic
+generation, translation or copy of the shared result into a private chat message.
+Existing current-input/model/evidence validation and rejection rules still apply;
+reading may observe runtime metadata but never tokenizes or generates. The panel
+is read-only except for private context initialization and explicit chat. It does
+not offer assessment generation, feedback or administrator review mutations.
+
+Selection is explicit, never inferred from arbitrary DOM text, and is cleared on
+page/user/organization changes or the return-to-page-context control. No unsolicited
+AI remark is generated while event context is selected. The saved brief is clearly
+labelled separately from the companion's non-evidentiary chat. Free-form cited event
+questions and independent native-language/user evaluation remain outside this slice.
+
+
 ## Offline assessment history — 9 September 2026
 
 `GET /api/interest-feed/events/{event_id}/brief/history` returns cursor-paged

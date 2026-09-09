@@ -17,6 +17,13 @@ resuming then permits its existing context initialization. These choices are
 browser preferences, not organization-wide access controls or per-account settings.
 Storage denial keeps the current in-memory choice but cannot promise persistence.
 
+The feed's **Open this brief with Marvin** action is an explicit request to enable
+Marvin and attach only that selected event. It does not enable speech, spontaneous
+remarks, download a model or change organization settings. This event selection is
+temporary: changing page, user or organization clears it, and the panel offers a
+return-to-page-context control. The saved brief uses the normal authorized reader;
+it is not sent through companion inference or copied into personal chat history.
+
 Before preferences are loaded, while paused, or with context detached, the
 companion does not initiate context/conversation/model-status requests or subscribe
 to its AI job feed. Other product panels may still request their own data. No

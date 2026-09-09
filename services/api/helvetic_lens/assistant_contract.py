@@ -45,7 +45,7 @@ AssistantRoute = Literal[
     "/laws",
     "/compare",
 ]
-AssistantEntityKind = Literal["law", "comparison", "monitoring_topic", "job"]
+AssistantEntityKind = Literal["law", "comparison", "monitoring_topic", "job", "regulatory_event"]
 
 
 class ContractModel(BaseModel):
@@ -113,7 +113,7 @@ class AssistantContextInput(ContractModel):
         expected = requirements.get(self.intent)
         if expected and (self.entity is None or self.entity.kind != expected):
             raise ValueError(f"{self.intent} requires a {expected} entity")
-        route_requirements = {"law": "/laws", "comparison": "/compare"}
+        route_requirements = {"law": "/laws", "comparison": "/compare", "regulatory_event": "/"}
         if self.entity and self.entity.kind in route_requirements:
             if self.route != route_requirements[self.entity.kind]:
                 raise ValueError(
@@ -374,6 +374,7 @@ def _route_action(data: AssistantContextInput) -> AssistantActionProposal:
             "comparison": "/compare/",
             "monitoring_topic": "/topics/",
             "job": "/activity?job=",
+            "regulatory_event": "/?event=",
         }
         target = f"{prefixes[data.entity.kind]}{data.entity.id}"
     return AssistantActionProposal(

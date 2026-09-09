@@ -792,6 +792,11 @@ def create_app(
                 elif data.entity.kind == "job":
                     job = get(session, Job, data.entity.id)
                     return f"{job.type.replace('_', ' ').title()} · {job.id[:8]}"
+                elif data.entity.kind == "regulatory_event":
+                    from .models import RegulatoryEvent, RegulatoryWork
+                    brief_history.authorize(session, service.organization_id, data.entity.id)
+                    event = session.get(RegulatoryEvent, data.entity.id)
+                    return session.get(RegulatoryWork, event.work_id).title
         return None
 
     def assistant_principal(request: Request) -> tuple[str | None, str]:
@@ -992,6 +997,8 @@ def create_app(
     ):
         with service.db.session() as session:
             record = personal_assistant_conversation(session, conversation_id, request)
+            if record.entity_kind == "regulatory_event":
+                brief_history.authorize(session, service.organization_id, record.entity_id)
             snapshot = {
                 "locale": record.locale,
                 "route": record.route,
