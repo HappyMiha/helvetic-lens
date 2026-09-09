@@ -1,5 +1,36 @@
 # Shared event relevance briefs
 
+## Saved-reader reuse observations — 9 September 2026
+
+Migration `ef5169a0c32d` creates daily aggregate observations keyed by organization,
+assessment, UTC calendar date and surface. The three measured paths are `reader`
+(the shared Today/Marvin current-brief endpoint), `notifications` and
+`digest_preview`. Only validated `available` projections count. Rejected, pending,
+stale, corrupt, foreign, missing-language and runtime-unverified responses do not.
+Duplicate references to one assessment in the same response count once.
+
+After closing the projection's read transaction, a separate short transaction
+checks assessment ownership/success and performs an atomic upsert. Counts and
+first/last timestamps survive concurrent requests. Observation failures log a fixed
+warning without replacing the actual saved response. Existing assessment prose,
+evidence, generation jobs and personal read/dismiss/feedback states are unchanged.
+Reading a brief now may write this aggregate diagnostic observation; it still
+never generates, translates or queues AI work. A browser-only cached read creates
+no observation, while another server refresh may count again.
+
+Organization administrators inspect
+`GET /api/integration-logs/briefs/{assessment_id}/reuse?days=7`, with supported
+1/7/30/90-day UTC calendar windows including today. SQL filters/grouping operate on
+the scoped daily rows, returning at most the three surface totals. The lazy UI
+keeps old counts hidden after an error and offers explicit refresh and period
+selection. Inspecting these diagnostics does not itself increment counts.
+
+These are server projections, not proof a person viewed the response. The table
+has no user ID, email, IP, conversation, question, answer or prompt. No past counts
+are fabricated. An empty period means no recorded observations, not zero true
+usage. Lost telemetry, browser cache, email delivery and offline historical readers
+are outside this counter; no complete-accounting or saved-token estimate is claimed.
+
 ## Retained attempt measurements — 9 September 2026
 
 Migration `de40589fb21c` adds `interest_assessment_attempts` without reconstructing

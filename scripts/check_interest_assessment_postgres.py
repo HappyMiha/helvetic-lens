@@ -39,6 +39,11 @@ from test_brief_history import (
     test_history_migration_preserves_existing_reviews_and_bindings,
     test_old_profile_and_offline_model_do_not_regenerate_saved_history,
 )
+from test_brief_reuse import (
+    test_actual_readers_reuse_without_regeneration_or_personal_tracking,
+    test_concurrent_observations_are_atomic_and_days_are_bounded,
+    test_reuse_migration_does_not_invent_old_usage_or_change_answers,
+)
 from test_brief_reviews import (
     test_concurrent_admin_decisions_preserve_the_first_accepted_intent,
     test_review_migration_preserves_assessment_and_personal_feedback,
@@ -180,6 +185,9 @@ def execute_relation(harness, scenario):
 
 
 SUITES = {
+    "brief-reuse-readers": lambda harness: execute_local(harness, lambda value: test_actual_readers_reuse_without_regeneration_or_personal_tracking(value, harness)),
+    "brief-reuse-concurrent": lambda harness: execute_local(harness, test_concurrent_observations_are_atomic_and_days_are_bounded),
+    "brief-reuse-migration": lambda harness: execute_local(harness, test_reuse_migration_does_not_invent_old_usage_or_change_answers),
     "brief-attempt-retry": lambda harness: execute_local(harness, lambda value: test_failed_repair_then_success_retains_both_attempts_and_cache_does_not_add_one(value, harness)),
     "brief-attempt-fence": lambda harness: execute_local(harness, test_old_fenced_attempt_cannot_close_newer_attempt_or_replace_its_measurements),
     "brief-attempt-migration": lambda harness: execute_local(harness, test_attempt_migration_preserves_assessment_and_original_context),

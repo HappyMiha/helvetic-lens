@@ -1436,6 +1436,19 @@ Completed on 4 September 2026. New normalized events now enter topic matching on
 
 ### HL-089 — Enrich matched developments with one persisted AI relevance brief
 
+**9 September 2026 — durable saved-reader reuse observations:** The server now
+records UTC daily aggregate counts of validated available briefs returned through
+the shared Today/Marvin reader, notifications and digest previews. Atomic increments
+retain concurrent observations, scoped to organization and exact assessment, with
+no per-user identity or prose. Admin diagnostics expose 1/7/30/90-day periods.
+Missing observations remain explicit: these counts are not confirmed views, unique
+users, browser-cache reads, delivered emails, billable savings or complete traffic
+accounting. Unavailable/rejected/stale briefs are excluded; failed metric writes
+cannot break the original response. API, PostgreSQL concurrency/migration and
+five-locale desktop/mobile evidence pass. Remaining HL-089 work includes aggregate
+attempt/queue/quality reporting, delivery-level correlation, large dossiers and
+independent real-model/language/hardware/pilot gates; the item is **IN PROGRESS**.
+
 **9 September 2026 — retained generation-attempt ledger:** Each new claimed brief
 attempt now keeps its own number, timestamps, terminal outcome and safe failure
 category. Failed/aborted/recovered attempts survive a later successful retry.

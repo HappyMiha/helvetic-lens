@@ -7,6 +7,7 @@ import {briefDiagnosticsCopy,type BriefDiagnosticsPage} from "@/lib/brief-diagno
 import {Button} from "./ui/button";
 import {ErrorNote,Loading,Status} from "./common";
 import {BriefAttemptHistory} from "./brief-attempts";
+import {BriefReuseHistory} from "./brief-reuse";
 
 export function BriefDiagnostics(){
  const {locale}=useI18n(),[open,setOpen]=useState(false);
@@ -34,6 +35,7 @@ function Content(){
    {row.measurement.state==="recorded"&&!row.measurement.complete_input_coverage&&<p>{copy.partial}</p>}
    <Link className="underline inline-block min-h-11 py-2" href={`/?event=${encodeURIComponent(row.event_id)}`}>{copy.event}</Link>
    <BriefAttemptHistory assessmentId={row.id}/>
+   <BriefReuseHistory assessmentId={row.id}/>
   </li>)}</ul>
   <div className="flex flex-wrap gap-2">{cursor&&<Button data-diagnostic-first variant="outline" disabled={page.loading} onClick={()=>setCursor("")}>{copy.first}</Button>}{data?.next_cursor&&<Button data-diagnostic-older variant="outline" disabled={page.loading} onClick={()=>setCursor(data.next_cursor!)}>{copy.older}</Button>}<Button data-diagnostic-refresh variant="outline" disabled={page.loading} onClick={page.reload}>{copy.refresh}</Button></div>
  </div>;

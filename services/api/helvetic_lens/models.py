@@ -1439,6 +1439,22 @@ class InterestEventAssessment(Base):
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class BriefReuseObservation(Base):
+    """Daily aggregate server projections, never a per-user viewing history."""
+    __tablename__ = "brief_reuse_observations"
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), primary_key=True)
+    assessment_id: Mapped[str] = mapped_column(ForeignKey("interest_event_assessments.id", ondelete="CASCADE"), primary_key=True)
+    day: Mapped[str] = mapped_column(String(10), primary_key=True)
+    surface: Mapped[str] = mapped_column(String(24), primary_key=True)
+    projections: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    first_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    __table_args__ = (
+        CheckConstraint("projections > 0", name="ck_brief_reuse_positive"),
+        CheckConstraint("surface IN ('reader', 'notifications', 'digest_preview')", name="ck_brief_reuse_surface"),
+    )
+
+
 class InterestAssessmentAttempt(Base):
     """One fenced generation attempt; telemetry never replaces an AI result."""
     __tablename__ = "interest_assessment_attempts"
@@ -1650,6 +1666,7 @@ ORGANIZATION_SCOPED_MODELS = (
     RelationImpactAnalysis,
     InterestEventAssessment,
     InterestAssessmentAttempt,
+    BriefReuseObservation,
     InterestAssessmentBinding,
     AskRecord,
     AssistantConversation,

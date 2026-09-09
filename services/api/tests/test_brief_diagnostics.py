@@ -105,13 +105,17 @@ def test_real_viewer_and_unauthenticated_diagnostics_are_denied(tmp_path):
     with TestClient(app) as client:
         assert client.get(PATH).status_code==401
         attempts_path = f"{PATH}/{uuid4()}/attempts"
+        reuse_path = f"{PATH}/{uuid4()}/reuse"
         assert client.get(attempts_path).status_code == 401
+        assert client.get(reuse_path).status_code == 401
         registered=_register(client).json()
         assert client.get(PATH).status_code==200
         assert client.get(attempts_path).status_code == 404
+        assert client.get(reuse_path).status_code == 404
         with app.state.service.db.session(include_all_organizations=True) as session:
             membership=session.scalar(select(OrganizationMembership).where(OrganizationMembership.user_id==registered["user"]["id"]))
             membership.role="viewer"
             session.commit()
         assert client.get(PATH).status_code==403
         assert client.get(attempts_path).status_code == 403
+        assert client.get(reuse_path).status_code == 403

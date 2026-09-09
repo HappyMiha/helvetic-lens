@@ -1187,7 +1187,10 @@ class HelveticLens:
             # remains an event feed, not an AI-created notification history.
             projected = attach(session, self.organization_id, {"events": page["items"]}, locale,
                 context=self.brief_read_context(), configuration=self.brief_configuration(session))
-            return {**page, "items": projected["events"]}
+            response = {**page, "items": projected["events"]}
+        from .brief_reuse import observe
+        observe(self.db, self.organization_id, [item["brief"] for item in projected["events"]], "notifications")
+        return response
 
     def interest_feed_topics(self, event_id: str, user_id: str | None, **filters) -> dict:
         with self.db.session() as session:
@@ -1282,13 +1285,16 @@ class HelveticLens:
                 )
             )
             source_options = reader.source_options(session)
-            return {
+            response = {
                 "preference": digests.serialize_preference(preference),
                 "preview": preview,
                 "source_options": source_options,
                 "delivery_mode": self.environment_settings.auth_email_mode,
                 "deliveries": [digests.serialize_delivery(item) for item in deliveries],
             }
+        from .brief_reuse import observe
+        observe(self.db, self.organization_id, [item["brief"] for item in preview["events"]], "digest_preview")
+        return response
 
     def save_digest_preference(
         self,
@@ -3741,7 +3747,10 @@ class HelveticLens:
                 if configuration != self.brief_configuration(session):
                     return {**interest_brief_reader.read(session, self.organization_id, event_id, locale=locale),
                             "status": "not_current"}
-                return interest_brief_reader.read(session, self.organization_id, event_id, locale=locale, model=model)
+                response = interest_brief_reader.read(session, self.organization_id, event_id, locale=locale, model=model)
+        from .brief_reuse import observe
+        observe(self.db, self.organization_id, [response], "reader")
+        return response
 
     def request_interest_brief(self, event_id, locale, request_id):
         from .interest_requests import enqueue

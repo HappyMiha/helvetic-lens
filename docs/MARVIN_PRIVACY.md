@@ -24,6 +24,12 @@ temporary: changing page, user or organization clears it, and the panel offers a
 return-to-page-context control. The saved brief uses the normal authorized reader;
 it is not sent through companion inference or copied into personal chat history.
 
+The current-brief reader can record an aggregate server reuse observation: exact
+assessment, organization, UTC day and shared reader surface, without a user ID,
+question, conversation or prose. Today and Marvin are not separated into personal
+activity histories. This records a validated server response, not proof it was
+viewed; browser-only cache reads are not observed. See `INTEREST_ASSESSMENTS.md`.
+
 Before preferences are loaded, while paused, or with context detached, the
 companion does not initiate context/conversation/model-status requests or subscribe
 to its AI job feed. Other product panels may still request their own data. No

@@ -22,6 +22,7 @@ from . import (
     brief_diagnostics,
     brief_feedback,
     brief_history,
+    brief_reuse,
     brief_reviews,
     corpus_evidence,
     feed_readiness,
@@ -2016,6 +2017,14 @@ def create_app(
             raise DomainError("Organization administrator access is required.", 403, "forbidden")
         with service.db.session() as session:
             return brief_attempts.read(session, service.organization_id, str(assessment_id))
+
+    @app.get("/api/integration-logs/briefs/{assessment_id}/reuse")
+    def interest_brief_reuse(assessment_id: uuid.UUID, request: Request, days: int = Query(default=7)):
+        identity = request.state.identity
+        if identity and identity.role != "organization_admin":
+            raise DomainError("Organization administrator access is required.", 403, "forbidden")
+        with service.db.session() as session:
+            return brief_reuse.read(session, service.organization_id, str(assessment_id), days=days)
 
     @app.get("/api/integration-logs/{log_id}")
     def integration_log_detail(log_id: str):

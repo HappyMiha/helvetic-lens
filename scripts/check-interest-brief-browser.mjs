@@ -21,7 +21,7 @@ const server=spawn(process.execPath,[join(root,"node_modules/next/dist/bin/next"
 const browser=spawn(chrome,["--headless=new","--no-first-run","--no-default-browser-check","--remote-debugging-port=0",`--user-data-dir=${profile}`,"about:blank"],{stdio:"ignore",windowsHide:true});
 let cdp,locale="en-CH",status="available",failure=false,feedback=[],receipts=new Map(),feedbackFailure="";const requests=[],exceptions=[];
 let reviews=[],reviewerRole="organization_admin";
-let historyStatus="historical",historyFailure=false,attemptFailure=false;
+let historyStatus="historical",historyFailure=false,attemptFailure=false,reuseFailure=false;
 async function waitFor(check,message){for(let i=0;i<180;i++){if(await check().catch(()=>false))return;await sleep(100);}throw new Error(message);}
 const event={event_id:"10000000-0000-4000-8000-000000000001",title:"Synthetic saved regulatory development",type:"updated",document_kind:"law",lifecycle_status:null,source:"Synthetic publisher",detected_at:"2026-09-08T08:00:00Z",official_dates:[],read_state:"unread",topic_matches:[],monitored_documents:[],law_impacts:[]};
 const claim={text:"Synthetic saved explanation for review, not a legal conclusion.",evidence_ids:["ev1"]};
@@ -40,6 +40,10 @@ try{
   else if(path.startsWith("/api/integration-logs/briefs/")&&path.endsWith("/attempts")){
    if(attemptFailure){code=503;body={detail:"Synthetic attempt history failure"};}
    else body={items:[{number:2,status:"succeeded",started_at:"2026-09-09T11:00:00Z",finished_at:"2026-09-09T11:00:02Z",error_code:null,measurement:{http_attempts_started:1,elapsed_run_ms:2000,measured_input_requests:1,measured_input_tokens:400,reported_output_requests:1,reported_output_tokens:0,observed_queue_requests:0,observed_queue_ms:null}},{number:1,status:"failed",started_at:"2026-09-09T10:00:00Z",finished_at:"2026-09-09T10:00:02Z",error_code:"model_timeout",measurement:null}]};
+  }
+  else if(path.startsWith("/api/integration-logs/briefs/")&&path.endsWith("/reuse")){
+   if(reuseFailure){code=503;body={detail:"Synthetic reuse observation failure"};}
+   else body={start_day:"2026-09-03",end_day:"2026-09-09",calendar_timezone:"UTC",items:new URL(request.url).searchParams.get("days")==="1"?[]:[{surface:"reader",projections:12,first_at:"2026-09-03T10:00:00Z",last_at:"2026-09-09T10:00:00Z"}]};
   }
   else if(path==="/api/integration-logs/briefs"){
    const params=new URL(request.url).searchParams,failed=params.get("status")==="failed",older=params.get("cursor");
@@ -98,6 +102,18 @@ try{
    await waitFor(()=>evaluate(cdp,"!!document.querySelector('[data-brief-attempts] [role=alert]')&&!document.querySelector('[data-brief-attempt]')"),"Attempt error did not hide stale measurements");
    attemptFailure=false;await click("[data-attempt-refresh]");
    await waitFor(()=>evaluate(cdp,"document.querySelectorAll('[data-brief-attempt]').length===2"),"Attempt history did not recover");
+   await click("[data-brief-attempts]>summary");
+   assert.equal(requests.slice(start).filter(r=>r.path.endsWith("/reuse")).length,0,"Collapsed reuse fetched data");
+   await click("[data-brief-reuse]>summary");
+   await waitFor(()=>evaluate(cdp,"document.querySelector('[data-reuse-surface=reader] strong')?.textContent==='12'"),"Reuse count missing");
+   await audit.check(cdp,`diagnostics-reuse-${width}-${locale}`,"body");
+   if(locale==="en-CH"){const shot=await cdp.send("Page.captureScreenshot",{format:"png"});await writeFile(join(root,`test-results/brief-reuse-${width}.png`),Buffer.from(shot.data,"base64"));}
+   reuseFailure=true;await click("[data-reuse-refresh]");
+   await waitFor(()=>evaluate(cdp,"!!document.querySelector('[data-brief-reuse] [role=alert]')&&!document.querySelector('[data-reuse-surface]')"),"Reuse error did not hide cached counts");
+   reuseFailure=false;await click("[data-reuse-refresh]");
+   await waitFor(()=>evaluate(cdp,"!!document.querySelector('[data-reuse-surface]')"),"Reuse recovery missing");
+   await choose("[data-reuse-days]","1");
+   await waitFor(()=>evaluate(cdp,"!!document.querySelector('[data-reuse-empty]')&&!document.querySelector('[data-reuse-surface]')"),"Unknown reuse period was not explicit");
    await click("[data-diagnostic-older]");await waitFor(()=>evaluate(cdp,"!!document.querySelector('[data-brief-diagnostic=older]')"),"Older diagnostics missing");
    async function choose(selector,value){await evaluate(cdp,`(()=>{const e=document.querySelector(${JSON.stringify(selector)});Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(e,${JSON.stringify(value)});e.dispatchEvent(new Event('change',{bubbles:true}));})()`);}
    await choose("[data-diagnostic-state]","failed");await waitFor(()=>evaluate(cdp,"document.querySelector('[data-brief-diagnostic=newest]')?.querySelectorAll('dd').length===4"),"Failure measurements missing");
@@ -254,6 +270,6 @@ try{
   const shellInitialization=new Set(["/api/assistant/context","/api/assistant/conversations"]);
   assert.deepEqual(requests.slice(start).filter(r=>r.method!=="GET"&&!shellInitialization.has(r.path)),[],"Reader performed a mutation");
  }
- assert.deepEqual(exceptions,[]);audit.finish(diagnosticsMode||assistantMode||historyMode||reviewMode||feedbackMode?30:20);console.log(diagnosticsMode?"Ten five-locale desktop/mobile diagnostic journeys passed: lazy pages, filters, missing measurements, error hiding, pagination and no inference or writes.":assistantMode?"Ten five-locale desktop/mobile assistant brief journeys passed with saved citations, stale/offline/error hiding, scope reset and no inference or shared writes.":historyMode?"Ten five-locale desktop/mobile historical brief journeys passed: lazy scalar pages, explicit bodies, old results and evidence, missing context, unavailable/error hiding, pagination, no current-model reader or writes.":reviewMode?"Ten five-locale desktop/mobile organization-review journeys passed: confirmation, rejection, collapsed original history, withdrawal, read-only viewer, shared history and no page reload; no model calls.":feedbackMode?"Ten five-locale desktop/mobile feedback journeys passed: save, conflict, retained draft, uncertain-reply replay, withdrawal, paged history, escaping and no page reload; no model calls.":"Ten five-locale desktop/mobile saved-brief journeys passed; no automatic generation or writes.");
+ assert.deepEqual(exceptions,[]);audit.finish(diagnosticsMode?40:assistantMode||historyMode||reviewMode||feedbackMode?30:20);console.log(diagnosticsMode?"Ten five-locale desktop/mobile diagnostic journeys passed: lazy pages, filters, missing measurements, error hiding, pagination and no inference or writes.":assistantMode?"Ten five-locale desktop/mobile assistant brief journeys passed with saved citations, stale/offline/error hiding, scope reset and no inference or shared writes.":historyMode?"Ten five-locale desktop/mobile historical brief journeys passed: lazy scalar pages, explicit bodies, old results and evidence, missing context, unavailable/error hiding, pagination, no current-model reader or writes.":reviewMode?"Ten five-locale desktop/mobile organization-review journeys passed: confirmation, rejection, collapsed original history, withdrawal, read-only viewer, shared history and no page reload; no model calls.":feedbackMode?"Ten five-locale desktop/mobile feedback journeys passed: save, conflict, retained draft, uncertain-reply replay, withdrawal, paged history, escaping and no page reload; no model calls.":"Ten five-locale desktop/mobile saved-brief journeys passed; no automatic generation or writes.");
 }catch(error){console.error({locale,status,exceptions,text:cdp?await evaluate(cdp,"document.body.innerText.slice(-2000)").catch(()=>"unavailable"):"none"});throw error;}
 finally{cdp?.close();for(const child of [browser,server]){const ended=new Promise(r=>child.once("exit",r));child.kill();await Promise.race([ended,sleep(2000)]);}assert.equal(dirname(resolve(profile)),resolve(tmpdir()));assert.ok(basename(profile).startsWith("helvetic-brief-browser-"));await rm(profile,{recursive:true,force:true,maxRetries:5,retryDelay:200});}

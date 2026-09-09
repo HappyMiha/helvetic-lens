@@ -1,5 +1,41 @@
 # Verification record
 
+## Saved brief reuse observations — 9 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl089-brief-reuse-observations`, based on `66c6f8d`.
+  Added additive migration `ef5169a0c32d`, typed daily aggregate rows, atomic
+  increments and scoped admin period summaries. Instrumented only successful
+  current-brief projections from Today/Marvin, notifications and digest previews,
+  outside their read transactions. No user identity/prose, generation, retranslation
+  or new delivery is introduced. Diagnostic failure cannot replace the response.
+- **83 API regressions passed in 166.42s**, including 11 new reuse scenarios plus
+  diagnostic, current-reader, notification and digest regressions. Tests exercise
+  actual service readers, no new generation/jobs, independent surfaces, repeated
+  reads, metadata-only schema, unavailable-language/profile/runtime/result states,
+  concurrency, tenant/API role boundaries, empty periods, observation failure and
+  migration preservation. Existing Starlette/httpx deprecation warning remains.
+- **Three PostgreSQL 17 scenarios passed** on an isolated local `hl089_regression`
+  database: `brief-reuse-readers`, `brief-reuse-concurrent`, `brief-reuse-migration`.
+  Twelve simultaneous increments produce twelve observations without double
+  counting duplicate cards within a response; downgrade/upgrade preserves AI
+  answers and does not invent old usage. No production DB or real model was used.
+- Root **`npm run build`**, Ruff and `git diff --check` passed. The initial build
+  correctly rejected a hard-coded UTC UI label; the final UI uses the response's
+  declared calendar timezone without weakening localization checks.
+  **10 desktop/mobile diagnostic journeys and 40 full-document axe checkpoints
+  passed** across DE/FR/IT/RM/EN and 390/1440px. Added lazy reuse disclosure,
+  period selection, no-observation text, failure hiding and explicit refresh
+  recovery. Inspected both screenshot sizes. Browser fixtures make no inference
+  or HTTP mutations; actual server read endpoints write aggregate observations
+  as tested separately. Axe incomplete checks and independent native-language
+  review remain open, not certified by fixtures.
+- Evidence: `test-results/brief-reuse-final-api.txt`, `brief-reuse-build.txt`,
+  `brief-reuse-browser.txt`, `pg-brief-reuse-*.txt` and
+  `brief-reuse-390.png`/`1440.png`. These counts do not prove unique people, viewed
+  responses, email deliveries, token savings or complete traffic accounting.
+  No historical backfill, production deployment or independent capacity/quality
+  acceptance; HL-089 remains in progress.
+
 ## Retained brief attempt ledger — 9 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl089-attempt-ledger`, based on `3ea406f`.
