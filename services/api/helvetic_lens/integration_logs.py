@@ -174,4 +174,5 @@ class IntegrationLogger:
                 session.commit()
         except Exception:
             # Diagnostics must never make monitoring or model requests fail.
-            logger.exception("Could not persist an integration log")
+            # SQLAlchemy exception strings may echo saved request/response bodies.
+            logger.warning("Could not persist an integration log")

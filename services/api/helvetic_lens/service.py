@@ -10,6 +10,7 @@ import time
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import ContextVar
 from datetime import UTC, date, datetime
+from functools import partial
 from pathlib import PurePosixPath
 from urllib.parse import urlsplit
 
@@ -204,7 +205,8 @@ class HelveticLens:
         self.organization_name = organization_name
         self.db = Database(settings, organization_id)
         self.credential_cipher = CredentialCipher(settings)
-        self.integration_logger = IntegrationLogger(self.db.session)
+        from .diagnostic_storage import diagnostic_session
+        self.integration_logger = IntegrationLogger(partial(diagnostic_session, self.db))
         self.api_metrics = ApiMetrics()
         self.regulatory_corpus = RegulatoryCorpus()
         self.connector_runner = ConnectorRunner(self.db, self.regulatory_corpus, settings)

@@ -8,6 +8,7 @@ from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
 from .config import DomainError
 from .db import utcnow
+from .diagnostic_storage import diagnostic_session
 from .models import BriefReuseObservation as Observation
 from .models import InterestEventAssessment as Assessment
 from .topic_matching import _iso
@@ -24,7 +25,7 @@ def observe(db, organization, briefs, surface):
     if not identities:
         return
     try:
-        with db.session() as session:
+        with diagnostic_session(db) as session:
             now = utcnow()
             # Explicit organization scope also applies in privileged workers.
             allowed = session.scalars(select(Assessment.id).where(Assessment.organization_id == organization,

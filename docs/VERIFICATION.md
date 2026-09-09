@@ -1,5 +1,43 @@
 # Verification record
 
+## Bounded optional diagnostic writes — 9 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl099-diagnostic-lock-bounds`, based on `38aa906`.
+  A real held SQLite writer initially delayed a current saved-brief read **11.42s**:
+  the model runtime metadata call tried to persist an integration log under the
+  default 10-second busy wait. Fixing reuse counters alone was insufficient; the
+  final helper also covers integration logs and attempt-finalization telemetry.
+- Optional diagnostic transactions use **250ms lock wait**, plus **500ms per
+  PostgreSQL statement**. The connection stays checked out through commit and
+  SQLite timeout restoration. PostgreSQL settings are transaction-local. Primary
+  domain/lease transactions and configured connection-pool timeout are unchanged.
+  Log persistence no longer prints SQL exception parameters/provider bodies.
+- **58 API regressions passed, 1 PostgreSQL-only test skipped, in 96.84s** across
+  diagnostic storage, attempt ledger, reuse observations, integration logs and
+  provider settings. Final explicit integration-log-lock coverage adds a targeted
+  **6 passed, 1 PostgreSQL-only skip in 12.12s**, including invalidation when SQLite
+  timeout restoration fails. The real reader returns the same
+  saved result in under the test's two-second ceiling while the writer still owns
+  its lock; no generation occurs. Tests verify restored SQLite timeouts on checked
+  in connections, failed observation remaining absent and later recording recovery.
+- **54 additional execution/worker regressions passed, 1 PostgreSQL-only dispatcher
+  skip, in 104.24s** (`test-results/diagnostic-lock-worker-regression.txt`). Primary
+  attempt ownership, cancellation, recovery and concurrent work remain intact.
+- **Seven isolated PostgreSQL 17 scenarios passed on final code**: held reuse-row
+  lock, held integration-log-table lock, successful commit restoration, failure
+  restoration, cancellation of `pg_sleep(5)`, concurrent reuse increments and
+  failed-then-successful attempt retention. No production database/model was used.
+  The PostgreSQL statement test skipped by SQLite ran in this dedicated suite.
+- Ruff and `git diff --check` pass. No frontend or schema changes; no new UI/build
+  certification is claimed. Final factory-cleanup smoke check: **7 passed,
+  1 PostgreSQL-only skip in 12.70s** (`diagnostic-lock-final-smoke.txt`). No new UI/build
+  certification is claimed. Evidence: `test-results/diagnostic-lock-api.txt`
+  (initial failing reproduction), `diagnostic-lock-final-api.txt`,
+  `diagnostic-lock-targeted.txt` and `pg-lock-*.txt`. Existing Starlette/httpx
+  deprecation warning remains. Short optional lock waits may lose diagnostics
+  under contention; no complete accounting or 100-user target-host performance
+  claim. No deployment, application data migration or production restart.
+
 ## Saved brief reuse observations — 9 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl089-brief-reuse-observations`, based on `66c6f8d`.

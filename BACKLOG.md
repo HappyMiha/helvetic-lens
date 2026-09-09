@@ -2477,6 +2477,19 @@ Acceptance criteria:
 
 ### HL-099 — Bound inbox/feed reads and digest work on a mature corpus
 
+**9 September 2026 — bounded optional diagnostic writes:** Saved-brief reads
+exposed an 11-second SQLite delay while integration logging waited behind another
+writer. Integration logs, reuse counters and final attempt telemetry now use
+separate short diagnostic transactions: 250ms lock wait, plus a 500ms PostgreSQL
+statement timeout. SQLite connection settings are restored before returning the
+connection to the pool; PostgreSQL settings are local to the transaction.
+Diagnostics may remain unrecorded under contention, but cannot replace the answer
+or its original error. SQL/provider payloads are no longer echoed when log
+persistence fails. Held-lock, statement-timeout, rollback/commit, concurrency and
+reuse checks pass on SQLite and isolated PostgreSQL. Ordinary DB pool acquisition
+and domain transactions are unchanged. Whole-request latency, corpus-scale query
+budgets and 100-user target-host acceptance remain open; HL-099 is **IN PROGRESS**.
+
 **8 September 2026 — deep action-history seeks:** An index-only reversible migration adds the exact organization/report/comparison/action/time/ID key. A tuple boundary lets PostgreSQL seek within large equal-time groups; history contents, cursor compatibility and access checks remain unchanged. Tests exercise the actual emitted HTTP page SQL before/after the index on two 100,001-decision distributions, plus populated rollback. See [contract](docs/ACTION_HISTORY.md#deep-page-index--8-september-2026) and verification. **Still open:** exact-count/current-summary database work, other corpus distributions, full response bounds and intended-host concurrent capacity. HL-099 remains **IN PROGRESS**; this is not the 100-user gate.
 
 **8 September 2026 — per-action decision history pages:** The comparison UI now requests compact current decisions/counts and browses complete per-action history in 20-record keyset pages. Previous/next, retry with retained records and refresh are available in five locales; current decisions remain visible above history. Every page rechecks report/comparison/law scope. New decisions refresh an open history without inference. Legacy callers retain the full-history response, with deterministic tied-time ordering. See [contract and limits](docs/ACTION_HISTORY.md) and verification. **Still open:** distinct-action fan-out, legacy full-history readers, selected report/diff bytes, SQL ranking/count/index cost and target-host capacity. HL-099 remains **IN PROGRESS**.

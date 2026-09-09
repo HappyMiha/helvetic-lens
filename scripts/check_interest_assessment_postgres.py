@@ -48,6 +48,11 @@ from test_brief_reviews import (
     test_concurrent_admin_decisions_preserve_the_first_accepted_intent,
     test_review_migration_preserves_assessment_and_personal_feedback,
 )
+from test_diagnostic_storage import (
+    test_diagnostic_timeout_is_local_and_restored_after_commit_or_error,
+    test_locked_reuse_counter_returns_saved_answer_without_waiting_for_owner,
+    test_postgres_slow_diagnostic_statement_is_cancelled,
+)
 from test_digest_briefs import (
     test_preview_and_actual_delivery_reuse_same_saved_assessment,
     test_recipient_locale_is_reloaded_at_send_not_from_preparation,
@@ -185,6 +190,11 @@ def execute_relation(harness, scenario):
 
 
 SUITES = {
+    "diagnostic-lock": lambda harness: execute_local(harness, lambda value: test_locked_reuse_counter_returns_saved_answer_without_waiting_for_owner(value, "reuse")),
+    "diagnostic-integration-lock": lambda harness: execute_local(harness, lambda value: test_locked_reuse_counter_returns_saved_answer_without_waiting_for_owner(value, "integration")),
+    "diagnostic-commit": lambda harness: execute_local(harness, lambda value: test_diagnostic_timeout_is_local_and_restored_after_commit_or_error(value, False)),
+    "diagnostic-rollback": lambda harness: execute_local(harness, lambda value: test_diagnostic_timeout_is_local_and_restored_after_commit_or_error(value, True)),
+    "diagnostic-statement": lambda harness: execute_local(harness, test_postgres_slow_diagnostic_statement_is_cancelled),
     "brief-reuse-readers": lambda harness: execute_local(harness, lambda value: test_actual_readers_reuse_without_regeneration_or_personal_tracking(value, harness)),
     "brief-reuse-concurrent": lambda harness: execute_local(harness, test_concurrent_observations_are_atomic_and_days_are_bounded),
     "brief-reuse-migration": lambda harness: execute_local(harness, test_reuse_migration_does_not_invent_old_usage_or_change_answers),

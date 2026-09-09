@@ -17,6 +17,7 @@ from . import brief_attempts
 from .analysis import InferenceBudget, ModelClient
 from .config import DomainError
 from .corpus_access import visible
+from .diagnostic_storage import diagnostic_session
 from .interest_admission import current_key
 from .interest_assessment import (
     MAX_PROVIDER_CALLS,
@@ -228,7 +229,7 @@ class LocalBriefRunner:
                 if assessment_id and attempt_token:
                     try:
                         measurement = brief_attempts.summarize(trace, budget.used, round((time.monotonic()-started)*1000))
-                        with self.db.session() as session:
+                        with diagnostic_session(self.db) as session:
                             brief_attempts.record(session, self.organization_id, assessment_id, attempt_token, measurement)
                             session.commit()
                     except Exception:

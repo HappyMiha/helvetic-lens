@@ -1,5 +1,21 @@
 # Shared event relevance briefs
 
+## Optional diagnostic storage limits — 9 September 2026
+
+Integration logs, aggregate reuse observations and final attempt measurements use
+the shared `diagnostic_session` boundary. Database lock waits are limited to 250ms;
+PostgreSQL also limits each diagnostic statement to 500ms. Primary assessment
+claim/finish/fail, queue leases and other domain transactions retain their existing
+semantics and limits. Missing diagnostic data remains explicit, not fabricated.
+
+The helper holds its physical connection through commit/rollback and restores
+SQLite's prior `busy_timeout` before returning it to the pool. Restoration failure
+invalidates the connection. PostgreSQL uses transaction-local settings. The helper
+does not change the application's configured pool-acquisition timeout or promise
+a total request deadline. It is a bound on optional diagnostic SQL contention,
+not a target-host throughput certification. Log-persistence failures emit a fixed
+warning without SQL parameters or provider request/response bodies.
+
 ## Saved-reader reuse observations — 9 September 2026
 
 Migration `ef5169a0c32d` creates daily aggregate observations keyed by organization,
