@@ -1,5 +1,30 @@
 # Verification record
 
+## English contextual section help — 9 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl073-contextual-section-help` retains the local
+  Basel-Stadt work at `ea2796f`. [Scope and usage](CONTEXTUAL_SECTION_HELP.md).
+- Production build passes localization, shell (31), resource (22), report (208)
+  and new guide-coverage (4) checks, TypeScript and Next.js production compilation.
+- The help browser suite opens all 30 actual page routes and four chapters with
+  synthetic API responses. It verifies desktop/mobile role boundaries, English
+  in a German interface, F1/Escape, focus containment/return, search, disabled and
+  disappearing targets, safe highlighting and preservation of a login draft.
+  Guide interactions cause no additional API writes. Native Marvin dialogs own
+  F1 while open, preventing a hidden second modal.
+- Eight full-document axe checkpoints pass in the help suite. Basel regression
+  passes 20 five-language administrator/viewer journeys and 40 axe checkpoints.
+  Shell regression passes 30 populated language/role/mobile-width journeys,
+  including nested Escape, focus restoration and resize cleanup. All browser
+  suites use isolated profiles and synthetic data, with no live model calls.
+- Desktop and 390 px screenshots were inspected. The panel sits above mobile
+  navigation and Marvin, keeps its close control reachable and scrolls its chapter
+  without horizontal overflow. Axe incomplete findings are retained in the test
+  reports; no complete accessibility or human-comprehension certification is made.
+- No API schema, source collector, production configuration or deployment changed.
+  Independent first-use comprehension and field-pilot gates remain open. Local
+  verification does not imply that the task branch has been published or deployed.
+
 ## Basel-Stadt cantonal pilot and first-use guide — 9 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl080-basel-stadt-onboarding`, based on `0c1adf0`.

@@ -56,6 +56,10 @@ const approvedUiLiterals = new Set([
 ]);
 const hardcoded = [];
 function recordLiteral(file, sourceFile, node, rawValue) {
+  // Explicit product scope: contextual guides ship in English first. Both their
+  // inline root and portalled dialog declare lang="en"; browser tests enforce it.
+  // Keep this exception local: the rest of the product remains five-language.
+  if (path.relative(root, file).replaceAll("\\", "/") === "apps/web/components/section-help.tsx") return;
   const value = rawValue.replace(/\s+/g, " ").trim();
   if (!/[A-Za-zÀ-ÿ]/.test(value) || approvedUiLiterals.has(value)) return;
   const line = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1;

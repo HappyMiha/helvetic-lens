@@ -38,6 +38,7 @@ import { BrandLockup } from "./brand";
 import { LanguageSelector, useI18n } from "@/lib/i18n";
 import { MarvinCompanion } from "./marvin-companion";
 import { NotificationCentre } from "./notification-centre";
+import { SectionHelp } from "./section-help";
 import { marvinHistoryCopy } from "@/lib/marvin-history-copy";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "./ui/dialog";
 
@@ -630,6 +631,7 @@ export function Shell({
               {t("shell.readOnlyBody")}
             </div>
           )}
+          <SectionHelp />
           {children}
           <footer className="workspace-footer">
             <ShieldCheck size={13} />

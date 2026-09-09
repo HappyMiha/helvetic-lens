@@ -1376,6 +1376,15 @@ Completed on 4 September 2026. A versioned global catalogue now supplies a Swiss
 
 ### HL-073 — Add stateful onboarding, contextual help, and useful empty states
 
+**9 September 2026 follow-up — English contextual section guides:** all 30 page
+routes now expose an orientation and on-demand Page guide with first steps,
+searchable control consequences/prerequisites, data provenance and wait/setup
+explanations. Role-aware controls and safe Show me highlighting work without AI;
+public account/unsubscribe routes are covered too. English is explicit inside
+otherwise localized UI. See [section help](docs/CONTEXTUAL_SECTION_HELP.md) for
+the keyboard/mobile behavior, route-coverage gate and browser evidence. This
+implementation does not close independent comprehension or field-pilot gates.
+
 **6 September 2026 implementation slice — personal intent and returnable guide:** `/onboarding` now persists an explicit topic/law/explore choice or deferral per user and organization, independently of any shared `DocumentWatch`. A new workspace-menu entry returns to it. The five-language guide links existing package review, monitoring, notification preferences and saved evidence; invited viewers can inspect existing organizational setup and use the existing administrator-request flow. Choosing an intent does not activate a source, create a watch/topic, subscribe to mail or call AI. GET is passive; CSRF-protected personal PATCH is allowed for viewers, with database uniqueness and PostgreSQL first-use concurrency coverage. See [personal onboarding](docs/PERSONAL_ONBOARDING.md) and [verification](docs/VERIFICATION.md).
 
 **6 September 2026 follow-up — actionable empty Today:** an empty feed now separates sparse candidate pages, unavailable linked events, period/read-state filters, no active interest, no enabled package/direct watch, interrupted topic history, pending topic history, source attention and pending collection. Recovery links lead to the matching existing flow. A lazy read-only bounded snapshot shows up to 20 active topics and 20 enabled packages with explicit truncation, current-evaluator/current-topic-revision history status, saved-event admission cutoff/processed-through time and processed/remaining counts. It never equates an empty feed or completed saved history with a genuinely quiet live period. Five-language mobile/desktop recovery is implemented; see [empty-feed recovery](docs/EMPTY_FEED_RECOVERY.md).

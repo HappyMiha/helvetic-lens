@@ -1,0 +1,1782 @@
+// Reviewed English product instructions. These describe behavior, never live status.
+export type GuideAccess = "everyone" | "manager" | "platform";
+export type GuideControl = {
+  id: string;
+  label: string;
+  does: string;
+  when: string;
+  effect:
+    | "Read / navigate"
+    | "Edit draft"
+    | "Save a change"
+    | "Start background work"
+    | "External action"
+    | "Remove data";
+  selector?: string;
+  names?: string[];
+  access?: GuideAccess;
+};
+export type SectionGuide = {
+  id: string;
+  title: string;
+  purpose: string;
+  first: string[];
+  data: string[];
+  wait: string;
+  setup: string;
+  controls: GuideControl[];
+  access?: GuideAccess;
+};
+const c = (
+  id: string,
+  label: string,
+  does: string,
+  when: string,
+  effect: GuideControl["effect"] = "Read / navigate",
+  selector?: string,
+  access?: GuideAccess,
+  names?: string[],
+): GuideControl => ({ id, label, does, when, effect, selector, access, names });
+const refresh = c(
+  "refresh",
+  "Refresh / Retry",
+  "Reads the saved page again. It does not collect new source documents or restart an AI task.",
+  "Use after a temporary loading error or to check newer saved results.",
+  "Read / navigate",
+  undefined,
+  undefined,
+  ["Refresh", "Retry", "Try again", "Refresh saved records"],
+);
+const pages = c(
+  "pages",
+  "Previous / Next / Load more",
+  "Opens another page of this saved list or text. A single page is not the whole collection.",
+  "Use to inspect more records without changing monitoring rules.",
+  "Read / navigate",
+  undefined,
+  undefined,
+  ["Next", "Previous", "Load more", "Next page", "Previous page"],
+);
+const official = c(
+  "official",
+  "Official source / Open source",
+  "Opens the publisher's website. Its live content can differ from the saved version used as evidence here.",
+  "Check the original publication and its legal status.",
+  "Read / navigate",
+  undefined,
+  undefined,
+  [
+    "Official source",
+    "Open source",
+    "Open official source",
+    "Official dataset and source attribution",
+  ],
+);
+const evidence = c(
+  "evidence",
+  "Open saved evidence / Citation",
+  "Opens the exact saved document or cited passage supporting this result. It does not fetch a replacement from the web.",
+  "Read the source before relying on a summary or confirming an impact.",
+  "Read / navigate",
+  'a[href^="/corpus-evidence/"], a[href^="/evidence/"]',
+);
+const filters = c(
+  "filters",
+  "Search, filters and Clear",
+  "Narrow the displayed saved records. Clear removes the view filters; it does not delete records or change a topic's rules.",
+  "If a list is empty, check its date, state and source filters first.",
+  "Read / navigate",
+  '[data-registry-filters] input, input[type="search"]',
+);
+const monitor = c(
+  "monitor",
+  "Monitor this",
+  "Opens a reviewable monitoring choice based on this material. Review the scope before confirming a shared topic or document watch.",
+  "Use when this material represents something your organization wants to keep following.",
+  "Edit draft",
+  "[data-monitor-this]",
+  undefined,
+  ["Monitor this", "Monitor this topic", "Monitor this document"],
+);
+const reading = c(
+  "reading",
+  "Read / Unread / Dismiss / Mute / Restore",
+  "Changes your inbox reading state. It does not repeal a law, remove the source document, or confirm a legal relationship.",
+  "Organize your personal review queue. Restore returns an item to unread.",
+  "Save a change",
+  undefined,
+  undefined,
+  ["Mark read", "Mark unread", "Dismiss", "Mute", "Restore"],
+);
+const scan = c(
+  "scan",
+  "Scan now / Check for changes",
+  "Queues collection of the monitored URL, saves a changed version and compares it with the selected baseline when one is available.",
+  "The document must be active. Follow the scan's progress; repeated clicks do not make a worker faster.",
+  "Start background work",
+  undefined,
+  "manager",
+  ["Scan now", "Check for changes", "Scan selected", "Scan all"],
+);
+const ai = c(
+  "ai",
+  "Analyse / Reanalyse / Ask",
+  "Requests model work using this saved evidence and the configured AI capability. A saved answer can be reused when its inputs are still current; citations remain the basis for checking it.",
+  "Wait for the recorded job state. If the model is unavailable, read the evidence and ask an administrator to check AI configuration.",
+  "Start background work",
+  undefined,
+  "manager",
+  [
+    "Analyse",
+    "Analyze",
+    "Reanalyse",
+    "Reanalyze",
+    "Ask",
+    "Generate brief",
+    "Request brief",
+  ],
+);
+
+export const SECTION_GUIDES: SectionGuide[] = [
+  {
+    id: "today",
+    title: "Today",
+    purpose:
+      "Review saved developments that match your organization's interests and decide what deserves attention.",
+    first: [
+      "Choose a period and reading state.",
+      "Open one relevant event, read its saved evidence and inspect why it matched.",
+      "Review its impact or monitoring choice; use reading states to organize your queue.",
+    ],
+    data: [
+      "Events come from enabled source packages or monitored documents admitted to this organization. A detected date is when the system observed an event, not necessarily when law changed.",
+      "Topic matches are rule-based candidates. A brief or impact explanation is a separate saved model result with its own evidence and freshness; it is not publisher text.",
+    ],
+    wait: "A saved event can appear before matching history or a requested AI brief finishes. Follow its actual progress; Refresh only reloads saved results.",
+    setup:
+      "For an empty workspace, enable a source package in Sources and save an interest in Topics. Invited viewers can ask their administrator. Filters, incomplete collection or a limited page can also explain an empty feed.",
+    controls: [
+      filters,
+      refresh,
+      evidence,
+      official,
+      c(
+        "event",
+        "Open event / All events",
+        "Opens a stable link to one event or returns to the full filtered feed.",
+        "Useful for returning to the same material.",
+        "Read / navigate",
+        "[data-feed-permalink], [data-feed-all]",
+      ),
+      monitor,
+      ai,
+      reading,
+      pages,
+    ],
+  },
+  {
+    id: "registry",
+    title: "Monitoring",
+    purpose:
+      "Inspect your monitored documents, saved versions and regulatory event history.",
+    first: [
+      "Choose the document or event view and narrow the saved list.",
+      "Open a document or saved evidence to inspect its actual contents.",
+      "Check the recorded source health and last load time before assuming this list is current.",
+    ],
+    data: [
+      "Records are saved by monitored URL scans or official shared collectors. Source health is a recorded observation, not continuous proof of availability.",
+      "Official metadata, saved versions, source relations and inferred candidates remain different kinds of information.",
+    ],
+    wait: "Loading a page is a read. A new source scan or shared collection is background work and must finish before new records can appear.",
+    setup:
+      "Use Sources to activate a package or add a document. Try Clear and an earlier period if expected saved records are hidden. An empty list does not prove no regulatory developments exist.",
+    controls: [
+      filters,
+      c(
+        "advanced",
+        "More filters",
+        "Reveals source, authority, kind, status and exact-date filters.",
+        "Use only the filters needed for the current question.",
+        "Edit draft",
+        "[data-registry-advanced] > summary",
+      ),
+      c(
+        "reload",
+        "Refresh saved records",
+        refresh.does,
+        refresh.when,
+        "Read / navigate",
+        "[data-registry-refresh]",
+      ),
+      evidence,
+      official,
+      monitor,
+      c(
+        "read",
+        "Mark read / unread",
+        "Updates the saved registry read flag for this organization's event.",
+        "Use to mark a registry event reviewed; this is separate from confirming its legal effect.",
+        "Save a change",
+        undefined,
+        undefined,
+        ["Mark read", "Mark unread"],
+      ),
+      pages,
+    ],
+  },
+  {
+    id: "discover",
+    title: "Discover",
+    purpose:
+      "Explore saved regulatory events and find material worth monitoring.",
+    first: [
+      "Search the saved event catalogue or narrow its filters.",
+      "Read the publisher link and saved evidence for a candidate.",
+      "Use Monitor this to review a proposed monitoring scope.",
+    ],
+    data: [
+      "Discover starts in the registry's event view. It reads collected records available to this organization; it is not an unrestricted live web search.",
+      "Titles and status come from the recorded source metadata. A matching title alone does not establish a legal relationship.",
+    ],
+    wait: "Refreshing this view does not start a source collection. Collection and topic matching have their own background progress.",
+    setup:
+      "Enable relevant Sources first. If the current scope has no saved events, review coverage and collection state rather than assuming there is nothing to discover.",
+    controls: [filters, refresh, evidence, official, monitor, pages],
+  },
+  {
+    id: "topics",
+    title: "Topics",
+    purpose:
+      "Turn a question or interest into explicit, reviewable monitoring rules for your organization.",
+    first: [
+      "Name the interest and describe what you want to follow.",
+      "Check the source scope and concepts, then preview saved matches.",
+      "Inspect examples and any duplicate-rule warning before activating or saving the topic.",
+    ],
+    data: [
+      "Manual concepts, synonyms, exclusions and source/language filters become the matching rules. The optional AI draft is only a proposal until you review and save it.",
+      "Preview uses the same deterministic scorer as matching, over a bounded sample of organization-saved events. Counts describe that sample, not all available law.",
+    ],
+    wait: "AI drafting waits for the configured model. Saving queues matching over saved history; partial or interrupted history can be continued. A pending scan is not a completed search with zero results.",
+    setup:
+      "Choose at least one package, language, jurisdiction, document kind and event kind. Disabled source packages do not begin collecting merely because you select them in a topic. Shared edits require an organization administrator.",
+    controls: [
+      c(
+        "new",
+        "New topic / Discard draft",
+        "Starts a new draft or leaves editing after the existing unsaved-change check. It does not delete the saved topic.",
+        "Use when you want different monitoring rules.",
+        "Edit draft",
+        "[data-topic-new]",
+      ),
+      c(
+        "scope",
+        "Adjust source scope",
+        "Reveals the packages, languages, jurisdictions and kinds used by the rule.",
+        "Use when the default scope does not fit your interest.",
+        "Edit draft",
+        "[data-topic-scope-options] > summary",
+      ),
+      c(
+        "matching",
+        "Refine matching",
+        "Changes concepts, synonyms, exclusions and minimum importance.",
+        "Preview again after editing; the old preview is no longer evidence for the new rule.",
+        "Edit draft",
+        "[data-topic-matching-options] > summary",
+      ),
+      c(
+        "draft",
+        "Draft with AI",
+        "Asks the configured model for proposed rules. It does not activate a topic.",
+        "Optional: you can write the rules yourself without a model.",
+        "Start background work",
+        undefined,
+        "manager",
+        ["Draft with AI"],
+      ),
+      c(
+        "preview",
+        "Preview",
+        "Tests the draft against a bounded saved-event sample without saving a topic or starting collection.",
+        "Required before saving. Inspect matches and source readiness.",
+        "Read / navigate",
+        'form button[type="submit"]',
+      ),
+      c(
+        "save",
+        "Activate / Save changes",
+        "Creates a shared topic or a new rule revision and queues saved-history matching.",
+        "A current preview and any required duplicate acknowledgement are needed.",
+        "Save a change",
+        "[data-topic-save]",
+        "manager",
+      ),
+      c(
+        "edit",
+        "Edit",
+        "Loads this saved topic into the editor; changes remain a draft until saved.",
+        "Use to refine noisy or incomplete results.",
+        "Edit draft",
+        "[data-topic-edit]",
+        "manager",
+      ),
+      c(
+        "status",
+        "Pause / Resume / Archive",
+        "Changes the shared topic's monitoring status. Pausing and archiving retain its recorded history; resuming makes it active again where allowed.",
+        "Use Pause when you want to stop matching without losing the rule.",
+        "Save a change",
+        undefined,
+        "manager",
+        ["Pause", "Resume", "Archive"],
+      ),
+      c(
+        "history",
+        "Continue history",
+        "Queues continuation of unfinished saved-history matching.",
+        "Use for partial or interrupted history, not to scrape all sources again.",
+        "Start background work",
+        undefined,
+        "manager",
+        ["Continue history", "Resume history scan"],
+      ),
+      c(
+        "restore",
+        "Restore draft / Discard saved draft",
+        "Restores or discards a draft kept for this browser tab and identity. Restoring does not restore a trusted preview.",
+        "Use after returning to an unfinished topic. Preview before saving.",
+        "Edit draft",
+        "[data-topic-restore], [data-topic-discard-recovery]",
+      ),
+      evidence,
+    ],
+  },
+  {
+    id: "sources",
+    title: "Sources",
+    purpose:
+      "Choose what your organization collects and inspect the limits of each source package.",
+    first: [
+      "Read a package's scope, languages, cadence and known gaps.",
+      "Enable only the packages or direct documents you need.",
+      "Check saved-event/backfill progress, then return to Topics or Today.",
+    ],
+    data: [
+      "Official packages share a collected corpus; enabling a package admits relevant saved events to your organization and enables future delivery. The federal starter and Basel-Stadt pilot are separate scopes.",
+      "Direct URL sources and imported snapshots have their own provenance. A package's active subscription or completed backfill does not prove complete live coverage.",
+    ],
+    wait: "Activation can queue backfill of already saved events. Fresh source collection follows shared schedules and may be delayed by a worker, source outage or queue pressure.",
+    setup:
+      "Organization administrators activate packages and manage URLs; viewers use the request flow. For Basel-Stadt's first two laws, open its dedicated guide. Model configuration is not required to read collected evidence.",
+    controls: [
+      c(
+        "enable",
+        "Enable starter / Enable / Disable",
+        "Changes the organization's package subscription. The federal starter affects its federal children; a canton is enabled separately. Disabling retains saved evidence.",
+        "Read coverage limits before changing the subscription.",
+        "Save a change",
+        "[data-pack-id] button",
+        "manager",
+      ),
+      c(
+        "request",
+        "Request enable / Request disable",
+        "Records a request for an administrator; it does not activate or disable collection immediately.",
+        "Use when you have viewer access.",
+        "Save a change",
+        undefined,
+        undefined,
+        ["Request enable", "Request disable"],
+      ),
+      c(
+        "review",
+        "Save source choice",
+        "Records your personal acknowledgement of the displayed package selection and revisions.",
+        "This is separate from enabling packages and does not subscribe you to email.",
+        "Save a change",
+        undefined,
+        undefined,
+        ["Save source choice", "Save my source choice"],
+      ),
+      c(
+        "add",
+        "Add document / Add source",
+        "Opens the form for a monitored URL or bounded source section. Saving can start initial collection.",
+        "Use an official accessible URL and inspect the resulting provenance.",
+        "Edit draft",
+        undefined,
+        "manager",
+        ["Add document", "Add source"],
+      ),
+      scan,
+      c(
+        "limits",
+        "Coverage limits",
+        "Expands the source's stated exclusions and history limitations.",
+        "Check before treating an empty result as meaningful.",
+        "Read / navigate",
+        "[data-pack-id] details > summary",
+      ),
+      refresh,
+    ],
+  },
+  {
+    id: "impact",
+    title: "Impact inbox",
+    purpose:
+      "Review possible effects of developments on monitored documents and record an evidence-based decision.",
+    first: [
+      "Choose a candidate and read its claimed relationship and severity.",
+      "Open the cited evidence and compare it with the monitored document.",
+      "Confirm, reject or annotate with a review note; keep uncertainty visible.",
+    ],
+    data: [
+      "Candidates combine recorded source relationships or matching signals with saved analysis. A possible effect is not a confirmed legal conclusion.",
+      "Analysis history and human review history are separate. New analysis does not silently replace what an earlier reviewer saw.",
+    ],
+    wait: "Reanalysis queues model work. You can continue inspecting the saved evidence while it is pending; Refresh does not generate an analysis.",
+    setup:
+      "You need a monitored document and available candidate evidence. Organization administrators perform shared reviews and reanalysis; viewers can inspect evidence and manage their inbox state.",
+    controls: [
+      filters,
+      evidence,
+      official,
+      c(
+        "review",
+        "Confirm / Reject / Add annotation",
+        "Saves a shared review decision with your note against the current evidence.",
+        "Open the evidence first. The form requires a note of at least three characters.",
+        "Save a change",
+        undefined,
+        "manager",
+        ["Confirm", "Reject", "Add annotation"],
+      ),
+      ai,
+      c(
+        "successor",
+        "Monitor successor",
+        "Adds the proposed successor to monitoring while keeping predecessor history.",
+        "Review the successor evidence and identity before adding it.",
+        "Save a change",
+        undefined,
+        "manager",
+        ["Monitor successor"],
+      ),
+      reading,
+      refresh,
+      pages,
+    ],
+  },
+  {
+    id: "topic-review",
+    title: "Topic match review",
+    purpose: "Decide whether a saved event is relevant to a monitoring topic.",
+    first: [
+      "Read the topic rules and the signals that produced the match.",
+      "Open the event evidence.",
+      "Write a review note, then confirm or reject relevance.",
+    ],
+    data: [
+      "These are saved topic/event matches produced by the matching rules, with recorded evidence and rule revisions.",
+      "A relevance decision concerns the monitoring interest. It is not confirmation of a legal relationship or a change in law.",
+    ],
+    wait: "If the topic's history matching is unfinished, more candidates may appear later. A stale evaluation may need current rules/evidence before a review can be saved.",
+    setup:
+      "Save an active topic and enable its source packages. Shared review controls require the appropriate organization role.",
+    controls: [
+      filters,
+      evidence,
+      official,
+      c(
+        "review",
+        "Confirm relevance / Reject relevance",
+        "Saves a shared review of the topic match with its evidence context and note.",
+        "A note of at least three characters and a current evaluation are required. Reload when the evidence or rules have changed.",
+        "Save a change",
+        undefined,
+        "manager",
+        ["Confirm relevance", "Reject relevance"],
+      ),
+      refresh,
+      pages,
+    ],
+  },
+  {
+    id: "matrix",
+    title: "Impact matrix",
+    purpose:
+      "See where saved analyses place potential effects across your organization's business areas.",
+    first: [
+      "Check that the organization profile lists the right business areas.",
+      "Inspect an affected area and open its underlying document or comparison.",
+      "Verify the cited evidence before acting on a severity label.",
+    ],
+    data: [
+      "Business areas come from the saved organization profile. Matrix entries come from saved analyses and their linked documents/comparisons.",
+      "An empty cell is not a guarantee that the business area has no legal exposure.",
+    ],
+    wait: "Newly requested analyses must finish before they can contribute results. This view does not itself generate an analysis.",
+    setup:
+      "Add business areas in Organization and collect comparable document versions. Configure AI only if you want model-produced impact analysis.",
+    controls: [
+      c(
+        "profile",
+        "Edit organization profile",
+        "Opens the shared organization context used by analysis.",
+        "Use when business areas are missing or inaccurate.",
+        "Read / navigate",
+        'a[href="/organization"]',
+      ),
+      evidence,
+      c(
+        "result",
+        "Open comparison / Document",
+        "Opens the saved material behind a matrix result.",
+        "Use to examine what actually supports the displayed effect.",
+        "Read / navigate",
+        'a[href^="/compare/"], a[href^="/laws/"]',
+      ),
+    ],
+  },
+  {
+    id: "digests",
+    title: "Notifications & digests",
+    purpose:
+      "Choose your delivery preferences and inspect the saved events that a digest can include.",
+    first: [
+      "Review the enabled delivery preference, interests, frequency and local schedule.",
+      "Inspect the preview and coverage boundaries.",
+      "Save your preferences; use Send now only when you intend to request delivery.",
+    ],
+    data: [
+      "The preview reads saved eligible developments for the selected interests and period. It is not a fresh collection of every source.",
+      "A saved brief can be reused in a digest. Missing or pending AI content is not evidence that nothing happened. Delivery history records actual saved attempts/outcomes.",
+    ],
+    wait: "Saving preferences is distinct from a scheduled delivery. Sending uses background work and configured email delivery; a queued request is not proof of receipt.",
+    setup:
+      "Enable delivery and select interests. Check account/email requirements, local time, quiet hours and the deployment's delivery configuration. Changing controls is not effective until Save.",
+    controls: [
+      c(
+        "preferences",
+        "Delivery, interests, frequency and quiet hours",
+        "Edits your personal notification preference draft, including schedule and selected interests.",
+        "Review time and timezone before saving.",
+        "Edit draft",
+        'input[type="checkbox"], select',
+      ),
+      c(
+        "save",
+        "Save",
+        "Persists your personal delivery preferences.",
+        "Save after changing the schedule or selected interests.",
+        "Save a change",
+        "[data-digest-save]",
+      ),
+      c(
+        "send",
+        "Send now",
+        "Requests digest delivery under the saved enabled preference. This can send email.",
+        "The saved preference must be enabled; editing an unsaved checkbox is not enough.",
+        "External action",
+        undefined,
+        undefined,
+        ["Send now"],
+      ),
+      c(
+        "clear",
+        "Clear quiet hours / Clear preferred time",
+        "Removes the time restriction from the draft.",
+        "Save to make the change effective.",
+        "Edit draft",
+        undefined,
+        undefined,
+        ["Clear quiet hours", "Clear preferred time"],
+      ),
+      c(
+        "preview",
+        "Restart preview",
+        "Reads a fresh first preview page for the current saved scope.",
+        "Use when the preview period has become stale.",
+        "Read / navigate",
+        undefined,
+        undefined,
+        ["Restart preview"],
+      ),
+      evidence,
+      pages,
+    ],
+  },
+  {
+    id: "organization",
+    title: "Organization",
+    purpose:
+      "Maintain the shared business context and manage membership where your role allows it.",
+    first: [
+      "Review the company profile, activities and business areas.",
+      "Save factual context relevant to regulatory analysis.",
+      "Use the membership and invitation controls only for deliberate access changes.",
+    ],
+    data: [
+      "Profile text is provided by your organization; it is not extracted from legislation or independently verified by AI.",
+      "Members, invitations and account verification state come from the saved organization and account records.",
+    ],
+    wait: "A pending invitation is not an accepted membership. Email verification requires completing the verification flow. Saving a profile does not instantly recompute every old analysis.",
+    setup:
+      "Organization administrators maintain shared profile and membership. Local development has a reduced account setup. Viewers should ask an administrator for shared changes.",
+    controls: [
+      c(
+        "save",
+        "Save profile",
+        "Persists shared organization context used by relevant analyses.",
+        "Review factual accuracy; future/current analysis freshness can depend on profile changes.",
+        "Save a change",
+        'form button[type="submit"]',
+        "manager",
+        ["Save profile"],
+      ),
+      c(
+        "reset",
+        "Reset / Cancel",
+        "Restores the form to its saved profile values without deleting the saved profile.",
+        "Use to discard unsaved profile edits.",
+        "Edit draft",
+        undefined,
+        "manager",
+        ["Reset", "Cancel"],
+      ),
+      c(
+        "invite",
+        "Invite member / Copy invitation link",
+        "Creates an invitation or copies its generated link. Access starts when the invitation is accepted.",
+        "Select the intended role and recipient. Copying does not itself send a message.",
+        "Save a change",
+        undefined,
+        "manager",
+        ["Invite member", "Copy invitation link"],
+      ),
+      c(
+        "roles",
+        "Change role / Handover / Remove member / Revoke",
+        "Changes access, transfers the permitted administrative role, removes membership or invalidates an invitation.",
+        "Review the named person and confirmation before applying an access change.",
+        "Save a change",
+        undefined,
+        "manager",
+      ),
+      c(
+        "join",
+        "Accept invitation",
+        "Uses the supplied invitation token to join the intended organization.",
+        "Check the invitation and signed-in account.",
+        "Save a change",
+        undefined,
+        undefined,
+        ["Accept invitation"],
+      ),
+      c(
+        "verify",
+        "Verify email",
+        "Requests the account's email verification flow.",
+        "Check the email and complete its link; requesting verification is not the same as being verified.",
+        "External action",
+        undefined,
+        undefined,
+        ["Verify email"],
+      ),
+    ],
+  },
+  {
+    id: "settings",
+    title: "AI settings",
+    access: "manager",
+    purpose:
+      "Configure the model connection used by this workspace's supported AI capabilities.",
+    first: [
+      "Choose the intended local or remote provider and model.",
+      "Test the connection and review the returned result.",
+      "Save the configuration, then check the capability settings for the task you want to run.",
+    ],
+    data: [
+      "Connection fields are workspace configuration or deployment defaults, not source-document content.",
+      "A provider/model list is returned by the selected provider. A successful connection test does not prove the quality of legal analysis.",
+    ],
+    wait: "Connection tests and model discovery contact the selected provider. A local model may need starting in Models; waiting cannot fix an incorrect endpoint or missing credential.",
+    setup:
+      "The provider, endpoint and required credentials must match. Model selection and capability modes are separate choices. Shared settings require an organization administrator; model runtime management is platform-only.",
+    controls: [
+      c(
+        "provider",
+        "Provider / Endpoint / Model / API key",
+        "Edits a connection draft. Remote provider choices can send later inference requests outside the local runtime.",
+        "Use the intended destination; do not paste secrets into general text or help search.",
+        "Edit draft",
+        "select",
+      ),
+      c(
+        "test",
+        "Test connection",
+        "Contacts the configured draft destination and checks whether it responds.",
+        "Fill the required fields and review any destination confirmation.",
+        "External action",
+        undefined,
+        "manager",
+        ["Test connection"],
+      ),
+      c(
+        "models",
+        "Load models",
+        "Requests the available model list from the selected destination.",
+        "A successful list does not save your selected configuration.",
+        "External action",
+        undefined,
+        "manager",
+        ["Load models"],
+      ),
+      c(
+        "save",
+        "Save settings",
+        "Saves the workspace model connection for subsequent supported tasks.",
+        "Check the provider and test result before saving.",
+        "Save a change",
+        'form button[type="submit"]',
+        "manager",
+      ),
+      c(
+        "reset",
+        "Use deployment defaults / Reset",
+        "Removes the workspace override and returns to deployment-provided configuration.",
+        "Available when a workspace override exists.",
+        "Save a change",
+        undefined,
+        "manager",
+        ["Use deployment defaults", "Reset to deployment defaults"],
+      ),
+      c(
+        "capabilities",
+        "Capability modes and providers",
+        "Sets whether supported AI tasks are disabled or use the allowed execution mode/provider.",
+        "A ready model does not automatically enable every capability. Review the per-capability scope before saving.",
+        "Save a change",
+        undefined,
+        "manager",
+      ),
+    ],
+  },
+  {
+    id: "prompts",
+    title: "Prompt settings",
+    access: "manager",
+    purpose:
+      "Review the instructions used by supported AI tasks and manage deliberate overrides.",
+    first: [
+      "Select the task and inspect its effective instructions and scope.",
+      "Edit only the instructions you intend to override.",
+      "Save a revision and test the resulting behavior with cited evidence.",
+    ],
+    data: [
+      "Prompt text is configured task instruction, not publisher text or an AI answer. Effective values can combine deployment defaults with permitted overrides.",
+      "Existing answers retain their recorded history; changing a prompt is not a bulk rewrite of old reports.",
+    ],
+    wait: "Saving instructions is not a model run. New or refreshed analysis may be needed to observe their effect.",
+    setup:
+      "Organization overrides need administrator access. Platform defaults need platform privileges. Capability-specific settings still determine whether a task can run.",
+    controls: [
+      c(
+        "task",
+        "Task / Scope selector",
+        "Chooses which task instructions and allowed scope you are editing.",
+        "Verify the selected task before changing text.",
+        "Edit draft",
+        "select",
+      ),
+      c(
+        "save",
+        "Save",
+        "Persists the edited prompt override as a recorded revision.",
+        "Inspect required variables and validation messages before saving.",
+        "Save a change",
+        'form button[type="submit"]',
+        "manager",
+      ),
+      c(
+        "restore",
+        "Restore defaults",
+        "After confirmation, removes the relevant override so inherited/default instructions apply.",
+        "This is a configuration change, not a reset of saved evidence.",
+        "Save a change",
+        undefined,
+        "manager",
+        ["Restore defaults"],
+      ),
+    ],
+  },
+  {
+    id: "logs",
+    title: "Integration logs",
+    access: "manager",
+    purpose:
+      "Diagnose recorded source, provider and service requests without confusing them with legal evidence.",
+    first: [
+      "Filter the request history around the time of the issue.",
+      "Open one entry and inspect its status and available diagnostic detail.",
+      "Return to the relevant source, task or configuration to fix the cause.",
+    ],
+    data: [
+      "Rows are recorded integration diagnostics, with retention and redaction limits. They are not a complete traffic capture or the evidence corpus.",
+      "Missing optional diagnostics do not prove that no request or model work occurred.",
+    ],
+    wait: "Refresh reads newly recorded entries. A failed request needs its actual cause checked; repeatedly refreshing the log does not retry that request.",
+    setup:
+      "Use AI settings for provider errors, Sources/Sync for collection issues and Activity for task progress. Shared logs require organization administrator access.",
+    controls: [
+      filters,
+      refresh,
+      c(
+        "detail",
+        "Open request / View",
+        "Opens the saved diagnostic fields for that request.",
+        "Inspect the status and timestamp before drawing conclusions.",
+        "Read / navigate",
+        ".log-request",
+      ),
+      c(
+        "clear",
+        "Clear logs",
+        "After confirmation, deletes the applicable recorded integration logs.",
+        "Use only when you intend to remove diagnostics; this is different from clearing a search filter.",
+        "Remove data",
+        undefined,
+        "manager",
+        ["Clear logs"],
+      ),
+      c(
+        "sort",
+        "Column headings",
+        "Changes the sort order of recorded requests.",
+        "Use time or status to find a failure.",
+        "Read / navigate",
+        ".sort-button",
+      ),
+      pages,
+    ],
+  },
+  {
+    id: "admin",
+    title: "Platform status",
+    access: "platform",
+    purpose:
+      "Inspect saved operational health, capacity and failures across the deployment.",
+    first: [
+      "Check freshness and the time of the reported observations.",
+      "Inspect queue pressure, model readiness and recent failures.",
+      "Open the relevant administration page for a deliberate corrective action.",
+    ],
+    data: [
+      "The dashboard aggregates operational observations from the backend, source schedules, jobs, storage and model services.",
+      "Healthy infrastructure is not proof of source completeness or correct model interpretation.",
+    ],
+    wait: "A queued task may be waiting for capacity. Read the actual queue and failure information before restarting work.",
+    setup:
+      "This view is for platform administrators. Use Sync for collection schedules, Models for local runtime actions and Settings for organization AI configuration.",
+    controls: [
+      refresh,
+      c(
+        "reprocess",
+        "Relation reprocessing",
+        "Opens the maintenance preview/apply workflow for saved relation evidence.",
+        "Preview its bounded scope before applying changes.",
+        "Read / navigate",
+        'a[href="/admin/relation-reprocessing"]',
+        "platform",
+      ),
+    ],
+  },
+  {
+    id: "connectors",
+    title: "Synchronization",
+    access: "platform",
+    purpose:
+      "Manage shared official-source schedules and inspect collection progress and health.",
+    first: [
+      "Find the exact connector and stream, then read its capability limits.",
+      "Check last success, next attempt and any failure or backpressure.",
+      "Sync now for one bounded collection job, or edit and save the schedule.",
+    ],
+    data: [
+      "Capabilities describe the verified source contract. Run history and saved health describe observed attempts, not a guarantee that all current source documents have been collected.",
+      "These are shared collectors. Organization source subscriptions decide which collected events are admitted to each organization.",
+    ],
+    wait: "Sync now queues or reuses a bounded job. Collection needs an ingestion worker, source availability and capacity. A completed page is not an entire historical archive.",
+    setup:
+      "Platform privileges are required. Pause/Resume edits a schedule draft; save the change. Check interval, jitter and collection windows against source limits.",
+    controls: [
+      refresh,
+      c(
+        "sync",
+        "Sync now",
+        "Queues or reuses one bounded synchronization job for this stream.",
+        "Follow its recorded run. Do not equate acceptance with completed collection.",
+        "Start background work",
+        undefined,
+        "platform",
+        ["Sync now"],
+      ),
+      c(
+        "pause",
+        "Pause / Resume",
+        "Changes the enabled flag in the schedule draft.",
+        "Save the schedule to make the change effective.",
+        "Edit draft",
+        undefined,
+        "platform",
+        ["Pause", "Resume"],
+      ),
+      c(
+        "schedule",
+        "Interval / Jitter / Window",
+        "Edits when shared collection is eligible to run.",
+        "Keep values within the displayed validation bounds.",
+        "Edit draft",
+        'input[type="number"]',
+        "platform",
+      ),
+      c(
+        "save",
+        "Save schedule",
+        "Persists the shared connector schedule.",
+        "A schedule change does not itself prove successful ingestion.",
+        "Save a change",
+        undefined,
+        "platform",
+        ["Save", "Save schedule"],
+      ),
+    ],
+  },
+  {
+    id: "models",
+    title: "Local model library",
+    access: "platform",
+    purpose:
+      "Download and operate supported local models on this deployment's hardware.",
+    first: [
+      "Check model compatibility, license requirements and disk capacity.",
+      "Download a supported model, then start it when ready.",
+      "Check the runtime result and configure the intended AI capability separately.",
+    ],
+    data: [
+      "Model metadata, compatibility and runtime state come from the model-management service. They are operational data, not regulatory evidence.",
+      "A cached file is not necessarily a running model; a running model is not a guarantee of a task's quality.",
+    ],
+    wait: "Downloads and startup can take time and are tracked as background work. Paused, failed and incompatible states need different actions; Refresh does not start the model.",
+    setup:
+      "Platform access, the model manager and compatible hardware are required. Accept the displayed license only after reviewing it. AI settings/capabilities still choose how the model is used.",
+    controls: [
+      refresh,
+      c(
+        "license",
+        "Accept license",
+        "Records acceptance for the selected model's displayed terms.",
+        "Read the terms before accepting.",
+        "Save a change",
+        undefined,
+        "platform",
+        ["Accept license"],
+      ),
+      c(
+        "download",
+        "Download / Resume",
+        "Queues or resumes downloading the model files.",
+        "Check available disk and any compatibility restrictions.",
+        "Start background work",
+        undefined,
+        "platform",
+        ["Download", "Resume"],
+      ),
+      c(
+        "runtime",
+        "Start / Stop",
+        "Starts or stops the selected local model runtime.",
+        "Check other active model work before changing runtime availability.",
+        "Start background work",
+        undefined,
+        "platform",
+        ["Start", "Stop"],
+      ),
+      c(
+        "pause",
+        "Pause / Cancel download",
+        "Pauses or cancels the model download using the supported download state.",
+        "Check whether the interface offers resumable state before cancelling.",
+        "Save a change",
+        undefined,
+        "platform",
+        ["Pause", "Cancel download"],
+      ),
+      c(
+        "remove",
+        "Remove",
+        "After confirmation, removes the selected model's downloaded files under the model manager's rules.",
+        "This changes local model availability, not saved source evidence.",
+        "Remove data",
+        undefined,
+        "platform",
+        ["Remove"],
+      ),
+    ],
+  },
+  {
+    id: "deployments",
+    title: "Deployment history",
+    access: "platform",
+    purpose:
+      "Inspect recorded releases, verification gates and deployment outcomes.",
+    first: [
+      "Check the reported current release and last run.",
+      "Read the gate outcomes and relevant failure detail.",
+      "Use the deployment runbook outside this read-only page for an authorized release operation.",
+    ],
+    data: [
+      "Records come from the configured deployment manager and its saved run history.",
+      "A recorded successful gate describes that run; it does not prove that today's live service has no new issue.",
+    ],
+    wait: "Refresh checks the recorded status. This page does not initiate a deployment, rollback or restart.",
+    setup:
+      "A configured deployment manager and platform administrator access are needed. If unavailable, check the service configuration rather than treating an empty history as a successful release.",
+    controls: [
+      refresh,
+      c(
+        "history",
+        "Run / Gate details",
+        "Shows recorded deployment and verification evidence.",
+        "Check the release identity and timestamps.",
+        "Read / navigate",
+        "details > summary",
+      ),
+      pages,
+    ],
+  },
+  {
+    id: "reprocessing",
+    title: "Relation reprocessing",
+    access: "platform",
+    purpose:
+      "Preview and deliberately apply updated relation rules to a bounded set of saved evidence.",
+    first: [
+      "Select the saved-evidence scope and run a dry preview.",
+      "Read changed, retained, rejected and skipped counts against the current rule revision.",
+      "Apply only after reviewing the preview and its explicit confirmation.",
+    ],
+    data: [
+      "Inputs are saved regulatory evidence and the recorded matching/rule revision. This is maintenance of existing evidence-derived relationships.",
+      "Preview results are not freshly collected source documents or a new legal opinion.",
+    ],
+    wait: "Preview and apply are durable jobs. Follow saved progress; use recovery for an uncertain request outcome so it does not create a second operation.",
+    setup:
+      "Platform privileges and current options are required. A superseded or obsolete preview must be refreshed; a disabled apply button is not a reason to bypass the preview.",
+    controls: [
+      c(
+        "preview",
+        "Preview changes",
+        "Queues a dry run that reports what would change without applying those relationship changes.",
+        "Choose the scope first.",
+        "Start background work",
+        "[data-reprocess-preview]",
+        "platform",
+      ),
+      c(
+        "review",
+        "Review and apply",
+        "Opens the explicit confirmation of a current successful preview.",
+        "Inspect the counts and acknowledge the change before applying.",
+        "Edit draft",
+        "[data-review-apply]",
+        "platform",
+      ),
+      c(
+        "apply",
+        "Confirm apply",
+        "Queues the bounded relationship update for the acknowledged scope.",
+        "This changes saved relation results; it is not a read-only preview.",
+        "Start background work",
+        "[data-confirm-apply]",
+        "platform",
+      ),
+      c(
+        "recover",
+        "Retry request / Resume",
+        "Recovers the same uncertain request or resumes a supported interrupted job.",
+        "Use the existing job's recovery control rather than submitting a new scope.",
+        "Start background work",
+        "[data-recover-request], [data-reprocess-resume]",
+        "platform",
+      ),
+      c(
+        "cancel",
+        "Cancel",
+        "Requests cancellation through the job's supported boundary; already completed work is not rewound.",
+        "Check the recorded outcome after cancellation.",
+        "Save a change",
+        "[data-reprocess-cancel]",
+        "platform",
+      ),
+      refresh,
+    ],
+  },
+  {
+    id: "law",
+    title: "Document history",
+    purpose:
+      "Inspect one monitored document, its saved versions and comparisons.",
+    first: [
+      "Check the source URL and whether monitoring is active.",
+      "Read a saved version and choose the intended baseline.",
+      "Compare two saved versions or request a fresh scan when appropriate.",
+    ],
+    data: [
+      "Versions come from recorded URL fetches or explicitly imported snapshots. An imported date is declared provenance, not proof of an official publication date.",
+      "Comparisons are derived from the selected saved pair. An analysis is a separate model result that must be checked against that pair.",
+    ],
+    wait: "Scanning and analysis are background tasks. The first saved version provides a baseline; a meaningful before/after comparison needs two different versions.",
+    setup:
+      "The URL must be available and the document active for scanning. Shared edits, imports and removal require an administrator. AI is optional for reading versions and differences.",
+    controls: [
+      scan,
+      c(
+        "rename",
+        "Rename / Save name",
+        "Changes the document's workspace display name.",
+        "It does not edit the official source text.",
+        "Save a change",
+        undefined,
+        "manager",
+        ["Rename", "Save name"],
+      ),
+      c(
+        "pause",
+        "Pause / Resume",
+        "Changes whether this document is actively monitored, retaining its history.",
+        "Resume before requesting another active scan.",
+        "Save a change",
+        undefined,
+        "manager",
+        ["Pause", "Resume"],
+      ),
+      c(
+        "import",
+        "Import version",
+        "Opens an upload form for an earlier snapshot with declared source/date provenance.",
+        "Label the import honestly; it is not a live publisher fetch.",
+        "Edit draft",
+        undefined,
+        "manager",
+        ["Import version"],
+      ),
+      c(
+        "baseline",
+        "Use as baseline / Old / New",
+        "Selects versions for the next scan/comparison workflow.",
+        "Inspect both dates and source identities. Selecting is not the same as running a comparison.",
+        "Edit draft",
+        undefined,
+        undefined,
+        ["Use as baseline", "Old", "New"],
+      ),
+      c(
+        "compare",
+        "Compare saved versions",
+        "Creates or opens the comparison for the two selected saved versions.",
+        "Choose two distinct versions of this document.",
+        "Save a change",
+        undefined,
+        "manager",
+        ["Compare saved versions"],
+      ),
+      evidence,
+      official,
+      c(
+        "remove",
+        "Delete document / Remove version",
+        "After confirmation, removes the selected document or version according to its retention/dependency rules.",
+        "Review the exact target; this differs from pausing monitoring.",
+        "Remove data",
+        undefined,
+        "manager",
+        ["Delete document", "Remove version"],
+      ),
+      pages,
+    ],
+  },
+  {
+    id: "comparison",
+    title: "Saved comparison",
+    purpose:
+      "Read what changed between two saved versions and inspect any evidence-backed interpretation.",
+    first: [
+      "Verify the selected old and new versions.",
+      "Read the changed passages and open the supporting source text.",
+      "Use the task panel for a summary, suggested actions, questions or retained history when available.",
+    ],
+    data: [
+      "The difference view is computed from the two retained versions. Imported and live provenance remain visible.",
+      "AI explanations and answers are generated or reused separately; they do not replace the saved diff. Dates and citations must be checked in the evidence.",
+    ],
+    wait: "An AI task can be queued, waiting for a model, running or failed. You can read the already saved diff while it waits; no universal completion time is promised.",
+    setup:
+      "Two distinct saved versions are required. A configured allowed AI capability is needed for model tasks; comparison reading itself does not require a running model.",
+    controls: [
+      c(
+        "tabs",
+        "Summary / Suggested actions / Ask / History",
+        "Switches the comparison task panel without changing the source pair.",
+        "Use Ask for a specific evidence-supported question and History for retained task results.",
+        "Read / navigate",
+        '[role="tab"]',
+      ),
+      c(
+        "changes",
+        "Changes / Show all passages",
+        "Switches between focused differences and the broader retained text where available.",
+        "Read surrounding context when a small change is ambiguous.",
+        "Read / navigate",
+        undefined,
+        undefined,
+        ["Show all passages", "Changes"],
+      ),
+      evidence,
+      official,
+      ai,
+      c(
+        "review",
+        "Save review",
+        "Records your assessment against this comparison's evidence and analysis context.",
+        "Inspect citations before confirming a finding.",
+        "Save a change",
+        undefined,
+        "manager",
+        ["Save review"],
+      ),
+      pages,
+    ],
+  },
+  {
+    id: "native-comparison",
+    title: "Official version comparison",
+    purpose:
+      "Choose the earlier saved version for an official event and read the resulting difference.",
+    first: [
+      "Inspect the event's saved current version and eligible earlier candidates.",
+      "Choose and confirm the intended baseline.",
+      "Read material changes, expanding context or all passages when needed.",
+    ],
+    data: [
+      "Both sides are saved native corpus versions tied to the event/document. A baseline is a recorded selection, not an inferred guarantee that the immediately preceding legal text was found.",
+      "The displayed differences are derived from that pair; no AI opinion is needed to produce the text diff.",
+    ],
+    wait: "Loading candidates or a comparison page is a saved-data read. An absent eligible baseline cannot be fixed merely by waiting on this view; collection may not contain it.",
+    setup:
+      "The organization needs access to the event and eligible versions. Administrators save or clear the baseline. If a candidate is missing, check source coverage rather than selecting an unrelated text.",
+    controls: [
+      c(
+        "more",
+        "More earlier versions",
+        "Reads another bounded page of eligible baseline candidates.",
+        "A missing candidate on the first page does not prove it does not exist.",
+        "Read / navigate",
+        "[data-native-more]",
+      ),
+      c(
+        "save",
+        "Save baseline",
+        "Persists the selected earlier version for this organization's event and the resulting comparison.",
+        "Select a valid distinct earlier version first.",
+        "Save a change",
+        "[data-native-save]",
+        "manager",
+      ),
+      c(
+        "clear",
+        "Clear baseline",
+        "Clears the saved baseline selection for this event; it does not delete source versions.",
+        "Use when the selected before-version is not the intended reference.",
+        "Save a change",
+        "[data-native-clear]",
+        "manager",
+      ),
+      c(
+        "all",
+        "Show all passages",
+        "Includes unchanged context as well as material differences.",
+        "Use to read the surrounding meaning.",
+        "Read / navigate",
+        "[data-native-all]",
+      ),
+      evidence,
+      c(
+        "refresh",
+        "Refresh",
+        refresh.does,
+        refresh.when,
+        "Read / navigate",
+        "[data-native-refresh]",
+      ),
+      pages,
+    ],
+  },
+  {
+    id: "evidence",
+    title: "Saved evidence",
+    purpose:
+      "Read the retained source text and verify a cited passage or original artifact.",
+    first: [
+      "Check source identity, origin and saved/date metadata.",
+      "Read the cited passage in its surrounding context.",
+      "Open or download the retained artifact when you need the original representation.",
+    ],
+    data: [
+      "This is extracted text from a saved source artifact or an explicitly imported snapshot, not an AI-written summary.",
+      "Extraction can simplify layout. A missing artifact or metadata-only record is stated explicitly; the viewer does not invent missing text.",
+    ],
+    wait: "Text may load in bounded pages. Download/open retrieves the retained artifact; it does not refresh the publisher's current page.",
+    setup:
+      "Access is limited to versions available to this organization. If a linked passage is missing, open the complete saved text. If extraction/collection did not retain text, check the source or ask an administrator.",
+    controls: [
+      c(
+        "artifact",
+        "Open PDF / Download original",
+        "Opens or downloads the exact retained artifact, where available. HTML originals are downloaded safely rather than executed as app content.",
+        "Use to check layout or original wording.",
+        "Read / navigate",
+        'a[href$="/artifact"]',
+      ),
+      official,
+      c(
+        "complete",
+        "Read complete text",
+        "Leaves the passage-specific view and opens the saved text from its available beginning.",
+        "Use when a cited passage is missing or you need broader context.",
+        "Read / navigate",
+        undefined,
+        undefined,
+        ["Read complete text"],
+      ),
+      c(
+        "back",
+        "Back to document / Back to monitoring",
+        "Returns to the linked document or originating saved list.",
+        "Use after checking the evidence to continue the review.",
+        "Read / navigate",
+        "[data-registry-return], .back-link",
+      ),
+      refresh,
+      pages,
+    ],
+  },
+  {
+    id: "assistant-history",
+    title: "Assistant history",
+    purpose:
+      "Reopen your saved assistant conversations without starting new model work.",
+    first: [
+      "Choose a saved conversation in the current user and organization scope.",
+      "Read the recorded answer and follow its evidence links.",
+      "Return to a current cited workflow if you need an updated answer.",
+    ],
+    data: [
+      "History contains saved assistant messages for this identity and organization. It is distinct from shared source evidence and from a current model run.",
+      "An old answer can be stale even when its source links still open. Reading history does not regenerate the answer.",
+    ],
+    wait: "Opening history is a read. A missing conversation may belong to a different identity/scope or have been deleted; waiting does not recreate it.",
+    setup:
+      "Use the intended signed-in user and organization. The assistant's enabled context and capability determine what new conversations can do, separately from history reading.",
+    controls: [
+      c(
+        "view",
+        "View conversation",
+        "Opens the saved message history without calling a model.",
+        "Choose the conversation you actually want to inspect.",
+        "Read / navigate",
+        "[data-history-view]",
+      ),
+      c(
+        "delete",
+        "Delete conversation",
+        "After confirmation, deletes this saved personal conversation. It does not delete the cited shared source documents.",
+        "Review the selected conversation before confirming.",
+        "Remove data",
+        "[data-history-delete]",
+      ),
+      evidence,
+      refresh,
+      pages,
+    ],
+  },
+  {
+    id: "onboarding",
+    title: "Getting started",
+    purpose:
+      "Choose a first task and follow the existing source, interest, notification and evidence steps.",
+    first: [
+      "Choose whether to follow a topic, monitor a document or explore.",
+      "Review source coverage and the setup already available in this organization.",
+      "Open a relevant saved material; return here whenever you need the setup links.",
+    ],
+    data: [
+      "The guide reads your saved onboarding intent, recorded personal milestones and the organization's current setup.",
+      "A recorded evidence display is not proof that you understood the material. Choosing an intent does not create monitoring or subscribe to email.",
+    ],
+    wait: "Choosing a task saves your personal intent before navigating. Source collection and topic matching happen in their own workflows.",
+    setup:
+      "Administrators enable shared packages and interests. Viewers can inspect existing setup and request source changes. Notifications require a separate explicit preference.",
+    controls: [
+      c(
+        "choice",
+        "Follow a topic / Monitor a document / Explore",
+        "Saves the chosen personal intent and opens that task's page.",
+        "Choose the outcome you want first; it does not activate a source in the background.",
+        "Save a change",
+        "[data-onboarding-choice]",
+      ),
+      c(
+        "later",
+        "Set up later",
+        "Records deferral and returns to the workspace while keeping the guide available.",
+        "Use when you want to inspect the workspace first.",
+        "Save a change",
+        "[data-onboarding-later]",
+      ),
+      c(
+        "basel",
+        "Open the Basel-Stadt guide",
+        "Opens the scoped cantonal first-material journey.",
+        "Use for the German legislation pilot with two verified starter examples.",
+        "Read / navigate",
+        'a[href="/onboarding/basel-stadt"]',
+      ),
+      refresh,
+    ],
+  },
+  {
+    id: "basel-stadt",
+    title: "Basel-Stadt first material",
+    purpose:
+      "Get from an explicitly enabled cantonal source package to a relevant saved law and a monitoring topic.",
+    first: [
+      "Read the German-source scope and enable the Basel-Stadt pilot.",
+      "Request the two starter laws, choose privacy or building/planning and preview matches.",
+      "Open the saved evidence, then save the topic if its rules fit.",
+    ],
+    data: [
+      "German source text comes from official Basel-Stadt dataset 100354, including municipal entries where supplied. The Kantonsblatt publication is authoritative.",
+      "The pilot excludes courts, parliamentary business, full gazette coverage and annex contents. Preview uses a bounded saved-event sample; newly found historical versions are not necessarily new legal changes.",
+    ],
+    wait: "Starter collection is queued and globally throttled. A worker and source availability are required. Historical collection is gradual; refresh the preview after collection rather than repeatedly requesting it.",
+    setup:
+      "An administrator enables the package and saves the shared topic. Search concepts should be German. No AI is required for this journey; notifications remain a separate preference.",
+    controls: [
+      c(
+        "enable",
+        "Enable Basel-Stadt",
+        "Enables the organization's separate cantonal subscription and starts saved-event backfill.",
+        "Read the stated scope; enabling the federal starter does not enable this pack.",
+        "Save a change",
+        "[data-basel-enable]",
+        "manager",
+      ),
+      c(
+        "collect",
+        "Collect the two starter laws",
+        "Requests bounded collection of the current privacy and building/planning examples.",
+        "The package must be enabled. A recent request can be reused/throttled.",
+        "Start background work",
+        "[data-basel-collect]",
+        "manager",
+      ),
+      c(
+        "concepts",
+        "Interest name / German concepts / Exclusions",
+        "Edits the proposed topic rules. Template buttons only fill a draft.",
+        "Use commas between concepts and preview again after any edit.",
+        "Edit draft",
+        "[data-basel-terms]",
+      ),
+      c(
+        "preview",
+        "Preview saved matches",
+        "Reads deterministic matches in the current saved-event sample without saving rules.",
+        "An empty result can mean pending collection, sample limits or unsuitable concepts.",
+        "Read / navigate",
+        "[data-basel-preview]",
+      ),
+      c(
+        "save",
+        "Save monitoring topic",
+        "Creates the shared topic using the previewed rules, with idempotent retry and a duplicate-rule check.",
+        "A nonempty preview is required in this guide; review existing topics when matching rules already exist.",
+        "Save a change",
+        "[data-basel-save]",
+        "manager",
+      ),
+      evidence,
+      official,
+    ],
+  },
+  {
+    id: "operations",
+    title: "Document operations",
+    purpose:
+      "Manage direct monitored documents and inspect scans and recent collection activity.",
+    first: [
+      "Inspect active documents and any already-running scan.",
+      "Select the intended documents or open one document's history.",
+      "Start a scan only when you want another source fetch.",
+    ],
+    data: [
+      "Document rows, scans and job history are saved workspace records. Successful source collection is different from a successful AI analysis.",
+      "A scan can report unchanged content; that means this fetched representation did not change, not that all related law stayed the same.",
+    ],
+    wait: "Queued scans need a worker. Watch their progress and recorded failures; the first version becomes a baseline before later comparison is possible.",
+    setup:
+      "Add an accessible document URL or source section in Sources. Administrative permissions are required for shared monitoring changes; source access and model configuration are separate concerns.",
+    controls: [
+      filters,
+      scan,
+      c(
+        "add",
+        "Add document / Add source",
+        "Opens the direct monitoring form; confirmation saves the selected URL/scope.",
+        "Check the exact source and boundary before saving.",
+        "Edit draft",
+        undefined,
+        "manager",
+        ["Add document", "Add source"],
+      ),
+      c(
+        "select",
+        "Select all / Select document",
+        "Chooses rows for a bulk action; selection alone does not run the action.",
+        "Review selected rows before scanning or removing them.",
+        "Edit draft",
+        'input[type="checkbox"]',
+      ),
+      c(
+        "cancel",
+        "Cancel scan / Retry job",
+        "Requests a supported stop or retry on that recorded background operation.",
+        "Read the failed step first. Cancellation does not undo already saved artifacts.",
+        "Start background work",
+        undefined,
+        "manager",
+        ["Cancel scan", "Retry job"],
+      ),
+      refresh,
+      pages,
+    ],
+  },
+  {
+    id: "login",
+    title: "Account access",
+    purpose:
+      "Sign in, create an account or complete a recovery/invitation flow.",
+    first: [
+      "Choose sign-in or account creation for the account you intend to use.",
+      "Check the organization or invitation before submitting.",
+      "Follow any email verification or password recovery instruction.",
+    ],
+    data: [
+      "These fields are information you supply for account access. They are not legal evidence or an AI conversation.",
+      "An invitation or recovery token identifies a specific account flow; it is not a general access credential to share.",
+    ],
+    wait: "Submit waits for the account service. A verification or recovery email can require separate delivery; a request acknowledgement does not mean the link was completed.",
+    setup:
+      "You need the correct account details and, where required, a valid invitation. Check the displayed error rather than repeatedly creating accounts.",
+    controls: [
+      c(
+        "submit",
+        "Sign in / Create account",
+        "Submits account details for the selected mode. Joining an organization follows its invitation rules.",
+        "Verify which mode and organization are selected.",
+        "Save a change",
+        'form button[type="submit"]',
+      ),
+      c(
+        "recovery",
+        "Forgot password / Reset password",
+        "Requests recovery or saves a new password with a valid recovery token.",
+        "Use the account email and complete the received recovery flow.",
+        "External action",
+        undefined,
+        undefined,
+        ["Forgot password?", "Reset password"],
+      ),
+      c(
+        "password",
+        "Show password",
+        "Toggles visibility of the password field locally.",
+        "Use only when your screen is private; it does not submit the form.",
+        "Edit draft",
+        'button[aria-label*="password"], button[title*="password"]',
+      ),
+    ],
+  },
+  {
+    id: "unsubscribe",
+    title: "Unsubscribe",
+    purpose: "Read the result of the digest unsubscribe link you opened.",
+    first: [
+      "Check whether the unsubscribe operation succeeded.",
+      "If the link is invalid or expired, open notification preferences while signed in.",
+      "Review your saved preference before assuming delivery has stopped.",
+    ],
+    data: [
+      "Opening this route already submits the link's token to the unsubscribe endpoint. The result is an account/delivery preference outcome, not source data.",
+    ],
+    wait: "Wait for the actual success or error message. A loading screen does not confirm that the preference changed.",
+    setup:
+      "A valid link token is needed. If it fails, use your signed-in notification preferences or obtain a valid link.",
+    controls: [
+      c(
+        "preferences",
+        "Open notification preferences",
+        "Navigates to your signed-in notification settings.",
+        "Use to inspect or change the saved delivery preference.",
+        "Read / navigate",
+        'a[href="/digests"]',
+      ),
+    ],
+  },
+];
+
+// Explicit routes: unknown routes never borrow instructions from an unrelated page.
+export const GUIDE_ROUTES: Record<string, string> = {
+  "/": "today",
+  "/registry": "registry",
+  "/discover": "discover",
+  "/topics": "topics",
+  "/sources": "sources",
+  "/impact": "impact",
+  "/topic-review": "topic-review",
+  "/matrix": "matrix",
+  "/digests": "digests",
+  "/organization": "organization",
+  "/settings": "settings",
+  "/prompts": "prompts",
+  "/logs": "logs",
+  "/admin": "admin",
+  "/connectors": "connectors",
+  "/models": "models",
+  "/deployments": "deployments",
+  "/admin/relation-reprocessing": "reprocessing",
+  "/assistant-history": "assistant-history",
+  "/onboarding": "onboarding",
+  "/onboarding/basel-stadt": "basel-stadt",
+  "/activity": "operations",
+  "/overview": "operations",
+  "/login": "login",
+  "/unsubscribe": "unsubscribe",
+};
+export function guideForPath(pathname: string): SectionGuide | undefined {
+  const path = pathname.split(/[?#]/, 1)[0].replace(/\/$/, "") || "/";
+  const id =
+    GUIDE_ROUTES[path] ||
+    (/^\/laws\/[^/]+$/.test(path)
+      ? "law"
+      : /^\/compare\/[^/]+$/.test(path)
+        ? "comparison"
+        : /^\/native-comparison\/[^/]+$/.test(path)
+          ? "native-comparison"
+          : /^\/(corpus-evidence|evidence)\/[^/]+$/.test(path)
+            ? "evidence"
+            : undefined);
+  return SECTION_GUIDES.find((guide) => guide.id === id);
+}
+export function permitted(
+  access: GuideAccess | undefined,
+  manager: boolean,
+  platform: boolean,
+) {
+  return access === "platform"
+    ? platform
+    : access === "manager"
+      ? manager
+      : true;
+}
+
+export const SHARED_CONTROLS: GuideControl[] = [
+  c(
+    "navigation",
+    "Sidebar / More",
+    "Navigates to another section. On small screens, More contains the additional destinations.",
+    "Unsaved forms can ask you to review changes before leaving.",
+    "Read / navigate",
+    ".mobile-nav-more, .nav-item",
+  ),
+  c(
+    "workspace",
+    "Workspace selector",
+    "Switches the active organization after any unsaved-change guard. Data and permissions are reloaded in the new scope.",
+    "Check the organization name before saving shared changes.",
+    "Save a change",
+    ".workspace-switcher button[aria-expanded]",
+  ),
+  c(
+    "language",
+    "Language selector",
+    "Changes the product interface language. It does not translate source documents. This page guide is currently English only.",
+    "Read source text in its stated language.",
+    "Save a change",
+    ".language-selector select",
+  ),
+  c(
+    "notifications",
+    "Notification bell",
+    "Opens recorded personal notifications. Reading/opening a notification is distinct from enabling email digests.",
+    "Use Digests for delivery preferences.",
+    "Read / navigate",
+    "[data-notifications-trigger]",
+    undefined,
+    ["Notifications", "Open notifications"],
+  ),
+  c(
+    "assistant",
+    "Marvin / Assistant",
+    "Opens the assistant. Sending a question can invoke its configured capability; cited task results and private conversation history have distinct scopes.",
+    "This static guide works even when AI is unavailable.",
+    "Read / navigate",
+    ".marvin-trigger",
+    undefined,
+    ["Open Marvin", "Open assistant"],
+  ),
+  c(
+    "assistant-context",
+    "Attach / Detach page context",
+    "Changes whether Marvin uses the current page context for its conversation. It does not remove saved evidence or delete earlier messages.",
+    "Check the context chip before asking about a specific document.",
+    "Save a change",
+    ".marvin-context-chip",
+  ),
+  c(
+    "assistant-send",
+    "Send message to Marvin",
+    "Submits your message to the assistant and can start model work. Conversation history is separate from shared cited analysis.",
+    "A nonempty draft, loaded conversation and ready runtime are required. Inspect the displayed model status if Send is disabled.",
+    "Start background work",
+    '.marvin-chat form button[type="submit"]',
+  ),
+  c(
+    "cited-ask",
+    "Open cited Ask / Prepare cited Ask",
+    "Moves a question into the comparison's evidence-based Ask workflow. A prepared question is still a draft until submitted there.",
+    "Use for a question that needs an answer grounded in the selected saved versions.",
+    "Edit draft",
+    '.marvin-ask-form button[type="submit"]',
+  ),
+  c(
+    "close",
+    "Close / Cancel in a form",
+    "Closes the current surface or discards its local draft as stated by that form. A job-specific Cancel has different behavior, described in its page guide.",
+    "Read any unsaved-change or destructive-action confirmation.",
+    "Edit draft",
+  ),
+];

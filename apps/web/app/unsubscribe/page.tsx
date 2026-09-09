@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CheckCircle2, Loader2, MailX } from "lucide-react";
 import { api, errorText } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
+import { SectionHelp } from "@/components/section-help";
 
 function Unsubscribe() {
   const { t } = useI18n();
@@ -53,6 +54,7 @@ function Unsubscribe() {
               )}
         </p>
         <Link href="/digests">{t("unsubscribe.open")}</Link>
+        <SectionHelp standalone />
       </section>
     </main>
   );

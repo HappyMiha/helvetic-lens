@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LanguageSelector, useI18n } from "@/lib/i18n";
 import styles from "./login.module.css";
+import { SectionHelp } from "@/components/section-help";
 
 export default function LoginPage() {
   const { locale, t, setLocale } = useI18n();
@@ -181,6 +182,7 @@ export default function LoginPage() {
 
         <section className={styles.formPanel}>
           <div className={styles.formContent}>
+            <SectionHelp standalone />
             {mode !== "verify" && mode !== "reset" && mode !== "forgot" && (
               <div className={styles.modeSwitcher}>
                 {(["register", "login"] as const).map((value) => (
