@@ -93,7 +93,8 @@ class AssessmentStore:
         if existing is not None:
             return existing, False
         record = InterestEventAssessment(organization_id=self.organization_id,
-            event_id=dossier.event.id, input_fingerprint=key, input_manifest=bindings)
+            event_id=dossier.event.id, input_fingerprint=key, input_manifest=bindings,
+            history_context=dossier.model_dump(mode="json", exclude={"evidence": {"__all__": {"text", "source_url"}}}))
         session.add(record)
         session.flush()
         for row in bindings["interests"]:

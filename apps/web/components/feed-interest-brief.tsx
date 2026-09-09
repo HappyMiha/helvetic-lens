@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useI18n } from "@/lib/i18n";
 import { invalidateResources, resourceTag, resources, useResource } from "@/lib/api";
-import { interestBriefCopy, type BriefClaim, type SavedInterestBrief } from "@/lib/interest-brief";
+import { interestBriefCopy, type SavedInterestBrief } from "@/lib/interest-brief";
 import { ErrorNote, Loading } from "./common";
 import { Button } from "./ui/button";
 import { BriefRecoveryHistory } from "./brief-recovery-history";
@@ -12,29 +11,25 @@ import { InterestBriefRequest } from "./interest-brief-request";
 import { BriefFeedback } from "./brief-feedback";
 import { BriefReviewPanel } from "./brief-review";
 import {briefReviewCopy} from "@/lib/brief-review";
+import {SavedBriefBody} from "./saved-brief-body";
+import {BriefHistory} from "./brief-history";
 
 export function FeedInterestBrief({eventId}: {eventId: string}) {
   const [open, setOpen] = useState(false);
   const {locale} = useI18n();
-  return <details data-feed-brief className="border-t mt-4 pt-3" open={open}
+  return <><details data-feed-brief className="border-t mt-4 pt-3" open={open}
     onToggle={event => setOpen(event.currentTarget.open)}>
     <summary className="min-h-11 cursor-pointer font-semibold py-2"><h3 className="inline text-base">{interestBriefCopy[locale].title}</h3></summary>
     {open && <Content key={`${eventId}:${locale}`} eventId={eventId} />}
-  </details>;
+  </details><BriefHistory key={`${eventId}:${locale}`} eventId={eventId}/></>;
 }
 
 function Content({eventId}: {eventId: string}) {
-  const {locale, dateTime, t} = useI18n();
+  const {locale, t} = useI18n();
   const copy = interestBriefCopy[locale];
   const page = useResource(resources.interestBrief<SavedInterestBrief>(eventId, locale.slice(0, 2)));
   const data = !page.error && !page.loading ? page.data : undefined;
   const result = data?.status === "available" || data?.status === "rejected" ? data.result : null;
-  const refs = Object.keys(data?.evidence_links || {});
-  function claim(value: BriefClaim) {
-    return <><p>{value.text}</p><div className="flex flex-wrap gap-x-3">{value.evidence_ids.map(id =>
-      data?.evidence_links?.[id] && <Link key={id} href={data.evidence_links[id]}
-        className="inline-flex min-h-11 items-center underline">{copy.source} {refs.indexOf(id) + 1}</Link>)}</div></>;
-  }
   return <div className="space-y-3 min-w-0 break-words" aria-busy={page.loading}>
     <p className="text-sm muted">{copy.help}</p>
     {page.loading && <Loading />}
@@ -48,17 +43,7 @@ function Content({eventId}: {eventId: string}) {
     } as Record<string, string>)[data.error_code] || "briefRecovery.unavailable")} />}
     {result && <details open={data?.status!=="rejected"} key={`${data?.assessment_id}:${data?.status}`} className="space-y-3">
       <summary className="min-h-11 py-2 cursor-pointer font-semibold">{data?.status==="rejected" ? briefReviewCopy[locale].original : copy.title}</summary>
-      <section lang={data?.locale} className="space-y-4" data-brief-result>
-      <p className="text-sm muted">{copy.saved}: {data?.saved_at ? dateTime(data.saved_at) : "—"}</p>
-      <div className="font-semibold">{claim(result.what_happened)}</div>
-      <div><h4 className="font-semibold">{copy.importance} · {copy.level[result.importance.level]}</h4>{claim(result.importance)}</div>
-      <details><summary className="min-h-11 py-2 cursor-pointer font-semibold"><h4 className="inline">{copy.why}</h4></summary>
-        <ul className="space-y-3">{result.why_in_radar.map(reason => <li key={reason.interest_id}>
-          <h5 className="font-semibold">{data?.interest_names?.[reason.interest_id]}</h5>{claim(reason)}</li>)}</ul></details>
-      <div><h4 className="font-semibold">{copy.next}</h4>{claim(result.next_step)}</div>
-      <details><summary className="min-h-11 py-2 cursor-pointer font-semibold"><h4 className="inline">{copy.limitations}</h4></summary>
-        <p>{result.uncertainty}</p><ul>{result.input_limitations.map((item, index) => <li key={index} lang="en">{item}</li>)}</ul></details>
-    </section></details>}
+      <SavedBriefBody data={data!} /></details>}
     {result && data?.assessment_id && <BriefFeedback key={data.assessment_id} assessmentId={data.assessment_id} />}
     {result && data?.assessment_id && <BriefReviewPanel key={`review:${data.assessment_id}`} assessmentId={data.assessment_id} eventId={eventId} />}
     {data && !result && <InterestBriefRequest eventId={eventId} canRequest={data.status !== "failed"} recovery={data.recovery} />}

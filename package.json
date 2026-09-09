@@ -52,7 +52,8 @@
     "check:native-baseline:browser": "node scripts/check-native-baseline-browser.mjs",
     "check:interest-brief:browser": "node scripts/check-interest-brief-browser.mjs",
     "check:brief-feedback:browser": "node scripts/check-interest-brief-browser.mjs --feedback",
-    "check:brief-review:browser": "node scripts/check-interest-brief-browser.mjs --reviews"
+    "check:brief-review:browser": "node scripts/check-interest-brief-browser.mjs --reviews",
+    "check:brief-history:browser": "node scripts/check-interest-brief-browser.mjs --history"
   },
   "devDependencies": {
     "axe-core": "4.13.0",

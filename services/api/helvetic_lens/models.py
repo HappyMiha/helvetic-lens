@@ -1427,6 +1427,7 @@ class InterestEventAssessment(Base):
     event_id: Mapped[str] = mapped_column(ForeignKey("regulatory_events.id"), index=True)
     input_fingerprint: Mapped[str] = mapped_column(String(64))
     input_manifest: Mapped[dict] = mapped_column(JSON)
+    history_context: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="queued")
     attempt_key: Mapped[str | None] = mapped_column(String(36))
     attempts: Mapped[int] = mapped_column(Integer, default=0)

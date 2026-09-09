@@ -1,5 +1,35 @@
 # Shared event relevance briefs
 
+## Offline assessment history — 9 September 2026
+
+`GET /api/interest-feed/events/{event_id}/brief/history` returns cursor-paged
+metadata in the selected user's language (1–50 items). It selects scalar columns,
+not saved prose or profile facts. `GET /api/interest-briefs/{assessment_id}/history`
+opens one historical result explicitly. Both enforce organization and current event
+access; neither probes, tokenizes, translates or generates with a model.
+
+New assessments save `history_context`: the original dossier excluding evidence
+text and URLs. On inspection, the server reconstructs those fields from authorized
+saved native or legacy versions, checks artifact and passage identities, rebuilds
+the input manifest/fingerprint, verifies execution provenance and revalidates the
+complete final result. This retains original profile revisions and interest names
+without substituting today's configuration. Missing/changed evidence withholds
+prose and links. Historical validation proves saved bindings, not legal truth or
+current applicability; an administrator's review is shown separately.
+
+The feed history panel is separate from the current-model reader. It loads metadata
+only when opened and a body only after explicit selection; errors hide old prose.
+It displays dates, model, profile revision, attempts, original evidence links and
+historical-use warnings in DE/FR/IT/RM/EN. There is no automatic regeneration or
+translation on navigation. Failed/running entries provide metadata, not partial
+answers. Legacy records without the snapshot show `legacy_context_missing`; the
+migration does not invent historical context or regenerate past answers.
+
+Migration `dd3f478ea10b` adds the nullable context column after `dc2e367d90fa`.
+Downgrade drops only this column, preserving existing assessment, review and binding
+rows. SQLite and PostgreSQL roundtrips are tested. No production migration has run.
+
+
 ## Organization relevance review — 9 September 2026
 
 The saved-brief panel now separates personal usefulness from a shared organization

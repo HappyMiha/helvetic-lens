@@ -355,6 +355,15 @@ export const resources = {
     return key<T>(`brief-review:${path}`, path, {tags: [`brief-review:${assessment}`], staleMs: 0, varyByLocale: false});
   },
 
+  briefHistory: <T>(event: string, locale: string, cursor: string) => {
+    const path = `/interest-feed/events/${encodeURIComponent(event)}/brief/history?${new URLSearchParams({locale,cursor})}`;
+    return key<T>(`brief-history:${path}`,path,{tags:[`brief-history:${event}`],staleMs:0,varyByLocale:false});
+  },
+  historicalBrief: <T>(assessment: string) => {
+    const path = `/interest-briefs/${encodeURIComponent(assessment)}/history`;
+    return key<T>(`historical:${path}`,path,{tags:[`historical-brief:${assessment}`,`brief-review:${assessment}`],staleMs:0,varyByLocale:false});
+  },
+
   interestFeed: <T = unknown>(query = "") => {
     const path = withQuery("/interest-feed", query);
     return key<T>(`monitoring:${path}`, path, {

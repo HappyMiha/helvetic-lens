@@ -1436,6 +1436,19 @@ Completed on 4 September 2026. New normalized events now enter topic matching on
 
 ### HL-089 — Enrich matched developments with one persisted AI relevance brief
 
+**9 September 2026 — offline saved-brief history:** The feed now offers a separate,
+collapsed history panel in the user's language. Metadata is paged; an individual
+saved answer opens explicitly without contacting the current model. New assessments
+retain original profile/topic/model context without duplicating source passages.
+Historical prose is validated against that snapshot and currently accessible saved
+sources, with exact evidence links and a clear historical-use warning. Old records
+without context remain metadata-only; no guessed backfill or automatic translation
+occurs. Failed/running or unverifiable results cannot expose partial/unverified
+prose. SQLite/PostgreSQL migration preservation, 55 API regressions and five-locale
+desktop/mobile history journeys pass. Assistant reuse, aggregate evaluation and
+independent quality/hardware/pilot gates remain open; HL-089 is **IN PROGRESS**.
+
+
 **9 September 2026 — shared administrator relevance review:** Organization admins
 can confirm, reject or withdraw a decision on an exact saved brief, with a required
 shared explanation and dated history. Viewers can read that history, not edit it.

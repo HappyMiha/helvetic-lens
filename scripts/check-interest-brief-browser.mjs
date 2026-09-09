@@ -10,7 +10,8 @@ import {Cdp, evaluate, sleep} from "./browser-cdp.mjs";
 import {AccessibilityAudit} from "./browser-accessibility.mjs";
 const feedbackMode=process.argv.includes("--feedback");
 const reviewMode=process.argv.includes("--reviews");
-const root=resolve(import.meta.dirname,".."),audit=new AccessibilityAudit(reviewMode?"brief-review":feedbackMode?"brief-feedback":"interest-brief");
+const historyMode=process.argv.includes("--history");
+const root=resolve(import.meta.dirname,".."),audit=new AccessibilityAudit(historyMode?"brief-history":reviewMode?"brief-review":feedbackMode?"brief-feedback":"interest-brief");
 const chrome=[process.env.CHROME_BIN,"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe","/usr/bin/google-chrome","/usr/bin/chromium"].filter(Boolean).find(existsSync);assert.ok(chrome);
 const reserve=createServer();await new Promise(r=>reserve.listen(0,"127.0.0.1",r));const port=reserve.address().port;await new Promise(r=>reserve.close(r));
 const base=`http://127.0.0.1:${port}`,profile=await mkdtemp(join(tmpdir(),"helvetic-brief-browser-"));
@@ -18,6 +19,7 @@ const server=spawn(process.execPath,[join(root,"node_modules/next/dist/bin/next"
 const browser=spawn(chrome,["--headless=new","--no-first-run","--no-default-browser-check","--remote-debugging-port=0",`--user-data-dir=${profile}`,"about:blank"],{stdio:"ignore",windowsHide:true});
 let cdp,locale="en-CH",status="available",failure=false,feedback=[],receipts=new Map(),feedbackFailure="";const requests=[],exceptions=[];
 let reviews=[],reviewerRole="organization_admin";
+let historyStatus="historical",historyFailure=false;
 async function waitFor(check,message){for(let i=0;i<180;i++){if(await check().catch(()=>false))return;await sleep(100);}throw new Error(message);}
 const event={event_id:"synthetic-event",title:"Synthetic saved regulatory development",type:"updated",document_kind:"law",lifecycle_status:null,source:"Synthetic publisher",detected_at:"2026-09-08T08:00:00Z",official_dates:[],read_state:"unread",topic_matches:[],monitored_documents:[],law_impacts:[]};
 const claim={text:"Synthetic saved explanation for review, not a legal conclusion.",evidence_ids:["ev1"]};
@@ -33,6 +35,15 @@ try{
   else if(path==="/api/health")body={status:"ok",database:"postgresql",apertus:{configured:false},firecrawl:{configured:false}};
   else if(path==="/api/settings/interest-briefs")body={enabled:false};
   else if(path==="/api/interest-feed")body={items:[event],scanned_event_count:1,has_more:false,next_cursor:null};
+  else if(path===`/api/interest-feed/events/${event.event_id}/brief/history`){
+   const cursor=new URL(request.url).searchParams.get("cursor");
+   const items=(cursor?["historical-old"]:["historical-new","historical-middle"]).map(id=>({id,status:"succeeded",created_at:"2026-09-07T10:00:00Z",finished_at:"2026-09-07T10:01:00Z",attempts:1,locale:locale.slice(0,2),model:"Synthetic old local model",route:"local",profile_revision:1}));
+   body={event_id:event.event_id,locale:locale.slice(0,2),items,next_cursor:cursor?null:"historical-middle",ai_calls:0};
+  }
+  else if(path.startsWith("/api/interest-briefs/")&&path.endsWith("/history")){
+   if(historyFailure){code=503;body={code:"synthetic_history_failure"};}
+   else body={...brief(),status:historyStatus,assessment_status:"succeeded",assessment_id:path.split("/")[3],result:historyStatus==="historical"?brief().result:null,provenance:historyStatus==="historical"?{input_fingerprint:"a".repeat(64),profile_revision:1,provider_calls:1,model:{model:"Synthetic old local model",route:"local",runtime_fingerprint:"b".repeat(64)}}:null};
+  }
   else if(path.endsWith("/reviews")){
    if(request.method==="POST"){
     const data=JSON.parse(request.postData);assert.equal(reviewerRole,"organization_admin");assert.equal(data.expected_previous_id,reviews[0]?.id||null);
@@ -53,11 +64,40 @@ try{
  });await cdp.send("Fetch.enable",{patterns:[{urlPattern:"*/api/*"}]});
  async function click(selector){let point;await waitFor(async()=>{point=await evaluate(cdp,`(()=>{const e=document.querySelector(${JSON.stringify(selector)});if(!e||e.disabled)return null;e.scrollIntoView({block:'center'});const r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,ok:e.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))};})()`);return point?.ok;},`Unreachable ${selector}`);for(const type of ["mousePressed","mouseReleased"])await cdp.send("Input.dispatchMouseEvent",{type,x:point.x,y:point.y,button:"left",clickCount:1});}
  for(const width of [390,1440])for(locale of ["de-CH","fr-CH","it-CH","rm-CH","en-CH"]){
-  failure=false;status="available";feedback=[];receipts=new Map();feedbackFailure="";reviews=[];reviewerRole="organization_admin";const start=requests.length;
+  failure=false;status="available";feedback=[];receipts=new Map();feedbackFailure="";reviews=[];reviewerRole="organization_admin";historyStatus="historical";historyFailure=false;const start=requests.length;
   await cdp.send("Emulation.setDeviceMetricsOverride",{width,height:960,deviceScaleFactor:1,mobile:width===390});
   await cdp.send("Page.navigate",{url:`${base}/?locale=${locale}&qa=${width}`});
   await waitFor(()=>evaluate(cdp,`document.documentElement.lang===${JSON.stringify(locale)}&&!!document.querySelector('[data-feed-brief]')`),"Feed missing");
   assert.equal(requests.slice(start).filter(r=>r.path.endsWith("/brief")).length,0,"Collapsed card fetched a brief");
+  if(historyMode){
+   assert.equal(requests.slice(start).filter(row=>row.path.endsWith("/history")).length,0,"Collapsed history loaded records");
+   await evaluate(cdp,"window.__historyMarker='retained'");await click("[data-brief-history]>summary");
+   await waitFor(()=>evaluate(cdp,"document.querySelectorAll('[data-history-item]').length===2"),"History list missing");
+   assert.equal(requests.slice(start).filter(row=>row.path.startsWith("/api/interest-briefs/")).length,0,"List loaded assessment bodies");
+   await click("[data-history-inspect]>summary");
+   await waitFor(()=>evaluate(cdp,"!!document.querySelector('[data-history-status=historical]')"),"Historical result missing");
+   assert.equal(await evaluate(cdp,"document.querySelector('[data-historical-result]').lang"),locale.slice(0,2));
+   assert.ok(await evaluate(cdp,"Array.from(document.querySelectorAll('[data-historical-result] a')).every(a=>a.getAttribute('href')==='/corpus-evidence/synthetic-version?passage=p1')"));
+   await audit.check(cdp,`history-saved-${width}-${locale}`,"body");
+   for(historyStatus of ["legacy_context_missing","historical_unavailable"]){
+    await click("[data-history-detail-refresh]");await waitFor(()=>evaluate(cdp,`!!document.querySelector('[data-history-status=${historyStatus}]')`),`Missing ${historyStatus}`);
+    assert.equal(await evaluate(cdp,"!!document.querySelector('[data-historical-result]')"),false);
+    await audit.check(cdp,`history-${historyStatus}-${width}-${locale}`,"body");
+   }
+   historyFailure=true;await click("[data-history-detail-refresh]");
+   await waitFor(()=>evaluate(cdp,"!!document.querySelector('[data-brief-history] [role=alert]')"),"History load error missing");
+   assert.equal(await evaluate(cdp,"!!document.querySelector('[data-historical-result]')"),false);
+   historyFailure=false;historyStatus="historical";
+   await click("[data-history-older]");await waitFor(()=>evaluate(cdp,"!!document.querySelector('[data-history-item=historical-old]')"),"Older history missing");
+   await click("[data-history-inspect]>summary");await waitFor(()=>evaluate(cdp,"!!document.querySelector('[data-historical-result]')"),"Older saved result missing");
+   assert.equal(await evaluate(cdp,"window.__historyMarker"),"retained");
+   assert.ok(await evaluate(cdp,"document.documentElement.scrollWidth<=innerWidth+1"));
+   if(locale==="en-CH"){const shot=await cdp.send("Page.captureScreenshot",{format:"png"});await writeFile(join(root,`test-results/brief-history-${width}.png`),Buffer.from(shot.data,"base64"));}
+   const observed=requests.slice(start);assert.equal(observed.filter(row=>row.path.endsWith("/brief")).length,0,"History contacted current-model reader");
+   assert.ok(observed.filter(row=>row.path.endsWith("/brief/history")).every(row=>new URLSearchParams(row.search).get("locale")===locale.slice(0,2)));
+   assert.ok(observed.filter(row=>row.method!=="GET").every(row=>["/api/assistant/context","/api/assistant/conversations"].includes(row.path)));
+   continue;
+  }
   await evaluate(cdp,"window.__briefMarker='retained'");await click("[data-feed-brief]>summary");
   await waitFor(()=>evaluate(cdp,"!!document.querySelector('[data-brief-result]')"),"Saved result missing");
   assert.equal(await evaluate(cdp,"window.__briefMarker"),"retained");
@@ -145,6 +185,6 @@ try{
   const shellInitialization=new Set(["/api/assistant/context","/api/assistant/conversations"]);
   assert.deepEqual(requests.slice(start).filter(r=>r.method!=="GET"&&!shellInitialization.has(r.path)),[],"Reader performed a mutation");
  }
- assert.deepEqual(exceptions,[]);audit.finish(reviewMode||feedbackMode?30:20);console.log(reviewMode?"Ten five-locale desktop/mobile organization-review journeys passed: confirmation, rejection, collapsed original history, withdrawal, read-only viewer, shared history and no page reload; no model calls.":feedbackMode?"Ten five-locale desktop/mobile feedback journeys passed: save, conflict, retained draft, uncertain-reply replay, withdrawal, paged history, escaping and no page reload; no model calls.":"Ten five-locale desktop/mobile saved-brief journeys passed; no automatic generation or writes.");
+ assert.deepEqual(exceptions,[]);audit.finish(historyMode||reviewMode||feedbackMode?30:20);console.log(historyMode?"Ten five-locale desktop/mobile historical brief journeys passed: lazy scalar pages, explicit bodies, old results and evidence, missing context, unavailable/error hiding, pagination, no current-model reader or writes.":reviewMode?"Ten five-locale desktop/mobile organization-review journeys passed: confirmation, rejection, collapsed original history, withdrawal, read-only viewer, shared history and no page reload; no model calls.":feedbackMode?"Ten five-locale desktop/mobile feedback journeys passed: save, conflict, retained draft, uncertain-reply replay, withdrawal, paged history, escaping and no page reload; no model calls.":"Ten five-locale desktop/mobile saved-brief journeys passed; no automatic generation or writes.");
 }catch(error){console.error({locale,status,exceptions,text:cdp?await evaluate(cdp,"document.body.innerText.slice(-2000)").catch(()=>"unavailable"):"none"});throw error;}
 finally{cdp?.close();for(const child of [browser,server]){const ended=new Promise(r=>child.once("exit",r));child.kill();await Promise.race([ended,sleep(2000)]);}assert.equal(dirname(resolve(profile)),resolve(tmpdir()));assert.ok(basename(profile).startsWith("helvetic-brief-browser-"));await rm(profile,{recursive:true,force:true,maxRetries:5,retryDelay:200});}

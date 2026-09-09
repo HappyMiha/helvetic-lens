@@ -19,6 +19,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from . import (
     assistant_history,
     brief_feedback,
+    brief_history,
     brief_reviews,
     corpus_evidence,
     feed_readiness,
@@ -1483,6 +1484,19 @@ def create_app(
         _, principal = assistant_principal(request)
         with service.db.session() as session:
             return brief_feedback.read(session, service.organization_id, principal, str(assessment_id), cursor=cursor, limit=limit)
+
+    @app.get("/api/interest-feed/events/{event_id}/brief/history")
+    def get_brief_history(event_id: uuid.UUID, request: Request,
+                          locale: str | None = Query(default=None, pattern="^(de|fr|it|rm|en)$"),
+                          cursor: str = Query(default="", max_length=36), limit: int = Query(default=20, ge=1, le=50)):
+        with service.db.session() as session:
+            return brief_history.page(session, service.organization_id, str(event_id),
+                locale=locale or selected_locale(request).split("-")[0], cursor=cursor, limit=limit)
+
+    @app.get("/api/interest-briefs/{assessment_id}/history")
+    def get_saved_brief_history(assessment_id: uuid.UUID):
+        with service.db.session() as session:
+            return brief_history.detail(session, service.organization_id, str(assessment_id))
 
     @app.get("/api/interest-briefs/{assessment_id}/reviews")
     def get_brief_reviews(assessment_id: uuid.UUID,

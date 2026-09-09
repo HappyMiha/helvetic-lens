@@ -1,5 +1,36 @@
 # Verification record
 
+## Offline saved-brief history — 9 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl089-brief-history`, based on `4cd6809`.
+  Added non-passage historical context, scalar cursor pages and explicit archived
+  result inspection with original profile/topic/model data and exact saved evidence.
+  The history reader never invokes the current model or silently translates prose.
+- **55 tests passed in 97.44s** across history, shared review, assessment storage
+  and current reading. Coverage includes old-profile/offline-model reuse, metadata
+  SQL projection, locale-scoped pagination, altered context/text/URL/artifact/citation,
+  revoked event/organization/source access, legacy before/after evidence, no partial
+  running results and migration preservation of assessments, bindings and reviews.
+  One pre-existing Starlette/httpx deprecation warning remains.
+- **Two PostgreSQL 17 suites passed:** `brief-history-offline` and
+  `brief-history-migration` using an isolated disposable QA database. Initial SQLite
+  downgrade testing caught foreign-key failure from rebuilding the parent table;
+  direct column removal now preserves its dependants. Fixture-only foreign
+  organization ID/slug errors were corrected before the passing regression run.
+- Root `npm run build` passes localization, shell, resource, report and TypeScript
+  gates. **10 historical browser journeys / 30 full-document axe checkpoints**
+  cover five locales at 390/1440 pixels, lazy metadata/body reads, pagination,
+  old results, missing context, invalid/error hiding, no reload, no horizontal
+  overflow and zero current-model reads or writes. Existing shared review
+  **10 journeys / 30 checkpoints** and current reader **10 / 20 checkpoints** also
+  pass. Mobile and desktop English screenshots were inspected. Other incomplete
+  automated findings remain in artifacts; these are not accessibility certification,
+  native-language review or independent usability/model-quality evidence.
+- Older records are not backfilled with guessed context. No production deployment,
+  production migration, real inference or outgoing messages occurred. HL-089 remains
+  open for assistant reuse, aggregate evaluation and independent acceptance gates.
+
+
 ## Shared organization relevance review — 9 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl089-shared-brief-review`, based on `0dad903`.
