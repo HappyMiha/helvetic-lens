@@ -12,7 +12,8 @@ const feedbackMode=process.argv.includes("--feedback");
 const reviewMode=process.argv.includes("--reviews");
 const historyMode=process.argv.includes("--history");
 const assistantMode=process.argv.includes("--assistant");
-const root=resolve(import.meta.dirname,".."),audit=new AccessibilityAudit(assistantMode?"assistant-brief":historyMode?"brief-history":reviewMode?"brief-review":feedbackMode?"brief-feedback":"interest-brief");
+const diagnosticsMode=process.argv.includes("--diagnostics");
+const root=resolve(import.meta.dirname,".."),audit=new AccessibilityAudit(diagnosticsMode?"brief-diagnostics":assistantMode?"assistant-brief":historyMode?"brief-history":reviewMode?"brief-review":feedbackMode?"brief-feedback":"interest-brief");
 const chrome=[process.env.CHROME_BIN,"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe","/usr/bin/google-chrome","/usr/bin/chromium"].filter(Boolean).find(existsSync);assert.ok(chrome);
 const reserve=createServer();await new Promise(r=>reserve.listen(0,"127.0.0.1",r));const port=reserve.address().port;await new Promise(r=>reserve.close(r));
 const base=`http://127.0.0.1:${port}`,profile=await mkdtemp(join(tmpdir(),"helvetic-brief-browser-"));
@@ -32,9 +33,15 @@ try{
  await cdp.send("Page.enable");await cdp.send("Runtime.enable");cdp.on("Runtime.exceptionThrown",({exceptionDetails})=>exceptions.push(exceptionDetails.exception?.description||exceptionDetails.text));
  cdp.on("Fetch.requestPaused",async({requestId,request})=>{
   const path=new URL(request.url).pathname;requests.push({path,search:new URL(request.url).search,method:request.method});let body={},code=200;
-  if(path==="/api/auth/session")body={authenticated:true,user:{id:`qa-${locale}`,locale,name:"QA",email:"qa@example.invalid"},organization:{id:"qa-org",name:"QA"},role:reviewMode?reviewerRole:"viewer",platform_admin:false};
+  if(path==="/api/auth/session")body={authenticated:true,user:{id:`qa-${locale}`,locale,name:"QA",email:"qa@example.invalid"},organization:{id:"qa-org",name:"QA"},role:diagnosticsMode?"organization_admin":reviewMode?reviewerRole:"viewer",platform_admin:false};
   else if(path==="/api/health")body={status:"ok",database:"postgresql",apertus:{configured:false},firecrawl:{configured:false}};
   else if(path==="/api/settings/interest-briefs")body={enabled:false};
+  else if(path==="/api/integration-logs")body={items:[],total:0,providers:[],limit:50,offset:0};
+  else if(path==="/api/integration-logs/briefs"){
+   const params=new URL(request.url).searchParams,failed=params.get("status")==="failed",older=params.get("cursor");
+   if(failure){code=503;body={detail:"Synthetic diagnostic failure"};}
+   else body={items:params.get("days")==="1"?[]:[{id:older?"older":"newest",event_id:event.event_id,status:failed?"failed":"succeeded",attempts:1,locale:"en",model:"Synthetic local model",created_at:"2026-09-09T10:00:00Z",started_at:null,finished_at:null,measurement:failed?{state:"missing",provider_calls:null,measured_calls:null,input_tokens:null,duration_ms:null,complete_input_coverage:false}:{state:"recorded",provider_calls:2,measured_calls:1,input_tokens:400,duration_ms:1250,complete_input_coverage:false}}],next_cursor:older?null:"newest",days:Number(params.get("days")),as_of:"2026-09-09T12:00:00Z"};
+  }
   else if(assistantMode&&path==="/api/assistant/context")body={context:{entity:JSON.parse(request.postData).entity||null},persona:{quip_allowed:false}};
   else if(assistantMode&&path==="/api/assistant/conversations")body={id:"10000000-0000-4000-8000-000000000002",draft:"",messages:[],handoffs:[],visibility:"personal"};
   else if(path==="/api/interest-feed")body={items:[event],scanned_event_count:1,has_more:false,next_cursor:null};
@@ -69,8 +76,27 @@ try{
  for(const width of [390,1440])for(locale of ["de-CH","fr-CH","it-CH","rm-CH","en-CH"]){
   failure=false;status="available";feedback=[];receipts=new Map();feedbackFailure="";reviews=[];reviewerRole="organization_admin";historyStatus="historical";historyFailure=false;const start=requests.length;
   await cdp.send("Emulation.setDeviceMetricsOverride",{width,height:960,deviceScaleFactor:1,mobile:width===390});
-  await cdp.send("Page.navigate",{url:`${base}/?locale=${locale}&qa=${width}`});
-  await waitFor(()=>evaluate(cdp,`document.documentElement.lang===${JSON.stringify(locale)}&&!!document.querySelector('[data-feed-brief]')`),"Feed missing");
+  await cdp.send("Page.navigate",{url:`${base}/${diagnosticsMode?"logs":""}?locale=${locale}&qa=${width}`});
+  await waitFor(()=>evaluate(cdp,`document.documentElement.lang===${JSON.stringify(locale)}&&!!document.querySelector('${diagnosticsMode?"[data-brief-diagnostics]":"[data-feed-brief]"}')`),"Required page missing");
+  if(diagnosticsMode){
+   assert.equal(requests.slice(start).filter(r=>r.path.endsWith("/briefs")).length,0,"Collapsed diagnostics fetched data");
+   await evaluate(cdp,"window.__diagnosticsMarker='retained'");await click("[data-brief-diagnostics]>summary");
+   await waitFor(()=>evaluate(cdp,"!!document.querySelector('[data-brief-diagnostic=newest]')"),"Measurements missing");
+   await audit.check(cdp,`diagnostics-recorded-${width}-${locale}`,"body");
+   await click("[data-diagnostic-older]");await waitFor(()=>evaluate(cdp,"!!document.querySelector('[data-brief-diagnostic=older]')"),"Older diagnostics missing");
+   async function choose(selector,value){await evaluate(cdp,`(()=>{const e=document.querySelector(${JSON.stringify(selector)});Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(e,${JSON.stringify(value)});e.dispatchEvent(new Event('change',{bubbles:true}));})()`);}
+   await choose("[data-diagnostic-state]","failed");await waitFor(()=>evaluate(cdp,"document.querySelector('[data-brief-diagnostic=newest]')?.querySelectorAll('dd').length===4"),"Failure measurements missing");
+   assert.ok(await evaluate(cdp,"Array.from(document.querySelectorAll('[data-brief-diagnostic] dd')).every(e=>!/^0$/.test(e.textContent))"));
+   await audit.check(cdp,`diagnostics-missing-${width}-${locale}`,"body");
+   await choose("[data-diagnostic-days]","1");await waitFor(()=>evaluate(cdp,"!document.querySelector('[data-brief-diagnostic]')&&!document.querySelector('[data-brief-diagnostics] [aria-busy=true]')"),"Empty period missing");
+   await audit.check(cdp,`diagnostics-empty-${width}-${locale}`,"body");
+   failure=true;await click("[data-diagnostic-refresh]");await waitFor(()=>evaluate(cdp,"!!document.querySelector('[data-brief-diagnostics] [role=alert]')"),"Diagnostics error missing");
+   failure=false;await choose("[data-diagnostic-days]","7");await waitFor(()=>evaluate(cdp,"!!document.querySelector('[data-brief-diagnostic]')"),"Diagnostics recovery missing");
+   assert.equal(await evaluate(cdp,"window.__diagnosticsMarker"),"retained");assert.ok(await evaluate(cdp,"document.documentElement.scrollWidth<=innerWidth+1"));
+   if(locale==="en-CH"){const shot=await cdp.send("Page.captureScreenshot",{format:"png"});await writeFile(join(root,`test-results/brief-diagnostics-${width}.png`),Buffer.from(shot.data,"base64"));}
+   assert.ok(requests.slice(start).filter(row=>row.method!=="GET").every(row=>["/api/assistant/context","/api/assistant/conversations"].includes(row.path)));
+   continue;
+  }
   assert.equal(requests.slice(start).filter(r=>r.path.endsWith("/brief")).length,0,"Collapsed card fetched a brief");
   if(assistantMode){
    await evaluate(cdp,"window.__assistantBriefMarker='retained'");
@@ -213,6 +239,6 @@ try{
   const shellInitialization=new Set(["/api/assistant/context","/api/assistant/conversations"]);
   assert.deepEqual(requests.slice(start).filter(r=>r.method!=="GET"&&!shellInitialization.has(r.path)),[],"Reader performed a mutation");
  }
- assert.deepEqual(exceptions,[]);audit.finish(assistantMode||historyMode||reviewMode||feedbackMode?30:20);console.log(assistantMode?"Ten five-locale desktop/mobile assistant brief journeys passed with saved citations, stale/offline/error hiding, scope reset and no inference or shared writes.":historyMode?"Ten five-locale desktop/mobile historical brief journeys passed: lazy scalar pages, explicit bodies, old results and evidence, missing context, unavailable/error hiding, pagination, no current-model reader or writes.":reviewMode?"Ten five-locale desktop/mobile organization-review journeys passed: confirmation, rejection, collapsed original history, withdrawal, read-only viewer, shared history and no page reload; no model calls.":feedbackMode?"Ten five-locale desktop/mobile feedback journeys passed: save, conflict, retained draft, uncertain-reply replay, withdrawal, paged history, escaping and no page reload; no model calls.":"Ten five-locale desktop/mobile saved-brief journeys passed; no automatic generation or writes.");
+ assert.deepEqual(exceptions,[]);audit.finish(diagnosticsMode||assistantMode||historyMode||reviewMode||feedbackMode?30:20);console.log(diagnosticsMode?"Ten five-locale desktop/mobile diagnostic journeys passed: lazy pages, filters, missing measurements, error hiding, pagination and no inference or writes.":assistantMode?"Ten five-locale desktop/mobile assistant brief journeys passed with saved citations, stale/offline/error hiding, scope reset and no inference or shared writes.":historyMode?"Ten five-locale desktop/mobile historical brief journeys passed: lazy scalar pages, explicit bodies, old results and evidence, missing context, unavailable/error hiding, pagination, no current-model reader or writes.":reviewMode?"Ten five-locale desktop/mobile organization-review journeys passed: confirmation, rejection, collapsed original history, withdrawal, read-only viewer, shared history and no page reload; no model calls.":feedbackMode?"Ten five-locale desktop/mobile feedback journeys passed: save, conflict, retained draft, uncertain-reply replay, withdrawal, paged history, escaping and no page reload; no model calls.":"Ten five-locale desktop/mobile saved-brief journeys passed; no automatic generation or writes.");
 }catch(error){console.error({locale,status,exceptions,text:cdp?await evaluate(cdp,"document.body.innerText.slice(-2000)").catch(()=>"unavailable"):"none"});throw error;}
 finally{cdp?.close();for(const child of [browser,server]){const ended=new Promise(r=>child.once("exit",r));child.kill();await Promise.race([ended,sleep(2000)]);}assert.equal(dirname(resolve(profile)),resolve(tmpdir()));assert.ok(basename(profile).startsWith("helvetic-brief-browser-"));await rm(profile,{recursive:true,force:true,maxRetries:5,retryDelay:200});}

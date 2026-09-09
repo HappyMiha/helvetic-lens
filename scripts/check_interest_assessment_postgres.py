@@ -23,6 +23,7 @@ from test_ai_dispatch import (
     test_tenant_turns_survive_restart_equal_clock_and_large_noisy_prefix,
     test_unclaimed_window_keeps_background_in_db_and_does_not_block_cpu,
 )
+from test_brief_diagnostics import test_cursor_window_scope_and_scalar_query
 from test_brief_feedback import (
     test_concurrent_personal_edits_do_not_overwrite_each_other,
     test_concurrent_request_replay_is_one_receipt,
@@ -174,6 +175,7 @@ def execute_relation(harness, scenario):
 
 
 SUITES = {
+    "brief-diagnostics-page": lambda harness: execute_local(harness, lambda value: test_cursor_window_scope_and_scalar_query(value, harness)),
     "brief-history-offline": lambda harness: execute_local(harness, lambda execution: test_old_profile_and_offline_model_do_not_regenerate_saved_history(execution, harness)),
     "brief-history-migration": lambda harness: execute_local(harness, test_history_migration_preserves_existing_reviews_and_bindings),
     "brief-review-race": lambda harness: execute_local(harness, test_concurrent_admin_decisions_preserve_the_first_accepted_intent),

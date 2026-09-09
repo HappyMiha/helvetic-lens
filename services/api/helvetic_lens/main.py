@@ -18,6 +18,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from . import (
     assistant_history,
+    brief_diagnostics,
     brief_feedback,
     brief_history,
     brief_reviews,
@@ -1993,6 +1994,19 @@ def create_app(
             limit=limit,
             offset=offset,
         )
+
+    @app.get("/api/integration-logs/briefs")
+    def interest_brief_diagnostics(request: Request, days: int = Query(default=7),
+                                   status: str = Query(default="", max_length=20),
+                                   locale: str = Query(default="", max_length=2),
+                                   cursor: str = Query(default="", max_length=36),
+                                   limit: int = Query(default=20, ge=1, le=50)):
+        identity = request.state.identity
+        if identity and identity.role != "organization_admin":
+            raise DomainError("Organization administrator access is required.", 403, "forbidden")
+        with service.db.session() as session:
+            return brief_diagnostics.page(session, service.organization_id, days=days,
+                                          status=status, locale=locale, cursor=cursor, limit=limit)
 
     @app.get("/api/integration-logs/{log_id}")
     def integration_log_detail(log_id: str):

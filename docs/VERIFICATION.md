@@ -1,5 +1,34 @@
 # Verification record
 
+## Bounded brief diagnostics — 9 September 2026 (HappyDucky02)
+
+- Branch `codex/HappyDucky02/hl089-brief-diagnostics`, based on `1de0492`.
+  Added organization-admin diagnostics with rolling period/lifecycle/language
+  filters, cursor pages and strict stored-measurement projection. Missing, invalid
+  and partial measurement coverage remain explicit; no guessed usage, copied
+  source prose, inference, automatic polling or writes are introduced.
+- **11 API tests passed in 16.37s**, covering exact input-token/duration/call
+  projection, no reserved-output-as-usage, malformed and boolean measurements,
+  missing/failed/partial coverage, two foreign/expired exclusions, 24 distinct rows
+  across three cursor pages, scalar SQL projection, invalid inputs and real
+  unauthenticated/viewer/admin authorization. Existing integration-log redaction,
+  sorting/detail/clearing behavior also passes. One existing deprecation remains.
+- Guarded **PostgreSQL 17 `brief-diagnostics-page` passes** in a disposable local
+  database, confirming JSON-path filtering, tenant/window scope and pagination.
+  No schema change or application/production database mutation was needed.
+- Root production build passes localization, shell/resource/report and TypeScript
+  gates. **10 browser journeys / 30 full-document axe checkpoints** cover five
+  locales at 390/1440 pixels: lazy loading, older pages, filter reset, empty period,
+  unknown rather than zero measurements, error hiding/recovery, no reload, no
+  overflow and no inference/shared writes. English mobile/desktop screenshots
+  were inspected. Other automated incomplete findings remain in artifacts; this
+  is not independent accessibility, native-language or user acceptance.
+- Ruff and whitespace checks pass. No production deployment, real-model call or
+  outgoing messages. Full failed-attempt cost, output tokens, durable reader reuse
+  counts and measured queue wait remain unfinished instrumentation work; this view
+  is not presented as a full cost dashboard or completion of HL-089.
+
+
 ## Saved brief reuse inside Marvin — 9 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl089-assistant-brief-reuse`, based on `15857e4`.

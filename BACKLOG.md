@@ -1436,6 +1436,19 @@ Completed on 4 September 2026. New normalized events now enter topic matching on
 
 ### HL-089 — Enrich matched developments with one persisted AI relevance brief
 
+**9 September 2026 — measured brief diagnostics:** Organization administrators
+can inspect recent assessments from Integration logs, with rolling 1/7/30/90-day
+and lifecycle filters, bounded cursor pages, model/language/attempt metadata,
+recorded provider calls, measured generation-input tokens and measured attempt
+duration. Values come from the stored execution contract, not estimates or output
+token reservations. Partial coverage is explicit; missing/invalid measurements are
+unknown, never zero. No prose, profile facts or prompt bodies enter the response.
+SQLite/PostgreSQL and five-locale mobile/desktop checks pass. **Still open:**
+complete costs across failed/retried attempts, actual output usage, durable reader
+reuse observations, queue-wait aggregation and independent quality/performance
+evaluation. The diagnostics view alone does not complete those metrics or HL-089.
+
+
 **9 September 2026 — explicit Marvin brief reuse:** A feed action opens the exact
 event's saved cited brief inside Marvin, using the existing current-input reader and
 the user's language. It does not paraphrase the answer through another model or

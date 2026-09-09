@@ -363,6 +363,10 @@ export const resources = {
     const path = `/interest-briefs/${encodeURIComponent(assessment)}/history`;
     return key<T>(`historical:${path}`,path,{tags:[`historical-brief:${assessment}`,`brief-review:${assessment}`],staleMs:0,varyByLocale:false});
   },
+  briefDiagnostics: <T>(days:number,status:string,cursor:string) => {
+    const path=`/integration-logs/briefs?${new URLSearchParams({days:String(days),status,cursor,limit:"20"})}`;
+    return key<T>(`diagnostics:${path}`,path,{owner:"administration",tags:["brief-diagnostics"],staleMs:0,varyByLocale:false});
+  },
 
   interestFeed: <T = unknown>(query = "") => {
     const path = withQuery("/interest-feed", query);

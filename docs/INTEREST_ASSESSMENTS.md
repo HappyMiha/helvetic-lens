@@ -1,5 +1,30 @@
 # Shared event relevance briefs
 
+## Recorded diagnostics — 9 September 2026
+
+`GET /api/integration-logs/briefs` is organization-admin-only (with existing
+explicit anonymous-development behavior). It returns at most 50 scalar/provenance
+records per cursor page in a rolling 1/7/30/90-day creation window, optionally
+filtered by lifecycle and stored brief language. Organization predicates apply
+even to privileged sessions. Cursor lookup must belong to the selected scope;
+the endpoint does not load result, historical profile context or whole manifests.
+
+The Integration logs page provides a collapsed, explicitly loaded panel with
+period/lifecycle controls and forward/newest pagination. Refresh and navigation
+do not schedule work, infer, translate or mutate records. A stored execution proof
+is strictly validated before exposing its duration, runtime fingerprint, provider
+calls and summed input tokens from generation measurements. Admission counting is
+not added again; output reservations are not output usage. Fewer measurements than
+provider calls are labelled partial. Duration includes preparation and validation,
+not just inference. Missing or invalid fields remain unknown instead of zero.
+
+This is recorded successful-attempt diagnostics, not all-time accounting. Failure
+costs, actual output tokens, reader cache hits and queue wait are explicitly
+unmeasured here. Clearing integration request logs does not delete assessments or
+their stored proof. A valid measurement schema is not a claim that its legal
+conclusion is correct or that the hardware has passed performance acceptance.
+
+
 ## Assistant reuse — 9 September 2026
 
 The feed's explicit “Open this brief with Marvin” action selects a validated UUID

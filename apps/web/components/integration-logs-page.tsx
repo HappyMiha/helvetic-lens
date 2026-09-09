@@ -42,6 +42,7 @@ import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
 import { Shell } from "./shell";
 import { AdminOnly } from "./auth-gate";
 import { useI18n } from "@/lib/i18n";
+import {BriefDiagnostics} from "./brief-diagnostics";
 
 type SortBy =
   | "created_at"
@@ -180,6 +181,7 @@ export function IntegrationLogsPage() {
       </div>
 
       <ErrorNote message={error || logs.error} />
+      <AdminOnly><BriefDiagnostics/></AdminOnly>
       {note && <SuccessNote>{note}</SuccessNote>}
 
       <div className="log-stats">
