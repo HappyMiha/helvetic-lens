@@ -1,6 +1,6 @@
 # Monitoring deployment status — 10 September 2026
 
-**MV2-072 is in progress; the public site and automatic updates have not been accepted.**
+**MV2-072 is BLOCKED on SMTP setup and dedicated Cloudflare tunnel activation. The public site and automatic updates have not been accepted.**
 
 ## Verified implementation
 
@@ -17,6 +17,10 @@ The dedicated root is `C:/Users/HappyDucky02/Documents/Codex/helvetic-lens-monit
 
 SMTP configuration is pending. No shared main-product credentials or user database were copied. The Cloudflare creation form has the proposed name `happyducky02-helvetic-monitoring-v2`; no new tunnel token or route exists yet. Existing main/Lokvetia tunnels are unchanged.
 
-Controller/scheduler installation, first bootstrap, full candidate quality gates, actual backup/restore rehearsal, public HTTPS instance/release checks and a subsequent automatic branch update still require live evidence. An installed scheduler will remain disabled until first bootstrap succeeds.
+The native installer validated and installed controller commit `aba58b3c0f7ac8b3a530503efc579dc123340cd9`. The actual Windows task `HelveticLens-Monitoring-v2-AutoDeploy` was read back as **Disabled / Enabled=false / IgnoreNew / Limited**. Its persisted selector follows only the Monitoring branch; the controller itself remains pinned. The source clone is marked serving-only using the repository Git safeguards.
+
+**External dependencies:** the user must identify working SMTP settings and authorize creation of the dedicated Cloudflare tunnel's persistent access through the prepared browser form. The operator then stores its token in the protected token file and routes only `monitoring.helveticlens.ch` to `http://web:3000`.
+
+First bootstrap, full candidate quality gates, actual backup/restore rehearsal, public HTTPS instance/release checks and a subsequent automatic branch update still require live evidence. Keep the task disabled until first bootstrap succeeds. No live Monitoring application containers, DNS route or user data have been created.
 
 The preview remains one Windows host. Login, Docker Desktop readiness, sleep/power and shared GPU capacity affect availability. Resource limits do not establish high availability or Pollen Watch user-test readiness. Follow the [runbook](../MONITORING_DEPLOYMENT.md); Pollen Watch remains the first product delivery and C4 customs remains deferred.

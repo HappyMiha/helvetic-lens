@@ -35,3 +35,5 @@ Hackathon connector improvements belong to the main product and follow its exist
 ## Current focus
 
 Support work is parked. Hackathon preparation has its own entry page within the main-product channel; no connectors are being implemented by this organization change. Monitoring v2 deployment setup is in progress for **HappyDucky02 → monitoring.helveticlens.ch**, using **`codex/HappyDucky02/monitoring-v2`**. DNS routing, isolation and branch-triggered deployment require verification before the site can be described as live. The existing `main` deployment on HappySnowman remains active; freezing the MVP tag does not freeze `main`.
+
+Monitoring deployment evidence: [controller installed; activation pending SMTP and tunnel access](docs/monitoring-v2/DEPLOYMENT_STATUS.md).

@@ -221,7 +221,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 | [MV2-069](#mv2-069) | Pollen Watch FIRST: Confirm sources and the first-delivery contract | FIRST | P0 | M | PLANNED — first implementation priority | [MV2-001](#mv2-001) |
 | [MV2-070](#mv2-070) | Pollen Watch FIRST: Implement the shared platform within C5 scope | FIRST | P0 | L | PLANNED — first implementation priority | [MV2-069](#mv2-069) |
 | [MV2-071](#mv2-071) | Pollen Watch FIRST: Accept the complete scenario and prepare for testing with real users | FIRST | P0 | M | PLANNED — first user-testing gate | [MV2-031](#mv2-031) |
-| [MV2-072](#mv2-072) | Isolated Monitoring deployment on HappyDucky02 | OPS | P0 | M | IN PROGRESS | None; user deployment decision |
+| [MV2-072](#mv2-072) | Isolated Monitoring deployment on HappyDucky02 | OPS | P0 | M | BLOCKED | None; user deployment decision |
 
 ## OPS — Separate Monitoring environment
 
@@ -229,7 +229,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ### MV2-072 — Isolated Monitoring deployment on HappyDucky02
 
-**Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Platform + Operations · **Size:** M
+**Status:** BLOCKED · **Priority:** P0 · **Owner:** Platform + Operations · **Size:** M
 
 **Dependencies:** None; independent of product source gates. **Requirements:** explicit user deployment decision, 2026-09-10.
 
@@ -248,7 +248,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** platform/unit and existing release regressions; rendered Compose isolation; first-install and rollback rehearsal against only the new instance; public HTTPS and automatic second-revision checks.
 
-**Execution evidence:** Work started; no live deployment or auto-update acceptance claimed yet.
+**Execution evidence:** Controller and disabled Windows scheduler installed; 79 Windows and 92 Linux affected tests passed, images built, isolation configuration verified. [Deployment status and remaining acceptance](docs/monitoring-v2/DEPLOYMENT_STATUS.md). **Blocker owner:** user for SMTP settings and dedicated tunnel access approval; operator for subsequent bootstrap, public verification and activation. No live deployment or automatic-update acceptance is claimed.
 
 ## F0 — Decisions, sources and validation of user needs
 

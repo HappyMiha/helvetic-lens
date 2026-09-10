@@ -35,3 +35,7 @@ The existing deployment manager has shared defaults and requires an isolation re
 - Any reusable hackathon result enters through an explicit v2 task and verification, not an implicit whole-branch merge.
 
 **Current step:** complete MV2-072 on the active v2 branch for HappyDucky02 and monitoring.helveticlens.ch, including proof of isolation and branch-triggered updates. Pollen Watch remains the first complete product scenario, followed through the stated delivery sequence.
+
+## Current environment status
+
+The pinned controller and dedicated Windows task are installed; the task is disabled. MV2-072 is blocked on SMTP settings and dedicated Cloudflare tunnel access. See [verified evidence and remaining activation steps](../monitoring-v2/DEPLOYMENT_STATUS.md). The public site is not yet live.
