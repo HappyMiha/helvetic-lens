@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "product": "Helvetic Lens",
+  "release_name": "Helvetic Lens 1.0 — Hackathon MVP",
+  "tag": "v1.0.0-hackathon-mvp",
+  "release_type": "MVP prerelease / frozen source snapshot",
+  "release_date": "2026-09-10",
+  "source_commit": "7109a2891f9c99e53572008cc7c1a86001792a57",
+  "source_tree": "e3c5fa9630ff7d8d79dd3107810367c38040ced8",
+  "annotated_tag_object": "c33f3094e51019bfe1083bec71a53858eef1917c",
+  "tag_signed": false,
+  "repository": "https://github.com/HappyMiha/helvetic-lens",
+  "tracked_source_file_count": 736,
+  "source_archive": "helvetic-lens-hackathon-mvp-source.zip",
+  "offline_git_bundle": "helvetic-lens-hackathon-mvp.bundle",
+  "critical_source_file_sha256": {
+    "package-lock.json": "fd8bda8158cd013f960b4275269055aa6afa72923e2ea268a63d073e0895931c",
+    "services/api/uv.lock": "cbbf598233d0bc6d17c9f3d1b8de0e90bbce8ac440d4ac8840d7ffa9885f5147",
+    "services/api/pyproject.toml": "3b24efbedbd305dbfa693dc486979341bba3df94fc631a13d525c84ae31d18c0",
+    "services/model-manager/requirements.txt": "736b40ca4a42ba3ef7581d5d366300b1a93bf55ae1e61759a9bfa3ecbbd4f6d6",
+    "services/model-manager/catalog.json": "417586a3915911253490d4d9a48981e9e672cd905075d7e84ed6805f53062a07",
+    "compose.production.yaml": "3beb7ddf9c5b9e8437ce2bec91805ec4e5c1062b17a041064e0032fd6a1247b4",
+    "compose.cloudflare-tunnel.yaml": "fb9204d53e668c8c300f5b36278ed202a90eb8c02f2a16282b1d2e24d8a0c067",
+    "apps/web/Dockerfile": "d963e0ee7c3b9a2ff2ace7d9000f7ca02c99383cd0f6077fef3faeae90f8c06e",
+    "services/api/Dockerfile": "bf9c44f8ee5b28a56f8bf009f71210fb3f10e2af9069b20a780185b4b914eaea",
+    "services/model-manager/Dockerfile": "615a3afd54c6e3186da5bbf13797037bbf9cd79f8bd1e6222cfeb45851cc3f84",
+    "deploy/production.env.example": "4b48930e0aaed3d7723e6ea69ecf2722a59352a5dd89f0f4992d1fcd37a2a436",
+    "deploy/backup.sh": "78d953950bc6c5487874d05021dd6d31dc698f637c14c7ed2a8231cd227d3337",
+    "deploy/restore.sh": "b5aca495c2389f199d9eb272fe48c4ecf51ae0b5b19b5eafb96ae26e0317e65b"
+  },
+  "migration_count": 57,
+  "migration_head": "ef5169a0c32d",
+  "fresh_verification": {
+    "archive_members_match_git_tree": "passed",
+    "archive_crc": "passed",
+    "git_bundle_verify_and_annotated_tag_restore": "passed",
+    "production_env_validator": "passed with synthetic values only",
+    "production_compose_config": "passed; config --quiet only, no services started",
+    "api_docker_build": "passed from exact extracted source archive",
+    "web_docker_build": "passed from exact extracted source archive; 265 checks plus localization, TypeScript and Next production build",
+    "api_packaged_alembic_heads": "passed with network disabled, no mounted volumes or database",
+    "full_api_suite_rerun": false,
+    "production_deployment_rehearsal": false,
+    "web_standalone_login_smoke": "passed in a disposable container with network disabled and no exposed ports; /login returns 200 and includes Page guide"
+  },
+  "local_build_evidence": {
+    "api": {
+      "local_tag": "helvetic-lens-api:7109a2891f9c99e53572008cc7c1a86001792a57",
+      "local_image_id": "sha256:723d3a1e698a4b56f3c6a33c9cfac1d63e079f82bd24375f8cf283b7776289a7",
+      "platform": "linux/amd64",
+      "published_binary": false
+    },
+    "web": {
+      "local_tag": "helvetic-lens-web:7109a2891f9c99e53572008cc7c1a86001792a57",
+      "local_image_id": "sha256:68df51b084a6fd42062cd9b52709a6135bc2bca11cc677ae36965e7fb303c024",
+      "platform": "linux/amd64",
+      "published_binary": false
+    }
+  },
+  "existing_baseline_verification": "See docs/VERIFICATION.md at source_commit; baseline evidence is distinct from fresh release checks.",
+  "included": [
+    "tracked source tree",
+    "complete reachable Git history and annotated release tag",
+    "dependency locks and build recipes",
+    "deployment guide and checksums"
+  ],
+  "excluded": [
+    "production database and user corpus",
+    "production environment and credential key",
+    "model weights and accepted-license state",
+    "built container image archives",
+    "Redis AOF",
+    "TLS/tunnel credentials",
+    "deployment journals"
+  ],
+  "rebuild_limits": [
+    "Requires accessible container/package/model registries for a fresh build.",
+    "Build tooling uv/Hatchling, apt repositories and model-manager transitive dependencies are not fully frozen.",
+    "Source retention does not establish bit-identical or fully offline runtime recreation.",
+    "Production recipe expects a compatible Linux/NVIDIA host; source and human-acceptance coverage remain bounded."
+  ],
+  "deployment_guard": "Manual exact-tag deployment. Do not install/poll a main-tracking release manager for a frozen installation. Use separate data and matching backups when returning from a later schema."
+}
