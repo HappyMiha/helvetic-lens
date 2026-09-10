@@ -44,7 +44,7 @@ The active Monitoring v2 backlog belongs to the dedicated branch; its main-branc
 
 ## Independent deployment task (version 1.5)
 
-[MV2-072](../../BACKLOG_MONITORING_V2.md#mv2-072) is IN PROGRESS and records the user's branch, host and hostname decision. It adds six acceptance criteria for instance isolation, persistent Windows polling, clean bootstrap and failed-candidate recovery, protected configuration, public release identity and automatic updates, and an English operating procedure. It has no product-source dependency and introduces no new scenario or original-specification requirement.
+[MV2-072](../../BACKLOG_MONITORING_V2.md#mv2-072) is BLOCKED pending SMTP and dedicated tunnel access and records the user's branch, host and hostname decision. It adds six acceptance criteria for instance isolation, persistent Windows polling, clean bootstrap and failed-candidate recovery, protected configuration, public release identity and automatic updates, and an English operating procedure. It has no product-source dependency and introduces no new scenario or original-specification requirement.
 
 The original 71 task index rows and detailed blocks remain unchanged from version 1.3. All 126 original AC, 79 supplemental requirement mappings, 35 inherited legacy obligations and source-document bytes are preserved. The complete 72-task dependency graph is acyclic; required tasks do not depend on the nine deferred tasks. MV2-072 does not alter the independent Pollen Watch predecessor chain or complete its source, end-to-end or real-user testing gates.
 

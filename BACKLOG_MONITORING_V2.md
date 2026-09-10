@@ -10,7 +10,7 @@
 
 ## Deployment channel
 
-This is the active backlog on `codex/HappyDucky02/monitoring-v2`, with a dedicated deployment target of **HappyDucky02 → monitoring.helveticlens.ch**. Deployment setup is IN PROGRESS under MV2-072; public availability and automatic updates are not yet verified. The main product and hackathon connectors follow **main → HappySnowman → helveticlens.ch**. Preserve the frozen MVP tag. Support and grant activity remains parked. MV2-072 establishes this separate environment; it adds no product scenario and does not change Pollen Watch priority.
+This is the active backlog on `codex/HappyDucky02/monitoring-v2`, with a dedicated deployment target of **HappyDucky02 → monitoring.helveticlens.ch**. Deployment activation is BLOCKED under MV2-072 pending SMTP and dedicated tunnel access; public availability and automatic updates are not yet verified. The main product and hackathon connectors follow **main → HappySnowman → helveticlens.ch**. Preserve the frozen MVP tag. Support and grant activity remains parked. MV2-072 establishes this separate environment; it adds no product scenario and does not change Pollen Watch priority.
 
 ## How to use this backlog
 
