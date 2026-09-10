@@ -39,6 +39,8 @@ security boundary. Keep them enabled; do not replace unrelated existing hooks.
 ## Single active product backlog
 
 - Read `BACKLOG_MONITORING_V2.md` before selecting implementation work. It is the sole current backlog for all new features, fixes and acceptance work.
+- Customs rates (C4), Swiss Customs, CURRENCY and MV2-026/027/061 are DEFERRED possible future scope. Do not start their discovery, licensing, implementation or acceptance work without a new explicit user scope decision recorded in the backlog; they do not block v2.0. Shared numeric rules for active cases remain required.
+- First delivery is Pollen Watch: MV2-001 → MV2-069 → MV2-070 → MV2-030 → MV2-031 → MV2-071. The explicit C5 slices are independent of parent tasks for all sources/templates; partial C5 acceptance does not complete those parents. Do not substitute mock forecast for verified official forecast or wait for full-v2 business/pilot gates to start this scoped delivery.
 - Use an MV2 task ID and its dependencies, source-readiness gates and acceptance criteria. Add any necessary new task or explicit subtask to that backlog before implementing it; do not silently expand scope.
 - `BACKLOG_V1_ARCHIVE.md` is historical, not a parallel queue. Remaining HL acceptance is inherited through `docs/monitoring-v2/LEGACY_DISPOSITION.md`; mapping an item does not complete it.
 - Preserve the frozen `v1.0.0-hackathon-mvp` tag, legacy evidence and compatibility. Planned v2 templates or source documentation must not be presented as implemented/live coverage.

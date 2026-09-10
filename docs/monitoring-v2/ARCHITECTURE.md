@@ -2,13 +2,15 @@
 
 **Дата:** 2026-09-10. **Стан:** цільова архітектура для реалізації за [єдиним беклогом](../../BACKLOG_MONITORING_V2.md). Код v2 цим документом не поставлено. Baseline: `7109a28`; snapshot MVP: [v1.0.0-hackathon-mvp](https://github.com/HappyMiha/helvetic-lens/releases/tag/v1.0.0-hackathon-mvp).
 
+**Scope v1.2:** дев’ять активних сценаріїв C1/C2/C3/C5/C6/C7/B2/B7/B8. C4 — можлива майбутня реалізація за рішенням користувача від 2026-09-10; CURRENCY, Swiss Customs і customs-specific контракти не реалізуються зараз. Generic kernel потрібний активним сценаріям.
+
 ## Висновок продуктового аналізу
 
 Запит розширює предмет моніторингу від текстових regulatory changes до офіційних подій, вимірювань і бізнес-можливостей. Спільна робота користувача не змінюється: визначити інтерес → отримати матеріальну зміну → перевірити причину/доказ → ухвалити рішення → відстежувати далі.
 
 Найцінніша одиниця — **development зі збереженою історією**, а не документ або окремий scrape. Тому новий тендер, перенесений deadline і Q&A повинні лишатися одним tender development; переглянуте рішення прив’язується до конкретної revision. Для commuter важливий не будь-який train alert, а перетин із його journey/service day/window. Для environmental watch важливі metric, unit, station, time і quality, а не юридичний textual diff.
 
-Сила v2 — не десять вкладок із різними сайтами. Це керований source-backed цикл із спільною доставкою та історією. Головні продуктові ризики: хибне відчуття повного покриття, notification fatigue, неочевидне походження AI-результату, втрата важливої revision після review та змішування приватного Home з employer workspace.
+Сила v2 — керований source-backed цикл із спільною доставкою та історією. Головні продуктові ризики: хибне відчуття повного покриття, notification fatigue, неочевидне походження AI-результату, втрата важливої revision після review та змішування приватного Home з employer workspace.
 
 Базове створення monitors не потребує AI. Semantic assistance зосереджена на tender capabilities/gaps, trademark candidates/goods-services та unstructured auction description. Числа, source lifecycle, route/time match і deadlines обчислюються deterministic contracts. Якщо AI не схвалений чи недоступний, це видно, а core monitoring працює.
 
@@ -76,7 +78,7 @@ Legal-only compare/registry/Ask лишаються підтриманим дом
 
 - Transport instance = provider trip identity + **service date**, route/stop references з versioned timetable. Trip з таким самим номером завтра — інший екземпляр.
 - Environmental series = source/station/metric або allergen/pollutant + unit/basis + aggregation + observed/forecast. Forecast додатково має issue time і target interval. Різні продукти не зливаються.
-- Customs series = authority/currency/nominal basis; daily effective state і його correction окремі revisions. Material daily change має effective-date identity; corrections цієї дати оновлюють той самий development. Загальна rate history об’єднується за series.
+- Майбутній C4 (DEFERRED, не поточний контракт реалізації): customs series = authority/currency/nominal basis; daily effective state і його correction окремі revisions. Material daily change має effective-date identity; corrections цієї дати оновлюють той самий development. Загальна rate history об’єднується за series.
 - Hazard/traffic incident = official ID + namespace; planned closure occurrence відрізняється від road entity. Rescheduling зберігає occurrence, якщо так визначено upstream.
 - Tender dossier і lots мають офіційні identifiers/aliases; publication language і document URL не є identity. Auction ≠ auction lot. Trademark ID важливіший за змінюваний owner/name.
 - Numeric threshold episodes не зберігають приватний user threshold у public corpus. Private subject binding визначає crossing/reset/reopen; reversal в активному episode лишає його історію, нове crossing після reset створює наступний episode, пов’язаний із series. Retry тієї самої state/rule revision не створює новий episode.
@@ -108,7 +110,7 @@ Cross-source MV2-036 — explainable association, а не автоматична
 
 [source dossier](SOURCE_FEASIBILITY.md) має дату й первинні посилання. Source policy включає дозволи ingestion, persistence, raw/derived UI/API/export, workspace sharing, alerts, publication_not_before, attribution, correction propagation, retention, grant expiry. Registry versioned; policy застосовується до всіх output paths, включно з support/log tooling.
 
-Відкритий XML/HTML не дає автоматичного права на перевидання. Для C4 запуск неможливий до підтверджених прав BAZG/SIX. Для ASTRA derived fields і history потребують verified policy; raw machine-readable export не дозволяється за перевіреними умовами. SIMAP originals не змішуються з коментарями, timed publication і corrections виконуються в outbox/read path. IPI mailings scope треба уточнити до email distribution.
+Відкритий XML/HTML не дає автоматичного права на перевидання. C4 відкладений; лише якщо користувач поверне його в scope, знадобиться окрема перевірка прав BAZG/SIX. Поточних робіт із цими правами немає. Для ASTRA derived fields і history потребують verified policy; raw machine-readable export не дозволяється за перевіреними умовами. SIMAP originals не змішуються з коментарями, timed publication і corrections виконуються в outbox/read path. IPI mailings scope треба уточнити до email distribution.
 
 Evidence contract допускає **raw або normalized** snapshots, як у вимогах. Якщо rights не дозволяють sufficient retained evidence для AC, цей кейс BLOCKED; official link сам по собі не закриває вимогу відновити попередній стан. Protected tender attachments не копіюються у shared public corpus; public search access не дорівнює document access. Manual interest declaration/credentials/user account потрібні за підтриманим дозволеним flow, інакше attachment coverage incomplete.
 
@@ -139,14 +141,16 @@ Shared source fetch і bounded fan-out; ніякого polling на кожног
 
 Retain дозволені state/evidence для всіх delivered revisions; uninteresting raw telemetry можна compact за source policy, але old/current proof і decisions не губляться. P95/capacity budgets, five-language review і pilot sample targets — запропоновані в беклозі; baseline runtime success тут не заявляється.
 
-Перший slice — C5; C4 не відкидається, але source-rights path ведеться паралельно. Десять кейсів повинні мати source-to-decision evidence до release2.0. Часткові previews явно так позначаються. Остаточний go/no-go належить MV2-059 після MV2-057/058 і незакритих inherited gates.
+**Перша повна поставка — Pollen Watch.** Явний шлях MV2-001 → MV2-069 → MV2-070 → MV2-030 → MV2-031 → MV2-071 виділяє C5 із shared source/UI/privacy/ops parent-задач, зберігаючи generic contracts. MV2-069 окремо підтверджує observation і forecast; MV2-070 реалізує C5 shared-platform subset; MV2-071 приймає повний сценарій для тестів із людьми. Він не залежить від all-domain UI, business AI чи full-v2 pilot; повні parent AC та MV2-058 лишаються незакритими. Перша хвиля usability ≥5 B2C — окремий ранній протокол, не доведені загальні KPI.
+
+ C4 виключений із поточної розробки, source-rights work, pilot і release gates. Дев’ять активних кейсів та 116 активних AC повинні мати source-to-decision evidence до release2.0; 10 AC-C4 збережені як DEFERRED. Часткові previews явно так позначаються. Остаточний go/no-go належить MV2-059 після MV2-057/058 і незакритих inherited gates.
 
 ## Рішення, які уточнюються перед відповідною реалізацією
 
 | Питання | Планове рішення зараз | Де закривається |
 |---|---|---|
 | Supported exact stations/regions/transport coverage | Показувати тільки verified capabilities; приклад Lugano не доводить доступність кожного параметра | MV2-003,015 та кожний adapter; core scenario не вилучається |
-| Source rights/account/cost | Не приймати terms і не купувати доступ у ході написання плану; G(case) обов’язковий | MV2-026/028/038/040/042/046/049 |
+| Source rights/account/cost | Не приймати terms і не купувати доступ у ході написання плану; G(case) обов’язковий | MV2-028/038/040/042/046/049 |
 | Параметри hysteresis/rapid increase/cooldown | Версійні template defaults після domain/UX checks; user overrides у межах schema | MV2-008, доменні workflows |
 | Geo library / spatial DB extension | Мінімальний механізм, що проходить boundary/CRS/performance checks | MV2-015/054 |
 | AI модель і thresholds | Зберегти local-first; promote тільки measured per-task/per-language profile | MV2-051/054 |
