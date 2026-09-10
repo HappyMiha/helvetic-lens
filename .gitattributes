@@ -8,3 +8,5 @@ demo/semantic-matching-example/*.txt -text
 
 # Preserve the supplied specification bytes and its intentional Markdown hard breaks.
 docs/monitoring-v2/requirements/HELVETIC_LENS_PRACTICAL_USE_CASE_SPECIFICATION_v1.0.md -text whitespace=-blank-at-eol
+# The English reading edition retains the source's Markdown hard breaks.
+docs/monitoring-v2/requirements/HELVETIC_LENS_PRACTICAL_USE_CASE_SPECIFICATION_v1.0_EN.md whitespace=-blank-at-eol

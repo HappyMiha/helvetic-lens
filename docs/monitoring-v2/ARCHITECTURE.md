@@ -1,41 +1,41 @@
-# Monitoring v2 — продуктове й архітектурне рішення
+# Monitoring v2 — product and architecture decisions
 
-**Дата:** 2026-09-10. **Стан:** цільова архітектура для реалізації за [єдиним беклогом](../../BACKLOG_MONITORING_V2.md). Код v2 цим документом не поставлено. Baseline: `7109a28`; snapshot MVP: [v1.0.0-hackathon-mvp](https://github.com/HappyMiha/helvetic-lens/releases/tag/v1.0.0-hackathon-mvp).
+**Date:** 2026-09-10. **Status:** target architecture for implementation through the [single backlog](../../BACKLOG_MONITORING_V2.md). This document does not deliver v2 code. Baseline: `7109a28`; MVP snapshot: [v1.0.0-hackathon-mvp](https://github.com/HappyMiha/helvetic-lens/releases/tag/v1.0.0-hackathon-mvp).
 
-**Scope v1.2:** дев’ять активних сценаріїв C1/C2/C3/C5/C6/C7/B2/B7/B8. C4 — можлива майбутня реалізація за рішенням користувача від 2026-09-10; CURRENCY, Swiss Customs і customs-specific контракти не реалізуються зараз. Generic kernel потрібний активним сценаріям.
+**Scope v1.3:** nine active scenarios C1/C2/C3/C5/C6/C7/B2/B7/B8. C4 is a possible future implementation following the user's decision of 2026-09-10; CURRENCY, Swiss Customs and customs-specific contracts are not being implemented now. Active scenarios require the generic kernel.
 
-## Висновок продуктового аналізу
+## Product analysis conclusion
 
-Запит розширює предмет моніторингу від текстових regulatory changes до офіційних подій, вимірювань і бізнес-можливостей. Спільна робота користувача не змінюється: визначити інтерес → отримати матеріальну зміну → перевірити причину/доказ → ухвалити рішення → відстежувати далі.
+The request expands monitoring from textual regulatory changes to official events, measurements and business opportunities. The shared user workflow stays the same: define an interest → receive a material change → check the reason/evidence → decide → continue monitoring.
 
-Найцінніша одиниця — **development зі збереженою історією**, а не документ або окремий scrape. Тому новий тендер, перенесений deadline і Q&A повинні лишатися одним tender development; переглянуте рішення прив’язується до конкретної revision. Для commuter важливий не будь-який train alert, а перетин із його journey/service day/window. Для environmental watch важливі metric, unit, station, time і quality, а не юридичний textual diff.
+The most valuable unit is a **development with retained history**, rather than a document or an individual scrape. A new tender, a postponed deadline and Q&A must therefore remain one tender development; a reviewed decision is bound to a specific revision. Commuters need train alerts that intersect their journey/service day/window. Environmental watches depend on metric, unit, station, time and quality, rather than a legal textual diff.
 
-Сила v2 — керований source-backed цикл із спільною доставкою та історією. Головні продуктові ризики: хибне відчуття повного покриття, notification fatigue, неочевидне походження AI-результату, втрата важливої revision після review та змішування приватного Home з employer workspace.
+The strength of v2 is a controlled, source-backed cycle with shared delivery and history. The main product risks are a false impression of complete coverage, notification fatigue, unclear provenance of AI output, loss of an important revision after review, and mixing a private Home with an employer workspace.
 
-Базове створення monitors не потребує AI. Semantic assistance зосереджена на tender capabilities/gaps, trademark candidates/goods-services та unstructured auction description. Числа, source lifecycle, route/time match і deadlines обчислюються deterministic contracts. Якщо AI не схвалений чи недоступний, це видно, а core monitoring працює.
+Basic monitor creation does not require AI. Semantic assistance focuses on tender capabilities/gaps, trademark candidates/goods-services and unstructured auction descriptions. Numbers, source lifecycle, route/time matching and deadlines follow deterministic contracts. If AI is unapproved or unavailable, that state is visible and core monitoring continues.
 
-## Що є насправді
+## What actually exists
 
-[Повний статичний аудит](BASELINE_AUDIT.md) містить прив’язки до baseline. Ключові підтверджені точки:
+The [full static audit](BASELINE_AUDIT.md) provides baseline references. Key verified points:
 
-| Вже є | Обмеження | Рішення |
+| Existing capability | Limitation | Decision |
 |---|---|---|
-| [Organization/membership](../../services/api/helvetic_lens/models.py#L32) і personal workspace registration | Особистий workspace не означає нову private subject model | Reuse auth; owner-only personal workspace і explicit scope |
-| [SourcePackDefinition/Subscription](../../services/api/helvetic_lens/models.py#L258) | Немає десяти підтверджених telemetry/business streams | Versioned capabilities/rights policy, source-specific adapters |
-| [MonitoringTopic](../../services/api/helvetic_lens/models.py#L335) | Plan переважно concepts/jurisdictions/languages/legal kinds | Typed subject/template configuration, bridge для Topics |
-| [RegulatoryWork](../../services/api/helvetic_lens/models.py#L586), [RegulatoryEvent](../../services/api/helvetic_lens/models.py#L762) | Legal-only CHECK, work/version foreign keys | Additive generic entity/state/development; не розширювати legal enums довільними назвами |
+| [Organization/membership](../../services/api/helvetic_lens/models.py#L32) and personal workspace registration | A personal workspace does not establish the new private subject model | Reuse auth; owner-only personal workspace and explicit scope |
+| [SourcePackDefinition/Subscription](../../services/api/helvetic_lens/models.py#L258) | Ten verified telemetry/business streams do not exist | Versioned capabilities/rights policy, source-specific adapters |
+| [MonitoringTopic](../../services/api/helvetic_lens/models.py#L335) | Its plan primarily covers concepts/jurisdictions/languages/legal kinds | Typed subject/template configuration, bridge for Topics |
+| [RegulatoryWork](../../services/api/helvetic_lens/models.py#L586), [RegulatoryEvent](../../services/api/helvetic_lens/models.py#L762) | Legal-only CHECK, work/version foreign keys | Additive generic entity/state/development; do not extend legal enums with arbitrary names |
 | [OfficialConnector](../../services/api/helvetic_lens/connectors.py#L177) | Expression/artifact/relation interface | Parallel observation interface, shared transport/checkpoints |
-| [InterestFeedReader](../../services/api/helvetic_lens/interest_feed.py#L49) | Групування навколо regulatory event, не real-world development | Generic read projection і legacy compatibility |
-| [ActionDecision](../../services/api/helvetic_lens/models.py#L1317) | Потребує comparison і analysis | Generic decision незалежно від AI; старі рішення зберегти |
-| [Job](../../services/api/helvetic_lens/models.py#L1552), [OutboxMessage](../../services/api/helvetic_lens/models.py#L1609) | Не задають самі source cadence і numeric semantics | Розширити handlers/policy, не будувати нову queue platform |
+| [InterestFeedReader](../../services/api/helvetic_lens/interest_feed.py#L49) | Groups around a regulatory event rather than a real-world development | Generic read projection and legacy compatibility |
+| [ActionDecision](../../services/api/helvetic_lens/models.py#L1317) | Requires comparison and analysis | Generic decision independent of AI; preserve existing decisions |
+| [Job](../../services/api/helvetic_lens/models.py#L1552), [OutboxMessage](../../services/api/helvetic_lens/models.py#L1609) | Do not themselves define source cadence and numeric semantics | Extend handlers/policy rather than building a new queue platform |
 
-Посилання в таблиці відповідають `7109a28`; наступні зміни можуть змістити рядки. Позначки DONE старого беклогу означають зроблений тодішній scope, а не автоматичне приймання нових сценаріїв.
+Table references correspond to `7109a28`; subsequent changes may shift line numbers. DONE labels in the old backlog indicate completion of its original scope, rather than automatic acceptance of new scenarios.
 
-## ADR-1. Стек і межі
+## ADR-1. Stack and boundaries
 
-Лишається один модульний застосунок: Next.js/Tailwind/shadcn, FastAPI, PostgreSQL, Redis/Celery, чинний artifact store й private local inference. Не додаємо десять сервісів, нову identity system, окремий time-series cluster або vector DB до доведеної потреби.
+Keep one modular application: Next.js/Tailwind/shadcn, FastAPI, PostgreSQL, Redis/Celery, the existing artifact store and private local inference. Do not add ten services, a new identity system, a separate time-series cluster or a vector DB before establishing a need.
 
-Generic kernel — модулі всередині current backend із type/schema contracts. PostGIS або інший spatial механізм — рішення MV2-015 на основі потрібних polygon/CRS операцій і перевіреного deployment; extension не слід оголошувати вже наявним. JSON payload дозволений для domain fields, але schema validation і індексовані identity/time/metric/geography keys обов’язкові. Не кожний conceptual noun потребує таблиці.
+The generic kernel consists of modules within the current backend with type/schema contracts. PostGIS or another spatial mechanism is a decision for MV2-015, based on the required polygon/CRS operations and verified deployment; do not claim the extension already exists. JSON payloads are allowed for domain fields, but schema validation and indexed identity/time/metric/geography keys are mandatory. Not every conceptual noun requires a table.
 
 ```mermaid
 flowchart TD
@@ -53,106 +53,106 @@ flowchart TD
   L --> U
 ```
 
-Legal-only compare/registry/Ask лишаються підтриманим доменом. Adapter bridge дозволяє новому Today показувати їх разом із v2, без rewrite усієї corpus history.
+Legal-only compare/registry/Ask remain a supported domain. An adapter bridge lets the new Today display them alongside v2 without rewriting the entire corpus history.
 
-## ADR-2. Власність і мінімальні контракти
+## ADR-2. Ownership and minimum contracts
 
-| Контракт | Обов’язковий зміст | Scope / зберігання |
+| Contract | Required content | Scope / storage |
 |---|---|---|
-| MonitoringSubject | id, template_id, type, workspace_id, owner_scope, name, configuration, status, revision, actor/times | Private personal workspace або explicit shared organization; reuse Topic revisions pattern |
-| SourcePack / capability | dataset/stream, schema version, supported types/fields/geo/language/history, cadence, rights/access state, responsible operator | Shared catalogue; subscriptions/credentials прив’язані до дозволеного scope |
-| SourceConnection | provider reference, grant/expiry, checkpoints, last-success, run/errors, quota | Розширення наявного ConnectorState/Schedule/Run, не другий control plane |
-| ObservedEntity | namespace, external_id, instance discriminator, entity_type, source provenance, aliases | Public shared тільки для дозволених public facts; access-gated data зберігає scope |
-| ObservedState | entity_id, schema/adapter revision, typed state, unit/aggregation, quality, source version, clocks, evidence_ref | Immutable; current pointer змінюється лише після ordering policy |
-| ChangeSet | previous/current state refs, typed field changes, rule/evaluator version, material/nonmaterial, reason/inputs | Immutable evaluation result; no-change poll log окремо |
-| Development | identity/grouping policy/version, domain, scope, lifecycle, current_revision, related entities/states | Source incident може бути shared; user-threshold episode — private binding/scope |
-| EvidenceBundle | authority/source/type/ID/URL, clocks, allowed snapshot/field/document references, content hashes, rights policy | Never infer permission from public URL; дозволена representation перевірена |
-| RelevanceAssessment | subject revision, development revision, rule, matched facts/reason params, method, exclusions, optional score/model | Tenant scoped; historical cause not rewritten by new profile |
-| Review / Decision | actor, owner, comment, development_revision, status, timestamp, history | Personal opened/read окремо від спільного review і decision |
+| MonitoringSubject | id, template_id, type, workspace_id, owner_scope, name, configuration, status, revision, actor/times | Private personal workspace or explicitly shared organization; reuse Topic revisions pattern |
+| SourcePack / capability | dataset/stream, schema version, supported types/fields/geo/language/history, cadence, rights/access state, responsible operator | Shared catalogue; subscriptions/credentials bound to permitted scope |
+| SourceConnection | provider reference, grant/expiry, checkpoints, last-success, run/errors, quota | Extension of existing ConnectorState/Schedule/Run rather than a second control plane |
+| ObservedEntity | namespace, external_id, instance discriminator, entity_type, source provenance, aliases | Public sharing only for permitted public facts; access-gated data retains its scope |
+| ObservedState | entity_id, schema/adapter revision, typed state, unit/aggregation, quality, source version, clocks, evidence_ref | Immutable; current pointer changes only according to ordering policy |
+| ChangeSet | previous/current state refs, typed field changes, rule/evaluator version, material/nonmaterial, reason/inputs | Immutable evaluation result; separate no-change poll log |
+| Development | identity/grouping policy/version, domain, scope, lifecycle, current_revision, related entities/states | A source incident may be shared; a user-threshold episode has private binding/scope |
+| EvidenceBundle | authority/source/type/ID/URL, clocks, allowed snapshot/field/document references, content hashes, rights policy | Never infer permission from a public URL; verify the permitted representation |
+| RelevanceAssessment | subject revision, development revision, rule, matched facts/reason params, method, exclusions, optional score/model | Tenant scoped; historical cause is not rewritten by a new profile |
+| Review / Decision | actor, owner, comment, development_revision, status, timestamp, history | Personal opened/read state separate from shared review and decision |
 | Deadline | explicit/calculated, source event/date, timezone/precision, rule/version, verification state, current revision | Rule audit; unknown stays unknown; scheduled reminders reference revision |
-| NotificationRule / receipt | recipient, channel, priority, opt-in, quiet hours, mute/cooldown, revision, delivery key/status | Reuse preferences/outbox; actor consent/current access rechecked |
+| NotificationRule / receipt | recipient, channel, priority, opt-in, quiet hours, mute/cooldown, revision, delivery key/status | Reuse preferences/outbox; recheck actor consent/current access |
 
-Усі domain fields зі state models специфікації збережені в [traceability](REQUIREMENTS_TRACEABILITY.md). Null означає не те саме, що0/false; unavailable, not-applicable і source-withheld мають різні reason codes. Технічні fields не потрібно показувати пересічному користувачеві.
+All domain fields from the specification's state models are retained in [traceability](REQUIREMENTS_TRACEABILITY.md). Null is different from 0/false; unavailable, not-applicable and source-withheld have distinct reason codes. Ordinary users do not need to see technical fields.
 
-## ADR-3. Ідентичність, час та історія
+## ADR-3. Identity, time and history
 
-- Transport instance = provider trip identity + **service date**, route/stop references з versioned timetable. Trip з таким самим номером завтра — інший екземпляр.
-- Environmental series = source/station/metric або allergen/pollutant + unit/basis + aggregation + observed/forecast. Forecast додатково має issue time і target interval. Різні продукти не зливаються.
-- Майбутній C4 (DEFERRED, не поточний контракт реалізації): customs series = authority/currency/nominal basis; daily effective state і його correction окремі revisions. Material daily change має effective-date identity; corrections цієї дати оновлюють той самий development. Загальна rate history об’єднується за series.
-- Hazard/traffic incident = official ID + namespace; planned closure occurrence відрізняється від road entity. Rescheduling зберігає occurrence, якщо так визначено upstream.
-- Tender dossier і lots мають офіційні identifiers/aliases; publication language і document URL не є identity. Auction ≠ auction lot. Trademark ID важливіший за змінюваний owner/name.
-- Numeric threshold episodes не зберігають приватний user threshold у public corpus. Private subject binding визначає crossing/reset/reopen; reversal в активному episode лишає його історію, нове crossing після reset створює наступний episode, пов’язаний із series. Retry тієї самої state/rule revision не створює новий episode.
-- UTC instants і IANA timezone для schedule; source civil date зберігається як date, а не вигадана опівніч. Intervals half-open `[from,to)`; overnight window перетинає наступний день. DST ambiguous/nonexistent input явно обробляється preview.
-- Clocks: fetched_at, source_published_at, observed_at, effective_at, valid_from/until, detected_at; quality/releaseState/forecast issue clocks окремі. Пізній fetch не робить старий source record найновішим.
+- Transport instance = provider trip identity + **service date**, with route/stop references from a versioned timetable. A trip with the same number tomorrow is a different instance.
+- Environmental series = source/station/metric or allergen/pollutant + unit/basis + aggregation + observed/forecast. A forecast additionally has an issue time and target interval. Different products are not merged.
+- Future C4 (DEFERRED, not a current implementation contract): customs series = authority/currency/nominal basis; a daily effective state and its correction are separate revisions. A material daily change has effective-date identity; corrections for that date update the same development. Overall rate history is grouped by series.
+- Hazard/traffic incident = official ID + namespace; a planned closure occurrence differs from the road entity. Rescheduling preserves the occurrence if defined that way upstream.
+- Tender dossiers and lots have official identifiers/aliases; publication language and document URL are not identity. Auction ≠ auction lot. Trademark ID takes precedence over a mutable owner/name.
+- Numeric threshold episodes do not store a private user threshold in the public corpus. Private subject binding determines crossing/reset/reopen; reversal within an active episode retains its history, while a new crossing after reset creates the next episode linked to the series. Retrying the same state/rule revision does not create a new episode.
+- Use UTC instants and IANA timezone for schedules; retain a source civil date as a date rather than inventing midnight. Intervals are half-open `[from,to)`; an overnight window crosses into the next day. Preview explicitly handles ambiguous/nonexistent DST input.
+- Clocks: fetched_at, source_published_at, observed_at, effective_at, valid_from/until, detected_at; keep quality/releaseState/forecast issue clocks separate. A late fetch does not make an old source record the latest one.
 
-Correction і deletion — versioned source events. Зникнення з partial feed не доводить cancellation. Якщо dataset не має історії, локальна дозволена ledger починається від first ingestion; UI не обіцяє попередню історію, якої немає.
+Corrections and deletions are versioned source events. Disappearance from a partial feed does not prove cancellation. If a dataset has no history, a permitted local ledger begins at first ingestion; the UI does not promise earlier history that does not exist.
 
-## ADR-4. Materiality і lifecycle
+## ADR-4. Materiality and lifecycle
 
-Перший числовий стан створює baseline без invented delta. Перше отримання чинного офіційного warning може бути initial active warning delivery з відповідним label; старий backfill не є «новою небезпекою».
+The first numeric state establishes a baseline without an invented delta. First receipt of a current official warning may deliver an initial active warning with the corresponding label; old backfill is not a "new hazard".
 
-Для чисел використовувати Decimal, unit/basis conversions і explicit rounding for display. Percentage = `(current - baseline) / abs(baseline) × 100`; zero/missing baseline → not computable. Daily/weekly baseline — попереднє effective period за правилами source, не попередній poll. Strict `>` і `≥` різні. Hysteresis, minimum duration/cooldown/reset потрібні, щоб значення біля порога не спамило; escalation/cancellation не пригнічується загальним шумовим правилом.
+Use Decimal for numbers, unit/basis conversions and explicit display rounding. Percentage = `(current - baseline) / abs(baseline) × 100`; zero/missing baseline → not computable. A daily/weekly baseline is the previous effective period under source rules, rather than the previous poll. Strict `>` and `≥` differ. Hysteresis, minimum duration/cooldown/reset prevent values near a threshold from causing spam; a general noise rule must not suppress escalation/cancellation.
 
-У специфікації одна вертикальна lifecycle змішує чотири осі. Реалізація розділяє їх:
+The specification's single vertical lifecycle mixes four axes. The implementation separates them:
 
-| Вісь | Приклади станів | Хто змінює |
+| Axis | Example states | Changed by |
 |---|---|---|
-| Source lifecycle | ACTIVE / UPDATED / CANCELLED / RESOLVED / EXPIRED | Підтверджений source event або явно позначений system expiry |
+| Source lifecycle | ACTIVE / UPDATED / CANCELLED / RESOLVED / EXPIRED | Verified source event or explicitly labelled system expiry |
 | Processing | DISCOVERED / EVALUATED / MATCHED / MATERIAL | Jobs/evaluator |
-| Delivery / private read | QUEUED / SENT / FAILED / OPENED | Outbox/channel/user; SENT не означає read |
-| Review / decision | UNREVIEWED / REVIEWED / REOPENED + NO_ACTION/BID/etc. | Authorized user + material revision re-open |
+| Delivery / private read | QUEUED / SENT / FAILED / OPENED | Outbox/channel/user; SENT does not mean read |
+| Review / decision | UNREVIEWED / REVIEWED / REOPENED + NO_ACTION/BID/etc. | Authorized user + reopening on a material revision |
 
-Material update робить reviewed-through revision застарілою, але не видаляє owner/comment/попередню decision. Source resolution закриває active source state навіть без відкриття користувачем; decision history залишається. Conflicting sources не отримують штучний «середній» стан або AI all-clear.
+A material update makes the reviewed-through revision outdated without deleting the owner/comment/previous decision. Source resolution closes the active source state even if the user has not opened it; decision history remains. Conflicting sources do not receive an artificial "average" state or an AI all-clear.
 
-Cross-source MV2-036 — explainable association, а не автоматична causal inference. До підтвердження identity події зв’язані, але не безповоротно злиті. Можливий audited split із збереженням delivery/review histories.
+Cross-source MV2-036 provides explainable association rather than automatic causal inference. Until identity is verified, events are linked without irreversible merging. An audited split can preserve delivery/review histories.
 
-## ADR-5. Права джерел — частина data contract
+## ADR-5. Source rights are part of the data contract
 
-[source dossier](SOURCE_FEASIBILITY.md) має дату й первинні посилання. Source policy включає дозволи ingestion, persistence, raw/derived UI/API/export, workspace sharing, alerts, publication_not_before, attribution, correction propagation, retention, grant expiry. Registry versioned; policy застосовується до всіх output paths, включно з support/log tooling.
+The [source dossier](SOURCE_FEASIBILITY.md) includes a date and primary references. Source policy includes permissions for ingestion, persistence, raw/derived UI/API/export, workspace sharing, alerts, publication_not_before, attribution, correction propagation, retention and grant expiry. The registry is versioned; policy applies to every output path, including support/log tooling.
 
-Відкритий XML/HTML не дає автоматичного права на перевидання. C4 відкладений; лише якщо користувач поверне його в scope, знадобиться окрема перевірка прав BAZG/SIX. Поточних робіт із цими правами немає. Для ASTRA derived fields і history потребують verified policy; raw machine-readable export не дозволяється за перевіреними умовами. SIMAP originals не змішуються з коментарями, timed publication і corrections виконуються в outbox/read path. IPI mailings scope треба уточнити до email distribution.
+Open XML/HTML does not automatically grant republication rights. C4 is deferred; separate verification of BAZG/SIX rights is required only if the user restores it to scope. No current work on those rights is scheduled. ASTRA derived fields and history require a verified policy; raw machine-readable export is not permitted under the reviewed terms. SIMAP originals remain separate from commentary, and timed publication/corrections are enforced in outbox/read paths. Clarify the scope of IPI mailings before email distribution.
 
-Evidence contract допускає **raw або normalized** snapshots, як у вимогах. Якщо rights не дозволяють sufficient retained evidence для AC, цей кейс BLOCKED; official link сам по собі не закриває вимогу відновити попередній стан. Protected tender attachments не копіюються у shared public corpus; public search access не дорівнює document access. Manual interest declaration/credentials/user account потрібні за підтриманим дозволеним flow, інакше attachment coverage incomplete.
+The evidence contract permits **raw or normalized** snapshots, as required. If rights do not permit sufficient retained evidence for an AC, the case is BLOCKED; an official link alone does not satisfy restoration of a previous state. Protected tender attachments are not copied into a shared public corpus; public search access does not equal document access. Manual interest declaration/credentials/user account are required through a supported, permitted flow; otherwise attachment coverage remains incomplete.
 
-## ADR-6. Matching, AI та рішення
+## ADR-6. Matching, AI and decisions
 
-Structured reasons — reason_code + params + matched fields + source anchors + subject/rule revision. AI може пояснювати, але не бути єдиною причиною доставки. Preserve negative outcomes/sampled rejected candidates для recall audit без збереження зайвих приватних даних.
+Structured reasons consist of reason_code + params + matched fields + source anchors + subject/rule revision. AI may explain delivery but cannot be its sole reason. Preserve negative outcomes/sampled rejected candidates for recall audits without retaining unnecessary private data.
 
-Business ranking: hard filters/exclusions → bounded lexical candidate set → similarity/optional semantic model → cited explanation. Unknown qualification = gap not proven; user score70 з прикладу не вмикає «70% probability». Для marks потрібні exact/lexical/phonetic і goods/services, а не legal conclusion.
+Business ranking: hard filters/exclusions → bounded lexical candidate set → similarity/optional semantic model → cited explanation. Unknown qualification = gap not proven; the example user score of 70 does not imply "70% probability". Marks require exact/lexical/phonetic matching and goods/services comparison rather than a legal conclusion.
 
-AI output кешується за source state/profile/prompt/model/locale revisions. Модель не формує legal deadline rule сама; unsupported date лишається unknown. Потрібні independent gold sets та supported task×language profile. Збережені legal-only prompts не застосовуються до transport/numeric facts. Якщо model queue зайнята, feed/review/delivery працюють із deterministic reasons.
+Cache AI output by source state/profile/prompt/model/locale revisions. The model does not invent a legal deadline rule; an unsupported date stays unknown. Independent gold sets and a supported task×language profile are required. Existing legal-only prompts do not apply to transport/numeric facts. If the model queue is busy, feed/review/delivery continue with deterministic reasons.
 
-BID/NO_BID/INSPECT/ESCALATE — внутрішні decision states. Tender submission, auction bid, official declaration of interest, counsel email/filing не виконуються автоматично. Підказки environmental cases не змінюють лікування, а hazard instructions походять від органу й не підміняються жартом Marvin.
+BID/NO_BID/INSPECT/ESCALATE are internal decision states. Tender submission, auction bids, official declarations of interest, counsel email/filing are not performed automatically. Environmental guidance does not change treatment, and hazard instructions come from the authority without being replaced by a Marvin joke.
 
-## ADR-7. Міграція й зворотна сумісність
+## ADR-7. Migration and backward compatibility
 
-1. Baseline characterization: scripts/fixtures для existing laws/topics/watch, auth/roles, source packs/Basel, comparisons/citations/AI histories, unread/preferences, deep links.
-2. Additive schema/API за feature flags; старі handlers і CHECK constraints не видаляються. Existing SourceConnection/Job/Outbox перевикористовуються.
-3. Resumable idempotent bridge із old ID mapping і versioned evidence; старі records не стають новими notifications. Access-gated references лишаються scoped.
-4. Shadow-read comparisons на representative persisted data; поправки documented, dual fan-out duplicate guard; mutable feature flags мають safe fallback.
-5. Per-template/per-workspace rollout; old URLs, evidence і workflows працюють. Виправлення старих артефактів — нова normalization revision, без overwrite originals.
-6. Isolated upgrade/restart/backfill/rollback restore rehearsal з row/hash/state checks; лише після цього production rollout за окремою авторизацією.
+1. Baseline characterization: scripts/fixtures for existing laws/topics/watch, auth/roles, source packs/Basel, comparisons/citations/AI histories, unread/preferences and deep links.
+2. Additive schema/API behind feature flags; do not delete old handlers or CHECK constraints. Reuse existing SourceConnection/Job/Outbox.
+3. Resumable idempotent bridge with old ID mapping and versioned evidence; old records do not become new notifications. Access-gated references remain scoped.
+4. Shadow-read comparisons on representative persisted data; document corrections, guard against duplicate dual fan-out; mutable feature flags have a safe fallback.
+5. Per-template/per-workspace rollout; old URLs, evidence and workflows continue to work. Repairing old artifacts creates a new normalization revision without overwriting originals.
+6. Isolated upgrade/restart/backfill/rollback restore rehearsal with row/hash/state checks; only then proceed to production rollout under separate authorization.
 
-v1 source tag — зафіксований код, а не backup реальної БД, secrets, model files чи built images. Після нових schema/data writes не можна просто checkout v1 на production і назвати це rollback.
+The v1 source tag is frozen code rather than a backup of the actual database, secrets, model files or built images. After new schema/data writes, checking out v1 in production is not sufficient rollback.
 
-## ADR-8. Операційні межі та приймання
+## ADR-8. Operational boundaries and acceptance
 
-Shared source fetch і bounded fan-out; ніякого polling на кожного користувача. Fair queues: deterministic urgent > bulk/history/AI; provider rate limits поважаються. User-visible freshness вимірює source publication/observation, не тільки успішний HTTP200. ASTRA revocation windows, GTFS full/differential feed і FOEN live history window входять у tests, а не inferred generic expiry.
+Shared source fetch and bounded fan-out; no per-user polling. Fair queues: deterministic urgent > bulk/history/AI; respect provider rate limits. User-visible freshness measures source publication/observation, rather than only a successful HTTP200. ASTRA revocation windows, GTFS full/differential feed and FOEN live history window belong in tests instead of being inferred from generic expiry.
 
-Retain дозволені state/evidence для всіх delivered revisions; uninteresting raw telemetry можна compact за source policy, але old/current proof і decisions не губляться. P95/capacity budgets, five-language review і pilot sample targets — запропоновані в беклозі; baseline runtime success тут не заявляється.
+Retain permitted state/evidence for every delivered revision; uninteresting raw telemetry may be compacted under source policy, while preserving old/current proof and decisions. P95/capacity budgets, five-language review and pilot sample targets are proposed in the backlog; no baseline runtime success is claimed here.
 
-**Перша повна поставка — Pollen Watch.** Явний шлях MV2-001 → MV2-069 → MV2-070 → MV2-030 → MV2-031 → MV2-071 виділяє C5 із shared source/UI/privacy/ops parent-задач, зберігаючи generic contracts. MV2-069 окремо підтверджує observation і forecast; MV2-070 реалізує C5 shared-platform subset; MV2-071 приймає повний сценарій для тестів із людьми. Він не залежить від all-domain UI, business AI чи full-v2 pilot; повні parent AC та MV2-058 лишаються незакритими. Перша хвиля usability ≥5 B2C — окремий ранній протокол, не доведені загальні KPI.
+**First complete delivery — Pollen Watch.** The explicit path MV2-001 → MV2-069 → MV2-070 → MV2-030 → MV2-031 → MV2-071 isolates C5 from shared source/UI/privacy/ops parent tasks while preserving generic contracts. MV2-069 separately verifies observation and forecast; MV2-070 implements the C5 shared-platform subset; MV2-071 accepts the complete scenario for testing with people. It does not depend on all-domain UI, business AI or the full-v2 pilot; full parent AC and MV2-058 remain open. The first usability wave with ≥5 B2C participants is a separate early protocol rather than proven overall KPIs.
 
- C4 виключений із поточної розробки, source-rights work, pilot і release gates. Дев’ять активних кейсів та 116 активних AC повинні мати source-to-decision evidence до release2.0; 10 AC-C4 збережені як DEFERRED. Часткові previews явно так позначаються. Остаточний go/no-go належить MV2-059 після MV2-057/058 і незакритих inherited gates.
+C4 is excluded from current development, source-rights work, pilot and release gates. Nine active cases and 116 active AC must have source-to-decision evidence before release 2.0; 10 AC-C4 remain DEFERRED. Partial previews are explicitly labelled. Final go/no-go belongs to MV2-059 after MV2-057/058 and any open inherited gates.
 
-## Рішення, які уточнюються перед відповідною реалізацією
+## Decisions to refine before the corresponding implementation
 
-| Питання | Планове рішення зараз | Де закривається |
+| Question | Current planned decision | Closed in |
 |---|---|---|
-| Supported exact stations/regions/transport coverage | Показувати тільки verified capabilities; приклад Lugano не доводить доступність кожного параметра | MV2-003,015 та кожний adapter; core scenario не вилучається |
-| Source rights/account/cost | Не приймати terms і не купувати доступ у ході написання плану; G(case) обов’язковий | MV2-028/038/040/042/046/049 |
-| Параметри hysteresis/rapid increase/cooldown | Версійні template defaults після domain/UX checks; user overrides у межах schema | MV2-008, доменні workflows |
-| Geo library / spatial DB extension | Мінімальний механізм, що проходить boundary/CRS/performance checks | MV2-015/054 |
-| AI модель і thresholds | Зберегти local-first; promote тільки measured per-task/per-language profile | MV2-051/054 |
-| Human reviewers / pilot participants | Ролі й мінімальні samples задані, конкретні люди ще не призначені | MV2-002/024/051/058 |
-| Release cadence / staffing / dates | Без вигаданого календаря; уточнити після source dossiers і refinement L tasks | MV2-001/003/059 |
+| Exact supported stations/regions/transport coverage | Show only verified capabilities; the Lugano example does not prove availability of every parameter | MV2-003,015 and each adapter; do not remove the core scenario |
+| Source rights/account/cost | Do not accept terms or purchase access while writing the plan; G(case) is mandatory | MV2-028/038/040/042/046/049 |
+| Hysteresis/rapid increase/cooldown parameters | Versioned template defaults after domain/UX checks; user overrides within schema | MV2-008, domain workflows |
+| Geo library / spatial DB extension | Minimum mechanism that passes boundary/CRS/performance checks | MV2-015/054 |
+| AI model and thresholds | Preserve local-first; promote only a measured per-task/per-language profile | MV2-051/054 |
+| Human reviewers / pilot participants | Roles and minimum samples are defined; specific people are not yet assigned | MV2-002/024/051/058 |
+| Release cadence / staffing / dates | No invented calendar; refine after source dossiers and refinement of L tasks | MV2-001/003/059 |

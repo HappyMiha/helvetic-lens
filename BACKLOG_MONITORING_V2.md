@@ -1,1877 +1,1881 @@
-# Helvetic Lens Monitoring v2 — єдиний беклог розробки
+# Helvetic Lens Monitoring v2 — single development backlog
 
-**Версія плану:** 1.2 · **Дата:** 10 вересня 2026 · **Baseline коду:** `7109a2891f9c99e53572008cc7c1a86001792a57`
+**Plan version:** 1.3 · **Date:** 10 September 2026 · **Code baseline:** `7109a2891f9c99e53572008cc7c1a86001792a57`
 
-**Статус:** план реалізації; жодна нова можливість v2 не оголошена реалізованою.
+**Status:** implementation plan; no new v2 capability is claimed as implemented.
 
-**Обсяг:** 9 обов’язкових сценаріїв, 62 обов’язкові задачі, 9 відкладених задач. 116 активних AC; 10 AC-C4 збережено як відкладені.
+**Scope:** 9 required scenarios, 62 required tasks, 9 deferred tasks. 116 active acceptance criteria (AC); 10 AC-C4 criteria retained as deferred.
 
-**Принцип:** authoritative source → material change → personal relevance → evidence → user decision.
+**Principle:** authoritative source → material change → personal relevance → evidence → user decision.
 
-## Як користуватися цим беклогом
+## How to use this backlog
 
-Це **єдине джерело поточного обсягу, пріоритетів, залежностей і приймання розробки Helvetic Lens**. Кореневий [BACKLOG.md](BACKLOG.md) веде сюди. [Попередній беклог](BACKLOG_V1_ARCHIVE.md) збережений як історія, а не паралельна черга. Уже зроблене з нього перевикористовуємо; 35 незавершених пунктів мають явних наступників у [legacy disposition](docs/monitoring-v2/LEGACY_DISPOSITION.md). Їхні невиконані детальні критерії успадковуються відповідальними задачами v2, а не зникають через короткий переказ.
+This is the **single source of current scope, priorities, dependencies and development acceptance for Helvetic Lens**. The root [BACKLOG.md](BACKLOG.md) points here. The [previous backlog](BACKLOG_V1_ARCHIVE.md) is preserved as history, not a parallel queue. Reuse its completed work; 35 unfinished items have explicit successors in the [legacy disposition](docs/monitoring-v2/LEGACY_DISPOSITION.md). Their outstanding detailed criteria are inherited by the responsible v2 tasks, not lost through summarization.
 
-Вхід — [Practical Use Case Specification v1.0](docs/monitoring-v2/requirements/HELVETIC_LENS_PRACTICAL_USE_CASE_SPECIFICATION_v1.0.md), збережений без змін, SHA-256 `a6f4e7da87a9ae30171164512d16ce4be411f2913c22d90ed7bf7e1bc94ece4c`.
-**Рішення користувача від 2026-09-10 (версія 1.1):** «Митні курси позначимо як можливо реалізувати, але в розробку не беремо». C4, Swiss Customs source pack, CURRENCY template, MV2-026/027/061 та їхні критерії збережені лише як можливість на майбутнє. Вони не входять у реалізацію, UX, discovery/ліцензування, pilot або приймання v2.0 і не є його блокерами. Повернення — лише після нового явного рішення користувача та зміни цього беклогу; строку реалізації немає. Ця зміна має пріоритет над обсягом первинної специфікації.
+Input: [Practical Use Case Specification v1.0 — English reading edition](docs/monitoring-v2/requirements/HELVETIC_LENS_PRACTICAL_USE_CASE_SPECIFICATION_v1.0_EN.md). The [original source](docs/monitoring-v2/requirements/HELVETIC_LENS_PRACTICAL_USE_CASE_SPECIFICATION_v1.0.md) is preserved byte for byte, SHA-256 `a6f4e7da87a9ae30171164512d16ce4be411f2913c22d90ed7bf7e1bc94ece4c`. The English edition preserves line positions and all original AC wording; it translates the remaining source prose without changing requirements.
 
-Формулювання документа про вже наявні можливості перевірені за кодом; вони не прийняті як доказ реалізації.
-План і архітектурні рішення нижче — результат аналізу; приклади сум, дат, міст, порогів і score зі специфікації не стали прихованими глобальними defaults.
+**User scope decision on 2026-09-10 (version 1.1):** customs rates are a possible future implementation and must not be taken into development. C4, the Swiss Customs source pack, the CURRENCY template, MV2-026/027/061 and their criteria are retained only as future possibilities. They are excluded from v2.0 implementation, UX, discovery/licensing, pilot and acceptance, and are not release blockers. Returning them to scope requires a new explicit user decision and an update to this backlog; no implementation date is set. This decision supersedes the original specification's scope.
 
-Перед стартом задачі: прочитати її критерії, залежності, source gate та успадковані legacy-зобов’язання; призначити виконавця на вказану роль; завести окрему гілку/worktree. Новий дефект або потрібне уточнення оформити як нову задачу MV2 з acceptance і залежностями **тут**, потім реалізовувати. Не брати старий HL ID як самостійну нову задачу. Поділ L-задачі на підзадачі дозволений лише з явними ID/criteria в цьому документі; coverage батьківського ID зберігається.
+The source document's statements about existing capabilities have been checked against the code and are not treated as implementation evidence. The plan and architectural decisions below result from that analysis; example amounts, dates, cities, thresholds and scores in the specification have not become implicit global defaults.
 
-Статуси: **PLANNED → READY → IN PROGRESS → VERIFYING → DONE**; **BLOCKED** завжди має конкретну зовнішню залежність/власника/наступну дію; **DEFERRED** не входить у v2.0. READY означає виконані залежності й доступні необхідні контракти/дані. Для першої поставки C5 діють явні виділені контракти MV2-069/070, без очікування DONE ширших parent-задач. Код у Git, mock, проходження JSON schema або написаний текст не дорівнюють DONE.
+Before starting a task, read its criteria, dependencies, source gate and inherited legacy obligations; assign an implementer to the stated role and create a separate branch/worktree. Record any new defect or required refinement as an MV2 task with acceptance criteria and dependencies **here**, then implement it. Do not take an old HL ID as a standalone new task. An L-sized task may be split only into explicit subtasks with IDs and criteria in this document; preserve coverage of the parent ID.
 
-**P0** — цілісність, спільна основа або gate перед відповідним зовнішнім pilot. **P1** — обов’язкова функція v2.0. **P2** — явно відкладений scope. Це пріоритет розробки, він не тотожний P1/P2/P3 пріоритету сповіщень у специфікації.
-Ролі позначають відповідальність, а не вже призначену команду. S/M/L — відносний розмір невизначеності та роботи, не календарна оцінка. L потребує refinement перед реалізацією.
+Statuses: **PLANNED → READY → IN PROGRESS → VERIFYING → DONE**. **BLOCKED** always identifies a specific external dependency, owner and next action. **DEFERRED** is outside v2.0. READY means that dependencies are satisfied and the necessary contracts/data are available. The first C5 delivery uses the explicitly extracted MV2-069/070 contracts without waiting for the broader parent tasks to be DONE. Code in Git, a mock, passing JSON schema validation or a written document does not mean DONE.
 
-## Продуктове рішення
+**P0** means integrity, shared foundations or a gate before the relevant external pilot. **P1** is a required v2.0 capability. **P2** is explicitly deferred scope. These are development priorities, distinct from the specification's P1/P2/P3 notification priorities.
 
-Користувач задає **що йому важливо**, а не конструює crawler. Початок — Create Monitor → Personal/Business → зрозумілі поля → preview очікуваних даних/збігу → явне Start. Далі один цикл: Today → What changed → Why received → Evidence → Decision → ongoing monitoring. Жоден звичайний користувач не має вводити API key джерела.
+Roles identify responsibility, not an already staffed team. S/M/L indicates relative uncertainty and effort, not a calendar estimate. L-sized tasks require refinement before implementation.
 
-| ID | Користувацький результат | Обов’язкові основні задачі |
+## Product decision
+
+The user specifies **what matters to them**. Setup follows Create Monitor → Personal/Business → understandable fields → preview of expected data/matches → explicit Start. A single ongoing loop follows: Today → What changed → Why received → Evidence → Decision → ongoing monitoring. Ordinary users do not need to enter a source API key or design a crawler.
+
+| ID | User outcome | Main required tasks |
 |---|---|---|
-| C1 | Попередження для Home/Office та інших Swiss locations | MV2-028, MV2-029 |
-| C2 | Зміни регулярного journey/line/stop у потрібні дні й час | MV2-037, MV2-038, MV2-039 |
-| C3 | A2/Gotthard/A13: напрям, перекриття, затори, планові зміни | MV2-037, MV2-040, MV2-041 |
-| C4 | **Можливо реалізувати в майбутньому; поза розробкою v2.0** | DEFERRED: MV2-026, MV2-027, MV2-061 |
-| C5 | Вибраний пилок біля підтриманої станції; observed і forecast | MV2-030, MV2-031 |
-| C6 | Вода/станція: рівень, витрата, температура, офіційна danger state | MV2-032, MV2-033 |
-| C7 | PM2.5/PM10/O3/NO2: значуща зміна, поліпшення й обмеження | MV2-034, MV2-035 |
-| B2 | Discovery тендерів і зміни вже відстежуваних tender dossiers | MV2-042…045 |
-| B7 | Exact/lexical/phonetic IP candidates та register/deadline review | MV2-046…048 |
-| B8 | Офіційні аукціони Ticino: актив, бюджет, строки, умови | MV2-049, MV2-050 |
+| C1 | Warnings for Home/Office and other Swiss locations | MV2-028, MV2-029 |
+| C2 | Changes affecting a regular journey/line/stop on the relevant days and at the relevant times | MV2-037, MV2-038, MV2-039 |
+| C3 | A2/Gotthard/A13: direction, closures, congestion and planned changes | MV2-037, MV2-040, MV2-041 |
+| C4 | **Possible future implementation; excluded from v2.0 development** | DEFERRED: MV2-026, MV2-027, MV2-061 |
+| C5 | Selected pollen near a supported station, with observations and forecasts | MV2-030, MV2-031 |
+| C6 | Water/station: level, discharge, temperature and official danger state | MV2-032, MV2-033 |
+| C7 | PM2.5/PM10/O3/NO2: meaningful changes, improvements and limitations | MV2-034, MV2-035 |
+| B2 | Tender discovery and changes to already monitored tender dossiers | MV2-042…045 |
+| B7 | Exact/lexical/phonetic IP candidates and register/deadline review | MV2-046…048 |
+| B8 | Official Ticino auctions: asset, budget, deadlines and conditions | MV2-049, MV2-050 |
 
-Спільний UI: **Today / Monitoring / Investigate / Workspace / Admin**. Existing Topics, laws, Discover, Impact Inbox/Matrix, Digests і Marvin отримують зрозуміле місце в цій структурі. Усі активні сценарії використовують спільну навігацію. Семантичний AI потрібний для поясненого business ranking, але активні C1/C2/C3/C5/C6/C7 та числові/часові B8 правила працюють без LLM.
+Shared UI: **Today / Monitoring / Investigate / Workspace / Admin**. Existing Topics, laws, Discover, Impact Inbox/Matrix, Digests and Marvin receive clear places in this structure. All active scenarios share navigation. Semantic AI supports explained business ranking, while active C1/C2/C3/C5/C6/C7 and numeric/time-based B8 rules work without an LLM.
 
-Перевага над звичайною підпискою — одна перевірна історія матеріальних оновлень із причиною саме для цього користувача та повторним review, коли змінився вже переглянутий факт.
+The value beyond an ordinary subscription is one verifiable history of material updates, with a reason specific to the user and renewed review when an already reviewed fact changes.
 
-## Перша поставка — Pollen Watch, повний C5 для реальних користувачів
+## First delivery — complete Pollen Watch for real users
 
-**Найближчий продуктовий результат:** повноцінний Pollen Watch, прийнятий за MV2-071 і готовий до першої хвилі тестування з людьми. Це перший сценарій реалізації. До його готовності пріоритет мають наведені нижче задачі та потрібна їм спільна основа; source discovery інших активних кейсів може йти паралельно. Їхні конектори й користувацькі функції не випереджають C5 без нового рішення про пріоритет.
+**Next product outcome:** a complete Pollen Watch, accepted under MV2-071 and ready for the first round of testing with people. This is the first scenario to implement. Until it is ready, the tasks below and their necessary shared foundations take priority; source discovery for other active cases may run in parallel. Their connectors and user-facing capabilities must not precede C5 without a new priority decision.
 
-**Порядок:** MV2-001 → MV2-069 → MV2-070 → MV2-030 → MV2-031 → MV2-071 → готовність почати тестування з людьми; після цього можуть починатися наступні активні сценарії v2. Номер F3 означає доменну групу, а не вимогу чекати повного F1/F2. Статус усіх цих робіт зараз PLANNED; реалізацію та тестування з людьми ще не виконано.
+**Sequence:** MV2-001 → MV2-069 → MV2-070 → MV2-030 → MV2-031 → MV2-071 → ready to begin user testing; the next active v2 scenarios may then start. F3 denotes a domain group, not a requirement to wait for all of F1/F2. All these tasks are currently PLANNED; implementation and real-user testing have not yet been performed.
 
-| Крок | Конкретний результат | Де приймається |
+| Step | Concrete outcome | Acceptance owner |
 |---|---|---|
-| Контракт C5 | Підтримані locations/stations/allergens, правила та UX; окремі підтверджені official observation **і forecast** channels/rights/live samples | [MV2-069](#mv2-069) |
-| Платформа для C5 | Personal monitor, generic state/rules/evidence/history, Today/review/reopen, real in-app/email, privacy, відновлення, потрібна legacy compatibility | [MV2-070](#mv2-070) |
-| Офіційна інтеграція | Реальні observed/forecast стани, versioned categories/units, freshness/corrections/coverage | [MV2-030](#mv2-030) |
-| Повний користувацький цикл | Setup → current state → material change → why/evidence → review → new revision/reopen → notification; усі 10 AC-C5 | [MV2-031](#mv2-031) |
-| Допуск до тестів із людьми | Незалежне приймання, privacy/operations/device/language evidence, захищене середовище і протокол першої хвилі ≥5 B2C людей | [MV2-071](#mv2-071) |
+| C5 contract | Supported locations/stations/allergens, rules and UX; separately verified official observation **and forecast** channels, rights and live samples | [MV2-069](#mv2-069) |
+| Platform for C5 | Personal monitor, generic states/rules/evidence/history, Today/review/reopen, working in-app/email delivery, privacy, recovery and necessary legacy compatibility | [MV2-070](#mv2-070) |
+| Official integration | Real observed/forecast states, versioned categories/units, freshness, corrections and coverage | [MV2-030](#mv2-030) |
+| Complete user journey | Setup → current state → material change → why/evidence → review → new revision/reopen → notification; all 10 AC-C5 criteria | [MV2-031](#mv2-031) |
+| Ready for user testing | Independent acceptance, privacy/operations/device/language evidence, a protected environment and a protocol for the first round with ≥5 B2C participants | [MV2-071](#mv2-071) |
 
-**Межа повноти:** observation-only конектор, demo із mock forecast, красива картка без реального rule/delivery/history або неперевірене покриття не закривають Pollen Watch. Якщо official forecast gate не пройдено, повна поставка лишається BLOCKED із конкретною наступною дією. Очікування природного category crossing не повинно приховувати стан: поточні офіційні дані видно одразу, historical replay маркується і доводить переходи окремо від live freshness.
+**Completeness boundary:** an observation-only connector, a demo with a mocked forecast, a card without working rules/delivery/history, or unverified coverage does not complete Pollen Watch. If the official forecast gate has not passed, full delivery remains BLOCKED with a specific next action. Waiting for a natural category crossing must not hide the current state: current official data is visible immediately; labelled historical replay demonstrates transitions separately from live freshness.
 
-**Межа залежностей:** MV2-069/070 — явні підзавдання спільних parent-задач у межах C5 з власними AC та evidence. Вони не залежать від DONE цих ширших parent-задач. MV2-030/031 залежать саме від цих виділених контрактів; MV2-071 не чекає business AI, усіх джерел, all-template UI чи загального v2 pilot. Parent-задачі повторно використовують результат і закриваються тільки після всього свого обсягу; частина C5 не робить їх автоматично DONE.
+**Dependency boundary:** MV2-069/070 are explicit C5-scoped subtasks of shared parent tasks, with their own AC and evidence. They do not depend on those broader parents being DONE. MV2-030/031 depend on these extracted contracts; MV2-071 does not wait for business AI, all sources, the UI for every template or the general v2 pilot. Parent tasks reuse the result and close only when their entire scope is complete; the C5 contribution does not automatically make them DONE.
 
-| Явне C5-підзавдання | Яку частину parent-задач закриває | Що лишається в parent scope |
+| Explicit C5 subtask | Contribution to parent tasks | Remaining parent scope |
 |---|---|---|
-| MV2-069 | MV2-002/003/015/025: C5 journey, source/forecast rights і coverage contract | Решта активних use cases, shared catalogue/UX completeness |
-| MV2-070 C01–C02 | MV2-004…011/015/017/020/053/055: C5 personal config, persistence, rules, isolation, station/evidence/history | Решта typed schemas, rules/geography та повне приймання прав/даних |
-| MV2-070 C03–C04 | MV2-012…014/017…022: повний C5 UI/review/delivery loop із legacy feed compatibility | Решта v2 cards/forms і domain-specific/team workflows |
-| MV2-070 C05–C08 + MV2-071 | MV2-016/024/025/052…056/060/068: C5 access, languages/a11y, ops/capacity/privacy/retention, bridge і restore | Full-v2/inherited matrices, інші locales×domain flows, full target-host workload, business evaluation |
+| MV2-069 | MV2-002/003/015/025: C5 journey, source/forecast rights and coverage contract | Other active use cases and completeness of the shared catalogue/UX |
+| MV2-070 C01–C02 | MV2-004…011/015/017/020/053/055: C5 personal configuration, persistence, rules, isolation, stations, evidence and history | Other typed schemas, rules/geography and full rights/data acceptance |
+| MV2-070 C03–C04 | MV2-012…014/017…022: full C5 UI/review/delivery loop with legacy feed compatibility | Other v2 cards/forms and domain-specific/team workflows |
+| MV2-070 C05–C08 + MV2-071 | MV2-016/024/025/052…056/060/068: C5 access, languages/accessibility, operations/capacity/privacy/retention, bridge and restore | Full-v2/inherited matrices, other locale×domain flows, full target-host workload and business evaluation |
 
-Перший тест із ≥5 людей перевіряє користування й допомагає виявити дефекти; він не замінює ≥10 B2C/≥5 organizations/four-week pilot MV2-058 і не доводить загальні KPI v2. Результати користувачів з’являються лише після фактичних сесій. Виправлення з цих сесій отримують явні MV2 ID/підзавдання в цьому ж беклозі перед реалізацією.
+The first test with ≥5 people checks usability and helps find defects. It does not replace the four-week MV2-058 pilot with ≥10 B2C participants and ≥5 organizations, or prove general v2 KPIs. User results exist only after actual sessions. Fixes arising from those sessions receive explicit MV2 IDs/subtasks in this same backlog before implementation.
 
-## Архітектура та source gates
+## Architecture and source gates
 
-[Архітектурне рішення](docs/monitoring-v2/ARCHITECTURE.md) фіксує additive generic kernel у чинному FastAPI/PostgreSQL/Celery/Next.js. [Аудит коду](docs/monitoring-v2/BASELINE_AUDIT.md) показує, що legal-only CHECK/FK, connectors, Today grouping і ActionDecision не підтримують ці кейси простим додаванням шаблонів. Зберігаємо стек, jobs/outbox, auth, artifact storage, local models, regulatory domain; додаємо typed entities/states/developments/rules і bridge.
+The [architecture decision](docs/monitoring-v2/ARCHITECTURE.md) defines an additive generic kernel within the existing FastAPI/PostgreSQL/Celery/Next.js stack. The [code audit](docs/monitoring-v2/BASELINE_AUDIT.md) shows that legal-only CHECK/FK constraints, connectors, Today grouping and ActionDecision cannot support these cases merely by adding templates. Keep the stack, jobs/outbox, authentication, artifact storage, local models and regulatory domain; add typed entities, states, developments, rules and a compatibility bridge.
 
-Ключові інваріанти: immutable evidence; idempotent ingestion/delivery; source state ≠ review ≠ decision ≠ delivery; source failure ≠ no change/all-clear; source severity ≠ user relevance ≠ notification priority; UNKNOWN ≠ 0; forecast ≠ observation; matched reasons належать workspace/subject revision, а офіційні дані можуть бути спільними.
+Key invariants: immutable evidence; idempotent ingestion/delivery; source state ≠ review ≠ decision ≠ delivery; source failure ≠ no change/all-clear; source severity ≠ user relevance ≠ notification priority; UNKNOWN ≠ 0; forecast ≠ observation. Match reasons belong to a workspace/subject revision, while official data may be shared.
 
-[Перевірка джерел](docs/monitoring-v2/SOURCE_FEASIBILITY.md) містить датовані офіційні посилання й межі перевірки. **Документований API не означає готовий конектор чи погоджений доступ.**
-MV2-003 можна завершити, коли для всіх дев’яти активних кейсів є точний dossier і approved/blocked outcome; він не вимагає одночасно отримати всі credentials. Кожний adapter додатково має власний **G(case)**: дозволений доступ → schema/identity/coverage contract → permitted live sample → lifecycle/quality → rights enforcement. C4 виключений з MV2-003 і поточних source gates; окремого дослідження прав/доступу зараз немає.
+The [source feasibility review](docs/monitoring-v2/SOURCE_FEASIBILITY.md) contains dated official references and verification limits. **A documented API does not establish an implemented connector or approved access.** MV2-003 can close once all nine active cases have an accurate dossier and an approved/blocked outcome; it does not require obtaining every credential at the same time. Each adapter also has its own **G(case)**: permitted access → schema/identity/coverage contract → permitted live sample → lifecycle/quality → rights enforcement. C4 is excluded from MV2-003 and current source gates; no C4 rights/access investigation is scheduled now.
 
-| Gate | Поточний висновок для планування | Власник / наступна дія |
+| Gate | Current planning finding | Owner / next action |
 |---|---|---|
-| G(C1), G(B8) | Офіційні сторінки є; supported API/автоматичне reuse не доведені | Integration, MV2-028/049: supported channel та allowed monitoring contract |
-| G(C3) | FEDRO access term та raw-data export restrictions | Integration/Operations, MV2-040: дозволені derived fields, renewal, retention |
-| G(B2) | SIMAP API, публікаційні умови й окремі права на attachments | Integration, MV2-042: client contract, publication time/corrections, gated documents |
-| G(B7) | IPI API через account/terms; допустимість monitoring emails потребує уточнення | Product/Integration, MV2-046: письмово зафіксувати channel scope |
-| G(C2), G(C6) | Є документація, але rate limit/live-window неоднозначні | Integration, MV2-038/032: conservative bounded probe та уточнення контракту |
-| G(C5), G(C7) | C5 observation OGD документований; official forecast потребує окремого підтвердження MV2-069. Air coverage залежить від station/dataset | Integration, MV2-069/030/034: observation і forecast contracts, точні stations/metrics/units/rights |
+| G(C1), G(B8) | Official pages exist; supported APIs/automated reuse have not been established | Integration, MV2-028/049: supported channel and permitted monitoring contract |
+| G(C3) | FEDRO access term and raw-data export restrictions | Integration/Operations, MV2-040: permitted derived fields, renewal and retention |
+| G(B2) | SIMAP API, publication terms and separate attachment rights | Integration, MV2-042: client contract, publication timing/corrections and access-gated documents |
+| G(B7) | IPI API through an account/terms; permission for monitoring emails needs clarification | Product/Integration, MV2-046: document the channel scope in writing |
+| G(C2), G(C6) | Documentation exists, but rate limits/live-window definitions are ambiguous | Integration, MV2-038/032: conservative bounded probe and contract clarification |
+| G(C5), G(C7) | C5 observation OGD is documented; official forecasts need separate confirmation in MV2-069. Air coverage depends on station/dataset | Integration, MV2-069/030/034: observation and forecast contracts, exact stations/metrics/units/rights |
 
-Для дев’яти активних сценаріїв діє таке правило: якщо потрібний source gate не пройдено, обов’язкова задача лишається BLOCKED, а повний v2.0 — не прийнятий. Посилання на зовнішній сайт або mock не закриває автоматичний monitoring AC. UNKNOWN в окремому record є чесною поведінкою; систематична відсутність mandatory capability (наприклад forecast, delay, документи/Q&A або deadline) залишає відповідний AC відкритим. Підписання умов, платний доступ, реєстрація від імені компанії чи зовнішні заявки — окремі явні дії власника/уповноваженого виконавця на етапі виконання.
+For the nine active scenarios, an unmet required source gate leaves the required task BLOCKED and full v2.0 unaccepted. An external website link or mock does not satisfy an automatic monitoring AC. UNKNOWN is honest behavior for an individual record; systematic absence of a mandatory capability, such as forecast, delay, documents/Q&A or a deadline, leaves the corresponding AC open. Signing terms, purchasing access, registering on behalf of a company or submitting external applications are separate explicit actions for the owner/authorized implementer during execution.
 
-## Порядок реалізації та контрольні точки
+## Implementation sequence and checkpoints
 
-Спочатку MV2-001 і перша черга Pollen Watch MV2-069/070/030/031/071. UX MV2-002 і source dossiers MV2-003 для інших активних сценаріїв можна вести паралельно; їхній повний DONE не блокує C5. Після мінімальних persistence/rule/delivery contracts будувати **повний C5 slice**, не чекати завершення всіх доменів або «ідеального» generic framework. Довідники/інтерфейси інших джерел досліджуються паралельно; активація лише після їхніх gates. Номер ID не є порядком виконання: наприклад, MV2-060/068 — рання сумісність, а не робота після релізу.
+Start with MV2-001 and the first Pollen Watch work: MV2-069/070/030/031/071. UX MV2-002 and source dossiers MV2-003 for other active scenarios may proceed in parallel; their full DONE status does not block C5. Once the minimum persistence/rule/delivery contracts exist, build the **complete C5 delivery** without waiting for all domains or a perfect generic framework. Catalogues/interfaces for other sources may be investigated in parallel; activation requires their gates. Task IDs are not execution order: for example, MV2-060/068 provide early compatibility work, not post-release work.
 
-| Checkpoint | Результат і вихідний доказ |
+| Checkpoint | Outcome and exit evidence |
 |---|---|
-| G0: F0 | Архітектурні контракти, відтворений legacy baseline, досліджені UX journeys, source dossiers; blockers мають owner |
-| G1: FIRST, Pollen Watch | MV2-069/070/030/031/071: повний C5 на real official observation + forecast; 10 C5 AC і CORE у C5 scope, user-testing readiness; не чекає завершення інших доменів |
-| G2: F3 | C1/C5/C6/C7 прийняті за власними AC і source gates; спільні numeric/location contracts перевірені |
-| G3: F4 | C2/C3 із time/route/expiry, direction, restoration; пояснений cross-source association |
-| G4: F5 | B2/B7/B8 із discovery **та** change-monitoring, calibrated semantic candidates, документами, deadlines і рішеннями |
-| G5: F6 | 116 активних AC (10 AC-C4 відкладено), inherited regressions, five-language/a11y, target-host capacity/recovery, privacy, pilot; незалежний go/no-go |
-| Release | MV2-059: артефакти v2.0, upgrade/rollback runbook; production deployment окремо авторизується |
+| G0: F0 | Architectural contracts, reproduced legacy baseline, investigated UX journeys and source dossiers; blockers have owners |
+| G1: FIRST, Pollen Watch | MV2-069/070/030/031/071: complete C5 with real official observations + forecasts; 10 C5 AC and CORE within C5 scope, ready for user testing; independent of completion of other domains |
+| G2: F3 | C1/C5/C6/C7 accepted against their own AC and source gates; shared numeric/location contracts verified |
+| G3: F4 | C2/C3 with time/route/expiry, direction and restoration; explained cross-source association |
+| G4: F5 | B2/B7/B8 with discovery **and** change monitoring, calibrated semantic candidates, documents, deadlines and decisions |
+| G5: F6 | 116 active AC (10 AC-C4 deferred), inherited regressions, five-language/accessibility acceptance, target-host capacity/recovery, privacy and pilot; independent go/no-go |
+| Release | MV2-059: v2.0 artifacts and upgrade/rollback runbook; production deployment requires separate authorization |
 
-F2 не означає, що весь UI треба завершити перед першим slice: потрібні лише частини залежних задач, а DONE ставиться після всіх їхніх критеріїв. Як тільки потрібний розріз стає самостійним work item, його додають як підзадачу до цього беклогу з власними залежностями.
-MV2-023/043/047 завершують implementation під feature flags після training/validation checks; незалежний held-out gate MV2-051 пізніше дозволяє production promotion. Це не взаємне блокування DONE.
+F2 does not require completing the entire UI before the first delivery: only the needed portions of dependent tasks are required, while DONE requires all their criteria. Whenever an extracted portion becomes an independent work item, add it to this backlog as a subtask with its own dependencies.
 
-F6 тестові протоколи/fixtures проєктуються від початку; зазначені dependencies — вимоги до фінального виконання і закриття gate.
+MV2-023/043/047 complete implementation behind feature flags after training/validation checks; the independent held-out gate MV2-051 later permits production promotion. Their DONE conditions do not block each other in a cycle.
 
-Для першої поставки critical external path — підтверджені observation **і forecast** channels/rights/coverage C5 у MV2-069. Для решти v2 — права/доступ C1, B7, B8 та підтверджене source coverage. Інженерний — entity/state/evidence → rules/development → scoped relevance/outbox → один UI loop → дев’ять adapter+journey slices → quality/recovery/pilot. Поки source gates і команда не оцінені, календарних обіцянок немає.
+Design F6 test protocols/fixtures from the start; the listed dependencies govern final execution and gate closure.
 
-## Definition of Ready та Definition of Done
+The first delivery's critical external path is verified C5 observation **and forecast** channels, rights and coverage in MV2-069. For the remainder of v2, it is C1, B7 and B8 rights/access and verified source coverage. The engineering path is entity/state/evidence → rules/development → scoped relevance/outbox → one UI loop → nine adapter+journey deliveries → quality/recovery/pilot. No calendar commitments are made before source gates and staffing have been assessed.
 
-**Ready:** задача зрозуміла виконавцю; predecessors завершені або є затверджений versioned interface для явно внесеної підзадачі; source access для залежної реалізації дозволений; є незалежний positive/negative fixture і target acceptance; review owner призначений.
+## Definition of Ready and Definition of Done
 
-**Done:** виконані всі task AC, власна явно визначена contribution до mapped source AC поточного активного scope та успадковані невиконані legacy acceptance у межах задачі; перевірені API/БД/UI і source path у заявленому обсязі; зафіксовані commit, test command/result, fixture hash, source/schema/rule version, rollout flag, limitations і reviewer. Відсутні критичні дефекти; оновлено цей статус і traceability evidence. Field/human/hardware criterion закривається тільки відповідним evidence, не self-assessment агента.
+**Ready:** the implementer understands the task; predecessors are complete, or an approved versioned interface exists for an explicitly recorded subtask; source access needed for implementation is permitted; independent positive/negative fixtures and target acceptance are defined; a review owner is assigned.
 
-**Мапа вимог не створює прихованих залежностей:** коли один AC має кілька task owners, кожний закриває тільки власні названі deliverables/contribution. Dossier MV2-069 не потребує готового UI; MV2-070 перевіряє platform contracts/components до live connector. Повне C5 source-to-user приймання — MV2-031/071; повне cross-domain приймання — MV2-057. Посилання на AC у preparatory task не вимагає виконати наступні задачі й не закриває весь AC.
+**Done:** all task AC, the task's explicitly defined contribution to mapped source AC in active scope, and inherited outstanding legacy acceptance within the task's scope are satisfied. API/database/UI and the source path have been verified within that scope. Record the commit, test command/result, fixture hash, source/schema/rule version, rollout flag, limitations and reviewer. No critical defects remain; update the task status and traceability evidence. Field, human and hardware criteria require the corresponding evidence, not an agent's self-assessment.
 
-Для кожного активного case adapter + workflow вимагається: initial state, new/material update, unrelated/nonmaterial negative, duplicate replay, applicable cancellation/restoration, stale source, history/evidence, personal/team permissions, review/reopen, channel policy. Не кожний numeric series має «офіційний all-clear» — це не вигадувати.
-Після source/rule/profile change і after review відтворюваність старого reason зберігається. Джерело, яке дозволяє тільки обмежену evidence representation, не отримує прихований raw export.
+**Traceability does not create hidden dependencies:** when an AC has multiple task owners, each closes only its named deliverables/contribution. The MV2-069 dossier does not require a finished UI; MV2-070 checks platform contracts/components before the live connector. Full C5 source-to-user acceptance belongs to MV2-031/071; full cross-domain acceptance belongs to MV2-057. An AC reference in a preparatory task does not require completing later tasks and does not close the entire AC.
 
-## Вимірювання, припущення та відкладений scope
+Each active case's adapter + workflow must cover initial state, new/material updates, unrelated/nonmaterial negatives, duplicate replay, applicable cancellation/restoration, a stale source, history/evidence, personal/team permissions, review/reopen and channel policy. Not every numeric series has an official all-clear; do not invent one.
 
-Числові gates нижче — **запропоновані цілі плану**, не дані специфікації й не поточні результати. Їх фіксують до вимірювання; зміна потребує обґрунтованої версії плану, а не підгонки під результат.
+Earlier reasons remain reproducible after source/rule/profile changes and after review. A source that permits only a limited evidence representation must not receive an implicit raw-export path.
 
-- First value: setup до першого зрозумілого поточного/збереженого source-backed стану ≤5 хвилин; очікування нової природної події вимірюється окремо. Median alert-to-understanding ≤60 секунд.
-- Pilot: ≥90% delivered relevance precision, ≥90% material-change precision, ≥90% understandable why, duplicates <1%. Кожний denominator та sample size видимий; aggregate не маскує провал окремого кейсу.
-- Candidate evaluation: ≥85% precision / ≥90% recall для business ranking на незалежному held-out наборі, ≥200 labelled pairs з ≥50 B2/B7/B8; не «ймовірність порушення IP».
-- Capacity: existing 100-account/10-org gate плюс proposed 1000 subjects/1M observations; legacy read p95≤500ms та enqueue≤1s зберігаються; для нових time-series/history endpoints proposed p95≤2s, post-ingest deterministic processing≤30s. Upstream і delivery lag окремо. Реальна підтримувана cadence залежить від джерела.
-- Pilot тривалістю4 тижні: ≥10 B2C людей та ≥5 незалежних organizations. Якщо подій мало — historical replay окремим доказом, а не заміна live sample.
-- English-first реалізація, але new v2 five-language closure успадковує EN/DE/FR/IT/RM contract; точна мова офіційного документа зберігається. Незалежна мовна перевірка не замінюється автоперекладом.
+## Measurement, assumptions and deferred scope
 
-MV2-036 свідомо включає source-described correlation opportunity у v2 як bounded explainable association; це рішення цього плану, а не мінімальний AC специфікації. Митні курси C4 повністю відкладені разом із конектором, валютою, порогами, історією, digest і purchase calculator; автоматичного старту після v2.0 немає. Розширена tender lifecycle і national auction expansion — можливий обсяг після2.0. Нові vertical use cases, navigation engine, medical treatment, infringement verdicts, autonomous bids/filings, новий identity system і бездоказова заміна стеку не входять у цей план.
-П’ять старих conditional directions лишаються явними DEFERRED задачами MV2-063…067, а не прихованою паралельною розробкою.
+The numerical gates below are **proposed plan targets**, not specification facts or current results. Fix them before measurement; changes require a justified plan revision rather than fitting targets to results.
 
-## Реєстр задач
+- First value: setup to the first understandable current/saved source-backed state ≤5 minutes; measure waiting for a new natural event separately. Median alert-to-understanding ≤60 seconds.
+- Pilot: ≥90% delivered relevance precision, ≥90% material-change precision, ≥90% understandable explanations, duplicates <1%. Every denominator and sample size is visible; aggregate results must not hide a failing case.
+- Candidate evaluation: ≥85% precision / ≥90% recall for business ranking on an independent held-out set, with ≥200 labelled pairs and ≥50 for each of B2/B7/B8. This is not a probability of IP infringement.
+- Capacity: the existing 100-account/10-organization gate plus a proposed 1000 subjects/1M observations; retain legacy read p95≤500ms and enqueue≤1s. Proposed budgets for new time-series/history endpoints are p95≤2s and post-ingest deterministic processing≤30s. Measure upstream and delivery lag separately. Actual supported cadence depends on the source.
+- Four-week pilot: ≥10 B2C participants and ≥5 independent organizations. When events are sparse, use historical replay as separate evidence, not as a substitute for live samples.
+- English-first implementation, with new v2 five-language acceptance inheriting the EN/DE/FR/IT/RM contract; preserve the exact language of official documents. Machine translation does not replace independent language review.
 
-| ID | Задача | Фаза | Пріоритет | Розмір | Статус | Залежності |
+MV2-036 deliberately includes the source-described correlation opportunity in v2 as bounded, explainable association. This is a plan decision, not a minimum specification AC. C4 customs rates are fully deferred, including the connector, currency selection, thresholds, history, digest and purchase calculator; they do not start automatically after v2.0. An extended tender lifecycle and national auction expansion are possible post-2.0 scope. Additional vertical use cases, a navigation engine, medical treatment, infringement verdicts, autonomous bids/filings, a new identity system and an unsupported stack replacement are outside this plan.
+
+Five historical conditional directions remain explicit DEFERRED tasks MV2-063…067, not an implicit parallel development stream.
+
+## Task index
+
+| ID | Task | Phase | Priority | Size | Status | Dependencies |
 |---|---|---|---|---|---|---|
-| [MV2-001](#mv2-001) | Зафіксувати контракти розширення та сумісність із MVP | F0 | P0 | M | PLANNED | — |
-| [MV2-002](#mv2-002) | Перевірити сценарії першої цінності та спільну навігацію | F0 | P0 | M | PLANNED | — |
-| [MV2-003](#mv2-003) | Перевірити права, покриття та контракти джерел дев’яти активних сценаріїв | F0 | P0 | L | PLANNED | [MV2-001](#mv2-001) |
-| [MV2-004](#mv2-004) | Особистий workspace і командні права моніторингу | F1 | P0 | M | PLANNED | [MV2-001](#mv2-001) |
-| [MV2-005](#mv2-005) | MonitoringSubject і версійні Monitoring Templates | F1 | P0 | L | PLANNED | [MV2-001](#mv2-001), [MV2-004](#mv2-004) |
-| [MV2-006](#mv2-006) | ObservedEntity: стабільна ідентичність джерела | F1 | P0 | M | PLANNED | [MV2-001](#mv2-001), [MV2-003](#mv2-003) |
-| [MV2-007](#mv2-007) | ObservedState та незмінні докази | F1 | P0 | L | PLANNED | [MV2-003](#mv2-003), [MV2-006](#mv2-006) |
-| [MV2-008](#mv2-008) | Детерміновані ChangeRule, ChangeSet і числові пороги | F1 | P0 | L | PLANNED | [MV2-005](#mv2-005), [MV2-007](#mv2-007) |
-| [MV2-009](#mv2-009) | Development, deduplication і lifecycle | F1 | P0 | L | PLANNED | [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-008](#mv2-008) |
-| [MV2-010](#mv2-010) | Структурна релевантність із доказом кожного збігу | F1 | P0 | L | PLANNED | [MV2-005](#mv2-005), [MV2-008](#mv2-008), [MV2-009](#mv2-009) |
-| [MV2-011](#mv2-011) | Надійний збір станів, черги та свіжість | F1 | P0 | L | PLANNED | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-009](#mv2-009) |
-| [MV2-012](#mv2-012) | Notification policy та transactional outbox | F1 | P0 | L | PLANNED | [MV2-004](#mv2-004), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-011](#mv2-011) |
-| [MV2-013](#mv2-013) | Review, Decision та призначення відповідального | F1 | P0 | M | PLANNED | [MV2-004](#mv2-004), [MV2-009](#mv2-009) |
-| [MV2-014](#mv2-014) | API та read projections спільної стрічки | F1 | P0 | L | PLANNED | [MV2-004](#mv2-004), [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-013](#mv2-013) |
-| [MV2-015](#mv2-015) | Каталог географії, станцій та зон покриття | F1 | P0 | L | PLANNED | [MV2-003](#mv2-003), [MV2-006](#mv2-006) |
-| [MV2-016](#mv2-016) | Часові вікна, строки та нагадування | F1 | P0 | L | PLANNED | [MV2-007](#mv2-007), [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-012](#mv2-012) |
-| [MV2-017](#mv2-017) | Create Monitor: дев’ять зрозумілих шаблонів | F2 | P1 | L | PLANNED | [MV2-002](#mv2-002), [MV2-005](#mv2-005), [MV2-010](#mv2-010), [MV2-015](#mv2-015) |
-| [MV2-018](#mv2-018) | Monitoring: керування збереженими subjects | F2 | P1 | M | PLANNED | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
-| [MV2-019](#mv2-019) | Today: одна картка для всіх доменів | F2 | P1 | L | PLANNED | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
-| [MV2-020](#mv2-020) | Investigate: стани, diff, докази та історія | F2 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
-| [MV2-021](#mv2-021) | Workspace: Impact Inbox, рішення та Impact Matrix | F2 | P1 | M | PLANNED | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
-| [MV2-022](#mv2-022) | Сповіщення та Digests із тих самих developments | F2 | P1 | L | PLANNED | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
-| [MV2-023](#mv2-023) | Ask і Marvin у контексті доказів v2 | F2 | P1 | M | PLANNED | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
-| [MV2-024](#mv2-024) | Зрозумілі підказки, доступність і п’ять мов | F2 | P0 | L | PLANNED | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
-| [MV2-025](#mv2-025) | Admin: правдиві source capabilities і керування доступом | F2 | P0 | M | PLANNED | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-018](#mv2-018) |
-| [MV2-026](#mv2-026) | Можливо реалізувати: C4, конектор офіційних митних курсів | LATER | P2 | M | DEFERRED — можливо реалізувати; не брати в розробку | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011) |
-| [MV2-027](#mv2-027) | Можливо реалізувати: C4, валюта, пороги, історія і digest | LATER | P2 | M | DEFERRED — можливо реалізувати; не брати в розробку | [MV2-008](#mv2-008), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-022](#mv2-022), [MV2-026](#mv2-026) |
-| [MV2-028](#mv2-028) | C1: офіційні попередження і географія небезпеки | F3 | P1 | L | PLANNED | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
-| [MV2-029](#mv2-029) | C1: Home/Office locations і повний warning workflow | F3 | P1 | L | PLANNED | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-028](#mv2-028) |
-| [MV2-030](#mv2-030) | C5: офіційні pollen observations і forecasts | F3 | P0 | M | PLANNED | [MV2-069](#mv2-069), [MV2-070](#mv2-070) |
-| [MV2-031](#mv2-031) | Pollen Watch — перший повний наскрізний сценарій (C5) | F3 | P0 | L | PLANNED | [MV2-070](#mv2-070), [MV2-030](#mv2-030) |
-| [MV2-032](#mv2-032) | C6: гідрологічні станції, показники та офіційна небезпека | F3 | P1 | M | PLANNED | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
-| [MV2-033](#mv2-033) | C6: River / Lake thresholds, escalation та історія | F3 | P1 | M | PLANNED | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-032](#mv2-032) |
-| [MV2-034](#mv2-034) | C7: офіційні air-quality ряди та інтерпретація | F3 | P1 | M | PLANNED | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
-| [MV2-035](#mv2-035) | C7: Air Quality — показники, зміни та поліпшення | F3 | P1 | M | PLANNED | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-034](#mv2-034) |
-| [MV2-036](#mv2-036) | Пов’язані developments із кількох джерел | F4 | P1 | M | PLANNED | [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-029](#mv2-029), [MV2-033](#mv2-033), [MV2-041](#mv2-041), [MV2-071](#mv2-071) |
-| [MV2-037](#mv2-037) | Довідники Journey/Trip/Route/Stop і Road Corridor | F4 | P0 | L | PLANNED | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-015](#mv2-015), [MV2-016](#mv2-016), [MV2-071](#mv2-071) |
-| [MV2-038](#mv2-038) | C2: Service Alerts і Trip Updates | F4 | P1 | L | PLANNED | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-037](#mv2-037), [MV2-071](#mv2-071) |
-| [MV2-039](#mv2-039) | C2: регулярний commute і тихі транспортні alerts | F4 | P1 | L | PLANNED | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-038](#mv2-038) |
-| [MV2-040](#mv2-040) | C3: ASTRA traffic і заплановані перекриття | F4 | P1 | L | PLANNED | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-037](#mv2-037), [MV2-071](#mv2-071) |
-| [MV2-041](#mv2-041) | C3: My Route Watch для A2 / Gotthard / A13 | F4 | P1 | L | PLANNED | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-040](#mv2-040) |
-| [MV2-042](#mv2-042) | B2: SIMAP discovery та відстеження публікацій | F5 | P1 | L | PLANNED | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071) |
-| [MV2-043](#mv2-043) | B2/B7/B8: структурні профілі й semantic candidate ranking | F5 | P1 | L | PLANNED | [MV2-005](#mv2-005), [MV2-008](#mv2-008), [MV2-010](#mv2-010), [MV2-071](#mv2-071) |
-| [MV2-044](#mv2-044) | Версії наборів документів та умов | F5 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-071](#mv2-071) |
+| [MV2-001](#mv2-001) | Establish extension contracts and MVP compatibility | F0 | P0 | M | PLANNED | None |
+| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | PLANNED | None |
+| [MV2-003](#mv2-003) | Verify source rights, coverage and contracts for the nine active scenarios | F0 | P0 | L | PLANNED | [MV2-001](#mv2-001) |
+| [MV2-004](#mv2-004) | Personal workspace and team monitoring permissions | F1 | P0 | M | PLANNED | [MV2-001](#mv2-001) |
+| [MV2-005](#mv2-005) | MonitoringSubject and versioned Monitoring Templates | F1 | P0 | L | PLANNED | [MV2-001](#mv2-001), [MV2-004](#mv2-004) |
+| [MV2-006](#mv2-006) | ObservedEntity: stable source identity | F1 | P0 | M | PLANNED | [MV2-001](#mv2-001), [MV2-003](#mv2-003) |
+| [MV2-007](#mv2-007) | ObservedState and immutable evidence | F1 | P0 | L | PLANNED | [MV2-003](#mv2-003), [MV2-006](#mv2-006) |
+| [MV2-008](#mv2-008) | Deterministic ChangeRule, ChangeSet and numeric thresholds | F1 | P0 | L | PLANNED | [MV2-005](#mv2-005), [MV2-007](#mv2-007) |
+| [MV2-009](#mv2-009) | Development, deduplication and lifecycle | F1 | P0 | L | PLANNED | [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-008](#mv2-008) |
+| [MV2-010](#mv2-010) | Structural relevance with evidence for every match | F1 | P0 | L | PLANNED | [MV2-005](#mv2-005), [MV2-008](#mv2-008), [MV2-009](#mv2-009) |
+| [MV2-011](#mv2-011) | Reliable state ingestion, queues and freshness | F1 | P0 | L | PLANNED | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-009](#mv2-009) |
+| [MV2-012](#mv2-012) | Notification policy and transactional outbox | F1 | P0 | L | PLANNED | [MV2-004](#mv2-004), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-011](#mv2-011) |
+| [MV2-013](#mv2-013) | Review, Decision and owner assignment | F1 | P0 | M | PLANNED | [MV2-004](#mv2-004), [MV2-009](#mv2-009) |
+| [MV2-014](#mv2-014) | Shared-feed API and read projections | F1 | P0 | L | PLANNED | [MV2-004](#mv2-004), [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-013](#mv2-013) |
+| [MV2-015](#mv2-015) | Geography, station and coverage catalogue | F1 | P0 | L | PLANNED | [MV2-003](#mv2-003), [MV2-006](#mv2-006) |
+| [MV2-016](#mv2-016) | Time windows, deadlines and reminders | F1 | P0 | L | PLANNED | [MV2-007](#mv2-007), [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-012](#mv2-012) |
+| [MV2-017](#mv2-017) | Create Monitor: nine understandable templates | F2 | P1 | L | PLANNED | [MV2-002](#mv2-002), [MV2-005](#mv2-005), [MV2-010](#mv2-010), [MV2-015](#mv2-015) |
+| [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | PLANNED | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
+| [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | PLANNED | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
+| [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
+| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | PLANNED | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
+| [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | PLANNED | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
+| [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | PLANNED | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
+| [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | PLANNED | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
+| [MV2-025](#mv2-025) | Admin: accurate source capabilities and access management | F2 | P0 | M | PLANNED | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-018](#mv2-018) |
+| [MV2-026](#mv2-026) | Possible future implementation: C4 official customs-rate connector | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011) |
+| [MV2-027](#mv2-027) | Possible future implementation: C4 currency, thresholds, history and digest | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-008](#mv2-008), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-022](#mv2-022), [MV2-026](#mv2-026) |
+| [MV2-028](#mv2-028) | C1: official warnings and hazard geography | F3 | P1 | L | PLANNED | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
+| [MV2-029](#mv2-029) | C1: Home/Office locations and the complete warning workflow | F3 | P1 | L | PLANNED | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-028](#mv2-028) |
+| [MV2-030](#mv2-030) | C5: official pollen observations and forecasts | F3 | P0 | M | PLANNED | [MV2-069](#mv2-069), [MV2-070](#mv2-070) |
+| [MV2-031](#mv2-031) | Pollen Watch — the first complete end-to-end scenario (C5) | F3 | P0 | L | PLANNED | [MV2-070](#mv2-070), [MV2-030](#mv2-030) |
+| [MV2-032](#mv2-032) | C6: hydrological stations, metrics and official danger levels | F3 | P1 | M | PLANNED | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
+| [MV2-033](#mv2-033) | C6: River / Lake thresholds, escalation and history | F3 | P1 | M | PLANNED | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-032](#mv2-032) |
+| [MV2-034](#mv2-034) | C7: official air-quality series and interpretation | F3 | P1 | M | PLANNED | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
+| [MV2-035](#mv2-035) | C7: Air Quality — metrics, changes and improvements | F3 | P1 | M | PLANNED | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-034](#mv2-034) |
+| [MV2-036](#mv2-036) | Related developments from multiple sources | F4 | P1 | M | PLANNED | [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-029](#mv2-029), [MV2-033](#mv2-033), [MV2-041](#mv2-041), [MV2-071](#mv2-071) |
+| [MV2-037](#mv2-037) | Journey/Trip/Route/Stop and Road Corridor reference data | F4 | P0 | L | PLANNED | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-015](#mv2-015), [MV2-016](#mv2-016), [MV2-071](#mv2-071) |
+| [MV2-038](#mv2-038) | C2: Service Alerts and Trip Updates | F4 | P1 | L | PLANNED | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-037](#mv2-037), [MV2-071](#mv2-071) |
+| [MV2-039](#mv2-039) | C2: Regular commutes and low-noise transport alerts | F4 | P1 | L | PLANNED | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-038](#mv2-038) |
+| [MV2-040](#mv2-040) | C3: ASTRA traffic and planned closures | F4 | P1 | L | PLANNED | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-037](#mv2-037), [MV2-071](#mv2-071) |
+| [MV2-041](#mv2-041) | C3: My Route Watch for A2 / Gotthard / A13 | F4 | P1 | L | PLANNED | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-040](#mv2-040) |
+| [MV2-042](#mv2-042) | B2: SIMAP discovery and publication monitoring | F5 | P1 | L | PLANNED | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071) |
+| [MV2-043](#mv2-043) | B2/B7/B8: Structured profiles and semantic candidate ranking | F5 | P1 | L | PLANNED | [MV2-005](#mv2-005), [MV2-008](#mv2-008), [MV2-010](#mv2-010), [MV2-071](#mv2-071) |
+| [MV2-044](#mv2-044) | Versioned document sets and conditions | F5 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-071](#mv2-071) |
 | [MV2-045](#mv2-045) | B2: Tender discovery → review → material update | F5 | P1 | L | PLANNED | [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022), [MV2-042](#mv2-042), [MV2-043](#mv2-043), [MV2-044](#mv2-044) |
-| [MV2-046](#mv2-046) | B7: офіційні trademark publications і register updates | F5 | P1 | L | PLANNED | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071) |
-| [MV2-047](#mv2-047) | B7: exact, lexical і phonetic candidates | F5 | P1 | L | PLANNED | [MV2-043](#mv2-043), [MV2-046](#mv2-046) |
-| [MV2-048](#mv2-048) | B7: IP review, строк перевірки та зміни реєстру | F5 | P1 | L | PLANNED | [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-046](#mv2-046), [MV2-047](#mv2-047) |
-| [MV2-049](#mv2-049) | B8: офіційні аукціони Ticino | F5 | P1 | L | PLANNED | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071) |
-| [MV2-050](#mv2-050) | B8: Auction profile, price limit і ending-soon | F5 | P1 | L | PLANNED | [MV2-008](#mv2-008), [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022), [MV2-043](#mv2-043), [MV2-044](#mv2-044), [MV2-049](#mv2-049) |
-| [MV2-051](#mv2-051) | Незалежна перевірка matching та локального AI | F6 | P0 | L | PLANNED | [MV2-023](#mv2-023), [MV2-043](#mv2-043), [MV2-047](#mv2-047) |
-| [MV2-052](#mv2-052) | Операційні метрики, degraded mode і відновлення джерел | F6 | P0 | M | PLANNED | [MV2-011](#mv2-011), [MV2-012](#mv2-012), [MV2-025](#mv2-025) |
-| [MV2-053](#mv2-053) | Приватність персональних locations і контроль доступу | F6 | P0 | M | PLANNED | [MV2-004](#mv2-004), [MV2-005](#mv2-005), [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-023](#mv2-023) |
-| [MV2-054](#mv2-054) | Ємність одного сервера і черги з різними пріоритетами | F6 | P0 | L | PLANNED | [MV2-011](#mv2-011), [MV2-014](#mv2-014), [MV2-043](#mv2-043), [MV2-052](#mv2-052) |
-| [MV2-055](#mv2-055) | Зберігання історії, retention та дозволений export | F6 | P0 | M | PLANNED | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-020](#mv2-020), [MV2-044](#mv2-044) |
-| [MV2-056](#mv2-056) | Міграція, сумісність і rollback rehearsal | F6 | P0 | L | PLANNED | [MV2-001](#mv2-001), [MV2-053](#mv2-053), [MV2-055](#mv2-055), [MV2-060](#mv2-060) |
-| [MV2-057](#mv2-057) | Виконуваний набір 116 активних AC та adversarial regression | F6 | P0 | L | PLANNED | [MV2-029](#mv2-029), [MV2-031](#mv2-031), [MV2-033](#mv2-033), [MV2-035](#mv2-035), [MV2-036](#mv2-036), [MV2-039](#mv2-039), [MV2-041](#mv2-041), [MV2-045](#mv2-045), [MV2-048](#mv2-048), [MV2-050](#mv2-050), [MV2-024](#mv2-024), [MV2-051](#mv2-051), [MV2-053](#mv2-053), [MV2-056](#mv2-056), [MV2-068](#mv2-068), [MV2-071](#mv2-071) |
-| [MV2-058](#mv2-058) | Виміряний B2C/B2B pilot | F6 | P0 | L | PLANNED | [MV2-002](#mv2-002), [MV2-024](#mv2-024), [MV2-051](#mv2-051), [MV2-054](#mv2-054), [MV2-057](#mv2-057), [MV2-071](#mv2-071) |
-| [MV2-059](#mv2-059) | Приймання і реліз Helvetic Lens Monitoring v2.0 | F6 | P0 | M | PLANNED | [MV2-025](#mv2-025), [MV2-052](#mv2-052), [MV2-054](#mv2-054), [MV2-055](#mv2-055), [MV2-056](#mv2-056), [MV2-057](#mv2-057), [MV2-058](#mv2-058) |
-| [MV2-060](#mv2-060) | Legacy bridge для Topics, watches та legal events | F1 | P0 | L | PLANNED | [MV2-004](#mv2-004), [MV2-005](#mv2-005), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
-| [MV2-061](#mv2-061) | Можливо реалізувати: customs purchase calculator | LATER | P2 | S | DEFERRED — можливо реалізувати; не брати в розробку | [MV2-027](#mv2-027) |
-| [MV2-062](#mv2-062) | Після v2.0: нові кантони аукціонів і розширений tender workflow | LATER | P2 | L | DEFERRED | [MV2-045](#mv2-045), [MV2-050](#mv2-050) |
-| [MV2-063](#mv2-063) | Умовно: pgvector після доведеного recall gap | LATER | P2 | M | DEFERRED | [MV2-051](#mv2-051), [MV2-054](#mv2-054) |
-| [MV2-064](#mv2-064) | Умовно: relation graph після перевірки користі | LATER | P2 | M | DEFERRED | [MV2-021](#mv2-021), [MV2-036](#mv2-036), [MV2-058](#mv2-058) |
-| [MV2-065](#mv2-065) | Умовно: кілька серверів / HA за виміряною потребою | LATER | P2 | M | DEFERRED | [MV2-054](#mv2-054), [MV2-056](#mv2-056) |
-| [MV2-066](#mv2-066) | Умовно: наступні два кантональні regulatory packs | LATER | P2 | M | DEFERRED | [MV2-068](#mv2-068) |
-| [MV2-067](#mv2-067) | Поза десятьма кейсами: opt-in public-discourse pilot | LATER | P2 | M | DEFERRED | [MV2-058](#mv2-058) |
-| [MV2-068](#mv2-068) | Завершити перевірку legacy coverage та repair старих артефактів | F1 | P0 | L | PLANNED | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-060](#mv2-060) |
-| [MV2-069](#mv2-069) | Pollen Watch FIRST: підтвердити джерела та контракт першої поставки | FIRST | P0 | M | PLANNED — перша черга | [MV2-001](#mv2-001) |
-| [MV2-070](#mv2-070) | Pollen Watch FIRST: реалізувати спільну платформу в межах C5 | FIRST | P0 | L | PLANNED — перша черга | [MV2-069](#mv2-069) |
-| [MV2-071](#mv2-071) | Pollen Watch FIRST: прийняти повний сценарій і підготувати до тестування з реальними користувачами | FIRST | P0 | M | PLANNED — перший user-testing gate | [MV2-031](#mv2-031) |
+| [MV2-046](#mv2-046) | B7: Official trademark publications and register updates | F5 | P1 | L | PLANNED | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071) |
+| [MV2-047](#mv2-047) | B7: Exact, lexical and phonetic candidates | F5 | P1 | L | PLANNED | [MV2-043](#mv2-043), [MV2-046](#mv2-046) |
+| [MV2-048](#mv2-048) | B7: IP review, review deadlines and register changes | F5 | P1 | L | PLANNED | [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-046](#mv2-046), [MV2-047](#mv2-047) |
+| [MV2-049](#mv2-049) | B8: Official Ticino auctions | F5 | P1 | L | PLANNED | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071) |
+| [MV2-050](#mv2-050) | B8: Auction profiles, price limits and ending-soon alerts | F5 | P1 | L | PLANNED | [MV2-008](#mv2-008), [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022), [MV2-043](#mv2-043), [MV2-044](#mv2-044), [MV2-049](#mv2-049) |
+| [MV2-051](#mv2-051) | Independent matching and local AI evaluation | F6 | P0 | L | PLANNED | [MV2-023](#mv2-023), [MV2-043](#mv2-043), [MV2-047](#mv2-047) |
+| [MV2-052](#mv2-052) | Operational metrics, degraded mode and source recovery | F6 | P0 | M | PLANNED | [MV2-011](#mv2-011), [MV2-012](#mv2-012), [MV2-025](#mv2-025) |
+| [MV2-053](#mv2-053) | Personal-location privacy and access control | F6 | P0 | M | PLANNED | [MV2-004](#mv2-004), [MV2-005](#mv2-005), [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-023](#mv2-023) |
+| [MV2-054](#mv2-054) | Single-server capacity and queues with different priorities | F6 | P0 | L | PLANNED | [MV2-011](#mv2-011), [MV2-014](#mv2-014), [MV2-043](#mv2-043), [MV2-052](#mv2-052) |
+| [MV2-055](#mv2-055) | History storage, retention and permitted exports | F6 | P0 | M | PLANNED | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-020](#mv2-020), [MV2-044](#mv2-044) |
+| [MV2-056](#mv2-056) | Migration, compatibility and rollback rehearsal | F6 | P0 | L | PLANNED | [MV2-001](#mv2-001), [MV2-053](#mv2-053), [MV2-055](#mv2-055), [MV2-060](#mv2-060) |
+| [MV2-057](#mv2-057) | Executable checks for 116 active AC and adversarial regression | F6 | P0 | L | PLANNED | [MV2-029](#mv2-029), [MV2-031](#mv2-031), [MV2-033](#mv2-033), [MV2-035](#mv2-035), [MV2-036](#mv2-036), [MV2-039](#mv2-039), [MV2-041](#mv2-041), [MV2-045](#mv2-045), [MV2-048](#mv2-048), [MV2-050](#mv2-050), [MV2-024](#mv2-024), [MV2-051](#mv2-051), [MV2-053](#mv2-053), [MV2-056](#mv2-056), [MV2-068](#mv2-068), [MV2-071](#mv2-071) |
+| [MV2-058](#mv2-058) | Measured B2C/B2B pilot | F6 | P0 | L | PLANNED | [MV2-002](#mv2-002), [MV2-024](#mv2-024), [MV2-051](#mv2-051), [MV2-054](#mv2-054), [MV2-057](#mv2-057), [MV2-071](#mv2-071) |
+| [MV2-059](#mv2-059) | Helvetic Lens Monitoring v2.0 acceptance and release | F6 | P0 | M | PLANNED | [MV2-025](#mv2-025), [MV2-052](#mv2-052), [MV2-054](#mv2-054), [MV2-055](#mv2-055), [MV2-056](#mv2-056), [MV2-057](#mv2-057), [MV2-058](#mv2-058) |
+| [MV2-060](#mv2-060) | Legacy bridge for Topics, watches and legal events | F1 | P0 | L | PLANNED | [MV2-004](#mv2-004), [MV2-005](#mv2-005), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
+| [MV2-061](#mv2-061) | Possible future feature: Customs purchase calculator | LATER | P2 | S | DEFERRED — possible future feature; do not take into development | [MV2-027](#mv2-027) |
+| [MV2-062](#mv2-062) | After v2.0: Additional auction cantons and extended tender workflow | LATER | P2 | L | DEFERRED | [MV2-045](#mv2-045), [MV2-050](#mv2-050) |
+| [MV2-063](#mv2-063) | Conditional: pgvector after a demonstrated recall gap | LATER | P2 | M | DEFERRED | [MV2-051](#mv2-051), [MV2-054](#mv2-054) |
+| [MV2-064](#mv2-064) | Conditional: Relationship graph after a usefulness test | LATER | P2 | M | DEFERRED | [MV2-021](#mv2-021), [MV2-036](#mv2-036), [MV2-058](#mv2-058) |
+| [MV2-065](#mv2-065) | Conditional: Multiple servers / HA based on measured need | LATER | P2 | M | DEFERRED | [MV2-054](#mv2-054), [MV2-056](#mv2-056) |
+| [MV2-066](#mv2-066) | Conditional: The next two cantonal regulatory packs | LATER | P2 | M | DEFERRED | [MV2-068](#mv2-068) |
+| [MV2-067](#mv2-067) | Beyond the ten source use cases: Opt-in public-discourse pilot | LATER | P2 | M | DEFERRED | [MV2-058](#mv2-058) |
+| [MV2-068](#mv2-068) | Complete legacy coverage verification and repair old artifacts | F1 | P0 | L | PLANNED | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-060](#mv2-060) |
+| [MV2-069](#mv2-069) | Pollen Watch FIRST: Confirm sources and the first-delivery contract | FIRST | P0 | M | PLANNED — first implementation priority | [MV2-001](#mv2-001) |
+| [MV2-070](#mv2-070) | Pollen Watch FIRST: Implement the shared platform within C5 scope | FIRST | P0 | L | PLANNED — first implementation priority | [MV2-069](#mv2-069) |
+| [MV2-071](#mv2-071) | Pollen Watch FIRST: Accept the complete scenario and prepare for testing with real users | FIRST | P0 | M | PLANNED — first user-testing gate | [MV2-031](#mv2-031) |
 
 
-## F0 — Рішення, джерела та перевірка потреби
+## F0 — Decisions, sources and validation of user needs
 
 <a id="mv2-001"></a>
 
-### MV2-001 — Зафіксувати контракти розширення та сумісність із MVP
+### MV2-001 — Establish extension contracts and MVP compatibility
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Architect + Backend · **Розмір:** M
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Architect + Backend · **Size:** M
 
-**Залежності:** —. **Вимоги:** §§1–7,19,27,30.
+**Dependencies:** None. **Requirements:** §§1–7,19,27,30.
 
-**Результат для користувача:** Розробка починається від перевіреної основи.
+**User outcome:** Development starts from a verified foundation.
 
-**Робота:** Затвердити ADR для generic kernel; інвентар API, схем, маршрутів, jobs та 35 відкритих legacy-пунктів; feature flags за template і workspace.
+**Work:** Approve the ADR for the generic kernel; inventory APIs, schemas, routes, jobs and 35 open legacy items; define feature flags by template and workspace.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Baseline — 7109a28; тег MVP незмінний; усі 35 відкритих HL мають disposition.
-2. Нові сутності не обходять legal CHECK constraints; описані additive migrations, bridge і повернення на старі читачі.
-3. Розмежовані факт джерела, системний розрахунок, AI та рішення; погоджені контракти з ARCHITECTURE.md.
+1. The baseline is 7109a28; the MVP tag remains unchanged; all 35 open HL items have a disposition.
+2. New entities do not bypass legal CHECK constraints; additive migrations, the bridge and fallback to legacy readers are documented.
+3. Source facts, system calculations, AI and decisions are separated; contracts are aligned with ARCHITECTURE.md.
 
-**Перевірка:** Рев’ю схем і матриці сумісності; characterization-набір на ізольованій копії БД.
+**Verification:** Review schemas and the compatibility matrix; run characterization tests on an isolated database copy.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-002"></a>
 
-### MV2-002 — Перевірити сценарії першої цінності та спільну навігацію
+### MV2-002 — Validate first-value journeys and shared navigation
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Product + UX · **Розмір:** M
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Product + UX · **Size:** M
 
-**Залежності:** —. **Вимоги:** §§20–21,25–26,34.
+**Dependencies:** None. **Requirements:** §§20–21,25–26,34.
 
-**Результат для користувача:** Людина створює спостереження без знання Sources/Topics.
+**User outcome:** People can create a monitor without understanding Sources/Topics.
 
-**Робота:** Прототип Create Monitor → preview → Today → evidence → decision; особистий і командний режими; сценарії усіх дев’яти активних шаблонів.
+**Work:** Prototype Create Monitor → preview → Today → evidence → decision; cover personal and team modes and the journeys of all nine active templates.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Щонайменше 5 B2C учасників і 5 представників B2B проходять релевантні їм задачі; протокол помилок збережений.
-2. Прототип явно показує недоступне покриття, очікування першого стану та брак свіжих даних.
-3. Навігація Today / Monitoring / Investigate / Workspace / Admin; збережено шлях до старих законів, Topics, Discover та Impact Matrix.
+1. At least 5 B2C participants and 5 B2B representatives complete tasks relevant to them; retain the error log.
+2. The prototype explicitly shows unavailable coverage, the wait for an initial state and the lack of fresh data.
+3. Navigation includes Today / Monitoring / Investigate / Workspace / Admin; preserve access to existing laws, Topics, Discover and Impact Matrix.
 
-**Перевірка:** Спостереження за користувачем без підказок; результати уточнюють тексти та конфігурацію, не розширюють дев’ять активних кейсів.
+**Verification:** Observe users without prompting; use the results to refine copy and configuration without expanding the nine active cases.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-003"></a>
 
-### MV2-003 — Перевірити права, покриття та контракти джерел дев’яти активних сценаріїв
+### MV2-003 — Verify source rights, coverage and contracts for the nine active scenarios
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Integration + Product · **Розмір:** L
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Integration + Product · **Size:** L
 
-**Залежності:** [MV2-001](#mv2-001). **Вимоги:** §§23,38; усі authoritative source розділи.
+**Dependencies:** [MV2-001](#mv2-001). **Requirements:** §§23,38; all authoritative source sections.
 
-**Результат для користувача:** Обіцяються лише дані, які можна отримувати й показувати.
+**User outcome:** Only promise data that can be obtained and displayed.
 
-**Робота:** Окремий dossier C1/C2/C3/C5/C6/C7/B2/B7/B8; C4 виключено з поточної роботи: endpoint, auth, terms, licence, поля, території, мови, cadence, історія, correction/delete, evidence retention/export; каталог capabilities.
+**Work:** Create a separate dossier for C1/C2/C3/C5/C6/C7/B2/B7/B8; C4 is excluded from current work. Cover endpoint, auth, terms, licence, fields, territories, languages, cadence, history, correction/delete and evidence retention/export; maintain a capability catalogue.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Для кожного з дев’яти активних кейсів є датований dossier з URL/версією умов, exact capability inventory, відповідальним і outcome approved або blocked. Якщо доступ заблокований, достатній документований blocker; successful response sample потрібний лише для власного G(case), не для DONE MV2-003.
-2. C3 має контроль строку доступу та заборони raw redistribution; SIMAP враховує час публікації.
-3. Недоступний обов’язковий кейс лишається BLOCKED; його не оголошують DONE через mock або підміну стороннім джерелом.
-4. C4 — DEFERRED за рішенням користувача; його dossier, API probes, запити доступу та ліцензування не виконуються у v2.0 і не блокують MV2-003.
+1. Each of the nine active cases has a dated dossier with the URL/version of its terms, an exact capability inventory, an owner and an approved or blocked outcome. If access is blocked, a documented blocker is sufficient; a successful response sample is required only for the case’s own G(case), not for MV2-003 to be DONE.
+2. C3 controls access expiry and the prohibition on raw redistribution; SIMAP respects publication time.
+3. An unavailable mandatory case remains BLOCKED; mocks or replacement with a third-party source do not make it DONE.
+4. C4 is DEFERRED by the user’s decision; its dossier, API probes, access requests and licensing are not undertaken in v2.0 and do not block MV2-003.
 
-**Перевірка:** Документальне рев’ю дев’яти активних source dossiers; successful bounded API probe та conformance fixtures виконуються в G(case) кожного adapter після дозволеного доступу.
+**Verification:** Review the nine active source dossiers; perform a successful bounded API probe and conformance fixtures in each adapter’s G(case) after obtaining permitted access.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 
-## FIRST — Pollen Watch: виконати першими разом із MV2-030/031
+## FIRST — Pollen Watch: implement first together with MV2-030/031
 
 <a id="mv2-069"></a>
 
-### MV2-069 — Pollen Watch FIRST: підтвердити джерела та контракт першої поставки
+### MV2-069 — Pollen Watch FIRST: Confirm sources and the first-delivery contract
 
-**Статус:** PLANNED — перша черга · **Пріоритет:** P0 · **Власник:** Product + Integration + UX · **Розмір:** M
+**Status:** PLANNED — first implementation priority · **Priority:** P0 · **Owner:** Product + Integration + UX · **Size:** M
 
-**Залежності:** [MV2-001](#mv2-001). **Вимоги:** Рішення користувача 2026-09-10: Pollen Watch перший; §12, §§23–25; AC-C5-01…10; S-45…48.
+**Dependencies:** [MV2-001](#mv2-001). **Requirements:** User decision 2026-09-10: Pollen Watch first; §12, §§23–25; AC-C5-01…10; S-45…48.
 
-**Результат для користувача:** Визначено повний Pollen Watch для реальних користувачів і перевірено, що його можна забезпечити офіційними даними.
+**User outcome:** A complete Pollen Watch for real users is defined, and official data is verified as sufficient to deliver it.
 
-**Робота:** Явне C5-підзавдання MV2-002/003/015/025: уточнити перший user journey, підтримані stations/locations/allergens, observation і forecast contracts, права, units/categories, cadence/freshness та очікування першого стану. Працювати з C5 dossier незалежно від решти восьми активних кейсів.
+**Work:** Explicit C5 contribution to MV2-002/003/015/025: clarify the first user journey, supported stations/locations/allergens, observation and forecast contracts, rights, units/categories, cadence/freshness and the initial-state waiting experience. Work on the C5 dossier independently of the other eight active cases.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Продуктовий контракт покриває всі AC-C5-01…10, multiple allergens, user thresholds/rapid increase, observed і forecast, why/evidence/history/review/reopen, opt-in email. Підтриману територію і стаціонарний характер вимірів видно до Start; це не точний вимір біля дому.
-2. G(C5-observation): dated source/terms/schema, station/allergen/unit/category inventory, attribution/retention/display/alert rights і дозволений live sample із timestamp/provenance. Документація cadence перевірена за реальною публікацією; успішний HTTP не є доказом свіжого виміру.
-3. G(C5-forecast): окремо встановлено official endpoint/channel, право використання, allergens/stations або area mapping, issue_time/valid_time, category semantics; є дозволений live forecast sample. Observations API саме по собі цього не доводить. Відсутність цього contract лишає MV2-069/030/071 BLOCKED для повної поставки.
-4. Короткий C5 prototype/usability review перевіряє setup, поріг, читання observed/forecast, reason/evidence, pause та відсутнє покриття; результати зафіксовані. Інші UX journeys MV2-002 не блокують цей висновок.
-5. Versioned interface/fixtures і supported coverage list дозволяють почати MV2-070; немає обіцянки all-Switzerland coverage чи медичної оцінки. C4 дослідження виключене.
+1. The product contract covers all AC-C5-01…10, multiple allergens, user thresholds/rapid increases, observations and forecasts, why/evidence/history/review/reopen and opt-in email. Supported coverage and the station-based nature of measurements are visible before Start; the data is not an exact measurement at the user’s home.
+2. G(C5-observation): dated source/terms/schema, station/allergen/unit/category inventory, attribution/retention/display/alert rights and a permitted live sample with timestamp/provenance. Documented cadence is checked against actual publication; a successful HTTP response is not evidence of a fresh measurement.
+3. G(C5-forecast): separately establish the official endpoint/channel, usage rights, allergens/stations or area mapping, issue_time/valid_time and category semantics; obtain a permitted live forecast sample. The observations API alone does not establish this. A missing forecast contract leaves MV2-069/030/071 BLOCKED for complete delivery.
+4. A short C5 prototype/usability review checks setup, thresholds, reading observations/forecasts, reasons/evidence, pause and unavailable coverage; results are recorded. Other UX journeys in MV2-002 do not block this finding.
+5. Versioned interfaces/fixtures and the supported-coverage list allow MV2-070 to start; there is no promise of all-Switzerland coverage or medical assessment. C4 research is excluded.
 
-**Перевірка:** Окремі observation/forecast dossier з датою, дозволеними live samples і source hashes; review контракту та C5 prototype. Відсутній доступ — конкретний blocker/owner/наступна дія без підміни mock.
+**Verification:** Separate dated observation/forecast dossiers with permitted live samples and source hashes; review the contract and C5 prototype. Missing access is recorded as a specific blocker, owner and next action without substituting a mock.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-070"></a>
 
-### MV2-070 — Pollen Watch FIRST: реалізувати спільну платформу в межах C5
+### MV2-070 — Pollen Watch FIRST: Implement the shared platform within C5 scope
 
-**Статус:** PLANNED — перша черга · **Пріоритет:** P0 · **Власник:** Backend + Frontend + Integration + QA · **Розмір:** L
+**Status:** PLANNED — first implementation priority · **Priority:** P0 · **Owner:** Backend + Frontend + Integration + QA · **Size:** L
 
-**Залежності:** [MV2-069](#mv2-069). **Вимоги:** Рішення користувача: перший повний Pollen Watch; AC-CORE-01…20, AC-C5-01…10; C5 subset названих parent-задач та inherited obligations.
+**Dependencies:** [MV2-069](#mv2-069). **Requirements:** User decision: first complete Pollen Watch; AC-CORE-01…20, AC-C5-01…10; C5 subset of the named parent tasks and inherited obligations.
 
-**Результат для користувача:** Є придатна до реальної C5 інтеграції платформа від personal monitor до історії та сповіщення, з ізоляцією користувачів і відновленням після помилок.
+**User outcome:** The platform is ready for real C5 integration, from a personal monitor to history and notifications, with user isolation and recovery from errors.
 
-**Робота:** Явне C5-підзавдання спільних MV2-004…022/024/025/052…056/060/068; межі наведені в таблиці першої поставки. Використати generic contracts MV2-001, additive persistence/API і чинний auth/outbox/UI. Не створювати окремий pollen-only сервіс. Робота обмежена названими C5 критеріями; повні parent-задачі лишаються незавершеними до решти власного scope.
+**Work:** Explicit C5 contribution to shared MV2-004…022/024/025/052…056/060/068; boundaries are listed in the first-delivery table. Use the generic MV2-001 contracts, additive persistence/API changes and existing authentication/outbox/UI. Do not create a separate pollen-only service. Work is limited to the named C5 criteria; full parent tasks remain incomplete until the rest of their own scope is delivered.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. C01 — Personal subject/доступ (004/005/010/015/017/053): location/station, один/кілька allergens, threshold/rapid-increase, notification choices; draft/preview/explicit Start/edit/pause/archive/delete; idempotent Start, revisioned config, permissions on API/jobs/evidence/cache; cross-tenant, role-revocation і private-location negative tests. Інші template schemas та UI не потрібні.
-2. C02 — State/rules (006/007/008/009/011/020/055): versioned observation/forecast + prior state, source/station/time/quality/rights, Decimal/unit/period, category crossing, threshold boundary/hysteresis/reset/rapid-increase, missing/stale/revised/out-of-order data; immutable enough evidence для history; duplicate replay/restart не губить state і не створює alert.
-3. C03 — Щоденний цикл (013/014/017/018/019/020/021): C5 Create Monitor → initial current state → Today → why/previous-current/evidence/history → Review/Not relevant/continue; material update reopen зберігає попереднє рішення; pause/mute відрізняється від source resolution. Спільний Today сумісний з legal feed, без вимоги додати інші нові домени.
-4. C04 — Delivery (012/022): shared fetch і scoped relevance/outbox, in-app та opt-in email/digest, dedup across subjects, quiet hours/priority/unsubscribe; відправлення повторно перевіряє права. Source failure не виглядає як low pollen/no change; recovery не надсилає історичний flood.
-5. C05 — Доступність/мови (024): C5 forms/cards/evidence/settings/error/stale/forecast перевірені клавіатурою, на narrow/mobile viewport і screen reader; критичні тексти C5 та переклади EN/DE/FR/IT/RM готові для незалежного sign-off MV2-071. Нові мови інших шаблонів не блокують C5.
-6. C06 — Operations/privacy (025/052/053/054/055): source last-good/observation lag, worker/outbox/delivery errors, bounded retries/rate limits і operator alert; мінімальні location data/logs, working delete/export, source rights/retention enforcement. Навантаження та budgets для заявленого C5 pilot вимірюються окремо; повні v2 та inherited budgets не послаблюються.
-7. C07 — Сумісність/відновлення (016/056/060/068): ізольований migration/backup/restore/restart rehearsal, representative legacy auth/law/topic/Today/evidence/URL checks, feature-flag fallback без втрати нових записів або старих доказів. Виправлення legacy потрібні для цього шляху включені; решта inherited acceptance не оголошується DONE.
-8. C08 — Contract/component acceptance: усі 20 AC-CORE мають перевірену C5 contract/component contribution та evidence у межах цієї задачі; це не остаточне live end-to-end приймання до появи конектора. Source/rule/state/schema revisions прив’язані до evidence. Extensibility перевіряється schema/contract fixture без реалізації другого нового сценарію; offline LLM не блокує базовий цикл. Повне інтегроване приймання C5/CORE у C5 scope виконують MV2-031/071 після MV2-030.
+1. C01 — Personal subject/access (004/005/010/015/017/053): location/station, one or multiple allergens, threshold/rapid increase, notification choices; draft/preview/explicit Start/edit/pause/archive/delete; idempotent Start, revisioned configuration and permissions on API/jobs/evidence/cache; negative cross-tenant, role-revocation and private-location tests. Other template schemas and UI are not required.
+2. C02 — State/rules (006/007/008/009/011/020/055): versioned observation/forecast and prior state, source/station/time/quality/rights, Decimal/unit/period, category crossing, threshold boundary/hysteresis/reset/rapid increase and missing/stale/revised/out-of-order data; sufficient immutable evidence for history; duplicate replay/restart neither loses state nor creates an alert.
+3. C03 — Daily workflow (013/014/017/018/019/020/021): C5 Create Monitor → initial current state → Today → why/previous-current/evidence/history → Review/Not relevant/continue; reopening after a material update preserves the previous decision; pause/mute is distinct from source resolution. Shared Today remains compatible with the legal feed, without requiring other new domains.
+4. C04 — Delivery (012/022): shared fetch and scoped relevance/outbox, in-app and opt-in email/digest, deduplication across subjects, quiet hours/priority/unsubscribe; sending rechecks permissions. Source failure is not presented as low pollen or no change; recovery does not flood users with historical alerts.
+5. C05 — Accessibility/languages (024): C5 forms/cards/evidence/settings/error/stale/forecast are checked with a keyboard, a narrow/mobile viewport and a screen reader; critical C5 copy and EN/DE/FR/IT/RM translations are ready for independent sign-off in MV2-071. Language work for other templates does not block C5.
+6. C06 — Operations/privacy (025/052/053/054/055): source last-good state/observation lag, worker/outbox/delivery errors, bounded retries/rate limits and operator alerts; minimal location data/logs, working deletion/export and enforcement of source rights/retention. Workload and budgets for the declared C5 pilot are measured separately; full v2 and inherited budgets are not weakened.
+7. C07 — Compatibility/recovery (016/056/060/068): isolated migration/backup/restore/restart rehearsal, representative legacy authentication/law/topic/Today/evidence/URL checks and feature-flag fallback without losing new records or old evidence. Legacy fixes required for this path are included; remaining inherited acceptance is not declared DONE.
+8. C08 — Contract/component acceptance: all 20 AC-CORE have a verified C5 contract/component contribution and evidence within this task; this is not final live end-to-end acceptance before the connector exists. Source/rule/state/schema revisions are linked to evidence. Extensibility is checked with a schema/contract fixture without implementing a second new scenario; an offline LLM does not block the core workflow. MV2-031/071 perform full integrated C5/CORE acceptance within C5 scope after MV2-030.
 
-**Перевірка:** API/DB/UI integration, independent source-contract fixtures, role matrix, boundary/replay/failure/restart checks і C5 build/restore evidence. Live product E2E завершує MV2-031; остаточний допуск людей — MV2-071.
+**Verification:** API/DB/UI integration, independent source-contract fixtures, a role matrix, boundary/replay/failure/restart checks and C5 build/restore evidence. MV2-031 completes live product end-to-end acceptance; MV2-071 provides the final gate for user testing.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-071"></a>
 
-### MV2-071 — Pollen Watch FIRST: прийняти повний сценарій і підготувати до тестування з реальними користувачами
+### MV2-071 — Pollen Watch FIRST: Accept the complete scenario and prepare for testing with real users
 
-**Статус:** PLANNED — перший user-testing gate · **Пріоритет:** P0 · **Власник:** Product + QA + Operations + Independent reviewer · **Розмір:** M
+**Status:** PLANNED — first user-testing gate · **Priority:** P0 · **Owner:** Product + QA + Operations + Independent reviewer · **Size:** M
 
-**Залежності:** [MV2-031](#mv2-031). **Вимоги:** Рішення користувача 2026-09-10 про першу поставку і реальних користувачів; AC-C5-01…10; AC-CORE у C5 scope; §§31–34.
+**Dependencies:** [MV2-031](#mv2-031). **Requirements:** User decision 2026-09-10 on first delivery and real users; AC-C5-01…10; AC-CORE within C5 scope; §§31–34.
 
-**Результат для користувача:** Є перевірена повна Pollen Watch поставка і конкретний протокол, за яким можна почати тестування з реальними користувачами.
+**User outcome:** A complete Pollen Watch delivery is verified, with a concrete protocol for starting tests with real users.
 
-**Робота:** Окремий ранній release/user-testing gate для C5. Перевірити реальні observation/forecast, end-to-end продукт, privacy/a11y/language, операційну підтримку і сценарії користувацького тесту. Не залежить від DONE MV2-051/057/058/059 або реалізації інших доменів. Це готовність першої поставки, а не приймання всього v2.0 чи вже проведений pilot.
+**Work:** Separate early C5 release/user-testing gate. Verify real observations/forecasts, the end-to-end product, privacy/accessibility/languages, operational support and user-test scenarios. It does not depend on MV2-051/057/058/059 being DONE or on other domains being implemented. This establishes first-delivery readiness, not acceptance of all v2.0 or completion of a pilot.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Усі 10 AC-C5 accepted і всі 20 AC-CORE accepted у C5 scope: test/protocol, commit/build, source/fixture version, час перевірки та незалежний reviewer. Live observation і live official forecast видимі різними станами з source/station/time; mock/застарілий sample не закриває source readiness.
-2. Контрольний користувач без підказок виконує location + multiple allergens + threshold → preview/Start → current state → material change → why/evidence/history → review → material update/reopen → opt-in delivery → pause/delete. Природна матеріальна подія або явно маркований historical replay тестують переходи; live freshness перевірено окремо.
-3. Перевірені below/exact/above threshold, HIGH flapping, improvement, forecast revision, missing/allergen/uncovered location, station change, provider outage/stale, source recovery, duplicate/restart і LLM offline. Немає critical defects, вигаданих вимірів, медичних діагнозів, втрачених reviews або cross-tenant витоків.
-4. C5 потоки мають незалежний EN/DE/FR/IT/RM sign-off та keyboard/mobile/screen-reader evidence. Pilot environment відокремлений від production, доступ захищений; versioned build, backups/restore, telemetry, email opt-in/unsubscribe, support owner, stop/rollback runbook перевірені. Для заявленого числа pilot users виміряно response/processing/delivery lag; inherited budgets збережено для зачеплених endpoints.
-5. Готовий протокол першої хвилі ≥5 реальних B2C користувачів із потребою pollen watch у підтвердженому покритті: завдання, добровільна згода/мінімізація даних, спосіб feedback, відповідальний і критерії pause/fix. Перші задачі — setup, тлумачення observed/forecast, threshold/why/evidence, review/pause; збирати completion, помилки, time-to-first-value, explanation understanding та relevance/noise з видимими denominators. Розмір ≥5 — ціль цього раннього usability тесту, не статистичне підтвердження KPI.
-6. Рішення READY FOR USER TESTING або HOLD записане з blockers/limitations і наступними діями. Готовність протоколу не означає, що людей уже запросили чи pilot завершено. Deployment, зовнішні запрошення й надсилання повідомлень виконуються лише після відповідної авторизації; повний four-week v2 pilot MV2-058 лишається окремим.
+1. All 10 AC-C5 and all 20 AC-CORE are accepted within C5 scope: test/protocol, commit/build, source/fixture version, verification time and independent reviewer. Live observations and live official forecasts are visible as separate states with source/station/time; mocks or stale samples do not satisfy source readiness.
+2. A test user, without prompting, completes location + multiple allergens + threshold → preview/Start → current state → material change → why/evidence/history → review → material update/reopen → opt-in delivery → pause/delete. A natural material event or explicitly labelled historical replay tests transitions; live freshness is verified separately.
+3. Verify below/exact/above threshold, HIGH flapping, improvement, forecast revision, missing data/allergen/uncovered location, station changes, provider outage/staleness, source recovery, duplicates/restart and an offline LLM. There are no critical defects, invented measurements, medical diagnoses, lost reviews or cross-tenant leaks.
+4. C5 flows have independent EN/DE/FR/IT/RM sign-off and keyboard/mobile/screen-reader evidence. The pilot environment is separate from production with protected access; the versioned build, backups/restore, telemetry, email opt-in/unsubscribe, support owner and stop/rollback runbook are verified. Response/processing/delivery lag is measured for the declared number of pilot users; inherited budgets are preserved for affected endpoints.
+5. A first-wave protocol is ready for ≥5 real B2C users who need pollen monitoring within confirmed coverage: tasks, voluntary consent/data minimization, feedback method, owner and pause/fix criteria. Initial tasks cover setup, interpretation of observations/forecasts, threshold/why/evidence and review/pause; collect completion, errors, time to first value, explanation understanding and relevance/noise with visible denominators. The ≥5 sample is a target for this early usability test, not statistical confirmation of KPIs.
+6. Record READY FOR USER TESTING or HOLD with blockers/limitations and next actions. A ready protocol does not mean people have already been invited or the pilot is complete. Deployment, external invitations and messages happen only after the corresponding authorization; the full four-week v2 pilot in MV2-058 remains separate.
 
-**Перевірка:** Незалежний C5 go/no-go checklist, live-source E2E recording, acceptance evidence manifest, isolated restore/privacy/device/language reports і готовий moderated user-test protocol. Виміряні результати людей записуються після фактичного тестування.
+**Verification:** An independent C5 go/no-go checklist, live-source end-to-end recording, acceptance evidence manifest, isolated restore/privacy/device/language reports and a ready moderated user-test protocol. Record measured user results after actual testing.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 
-## F1 — Спільні контракти й сумісність
+## F1 — Shared contracts and compatibility
 
 <a id="mv2-004"></a>
 
-### MV2-004 — Особистий workspace і командні права моніторингу
+### MV2-004 — Personal workspace and team monitoring permissions
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Backend + UX · **Розмір:** M
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Backend + UX · **Size:** M
 
-**Залежності:** [MV2-001](#mv2-001). **Вимоги:** §§5,27.1,27.7.
+**Dependencies:** [MV2-001](#mv2-001). **Requirements:** §§5,27.1,27.7.
 
-**Результат для користувача:** B2C не потребує вигаданої компанії; командні дані залишаються командними.
+**User outcome:** B2C users do not need to invent a company; team data remains within the team.
 
-**Робота:** Повторно використати Organization/personal workspace і auth; subject owner_scope, автор, доступ, членство, видалення/передача власника.
+**Work:** Reuse Organization/personal workspace and auth; define subject owner_scope, creator, access, membership, deletion and ownership transfer.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Особистий workspace за замовчуванням ізольований; адресу Home не бачить інша організація.
-2. Admin керує shared monitors; viewer має тільки дозволені read/особисті acknowledgement дії; спільне рішення потребує права.
-3. Перемикання workspace, відкликання доступу й старі посилання не розкривають стан або AI-висновок.
+1. A personal workspace is isolated by default; another organization cannot see the Home address.
+2. Admin manages shared monitors; a viewer has only permitted read/personal acknowledgement actions; a shared decision requires permission.
+3. Workspace switching, access revocation and old links do not disclose a state or an AI conclusion.
 
-**Перевірка:** API role-matrix, cross-tenant негативні тести, browser switch/revocation.
+**Verification:** API role matrix, negative cross-tenant tests and browser switching/revocation checks.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-005"></a>
 
-### MV2-005 — MonitoringSubject і версійні Monitoring Templates
+### MV2-005 — MonitoringSubject and versioned Monitoring Templates
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Backend + Frontend · **Розмір:** L
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Backend + Frontend · **Size:** L
 
-**Залежності:** [MV2-001](#mv2-001), [MV2-004](#mv2-004). **Вимоги:** §§5,19.1,25,27.1.
+**Dependencies:** [MV2-001](#mv2-001), [MV2-004](#mv2-004). **Requirements:** §§5,19.1,25,27.1.
 
-**Результат для користувача:** Одна конфігурація описує те, що користувач хоче відстежувати.
+**User outcome:** One configuration describes what the user wants to monitor.
 
-**Робота:** 8 активних типів subject, 9 template_id; CURRENCY та шаблон C4 відкладені; schema_version; конфігурація, filters/thresholds/rules, source bindings, draft/active/paused/archived, revision і preview.
+**Work:** 8 active subject types and 9 template_id values; CURRENCY and the C4 template are deferred. Include schema_version, configuration, filters/thresholds/rules, source bindings, draft/active/paused/archived, revision and preview.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Валідовані LOCATION, JOURNEY, ROAD, ALLERGEN, MEASUREMENT_STATION, TENDER_PROFILE, TRADEMARK, AUCTION_PROFILE; C6/C7 мають різні шаблони над MEASUREMENT_STATION. CURRENCY/C4 не вимагають реалізації schema, API або UI в поточному scope.
-2. Активація вимагає доступного source capability; немає прихованої активації після preview.
-3. Редагування зберігає revision та actor; повторний create з тим самим idempotency key не дублює monitor.
+1. Validate LOCATION, JOURNEY, ROAD, ALLERGEN, MEASUREMENT_STATION, TENDER_PROFILE, TRADEMARK and AUCTION_PROFILE; C6/C7 use different templates over MEASUREMENT_STATION. CURRENCY/C4 require no schema, API or UI implementation in the current scope.
+2. Activation requires an available source capability; preview does not trigger hidden activation.
+3. Editing retains the revision and actor; repeating create with the same idempotency key does not duplicate a monitor.
 
-**Перевірка:** Schema/API tests для валідних і несумісних параметрів усіх дев’яти активних шаблонів.
+**Verification:** Schema/API tests for valid and incompatible parameters across all nine active templates.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-006"></a>
 
-### MV2-006 — ObservedEntity: стабільна ідентичність джерела
+### MV2-006 — ObservedEntity: stable source identity
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Backend + Integration · **Розмір:** M
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Backend + Integration · **Size:** M
 
-**Залежності:** [MV2-001](#mv2-001), [MV2-003](#mv2-003). **Вимоги:** §§4,27.2,29.
+**Dependencies:** [MV2-001](#mv2-001), [MV2-003](#mv2-003). **Requirements:** §§4,27.2,29.
 
-**Результат для користувача:** Повторне отримання запису не створює нову реальну сутність.
+**User outcome:** Fetching a record again does not create a new real-world entity.
 
-**Робота:** Identity = source_namespace + entity_type + external_id; aliases для підтверджених перевидань і мовних версій; provenance та domain extensions.
+**Work:** Identity = source_namespace + entity_type + external_id; aliases for confirmed republications and language versions; provenance and domain extensions.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Одна сутність має стабільний ID між polling, мовами й перезапуском; namespace не зливає чужі ідентифікатори.
-2. Немає надійного ID — версійна fallback strategy з collision tests і позначкою невпевненості.
-3. Зміна назви, власника або URL не видаляє історію; merge/split аудитується та може бути виправлений.
+1. An entity has a stable ID across polling, languages and restarts; namespaces do not merge unrelated identifiers.
+2. When no reliable ID exists, use a versioned fallback strategy with collision tests and an uncertainty marker.
+3. Changing a name, owner or URL does not delete history; merge/split operations are audited and can be corrected.
 
-**Перевірка:** Replay duplicated/renamed records, collision та split fixtures.
+**Verification:** Replay duplicated/renamed records and collision/split fixtures.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-007"></a>
 
-### MV2-007 — ObservedState та незмінні докази
+### MV2-007 — ObservedState and immutable evidence
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Backend · **Розмір:** L
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Backend · **Size:** L
 
-**Залежності:** [MV2-003](#mv2-003), [MV2-006](#mv2-006). **Вимоги:** §§19.2,27.3,30.
+**Dependencies:** [MV2-003](#mv2-003), [MV2-006](#mv2-006). **Requirements:** §§19.2,27.3,30.
 
-**Результат для користувача:** Кожен стан можна перевірити і порівняти з попереднім.
+**User outcome:** Every state can be verified and compared with its predecessor.
 
-**Робота:** Typed payload, units, measurement/forecast, quality, fetched/published/effective/observed/valid times; schema_version, checksum, evidence locators і source retention policy.
+**Work:** Typed payload, units, measurement/forecast, quality, fetched/published/effective/observed/valid times; schema_version, checksum, evidence locators and source retention policy.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Повторний snapshot ідентичний за змістом не створює матеріальної зміни; transport fetch log зберігається окремо.
-2. Пізня/виправлена відповідь зберігає history, але не відкочує current без правила revision ordering.
-3. UNKNOWN, missing, zero, stale, forecast і provisional розрізняються; evidence access/export відповідає правам джерела.
+1. A repeated snapshot with identical content does not create a material change; retain transport fetch logs separately.
+2. A late/corrected response preserves history but does not roll back current without a revision-ordering rule.
+3. Distinguish UNKNOWN, missing, zero, stale, forecast and provisional; evidence access/export complies with source rights.
 
-**Перевірка:** Round-trip snapshots; out-of-order, correction, missing і rights-filter tests.
+**Verification:** Round-trip snapshots; out-of-order, correction, missing-data and rights-filter tests.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-008"></a>
 
-### MV2-008 — Детерміновані ChangeRule, ChangeSet і числові пороги
+### MV2-008 — Deterministic ChangeRule, ChangeSet and numeric thresholds
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Backend · **Розмір:** L
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Backend · **Size:** L
 
-**Залежності:** [MV2-005](#mv2-005), [MV2-007](#mv2-007). **Вимоги:** §§4,19.3,22,33.
+**Dependencies:** [MV2-005](#mv2-005), [MV2-007](#mv2-007). **Requirements:** §§4,19.3,22,33.
 
-**Результат для користувача:** Сповіщення виникає через значущу зміну, а не оновлення часу.
+**User outcome:** A notification results from a meaningful change, rather than a timestamp refresh.
 
-**Робота:** NEW_ENTITY, STATE_TRANSITION, NUMERIC_THRESHOLD, PERCENTAGE_DELTA, FIELD_CHANGED, DEADLINE_CHANGED, DOCUMENT_ADDED, STATUS_CHANGED; SEMANTIC_MATCH підключається як candidate assessment у MV2-043. Спільний числовий engine залишається потрібним для C5/C6/C7 і цінових правил B8; customs-specific events, календар і daily/weekly FX workflows у v2.0 не реалізуються.
+**Work:** NEW_ENTITY, STATE_TRANSITION, NUMERIC_THRESHOLD, PERCENTAGE_DELTA, FIELD_CHANGED, DEADLINE_CHANGED, DOCUMENT_ADDED, STATUS_CHANGED; SEMANTIC_MATCH is integrated as a candidate assessment in MV2-043. The shared numeric engine remains necessary for C5/C6/C7 and B8 price rules; customs-specific events, calendars and daily/weekly FX workflows are not implemented in v2.0.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Обчислення використовує Decimal, unit/basis/aggregation-period; zero baseline не дає вигаданий percentage.
-2. Зафіксовані > проти ≥, previous-effective/daily/weekly baseline, crossing direction, hysteresis, cooldown та reset.
-3. Кожна оцінка зберігає rule revision, input state IDs, reason і результат; preview та worker використовують той самий evaluator.
-4. Перший стан є baseline; активна офіційна небезпека може дати initial alert, але числовий delta без бази — ні.
+1. Calculations use Decimal, unit/basis/aggregation-period; a zero baseline does not produce an invented percentage.
+2. Define > versus ≥, previous-effective/daily/weekly baseline, crossing direction, hysteresis, cooldown and reset.
+3. Each evaluation stores the rule revision, input state IDs, reason and result; preview and worker use the same evaluator.
+4. The first state is a baseline; an active official hazard may produce an initial alert, but a numeric delta without a baseline may not.
 
-**Перевірка:** Boundary/property/replay tests: рівність, нуль, null, flapping, пропуски, одиниці, щотижневий baseline.
+**Verification:** Boundary/property/replay tests: equality, zero, null, flapping, gaps, units and weekly baseline.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-009"></a>
 
-### MV2-009 — Development, deduplication і lifecycle
+### MV2-009 — Development, deduplication and lifecycle
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Backend · **Розмір:** L
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Backend · **Size:** L
 
-**Залежності:** [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-008](#mv2-008). **Вимоги:** §§6,27.4,29.
+**Dependencies:** [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-008](#mv2-008). **Requirements:** §§6,27.4,29.
 
-**Результат для користувача:** Користувач бачить одну історію з оновленнями.
+**User outcome:** The user sees one evolving history.
 
-**Робота:** Development + immutable revisions; source lifecycle окремо від review/delivery; correlation keys за доменом; manual split audit.
+**Work:** Development + immutable revisions; separate source lifecycle from review/delivery; domain-specific correlation keys; audit manual splits.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Той самий incident/announcement і мовні копії дають одну development; новий trip service date або новий warning ID не зливаються.
-2. Матеріальна revision повторно відкриває review; незмінний refresh не відкриває і не надсилає.
-3. CANCELLED/RESOLVED/EXPIRED мають різні причини; зникнення з feed або timeout не означає офіційний all-clear.
-4. Оновлення та re-open після перезапуску обробляються ідемпотентно.
+1. The same incident/announcement and its language copies produce one development; a new trip service date or warning ID is not merged.
+2. A material revision reopens review; an unchanged refresh neither reopens review nor sends a notification.
+3. CANCELLED/RESOLVED/EXPIRED have different reasons; disappearance from a feed or a timeout does not mean an official all-clear.
+4. Updates and reopening after a restart are handled idempotently.
 
-**Перевірка:** State-machine і concurrent-ingestion tests; manual correction/merge/split replay.
+**Verification:** State-machine and concurrent-ingestion tests; replay manual correction/merge/split operations.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-010"></a>
 
-### MV2-010 — Структурна релевантність із доказом кожного збігу
+### MV2-010 — Structural relevance with evidence for every match
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Backend · **Розмір:** L
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Backend · **Size:** L
 
-**Залежності:** [MV2-005](#mv2-005), [MV2-008](#mv2-008), [MV2-009](#mv2-009). **Вимоги:** §§7,19.4,22,27.6.
+**Dependencies:** [MV2-005](#mv2-005), [MV2-008](#mv2-008), [MV2-009](#mv2-009). **Requirements:** §§7,19.4,22,27.6.
 
-**Результат для користувача:** На «чому я це бачу?» є точна відповідь.
+**User outcome:** “Why am I seeing this?” has a precise answer.
 
-**Робота:** RelevanceAssessment на subject revision × development revision; rule IDs, matched fields, source anchors, method; одна development може мати кілька причин.
+**Work:** RelevanceAssessment over subject revision × development revision; rule IDs, matched fields, source anchors and method; one development can have multiple reasons.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Delivery без reason і evidence блокується; AI-текст не підміняє структурний match.
-2. Зміна профілю переоцінює поточну релевантність, але не переписує історичну причину.
-3. Exclusions переважають semantic score; UNKNOWN не трактується як підтверджена відповідність.
-4. Одна development для кількох monitors не створює кілька сповіщень одному одержувачу.
+1. Block delivery without a reason and evidence; AI text does not replace a structural match.
+2. A profile change reevaluates current relevance but does not rewrite the historical reason.
+3. Exclusions take precedence over semantic score; UNKNOWN is not treated as a confirmed match.
+4. One development matching multiple monitors does not generate multiple notifications for the same recipient.
 
-**Перевірка:** Golden match/nonmatch cases, preview/worker parity, cross-profile replay.
+**Verification:** Golden match/nonmatch cases, preview/worker parity and cross-profile replay.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-011"></a>
 
-### MV2-011 — Надійний збір станів, черги та свіжість
+### MV2-011 — Reliable state ingestion, queues and freshness
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Backend + Operations · **Розмір:** L
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Backend + Operations · **Size:** L
 
-**Залежності:** [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-009](#mv2-009). **Вимоги:** §§3,23,28,33.
+**Dependencies:** [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-009](#mv2-009). **Requirements:** §§3,23,28,33.
 
-**Результат для користувача:** Монітор має правдивий стан навіть під час збоїв.
+**User outcome:** A monitor reports its state accurately even during failures.
 
-**Робота:** Розширити PostgreSQL jobs + Celery; scheduled connector ingest окремо від bounded match fan-out; source leases, cursors, backoff, Retry-After, priority queues.
+**Work:** Extend PostgreSQL jobs + Celery; separate scheduled connector ingestion from bounded match fan-out; source leases, cursors, backoff, Retry-After and priority queues.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Одна shared source fetch обслуговує багато subjects; quota чи 429 не запускає нескінченний retry.
-2. Restart/replay не губить watermark і не дублює revisions; reprocess історії за замовчуванням не надсилає сповіщення.
-3. Fresh/late/stale/failed/no-data відрізняються від no-change; next expected update походить із capability.
-4. Термінові deterministic jobs не стоять за LLM; один tenant не монополізує чергу.
+1. One shared source fetch serves many subjects; quota exhaustion or 429 does not trigger endless retries.
+2. Restart/replay does not lose the watermark or duplicate revisions; history reprocessing does not send notifications by default.
+3. Fresh/late/stale/failed/no-data are distinct from no-change; the next expected update comes from the capability.
+4. Urgent deterministic jobs do not wait behind the LLM; one tenant cannot monopolize the queue.
 
-**Перевірка:** Kill/restart, duplicate worker, 429/partial feed і overload tests; queue lag telemetry.
+**Verification:** Kill/restart, duplicate-worker, 429/partial-feed and overload tests; queue-lag telemetry.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-012"></a>
 
-### MV2-012 — Notification policy та transactional outbox
+### MV2-012 — Notification policy and transactional outbox
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Backend · **Розмір:** L
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Backend · **Size:** L
 
-**Залежності:** [MV2-004](#mv2-004), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-011](#mv2-011). **Вимоги:** §§28–29,33.
+**Dependencies:** [MV2-004](#mv2-004), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-011](#mv2-011). **Requirements:** §§28–29,33.
 
-**Результат для користувача:** Канал доставки виконує налаштування, не створює спам.
+**User outcome:** Delivery channels respect settings without generating spam.
 
-**Робота:** Розширити наявний outbox; recipient + development revision + channel policy revision; immediate/important/digest, mute, quiet hours, user timezone, opt-in.
+**Work:** Extend the existing outbox; recipient + development revision + channel policy revision; immediate/important/digest, mute, quiet hours, user timezone and opt-in.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Матеріальна revision і права одержувача перевіряються до enqueue та send; відкликані/paused/muted monitors не отримують доставку.
-2. Матеріальне посилення може обійти cooldown лише за явним template rule; не ігнорує відмову користувача від каналу.
-3. Retry, send-timeout і перезапуск не дають повторну in-app подію; зовнішнє email підтвердження не видається за гарантовану доставку.
-4. Термінове означає пріоритет обробки після отримання джерела, без обіцянки заміни аварійної системи.
+1. Verify the material revision and recipient permissions before enqueue and send; revoked/paused/muted monitors receive no delivery.
+2. Material escalation may bypass cooldown only under an explicit template rule; it does not override the user’s channel opt-out.
+3. Retries, send timeouts and restarts do not duplicate in-app events; an external email acknowledgement is not presented as guaranteed delivery.
+4. Urgent means processing priority after receiving source data, without promising to replace an emergency system.
 
-**Перевірка:** Outbox race/retry/revocation tests, quiet hours/DST, send ambiguity і dedup.
+**Verification:** Outbox race/retry/revocation tests, quiet hours/DST, send ambiguity and deduplication.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-013"></a>
 
-### MV2-013 — Review, Decision та призначення відповідального
+### MV2-013 — Review, Decision and owner assignment
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Backend + Frontend · **Розмір:** M
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Backend + Frontend · **Size:** M
 
-**Залежності:** [MV2-004](#mv2-004), [MV2-009](#mv2-009). **Вимоги:** §§6,21,27.7,31.
+**Dependencies:** [MV2-004](#mv2-004), [MV2-009](#mv2-009). **Requirements:** §§6,21,27.7,31.
 
-**Результат для користувача:** Рішення користувача зберігається разом із версією доказів.
+**User outcome:** The user’s decision is saved with the evidence version.
 
-**Робота:** Особистий read state, workspace Review, append-only Decision; REVIEWED/ACTION_REQUIRED/NO_ACTION/NOT_RELEVANT/MONITOR/RESOLVED і domain decisions.
+**Work:** Personal read state, workspace Review, append-only Decision; REVIEWED/ACTION_REQUIRED/NO_ACTION/NOT_RELEVANT/MONITOR/RESOLVED and domain decisions.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Рішення містить development revision, actor, owner, comment, timestamp; конкурентний запис не затирає інший.
-2. Новий material update позначає попереднє рішення як прийняте на старій revision; його текст залишається в історії.
-3. BID/NO_BID/INSPECT/ESCALATE_TO_IP_COUNSEL — внутрішні рішення; зовнішня подача чи надсилання не виконується.
-4. Деактивація owner не губить unresolved review; дозволена передача іншому member.
+1. A decision includes development revision, actor, owner, comment and timestamp; a concurrent write does not overwrite another.
+2. A new material update marks the previous decision as based on an older revision; its text remains in history.
+3. BID/NO_BID/INSPECT/ESCALATE_TO_IP_COUNSEL are internal decisions; no external submission or sending occurs.
+4. Deactivating an owner does not lose unresolved reviews; reassignment to another member is permitted.
 
-**Перевірка:** Optimistic concurrency, roles, reopen, reassignment і personal/shared-state tests.
+**Verification:** Optimistic concurrency, roles, reopening, reassignment and personal/shared-state tests.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-014"></a>
 
-### MV2-014 — API та read projections спільної стрічки
+### MV2-014 — Shared-feed API and read projections
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Backend · **Розмір:** L
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Backend · **Size:** L
 
-**Залежності:** [MV2-004](#mv2-004), [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-013](#mv2-013). **Вимоги:** §§20–21,26,33.
+**Dependencies:** [MV2-004](#mv2-004), [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-013](#mv2-013). **Requirements:** §§20–21,26,33.
 
-**Результат для користувача:** Today і історія залишаються швидкими зі змішаними даними.
+**User outcome:** Today and history stay fast with mixed data.
 
-**Робота:** Нові versioned API contracts; projections, cursor pagination, unseen revision count, filters template/status/subject/severity; evidence lazy load.
+**Work:** New versioned API contracts; projections, cursor pagination, unseen revision count, template/status/subject/severity filters and lazy-loaded evidence.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Today не виконує cross-join усіх станів, AI або генерацію; max page/period/enrichment bounded.
-2. Unread count ґрунтується на видимій revision і не залежить від поточної сторінки.
-3. Stable cursors не гублять записи під час нових revisions; archived/resolved history доступна.
-4. Endpoint authorization перевіряє workspace для кожної development, evidence і decision.
+1. Today does not perform a cross-join over all states, AI calls or generation; maximum page size, period and enrichment are bounded.
+2. Unread count is based on visible revisions and does not depend on the current page.
+3. Stable cursors do not lose records when new revisions arrive; archived/resolved history remains accessible.
+4. Endpoint authorization checks the workspace for every development, evidence item and decision.
 
-**Перевірка:** SQL query-count/plan checks, pagination under updates, serialization contract.
+**Verification:** SQL query-count/plan checks, pagination during updates and serialization contracts.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-015"></a>
 
-### MV2-015 — Каталог географії, станцій та зон покриття
+### MV2-015 — Geography, station and coverage catalogue
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Integration + Backend + UX · **Розмір:** L
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Integration + Backend + UX · **Size:** L
 
-**Залежності:** [MV2-003](#mv2-003), [MV2-006](#mv2-006). **Вимоги:** §§8,12–14,19.1.
+**Dependencies:** [MV2-003](#mv2-003), [MV2-006](#mv2-006). **Requirements:** §§8,12–14,19.1.
 
-**Результат для користувача:** Вибрана локація відповідає реальному покриттю.
+**User outcome:** The selected location corresponds to actual coverage.
 
-**Робота:** Офіційні municipality/station IDs, coordinates, CRS, polygon/radius, station metrics та validity; reuse pack metadata.
+**Work:** Official municipality/station IDs, coordinates, CRS, polygon/radius, station metrics and validity; reuse pack metadata.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Boundary intersection, overlapping canton/municipality, radius і CRS перевірені на fixtures.
-2. Найближча станція не оголошується виміром у домі; показані distance, representativeness, доступні показники та обмеження.
-3. Непокрита локація не активує fictitious monitor; недоступний параметр не замінюється іншим.
-4. Перенесена/закрита станція отримує явний remap з історією, не безшумну заміну.
+1. Test boundary intersections, overlapping canton/municipality areas, radius and CRS using fixtures.
+2. The nearest station is not presented as a measurement at home; show distance, representativeness, available metrics and limitations.
+3. An uncovered location does not activate a fictitious monitor; an unavailable parameter is not replaced with another.
+4. A relocated/closed station receives an explicit remap with history, rather than a silent replacement.
 
-**Перевірка:** Geo boundary/CRS tests, station gap/change fixtures, keyboard selector UX.
+**Verification:** Geo boundary/CRS tests, station gap/change fixtures and keyboard selector UX.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-016"></a>
 
-### MV2-016 — Часові вікна, строки та нагадування
+### MV2-016 — Time windows, deadlines and reminders
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Backend · **Розмір:** L
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Backend · **Size:** L
 
-**Залежності:** [MV2-007](#mv2-007), [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-012](#mv2-012). **Вимоги:** §§9–10,15–17,27,28.
+**Dependencies:** [MV2-007](#mv2-007), [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-012](#mv2-012). **Requirements:** §§9–10,15–17,27,28.
 
-**Результат для користувача:** Зміна строку й запланована поїздка обробляються правильно.
+**User outcome:** Deadline changes and planned journeys are handled correctly.
 
-**Робота:** UTC storage + Europe/Zurich display, overnight windows, service date >24h, weekdays; explicit vs calculated deadline, evidence rule version, reschedule jobs.
+**Work:** UTC storage + Europe/Zurich display, overnight windows, service date >24h and weekdays; explicit versus calculated deadlines, evidence rule version and rescheduled jobs.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. DST gap/fold і 23:00–05:00 працюють із визначеною політикою; source timezone збережений.
-2. Невідомий/неоднозначний deadline не вигадується; calculated legal deadline завжди має verification_required.
-3. Перенесення/скасування auction чи tender скасовує старі ending-soon jobs; reminder idempotent per deadline revision.
-4. Документована відмінність official resolution від system expiry; минулі події лишаються в історії.
+1. DST gaps/folds and 23:00–05:00 work under a defined policy; retain the source timezone.
+2. Unknown/ambiguous deadlines are not invented; a calculated legal deadline always has verification_required.
+3. Rescheduling/cancelling an auction or tender cancels previous ending-soon jobs; reminders are idempotent per deadline revision.
+4. Document the difference between official resolution and system expiry; past events remain in history.
 
-**Перевірка:** Fake-clock tests для DST, midnight, delay, reschedule, expiry, source correction.
+**Verification:** Fake-clock tests for DST, midnight, delays, rescheduling, expiry and source corrections.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-060"></a>
 
-### MV2-060 — Legacy bridge для Topics, watches та legal events
+### MV2-060 — Legacy bridge for Topics, watches and legal events
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Backend + Frontend · **Розмір:** L
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Backend + Frontend · **Size:** L
 
-**Залежності:** [MV2-004](#mv2-004), [MV2-005](#mv2-005), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014). **Вимоги:** §§1,26–27; legacy HL-073,076–080,089,098–100.
+**Dependencies:** [MV2-004](#mv2-004), [MV2-005](#mv2-005), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014). **Requirements:** §§1,26–27; legacy HL-073,076–080,089,098–100.
 
-**Результат для користувача:** Чинні можливості Helvetic Lens лишаються доступними в новій моделі.
+**User outcome:** Existing Helvetic Lens capabilities remain available in the new model.
 
-**Робота:** Bridge references old Topic/RegulatoryEvent/Watch IDs → generic Subject/Entity/Development; compatibility read adapters, no blanket FK rewrite.
+**Work:** Bridge references from old Topic/RegulatoryEvent/Watch IDs → generic Subject/Entity/Development; compatibility read adapters without a blanket foreign-key rewrite.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Legal records лишаються в існуючих таблицях; generic contracts не вимагають AI analysis/comparison для numeric decision.
-2. Backfill не робить старі reviewed events новими unread; дві fan-out системи не надсилають дублікати.
-3. Topics/watch settings, locales, citations і user decisions збережені; old links resolve до відповідного evidence.
-4. Legacy-only unsupported record видимий через старий reader із причиною, а не silently dropped; repair audited.
+1. Legal records remain in the existing tables; generic contracts do not require AI analysis/comparison for numerical decisions.
+2. Backfill does not turn old reviewed events into new unread items; the two fan-out systems do not send duplicates.
+3. Topics/watch settings, locales, citations and user decisions are preserved; old links resolve to the corresponding evidence.
+4. Unsupported legacy-only records remain visible through the old reader with an explanation, rather than being silently dropped; repairs are audited.
 
-**Перевірка:** Golden production-shaped legacy corpus, bridge replay, read parity і notification suppression.
+**Verification:** A gold legacy corpus shaped like production, bridge replay, read parity and notification suppression.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-068"></a>
 
-### MV2-068 — Завершити перевірку legacy coverage та repair старих артефактів
+### MV2-068 — Complete legacy coverage verification and repair old artifacts
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Integration + Backend + QA · **Розмір:** L
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Integration + Backend + QA · **Size:** L
 
-**Залежності:** [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-060](#mv2-060). **Вимоги:** legacy HL-080,098,100; §§1,26,30.
+**Dependencies:** [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-060](#mv2-060). **Requirements:** legacy HL-080,098,100; §§1,26,30.
 
-**Результат для користувача:** Нові домени не приховують незавершену якість чинного legal monitoring.
+**User outcome:** New domains do not conceal unfinished quality work in existing legal monitoring.
 
-**Робота:** Перенести remaining HL-080/098: exact source coverage federal/cantonal streams, Basel pilot evidence, bounded versioned re-extraction/repair із preview; unchanged immutable originals.
+**Work:** Carry forward the remaining HL-080/098 work: exact source coverage of federal/cantonal streams, Basel pilot evidence, bounded versioned re-extraction/repair with preview; immutable originals remain unchanged.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Заявлене старе покриття має перевірені види/мови/географію/час/історію і відомі gaps; Ticino auction не закриває Basel regulatory gate.
-2. Repair має нову normalization revision і пояснення, старий hash/доказ не перезаписується.
-3. Повторний repair/resume не створює фальшивих amendments або дубльованих notifications; affected comparisons і cached briefs superseded контрольовано.
-4. Після repair old URLs/citations/review/read state та legal relation evidence проходять regression.
+1. Claimed existing coverage has verified types, languages, geography, time, history and known gaps; Ticino auctions do not satisfy the Basel regulatory gate.
+2. A repair has a new normalization revision and an explanation; the old hash/evidence is not overwritten.
+3. Repeated repair/resume does not create false amendments or duplicate notifications; affected comparisons and cached briefs are superseded in a controlled way.
+4. After repair, old URLs, citations, review/read state and legal-relationship evidence pass regression checks.
 
-**Перевірка:** Representative legacy corpus до/після з hashes, legal/cantonal live permitted samples, re-extract/cancel/retry і user journey evidence.
+**Verification:** A representative legacy corpus before/after with hashes, permitted live legal/cantonal samples, re-extract/cancel/retry checks and user-journey evidence.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 
-## F2 — Єдиний користувацький шлях
+## F2 — One user journey
 
 <a id="mv2-017"></a>
 
-### MV2-017 — Create Monitor: дев’ять зрозумілих шаблонів
+### MV2-017 — Create Monitor: nine understandable templates
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** Frontend + UX · **Розмір:** L
+**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend + UX · **Size:** L
 
-**Залежності:** [MV2-002](#mv2-002), [MV2-005](#mv2-005), [MV2-010](#mv2-010), [MV2-015](#mv2-015). **Вимоги:** §§5,25,33.
+**Dependencies:** [MV2-002](#mv2-002), [MV2-005](#mv2-005), [MV2-010](#mv2-010), [MV2-015](#mv2-015). **Requirements:** §§5,25,33.
 
-**Результат для користувача:** Користувач налаштовує мету, а джерело система підбирає сама.
+**User outcome:** The user configures the goal, and the system selects the source.
 
-**Робота:** Personal/Business template picker; guided form, capability availability, preview why-match/no-match, defaults, explicit start.
+**Work:** Personal/Business template picker; guided form, capability availability, why-match/no-match preview, defaults and explicit start.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Є шість Personal шаблонів C1/C2/C3/C5/C6/C7 і три Business B2/B7/B8; unsupported/blocked активні сценарії пояснюють причину й не активуються. C4 відсутній у поточному picker; placeholder або форма митних курсів не потрібні.
-2. Форма збирає domain configuration з requirements, без вимоги вводити URL, API key чи технічний source ID.
-3. Preview позначає sample/baseline та не створює реальних alerts; double-click Start не дублює.
-4. Помилки зберігають draft, підказують виправлення; перший стан має expected wait, джерело й наступний крок.
+1. Provide six Personal templates C1/C2/C3/C5/C6/C7 and three Business templates B2/B7/B8; unsupported/blocked active scenarios explain the reason and cannot be activated. C4 is absent from the current picker; no customs-rate placeholder or form is required.
+2. The form collects the domain configuration from the requirements without asking users for a URL, API key or technical source ID.
+3. Preview labels a sample/baseline and does not create real alerts; double-clicking Start does not create duplicates.
+4. Errors retain the draft and suggest corrections; the first state shows the expected wait, source and next step.
 
-**Перевірка:** Browser journeys створення/редагування/недоступності для дев’яти активних templates.
+**Verification:** Browser journeys for creation, editing and unavailability across the nine active templates.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-018"></a>
 
-### MV2-018 — Monitoring: керування збереженими subjects
+### MV2-018 — Monitoring: manage saved subjects
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** Frontend · **Розмір:** M
+**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend · **Size:** M
 
-**Залежності:** [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017). **Вимоги:** §§9.12,25–26.
+**Dependencies:** [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017). **Requirements:** §§9.12,25–26.
 
-**Результат для користувача:** Видно, що саме відстежується і чи працює збір.
+**User outcome:** Users can see exactly what is monitored and whether ingestion is working.
 
-**Робота:** Список personal/shared subjects; стан, джерело, last observation/success/next expected, пороги, pause/resume/archive, contextual Monitor this.
+**Work:** List personal/shared subjects; status, source, last observation/success/next expected update, thresholds, pause/resume/archive and contextual Monitor this.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Редагування й pause/resume видимі після reload; archive не видаляє історію.
-2. No change, first data pending, stale, source unavailable і disabled відрізняються словами та дією.
-3. Pause commute today автоматично відновлюється за timezone й показує час; archive без auto resume.
-4. Поточні Topics і watched documents доступні через bridge; нова навігація не дублює керування.
+1. Edits and pause/resume persist after reload; archiving does not delete history.
+2. No change, first data pending, stale, source unavailable and disabled have distinct wording and actions.
+3. Pause commute today resumes automatically according to the timezone and shows the time; archive has no automatic resume.
+4. Existing Topics and watched documents remain accessible through the bridge; new navigation does not duplicate management.
 
-**Перевірка:** Browser persistence, realtime status update, stale recovery і legacy link tests.
+**Verification:** Browser persistence, real-time status updates, stale recovery and legacy-link tests.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-019"></a>
 
-### MV2-019 — Today: одна картка для всіх доменів
+### MV2-019 — Today: one card across all domains
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** Frontend + UX · **Розмір:** L
+**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend + UX · **Size:** L
 
-**Залежності:** [MV2-014](#mv2-014), [MV2-017](#mv2-017). **Вимоги:** §§20,26.1,33.
+**Dependencies:** [MV2-014](#mv2-014), [MV2-017](#mv2-017). **Requirements:** §§20,26.1,33.
 
-**Результат для користувача:** Змішані події читаються однаково зрозуміло.
+**User outcome:** Mixed events are equally easy to understand.
 
-**Робота:** Спільний card shell: type, authority severity, state/delta, why, timestamps, evidence, review; domain-specific fields усередині shell.
+**Work:** Shared card shell: type, authority severity, state/delta, why, timestamps, evidence and review; domain-specific fields within the shell.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Картка має факт, previous→current, source/time, структурне why і явний CTA; перший baseline не показує вигадане previous. На картці явні Review / Evidence / Not relevant.
-2. Observed, forecast, stale і system calculation мають видимі підписи; source severity відокремлена від user priority.
-3. Одне development агрегує кілька subjects; material updates/reopened позначені без другої незалежної картки.
-4. Legacy legal і усі 9 активних v2 templates сумісні з filters, accessible empty/loading/error і global unread.
+1. The card includes the fact, previous→current, source/time, structural why and an explicit CTA; the initial baseline does not invent a previous state. Review / Evidence / Not relevant are explicit on the card.
+2. Observed, forecast, stale and system calculation have visible labels; source severity is separate from user priority.
+3. One development aggregates multiple subjects; material updates/reopened states are marked without creating a second independent card.
+4. Legacy legal and all 9 active v2 templates work with filters, accessible empty/loading/error states and global unread counts.
 
-**Перевірка:** Populated mixed-feed browser replay; keyboard, narrow viewport та live revision updates.
+**Verification:** Populated mixed-feed browser replay; keyboard, narrow viewport and live revision updates.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-020"></a>
 
-### MV2-020 — Investigate: стани, diff, докази та історія
+### MV2-020 — Investigate: states, diffs, evidence and history
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** Frontend + Backend · **Розмір:** L
+**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
 
-**Залежності:** [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014). **Вимоги:** §§21,30.
+**Dependencies:** [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014). **Requirements:** §§21,30.
 
-**Результат для користувача:** Можна перевірити, що змінилося від моменту свого рішення.
+**User outcome:** Users can verify what has changed since their decision.
 
-**Робота:** Typed numeric/state diff, document-set diff plug-in, pinned evidence, current/historical revisions, provenance та AI section.
+**Work:** Typed numeric/state diffs, document-set diff plug-in, pinned evidence, current/historical revisions, provenance and an AI section.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Історична картка відкриває саме старий доказ; today/current response не підміняє його.
-2. Fact / AI / calculation / decision явно розділені; numeric value містить unit, period і quality.
-3. Raw download/export доступний лише за source policy; інакше дозволений normalized evidence + official link + пояснення меж.
-4. Великі документи й timeline завантажуються частинами; broken/live source не руйнує збережені дозволені докази.
+1. A historical card opens the corresponding old evidence; a today/current response does not replace it.
+2. Fact / AI / calculation / decision are explicitly separated; a numeric value includes unit, period and quality.
+3. Raw download/export is available only where source policy permits it; otherwise provide permitted normalized evidence + official link + an explanation of limitations.
+4. Load large documents and timelines in parts; a broken/live source does not invalidate retained permitted evidence.
 
-**Перевірка:** Evidence-version navigation, permissioned export, long-text/large-history browser checks.
+**Verification:** Evidence-version navigation, permissioned export and long-text/large-history browser checks.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-021"></a>
 
-### MV2-021 — Workspace: Impact Inbox, рішення та Impact Matrix
+### MV2-021 — Workspace: Impact Inbox, decisions and Impact Matrix
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** Frontend + Backend · **Розмір:** M
+**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** M
 
-**Залежності:** [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020). **Вимоги:** §§15–17,26.4,27.7.
+**Dependencies:** [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020). **Requirements:** §§15–17,26.4,27.7.
 
-**Результат для користувача:** Незавершена робота має відповідального і контекст.
+**User outcome:** Unfinished work has an owner and context.
 
-**Робота:** Фільтри unresolved/reopened/assigned, notes, decisions, safe batch review; зберегти existing Matrix у regulatory контексті без вигаданих cross-domain impact scores.
+**Work:** Unresolved/reopened/assigned filters, notes, decisions and safe batch review; preserve the existing Matrix in its regulatory context without invented cross-domain impact scores.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Високий hazard, relevant IP candidate й tender update можуть мати Inbox review; source state не змішується з рішенням.
-2. Batch review прив’язана до видимих revisions; нова revision під час дії не вважається переглянутою.
-3. BID/NO_BID/INSPECT/escalate мають доменні labels і не надсилають нічого назовні.
-4. Призначення owner і decision history видимі лише в дозволеному scope; Matrix та старі inbox links працюють.
+1. A high-severity hazard, relevant IP candidate or tender update can have an Inbox review; source state is not mixed with the decision.
+2. Batch review is tied to visible revisions; a new revision arriving during the action is not considered reviewed.
+3. BID/NO_BID/INSPECT/escalate have domain-specific labels and send nothing externally.
+4. Owner assignment and decision history are visible only within the permitted scope; Matrix and old inbox links work.
 
-**Перевірка:** Concurrent revision/decision браузерні сценарії, owner filters, legacy Matrix regression.
+**Verification:** Concurrent revision/decision browser journeys, owner filters and legacy Matrix regression.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-022"></a>
 
-### MV2-022 — Сповіщення та Digests із тих самих developments
+### MV2-022 — Notifications and Digests from the same developments
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** Frontend + Backend · **Розмір:** L
+**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
 
-**Залежності:** [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019). **Вимоги:** §§28,33; AC-B2-12; C4 digest відкладено.
+**Dependencies:** [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019). **Requirements:** §§28,33; AC-B2-12; C4 digest deferred.
 
-**Результат для користувача:** Користувач керує шумом в одному місці.
+**User outcome:** Users manage noise in one place.
 
-**Робота:** In-app center і opt-in email digest; monitor/type/event/channel mute, priority, frequency, quiet hours; review/evidence deep links.
+**Work:** In-app center and opt-in email digest; monitor/type/event/channel mute, priority, frequency, quiet hours and review/evidence deep links.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Immediate та digest не дублюють ту саму revision без явно вибраної recap policy.
-2. Digest містить тільки material changes дозволеного періоду та позначає source gaps; preview = sending rules.
-3. Налаштування збережені per user/workspace; unsubscribe та права застосовані перед відправленням.
-4. Покращення/скасування посилаються на попередній development; непрочитане синхронізується між Today й center.
+1. Immediate notifications and digests do not duplicate the same revision without an explicitly selected recap policy.
+2. A digest contains only material changes from the permitted period and identifies source gaps; preview uses the sending rules.
+3. Settings are saved per user/workspace; unsubscribe and permissions are applied before sending.
+4. Improvement/cancellation messages link to the preceding development; unread state is synchronized between Today and the center.
 
-**Перевірка:** Send-preview parity, race/unsubscribe, multi-monitor dedup, bounded period queries.
+**Verification:** Send-preview parity, race/unsubscribe tests, multi-monitor deduplication and bounded-period queries.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-023"></a>
 
-### MV2-023 — Ask і Marvin у контексті доказів v2
+### MV2-023 — Ask and Marvin in the context of v2 evidence
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** AI + Frontend · **Розмір:** M
+**Status:** PLANNED · **Priority:** P1 · **Owner:** AI + Frontend · **Size:** M
 
-**Залежності:** [MV2-010](#mv2-010), [MV2-020](#mv2-020). **Вимоги:** §§21–22,26.3,31; legacy HL-083–087,089.
+**Dependencies:** [MV2-010](#mv2-010), [MV2-020](#mv2-020). **Requirements:** §§21–22,26.3,31; legacy HL-083–087,089.
 
-**Результат для користувача:** Питання про подію не запускає зайву генерацію й не змінює monitor.
+**User outcome:** Asking about an event does not trigger unnecessary generation or change a monitor.
 
-**Робота:** Reuse cached briefs; entity-aware read context, cited answers; follow-up intent, explicit draft/preview for monitor changes.
+**Work:** Reuse cached briefs; entity-aware read context and cited answers; follow-up intent and explicit draft/preview for monitor changes.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Активні C1/C2/C3/C5/C6/C7 core works with LLM offline; unavailable model показує evidence/extractive mode.
-2. Збережений висновок прив’язаний до state/profile/model/prompt/locale revisions; stale answer не видається як актуальний.
-3. Ask не обіцяє medical treatment, infringement або гарантований legal deadline; official instructions цитуються точно.
-4. Natural-language config створює draft для перегляду; жодної автономної активації, bid чи зовнішнього повідомлення.
+1. The core of active C1/C2/C3/C5/C6/C7 works with the LLM offline; an unavailable model presents evidence/extractive mode.
+2. A saved conclusion is tied to state/profile/model/prompt/locale revisions; a stale answer is not presented as current.
+3. Ask does not promise medical treatment, infringement findings or a guaranteed legal deadline; official instructions are quoted accurately.
+4. Natural-language configuration creates a draft for review; no autonomous activation, bid or external message occurs.
 
-**Перевірка:** Context revocation, stale brief, prompt-injection fixtures та cited-answer checks під feature flag. DONE означає інтеграцію з manual/extractive fallback; production model enablement окремо проходить MV2-051.
+**Verification:** Context revocation, stale briefs, prompt-injection fixtures and cited-answer checks under a feature flag. DONE means integration with manual/extractive fallback; production model enablement separately passes MV2-051.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-024"></a>
 
-### MV2-024 — Зрозумілі підказки, доступність і п’ять мов
+### MV2-024 — Clear guidance, accessibility and five languages
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** UX + Frontend + Language reviewers · **Розмір:** L
+**Status:** PLANNED · **Priority:** P0 · **Owner:** UX + Frontend + Language reviewers · **Size:** L
 
-**Залежності:** [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022). **Вимоги:** §§20–21,25–26; legacy HL-057,073,095–097.
+**Dependencies:** [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022). **Requirements:** §§20–21,25–26; legacy HL-057,073,095–097.
 
-**Результат для користувача:** Нові можливості доступні з клавіатури, телефона й підтриманою мовою.
+**User outcome:** New capabilities are accessible by keyboard, on a phone and in a supported language.
 
-**Робота:** English-first реалізація з existing i18n contracts; EN/DE/FR/IT/RM release strings і human review; F1/Page guide/Show me для нових дій.
+**Work:** English-first implementation with existing i18n contracts; EN/DE/FR/IT/RM release strings and human review; F1/Page guide/Show me for new actions.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. У нових розділах пояснені походження даних, кожна дія, waiting/configuration та наслідки mute/review.
-2. Keyboard/focus/contrast/reader checks проходять populated/error/stale flows; колір не є єдиним сигналом.
-3. Нові v2 потоки всіх п’яти мов перевірені незалежними fluent reviewers; неперевірена мова не оголошується готовою.
-4. Primary actions прості; provider/queue/debug поля лишаються Admin, units/dates/number formats локалізовані.
+1. New sections explain data provenance, every action, waiting/configuration and the effects of mute/review.
+2. Keyboard/focus/contrast/screen-reader checks pass for populated/error/stale flows; color is not the only signal.
+3. Independent fluent reviewers verify new v2 flows in all five languages; an unreviewed language is not declared ready.
+4. Primary actions are simple; provider/queue/debug fields stay in Admin, and units/dates/number formats are localized.
 
-**Перевірка:** Browser/axe + screen-reader/device review + language sign-off; автоматичні checks не замінюють human acceptance.
+**Verification:** Browser/axe + screen-reader/device review + language sign-off; automated checks do not replace human acceptance.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-025"></a>
 
-### MV2-025 — Admin: правдиві source capabilities і керування доступом
+### MV2-025 — Admin: accurate source capabilities and access management
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Integration + Frontend · **Розмір:** M
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Integration + Frontend · **Size:** M
 
-**Залежності:** [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-018](#mv2-018). **Вимоги:** §§23,26.5,38.
+**Dependencies:** [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-018](#mv2-018). **Requirements:** §§23,26.5,38.
 
-**Результат для користувача:** Адміністратор розуміє, чому шаблон доступний чи заблокований.
+**User outcome:** Administrators understand why a template is available or blocked.
 
-**Робота:** Каталог 4 активних source packs: Swiss Safety & Environment, Swiss Mobility, Swiss Business Opportunities, Swiss IP; Swiss Customs відкладено. Для активних packs:, conformance version, access expiry, supported fields/location/history, quotas, freshness, reprocess controls.
+**Work:** Catalogue 4 active source packs: Swiss Safety & Environment, Swiss Mobility, Swiss Business Opportunities and Swiss IP; Swiss Customs is deferred. For active packs, include conformance version, access expiry, supported fields/location/history, quotas, freshness and reprocess controls.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Заборона export, строк доступу, correction requirements і licence version виконуються політикою, а не лише записані в docs.
-2. Відсутній доступ показує actionable state; viewer не бачить секретів або credentials.
-3. Reprocess має preview, bounded scope, progress/cancel/resume; історичний replay не створює alert burst.
-4. Зміна terms/capability вимикає залежну функцію та повідомляє адміністратора; без тихого стороннього fallback.
+1. Export restrictions, access expiry, correction requirements and licence version are enforced through policy, rather than only documented.
+2. Missing access shows an actionable state; viewers cannot see secrets or credentials.
+3. Reprocess provides preview, bounded scope, progress/cancel/resume; historical replay does not create an alert burst.
+4. A terms/capability change disables the dependent function and notifies the administrator; no silent third-party fallback occurs.
 
-**Перевірка:** API permission tests, licence-expiry clock, source fail/recover і reprocess browser checks.
+**Verification:** API permission tests, licence-expiry clock, source failure/recovery and reprocess browser checks.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 
-## F3 — Числові стани, середовище та небезпеки
+## F3 — Numeric states, environment and hazards
 
 <a id="mv2-028"></a>
 
-### MV2-028 — C1: офіційні попередження і географія небезпеки
+### MV2-028 — C1: official warnings and hazard geography
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** Integration · **Розмір:** L
+**Status:** PLANNED · **Priority:** P1 · **Owner:** Integration · **Size:** L
 
-**Залежності:** [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071). **Вимоги:** §8.4–8.9; AC-C1-02,04,05,07,09.
+**Dependencies:** [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071). **Requirements:** §8.4–8.9; AC-C1-02,04,05,07,09.
 
-**Результат для користувача:** Офіційне попередження має стабільну історію й зону дії.
+**User outcome:** An official warning has a stable history and affected area.
 
-**Робота:** Alertswiss/federal/cantonal capability-specific adapter; authority ID, severity scale, certainty, instructions, publication/effective/valid times, cancellation. Реалізація цього домену стартує після готовності першого Pollen Watch (MV2-071); source discovery у MV2-003 може йти паралельно.
+**Work:** Alertswiss/federal/cantonal capability-specific adapter; authority ID, severity scale, certainty, instructions, publication/effective/valid times and cancellation. Implementation of this domain starts after the first Pollen Watch is ready (MV2-071); source discovery in MV2-003 can proceed in parallel.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Доступ і дозволена географія підтверджені; категорії hazards показують реальне source coverage, включно з outage, якщо джерело її дає.
-2. Instructions і authority severity збережені без AI-переписування; кілька мов не дублюють warning.
-3. Polygon/municipality expansion/reduction зберігається як update; cancellation/all-clear відрізняється від пропуску feed.
-4. Відсутні типи чи кантональні дані позначені недоступними, а не «немає небезпеки».
+1. Verify access and permitted geography; hazard categories reflect actual source coverage, including outages if the source supplies them.
+2. Retain instructions and authority severity without AI rewriting; multiple languages do not duplicate a warning.
+3. Retain polygon/municipality expansion/reduction as an update; cancellation/all-clear is distinct from a feed gap.
+4. Missing types or cantonal data are marked unavailable, rather than “no hazard”.
 
-**Перевірка:** Source fixture creation/update/instructions/geography/cancel; controlled live fetch з дозволом.
+**Verification:** Source fixtures for creation/update/instructions/geography/cancellation; controlled live fetch with permission.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-029"></a>
 
-### MV2-029 — C1: Home/Office locations і повний warning workflow
+### MV2-029 — C1: Home/Office locations and the complete warning workflow
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** Frontend + Backend · **Розмір:** L
+**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
 
-**Залежності:** [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-028](#mv2-028). **Вимоги:** §8; AC-C1-01…10.
+**Dependencies:** [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-028](#mv2-028). **Requirements:** §8; AC-C1-01…10.
 
-**Результат для користувача:** Попередження отримує лише людина, якої стосується зона.
+**User outcome:** Only people affected by the area receive the warning.
 
-**Робота:** Multiple saved locations, hazards/minimum importance, Review/View official/Not relevant/Mute type; active and historical warning state.
+**Work:** Multiple saved locations, hazards/minimum importance, Review/View official/Not relevant/Mute type; active and historical warning state.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Виконано AC-C1-01…10; Home усередині affected geometry отримує warning, поза нею — ні.
-2. Нові instructions, severity, geography, time або cancellation створюють material revision; formatting/timestamp refresh — ні.
-3. Material escalation reopen перевірено після reviewed; all-clear закриває active source event, зберігаючи review history.
-4. Critical source instructions видно без AI; поруч official source і актуальність; no-data не показується як all-clear.
+1. Satisfy AC-C1-01…10; Home inside the affected geometry receives a warning, while Home outside it does not.
+2. New instructions, severity, geography, time or cancellation create a material revision; formatting/timestamp refreshes do not.
+3. Verify that material escalation reopens a reviewed item; an all-clear closes the active source event while retaining review history.
+4. Critical source instructions are visible without AI; show the official source and freshness alongside them; no-data is not shown as an all-clear.
 
-**Перевірка:** E2E multi-location, boundary, changed instruction, reviewed→reopened→all-clear, mute і offline model.
+**Verification:** E2E multi-location, boundary, changed instructions, reviewed→reopened→all-clear, mute and offline-model checks.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-030"></a>
 
-### MV2-030 — C5: офіційні pollen observations і forecasts
+### MV2-030 — C5: official pollen observations and forecasts
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Integration · **Розмір:** M
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Integration · **Size:** M
 
-**Залежності:** [MV2-069](#mv2-069), [MV2-070](#mv2-070). **Вимоги:** §12.3–12.8; AC-C5-03,06,08.
+**Dependencies:** [MV2-069](#mv2-069), [MV2-070](#mv2-070). **Requirements:** §12.3–12.8; AC-C5-03,06,08.
 
-**Результат для користувача:** Є перевірений часовий ряд allergen × station.
+**User outcome:** A verified allergen × station time series is available.
 
-**Робота:** MeteoSwiss/SwissPollen dataset contract, parameter list, categories, units, station capability; окремі observation та forecast series. Перша реалізація C5 використовує завершені контракти MV2-069/070; DONE загальних parent-задач MV2-003/007/011/015 не є її передумовою.
+**Work:** MeteoSwiss/SwissPollen dataset contract, parameter list, categories, units and station capability; separate observation and forecast series. The first C5 implementation uses the completed contracts from MV2-069/070; DONE status for the general parent tasks MV2-003/007/011/015 is not a prerequisite.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Підтримка birch/grasses доведена для обраної станції; unavailable аллерген не вважається нулем.
-2. Observation_time, issue_time і forecast_valid_time не змішуються; revised forecast не перезаписує measurement.
-3. Official categories/scales збережені з версією; provisional/corrected readings відрізняються.
-4. Polling відповідає перевіреному source cadence; 20-minute refresh не означає окремий alert.
-5. G(C5-observation) і G(C5-forecast) мають окремі дозволені live samples, stations/allergens/часові поля та sufficient retained evidence. Синтетичний прогноз або прогноз без підтвердженого official channel не закриває повний сценарій.
+1. Demonstrate support for birch/grasses at the selected station; an unavailable allergen is not treated as zero.
+2. Do not mix observation_time, issue_time and forecast_valid_time; a revised forecast does not overwrite a measurement.
+3. Retain official categories/scales with their version; distinguish provisional/corrected readings.
+4. Polling follows verified source cadence; a 20-minute refresh does not imply a separate alert.
+5. G(C5-observation) and G(C5-forecast) each have separate permitted live samples, stations/allergens/time fields and sufficient retained evidence. A synthetic forecast or a forecast without a confirmed official channel does not satisfy the complete scenario.
 
-**Перевірка:** Official dataset sample, missing station/allergen, revision and forecast-vs-observation conformance.
+**Verification:** Official dataset sample, missing station/allergen, revision and forecast-versus-observation conformance.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-031"></a>
 
-### MV2-031 — Pollen Watch — перший повний наскрізний сценарій (C5)
+### MV2-031 — Pollen Watch — the first complete end-to-end scenario (C5)
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Frontend + Backend + UX · **Розмір:** L
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Frontend + Backend + UX · **Size:** L
 
-**Залежності:** [MV2-070](#mv2-070), [MV2-030](#mv2-030). **Вимоги:** §12; AC-C5-01…10.
+**Dependencies:** [MV2-070](#mv2-070), [MV2-030](#mv2-030). **Requirements:** §12; AC-C5-01…10.
 
-**Результат для користувача:** Location + pollen type + поріг дають зрозуміле спостереження.
+**User outcome:** Location + pollen type + threshold produce an understandable monitor.
 
-**Робота:** Створити один цілісний delivery slice на справжньому дозволеному джерелі: setup, initial state, category crossing, review, improvement, history. Це перша функціональна поставка продукту; вона не залежить від завершення all-template UI, business AI, mobility або повного F6. Її shared prerequisites реалізуються і перевіряються в явному C5-підзавданні MV2-070. Допуск реальних користувачів — окремий gate MV2-071.
+**Work:** Create one coherent delivery slice using a real permitted source: setup, initial state, category crossing, review, improvement and history. This is the first functional product delivery; it does not depend on completion of the all-template UI, business AI, mobility or the whole of F6. Implement and verify its shared prerequisites in the explicit C5 subtask MV2-070. Admission of real users is a separate gate in MV2-071.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Виконано AC-C5-01…10; одна й кілька pollen types, threshold/high-or-above і rapid-increase window.
-2. HIGH fluctuation не спамить; improvement оновлює ту саму development після configured reset.
-3. Observed та Forecast tomorrow мають різні labels/час; пояснені station coverage і локальні обмеження.
-4. Немає діагнозу/дозування; перша цінність доступна з вимкненим LLM.
+1. Satisfy AC-C5-01…10; support one or multiple pollen types, threshold/high-or-above and a rapid-increase window.
+2. HIGH fluctuations do not generate spam; improvement updates the same development after the configured reset.
+3. Observed and Forecast tomorrow have different labels/times; explain station coverage and local limitations.
+4. Provide no diagnosis/dosage; first value is available with the LLM disabled.
 
-**Перевірка:** Golden + live permitted E2E, reviewed update, flapping, station gap, email opt-in; записане демо.
+**Verification:** Golden + permitted live E2E, reviewed updates, flapping, station gaps and email opt-in; recorded demo.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-032"></a>
 
-### MV2-032 — C6: гідрологічні станції, показники та офіційна небезпека
+### MV2-032 — C6: hydrological stations, metrics and official danger levels
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** Integration · **Розмір:** M
+**Status:** PLANNED · **Priority:** P1 · **Owner:** Integration · **Size:** M
 
-**Залежності:** [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071). **Вимоги:** §13.3–13.5; AC-C6-01,02,05,08.
+**Dependencies:** [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071). **Requirements:** §13.3–13.5; AC-C6-01,02,05,08.
 
-**Результат для користувача:** Рівень води, витрата, температура й danger не змішуються.
+**User outcome:** Water level, discharge, temperature and danger are not mixed.
 
-**Робота:** FOEN station/waterbody mapping; parameter units/reference datum/aggregation/quality; explicit source danger vs locally calculated threshold. Реалізація цього домену стартує після готовності першого Pollen Watch (MV2-071); source discovery у MV2-003 може йти паралельно.
+**Work:** FOEN station/waterbody mapping; parameter units/reference datum/aggregation/quality; explicit source danger versus a locally calculated threshold. Implementation of this domain starts after the first Pollen Watch is ready (MV2-071); source discovery in MV2-003 can proceed in parallel.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Покриття кожної величини перевірене; відсутній station parameter = UNKNOWN.
-2. Water level з різними datum не порівнюється як один ряд; discharge/temperature мають власні units.
-3. Офіційний danger level походить із офіційного продукту й зони, а не вигадується з water level.
-4. Підтверджено live/history window та recovery watermark, врахована суперечність документації.
+1. Verify coverage for each metric; an absent station parameter = UNKNOWN.
+2. Water levels with different datums are not compared as a single series; discharge/temperature have their own units.
+3. An official danger level comes from an official product and area, rather than being invented from the water level.
+4. Confirm the live/history window and recovery watermark, accounting for contradictory documentation.
 
-**Перевірка:** Metric/datum/quality fixtures і source contract probe; hydrology sample review.
+**Verification:** Metric/datum/quality fixtures and source-contract probe; hydrology sample review.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-033"></a>
 
-### MV2-033 — C6: River / Lake thresholds, escalation та історія
+### MV2-033 — C6: River / Lake thresholds, escalation and history
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** Frontend + Backend · **Розмір:** M
+**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** M
 
-**Залежності:** [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-032](#mv2-032). **Вимоги:** §13; AC-C6-01…10.
+**Dependencies:** [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-032](#mv2-032). **Requirements:** §13; AC-C6-01…10.
 
-**Результат для користувача:** Користувач стежить за потрібною водоймою чи станцією.
+**User outcome:** The user monitors the waterbody or station they need.
 
-**Робота:** Station/waterbody picker, water-level/discharge/temperature/danger selection; absolute/rate-of-change window; escalation/downgrade.
+**Work:** Station/waterbody picker, water-level/discharge/temperature/danger selection; absolute/rate-of-change window; escalation/downgrade.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Виконано AC-C6-01…10; абсолютний >2.5m і +30cm за заданий час використовують відповідні одиниці/вікно.
-2. Офіційна danger escalation має вищий пріоритет, не пригнічується нижчим custom threshold.
-3. Downgrade змінює існуючу development; unchanged readings не створюють duplicates.
-4. History measurements відокремлена від change history; source timestamp/quality видно.
+1. Satisfy AC-C6-01…10; an absolute threshold >2.5m and +30cm over a specified time use the appropriate units/window.
+2. Official danger escalation has higher priority and is not suppressed by a lower custom threshold.
+3. A downgrade changes the existing development; unchanged readings do not create duplicates.
+4. Measurement history is separate from change history; the source timestamp/quality is visible.
 
-**Перевірка:** E2E threshold/window/danger override/reversal/duplicate/missing reading.
+**Verification:** E2E threshold/window/danger override/reversal/duplicate/missing-reading checks.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-034"></a>
 
-### MV2-034 — C7: офіційні air-quality ряди та інтерпретація
+### MV2-034 — C7: official air-quality series and interpretation
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** Integration · **Розмір:** M
+**Status:** PLANNED · **Priority:** P1 · **Owner:** Integration · **Size:** M
 
-**Залежності:** [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071). **Вимоги:** §14.3–14.6; AC-C7-01,03,06,07.
+**Dependencies:** [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071). **Requirements:** §14.3–14.6; AC-C7-01,03,06,07.
 
-**Результат для користувача:** Користувач бачить відомий показник із правильним періодом.
+**User outcome:** The user sees a known metric with the correct period.
 
-**Робота:** FOEN/NABEL та дозволені кантональні adapters; PM2.5/PM10/O3/NO2, station/model distinction, hourly/daily/24h fields. Реалізація цього домену стартує після готовності першого Pollen Watch (MV2-071); source discovery у MV2-003 може йти паралельно.
+**Work:** FOEN/NABEL and permitted cantonal adapters; PM2.5/PM10/O3/NO2, station/model distinction and hourly/daily/24h fields. Implementation of this domain starts after the first Pollen Watch is ready (MV2-071); source discovery in MV2-003 can proceed in parallel.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Station and parameter support підтверджено, зокрема для вибраної Lugano локації; відсутнє покриття видно.
-2. O3 hourly і daily-max, NO2/PM 24h не порівнюються напряму; source measurement time відрізняється від fetch time.
-3. Категорії мають офіційну шкалу/джерело; без неї показано числовий стан і user rule, без вигаданих medical risk classes.
-4. Provisional/invalid/corrected data і local representativeness позначені.
+1. Confirm station and parameter support, including for the selected Lugano location; missing coverage is visible.
+2. O3 hourly and daily-max values and NO2/PM 24h values are not compared directly; source measurement time is distinct from fetch time.
+3. Categories have an official scale/source; without one, display the numeric state and user rule without invented medical risk classes.
+4. Label provisional/invalid/corrected data and local representativeness.
 
-**Перевірка:** Unit/aggregation/category source conformance; provisional/missing/corrected data cases.
+**Verification:** Unit/aggregation/category source conformance; provisional/missing/corrected data cases.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-035"></a>
 
-### MV2-035 — C7: Air Quality — показники, зміни та поліпшення
+### MV2-035 — C7: Air Quality — metrics, changes and improvements
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** Frontend + Backend · **Розмір:** M
+**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** M
 
-**Залежності:** [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-034](#mv2-034). **Вимоги:** §14; AC-C7-01…10.
+**Dependencies:** [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-034](#mv2-034). **Requirements:** §14; AC-C7-01…10.
 
-**Результат для користувача:** Забруднення відстежується без сповіщень про кожну флуктуацію.
+**User outcome:** Pollution is monitored without notifications for every fluctuation.
 
-**Робота:** Location/station, pollutant multiselect, category/material increase, mute pollutant, adjust threshold, compare/history.
+**Work:** Location/station, pollutant multiselect, category/material increase, mute pollutant, adjust threshold and compare/history.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Виконано AC-C7-01…10; релевантна зміна входить у Today і пояснює station/area match.
-2. Категорійний поріг та cooldown не змішують різні aggregation periods.
-3. Improved/resolved state оновлює той самий development; source unavailable не означає normal.
-4. UI не робить висновок про здоров’я конкретного користувача; limitations/evidence доступні.
+1. Satisfy AC-C7-01…10; a relevant change appears in Today and explains the station/area match.
+2. Category thresholds and cooldown do not mix different aggregation periods.
+3. An improved/resolved state updates the same development; source unavailability does not mean normal.
+4. The UI does not infer the health of an individual user; limitations/evidence are accessible.
 
-**Перевірка:** E2E pollutants/periods, improvement, noise suppression, unsupported station і history.
+**Verification:** E2E pollutants/periods, improvement, noise suppression, unsupported-station and history checks.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 
-## F4 — Мобільність і зв’язок подій
+## F4 — Mobility and related events
 
 <a id="mv2-036"></a>
 
-### MV2-036 — Пов’язані developments із кількох джерел
+### MV2-036 — Related developments from multiple sources
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** Backend + UX · **Розмір:** M
+**Status:** PLANNED · **Priority:** P1 · **Owner:** Backend + UX · **Size:** M
 
-**Залежності:** [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-029](#mv2-029), [MV2-033](#mv2-033), [MV2-041](#mv2-041), [MV2-071](#mv2-071). **Вимоги:** §§13.7,29.
+**Dependencies:** [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-029](#mv2-029), [MV2-033](#mv2-033), [MV2-041](#mv2-041), [MV2-071](#mv2-071). **Requirements:** §§13.7,29.
 
-**Результат для користувача:** Повінь і закриття дороги можна розглядати разом.
+**User outcome:** A flood and a road closure can be reviewed together.
 
-**Робота:** Cross-source association за verified identifiers/geography/time; grouped overview, evidence per event, explainable linkage й reversible split.
+**Work:** Associate records across sources using verified identifiers, geography and time; provide a grouped overview, evidence for each event, explainable links and reversible splits.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. River danger + Alertswiss + road closure можна зв’язати з однією location story без втрати окремих authority IDs.
-2. Проста близькість у часі не доводить спільну причину; непідтверджений зв’язок позначено можливим.
-3. Conflicting sources показані окремо; скасування одного не закриває решту.
-4. Merge/split не дублює delivery і не переносить автоматично чужі review decisions.
+1. River danger, Alertswiss and a road closure can be linked to one location story without losing their separate authority IDs.
+2. Proximity in time alone does not prove a common cause; an unconfirmed relationship is labelled as possible.
+3. Conflicting sources are displayed separately; cancellation of one event does not close the others.
+4. Merging or splitting does not duplicate delivery or automatically transfer review decisions from another event.
 
-**Перевірка:** Three-source fixture плюс unrelated near-location negative і correction/split replay.
+**Verification:** A three-source fixture, an unrelated nearby-location negative case, and correction/split replay.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-037"></a>
 
-### MV2-037 — Довідники Journey/Trip/Route/Stop і Road Corridor
+### MV2-037 — Journey/Trip/Route/Stop and Road Corridor reference data
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Integration + Backend · **Розмір:** L
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Integration + Backend · **Size:** L
 
-**Залежності:** [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-015](#mv2-015), [MV2-016](#mv2-016), [MV2-071](#mv2-071). **Вимоги:** §§9.4–9.8,10.3–10.5.
+**Dependencies:** [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-015](#mv2-015), [MV2-016](#mv2-016), [MV2-071](#mv2-071). **Requirements:** §§9.4–9.8,10.3–10.5.
 
-**Результат для користувача:** Транспортний subject зіставляється за стабільною сутністю.
+**User outcome:** A transport subject is matched using a stable entity.
 
-**Робота:** GTFS/static identifiers, timetable service dates, stop/line/trip/route/journey/direction; saved road segments/corridor geometry. Без turn-by-turn routing.
+**Work:** GTFS/static identifiers, timetable service dates, stop/line/trip/route/journey/direction; saved road segments and corridor geometry. Turn-by-turn routing is outside scope.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Origin/destination можуть вибрати підтверджений journey чи explicit legs; keyword city match не видається за route intersection.
-2. Trip ID пов’язаний із service date, stop IDs cross-feed mapping версійний; >24h timetable підтриманий.
-3. Road direction, segment і corridor IDs зіставляються окремо від railway route.
-4. Reference-data refresh не губить monitors; unresolved mapping повідомляє користувача.
+1. Origin and destination can select a verified journey or explicit legs; a city keyword match is not presented as a route intersection.
+2. Trip ID is tied to the service date, cross-feed stop ID mappings are versioned, and timetable times >24h are supported.
+3. Road direction, segment and corridor IDs are matched separately from railway routes.
+4. Reference-data refreshes preserve monitors; unresolved mappings are communicated to the user.
 
-**Перевірка:** Static↔realtime ID fixtures, replaced timetable, overnight trip, opposite road direction.
+**Verification:** Static↔realtime ID fixtures, a replaced timetable, an overnight trip and the opposite road direction.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-038"></a>
 
-### MV2-038 — C2: Service Alerts і Trip Updates
+### MV2-038 — C2: Service Alerts and Trip Updates
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** Integration · **Розмір:** L
+**Status:** PLANNED · **Priority:** P1 · **Owner:** Integration · **Size:** L
 
-**Залежності:** [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-037](#mv2-037), [MV2-071](#mv2-071). **Вимоги:** §9; AC-C2-02,06,07,08.
+**Dependencies:** [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-037](#mv2-037), [MV2-071](#mv2-071). **Requirements:** §9; AC-C2-02,06,07,08.
 
-**Результат для користувача:** Регулярна поїздка отримує офіційний disruption state.
+**User outcome:** A regular journey receives the official disruption state.
 
-**Робота:** Official GTFS-RT alerts/trip updates; cancellation, partial cancel, stop/platform change, replacement, restoration; documented full/differential feed semantics. Реалізація цього домену стартує після готовності першого Pollen Watch (MV2-071); source discovery у MV2-003 може йти паралельно.
+**Work:** Official GTFS-RT alerts/trip updates; cancellation, partial cancellation, stop/platform changes, replacement and restoration; documented full/differential feed semantics. Implementation of this domain starts after the first Pollen Watch is ready (MV2-071); source discovery in MV2-003 can proceed in parallel.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Усі заявлені типи зіставлені з реально доступними feed fields; відсутні platform/delay дані не вигадуються.
-2. GTFS service date, entity ID, validity, delay minutes і language editions збережені.
-3. Повторна відповідь, entity disappearance і expired alert мають різні семантики; deletion не гарантує restoration.
-4. Auth/rate-limit контракт уточнений у джерела; технічна суперечність 2/5 req/min не вирішена здогадкою.
+1. Every claimed event type is mapped to fields actually available in the feed; missing platform or delay data is not invented.
+2. GTFS service date, entity ID, validity, delay minutes and language editions are preserved.
+3. A repeated response, entity disappearance and an expired alert have distinct semantics; deletion does not guarantee restoration.
+4. The authentication and rate-limit contract is clarified with the source; the documented conflict between 2/5 req/min is not resolved by guessing.
 
-**Перевірка:** Protocol replay: full/differential/delete/stale, cancellation, changed stop, replacement/restoration.
+**Verification:** Protocol replay: full/differential/delete/stale, cancellation, a changed stop, and replacement/restoration.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-039"></a>
 
-### MV2-039 — C2: регулярний commute і тихі транспортні alerts
+### MV2-039 — C2: Regular commutes and low-noise transport alerts
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** Frontend + Backend · **Розмір:** L
+**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
 
-**Залежності:** [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-038](#mv2-038). **Вимоги:** §9; AC-C2-01…10.
+**Dependencies:** [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-038](#mv2-038). **Requirements:** §9; AC-C2-01…10.
 
-**Результат для користувача:** Сповіщення стосується маршруту й часу поїздки.
+**User outcome:** Alerts relate to the route and the journey time.
 
-**Робота:** Journey/line/stop/trip selector, weekdays/window, threshold minutes, pause today, mute event; state transition NORMAL→…→RESTORED.
+**Work:** Journey/line/stop/trip selector, weekdays and time window, threshold in minutes, pause today, mute event; NORMAL→…→RESTORED state transitions.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Виконано AC-C2-01…10; cancellation поза route не доставляється; overlap time необхідний для immediate.
-2. Поза вікном — ignore або opt-in digest за видимою policy; 1/2/3/4 minutes не спамлять за threshold10.
-3. Restoration/partial resumption змінює ту саму service-day development, historical disruptions доступні.
-4. Near-departure cancellation пріоритетна в deterministic queue; source stale видно до планування поїздки.
+1. AC-C2-01…10 are met; a cancellation outside the route is not delivered; time overlap is required for immediate delivery.
+2. Outside the time window, ignore the event or include it in an opt-in digest according to a visible policy; delays of 1/2/3/4 minutes do not generate repeated alerts with a threshold of 10.
+3. Restoration or partial resumption updates the same service-day development; historical disruptions remain available.
+4. A cancellation near departure has priority in the deterministic queue; stale source data is visible before planning the journey.
 
-**Перевірка:** E2E commute weekdays, time/DST, threshold, partial restore, pause today і historical replay.
+**Verification:** End-to-end commute checks for weekdays, time/DST, thresholds, partial restoration, pause today and historical replay.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-040"></a>
 
-### MV2-040 — C3: ASTRA traffic і заплановані перекриття
+### MV2-040 — C3: ASTRA traffic and planned closures
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** Integration · **Розмір:** L
+**Status:** PLANNED · **Priority:** P1 · **Owner:** Integration · **Size:** L
 
-**Залежності:** [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-037](#mv2-037), [MV2-071](#mv2-071). **Вимоги:** §10; AC-C3-02,04,05,07,08.
+**Dependencies:** [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-037](#mv2-037), [MV2-071](#mv2-071). **Requirements:** §10; AC-C3-02,04,05,07,08.
 
-**Результат для користувача:** Відомі дороги мають source-backed стан і планові зміни.
+**User outcome:** Known roads have states and planned changes supported by source evidence.
 
-**Робота:** ASTRA/FEDRO permitted feed(s); DATEX/інший підтверджений формат; segment/direction, lane/full closure, incident, congestion/delay, planned windows. Реалізація цього домену стартує після готовності першого Pollen Watch (MV2-071); source discovery у MV2-003 може йти паралельно.
+**Work:** Permitted ASTRA/FEDRO feeds; DATEX or another confirmed format; segment/direction, lane/full closure, incident, congestion/delay and planned time windows. Implementation of this domain starts after the first Pollen Watch is ready (MV2-071); source discovery in MV2-003 can proceed in parallel.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Доступ і шестимісячний строк/продовження відстежені; raw machine-readable redistribution заборонено відповідно до source policy.
-2. Закриття й measured congestion/delay — різні capabilities: одного safety feed недостатньо для заяви про всі дорожні стани.
-3. Planned/live events, reschedule і reopening нормалізовані; source instructions/evidence збережені в дозволеній формі.
-4. A2/Gotthard/A13 coverage і напрям підтверджені; estimated_delay UNKNOWN, якщо feed його не дає.
+1. Access, the six-month access period and renewal are tracked; raw machine-readable redistribution is prohibited according to the source policy.
+2. Closures and measured congestion/delay are separate capabilities: one safety feed is insufficient to claim coverage of all road states.
+3. Planned/live events, rescheduling and reopening are normalized; source instructions and evidence are preserved in a permitted form.
+4. Coverage and direction for A2/Gotthard/A13 are confirmed; estimated_delay is UNKNOWN when the feed does not provide it.
 
-**Перевірка:** Contract probe і replay full/lane closure, roadwork, delay missing, planned reschedule, reopened.
+**Verification:** Contract probe and replay of full/lane closures, roadworks, missing delay, planned rescheduling and reopening.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-041"></a>
 
-### MV2-041 — C3: My Route Watch для A2 / Gotthard / A13
+### MV2-041 — C3: My Route Watch for A2 / Gotthard / A13
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** Frontend + Backend · **Розмір:** L
+**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
 
-**Залежності:** [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-040](#mv2-040). **Вимоги:** §10; AC-C3-01…10.
+**Dependencies:** [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-040](#mv2-040). **Requirements:** §10; AC-C3-01…10.
 
-**Результат для користувача:** Людина знає про значущу зміну на збереженому коридорі.
+**User outcome:** The user knows about a material change on a saved corridor.
 
-**Робота:** Multi-corridor selection, direction, event types, minimum delay, planned closures overnight, compare/source/review/history.
+**Work:** Multiple corridor selection, direction, event types, minimum delay, planned overnight closures, comparison, source, review and history.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Виконано AC-C3-01…10; northbound filter виключає southbound і непов’язані segment events.
-2. OPEN→CLOSED, lane restriction, roadwork/accident і rescheduled closure коректно відображені.
-3. Повторні traffic records однієї події об’єднуються; reopening зберігає history.
-4. 15-minute threshold використовується лише за валідним delay; відсутній delay не пригнічує explicit full closure.
+1. AC-C3-01…10 are met; a northbound filter excludes southbound and unrelated segment events.
+2. OPEN→CLOSED, lane restrictions, roadworks/accidents and rescheduled closures are displayed correctly.
+3. Repeated traffic records for one event are combined; reopening preserves history.
+4. The 15-minute threshold is applied only to a valid delay; a missing delay does not suppress an explicit full closure.
 
-**Перевірка:** E2E opposite direction, planned date shift, no delay value, closure/reopen, duplicate languages.
+**Verification:** End-to-end checks for the opposite direction, a planned date shift, no delay value, closure/reopening and duplicate language editions.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 
-## F5 — Бізнес-сценарії
+## F5 — Business scenarios
 
 <a id="mv2-042"></a>
 
-### MV2-042 — B2: SIMAP discovery та відстеження публікацій
+### MV2-042 — B2: SIMAP discovery and publication monitoring
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** Integration · **Розмір:** L
+**Status:** PLANNED · **Priority:** P1 · **Owner:** Integration · **Size:** L
 
-**Залежності:** [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071). **Вимоги:** §15; AC-B2-02,05,06,11.
+**Dependencies:** [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071). **Requirements:** §15; AC-B2-02,05,06,11.
 
-**Результат для користувача:** Публічні закупівлі надходять як нові й змінені сутності.
+**User outcome:** Public procurement notices arrive as new and changed entities.
 
-**Робота:** Official SIMAP API/client registration, pages/cursors, publication IDs, tender dossier linking; authority/CPV/region/language/deadline/documents/Q&A. Реалізація цього домену стартує після готовності першого Pollen Watch (MV2-071); source discovery у MV2-003 може йти паралельно.
+**Work:** Official SIMAP API/client registration, pages/cursors, publication IDs and tender dossier linking; authority/CPV/region/language/deadline/documents/Q&A. Implementation of this domain starts after the first Pollen Watch is ready (MV2-071); source discovery in MV2-003 can proceed in parallel.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Публікація не поширюється до дозволеного source часу 08:00; original/commentary і required notice розділені.
-2. Access to public publications не дає автоматичного доступу до restricted tender attachments; coverage кожного поля явне.
-3. Corrections, cancellations, award/status і multilingual publications versioned без duplicate opportunity.
-4. Backfill bounds/watermark не втрачають late publication; заборонені документи не витягуються обхідним шляхом.
+1. Publications are not distributed before the source permits publication at 08:00; originals, commentary and the required notice remain distinct.
+2. Access to public publications does not automatically grant access to restricted tender attachments; coverage of each field is explicit.
+3. Corrections, cancellations, awards/status and multilingual publications are versioned without duplicate opportunities.
+4. Backfill bounds and watermarks preserve late publications; prohibited documents are not retrieved through workarounds.
 
-**Перевірка:** Contract/API fixtures pagination, publication gate clock, corrections і public-vs-restricted attachments.
+**Verification:** Contract/API fixtures for pagination, the publication gate clock, corrections and public versus restricted attachments.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-043"></a>
 
-### MV2-043 — B2/B7/B8: структурні профілі й semantic candidate ranking
+### MV2-043 — B2/B7/B8: Structured profiles and semantic candidate ranking
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** Backend + AI · **Розмір:** L
+**Status:** PLANNED · **Priority:** P1 · **Owner:** Backend + AI · **Size:** L
 
-**Залежності:** [MV2-005](#mv2-005), [MV2-008](#mv2-008), [MV2-010](#mv2-010), [MV2-071](#mv2-071). **Вимоги:** §§15.4,15.9,16.6,17.3,19.3,22.
+**Dependencies:** [MV2-005](#mv2-005), [MV2-008](#mv2-008), [MV2-010](#mv2-010), [MV2-071](#mv2-071). **Requirements:** §§15.4,15.9,16.6,17.3,19.3,22.
 
-**Результат для користувача:** Business match кращий за слово в заголовку і зрозумілий людині.
+**User outcome:** Business matching goes beyond a word in the title and is understandable to the user.
 
-**Робота:** Typed capability/brand/asset profiles, deterministic includes/excludes; lexical candidates then bounded optional semantic assessment; match facets and unknown gaps.
+**Work:** Typed capability/brand/asset profiles, deterministic inclusion and exclusion rules; lexical candidates followed by bounded optional semantic assessment; match facets and unknown gaps.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Tender profile зберігає CPV/capabilities, regions/languages/exclusions, size/qualification constraints; score70 з прикладу не стає неперевіреним default.
-2. Asset profile має category/location/keywords/brands/price; UNKNOWN price не дає «within budget».
-3. SEMANTIC_MATCH має versioned score/model/evidence; hard exclusions не обходяться LLM.
-4. Відсутня qualification в профілі = unknown gap, а не доведена невідповідність. DONE: implement/schema/bounded evaluation на training/validation під disabled semantic flag; independent promotion MV2-051 не є зворотною залежністю.
+1. A tender profile stores CPV/capabilities, regions/languages/exclusions, size and qualification constraints; the example score of 70 does not become an unvalidated default.
+2. An asset profile has category/location/keywords/brands/price; UNKNOWN price does not produce a “within budget” result.
+3. SEMANTIC_MATCH has a versioned score/model/evidence; the LLM cannot bypass hard exclusions.
+4. A qualification absent from the profile is an unknown gap, not proven noncompliance. DONE means implementation, schema and bounded evaluation on training/validation data under a disabled semantic flag; independent promotion in MV2-051 is not a reverse dependency.
 
-**Перевірка:** Independent structured/semantic match set, hard exclusion, unknown field, profile revision і preview parity.
+**Verification:** An independent structured/semantic match set, hard exclusions, unknown fields, profile revisions and preview parity.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-044"></a>
 
-### MV2-044 — Версії наборів документів та умов
+### MV2-044 — Versioned document sets and conditions
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** Backend + Frontend · **Розмір:** L
+**Status:** PLANNED · **Priority:** P1 · **Owner:** Backend + Frontend · **Size:** L
 
-**Залежності:** [MV2-007](#mv2-007), [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-071](#mv2-071). **Вимоги:** §§15.5,15.8,17.4,17.7,17.10.
+**Dependencies:** [MV2-007](#mv2-007), [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-071](#mv2-071). **Requirements:** §§15.5,15.8,17.4,17.7,17.10.
 
-**Результат для користувача:** Зміна файлу, вимоги чи Q&A видима після попереднього review.
+**User outcome:** Changes to a file, requirement or Q&A remain visible after an earlier review.
 
-**Робота:** DocumentSetManifest: stable item ID, type, URL, hash, retrieved/version time, access status; add/replace/remove; link existing exact/legal diff where applicable.
+**Work:** DocumentSetManifest: stable item ID, type, URL, hash, retrieval/version time and access status; add/replace/remove; link existing exact/legal diffs where applicable.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Нове Q&A, змінений файл за тим самим URL, видалення/withdrawal документа та зміна conditions дають різні deltas.
-2. Зміна порядку списку чи signed URL не створює false material update.
-3. Історичний комплект і changed requirements мають посилання на точні дозволені snapshots/locators; denied attachment = unavailable, не removed.
-4. Невдалий OCR/parse не створює вигаданий зміст; UI пропонує official evidence і позначає неповноту.
+1. New Q&A, a changed file at the same URL, document removal/withdrawal and changed conditions produce distinct deltas.
+2. List reordering or a changed signed URL does not create a false material update.
+3. Historical document sets and changed requirements link to exact permitted snapshots/locators; a denied attachment is unavailable, not removed.
+4. Failed OCR/parsing does not invent content; the UI offers official evidence and identifies incomplete information.
 
-**Перевірка:** Golden add/replace/remove/reorder/403 documents, deadline vs body diff, historical view.
+**Verification:** Gold fixtures for document addition/replacement/removal/reordering/403, deadline versus body diffs and historical views.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-045"></a>
 
 ### MV2-045 — B2: Tender discovery → review → material update
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** Frontend + Backend · **Розмір:** L
+**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
 
-**Залежності:** [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022), [MV2-042](#mv2-042), [MV2-043](#mv2-043), [MV2-044](#mv2-044). **Вимоги:** §15; AC-B2-01…12.
+**Dependencies:** [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022), [MV2-042](#mv2-042), [MV2-043](#mv2-043), [MV2-044](#mv2-044). **Requirements:** §15; AC-B2-01…12.
 
-**Результат для користувача:** Компанія вирішує Bid/No-bid/Monitor і бачить зміни умов.
+**User outcome:** A company chooses Bid/No-bid/Monitor and sees changes to the conditions.
 
-**Робота:** Tender profile wizard, discovery candidates, follow tender, explain matched capabilities/gaps, explicit deadline, Q&A/doc changes, owner.
+**Work:** Tender profile wizard, discovery candidates, follow tender, explanations of matched capabilities and gaps, explicit deadline, Q&A/document changes and owner.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Виконано AC-B2-01…12; discovery та follow/update — обидва доступні.
-2. Deadline20→27, references3→5 і Q&A v3 відкривають старий review з тим самим tender ID.
-3. Irrelevant opportunities suppressed; explanatory match/gaps evidence-linked і не обіцяють eligibility.
-4. BID/NO_BID/MONITOR зберігає внутрішнє рішення; жодного submit bid; digest включає нові й material updates.
-5. Без дозволеного capture/version/diff потрібних документів і Q&A AC-B2-08 та відповідна частина AC-B2-06 лишаються BLOCKED; metadata-only або unavailable badge не закриває цей кейс.
+1. AC-B2-01…12 are met; both discovery and following/updates are available.
+2. A deadline change from 20→27, required references from 3→5 and Q&A v3 reopen the earlier review with the same tender ID.
+3. Irrelevant opportunities are suppressed; explanations of matches and gaps link to evidence and do not promise eligibility.
+4. BID/NO_BID/MONITOR records an internal decision; it never submits a bid; the digest includes new opportunities and material updates.
+5. Without permitted capture/versioning/diffing of the required documents and Q&A, AC-B2-08 and the relevant part of AC-B2-06 remain BLOCKED; metadata alone or an unavailable badge does not satisfy this case.
 
-**Перевірка:** E2E profile→publication→review→3-field revision→reopen→digest; negatives і unavailable attachment.
+**Verification:** End-to-end profile→publication→review→3-field revision→reopen→digest, negative cases and an unavailable attachment.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-046"></a>
 
-### MV2-046 — B7: офіційні trademark publications і register updates
+### MV2-046 — B7: Official trademark publications and register updates
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** Integration · **Розмір:** L
+**Status:** PLANNED · **Priority:** P1 · **Owner:** Integration · **Size:** L
 
-**Залежності:** [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071). **Вимоги:** §16; AC-B7-02,06,08,10.
+**Dependencies:** [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071). **Requirements:** §16; AC-B7-02,06,08,10.
 
-**Результат для користувача:** Є source-backed публікації й версії реєстрацій.
+**User outcome:** Publications and registration versions are supported by source evidence.
 
-**Робота:** IPI/Swissreg official API після terms/account; mark/owner/representative/classes/goods-services/application/publication/registration/status. Реалізація цього домену стартує після готовності першого Pollen Watch (MV2-071); source discovery у MV2-003 може йти паралельно.
+**Work:** Official IPI/Swissreg API after terms and account approval; mark/owner/representative/classes/goods-services/application/publication/registration/status. Implementation of this domain starts after the first Pollen Watch is ready (MV2-071); source discovery in MV2-003 can proceed in parallel.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Автоматичний доступ, retention та допустимі in-app/email uses погоджені; search UI не використовується як доказ API licence.
-2. Application, publication і registration dates не взаємозамінні; Swiss jurisdiction/rights coverage явні.
-3. Owner/representative/goods-services/renewal/cancel/status updates зберігають попередній стан.
-4. Відсутні mark fields не домислюються; publication evidence має стабільний official ID.
+1. Automated access, retention and permitted in-app/email uses are approved; the search UI is not used as evidence of an API licence.
+2. Application, publication and registration dates are not interchangeable; Swiss jurisdiction and rights coverage are explicit.
+3. Owner/representative/goods-services/renewal/cancellation/status updates preserve the previous state.
+4. Missing mark fields are not inferred; publication evidence has a stable official ID.
 
-**Перевірка:** Official API contract fixtures, multilingual goods/services, status/owner corrections і rights-policy test.
+**Verification:** Official API contract fixtures, multilingual goods/services, status/owner corrections and a rights-policy test.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-047"></a>
 
-### MV2-047 — B7: exact, lexical і phonetic candidates
+### MV2-047 — B7: Exact, lexical and phonetic candidates
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** Backend + AI/domain reviewer · **Розмір:** L
+**Status:** PLANNED · **Priority:** P1 · **Owner:** Backend + AI/domain reviewer · **Size:** L
 
-**Залежності:** [MV2-043](#mv2-043), [MV2-046](#mv2-046). **Вимоги:** §16.4–16.7; AC-B7-01,03,04,05,07.
+**Dependencies:** [MV2-043](#mv2-043), [MV2-046](#mv2-046). **Requirements:** §16.4–16.7; AC-B7-01,03,04,05,07.
 
-**Результат для користувача:** Подібні назви можна знайти з поясненням підстав.
+**User outcome:** Similar names can be found with an explanation of the matching basis.
 
-**Робота:** Multi-brand portfolio, optional word variants/owners, Unicode normalization, exact/near lexical/phonetic, class та goods/services overlap.
+**Work:** Multiple-brand portfolio, optional word variants/owners, Unicode normalization, exact/near lexical/phonetic matching, and class and goods/services overlap.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. ALMORA/ALMORA exact, ALMORE/ALMORIA lexical і phonetic cases відтворюються; normalization/version збережені.
-2. Goods/services overlap впливає на пріоритет; однаковий class code сам собою не доводить similarity/conflict.
-3. False positives по мовах виміряні; thresholds калібровані на training/validation, потім frozen. Held-out evaluation виконує MV2-051; дані held-out не використовуються для налаштування.
-4. Результат candidate for IP review; немає confirmed infringement, навіть за perfect score.
+1. ALMORA/ALMORA exact, ALMORE/ALMORIA lexical and phonetic cases are reproducible; normalization and version are recorded.
+2. Goods/services overlap affects priority; the same class code alone does not prove similarity or conflict.
+3. False positives are measured by language; thresholds are calibrated on training/validation data and then frozen. MV2-051 performs the held-out evaluation; held-out data is not used for tuning.
+4. The result is a candidate for IP review; it is never confirmed infringement, even with a perfect score.
 
-**Перевірка:** Independent exact/near/phonetic/goods-services cases; accents/transliterations і unrelated class negatives.
+**Verification:** Independent exact/near/phonetic/goods-services cases, accents/transliterations and unrelated-class negative cases.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-048"></a>
 
-### MV2-048 — B7: IP review, строк перевірки та зміни реєстру
+### MV2-048 — B7: IP review, review deadlines and register changes
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** Frontend + Backend · **Розмір:** L
+**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
 
-**Залежності:** [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-046](#mv2-046), [MV2-047](#mv2-047). **Вимоги:** §16; AC-B7-01…12.
+**Dependencies:** [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-046](#mv2-046), [MV2-047](#mv2-047). **Requirements:** §16; AC-B7-01…12.
 
-**Результат для користувача:** Власник бренду отримує кандидат і контрольований review workflow.
+**User outcome:** A brand owner receives a candidate and a controlled review workflow.
 
-**Робота:** Portfolio wizard, candidate evidence, deadline context/rule, review/relevant/not relevant/monitor/escalate decision; register updates.
+**Work:** Portfolio wizard, candidate evidence, deadline context/rule, review/relevant/not relevant/monitor/escalate decision and register updates.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Виконано AC-B7-01…12; високий candidate доступний у Impact Inbox.
-2. Calculated review deadline має source date, approved applicable rule/version, calculation trace і verification warning; unknown rule → deadline unavailable. Показано days_remaining на основі тієї самої timezone/rule revision.
-3. Матеріальна зміна owner/status/goods-services відкриває review, зберігаючи минуле рішення.
-4. Send to counsel у v2 — позначити/підготувати дозволений evidence export; зовнішнє надсилання потребує окремої дії користувача.
+1. AC-B7-01…12 are met; a high-priority candidate is available in the Impact Inbox.
+2. A calculated review deadline has a source date, an approved applicable rule/version, a calculation trace and a verification warning; an unknown rule makes the deadline unavailable. days_remaining is displayed using the same timezone and rule revision.
+3. A material change to owner/status/goods-services reopens the review while preserving the previous decision.
+4. In v2, Send to counsel marks the item or prepares a permitted evidence export; external sending requires a separate user action.
 
-**Перевірка:** E2E multi-brand→candidate→review→register update; missing date/rule, deadline change, export rights.
+**Verification:** End-to-end multiple-brand→candidate→review→register update, missing date/rule, deadline changes and export rights.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-049"></a>
 
-### MV2-049 — B8: офіційні аукціони Ticino
+### MV2-049 — B8: Official Ticino auctions
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** Integration · **Розмір:** L
+**Status:** PLANNED · **Priority:** P1 · **Owner:** Integration · **Size:** L
 
-**Залежності:** [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071). **Вимоги:** §17.3–17.7,17.11; AC-B8-02,05,06,11.
+**Dependencies:** [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071). **Requirements:** §17.3–17.7,17.11; AC-B8-02,05,06,11.
 
-**Результат для користувача:** Офіційна пропозиція має перевірені поля і джерело.
+**User outcome:** An official opportunity has verified fields and a source.
 
-**Робота:** Ticino official auction source contract; real estate/vehicles/equipment capability; auction/lot IDs, dates, documents, conditions, price type, status. Реалізація цього домену стартує після готовності першого Pollen Watch (MV2-071); source discovery у MV2-003 може йти паралельно.
+**Work:** Official Ticino auction source contract; real estate/vehicles/equipment capability; auction/lot IDs, dates, documents, conditions, price type and status. Implementation of this domain starts after the first Pollen Watch is ready (MV2-071); source discovery in MV2-003 can proceed in parallel.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Підтверджено автоматичний доступ/повторне використання; HTML availability не оголошується API licence.
-2. Current bid, estimate, starting/minimum price зберігаються як різні типи; missing bid_count/price/end = UNKNOWN.
-3. Auction і lot не зливаються; cancellation/postponement/conditions/doc updates versioned.
-4. Coverage категорій у Ticino перевірена; непідтримані категорії/території чесно показані, без неофіційного fallback.
+1. Automated access and reuse are confirmed; HTML availability is not presented as an API licence.
+2. Current bid, estimate and starting/minimum price are stored as distinct types; missing bid_count/price/end is UNKNOWN.
+3. Auctions and lots are not merged; cancellation/postponement/conditions/document updates are versioned.
+4. Category coverage in Ticino is verified; unsupported categories/areas are clearly shown, without an unofficial fallback.
 
-**Перевірка:** Bounded official sample + multi-lot/unknown fields/cancel fixtures; parser drift tests.
+**Verification:** A bounded official sample, multiple-lot/unknown-field/cancellation fixtures and parser drift tests.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-050"></a>
 
-### MV2-050 — B8: Auction profile, price limit і ending-soon
+### MV2-050 — B8: Auction profiles, price limits and ending-soon alerts
 
-**Статус:** PLANNED · **Пріоритет:** P1 · **Власник:** Frontend + Backend · **Розмір:** L
+**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
 
-**Залежності:** [MV2-008](#mv2-008), [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022), [MV2-043](#mv2-043), [MV2-044](#mv2-044), [MV2-049](#mv2-049). **Вимоги:** §17; AC-B8-01…12.
+**Dependencies:** [MV2-008](#mv2-008), [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022), [MV2-043](#mv2-043), [MV2-044](#mv2-044), [MV2-049](#mv2-049). **Requirements:** §17; AC-B8-01…12.
 
-**Результат для користувача:** Покупець бачить релевантний актив і важливі зміни торгів.
+**User outcome:** A buyer sees relevant assets and important auction changes.
 
-**Робота:** Category/location/keywords/brand/budget, new match, price crossing, end shift, documents/conditions, cancellation; Bid/No-bid/Inspect/Monitor.
+**Work:** Category/location/keywords/brand/budget, new matches, price crossings, end-time shifts, documents/conditions and cancellation; Bid/No-bid/Inspect/Monitor.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Виконано AC-B8-01…12; supported category/location/keywords працюють; новий canton adapter не змінює domain workflow. Розширюваність підтверджена другим canton adapter conformance fixture; live rollout інших кантонів не заявляється.
-2. CHF8500→12700 при limit12000 дає crossing; кожен bid increment не спамить без opt-in.
-3. Ending-soon має налаштовувану кількість годин до end;24h — приклад. Перенесення строку переобчислює reminder; cancelled/unknown end не надсилається.
-4. UNKNOWN ціна не проходить budget filter як нуль; action Bid не виконує ставку; історія доступна.
-5. Можна stop/continue following конкретного auction, не зупиняючи discovery всього profile; історичні рішення лишаються.
+1. AC-B8-01…12 are met; supported category/location/keyword filters work; a new canton adapter does not change the domain workflow. Extensibility is demonstrated with a second canton adapter conformance fixture; no live rollout to other cantons is claimed.
+2. CHF8500→12700 with a limit of 12000 produces a crossing; individual bid increments do not generate repeated alerts without opt-in.
+3. Ending-soon alerts use a configurable number of hours before the end; 24h is an example. An end-time change recalculates the reminder; cancelled auctions or an unknown end time do not trigger it.
+4. UNKNOWN price does not pass the budget filter as zero; the Bid action does not place a bid; history is available.
+5. A user can stop or continue following a specific auction without stopping discovery for the entire profile; historical decisions remain.
 
-**Перевірка:** E2E new auction→inspect→price/conditions/end change→reminder→cancel; unknown fields, adapter swap fixture.
+**Verification:** End-to-end new auction→inspect→price/conditions/end change→reminder→cancel, unknown fields and an adapter-swap fixture.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 
-## F6 — Докази якості, pilot та реліз
+## F6 — Quality evidence, pilot and release
 
 <a id="mv2-051"></a>
 
-### MV2-051 — Незалежна перевірка matching та локального AI
+### MV2-051 — Independent matching and local AI evaluation
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** AI + Independent domain reviewers · **Розмір:** L
+**Status:** PLANNED · **Priority:** P0 · **Owner:** AI + Independent domain reviewers · **Size:** L
 
-**Залежності:** [MV2-023](#mv2-023), [MV2-043](#mv2-043), [MV2-047](#mv2-047). **Вимоги:** §§7,22,31,34; legacy HL-064,089,091–094,100.
+**Dependencies:** [MV2-023](#mv2-023), [MV2-043](#mv2-043), [MV2-047](#mv2-047). **Requirements:** §§7,22,31,34; legacy HL-064,089,091–094,100.
 
-**Результат для користувача:** Semantic match не отримує довіру лише через успішну схему JSON.
+**User outcome:** Semantic matching does not earn trust merely by returning valid JSON.
 
-**Робота:** Independent gold set, held-out partition, per-case/language/negative evaluation; local model/task/locale profile approvals; semantic benchmark before feature promotion.
+**Work:** Independent gold set, held-out partition, evaluation by case/language/negative example; approvals for local model/task/locale profiles; semantic benchmark before feature promotion.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Щонайменше 200 незалежно розмічених match/nonmatch пар, ≥50 для кожного B2/B7/B8; held-out split і disagreements/adjudication збережені.
-2. Для calibrated business candidate ranking виміряні precision/recall per case; proposed gates ≥85% precision та ≥90% recall, без claim legal conflict accuracy.
-3. 100% перевірених цитат посилаються на дозволений snapshot/field; zero invented facts/deadlines у release critical fixture set.
-4. Без схваленого profile семантичний режим unavailable/extractive; deterministic results не блокуються; measured score не подається як probability без калібрування.
+1. At least 200 independently labelled match/nonmatch pairs, with ≥50 for each of B2/B7/B8; the held-out split, disagreements and adjudication are recorded.
+2. Precision and recall are measured per case for calibrated business candidate ranking; proposed gates are ≥85% precision and ≥90% recall, with no claim of legal conflict accuracy.
+3. 100% of checked citations refer to a permitted snapshot/field; there are zero invented facts/deadlines in the release-critical fixture set.
+4. Without an approved profile, semantic mode is unavailable or extractive; deterministic results are not blocked; a measured score is not presented as a probability without calibration.
 
-**Перевірка:** Повторюваний offline benchmark з report/hash/config; незалежний review без авторства тих самих очікуваних відповідей.
+**Verification:** A reproducible offline benchmark with report/hash/config; independent review by people who did not author the same expected answers.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-052"></a>
 
-### MV2-052 — Операційні метрики, degraded mode і відновлення джерел
+### MV2-052 — Operational metrics, degraded mode and source recovery
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Operations + Backend · **Розмір:** M
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Operations + Backend · **Size:** M
 
-**Залежності:** [MV2-011](#mv2-011), [MV2-012](#mv2-012), [MV2-025](#mv2-025). **Вимоги:** §§23,28,33.11–12,34; legacy HL-094,099.
+**Dependencies:** [MV2-011](#mv2-011), [MV2-012](#mv2-012), [MV2-025](#mv2-025). **Requirements:** §§23,28,33.11–12,34; legacy HL-094,099.
 
-**Результат для користувача:** Адміністратор бачить пропущені дані й причину затримки.
+**User outcome:** The administrator can see missing data and the reason for a delay.
 
-**Робота:** Per-source ingest/match/delivery lag, last-good state, error taxonomy, coverage gaps; alert on actionable source failure; renew access reminders.
+**Work:** Per-source ingestion/matching/delivery lag, last good state, error taxonomy and coverage gaps; alerts for actionable source failures; access-renewal reminders.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. На графіках розділені source publication lag, ingest lag, processing lag і channel delivery; нуль не заміняє unknown.
-2. При stale/expired licence UI й jobs виконують policy; відновлення backfills gaps без flood старих alerts.
-3. AI utilization/budget/reuse та fairness measured; diagnostics має короткий timeout і не затримує відповідь.
-4. Logs не містять секретів, Home coordinates чи повних user prompts; correlated job IDs достатні для підтримки.
+1. Charts distinguish source publication lag, ingestion lag, processing lag and channel delivery lag; zero does not replace unknown.
+2. When data is stale or a licence expires, the UI and jobs follow the policy; recovery backfills gaps without flooding users with historical alerts.
+3. AI utilization/budget/reuse and fairness are measured; diagnostics have a short timeout and do not delay the response.
+4. Logs contain no secrets, Home coordinates or complete user prompts; correlated job IDs are sufficient for support.
 
-**Перевірка:** Failure injection source/queue/provider/email/DB telemetry; bounded diagnostic lock regression.
+**Verification:** Failure injection for source/queue/provider/email/DB telemetry and regression checks for bounded diagnostic locking.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-053"></a>
 
-### MV2-053 — Приватність персональних locations і контроль доступу
+### MV2-053 — Personal-location privacy and access control
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Backend + Security reviewer · **Розмір:** M
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Backend + Security reviewer · **Size:** M
 
-**Залежності:** [MV2-004](#mv2-004), [MV2-005](#mv2-005), [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-023](#mv2-023). **Вимоги:** §§5,27,31; inherited personal/organization access contract.
+**Dependencies:** [MV2-004](#mv2-004), [MV2-005](#mv2-005), [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-023](#mv2-023). **Requirements:** §§5,27,31; inherited personal/organization access contract.
 
-**Результат для користувача:** Приватний Home, commute і бізнес-інтерес не потрапляють у чужий простір.
+**User outcome:** Private Home locations, commutes and business interests are not exposed to another workspace.
 
-**Робота:** Consent/minimization, owner-only personal scope, retention/delete/export user config, cache isolation, role checks; secrets remain current provider store.
+**Work:** Consent and data minimization, owner-only personal scope, retention/deletion/export of user configuration, cache isolation and role checks; secrets stay in the current provider store.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Session/CSRF/current role checks покривають нові endpoints, jobs, exports і evidence; IDOR tests негативні.
-2. Personal coordinate precision мінімальна для matching; public corpus не містить private subject definitions.
-3. Delete account/monitor виконує policy для private state/decisions, не руйнує shared official history інших workspace.
-4. Cloud AI disabled by default; explicit opt-in показує які дані передаються, без прихованого location/profile disclosure.
+1. Session, CSRF and current-role checks cover new endpoints, jobs, exports and evidence; negative IDOR tests pass.
+2. Personal coordinate precision is limited to what matching needs; the public corpus does not contain private subject definitions.
+3. Deleting an account or monitor applies the private-state/decision policy without destroying shared official history used by other workspaces.
+4. Cloud AI is disabled by default; explicit opt-in shows which data is transmitted, with no hidden location/profile disclosure.
 
-**Перевірка:** API privacy boundary tests, deletion/export workflow, revocation during job and browser context switch.
+**Verification:** API privacy-boundary tests, deletion/export workflow, revocation during a job and browser workspace switching.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-054"></a>
 
-### MV2-054 — Ємність одного сервера і черги з різними пріоритетами
+### MV2-054 — Single-server capacity and queues with different priorities
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Operations + Backend + AI · **Розмір:** L
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Operations + Backend + AI · **Size:** L
 
-**Залежності:** [MV2-011](#mv2-011), [MV2-014](#mv2-014), [MV2-043](#mv2-043), [MV2-052](#mv2-052). **Вимоги:** §§22,28,34; legacy HL-032,048,049,084,099.
+**Dependencies:** [MV2-011](#mv2-011), [MV2-014](#mv2-014), [MV2-043](#mv2-043), [MV2-052](#mv2-052). **Requirements:** §§22,28,34; legacy HL-032,048,049,084,099.
 
-**Результат для користувача:** Realtime monitoring не витісняється document ingestion або LLM.
+**User outcome:** Realtime monitoring is not displaced by document ingestion or LLM work.
 
-**Робота:** Target i7/32GB/2×GTX1080 measured workload; independent deterministic/source/matching/AI queues; data growth and DB indexes; no infrastructure rewrite without evidence.
+**Work:** Measured workload on the target i7/32GB/2×GTX1080 hardware; independent deterministic/source/matching/AI queues; data growth and database indexes; no infrastructure rewrite without evidence.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Відтворено inherited gate:100 акаунтів,300 reads,10–20 concurrent users,20 AI jobs, parallel sync, restart і recovery. Збережено оригінальну матрицю 10 organizations,100k legal corpus/20 readers та 50-run assistant stability.
-2. Додано запропонований v2 workload:1000 active subjects,9 активних templates, 1M observation rows; budget model і actual measurements опубліковані.
-3. Збережено inherited thresholds: legacy reads p95≤500ms і enqueue≤1s на відповідному baseline workload. Proposed нові history/time-series endpoints p95≤2s, post-ingest deterministic ready≤30s вимірюються окремо; старі бюджети не послаблюються.
-4. GPU OOM/degraded/offline не ламає активні C1/C2/C3/C5/C6/C7; 8B default дозволено лише після target hardware gate, pgvector/HA — лише за доказом потреби.
+1. Reproduce the inherited gate: 100 accounts, 300 reads, 10–20 concurrent users, 20 AI jobs, parallel synchronization, restart and recovery. Preserve the original matrix of 10 organizations, a 100k legal corpus/20 readers and 50-run assistant stability.
+2. Add the proposed v2 workload: 1000 active subjects, 9 active templates and 1M observation rows; publish the budget model and actual measurements.
+3. Preserve inherited thresholds: legacy reads p95≤500ms and enqueue≤1s on the corresponding baseline workload. Measure the proposed new history/time-series endpoint threshold p95≤2s and post-ingestion deterministic readiness≤30s separately; existing budgets are not weakened.
+4. GPU OOM, degraded mode or offline operation does not break active C1/C2/C3/C5/C6/C7; an 8B default is allowed only after the target-hardware gate; pgvector/HA requires evidence of need.
 
-**Перевірка:** Load/restart benchmark на цільовому host або позначено BLOCKED; synthetic workstation report не закриває gate.
+**Verification:** Load/restart benchmark on the target host, otherwise mark BLOCKED; a synthetic workstation report does not satisfy the gate.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-055"></a>
 
-### MV2-055 — Зберігання історії, retention та дозволений export
+### MV2-055 — History storage, retention and permitted exports
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Backend + Operations · **Розмір:** M
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Backend + Operations · **Size:** M
 
-**Залежності:** [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-020](#mv2-020), [MV2-044](#mv2-044). **Вимоги:** §§27,29–30,38.
+**Dependencies:** [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-020](#mv2-020), [MV2-044](#mv2-044). **Requirements:** §§27,29–30,38.
 
-**Результат для користувача:** Історія залишається перевірною за контрольованого обсягу даних.
+**User outcome:** History remains verifiable while data volume is controlled.
 
-**Робота:** Retention per source/data class, raw/normalized states, compaction/downsampling policy, evidence pinning for delivered revisions, export manifests.
+**Work:** Retention by source/data class, raw/normalized states, compaction/downsampling policy, evidence pinning for delivered revisions and export manifests.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Delivered development/decision evidence не губиться через telemetry compaction; old/new потрібні для diff залишаються доступні в дозволеній формі.
-2. Retention/rights conflict потребує durable permitted raw або normalized snapshot із provenance, достатнього для historical compare. Expiry notice/link не замінює доказ; якщо достатню форму не можна зберігати, G(case) і affected AC лишаються BLOCKED.
-3. ASTRA raw export/API заблокований, SIMAP originals/commentary відділені, IP permissions застосовані.
-4. History export відтворює provenance/state/rule/decision revisions; персональні дані доступні тільки авторизованому scope.
+1. Evidence for delivered developments and decisions is not lost through telemetry compaction; the old/new states required for diffs remain available in a permitted form.
+2. A retention/rights conflict requires a durable permitted raw or normalized snapshot with provenance sufficient for historical comparison. An expiry notice or link does not replace evidence; if a sufficient form cannot be stored, G(case) and the affected AC remain BLOCKED.
+3. ASTRA raw-data export/API redistribution is blocked, SIMAP originals and commentary are separated, and IP permissions are enforced.
+4. History exports reproduce provenance/state/rule/decision revisions; personal data is available only within the authorized scope.
 
-**Перевірка:** Retention time travel, restore archived evidence, forbidden raw export і cross-tenant export negatives.
+**Verification:** Retention time travel, restoration of archived evidence, prohibited raw-export checks and negative cross-tenant export tests.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-056"></a>
 
-### MV2-056 — Міграція, сумісність і rollback rehearsal
+### MV2-056 — Migration, compatibility and rollback rehearsal
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Backend + Operations + QA · **Розмір:** L
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Backend + Operations + QA · **Size:** L
 
-**Залежності:** [MV2-001](#mv2-001), [MV2-053](#mv2-053), [MV2-055](#mv2-055), [MV2-060](#mv2-060). **Вимоги:** §§1,26–27,30; legacy HL-048,049,098.
+**Dependencies:** [MV2-001](#mv2-001), [MV2-053](#mv2-053), [MV2-055](#mv2-055), [MV2-060](#mv2-060). **Requirements:** §§1,26–27,30; legacy HL-048,049,098.
 
-**Результат для користувача:** Перехід на v2 зберігає чинних користувачів і MVP-докази.
+**User outcome:** The transition to v2 preserves existing users and MVP evidence.
 
-**Робота:** Additive Alembic migrations, resumable bridge backfill, dry-run/checkpoints, dual-read/shadow comparison, feature flag rollout; backup→restore in isolated env.
+**Work:** Additive Alembic migrations, resumable bridge backfill, dry runs/checkpoints, dual reads/shadow comparison and feature-flag rollout; backup→restore in an isolated environment.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. До/після збережені organization/member/session/watch/topic IDs, review/unread/preferences, source packs, artifact hashes, analyses/citations.
-2. Повторна міграція, interruption і частковий backfill не дублюють records або notifications.
-3. Legacy API/URLs/Ask/Today/Basel journey/Page guide працюють; shadow parity report фіксує deliberate differences.
-4. Rollback flags + compatible code/schema та verified DB restore відпрацьовані; тег MVP без відповідного backup не вважається rollback БД.
+1. Organization/member/session/watch/topic IDs, review/unread/preferences, source packs, artifact hashes and analyses/citations are preserved before and after migration.
+2. Repeated migration, interruption and partial backfill do not duplicate records or notifications.
+3. Legacy API/URLs/Ask/Today/Basel journey/Page guide work; a shadow-parity report records deliberate differences.
+4. Rollback flags, compatible code/schema and verified database restore are rehearsed; the MVP tag without a corresponding backup is not considered a database rollback.
 
-**Перевірка:** Production-shaped sanitized snapshot rehearsal, row/hash counts, restart/resume, rollback та regression report.
+**Verification:** Rehearsal on a sanitized snapshot shaped like production, row/hash counts, restart/resume, rollback and a regression report.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-057"></a>
 
-### MV2-057 — Виконуваний набір 116 активних AC та adversarial regression
+### MV2-057 — Executable checks for 116 active AC and adversarial regression
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** QA + Domain reviewers · **Розмір:** L
+**Status:** PLANNED · **Priority:** P0 · **Owner:** QA + Domain reviewers · **Size:** L
 
-**Залежності:** [MV2-029](#mv2-029), [MV2-031](#mv2-031), [MV2-033](#mv2-033), [MV2-035](#mv2-035), [MV2-036](#mv2-036), [MV2-039](#mv2-039), [MV2-041](#mv2-041), [MV2-045](#mv2-045), [MV2-048](#mv2-048), [MV2-050](#mv2-050), [MV2-024](#mv2-024), [MV2-051](#mv2-051), [MV2-053](#mv2-053), [MV2-056](#mv2-056), [MV2-068](#mv2-068), [MV2-071](#mv2-071). **Вимоги:** Активні AC-CORE/C1/C2/C3/C5/C6/C7/B2/B7/B8; AC-C4 відкладені; §§29–34.
+**Dependencies:** [MV2-029](#mv2-029), [MV2-031](#mv2-031), [MV2-033](#mv2-033), [MV2-035](#mv2-035), [MV2-036](#mv2-036), [MV2-039](#mv2-039), [MV2-041](#mv2-041), [MV2-045](#mv2-045), [MV2-048](#mv2-048), [MV2-050](#mv2-050), [MV2-024](#mv2-024), [MV2-051](#mv2-051), [MV2-053](#mv2-053), [MV2-056](#mv2-056), [MV2-068](#mv2-068), [MV2-071](#mv2-071). **Requirements:** Active AC-CORE/C1/C2/C3/C5/C6/C7/B2/B7/B8; AC-C4 deferred; §§29–34.
 
-**Результат для користувача:** Повнота v2 доведена конкретними сценаріями, а не кількістю комітів.
+**User outcome:** v2 completeness is demonstrated by concrete scenarios rather than commit counts.
 
-**Робота:** AC-linked integration/browser tests, versioned official fixtures with licence/provenance; positive/negative/material/nonmaterial/history/roles for each template.
+**Work:** AC-linked integration/browser tests, versioned official fixtures with licence/provenance; positive/negative, material/nonmaterial, history and role cases for each template.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Кожний із 116 активних source AC (20 CORE, 60 C1/C2/C3/C5/C6/C7, 36 B2/B7/B8) має виконуваний check або reviewer protocol і evidence reference; активна частина supplemental coverage також перевірена. 10 AC-C4 збережені як DEFERRED і не є release gate; C4 tests не входять у поточну роботу.
-2. Replay same batch twice/restart/out-of-order/translation duplicate/429/source disappearance/model offline не порушує invariants.
-3. Нуль critical defects: cross-tenant leak, false official all-clear, invented numerical/legal fact, duplicate internal delivery, lost review.
-4. Немає tests які лише повторюють implementation; gold fixtures незалежні, live freshness contract перевіряється окремо.
-5. Постійна відсутність required source capability (forecast, delay, docs/Q&A або deadline) залишає affected AC відкритим. UNKNOWN — правильна поведінка окремого record, не заміна обов’язкової функції всього template.
+1. Each of the 116 active source AC (20 CORE, 60 C1/C2/C3/C5/C6/C7, 36 B2/B7/B8) has an executable check or reviewer protocol and an evidence reference; active supplemental coverage is also verified. The 10 AC-C4 are preserved as DEFERRED and are not a release gate; C4 tests are outside current work.
+2. Replaying the same batch twice, restart, out-of-order data, duplicate translations, 429, source disappearance and an offline model do not violate invariants.
+3. Zero critical defects: cross-tenant leaks, false official all-clear, invented numerical/legal facts, duplicate internal delivery or lost reviews.
+4. Tests do not merely repeat the implementation; gold fixtures are independent, and the live freshness contract is verified separately.
+5. Persistent absence of a required source capability (forecast, delay, documents/Q&A or deadline) leaves the affected AC open. UNKNOWN is correct behavior for an individual record, not a substitute for a required capability of the entire template.
 
-**Перевірка:** Full suite plus nine active domain demo recordings, contract reports і independent evidence spot-check.
+**Verification:** The full suite, recordings of all nine active domain demos, contract reports and independent evidence spot-checks.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-058"></a>
 
-### MV2-058 — Виміряний B2C/B2B pilot
+### MV2-058 — Measured B2C/B2B pilot
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Product + QA + Operations · **Розмір:** L
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Product + QA + Operations · **Size:** L
 
-**Залежності:** [MV2-002](#mv2-002), [MV2-024](#mv2-024), [MV2-051](#mv2-051), [MV2-054](#mv2-054), [MV2-057](#mv2-057), [MV2-071](#mv2-071). **Вимоги:** §34; legacy HL-088,090,101.
+**Dependencies:** [MV2-002](#mv2-002), [MV2-024](#mv2-024), [MV2-051](#mv2-051), [MV2-054](#mv2-054), [MV2-057](#mv2-057), [MV2-071](#mv2-071). **Requirements:** §34; legacy HL-088,090,101.
 
-**Результат для користувача:** Підтверджено, що люди розуміють зміни й повертаються до моніторингу.
+**User outcome:** Evidence confirms that people understand changes and return to monitoring.
 
-**Робота:** Proposed four-week pilot:≥10 B2C учасників і≥5 organizations; representative coverage усіх дев’яти активних cases; C4 не входить у pilot; sparse events supplement by labelled historical replay. Це загальний v2 pilot після першого Pollen Watch тестування; він не є передумовою MV2-071.
+**Work:** Proposed four-week pilot: ≥10 B2C participants and ≥5 organizations; representative coverage of all nine active cases; C4 is excluded from the pilot; supplement sparse events with labelled historical replay. This is the overall v2 pilot after the first Pollen Watch user testing; it is not a prerequisite for MV2-071.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Для кожного активного template зафіксовані eligible sample, precision/materiality/duplicates, explanation helpfulness, decisions і time-to-understand.
-2. Proposed targets: delivered relevance≥90%, material-change precision≥90%, understandable why≥90%, duplicate rate<1%, first value≤5min setup та median understand≤60s.
-3. Actionability вимірюється без мінімуму, що змушує вигадувати дії; no-action може бути корисним рішенням.
-4. Недостатній sample або blocked source = explicit incomplete evidence; replay не видається за live pilot, thresholds не видаються за досягнуті.
+1. For each active template, record the eligible sample, precision/materiality/duplicates, explanation helpfulness, decisions and time to understand.
+2. Proposed targets: delivered relevance≥90%, material-change precision≥90%, understandable why≥90%, duplicate rate<1%, first value≤5min of setup and median understanding time≤60s.
+3. Measure actionability without a minimum that forces invented actions; taking no action can be a useful decision.
+4. An insufficient sample or blocked source is explicit incomplete evidence; replay is not presented as a live pilot, and targets are not presented as achieved results.
 
-**Перевірка:** Анонімізований pilot report з denominators, confidence/limitations, defects та рішенням expand/fix/hold.
+**Verification:** An anonymized pilot report with denominators, confidence/limitations, defects and an expand/fix/hold decision.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 <a id="mv2-059"></a>
 
-### MV2-059 — Приймання і реліз Helvetic Lens Monitoring v2.0
+### MV2-059 — Helvetic Lens Monitoring v2.0 acceptance and release
 
-**Статус:** PLANNED · **Пріоритет:** P0 · **Власник:** Release owner + Product + Operations · **Розмір:** M
+**Status:** PLANNED · **Priority:** P0 · **Owner:** Release owner + Product + Operations · **Size:** M
 
-**Залежності:** [MV2-025](#mv2-025), [MV2-052](#mv2-052), [MV2-054](#mv2-054), [MV2-055](#mv2-055), [MV2-056](#mv2-056), [MV2-057](#mv2-057), [MV2-058](#mv2-058). **Вимоги:** §§33,39–40; v2.0 scope після рішення користувача відкласти C4.
+**Dependencies:** [MV2-025](#mv2-025), [MV2-052](#mv2-052), [MV2-054](#mv2-054), [MV2-055](#mv2-055), [MV2-056](#mv2-056), [MV2-057](#mv2-057), [MV2-058](#mv2-058). **Requirements:** §§33,39–40; v2.0 scope after the user decision to defer C4.
 
-**Результат для користувача:** Версія v2 може бути відновлена, перевірена і підтримувана.
+**User outcome:** v2 can be restored, verified and supported.
 
-**Робота:** Release checklist, immutable source/tag, manifest/checksums/build versions, migrations/backup/restore, source credentials/licence renewal runbook, release notes.
+**Work:** Release checklist, immutable source/tag, manifest/checksums/build versions, migrations/backup/restore, source credential/licence-renewal runbook and release notes.
 
-**Критерії приймання:**
+**Acceptance criteria:**
 
-1. Усі 62 required задач цього беклогу DONE (MV2-059 закривається фінальним release evidence), усі 116 активних AC accepted, усі 9 активних templates мають allowed source та end-to-end evidence. 9 DEFERRED задач, включно з MV2-026/027/061, і 10 AC-C4 не входять у приймання.
-2. Жоден із дев’яти required кейсів не пропущений заради назви2.0; часткові milestones маркуються preview/limited pilot.
-3. Перевірено fresh install і upgrade, rollback restore, підтримані мови, source/export policy; критичні дефекти відсутні.
-4. MVP tag незмінний; production rollout окрема явно погоджена операція з health/rollback checks.
+1. All 62 required backlog tasks are DONE (MV2-059 closes with the final release evidence), all 116 active AC are accepted, and all 9 active templates have permitted sources and end-to-end evidence. The 9 DEFERRED tasks, including MV2-026/027/061, and the 10 AC-C4 are excluded from acceptance.
+2. None of the nine required cases is omitted to obtain the 2.0 label; partial milestones are labelled preview/limited pilot.
+3. Fresh installation and upgrade, rollback restore, supported languages and source/export policies are verified; no critical defects remain.
+4. The MVP tag is unchanged; production rollout is a separate, explicitly approved operation with health and rollback checks.
 
-**Перевірка:** Independent go/no-go checklist, release artifact restore/build verification і post-deploy checks лише після deployment authorization.
+**Verification:** Independent go/no-go checklist, release-artifact restore/build verification, and post-deployment checks only after deployment authorization.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
 
 
-## Відкладений обсяг — не входить до v2.0
+## Deferred scope — excluded from v2.0
 
 <a id="mv2-026"></a>
 
-### MV2-026 — Можливо реалізувати: C4, конектор офіційних митних курсів
+### MV2-026 — Possible future implementation: C4 official customs-rate connector
 
-**Статус:** DEFERRED — можливо реалізувати; не брати в розробку · **Пріоритет:** P2 · **Власник:** Integration · **Розмір:** M
+**Status:** DEFERRED — possible future implementation; do not start development · **Priority:** P2 · **Owner:** Integration · **Size:** M
 
-**Залежності:** [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011). **Вимоги:** §11; AC-C4-02,03,07,09; рішення користувача 2026-09-10: поза розробкою v2.0.
+**Dependencies:** [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011). **Requirements:** §11; AC-C4-02,03,07,09; user decision 2026-09-10: outside v2.0 development.
 
-**Результат для користувача:** Можливий майбутній результат: Зберігається саме офіційний customs rate.
+**User outcome:** Possible future outcome: retain the official customs rate itself.
 
-**Робота:** Лише майбутня можливість. Не виконувати discovery, інтеграцію, UI, ліцензування або тести C4 у поточній розробці. Повернення потребує нового явного рішення користувача про scope; отримання доступу або завершення v2.0 саме по собі не активує задачу. Після такого рішення: Отримати/зафіксувати право повторного використання BAZG/SIX, перевірити XML, currency unit/basis, effective day, correction/weekend semantics.
+**Work:** Future possibility only. Do not undertake C4 discovery, integration, UI, licensing or tests in current development. Reactivation requires a new explicit user decision on scope; obtaining access or completing v2.0 does not activate the task by itself. After that decision: obtain/document BAZG/SIX reuse rights and verify XML, currency unit/basis, effective day and correction/weekend semantics.
 
-**Критерії для можливої майбутньої реалізації:**
+**Acceptance criteria for possible future implementation:**
 
-1. Письмово або у чинній ліцензії підтверджено дозволений сценарій; до цього production ingest/distribution не активується.
-2. Курс зберігає валюту, nominal units, CHF basis, effective date і джерело; JPY/100 не читається як JPY/1.
-3. Вихідний/відсутня публікація не створює нульового курсу; виправлення дати versioned.
-4. Жодного market FX fallback під назвою customs.
+1. Written confirmation or a valid licence permits the intended use; production ingestion/distribution is not activated before this.
+2. The rate retains currency, nominal units, CHF basis, effective date and source; JPY/100 is not interpreted as JPY/1.
+3. A weekend/missing publication does not create a zero rate; date corrections are versioned.
+4. No market FX fallback is labelled as customs.
 
-**Перевірка після повернення в scope:** Licensed sample replay і 1/100-unit fixtures; source-contract report.
+**Verification after returning to scope:** Licensed sample replay and 1/100-unit fixtures; source-contract report.
 
-**Evidence виконання:** відкладено; не є поточним work item або release gate.
+**Execution evidence:** Deferred; not a current work item or release gate.
 
 <a id="mv2-027"></a>
 
-### MV2-027 — Можливо реалізувати: C4, валюта, пороги, історія і digest
+### MV2-027 — Possible future implementation: C4 currency, thresholds, history and digest
 
-**Статус:** DEFERRED — можливо реалізувати; не брати в розробку · **Пріоритет:** P2 · **Власник:** Frontend + Backend · **Розмір:** M
+**Status:** DEFERRED — possible future implementation; do not start development · **Priority:** P2 · **Owner:** Frontend + Backend · **Size:** M
 
-**Залежності:** [MV2-008](#mv2-008), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-022](#mv2-022), [MV2-026](#mv2-026). **Вимоги:** §11; AC-C4-01…10; рішення користувача 2026-09-10: поза розробкою v2.0.
+**Dependencies:** [MV2-008](#mv2-008), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-022](#mv2-022), [MV2-026](#mv2-026). **Requirements:** §11; AC-C4-01…10; user decision 2026-09-10: outside v2.0 development.
 
-**Результат для користувача:** Можливий майбутній результат: Користувач отримує значущу зміну обраного курсу.
+**User outcome:** Possible future outcome: the user receives meaningful changes to the selected rate.
 
-**Робота:** Лише майбутня можливість. Не виконувати discovery, інтеграцію, UI, ліцензування або тести C4 у поточній розробці. Повернення потребує нового явного рішення користувача про scope; отримання доступу або завершення v2.0 саме по собі не активує задачу. Після такого рішення: Currency selector; daily/weekly/absolute crossing/every-change rules; previous/current/delta/chart/digest. Purchase calculator відокремлений у MV2-061.
+**Work:** Future possibility only. Do not undertake C4 discovery, integration, UI, licensing or tests in current development. Reactivation requires a new explicit user decision on scope; obtaining access or completing v2.0 does not activate the task by itself. After that decision: currency selector; daily/weekly/absolute crossing/every-change rules; previous/current/delta/chart/digest. The purchase calculator is separate in MV2-061.
 
-**Критерії для можливої майбутньої реалізації:**
+**Acceptance criteria for possible future implementation:**
 
-1. Виконано AC-C4-01…10; 0.9412→0.9547 дає +1.43434…%, показано +1.43% із точним underlying value.
-2. Strict greater-than 1% не спрацьовує на рівно1%; weekly baseline і відсутній baseline пояснені.
-3. Поріг перевіряється на unrounded Decimal; every-change — явний opt-in; history та evidence доступні.
-4. Без purchase value шаблон повністю корисний.
+1. Satisfy AC-C4-01…10; 0.9412→0.9547 produces +1.43434…%, displayed as +1.43% with the exact underlying value retained.
+2. Strictly greater than 1% does not trigger at exactly 1%; explain the weekly baseline and a missing baseline.
+3. Evaluate the threshold using unrounded Decimal; every-change requires explicit opt-in; history and evidence are accessible.
+4. The template is fully useful without a purchase value.
 
-**Перевірка після повернення в scope:** End-to-end licensed source→state→rule→Today→digest; below/exact/above threshold, weekend/correction fixtures.
+**Verification after returning to scope:** End-to-end licensed source→state→rule→Today→digest; below/exact/above threshold and weekend/correction fixtures.
 
-**Evidence виконання:** відкладено; не є поточним work item або release gate.
+**Execution evidence:** Deferred; not a current work item or release gate.
 
 <a id="mv2-061"></a>
 
-### MV2-061 — Можливо реалізувати: customs purchase calculator
+### MV2-061 — Possible future feature: Customs purchase calculator
 
-**Статус:** DEFERRED — можливо реалізувати; не брати в розробку · **Пріоритет:** P2 · **Власник:** Product + Backend · **Розмір:** S
+**Status:** DEFERRED — possible future feature; do not take into development · **Priority:** P2 · **Owner:** Product + Backend · **Size:** S
 
-**Залежності:** [MV2-027](#mv2-027). **Вимоги:** §11.8 — explicitly future; рішення користувача 2026-09-10: поза розробкою v2.0.
+**Dependencies:** [MV2-027](#mv2-027). **Requirements:** §11.8 — explicitly future; user decision 2026-09-10: outside v2.0 development.
 
-**Результат для користувача:** Можливий майбутній результат: Можна оцінити зміну CHF valuation для заданої покупки.
+**User outcome:** Possible future outcome: estimate the change in CHF valuation for a specified purchase.
 
-**Робота:** Лише майбутня можливість. Не виконувати discovery, інтеграцію, UI, ліцензування або тести C4 у поточній розробці. Повернення потребує нового явного рішення користувача про scope; отримання доступу або завершення v2.0 саме по собі не активує задачу. Після такого рішення: Optional purchase amount/currency, official rate basis і deterministic delta; не загальний розрахунок мита/податку.
+**Work:** A future possibility only. Do not perform C4 discovery, integration, UI, licensing or tests in current development. Reintroduction requires a new explicit user decision on scope; obtaining access or completing v2.0 does not activate the task on its own. After that decision: optional purchase amount/currency, official rate basis and deterministic delta; this is not a general customs-duty/tax calculation.
 
-**Критерії для можливої майбутньої реалізації:**
+**Acceptance criteria for possible future implementation:**
 
-1. Source rights дозволяють розрахунок; optional amount не потрібна для primary rate watch.
-2. Previous/current CHF basis та delta пояснюють rate/nominal units/rounding; не дають tax liability claim.
+1. Source rights permit the calculation; the optional amount is not required for the primary exchange-rate watch.
+2. The previous/current CHF basis and delta explain the rate, nominal units and rounding; they make no tax-liability claim.
 
-**Перевірка після повернення в scope:** Decimal/unit calculation та optional form checks.
+**Verification after returning to scope:** Decimal/unit calculation and optional-form checks.
 
-**Evidence виконання:** відкладено; не є поточним work item або release gate.
+**Execution evidence:** Deferred; not a current work item or release gate.
 
 <a id="mv2-062"></a>
 
-### MV2-062 — Після v2.0: нові кантони аукціонів і розширений tender workflow
+### MV2-062 — After v2.0: Additional auction cantons and extended tender workflow
 
-**Статус:** DEFERRED · **Пріоритет:** P2 · **Власник:** Product + Integration · **Розмір:** L
+**Status:** DEFERRED · **Priority:** P2 · **Owner:** Product + Integration · **Size:** L
 
-**Залежності:** [MV2-045](#mv2-045), [MV2-050](#mv2-050). **Вимоги:** §§15.10,17.11 — explicitly future.
+**Dependencies:** [MV2-045](#mv2-045), [MV2-050](#mv2-050). **Requirements:** §§15.10,17.11 — explicitly future.
 
-**Результат для користувача:** Розширення охоплення відбувається без другої архітектури.
+**User outcome:** Coverage expands without requiring a second architecture.
 
-**Робота:** Additional cantonal source packs після окремого source gate; за підтвердженою потребою QUALIFY/SUBMITTED/CLOSED/AWARDED/NOT_AWARDED.
+**Work:** Additional cantonal source packs after a separate source gate; QUALIFY/SUBMITTED/CLOSED/AWARDED/NOT_AWARDED when justified by confirmed need.
 
-**Критерії приймання:**
+**Acceptance criteria for possible future implementation:**
 
-1. Кожне джерело має власний rights/coverage dossier; це не автоматична обіцянка national coverage.
-2. Нові decision states не змінюють стару history і не виконують bid submission; пріоритет уточнюється лише через canonical backlog.
+1. Each source has its own rights/coverage dossier; this is not an automatic promise of national coverage.
+2. New decision states do not change historical records or submit bids; priority is updated only through the canonical backlog.
 
-**Перевірка:** Adapter conformance і backward-compatible decision tests.
+**Verification after returning to scope:** Adapter conformance and backward-compatible decision tests.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** Deferred; not a current work item or release gate.
 
 <a id="mv2-063"></a>
 
-### MV2-063 — Умовно: pgvector після доведеного recall gap
+### MV2-063 — Conditional: pgvector after a demonstrated recall gap
 
-**Статус:** DEFERRED · **Пріоритет:** P2 · **Власник:** Product + Architect · **Розмір:** M
+**Status:** DEFERRED · **Priority:** P2 · **Owner:** Product + Architect · **Size:** M
 
-**Залежності:** [MV2-051](#mv2-051), [MV2-054](#mv2-054). **Вимоги:** legacy HL-024.
+**Dependencies:** [MV2-051](#mv2-051), [MV2-054](#mv2-054). **Requirements:** legacy HL-024.
 
-**Результат для користувача:** Збережено відкладене зобов’язання без розширення поточного release scope.
+**User outcome:** A deferred commitment is preserved without expanding the current release scope.
 
-**Робота:** Зберегти HL-024: спершу виміряти direct-context retrieval; pgvector в existing PostgreSQL лише якщо покращення доведене.
+**Work:** Preserve HL-024: first measure direct-context retrieval; add pgvector to the existing PostgreSQL only if improvement is demonstrated.
 
-**Критерії приймання:**
+**Acceptance criteria for possible future implementation:**
 
-1. Немає v2 prerequisite на vector DB; benchmark порівнює citations/recall/latency/cost.
-2. Exact version context і direct fallback зберігаються.
+1. A vector database is not a v2 prerequisite; the benchmark compares citations, recall, latency and cost.
+2. Exact-version context and a direct fallback are preserved.
 
-**Перевірка:** Окремий evidence report за умовою активації; реалізація лише після внесення рішення й пріоритету в цей беклог.
+**Verification after returning to scope:** A separate evidence report when the activation condition is met; implementation starts only after the decision and priority are recorded in this backlog.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** Deferred; not a current work item or release gate.
 
 <a id="mv2-064"></a>
 
-### MV2-064 — Умовно: relation graph після перевірки користі
+### MV2-064 — Conditional: Relationship graph after a usefulness test
 
-**Статус:** DEFERRED · **Пріоритет:** P2 · **Власник:** Product + Architect · **Розмір:** M
+**Status:** DEFERRED · **Priority:** P2 · **Owner:** Product + Architect · **Size:** M
 
-**Залежності:** [MV2-021](#mv2-021), [MV2-036](#mv2-036), [MV2-058](#mv2-058). **Вимоги:** legacy HL-053.
+**Dependencies:** [MV2-021](#mv2-021), [MV2-036](#mv2-036), [MV2-058](#mv2-058). **Requirements:** legacy HL-053.
 
-**Результат для користувача:** Збережено відкладене зобов’язання без розширення поточного release scope.
+**User outcome:** A deferred commitment is preserved without expanding the current release scope.
 
-**Робота:** Зберегти HL-053: list-vs-graph user experiment; існуючий relation review лишається доступний.
+**Work:** Preserve HL-053: a list-versus-graph user experiment; existing relationship review remains available.
 
-**Критерії приймання:**
+**Acceptance criteria for possible future implementation:**
 
-1. No-benefit результат завершує експеримент без обов’язкової побудови графа.
-2. Граф не замінює доказовий список і не змінює статус непідтверджених зв’язків.
+1. A no-benefit result ends the experiment without requiring a graph to be built.
+2. The graph does not replace the evidence list or change the status of unconfirmed relationships.
 
-**Перевірка:** Окремий evidence report за умовою активації; реалізація лише після внесення рішення й пріоритету в цей беклог.
+**Verification after returning to scope:** A separate evidence report when the activation condition is met; implementation starts only after the decision and priority are recorded in this backlog.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** Deferred; not a current work item or release gate.
 
 <a id="mv2-065"></a>
 
-### MV2-065 — Умовно: кілька серверів / HA за виміряною потребою
+### MV2-065 — Conditional: Multiple servers / HA based on measured need
 
-**Статус:** DEFERRED · **Пріоритет:** P2 · **Власник:** Product + Architect · **Розмір:** M
+**Status:** DEFERRED · **Priority:** P2 · **Owner:** Product + Architect · **Size:** M
 
-**Залежності:** [MV2-054](#mv2-054), [MV2-056](#mv2-056). **Вимоги:** legacy HL-056.
+**Dependencies:** [MV2-054](#mv2-054), [MV2-056](#mv2-056). **Requirements:** legacy HL-056.
 
-**Результат для користувача:** Збережено відкладене зобов’язання без розширення поточного release scope.
+**User outcome:** A deferred commitment is preserved without expanding the current release scope.
 
-**Робота:** Зберегти HL-056: перейти до scale/HA design лише за зафіксованим bottleneck або recovery requirement.
+**Work:** Preserve HL-056: begin scaling/HA design only in response to a documented bottleneck or recovery requirement.
 
-**Критерії приймання:**
+**Acceptance criteria for possible future implementation:**
 
-1. Є measured necessity і resource plan; не додається Kubernetes/microservices заради шаблонів.
-2. Дотримані job identity, storage, tenancy, backup/restore та Git host contracts.
+1. Measured necessity and a resource plan exist; Kubernetes/microservices are not added merely to support templates.
+2. Job identity, storage, tenancy, backup/restore and Git host contracts are preserved.
 
-**Перевірка:** Окремий evidence report за умовою активації; реалізація лише після внесення рішення й пріоритету в цей беклог.
+**Verification after returning to scope:** A separate evidence report when the activation condition is met; implementation starts only after the decision and priority are recorded in this backlog.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** Deferred; not a current work item or release gate.
 
 <a id="mv2-066"></a>
 
-### MV2-066 — Умовно: наступні два кантональні regulatory packs
+### MV2-066 — Conditional: The next two cantonal regulatory packs
 
-**Статус:** DEFERRED · **Пріоритет:** P2 · **Власник:** Product + Architect · **Розмір:** M
+**Status:** DEFERRED · **Priority:** P2 · **Owner:** Product + Architect · **Size:** M
 
-**Залежності:** [MV2-068](#mv2-068). **Вимоги:** legacy HL-081.
+**Dependencies:** [MV2-068](#mv2-068). **Requirements:** legacy HL-081.
 
-**Результат для користувача:** Збережено відкладене зобов’язання без розширення поточного release scope.
+**User outcome:** A deferred commitment is preserved without expanding the current release scope.
 
-**Робота:** Зберегти HL-081: два окремо названі й перевірені пакети законодавства після Basel; не плутати з C1 coverage або B8 Ticino.
+**Work:** Preserve HL-081: two separately named and verified regulatory packs after Basel; these are distinct from C1 coverage and B8 Ticino.
 
-**Критерії приймання:**
+**Acceptance criteria for possible future implementation:**
 
-1. Кожний pack має незалежні rights/parser/drift/localization/history/acceptance докази.
-2. Автоматично не активується лише через завершення new-domain connectors.
+1. Each pack has independent evidence for rights, parser behavior, drift, localization, history and acceptance.
+2. Completion of new-domain connectors alone does not activate this task automatically.
 
-**Перевірка:** Окремий evidence report за умовою активації; реалізація лише після внесення рішення й пріоритету в цей беклог.
+**Verification after returning to scope:** A separate evidence report when the activation condition is met; implementation starts only after the decision and priority are recorded in this backlog.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** Deferred; not a current work item or release gate.
 
 <a id="mv2-067"></a>
 
-### MV2-067 — Поза десятьма кейсами: opt-in public-discourse pilot
+### MV2-067 — Beyond the ten source use cases: Opt-in public-discourse pilot
 
-**Статус:** DEFERRED · **Пріоритет:** P2 · **Власник:** Product + Architect · **Розмір:** M
+**Status:** DEFERRED · **Priority:** P2 · **Owner:** Product + Architect · **Size:** M
 
-**Залежності:** [MV2-058](#mv2-058). **Вимоги:** legacy HL-082.
+**Dependencies:** [MV2-058](#mv2-058). **Requirements:** legacy HL-082.
 
-**Результат для користувача:** Збережено відкладене зобов’язання без розширення поточного release scope.
+**User outcome:** A deferred commitment is preserved without expanding the current release scope.
 
-**Робота:** Зберегти HL-082 як поза v2.0: щонайбільше два джерела commentary після окремого рішення про зміну scope.
+**Work:** Preserve HL-082 outside v2.0: at most two commentary sources after a separate scope-change decision.
 
-**Критерії приймання:**
+**Acceptance criteria for possible future implementation:**
 
-1. Окремі source rights, expiry/diversity/noise/usefulness/corrections/removal gates.
-2. Неофіційне commentary ніколи не змішується з authoritative facts; explicit org opt-in до alerts.
+1. Separate gates for source rights, expiry, diversity, noise, usefulness, corrections and removal.
+2. Unofficial commentary is never mixed with authoritative facts; alerts require explicit organization opt-in.
 
-**Перевірка:** Окремий evidence report за умовою активації; реалізація лише після внесення рішення й пріоритету в цей беклог.
+**Verification after returning to scope:** A separate evidence report when the activation condition is met; implementation starts only after the decision and priority are recorded in this backlog.
 
-**Evidence виконання:** ще немає; записати commit, tests/protocol, source/fixture version, reviewer та limitations при закритті.
+**Execution evidence:** Deferred; not a current work item or release gate.
 
-## Трасування та зміни плану
+## Traceability and plan changes
 
-[126 збережених AC: 116 активних + 10 відкладених; 79 додаткових вимог](docs/monitoring-v2/REQUIREMENTS_TRACEABILITY.md) · [Legacy disposition](docs/monitoring-v2/LEGACY_DISPOSITION.md) · [Архітектура](docs/monitoring-v2/ARCHITECTURE.md) · [Офіційні джерела](docs/monitoring-v2/SOURCE_FEASIBILITY.md).
+[126 preserved AC: 116 active + 10 deferred; 79 supplemental requirements](docs/monitoring-v2/REQUIREMENTS_TRACEABILITY.md) · [Legacy disposition](docs/monitoring-v2/LEGACY_DISPOSITION.md) · [Architecture](docs/monitoring-v2/ARCHITECTURE.md) · [Official sources](docs/monitoring-v2/SOURCE_FEASIBILITY.md).
 
-| Версія | Дата | Зміна |
+| Version | Date | Change |
 |---|---|---|
-| 1.0 | 2026-09-10 | Повний план десяти сценаріїв, source gates, generic extension, MVP compatibility, 126 AC/79 supplemental, 35 legacy dispositions; нові фічі не реалізовано |
-| 1.1 | 2026-09-10 | За рішенням користувача C4 «Митні курси» — можлива майбутня реалізація, поза поточною розробкою. MV2-026/027 перенесені в DEFERRED, MV2-061 залишається там; 9 активних сценаріїв, 59 required/9 deferred задач, 116 активних/10 відкладених AC. Усунено C4 з source gates, UI, pilot і release dependencies; оригінал вимог збережено |
-| 1.2 | 2026-09-10 | Pollen Watch — перша повна поставка до тестування з реальними користувачами. Додані MV2-069/070/071, явні C5 підзавдання й незалежний ранній gate; MV2-030/031 P0 із залежностями на C5 contracts. 62 required/9 deferred задач; решта 9-case scope та 116 active AC збережені |
+| 1.0 | 2026-09-10 | Complete plan for ten scenarios, source gates, generic extension, MVP compatibility, 126 AC/79 supplemental requirements and 35 legacy dispositions; new features were not implemented |
+| 1.1 | 2026-09-10 | By user decision, C4 customs rates became a possible future implementation, excluded from current development. MV2-026/027 moved to DEFERRED; MV2-061 remained deferred. 9 active scenarios, 59 required/9 deferred tasks, 116 active/10 deferred AC. Removed C4 from source gates, UI, pilot and release dependencies; preserved the original requirements |
+| 1.2 | 2026-09-10 | Pollen Watch became the first complete delivery for real-user testing. Added MV2-069/070/071, explicit C5 subtasks and an independent early gate; MV2-030/031 became P0 with dependencies on C5 contracts. 62 required/9 deferred tasks; the remaining nine-case scope and 116 active AC were preserved |
+| 1.3 | 2026-09-10 | Translated the backlog and supporting planning documents into English and added a line-preserving English reading edition of the source specification. Scope, IDs, dependencies, priorities and acceptance obligations are unchanged. The user explicitly authorized integration and push to main |

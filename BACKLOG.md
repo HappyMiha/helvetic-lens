@@ -2,7 +2,7 @@
 
 The single current implementation backlog is **[Helvetic Lens Monitoring v2](BACKLOG_MONITORING_V2.md)**.
 
-Plan 1.2 has 9 active scenarios and 62 required tasks; customs rates (C4) remain a possible future feature and must not be taken into development.
+Plan 1.3 has 9 active scenarios and 62 required tasks; customs rates (C4) remain a possible future feature and must not be taken into development.
 
 The first implementation delivery is **Pollen Watch**, through MV2-001 → MV2-069 → MV2-070 → MV2-030 → MV2-031 → MV2-071, ready for real-user testing before the other v2 scenarios.
 
