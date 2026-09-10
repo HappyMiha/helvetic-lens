@@ -2,7 +2,7 @@
 
 [Back to the project map](../../PROJECT_MAP.md)
 
-**Status: independent deployment and backlog progress visibility are IN PROGRESS. Pollen Watch feature implementation has not started; live deployment acceptance remains pending.**
+**Status: isolated site live; automatic update acceptance pending under MV2-072. Backlog progress visibility is VERIFYING under MV2-073. Pollen Watch feature implementation has not started.**
 
 ## Where development is tracked
 
@@ -10,7 +10,7 @@ Use **[BACKLOG_MONITORING_V2.md on the dedicated v2 branch](../../BACKLOG_MONITO
 
 - First complete delivery: **Pollen Watch**, ready for testing with real users.
 - Sequence: **MV2-001 → MV2-069 → MV2-070 → MV2-030 → MV2-031 → MV2-071**.
-- Current scope: 9 active scenarios, 64 required tasks and 9 deferred tasks. [MV2-072](../../BACKLOG_MONITORING_V2.md#mv2-072) adds independent deployment and [MV2-073](../../BACKLOG_MONITORING_V2.md#mv2-073) adds backlog progress visibility to the original 71 tasks. Both are IN PROGRESS; neither adds a product scenario.
+- Current scope: 9 active scenarios, 64 required tasks and 9 deferred tasks. [MV2-072](../../BACKLOG_MONITORING_V2.md#mv2-072) adds independent deployment and [MV2-073](../../BACKLOG_MONITORING_V2.md#mv2-073) adds backlog progress visibility to the original 71 tasks. MV2-072 is IN PROGRESS and MV2-073 is VERIFYING; neither adds a product scenario.
 - Customs rates (C4) remain a possible future feature, excluded from current development and release acceptance.
 
 ## Deployment target recorded from the user
@@ -18,10 +18,10 @@ Use **[BACKLOG_MONITORING_V2.md on the dedicated v2 branch](../../BACKLOG_MONITO
 | Setting | Target | Current state |
 |---|---|---|
 | Host | **HappyDucky02** | Selected by the user |
-| Site | **monitoring.helveticlens.ch** | Routing and public availability not yet verified |
+| Site | **monitoring.helveticlens.ch** | HTTPS and full instance/release identity verified |
 | Integration branch | **`codex/HappyDucky02/monitoring-v2`** | Dedicated Monitoring v2 channel |
 | Product channel | Monitoring v2 preview/pilot | Independent from `main` → HappySnowman → helveticlens.ch |
-| Automatic deployment | Dedicated v2 configuration and trigger watching only the v2 branch | Setup in progress; bootstrap, update and rollback verification required |
+| Automatic deployment | Dedicated v2 configuration and trigger watching only the v2 branch | Bootstrap and backup/restore verified; automatic update acceptance pending |
 
 [MV2-072](../../BACKLOG_MONITORING_V2.md#mv2-072) records the authorized infrastructure work and its acceptance criteria. It must deliver an isolated, reviewable setup with its own application directory, deployment selector/trigger, Compose project, ports, data volumes/database, queues, secrets, backups and domain/tunnel route. Account for shared CPU/RAM/GPU capacity on HappyDucky02. A second hostname alone does not isolate the application or its data.
 
@@ -38,4 +38,4 @@ The existing deployment manager has shared defaults and requires an isolation re
 
 ## Current environment status
 
-The pinned controller and dedicated Windows task are installed; the task is disabled. MV2-072 is IN PROGRESS: the dedicated tunnel/hostname is configured and SMTP STARTTLS/authentication is verified. Bootstrap is underway. See [verified evidence and remaining activation steps](../monitoring-v2/DEPLOYMENT_STATUS.md). Public-site and automatic-update acceptance remain pending.
+The isolated site is live after successful bootstrap and a database/document backup-and-restore rehearsal. The pinned controller and dedicated Windows task are installed; the task remains paused while the reviewed owner-identity fix is prepared for upgrade. SMTP STARTTLS/authentication is verified. See [verified evidence and remaining activation steps](../monitoring-v2/DEPLOYMENT_STATUS.md). Automatic-update acceptance and real user registration/email delivery remain pending.

@@ -1,30 +1,39 @@
 # Monitoring deployment status — 10 September 2026
 
-**MV2-072 is IN PROGRESS. The dedicated Cloudflare tunnel and hostname route are configured, and SMTP STARTTLS/authentication is verified. First bootstrap is underway; successful activation, public-site acceptance and automatic-update acceptance remain pending.**
+**The isolated Monitoring site is live. MV2-072 remains IN PROGRESS: first bootstrap, public HTTPS identity and actual backup/restore passed; automatic-update acceptance remains pending. MV2-073 is VERIFYING and its progress interface is published in Git, awaiting deployment.**
 
-## Verified implementation
+## Verified first release
 
-- Main routing documentation was published as `4aa4981e11e946a4fc8bb49865ab7455de374295`. Its application/deployment code was not changed by this split.
-- Monitoring follows `codex/HappyDucky02/monitoring-v2`, host HappyDucky02, Compose project `helvetic-lens-v2`, Docker context `desktop-linux`, and hostname `monitoring.helveticlens.ch`.
-- Native Windows affected regressions: **79 passed**. Linux affected deployment/installer/configuration regressions: **92 passed**. Ruff passed.
-- Native Windows installer regression checks passed, including strict configuration validation, controller provenance, ACLs, concurrent-install lock, idempotence, foreign-task rejection and the exact hidden scheduler invocation. Scheduler calls were mocked in these tests.
-- API, model-manager and web images built with explicitly synthetic QA configuration. Rendered Compose has separate namespaced volumes/networks, no published host ports and explicit service memory/CPU limits. This is build/isolation evidence, not a live deployment.
-- During earlier preparation, a broader application test run was stopped after the affected suites passed because external setup was still incomplete. It is **not** a passing full-suite result. The controller retains its mandatory full API and image-build quality gates before activation; none were bypassed.
+- Application: `69a63823d6f6e04e9167077d9f89396ba2be9ab1`; controller: `aba58b3c0f7ac8b3a530503efc579dc123340cd9`.
+- Host HappyDucky02; branch `codex/HappyDucky02/monitoring-v2`; Compose project `helvetic-lens-v2`; Docker context `desktop-linux`.
+- Every bootstrap gate passed. The full API suite reported **2023 passed, 12 skipped, 1 warning** in 82m 32s. Image build, empty-instance guard, startup, initial backup, public health and release publication succeeded. No gate was bypassed.
+- At `2026-09-10T21:20:54Z`, an independent HTTPS request to `monitoring.helveticlens.ch/api/ready` returned 200, `status=ready`, `instance=monitoring-v2`, and `release=git-69a63823d6f6e04e9167077d9f89396ba2be9ab1`. Login returned 200; the deployment API returned 401 without authentication.
+- The dedicated Cloudflare connector is healthy. Tunnel **happyducky02-helvetic-monitoring-v2**, UUID `bba4be43-c30a-4c98-a3f3-c788002b2422`, routes **monitoring.helveticlens.ch → http://web:3000**. The earlier 1033 error occurred before the connector started.
 
-At `2026-09-10T19:56:35Z`, the authenticated main-product deployment UI showed **main** with verified activated SHA `4aa4981e11e946a4fc8bb49865ab7455de374295`, automation idle/up to date, and the latest deployment succeeded on HappySnowman (`happysnowman-cWo2eEPkrR1nfT0`). The UI displayed completion at **21:49:05 Europe/Zurich** and an API-test duration of **39m 31s**. This is the pre-Monitoring-activation baseline; compare the same authenticated UI after v2 activation. The main public readiness endpoint does not expose release identity.
+## Recovery and isolation evidence
 
-## Host preparation and open acceptance
+With the Windows task paused, a rehearsal created a uniquely named database table and document, captured backup `20260910T212131Z`, mutated both probes, then restored that exact backup. Database contents and document bytes matched the saved versions. The probes were removed, clean backup `20260910T212146Z` was captured, and the same full application SHA restarted with verified public readiness and login.
 
-The dedicated root is `C:/Users/HappyDucky02/Documents/Codex/helvetic-lens-monitoring`. It contains a separate serving-only source clone, protected private configuration, separate generated database/encryption credentials and instance paths. Windows ACLs restrict the root to the owning user, SYSTEM and Administrators.
+This proves actual database/document restoration and a restart of the prior revision. It does not claim an intentionally failed candidate was exercised on the live site; release-transaction failure and rollback behavior are covered by the existing regression suites. The rehearsal affected only this instance.
 
-The user explicitly approved the separate setup. The dedicated Cloudflare tunnel **happyducky02-helvetic-monitoring-v2**, UUID `bba4be43-c30a-4c98-a3f3-c788002b2422`, has been created. Its token is stored in the protected instance configuration, and the hostname route **monitoring.helveticlens.ch → http://web:3000** has been saved. Existing main-product and Lokvetia tunnels are unchanged. A saved Cloudflare route is configuration evidence; a connected tunnel and the public application's identity still require live verification.
+All **30 unrelated running containers** retained their identities/start times through bootstrap and recovery. The refreshed authenticated main-product deployment page still showed verified activated SHA **`4aa4981e11e946a4fc8bb49865ab7455de374295`** on HappySnowman (`happysnowman-cWo2eEPkrR1nfT0`), matching the pre-activation baseline. Public main readiness alone does not expose a release identity.
 
-The user created a separate fourth Infomaniak mailbox device, **Helvetic Lens Monitoring v2 - HappyDucky02**, for **info@helveticlens.ch**. The operator stored its credential in the protected Monitoring environment and verified SMTP STARTTLS followed by successful authentication (`235`) at `2026-09-10T19:53:07+00:00`. No message was sent; registration-email delivery and a real authentication flow remain unverified. The three existing mailbox devices are unchanged, and no main-product device credential or user database was copied into Monitoring.
+The dedicated root is `C:/Users/HappyDucky02/Documents/Codex/helvetic-lens-monitoring`, with its own serving-only source clone, immutable releases, controller, state, data/queue volumes, backups, database/encryption credentials and protected private configuration. Windows ACLs restrict the root to its owning user, SYSTEM and Administrators. Runtime services have scoped CPU/memory limits and no published host ports.
 
-The native installer validated and installed controller commit `aba58b3c0f7ac8b3a530503efc579dc123340cd9`. The actual Windows task `HelveticLens-Monitoring-v2-AutoDeploy` was read back as **Disabled / Enabled=false / IgnoreNew / Limited**. Its persisted selector follows only the Monitoring branch; the controller itself remains pinned. The source clone is marked serving-only using the repository Git safeguards.
+## SMTP and account access
 
-**Current action:** the installed pinned controller is bootstrapping application candidate `69a63823d6f6e04e9167077d9f89396ba2be9ab1`. At the recorded checkpoint, production configuration validation and the empty-instance guard passed; the Windows deployment task remained disabled. The operator owns completion of the mandatory quality gates, bootstrap, recovery rehearsal, public verification and subsequent automatic-update acceptance. Setup authorization, the dedicated tunnel route and SMTP authentication are complete.
+The user created the fourth Infomaniak mailbox device **Helvetic Lens Monitoring v2 - HappyDucky02** for **info@helveticlens.ch**. Its credential is protected locally. SMTP STARTTLS followed by authentication returned `235` at `2026-09-10T19:53:07+00:00`. Existing mailbox devices are unchanged. No main-product user database was copied into Monitoring. Registration-email delivery and a real user authentication flow remain unverified; SMTP authentication alone is not delivery evidence.
 
-Successful first-bootstrap completion, full candidate quality-gate results, actual backup/restore rehearsal, public HTTPS instance/release checks and a subsequent automatic branch update still require evidence. Keep the Windows deployment task disabled until bootstrap succeeds and the operator has completed the paused recovery rehearsal. The dedicated Cloudflare tunnel and hostname route exist; this status does not yet claim an accepted live Monitoring application or automatic deployment. SMTP authentication success does not prove email delivery.
+## Controller upgrade and automatic update pending
 
-The preview remains one Windows host. Login, Docker Desktop readiness, sleep/power and shared GPU capacity affect availability. Resource limits do not establish high availability or Pollen Watch user-test readiness. Follow the [runbook](../MONITORING_DEPLOYMENT.md); Pollen Watch remains the first product delivery and C4 customs remains deferred.
+The installed controller remains pinned to `aba58b3c0f7ac8b3a530503efc579dc123340cd9`; `self_update` is false. The task **HelveticLens-Monitoring-v2-AutoDeploy** remains **Disabled / IgnoreNew / Limited** while its upgrade is prepared.
+
+The first upgrade attempt was rejected before files or tasks changed because Windows returned the task principal as the local short name. The installer compared only its SID and qualified name. The reviewed fix resolves the principal through Windows to a SID and compares that exact identity; unknown/different owners and mismatched actions/descriptions remain rejected. Native installer regressions cover SID, qualified and short names, foreign/unresolved principals, immutable controller extraction, ACLs, configuration preservation, paused-task preservation and the exact hidden invocation. Scheduler registration is mocked in the suite. The actual paused task also passed a read-only ownership check with the repaired function.
+
+**Next action:** publish this fix, install the reviewed pinned controller, enable the dedicated task, let a scheduled poll pick up the subsequent application revision, and verify the public SHA plus before/after progress snapshots. Keep MV2-072 IN PROGRESS and MV2-073 VERIFYING until their remaining live acceptance passes. A task registration or Git push alone is not automatic-deployment evidence.
+
+## Earlier validation and limits
+
+Earlier affected regressions passed: **79 native Windows** and **92 Linux** tests plus Ruff, synthetic image builds and rendered Compose isolation checks. A preliminary broader run was stopped while external setup was incomplete; it was not a full-suite pass. The completed first-bootstrap result above supersedes that preliminary checkpoint.
+
+The preview remains one Windows host: login, Docker Desktop readiness, sleep/power and shared GPU capacity affect availability. This setup does not establish high availability or implement Pollen Watch. Follow the [runbook](../MONITORING_DEPLOYMENT.md); Pollen Watch remains first, support remains parked and C4 customs remains deferred.

@@ -158,6 +158,20 @@ function Get-MonitoringLauncherContent {
     return "# Managed Monitoring v2 poller; controller $($Plan.Commit)`r`n`$ErrorActionPreference = 'Stop'`r`n`$env:GIT_TERMINAL_PROMPT = '0'`r`n& '$python' '$manager' --config '$config' --poll`r`nexit `$LASTEXITCODE`r`n"
 }
 
+function Resolve-MonitoringPrincipalSid {
+    param([string]$UserId)
+    if ([string]::IsNullOrWhiteSpace($UserId)) { return $null }
+    try {
+        # Task Scheduler can return a SID, qualified name or local short name.
+        # Resolve names through Windows; never trust a matching username alone.
+        if ($UserId -match '^S-\d+(?:-\d+)+$') {
+            return ([Security.Principal.SecurityIdentifier]::new($UserId)).Value
+        }
+        $account = [Security.Principal.NTAccount]::new($UserId)
+        return $account.Translate([Security.Principal.SecurityIdentifier]).Value
+    } catch { return $null }
+}
+
 function Assert-MonitoringTaskOwnership {
     param($Plan)
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -167,7 +181,7 @@ function Assert-MonitoringTaskOwnership {
     $existing = Get-ScheduledTask -TaskName $script:MonitoringTaskName -TaskPath '\' -ErrorAction SilentlyContinue
     if ($existing) {
         $owned = $existing.Description -ceq $script:MonitoringTaskDescription -and
-            $existing.Principal.UserId -in @($sid, $identity.Name) -and
+            (Resolve-MonitoringPrincipalSid $existing.Principal.UserId) -ceq $sid -and
             @($existing.Actions).Count -eq 1 -and $existing.Actions[0].Execute -ieq $powershell -and
             $existing.Actions[0].Arguments -ceq $arguments
         if (-not $owned) { throw 'The fixed Monitoring task name is already owned by a different task or instance. No task was replaced.' }

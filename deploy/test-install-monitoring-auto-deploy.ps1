@@ -133,6 +133,11 @@ try {
     Assert-True (-not $script:ExistingTask.Settings.Enabled) 'StartDisabled registered an enabled task.'
     Install-MonitoringAutoDeploy $configPath $PythonExecutable $revision
     Assert-True (-not $script:ExistingTask.Settings.Enabled) 'Reinstallation unexpectedly resumed a paused task.'
+    foreach ($ownerName in @([Security.Principal.WindowsIdentity]::GetCurrent().Name, [Environment]::UserName)) {
+        $script:ExistingTask.Principal.UserId = $ownerName
+        Install-MonitoringAutoDeploy $configPath $PythonExecutable $revision
+        Assert-True (-not $script:ExistingTask.Settings.Enabled) 'Normalized owner reinstallation resumed a paused task.'
+    }
     Assert-True ($script:RegisteredTasks.Count -eq 1) 'Repeated installation created more than one task.'
     Assert-True ((Get-FileHash -LiteralPath $configPath).Hash -ceq $originalHash) 'Installation rewrote persistent configuration.'
     Assert-True ([IO.File]::ReadAllText((Join-Path $config.control_dir 'release_manager.py')) -ceq $managerText) 'Controller bytes did not match the reviewed object.'
@@ -164,13 +169,22 @@ try {
     $process.WaitForExit()
     Assert-True ($process.ExitCode -eq 0 -and $stdout.Contains('reviewed test controller')) "Exact scheduled invocation failed: $stderr"
     $process.Dispose()
+    foreach ($foreignOwner in @('S-1-5-18', 'NT AUTHORITY\SYSTEM', '', 'S-1-5-invalid', ($env:COMPUTERNAME + '\HL-NoSuch-' + [guid]::NewGuid().ToString('N')))) {
+        $task.Principal.UserId = $foreignOwner
+        $ownerRegistrationCount = $script:RegistrationCount
+        $ownerManagerHash = (Get-FileHash -LiteralPath (Join-Path $config.control_dir 'release_manager.py')).Hash
+        Assert-Rejected { Install-MonitoringAutoDeploy $configPath $PythonExecutable $revision } 'A foreign or unresolved task principal was accepted.'
+        Assert-True ($script:RegistrationCount -eq $ownerRegistrationCount) 'Owner rejection changed the scheduler.'
+        Assert-True ((Get-FileHash -LiteralPath (Join-Path $config.control_dir 'release_manager.py')).Hash -ceq $ownerManagerHash) 'Owner rejection changed the controller.'
+    }
+    $task.Principal.UserId = $currentSid
     $task.Description = 'Another application owns this name'
     $before = $script:RegistrationCount
     $beforeManagerHash = (Get-FileHash -LiteralPath (Join-Path $config.control_dir 'release_manager.py')).Hash
     Assert-Rejected { Install-MonitoringAutoDeploy $configPath $PythonExecutable $revision } 'A foreign scheduled task was overwritten.'
     Assert-True ($script:RegistrationCount -eq $before) 'Foreign task collision still mutated the scheduler.'
     Assert-True ((Get-FileHash -LiteralPath (Join-Path $config.control_dir 'release_manager.py')).Hash -ceq $beforeManagerHash) 'Foreign task collision changed the controller.'
-    Write-Output 'PASS: parsing, native directory ACL, read-only validation, 17 unsafe configurations, junction escape, pinned provenance, config preservation, exact extraction, idempotence, paused-task preservation, task scope and exact hidden scheduled invocation.'
+    Write-Output 'PASS: parsing, native directory ACL, read-only validation, 17 unsafe configurations, junction escape, pinned provenance, config preservation, exact extraction, idempotence, SID/qualified/short owner readback, foreign/unresolved owner rejection, paused-task preservation, task scope and exact hidden scheduled invocation.'
 } finally {
     [Environment]::SetEnvironmentVariable('GIT_TERMINAL_PROMPT', $initialPrompt, 'Process')
     # Only the verified GUID-named disposable directory created by this test.

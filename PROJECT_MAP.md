@@ -7,7 +7,7 @@
 | Product | Integration branch | Deployment host | Website | Update route |
 |---|---|---|---|---|
 | **Main product, including hackathon connectors** | `main` | **HappySnowman** | **helveticlens.ch** | Existing automatic deployment from `main` |
-| **Monitoring v2** | `codex/HappyDucky02/monitoring-v2` | **HappyDucky02** | **monitoring.helveticlens.ch** | Independent automatic deployment from the dedicated v2 branch; setup in progress, live operation not yet verified |
+| **Monitoring v2** | `codex/HappyDucky02/monitoring-v2` | **HappyDucky02** | **monitoring.helveticlens.ch** | Isolated site live; automatic updates from the dedicated v2 branch awaiting acceptance |
 
 Hackathon connector improvements belong to the main product and follow its existing release route. Monitoring v2 has a separate application instance, deployment trigger and data. Funding/support does not create a third application branch or website.
 
@@ -34,6 +34,6 @@ Hackathon connector improvements belong to the main product and follow its exist
 
 ## Current focus
 
-Support work is parked. Hackathon preparation has its own entry page within the main-product channel; no connectors are being implemented by this organization change. Monitoring v2 deployment setup is in progress for **HappyDucky02 → monitoring.helveticlens.ch**, using **`codex/HappyDucky02/monitoring-v2`**. DNS routing, isolation and branch-triggered deployment require verification before the site can be described as live. The existing `main` deployment on HappySnowman remains active; freezing the MVP tag does not freeze `main`.
+Support work is parked. Hackathon preparation has its own entry page within the main-product channel; no connectors are being implemented by this organization change. Monitoring v2 deployment setup is in progress for **HappyDucky02 → monitoring.helveticlens.ch**, using **`codex/HappyDucky02/monitoring-v2`**. HTTPS, isolated first deployment and backup/restore are verified; branch-triggered automatic update acceptance remains pending. The existing `main` deployment on HappySnowman remains active; freezing the MVP tag does not freeze `main`.
 
-Monitoring deployment evidence: [SMTP and tunnel configured; bootstrap in progress](docs/monitoring-v2/DEPLOYMENT_STATUS.md).
+Monitoring deployment evidence: [Site live; recovery verified; automatic update acceptance pending](docs/monitoring-v2/DEPLOYMENT_STATUS.md).

@@ -46,7 +46,7 @@ git worktree list
 | Work | Task base and integration target | Deployment |
 |---|---|---|
 | Main-product improvements, including hackathon connectors | `main` | Existing automatic deployment on HappySnowman at helveticlens.ch |
-| Monitoring v2 | `codex/HappyDucky02/monitoring-v2` | Independent automatic deployment on HappyDucky02 at monitoring.helveticlens.ch; setup in progress, not yet verified live |
+| Monitoring v2 | `codex/HappyDucky02/monitoring-v2` | Isolated site live on HappyDucky02 at monitoring.helveticlens.ch; automatic update acceptance pending |
 
 The frozen `v1.0.0-hackathon-mvp` tag is a historical release reference. Keep it
 immutable while allowing `main` and its existing automatic deployment to continue.
