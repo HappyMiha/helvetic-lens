@@ -14,6 +14,8 @@ To close each active row, replace `NOT VERIFIED` with a specific test/protocol, 
 
 **Deployment decision, plan 1.5:** [MV2-072](../../BACKLOG_MONITORING_V2.md#mv2-072) records the user's separate branch, HappyDucky02 host and monitoring.helveticlens.ch deployment requirement. Its six infrastructure criteria are additional to the original specification, so the 126 AC and 79 supplemental rows below remain unchanged. Deployment evidence belongs to MV2-072 and does not change any product-requirement status or complete Pollen Watch acceptance.
 
+**Progress visibility, plan 1.6:** [MV2-073](../../BACKLOG_MONITORING_V2.md#mv2-073) implements the user-requested deployment-page progress summary. Its criteria supplement the original specification; the 126 AC and 79 supplemental mappings below remain unchanged. Counts summarize recorded backlog statuses and do not constitute product acceptance evidence.
+
 ## CORE
 
 | ID | Exact criterion from the specification | Section / line | Accountable tasks | Evidence |

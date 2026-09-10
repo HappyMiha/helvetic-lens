@@ -2,7 +2,7 @@
 
 [Back to the project map](../../PROJECT_MAP.md)
 
-**Status: backlog ready; feature implementation has not started. Separate deployment setup is in progress and has not yet been verified live.**
+**Status: independent deployment and backlog progress visibility are IN PROGRESS. Pollen Watch feature implementation has not started; live deployment acceptance remains pending.**
 
 ## Where development is tracked
 
@@ -10,7 +10,7 @@ Use **[BACKLOG_MONITORING_V2.md on the dedicated v2 branch](../../BACKLOG_MONITO
 
 - First complete delivery: **Pollen Watch**, ready for testing with real users.
 - Sequence: **MV2-001 → MV2-069 → MV2-070 → MV2-030 → MV2-031 → MV2-071**.
-- Current scope: 9 active scenarios, 63 required tasks and 9 deferred tasks. [MV2-072](../../BACKLOG_MONITORING_V2.md#mv2-072) adds the independent deployment to the original 71 tasks; it is IN PROGRESS and adds no product scenario.
+- Current scope: 9 active scenarios, 64 required tasks and 9 deferred tasks. [MV2-072](../../BACKLOG_MONITORING_V2.md#mv2-072) adds independent deployment and [MV2-073](../../BACKLOG_MONITORING_V2.md#mv2-073) adds backlog progress visibility to the original 71 tasks. Both are IN PROGRESS; neither adds a product scenario.
 - Customs rates (C4) remain a possible future feature, excluded from current development and release acceptance.
 
 ## Deployment target recorded from the user
@@ -38,4 +38,4 @@ The existing deployment manager has shared defaults and requires an isolation re
 
 ## Current environment status
 
-The pinned controller and dedicated Windows task are installed; the task is disabled. MV2-072 is blocked on SMTP settings and dedicated Cloudflare tunnel access. See [verified evidence and remaining activation steps](../monitoring-v2/DEPLOYMENT_STATUS.md). The public site is not yet live.
+The pinned controller and dedicated Windows task are installed; the task is disabled. MV2-072 is IN PROGRESS: the dedicated tunnel/hostname is configured and SMTP STARTTLS/authentication is verified. Bootstrap is underway. See [verified evidence and remaining activation steps](../monitoring-v2/DEPLOYMENT_STATUS.md). Public-site and automatic-update acceptance remain pending.
