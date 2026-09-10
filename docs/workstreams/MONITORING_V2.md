@@ -38,4 +38,4 @@ The existing deployment manager has shared defaults and requires an isolation re
 
 ## Current environment status
 
-The isolated site is live after successful bootstrap and a database/document backup-and-restore rehearsal. The pinned controller and dedicated Windows task are installed; the task remains paused while the reviewed owner-identity fix is prepared for upgrade. SMTP STARTTLS/authentication is verified. See [verified evidence and remaining activation steps](../monitoring-v2/DEPLOYMENT_STATUS.md). Automatic-update acceptance and real user registration/email delivery remain pending.
+The isolated site is live after successful bootstrap and a database/document backup-and-restore rehearsal. The pinned controller and dedicated Windows task are installed; the controller upgrade succeeded and the enabled task has automatically started the next release through the full quality gates. SMTP STARTTLS/authentication is verified. See [verified evidence and remaining activation steps](../monitoring-v2/DEPLOYMENT_STATUS.md). Automatic-update acceptance and real user registration/email delivery remain pending.
