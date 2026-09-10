@@ -1,10 +1,10 @@
 # Monitoring v2 — plan review
 
-Date: 2026-09-10. Plan version: 1.5. This review covers **documentation and plan integrity**, not runtime acceptance. Version 1.3 translated the plan into English; version 1.4 recorded the product-channel split; version 1.5 adds the independent deployment task while preserving the published product requirements and Pollen Watch delivery order.
+Date: 2026-09-10. Plan version: 1.6. This review covers **documentation and plan integrity**, not runtime acceptance. Version 1.3 translated the plan into English; version 1.4 recorded the product-channel split; version 1.5 added independent deployment and version 1.6 adds backlog progress visibility while preserving the published product requirements and Pollen Watch delivery order.
 
 ## Completeness checks
 
-- 72 unique MV2 IDs: 63 required, 9 DEFERRED. MV2-072 is the additional deployment task; the original 71 task definitions and dependencies are preserved.
+- 73 unique MV2 IDs: 64 required, 9 DEFERRED. MV2-072 and MV2-073 add independent deployment and backlog progress visibility; the original 71 task definitions and dependencies are preserved.
 - All 126 exact source AC retained: 116 active (20 CORE, 60 C1/C2/C3/C5/C6/C7, 36 B2/B7/B8), 10 AC-C4 deferred.
 - 79 supplemental requirement groups S-01…S-79, each with an accountable task.
 - 35 non-DONE legacy HL items have MV2 successors; original text and statuses are preserved.
@@ -44,11 +44,15 @@ The active Monitoring v2 backlog belongs to the dedicated branch; its main-branc
 
 ## Independent deployment task (version 1.5)
 
-[MV2-072](../../BACKLOG_MONITORING_V2.md#mv2-072) is BLOCKED pending SMTP and dedicated tunnel access and records the user's branch, host and hostname decision. It adds six acceptance criteria for instance isolation, persistent Windows polling, clean bootstrap and failed-candidate recovery, protected configuration, public release identity and automatic updates, and an English operating procedure. It has no product-source dependency and introduces no new scenario or original-specification requirement.
+[MV2-072](../../BACKLOG_MONITORING_V2.md#mv2-072) is IN PROGRESS following verified SMTP authentication and dedicated tunnel configuration, and records the user's branch, host and hostname decision. It adds six acceptance criteria for instance isolation, persistent Windows polling, clean bootstrap and failed-candidate recovery, protected configuration, public release identity and automatic updates, and an English operating procedure. It has no product-source dependency and introduces no new scenario or original-specification requirement.
 
-The original 71 task index rows and detailed blocks remain unchanged from version 1.3. All 126 original AC, 79 supplemental requirement mappings, 35 inherited legacy obligations and source-document bytes are preserved. The complete 72-task dependency graph is acyclic; required tasks do not depend on the nine deferred tasks. MV2-072 does not alter the independent Pollen Watch predecessor chain or complete its source, end-to-end or real-user testing gates.
+The original 71 task index rows and detailed blocks remain unchanged from version 1.3. All 126 original AC, 79 supplemental requirement mappings, 35 inherited legacy obligations and source-document bytes are preserved. The complete 73-task dependency graph is acyclic; required tasks do not depend on the nine deferred tasks. MV2-072 does not alter the independent Pollen Watch predecessor chain or complete its source, end-to-end or real-user testing gates.
 
 The local backlog is authoritative on this branch; links to the main-branch snapshot explicitly target `main`. Separate deployment setup remains in progress. These document checks do not establish public availability, data isolation, successful rollback or branch-triggered updates; those require operational evidence under MV2-072.
+
+## Backlog progress visibility (version 1.6)
+
+[MV2-073](../../BACKLOG_MONITORING_V2.md#mv2-073) records the user-requested progress summary before implementation. [Its contract](../MONITORING_PROGRESS.md) distinguishes exact latest-branch and actual deployed-backlog snapshots. Only DONE contributes to completion; the nine DEFERRED tasks are excluded. Required tasks count equally, including OPS tasks, and each snapshot retains its own denominator. Pollen Watch has a separate six-task view; unavailable data does not become zero progress. This task changes no original acceptance requirement or product-scenario priority.
 
 ## Result boundaries
 

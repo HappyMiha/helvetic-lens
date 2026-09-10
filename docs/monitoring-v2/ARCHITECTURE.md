@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-10. **Status:** target architecture for implementation through the [single backlog](../../BACKLOG_MONITORING_V2.md). This document does not deliver v2 code. Baseline: `7109a28`; MVP snapshot: [v1.0.0-hackathon-mvp](https://github.com/HappyMiha/helvetic-lens/releases/tag/v1.0.0-hackathon-mvp).
 
-**Product scope, unchanged in plan v1.5:** nine active scenarios C1/C2/C3/C5/C6/C7/B2/B7/B8. C4 is a possible future implementation following the user's decision of 2026-09-10; CURRENCY, Swiss Customs and customs-specific contracts are not being implemented now. Active scenarios require the generic kernel.
+**Product scope, unchanged in plan v1.6:** nine active scenarios C1/C2/C3/C5/C6/C7/B2/B7/B8. C4 is a possible future implementation following the user's decision of 2026-09-10; CURRENCY, Swiss Customs and customs-specific contracts are not being implemented now. Active scenarios require the generic kernel.
 
 **Deployment channel:** `codex/HappyDucky02/monitoring-v2` targets its own instance on HappyDucky02 at monitoring.helveticlens.ch. Main-product and hackathon connector work continues through `main` on HappySnowman at helveticlens.ch. [MV2-072](../../BACKLOG_MONITORING_V2.md#mv2-072) owns the additional isolation and automatic-deployment acceptance; setup is in progress. This separation changes neither the modular application architecture below nor the Pollen Watch delivery order, and does not establish runtime readiness.
 

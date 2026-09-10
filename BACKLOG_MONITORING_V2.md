@@ -1,16 +1,16 @@
 # Helvetic Lens Monitoring v2 — active implementation backlog
 
-**Plan version:** 1.5 · **Date:** 10 September 2026 · **Code baseline:** `7109a2891f9c99e53572008cc7c1a86001792a57`
+**Plan version:** 1.6 · **Date:** 10 September 2026 · **Code baseline:** `7109a2891f9c99e53572008cc7c1a86001792a57`
 
 **Status:** implementation plan; no new v2 capability is claimed as implemented.
 
-**Scope:** 9 required scenarios, 63 required tasks, 9 deferred tasks. 116 active acceptance criteria (AC); 10 AC-C4 criteria retained as deferred.
+**Scope:** 9 required scenarios, 64 required tasks, 9 deferred tasks. 116 active acceptance criteria (AC); 10 AC-C4 criteria retained as deferred.
 
 **Principle:** authoritative source → material change → personal relevance → evidence → user decision.
 
 ## Deployment channel
 
-This is the active backlog on `codex/HappyDucky02/monitoring-v2`, with a dedicated deployment target of **HappyDucky02 → monitoring.helveticlens.ch**. Deployment activation is BLOCKED under MV2-072 pending SMTP and dedicated tunnel access; public availability and automatic updates are not yet verified. The main product and hackathon connectors follow **main → HappySnowman → helveticlens.ch**. Preserve the frozen MVP tag. Support and grant activity remains parked. MV2-072 establishes this separate environment; it adds no product scenario and does not change Pollen Watch priority.
+This is the active backlog on `codex/HappyDucky02/monitoring-v2`, with a dedicated deployment target of **HappyDucky02 → monitoring.helveticlens.ch**. Deployment activation is IN PROGRESS under MV2-072: SMTP and the dedicated tunnel route are configured, while first bootstrap and live automatic-update verification remain underway. The main product and hackathon connectors follow **main → HappySnowman → helveticlens.ch**. Preserve the frozen MVP tag. Support and grant activity remains parked. MV2-072 establishes this separate environment; it adds no product scenario and does not change Pollen Watch priority.
 
 ## How to use this backlog
 
@@ -221,7 +221,8 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 | [MV2-069](#mv2-069) | Pollen Watch FIRST: Confirm sources and the first-delivery contract | FIRST | P0 | M | PLANNED — first implementation priority | [MV2-001](#mv2-001) |
 | [MV2-070](#mv2-070) | Pollen Watch FIRST: Implement the shared platform within C5 scope | FIRST | P0 | L | PLANNED — first implementation priority | [MV2-069](#mv2-069) |
 | [MV2-071](#mv2-071) | Pollen Watch FIRST: Accept the complete scenario and prepare for testing with real users | FIRST | P0 | M | PLANNED — first user-testing gate | [MV2-031](#mv2-031) |
-| [MV2-072](#mv2-072) | Isolated Monitoring deployment on HappyDucky02 | OPS | P0 | M | BLOCKED | None; user deployment decision |
+| [MV2-072](#mv2-072) | Isolated Monitoring deployment on HappyDucky02 | OPS | P0 | M | IN PROGRESS | None; user deployment decision |
+| [MV2-073](#mv2-073) | Show Monitoring backlog completion and deployment progress | OPS | P0 | M | IN PROGRESS | None; user progress-visibility request |
 
 ## OPS — Separate Monitoring environment
 
@@ -229,7 +230,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ### MV2-072 — Isolated Monitoring deployment on HappyDucky02
 
-**Status:** BLOCKED · **Priority:** P0 · **Owner:** Platform + Operations · **Size:** M
+**Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Platform + Operations · **Size:** M
 
 **Dependencies:** None; independent of product source gates. **Requirements:** explicit user deployment decision, 2026-09-10.
 
@@ -252,7 +253,36 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Subtask evidence, 2026-09-10:** Six isolated deployment-status API regressions and targeted Ruff checks passed. `npm run check:i18n`, web TypeScript checking and the production frontend build passed. The existing `npm run check:deployments:browser` passed 10 localized desktop/mobile history journeys, five unavailable-branch views and 20 full-document accessibility checkpoints with synthetic API responses. The check covers `main`, the dedicated Monitoring branch, honest unknown status and mobile wrapping. Original MV2-001–071 task definitions remain unchanged. Live deployment and automatic update acceptance remain part of MV2-072's separate verification.
 
-**Execution evidence:** Controller and disabled Windows scheduler installed; 79 Windows and 92 Linux affected tests passed, images built, isolation configuration verified. [Deployment status and remaining acceptance](docs/monitoring-v2/DEPLOYMENT_STATUS.md). **Blocker owner:** user for SMTP settings and dedicated tunnel access approval; operator for subsequent bootstrap, public verification and activation. No live deployment or automatic-update acceptance is claimed.
+**Execution evidence:** Controller and disabled Windows scheduler installed; 79 Windows and 92 Linux affected tests passed, images built, isolation configuration verified. The user approved setup. Dedicated Cloudflare tunnel `happyducky02-helvetic-monitoring-v2` (`bba4be43-c30a-4c98-a3f3-c788002b2422`) was created, its token protected, and monitoring.helveticlens.ch routed to http://web:3000; existing tunnels are unchanged. A separate Infomaniak device was created, its credential protected, and SMTP STARTTLS/authentication (`235`) verified at `2026-09-10T19:53:07+00:00`; no email was sent and existing devices remain unchanged. Bootstrap of `69a63823d6f6e04e9167077d9f89396ba2be9ab1` is underway; production configuration and the empty-instance guard passed. [Deployment status and remaining acceptance](docs/monitoring-v2/DEPLOYMENT_STATUS.md). **Owner and next action:** operator completes candidate quality gates, bootstrap, paused recovery rehearsal, public checks and automatic-update verification. The scheduler stays disabled until activation prerequisites pass. No successful live deployment, email-delivery or automatic-update acceptance is claimed yet.
+
+<a id="mv2-073"></a>
+
+### MV2-073 — Show Monitoring backlog completion and deployment progress
+
+**Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Platform + Frontend · **Size:** M
+
+**Dependencies:** None; user-authorized visibility work. **Requirements:** explicit user request for simple development progress, 2026-09-10.
+
+**User outcome:** The deployment page shows what the Monitoring backlog records as completed in Git, what completion is present in the running release, what remains, and an approximate completion percentage, with Pollen Watch easy to find.
+
+**Work:** Derive immutable progress snapshots from the existing Markdown backlog at the latest successfully fetched Monitoring commit and the actually deployed commit. Display a compact summary, remaining tasks and the six-task Pollen Watch path on the existing deployment page. Keep the backlog as the only manually maintained source. Implementation can proceed alongside MV2-072; live verification requires the Monitoring site to be running.
+
+**Contract:** [Monitoring progress snapshots and counting rules](docs/MONITORING_PROGRESS.md).
+
+**Acceptance criteria:**
+
+1. The deployment collector reads only `BACKLOG_MONITORING_V2.md` from exact Git commit blobs. The latest snapshot uses the successfully fetched configured Monitoring branch SHA; the deployed snapshot uses the actual deployment record SHA. The application reads sanitized persisted metadata and does not fetch Git or contact GitHub. No second manually maintained task list or counter is introduced.
+2. Each snapshot validates unique detailed task IDs and allowed Status values against its task index. Missing, unreadable, malformed or inconsistent data produces an explicit unavailable state with a safe reason. Missing progress never appears as zero completion, and a latest-snapshot failure does not invalidate an independently valid deployed snapshot. A last-verified deployment record is not proof of current runtime state: failed rollback or interruption after startup produces deployed unavailable, retaining the journal SHA; a successful rollback or failure before runtime changes may preserve the prior snapshot.
+3. Only tasks with Status DONE count as completed. PLANNED, READY, IN PROGRESS, VERIFYING and BLOCKED remain unfinished. Every DEFERRED task is excluded from the denominator, remaining-work count and Pollen completion claims. All required backlog items, including OPS tasks MV2-072 and MV2-073, count equally; the UI clearly calls this approximate unweighted backlog completion, not an estimate of effort, time, implementation volume or product readiness.
+4. The page distinguishes Completed in Git, Already on this site and Remaining. The first and remaining values use the latest snapshot; the deployed value uses the deployed snapshot. Each count/percentage uses its own snapshot's required-task denominator, visibly showing X/Y when backlog versions differ. Already on this site means recorded DONE in the deployed backlog, not independently verified business outcomes. During an active deployment, label the deployed measure Last verified release. A failed or pending deployment must not copy latest progress into the deployed result.
+5. Pollen Watch highlights MV2-001 → MV2-069 → MV2-070 → MV2-030 → MV2-031 → MV2-071, with task titles and separate latest/deployed statuses. The latest and deployed Pollen counts are each DONE out of the six listed tasks. Missing snapshot data is unavailable; a task absent from a valid older snapshot is labelled not present in that revision. No partial count or operations completion is described as Pollen readiness, forecast coverage or completed real-user testing.
+6. The user can inspect unfinished required tasks and completed tasks awaiting deployment, with their IDs, titles and statuses. Awaiting deployment is computed by task ID as latest DONE without deployed DONE, never by subtracting aggregate counts; it is unavailable when either required snapshot is unavailable. Reopened tasks and different backlog sizes render consistently. Task contents are displayed as text through existing page authorization, accessibility and localization conventions.
+7. Backend/collector and UI checks cover separate Git/deployed SHAs, all status values, the nine deferred exclusions, no-DONE valid snapshots, an unavailable snapshot, malformed/duplicate/index-inconsistent tasks, an older deployed backlog with a different denominator, reopened tasks and Pollen status differences. No tests assert invented progress or bypass the deployment quality gates.
+8. After the feature is deployed, verify the summary against the exact latest and deployed backlog blobs and record the application/controller revisions and evidence. A later automatic update refreshes the deployed snapshot only after the deployment is accepted. Keep MV2-073 IN PROGRESS or VERIFYING until its own criteria pass; do not pre-mark it DONE to inflate its first visible progress result.
+
+**Verification:** focused parser/collector and page tests; exact-blob count comparison; deployed-page inspection and subsequent automatic-update evidence. A passing build or an IN PROGRESS task is not completion.
+
+**Execution evidence:** User-authorized task recorded; implementation/live acceptance pending. Record actual results here after verification.
 
 ## F0 — Decisions, sources and validation of user needs
 
@@ -1916,3 +1946,4 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 | 1.3 | 2026-09-10 | Translated the backlog and supporting planning documents into English and added a line-preserving English reading edition of the source specification. Scope, IDs, dependencies, priorities and acceptance obligations are unchanged. The user explicitly authorized integration and push to main |
 | 1.4 | 2026-09-10 | Organized three activities into two product channels. Main-product/hackathon changes use main → HappySnowman → helveticlens.ch; Monitoring v2 uses codex/HappyDucky02/monitoring-v2 → HappyDucky02 → monitoring.helveticlens.ch. Main retains a planning snapshot while this branch owns the active backlog. Support is parked; the original 71 task definitions remain unchanged |
 | 1.5 | 2026-09-10 | Added MV2-072 for the user-selected dedicated Monitoring branch, Windows host and hostname. 63 required/9 deferred tasks; original product task details and Pollen Watch order preserved |
+| 1.6 | 2026-09-10 | Added MV2-073 for user-requested backlog progress on the deployment page: exact latest/deployed Git snapshots, required-only completion and the Pollen Watch path. 73 tasks: 64 required and 9 deferred. Product scenarios and original task definitions remain unchanged. Updated MV2-072 evidence to SMTP verified and bootstrap IN PROGRESS; no live acceptance claimed |
