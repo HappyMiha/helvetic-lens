@@ -1,17 +1,15 @@
-# Helvetic Lens — active development backlog
+# Helvetic Lens — choose a workstream
 
-The single current implementation backlog is **[Helvetic Lens Monitoring v2](BACKLOG_MONITORING_V2.md)**.
+Start with **[PROJECT_MAP.md](PROJECT_MAP.md)**. Three organizational activities use two product channels: `main` for the main product and hackathon connectors, and `codex/HappyDucky02/monitoring-v2` for Monitoring v2. The frozen MVP tag remains a reference while both channels can evolve independently.
 
-Plan 1.3 has 9 active scenarios and 62 required tasks; customs rates (C4) remain a possible future feature and must not be taken into development.
+| Workstream | Entry point | Status |
+|---|---|---|
+| Support & Infrastructure | [Open support](docs/workstreams/SUPPORT.md) | Parked — wait for the user's explicit start |
+| Legal Hackathon — 23 September 2026 | [Open main-product hackathon preparation](docs/workstreams/HACKATHON_2026.md) | Changes go to `main` → HappySnowman → helveticlens.ch; connector implementation not started |
+| Helvetic Lens Monitoring v2 | [Open Monitoring v2](docs/workstreams/MONITORING_V2.md) | Dedicated v2 branch → HappyDucky02 → monitoring.helveticlens.ch; deployment setup in progress, not yet verified live |
 
-The first implementation delivery is **Pollen Watch**, through MV2-001 → MV2-069 → MV2-070 → MV2-030 → MV2-031 → MV2-071, ready for real-user testing before the other v2 scenarios.
+**Monitoring v2 implementation:** use the [active backlog on the dedicated v2 branch](BACKLOG_MONITORING_V2.md), with Pollen Watch first and customs rates deferred. The [main-branch snapshot](https://github.com/HappyMiha/helvetic-lens/blob/main/BACKLOG_MONITORING_V2.md) preserves the published plan and is not the active implementation queue.
 
-All new work, defects, acceptance evidence, priorities and dependencies are tracked there under MV2 IDs. Do not continue historical HL items as a separate development queue.
+[Frozen MVP release](https://github.com/HappyMiha/helvetic-lens/releases/tag/v1.0.0-hackathon-mvp) · [Historical v1 backlog](BACKLOG_V1_ARCHIVE.md) · [Outstanding legacy obligations](docs/monitoring-v2/LEGACY_DISPOSITION.md).
 
-- [Monitoring v2 backlog](BACKLOG_MONITORING_V2.md)
-- [Architecture and product decisions](docs/monitoring-v2/ARCHITECTURE.md)
-- [126 preserved source AC (116 active, 10 deferred) and 79 supplemental requirements](docs/monitoring-v2/REQUIREMENTS_TRACEABILITY.md)
-- [35 unfinished legacy obligations and their MV2 owners](docs/monitoring-v2/LEGACY_DISPOSITION.md)
-- [Historical v1 backlog, preserved without status changes](BACKLOG_V1_ARCHIVE.md)
-
-The frozen Hackathon MVP remains [v1.0.0-hackathon-mvp](https://github.com/HappyMiha/helvetic-lens/releases/tag/v1.0.0-hackathon-mvp). The v2 documents describe planned work, not delivered v2 functionality.
+The historical backlog is not a parallel queue. Record work in its selected workstream before implementation; do not mix support activity, hackathon integrations and Monitoring v2 features.

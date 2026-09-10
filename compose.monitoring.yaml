@@ -1,0 +1,43 @@
+# Monitoring-only override. The configured controller always includes this file.
+# Named volumes/networks inherit the required helvetic-lens-v2 Compose project.
+# These limits protect other workloads; GPU capacity and host availability remain shared.
+services:
+  db:
+    cpus: 1.0
+    mem_limit: 1g
+  redis:
+    cpus: 0.5
+    mem_limit: 256m
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec", "--maxmemory", "192mb", "--maxmemory-policy", "noeviction"]
+  migrate:
+    cpus: 1.0
+    mem_limit: 1g
+  api:
+    cpus: 2.0
+    mem_limit: 1536m
+  worker-cpu:
+    cpus: 1.0
+    mem_limit: 1g
+    command: ["celery", "-A", "helvetic_lens.celery_app:celery_app", "worker", "--loglevel=INFO", "-Q", "interactive,ingest,parse_diff,maintenance", "--concurrency=1"]
+  worker-ai:
+    cpus: 1.0
+    mem_limit: 1g
+  scheduler:
+    cpus: 0.25
+    mem_limit: 256m
+  model-manager:
+    cpus: 2.0
+    mem_limit: 3g
+  web:
+    cpus: 1.0
+    mem_limit: 512m
+  backup:
+    cpus: 0.5
+    mem_limit: 512m
+  restore:
+    cpus: 1.0
+    mem_limit: 512m
+  cloudflared:
+    cpus: 0.5
+    mem_limit: 256m
+    command: ["tunnel", "--no-autoupdate", "--metrics", "0.0.0.0:20241", "run", "--token-file", "/etc/cloudflared/token"]

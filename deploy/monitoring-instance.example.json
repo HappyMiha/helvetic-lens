@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "instance": "monitoring-v2",
+  "branch": "codex/HappyDucky02/monitoring-v2",
+  "compose_project": "helvetic-lens-v2",
+  "docker_context": "desktop-linux",
+  "base_dir": "C:/Users/HappyDucky02/Documents/Codex/helvetic-lens-monitoring",
+  "source_repo": "C:/Users/HappyDucky02/Documents/Codex/helvetic-lens-monitoring/source",
+  "control_dir": "C:/Users/HappyDucky02/Documents/Codex/helvetic-lens-monitoring/controller",
+  "releases_dir": "C:/Users/HappyDucky02/Documents/Codex/helvetic-lens-monitoring/releases",
+  "state_dir": "C:/Users/HappyDucky02/Documents/Codex/helvetic-lens-monitoring/state",
+  "env_file": "C:/Users/HappyDucky02/Documents/Codex/helvetic-lens-monitoring/private/monitoring.env",
+  "tunnel_dir": "C:/Users/HappyDucky02/Documents/Codex/helvetic-lens-monitoring/private/cloudflared",
+  "expected_repository": "https://github.com/HappyMiha/helvetic-lens.git",
+  "public_url": "https://monitoring.helveticlens.ch",
+  "self_update": false,
+  "qa_cpus": "2",
+  "qa_memory": "4g",
+  "qa_user": "1000:1000",
+  "api_test_timeout_seconds": 7200
+}

@@ -38,6 +38,14 @@ class Settings(BaseSettings):
     database_max_overflow: int = Field(default=2, ge=0, le=32)
     database_pool_timeout_seconds: int = Field(default=15, ge=1, le=120)
     app_environment: Literal["development", "production", "test"] = "development"
+    deployment_instance: str = Field(
+        default="main", validation_alias="HELVETIC_LENS_INSTANCE",
+        pattern=r"^[a-z0-9][a-z0-9-]{0,62}$",
+    )
+    deployment_release: str = Field(
+        default="development", validation_alias="HELVETIC_LENS_RELEASE",
+        pattern=r"^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$",
+    )
     allow_anonymous_dev: bool = True
     session_cookie_secure: bool = False
     session_ttl_days: int = Field(default=14, ge=1, le=90)

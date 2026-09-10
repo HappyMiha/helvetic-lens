@@ -17,7 +17,7 @@ services:
       - 0.0.0.0:20241
       - run
     volumes:
-      - ./.cloudflared:/etc/cloudflared:ro
+      - ${HELVETIC_LENS_TUNNEL_DIR:-./.cloudflared}:/etc/cloudflared:ro
     networks:
       - edge
     depends_on:

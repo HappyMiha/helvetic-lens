@@ -147,10 +147,12 @@ def test_application_accepts_only_the_validated_production_security_boundary(tmp
         )
 
 
-def test_readiness_requires_both_database_and_redis(monkeypatch, tmp_path):
+@pytest.mark.parametrize("redis_ready", [True, False])
+@pytest.mark.parametrize("instance,release", [("main", "development"), ("monitoring-v2", "git-" + "a" * 40)])
+def test_readiness_requires_dependencies_and_identifies_release(monkeypatch, tmp_path, redis_ready, instance, release):
     class ReadyRedis:
         def ping(self):
-            return True
+            return redis_ready
 
         def close(self):
             pass
@@ -160,6 +162,8 @@ def test_readiness_requires_both_database_and_redis(monkeypatch, tmp_path):
         Settings(
             _env_file=None,
             app_environment="test",
+            deployment_instance=instance,
+            deployment_release=release,
             data_dir=tmp_path,
             job_execution_mode="inline",
         )
@@ -168,5 +172,10 @@ def test_readiness_requires_both_database_and_redis(monkeypatch, tmp_path):
     with TestClient(app) as client:
         response = client.get("/api/ready")
 
-    assert response.status_code == 200
-    assert response.json() == {"status": "ready", "checks": {"database": True, "redis": True}}
+    assert response.status_code == (200 if redis_ready else 503)
+    assert response.json() == {
+        "status": "ready" if redis_ready else "unavailable",
+        "checks": {"database": True, "redis": redis_ready},
+        "instance": instance,
+        "release": release,
+    }

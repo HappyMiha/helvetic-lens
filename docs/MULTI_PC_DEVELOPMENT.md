@@ -2,8 +2,8 @@
 
 | Alias | Environment | Purpose |
 | --- | --- | --- |
-| `HappyDucky02` | Windows development PC | Develop and test task branches |
-| `HappySnowman` | Ubuntu production host | Run production; develop only in a separate worktree/clone |
+| `HappyDucky02` | Windows development PC and selected Monitoring v2 host | Develop/test in task worktrees; serve v2 from a separate deployment directory |
+| `HappySnowman` | Ubuntu main-product production host | Run helveticlens.ch; develop only in a separate worktree/clone |
 
 The alias is stored in **clone-local Git configuration**, not guessed from a user
 name or the OS hostname. The Windows hostname may differ from `HappyDucky02`.
@@ -41,13 +41,25 @@ git status --short --branch
 git worktree list
 ```
 
+## Select the product channel first
+
+| Work | Task base and integration target | Deployment |
+|---|---|---|
+| Main-product improvements, including hackathon connectors | `main` | Existing automatic deployment on HappySnowman at helveticlens.ch |
+| Monitoring v2 | `codex/HappyDucky02/monitoring-v2` | Independent automatic deployment on HappyDucky02 at monitoring.helveticlens.ch; setup in progress, not yet verified live |
+
+The frozen `v1.0.0-hackathon-mvp` tag is a historical release reference. Keep it
+immutable while allowing `main` and its existing automatic deployment to continue.
+Support & Infrastructure is an organizational workstream, currently parked; it has
+no application branch or deployment. See [the project map](../PROJECT_MAP.md).
+
 ## Each task gets its own branch and working directory
 
 First check for uncommitted changes and other running tasks. Do not stash, reset,
 overwrite or switch their work. Fetch the remote before selecting a task, and
 inspect remote `codex/*` branches to avoid implementing the same backlog item.
 
-For a clean, otherwise idle DEVELOPMENT checkout:
+For main-product or hackathon work in a clean, otherwise idle DEVELOPMENT checkout:
 
 ```sh
 git fetch origin
@@ -78,7 +90,7 @@ Development-Host: HappyDucky02
 Inspect it with `git log --format=full`. Git tags remain for releases, such as
 `v0.2.0`; a tag identifying a computer would not prevent history replacement.
 
-## Publish and integrate without losing remote changes
+## Publish main-product work without losing remote changes
 
 ```sh
 git push -u origin HEAD
@@ -95,7 +107,8 @@ git push origin HEAD:main
 The final command is an ordinary fast-forward push; it does not switch the current
 task branch or another worktree's `main`. Existing authorization to publish tested
 tasks does not need repeating. If GitHub later requires PRs, use a PR instead.
-Do not automatically deploy merely because code reached `main`.
+The existing authorized `main` auto-deployment remains active. A routine Git task
+does not authorize additional manual production restarts or migrations.
 
 The pre-push hook freshly fetches `main` from the exact push destination and checks
 that its tip is an ancestor of the proposed update. If another PC wins the race,
@@ -117,10 +130,41 @@ push. A fresh-main check is not a distributed lock. Repository administrators ca
 still change protection settings; this workflow prevents accidents, not a hostile
 administrator or intentional semantic removal of code in a new commit.
 
-## Keep HappySnowman's production checkout out of development
+## Publish Monitoring v2 work to its own channel
 
-After installing these files in that checkout as part of a normal, planned code
-update, mark it explicitly:
+Monitoring v2 uses the same host-owned task branches and isolated worktrees, but
+its task base and integration destination are the dedicated v2 branch. On
+HappyDucky02, after fetching and checking the branch exists, for example:
+
+```sh
+git fetch origin
+git worktree add -b codex/HappyDucky02/mv2-001-contract ../mv2-001-contract origin/codex/HappyDucky02/monitoring-v2
+```
+
+Commit and test in that task worktree. Before publishing an integration, fetch
+again and merge `origin/codex/HappyDucky02/monitoring-v2` into the task branch if
+needed. Review the combined diff, rerun affected checks, push the task branch and
+fast-forward the dedicated v2 branch. On HappyDucky02, the integration push is:
+
+```sh
+git push origin HEAD:codex/HappyDucky02/monitoring-v2
+```
+
+Do not use `HEAD:main` for v2 task delivery or merge the whole v2 branch into
+`main`. Hooks enforce host-owned prefixes, so a HappySnowman task must publish its
+own task branch and coordinate integration through HappyDucky02 or a repository
+PR; never change the host alias or bypass hooks. The long-lived v2 channel branch
+is the agreed integration target, not a shared development worktree.
+
+Cross-channel reuse requires an explicit receiving task and review of the selected
+commits, their dependencies and compatibility. Changes to `main` must not silently
+change v2's application version, controller, schema or data. An update to the v2
+branch must affect only its dedicated deployment.
+
+## Keep both serving checkouts out of development
+
+After installing these files in HappySnowman's checkout as part of a normal,
+planned code update, mark it explicitly:
 
 ```sh
 sh scripts/setup-git-workflow.sh HappySnowman --production
@@ -134,11 +178,15 @@ prevent file edits or deployment commands, so the agent instructions also forbid
 development in that checkout. A separate development clone is equally valid.
 Do not remove the marker to unblock a development task.
 
+Apply the same serving-checkout boundary on HappyDucky02 when installing Monitoring
+v2, using its own host alias and deployment directory. The independent v2 installer
+must not reuse or alter HappySnowman's main-product deployment trigger.
+
 Development containers need a separate Compose project name **and** separate
 ports, volumes, database/Redis credentials and data. A worktree alone does not
 isolate those resources. Never start the default development stack beside
 production without checking those collisions. Deploy separately from a reviewed
-main commit/release through the existing release procedure; do not restart
+commit/release in the selected product channel through its release procedure; do not restart
 containers, migrate the database or change running code during ordinary task work.
 
 ## Verification and limits

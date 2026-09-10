@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import os
 import re
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from urllib.parse import urlsplit
 
 FALSE_VALUES = {"0", "false", "no", "off"}
@@ -39,7 +40,7 @@ def _placeholder(value: str) -> bool:
     return not value or any(marker in lowered for marker in PLACEHOLDER_MARKERS)
 
 
-def validate(values: dict[str, str]) -> list[str]:
+def validate(values: dict[str, str], *, host_platform: str = "posix") -> list[str]:
     errors: list[str] = []
 
     def require(name: str) -> str:
@@ -115,7 +116,8 @@ def validate(values: dict[str, str]) -> list[str]:
         errors.append("MAX_DOCUMENT_BYTES: must be an integer")
 
     backup_dir = require("HELVETIC_LENS_BACKUP_DIR")
-    if backup_dir and (not PurePosixPath(backup_dir).is_absolute() or backup_dir in {"/", "/tmp"}):
+    host_path = PureWindowsPath(backup_dir) if host_platform == "nt" else PurePosixPath(backup_dir)
+    if backup_dir and (not host_path.is_absolute() or str(host_path) == host_path.anchor or backup_dir in {"/", "/tmp"}):
         errors.append("HELVETIC_LENS_BACKUP_DIR: must be an absolute separate host path")
     try:
         retention_days = int(require("BACKUP_RETENTION_DAYS"))
@@ -140,7 +142,7 @@ def main() -> None:
     args = parser.parse_args()
     try:
         values = load_env(args.env_file)
-        errors = validate(values)
+        errors = validate(values, host_platform=os.name)
     except (OSError, ValueError) as exc:
         raise SystemExit(f"Production configuration is invalid: {exc}") from exc
     if errors:

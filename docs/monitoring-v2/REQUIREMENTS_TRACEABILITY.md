@@ -12,6 +12,8 @@ To close each active row, replace `NOT VERIFIED` with a specific test/protocol, 
 
 **First delivery, plan 1.2:** MV2-069/070/030/031/071 accept all AC-C5 and AC-CORE within C5. Full cross-domain CORE acceptance remains in MV2-057, reusing C5 evidence. Early user testing does not close the overall v2 pilot.
 
+**Deployment decision, plan 1.5:** [MV2-072](../../BACKLOG_MONITORING_V2.md#mv2-072) records the user's separate branch, HappyDucky02 host and monitoring.helveticlens.ch deployment requirement. Its six infrastructure criteria are additional to the original specification, so the 126 AC and 79 supplemental rows below remain unchanged. Deployment evidence belongs to MV2-072 and does not change any product-requirement status or complete Pollen Watch acceptance.
+
 ## CORE
 
 | ID | Exact criterion from the specification | Section / line | Accountable tasks | Evidence |

@@ -1,10 +1,10 @@
 # Monitoring v2 — plan review
 
-Date: 2026-09-10. Plan version: 1.3. This review covers **documentation and plan integrity**, not v2 implementation. Version 1.3 translates the plan into English without changing scope or delivery order.
+Date: 2026-09-10. Plan version: 1.5. This review covers **documentation and plan integrity**, not runtime acceptance. Version 1.3 translated the plan into English; version 1.4 recorded the product-channel split; version 1.5 adds the independent deployment task while preserving the published product requirements and Pollen Watch delivery order.
 
 ## Completeness checks
 
-- 71 unique MV2 IDs: 62 required, 9 DEFERRED.
+- 72 unique MV2 IDs: 63 required, 9 DEFERRED. MV2-072 is the additional deployment task; the original 71 task definitions and dependencies are preserved.
 - All 126 exact source AC retained: 116 active (20 CORE, 60 C1/C2/C3/C5/C6/C7, 36 B2/B7/B8), 10 AC-C4 deferred.
 - 79 supplemental requirement groups S-01…S-79, each with an accountable task.
 - 35 non-DONE legacy HL items have MV2 successors; original text and statuses are preserved.
@@ -36,8 +36,22 @@ Following the user's next decision, explicit MV2-069/070/071 tasks were added, M
 
 All 71 task IDs, dependencies, phases, priorities, responsible roles, sizes and acceptance-criterion counts were checked against version 1.2. All 126 source AC and 79 supplemental requirement text/location/owner cells remain unchanged. The English specification edition translates 61 prose lines while preserving all 4,534 physical line positions and every original AC. The original source hash and archived backlog content remain unchanged. Active planning and entry documents contain no remaining Cyrillic prose; the immutable source and historical multilingual regression-test input are retained as evidence. Document links/anchors, dependency cycles, C4 exclusions and the independent Pollen Watch delivery path passed validation.
 
+## Workstream organization (version 1.4)
+
+The project map organizes Support & Infrastructure, Legal Hackathon 2026 and Monitoring v2 into **three activities and two code/deployment channels**. Support remains parked by user instruction. Main-product changes, including hackathon connectors, use `main` and its existing automatic deployment on HappySnowman at helveticlens.ch. Monitoring v2 uses `codex/HappyDucky02/monitoring-v2` and an independent deployment on HappyDucky02 at monitoring.helveticlens.ch. The frozen MVP tag remains immutable while `main` continues to evolve.
+
+The active Monitoring v2 backlog belongs to the dedicated branch; its main-branch copy is clearly marked as a published snapshot. At the split, the 71-task index and detailed task blocks were unchanged from version 1.3. Subsequent deployment work received an explicit task on the active v2 branch before implementation.
+
+## Independent deployment task (version 1.5)
+
+[MV2-072](../../BACKLOG_MONITORING_V2.md#mv2-072) is IN PROGRESS and records the user's branch, host and hostname decision. It adds six acceptance criteria for instance isolation, persistent Windows polling, clean bootstrap and failed-candidate recovery, protected configuration, public release identity and automatic updates, and an English operating procedure. It has no product-source dependency and introduces no new scenario or original-specification requirement.
+
+The original 71 task index rows and detailed blocks remain unchanged from version 1.3. All 126 original AC, 79 supplemental requirement mappings, 35 inherited legacy obligations and source-document bytes are preserved. The complete 72-task dependency graph is acyclic; required tasks do not depend on the nine deferred tasks. MV2-072 does not alter the independent Pollen Watch predecessor chain or complete its source, end-to-end or real-user testing gates.
+
+The local backlog is authoritative on this branch; links to the main-branch snapshot explicitly target `main`. Separate deployment setup remains in progress. These document checks do not establish public availability, data isolation, successful rollback or branch-triggered updates; those require operational evidence under MV2-072.
+
 ## Result boundaries
 
-No new connectors were written, accounts created, source terms accepted or paid licences purchased. Application code, migrations, production, the model and the MVP release tag were not changed. All task implementation evidence remains absent; sources have their own access and functional gates.
+The documentation changes reviewed here do not implement connectors, alter application code or migrations, or modify the MVP release tag. Deployment implementation and operational evidence are tracked separately on the v2 branch; this review is not evidence of a live site. The 71 published feature-task definitions gain no implementation evidence from routing changes; sources retain their own access and functional gates.
 
 KPI values, pilot samples and new performance targets are proposed criteria of this plan. They are neither the specification author's requirements nor measured results of the current product.

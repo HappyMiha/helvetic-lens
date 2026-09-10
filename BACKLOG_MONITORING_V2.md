@@ -1,16 +1,20 @@
-# Helvetic Lens Monitoring v2 — single development backlog
+# Helvetic Lens Monitoring v2 — active implementation backlog
 
-**Plan version:** 1.3 · **Date:** 10 September 2026 · **Code baseline:** `7109a2891f9c99e53572008cc7c1a86001792a57`
+**Plan version:** 1.5 · **Date:** 10 September 2026 · **Code baseline:** `7109a2891f9c99e53572008cc7c1a86001792a57`
 
 **Status:** implementation plan; no new v2 capability is claimed as implemented.
 
-**Scope:** 9 required scenarios, 62 required tasks, 9 deferred tasks. 116 active acceptance criteria (AC); 10 AC-C4 criteria retained as deferred.
+**Scope:** 9 required scenarios, 63 required tasks, 9 deferred tasks. 116 active acceptance criteria (AC); 10 AC-C4 criteria retained as deferred.
 
 **Principle:** authoritative source → material change → personal relevance → evidence → user decision.
 
+## Deployment channel
+
+This is the active backlog on `codex/HappyDucky02/monitoring-v2`, with a dedicated deployment target of **HappyDucky02 → monitoring.helveticlens.ch**. Deployment setup is IN PROGRESS under MV2-072; public availability and automatic updates are not yet verified. The main product and hackathon connectors follow **main → HappySnowman → helveticlens.ch**. Preserve the frozen MVP tag. Support and grant activity remains parked. MV2-072 establishes this separate environment; it adds no product scenario and does not change Pollen Watch priority.
+
 ## How to use this backlog
 
-This is the **single source of current scope, priorities, dependencies and development acceptance for Helvetic Lens**. The root [BACKLOG.md](BACKLOG.md) points here. The [previous backlog](BACKLOG_V1_ARCHIVE.md) is preserved as history, not a parallel queue. Reuse its completed work; 35 unfinished items have explicit successors in the [legacy disposition](docs/monitoring-v2/LEGACY_DISPOSITION.md). Their outstanding detailed criteria are inherited by the responsible v2 tasks, not lost through summarization.
+This is the **single source of scope, priorities, dependencies and acceptance for the Monitoring v2 workstream**. Use the [project map](PROJECT_MAP.md) and [BACKLOG.md](BACKLOG.md) to select an activity and product channel. Main-product and hackathon connector tasks remain in the main channel; support activity is parked. The [main-branch snapshot](https://github.com/HappyMiha/helvetic-lens/blob/main/BACKLOG_MONITORING_V2.md) preserves the published plan but is not the active v2 queue. The [previous backlog](BACKLOG_V1_ARCHIVE.md) is preserved as history, not a parallel queue. Reuse its completed work; 35 unfinished items have explicit successors in the [legacy disposition](docs/monitoring-v2/LEGACY_DISPOSITION.md). Their outstanding detailed criteria are inherited by the responsible v2 tasks, not lost through summarization.
 
 Input: [Practical Use Case Specification v1.0 — English reading edition](docs/monitoring-v2/requirements/HELVETIC_LENS_PRACTICAL_USE_CASE_SPECIFICATION_v1.0_EN.md). The [original source](docs/monitoring-v2/requirements/HELVETIC_LENS_PRACTICAL_USE_CASE_SPECIFICATION_v1.0.md) is preserved byte for byte, SHA-256 `a6f4e7da87a9ae30171164512d16ce4be411f2913c22d90ed7bf7e1bc94ece4c`. The English edition preserves line positions and all original AC wording; it translates the remaining source prose without changing requirements.
 
@@ -217,7 +221,34 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 | [MV2-069](#mv2-069) | Pollen Watch FIRST: Confirm sources and the first-delivery contract | FIRST | P0 | M | PLANNED — first implementation priority | [MV2-001](#mv2-001) |
 | [MV2-070](#mv2-070) | Pollen Watch FIRST: Implement the shared platform within C5 scope | FIRST | P0 | L | PLANNED — first implementation priority | [MV2-069](#mv2-069) |
 | [MV2-071](#mv2-071) | Pollen Watch FIRST: Accept the complete scenario and prepare for testing with real users | FIRST | P0 | M | PLANNED — first user-testing gate | [MV2-031](#mv2-031) |
+| [MV2-072](#mv2-072) | Isolated Monitoring deployment on HappyDucky02 | OPS | P0 | M | IN PROGRESS | None; user deployment decision |
 
+## OPS — Separate Monitoring environment
+
+<a id="mv2-072"></a>
+
+### MV2-072 — Isolated Monitoring deployment on HappyDucky02
+
+**Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Platform + Operations · **Size:** M
+
+**Dependencies:** None; independent of product source gates. **Requirements:** explicit user deployment decision, 2026-09-10.
+
+**User outcome:** Monitoring evolves separately while the main product receives hackathon improvements.
+
+**Work:** Adapt the existing release transaction for a dedicated Windows/Docker instance and branch, install its persistent automatic deployment task, and publish monitoring.helveticlens.ch with isolated data and a reproducible operating procedure.
+
+**Acceptance criteria:**
+
+1. Only `codex/HappyDucky02/monitoring-v2` supplies the Monitoring application; main continues through the existing HappySnowman channel. Source, immutable releases, controller configuration, Compose project, volumes, queues, database credentials, backup paths and domain route are separate.
+2. Native Windows polling persists the exact branch, Docker context and paths; concurrent runs are excluded. The existing Linux defaults and rollback pipeline pass regression tests. Controller changes remain explicitly pinned.
+3. A clean first installation succeeds without borrowing existing containers, models or user data. Failed candidates preserve the prior release; first-install failure reports the absence of a previous release and retains evidence.
+4. Production configuration validation, application quality gates, scoped resource budgets, backup and recovery checks pass. Authentication remains protected with valid SMTP; no anonymous mode or mock data is used to claim readiness.
+5. HTTPS serves the Monitoring instance with independently verified release identity. A subsequent branch commit is picked up automatically and main remains unaffected. Record the exact revisions, scheduler status and live evidence.
+6. An English runbook documents update, rollback, pause/resume, reboot/login requirements, resource limits and remaining operational constraints. The environment alone does not complete Pollen Watch or claim high availability.
+
+**Verification:** platform/unit and existing release regressions; rendered Compose isolation; first-install and rollback rehearsal against only the new instance; public HTTPS and automatic second-revision checks.
+
+**Execution evidence:** Work started; no live deployment or auto-update acceptance claimed yet.
 
 ## F0 — Decisions, sources and validation of user needs
 
@@ -1879,3 +1910,5 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 | 1.1 | 2026-09-10 | By user decision, C4 customs rates became a possible future implementation, excluded from current development. MV2-026/027 moved to DEFERRED; MV2-061 remained deferred. 9 active scenarios, 59 required/9 deferred tasks, 116 active/10 deferred AC. Removed C4 from source gates, UI, pilot and release dependencies; preserved the original requirements |
 | 1.2 | 2026-09-10 | Pollen Watch became the first complete delivery for real-user testing. Added MV2-069/070/071, explicit C5 subtasks and an independent early gate; MV2-030/031 became P0 with dependencies on C5 contracts. 62 required/9 deferred tasks; the remaining nine-case scope and 116 active AC were preserved |
 | 1.3 | 2026-09-10 | Translated the backlog and supporting planning documents into English and added a line-preserving English reading edition of the source specification. Scope, IDs, dependencies, priorities and acceptance obligations are unchanged. The user explicitly authorized integration and push to main |
+| 1.4 | 2026-09-10 | Organized three activities into two product channels. Main-product/hackathon changes use main → HappySnowman → helveticlens.ch; Monitoring v2 uses codex/HappyDucky02/monitoring-v2 → HappyDucky02 → monitoring.helveticlens.ch. Main retains a planning snapshot while this branch owns the active backlog. Support is parked; the original 71 task definitions remain unchanged |
+| 1.5 | 2026-09-10 | Added MV2-072 for the user-selected dedicated Monitoring branch, Windows host and hostname. 63 required/9 deferred tasks; original product task details and Pollen Watch order preserved |

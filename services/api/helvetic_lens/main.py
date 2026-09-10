@@ -1088,7 +1088,12 @@ def create_app(
         except (OSError, RedisError, SQLAlchemyError):
             pass
         status = 200 if all(checks.values()) else 503
-        return JSONResponse({"status": "ready" if status == 200 else "unavailable", "checks": checks}, status)
+        return JSONResponse({
+            "status": "ready" if status == 200 else "unavailable",
+            "checks": checks,
+            "instance": settings.deployment_instance,
+            "release": settings.deployment_release,
+        }, status)
 
     @app.post("/api/preview")
     async def preview(data: PreviewInput):

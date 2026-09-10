@@ -2,6 +2,8 @@ name: helvetic-lens
 
 x-api-environment: &api-environment
   APP_ENVIRONMENT: production
+  HELVETIC_LENS_INSTANCE: ${HELVETIC_LENS_INSTANCE:-main}
+  HELVETIC_LENS_RELEASE: ${HELVETIC_LENS_RELEASE:?Set an immutable release identifier}
   ALLOW_ANONYMOUS_DEV: "false"
   SESSION_COOKIE_SECURE: "true"
   SESSION_TTL_DAYS: ${SESSION_TTL_DAYS:-14}

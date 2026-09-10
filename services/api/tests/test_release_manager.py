@@ -36,6 +36,7 @@ def test_release_update_preserves_secrets_and_file_permissions(tmp_path):
         encoding="utf-8",
     )
     environment.chmod(0o600)
+    original_mode = environment.stat().st_mode & 0o777
 
     release_manager.atomic_update_release(environment, "git-0123456789ab")
 
@@ -43,7 +44,9 @@ def test_release_update_preserves_secrets_and_file_permissions(tmp_path):
         "HELVETIC_LENS_RELEASE=git-0123456789ab\n"
         "AUTH_SMTP_PASSWORD=do-not-change\n"
     )
-    assert environment.stat().st_mode & 0o777 == 0o600
+    # Windows file modes do not represent DACLs; the installer protects the
+    # containing directory. Preserve the observable mode on both platforms.
+    assert environment.stat().st_mode & 0o777 == original_mode
 
 
 def test_backup_id_comes_from_the_successful_container_output():
@@ -74,7 +77,7 @@ def test_quality_gate_builds_test_tools_without_mounting_host_git_or_production_
 
     build, execution, cleanup = calls
     context = ROOT / "deploy/api-quality"
-    assert build[0][:3] == ["/usr/bin/docker", "build", "--tag"]
+    assert build[0][:3] == [manager._executable("docker"), "build", "--tag"]
     assert build[0][-1] == str(context)
     image = build[0][3]
     assert image.startswith("helvetic-lens-api-quality:")
@@ -85,7 +88,7 @@ def test_quality_gate_builds_test_tools_without_mounting_host_git_or_production_
     assert execution[1]["timeout"] == release_manager.API_TEST_TIMEOUT_DEFAULT
     assert "PYTHONUNBUFFERED=1" in execution[0] and "--init" in execution[0]
     name = execution[0][execution[0].index("--name") + 1]
-    assert cleanup[0] == ["/usr/bin/docker", "rm", "--force", name]
+    assert cleanup[0] == [manager._executable("docker"), "rm", "--force", name]
     assert cleanup[1] == {"step": "api_tests_cleanup", "check": False, "timeout": 60}
     assert "--no-install-recommends git" in (context / "Dockerfile").read_text()
 
@@ -132,7 +135,7 @@ def test_quality_gate_cleans_only_its_named_container_on_every_exit(tmp_path, ou
     launched, cleanup = calls[1:]
     name = launched[launched.index("--name") + 1]
     assert name.startswith("helvetic-api-qa-")
-    assert cleanup == ["/usr/bin/docker", "rm", "--force", name]
+    assert cleanup == [manager._executable("docker"), "rm", "--force", name]
     assert not any("prune" in row or "down" in row for row in calls)
 
 

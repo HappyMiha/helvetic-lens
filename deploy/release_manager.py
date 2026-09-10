@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import fcntl
 import hashlib
 import json
 import os
@@ -23,6 +22,11 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+if os.name == "nt":
+    import msvcrt
+else:
+    import fcntl
+
 SCHEMA_VERSION = 1
 DEFAULT_BASE_DIR = Path("/srv/helvetic-lens")
 DEFAULT_REPOSITORY = "https://github.com/HappyMiha/helvetic-lens.git"
@@ -38,6 +42,92 @@ WRITER_SERVICES = (
 )
 SECRET_KEY_PARTS = ("PASSWORD", "SECRET", "TOKEN", "CREDENTIAL", "API_KEY")
 API_TEST_TIMEOUT_DEFAULT = 7200
+CONFIG_REQUIRED = {
+    "version", "instance", "branch", "compose_project", "docker_context", "base_dir",
+    "source_repo", "control_dir", "releases_dir", "state_dir", "env_file", "tunnel_dir",
+    "expected_repository", "public_url", "self_update",
+}
+CONFIG_OPTIONAL = {"qa_cpus", "qa_memory", "qa_user", "api_test_timeout_seconds"}
+
+
+def load_config(path: Path) -> dict[str, Any]:
+    """A deployment selector, never an alternate store for application secrets."""
+    value = json.loads(path.read_text(encoding="utf-8-sig"))
+    if not isinstance(value, dict) or set(value) - CONFIG_REQUIRED - CONFIG_OPTIONAL:
+        raise ValueError("Deployment configuration contains unsupported fields.")
+    if CONFIG_REQUIRED - set(value):
+        raise ValueError("Deployment configuration is missing required selector fields.")
+    if type(value["version"]) is not int or value["version"] != 1:
+        raise ValueError("Unsupported deployment configuration version.")
+    if value["self_update"] is not False:
+        raise ValueError("Configured instances require a separately pinned controller (self_update=false).")
+    for name in CONFIG_REQUIRED - {"version", "self_update"}:
+        if not isinstance(value[name], str) or not value[name] or any(ord(c) < 32 for c in value[name]):
+            raise ValueError(f"Invalid deployment selector: {name}.")
+    for name in ("instance", "compose_project", "docker_context"):
+        if not re.fullmatch(r"[a-z0-9][a-z0-9_-]{1,62}", value[name]):
+            raise ValueError(f"Invalid deployment selector: {name}.")
+    if value["compose_project"] == "helvetic-lens" or value["branch"] == "main":
+        raise ValueError("An independent instance cannot target the main project or main branch.")
+    branch = value["branch"]
+    if (not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]*", branch)
+            or any(part in branch for part in ("..", "//"))
+            or any(part.startswith(".") or part.endswith((".", ".lock")) or not part for part in branch.split("/"))):
+        raise ValueError("Invalid application branch.")
+    from urllib.parse import urlsplit
+    for name in ("expected_repository", "public_url"):
+        url = urlsplit(value[name])
+        if url.scheme != "https" or not url.hostname or url.username or url.password or url.query or url.fragment:
+            raise ValueError(f"Invalid HTTPS selector: {name}.")
+        if name == "public_url" and (url.path not in {"", "/"} or url.port not in {None, 443}):
+            raise ValueError("public_url must be an HTTPS origin.")
+    base = Path(value["base_dir"]).resolve()
+    if not Path(value["base_dir"]).is_absolute() or base == Path(base.anchor):
+        raise ValueError("base_dir must be an absolute dedicated directory.")
+    paths = []
+    for name in ("source_repo", "control_dir", "releases_dir", "state_dir", "env_file", "tunnel_dir"):
+        original = Path(value[name])
+        resolved = original.resolve()
+        if not original.is_absolute() or resolved == base or not resolved.is_relative_to(base):
+            raise ValueError(f"{name} must be inside the dedicated base_dir.")
+        paths.append((name, resolved))
+    for index, (name, current) in enumerate(paths):
+        for other_name, other in paths[index + 1:]:
+            if current.is_relative_to(other) or other.is_relative_to(current):
+                raise ValueError(f"Instance paths must not overlap: {name}/{other_name}.")
+    if not re.fullmatch(r"(?:[1-9][0-9]?)(?:\.[0-9]+)?", str(value.get("qa_cpus", "2"))):
+        raise ValueError("qa_cpus must be a positive bounded CPU count.")
+    if not re.fullmatch(r"[1-9][0-9]{0,2}[mg]", str(value.get("qa_memory", "4g"))):
+        raise ValueError("qa_memory must be an explicit Docker memory budget.")
+    if not re.fullmatch(r"[1-9][0-9]*:[1-9][0-9]*", str(value.get("qa_user", "1000:1000"))):
+        raise ValueError("qa_user must specify a non-root Linux UID:GID.")
+    timeout = value.get("api_test_timeout_seconds", API_TEST_TIMEOUT_DEFAULT)
+    if type(timeout) is not int or not 300 <= timeout <= 21600:
+        raise ValueError("api_test_timeout_seconds must be between 300 and 21600.")
+    return value
+
+
+@contextmanager
+def deployment_lock(path: Path) -> Iterator[bool]:
+    """Never unlink this file: the installer and runner lock the same first byte."""
+    with path.open("a+b") as stream:
+        try:
+            if os.name == "nt":
+                stream.seek(0)
+                msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except (BlockingIOError, PermissionError):
+            yield False
+            return
+        try:
+            yield True
+        finally:
+            if os.name == "nt":
+                stream.seek(0)
+                msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                fcntl.flock(stream, fcntl.LOCK_UN)
 
 
 def api_test_timeout() -> int:
@@ -71,7 +161,7 @@ def parse_iso(value: str | None) -> datetime | None:
 
 def read_env(path: Path) -> dict[str, str]:
     values: dict[str, str] = {}
-    for raw_line in path.read_text(encoding="utf-8").splitlines():
+    for raw_line in path.read_text(encoding="utf-8-sig").splitlines():
         line = raw_line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
@@ -99,7 +189,7 @@ def atomic_json(path: Path, value: Any) -> None:
 
 
 def atomic_update_release(path: Path, release: str) -> None:
-    lines = path.read_text(encoding="utf-8").splitlines()
+    lines = path.read_text(encoding="utf-8-sig").splitlines()
     updated = False
     output: list[str] = []
     for line in lines:
@@ -124,7 +214,12 @@ class DeploymentError(RuntimeError):
 
 
 class ReleaseManager:
-    def __init__(self) -> None:
+    def __init__(self, config_path: Path | None = None, *, bootstrap: bool = False) -> None:
+        config = load_config(config_path) if config_path else {}
+        self.instance = config.get("instance")
+        self.bootstrap = bootstrap
+        if bootstrap and not config:
+            raise ValueError("Bootstrap requires an explicit independent instance configuration.")
         self.base_dir = Path(os.getenv("HELVETIC_LENS_BASE_DIR", DEFAULT_BASE_DIR))
         self.source_repo = Path(
             os.getenv("HELVETIC_LENS_SOURCE_REPO", self.base_dir / "helvetic-lens")
@@ -152,6 +247,20 @@ class ReleaseManager:
         self.poll_seconds = int(os.getenv("HELVETIC_LENS_DEPLOY_POLL_SECONDS", "120"))
         self.retry_seconds = int(os.getenv("HELVETIC_LENS_DEPLOY_RETRY_SECONDS", "900"))
         self.history_limit = int(os.getenv("HELVETIC_LENS_DEPLOY_HISTORY_LIMIT", "30"))
+        if config:
+            for name in ("base_dir", "source_repo", "control_dir", "releases_dir", "state_dir", "env_file", "tunnel_dir"):
+                setattr(self, name, Path(config[name]).resolve())
+            self.remote = "origin"
+            self.branch = config["branch"]
+            self.expected_repository = config["expected_repository"]
+        self.compose_project = config.get("compose_project", "helvetic-lens")
+        self.docker_context = config.get("docker_context")
+        self.public_url = config.get("public_url")
+        self.self_update = config.get("self_update", True)
+        self.qa_cpus = str(config.get("qa_cpus", "2"))
+        self.qa_memory = str(config.get("qa_memory", "4g"))
+        self.qa_user = str(config.get("qa_user", "1000:1000")) if os.name == "nt" or config else f"{os.getuid()}:{os.getgid()}"
+        self.api_timeout = config.get("api_test_timeout_seconds", api_test_timeout())
         self.status_path = self.state_dir / "status.json"
         self.history_path = self.state_dir / "history.json"
         self.deployed_path = self.control_dir / "deployed.json"
@@ -161,12 +270,35 @@ class ReleaseManager:
         self.run_record: dict[str, Any] | None = None
         self.status = self._load_status()
         self.env_values = read_env(self.env_file)
+        if config:
+            if any(key.startswith(("COMPOSE_", "DOCKER_")) for key in self.env_values):
+                raise ValueError("Application env_file must not contain reserved COMPOSE_ or DOCKER_ selectors.")
+            if self.env_values.get("PUBLIC_BASE_URL", "").rstrip("/") != self.public_url.rstrip("/"):
+                raise ValueError("Instance public_url and PUBLIC_BASE_URL must match.")
+            backup = Path(self.env_values.get("HELVETIC_LENS_BACKUP_DIR", ""))
+            if (not backup.is_absolute() or backup.resolve() == Path(backup.anchor)
+                    or backup.resolve() == self.base_dir
+                    or any(backup.resolve().is_relative_to(p) or p.is_relative_to(backup.resolve())
+                           for p in (self.source_repo, self.control_dir, self.releases_dir, self.state_dir, self.env_file, self.tunnel_dir))):
+                raise ValueError("The instance requires an absolute separate backup directory.")
         self.secrets = [
             value
             for key, value in self.env_values.items()
             if value and len(value) >= 4 and any(part in key.upper() for part in SECRET_KEY_PARTS)
         ]
         self.log_path: Path | None = None
+
+    def _executable(self, name: str) -> str:
+        if name == "python3":
+            return sys.executable if os.name == "nt" else "/usr/bin/python3"
+        return (shutil.which(name) or name) if os.name == "nt" else f"/usr/bin/{name}"
+
+    def _docker(self, *arguments: str) -> list[str]:
+        prefix = [self._executable("docker")]
+        context = getattr(self, "docker_context", None)
+        if context:
+            prefix.extend(["--context", context])
+        return [*prefix, *arguments]
 
     def _load_json(self, path: Path, fallback: Any) -> Any:
         try:
@@ -212,17 +344,23 @@ class ReleaseManager:
         timeout: int = 3600,
     ) -> subprocess.CompletedProcess[str]:
         self._log("$ " + " ".join(command))
+        process_env = dict(os.environ if env is None else env)
+        process_env.update(GIT_TERMINAL_PROMPT="0", GCM_INTERACTIVE="never")
+        if getattr(self, "instance", None):
+            for name in ("DOCKER_HOST", "DOCKER_CONTEXT", "DOCKER_TLS_VERIFY", "DOCKER_CERT_PATH"):
+                process_env.pop(name, None)
         try:
             completed = subprocess.run(
                 command,
                 cwd=cwd,
-                env=env,
+                env=process_env,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
                 errors="replace",
                 timeout=timeout,
                 check=False,
+                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
             )
         except subprocess.TimeoutExpired as exc:
             partial = exc.output or ""
@@ -250,7 +388,7 @@ class ReleaseManager:
 
     def _git(self, *arguments: str, step: str = "git") -> str:
         completed = self._run(
-            ["/usr/bin/git", "-C", str(self.source_repo), *arguments],
+            [self._executable("git"), "-C", str(self.source_repo), *arguments],
             step=step,
         )
         return completed.stdout.strip()
@@ -259,7 +397,7 @@ class ReleaseManager:
         if not revision:
             return None
         completed = self._run(
-            ["/usr/bin/git", "-C", str(self.source_repo), "rev-parse", f"{revision}^{{commit}}"],
+            [self._executable("git"), "-C", str(self.source_repo), "rev-parse", f"{revision}^{{commit}}"],
             step="resolve_release",
             check=False,
         )
@@ -270,7 +408,7 @@ class ReleaseManager:
         if not sha:
             return None
         completed = self._run(
-            ["/usr/bin/git", "-C", str(self.source_repo), "show", "-s", "--format=%s", sha],
+            [self._executable("git"), "-C", str(self.source_repo), "show", "-s", "--format=%s", sha],
             step="commit_summary",
             check=False,
         )
@@ -278,6 +416,16 @@ class ReleaseManager:
 
     def _bootstrap_deployed(self) -> dict[str, Any]:
         deployed = self._load_deployed()
+        if getattr(self, "instance", None):
+            if deployed.get("sha"):
+                if self.bootstrap:
+                    raise DeploymentError("bootstrap", "This instance already has a deployed release; use --poll.")
+                if not re.fullmatch(r"[0-9a-f]{40}", str(deployed["sha"])):
+                    raise DeploymentError("bootstrap", "The instance deployment record has an invalid SHA.")
+                return deployed
+            if not self.bootstrap:
+                raise DeploymentError("bootstrap", "No verified release exists for this instance; use explicit --bootstrap.")
+            return {}
         if deployed.get("sha"):
             return deployed
         current_release = self.env_values.get("HELVETIC_LENS_RELEASE")
@@ -413,18 +561,26 @@ class ReleaseManager:
         destination = self.releases_dir / sha
         if destination.exists():
             completed = self._run(
-                ["/usr/bin/git", "-C", str(destination), "rev-parse", "HEAD"],
+                [self._executable("git"), "-C", str(destination), "rev-parse", "HEAD"],
                 step="checkout",
                 check=False,
             )
             if completed.returncode == 0 and completed.stdout.strip() == sha:
+                if getattr(self, "instance", None):
+                    changes = self._run(
+                        [self._executable("git"), "-C", str(destination), "status", "--porcelain", "--untracked-files=all", "--ignored"],
+                        step="checkout",
+                    )
+                    if changes.stdout.strip():
+                        raise DeploymentError("checkout", "The immutable release directory has local changes or extra files.")
                 self._link_runtime_configuration(destination)
                 return destination
             raise DeploymentError("checkout", f"Existing release directory does not match {sha[:12]}.")
         self.releases_dir.mkdir(parents=True, exist_ok=True, mode=0o755)
         self._run(
             [
-                "/usr/bin/git",
+                self._executable("git"),
+                "-c", "core.autocrlf=false",
                 "-C",
                 str(self.source_repo),
                 "worktree",
@@ -441,6 +597,13 @@ class ReleaseManager:
     def _link_runtime_configuration(self, release_dir: Path) -> None:
         if not self.tunnel_dir.is_dir():
             raise DeploymentError("checkout", "Cloudflare Tunnel configuration directory is missing.")
+        if getattr(self, "instance", None):
+            # Configured instances mount the protected directory directly. No
+            # privileged Windows symlink or credential path in build contexts.
+            token = self.tunnel_dir / "token"
+            if not token.is_file() or token.stat().st_size == 0:
+                raise DeploymentError("checkout", "The dedicated tunnel token file is missing or empty.")
+            return
         link = release_dir / ".cloudflared"
         if link.is_symlink() and link.resolve() == self.tunnel_dir.resolve():
             return
@@ -450,6 +613,11 @@ class ReleaseManager:
 
     def _compose_environment(self, release: str) -> dict[str, str]:
         environment = os.environ.copy()
+        if getattr(self, "instance", None):
+            environment = {key: value for key, value in environment.items() if not key.startswith("COMPOSE_")}
+            environment.update(self.env_values)
+            environment["HELVETIC_LENS_INSTANCE"] = self.instance
+            environment["HELVETIC_LENS_TUNNEL_DIR"] = str(self.tunnel_dir)
         environment["HELVETIC_LENS_RELEASE"] = release
         environment["HELVETIC_LENS_CONFIG_FILE"] = str(self.env_file)
         environment["HELVETIC_LENS_DEPLOY_STATE_DIR"] = str(self.state_dir)
@@ -457,10 +625,10 @@ class ReleaseManager:
 
     def _compose(self, release_dir: Path, release: str, *arguments: str) -> list[str]:
         return [
-            "/usr/bin/docker",
+            *self._docker(),
             "compose",
             "--project-name",
-            "helvetic-lens",
+            getattr(self, "compose_project", "helvetic-lens"),
             "--project-directory",
             str(release_dir),
             "--env-file",
@@ -469,6 +637,7 @@ class ReleaseManager:
             str(release_dir / "compose.production.yaml"),
             "-f",
             str(release_dir / "compose.cloudflare-tunnel.yaml"),
+            *(["-f", str(release_dir / "compose.monitoring.yaml")] if getattr(self, "instance", None) else []),
             *arguments,
         ]
 
@@ -494,7 +663,7 @@ class ReleaseManager:
         revision = f"{previous_sha}..{target_sha}" if previous_sha else target_sha
         completed = self._run(
             [
-                "/usr/bin/git",
+                self._executable("git"),
                 "-C",
                 str(self.source_repo),
                 "log",
@@ -521,22 +690,22 @@ class ReleaseManager:
         return changes
 
     def _run_api_quality_gate(self, release_dir: Path, command: str, step: str) -> None:
-        timeout = api_test_timeout() if step == "api_tests" else 1800
+        timeout = getattr(self, "api_timeout", api_test_timeout()) if step == "api_tests" else 1800
         self.cache_dir.mkdir(parents=True, exist_ok=True, mode=0o755)
         context = release_dir / "deploy" / "api-quality"
         # Build from a tiny, secret-free context, and cache by the reviewed recipe.
         recipe_hash = hashlib.sha256((context / "Dockerfile").read_bytes()).hexdigest()[:16]
         image = f"helvetic-lens-api-quality:{recipe_hash}"
         self._run(
-            ["/usr/bin/docker", "build", "--tag", image, str(context)],
+            self._docker("build", "--tag", image, str(context)),
             step=step,
             timeout=600,
         )
         container = f"helvetic-api-qa-{uuid.uuid4().hex}"
         run_command = [
-            "/usr/bin/docker", "run", "--rm", "--init", "--name", container,
+            *self._docker(), "run", "--rm", "--init", "--name", container,
             "--label", "helvetic-lens.purpose=deployment-quality-gate",
-            "--user", f"{os.getuid()}:{os.getgid()}",
+            "--user", getattr(self, "qa_user", "1000:1000" if os.name == "nt" else f"{os.getuid()}:{os.getgid()}"),
             "-e", "HOME=/tmp",
             "-e", "UV_CACHE_DIR=/cache",
             "-e", "UV_PROJECT_ENVIRONMENT=/tmp/helvetic-lens-venv",
@@ -549,6 +718,10 @@ class ReleaseManager:
             "-v", f"{self.cache_dir}:/cache",
             "-w", "/workspace", image, "uv", "run", "--frozen", *command.split(),
         ]
+        if getattr(self, "instance", None):
+            insertion = run_command.index("--user")
+            run_command[insertion:insertion] = ["--cpus", self.qa_cpus, "--memory", self.qa_memory,
+                                              "--memory-swap", self.qa_memory, "--pids-limit", "512"]
         failure = None
         try:
             self._run(run_command, step=step, timeout=timeout)
@@ -559,7 +732,7 @@ class ReleaseManager:
             # A timeout kills the Docker CLI, not necessarily its container.
             # This UUID identifies only this gate; never prune the host or volumes.
             try:
-                cleanup = self._run(["/usr/bin/docker", "rm", "--force", container],
+                cleanup = self._run(self._docker("rm", "--force", container),
                     step=f"{step}_cleanup", check=False, timeout=60)
                 if cleanup.returncode and "No such container" not in (cleanup.stdout or ""):
                     raise DeploymentError(step, "Could not confirm removal of the quality-gate container.")
@@ -586,6 +759,11 @@ class ReleaseManager:
                     ready = json.loads(response.read(64 * 1024))
                     if response.status != 200 or ready.get("status") != "ready":
                         raise ValueError(f"readiness returned {response.status}: {ready}")
+                    if getattr(self, "instance", None) and (
+                        ready.get("instance") != self.instance
+                        or ready.get("release") != getattr(self, "health_release", None)
+                    ):
+                        raise ValueError("The public endpoint is not the expected instance and release.")
                 login_request = urllib.request.Request(
                     f"{public_base}/login",
                     headers={"User-Agent": "HelveticLens-ReleaseManager/1.0", "Accept": "text/html"},
@@ -608,9 +786,9 @@ class ReleaseManager:
         )
         completed = self._run(
             [
-                "/usr/bin/docker",
+                *self._docker(),
                 "exec",
-                "helvetic-lens-model-manager-1",
+                f"{getattr(self, 'compose_project', 'helvetic-lens')}-model-manager-1",
                 "python3",
                 "-c",
                 code,
@@ -642,9 +820,9 @@ class ReleaseManager:
         )
         self._run(
             [
-                "/usr/bin/docker",
+                *self._docker(),
                 "exec",
-                "helvetic-lens-model-manager-1",
+                f"{getattr(self, 'compose_project', 'helvetic-lens')}-model-manager-1",
                 "python3",
                 "-c",
                 code,
@@ -682,6 +860,7 @@ class ReleaseManager:
             release,
             "stop",
             *WRITER_SERVICES,
+            *(["migrate"] if getattr(self, "instance", None) else []),
             step="quiesce",
             check=check,
             timeout=300,
@@ -700,7 +879,7 @@ class ReleaseManager:
         rollback: dict[str, Any] = {"status": "running", "started_at": timestamp()}
         errors: list[str] = []
         try:
-            self._quiesce(target_dir, target_release, check=False)
+            self._quiesce(target_dir, target_release, check=bool(getattr(self, "instance", None)))
             if target_started and backup_id:
                 environment = self._compose_environment(previous_release)
                 environment["BACKUP_ID"] = backup_id
@@ -738,8 +917,11 @@ class ReleaseManager:
             )
             if active_model_id:
                 self._restore_model_runtime(active_model_id)
+            self.health_release = previous_release
             self._public_health()
-        except DeploymentError as exc:
+            if getattr(self, "instance", None):
+                atomic_update_release(self.env_file, previous_release)
+        except (DeploymentError, OSError, ValueError) as exc:
             errors.append(str(exc))
         rollback["finished_at"] = timestamp()
         rollback["status"] = "succeeded" if not errors else "failed"
@@ -749,6 +931,8 @@ class ReleaseManager:
         return rollback
 
     def _install_manager_update(self, release_dir: Path) -> None:
+        if not getattr(self, "self_update", True):
+            return
         source = release_dir / "deploy" / "release_manager.py"
         destination = self.control_dir / "release_manager.py"
         if not source.is_file():
@@ -757,6 +941,41 @@ class ReleaseManager:
         shutil.copyfile(source, temporary)
         temporary.chmod(0o755)
         temporary.replace(destination)
+
+    def _assert_empty_instance(self) -> None:
+        """First installation must not adopt an unexplained existing stack."""
+        project = self.compose_project
+        for resource, arguments in (
+            ("containers", ["ps", "-aq", "--filter", f"label=com.docker.compose.project={project}"]),
+            ("volumes", ["volume", "ls", "-q", "--filter", f"label=com.docker.compose.project={project}"]),
+            ("networks", ["network", "ls", "-q", "--filter", f"label=com.docker.compose.project={project}"]),
+        ):
+            result = self._run(self._docker(*arguments), step="bootstrap", timeout=60)
+            if result.stdout.strip():
+                raise DeploymentError("bootstrap", f"Instance {resource} already exist; inspect and recover explicitly.")
+        # Also catch unlabelled volumes that Compose could otherwise adopt.
+        volumes = self._run(self._docker("volume", "ls", "--format", "{{.Name}}"), step="bootstrap", timeout=60)
+        if any(name.startswith(project + "_") for name in volumes.stdout.splitlines()):
+            raise DeploymentError("bootstrap", "Instance volume names already exist; adoption is prohibited.")
+        networks = self._run(self._docker("network", "ls", "--format", "{{.Name}}"), step="bootstrap", timeout=60)
+        if any(name.startswith(project + "_") for name in networks.stdout.splitlines()):
+            raise DeploymentError("bootstrap", "Instance network names already exist; adoption is prohibited.")
+        containers = self._run(self._docker("ps", "-a", "--format", "{{.Names}}"), step="bootstrap", timeout=60)
+        if any(name.startswith(project + "-") for name in containers.stdout.splitlines()):
+            raise DeploymentError("bootstrap", "Instance container names already exist; adoption is prohibited.")
+        backup = Path(self.env_values["HELVETIC_LENS_BACKUP_DIR"])
+        if backup.exists() and any(backup.iterdir()):
+            raise DeploymentError("bootstrap", "The first-install backup directory is not empty.")
+
+    def _stop_failed_bootstrap(self, target_dir: Path, release: str) -> dict[str, Any]:
+        recovery = {"status": "not_required", "reason": "No previous release exists for this first installation.",
+                    "backup_restored": False, "candidate_stopped": False}
+        try:
+            self._compose_run(target_dir, release, "stop", step="bootstrap_stop", timeout=300)
+            recovery["candidate_stopped"] = True
+        except DeploymentError as exc:
+            recovery.update(status="failed", error=self._redact(str(exc)))
+        return recovery
 
     def _record_poll_failure(self, error: Exception) -> None:
         checked_at = timestamp()
@@ -795,20 +1014,15 @@ class ReleaseManager:
         self.state_dir.mkdir(parents=True, exist_ok=True, mode=0o755)
         self.log_dir.mkdir(parents=True, exist_ok=True, mode=0o750)
         self.cache_dir.mkdir(parents=True, exist_ok=True, mode=0o755)
-        lock_stream = self.lock_path.open("a+")
-        try:
-            fcntl.flock(lock_stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError:
-            return
-
-        try:
-            self._poll_locked()
-        except (DeploymentError, OSError, ValueError, json.JSONDecodeError) as exc:
-            if self.run_record is None:
-                self._record_poll_failure(exc)
-            raise
-        finally:
-            lock_stream.close()
+        with deployment_lock(self.lock_path) as acquired:
+            if not acquired:
+                return
+            try:
+                self._poll_locked()
+            except (DeploymentError, OSError, ValueError, json.JSONDecodeError) as exc:
+                if self.run_record is None:
+                    self._record_poll_failure(exc)
+                raise
 
     def _poll_locked(self) -> None:
         # The host lock is held, so a saved unfinished run belongs to a previous
@@ -830,7 +1044,8 @@ class ReleaseManager:
                 "verify_remote",
                 f"Refusing unexpected Git remote {normalize_remote(repository)}.",
             )
-        self._git("fetch", "--prune", self.remote, self.branch, step="fetch")
+        self._git("fetch", "--prune", self.remote,
+                  f"refs/heads/{self.branch}:refs/remotes/{self.remote}/{self.branch}", step="fetch")
         target_sha = self._git(
             "rev-parse", f"refs/remotes/{self.remote}/{self.branch}^{{commit}}", step="fetch"
         )
@@ -838,6 +1053,9 @@ class ReleaseManager:
             raise DeploymentError("fetch", "Remote branch did not resolve to a full commit SHA.")
 
         deployed = self._bootstrap_deployed()
+        first_install = bool(getattr(self, "instance", None) and getattr(self, "bootstrap", False))
+        if first_install:
+            self._assert_empty_instance()
         checked_at = timestamp()
         self.status = self._base_status(deployed)
         self.status["remote"] = {
@@ -871,7 +1089,7 @@ class ReleaseManager:
         if previous_sha:
             ancestry = self._run(
                 [
-                    "/usr/bin/git",
+                    self._executable("git"),
                     "-C",
                     str(self.source_repo),
                     "merge-base",
@@ -885,10 +1103,10 @@ class ReleaseManager:
             if ancestry.returncode != 0:
                 raise DeploymentError(
                     "verify_history",
-                    "Remote main is not a fast-forward from the deployed commit; manual review is required.",
+                    "Remote branch is not a fast-forward from the deployed commit; manual review is required.",
                 )
 
-        release = f"git-{target_sha[:12]}"
+        release = f"git-{target_sha if getattr(self, 'instance', None) else target_sha[:12]}"
         run_started = now()
         self.log_path = self.log_dir / f"{run_started.strftime('%Y%m%dT%H%M%SZ')}-{target_sha[:12]}.log"
         self.log_path.touch(mode=0o640)
@@ -939,13 +1157,13 @@ class ReleaseManager:
                 target_dir = self._ensure_release(target_sha)
                 if previous_sha:
                     previous_dir = self._ensure_release(previous_sha)
-                else:
+                elif not first_install:
                     previous_dir = Path(deployed.get("release_dir") or self.source_repo)
 
             with self.step("validate_configuration"):
                 self._run(
                     [
-                        "/usr/bin/python3",
+                        self._executable("python3"),
                         str(target_dir / "scripts" / "validate_production_env.py"),
                         "--env-file",
                         str(self.env_file),
@@ -987,29 +1205,33 @@ class ReleaseManager:
                     timeout=3600,
                 )
 
-            with self.step("capture_model_runtime"):
-                active_model_id = self._active_model_id(
-                    self._model_deployment("capture_model_runtime")
-                )
-                self.run_record["model_id"] = active_model_id
+            if first_install:
+                with self.step("bootstrap_guard"):
+                    self._assert_empty_instance()
+            else:
+                with self.step("capture_model_runtime"):
+                    active_model_id = self._active_model_id(
+                        self._model_deployment("capture_model_runtime")
+                    )
+                    self.run_record["model_id"] = active_model_id
 
-            with self.step("quiesce_writers"):
-                quiesced = True
-                self._quiesce(previous_dir, previous_release)
+                with self.step("quiesce_writers"):
+                    quiesced = True
+                    self._quiesce(previous_dir, previous_release)
 
-            with self.step("pre_deploy_backup"):
-                backup = self._compose_run(
-                    previous_dir,
-                    previous_release,
-                    "run",
-                    "--rm",
-                    "backup",
-                    "once",
-                    step="pre_deploy_backup",
-                    timeout=1800,
-                )
-                backup_id = self._backup_id(backup.stdout)
-                self.run_record["backup_id"] = backup_id
+                with self.step("pre_deploy_backup"):
+                    backup = self._compose_run(
+                        previous_dir,
+                        previous_release,
+                        "run",
+                        "--rm",
+                        "backup",
+                        "once",
+                        step="pre_deploy_backup",
+                        timeout=1800,
+                    )
+                    backup_id = self._backup_id(backup.stdout)
+                    self.run_record["backup_id"] = backup_id
 
             with self.step("start_release"):
                 target_started = True
@@ -1030,7 +1252,17 @@ class ReleaseManager:
                 with self.step("restore_model_runtime"):
                     self._restore_model_runtime(active_model_id)
 
+            if first_install:
+                with self.step("initial_backup"):
+                    self._quiesce(target_dir, release)
+                    backup = self._compose_run(target_dir, release, "run", "--rm", "backup", "once",
+                                               step="initial_backup", timeout=1800)
+                    self.run_record["backup_id"] = self._backup_id(backup.stdout)
+                    self._compose_run(target_dir, release, "up", "-d", "--wait", "--wait-timeout", "300",
+                                      step="initial_start", timeout=900)
+
             with self.step("public_health_check"):
+                self.health_release = release
                 self._public_health()
 
             with self.step("publish_release"):
@@ -1059,6 +1291,8 @@ class ReleaseManager:
                     target_started,
                     active_model_id,
                 )
+            elif first_install and target_started and target_dir:
+                self.run_record["rollback"] = self._stop_failed_bootstrap(target_dir, release)
             self.run_record["status"] = (
                 "rollback_failed" if self.run_record["rollback"].get("status") == "failed" else "failed"
             )
@@ -1087,15 +1321,20 @@ class ReleaseManager:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--poll", action="store_true", help="Check Git and deploy a new main commit.")
-    parser.add_argument("--status", action="store_true", help="Print the current sanitized status JSON.")
+    parser.add_argument("--config", type=Path, help="Protected JSON instance selector; application secrets remain in env_file.")
+    modes = parser.add_mutually_exclusive_group(required=True)
+    modes.add_argument("--poll", action="store_true", help="Check the configured Git branch and deploy a new commit.")
+    modes.add_argument("--status", action="store_true", help="Print the current sanitized status JSON.")
+    modes.add_argument("--bootstrap", action="store_true", help="Explicit first installation of an empty configured instance.")
     arguments = parser.parse_args()
-    manager = ReleaseManager()
+    try:
+        manager = ReleaseManager(arguments.config, bootstrap=arguments.bootstrap)
+    except (OSError, ValueError) as exc:
+        print(f"Invalid deployment configuration: {exc}", file=sys.stderr)
+        return 2
     if arguments.status:
         print(json.dumps(manager._load_status(), ensure_ascii=False, indent=2))
         return 0
-    if not arguments.poll:
-        parser.error("choose --poll or --status")
     try:
         manager.poll()
     except (DeploymentError, OSError, ValueError, json.JSONDecodeError) as exc:
