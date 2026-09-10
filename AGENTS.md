@@ -35,3 +35,11 @@ humans and Codex tasks on both computers; nested AGENTS.md instructions still ap
 
 Hooks are local safeguards and must be installed per clone. They are not a server
 security boundary. Keep them enabled; do not replace unrelated existing hooks.
+
+## Single active product backlog
+
+- Read `BACKLOG_MONITORING_V2.md` before selecting implementation work. It is the sole current backlog for all new features, fixes and acceptance work.
+- Use an MV2 task ID and its dependencies, source-readiness gates and acceptance criteria. Add any necessary new task or explicit subtask to that backlog before implementing it; do not silently expand scope.
+- `BACKLOG_V1_ARCHIVE.md` is historical, not a parallel queue. Remaining HL acceptance is inherited through `docs/monitoring-v2/LEGACY_DISPOSITION.md`; mapping an item does not complete it.
+- Preserve the frozen `v1.0.0-hackathon-mvp` tag, legacy evidence and compatibility. Planned v2 templates or source documentation must not be presented as implemented/live coverage.
+- Update task status and requirement evidence after verification. Source-access, native-language, independent evaluation, hardware and pilot gates require their stated evidence; mocks or local static checks do not satisfy them.

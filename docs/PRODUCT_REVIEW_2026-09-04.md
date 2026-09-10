@@ -146,7 +146,7 @@ flowchart LR
 3. **Читання й доступність:** HL-095/096, завершення HL-057/097, контрольоване покращення Marvin у HL-083–087. Це робота паралельно з core flow, не окремий косметичний реліз.
 4. **Пілот, а не голослівний launch:** HL-098, existing hardware/operations gates, HL-101 та фінальний HL-088. Canton/media expansion — тільки після перевірки потрібного coverage і шуму.
 
-Не додавати ще одну notification систему, історію чи matcher поруч із наявними. Повні task definitions, dependencies, deliverables і критерії — у [BACKLOG.md](../BACKLOG.md#product-quality-reset-2026-09-04). DONE у старому backlog означає історичне виконання scope, а не недоторканність реалізації чи доказ market fit.
+Не додавати ще одну notification систему, історію чи matcher поруч із наявними. Історичні task definitions, dependencies, deliverables і критерії — у [BACKLOG_V1_ARCHIVE.md](../BACKLOG_V1_ARCHIVE.md#product-quality-reset-2026-09-04); поточна розробка — за [Monitoring v2](../BACKLOG_MONITORING_V2.md). DONE у старому backlog означає історичне виконання scope, а не недоторканність реалізації чи доказ market fit.
 
 ## Орієнтири з першоджерел
 

@@ -15,7 +15,7 @@ The MVP must be a functional product with a narrow scope. Sources are configured
 
 > **Public-beta direction:** Local AI is the clean-install default; cloud providers are explicit optional adapters. The target remains one physical i7/32 GB/two-GTX-1080 server and one Compose deployment. Durable jobs, managed quantized models, account sessions, enforced organization roles, the normalized regulatory corpus, time-grouped registry, bounded official-source connectors, scheduled synchronization, cited fixed-budget analysis, and the organization impact inbox are implemented. The five-language UI and executable localization checks are implemented; native-language review, target-hardware acceptance, production operations rehearsal, and independent usefulness evaluation remain open. See the [architecture decision](docs/ARCHITECTURE.md), [current product review](docs/PRODUCT_REVIEW_2026-09-04.md), and acceptance gates in [BACKLOG.md](BACKLOG.md).
 
-Development tasks, priorities, dependencies, and acceptance criteria are tracked in [BACKLOG.md](BACKLOG.md).
+**Active development plan:** [Helvetic Lens Monitoring v2](BACKLOG_MONITORING_V2.md) is the single backlog for all further work. It plans ten personal/business monitoring templates over a shared change engine; these v2 capabilities are not yet implemented. See the [architecture](docs/monitoring-v2/ARCHITECTURE.md), [requirements traceability](docs/monitoring-v2/REQUIREMENTS_TRACEABILITY.md), [source feasibility](docs/monitoring-v2/SOURCE_FEASIBILITY.md), and [legacy continuation](docs/monitoring-v2/LEGACY_DISPOSITION.md). The frozen [Hackathon MVP release](https://github.com/HappyMiha/helvetic-lens/releases/tag/v1.0.0-hackathon-mvp) remains available. [BACKLOG.md](BACKLOG.md) is the entry point; the original backlog is preserved as [history](BACKLOG_V1_ARCHIVE.md).
 Organization interests use explicit, revisioned [monitoring topics](docs/MONITORING_TOPICS.md) with a manual path, optional local-AI draft, and deterministic preview before activation.
 
 ## Run locally
@@ -265,6 +265,8 @@ Fedlex / Parliament / Federal Supreme Court / Federal Criminal Court
 
 ## Build order
 
+The following checklist records the historical MVP/public-beta baseline, not the current execution order. All further work follows [Monitoring v2](BACKLOG_MONITORING_V2.md); unfinished HL obligations are carried through its [legacy mapping](docs/monitoring-v2/LEGACY_DISPOSITION.md).
+
 - [x] Implement persistent source and law management, including direct document URLs.
 - [x] Add real HTML/PDF fetching, extraction previews, and bounded document discovery.
 - [x] Add previous-version import, immutable snapshots, and explicit baseline selection.
@@ -284,6 +286,8 @@ Fedlex / Parliament / Federal Supreme Court / Federal Criminal Court
 
 ## Definition of done
 
+These are retained baseline requirements. Monitoring v2 adds the complete acceptance contract in [BACKLOG_MONITORING_V2.md](BACKLOG_MONITORING_V2.md).
+
 - A user can connect a supported website, discover documents, and track a law without editing code. Direct HTML/PDF law URLs also work independently of discovery.
 - Sources, tracked laws, version history, and scan results survive an application restart.
 - A user can import a previous version, choose it as a baseline, fetch the current source, and inspect exact text changes with an Apertus explanation and a cited follow-up answer.
@@ -298,13 +302,15 @@ Public-beta acceptance additionally requires local-only clean-install behavior, 
 
 ## Product boundaries
 
+These boundaries describe the existing MVP/public-beta baseline. The planned v2 scope, including source-specific access gates for business documents, is defined only in [BACKLOG_MONITORING_V2.md](BACKLOG_MONITORING_V2.md).
+
 - The application already supports multiple isolated organizations, shared monitoring within each organization, and personal account state. Its loopback development Compose file is not a public deployment; the production configuration still requires the target-host and human-review acceptance gates.
 - Two organization roles and a separate platform administrator are implemented. Enterprise SSO, SCIM, arbitrary custom roles, and compliance certification are outside this release.
 - It adds bounded official connectors and scheduled workers, not an exhaustive crawler or a claim of universal Swiss legal coverage.
 - It stores an evidence-backed relation graph as a data model, but a visual graph and pgvector wait for measured value.
 - Kubernetes, multi-host workers, database/broker high availability, OCR, login-gated ingestion, model training/fine-tuning, and automatic legal decisions remain outside the public-beta release.
 
-The complete task definitions, dependencies, acceptance gates, and explicitly deferred work live in [BACKLOG.md](BACKLOG.md).
+All current task definitions, dependencies, acceptance gates, and explicitly deferred work live in [BACKLOG_MONITORING_V2.md](BACKLOG_MONITORING_V2.md).
 
 ## Development on HappyDucky02 and HappySnowman
 

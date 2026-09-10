@@ -4,7 +4,7 @@
 
 **Decision date:** 3 September 2026
 
-**Related roadmap:** [HL-058–HL-064](../BACKLOG.md#hl-058)
+**Related historical roadmap:** [HL-058–HL-064](../BACKLOG_V1_ARCHIVE.md#hl-058). Current work follows [Monitoring v2](../BACKLOG_MONITORING_V2.md).
 **Deployment assumption:** local Apertus is the primary inference path
 
 Helvetic Lens should reduce the time between a new official version and a defensible review decision. The useful outcome is a short, evidence-backed explanation of material legal changes, their possible relevance to an organization, and a concrete review plan. The exact line/passage diff remains available as the audit layer.
