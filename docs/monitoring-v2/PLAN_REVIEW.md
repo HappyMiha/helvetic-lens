@@ -1,6 +1,6 @@
 # Monitoring v2 — plan review
 
-Date: 2026-09-10. Plan version: 1.3. This review covers **documentation and plan integrity**, not v2 implementation. Version 1.3 translates the plan into English without changing scope or delivery order.
+Date: 2026-09-10. Plan version: 1.4. This review covers **documentation and plan integrity**, not v2 implementation. Version 1.3 translated the plan into English; version 1.4 records the product-channel split without changing the published task definitions or delivery order.
 
 ## Completeness checks
 
@@ -36,8 +36,14 @@ Following the user's next decision, explicit MV2-069/070/071 tasks were added, M
 
 All 71 task IDs, dependencies, phases, priorities, responsible roles, sizes and acceptance-criterion counts were checked against version 1.2. All 126 source AC and 79 supplemental requirement text/location/owner cells remain unchanged. The English specification edition translates 61 prose lines while preserving all 4,534 physical line positions and every original AC. The original source hash and archived backlog content remain unchanged. Active planning and entry documents contain no remaining Cyrillic prose; the immutable source and historical multilingual regression-test input are retained as evidence. Document links/anchors, dependency cycles, C4 exclusions and the independent Pollen Watch delivery path passed validation.
 
+## Workstream organization (version 1.4)
+
+The project map organizes Support & Infrastructure, Legal Hackathon 2026 and Monitoring v2 into **three activities and two code/deployment channels**. Support remains parked by user instruction. Main-product changes, including hackathon connectors, use `main` and its existing automatic deployment on HappySnowman at helveticlens.ch. Monitoring v2 uses `codex/HappyDucky02/monitoring-v2` and an independent deployment on HappyDucky02 at monitoring.helveticlens.ch. The frozen MVP tag remains immutable while `main` continues to evolve.
+
+The active Monitoring v2 backlog belongs to the dedicated branch; its main-branch copy is clearly marked as a published snapshot. The 71-task index and detailed task blocks are unchanged from version 1.3. Additional deployment work must receive an explicit task on the active v2 branch before implementation. Separate deployment setup is in progress, but these documents do not establish public availability, data isolation or branch-triggered updates; those require operational evidence in the deployment task.
+
 ## Result boundaries
 
-No new connectors were written, accounts created, source terms accepted or paid licences purchased. Application code, migrations, production, the model and the MVP release tag were not changed. All task implementation evidence remains absent; sources have their own access and functional gates.
+The documentation changes reviewed here do not implement connectors, alter application code or migrations, or modify the MVP release tag. Deployment implementation and operational evidence are tracked separately on the v2 branch; this review is not evidence of a live site. The 71 published feature-task definitions gain no implementation evidence from routing changes; sources retain their own access and functional gates.
 
 KPI values, pilot samples and new performance targets are proposed criteria of this plan. They are neither the specification author's requirements nor measured results of the current product.

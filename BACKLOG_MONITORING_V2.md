@@ -1,8 +1,10 @@
-# Helvetic Lens Monitoring v2 — single development backlog
+# Helvetic Lens Monitoring v2 — published planning snapshot
 
-**Plan version:** 1.3 · **Date:** 10 September 2026 · **Code baseline:** `7109a2891f9c99e53572008cc7c1a86001792a57`
+**Plan version:** 1.4 · **Date:** 10 September 2026 · **Code baseline:** `7109a2891f9c99e53572008cc7c1a86001792a57`
 
 **Status:** implementation plan; no new v2 capability is claimed as implemented.
+
+> **Main-branch reference:** this file preserves the plan published before the product channels split. The [active implementation backlog](https://github.com/HappyMiha/helvetic-lens/blob/codex/HappyDucky02/monitoring-v2/BACKLOG_MONITORING_V2.md) lives on **`codex/HappyDucky02/monitoring-v2`**, which deploys independently to **HappyDucky02 → monitoring.helveticlens.ch**. Record new v2 tasks, status and evidence there. Main-product and hackathon connector work stays on **`main` → HappySnowman → helveticlens.ch**.
 
 **Scope:** 9 required scenarios, 62 required tasks, 9 deferred tasks. 116 active acceptance criteria (AC); 10 AC-C4 criteria retained as deferred.
 
@@ -10,7 +12,7 @@
 
 ## How to use this backlog
 
-This is the **single source of current scope, priorities, dependencies and development acceptance for Helvetic Lens**. The root [BACKLOG.md](BACKLOG.md) points here. The [previous backlog](BACKLOG_V1_ARCHIVE.md) is preserved as history, not a parallel queue. Reuse its completed work; 35 unfinished items have explicit successors in the [legacy disposition](docs/monitoring-v2/LEGACY_DISPOSITION.md). Their outstanding detailed criteria are inherited by the responsible v2 tasks, not lost through summarization.
+The **version on the dedicated v2 branch** is the single source of scope, priorities, dependencies and acceptance for Monitoring v2; this main-branch snapshot is reference material. Use the [project map](PROJECT_MAP.md) to choose between Support & Infrastructure, Legal Hackathon 2026 and Monitoring v2. The root [BACKLOG.md](BACKLOG.md) routes to those entry pages. The v2 backlog does not absorb support activity or hackathon-only implementation. The [v2 entry page](docs/workstreams/MONITORING_V2.md) records the dedicated branch and deployment target; infrastructure implementation must receive an explicit task in the active backlog before it starts. The [previous backlog](BACKLOG_V1_ARCHIVE.md) is preserved as history, not a parallel queue. Reuse its completed work; 35 unfinished items have explicit successors in the [legacy disposition](docs/monitoring-v2/LEGACY_DISPOSITION.md). Their outstanding detailed criteria are inherited by the responsible v2 tasks, not lost through summarization.
 
 Input: [Practical Use Case Specification v1.0 — English reading edition](docs/monitoring-v2/requirements/HELVETIC_LENS_PRACTICAL_USE_CASE_SPECIFICATION_v1.0_EN.md). The [original source](docs/monitoring-v2/requirements/HELVETIC_LENS_PRACTICAL_USE_CASE_SPECIFICATION_v1.0.md) is preserved byte for byte, SHA-256 `a6f4e7da87a9ae30171164512d16ce4be411f2913c22d90ed7bf7e1bc94ece4c`. The English edition preserves line positions and all original AC wording; it translates the remaining source prose without changing requirements.
 
@@ -18,7 +20,7 @@ Input: [Practical Use Case Specification v1.0 — English reading edition](docs/
 
 The source document's statements about existing capabilities have been checked against the code and are not treated as implementation evidence. The plan and architectural decisions below result from that analysis; example amounts, dates, cities, thresholds and scores in the specification have not become implicit global defaults.
 
-Before starting a task, read its criteria, dependencies, source gate and inherited legacy obligations; assign an implementer to the stated role and create a separate branch/worktree. Record any new defect or required refinement as an MV2 task with acceptance criteria and dependencies **here**, then implement it. Do not take an old HL ID as a standalone new task. An L-sized task may be split only into explicit subtasks with IDs and criteria in this document; preserve coverage of the parent ID.
+Before starting a task, open the active backlog on the v2 branch, read its criteria, dependencies, source gate and inherited legacy obligations; assign an implementer to the stated role and create a separate branch/worktree from that channel. Record any new defect or required refinement as an MV2 task with acceptance criteria and dependencies **in the active backlog**, then implement it. Do not take an old HL ID as a standalone new task. An L-sized task may be split only into explicit subtasks with IDs and criteria in the active backlog; preserve coverage of the parent ID.
 
 Statuses: **PLANNED → READY → IN PROGRESS → VERIFYING → DONE**. **BLOCKED** always identifies a specific external dependency, owner and next action. **DEFERRED** is outside v2.0. READY means that dependencies are satisfied and the necessary contracts/data are available. The first C5 delivery uses the explicitly extracted MV2-069/070 contracts without waiting for the broader parent tasks to be DONE. Code in Git, a mock, passing JSON schema validation or a written document does not mean DONE.
 
@@ -1879,3 +1881,4 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 | 1.1 | 2026-09-10 | By user decision, C4 customs rates became a possible future implementation, excluded from current development. MV2-026/027 moved to DEFERRED; MV2-061 remained deferred. 9 active scenarios, 59 required/9 deferred tasks, 116 active/10 deferred AC. Removed C4 from source gates, UI, pilot and release dependencies; preserved the original requirements |
 | 1.2 | 2026-09-10 | Pollen Watch became the first complete delivery for real-user testing. Added MV2-069/070/071, explicit C5 subtasks and an independent early gate; MV2-030/031 became P0 with dependencies on C5 contracts. 62 required/9 deferred tasks; the remaining nine-case scope and 116 active AC were preserved |
 | 1.3 | 2026-09-10 | Translated the backlog and supporting planning documents into English and added a line-preserving English reading edition of the source specification. Scope, IDs, dependencies, priorities and acceptance obligations are unchanged. The user explicitly authorized integration and push to main |
+| 1.4 | 2026-09-10 | Organized three activities into two product channels. Main-product/hackathon changes use main → HappySnowman → helveticlens.ch; Monitoring v2 uses codex/HappyDucky02/monitoring-v2 → HappyDucky02 → monitoring.helveticlens.ch. The active backlog moves to the dedicated branch and main retains this snapshot. All 71 task definitions remain unchanged. Support is parked; v2 deployment setup is in progress but not verified live |

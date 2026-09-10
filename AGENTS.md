@@ -9,7 +9,9 @@ humans and Codex tasks on both computers; nested AGENTS.md instructions still ap
   Configure an unconfigured clone with `sh scripts/setup-git-workflow.sh <alias>`.
   Do not change an existing alias just to pass a hook.
 - Fetch origin before starting a new task. Use a unique branch
-  `codex/<alias>/<task-id-or-short-slug>` based on current `origin/main`.
+  `codex/<alias>/<task-id-or-short-slug>` based on the selected product channel:
+  current `origin/main` for main-product/hackathon work, or current
+  `origin/codex/HappyDucky02/monitoring-v2` for Monitoring v2 work.
   Concurrent tasks on the SAME PC also need different branches AND worktrees.
   Never switch another running task's checkout or discard its uncommitted work.
 - Do not develop in the checkout serving production. On HappySnowman mark that
@@ -36,12 +38,17 @@ humans and Codex tasks on both computers; nested AGENTS.md instructions still ap
 Hooks are local safeguards and must be installed per clone. They are not a server
 security boundary. Keep them enabled; do not replace unrelated existing hooks.
 
-## Single active product backlog
+## Workstream routing
 
-- Read `BACKLOG_MONITORING_V2.md` before selecting implementation work. It is the sole current backlog for all new features, fixes and acceptance work.
+- Read `PROJECT_MAP.md` and select one workstream before work: Support & Infrastructure, Legal Hackathon 2026, or Monitoring v2. Their entry pages are in `docs/workstreams/`; `BACKLOG.md` is the routing page. These are three organizational activities with two code/deployment channels.
+- Support & Infrastructure is parked by explicit user instruction: do not start further research, applications, outreach, signup or purchases until the user activates it.
+- Main-product changes, including hackathon connectors, integrate into `main` and follow its existing automatic deployment on HappySnowman at helveticlens.ch. Preserve the frozen MVP tag without pausing that deployment or freezing `main`. No hackathon connectors are started by this organization change.
+- Monitoring v2 integrates into `codex/HappyDucky02/monitoring-v2` and deploys independently on HappyDucky02 at monitoring.helveticlens.ch. Fetch/review/test against that branch before integrating v2 tasks; do not route them into `main` using the main-product integration instructions above. Never develop in either serving checkout.
+- For Monitoring v2, `BACKLOG_MONITORING_V2.md` on the dedicated v2 branch is the sole implementation backlog; its copy on `main` is a published snapshot with a link to the active version. Keep hackathon-only tasks and support activity out of it; record any cross-workstream reuse as an explicit receiving task.
+- Separate v2 deployment setup is in progress; live routing and branch-triggered updates are not yet verified. Add a specific infrastructure task on the v2 branch before implementation and isolate its deployment, data, credentials and resources from the main-product/hackathon environment.
 - Customs rates (C4), Swiss Customs, CURRENCY and MV2-026/027/061 are DEFERRED possible future scope. Do not start their discovery, licensing, implementation or acceptance work without a new explicit user scope decision recorded in the backlog; they do not block v2.0. Shared numeric rules for active cases remain required.
 - First delivery is Pollen Watch: MV2-001 → MV2-069 → MV2-070 → MV2-030 → MV2-031 → MV2-071. The explicit C5 slices are independent of parent tasks for all sources/templates; partial C5 acceptance does not complete those parents. Do not substitute mock forecast for verified official forecast or wait for full-v2 business/pilot gates to start this scoped delivery.
-- Use an MV2 task ID and its dependencies, source-readiness gates and acceptance criteria. Add any necessary new task or explicit subtask to that backlog before implementing it; do not silently expand scope.
+- For v2 implementation, use an MV2 task ID and its dependencies, source-readiness gates and acceptance criteria. Add any necessary new task or explicit subtask to that backlog before implementing it; do not silently expand scope.
 - `BACKLOG_V1_ARCHIVE.md` is historical, not a parallel queue. Remaining HL acceptance is inherited through `docs/monitoring-v2/LEGACY_DISPOSITION.md`; mapping an item does not complete it.
 - Preserve the frozen `v1.0.0-hackathon-mvp` tag, legacy evidence and compatibility. Planned v2 templates or source documentation must not be presented as implemented/live coverage.
 - Update task status and requirement evidence after verification. Source-access, native-language, independent evaluation, hardware and pilot gates require their stated evidence; mocks or local static checks do not satisfy them.
