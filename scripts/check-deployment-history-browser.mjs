@@ -8,6 +8,7 @@ import { basename, dirname, join, resolve } from "node:path";
 import { createServer } from "node:net";
 import { Cdp, evaluate, sleep } from "./browser-cdp.mjs";
 import { AccessibilityAudit } from "./browser-accessibility.mjs";
+import { monitoringProgressFixture } from "./monitoring-progress-fixtures.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const audit = new AccessibilityAudit("deployment-history");
@@ -23,6 +24,7 @@ const profile=await mkdtemp(join(tmpdir(),"helvetic-deployment-browser-"));
 const browser=spawn(chrome,["--headless=new","--no-first-run","--no-default-browser-check","--remote-debugging-port=0",`--user-data-dir=${profile}`,"about:blank"],{stdio:"ignore",windowsHide:true});
 let cdp,locale="en-CH",administrator=true,failDetail=true;
 let deploymentBranch="main";
+let deploymentProgress, serviceState="idle";
 const monitoringBranch="codex/HappyDucky02/monitoring-v2";
 const unknownBranch={"de-CH":"Unbekannt","fr-CH":"Inconnu","it-CH":"Sconosciuto","rm-CH":"Nunenconuschent","en-CH":"Unknown"};
 const requests=[],exceptions=[];
@@ -42,7 +44,7 @@ try {
     let body={},code=200;
     if(path==="/api/auth/session") body={authenticated:true,platform_admin:administrator,user:{id:`qa-${administrator}-${locale}`,email:"qa@example.invalid",name:"QA",locale},organization:{id:"qa-org",name:"QA"},role:"organization_admin"};
     else if(path==="/api/health")body={status:"ok",database:"postgresql",apertus:{configured:false},firecrawl:{configured:false}};
-    else if(path==="/api/admin/deployments")body={schema_version:1,service:{enabled:deploymentBranch!==null,state:deploymentBranch===null?"status_unavailable":"idle",poll_interval_seconds:120,last_checked_at:"2026-09-08T08:00:00Z"},remote:{branch:deploymentBranch,sha:deploymentBranch===null?null:"a".repeat(40)},current:{sha:"a".repeat(40),release:"test-release"},last_run:run("latest"),history:[]};
+    else if(path==="/api/admin/deployments")body={schema_version:1,service:{enabled:deploymentBranch!==null,state:deploymentBranch===null?"status_unavailable":serviceState,poll_interval_seconds:120,last_checked_at:"2026-09-08T08:00:00Z"},remote:{branch:deploymentBranch,sha:deploymentBranch===null?null:"a".repeat(40)},current:{sha:"b".repeat(40),release:"test-release"},monitoring_progress:deploymentProgress,last_run:run("latest"),history:[]};
     else if(path==="/api/admin/deployments/history")body={items:url.searchParams.get("cursor")==="older"?[run("old")]:url.searchParams.get("status")==="succeeded"?[run("success")]:[run("success"),run("failure","failed")],next_cursor:url.searchParams.get("cursor")||url.searchParams.get("status")?null:"older",mode:"journal",archive_started_at:"2026-09-08T08:00:00Z",legacy_retention_unknown:true};
     else if(path.startsWith("/api/admin/deployments/history/")){
       const id=path.split("/").pop();
@@ -109,17 +111,83 @@ try {
     assert.ok(description.trim().length>20&&!description.includes("main")&&!description.includes(monitoringBranch)&&!description.includes("{branch}"),"Unavailable description must not invent a release channel");
     assert.ok(await evaluate(cdp,`document.documentElement.scrollWidth<=innerWidth+1`),"Unavailable branch view overflows mobile width");
   }
+  const progressText=selector=>evaluate(cdp,`document.querySelector(${JSON.stringify(selector)})?.textContent.trim()`);
+  const openProgress=async kind=>{
+    deploymentProgress=monitoringProgressFixture(kind);
+    await cdp.send("Page.navigate",{url:`${base}/deployments?locale=${locale}&qa=progress-${kind}`});
+    await waitFor(()=>evaluate(cdp,`document.documentElement.lang===${JSON.stringify(locale)}&&!!document.querySelector('[data-monitoring-progress]')`),"Monitoring progress missing");
+  };
+  for(const width of [390,1440])for(locale of ["de-CH","fr-CH","it-CH","rm-CH","en-CH"]){
+    deploymentBranch=monitoringBranch;
+    serviceState=width===390?"deploying":"idle";
+    await cdp.send("Emulation.setDeviceMetricsOverride",{width,height:960,deviceScaleFactor:1,mobile:width===390});
+    await openProgress("divergent");
+    assert.equal(await progressText('[data-monitoring-card="git"] [data-monitoring-percent]'),"≈33%");
+    assert.match(await progressText('[data-monitoring-card="git"] [data-monitoring-ratio]'),/^3\/9 /);
+    assert.equal(await progressText('[data-monitoring-card="deployed"] [data-monitoring-percent]'),"≈25%");
+    assert.match(await progressText('[data-monitoring-card="deployed"] [data-monitoring-ratio]'),/^2\/8 /);
+    assert.equal(await progressText('[data-monitoring-remaining-count]'),"6");
+    assert.match(await progressText('[data-monitoring-in-progress]'),/^2 /);
+    assert.equal(await evaluate(cdp,`document.querySelectorAll('[data-monitoring-pollen]').length`),6);
+    assert.match(await progressText('[data-monitoring-pollen-counts]'),/1\/6.*1\/6/);
+    assert.ok(await evaluate(cdp,`document.querySelector('[data-monitoring-card="git"]').textContent.includes('aaaaaaaaaaaa')&&document.querySelector('[data-monitoring-card="deployed"]').textContent.includes('bbbbbbbbbbbb')`),"Each measure must retain its revision");
+    if(locale==="en-CH")assert.equal(await progressText('[data-monitoring-card="deployed"] h3'),width===390?"Last verified release":"Already on this site");
+    assert.ok(await evaluate(cdp,`!document.querySelector('[data-monitoring-unfinished]').open&&!document.querySelector('[data-monitoring-awaiting]').open&&!document.querySelector('[data-monitoring-pollen-steps]').open`),"Task lists must start collapsed");
+    await click('[data-monitoring-pollen-steps] summary');
+    assert.ok(await evaluate(cdp,`Array.from(document.querySelectorAll('[data-monitoring-pollen]')).every(row=>row.getBoundingClientRect().height>0)`),"All six Pollen steps must be reachable");
+    if(locale==="en-CH")assert.equal(await progressText('[data-monitoring-pollen="true"][data-monitoring-task="MV2-070"] dt'),"In Git","Unfinished rows must not be labelled completed");
+    assert.equal(await evaluate(cdp,`document.querySelectorAll('[data-monitoring-progress] img').length`),0,"Backlog title markup must render as text");
+    assert.notEqual(await progressText('[data-monitoring-pollen="true"][data-monitoring-task="MV2-071"] [data-monitoring-latest-status]'),await progressText('[data-monitoring-pollen="true"][data-monitoring-task="MV2-071"] [data-monitoring-deployed-status]'),"Reopened Pollen work must preserve deployed status");
+    await click('[data-monitoring-unfinished] summary');
+    assert.equal(await evaluate(cdp,`document.querySelectorAll('[data-monitoring-unfinished] [data-monitoring-task]').length`),6);
+    assert.equal(await evaluate(cdp,`document.querySelectorAll('[data-monitoring-progress] [data-monitoring-task="MV2-026"]').length`),0,"Deferred work is excluded from remaining");
+    await click('[data-monitoring-awaiting] summary');
+    assert.deepEqual(await evaluate(cdp,`Array.from(document.querySelectorAll('[data-monitoring-awaiting] [data-monitoring-task]'),node=>node.dataset.monitoringTask)`),["MV2-001","MV2-074"],"Awaiting deployment must compare IDs, not aggregate totals");
+    assert.ok((await progressText('[data-monitoring-awaiting] [data-monitoring-task="MV2-074"]')).includes('<img src=x onerror=alert(1)>'),"Backlog markup must remain literal text");
+    assert.ok(await evaluate(cdp,`document.documentElement.scrollWidth<=innerWidth+1`),"Progress task lists overflow");
+    await audit.check(cdp,`progress-${width}-${locale}`,'[data-monitoring-progress]');
+    if(locale==="en-CH"){
+      await evaluate(cdp,`document.querySelector('[data-monitoring-unfinished]').open=false;document.querySelector('[data-monitoring-awaiting]').open=false;document.querySelector('[data-monitoring-pollen-steps]').open=false;const panel=document.querySelector('[data-monitoring-progress]');panel.style.scrollMarginTop='90px';panel.scrollIntoView({block:'start'})`);
+      const shot=await cdp.send("Page.captureScreenshot",{format:"png"});
+      await writeFile(join(root,"test-results/deployment-history",`progress-${width}.png`),Buffer.from(shot.data,"base64"));
+    }
+    const unavailableSide=width===390?"latest":"deployed";
+    await openProgress(`${unavailableSide}-unavailable`);
+    const card=unavailableSide==="latest"?"git":"deployed";
+    assert.equal(await evaluate(cdp,`document.querySelector('[data-monitoring-card="${card}"] [data-monitoring-ratio]')`),null,"Unavailable must not appear as zero completion");
+    assert.ok(await progressText(`[data-monitoring-card="${card}"] [data-monitoring-percent]`));
+    assert.ok(!(await progressText('[data-monitoring-awaiting] summary')).match(/ · \d+$/),"Awaiting count needs both snapshots");
+    assert.ok(await evaluate(cdp,`document.querySelector('[data-monitoring-card="${card==="git"?"deployed":"git"}"] [data-monitoring-ratio]')!==null`),"Independent valid snapshot must remain visible");
+    assert.ok(await evaluate(cdp,`document.documentElement.scrollWidth<=innerWidth+1`),"Unavailable progress overflows");
+    await audit.check(cdp,`progress-unavailable-${width}-${locale}`,'[data-monitoring-progress]');
+    deploymentBranch="main";
+    deploymentProgress=monitoringProgressFixture();
+    await cdp.send("Page.navigate",{url:`${base}/deployments?locale=${locale}&qa=main-progress-hidden`});
+    await waitFor(()=>evaluate(cdp,`document.querySelector('[data-deployment-branch]')?.textContent.includes('main')`),"Main status missing");
+    assert.equal(await evaluate(cdp,`document.querySelector('[data-monitoring-progress]')`),null,"Monitoring progress must stay off the main channel");
+  }
+  locale="en-CH";deploymentBranch=monitoringBranch;serviceState="idle";
+  await cdp.send("Emulation.setDeviceMetricsOverride",{width:390,height:960,deviceScaleFactor:1,mobile:true});
+  await openProgress("zero");
+  assert.equal(await progressText('[data-monitoring-card="git"] [data-monitoring-percent]'),"≈0%","A valid no-DONE backlog has real zero progress");
+  await openProgress("missing");
+  assert.equal(await evaluate(cdp,`document.querySelectorAll('[data-monitoring-ratio]').length`),0,"Absent metadata must never invent counters");
+  await openProgress("no-required");
+  assert.equal(await progressText('[data-monitoring-card="git"] [data-monitoring-percent]'),"Not applicable");
+  await openProgress("older-pollen");
+  assert.equal(await progressText('[data-monitoring-pollen="true"][data-monitoring-task="MV2-071"] [data-monitoring-deployed-status]'),"Not present in this revision");
   administrator=false;
   const before=requests.length;
   await cdp.send("Page.navigate",{url:`${base}/deployments?qa=nonadmin`});
   await waitFor(()=>evaluate(cdp,`!document.querySelector('[data-deployment-history]')&&!!document.querySelector('.error-note')`),"Non-admin denial missing");
   assert.equal(requests.slice(before).filter(r=>r.path.startsWith('/api/admin/deployments')).length,0);
+  assert.equal(await evaluate(cdp,`document.querySelector('[data-monitoring-progress]')`),null);
   // The existing companion initializes its private conversation/context via
   // POST on every route; those intercepted fixture calls do not deploy or infer.
   assert.deepEqual(requests.filter(r=>r.method!=="GET" && !["/api/assistant/context","/api/assistant/conversations"].includes(r.path)),[]);
   assert.deepEqual(exceptions,[]);
-  audit.finish(20);
-  console.log("10 multilingual desktop/mobile deployment journeys and 5 unavailable-branch views pass: instance branch identity, pinned notes, phase failure, exact retry, paging/filter, no deployment writes and non-admin boundary.");
+  audit.finish(40);
+  console.log("Deployment history and Monitoring progress pass in five locales at desktop/mobile widths: distinct revisions/denominators, reopened tasks, Pollen, unavailable metadata, collapsed lists, main isolation and non-admin boundary.");
 } catch(error){console.error({locale,requests:requests.slice(-10),exceptions,text:cdp?await evaluate(cdp,"document.body.innerText.slice(-2500)").catch(()=>"unavailable"):"none"});throw error;}
 finally{
   cdp?.close();

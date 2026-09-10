@@ -1033,6 +1033,7 @@ export type DeploymentHistoryPage = {
   legacy_retention_unknown: boolean;
 };
 export type ProductionDeploymentStatus = {
+  monitoring_progress?: import("./monitoring-progress").MonitoringProgress | null;
   schema_version: number;
   service: {
     enabled: boolean;
