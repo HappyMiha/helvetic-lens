@@ -52,7 +52,7 @@ def deployment_snapshot(state_dir: Path) -> dict[str, Any]:
         },
         "remote": {
             "repository": None,
-            "branch": "main",
+            "branch": None,
             "sha": None,
             "checked_at": None,
         },

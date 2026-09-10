@@ -22,6 +22,9 @@ const server=spawn(process.execPath,[join(root,"node_modules/next/dist/bin/next"
 const profile=await mkdtemp(join(tmpdir(),"helvetic-deployment-browser-"));
 const browser=spawn(chrome,["--headless=new","--no-first-run","--no-default-browser-check","--remote-debugging-port=0",`--user-data-dir=${profile}`,"about:blank"],{stdio:"ignore",windowsHide:true});
 let cdp,locale="en-CH",administrator=true,failDetail=true;
+let deploymentBranch="main";
+const monitoringBranch="codex/HappyDucky02/monitoring-v2";
+const unknownBranch={"de-CH":"Unbekannt","fr-CH":"Inconnu","it-CH":"Sconosciuto","rm-CH":"Nunenconuschent","en-CH":"Unknown"};
 const requests=[],exceptions=[];
 async function waitFor(check,message){for(let i=0;i<180;i++){if(await check().catch(()=>false))return;await sleep(100);}throw new Error(message);}
 const run=(id,status="succeeded")=>({id,kind:"release",status,target_sha:"a".repeat(40),previous_sha:"b".repeat(40),activated_sha:status==="succeeded"?"a".repeat(40):null,host:"Synthetic-host",environment:"test",release:"test-release",started_at:"2026-09-08T08:00:00Z",finished_at:"2026-09-08T08:05:00Z",duration_seconds:300,changes:[{sha:"a".repeat(40),short_sha:"aaaaaaa",subject:"Synthetic pinned change",author:"QA",committed_at:"2026-09-08T07:00:00Z"}],steps:[{name:"api_tests",status,error:status==="failed"?"Synthetic gate diagnostics: a regression failed.":null}],rollback:{status:status==="failed"?"succeeded":"not_required",backup_restored:status==="failed"},error:status==="failed"?"Synthetic deployment failure":null,release_notes:{kind:"commit_summary",previous_sha:"b".repeat(40),target_sha:"a".repeat(40),text:"Synthetic pinned release notes\n- Improved source monitoring\n- Fixed a previous regression",captured_at:"2026-09-08T08:00:00Z",repository_notes_available:false,changes_may_be_truncated:false,text_truncated:false},compare_url:"https://github.com/HappyMiha/helvetic-lens/compare/"+"b".repeat(40)+"..."+"a".repeat(40)});
@@ -39,7 +42,7 @@ try {
     let body={},code=200;
     if(path==="/api/auth/session") body={authenticated:true,platform_admin:administrator,user:{id:`qa-${administrator}-${locale}`,email:"qa@example.invalid",name:"QA",locale},organization:{id:"qa-org",name:"QA"},role:"organization_admin"};
     else if(path==="/api/health")body={status:"ok",database:"postgresql",apertus:{configured:false},firecrawl:{configured:false}};
-    else if(path==="/api/admin/deployments")body={schema_version:1,service:{enabled:true,state:"idle",poll_interval_seconds:120,last_checked_at:"2026-09-08T08:00:00Z"},remote:{branch:"main",sha:"a".repeat(40)},current:{sha:"a".repeat(40),release:"test-release"},last_run:run("latest"),history:[]};
+    else if(path==="/api/admin/deployments")body={schema_version:1,service:{enabled:deploymentBranch!==null,state:deploymentBranch===null?"status_unavailable":"idle",poll_interval_seconds:120,last_checked_at:"2026-09-08T08:00:00Z"},remote:{branch:deploymentBranch,sha:deploymentBranch===null?null:"a".repeat(40)},current:{sha:"a".repeat(40),release:"test-release"},last_run:run("latest"),history:[]};
     else if(path==="/api/admin/deployments/history")body={items:url.searchParams.get("cursor")==="older"?[run("old")]:url.searchParams.get("status")==="succeeded"?[run("success")]:[run("success"),run("failure","failed")],next_cursor:url.searchParams.get("cursor")||url.searchParams.get("status")?null:"older",mode:"journal",archive_started_at:"2026-09-08T08:00:00Z",legacy_retention_unknown:true};
     else if(path.startsWith("/api/admin/deployments/history/")){
       const id=path.split("/").pop();
@@ -60,9 +63,12 @@ try {
   };
   for(const width of [390,1440])for(locale of ["de-CH","fr-CH","it-CH","rm-CH","en-CH"]){
     administrator=true;failDetail=true;
+    deploymentBranch=width===390?monitoringBranch:"main";
     await cdp.send("Emulation.setDeviceMetricsOverride",{width,height:960,deviceScaleFactor:1,mobile:width===390});
     await cdp.send("Page.navigate",{url:`${base}/deployments?locale=${locale}&qa=${width}`});
     await waitFor(()=>evaluate(cdp,`document.documentElement.lang===${JSON.stringify(locale)}&&document.querySelectorAll('[data-deployment-run]').length===2`),"History list missing");
+    assert.equal(await evaluate(cdp,`document.querySelector('[data-deployment-branch]').textContent.trim().split(' · ').at(-1)`),deploymentBranch,"Git card must show the instance's branch");
+    assert.ok(await evaluate(cdp,`document.querySelector('[data-deployment-branch-description]').textContent.includes(${JSON.stringify(deploymentBranch)})`),"Description must show the instance's branch");
     assert.equal(await evaluate(cdp,`document.querySelector('[data-deployment-latest]').open`),false,"Latest run should not push history behind an expanded report");
     await click('[data-deployment-run="success"]');
     await waitFor(()=>evaluate(cdp,`document.querySelector('[data-deployment-detail="success"]')?.innerText.includes('Synthetic pinned release notes')`),"Pinned notes missing");
@@ -94,6 +100,15 @@ try {
       await writeFile(join(root,"test-results/deployment-history",`${width}.png`),Buffer.from(shot.data,"base64"));
     }
   }
+  deploymentBranch=null;
+  await cdp.send("Emulation.setDeviceMetricsOverride",{width:390,height:960,deviceScaleFactor:1,mobile:true});
+  for(locale of ["de-CH","fr-CH","it-CH","rm-CH","en-CH"]){
+    await cdp.send("Page.navigate",{url:`${base}/deployments?locale=${locale}&qa=unavailable`});
+    await waitFor(()=>evaluate(cdp,`document.documentElement.lang===${JSON.stringify(locale)}&&document.querySelector('[data-deployment-branch]')?.textContent.trim().split(' · ').at(-1)===${JSON.stringify(unknownBranch[locale])}`),"Unavailable status must show a localized unknown branch");
+    const description=await evaluate(cdp,`document.querySelector('[data-deployment-branch-description]').textContent`);
+    assert.ok(description.trim().length>20&&!description.includes("main")&&!description.includes(monitoringBranch)&&!description.includes("{branch}"),"Unavailable description must not invent a release channel");
+    assert.ok(await evaluate(cdp,`document.documentElement.scrollWidth<=innerWidth+1`),"Unavailable branch view overflows mobile width");
+  }
   administrator=false;
   const before=requests.length;
   await cdp.send("Page.navigate",{url:`${base}/deployments?qa=nonadmin`});
@@ -104,7 +119,7 @@ try {
   assert.deepEqual(requests.filter(r=>r.method!=="GET" && !["/api/assistant/context","/api/assistant/conversations"].includes(r.path)),[]);
   assert.deepEqual(exceptions,[]);
   audit.finish(20);
-  console.log("10 multilingual desktop/mobile deployment journeys pass: pinned notes, phase failure, exact retry, paging/filter, no deployment writes and non-admin boundary.");
+  console.log("10 multilingual desktop/mobile deployment journeys and 5 unavailable-branch views pass: instance branch identity, pinned notes, phase failure, exact retry, paging/filter, no deployment writes and non-admin boundary.");
 } catch(error){console.error({locale,requests:requests.slice(-10),exceptions,text:cdp?await evaluate(cdp,"document.body.innerText.slice(-2500)").catch(()=>"unavailable"):"none"});throw error;}
 finally{
   cdp?.close();

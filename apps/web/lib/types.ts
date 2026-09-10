@@ -1044,7 +1044,7 @@ export type ProductionDeploymentStatus = {
   };
   remote: {
     repository: string | null;
-    branch: string;
+    branch: string | null;
     sha: string | null;
     summary?: string | null;
     checked_at: string | null;

@@ -159,6 +159,7 @@ export function DeploymentManagerPage() {
     isPlatformAdmin ? resources.deployments() : null,
   );
   const data = status.data;
+  const branch = data?.remote.branch?.trim() || null;
   const pending = Boolean(
     data?.remote.sha && data.current.sha && data.remote.sha !== data.current.sha,
   );
@@ -169,7 +170,9 @@ export function DeploymentManagerPage() {
         <div>
           <span className="eyebrow">{t("deploy.eyebrow")}</span>
           <h1>{t("deploy.title")}</h1>
-          <p>{t("deploy.body")}</p>
+          <p className="break-words" data-deployment-branch-description>
+            {branch ? t("deploy.body", { branch }) : t("deploy.bodyUnavailable")}
+          </p>
         </div>
         {isPlatformAdmin && (
           <Button variant="outline" onClick={status.reload} disabled={status.loading}>
@@ -203,7 +206,9 @@ export function DeploymentManagerPage() {
                   <small>{data.current.summary || data.current.release || t("deploy.unknown")}</small>
                 </div>
                 <div className="stat-card">
-                  <span className="eyebrow">{t("deploy.git")} · {data.remote.branch}</span>
+                  <span className="eyebrow break-all" data-deployment-branch>
+                    {t("deploy.git")} · {branch || t("deploy.unknown")}
+                  </span>
                   <strong><code>{shortSha(data.remote.sha)}</code></strong>
                   <small>{data.remote.summary || t("deploy.unknown")}</small>
                 </div>

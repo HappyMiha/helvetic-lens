@@ -248,6 +248,10 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** platform/unit and existing release regressions; rendered Compose isolation; first-install and rollback rehearsal against only the new instance; public HTTPS and automatic second-revision checks.
 
+**Explicit subtask — deployment branch identity (VERIFIED LOCALLY; pending integration):** Make the deployment page's explanatory text and Git label reflect the branch reported by this instance's status. Missing or unreadable status must report an unknown branch rather than inventing `main`. Verify main, the dedicated Monitoring branch and unavailable status with focused API and localized UI checks. This supports acceptance criteria 1 and 5; it does not add a product scenario or claim live deployment acceptance.
+
+**Subtask evidence, 2026-09-10:** Six isolated deployment-status API regressions and targeted Ruff checks passed. `npm run check:i18n`, web TypeScript checking and the production frontend build passed. The existing `npm run check:deployments:browser` passed 10 localized desktop/mobile history journeys, five unavailable-branch views and 20 full-document accessibility checkpoints with synthetic API responses. The check covers `main`, the dedicated Monitoring branch, honest unknown status and mobile wrapping. Original MV2-001–071 task definitions remain unchanged. Live deployment and automatic update acceptance remain part of MV2-072's separate verification.
+
 **Execution evidence:** Controller and disabled Windows scheduler installed; 79 Windows and 92 Linux affected tests passed, images built, isolation configuration verified. [Deployment status and remaining acceptance](docs/monitoring-v2/DEPLOYMENT_STATUS.md). **Blocker owner:** user for SMTP settings and dedicated tunnel access approval; operator for subsequent bootstrap, public verification and activation. No live deployment or automatic-update acceptance is claimed.
 
 ## F0 — Decisions, sources and validation of user needs
