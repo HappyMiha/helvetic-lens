@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { Shell } from "./shell";
 import { DeploymentHistory } from "./deployment-history";
+import { MonitoringProgressPanel } from "./monitoring-progress";
 import { useAuth } from "./auth-gate";
 import { ErrorNote, Loading } from "./common";
 import { Badge } from "./ui/badge";
@@ -218,6 +219,8 @@ export function DeploymentManagerPage() {
                   <small>{t("deploy.checked", { date: dateTime(data.service.last_checked_at) })}</small>
                 </div>
               </section>
+
+              <MonitoringProgressPanel progress={data.monitoring_progress} branch={branch} deploying={data.service.state === "deploying"} />
 
               <section className="panel">
                 <div className="panel-header">

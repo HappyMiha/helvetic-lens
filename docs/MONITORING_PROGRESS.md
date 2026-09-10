@@ -55,7 +55,7 @@ remaining = required tasks whose status is not DONE
 completion_percent = completed_count / required_count * 100
 ```
 
-Display whole percentages with an approximation marker or explanatory label, alongside the exact completed/required count. If rounding would show 100% while required tasks remain, display `<100%` or cap the displayed rounded value at 99%; 100% is reserved for all required tasks DONE. An unexpected available snapshot with zero required tasks renders a percentage as not applicable, never as product completion. No snapshot renders unavailable, never 0%.
+Display whole percentages with an approximation marker or explanatory label, alongside the exact completed/required count. If rounding would show 100% while required tasks remain, display `<100%` or cap the displayed rounded value at 99%; 100% is reserved for all required tasks DONE. An unexpected available snapshot with zero required tasks renders a percentage as not applicable, never as product completion. A missing snapshot renders as unavailable, never 0%.
 
 Use two separately labelled completion measures:
 

@@ -48,6 +48,76 @@ CONFIG_REQUIRED = {
     "expected_repository", "public_url", "self_update",
 }
 CONFIG_OPTIONAL = {"qa_cpus", "qa_memory", "qa_user", "api_test_timeout_seconds"}
+MONITORING_BACKLOG_PATH = "BACKLOG_MONITORING_V2.md"
+MONITORING_MAX_BYTES = 512 * 1024
+MONITORING_MAX_TASKS = 100
+MONITORING_STATUSES = {"PLANNED", "READY", "IN PROGRESS", "VERIFYING", "DONE", "BLOCKED", "DEFERRED"}
+MONITORING_RUNTIME_UNKNOWN = "Runtime identity is unconfirmed after an interrupted deployment or failed rollback."
+
+
+def parse_monitoring_backlog(content: bytes) -> list[dict[str, str]]:
+    """Read complete Markdown task sections, cross-checking the navigation index."""
+    if len(content) > MONITORING_MAX_BYTES:
+        raise ValueError("Monitoring backlog exceeds its byte limit.")
+    text = content.decode("utf-8-sig")
+    index: dict[str, str] = {}
+    tasks: dict[str, dict[str, str]] = {}
+    current: dict[str, str] | None = None
+    fence: tuple[str, int] | None = None
+
+    def status(value: str) -> str:
+        canonical, separator, note = value.strip().partition(" — ")
+        if canonical not in MONITORING_STATUSES or (separator and not note.strip()):
+            raise ValueError("Monitoring backlog contains an unsupported task status.")
+        return canonical
+
+    for raw_line in text.splitlines():
+        if fence:
+            if re.fullmatch(r" {0,3}" + re.escape(fence[0]) + "{" + str(fence[1]) + r",}[ \t]*", raw_line):
+                fence = None
+            continue
+        opening = re.fullmatch(r" {0,3}(`{3,}|~{3,})(.*)", raw_line)
+        if opening and not (opening[1][0] == "`" and "`" in opening[2]):
+            fence = (opening[1][0], len(opening[1]))
+            continue
+        line = raw_line.lstrip(" \t")
+        indentation = raw_line[:len(raw_line) - len(line)]
+        if len(indentation) > 3 or "\t" in indentation:
+            if re.match(r"(?:\|\s*\[MV2-|###\s+MV2-|\*\*Status:\*\*)", line):
+                raise ValueError("Monitoring backlog contains unsupported indented task syntax.")
+            continue
+        if re.match(r"\|\s*\[MV2-", line):
+            cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+            link = re.fullmatch(r"\[(MV2-[0-9]{3})\]\(#(mv2-[0-9]{3})\)", cells[0])
+            if len(cells) != 7 or not link or link[1].lower() != link[2]:
+                raise ValueError("Monitoring backlog contains an invalid index row.")
+            task_id = link[1]
+            if task_id in index:
+                raise ValueError("Monitoring backlog contains a duplicate index ID.")
+            index[task_id] = status(cells[5])
+            if len(index) > MONITORING_MAX_TASKS:
+                raise ValueError("Monitoring backlog exceeds its task limit.")
+        if re.match(r"###\s+MV2-", line):
+            header = re.fullmatch(r"### +(MV2-[0-9]{3}) +— +(.+)", line)
+            if not header or not header[2].strip() or len(header[2]) > 500:
+                raise ValueError("Monitoring backlog contains an invalid task heading.")
+            if header[1] in tasks:
+                raise ValueError("Monitoring backlog contains a duplicate task ID.")
+            current = {"id": header[1], "title": header[2].strip()}
+            tasks[header[1]] = current
+            if len(tasks) > MONITORING_MAX_TASKS:
+                raise ValueError("Monitoring backlog exceeds its task limit.")
+        elif re.match(r"^#{1,3} ", line):
+            current = None
+        elif current is not None and line.startswith("**Status:**"):
+            if "status" in current or line.count("**Status:**") != 1:
+                raise ValueError("Monitoring backlog contains duplicate task statuses.")
+            current["status"] = status(line.removeprefix("**Status:**").split(" · ", 1)[0])
+    if fence or not tasks or set(index) != set(tasks):
+        raise ValueError("Monitoring backlog index and task sections are incomplete.")
+    if any(task.get("status") != index[task_id] for task_id, task in tasks.items()):
+        raise ValueError("Monitoring backlog index and task statuses disagree.")
+    return [tasks[task_id] for task_id in sorted(tasks)]
 
 
 def load_config(path: Path) -> dict[str, Any]:
@@ -393,6 +463,82 @@ class ReleaseManager:
         )
         return completed.stdout.strip()
 
+    def _monitoring_blob(self, sha: str) -> bytes:
+        """Bound the immutable object before reading it; never log backlog contents."""
+        if not re.fullmatch(r"[0-9a-f]{40}", sha):
+            raise ValueError("Monitoring backlog requires a full commit SHA.")
+        command = [self._executable("git"), "--no-replace-objects", "-C", str(self.source_repo), "cat-file"]
+        environment = dict(os.environ)
+        for key in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY",
+                    "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_NAMESPACE"):
+            environment.pop(key, None)
+        environment.update(GIT_TERMINAL_PROMPT="0", GCM_INTERACTIVE="never")
+        expression = f"{sha}:{MONITORING_BACKLOG_PATH}"
+
+        def read(option: str) -> bytes:
+            result = subprocess.run(
+                [*command, option, expression], env=environment, capture_output=True, timeout=10, check=False,
+                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+            )
+            if result.returncode:
+                raise ValueError("The committed Monitoring backlog cannot be read.")
+            return result.stdout
+
+        size = int(read("-s").strip())
+        if not 0 < size <= MONITORING_MAX_BYTES:
+            raise ValueError("Monitoring backlog exceeds its byte limit or is empty.")
+        content = read("blob")
+        if len(content) != size:
+            raise ValueError("Monitoring backlog object size changed unexpectedly.")
+        return content
+
+    def _monitoring_snapshot(self, sha: Any, reason: str | None = None) -> dict[str, Any]:
+        valid_sha = sha if isinstance(sha, str) and re.fullmatch(r"[0-9a-f]{40}", sha) else None
+        result: dict[str, Any] = {"sha": valid_sha, "state": "unavailable", "reason": reason, "tasks": []}
+        if reason:
+            return result
+        if not valid_sha:
+            result["reason"] = "No verified deployment exists yet."
+            return result
+        try:
+            tasks = parse_monitoring_backlog(self._monitoring_blob(valid_sha))
+        except Exception:  # noqa: BLE001 - Optional progress metadata must not reject a release.
+            # Progress is observational: parser/Git failures cannot reject an otherwise valid release.
+            # Never include subprocess output, paths or exception text in this public diagnostic.
+            result["reason"] = "The committed backlog is unavailable or invalid."
+            return result
+        result.update(state="available", reason=None, tasks=tasks)
+        return result
+
+    def _refresh_monitoring_progress(
+        self, latest_sha: str | None, *, latest_reason: str | None = None, runtime_verified: bool = False,
+    ) -> None:
+        if getattr(self, "instance", None) != "monitoring-v2":
+            return
+        previous = self.status.get("monitoring_progress")
+        previous = previous if isinstance(previous, dict) else {}
+        previous_deployed = previous.get("deployed")
+        previous_deployed = previous_deployed if isinstance(previous_deployed, dict) else {}
+        run = self.status.get("last_run")
+        run = run if isinstance(run, dict) else {}
+        rollback = run.get("rollback")
+        rollback = rollback if isinstance(rollback, dict) else {}
+        unknown = not runtime_verified and (
+            previous_deployed.get("reason") == MONITORING_RUNTIME_UNKNOWN
+            or run.get("status") in {"interrupted", "rollback_failed"}
+            or rollback.get("status") == "failed"
+        )
+        self.status["monitoring_progress"] = {
+            "schema_version": 1,
+            "source_path": MONITORING_BACKLOG_PATH,
+            "updated_at": timestamp(),
+            "branch": self.branch,
+            "latest": self._monitoring_snapshot(latest_sha, latest_reason),
+            "deployed": self._monitoring_snapshot(
+                self._load_deployed().get("sha"), MONITORING_RUNTIME_UNKNOWN if unknown else None,
+            ),
+        }
+
     def _resolve_commit(self, revision: str | None) -> str | None:
         if not revision:
             return None
@@ -468,6 +614,8 @@ class ReleaseManager:
             },
             "current": self._public_current(deployed),
             "last_run": self.status.get("last_run"),
+            **({"monitoring_progress": self.status.get("monitoring_progress")}
+               if getattr(self, "instance", None) == "monitoring-v2" else {}),
         }
 
     def _save_status(self) -> None:
@@ -1005,6 +1153,10 @@ class ReleaseManager:
         }
         self.status = self._base_status(deployed)
         self.status["service"].update(state="error", last_checked_at=checked_at)
+        self._refresh_monitoring_progress(
+            self.status.get("remote", {}).get("sha"),
+            latest_reason="The latest Git branch could not be verified during this poll.",
+        )
         self.status["last_run"] = run
         self._save_status()
         self._save_history(run)
@@ -1036,6 +1188,10 @@ class ReleaseManager:
                 if phase.get("status") == "running":
                     phase.update(status="interrupted", interrupted_at=previous_run["interrupted_at"])
             self.status["last_run"] = previous_run
+            self._refresh_monitoring_progress(
+                self.status.get("remote", {}).get("sha"),
+                latest_reason="The latest Git branch has not been refreshed after interruption.",
+            )
             self._save_status()
             self._save_history(previous_run)
         repository = self._git("remote", "get-url", self.remote, step="verify_remote")
@@ -1066,6 +1222,7 @@ class ReleaseManager:
             "checked_at": checked_at,
         }
         self.status["service"]["last_checked_at"] = checked_at
+        self._refresh_monitoring_progress(target_sha)
 
         if deployed.get("sha") == target_sha:
             self.status["service"]["state"] = "idle"
@@ -1304,6 +1461,9 @@ class ReleaseManager:
             )
             self.status["current"] = self._public_current(self._load_deployed())
             self.status["last_run"] = self.run_record
+            self._refresh_monitoring_progress(
+                target_sha, runtime_verified=self.run_record["rollback"].get("status") == "succeeded",
+            )
             self._save_status()
             self._save_history(self.run_record)
             raise error
@@ -1315,6 +1475,7 @@ class ReleaseManager:
         self.status["service"].update(state="idle", next_retry_at=None)
         self.status["current"] = self._public_current(deployed)
         self.status["last_run"] = self.run_record
+        self._refresh_monitoring_progress(target_sha, runtime_verified=True)
         self._save_status()
         self._save_history(self.run_record)
 

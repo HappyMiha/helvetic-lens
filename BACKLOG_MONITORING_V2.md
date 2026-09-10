@@ -222,7 +222,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 | [MV2-070](#mv2-070) | Pollen Watch FIRST: Implement the shared platform within C5 scope | FIRST | P0 | L | PLANNED — first implementation priority | [MV2-069](#mv2-069) |
 | [MV2-071](#mv2-071) | Pollen Watch FIRST: Accept the complete scenario and prepare for testing with real users | FIRST | P0 | M | PLANNED — first user-testing gate | [MV2-031](#mv2-031) |
 | [MV2-072](#mv2-072) | Isolated Monitoring deployment on HappyDucky02 | OPS | P0 | M | IN PROGRESS | None; user deployment decision |
-| [MV2-073](#mv2-073) | Show Monitoring backlog completion and deployment progress | OPS | P0 | M | IN PROGRESS | None; user progress-visibility request |
+| [MV2-073](#mv2-073) | Show Monitoring backlog completion and deployment progress | OPS | P0 | M | VERIFYING | None; user progress-visibility request |
 
 ## OPS — Separate Monitoring environment
 
@@ -249,7 +249,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** platform/unit and existing release regressions; rendered Compose isolation; first-install and rollback rehearsal against only the new instance; public HTTPS and automatic second-revision checks.
 
-**Explicit subtask — deployment branch identity (VERIFIED LOCALLY; pending integration):** Make the deployment page's explanatory text and Git label reflect the branch reported by this instance's status. Missing or unreadable status must report an unknown branch rather than inventing `main`. Verify main, the dedicated Monitoring branch and unavailable status with focused API and localized UI checks. This supports acceptance criteria 1 and 5; it does not add a product scenario or claim live deployment acceptance.
+**Explicit subtask — deployment branch identity (INTEGRATED; live acceptance pending):** Make the deployment page's explanatory text and Git label reflect the branch reported by this instance's status. Missing or unreadable status must report an unknown branch rather than inventing `main`. Verify main, the dedicated Monitoring branch and unavailable status with focused API and localized UI checks. This supports acceptance criteria 1 and 5; it does not add a product scenario or claim live deployment acceptance.
 
 **Subtask evidence, 2026-09-10:** Six isolated deployment-status API regressions and targeted Ruff checks passed. `npm run check:i18n`, web TypeScript checking and the production frontend build passed. The existing `npm run check:deployments:browser` passed 10 localized desktop/mobile history journeys, five unavailable-branch views and 20 full-document accessibility checkpoints with synthetic API responses. The check covers `main`, the dedicated Monitoring branch, honest unknown status and mobile wrapping. Original MV2-001–071 task definitions remain unchanged. Live deployment and automatic update acceptance remain part of MV2-072's separate verification.
 
@@ -259,7 +259,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ### MV2-073 — Show Monitoring backlog completion and deployment progress
 
-**Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Platform + Frontend · **Size:** M
+**Status:** VERIFYING · **Priority:** P0 · **Owner:** Platform + Frontend · **Size:** M
 
 **Dependencies:** None; user-authorized visibility work. **Requirements:** explicit user request for simple development progress, 2026-09-10.
 
@@ -282,7 +282,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** focused parser/collector and page tests; exact-blob count comparison; deployed-page inspection and subsequent automatic-update evidence. A passing build or an IN PROGRESS task is not completion.
 
-**Execution evidence:** User-authorized task recorded; implementation/live acceptance pending. Record actual results here after verification.
+**Execution evidence, 2026-09-10:** Reviewed backend task `f3d53570b28b5024ac259534780a9c7589ee4d97` passed 112 focused parser, collector, release and API tests plus Ruff. Reviewed UI task `1e2780805d55a7b767525221b93151e7227c6796` passed seven semantic counting tests, i18n, TypeScript, the production frontend build and the existing deployment browser check with 40 full-document accessibility checkpoints across five locales and desktop/mobile views. Independent review findings on Markdown indentation/fences and per-task status labels were resolved. Both task branches are integrated here. Browser fixtures are synthetic evidence, not a live deployment or actual completion percentages. The installed controller remains pinned to the prior MV2-072 revision until bootstrap and the paused recovery rehearsal complete. Exact live snapshots, deployed-page inspection and subsequent automatic-update acceptance remain pending; keep this task VERIFYING.
 
 ## F0 — Decisions, sources and validation of user needs
 
