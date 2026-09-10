@@ -141,6 +141,27 @@ function Protect-MonitoringControllerPath {
         $acl = New-Object Security.AccessControl.FileSecurity
         $inherit = [Security.AccessControl.InheritanceFlags]::None
     }
+    # Preserve an already exact protected DACL. Reapplying it can require an
+    # unavailable audit privilege on Windows even though no ACL change is needed.
+    # Read access/owner information only; never request or change a SACL.
+    $existing = Get-Acl -LiteralPath $Path
+    $rules = @($existing.GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier]))
+    $expectedSids = @($sid.Value, 'S-1-5-18')
+    $exact = $existing.AreAccessRulesProtected -and
+        $existing.GetOwner([Security.Principal.SecurityIdentifier]).Value -ceq $sid.Value -and
+        $rules.Count -eq 2
+    foreach ($expectedSid in $expectedSids) {
+        $matching = @($rules | Where-Object {
+            $_.IdentityReference.Value -ceq $expectedSid -and
+            -not $_.IsInherited -and
+            $_.AccessControlType -eq [Security.AccessControl.AccessControlType]::Allow -and
+            $_.FileSystemRights -eq [Security.AccessControl.FileSystemRights]::FullControl -and
+            $_.InheritanceFlags -eq $inherit -and
+            $_.PropagationFlags -eq [Security.AccessControl.PropagationFlags]::None
+        })
+        $exact = $exact -and $matching.Count -eq 1
+    }
+    if ($exact) { return }
     $acl.SetOwner($sid)
     $acl.SetAccessRuleProtection($true, $false)
     foreach ($identity in @($sid, (New-Object Security.Principal.SecurityIdentifier('S-1-5-18')))) {

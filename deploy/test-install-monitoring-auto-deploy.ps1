@@ -60,6 +60,54 @@ try {
     $rules = @($acl.GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier]))
     $currentSid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
     Assert-True ($rules.Count -eq 2 -and @($rules | Where-Object { $_.IdentityReference.Value -notin @($currentSid, 'S-1-5-18') }).Count -eq 0) 'Controller ACL grants an unexpected identity.'
+    $originalDirectorySddl = $acl.Sddl
+    & $nativeProtectPath $aclFixture
+    Assert-True ((Get-Acl -LiteralPath $aclFixture).Sddl -ceq $originalDirectorySddl) 'Repeated directory protection changed the ACL.'
+    $aclFileFixture = Join-Path $aclFixture 'controller.txt'
+    [IO.File]::WriteAllText($aclFileFixture, 'controller fixture')
+    & $nativeProtectPath $aclFileFixture
+    $fileAcl = Get-Acl -LiteralPath $aclFileFixture
+    $fileRules = @($fileAcl.GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier]))
+    Assert-True ($fileAcl.AreAccessRulesProtected -and $fileRules.Count -eq 2) 'Controller file ACL is not protected with two entries.'
+    foreach ($expectedSid in @($currentSid, 'S-1-5-18')) {
+        Assert-True (@($fileRules | Where-Object {
+            $_.IdentityReference.Value -ceq $expectedSid -and -not $_.IsInherited -and
+            $_.AccessControlType -eq [Security.AccessControl.AccessControlType]::Allow -and
+            $_.FileSystemRights -eq [Security.AccessControl.FileSystemRights]::FullControl -and
+            $_.InheritanceFlags -eq [Security.AccessControl.InheritanceFlags]::None -and
+            $_.PropagationFlags -eq [Security.AccessControl.PropagationFlags]::None
+        }).Count -eq 1) 'Controller file ACL does not match the exact identity and permissions.'
+    }
+    Assert-True ($fileAcl.GetOwner([Security.Principal.SecurityIdentifier]).Value -ceq $currentSid) 'Controller file owner changed.'
+    & $nativeProtectPath $aclFileFixture
+    Assert-True ((Get-Acl -LiteralPath $aclFileFixture).Sddl -ceq $fileAcl.Sddl) 'Repeated file protection changed the ACL.'
+    # Drift must reach the protection operation, never the unchanged-ACL return.
+    # Synthetic ACLs avoid granting real access to another identity in this test.
+    $script:AclProtectionCalls = 0
+    function Get-Acl { param($LiteralPath); return $script:AclReadback }
+    function Set-Acl { param($LiteralPath, $AclObject); $script:AclProtectionCalls++ }
+    try {
+        foreach ($drift in @('missing-system', 'extra-identity', 'read-only', 'inheriting')) {
+            $script:AclReadback = New-Object Security.AccessControl.FileSecurity
+            $script:AclReadback.SetSecurityDescriptorSddlForm($fileAcl.Sddl)
+            $systemSid = New-Object Security.Principal.SecurityIdentifier('S-1-5-18')
+            if ($drift -eq 'missing-system') { $script:AclReadback.PurgeAccessRules($systemSid) }
+            if ($drift -eq 'extra-identity') {
+                $everyone = New-Object Security.Principal.SecurityIdentifier('S-1-1-0')
+                $script:AclReadback.AddAccessRule((New-Object Security.AccessControl.FileSystemAccessRule($everyone, 'Read', 'Allow')))
+            }
+            if ($drift -eq 'read-only') {
+                $script:AclReadback.SetAccessRule((New-Object Security.AccessControl.FileSystemAccessRule($systemSid, 'Read', 'Allow')))
+            }
+            if ($drift -eq 'inheriting') { $script:AclReadback.SetAccessRuleProtection($false, $false) }
+            $beforeProtection = $script:AclProtectionCalls
+            & $nativeProtectPath $aclFileFixture
+            Assert-True ($script:AclProtectionCalls -eq $beforeProtection + 1) "An unsafe ACL was accepted unchanged: $drift"
+        }
+    } finally {
+        Remove-Item Function:\Get-Acl
+        Remove-Item Function:\Set-Acl
+    }
     Test-Git @('init', '-q')
     Test-Git @('config', 'user.name', 'Installer Test')
     Test-Git @('config', 'user.email', 'installer-test@example.invalid')
@@ -184,7 +232,7 @@ try {
     Assert-Rejected { Install-MonitoringAutoDeploy $configPath $PythonExecutable $revision } 'A foreign scheduled task was overwritten.'
     Assert-True ($script:RegistrationCount -eq $before) 'Foreign task collision still mutated the scheduler.'
     Assert-True ((Get-FileHash -LiteralPath (Join-Path $config.control_dir 'release_manager.py')).Hash -ceq $beforeManagerHash) 'Foreign task collision changed the controller.'
-    Write-Output 'PASS: parsing, native directory ACL, read-only validation, 17 unsafe configurations, junction escape, pinned provenance, config preservation, exact extraction, idempotence, SID/qualified/short owner readback, foreign/unresolved owner rejection, paused-task preservation, task scope and exact hidden scheduled invocation.'
+    Write-Output 'PASS: parsing, native first/repeated directory and file ACLs, four rejected ACL-drift cases, read-only validation, 17 unsafe configurations, junction escape, pinned provenance, config preservation, exact extraction, idempotence, SID/qualified/short owner readback, foreign/unresolved owner rejection, paused-task preservation, task scope and exact hidden scheduled invocation.'
 } finally {
     [Environment]::SetEnvironmentVariable('GIT_TERMINAL_PROMPT', $initialPrompt, 'Process')
     # Only the verified GUID-named disposable directory created by this test.
