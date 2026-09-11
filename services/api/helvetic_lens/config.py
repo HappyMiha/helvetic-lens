@@ -7,6 +7,7 @@ from pydantic import AliasChoices, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .locales import normalize_locale
+from .monitoring_contracts import MonitoringRollout
 
 # The source checkout and the API container have different directory depths.
 ROOT = next(
@@ -47,6 +48,9 @@ class Settings(BaseSettings):
         pattern=r"^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$",
     )
     allow_anonymous_dev: bool = True
+    monitoring_rollout: MonitoringRollout = Field(
+        default_factory=MonitoringRollout, validation_alias="MONITORING_V2_ROLLOUT",
+    )
     session_cookie_secure: bool = False
     session_ttl_days: int = Field(default=14, ge=1, le=90)
     public_base_url: str = "http://127.0.0.1:3000"

@@ -57,6 +57,7 @@ from .models import (
     Source,
     Version,
 )
+from .monitoring_subject_api import draft_router
 from .observability import correlation_context
 from .prompt_settings import PromptSettingsInput
 from .registry import RegistryFilters
@@ -311,6 +312,8 @@ class RelationReprocessingInput(Input):
 
 
 def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
+    if path.startswith("/api/monitoring-subjects"):
+        return "monitoring_subjects", 60, 60
     if method not in {"POST", "PUT", "PATCH", "DELETE"}:
         return None
     if path.startswith("/api/auth/"):
@@ -500,10 +503,11 @@ def create_app(
         rate = _rate_policy(path, request.method)
         if rate:
             try:
+                rate_path = "/api/monitoring-subjects" if path.startswith("/api/monitoring-subjects") else path
                 await asyncio.to_thread(
                     limiter.check,
                     rate[0],
-                    f"{identity.user_id if identity else client}:{path}",
+                    f"{identity.user_id if identity else client}:{rate_path}",
                     limit=rate[1],
                     window_seconds=rate[2],
                 )
@@ -551,6 +555,8 @@ def create_app(
             with correlation_context(request_id=request_id):
                 response = await call_next(request)
             status = response.status_code
+            if request.url.path.startswith("/api/monitoring-subjects"):
+                response.headers["Cache-Control"] = "private, no-store"
             response.headers["X-Request-ID"] = request_id
             return response
         finally:
@@ -2108,6 +2114,7 @@ def create_app(
     def reset_prompt_settings():
         return service.reset_prompt_settings()
 
+    app.include_router(draft_router(service, settings))
     return app
 
 

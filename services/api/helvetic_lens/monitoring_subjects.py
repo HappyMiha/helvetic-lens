@@ -10,7 +10,7 @@ from copy import deepcopy
 from decimal import Decimal
 
 from pydantic import ValidationError
-from sqlalchemy import delete, select, update
+from sqlalchemy import and_, delete, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -92,13 +92,35 @@ def get_subject(session: Session, *, user_id: str, subject_id: str) -> dict:
 
 
 def list_subjects(session: Session, *, user_id: str, limit: int = 50) -> list[dict]:
+    return list_subjects_page(session, user_id=user_id, limit=limit)["items"]
+
+
+def list_subjects_page(session: Session, *, user_id: str, limit: int = 50, after_id: str | None = None) -> dict:
     organization_id = _actor(session, user_id)
     if type(limit) is not int or not 1 <= limit <= 100:
         raise DomainError("List limit must be between 1 and 100.", 422, "subject_limit_invalid")
-    subjects = session.scalars(select(MonitoringSubject).where(
+    statement = select(MonitoringSubject).where(
         MonitoringSubject.organization_id == organization_id, MonitoringSubject.owner_user_id == user_id,
-    ).order_by(MonitoringSubject.created_at.desc(), MonitoringSubject.id).limit(limit))
-    return [_view(session, subject) for subject in subjects]
+    )
+    if after_id:
+        anchor = _owned(session, organization_id, user_id, after_id)
+        statement = statement.where(or_(MonitoringSubject.created_at < anchor.created_at,
+                                        and_(MonitoringSubject.created_at == anchor.created_at,
+                                             MonitoringSubject.id > anchor.id)))
+    rows = list(session.scalars(statement.order_by(
+        MonitoringSubject.created_at.desc(), MonitoringSubject.id,
+    ).limit(limit + 1)))
+    return {"items": [_view(session, subject) for subject in rows[:limit]],
+            "next_cursor": rows[limit - 1].id if len(rows) > limit else None}
+
+
+def preview_draft(session: Session, *, user_id: str, configuration: dict) -> dict:
+    _actor(session, user_id, write=True)
+    payload, digest = _configuration(configuration)
+    return {"configuration": payload, "configuration_hash": digest,
+            "preview_kind": "configuration_only", "coverage": "unverified",
+            "observations": [], "forecasts": [], "start_available": False,
+            "blocking_reasons": ["source_acceptance_pending", "live_connector_not_implemented"]}
 
 
 def create_draft(session: Session, *, user_id: str, request_key: str, configuration: dict) -> dict:
@@ -166,16 +188,26 @@ def revise_draft(session: Session, *, user_id: str, subject_id: str,
 
 
 def subject_history(session: Session, *, user_id: str, subject_id: str, limit: int = 100) -> list[dict]:
+    return subject_history_page(session, user_id=user_id, subject_id=subject_id, limit=limit)["items"]
+
+
+def subject_history_page(session: Session, *, user_id: str, subject_id: str,
+                         limit: int = 100, before_revision: int | None = None) -> dict:
     organization_id = _actor(session, user_id)
     _owned(session, organization_id, user_id, subject_id)
     if type(limit) is not int or not 1 <= limit <= 100:
         raise DomainError("History limit must be between 1 and 100.", 422, "subject_limit_invalid")
-    revisions = session.scalars(select(MonitoringSubjectRevision).where(
+    statement = select(MonitoringSubjectRevision).where(
         MonitoringSubjectRevision.subject_id == subject_id,
         MonitoringSubjectRevision.organization_id == organization_id,
-    ).order_by(MonitoringSubjectRevision.revision.desc()).limit(limit))
-    return [{"revision": row.revision, "configuration": deepcopy(row.configuration_json),
-             "configuration_hash": row.configuration_hash} for row in revisions]
+    )
+    if before_revision is not None:
+        _expected_revision(before_revision)
+        statement = statement.where(MonitoringSubjectRevision.revision < before_revision)
+    revisions = list(session.scalars(statement.order_by(MonitoringSubjectRevision.revision.desc()).limit(limit + 1)))
+    return {"items": [{"revision": row.revision, "configuration": deepcopy(row.configuration_json),
+                       "configuration_hash": row.configuration_hash} for row in revisions[:limit]],
+            "next_before_revision": revisions[limit - 1].revision if len(revisions) > limit else None}
 
 
 def delete_draft(session: Session, *, user_id: str, subject_id: str, expected_revision: int) -> None:

@@ -412,6 +412,8 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **C01a-R1 publication follow-up:** The previous c2ab0d6 automatic release failed its existing backlog consistency test because MV2-069's detail status had changed without its index row; later MV2-001/070 updates had the same omission. Synchronize those three index rows with the evidence-backed detail statuses and verify the existing parser. Preserve the parser's strict mismatch rejection and all deployment gates. This repairs publication metadata, not product acceptance.
 
+**C01b1 API refinement, 2026-09-11:** Expose authenticated private draft CRUD, paged list/history and configuration-only preview under the exact workspace/template/version shadow grant, disabled by default. Verify CSRF, same-workspace other-owner and cross-workspace denial, revoked access, revision conflicts, cache prevention and bounded input/rate behavior. Start must explicitly reject unaccepted source/live workflow gates without changing state or enqueuing jobs. C01b2 will implement accepted-source Start/lifecycle; a permanently blocked Start is not completion of C01b or Pollen Watch.
+
 **Acceptance criteria:**
 
 1. C01 — Personal subject/access (004/005/010/015/017/053): location/station, one or multiple allergens, threshold/rapid increase, notification choices; draft/preview/explicit Start/edit/pause/archive/delete; idempotent Start, revisioned configuration and permissions on API/jobs/evidence/cache; negative cross-tenant, role-revocation and private-location tests. Other template schemas and UI are not required.
@@ -426,6 +428,8 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 **Verification:** API/DB/UI integration, independent source-contract fixtures, a role matrix, boundary/replay/failure/restart checks and C5 build/restore evidence. MV2-031 completes live product end-to-end acceptance; MV2-071 provides the final gate for user testing.
 
 **Execution evidence, 2026-09-11:** C01a internal draft persistence implemented on `codex/HappyDucky02/mv2-070-personal-subjects`: additive generic subject/revision tables, owner-scoped create/read/list/edit/history/delete, conditional revision updates and idempotent concurrent creation. 10 repository tests passed on each of SQLite and isolated PostgreSQL 17; three existing foundation/legacy characterization tests and Ruff also passed. [Evidence and remaining boundaries](docs/monitoring-v2/evidence/MV2-070.md). Exact automatic deployment, C01b API/Start, C01c UI and C02–C08 remain open; this does not activate pollen sources or notifications.
+
+**C01b1 execution evidence, 2026-09-11:** Added the [authenticated draft API](docs/monitoring-v2/PERSONAL_DRAFT_API.md), default-off exact shadow rollout, private create/read/edit/delete, configuration-only preview, list/history pagination and explicitly blocked Start. Eight HTTP cases, eleven SQLite repository cases, four existing authentication cases and the required backlog consistency check passed; the new pagination case also passed on disposable PostgreSQL 17. Targeted Ruff passed. The serving configuration remains off; no accepted source, live Start, UI or delivery is claimed. See the [continuation evidence](docs/monitoring-v2/evidence/MV2-070.md).
 
 <a id="mv2-071"></a>
 

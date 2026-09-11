@@ -15,7 +15,7 @@ from sqlalchemy.exc import IntegrityError
 from alembic import command
 from helvetic_lens import monitoring_subjects as subjects
 from helvetic_lens.config import DomainError, Settings
-from helvetic_lens.db import Database
+from helvetic_lens.db import Database, utcnow
 from helvetic_lens.models import (
     MonitoringSubject,
     MonitoringSubjectRevision,
@@ -244,3 +244,30 @@ def test_upgrade_from_previous_schema_preserves_existing_identity_rows(db):
             assert connection.execute(select(model.__table__).order_by(model.id)).all() == before[model.__tablename__]
     record = create(db)
     assert record["status"] == "draft"
+
+
+def test_pages_handle_equal_timestamps_and_revision_continuation(db):
+    records = [create(db, key=f"page-{index}") for index in range(3)]
+    with db.session() as session:
+        session.execute(update(MonitoringSubject).where(
+            MonitoringSubject.owner_user_id == "owner", MonitoringSubject.organization_id == "org-a",
+        ).values(created_at=utcnow()))
+        session.commit()
+        seen, cursor = [], None
+        for _ in range(3):
+            page = subjects.list_subjects_page(session, user_id="owner", limit=1, after_id=cursor)
+            seen.append(page["items"][0]["id"])
+            cursor = page["next_cursor"]
+        assert cursor is None
+        assert seen == sorted(record["id"] for record in records)
+        subject_id = records[0]["id"]
+        for revision, station in ((1, "PZH"), (2, "PGE")):
+            subjects.revise_draft(session, user_id="owner", subject_id=subject_id,
+                                  expected_revision=revision, configuration=config(station))
+        session.commit()
+        first = subjects.subject_history_page(session, user_id="owner", subject_id=subject_id, limit=1)
+        rest = subjects.subject_history_page(session, user_id="owner", subject_id=subject_id,
+                                             before_revision=first["next_before_revision"])
+        assert first["items"][0]["revision"] == 3
+        assert [row["revision"] for row in rest["items"]] == [2, 1]
+        assert rest["next_before_revision"] is None
