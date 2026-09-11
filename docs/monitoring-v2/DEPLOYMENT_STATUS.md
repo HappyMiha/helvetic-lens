@@ -4,6 +4,13 @@
 
 ## Current checkpoint — 11 September
 
+**15:27 UTC update:** Automatic release `40e7283bc4b7d61b56c6fc2b212c7f35cec3b315`
+was activated at `2026-09-11T15:08:19Z`, with all gates successful and **2261 API
+tests passed, 12 skipped**. Public readiness independently confirms that SHA.
+This includes the numeric coordinator and additive private evaluation ledger.
+The controller now tests `fc62f43`; frontend iterations continue without restarting
+that run. This is actual component release evidence, not source/user acceptance.
+
 **13:49 UTC update:** Automatic release `1144a4742dce6666f6530261e5f08c467b6cc995`
 was activated at `2026-09-11T13:42:41Z`; all automatic gates succeeded. Its full
 API suite passed **2225 tests, 12 skipped**. Independent public readiness confirms

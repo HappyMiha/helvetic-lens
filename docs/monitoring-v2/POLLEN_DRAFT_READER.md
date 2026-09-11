@@ -3,8 +3,9 @@
 MV2-070 C01c1, 11 September 2026. `/pollen-watch` renders the existing private
 draft API's list, current saved configuration and immutable configuration history.
 The reader is now accompanied by C01c2a new-draft creation and configuration-only
-preview. Existing-draft editing/deletion and delivery-preference editing remain
-C01c2b; the live workflow is not implemented by this interface.
+preview, plus C01c2b1 confirmed draft deletion. Existing-draft editing and
+delivery-preference editing remain C01c2b2; the live workflow is not implemented
+by this interface.
 
 The reader requires an authenticated user and workspace; anonymous development
 does not receive a private identity. The server's exact default-off shadow grant
@@ -12,7 +13,9 @@ remains authoritative. A disabled workspace sees an unavailable explanation,
 not a fake empty list. No serving configuration or navigation rollout is enabled
 by this change. Access the route directly in an explicitly configured test
 workspace. The reader uses GET; the manager-only creator uses preview and create
-POST requests through the existing CSRF-aware helper. No Start request is made.
+POST requests through the existing CSRF-aware helper. Confirmed owned-draft
+deletion uses the same helper with DELETE and the reviewed expected revision.
+No Start request is made.
 
 Each component instance is keyed by user, workspace and role. Switching identity
 remounts it before private data can render under another scope. Unmount, reload
@@ -76,3 +79,31 @@ preview invalidation, CSRF, duplicate clicks, a simulated committed save with a
 lost response, same-key retry, saved navigation, discard decisions and revocation.
 Five creator axe checkpoints bring the suite total to eleven. Native-language,
 screen-reader, real workspace and source acceptance are still required.
+
+## C01c2b1 confirmed deletion
+
+Only a manager viewing an owned subject whose current status is draft is offered
+Delete draft. The native confirmation names the selected station and exact
+revision, and explains irreversible removal of configuration and evaluation
+history. Cancel sends no request. A synchronous guard prevents duplicate
+submission, and competing reader actions are disabled until the response arrives.
+
+DELETE carries only the reviewed expected revision. On success, detail/history
+are cleared and the list restarts with fresh pagination; a focused status message
+confirms removal. A revision conflict retains the attempted view and blocks
+another deletion until the user reloads the selected draft. The next confirmation
+uses that newly read revision; no automatic conflict retry or unseen revision is
+used. The server continues to enforce owner, organization, membership and lifecycle.
+
+A failed response remains uncertain and offers explicit retry of the same
+revision, or a list reload to inspect the result. A subsequent missing-record
+response clears private data and reports unavailable rather than claiming that
+this client proved deletion. Revoked/default-off access likewise clears private
+state. Leaving the page aborts observation of the request, not necessarily a
+server transaction that already committed; reread the draft list after returning.
+
+Five-language browser checks cover exact confirmations, cancellation, successful
+removal, double clicks, CSRF, fresh-revision conflict recovery, uncertain-then-missing,
+revocation and active/viewer denial. Five post-deletion full-document axe checks
+bring the combined suite to sixteen. Existing API/DB checks verify the private
+cascades; no real user record is used by the browser fixtures.

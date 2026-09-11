@@ -8,6 +8,7 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { pollenDraftCopy } from "../apps/web/lib/pollen-draft-copy.ts";
 import { pollenCreateCopy } from "../apps/web/lib/pollen-create-copy.ts";
+import { pollenDeleteCopy } from "../apps/web/lib/pollen-delete-copy.ts";
 import { AccessibilityAudit } from "./browser-accessibility.mjs";
 import { Cdp, evaluate, sleep } from "./browser-cdp.mjs";
 
@@ -27,6 +28,8 @@ const browser = spawn(chrome, ["--headless=new", "--no-first-run", "--no-default
 let cdp, locale = "en-CH", mode = "ready", organization = "org-a", delayFirst = false;
 let manager = false, previewError = false, loseFirstSave = false, dialogAccept = false;
 const created = new Map();
+const deleted = new Set(), revisions = new Map(), dialogs = [];
+let deleteMode = "success", selectedStatus = "draft";
 const requests = [], exceptions = [];
 const audit = new AccessibilityAudit("pollen-drafts");
 const config = station => ({ station_id: station, selections: [{ allergen: "birch", rules: [{ period: "observation_hourly", unit: "number/m3",
@@ -54,7 +57,8 @@ try {
   cdp = new Cdp(target.webSocketDebuggerUrl);
   await cdp.send("Page.enable"); await cdp.send("Runtime.enable");
   await cdp.send("Network.setCookie", { name: "helvetic_lens_csrf", value: "synthetic-pollen-csrf", url: base });
-  cdp.on("Page.javascriptDialogOpening", async () => {
+  cdp.on("Page.javascriptDialogOpening", async ({ message }) => {
+    dialogs.push(message);
     await cdp.send("Page.handleJavaScriptDialog", { accept: dialogAccept });
   });
   cdp.on("Runtime.exceptionThrown", ({ exceptionDetails }) => exceptions.push(exceptionDetails.text));
@@ -70,6 +74,14 @@ try {
       if (["disabled", "revoked", "error", "missing"].includes(mode)) {
         code = mode === "revoked" ? 403 : mode === "error" ? 503 : 404;
         body = { code: { disabled: "monitoring_not_enabled", revoked: "membership_required", error: "unavailable", missing: "subject_not_found" }[mode] };
+      } else if (deleted.has(url.pathname.split("/")[3])) {
+        code = 404; body = { code: "subject_not_found" };
+      } else if (request.method === "DELETE") {
+        await sleep(200);
+        const id = url.pathname.split("/")[3];
+        if (deleteMode === "conflict") { revisions.set(id, 13); code = 409; body = { code: "subject_revision_conflict" }; }
+        else if (deleteMode === "revoked") { code = 403; body = { code: "membership_required" }; }
+        else { deleted.add(id); code = deleteMode === "uncertain" ? 503 : 204; body = { code: "unavailable" }; }
       } else if (url.pathname === "/api/monitoring-subjects/preview") {
         if (previewError) { code = 422; body = { code: "invalid_input" }; }
         else body = { configuration: payload.configuration, configuration_hash: "c".repeat(64), preview_kind: "configuration_only", start_available: false,
@@ -79,12 +91,17 @@ try {
           revision: 1, configuration: payload.configuration });
         if (loseFirstSave) { loseFirstSave = false; code = 503; body = { code: "unavailable" }; }
         else { code = 201; body = created.get(payload.request_key); }
-      } else if (url.pathname === "/api/monitoring-subjects") body = mode === "empty" || organization === "org-b" ? { items: [], next_cursor: null }
-        : url.searchParams.has("cursor") ? { items: [draft("b", "PZH")], next_cursor: null } : { items: [draft("a", "PBS")], next_cursor: "a" };
+      } else if (url.pathname === "/api/monitoring-subjects") {
+        const remaining = [draft("a", "PBS"), draft("b", "PZH")].filter(d => !deleted.has(d.id));
+        body = mode === "empty" || organization === "org-b" ? { items: [], next_cursor: null }
+          : url.searchParams.has("cursor") ? { items: remaining.slice(1), next_cursor: null } : { items: remaining.slice(0, 1), next_cursor: remaining.length > 1 ? remaining[0].id : null };
+      }
       else {
         const isA = url.pathname.split("/")[3] === "a";
         if (delayFirst && isA) await sleep(800);
         const selected = [...created.values()].find(d => d.id === url.pathname.split("/")[3]) || draft(isA ? "a" : "b", isA ? "PBS" : "PZH");
+        selected.revision = revisions.get(selected.id) || selected.revision;
+        selected.status = selectedStatus;
         body = url.pathname.endsWith("/history") ? { items: [{ revision: url.searchParams.has("before_revision") ? 11 : 12,
           configuration: config("PGE"), configuration_hash: "b".repeat(64) }], next_before_revision: url.searchParams.has("before_revision") ? null : 12 } : selected;
       }
@@ -92,7 +109,7 @@ try {
     else { code = 503; body = { detail: "Synthetic endpoint unavailable" }; }
     await cdp.send("Fetch.fulfillRequest", { requestId, responseCode: code,
       responseHeaders: [{ name: "Content-Type", value: "application/json" }, { name: "Cache-Control", value: "private, no-store" }],
-      body: Buffer.from(JSON.stringify(body)).toString("base64") }).catch(() => {});
+      body: code === 204 ? "" : Buffer.from(JSON.stringify(body)).toString("base64") }).catch(() => {});
   });
   await cdp.send("Fetch.enable", { patterns: [{ urlPattern: `${base}/api/*`, requestStage: "Request" }] });
   for (const language of Object.keys(pollenDraftCopy)) {
@@ -106,6 +123,7 @@ try {
     await cdp.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, text: "\r", unmodifiedText: "\r" });
     await cdp.send("Input.dispatchKeyEvent", { type: "keyUp", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13 });
     await wait(async () => (await text()).includes("12.500001"), "Exact saved threshold missing");
+    assert.equal(await evaluate(cdp, "!!document.querySelector('[data-pollen-delete]')"), false, "Viewer was offered deletion");
     await wait(() => evaluate(cdp, "document.activeElement?.tagName === 'H2'"), "Selection did not focus its settings heading");
     if (locale !== "en-CH") assert.ok(await evaluate(cdp, "document.activeElement.getBoundingClientRect().top >= 72"), "Focused heading is hidden by the mobile header");
     assert.ok((await text()).includes(pollenDraftCopy[locale].blocked));
@@ -213,11 +231,60 @@ try {
   mode = "revoked"; await button(copy.preview);
   await wait(async () => (await text()).includes(pollenDraftCopy[locale].access), "Creation access revocation was not shown");
   assert.equal(await evaluate(cdp, "!!document.querySelector('[data-pollen-create]')"), false);
+  const deletes = () => requests.filter(r => r.method === "DELETE");
+  async function selectForDelete() {
+    await navigate();
+    await wait(() => evaluate(cdp, "!!document.querySelector('[data-pollen-drafts] li:first-child button')"), "Deletion fixture list missing");
+    await click('[data-pollen-drafts] li:first-child button');
+    await wait(async () => (await text()).includes("12.500001"), "Deletion fixture settings missing");
+  }
+  mode = "ready";
+  for (const language of Object.keys(pollenDeleteCopy)) {
+    locale = language; deleted.clear(); revisions.clear(); deleteMode = "success";
+    await selectForDelete(); const removal = pollenDeleteCopy[locale];
+    const count = deletes().length; dialogAccept = false; await button(removal.remove);
+    assert.equal(deletes().length, count);
+    assert.equal(dialogs.at(-1), removal.confirm.replace("{station}", "PBS").replace("{revision}", "12"));
+    dialogAccept = true;
+    await evaluate(cdp, "(() => {const button=document.querySelector('[data-pollen-delete]'); button.click(); button.click();})()");
+    await wait(async () => (await text()).includes(removal.deleted), "Deletion success was not shown");
+    assert.equal(deletes().length, count + 1);
+    assert.deepEqual(deletes().at(-1).payload, { expected_revision: 12 });
+    assert.equal(Object.entries(deletes().at(-1).headers).find(([key]) => key.toLowerCase() === "x-csrf-token")?.[1], "synthetic-pollen-csrf");
+    assert.ok(!(await text()).includes("12.500001"));
+    assert.equal(await evaluate(cdp, "document.querySelectorAll('[data-pollen-drafts] details').length"), 0);
+    await audit.check(cdp, `deleted-${locale}`, "[data-pollen-drafts] p[role=status]");
+  }
+  locale = "en-CH"; deleted.clear(); revisions.clear(); deleteMode = "conflict";
+  await selectForDelete(); const removal = pollenDeleteCopy[locale];
+  await button(removal.remove);
+  await wait(async () => (await text()).includes(removal.conflict), "Revision conflict missing");
+  assert.equal(await evaluate(cdp, "document.querySelector('[data-pollen-delete]').disabled"), true);
+  const conflictCount = deletes().length; await button(removal.remove); assert.equal(deletes().length, conflictCount);
+  deleteMode = "success"; await button(removal.reload);
+  await wait(() => evaluate(cdp, "document.querySelector('[data-pollen-drafts] section[aria-label=\"Saved settings\"] h3')?.textContent.includes('13')"), "Changed revision was not read");
+  await button(removal.remove);
+  await wait(async () => (await text()).includes(removal.deleted), "Fresh-revision deletion failed");
+  assert.equal(deletes().at(-1).payload.expected_revision, 13);
+  assert.equal(dialogs.at(-1), removal.confirm.replace("{station}", "PBS").replace("{revision}", "13"));
+  deleted.clear(); revisions.clear(); deleteMode = "uncertain"; await selectForDelete(); await button(removal.remove);
+  await wait(async () => (await text()).includes(removal.uncertain), "Uncertain deletion was treated as success");
+  await button(removal.remove);
+  await wait(async () => (await text()).includes(pollenDraftCopy[locale].missing), "Missing after uncertain deletion was not distinguished");
+  assert.ok(!(await text()).includes(removal.deleted));
+  assert.ok(!(await text()).includes("12.500001"));
+  assert.deepEqual(deletes().at(-1).payload, deletes().at(-2).payload);
+  deleted.clear(); deleteMode = "revoked"; await selectForDelete(); await button(removal.remove);
+  await wait(async () => (await text()).includes(pollenDraftCopy[locale].access), "Deletion revocation was not shown");
+  assert.ok(!(await text()).includes("12.500001"));
+  selectedStatus = "active"; deleteMode = "success"; await selectForDelete();
+  assert.equal(await evaluate(cdp, "!!document.querySelector('[data-pollen-delete]')"), false, "Active monitor was offered draft deletion");
   assert.equal(requests.filter(r => r.path.endsWith("/start")).length, 0);
   assert.deepEqual(exceptions, []);
-  audit.finish(11);
+  audit.finish(16);
   console.log("Pollen reader: five locales, desktop/mobile, keyboard activation, exact decimals, list/history pagination, obsolete responses, revoked/default-off/missing/error/empty/anonymous/workspace isolation passed. Synthetic APIs only; no live acceptance.");
   console.log("Pollen creation: five locales, keyboard entry, multi-allergen observation/forecast rules, invalid preview, preview invalidation, CSRF, busy guard, lost-response same-key retry, saved navigation, confirmed/cancelled discard and revoked access passed. Email off; no Start requests.");
+  console.log("Pollen deletion: five localized exact station/revision confirmations, cancel/success, duplicate clicks, CSRF, private-history removal, conflict requiring fresh revision, uncertain response then missing, revoked access and active/viewer denial passed.");
 } catch (error) {
   console.error({ locale, mode, requests: requests.slice(-12), exceptions,
     page: cdp ? await text().catch(() => "unavailable") : null,

@@ -5,6 +5,7 @@ import { api, ApiError } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { pollenDraftCopy } from "@/lib/pollen-draft-copy";
 import { pollenCreateCopy } from "@/lib/pollen-create-copy";
+import { pollenDeleteCopy } from "@/lib/pollen-delete-copy";
 import { PollenDraftCreate } from "./pollen-draft-create";
 import {
   draftFailure,
@@ -106,6 +107,14 @@ function Reader({ allowed }: { allowed: boolean }) {
   const { locale } = useI18n();
   const copy = pollenDraftCopy[locale];
   const [items, setItems] = useState<PollenDraft[]>([]);
+  const removal = pollenDeleteCopy[locale];
+  const [deleting, setDeleting] = useState(false);
+  const [deleteNotice, setDeleteNotice] = useState<
+    "deleted" | "conflict" | "uncertain" | null
+  >(null);
+  const deleteInFlight = useRef(false);
+  const deleteRequest = useRef<AbortController | null>(null);
+  const deletionNotice = useRef<HTMLParagraphElement | null>(null);
   const [cursor, setCursor] = useState<string | null>(null);
   const [selected, setSelected] = useState<PollenDraft | null>(null);
   const [history, setHistory] = useState<PollenRevision[]>([]);
@@ -120,6 +129,10 @@ function Reader({ allowed }: { allowed: boolean }) {
   const detailHeading = useRef<HTMLHeadingElement | null>(null);
 
   useEffect(() => {
+    if (deleteNotice) deletionNotice.current?.focus();
+  }, [deleteNotice]);
+
+  useEffect(() => {
     if (!selected) return;
     detailHeading.current?.focus({ preventScroll: true });
     if (window.matchMedia("(max-width: 700px)").matches) {
@@ -128,6 +141,7 @@ function Reader({ allowed }: { allowed: boolean }) {
   }, [selected?.id]);
 
   function clearDetail() {
+    setDeleteNotice(null);
     detailRequest.current?.abort();
     setSelected(null);
     setHistory([]);
@@ -147,7 +161,7 @@ function Reader({ allowed }: { allowed: boolean }) {
     );
   }
   async function loadList(next: string | null = null) {
-    if (!allowed) return;
+    if (!allowed || deleteInFlight.current) return;
     listRequest.current?.abort();
     const controller = new AbortController();
     listRequest.current = controller;
@@ -182,6 +196,7 @@ function Reader({ allowed }: { allowed: boolean }) {
     }
   }
   async function openDraft(id: string) {
+    if (deleteInFlight.current) return;
     clearDetail();
     setFailure(null);
     setDetailLoading(true);
@@ -206,6 +221,7 @@ function Reader({ allowed }: { allowed: boolean }) {
     }
   }
   async function moreHistory() {
+    if (deleteInFlight.current) return;
     if (!selected || before === null) return;
     detailRequest.current?.abort();
     const controller = new AbortController();
@@ -230,11 +246,72 @@ function Reader({ allowed }: { allowed: boolean }) {
       if (!controller.signal.aborted) setDetailLoading(false);
     }
   }
+  async function removeDraft() {
+    if (
+      !canManage ||
+      !selected ||
+      selected.status !== "draft" ||
+      deleteInFlight.current ||
+      loading ||
+      detailLoading ||
+      deleteNotice === "conflict"
+    )
+      return;
+    const snapshot = selected;
+    if (
+      !window.confirm(
+        removal.confirm
+          .replace("{station}", snapshot.configuration.station_id)
+          .replace("{revision}", String(snapshot.revision)),
+      )
+    )
+      return;
+    deleteInFlight.current = true;
+    setDeleting(true);
+    setDeleteNotice(null);
+    const controller = new AbortController();
+    deleteRequest.current = controller;
+    try {
+      await api<void>(
+        `/monitoring-subjects/${encodeURIComponent(snapshot.id)}`,
+        {
+          method: "DELETE",
+          body: JSON.stringify({ expected_revision: snapshot.revision }),
+          signal: controller.signal,
+        },
+      );
+      if (controller.signal.aborted) return;
+      deleteInFlight.current = false;
+      setDeleting(false);
+      await loadList();
+      if (!controller.signal.aborted) setDeleteNotice("deleted");
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      if (
+        error instanceof ApiError &&
+        error.code === "subject_revision_conflict"
+      )
+        setDeleteNotice("conflict");
+      else if (
+        error instanceof ApiError &&
+        draftFailure(error.code) !== "failed"
+      )
+        failed(error);
+      else setDeleteNotice("uncertain");
+    } finally {
+      if (!controller.signal.aborted) {
+        deleteInFlight.current = false;
+        setDeleting(false);
+      }
+    }
+  }
+
   useEffect(() => {
     void loadList();
     return () => {
       listRequest.current?.abort();
       detailRequest.current?.abort();
+      deleteRequest.current?.abort();
     };
     // Reader is keyed by the complete authenticated principal, including role.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -265,11 +342,11 @@ function Reader({ allowed }: { allowed: boolean }) {
               className={styles.button}
               type="button"
               onClick={() => void loadList()}
-              disabled={loading}
+              disabled={loading || deleting}
             >
               {copy.refresh}
             </button>
-            {canManage && !loading && !failure && (
+            {canManage && !loading && !failure && !deleting && (
               <button
                 className={styles.button}
                 type="button"
@@ -286,6 +363,17 @@ function Reader({ allowed }: { allowed: boolean }) {
                 {copy[failure]}
               </p>
             )}
+            {deleting && <p role="status">{removal.busy}</p>}
+            {deleteNotice && (
+              <p
+                className={styles.notice}
+                ref={deletionNotice}
+                tabIndex={-1}
+                role={deleteNotice === "deleted" ? "status" : "alert"}
+              >
+                {removal[deleteNotice]}
+              </p>
+            )}
             <div className={styles.columns}>
               <section aria-label={copy.title} aria-busy={loading}>
                 {loading && <p role="status">{copy.loading}</p>}
@@ -297,6 +385,7 @@ function Reader({ allowed }: { allowed: boolean }) {
                         className={styles.button}
                         type="button"
                         aria-pressed={selected?.id === item.id}
+                        disabled={deleting}
                         onClick={() => void openDraft(item.id)}
                       >
                         <strong>
@@ -320,7 +409,7 @@ function Reader({ allowed }: { allowed: boolean }) {
                   <button
                     className={styles.button}
                     type="button"
-                    disabled={loading}
+                    disabled={loading || deleting}
                     onClick={() => void loadList(cursor)}
                   >
                     {copy.more}
@@ -341,6 +430,32 @@ function Reader({ allowed }: { allowed: boolean }) {
                       {copy.revision} {selected.revision}
                     </h3>
                     <Settings configuration={selected.configuration} />
+                    {canManage && selected.status === "draft" && (
+                      <button
+                        className={styles.button}
+                        type="button"
+                        data-pollen-delete
+                        disabled={
+                          deleting ||
+                          loading ||
+                          detailLoading ||
+                          deleteNotice === "conflict"
+                        }
+                        onClick={() => void removeDraft()}
+                      >
+                        {removal.remove}
+                      </button>
+                    )}
+                    {deleteNotice === "conflict" && (
+                      <button
+                        className={styles.button}
+                        type="button"
+                        disabled={deleting || detailLoading}
+                        onClick={() => void openDraft(selected.id)}
+                      >
+                        {removal.reload}
+                      </button>
+                    )}
                     <button
                       className={styles.button}
                       type="button"
@@ -368,7 +483,7 @@ function Reader({ allowed }: { allowed: boolean }) {
                       <button
                         className={styles.button}
                         type="button"
-                        disabled={detailLoading}
+                        disabled={detailLoading || deleting}
                         onClick={() => void moreHistory()}
                       >
                         {copy.more}
