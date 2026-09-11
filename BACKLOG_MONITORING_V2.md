@@ -55,7 +55,7 @@ The value beyond an ordinary subscription is one verifiable history of material 
 
 **Next product outcome:** a complete Pollen Watch, accepted under MV2-071 and ready for the first round of testing with people. This is the first scenario to implement. Until it is ready, the tasks below and their necessary shared foundations take priority; source discovery for other active cases may run in parallel. Their connectors and user-facing capabilities must not precede C5 without a new priority decision.
 
-**Sequence:** MV2-001 → MV2-069 → MV2-070 → MV2-030 → MV2-031 → MV2-071 → ready to begin user testing; the next active v2 scenarios may then start. F3 denotes a domain group, not a requirement to wait for all of F1/F2. All these tasks are currently PLANNED; implementation and real-user testing have not yet been performed.
+**Sequence:** MV2-001 → MV2-069 → MV2-070 → MV2-030 → MV2-031 → MV2-071 → ready to begin user testing; the next active v2 scenarios may then start. F3 denotes a domain group, not a requirement to wait for all of F1/F2. MV2-001 is VERIFYING and MV2-069 is IN PROGRESS; subsequent tasks remain PLANNED. No complete Pollen Watch or real-user acceptance is claimed.
 
 | Step | Concrete outcome | Acceptance owner |
 |---|---|---|
@@ -374,7 +374,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ### MV2-069 — Pollen Watch FIRST: Confirm sources and the first-delivery contract
 
-**Status:** PLANNED — first implementation priority · **Priority:** P0 · **Owner:** Product + Integration + UX · **Size:** M
+**Status:** IN PROGRESS — first implementation priority · **Priority:** P0 · **Owner:** Product + Integration + UX · **Size:** M
 
 **Dependencies:** [MV2-001](#mv2-001). **Requirements:** User decision 2026-09-10: Pollen Watch first; §12, §§23–25; AC-C5-01…10; S-45…48.
 
@@ -392,7 +392,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** Separate dated observation/forecast dossiers with permitted live samples and source hashes; review the contract and C5 prototype. Missing access is recorded as a specific blocker, owner and next action without substituting a mock.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Execution evidence, 2026-09-11:** Codex on HappyDucky02 implemented bounded source capture and offline proof decoding on `codex/HappyDucky02/mv2-069-pollen-sources`. Real PBS hourly observations and a separate official AMBRsnc/DEN forecast are retained with hashes, source identities and UTC times. The exact catalogue contains 15 stations; only PBS observations were sampled. [Evidence](docs/monitoring-v2/evidence/MV2-069.md), [source dossier](docs/monitoring-v2/POLLEN_SOURCES.md) and [draft contract](docs/monitoring-v2/POLLEN_CONTRACT.md) distinguish implementation from acceptance. Native decoder/definitions compatibility, category semantics, seasonal birch/grass forecast evidence, infrastructure/lifecycle terms and prototype review remain open; their dependent live activation stays blocked. Independent contract work continues without waiting for MV2-001's background tests/deployment.
 
 <a id="mv2-070"></a>
 
