@@ -55,7 +55,7 @@ The value beyond an ordinary subscription is one verifiable history of material 
 
 **Next product outcome:** a complete Pollen Watch, accepted under MV2-071 and ready for the first round of testing with people. This is the first scenario to implement. Until it is ready, the tasks below and their necessary shared foundations take priority; source discovery for other active cases may run in parallel. Their connectors and user-facing capabilities must not precede C5 without a new priority decision.
 
-**Sequence:** MV2-001 → MV2-069 → MV2-070 → MV2-030 → MV2-031 → MV2-071 → ready to begin user testing; the next active v2 scenarios may then start. F3 denotes a domain group, not a requirement to wait for all of F1/F2. MV2-001 is VERIFYING and MV2-069 is IN PROGRESS; subsequent tasks remain PLANNED. No complete Pollen Watch or real-user acceptance is claimed.
+**Sequence:** MV2-001 → MV2-069 → MV2-070 → MV2-030 → MV2-031 → MV2-071 → ready to begin user testing; the next active v2 scenarios may then start. F3 denotes a domain group, not a requirement to wait for all of F1/F2. MV2-001 is DONE and MV2-069 is IN PROGRESS; subsequent tasks remain PLANNED. No complete Pollen Watch or real-user acceptance is claimed.
 
 | Step | Concrete outcome | Acceptance owner |
 |---|---|---|
@@ -304,7 +304,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ### MV2-001 — Establish extension contracts and MVP compatibility
 
-**Status:** VERIFYING · **Priority:** P0 · **Owner:** Architect + Backend · **Size:** M
+**Status:** DONE · **Priority:** P0 · **Owner:** Architect + Backend · **Size:** M
 
 **Dependencies:** None. **Requirements:** §§1–7,19,27,30.
 
@@ -320,7 +320,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** Review schemas and the compatibility matrix; run characterization tests on an isolated database copy.
 
-**Execution evidence, 2026-09-11:** Implemented [ADR and contract v1](docs/monitoring-v2/EXTENSION_CONTRACT.md), exact workspace/template/version rollout grants with default legacy fallback, and a reproducible Git inventory. Baseline/MVP commit `7109a2891f9c99e53572008cc7c1a86001792a57` and annotated tag object `c33f3094e51019bfe1083bec71a53858eef1917c` are unchanged. Against integration base `cb47c01c0ef4c3632e0e65388d4092801ca42c2d`, the inventory reports 174 API routes, 30 web pages, 75 models, no removed routes or changed legacy models, and all 35 open legacy items mapped. Three new boundary/copy-characterization tests and 18 existing corpus/Basel tests passed; targeted Ruff and diff checks passed. The copy test preserves all rows and evidence hashes through repeated migration and rejects pollen records under the legacy legal CHECK. [Evidence and limitations](docs/monitoring-v2/evidence/MV2-001.md). Reviewer: Codex implementation review, not independent human acceptance. **Next:** push, integrate through the Monitoring branch, and verify automatic release identity before DONE. This does not activate Pollen Watch or close source/human/production-migration gates.
+**Execution evidence, 2026-09-11:** Implemented [ADR and contract v1](docs/monitoring-v2/EXTENSION_CONTRACT.md), exact workspace/template/version rollout grants with default legacy fallback, and a reproducible Git inventory. Baseline/MVP commit `7109a2891f9c99e53572008cc7c1a86001792a57` and annotated tag object `c33f3094e51019bfe1083bec71a53858eef1917c` are unchanged. Against integration base `cb47c01c0ef4c3632e0e65388d4092801ca42c2d`, the inventory reports 174 API routes, 30 web pages, 75 models, no removed routes or changed legacy models, and all 35 open legacy items mapped. Three new boundary/copy-characterization tests and 18 existing corpus/Basel tests passed; targeted Ruff and diff checks passed. The copy test preserves all rows and evidence hashes through repeated migration and rejects pollen records under the legacy legal CHECK. [Evidence and limitations](docs/monitoring-v2/evidence/MV2-001.md). Reviewer: Codex implementation review, not independent human acceptance. **Release accepted:** implementation SHA `8d5e94b786885609cf4413f17a640ac6a8097792` completed every automatic release step at 2026-09-11T07:04:38Z; independent public readiness confirmed the same SHA. MV2-001 is DONE within its foundation scope. This does not activate Pollen Watch or close source/human/production-migration gates.
 
 <a id="mv2-002"></a>
 
