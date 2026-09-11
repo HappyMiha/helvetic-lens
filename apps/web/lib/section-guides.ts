@@ -139,6 +139,19 @@ const ai = c(
 
 export const SECTION_GUIDES: SectionGuide[] = [
   {
+    id: "pollen-watch",
+    title: "Read your Pollen Watch drafts",
+    purpose: "Inspect private saved station, allergen and rule settings. This reader does not show live pollen or activate monitoring.",
+    first: ["Check the current workspace, then select one of your saved drafts.", "Expand a configuration revision to compare earlier settings."],
+    data: ["Only your own drafts and their configuration history are returned by the authenticated API.", "Saved delivery preferences do not send messages. Empty lists are not zero-pollen observations."],
+    wait: "Loading waits for saved settings only. Reload after an unavailable or deleted page; disabled rollout requires workspace enablement.",
+    setup: "An authenticated active membership and an explicitly enabled draft workspace are required. Official source acceptance and live Start remain pending.",
+    controls: [refresh, pages,
+      c("select-draft", "Select a station draft", "Reads the current saved settings and the first history page for that private draft.", "Use after the draft list loads; selecting another draft cancels the previous read.", "Read / navigate", "[data-pollen-drafts] button[aria-pressed]"),
+      c("revision", "Expand a revision", "Displays the immutable configuration saved at that revision.", "Use to inspect previous settings without changing the current revision.", "Read / navigate", "[data-pollen-drafts] summary"),
+      c("start", "Start monitoring (unavailable)", "This disabled control performs no action and sends no request.", "Source and live workflow acceptance must pass before Start can be implemented.")],
+  },
+  {
     id: "today",
     title: "Today",
     purpose:
@@ -1654,6 +1667,7 @@ export const GUIDE_ROUTES: Record<string, string> = {
   "/registry": "registry",
   "/discover": "discover",
   "/topics": "topics",
+  "/pollen-watch": "pollen-watch",
   "/sources": "sources",
   "/impact": "impact",
   "/topic-review": "topic-review",

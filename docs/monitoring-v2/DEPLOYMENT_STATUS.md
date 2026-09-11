@@ -4,6 +4,13 @@
 
 ## Current checkpoint — 11 September
 
+**13:49 UTC update:** Automatic release `1144a4742dce6666f6530261e5f08c467b6cc995`
+was activated at `2026-09-11T13:42:41Z`; all automatic gates succeeded. Its full
+API suite passed **2225 tests, 12 skipped**. Independent public readiness confirms
+that exact SHA. The next automatic run targets `40e7283` and continues separately
+from frontend implementation. Source-backed Start remains unavailable; this
+accepts the rapid-comparison component's release, not the complete Pollen Watch.
+
 **12:21 UTC update:** Automatic release `030ab2960b08a079605013f402c14ef0db1eb9c4`
 completed every gate at `2026-09-11T12:21:06Z`, including public health and release
 publication. Its full API suite passed **2180 tests, 12 skipped**. Independent
