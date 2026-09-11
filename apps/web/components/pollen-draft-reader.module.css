@@ -42,13 +42,18 @@
   display: grid;
   gap: 6px;
 }
+.deliveryFields {
+  display: grid;
+  gap: 12px;
+}
 .formFields label.check {
   display: flex;
   align-items: center;
   gap: 10px;
   min-height: 44px;
 }
-.formFields input:not([type="checkbox"]) {
+.formFields input:not([type="checkbox"]),
+.formFields select {
   background: white;
   border: 1px solid #718096;
   border-radius: 6px;

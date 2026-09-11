@@ -10,6 +10,7 @@ import { pollenDraftCopy } from "../apps/web/lib/pollen-draft-copy.ts";
 import { pollenCreateCopy } from "../apps/web/lib/pollen-create-copy.ts";
 import { pollenDeleteCopy } from "../apps/web/lib/pollen-delete-copy.ts";
 import { pollenEditCopy } from "../apps/web/lib/pollen-edit-copy.ts";
+import { pollenDeliveryCopy } from "../apps/web/lib/pollen-delivery-copy.ts";
 import { AccessibilityAudit } from "./browser-accessibility.mjs";
 import { Cdp, evaluate, sleep } from "./browser-cdp.mjs";
 
@@ -396,13 +397,89 @@ try {
   mode = "ready"; unsupportedEdit = true; await selectForDelete();
   assert.ok((await text()).includes(pollenEditCopy[locale].unsupported));
   assert.equal(await evaluate(cdp, "!!document.querySelector('[data-pollen-edit-open]')"), false);
+  unsupportedEdit = false; editFixture = false; editMode = "success";
+  const chooseEmail = value => evaluate(cdp, `(() => {const s=document.querySelector('[name="pollen-email"]'); s.value=${JSON.stringify(value)}; s.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+  for (const language of Object.keys(pollenDeliveryCopy)) {
+    locale = language; await navigate();
+    await wait(async () => (await text()).includes(pollenCreateCopy[locale].create), "Delivery creator entry missing");
+    await button(pollenCreateCopy[locale].create);
+    await fill("pollen-station", "PBS"); await click('[name="allergen-birch"]');
+    await click('[name="rule-birch-observation_hourly"]');
+    await fill("trigger-birch-observation_hourly", "12.500001"); await fill("reset-birch-observation_hourly", "5");
+    assert.equal(await evaluate(cdp, "document.querySelector('[name=\"pollen-email\"]').value"), "off");
+    assert.ok((await text()).includes(pollenDeliveryCopy[locale].note));
+    const previewCount = posts('/api/monitoring-subjects/preview').length;
+    await chooseEmail("daily_digest"); await button(pollenCreateCopy[locale].preview);
+    assert.equal(posts('/api/monitoring-subjects/preview').length, previewCount, "Empty digest time passed native validation");
+    assert.equal(await evaluate(cdp, "document.querySelector('[name=\"pollen-digest\"]').validity.valueMissing"), true);
+    await fill("pollen-digest", "23:59"); await click('[name="pollen-quiet"]');
+    await button(pollenCreateCopy[locale].preview);
+    assert.equal(posts('/api/monitoring-subjects/preview').length, previewCount, "Empty quiet hours passed validation");
+    await fill("pollen-quiet-start", "22:00"); await fill("pollen-quiet-end", "22:00");
+    await button(pollenCreateCopy[locale].preview);
+    await wait(async () => (await text()).includes(pollenDeliveryCopy[locale].invalidQuiet), "Equal quiet endpoints not explained");
+    assert.equal(posts('/api/monitoring-subjects/preview').length, previewCount);
+    await fill("pollen-quiet-end", "07:00"); await button(pollenCreateCopy[locale].preview);
+    await wait(async () => (await text()).includes(pollenCreateCopy[locale].checked), "Delivery preview missing");
+    await chooseEmail("immediate"); assert.ok(!(await text()).includes(pollenCreateCopy[locale].checked));
+    assert.equal(await evaluate(cdp, "!!document.querySelector('[name=\"pollen-digest\"]')"), false);
+    await button(pollenCreateCopy[locale].preview);
+    await wait(async () => (await text()).includes(pollenCreateCopy[locale].checked), "Immediate preview missing");
+    assert.deepEqual(posts('/api/monitoring-subjects/preview').at(-1).payload.configuration.delivery,
+      { email: "immediate", digest_at: null, quiet_hours: { start: "22:00", end: "07:00" } });
+    await chooseEmail("off"); await click('[name="pollen-quiet"]'); await button(pollenCreateCopy[locale].preview);
+    await wait(async () => (await text()).includes(pollenCreateCopy[locale].checked), "Cleared preferences preview missing");
+    assert.deepEqual(posts('/api/monitoring-subjects/preview').at(-1).payload.configuration.delivery,
+      { email: "off", digest_at: null, quiet_hours: null });
+    await chooseEmail("daily_digest");
+    assert.equal(await evaluate(cdp, "document.querySelector('[name=\"pollen-digest\"]').value"), "", "Old digest time silently restored");
+    await fill("pollen-digest", "00:00"); await click('[name="pollen-quiet"]');
+    await fill("pollen-quiet-start", "22:00"); await fill("pollen-quiet-end", "07:00");
+    await fill("pollen-timezone", "Europe/London");
+    assert.ok((await text()).includes(pollenDeliveryCopy[locale].clock.replace('{timezone}', 'Europe/London')));
+    await button(pollenCreateCopy[locale].preview);
+    await wait(async () => (await text()).includes(pollenCreateCopy[locale].checked), "Final delivery preview missing");
+    await audit.check(cdp, `delivery-${locale}`, "[data-pollen-delivery]");
+    assert.equal(await evaluate(cdp, "document.documentElement.scrollWidth <= innerWidth"), true);
+    if (locale === "en-CH") {
+      await evaluate(cdp, "document.querySelector('[data-pollen-delivery]').scrollIntoView({block:'start'})");
+      const deliveryImage = await cdp.send("Page.captureScreenshot", { format: "png" });
+      await writeFile(join(root, "test-results/pollen-delivery-mobile.png"), Buffer.from(deliveryImage.data, "base64"));
+    }
+    await button(pollenCreateCopy[locale].save);
+    await wait(async () => (await text()).includes(pollenCreateCopy[locale].saved), "Delivery draft not saved");
+    const createdDelivery = posts('/api/monitoring-subjects').at(-1).payload.configuration;
+    assert.deepEqual(createdDelivery.delivery, { email: "daily_digest", digest_at: "00:00", quiet_hours: { start: "22:00", end: "07:00" } });
+    assert.equal(createdDelivery.timezone, "Europe/London");
+    await button(pollenCreateCopy[locale].view);
+    await wait(() => evaluate(cdp, "!!document.querySelector('[data-pollen-edit-open]')"), "Saved delivery edit entry missing");
+    await button(pollenEditCopy[locale].edit);
+    assert.equal(await evaluate(cdp, "document.querySelector('[name=\"pollen-digest\"]').value"), "00:00");
+    await chooseEmail("immediate"); await fill("pollen-quiet-end", "08:00");
+    await button(pollenCreateCopy[locale].preview);
+    await wait(async () => (await text()).includes(pollenCreateCopy[locale].checked), "Delivery revision preview missing");
+    editMode = locale === "en-CH" ? "lost" : "success";
+    await button(pollenCreateCopy[locale].save);
+    if (editMode === "lost") {
+      await wait(async () => (await text()).includes(pollenEditCopy[locale].uncertain), "Uncertain delivery edit not retained");
+      assert.equal(await evaluate(cdp, "document.querySelector('[name=\"pollen-email\"]').matches(':disabled')"), true);
+      const count = patches().length; await button(pollenEditCopy[locale].recover);
+      await wait(async () => (await text()).includes(pollenEditCopy[locale].recorded), "Delivery history recovery failed");
+      assert.equal(patches().length, count);
+    } else await wait(async () => (await text()).includes(pollenEditCopy[locale].saved), "Delivery revision not saved");
+    assert.equal(patches().at(-1).payload.expected_revision, 1);
+    assert.deepEqual(patches().at(-1).payload.configuration.delivery,
+      { email: "immediate", digest_at: null, quiet_hours: { start: "22:00", end: "08:00" } });
+    assert.deepEqual(patches().at(-1).payload.configuration.selections, createdDelivery.selections);
+  }
   assert.equal(requests.filter(r => r.path.endsWith("/start")).length, 0);
   assert.deepEqual(exceptions, []);
-  audit.finish(21);
+  audit.finish(26);
   console.log("Pollen reader: five locales, desktop/mobile, keyboard activation, exact decimals, list/history pagination, obsolete responses, revoked/default-off/missing/error/empty/anonymous/workspace isolation passed. Synthetic APIs only; no live acceptance.");
   console.log("Pollen creation: five locales, keyboard entry, multi-allergen observation/forecast rules, invalid preview, preview invalidation, CSRF, busy guard, lost-response same-key retry, saved navigation, confirmed/cancelled discard and revoked access passed. Email off; no Start requests.");
   console.log("Pollen deletion: five localized exact station/revision confirmations, cancel/success, duplicate clicks, CSRF, private-history removal, conflict requiring fresh revision, uncertain response then missing, revoked access and active/viewer denial passed.");
   console.log("Pollen editing: five locales, exact decimals, preserved contract/delivery fields, CSRF, revision CAS, duplicate guard, history recovery without writes including newer current revision, explicit unchanged retry, conflicting history, discard/reload, revoked access and unsupported category read-only passed.");
+  console.log("Pollen delivery preferences: five locales, email-off defaults, required clock fields, equal/overnight quiet hours, all mode transitions, digest/quiet clearing, timezone labels, preview invalidation, exact create/edit payloads, numeric preservation and uncertain-write history recovery passed. No Start or delivery activation.");
 } catch (error) {
   console.error({ locale, mode, requests: requests.slice(-12), exceptions,
     page: cdp ? await text().catch(() => "unavailable") : null,

@@ -4,6 +4,14 @@
 
 ## Current checkpoint — 11 September
 
+**17:00 UTC update:** Automatic release `fc62f43b621d0cb2a613c272473263d6b7e4bb78`
+was activated at `2026-09-11T16:35:06Z`, with every gate successful and **2261 API
+tests passed, 12 skipped**. Public readiness independently confirms the same SHA.
+This includes the private reader and new-draft creator. The controller is now
+running API tests for `5e318b0`; independent delivery-preference development
+continues without restarting that run. Draft rollout/source/user acceptance
+remains separate from successful component activation.
+
 **15:27 UTC update:** Automatic release `40e7283bc4b7d61b56c6fc2b212c7f35cec3b315`
 was activated at `2026-09-11T15:08:19Z`, with all gates successful and **2261 API
 tests passed, 12 skipped**. Public readiness independently confirms that SHA.

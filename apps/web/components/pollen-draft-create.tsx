@@ -6,6 +6,8 @@ import { useI18n } from "@/lib/i18n";
 import { pollenCreateCopy } from "@/lib/pollen-create-copy";
 import { pollenDraftCopy } from "@/lib/pollen-draft-copy";
 import { pollenEditCopy } from "@/lib/pollen-edit-copy";
+import { pollenDeliveryCopy } from "@/lib/pollen-delivery-copy";
+import { PollenDeliveryFields } from "./pollen-delivery-fields";
 import {
   draftFailure,
   type PollenConfiguration,
@@ -145,6 +147,14 @@ export function PollenDraftCreate({
     if (inFlight.current || attempt) return;
     if (!configuration.selections.length) {
       setMessage(copy.select);
+      return;
+    }
+    if (
+      configuration.delivery.quiet_hours &&
+      configuration.delivery.quiet_hours.start ===
+        configuration.delivery.quiet_hours.end
+    ) {
+      setMessage(pollenDeliveryCopy[locale].invalidQuiet);
       return;
     }
     inFlight.current = true;
@@ -352,6 +362,11 @@ export function PollenDraftCreate({
                   }
                 />
               </label>
+              <PollenDeliveryFields
+                delivery={configuration.delivery}
+                timezone={configuration.timezone}
+                onChange={(delivery) => change({ ...configuration, delivery })}
+              />
               <fieldset>
                 <legend>{copy.allergens}</legend>
                 {Object.entries(labels.allergens).map(([allergen, name]) => (

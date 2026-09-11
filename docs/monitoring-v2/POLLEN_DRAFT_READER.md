@@ -3,8 +3,8 @@
 MV2-070 C01c1, 11 September 2026. `/pollen-watch` renders the existing private
 draft API's list, current saved configuration and immutable configuration history.
 The reader is now accompanied by C01c2a new-draft creation and configuration-only
-preview, C01c2b1 confirmed draft deletion and C01c2b2 revision-checked numeric
-editing. Delivery-preference editing remains open; the live workflow is not
+preview, C01c2b1 confirmed draft deletion, C01c2b2 revision-checked numeric
+editing and C01c2b3 delivery-preference editing. The live workflow is not
 implemented by this interface.
 
 The reader requires an authenticated user and workspace; anonymous development
@@ -113,8 +113,8 @@ cascades; no real user record is used by the browser fixtures.
 
 An owner manager can edit a selected draft's supported numeric configuration.
 The form clones the reviewed configuration, including contract/template metadata
-and saved delivery preferences. Those preferences are displayed and preserved;
-this slice does not edit them or activate delivery. Unknown fields, future
+and saved delivery preferences. Those preferences are displayed and preserved
+unless explicitly changed through C01c2b3 below. Editing never activates delivery. Unknown fields, future
 versions, units, allergens, periods and category rules keep the configuration
 read-only instead of silently dropping settings the form cannot represent.
 
@@ -144,3 +144,36 @@ creation and deletion journeys. Compatibility tests reject future/unknown fields
 without mutation. These are synthetic component/contract checks. Real workspace,
 native-language, screen-reader, broader configuration editing, navigation/crash
 recovery, source and live workflow acceptance remain open.
+
+## C01c2b3 delivery preferences
+
+Both new and existing supported drafts offer email off, immediate and daily digest
+preferences. New drafts default to off. Selecting daily digest reveals a required
+local time; changing the mode clears that time, and choosing digest again requires
+a fresh entry. Quiet hours are optional and independent of email mode. Enabling
+them requires explicit start/end times; disabling them clears the interval.
+Overnight intervals are valid, equal endpoints are rejected with localized feedback.
+Native time inputs require minute precision; the server remains authoritative for
+clock, mode, quiet-hour and IANA timezone validation.
+
+The form shows the selected timezone and explains that these are saved preferences
+only. No live consent is granted, no scheduler is configured and no message is
+sent. Runtime timezone/DST scheduling, consent and membership checks, opt-in and
+unsubscribe remain C04/live acceptance work. Switching a draft to email off must
+not be described as stopping an active delivery process that does not yet exist.
+
+Every preference or timezone edit invalidates the configuration-only preview.
+Saving uses the same idempotent create or expected-revision PATCH and uncertain
+write recovery as numeric edits. Numeric selectors/rules and metadata are
+preserved. The original delivery schedule remains available in immutable history;
+the current revision displays the newly saved preferences. No browser persistence
+or source call is added.
+
+Browser checks cover all five locales, off defaults, missing clock fields, equal
+and overnight quiet hours, midnight times, switching through all email modes,
+explicit interval clearing, timezone labels, preview invalidation, exact create/edit
+payloads, numeric preservation and lost-response history recovery. The API journey
+also verifies rejected schedules cannot append revisions, old schedules remain in
+history and no job or outbox message is created. These are component and contract
+checks; actual email, human language/accessibility, source and user-test readiness
+remain unverified.

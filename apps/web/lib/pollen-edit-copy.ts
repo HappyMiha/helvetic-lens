@@ -18,7 +18,7 @@ export const pollenEditCopy: Record<Locale, Copy> = {
     cancel: "Cancel editing",
     edit: "Edit draft",
     intro:
-      "Edit the reviewed revision. Saved delivery preferences are preserved. Checking or saving settings does not start monitoring or send email.",
+      "Edit the reviewed revision. Checking or saving settings does not start monitoring or send email.",
     unsupported:
       "These settings contain options this editor cannot safely change. They remain available for reading.",
     conflict:
@@ -39,7 +39,7 @@ export const pollenEditCopy: Record<Locale, Copy> = {
     cancel: "Bearbeitung abbrechen",
     edit: "Entwurf bearbeiten",
     intro:
-      "Bearbeiten Sie die geprüfte Version. Gespeicherte Versandpräferenzen bleiben erhalten. Prüfen oder Speichern startet keine Überwachung und versendet keine E-Mails.",
+      "Bearbeiten Sie die geprüfte Version. Prüfen oder Speichern startet keine Überwachung und versendet keine E-Mails.",
     unsupported:
       "Diese Einstellungen enthalten Optionen, die dieser Editor nicht sicher ändern kann. Sie bleiben lesbar.",
     conflict:
@@ -61,7 +61,7 @@ export const pollenEditCopy: Record<Locale, Copy> = {
     cancel: "Annuler la modification",
     edit: "Modifier le brouillon",
     intro:
-      "Modifiez la révision consultée. Les préférences d’envoi enregistrées sont conservées. Vérifier ou enregistrer ne démarre pas la surveillance et n’envoie pas d’e-mail.",
+      "Modifiez la révision consultée. Vérifier ou enregistrer ne démarre pas la surveillance et n’envoie pas d’e-mail.",
     unsupported:
       "Ces paramètres contiennent des options que cet éditeur ne peut pas modifier sans risque. Ils restent consultables.",
     conflict:
@@ -83,7 +83,7 @@ export const pollenEditCopy: Record<Locale, Copy> = {
     cancel: "Annulla modifica",
     edit: "Modifica bozza",
     intro:
-      "Modificate la revisione consultata. Le preferenze di invio salvate vengono conservate. Verificare o salvare non avvia il monitoraggio e non invia e-mail.",
+      "Modificate la revisione consultata. Verificare o salvare non avvia il monitoraggio e non invia e-mail.",
     unsupported:
       "Queste impostazioni contengono opzioni che l’editor non può modificare in sicurezza. Restano consultabili.",
     conflict:
@@ -105,7 +105,7 @@ export const pollenEditCopy: Record<Locale, Copy> = {
     cancel: "Interrumper la modificaziun",
     edit: "Modifitgar il sboz",
     intro:
-      "Modifitgescha la versiun consultada. Las preferenzas da spediziun memorisadas restan mantegnidas. Verifitgar u memorisar na cumenza nagina surveglianza e na trametta nagins e-mails.",
+      "Modifitgescha la versiun consultada. Verifitgar u memorisar na cumenza nagina surveglianza e na trametta nagins e-mails.",
     unsupported:
       "Quests parameters cuntegnan opziuns che quest editur na po betg midar cun segirezza. Els restan legibels.",
     conflict:

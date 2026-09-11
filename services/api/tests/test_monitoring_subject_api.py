@@ -9,7 +9,7 @@ from sqlalchemy import func, select, update
 from test_auth import _csrf, _register, _settings
 
 from helvetic_lens.main import create_app
-from helvetic_lens.models import Job, MonitoringSubject, OrganizationMembership
+from helvetic_lens.models import Job, MonitoringSubject, OrganizationMembership, OutboxMessage
 from helvetic_lens.monitoring_contracts import MonitoringRollout, RolloutGrant
 
 URL = "/api/monitoring-subjects"
@@ -75,6 +75,56 @@ def test_http_draft_journey_revision_history_preview_and_blocked_start(api):
     removed = client.request("DELETE", URL + "/" + first["id"], json={"expected_revision": 2}, headers=_csrf(client))
     assert removed.status_code == 204
     assert client.get(URL + "/" + first["id"]).status_code == 404
+
+
+def test_delivery_preferences_validate_and_retain_history_without_starting_jobs(api):
+    client, app, _, _ = api
+    settings = config()
+    settings["timezone"] = "Europe/Zurich"
+    settings["selections"][0]["rules"] = [{"period": "observation_hourly", "threshold": {
+        "trigger_at_or_above": "12.500001", "reset_at_or_below": "5",
+    }}]
+    digest = {"email": "daily_digest", "digest_at": "00:00",
+              "quiet_hours": {"start": "23:59", "end": "07:00"}}
+    settings["delivery"] = digest
+    with app.state.service.db.session(include_all_organizations=True) as session:
+        jobs_before = session.scalar(select(func.count()).select_from(Job))
+        outbox_before = session.scalar(select(func.count()).select_from(OutboxMessage))
+    preview = client.post(URL + "/preview", json={"configuration": settings}, headers=_csrf(client))
+    assert preview.status_code == 200, preview.text
+    normalized = preview.json()["configuration"]
+    assert normalized["delivery"] == digest
+    assert preview.json()["start_available"] is False
+    saved = client.post(URL, json={"request_key": "delivery", "configuration": normalized}, headers=_csrf(client))
+    assert saved.status_code == 201, saved.text
+    path = URL + "/" + saved.json()["id"]
+    for invalid in [
+        {"email": "daily_digest", "digest_at": ""},
+        {"email": "daily_digest", "digest_at": "24:00"},
+        {"email": "daily_digest", "digest_at": "09:00:30"},
+        {"email": "immediate", "digest_at": "09:00"},
+        {"email": "off", "quiet_hours": {"start": "22:00", "end": "22:00"}},
+    ]:
+        rejected = client.patch(path, json={"expected_revision": 1,
+            "configuration": {**normalized, "delivery": invalid}}, headers=_csrf(client))
+        assert rejected.status_code == 422, rejected.text
+        assert client.get(path).json()["revision"] == 1
+    for revision, delivery in enumerate([
+        {"email": "immediate", "digest_at": None, "quiet_hours": digest["quiet_hours"]},
+        {"email": "off", "digest_at": None, "quiet_hours": None},
+    ], start=1):
+        edited = client.patch(path, json={"expected_revision": revision,
+            "configuration": {**normalized, "delivery": delivery}}, headers=_csrf(client))
+        assert edited.status_code == 200, edited.text
+        assert edited.json()["configuration"]["delivery"] == delivery
+        assert edited.json()["configuration"]["selections"] == normalized["selections"]
+    history = client.get(path + "/history").json()["items"]
+    assert [item["revision"] for item in history] == [3, 2, 1]
+    assert history[-1]["configuration"]["delivery"] == digest
+    assert client.get(path).json()["status"] == "draft"
+    with app.state.service.db.session(include_all_organizations=True) as session:
+        assert session.scalar(select(func.count()).select_from(Job)) == jobs_before
+        assert session.scalar(select(func.count()).select_from(OutboxMessage)) == outbox_before
 
 
 def test_pagination_has_no_duplicates_and_preserves_owner_scope(api):
