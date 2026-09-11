@@ -4,6 +4,17 @@
 
 ## Current checkpoint — 11 September
 
+**12:21 UTC update:** Automatic release `030ab2960b08a079605013f402c14ef0db1eb9c4`
+completed every gate at `2026-09-11T12:21:06Z`, including public health and release
+publication. Its full API suite passed **2180 tests, 12 skipped**. Independent
+public readiness now reports `ready` with that exact SHA. The transient 1033
+during container startup cleared when the new tunnel became healthy. The old-date
+digest-fixture repair is therefore included in an accepted real release, together
+with private draft API and C02a threshold code. Source-backed Start remains off.
+The controller subsequently picked up `1144a47`; its tests run independently.
+Remaining account/email/protected progress acceptance keeps MV2-072/073 open.
+The earlier checkpoints below remain historical evidence.
+
 Automatic application release `8d5e94b786885609cf4413f17a640ac6a8097792`
 completed every release step at `2026-09-11T07:04:38Z`. Public readiness still
 independently reports `ready` and that exact SHA at the 10:00 UTC checkpoint.

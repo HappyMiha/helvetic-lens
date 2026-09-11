@@ -173,6 +173,22 @@ def _content(sample: PollenSample) -> dict:
     return payload
 
 
+def _source_order(sample: PollenSample, latest: PollenSample) -> str:
+    if sample.valid_at < latest.valid_at or (
+        sample.valid_at == latest.valid_at and sample.source_revision < latest.source_revision
+    ):
+        return "history_required"
+    if sample.valid_at != latest.valid_at:
+        return "new"
+    if sample.source_revision != latest.source_revision:
+        return "revised"
+    if _content(sample) != _content(latest):
+        raise ValueError("Conflicting content for the same source time and revision")
+    if sample.policy_version == latest.policy_version and sample.fresh_until != latest.fresh_until:
+        raise ValueError("Freshness deadline cannot change without a source or policy revision")
+    return "history_required" if sample.fetched_at < latest.fetched_at else "duplicate"
+
+
 def evaluate_threshold(
     binding: ThresholdBinding, sample: PollenSample, *, as_of: datetime,
     prior: ThresholdState | None = None,
@@ -190,22 +206,9 @@ def evaluate_threshold(
     if sample.fetched_at > as_of or (prior and as_of < prior.evaluated_at):
         raise ValueError("Evaluation cannot precede retrieval or move its clock backwards")
     previous = prior.last_good if prior else None
-    revised = duplicate = False
-    if prior:
-        latest = prior.latest
-        if sample.valid_at < latest.valid_at or (
-            sample.valid_at == latest.valid_at and sample.source_revision < latest.source_revision
-        ):
-            return ThresholdDecision(state=prior, disposition="history_required", previous=previous, current=sample)
-        if sample.valid_at == latest.valid_at:
-            duplicate = sample.source_revision == latest.source_revision
-            revised = not duplicate
-            if duplicate and _content(sample) != _content(latest):
-                raise ValueError("Conflicting content for the same source time and revision")
-            if duplicate and sample.policy_version == latest.policy_version and sample.fresh_until != latest.fresh_until:
-                raise ValueError("Freshness deadline cannot change without a source or policy revision")
-            if duplicate and sample.fetched_at < latest.fetched_at:
-                return ThresholdDecision(state=prior, disposition="history_required", previous=previous, current=sample)
+    order = _source_order(sample, prior.latest) if prior else "new"
+    if order == "history_required":
+        return ThresholdDecision(state=prior, disposition="history_required", previous=previous, current=sample)
 
     available = sample.quality == "usable" and sample.rights == "approved" and as_of < sample.fresh_until
     active = prior.active if prior else None
@@ -222,11 +225,11 @@ def evaluate_threshold(
             disposition = "baseline"
         elif not prior.available or as_of >= prior.latest.fresh_until:
             disposition = "recovered"
-        elif revised:
+        elif order == "revised":
             disposition = "revised"
         elif sample.policy_version != prior.latest.policy_version:
             disposition = "policy_rebaseline"
-        elif duplicate:
+        elif order == "duplicate":
             disposition = "duplicate"
         elif next_active != active:
             disposition = "triggered" if next_active else "reset"
