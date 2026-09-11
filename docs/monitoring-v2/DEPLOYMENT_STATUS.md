@@ -1,6 +1,33 @@
-# Monitoring deployment status — 10 September 2026
+# Monitoring deployment status — 11 September 2026
 
-**The isolated Monitoring site is live. MV2-072 remains IN PROGRESS: first bootstrap, public HTTPS identity and actual backup/restore passed; automatic-update acceptance remains pending. MV2-073 is VERIFYING and its progress interface is published in Git, awaiting deployment.**
+**The isolated Monitoring site is live. MV2-072 remains IN PROGRESS: bootstrap, backup/restore and an actual subsequent automatic release passed; remaining account/email and protected progress-page acceptance are still open. MV2-073 remains VERIFYING.**
+
+## Current checkpoint — 11 September
+
+Automatic application release `8d5e94b786885609cf4413f17a640ac6a8097792`
+completed every release step at `2026-09-11T07:04:38Z`. Public readiness still
+independently reports `ready` and that exact SHA at the 10:00 UTC checkpoint.
+This verifies an actual automatic update, beyond scheduler pickup. It does not
+complete the remaining account/email or protected progress-page checks.
+
+Candidate `c2ab0d6` failed the strict backlog index/detail consistency test; its
+cause was fixed in `2d07c09`. Later candidate `9034523` still contained that old
+error and failed 49 additional digest/brief cases (50 failed, 2067 passed,
+12 skipped). The full retained release log identifies a shared synthetic event
+dated `2026-09-04T08:00:00Z`; it left the seven-day digest period during the next
+run. A focused paging case reproduces the failure. The independent MV2-072
+fixture repair anchors that synthetic detection time five minutes before the
+test clock, before any match/assessment fingerprints are created. Application
+period filters, eligibility, evidence checks and release gates are unchanged.
+All 81 focused regressions passed, including the 49 affected digest/brief cases;
+the mandatory backlog consistency test and Ruff also passed. See the
+[repair evidence](evidence/MV2-072-digest-clock.md); its automatic release remains pending.
+
+At that checkpoint the controller is testing `bd4fcc5`; latest published Monitoring is `bbce3e2`.
+Those are distinct from the currently serving SHA. Development continues in
+isolated task worktrees while that run proceeds; it is not restarted or duplicated.
+The sections below retain the dated bootstrap/controller history, not current
+claims that the first automatic update is still running.
 
 ## Verified first release
 

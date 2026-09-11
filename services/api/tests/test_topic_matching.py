@@ -67,7 +67,9 @@ def add_event(service, *, title="Naturalisation Act amendment", language="en"):
                 expression_id=merged.expression.id,
                 authority="fedlex",
                 event_type="amended",
-                detected_at=datetime(2026, 9, 4, 8, 0, tzinfo=UTC),
+                # Shared current-event fixture: keep it within rolling digest
+                # windows before matches/brief fingerprints capture its evidence.
+                detected_at=datetime.now(UTC) - timedelta(minutes=5),
                 provenance_method="official_metadata",
                 source_url="https://fedlex.data.admin.ch/eli/cc/topic-match",
                 evidence={"stream": "rss-de", "language": language, "published_at": "2026-09-04"},
