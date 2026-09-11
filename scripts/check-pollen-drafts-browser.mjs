@@ -11,6 +11,7 @@ import { pollenCreateCopy } from "../apps/web/lib/pollen-create-copy.ts";
 import { pollenDeleteCopy } from "../apps/web/lib/pollen-delete-copy.ts";
 import { pollenEditCopy } from "../apps/web/lib/pollen-edit-copy.ts";
 import { pollenDeliveryCopy } from "../apps/web/lib/pollen-delivery-copy.ts";
+import { pollenRecoveryCopy } from "../apps/web/lib/pollen-recovery-copy.ts";
 import { AccessibilityAudit } from "./browser-accessibility.mjs";
 import { Cdp, evaluate, sleep } from "./browser-cdp.mjs";
 
@@ -49,8 +50,18 @@ async function wait(check, message) {
 }
 const text = () => evaluate(cdp, "document.querySelector('[data-pollen-drafts]')?.innerText || ''");
 const click = selector => evaluate(cdp, `document.querySelector(${JSON.stringify(selector)}).click()`);
+async function navigateDocument(url) {
+  await evaluate(cdp, "window.__pollenOldDocument = true");
+  await cdp.send("Page.navigate", { url });
+  await wait(() => evaluate(cdp, `!window.__pollenOldDocument && location.search === ${JSON.stringify(new URL(url).search)}`), "New document did not replace the previous page");
+}
+async function reloadDocument() {
+  await evaluate(cdp, "window.__pollenOldDocument = true");
+  await cdp.send("Page.reload");
+  await wait(() => evaluate(cdp, "!window.__pollenOldDocument"), "Reload did not replace the previous document");
+}
 async function navigate() {
-  await cdp.send("Page.navigate", { url: `${base}/pollen-watch?case=${Date.now()}` });
+  await navigateDocument(`${base}/pollen-watch?case=${Date.now()}`);
   await wait(async () => (await text()).includes(pollenDraftCopy[locale].title), "Reader not rendered");
 }
 try {
@@ -472,18 +483,85 @@ try {
       { email: "immediate", digest_at: null, quiet_hours: { start: "22:00", end: "08:00" } });
     assert.deepEqual(patches().at(-1).payload.configuration.selections, createdDelivery.selections);
   }
+  editFixture = false; unsupportedEdit = false; updated.clear(); editHistory.clear();
+  const writes = () => requests.filter(r => r.path.startsWith('/api/monitoring-subjects') && r.method !== 'GET');
+  const originalWrites = writes().length;
+  for (const language of Object.keys(pollenRecoveryCopy)) {
+    locale = language; revisions.clear(); await selectForDelete();
+    assert.equal(await evaluate(cdp, "location.hash"), "#draft=a");
+    assert.ok((await text()).includes(pollenRecoveryCopy[locale].saved));
+    assert.equal(await evaluate(cdp, "document.querySelector('[data-pollen-saved-link]').getAttribute('href')"), "/pollen-watch#draft=a");
+    revisions.set("a", 13); await reloadDocument();
+    await wait(() => evaluate(cdp, "document.querySelector('[data-pollen-drafts] section[aria-label] h3')?.textContent.includes('13')"), "Reload did not read current saved revision");
+    await audit.check(cdp, `recovery-${locale}`, "[data-pollen-saved-link]");
+  }
+  assert.equal(writes().length, originalWrites, "Saved-state recovery issued a write");
+  locale = "en-CH";
+  for (const denied of ['revoked', 'disabled', 'missing']) {
+    mode = denied;
+    await navigateDocument(`${base}/pollen-watch?recovery=${denied}#draft=a`);
+    await wait(async () => (await text()).includes(pollenDraftCopy[locale][denied === 'revoked' ? 'access' : denied]) && await evaluate(cdp, "location.hash === ''"), 'Recovery did not report access failure and clear its locator');
+    assert.equal(await evaluate(cdp, "location.hash"), "");
+    assert.ok(!(await text()).includes('12.500001'));
+  }
+  mode = 'ready'; revisions.clear(); await selectForDelete();
+  const savedUrl = await evaluate(cdp, 'location.href');
+  await navigateDocument(`${base}/pollen-watch?away=1`);
+  await wait(() => evaluate(cdp, "location.search === '?away=1' && !!document.querySelector('[data-pollen-drafts] li')"), 'Away document not ready');
+  const historyBeforeBack = await cdp.send('Page.getNavigationHistory');
+  revisions.set('a', 14);
+  await cdp.send('Page.navigateToHistoryEntry', {entryId: historyBeforeBack.entries[historyBeforeBack.currentIndex - 1].id});
+  await wait(() => evaluate(cdp, "document.querySelector('[data-pollen-drafts] section[aria-label] h3')?.textContent.includes('14')"), 'Back did not revalidate saved settings');
+  assert.equal(await evaluate(cdp, 'location.href'), savedUrl);
+  const historyBeforeForward = await cdp.send('Page.getNavigationHistory');
+  await cdp.send('Page.navigateToHistoryEntry', {entryId: historyBeforeForward.entries[historyBeforeForward.currentIndex + 1].id});
+  await wait(() => evaluate(cdp, "location.search === '?away=1' && !document.querySelector('[data-pollen-saved-link]')"), 'Forward retained stale selected settings');
+  await selectForDelete();
+  await evaluate(cdp, "window.dispatchEvent(new PageTransitionEvent('pagehide', {persisted:true}))");
+  assert.ok(!(await text()).includes('12.500001'), 'Cached page retained private settings');
+  mode = 'revoked';
+  const authReads = requests.filter(r => r.path === '/api/auth/session').length;
+  await evaluate(cdp, "window.dispatchEvent(new PageTransitionEvent('pageshow', {persisted:true}))");
+  await wait(async () => (await text()).includes(pollenDraftCopy[locale].access) && requests.filter(r => r.path === '/api/auth/session').length > authReads, 'Cached restore did not recheck session and authorization');
+  assert.ok(requests.filter(r => r.path === '/api/auth/session').length > authReads);
+  mode = 'ready'; await navigate();
+  await wait(async () => (await text()).includes(pollenCreateCopy[locale].create), 'Navigation creator not ready');
+  await button(pollenCreateCopy[locale].create); await fill('pollen-station', 'PBS');
+  assert.equal(await evaluate(cdp, 'location.hash'), '');
+  assert.ok((await text()).includes(pollenRecoveryCopy[locale].unsaved));
+  const dialogsBeforeProbes = dialogs.length;
+  for (const variant of ['anchor','modified','blank','download']) {
+    await evaluate(cdp, `(() => { const a=document.createElement('a'); a.href=${JSON.stringify(variant === 'anchor' ? '#form-section' : '/pollen-watch?elsewhere=1')};
+      ${variant === 'blank' ? "a.target='_blank';" : ''} ${variant === 'download' ? "a.download='fixture';" : ''}
+      a.addEventListener('click', e => e.preventDefault()); document.body.append(a);
+      a.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,ctrlKey:${variant === 'modified'}})); a.remove(); })()`);
+  }
+  assert.equal(dialogs.length, dialogsBeforeProbes, 'A non-departing link prompted discard');
+  dialogAccept = false;
+  assert.equal(await evaluate(cdp, "window.dispatchEvent(new CustomEvent('helvetic:before-navigation',{cancelable:true}))"), false);
+  assert.equal(await evaluate(cdp, "window.dispatchEvent(new Event('beforeunload',{cancelable:true}))"), false);
+  dialogAccept = true;
+  assert.equal(await evaluate(cdp, "window.dispatchEvent(new CustomEvent('helvetic:before-navigation',{cancelable:true}))"), true);
+  // Approval alone is not a commit: a failed workspace switch must still protect the form.
+  assert.equal(await evaluate(cdp, "window.dispatchEvent(new Event('beforeunload',{cancelable:true}))"), false);
+  await evaluate(cdp, "window.dispatchEvent(new CustomEvent('helvetic:navigation-committed'))");
+  assert.equal(await evaluate(cdp, "window.dispatchEvent(new Event('beforeunload',{cancelable:true}))"), true);
+  await reloadDocument();
+  await wait(() => evaluate(cdp, "!!document.querySelector('[data-pollen-drafts] li') && !document.querySelector('[data-pollen-create]')"), 'Reload invented unsaved form recovery');
+  assert.equal(writes().length, originalWrites, 'Navigation recovery wrote private records');
   assert.equal(requests.filter(r => r.path.endsWith("/start")).length, 0);
   assert.deepEqual(exceptions, []);
-  audit.finish(26);
+  audit.finish(31);
   console.log("Pollen reader: five locales, desktop/mobile, keyboard activation, exact decimals, list/history pagination, obsolete responses, revoked/default-off/missing/error/empty/anonymous/workspace isolation passed. Synthetic APIs only; no live acceptance.");
   console.log("Pollen creation: five locales, keyboard entry, multi-allergen observation/forecast rules, invalid preview, preview invalidation, CSRF, busy guard, lost-response same-key retry, saved navigation, confirmed/cancelled discard and revoked access passed. Email off; no Start requests.");
   console.log("Pollen deletion: five localized exact station/revision confirmations, cancel/success, duplicate clicks, CSRF, private-history removal, conflict requiring fresh revision, uncertain response then missing, revoked access and active/viewer denial passed.");
   console.log("Pollen editing: five locales, exact decimals, preserved contract/delivery fields, CSRF, revision CAS, duplicate guard, history recovery without writes including newer current revision, explicit unchanged retry, conflicting history, discard/reload, revoked access and unsupported category read-only passed.");
   console.log("Pollen delivery preferences: five locales, email-off defaults, required clock fields, equal/overnight quiet hours, all mode transitions, digest/quiet clearing, timezone labels, preview invalidation, exact create/edit payloads, numeric preservation and uncertain-write history recovery passed. No Start or delivery activation.");
+  console.log("Pollen saved recovery: five locales, identifier-only links, reload/current revisions, denied/missing/default-off clearing, real Back/Forward document restoration, cached-page privacy/session revalidation, non-departing links and committed-only unload bypass passed without writes. Unsaved crash recovery and same-document traversal cancellation remain open.");
 } catch (error) {
   console.error({ locale, mode, requests: requests.slice(-12), exceptions,
     page: cdp ? await text().catch(() => "unavailable") : null,
-    active: cdp ? await evaluate(cdp, "document.activeElement?.outerHTML").catch(() => null) : null });
+    active: cdp ? await evaluate(cdp, "document.activeElement?.outerHTML.slice(0,600)").catch(() => null) : null });
   throw error;
 } finally {
   cdp?.close();

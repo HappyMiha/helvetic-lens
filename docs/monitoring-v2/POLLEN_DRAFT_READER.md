@@ -4,7 +4,7 @@ MV2-070 C01c1, 11 September 2026. `/pollen-watch` renders the existing private
 draft API's list, current saved configuration and immutable configuration history.
 The reader is now accompanied by C01c2a new-draft creation and configuration-only
 preview, C01c2b1 confirmed draft deletion, C01c2b2 revision-checked numeric
-editing and C01c2b3 delivery-preference editing. The live workflow is not
+editing, C01c2b3 delivery-preference editing and C01c2b4a saved-state recovery. The live workflow is not
 implemented by this interface.
 
 The reader requires an authenticated user and workspace; anonymous development
@@ -177,3 +177,42 @@ also verifies rejected schedules cannot append revisions, old schedules remain i
 history and no job or outbox message is created. These are component and contract
 checks; actual email, human language/accessibility, source and user-test readiness
 remain unverified.
+
+## C01c2b4a saved-state recovery
+
+Selecting a saved draft replaces the URL fragment with `#draft=<opaque-id>` while
+preserving the current route/query and Next history state. The visible saved-draft
+link can be reopened after a reload; it restores the current saved configuration
+and first history page through the existing authorized API, not the revision that
+was previously on screen. No configuration, request key, credential or permission
+is carried by the URL. Browser local/session storage remains unused. A copied
+identifier does not transfer owner/workspace access.
+
+Failed, revoked, default-off and missing-record reads clear private state and the
+locator. Starting a new draft, successful deletion and explicit list reset clear
+the locator. Returning to an existing editor retains the selected saved identifier,
+so a reload can read its server state; unsaved edits are not restored or represented
+as saved. After an uncertain creation whose response did not reveal an identifier,
+inspect the saved list before creating another draft. Memory-only retry keys and
+unsaved fields cannot be recovered after a crash by this slice.
+
+On `pagehide`, outstanding reads/mutations are aborted and private component state
+is cleared synchronously before a document can be cached. A persisted `pageshow`
+reloads the session as well as current settings, since another tab may have changed
+the active principal. Ordinary Back/Forward document navigation is checked against
+new saved revisions. Cancelling same-document history traversal while editing is
+still open; this change does not use history sentinels or claim universal browser
+navigation blocking.
+
+Modified clicks, new-tab/download links and same-document anchors do not trigger a
+discard prompt. An ordinary departing link asks once, then performs the confirmed
+document navigation. Workspace/sign-out approval alone does not disable unload
+protection; only the existing committed-navigation event does so after the action
+succeeds. Browser-native reload protection remains in place for unsaved work.
+The five-language form guidance explicitly describes the limits of recovery.
+
+The implementation follows the installed Next native-history guide for preserving
+router state. Navigation API traversal cancellation is not used as a substitute for
+tested behavior; the [MDN overview](https://developer.mozilla.org/en-US/docs/Web/API/Navigation_API)
+records limits on traversal cancellation. Full editing navigation/crash acceptance
+requires a separate privacy-aware recovery design (C01c2b4b).

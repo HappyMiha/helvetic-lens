@@ -8,6 +8,7 @@ import { pollenDraftCopy } from "@/lib/pollen-draft-copy";
 import { pollenEditCopy } from "@/lib/pollen-edit-copy";
 import { pollenDeliveryCopy } from "@/lib/pollen-delivery-copy";
 import { PollenDeliveryFields } from "./pollen-delivery-fields";
+import { pollenRecoveryCopy } from "@/lib/pollen-recovery-copy";
 import {
   draftFailure,
   type PollenConfiguration,
@@ -78,31 +79,66 @@ export function PollenDraftCreate({
   }, []);
   useEffect(() => {
     if (!dirty || saved) return;
+    let committed = false;
     const unload = (event: BeforeUnloadEvent) => {
+      if (committed) return;
       event.preventDefault();
       event.returnValue = "";
     };
     const navigation = (event: Event) => {
       if (!window.confirm(discard)) event.preventDefault();
     };
+    const acceptNavigation = () => {
+      committed = true;
+    };
     const link = (event: MouseEvent) => {
-      if (!(event.target instanceof Element)) return;
-      const anchor = event.target.closest("a[href]");
       if (
-        anchor &&
-        !anchor.getAttribute("href")?.startsWith("#") &&
-        !window.confirm(discard)
-      ) {
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey ||
+        !(event.target instanceof Element)
+      )
+        return;
+      const anchor = event.target.closest<HTMLAnchorElement>("a[href]");
+      if (
+        !anchor ||
+        anchor.hasAttribute("download") ||
+        (anchor.target && anchor.target !== "_self")
+      )
+        return;
+      const destination = new URL(anchor.href, window.location.href);
+      const current = new URL(window.location.href);
+      if (!["http:", "https:"].includes(destination.protocol)) return;
+      if (
+        destination.origin === current.origin &&
+        destination.pathname === current.pathname &&
+        destination.search === current.search
+      )
+        return;
+      if (!window.confirm(discard)) {
         event.preventDefault();
         event.stopPropagation();
+      } else {
+        committed = true;
+        event.preventDefault();
+        event.stopPropagation();
+        window.location.assign(destination.href);
       }
     };
     window.addEventListener("beforeunload", unload);
     window.addEventListener("helvetic:before-navigation", navigation);
+    window.addEventListener("helvetic:navigation-committed", acceptNavigation);
     document.addEventListener("click", link, true);
     return () => {
       window.removeEventListener("beforeunload", unload);
       window.removeEventListener("helvetic:before-navigation", navigation);
+      window.removeEventListener(
+        "helvetic:navigation-committed",
+        acceptNavigation,
+      );
       document.removeEventListener("click", link, true);
     };
   }, [dirty, saved, discard]);
@@ -299,6 +335,7 @@ export function PollenDraftCreate({
         {draft ? edit.edit : copy.create}
       </h2>
       <p>{draft ? edit.intro : copy.intro}</p>
+      <p>{pollenRecoveryCopy[locale].unsaved}</p>
       {draft && (
         <p>
           {labels.revision} {draft.revision} · {labels.delivery}:{" "}

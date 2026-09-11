@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { api, ApiError } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { pollenDraftCopy } from "@/lib/pollen-draft-copy";
@@ -8,6 +9,11 @@ import { pollenCreateCopy } from "@/lib/pollen-create-copy";
 import { pollenDeleteCopy } from "@/lib/pollen-delete-copy";
 import { pollenEditCopy } from "@/lib/pollen-edit-copy";
 import { editablePollenConfiguration } from "@/lib/pollen-edit";
+import {
+  pollenDraftIdFromHash,
+  replacePollenDraftLocation,
+} from "@/lib/pollen-draft-location";
+import { pollenRecoveryCopy } from "@/lib/pollen-recovery-copy";
 import { PollenDraftCreate } from "./pollen-draft-create";
 import {
   draftFailure,
@@ -152,6 +158,7 @@ function Reader({ allowed }: { allowed: boolean }) {
     setDetailLoading(false);
   }
   function failed(error: unknown) {
+    replacePollenDraftLocation(null);
     setCreating(false);
     setEditing(null);
     // Never keep potentially revoked private records visible after a failed read.
@@ -216,6 +223,7 @@ function Reader({ allowed }: { allowed: boolean }) {
       ]);
       if (controller.signal.aborted) return;
       setSelected(draft);
+      replacePollenDraftLocation(draft.id);
       setHistory(page.items);
       setBefore(page.next_before_revision);
     } catch (error) {
@@ -287,6 +295,7 @@ function Reader({ allowed }: { allowed: boolean }) {
       if (controller.signal.aborted) return;
       deleteInFlight.current = false;
       setDeleting(false);
+      replacePollenDraftLocation(null);
       await loadList();
       if (!controller.signal.aborted) setDeleteNotice("deleted");
     } catch (error) {
@@ -311,8 +320,36 @@ function Reader({ allowed }: { allowed: boolean }) {
   }
 
   useEffect(() => {
-    void loadList();
+    function restore() {
+      const id = pollenDraftIdFromHash(window.location.hash);
+      void loadList();
+      if (allowed && id) void openDraft(id);
+    }
+    function hide() {
+      // A cached document must not retain a private view for a later principal.
+      listRequest.current?.abort();
+      detailRequest.current?.abort();
+      deleteRequest.current?.abort();
+      flushSync(() => {
+        deleteInFlight.current = false;
+        setDeleting(false);
+        setCreating(false);
+        setEditing(null);
+        clearDetail();
+        setItems([]);
+        setCursor(null);
+      });
+    }
+    function show(event: PageTransitionEvent) {
+      // Rehydrate the session too: another tab may have switched principal.
+      if (event.persisted) window.location.reload();
+    }
+    restore();
+    window.addEventListener("pagehide", hide);
+    window.addEventListener("pageshow", show);
     return () => {
+      window.removeEventListener("pagehide", hide);
+      window.removeEventListener("pageshow", show);
       listRequest.current?.abort();
       detailRequest.current?.abort();
       deleteRequest.current?.abort();
@@ -352,7 +389,10 @@ function Reader({ allowed }: { allowed: boolean }) {
             <button
               className={styles.button}
               type="button"
-              onClick={() => void loadList()}
+              onClick={() => {
+                replacePollenDraftLocation(null);
+                void loadList();
+              }}
               disabled={loading || deleting}
             >
               {copy.refresh}
@@ -362,6 +402,7 @@ function Reader({ allowed }: { allowed: boolean }) {
                 className={styles.button}
                 type="button"
                 onClick={() => {
+                  replacePollenDraftLocation(null);
                   clearDetail();
                   setCreating(true);
                 }}
@@ -437,6 +478,13 @@ function Reader({ allowed }: { allowed: boolean }) {
                     <h2 ref={detailHeading} tabIndex={-1}>
                       {copy.settings}
                     </h2>
+                    <a
+                      href={`/pollen-watch#draft=${encodeURIComponent(selected.id)}`}
+                      data-pollen-saved-link
+                    >
+                      {pollenRecoveryCopy[locale].link}
+                    </a>
+                    <p>{pollenRecoveryCopy[locale].saved}</p>
                     <h3>
                       {copy.revision} {selected.revision}
                     </h3>
