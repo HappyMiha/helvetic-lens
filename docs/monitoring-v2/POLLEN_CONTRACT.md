@@ -28,10 +28,45 @@ opt-in; delivery rechecks current permissions and consent.
 
 ## Interface boundaries for MV2-070
 
+`services/api/helvetic_lens/pollen_contracts.py` implements the configuration
+boundary. Its generated [JSON schema](evidence/pollen-configuration-v1.schema.json)
+and boundary tests are the v1 handoff for MV2-070 C01. A valid draft is not an
+authorized Start: runtime coverage, source gates, permissions and consent are
+still checked by the future application. No endpoint or persistence is added here.
+
 Use `contract_version=1`, `template_id=pollen-watch`, immutable template/configuration
 and rule revisions. The configuration contains public `station_id`, unique selected
 allergen IDs, rule settings, timezone and delivery preferences; private workspace
 ownership comes from authorization, never a trusted request field.
+
+Configuration v1 rules:
+
+- One to eight unique allergen selections; one rule per aggregation period for
+  each allergen. No rules means current-state preview without change notifications.
+- Observation hourly, daily 00–24 UTC, daily 06–06 UTC, and instantaneous model
+  forecast are separate periods. Never use the user's display timezone to redefine
+  an upstream UTC aggregation window.
+- Thresholds use Decimal `number/m3`, at most six fractional/six integer digits.
+  Trigger is inclusive `>= trigger_at_or_above`; reset is inclusive
+  `<= reset_at_or_below`, strictly below the trigger. Zero is a valid reset.
+  This is a technical configuration bound, not an allergological recommendation.
+- Rapid increase uses an absolute positive difference over an explicit 1–24 hour
+  window. Daily means cannot use this hourly rule. Runtime comparison requires the
+  same station/allergen/period; forecast points also require the same issue/member.
+  Missing baseline or unequal windows cannot be interpreted as zero or a match.
+- Category-change selection still requires a reviewed scale matching allergen,
+  method and period before Start. Numeric validity does not approve that scale.
+- Email defaults off. A daily digest requires a local `HH:MM`; other email modes
+  forbid a digest time. Quiet hours permit overnight intervals but not equal
+  start/end. An IANA timezone is required; runtime DST scheduling remains C04 work.
+- Unknown fields, injected workspace/source-ready fields, duplicate selectors,
+  unsupported versions, non-finite/negative values and ambiguous schedules fail
+  validation. Configuration objects and nested collections are immutable.
+
+The schema expresses structural constraints. API/worker consumers must use the
+Python model as well: reset ordering, selector uniqueness, schedule relationships
+and timezone availability require its semantic validators. A JSON-schema-only
+client is not an authority for writes or dispatch.
 
 Keep these source facts independent of that private configuration:
 

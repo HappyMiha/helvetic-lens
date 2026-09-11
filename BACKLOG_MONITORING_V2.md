@@ -394,6 +394,8 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Execution evidence, 2026-09-11:** Codex on HappyDucky02 implemented bounded source capture and offline proof decoding on `codex/HappyDucky02/mv2-069-pollen-sources`. Real PBS hourly observations and a separate official AMBRsnc/DEN forecast are retained with hashes, source identities and UTC times. The exact catalogue contains 15 stations; only PBS observations were sampled. [Evidence](docs/monitoring-v2/evidence/MV2-069.md), [source dossier](docs/monitoring-v2/POLLEN_SOURCES.md) and [draft contract](docs/monitoring-v2/POLLEN_CONTRACT.md) distinguish implementation from acceptance. Native decoder/definitions compatibility, category semantics, seasonal birch/grass forecast evidence, infrastructure/lifecycle terms and prototype review remain open; their dependent live activation stays blocked. Independent contract work continues without waiting for MV2-001's background tests/deployment.
 
+**MV2-069 configuration slice, 2026-09-11:** The immutable v1 Python configuration contract and exported JSON schema now cover multiple allergens, explicit observation/forecast aggregation periods, Decimal threshold/reset and rapid-increase rules, timezone and opt-in delivery schedules. 25 focused boundary tests and Ruff passed. The documented interface is available for independent MV2-070 C01 implementation; it does not authorize Start, approve hourly categories or complete the source/prototype gates. See [contract and semantic constraints](docs/monitoring-v2/POLLEN_CONTRACT.md). MV2-001's real automatic release has separately been accepted.
+
 <a id="mv2-070"></a>
 
 ### MV2-070 — Pollen Watch FIRST: Implement the shared platform within C5 scope

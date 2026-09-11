@@ -37,6 +37,15 @@ this does not remain a fresh reading when replayed later. Preserve blanks as
 missing. Reject an unrecognized missing marker until its meaning is established.
 Categories/threshold scales are still unverified; do not invent labels from numbers.
 
+Follow-up 2026-09-11: the official
+[threshold table](https://www.meteoswiss.admin.ch/dam/jcr%3Af3d0942c-b3ab-4de6-882e-5df909faed9c/threshold-values-for-pollen-load-classes-of-allergenic-pollen-types.pdf)
+specifies **mean daily** concentrations. It is not an hourly scale. The
+[pollen information page](https://www.meteoswiss.admin.ch/climate/the-climate-of-switzerland/pollen-information.html)
+also distinguishes the pre-2023 manual method from automatic measurements.
+Retain the table as a candidate reference; do not activate its thresholds for
+hourly automatic observations or instantaneous model values without a matching
+method/period contract. No numeric threshold from that PDF is implemented yet.
+
 ## Separate forecast channel
 
 Official [model documentation](https://opendatadocs.meteoswiss.ch/e-forecast-data/e2-e3-numerical-weather-forecasting-model),
@@ -96,6 +105,26 @@ configuration, state contracts and labelled prototype work may continue while
 the source gates, previous tests and deployment remain pending.
 
 ## Reproduce the bounded experiment
+
+### Infrastructure terms follow-up — 2026-09-11
+
+[FSDI terms](https://www.geo.admin.ch/en/general-terms-of-use-fsdi) allow
+registration-free acquisition under fair use and the dataset's own conditions.
+Use download services for retained datasets, share fetches across users, cache
+unchanged content and adapt to interface updates. Access can be restricted for
+excessive use; the service operates on a best-effort basis. The reviewed page
+refers to a request-limit table but does not expose numeric endpoint limits in
+its text; do not invent a guaranteed allowance. The proposed 20-minute shared
+observation refresh remains subject to cadence/lifecycle verification.
+
+The [CSCS terms page linked by MeteoSwiss](https://www.cscs.ch/information/terms-privacy-policy)
+describes named CSCS websites and reserves third-party rights; it does not clearly
+specify public object-store download quotas or MeteoSwiss dataset retention rules.
+This is a scope ambiguity, not evidence that MeteoSwiss's CC BY dataset rights are
+revoked. Keep the infrastructure gate open for Integration to identify the applicable
+object-store policy. No new account, paid service or communication was initiated.
+
+### Commands and retained evidence
 
 `scripts/pollen_source_probe.py --output <new-proof-directory> --issue-time <UTC>
 --station PBS --variable AMBRsnc --lead-hours 6` fetches explicit live public data.
