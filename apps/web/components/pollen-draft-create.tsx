@@ -9,6 +9,7 @@ import { pollenEditCopy } from "@/lib/pollen-edit-copy";
 import { pollenDeliveryCopy } from "@/lib/pollen-delivery-copy";
 import { PollenDeliveryFields } from "./pollen-delivery-fields";
 import { pollenRecoveryCopy } from "@/lib/pollen-recovery-copy";
+import { pollenBackupCopy } from "@/lib/pollen-backup-copy";
 import {
   draftFailure,
   type PollenConfiguration,
@@ -40,11 +41,13 @@ const newRule = (period: string): PollenRule => ({
 
 export function PollenDraftCreate({
   draft,
+  imported,
   onClose,
   onSaved,
   onDenied,
 }: {
   draft?: PollenDraft;
+  imported?: PollenConfiguration;
   onClose: () => void;
   onSaved: (id: string) => void;
   onDenied: (error: unknown) => void;
@@ -55,7 +58,7 @@ export function PollenDraftCreate({
     edit = pollenEditCopy[locale];
   const discard = draft ? edit.discard : copy.discard;
   const [configuration, setConfiguration] = useState(() =>
-    structuredClone(draft?.configuration ?? initial()),
+    structuredClone(draft?.configuration ?? imported ?? initial()),
   );
   const [preview, setPreview] = useState<Preview | null>(null);
   const [attempt, setAttempt] = useState<{
@@ -65,7 +68,7 @@ export function PollenDraftCreate({
   const [saved, setSaved] = useState<PollenDraft | null>(null);
   const [conflict, setConflict] = useState(false);
   const [recorded, setRecorded] = useState(false);
-  const [dirty, setDirty] = useState(false),
+  const [dirty, setDirty] = useState(!!imported),
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState("");
   const inFlight = useRef(false),
@@ -335,6 +338,9 @@ export function PollenDraftCreate({
         {draft ? edit.edit : copy.create}
       </h2>
       <p>{draft ? edit.intro : copy.intro}</p>
+      {imported && (
+        <p data-pollen-import-review>{pollenBackupCopy[locale].restore}</p>
+      )}
       <p>{pollenRecoveryCopy[locale].unsaved}</p>
       {draft && (
         <p>

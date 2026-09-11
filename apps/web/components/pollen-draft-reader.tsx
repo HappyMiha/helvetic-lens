@@ -15,6 +15,7 @@ import {
 } from "@/lib/pollen-draft-location";
 import { pollenRecoveryCopy } from "@/lib/pollen-recovery-copy";
 import { PollenDraftCreate } from "./pollen-draft-create";
+import { PollenDraftExport, PollenDraftImport } from "./pollen-draft-backup";
 import {
   draftFailure,
   privatePollenScope,
@@ -112,6 +113,7 @@ function Settings({
 function Reader({ allowed }: { allowed: boolean }) {
   const { canManage } = useAuth();
   const [creating, setCreating] = useState(false);
+  const [imported, setImported] = useState<PollenConfiguration | null>(null);
   const [editing, setEditing] = useState<PollenDraft | null>(null);
   const { locale } = useI18n();
   const copy = pollenDraftCopy[locale];
@@ -158,6 +160,7 @@ function Reader({ allowed }: { allowed: boolean }) {
     setDetailLoading(false);
   }
   function failed(error: unknown) {
+    setImported(null);
     replacePollenDraftLocation(null);
     setCreating(false);
     setEditing(null);
@@ -331,6 +334,7 @@ function Reader({ allowed }: { allowed: boolean }) {
       detailRequest.current?.abort();
       deleteRequest.current?.abort();
       flushSync(() => {
+        setImported(null);
         deleteInFlight.current = false;
         setDeleting(false);
         setCreating(false);
@@ -371,13 +375,16 @@ function Reader({ allowed }: { allowed: boolean }) {
           <PollenDraftCreate
             key={editing ? `${editing.id}:${editing.revision}` : "new"}
             draft={editing ?? undefined}
+            imported={imported ?? undefined}
             onClose={() => {
+              setImported(null);
               setCreating(false);
               setEditing(null);
               if (editing) void openDraft(editing.id);
             }}
             onDenied={failed}
             onSaved={(id) => {
+              setImported(null);
               setCreating(false);
               setEditing(null);
               void loadList();
@@ -404,6 +411,7 @@ function Reader({ allowed }: { allowed: boolean }) {
                 onClick={() => {
                   replacePollenDraftLocation(null);
                   clearDetail();
+                  setImported(null);
                   setCreating(true);
                 }}
               >
@@ -414,6 +422,17 @@ function Reader({ allowed }: { allowed: boolean }) {
               <p className={styles.notice} role="alert">
                 {copy[failure]}
               </p>
+            )}
+            {canManage && !loading && !failure && !deleting && (
+              <PollenDraftImport
+                onLoaded={(configuration) => {
+                  listRequest.current?.abort();
+                  replacePollenDraftLocation(null);
+                  clearDetail();
+                  setImported(configuration);
+                  setCreating(true);
+                }}
+              />
             )}
             {deleting && <p role="status">{removal.busy}</p>}
             {deleteNotice && (
@@ -489,6 +508,17 @@ function Reader({ allowed }: { allowed: boolean }) {
                       {copy.revision} {selected.revision}
                     </h3>
                     <Settings configuration={selected.configuration} />
+                    <PollenDraftExport
+                      key={selected.id}
+                      id={selected.id}
+                      disabled={
+                        deleting ||
+                        loading ||
+                        detailLoading ||
+                        deleteNotice !== null
+                      }
+                      onDenied={failed}
+                    />
                     {canManage &&
                       selected.status === "draft" &&
                       (editablePollenConfiguration(selected.configuration) ? (
@@ -553,7 +583,11 @@ function Reader({ allowed }: { allowed: boolean }) {
                     </p>
                     <h2>{copy.history}</h2>
                     {history.map((item) => (
-                      <details key={item.revision} className={styles.history}>
+                      <details
+                        key={item.revision}
+                        className={styles.history}
+                        data-pollen-revision
+                      >
                         <summary>
                           {copy.revision} {item.revision}
                         </summary>

@@ -18,6 +18,18 @@
 .creator {
   max-width: 760px;
 }
+.backupFile {
+  display: grid;
+  gap: 8px;
+}
+.backupFile input {
+  min-height: 44px;
+  max-width: 100%;
+}
+.backupFile input:focus-visible {
+  outline: 3px solid #176c71;
+  outline-offset: 3px;
+}
 .creator button {
   margin: 8px 8px 8px 0;
 }

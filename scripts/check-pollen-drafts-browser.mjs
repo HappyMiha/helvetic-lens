@@ -12,6 +12,7 @@ import { pollenDeleteCopy } from "../apps/web/lib/pollen-delete-copy.ts";
 import { pollenEditCopy } from "../apps/web/lib/pollen-edit-copy.ts";
 import { pollenDeliveryCopy } from "../apps/web/lib/pollen-delivery-copy.ts";
 import { pollenRecoveryCopy } from "../apps/web/lib/pollen-recovery-copy.ts";
+import { pollenBackupCopy } from "../apps/web/lib/pollen-backup-copy.ts";
 import { AccessibilityAudit } from "./browser-accessibility.mjs";
 import { Cdp, evaluate, sleep } from "./browser-cdp.mjs";
 
@@ -169,7 +170,7 @@ try {
     if (locale !== "en-CH") assert.ok(await evaluate(cdp, "document.activeElement.getBoundingClientRect().top >= 72"), "Focused heading is hidden by the mobile header");
     assert.ok((await text()).includes(pollenDraftCopy[locale].blocked));
     assert.equal(await evaluate(cdp, "document.querySelector('[aria-describedby=\"pollen-start-blocked\"]').disabled"), true);
-    await audit.check(cdp, locale, "[data-pollen-drafts] details");
+    await audit.check(cdp, locale, "[data-pollen-revision]");
     assert.equal(await evaluate(cdp, "document.documentElement.scrollWidth <= innerWidth"), true);
   }
   locale = "en-CH"; await navigate();
@@ -183,10 +184,10 @@ try {
   await sleep(1000);
   assert.ok(await evaluate(cdp, "document.querySelector('[data-pollen-drafts] button[aria-pressed=true]').innerText.includes('PZH')"));
   await click('[data-pollen-drafts] section[aria-label="Saved settings"] > button:last-child');
-  await wait(() => evaluate(cdp, "document.querySelectorAll('[data-pollen-drafts] details').length === 2"), "History continuation failed");
-  await click('[data-pollen-drafts] details:last-of-type summary');
+  await wait(() => evaluate(cdp, "document.querySelectorAll('[data-pollen-revision]').length === 2"), "History continuation failed");
+  await click('[data-pollen-revision]:last-of-type summary');
   assert.ok((await text()).includes("PGE"));
-  await audit.check(cdp, "expanded-history", "[data-pollen-drafts] details[open]");
+  await audit.check(cdp, "expanded-history", "[data-pollen-revision][open]");
   await mkdir(join(root, "test-results"), { recursive: true });
   const screenshot = await cdp.send("Page.captureScreenshot", { format: "png" });
   await writeFile(join(root, "test-results/pollen-drafts-mobile.png"), Buffer.from(screenshot.data, "base64"));
@@ -293,7 +294,7 @@ try {
     assert.deepEqual(deletes().at(-1).payload, { expected_revision: 12 });
     assert.equal(Object.entries(deletes().at(-1).headers).find(([key]) => key.toLowerCase() === "x-csrf-token")?.[1], "synthetic-pollen-csrf");
     assert.ok(!(await text()).includes("12.500001"));
-    assert.equal(await evaluate(cdp, "document.querySelectorAll('[data-pollen-drafts] details').length"), 0);
+    assert.equal(await evaluate(cdp, "document.querySelectorAll('[data-pollen-revision]').length"), 0);
     await audit.check(cdp, `deleted-${locale}`, "[data-pollen-drafts] p[role=status]");
   }
   locale = "en-CH"; deleted.clear(); revisions.clear(); deleteMode = "conflict";
@@ -549,15 +550,133 @@ try {
   await reloadDocument();
   await wait(() => evaluate(cdp, "!!document.querySelector('[data-pollen-drafts] li') && !document.querySelector('[data-pollen-create]')"), 'Reload invented unsaved form recovery');
   assert.equal(writes().length, originalWrites, 'Navigation recovery wrote private records');
+
+  const downloadDirectory = join(profile, "downloads");
+  await mkdir(downloadDirectory);
+  await cdp.send("Browser.setDownloadBehavior", { behavior: "allow", downloadPath: downloadDirectory });
+  const backupPath = join(downloadDirectory, "pollen-watch-settings.json");
+  async function chooseBackup(path) {
+    await evaluate(cdp, "document.querySelector('[data-pollen-import]').open = true");
+    const { root: documentRoot } = await cdp.send("DOM.getDocument");
+    const { nodeId } = await cdp.send("DOM.querySelector", { nodeId: documentRoot.nodeId, selector: "[data-pollen-import] input" });
+    await cdp.send("DOM.setFileInputFiles", { nodeId, files: [path] });
+  }
+  const writesBeforeBackup = writes().length;
+  for (const language of Object.keys(pollenBackupCopy)) {
+    locale = language; mode = "ready"; manager = true; organization = "org-a";
+    updated.clear(); revisions.clear(); editFixture = false;
+    await selectForDelete();
+    const fresh = config("PGE");
+    Object.assign(fresh, { contract_version: 1, template_version: 1, template_id: "pollen-watch" });
+    fresh.selections[0].rules[0].threshold = { trigger_at_or_above: "999999.999999", reset_at_or_below: "0.000001" };
+    fresh.selections[0].rules[0].rapid_increase.minimum_increase = "3.000001";
+    fresh.delivery = { email: "daily_digest", digest_at: "08:30", quiet_hours: { start: "22:00", end: "07:00" } };
+    updated.set("a", { ...draft("a", "PGE"), revision: 15, configuration: fresh });
+    const readCount = requests.filter(r => r.path === '/api/monitoring-subjects/a' && r.method === 'GET').length;
+    // Actual keyboard-initiated download and an actual file input round trip.
+    await evaluate(cdp, "document.querySelector('[data-pollen-export]').focus()");
+    await cdp.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, text: "\r", unmodifiedText: "\r" });
+    await cdp.send("Input.dispatchKeyEvent", { type: "keyUp", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13 });
+    let backup;
+    await wait(async () => { backup = JSON.parse(await readFile(backupPath, 'utf8')); return true; }, 'Settings backup download missing');
+    assert.deepEqual(backup, { format: 'helvetic-lens.pollen-draft', version: 1, configuration: fresh });
+    assert.equal(requests.filter(r => r.path === '/api/monitoring-subjects/a' && r.method === 'GET').length, readCount + 1);
+    assert.ok((await text()).includes(pollenBackupCopy[locale].downloaded));
+    const beforeImport = writes().length;
+    await chooseBackup(backupPath);
+    await wait(() => evaluate(cdp, "!!document.querySelector('[data-pollen-import-review]')"), 'Imported review missing');
+    assert.equal(writes().length, beforeImport, 'Selecting backup sent configuration before explicit preview');
+    assert.equal(await evaluate(cdp, "document.activeElement?.tagName"), 'H2');
+    assert.equal(await evaluate(cdp, "document.querySelector('[name=pollen-station]').value"), 'PGE');
+    assert.equal(await evaluate(cdp, "document.querySelector('[name=trigger-birch-observation_hourly]').value"), '999999.999999');
+    assert.equal(await evaluate(cdp, "document.querySelector('[name=pollen-email]').value"), 'daily_digest');
+    assert.equal(await evaluate(cdp, "document.querySelector('[name=pollen-digest]').value"), '08:30');
+    dialogAccept = false;
+    await button(pollenCreateCopy[locale].cancel);
+    assert.ok(await evaluate(cdp, "!!document.querySelector('[data-pollen-import-review]')"), 'Imported settings lacked discard protection');
+    dialogAccept = true;
+    await button(pollenCreateCopy[locale].preview);
+    await wait(async () => (await text()).includes(pollenCreateCopy[locale].checked), 'Restored preview missing');
+    assert.deepEqual(posts('/api/monitoring-subjects/preview').at(-1).payload, { configuration: fresh });
+    await audit.check(cdp, `backup-${locale}`, '[data-pollen-import-review]');
+    assert.equal(await evaluate(cdp, 'document.documentElement.scrollWidth <= innerWidth'), true);
+    if (language === 'en-CH') {
+      await evaluate(cdp, "document.querySelector('[data-pollen-import-review]').scrollIntoView({block:'center'})");
+      const backupImage = await cdp.send('Page.captureScreenshot', { format: 'png' });
+      await writeFile(join(root, 'test-results/pollen-backup-mobile.png'), Buffer.from(backupImage.data, 'base64'));
+    }
+    const oldCreated = created.size;
+    loseFirstSave = true;
+    await button(pollenCreateCopy[locale].save);
+    await wait(async () => (await text()).includes(pollenCreateCopy[locale].uncertain), 'Restore lost-response fixture missing');
+    await button(pollenCreateCopy[locale].save);
+    await wait(async () => (await text()).includes(pollenCreateCopy[locale].saved), 'Restore retry missing');
+    const [firstSave, retrySave] = posts('/api/monitoring-subjects').slice(-2);
+    assert.deepEqual(firstSave.payload, retrySave.payload);
+    assert.deepEqual(firstSave.payload.configuration, fresh);
+    assert.deepEqual(Object.keys(firstSave.payload).sort(), ['configuration', 'request_key']);
+    assert.equal(created.size, oldCreated + 1);
+    assert.equal(updated.get('a').revision, 15, 'Restore overwrote original');
+    assert.equal(Object.entries(firstSave.headers).find(([key]) => key.toLowerCase() === 'x-csrf-token')?.[1], 'synthetic-pollen-csrf');
+    await button(pollenCreateCopy[locale].view);
+    await wait(() => evaluate(cdp, "location.hash.startsWith('#draft=created-')"), 'Restored draft not opened');
+    await rm(backupPath);
+  }
+  assert.equal(writes().length - writesBeforeBackup, 15, 'Backup workflow performed unexpected writes');
+  locale = 'en-CH'; updated.clear(); revisions.clear();
+  await selectForDelete();
+  const fixturePath = join(profile, 'import-fixture.json');
+  const noUnexpectedWrites = writes().length;
+  for (const [contents, error] of [['{bad', 'invalid'], ['x'.repeat(65537), 'invalid'], [JSON.stringify({format:'other',version:1,configuration:config('PBS')}), 'unsupported']]) {
+    await writeFile(fixturePath, contents);
+    await chooseBackup(fixturePath);
+    await wait(async () => (await text()).includes(pollenBackupCopy[locale][error]), 'Invalid import not explained');
+    assert.equal(await evaluate(cdp, "!!document.querySelector('[data-pollen-create]')"), false);
+    assert.ok((await text()).includes('12.500001'), 'Invalid import cleared saved reader');
+  }
+  for (const failureMode of ['revoked', 'disabled', 'missing', 'error']) {
+    mode = 'ready'; await selectForDelete(); mode = failureMode;
+    await click('[data-pollen-export]');
+    await wait(async () => (await text()).includes(failureMode === 'error' ? pollenBackupCopy[locale].failed : pollenDraftCopy[locale][failureMode === 'revoked' ? 'access' : failureMode]), 'Failed export not explained');
+    assert.equal(existsSync(backupPath), false, 'Failed export downloaded stale private settings');
+    if (failureMode !== 'error') assert.ok(!(await text()).includes('12.500001'), 'Revoked export retained private settings');
+  }
+  mode = 'ready'; await selectForDelete(); delayFirst = true;
+  await click('[data-pollen-export]');
+  await button(pollenCreateCopy[locale].create);
+  await sleep(900);
+  assert.equal(existsSync(backupPath), false, 'Late export survived leaving its selected draft');
+  delayFirst = false; await button(pollenCreateCopy[locale].cancel);
+  await writeFile(fixturePath, JSON.stringify({format:'helvetic-lens.pollen-draft',version:1,configuration:config('PBS')}));
+  await evaluate(cdp, "window.__originalPollenRead = File.prototype.arrayBuffer; File.prototype.arrayBuffer = function() { const file = this; return new Promise(resolve => setTimeout(() => resolve(window.__originalPollenRead.call(file)), 500)); }");
+  await chooseBackup(fixturePath);
+  await button(pollenCreateCopy[locale].create);
+  await sleep(600);
+  assert.equal(await evaluate(cdp, "document.querySelector('[name=pollen-station]').value"), '', 'Late import replaced a different form');
+  assert.equal(await evaluate(cdp, "!!document.querySelector('[data-pollen-import-review]')"), false);
+  await evaluate(cdp, "File.prototype.arrayBuffer = window.__originalPollenRead");
+  await button(pollenCreateCopy[locale].cancel);
+  await chooseBackup(fixturePath);
+  await wait(() => evaluate(cdp, "!!document.querySelector('[data-pollen-import-review]')"), 'Revoked restore review missing');
+  mode = 'revoked'; await button(pollenCreateCopy[locale].preview);
+  await wait(async () => (await text()).includes(pollenDraftCopy[locale].access), 'Imported preview bypassed access recheck');
+  assert.equal(await evaluate(cdp, "!!document.querySelector('[data-pollen-create]')"), false);
+  assert.equal(writes().length, noUnexpectedWrites + 1);
+  mode = 'ready'; manager = false; await selectForDelete();
+  assert.equal(await evaluate(cdp, "!!document.querySelector('[data-pollen-import]')"), false, 'Viewer can import');
+  await click('[data-pollen-export]');
+  await wait(() => existsSync(backupPath), 'Authorized owner viewer cannot export own configuration');
+  await rm(backupPath);
   assert.equal(requests.filter(r => r.path.endsWith("/start")).length, 0);
   assert.deepEqual(exceptions, []);
-  audit.finish(31);
+  audit.finish(36);
   console.log("Pollen reader: five locales, desktop/mobile, keyboard activation, exact decimals, list/history pagination, obsolete responses, revoked/default-off/missing/error/empty/anonymous/workspace isolation passed. Synthetic APIs only; no live acceptance.");
   console.log("Pollen creation: five locales, keyboard entry, multi-allergen observation/forecast rules, invalid preview, preview invalidation, CSRF, busy guard, lost-response same-key retry, saved navigation, confirmed/cancelled discard and revoked access passed. Email off; no Start requests.");
   console.log("Pollen deletion: five localized exact station/revision confirmations, cancel/success, duplicate clicks, CSRF, private-history removal, conflict requiring fresh revision, uncertain response then missing, revoked access and active/viewer denial passed.");
   console.log("Pollen editing: five locales, exact decimals, preserved contract/delivery fields, CSRF, revision CAS, duplicate guard, history recovery without writes including newer current revision, explicit unchanged retry, conflicting history, discard/reload, revoked access and unsupported category read-only passed.");
   console.log("Pollen delivery preferences: five locales, email-off defaults, required clock fields, equal/overnight quiet hours, all mode transitions, digest/quiet clearing, timezone labels, preview invalidation, exact create/edit payloads, numeric preservation and uncertain-write history recovery passed. No Start or delivery activation.");
   console.log("Pollen saved recovery: five locales, identifier-only links, reload/current revisions, denied/missing/default-off clearing, real Back/Forward document restoration, cached-page privacy/session revalidation, non-departing links and committed-only unload bypass passed without writes. Unsaved crash recovery and same-document traversal cancellation remain open.");
+  console.log("Private backup and restore: five locales, real keyboard downloads and local file inputs, fresh authorized snapshots, lossless settings, separate preview/new-copy Save, same-key retry, dirty review, malformed/oversized/unsupported files, revoked/default-off/missing/failed export, cancelled late download and viewer read-only export passed. No history/identity/source/consent restoration.");
 } catch (error) {
   console.error({ locale, mode, requests: requests.slice(-12), exceptions,
     page: cdp ? await text().catch(() => "unavailable") : null,

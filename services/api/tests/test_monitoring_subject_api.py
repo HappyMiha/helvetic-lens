@@ -127,6 +127,46 @@ def test_delivery_preferences_validate_and_retain_history_without_starting_jobs(
         assert session.scalar(select(func.count()).select_from(OutboxMessage)) == outbox_before
 
 
+def test_configuration_backup_restores_a_new_private_draft_without_history_or_delivery(api):
+    client, app, _, _ = api
+    original = create(client, key="backup-original")
+    path = URL + "/" + original["id"]
+    settings = original["configuration"]
+    settings["station_id"] = "PGE"
+    settings["selections"][0]["rules"] = [{
+        "period": "observation_hourly", "threshold": {
+            "trigger_at_or_above": "999999.999999", "reset_at_or_below": "0.000001",
+        }, "rapid_increase": {"minimum_increase": "3.000001", "window_hours": 2},
+    }]
+    settings["delivery"] = {"email": "daily_digest", "digest_at": "08:30",
+                            "quiet_hours": {"start": "22:00", "end": "07:00"}}
+    changed = client.patch(path, json={"expected_revision": 1, "configuration": settings}, headers=_csrf(client))
+    assert changed.status_code == 200, changed.text
+    current = client.get(path)
+    assert "no-store" in current.headers["cache-control"]
+    backup_configuration = current.json()["configuration"]
+    with app.state.service.db.session(include_all_organizations=True) as session:
+        counts = (session.scalar(select(func.count()).select_from(Job)),
+                  session.scalar(select(func.count()).select_from(OutboxMessage)))
+    checked = client.post(URL + "/preview", json={"configuration": backup_configuration}, headers=_csrf(client))
+    assert checked.status_code == 200, checked.text
+    assert checked.json()["configuration"] == backup_configuration
+    assert checked.json()["start_available"] is False
+    payload = {"request_key": "restore-new-copy", "configuration": checked.json()["configuration"]}
+    restored = client.post(URL, json=payload, headers=_csrf(client))
+    assert restored.status_code == 201, restored.text
+    assert client.post(URL, json=payload, headers=_csrf(client)).json() == restored.json()
+    copy = restored.json()
+    assert copy["id"] != original["id"] and copy["revision"] == 1 and copy["status"] == "draft"
+    assert copy["configuration"] == backup_configuration
+    assert client.get(path).json()["revision"] == 2
+    assert len(client.get(path + "/history").json()["items"]) == 2
+    assert len(client.get(URL + "/" + copy["id"] + "/history").json()["items"]) == 1
+    with app.state.service.db.session(include_all_organizations=True) as session:
+        assert (session.scalar(select(func.count()).select_from(Job)),
+                session.scalar(select(func.count()).select_from(OutboxMessage))) == counts
+
+
 def test_pagination_has_no_duplicates_and_preserves_owner_scope(api):
     client, _, _, _ = api
     expected = {create(client, key=str(index))["id"] for index in range(3)}

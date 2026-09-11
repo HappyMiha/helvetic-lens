@@ -161,30 +161,34 @@ commits, their dependencies and compatibility. Changes to `main` must not silent
 change v2's application version, controller, schema or data. An update to the v2
 branch must affect only its dedicated deployment.
 
-## Monitoring iteration continues during verification
+## Monitoring publishes complete features
 
-The user explicitly requested on 11 September 2026 that development continue
-iteratively without waiting for tests and deployment of preceding changes. The
-Monitoring execution loop therefore overlaps implementation with verification:
+The latest user instruction on 11 September 2026 supersedes publication after
+each technical task/slice: complete a user-facing feature, then test, push and
+let the existing deployment pick it up. A feature is a coherent end-to-end user
+outcome with explicit acceptance criteria, not a renamed small technical task.
 
-1. Fetch the Monitoring channel and choose a ready task or an independently
-   implementable slice with an explicit, versioned predecessor contract.
-2. Implement in a separate task branch/worktree. Run required focused checks and
-   publish each commit immediately to its task branch. Preserve pending check
-   results as pending; a push is not evidence of a test pass.
-3. Fetch/review/integrate through the Monitoring channel under its existing
-   quality gates. Let long test suites and the automatic release run continue in
-   the background; do not restart them merely because a new iteration starts.
-4. Proceed with available development while collecting check and deployment
-   results. Prioritize failures, fix their causes and rerun affected checks.
-5. Record implemented, pushed, tested and actually deployed revisions separately.
-   Leave incomplete acceptance IN PROGRESS or VERIFYING. Mark DONE only with the
-   required evidence, including actual release identity when applicable.
+1. Fetch the Monitoring channel, define the next ready feature and map its
+   dependencies/acceptance to the existing backlog. Use one feature worktree and
+   host-owned MV2 branch. Resume that worktree across continuations until done.
+2. Implement the complete feature. Keep unfinished local changes and an accurate
+   checkpoint; a timer/heartbeat is not a release boundary. Necessary focused
+   diagnostics are allowed, but do not repeat full builds/suites per small edit.
+3. Once implemented, run the required feature and regression checks together,
+   fix failures and update English backlog/evidence. Required source, permission,
+   accessibility and user-acceptance gates retain their original meaning.
+4. Commit and immediately push the feature branch, fetch/review the latest
+   Monitoring channel, resolve integration changes and reverify affected behavior,
+   then publish one fast-forward feature update to Monitoring for auto-deploy.
+   Do not publish isolated documentation/instruction/substep commits just to end
+   a continuation. Every actual commit still receives its immediate task push.
+5. Implement the next ready feature while the preceding deployment runs. Collect
+   results without duplicating suites or restarting active deployment. Keep
+   implemented, tested, pushed and activated evidence separate; DONE still needs
+   all acceptance evidence and the actual public release identity.
 
-This instruction removes waiting as the default development dependency. It does
-not waive source-access rights, missing required contracts, tenant boundaries,
-safe integration, test gates, deployment gates or human acceptance. Do not invent
-a passing result, bypass a failed gate or activate unsupported source coverage.
+Existing routine commit/push/auto-deploy authorization remains valid. This changes
+delivery granularity, not scope, source rights, tenant boundaries or quality gates.
 
 ## Keep both serving checkouts out of development
 

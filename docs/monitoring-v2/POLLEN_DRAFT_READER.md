@@ -216,3 +216,53 @@ router state. Navigation API traversal cancellation is not used as a substitute 
 tested behavior; the [MDN overview](https://developer.mozilla.org/en-US/docs/Web/API/Navigation_API)
 records limits on traversal cancellation. Full editing navigation/crash acceptance
 requires a separate privacy-aware recovery design (C01c2b4b).
+
+## Private draft backup and restore
+
+The feature delivers one portable saved-settings workflow across C01/C05/C06/C07:
+download current settings, keep a private file, then restore them into a new draft
+in an authorized workspace. It is configuration backup, not source/history export
+or a full account/database restore. No new API, migration or service is required.
+
+An owner with read access selects a saved draft and chooses **Download settings
+backup**. The client performs a new private GET to recheck access and read the
+current saved configuration, even if the selected screen displays an older
+revision. It downloads `pollen-watch-settings.json` only after that read succeeds.
+Revoked, disabled or missing reads clear private state through the reader's error
+path; transient failures never fall back to cached settings. Leaving the selected
+draft cancels the read. Object URLs are revoked when replaced or unmounted,
+including the existing pagehide/scope-change cleanup. The success message says
+that the download was requested, not that the browser saved a file successfully.
+
+The UTF-8 JSON envelope has exactly `format: "helvetic-lens.pollen-draft"`,
+`version: 1` and `configuration`. It excludes draft/owner/workspace identities,
+request keys, revision history, credentials, observations and evaluation evidence.
+The file still contains personal station/allergen/rule/delivery preferences;
+five-language guidance explains that it must be kept private. Deleting a server
+draft cannot delete a file the user previously downloaded.
+
+A manager chooses **Restore from a settings backup** and selects a local file.
+The file is limited to 64 KiB before reading, decoded as strict UTF-8 and checked
+for the supported envelope and form-compatible configuration. Unknown properties,
+versions, categories or units are rejected rather than silently discarded. Arrays
+are bounded and unique, and decimal values must remain bounded text rather than
+potentially rounded JSON numbers. The local check does not replace authoritative
+server validation of rule semantics, timezone or schedules.
+
+A valid file opens the existing creation form with imported values, exact decimal
+text and delivery preferences. The form is dirty immediately and requires explicit
+discard before abandoning it. Selecting a file performs no request or write;
+**Check settings** is a separate authenticated server preview and **Save private
+draft** is a separate idempotent create using a newly generated scoped request key.
+A lost save response retains the same payload/key for retry. Neither the file nor
+its origin can overwrite another draft or transfer permission. The original draft
+and history stay unchanged; the new draft starts at revision 1 without imported
+history. No monitoring activation, source admission or email consent is restored.
+
+Import/export controls and errors are available in EN/DE/FR/IT/RM, with contextual
+help, keyboard focus and a narrow-viewport layout. Pending imports cannot replace
+a different form after the import component is unmounted. Invalid files leave the
+existing saved reader intact. There is no automatic local/session storage, silent
+upload, automatic save or recovery of unsaved fields after a crash. Independent
+language/screen-reader review, complete source-backed Start, live user acceptance
+and the broader C06/C07 operational/restore criteria remain separate open gates.

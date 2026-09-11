@@ -4,6 +4,15 @@
 
 ## Current checkpoint — 11 September
 
+**19:31 UTC update:** The controller reports automatic release
+`72bc48945a08fc98140559d6d837f2cfbe6b3dfe` succeeded with no error step, and public
+readiness independently serves that exact SHA. Saved-state recovery and delivery
+preferences are therefore activated components. The next private backup/restore
+feature has passed its local build, API and browser gates and is being published
+once as a complete feature under the user's revised cadence. Its activation is
+not yet verified. No source, live Start, email-consent or human acceptance gate is
+completed by the earlier automatic release.
+
 **17:00 UTC update:** Automatic release `fc62f43b621d0cb2a613c272473263d6b7e4bb78`
 was activated at `2026-09-11T16:35:06Z`, with every gate successful and **2261 API
 tests passed, 12 skipped**. Public readiness independently confirms the same SHA.
