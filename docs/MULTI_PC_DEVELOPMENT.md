@@ -161,6 +161,31 @@ commits, their dependencies and compatibility. Changes to `main` must not silent
 change v2's application version, controller, schema or data. An update to the v2
 branch must affect only its dedicated deployment.
 
+## Monitoring iteration continues during verification
+
+The user explicitly requested on 11 September 2026 that development continue
+iteratively without waiting for tests and deployment of preceding changes. The
+Monitoring execution loop therefore overlaps implementation with verification:
+
+1. Fetch the Monitoring channel and choose a ready task or an independently
+   implementable slice with an explicit, versioned predecessor contract.
+2. Implement in a separate task branch/worktree. Run required focused checks and
+   publish each commit immediately to its task branch. Preserve pending check
+   results as pending; a push is not evidence of a test pass.
+3. Fetch/review/integrate through the Monitoring channel under its existing
+   quality gates. Let long test suites and the automatic release run continue in
+   the background; do not restart them merely because a new iteration starts.
+4. Proceed with available development while collecting check and deployment
+   results. Prioritize failures, fix their causes and rerun affected checks.
+5. Record implemented, pushed, tested and actually deployed revisions separately.
+   Leave incomplete acceptance IN PROGRESS or VERIFYING. Mark DONE only with the
+   required evidence, including actual release identity when applicable.
+
+This instruction removes waiting as the default development dependency. It does
+not waive source-access rights, missing required contracts, tenant boundaries,
+safe integration, test gates, deployment gates or human acceptance. Do not invent
+a passing result, bypass a failed gate or activate unsupported source coverage.
+
 ## Keep both serving checkouts out of development
 
 After installing these files in HappySnowman's checkout as part of a normal,

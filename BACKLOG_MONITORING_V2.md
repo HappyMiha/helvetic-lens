@@ -99,6 +99,16 @@ For the nine active scenarios, an unmet required source gate leaves the required
 
 ## Implementation sequence and checkpoints
 
+**Execution instruction — user decision, 2026-09-11:** Continue development
+iteratively while previous changes undergo tests and automatic deployment.
+Pending verification alone does not block the next ready task or independently
+implementable slice using recorded versioned contracts. Run checks in the
+background, collect results without duplicate runs, prioritize failures and
+record implementation, push, test and release evidence separately. Keep pending
+acceptance IN PROGRESS/VERIFYING; DONE still requires all applicable gates.
+Source rights, missing required contracts and unsafe dependencies remain real
+blockers. See [the iteration workflow](docs/MULTI_PC_DEVELOPMENT.md#monitoring-iteration-continues-during-verification).
+
 Start with MV2-001 and the first Pollen Watch work: MV2-069/070/030/031/071. UX MV2-002 and source dossiers MV2-003 for other active scenarios may proceed in parallel; their full DONE status does not block C5. Once the minimum persistence/rule/delivery contracts exist, build the **complete C5 delivery** without waiting for all domains or a perfect generic framework. Catalogues/interfaces for other sources may be investigated in parallel; activation requires their gates. Task IDs are not execution order: for example, MV2-060/068 provide early compatibility work, not post-release work.
 
 | Checkpoint | Outcome and exit evidence |
