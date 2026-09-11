@@ -10,6 +10,7 @@ from sqlalchemy import (
     FetchedValue,
     Float,
     ForeignKey,
+    ForeignKeyConstraint,
     Index,
     Integer,
     String,
@@ -1622,9 +1623,56 @@ class OutboxMessage(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class MonitoringSubject(Base):
+    """Private generic monitoring configuration; independent of legal topics."""
+
+    __tablename__ = "monitoring_subjects"
+    __table_args__ = (
+        UniqueConstraint("id", "organization_id", name="uq_subject_id_org"),
+        UniqueConstraint("organization_id", "owner_user_id", "request_key", name="uq_subject_owner_request"),
+        CheckConstraint("status IN ('draft', 'active', 'paused', 'archived')", name="ck_subject_status"),
+        CheckConstraint("current_revision >= 1", name="ck_subject_revision"),
+        CheckConstraint("contract_version >= 1 AND template_version >= 1", name="ck_subject_versions"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"), index=True)
+    owner_user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    template_id: Mapped[str] = mapped_column(String(80))
+    template_version: Mapped[int] = mapped_column(Integer)
+    contract_version: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(20), default="draft")
+    current_revision: Mapped[int] = mapped_column(Integer, default=1)
+    request_key: Mapped[str] = mapped_column(String(120))
+    request_hash: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class MonitoringSubjectRevision(Base):
+    """Append-only through the repository; removed with its private subject."""
+
+    __tablename__ = "monitoring_subject_revisions"
+    __table_args__ = (
+        ForeignKeyConstraint(["subject_id", "organization_id"],
+                             ["monitoring_subjects.id", "monitoring_subjects.organization_id"],
+                             ondelete="CASCADE", name="fk_subject_revision_scope"),
+        UniqueConstraint("subject_id", "revision", name="uq_subject_revision"),
+        CheckConstraint("revision >= 1", name="ck_subject_revision_number"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"), index=True)
+    subject_id: Mapped[str] = mapped_column(String(36), index=True)
+    revision: Mapped[int] = mapped_column(Integer)
+    configuration_json: Mapped[dict] = mapped_column(JSON)
+    configuration_hash: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 # Central policy used by the session boundary. Keeping this list beside the
 # models makes a newly persisted tenant-owned record difficult to forget.
 ORGANIZATION_SCOPED_MODELS = (
+    MonitoringSubject,
+    MonitoringSubjectRevision,
     InterestBriefFeedback,
     InterestBriefReview,
     InterestBriefPolicy,

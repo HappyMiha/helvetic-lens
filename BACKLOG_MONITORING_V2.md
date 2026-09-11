@@ -55,7 +55,7 @@ The value beyond an ordinary subscription is one verifiable history of material 
 
 **Next product outcome:** a complete Pollen Watch, accepted under MV2-071 and ready for the first round of testing with people. This is the first scenario to implement. Until it is ready, the tasks below and their necessary shared foundations take priority; source discovery for other active cases may run in parallel. Their connectors and user-facing capabilities must not precede C5 without a new priority decision.
 
-**Sequence:** MV2-001 → MV2-069 → MV2-070 → MV2-030 → MV2-031 → MV2-071 → ready to begin user testing; the next active v2 scenarios may then start. F3 denotes a domain group, not a requirement to wait for all of F1/F2. MV2-001 is DONE and MV2-069 is IN PROGRESS; subsequent tasks remain PLANNED. No complete Pollen Watch or real-user acceptance is claimed.
+**Sequence:** MV2-001 → MV2-069 → MV2-070 → MV2-030 → MV2-031 → MV2-071 → ready to begin user testing; the next active v2 scenarios may then start. F3 denotes a domain group, not a requirement to wait for all of F1/F2. MV2-001 is DONE; MV2-069 and MV2-070 are IN PROGRESS, with C01a using the recorded configuration contract while source gates remain open. Subsequent tasks remain PLANNED. No complete Pollen Watch or real-user acceptance is claimed.
 
 | Step | Concrete outcome | Acceptance owner |
 |---|---|---|
@@ -400,13 +400,15 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ### MV2-070 — Pollen Watch FIRST: Implement the shared platform within C5 scope
 
-**Status:** PLANNED — first implementation priority · **Priority:** P0 · **Owner:** Backend + Frontend + Integration + QA · **Size:** L
+**Status:** IN PROGRESS — first implementation priority · **Priority:** P0 · **Owner:** Backend + Frontend + Integration + QA · **Size:** L
 
 **Dependencies:** [MV2-069](#mv2-069). **Requirements:** User decision: first complete Pollen Watch; AC-CORE-01…20, AC-C5-01…10; C5 subset of the named parent tasks and inherited obligations.
 
 **User outcome:** The platform is ready for real C5 integration, from a personal monitor to history and notifications, with user isolation and recovery from errors.
 
 **Work:** Explicit C5 contribution to shared MV2-004…022/024/025/052…056/060/068; boundaries are listed in the first-delivery table. Use the generic MV2-001 contracts, additive persistence/API changes and existing authentication/outbox/UI. Do not create a separate pollen-only service. Work is limited to the named C5 criteria; full parent tasks remain incomplete until the rest of their own scope is delivered.
+
+**C01 implementation refinement, 2026-09-11 (before implementation):** C01a adds generic subject/revision tables by an additive migration and an internal personal-draft repository using the MV2-069 v1 configuration contract. Acceptance: create/read/list/edit/delete drafts; immutable configuration history; scoped idempotency keys with conflicting-payload rejection; compare-and-swap edits; tenant and owner isolation, active membership recheck and revoked/viewer write denial; rollback/restart retention and unchanged legacy rows. No source activation, collector, Start, public endpoint or email is introduced by C01a. C01b follows with authenticated API/preview/explicit Start and lifecycle gates; C01c adds UI and job/evidence/cache permission checks. The original C01 acceptance remains mandatory. C01a may proceed while MV2-069's source/prototype gates are open because it only stores validated drafts.
 
 **Acceptance criteria:**
 
@@ -421,7 +423,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** API/DB/UI integration, independent source-contract fixtures, a role matrix, boundary/replay/failure/restart checks and C5 build/restore evidence. MV2-031 completes live product end-to-end acceptance; MV2-071 provides the final gate for user testing.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Execution evidence, 2026-09-11:** C01a internal draft persistence implemented on `codex/HappyDucky02/mv2-070-personal-subjects`: additive generic subject/revision tables, owner-scoped create/read/list/edit/history/delete, conditional revision updates and idempotent concurrent creation. 10 repository tests passed on each of SQLite and isolated PostgreSQL 17; three existing foundation/legacy characterization tests and Ruff also passed. [Evidence and remaining boundaries](docs/monitoring-v2/evidence/MV2-070.md). Exact automatic deployment, C01b API/Start, C01c UI and C02–C08 remain open; this does not activate pollen sources or notifications.
 
 <a id="mv2-071"></a>
 
