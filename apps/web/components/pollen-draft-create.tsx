@@ -11,6 +11,10 @@ import { PollenDeliveryFields } from "./pollen-delivery-fields";
 import { pollenRecoveryCopy } from "@/lib/pollen-recovery-copy";
 import { pollenBackupCopy } from "@/lib/pollen-backup-copy";
 import {
+  PollenStationPicker,
+  PollenChannelOverview,
+} from "./pollen-station-picker";
+import {
   draftFailure,
   type PollenConfiguration,
   type PollenDraft,
@@ -375,23 +379,12 @@ export function PollenDraftCreate({
         <>
           <form onSubmit={(event) => void check(event)}>
             <fieldset disabled={frozen} className={styles.formFields}>
-              <label>
-                {labels.station}
-                <input
-                  name="pollen-station"
-                  required
-                  pattern="[A-Z]{3}"
-                  maxLength={3}
-                  autoComplete="off"
-                  value={configuration.station_id}
-                  onChange={(event) =>
-                    change({
-                      ...configuration,
-                      station_id: event.target.value.toUpperCase(),
-                    })
-                  }
-                />
-              </label>
+              <PollenStationPicker
+                value={configuration.station_id}
+                onChange={(station_id) =>
+                  change({ ...configuration, station_id })
+                }
+              />
               <label>
                 {labels.timezone}
                 <input
@@ -438,6 +431,12 @@ export function PollenDraftCreate({
                   </label>
                 ))}
               </fieldset>
+              <PollenChannelOverview
+                stationId={configuration.station_id}
+                allergens={configuration.selections.map(
+                  (selection) => selection.allergen,
+                )}
+              />
               {configuration.selections.map((selection) => (
                 <fieldset key={selection.allergen}>
                   <legend>{labels.allergens[selection.allergen]}</legend>

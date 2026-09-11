@@ -219,6 +219,11 @@ requires a separate privacy-aware recovery design (C01c2b4b).
 
 ## Private draft backup and restore
 
+The [station-selection feature](POLLEN_STATION_SELECTION.md) supplies named station
+choice, optional in-browser distance ranking and a dated per-allergen channel
+overview for both ordinary and imported configurations. Unknown imported station
+codes remain intact; none of this turns an imported preference into live coverage.
+
 The feature delivers one portable saved-settings workflow across C01/C05/C06/C07:
 download current settings, keep a private file, then restore them into a new draft
 in an authorized workspace. It is configuration backup, not source/history export

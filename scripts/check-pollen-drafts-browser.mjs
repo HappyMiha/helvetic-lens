@@ -13,6 +13,7 @@ import { pollenEditCopy } from "../apps/web/lib/pollen-edit-copy.ts";
 import { pollenDeliveryCopy } from "../apps/web/lib/pollen-delivery-copy.ts";
 import { pollenRecoveryCopy } from "../apps/web/lib/pollen-recovery-copy.ts";
 import { pollenBackupCopy } from "../apps/web/lib/pollen-backup-copy.ts";
+import { pollenStationCopy } from "../apps/web/lib/pollen-station-copy.ts";
 import { AccessibilityAudit } from "./browser-accessibility.mjs";
 import { Cdp, evaluate, sleep } from "./browser-cdp.mjs";
 
@@ -206,7 +207,7 @@ try {
   await wait(async () => (await text()).includes(pollenDraftCopy[locale].access), "Anonymous state missing");
   assert.equal(requests.slice(requestStart).filter(r => r.path.startsWith("/api/monitoring-subjects")).length, 0);
   assert.equal(requests.filter(r => r.path.startsWith("/api/monitoring-subjects") && r.method !== "GET").length, 0);
-  const fill = (name, value) => evaluate(cdp, `(() => { const input=document.querySelector(${JSON.stringify(`[name="${name}"]`)}); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(value)}); input.dispatchEvent(new Event('input',{bubbles:true})); })()`);
+  const fill = (name, value) => evaluate(cdp, `(() => { const input=document.querySelector(${JSON.stringify(`[name="${name}"]`)}); const select=input instanceof HTMLSelectElement; Object.getOwnPropertyDescriptor(select ? HTMLSelectElement.prototype : HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(value)}); input.dispatchEvent(new Event(select ? 'change' : 'input',{bubbles:true})); })()`);
   const button = label => evaluate(cdp, `Array.from(document.querySelectorAll('[data-pollen-drafts] button')).find(b => b.textContent === ${JSON.stringify(label)}).click()`);
   const posts = path => requests.filter(r => r.path === path && r.method === "POST");
   mode = "ready"; organization = "org-a"; manager = true; delayFirst = false;
@@ -667,9 +668,101 @@ try {
   await click('[data-pollen-export]');
   await wait(() => existsSync(backupPath), 'Authorized owner viewer cannot export own configuration');
   await rm(backupPath);
+  manager = true; mode = 'ready'; updated.clear(); revisions.clear();
+  const deviceLocation = {latitude:47.56181234, longitude:7.58394321};
+  await cdp.send('Page.addScriptToEvaluateOnNewDocument', {source: "window.__pollenLocationCalls = 0; const locate = navigator.geolocation.getCurrentPosition.bind(navigator.geolocation); navigator.geolocation.getCurrentPosition = (...args) => { window.__pollenLocationCalls++; return locate(...args); };"});
+  await cdp.send('Browser.grantPermissions', {origin:base, permissions:['geolocation']});
+  await cdp.send('Emulation.setGeolocationOverride', {...deviceLocation, accuracy:50});
+  for (const language of Object.keys(pollenStationCopy)) {
+    locale = language; const stationCopy = pollenStationCopy[locale], createCopy = pollenCreateCopy[locale];
+    await navigate();
+    await wait(async () => (await text()).includes(createCopy.create), 'Station creator not ready');
+    await button(createCopy.create);
+    assert.equal(await evaluate(cdp, "document.querySelector('[name=pollen-station]').value"), '');
+    assert.equal(await evaluate(cdp, "document.querySelectorAll('[name=pollen-station] option').length"), 16);
+    assert.equal(await evaluate(cdp, "!!document.querySelector('[data-pollen-distance]')"), false);
+    assert.equal(await evaluate(cdp, 'window.__pollenLocationCalls'), 0, 'Location was requested without a user action');
+    await click('[data-pollen-nearby] summary');
+    const beforeLocation = writes().length;
+    await click('[data-pollen-locate]');
+    await wait(async () => (await text()).includes(stationCopy.ordered), 'Browser location did not rank stations');
+    assert.equal(await evaluate(cdp, 'window.__pollenLocationCalls'), 1);
+    assert.equal(await evaluate(cdp, "document.querySelectorAll('[name=pollen-station] option')[1].value"), 'PBS');
+    assert.equal(await evaluate(cdp, "document.querySelector('[name=pollen-station]').value"), '', 'Location silently selected a station');
+    assert.equal(writes().length, beforeLocation, 'Location caused a write');
+    await evaluate(cdp, "document.querySelector('[name=pollen-station]').focus()");
+    await cdp.send('Input.dispatchKeyEvent', {type:'keyDown', key:'ArrowDown', code:'ArrowDown', windowsVirtualKeyCode:40});
+    await cdp.send('Input.dispatchKeyEvent', {type:'keyUp', key:'ArrowDown', code:'ArrowDown', windowsVirtualKeyCode:40});
+    await wait(() => evaluate(cdp, "document.querySelector('[name=pollen-station]').value === 'PBS'"), 'Keyboard station selection failed');
+    assert.ok(await evaluate(cdp, "!!document.querySelector('[data-pollen-distance]')"));
+    await click('[name=allergen-birch]'); await click('[name=allergen-grasses]');
+    await click('[name=allergen-beech]'); await click('[name=allergen-ragweed]');
+    const rows = await evaluate(cdp, "Array.from(document.querySelectorAll('[data-pollen-channels] tbody tr')).map(r => r.innerText)");
+    assert.equal(rows.length, 4);
+    assert.ok(rows[0].includes(stationCopy.documentedObservation) && rows[0].includes(stationCopy.documentedForecast));
+    assert.ok(rows[2].includes(stationCopy.documentedObservation) && rows[2].includes(stationCopy.notEstablished));
+    assert.ok(rows[3].includes(stationCopy.notEstablished) && rows[3].includes(stationCopy.documentedForecast));
+    assert.ok((await text()).includes(stationCopy.unverified));
+    await button(createCopy.preview);
+    await wait(async () => (await text()).includes(createCopy.checked), 'Station configuration check missing');
+    await fill('pollen-station', 'PGE');
+    assert.ok(!(await text()).includes(createCopy.checked), 'Changed station kept old preview');
+    await click('[data-pollen-location-clear]');
+    assert.equal(await evaluate(cdp, "!!document.querySelector('[data-pollen-distance]')"), false);
+    assert.equal(await evaluate(cdp, "document.querySelector('[name=pollen-station]').value"), 'PGE', 'Clearing coordinates changed the station');
+    await button(createCopy.preview);
+    await wait(async () => (await text()).includes(createCopy.checked), 'Changed station check missing');
+    await audit.check(cdp, `station-${locale}`, '[data-pollen-station-picker]');
+    assert.equal(await evaluate(cdp, 'document.documentElement.scrollWidth <= innerWidth'), true);
+    if (language === 'en-CH') {
+      await evaluate(cdp, "document.querySelector('[data-pollen-station-picker]').scrollIntoView({block:'start'})");
+      await writeFile(join(root, 'test-results/pollen-station-mobile.png'), Buffer.from((await cdp.send('Page.captureScreenshot', {format:'png'})).data, 'base64'));
+    }
+    await button(createCopy.save);
+    await wait(async () => (await text()).includes(createCopy.saved), 'Station save failed');
+    const payload = posts('/api/monitoring-subjects').at(-1).payload.configuration;
+    assert.equal(payload.station_id, 'PGE'); assert.equal(payload.selections.length, 4);
+    assert.equal(Object.hasOwn(payload, 'latitude'), false); assert.equal(Object.hasOwn(payload, 'longitude'), false);
+    await button(createCopy.view);
+    await wait(async () => (await text()).includes('Genève') && (await text()).includes(stationCopy.coverage), 'Saved station name/channel overview missing');
+    const browserStorage = await evaluate(cdp, 'JSON.stringify([Object.entries(localStorage), Object.entries(sessionStorage), document.cookie])');
+    for (const coordinate of Object.values(deviceLocation)) assert.ok(!browserStorage.includes(String(coordinate)), 'Device coordinates reached browser persistence');
+  }
+  for (const coordinate of Object.values(deviceLocation)) assert.ok(!JSON.stringify(requests).includes(String(coordinate)), 'Device coordinates reached an API request');
+  locale = 'en-CH';
+  await navigate(); await wait(async () => (await text()).includes(pollenCreateCopy[locale].create), 'Location error fixture not ready');
+  await button(pollenCreateCopy[locale].create); await click('[data-pollen-nearby] summary');
+  await evaluate(cdp, "window.__savedLocation = navigator.geolocation.getCurrentPosition.bind(navigator.geolocation)");
+  for (const [code, key] of [[1,'denied'], [2,'unavailable'], [3,'timeout']]) {
+    await evaluate(cdp, `navigator.geolocation.getCurrentPosition = (ok, fail) => fail({code:${code}})`);
+    await click('[data-pollen-locate]');
+    await wait(async () => (await text()).includes(pollenStationCopy[locale][key]), 'Location error not explained');
+    assert.equal(await evaluate(cdp, "document.querySelector('[name=pollen-station]').disabled"), false);
+  }
+  await evaluate(cdp, "navigator.geolocation.getCurrentPosition = ok => { window.__latePollenLocation = ok; }");
+  await click('[data-pollen-locate]'); await click('[data-pollen-location-clear]');
+  await evaluate(cdp, `window.__latePollenLocation({coords:${JSON.stringify(deviceLocation)}})`);
+  assert.ok(!(await text()).includes(pollenStationCopy[locale].ordered), 'Cancelled location callback returned');
+  await click('[data-pollen-locate]'); await button(pollenCreateCopy[locale].cancel);
+  await button(pollenCreateCopy[locale].create);
+  await evaluate(cdp, `window.__latePollenLocation({coords:${JSON.stringify(deviceLocation)}})`);
+  assert.equal(await evaluate(cdp, "document.querySelector('[name=pollen-station]').value"), '');
+  assert.ok(!(await text()).includes(pollenStationCopy[locale].ordered), 'Old form location reached new form');
+  await button(pollenCreateCopy[locale].cancel);
+  updated.set('a', {...draft('a','XYZ'), configuration:config('XYZ')});
+  await navigate(); await wait(() => evaluate(cdp, "!!document.querySelector('[data-pollen-drafts] li button')"), 'Unknown station list missing');
+  await click('[data-pollen-drafts] li button');
+  await wait(async () => (await text()).includes(pollenStationCopy[locale].unknown), 'Unknown saved station not explained');
+  await click('[data-pollen-edit-open]');
+  assert.equal(await evaluate(cdp, "document.querySelector('[name=pollen-station]').value"), 'XYZ');
+  await button(pollenCreateCopy[locale].preview);
+  await wait(async () => (await text()).includes(pollenCreateCopy[locale].checked), 'Unknown station configuration check failed');
+  assert.equal(posts('/api/monitoring-subjects/preview').at(-1).payload.configuration.station_id, 'XYZ');
+  assert.ok((await text()).includes(pollenStationCopy[locale].unknown));
+  await button(pollenEditCopy[locale].cancel);
   assert.equal(requests.filter(r => r.path.endsWith("/start")).length, 0);
   assert.deepEqual(exceptions, []);
-  audit.finish(36);
+  audit.finish(41);
   console.log("Pollen reader: five locales, desktop/mobile, keyboard activation, exact decimals, list/history pagination, obsolete responses, revoked/default-off/missing/error/empty/anonymous/workspace isolation passed. Synthetic APIs only; no live acceptance.");
   console.log("Pollen creation: five locales, keyboard entry, multi-allergen observation/forecast rules, invalid preview, preview invalidation, CSRF, busy guard, lost-response same-key retry, saved navigation, confirmed/cancelled discard and revoked access passed. Email off; no Start requests.");
   console.log("Pollen deletion: five localized exact station/revision confirmations, cancel/success, duplicate clicks, CSRF, private-history removal, conflict requiring fresh revision, uncertain response then missing, revoked access and active/viewer denial passed.");
@@ -677,6 +770,7 @@ try {
   console.log("Pollen delivery preferences: five locales, email-off defaults, required clock fields, equal/overnight quiet hours, all mode transitions, digest/quiet clearing, timezone labels, preview invalidation, exact create/edit payloads, numeric preservation and uncertain-write history recovery passed. No Start or delivery activation.");
   console.log("Pollen saved recovery: five locales, identifier-only links, reload/current revisions, denied/missing/default-off clearing, real Back/Forward document restoration, cached-page privacy/session revalidation, non-departing links and committed-only unload bypass passed without writes. Unsaved crash recovery and same-document traversal cancellation remain open.");
   console.log("Private backup and restore: five locales, real keyboard downloads and local file inputs, fresh authorized snapshots, lossless settings, separate preview/new-copy Save, same-key retry, dirty review, malformed/oversized/unsupported files, revoked/default-off/missing/failed export, cancelled late download and viewer read-only export passed. No history/identity/source/consent restoration.");
+  console.log("Station selection: five locales, 15 named source stations, real browser geolocation and keyboard choice, local distances without automatic selection, separate allergen channels, preview invalidation, saved names, unknown-code retention, location errors/cancellation/late callbacks, and no coordinate persistence/API transmission passed. Dated metadata is not live coverage.");
 } catch (error) {
   console.error({ locale, mode, requests: requests.slice(-12), exceptions,
     page: cdp ? await text().catch(() => "unavailable") : null,

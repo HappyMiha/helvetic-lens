@@ -18,6 +18,25 @@
 .creator {
   max-width: 760px;
 }
+.channelTable {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  margin: 12px 0;
+}
+.channelTable caption {
+  text-align: left;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.channelTable th,
+.channelTable td {
+  text-align: left;
+  vertical-align: top;
+  border: 1px solid #b7c6d2;
+  padding: 8px;
+  overflow-wrap: anywhere;
+}
 .backupFile {
   display: grid;
   gap: 8px;

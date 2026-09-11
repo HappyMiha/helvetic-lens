@@ -17,7 +17,7 @@
     "check:resources": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test scripts/resource-cache.test.mjs scripts/resource-flow-contracts.test.mjs scripts/marvin-delivery.test.mjs",
     "check:ai:contrast": "node scripts/check-ai-contrast-browser.mjs",
     "check:reports": "npm run check:monitoring-progress && node --test scripts/decision-review.test.mjs scripts/report-dates.test.mjs scripts/material-headings.test.mjs scripts/material-delta.test.mjs scripts/topic-history.test.mjs scripts/topic-preview.test.mjs scripts/digest-coverage.test.mjs scripts/inbox-navigation.test.mjs scripts/registry-filters.test.mjs scripts/registry-position.test.mjs scripts/topic-tab-draft.test.mjs scripts/reprocessing-admin.test.mjs",
-    "check:monitoring-progress": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test scripts/monitoring-progress.test.mjs scripts/pollen-edit.test.mjs scripts/pollen-draft-location.test.mjs scripts/pollen-backup.test.mjs",
+    "check:monitoring-progress": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test scripts/monitoring-progress.test.mjs scripts/pollen-edit.test.mjs scripts/pollen-draft-location.test.mjs scripts/pollen-backup.test.mjs scripts/pollen-stations.test.mjs",
     "check:registry:browser": "node scripts/check-registry-filters-browser.mjs",
     "check:digests:browser": "node scripts/check-digest-preview-browser.mjs",
     "check:inbox:browser": "node scripts/check-inbox-browser.mjs",

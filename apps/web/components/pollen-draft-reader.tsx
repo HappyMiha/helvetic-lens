@@ -16,6 +16,8 @@ import {
 import { pollenRecoveryCopy } from "@/lib/pollen-recovery-copy";
 import { PollenDraftCreate } from "./pollen-draft-create";
 import { PollenDraftExport, PollenDraftImport } from "./pollen-draft-backup";
+import { PollenChannelOverview } from "./pollen-station-picker";
+import { pollenStations } from "@/lib/pollen-stations";
 import {
   draftFailure,
   privatePollenScope,
@@ -55,7 +57,11 @@ function Settings({
   return (
     <div className={styles.settings}>
       <p>
-        <strong>{copy.station}:</strong> {configuration.station_id}
+        <strong>{copy.station}:</strong>{" "}
+        {pollenStations.find(
+          (station) => station.id === configuration.station_id,
+        )?.name || copy.unknown}{" "}
+        · {configuration.station_id}
       </p>
       {configuration.selections.map((selection) => (
         <section key={selection.allergen}>
@@ -106,6 +112,14 @@ function Settings({
       <p>
         {copy.timezone}: {configuration.timezone}
       </p>
+      {!historical && (
+        <PollenChannelOverview
+          stationId={configuration.station_id}
+          allergens={configuration.selections.map(
+            (selection) => selection.allergen,
+          )}
+        />
+      )}
     </div>
   );
 }
@@ -460,7 +474,11 @@ function Reader({ allowed }: { allowed: boolean }) {
                         onClick={() => void openDraft(item.id)}
                       >
                         <strong>
-                          {copy.station} {item.configuration.station_id}
+                          {pollenStations.find(
+                            (station) =>
+                              station.id === item.configuration.station_id,
+                          )?.name || copy.station}{" "}
+                          · {item.configuration.station_id}
                         </strong>
                         <span>
                           {item.configuration.selections

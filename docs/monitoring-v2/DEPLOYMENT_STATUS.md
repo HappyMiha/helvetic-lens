@@ -4,6 +4,12 @@
 
 ## Current checkpoint — 11 September
 
+**20:08 UTC update:** The controller is deploying the completed backup/restore
+feature `6d7a5997b480c7da8fd78ec7938bf12d50c05737`, with no error step. Public
+readiness continues to serve `72bc48945a08fc98140559d6d837f2cfbe6b3dfe`. Development
+of the next complete named-station/channel-guidance feature proceeded independently;
+its local checks have passed. Neither newer feature is recorded as activated yet.
+
 **19:31 UTC update:** The controller reports automatic release
 `72bc48945a08fc98140559d6d837f2cfbe6b3dfe` succeeded with no error step, and public
 readiness independently serves that exact SHA. Saved-state recovery and delivery
