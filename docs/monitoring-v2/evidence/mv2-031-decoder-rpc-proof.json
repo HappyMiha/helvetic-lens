@@ -1,0 +1,159 @@
+{
+  "protocol": 1,
+  "variable": "AMBRsnc",
+  "issue_time": "2026-09-11T00:00:00+00:00",
+  "valid_time": "2026-09-11T06:00:00+00:00",
+  "grid": "bbbd5a09855499243c7a4aa4c8762920",
+  "layer": "80",
+  "unit": "number/m3",
+  "artifact_hashes": {
+    "AMBRsnc.grib2": "53c86d866750292079cd94af04fa6100b52cd6fdfba5a5db9798eda234e677d6",
+    "DEN.grib2": "b9d929a96e6451b2b1c39b4d1d627fbbf189213848060509023fdc31baab6ccd",
+    "horizontal_constants_icon-ch2-eps.grib2": "90784019f5f081a619e1185c4bff5bc4a26e437cd1e36ac432a7b56e8adede5a",
+    "stations.csv": "d367bf17c1262f5bd8c913147162b9f366d1bfcc88e0799c2c29282936bb827b"
+  },
+  "runtime": {
+    "eccodes_native": "2.47.0",
+    "cosmo_release": "v2.47.0.2",
+    "cosmo_definitions_sha256": "45a9168efdf755dfe281cb00c0525e7c39d71cbc82513dbd6a819926c8509a1a",
+    "cosmo_definition_files": 712,
+    "eccodes_python": "2.47.0"
+  },
+  "points": [
+    {
+      "station_id": "PBE",
+      "availability": "usable",
+      "grid_cell": 191545,
+      "mapping_distance_km": 0.5574555554866488,
+      "value": "0.14724913984537125",
+      "number_per_kg": "0.125",
+      "density_kg_m3": "1.17799311876297"
+    },
+    {
+      "station_id": "PBS",
+      "availability": "usable",
+      "grid_cell": 150922,
+      "mapping_distance_km": 1.0347583465193604,
+      "value": "0.9813446439802646875",
+      "number_per_kg": "0.8125",
+      "density_kg_m3": "1.207808792591095"
+    },
+    {
+      "station_id": "PBU",
+      "availability": "usable",
+      "grid_cell": 197486,
+      "mapping_distance_km": 0.8804097599025316,
+      "value": "0.07297940924763679375",
+      "number_per_kg": "0.0625",
+      "density_kg_m3": "1.1676705479621887"
+    },
+    {
+      "station_id": "PCF",
+      "availability": "usable",
+      "grid_cell": 185538,
+      "mapping_distance_km": 1.5806378350381358,
+      "value": "0.1382149830460548375",
+      "number_per_kg": "0.125",
+      "density_kg_m3": "1.1057198643684387"
+    },
+    {
+      "station_id": "PDS",
+      "availability": "usable",
+      "grid_cell": 143512,
+      "mapping_distance_km": 1.4812915069982753,
+      "value": "0.032146194949746131250",
+      "number_per_kg": "0.03125",
+      "density_kg_m3": "1.0286782383918762"
+    },
+    {
+      "station_id": "PGE",
+      "availability": "usable",
+      "grid_cell": 182977,
+      "mapping_distance_km": 0.9728104965936449,
+      "value": "0.37250498309731484375",
+      "number_per_kg": "0.3125",
+      "density_kg_m3": "1.1920159459114075"
+    },
+    {
+      "station_id": "PLO",
+      "availability": "usable",
+      "grid_cell": 190202,
+      "mapping_distance_km": 1.2724233869371402,
+      "value": "0.036854961887001990625",
+      "number_per_kg": "0.03125",
+      "density_kg_m3": "1.1793587803840637"
+    },
+    {
+      "station_id": "PLS",
+      "availability": "usable",
+      "grid_cell": 184011,
+      "mapping_distance_km": 0.15162090292070743,
+      "value": "0.108907638117671015625",
+      "number_per_kg": "0.09375",
+      "density_kg_m3": "1.1616814732551575"
+    },
+    {
+      "station_id": "PLU",
+      "availability": "usable",
+      "grid_cell": 189725,
+      "mapping_distance_km": 0.9521319583661413,
+      "value": "1.354062275961041484375",
+      "number_per_kg": "1.15625",
+      "density_kg_m3": "1.1710808873176575"
+    },
+    {
+      "station_id": "PLZ",
+      "availability": "usable",
+      "grid_cell": 194520,
+      "mapping_distance_km": 0.21144681226162332,
+      "value": "0.184861319139599796875",
+      "number_per_kg": "0.15625",
+      "density_kg_m3": "1.1831124424934387"
+    },
+    {
+      "station_id": "PMU",
+      "availability": "usable",
+      "grid_cell": 197714,
+      "mapping_distance_km": 0.8333145569489772,
+      "value": "0.036939600482583046875",
+      "number_per_kg": "0.03125",
+      "density_kg_m3": "1.1820672154426575"
+    },
+    {
+      "station_id": "PNE",
+      "availability": "usable",
+      "grid_cell": 185390,
+      "mapping_distance_km": 0.5879163169521535,
+      "value": "0.251956557855010028125",
+      "number_per_kg": "0.21875",
+      "density_kg_m3": "1.1518014073371887"
+    },
+    {
+      "station_id": "PPY",
+      "availability": "usable",
+      "grid_cell": 185266,
+      "mapping_distance_km": 0.7123569949521876,
+      "value": "0.1475857868790626500",
+      "number_per_kg": "0.125",
+      "density_kg_m3": "1.1806862950325012"
+    },
+    {
+      "station_id": "PSN",
+      "availability": "usable",
+      "grid_cell": 193341,
+      "mapping_distance_km": 0.8823762970197574,
+      "value": "0.2912176400423050",
+      "number_per_kg": "0.25",
+      "density_kg_m3": "1.16487056016922"
+    },
+    {
+      "station_id": "PZH",
+      "availability": "usable",
+      "grid_cell": 196531,
+      "mapping_distance_km": 1.0292292901062616,
+      "value": "0.0362820420414209375",
+      "number_per_kg": "0.03125",
+      "density_kg_m3": "1.16102534532547"
+    }
+  ]
+}

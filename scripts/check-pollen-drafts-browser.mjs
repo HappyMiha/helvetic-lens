@@ -14,6 +14,7 @@ import { pollenDeliveryCopy } from "../apps/web/lib/pollen-delivery-copy.ts";
 import { pollenRecoveryCopy } from "../apps/web/lib/pollen-recovery-copy.ts";
 import { pollenBackupCopy } from "../apps/web/lib/pollen-backup-copy.ts";
 import { pollenStationCopy } from "../apps/web/lib/pollen-station-copy.ts";
+import { pollenRuntimeCopy } from "../apps/web/lib/pollen-runtime-copy.ts";
 import { AccessibilityAudit } from "./browser-accessibility.mjs";
 import { Cdp, evaluate, sleep } from "./browser-cdp.mjs";
 
@@ -36,6 +37,11 @@ const created = new Map();
 const deleted = new Set(), revisions = new Map(), dialogs = [];
 let deleteMode = "success", selectedStatus = "draft";
 let editMode = "success", editFixture = false, unsupportedEdit = false;
+let live = false, liveLost = false, liveReady = true;
+let liveRuntime = { version: 0, run_id: null, health: "waiting", email_consent: false, muted: false };
+let liveEntries = [];
+const liveCommands = new Map();
+const liveSample = (value, forecast = false) => ({ series: { source_id: "synthetic-browser-source", method_version: "synthetic-browser-v1", station_id: "PBS", allergen: "birch", period: forecast ? "forecast_instant" : "observation_hourly", unit: "number/m3", forecast: forecast ? { issue_at: "2026-09-11T00:00:00Z", model: "synthetic" } : null }, value, valid_at: forecast ? "2026-09-12T08:00:00Z" : "2026-09-11T08:00:00Z", fetched_at: "2026-09-11T08:10:00Z", fresh_until: "2026-09-12T10:00:00Z", quality: value === null ? "missing" : "usable", source_revision: 1, artifact_hashes: ["a".repeat(64)], policy_version: "synthetic" });
 const updated = new Map(), editHistory = new Map();
 const requests = [], exceptions = [];
 const audit = new AccessibilityAudit("pollen-drafts");
@@ -93,6 +99,29 @@ try {
         body = { code: { disabled: "monitoring_not_enabled", revoked: "membership_required", error: "unavailable", missing: "subject_not_found" }[mode] };
       } else if (deleted.has(url.pathname.split("/")[3])) {
         code = 404; body = { code: "subject_not_found" };
+      } else if (url.pathname === "/api/monitoring-subjects/today") {
+        body = { items: live ? liveEntries.filter(entry => !entry.review || ["continue", "action_required"].includes(entry.review.decision)).map(entry => ({ id: entry.id, subject_id: "a", station_id: "PBS", allergen: "birch", reasons: entry.reasons })) : [], next_cursor: null };
+      } else if (live && url.pathname.endsWith("/commands")) {
+        if (liveCommands.has(payload.request_key)) body = liveCommands.get(payload.request_key);
+        else {
+          assert.equal(payload.expected_version, liveRuntime.version);
+          liveRuntime = { ...liveRuntime, version: liveRuntime.version + 1, email_consent: payload.email_consent || false };
+          if (["start", "resume"].includes(payload.action)) { selectedStatus = "active"; liveRuntime.run_id = `run-${liveRuntime.version}`; }
+          if (payload.action === "pause") selectedStatus = "paused";
+          if (payload.action === "archive") selectedStatus = "archived";
+          if (payload.action === "mute") liveRuntime.muted = true;
+          if (payload.action === "unmute") liveRuntime.muted = false;
+          body = { ...draft("a", "PBS"), status: selectedStatus, runtime: liveRuntime };
+          liveCommands.set(payload.request_key, body);
+          if (liveLost) { liveLost = false; code = 503; body = { code: "unavailable" }; }
+        }
+      } else if (live && url.pathname.endsWith("/review")) {
+        const entry = liveEntries.find(entry => entry.id === url.pathname.split("/")[5]);
+        assert.equal(payload.expected_version, entry.review?.version || 0);
+        entry.review = { decision: payload.decision, version: payload.expected_version + 1 };
+        body = entry.review;
+      } else if (live && url.pathname.endsWith("/reviews")) {
+        body = { items: [{ version: 1, decision: "reviewed", created_at: "2026-09-11T09:00:00Z" }], next_before_version: null };
       } else if (request.method === "PATCH") {
         await sleep(200);
         const id = url.pathname.split("/")[3];
@@ -136,12 +165,18 @@ try {
         if (editFixture && !updated.has(id)) {
           Object.assign(selected.configuration, { contract_version: 1, template_version: 1, template_id: "pollen-watch" });
           selected.configuration.delivery = { email: "daily_digest", digest_at: "08:30", quiet_hours: { start: "22:00", end: "07:00" } };
-          if (unsupportedEdit) selected.configuration.selections[0].rules[0].category_change = true;
+          if (unsupportedEdit) selected.configuration.selections[0].rules[0].future_rule_setting = true;
         }
         selected.revision = revisions.get(selected.id) || selected.revision;
         selected.status = selectedStatus;
+        if (live) { selected.runtime_version = liveRuntime.version; selected.configuration.delivery = { email: "immediate", digest_at: null, quiet_hours: null }; }
         body = url.pathname.endsWith("/history") ? { items: [{ revision: url.searchParams.has("before_revision") ? 11 : 12,
           configuration: config("PGE"), configuration_hash: "b".repeat(64) }], next_before_revision: url.searchParams.has("before_revision") ? null : 12 } : selected;
+        if (url.pathname.endsWith("/state")) body = { ...selected, runtime: { version: 0, run_id: null, health: "not_started", email_consent: false, muted: false },
+          start_available: false, blocking_reasons: ["source_acceptance_pending"], current: [], coverage: [] };
+        if (url.pathname.endsWith("/activity")) body = { items: [], next_cursor: null };
+        if (live && url.pathname.endsWith("/state")) body = { ...selected, runtime: liveRuntime, start_available: liveReady, blocking_reasons: liveReady ? [] : ["pollen_source_not_ready"], coverage: [], current: liveRuntime.run_id ? [{ stream_id: "measured", entry_id: "initial", sample: liveSample(liveReady ? "12.500001" : null), availability: liveReady ? "usable" : "unverified", category: null }, { stream_id: "forecast", entry_id: "forecast", sample: liveSample("3.8125", true), availability: "usable", category: null }] : [] };
+        if (live && url.pathname.endsWith("/activity")) body = { items: structuredClone(liveEntries), next_cursor: null };
         if (url.pathname.endsWith("/history") && editHistory.has(id)) {
           const before = Number(url.searchParams.get("before_revision") || Infinity);
           body = { items: editHistory.get(id).filter(r => r.revision < before).slice(0, Number(url.searchParams.get("limit") || 10)), next_before_revision: null };
@@ -176,7 +211,7 @@ try {
   }
   locale = "en-CH"; await navigate();
   await wait(() => evaluate(cdp, "!!document.querySelector('[data-pollen-drafts] ul button')"), "List not ready");
-  await click('[data-pollen-drafts] section[aria-label="Pollen Watch drafts"] > button');
+  await click('[data-pollen-drafts] section[aria-label="Pollen Watch"] > button');
   await wait(() => evaluate(cdp, "document.querySelectorAll('[data-pollen-drafts] ul button').length === 2"), "List continuation failed");
   delayFirst = true;
   await click('[data-pollen-drafts] li:first-child button');
@@ -762,12 +797,66 @@ try {
   await button(pollenEditCopy[locale].cancel);
   assert.equal(requests.filter(r => r.path.endsWith("/start")).length, 0);
   assert.deepEqual(exceptions, []);
-  audit.finish(41);
+  live = true; manager = true; mode = "ready"; updated.clear(); revisions.clear(); deleted.clear(); editFixture = false;
+  for (const language of Object.keys(pollenRuntimeCopy)) {
+    locale = language; selectedStatus = "draft"; liveEntries = []; liveCommands.clear(); liveReady = true;
+    liveRuntime = { version: 0, run_id: null, health: "waiting", email_consent: false, muted: false };
+    const copy = pollenRuntimeCopy[locale];
+    await navigate(); await wait(() => evaluate(cdp, "!!document.querySelector('[data-pollen-drafts] li button')"), "Live monitor list missing");
+    await click('[data-pollen-drafts] li button');
+    await wait(() => evaluate(cdp, "document.querySelector('[data-pollen-start]')?.disabled === false"), "Approved live Start unavailable");
+    assert.equal(await evaluate(cdp, "document.querySelector('[data-pollen-runtime] fieldset input[type=checkbox]').checked"), false);
+    liveLost = true;
+    await button(copy.start); await wait(async () => (await text()).includes(copy.uncertain), "Lost Start response not explained");
+    const firstKey = requests.filter(r => r.path.endsWith('/commands')).at(-1).payload.request_key;
+    await button(copy.retry); await wait(async () => (await text()).includes(copy.active), "Start retry did not recover active monitor");
+    assert.equal(requests.filter(r => r.path.endsWith('/commands')).at(-1).payload.request_key, firstKey);
+    assert.equal(liveRuntime.version, 1); assert.equal(liveRuntime.email_consent, false);
+    assert.ok((await text()).includes(copy.measured) && (await text()).includes(copy.forecast));
+    assert.ok((await text()).includes('12.500001') && (await text()).includes('3.8125'));
+    liveEntries = [{ id: 'material-1', sequence: 2, kind: 'material', material_id: 'synthetic-material', current: liveSample('20'), previous: liveSample('5'), baseline: liveSample('2'), reasons: ['threshold_triggered'], binding: { rule: config('PBS').selections[0].rules[0] }, configuration_revision: 12, review: null }];
+    await button(copy.load); await wait(() => evaluate(cdp, "!!document.querySelector('[data-pollen-activity]')"), "Material change not rendered");
+    assert.ok((await text()).includes(copy.threshold_triggered));
+    await click('[data-pollen-activity] details > summary');
+    assert.ok((await text()).includes(copy.previous));
+    await audit.check(cdp, `runtime-${locale}`, '[data-pollen-runtime]');
+    if (locale === 'en-CH') {
+      await evaluate(cdp, "document.querySelector('[data-pollen-runtime]').scrollIntoView({block:'start'})");
+      await writeFile(join(root, 'test-results/pollen-runtime-mobile.png'), Buffer.from((await cdp.send('Page.captureScreenshot', {format:'png'})).data, 'base64'));
+    }
+    assert.equal(await evaluate(cdp, 'document.documentElement.scrollWidth <= innerWidth'), true);
+    for (const decision of ['action_required', 'not_relevant', 'continue', 'reviewed']) {
+      await button(copy[decision]); await wait(() => evaluate(cdp, `document.querySelector('[data-pollen-activity] button[aria-pressed=true]')?.textContent === ${JSON.stringify(copy[decision])}`), 'Review was not retained');
+    }
+    liveRuntime.health = 'source_unavailable'; await button(copy.load);
+    await wait(async () => (await text()).includes(copy.source_unavailable), 'Failed source refresh not explained');
+    assert.ok((await text()).includes('12.500001'));
+    liveEntries.unshift({ ...liveEntries[0], id: 'material-2', material_id: 'synthetic-reopened', review: null, reasons: ['threshold_reset'] });
+    await button(copy.load); await wait(() => evaluate(cdp, "document.querySelectorAll('[data-pollen-activity]').length === 2"), 'Later change did not reopen separately');
+    assert.ok((await text()).includes(copy.new));
+    await button(copy.pause); await wait(async () => (await text()).includes(copy.paused), 'Pause state missing');
+    await button(copy.resume); await wait(async () => (await text()).includes(copy.active), 'Resume state missing');
+    assert.equal(liveRuntime.email_consent, false);
+    liveReady = false; await button(copy.load); await wait(async () => (await text()).includes(copy.unverified), 'Source revocation not visible');
+    mode = 'revoked'; await button(copy.load); await wait(async () => (await text()).includes(pollenDraftCopy[locale].access), 'Membership revocation not cleared');
+    assert.equal(await evaluate(cdp, "!!document.querySelector('[data-pollen-runtime]')"), false);
+    mode = 'ready';
+  }
+  locale = 'en-CH'; mode = 'ready'; liveReady = true;
+  await navigateDocument(`${base}/?case=pollen-today`);
+  await wait(() => evaluate(cdp, "!!document.querySelector('[data-pollen-today] a')"), 'Pollen changes did not appear in Today');
+  assert.ok(await evaluate(cdp, "document.querySelector('[data-pollen-today] a').getAttribute('href').includes('/pollen-watch#draft=a')"));
+  await audit.check(cdp, 'pollen-today', '[data-pollen-today]');
+  await click('[data-pollen-today] a');
+  await wait(() => evaluate(cdp, "!!document.querySelector('[data-pollen-runtime]')"), 'Today link did not open its private monitor');
+  assert.deepEqual(exceptions, []);
+  audit.finish(47);
+  console.log('Pollen runtime: five locales, measured/forecast separation, exact values, lost Start same-key recovery, no implicit email consent, why/previous evidence, review and new change reopening, pause/resume, source/membership revocation and Today navigation passed with synthetic APIs.');
   console.log("Pollen reader: five locales, desktop/mobile, keyboard activation, exact decimals, list/history pagination, obsolete responses, revoked/default-off/missing/error/empty/anonymous/workspace isolation passed. Synthetic APIs only; no live acceptance.");
-  console.log("Pollen creation: five locales, keyboard entry, multi-allergen observation/forecast rules, invalid preview, preview invalidation, CSRF, busy guard, lost-response same-key retry, saved navigation, confirmed/cancelled discard and revoked access passed. Email off; no Start requests.");
+  console.log("Pollen creation: five locales, keyboard entry, multi-allergen observation/forecast rules, invalid preview, preview invalidation, CSRF, busy guard, lost-response same-key retry, saved navigation, confirmed/cancelled discard and revoked access passed. Draft creation phase: email off and no Start requests.");
   console.log("Pollen deletion: five localized exact station/revision confirmations, cancel/success, duplicate clicks, CSRF, private-history removal, conflict requiring fresh revision, uncertain response then missing, revoked access and active/viewer denial passed.");
-  console.log("Pollen editing: five locales, exact decimals, preserved contract/delivery fields, CSRF, revision CAS, duplicate guard, history recovery without writes including newer current revision, explicit unchanged retry, conflicting history, discard/reload, revoked access and unsupported category read-only passed.");
-  console.log("Pollen delivery preferences: five locales, email-off defaults, required clock fields, equal/overnight quiet hours, all mode transitions, digest/quiet clearing, timezone labels, preview invalidation, exact create/edit payloads, numeric preservation and uncertain-write history recovery passed. No Start or delivery activation.");
+  console.log("Pollen editing: five locales, exact decimals, preserved contract/delivery fields, CSRF, revision CAS, duplicate guard, history recovery without writes including newer current revision, explicit unchanged retry, conflicting history, discard/reload, revoked access and unsupported future configuration read-only passed.");
+  console.log("Pollen delivery preferences: five locales, email-off defaults, required clock fields, equal/overnight quiet hours, all mode transitions, digest/quiet clearing, timezone labels, preview invalidation, exact create/edit payloads, numeric preservation and uncertain-write history recovery passed. Draft preference phase: no Start or delivery activation.");
   console.log("Pollen saved recovery: five locales, identifier-only links, reload/current revisions, denied/missing/default-off clearing, real Back/Forward document restoration, cached-page privacy/session revalidation, non-departing links and committed-only unload bypass passed without writes. Unsaved crash recovery and same-document traversal cancellation remain open.");
   console.log("Private backup and restore: five locales, real keyboard downloads and local file inputs, fresh authorized snapshots, lossless settings, separate preview/new-copy Save, same-key retry, dirty review, malformed/oversized/unsupported files, revoked/default-off/missing/failed export, cancelled late download and viewer read-only export passed. No history/identity/source/consent restoration.");
   console.log("Station selection: five locales, 15 named source stations, real browser geolocation and keyboard choice, local distances without automatic selection, separate allergen channels, preview invalidation, saved names, unknown-code retention, location errors/cancellation/late callbacks, and no coordinate persistence/API transmission passed. Dated metadata is not live coverage.");

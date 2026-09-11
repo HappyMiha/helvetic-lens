@@ -20,7 +20,11 @@ export type PollenRevision = {
   configuration: PollenConfiguration;
   configuration_hash: string;
 };
-export type PollenDraft = PollenRevision & { id: string; status: string };
+export type PollenDraft = PollenRevision & {
+  id: string;
+  status: string;
+  runtime_version?: number;
+};
 export type DraftPage = { items: PollenDraft[]; next_cursor: string | null };
 export type RevisionPage = {
   items: PollenRevision[];

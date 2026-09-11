@@ -21,6 +21,14 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .db import Base, utcnow
+from .monitoring_live_models import (
+    MonitoringCommand,
+    MonitoringDelivery,
+    MonitoringLiveEntry,
+    MonitoringLiveStream,
+    MonitoringReview,
+    MonitoringRuntime,
+)
 
 
 def new_id() -> str:
@@ -1722,6 +1730,12 @@ class MonitoringEvaluationEntry(Base):
 # Central policy used by the session boundary. Keeping this list beside the
 # models makes a newly persisted tenant-owned record difficult to forget.
 ORGANIZATION_SCOPED_MODELS = (
+    MonitoringCommand,
+    MonitoringDelivery,
+    MonitoringLiveEntry,
+    MonitoringLiveStream,
+    MonitoringReview,
+    MonitoringRuntime,
     MonitoringEvaluationStream,
     MonitoringEvaluationEntry,
     MonitoringSubject,

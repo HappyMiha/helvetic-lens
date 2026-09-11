@@ -4,6 +4,16 @@
 
 ## Current checkpoint — 11 September
 
+**22:34 UTC update:** Public readiness still serves
+`6d7a5997b480c7da8fd78ec7938bf12d50c05737`. The subsequent named-station candidate
+failed at `build_images` at 22:31:16 UTC; the service is in `retry_wait`. Its web
+builder omitted `docs/monitoring-v2/evidence/mv2-069-source-proof.json`, required
+by the station contract test. The complete Pollen feature worktree fixes this by
+copying that exact fixture into the build stage. A real isolated web Docker build
+now passes, without removing the test or changing the running controller. The
+feature is not yet published or activated. No source, email or human gate closes
+because a build passes. See [complete-feature evidence](POLLEN_COMPLETE_FEATURE.md).
+
 **20:08 UTC update:** The controller is deploying the completed backup/restore
 feature `6d7a5997b480c7da8fd78ec7938bf12d50c05737`, with no error step. Public
 readiness continues to serve `72bc48945a08fc98140559d6d837f2cfbe6b3dfe`. Development

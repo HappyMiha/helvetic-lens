@@ -26,7 +26,7 @@ for (const [name, mutate] of [
   ["retry identity", f => f.request_key = "old-save"],
   ["owner identity", f => f.configuration.owner_user_id = "another-owner"],
   ["unknown rule", f => f.configuration.selections[0].rules[0].future = true],
-  ["category not supported by form", f => f.configuration.selections[0].rules[0].category_change = true],
+  ["invalid category flag", f => f.configuration.selections[0].rules[0].category_change = "true"],
   ["JSON number precision", f => f.configuration.selections[0].rules[0].threshold.trigger_at_or_above = 12.500001],
   ["excess decimals", f => f.configuration.selections[0].rules[0].threshold.trigger_at_or_above = "1.1234567"],
   ["duplicate selection", f => f.configuration.selections.push(f.configuration.selections[0])],

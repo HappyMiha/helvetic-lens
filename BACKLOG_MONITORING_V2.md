@@ -191,8 +191,8 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 | [MV2-027](#mv2-027) | Possible future implementation: C4 currency, thresholds, history and digest | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-008](#mv2-008), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-022](#mv2-022), [MV2-026](#mv2-026) |
 | [MV2-028](#mv2-028) | C1: official warnings and hazard geography | F3 | P1 | L | PLANNED | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
 | [MV2-029](#mv2-029) | C1: Home/Office locations and the complete warning workflow | F3 | P1 | L | PLANNED | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-028](#mv2-028) |
-| [MV2-030](#mv2-030) | C5: official pollen observations and forecasts | F3 | P0 | M | PLANNED | [MV2-069](#mv2-069), [MV2-070](#mv2-070) |
-| [MV2-031](#mv2-031) | Pollen Watch — the first complete end-to-end scenario (C5) | F3 | P0 | L | PLANNED | [MV2-070](#mv2-070), [MV2-030](#mv2-030) |
+| [MV2-030](#mv2-030) | C5: official pollen observations and forecasts | F3 | P0 | M | IN PROGRESS | [MV2-069](#mv2-069), [MV2-070](#mv2-070) |
+| [MV2-031](#mv2-031) | Pollen Watch — the first complete end-to-end scenario (C5) | F3 | P0 | L | IN PROGRESS | [MV2-070](#mv2-070), [MV2-030](#mv2-030) |
 | [MV2-032](#mv2-032) | C6: hydrological stations, metrics and official danger levels | F3 | P1 | M | PLANNED | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
 | [MV2-033](#mv2-033) | C6: River / Lake thresholds, escalation and history | F3 | P1 | M | PLANNED | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-032](#mv2-032) |
 | [MV2-034](#mv2-034) | C7: official air-quality series and interpretation | F3 | P1 | M | PLANNED | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
@@ -232,7 +232,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 | [MV2-068](#mv2-068) | Complete legacy coverage verification and repair old artifacts | F1 | P0 | L | PLANNED | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-060](#mv2-060) |
 | [MV2-069](#mv2-069) | Pollen Watch FIRST: Confirm sources and the first-delivery contract | FIRST | P0 | M | IN PROGRESS — first implementation priority | [MV2-001](#mv2-001) |
 | [MV2-070](#mv2-070) | Pollen Watch FIRST: Implement the shared platform within C5 scope | FIRST | P0 | L | IN PROGRESS — first implementation priority | [MV2-069](#mv2-069) |
-| [MV2-071](#mv2-071) | Pollen Watch FIRST: Accept the complete scenario and prepare for testing with real users | FIRST | P0 | M | PLANNED — first user-testing gate | [MV2-031](#mv2-031) |
+| [MV2-071](#mv2-071) | Pollen Watch FIRST: Accept the complete scenario and prepare for testing with real users | FIRST | P0 | M | IN PROGRESS — first user-testing gate | [MV2-031](#mv2-031) |
 | [MV2-072](#mv2-072) | Isolated Monitoring deployment on HappyDucky02 | OPS | P0 | M | IN PROGRESS | None; user deployment decision |
 | [MV2-073](#mv2-073) | Show Monitoring backlog completion and deployment progress | OPS | P0 | M | VERIFYING | None; user progress-visibility request |
 
@@ -382,6 +382,8 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Status:** IN PROGRESS — first implementation priority · **Priority:** P0 · **Owner:** Product + Integration + UX · **Size:** M
 
+**Whole-feature engineering evidence, 2026-09-12:** The integrated Pollen candidate now includes approved-source collection/decoder contracts, private Start/current state, Today/evidence, four-state review/reopening, lifecycle/export and independently consented delivery. Final standard-path Pollen/Monitoring tests: 346 passed; PostgreSQL concurrency/migration checks, 47 browser axe checkpoints, real Docker web/native builds and restore rehearsals passed. The broader Windows run retained two environment-sensitive legacy failures; isolated unchanged rerun passed 9/9. See [complete evidence and CORE-20 trace](docs/monitoring-v2/POLLEN_COMPLETE_FEATURE.md). Source/category/seasonal, independent human and actual-release acceptance remain open; no production source activation or real email was performed.
+
 **Dependencies:** [MV2-001](#mv2-001). **Requirements:** User decision 2026-09-10: Pollen Watch first; §12, §§23–25; AC-C5-01…10; S-45…48.
 
 **User outcome:** A complete Pollen Watch for real users is defined, and official data is verified as sufficient to deliver it.
@@ -408,11 +410,15 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Status:** IN PROGRESS — first implementation priority · **Priority:** P0 · **Owner:** Backend + Frontend + Integration + QA · **Size:** L
 
+**Whole-feature engineering evidence, 2026-09-12:** The integrated Pollen candidate now includes approved-source collection/decoder contracts, private Start/current state, Today/evidence, four-state review/reopening, lifecycle/export and independently consented delivery. Final standard-path Pollen/Monitoring tests: 346 passed; PostgreSQL concurrency/migration checks, 47 browser axe checkpoints, real Docker web/native builds and restore rehearsals passed. The broader Windows run retained two environment-sensitive legacy failures; isolated unchanged rerun passed 9/9. See [complete evidence and CORE-20 trace](docs/monitoring-v2/POLLEN_COMPLETE_FEATURE.md). Source/category/seasonal, independent human and actual-release acceptance remain open; no production source activation or real email was performed.
+
 **Dependencies:** [MV2-069](#mv2-069). **Requirements:** User decision: first complete Pollen Watch; AC-CORE-01…20, AC-C5-01…10; C5 subset of the named parent tasks and inherited obligations.
 
 **User outcome:** The platform is ready for real C5 integration, from a personal monitor to history and notifications, with user isolation and recovery from errors.
 
 **Feature verification, 2026-09-11: Choose a station and understand pollen channels.** Implemented the complete named-station → optional local distance ranking → allergen-channel overview → preview/save → reopen flow, with all 15 records tied to retained official metadata, five-language guidance, unknown-code preservation and no coordinate storage/transmission or automatic selection. Production build/frontend gates, 16 new directory/geographic/channel cases, 36 API/configuration/backlog regressions and 41 full-document browser axe checkpoints passed, including real browser geolocation with synthetic positions, keyboard choice, cancelled/late callbacks and all earlier draft workflows. Documentation explicitly separates dated channel capabilities from unverified live coverage. Actual candidate activation and independent human/source/live acceptance remain open; MV2-070 stays IN PROGRESS. [Evidence](docs/monitoring-v2/evidence/MV2-070.md#feature-named-stations-and-pollen-channel-guidance--11-september-2026).
+
+**Whole-block feature refinement, 2026-09-11 (before implementation):** The user explicitly requested the entire remaining Pollen block as one feature. MV2-069/070/030/031/071 engineering proceeds in one worktree across continuations under the [complete feature plan](docs/monitoring-v2/POLLEN_COMPLETE_FEATURE.md). Implement accepted-source Start, current state, changes/evidence/review, lifecycle and delivery together. Publish no further separate draft controls or technical slices. Existing source, independent human and actual release acceptance gates remain mandatory; current task statuses are not changed by scope selection.
 
 **Feature definition, 2026-09-11 (before implementation): Choose a station and understand pollen channels.** Deliver the C01/C05 and AC-C5-01/02 setup outcome: select an official station by name, optionally rank stations by distance from a device location used only in browser memory, select allergens, inspect separate documented hourly-observation/forecast capabilities, then preview/save and reopen the chosen settings. Use the 15-station metadata from the retained, hashed MV2-069 catalogue as a dated directory, never its sample concentrations as live data. Source attribution/date, station measurement limits and the distinction between documented capability and unverified current availability must be visible. Request geolocation only after an explicit user action; do not send/store coordinates, silently select a station or infer home-level exposure. Handle unsupported/denied/timed-out location, cancellation/late callbacks, existing unknown station IDs without data loss, all five languages, keyboard/mobile and exact configuration preservation. A station or allergen change invalidates preview; numeric/delivery settings and imported configurations remain intact. Verify catalogue provenance, geographic calculations, privacy/no-network/no-auto-save boundaries, role/scope recovery and the complete existing draft workflow after the feature is implemented. Source-backed Start, actual current coverage and human source/usability acceptance stay gated. Publish only this complete feature with its evidence, not individual controls or metadata substeps.
 
@@ -489,7 +495,9 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ### MV2-071 — Pollen Watch FIRST: Accept the complete scenario and prepare for testing with real users
 
-**Status:** PLANNED — first user-testing gate · **Priority:** P0 · **Owner:** Product + QA + Operations + Independent reviewer · **Size:** M
+**Status:** IN PROGRESS — first user-testing gate · **Priority:** P0 · **Owner:** Product + QA + Operations + Independent reviewer · **Size:** M
+
+**Complete-feature checkpoint, 2026-09-12:** The entire remaining Pollen block is implemented together in one unpublished feature worktree. The [pilot runbook](docs/monitoring-v2/POLLEN_PILOT_RUNBOOK.md) and [whole-feature record](docs/monitoring-v2/POLLEN_COMPLETE_FEATURE.md) define the reviewable scenario and evidence boundaries. Independent source/category/seasonal, language, accessibility, real-user and actual release acceptance remains **HOLD**. No invitations, real email or production source/rollout activation were performed. This status records implementation and review preparation, not accepted upstream dependencies or readiness for participants.
 
 **Dependencies:** [MV2-031](#mv2-031). **Requirements:** User decision 2026-09-10 on first delivery and real users; AC-C5-01…10; AC-CORE within C5 scope; §§31–34.
 
@@ -508,7 +516,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** An independent C5 go/no-go checklist, live-source end-to-end recording, acceptance evidence manifest, isolated restore/privacy/device/language reports and a ready moderated user-test protocol. Record measured user results after actual testing.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Execution evidence:** Complete-feature implementation and isolated verification are recorded in [POLLEN_COMPLETE_FEATURE.md](docs/monitoring-v2/POLLEN_COMPLETE_FEATURE.md), including CORE-20 traceability, retained native evidence, private lifecycle/delivery and the pilot HOLD boundary. Publication, actual release identity and independent source/human acceptance remain open; this task is not DONE.
 
 
 ## F1 — Shared contracts and compatibility
@@ -1117,7 +1125,9 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ### MV2-030 — C5: official pollen observations and forecasts
 
-**Status:** PLANNED · **Priority:** P0 · **Owner:** Integration · **Size:** M
+**Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Integration · **Size:** M
+
+**Complete-feature checkpoint, 2026-09-12:** Bounded official hourly/daily collection, shared source leases, immutable revisions/retention and the isolated pinned ICON-CH2 decoder/collector are implemented in the same feature as MV2-070/031. Canonical LF definitions reproduce the retained 15-station ragweed proof exactly; synthetic transports test failure and correction handling. These are engineering checks, not permitted current birch/grass forecast or official category/operating acceptance. See the [source dossier](docs/monitoring-v2/POLLEN_SOURCES.md) and [whole-feature record](docs/monitoring-v2/POLLEN_COMPLETE_FEATURE.md).
 
 **Dependencies:** [MV2-069](#mv2-069), [MV2-070](#mv2-070). **Requirements:** §12.3–12.8; AC-C5-03,06,08.
 
@@ -1135,13 +1145,15 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** Official dataset sample, missing station/allergen, revision and forecast-versus-observation conformance.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Execution evidence:** Complete-feature implementation and isolated verification are recorded in [POLLEN_COMPLETE_FEATURE.md](docs/monitoring-v2/POLLEN_COMPLETE_FEATURE.md), including CORE-20 traceability, retained native evidence, private lifecycle/delivery and the pilot HOLD boundary. Publication, actual release identity and independent source/human acceptance remain open; this task is not DONE.
 
 <a id="mv2-031"></a>
 
 ### MV2-031 — Pollen Watch — the first complete end-to-end scenario (C5)
 
-**Status:** PLANNED · **Priority:** P0 · **Owner:** Frontend + Backend + UX · **Size:** L
+**Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Frontend + Backend + UX · **Size:** L
+
+**Complete-feature checkpoint, 2026-09-12:** The implementation joins explicit Start, current observation/forecast, material changes in Today, exact why/evidence, review history/reopening, pause/edit/resume/archive/delete/export and separately consented email. Five-language synthetic browser scenarios and isolated SQLite/PostgreSQL checks are recorded in the [whole-feature record](docs/monitoring-v2/POLLEN_COMPLETE_FEATURE.md). Full regression and publication are in progress; no DONE or user-testing acceptance is claimed.
 
 **Dependencies:** [MV2-070](#mv2-070), [MV2-030](#mv2-030). **Requirements:** §12; AC-C5-01…10.
 
@@ -1158,7 +1170,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** Golden + permitted live E2E, reviewed updates, flapping, station gaps and email opt-in; recorded demo.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Execution evidence:** Complete-feature implementation and isolated verification are recorded in [POLLEN_COMPLETE_FEATURE.md](docs/monitoring-v2/POLLEN_COMPLETE_FEATURE.md), including CORE-20 traceability, retained native evidence, private lifecycle/delivery and the pilot HOLD boundary. Publication, actual release identity and independent source/human acceptance remain open; this task is not DONE.
 
 <a id="mv2-032"></a>
 

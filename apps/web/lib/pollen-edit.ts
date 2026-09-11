@@ -68,7 +68,7 @@ export function editablePollenConfiguration(value: unknown): boolean {
             ]) ||
             !periods.includes(String(r.period)) ||
             r.unit !== "number/m3" ||
-            r.category_change !== false
+            typeof r.category_change !== "boolean"
           )
             return false;
           if (

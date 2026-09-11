@@ -200,7 +200,7 @@ def test_csrf_and_input_errors_do_not_mutate_drafts_or_echo_private_values(api):
         assert session.scalar(select(func.count()).select_from(MonitoringSubject)) == 0
 
 
-def test_rollout_defaults_off_and_only_exact_shadow_grant_allows_drafts(api):
+def test_rollout_defaults_off_and_exact_shadow_or_enabled_grant_allows_private_settings(api):
     client, _, settings, identity = api
     assert client.get(URL).status_code == 200
     settings.monitoring_rollout = MonitoringRollout()
@@ -208,7 +208,10 @@ def test_rollout_defaults_off_and_only_exact_shadow_grant_allows_drafts(api):
     grant(settings, str(uuid4()))
     assert client.get(URL).status_code == 404
     grant(settings, identity["organization"]["id"], mode="enabled")
-    assert client.get(URL).status_code == 404  # No verified source gate for enabled mode.
+    assert client.get(URL).status_code == 200  # Settings remain available; Start has a separate source gate.
+    preview = client.post(URL + "/preview", json={"configuration": config()}, headers=_csrf(client))
+    assert preview.status_code == 200 and preview.json()["start_available"] is False
+    assert preview.json()["blocking_reasons"] == ["pollen_source_not_ready"]
     grant(settings, identity["organization"]["id"])
     settings.deployment_instance = "main"
     assert client.get(URL).status_code == 404

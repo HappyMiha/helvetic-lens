@@ -8,6 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .locales import normalize_locale
 from .monitoring_contracts import MonitoringRollout
+from .pollen_sources import PollenSourcePolicy
 
 # The source checkout and the API container have different directory depths.
 ROOT = next(
@@ -51,6 +52,10 @@ class Settings(BaseSettings):
     monitoring_rollout: MonitoringRollout = Field(
         default_factory=MonitoringRollout, validation_alias="MONITORING_V2_ROLLOUT",
     )
+    pollen_source_policy: PollenSourcePolicy = Field(
+        default_factory=PollenSourcePolicy, validation_alias="POLLEN_SOURCE_POLICY",
+    )
+    pollen_decoder_url: str = Field(default="", pattern=r"^(|http://pollen-decoder:8093)$")
     session_cookie_secure: bool = False
     session_ttl_days: int = Field(default=14, ge=1, le=90)
     public_base_url: str = "http://127.0.0.1:3000"

@@ -214,8 +214,7 @@ export function PollenDraftCreate({
       });
       if (controller.signal.aborted) return;
       if (
-        result.preview_kind !== "configuration_only" ||
-        result.start_available !== false
+        !["configuration_only", "source_coverage"].includes(result.preview_kind)
       ) {
         setMessage(copy.failed);
         return;
@@ -609,6 +608,20 @@ export function PollenDraftCreate({
                                 </label>
                               </div>
                             )}
+                            <label className={styles.check}>
+                              <input
+                                type="checkbox"
+                                name={`category-${prefix}`}
+                                checked={rule.category_change}
+                                onChange={(event) =>
+                                  ruleChange(selection.allergen, {
+                                    ...rule,
+                                    category_change: event.target.checked,
+                                  })
+                                }
+                              />
+                              {labels.category}
+                            </label>
                           </>
                         )}
                       </fieldset>

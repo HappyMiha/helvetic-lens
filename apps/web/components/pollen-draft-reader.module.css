@@ -18,6 +18,12 @@
 .creator {
   max-width: 760px;
 }
+.runtime {
+  scroll-margin-top: 90px;
+}
+.runtime button {
+  margin: 6px 8px 6px 0;
+}
 .channelTable {
   width: 100%;
   table-layout: fixed;

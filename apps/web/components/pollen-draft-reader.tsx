@@ -15,6 +15,7 @@ import {
 } from "@/lib/pollen-draft-location";
 import { pollenRecoveryCopy } from "@/lib/pollen-recovery-copy";
 import { PollenDraftCreate } from "./pollen-draft-create";
+import { PollenRuntime } from "./pollen-runtime";
 import { PollenDraftExport, PollenDraftImport } from "./pollen-draft-backup";
 import { PollenChannelOverview } from "./pollen-station-picker";
 import { pollenStations } from "@/lib/pollen-stations";
@@ -279,7 +280,7 @@ function Reader({ allowed }: { allowed: boolean }) {
     if (
       !canManage ||
       !selected ||
-      selected.status !== "draft" ||
+      !["draft", "active", "paused", "archived"].includes(selected.status) ||
       deleteInFlight.current ||
       loading ||
       detailLoading ||
@@ -305,7 +306,12 @@ function Reader({ allowed }: { allowed: boolean }) {
         `/monitoring-subjects/${encodeURIComponent(snapshot.id)}`,
         {
           method: "DELETE",
-          body: JSON.stringify({ expected_revision: snapshot.revision }),
+          body: JSON.stringify({
+            expected_revision: snapshot.revision,
+            ...(snapshot.status !== "draft"
+              ? { expected_version: snapshot.runtime_version }
+              : {}),
+          }),
           signal: controller.signal,
         },
       );
@@ -538,7 +544,7 @@ function Reader({ allowed }: { allowed: boolean }) {
                       onDenied={failed}
                     />
                     {canManage &&
-                      selected.status === "draft" &&
+                      ["draft", "paused"].includes(selected.status) &&
                       (editablePollenConfiguration(selected.configuration) ? (
                         <button
                           className={styles.button}
@@ -562,22 +568,24 @@ function Reader({ allowed }: { allowed: boolean }) {
                       ) : (
                         <p>{pollenEditCopy[locale].unsupported}</p>
                       ))}
-                    {canManage && selected.status === "draft" && (
-                      <button
-                        className={styles.button}
-                        type="button"
-                        data-pollen-delete
-                        disabled={
-                          deleting ||
-                          loading ||
-                          detailLoading ||
-                          deleteNotice === "conflict"
-                        }
-                        onClick={() => void removeDraft()}
-                      >
-                        {removal.remove}
-                      </button>
-                    )}
+                    {canManage &&
+                      (selected.status === "draft" ||
+                        !!selected.runtime_version) && (
+                        <button
+                          className={styles.button}
+                          type="button"
+                          data-pollen-delete
+                          disabled={
+                            deleting ||
+                            loading ||
+                            detailLoading ||
+                            deleteNotice === "conflict"
+                          }
+                          onClick={() => void removeDraft()}
+                        >
+                          {removal.remove}
+                        </button>
+                      )}
                     {deleteNotice === "conflict" && (
                       <button
                         className={styles.button}
@@ -588,17 +596,13 @@ function Reader({ allowed }: { allowed: boolean }) {
                         {removal.reload}
                       </button>
                     )}
-                    <button
-                      className={styles.button}
-                      type="button"
-                      disabled
-                      aria-describedby="pollen-start-blocked"
-                    >
-                      {copy.start}
-                    </button>
-                    <p id="pollen-start-blocked" className={styles.notice}>
-                      {copy.blocked}
-                    </p>
+                    <PollenRuntime
+                      key={`${selected.id}:${selected.revision}:${selected.status}`}
+                      id={selected.id}
+                      canManage={canManage}
+                      onDenied={failed}
+                      onChanged={() => void openDraft(selected.id)}
+                    />
                     <h2>{copy.history}</h2>
                     {history.map((item) => (
                       <details

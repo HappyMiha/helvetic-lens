@@ -14,6 +14,12 @@ test("supported v1 settings and delivery preferences remain representable withou
   assert.equal(editablePollenConfiguration(value), true);
   assert.deepEqual(value, before);
 });
+test("category-change rules round-trip without dropping the enabled flag", () => {
+  const value = fixture();
+  value.selections[0].rules[0].category_change = true;
+  assert.equal(editablePollenConfiguration(value), true);
+  assert.equal(value.selections[0].rules[0].category_change, true);
+});
 for (const [name, change] of [
   ["future contract", c => c.contract_version = 2],
   ["future template", c => c.template_version = 2],
@@ -21,7 +27,7 @@ for (const [name, change] of [
   ["unknown root setting", c => c.future = true],
   ["unknown selection setting", c => c.selections[0].future = true],
   ["unknown rule setting", c => c.selections[0].rules[0].future = true],
-  ["category rules", c => c.selections[0].rules[0].category_change = true],
+  ["invalid category flag", c => c.selections[0].rules[0].category_change = "true"],
   ["different units", c => c.selections[0].rules[0].unit = "category"],
   ["unknown period", c => c.selections[0].rules[0].period = "forecast_daily"],
   ["unknown allergen", c => c.selections[0].allergen = "unknown"],

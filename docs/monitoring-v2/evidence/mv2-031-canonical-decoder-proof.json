@@ -1,0 +1,341 @@
+{
+  "schema_version": 1,
+  "status": "decoded_source_proof_not_live_service",
+  "attribution": "Source: MeteoSwiss",
+  "decoder_library": "2.47.0",
+  "decoder_runtime": {
+    "eccodes_native": "2.47.0",
+    "cosmo_release": "v2.47.0.2",
+    "cosmo_definitions_sha256": "45a9168efdf755dfe281cb00c0525e7c39d71cbc82513dbd6a819926c8509a1a",
+    "cosmo_definition_files": 712,
+    "eccodes_python": "2.47.0",
+    "numpy": "2.4.3"
+  },
+  "acceptance": "Pending categories, lifecycle and product acceptance",
+  "observation": {
+    "station_id": "PBS",
+    "observed_at": "2026-09-11T06:00:00+00:00",
+    "age_at_fetch_seconds": 2555.962308,
+    "source_row": {
+      "station_abbr": "PBS",
+      "reference_timestamp": "11.09.2026 06:00",
+      "kabetuh0": "0",
+      "khpoach0": "3",
+      "kaalnuh0": "0",
+      "kacoryh0": "0",
+      "kafaguh0": "0",
+      "kafraxh0": "0",
+      "kaquerh0": "0"
+    }
+  },
+  "forecast": {
+    "variable": "AMBRsnc",
+    "issue_time": "2026-09-11T00:00:00+00:00",
+    "valid_time": "2026-09-11T06:00:00+00:00",
+    "grid_uuid": "bbbd5a09855499243c7a4aa4c8762920",
+    "level": 80,
+    "mapping": "nearest grid-cell centre to public station coordinates",
+    "points": [
+      {
+        "station_id": "PBE",
+        "station_name": "Bern",
+        "station_latitude": 46.950342,
+        "station_longitude": 7.424661,
+        "grid_cell": 191545,
+        "grid_latitude": 46.95526123046875,
+        "grid_longitude": 7.423244833946228,
+        "mapping_distance_km": 0.5574555554866488,
+        "number_per_kg": "0.125",
+        "density_kg_m3": "1.17799311876297",
+        "derived_number_per_m3": "0.14724913984537125"
+      },
+      {
+        "station_id": "PBS",
+        "station_name": "Basel",
+        "station_latitude": 47.5618,
+        "station_longitude": 7.583931,
+        "grid_cell": 150922,
+        "grid_latitude": 47.56805419921875,
+        "grid_longitude": 7.594143271446228,
+        "mapping_distance_km": 1.0347583465193604,
+        "number_per_kg": "0.8125",
+        "density_kg_m3": "1.207808792591095",
+        "derived_number_per_m3": "0.9813446439802646875"
+      },
+      {
+        "station_id": "PBU",
+        "station_name": "Buchs, SG",
+        "station_latitude": 47.173267,
+        "station_longitude": 9.472614,
+        "grid_cell": 197486,
+        "grid_latitude": 47.17523193359375,
+        "grid_longitude": 9.461330771446228,
+        "mapping_distance_km": 0.8804097599025316,
+        "number_per_kg": "0.0625",
+        "density_kg_m3": "1.1676705479621887",
+        "derived_number_per_m3": "0.07297940924763679375"
+      },
+      {
+        "station_id": "PCF",
+        "station_name": "La Chaux-de-Fonds",
+        "station_latitude": 47.113514,
+        "station_longitude": 6.832,
+        "grid_cell": 185538,
+        "grid_latitude": 47.10150146484375,
+        "grid_longitude": 6.843166708946228,
+        "mapping_distance_km": 1.5806378350381358,
+        "number_per_kg": "0.125",
+        "density_kg_m3": "1.1057198643684387",
+        "derived_number_per_m3": "0.1382149830460548375"
+      },
+      {
+        "station_id": "PDS",
+        "station_name": "Davos / Wolfgang",
+        "station_latitude": 46.829092,
+        "station_longitude": 9.855489,
+        "grid_cell": 143512,
+        "grid_latitude": 46.81658935546875,
+        "grid_longitude": 9.862209677696228,
+        "mapping_distance_km": 1.4812915069982753,
+        "number_per_kg": "0.03125",
+        "density_kg_m3": "1.0286782383918762",
+        "derived_number_per_m3": "0.032146194949746131250"
+      },
+      {
+        "station_id": "PGE",
+        "station_name": "Gen\u00e8ve",
+        "station_latitude": 46.191969,
+        "station_longitude": 6.147544,
+        "grid_cell": 182977,
+        "grid_latitude": 46.18475341796875,
+        "grid_longitude": 6.154690146446228,
+        "mapping_distance_km": 0.9728104965936449,
+        "number_per_kg": "0.3125",
+        "density_kg_m3": "1.1920159459114075",
+        "derived_number_per_m3": "0.37250498309731484375"
+      },
+      {
+        "station_id": "PLO",
+        "station_name": "Locarno / Monti",
+        "station_latitude": 46.172547,
+        "station_longitude": 8.787389,
+        "grid_cell": 190202,
+        "grid_latitude": 46.16302490234375,
+        "grid_longitude": 8.778225302696228,
+        "mapping_distance_km": 1.2724233869371402,
+        "number_per_kg": "0.03125",
+        "density_kg_m3": "1.1793587803840637",
+        "derived_number_per_m3": "0.036854961887001990625"
+      },
+      {
+        "station_id": "PLS",
+        "station_name": "Lausanne",
+        "station_latitude": 46.524103,
+        "station_longitude": 6.644825,
+        "grid_cell": 184011,
+        "grid_latitude": 46.52362060546875,
+        "grid_longitude": 6.642971396446228,
+        "mapping_distance_km": 0.15162090292070743,
+        "number_per_kg": "0.09375",
+        "density_kg_m3": "1.1616814732551575",
+        "derived_number_per_m3": "0.108907638117671015625"
+      },
+      {
+        "station_id": "PLU",
+        "station_name": "Lugano",
+        "station_latitude": 46.004231,
+        "station_longitude": 8.960631,
+        "grid_cell": 189725,
+        "grid_latitude": 46.01165771484375,
+        "grid_longitude": 8.954494833946228,
+        "mapping_distance_km": 0.9521319583661413,
+        "number_per_kg": "1.15625",
+        "density_kg_m3": "1.1710808873176575",
+        "derived_number_per_m3": "1.354062275961041484375"
+      },
+      {
+        "station_id": "PLZ",
+        "station_name": "Luzern",
+        "station_latitude": 47.057678,
+        "station_longitude": 8.296803,
+        "grid_cell": 194520,
+        "grid_latitude": 47.05902099609375,
+        "grid_longitude": 8.294826865196228,
+        "mapping_distance_km": 0.21144681226162332,
+        "number_per_kg": "0.15625",
+        "density_kg_m3": "1.1831124424934387",
+        "derived_number_per_m3": "0.184861319139599796875"
+      },
+      {
+        "station_id": "PMU",
+        "station_name": "M\u00fcnsterlingen",
+        "station_latitude": 47.630206,
+        "station_longitude": 9.236878,
+        "grid_cell": 197714,
+        "grid_latitude": 47.62322998046875,
+        "grid_longitude": 9.232815146446228,
+        "mapping_distance_km": 0.8333145569489772,
+        "number_per_kg": "0.03125",
+        "density_kg_m3": "1.1820672154426575",
+        "derived_number_per_m3": "0.036939600482583046875"
+      },
+      {
+        "station_id": "PNE",
+        "station_name": "Neuch\u00e2tel",
+        "station_latitude": 47.000269,
+        "station_longitude": 6.949828,
+        "grid_cell": 185390,
+        "grid_latitude": 47.00555419921875,
+        "grid_longitude": 6.949612021446228,
+        "mapping_distance_km": 0.5879163169521535,
+        "number_per_kg": "0.21875",
+        "density_kg_m3": "1.1518014073371887",
+        "derived_number_per_m3": "0.251956557855010028125"
+      },
+      {
+        "station_id": "PPY",
+        "station_name": "Payerne",
+        "station_latitude": 46.813403,
+        "station_longitude": 6.942939,
+        "grid_cell": 185266,
+        "grid_latitude": 46.81927490234375,
+        "grid_longitude": 6.946682333946228,
+        "mapping_distance_km": 0.7123569949521876,
+        "number_per_kg": "0.125",
+        "density_kg_m3": "1.1806862950325012",
+        "derived_number_per_m3": "0.1475857868790626500"
+      },
+      {
+        "station_id": "PSN",
+        "station_name": "Sion",
+        "station_latitude": 46.235403,
+        "station_longitude": 7.384606,
+        "grid_cell": 193341,
+        "grid_latitude": 46.23358154296875,
+        "grid_longitude": 7.373440146446228,
+        "mapping_distance_km": 0.8823762970197574,
+        "number_per_kg": "0.25",
+        "density_kg_m3": "1.16487056016922",
+        "derived_number_per_m3": "0.2912176400423050"
+      },
+      {
+        "station_id": "PZH",
+        "station_name": "Z\u00fcrich",
+        "station_latitude": 47.378225,
+        "station_longitude": 8.565644,
+        "grid_cell": 196531,
+        "grid_latitude": 47.38616943359375,
+        "grid_longitude": 8.572658896446228,
+        "mapping_distance_km": 1.0292292901062616,
+        "number_per_kg": "0.03125",
+        "density_kg_m3": "1.16102534532547",
+        "derived_number_per_m3": "0.0362820420414209375"
+      }
+    ]
+  },
+  "source_files": {
+    "ogd-pollen_meta_datainventory.csv": {
+      "sha256": "1a18b641ef15eb9660145674f5e3ce2e9732ae4909483892652a97839e083023",
+      "bytes": 20037,
+      "fetched_at": "2026-09-11T06:42:35.300175+00:00",
+      "last_modified": "Fri, 11 Sep 2026 04:23:41 GMT",
+      "etag": "\"627d4725f7cf5bb78b3d6ba3c4f1d221-1\"",
+      "provider_sha256": "1a18b641ef15eb9660145674f5e3ce2e9732ae4909483892652a97839e083023",
+      "source_identity": "https://data.geo.admin.ch/ch.meteoschweiz.ogd-pollen/ogd-pollen_meta_datainventory.csv"
+    },
+    "ogd-pollen_meta_stations.csv": {
+      "sha256": "d367bf17c1262f5bd8c913147162b9f366d1bfcc88e0799c2c29282936bb827b",
+      "bytes": 12547,
+      "fetched_at": "2026-09-11T06:42:35.407424+00:00",
+      "last_modified": "Fri, 11 Sep 2026 04:23:40 GMT",
+      "etag": "\"1e67b41935e0ae55f94c144d30bafca1-1\"",
+      "provider_sha256": "d367bf17c1262f5bd8c913147162b9f366d1bfcc88e0799c2c29282936bb827b",
+      "source_identity": "https://data.geo.admin.ch/ch.meteoschweiz.ogd-pollen/ogd-pollen_meta_stations.csv"
+    },
+    "ogd-pollen_meta_parameters.csv": {
+      "sha256": "6b1f01eeadce18e417d0d66c45bf38fc6d95fb7e5ba924ba8d4a18de7d02e0ac",
+      "bytes": 9064,
+      "fetched_at": "2026-09-11T06:42:35.583988+00:00",
+      "last_modified": "Fri, 11 Sep 2026 04:23:38 GMT",
+      "etag": "\"ef0c0728e58d42fe40183bea0bd658b8-1\"",
+      "provider_sha256": "6b1f01eeadce18e417d0d66c45bf38fc6d95fb7e5ba924ba8d4a18de7d02e0ac",
+      "source_identity": "https://data.geo.admin.ch/ch.meteoschweiz.ogd-pollen/ogd-pollen_meta_parameters.csv"
+    },
+    "ogd-pollen_pbs_h_now.csv": {
+      "sha256": "123bfacb878bfb3a496f4e81f73c6281637ec86fae45833ae9a908b6c5998dc4",
+      "bytes": 351,
+      "fetched_at": "2026-09-11T06:42:35.962308+00:00",
+      "last_modified": "Fri, 11 Sep 2026 06:26:48 GMT",
+      "etag": "\"7e88a86080c14d779f1018764a6c79fb-1\"",
+      "provider_sha256": "123bfacb878bfb3a496f4e81f73c6281637ec86fae45833ae9a908b6c5998dc4",
+      "source_identity": "https://data.geo.admin.ch/ch.meteoschweiz.ogd-pollen/pbs/ogd-pollen_pbs_h_now.csv"
+    },
+    "ogd-pollen_pbs_d_recent.csv": {
+      "sha256": "7ba648efc63e82e750434e6ed9234fd5ef5c25f308b99bfe6f9bfed565f535f3",
+      "bytes": 12708,
+      "fetched_at": "2026-09-11T06:42:36.138885+00:00",
+      "last_modified": "Fri, 11 Sep 2026 02:33:17 GMT",
+      "etag": "\"b8282cfc327dfd4088693627592a59cd-1\"",
+      "provider_sha256": "7ba648efc63e82e750434e6ed9234fd5ef5c25f308b99bfe6f9bfed565f535f3",
+      "source_identity": "https://data.geo.admin.ch/ch.meteoschweiz.ogd-pollen/pbs/ogd-pollen_pbs_d_recent.csv"
+    },
+    "params_icon-ch2-eps.csv": {
+      "sha256": "c015c06b262f2d6fe0720afe1fc96f08dc8d6e2287c3672e1e3d8177ba1e676d",
+      "bytes": 11675,
+      "fetched_at": "2026-09-11T06:44:37.057971+00:00",
+      "last_modified": "Fri, 11 Sep 2026 02:56:27 GMT",
+      "etag": "\"d02144a044a95bae2625f93148227c1a\"",
+      "provider_sha256": "c015c06b262f2d6fe0720afe1fc96f08dc8d6e2287c3672e1e3d8177ba1e676d",
+      "source_identity": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch2/assets/params_icon-ch2-eps.csv"
+    },
+    "horizontal_constants_icon-ch2-eps.grib2": {
+      "sha256": "90784019f5f081a619e1185c4bff5bc4a26e437cd1e36ac432a7b56e8adede5a",
+      "bytes": 8519255,
+      "fetched_at": "2026-09-11T06:44:38.329193+00:00",
+      "last_modified": "Fri, 11 Sep 2026 02:56:25 GMT",
+      "etag": "\"2937975c8cd809e8b500937b759e779b-2\"",
+      "provider_sha256": "90784019f5f081a619e1185c4bff5bc4a26e437cd1e36ac432a7b56e8adede5a",
+      "source_identity": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch2/assets/horizontal_constants_icon-ch2-eps.grib2"
+    },
+    "AMBRsnc.grib2": {
+      "sha256": "53c86d866750292079cd94af04fa6100b52cd6fdfba5a5db9798eda234e677d6",
+      "bytes": 567953,
+      "fetched_at": "2026-09-11T06:44:39.128999+00:00",
+      "last_modified": "Fri, 11 Sep 2026 02:06:50 GMT",
+      "etag": "\"06aee3d583bfea315aab377a505fbb13\"",
+      "provider_sha256": "53c86d866750292079cd94af04fa6100b52cd6fdfba5a5db9798eda234e677d6",
+      "source_identity": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch2/items/09112026-0000-6-ambrsnc-ctrl-j7ycuvqh",
+      "properties": {
+        "datetime": "2026-09-11T06:00:00Z",
+        "title": "AMBRsnc at 11.09.2026 00:00 Step 6 (Control)",
+        "created": "2026-09-11T02:07:18.132031Z",
+        "updated": "2026-09-11T02:07:18.148034Z",
+        "expires": "2026-09-12T02:07:13.021750Z",
+        "forecast:reference_datetime": "2026-09-11T00:00:00Z",
+        "forecast:horizon": "P0DT06H00M00S",
+        "forecast:variable": "AMBRsnc",
+        "forecast:perturbed": false
+      }
+    },
+    "DEN.grib2": {
+      "sha256": "b9d929a96e6451b2b1c39b4d1d627fbbf189213848060509023fdc31baab6ccd",
+      "bytes": 567951,
+      "fetched_at": "2026-09-11T06:44:39.962996+00:00",
+      "last_modified": "Fri, 11 Sep 2026 02:06:50 GMT",
+      "etag": "\"eae0ea3d013202a4c60404766c5c326d\"",
+      "provider_sha256": "b9d929a96e6451b2b1c39b4d1d627fbbf189213848060509023fdc31baab6ccd",
+      "source_identity": "https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch2/items/09112026-0000-6-den-ctrl-clm61cwg",
+      "properties": {
+        "datetime": "2026-09-11T06:00:00Z",
+        "title": "DEN at 11.09.2026 00:00 Step 6 (Control)",
+        "created": "2026-09-11T02:07:18.132111Z",
+        "updated": "2026-09-11T02:07:18.148034Z",
+        "expires": "2026-09-12T02:07:13.032479Z",
+        "forecast:reference_datetime": "2026-09-11T00:00:00Z",
+        "forecast:horizon": "P0DT06H00M00S",
+        "forecast:variable": "DEN",
+        "forecast:perturbed": false
+      }
+    }
+  }
+}

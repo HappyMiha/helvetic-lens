@@ -16,15 +16,26 @@ then verify that HEAD is `019e3357ebbfcc1924b237565514978b451c9b51`:
 ```sh
 git clone --depth 1 --branch v2.47.0.2 https://github.com/COSMO-ORG/eccodes-cosmo-resources.git cosmo-24702
 git -C cosmo-24702 rev-parse HEAD
-git -C cosmo-24702 archive --format=tar --prefix=cosmo/ --output=../cosmo-24702.tar HEAD
+git -C cosmo-24702 -c core.autocrlf=false -c core.eol=lf archive --format=tar --prefix=cosmo/ --output=../cosmo-24702.tar HEAD
 ```
 
 Copy the resulting archive into this directory (ignored by Git). `git archive`
 preserves original blobs and symlinks even on Windows; do not archive the working
 directory, normalize line endings or modify upstream definitions. The Dockerfile
 rejects an archive whose SHA-256 differs from
-`227486afb5a85fe1ee245ea31a3b4302b26aa7eb2ab00d298cd8314f12887f8b`.
+`40269dfa8c5315e47c31d47ca9e4b3b2042b4ea6ec4010d1ecc837da61a0d8c5`.
 Upstream documentation remains in the source archive.
+
+Complete-feature follow-up, 2026-09-11: Git for Windows had applied CRLF conversion
+to 698 text files in the earlier retained archive (SHA-256 `227486af…`). An offline
+entry-by-entry comparison found identical names, metadata and all contents after
+CRLF-to-LF normalization. The command now explicitly disables conversion. The
+canonical Linux archive retains original LF bytes, and its 712-file definition
+tree hash is `45a9168efdf755dfe281cb00c0525e7c39d71cbc82513dbd6a819926c8509a1a`.
+The earlier proof remains historical evidence of the CRLF runtime; it must not be
+described as byte-identical upstream definitions. The canonical runtime was
+rechecked offline against the same official capture with matching scientific
+results. No source or product gate is granted by that decoding check.
 
 From the repository root:
 

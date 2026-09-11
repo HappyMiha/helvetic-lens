@@ -1,5 +1,6 @@
 "use client";
 
+import { PollenToday } from './pollen-today';
 import { FeedTopicList } from "./feed-topic-list";
 import { FeedInterestBrief } from "./feed-interest-brief";
 import { FeedWatchList } from "./feed-watch-list";
@@ -51,6 +52,7 @@ export function InterestFeedPage() {
   const [busy, setBusy] = useState("");
   const [failure, setFailure] = useState("");
   const [notice, setNotice] = useState("");
+  const [pollenRefresh, setPollenRefresh] = useState(0);
   function href(patch: Record<string, string>) {
     const next = new URLSearchParams(query);
     for (const [key, value] of Object.entries(patch)) value ? next.set(key, value) : next.delete(key);
@@ -68,8 +70,9 @@ export function InterestFeedPage() {
   return <Shell section={t("nav.today")}>
     <header className="page-heading">
       <div><h1>{t("feed.title")}</h1><p className="muted max-w-3xl">{t("feed.body")}</p></div>
-      <Button variant="outline" onClick={() => { router.replace(href({ cursor: "" })); void invalidateResources(resourceTag("impact-inbox")); }}><RefreshCw size={16} />{t("inboxPaging.refresh")}</Button>
+      <Button variant="outline" onClick={() => { router.replace(href({ cursor: "" })); setPollenRefresh(value => value + 1); void invalidateResources(resourceTag("impact-inbox")); }}><RefreshCw size={16} />{t("inboxPaging.refresh")}</Button>
     </header>
+    <PollenToday key={pollenRefresh} />
     <nav className="flex flex-wrap gap-x-5 gap-y-2 mb-5 text-sm">
       <Link className="underline min-h-[44px] inline-flex items-center" href="/topics">{t("nav.topics")}</Link>
       <Link className="underline min-h-[44px] inline-flex items-center" href="/sources">{t("nav.sources")}</Link>

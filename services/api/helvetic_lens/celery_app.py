@@ -51,6 +51,10 @@ celery_app.conf.update(
             "task": "helvetic_lens.schedule_digests",
             "schedule": 60.0,
         },
+        "schedule-pollen-monitoring": {
+            "task": "helvetic_lens.schedule_pollen_monitoring",
+            "schedule": 60.0,
+        },
     },
 )
 
@@ -103,6 +107,18 @@ def cleanup_data():
     database = Database(settings)
     try:
         return cleanup_operational_data(database, settings)
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.schedule_pollen_monitoring")
+def schedule_pollen_monitoring():
+    from .pollen_delivery import enqueue_due as enqueue_mail
+    from .pollen_jobs import enqueue_due
+    from .pollen_retention import cleanup
+    database = Database(settings)
+    try:
+        return {"refresh": enqueue_due(database, settings), "delivery": enqueue_mail(database, settings), "retention": cleanup(database, settings)}
     finally:
         database.engine.dispose()
 

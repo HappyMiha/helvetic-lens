@@ -35,8 +35,8 @@ type Copy = {
 
 export const pollenDraftCopy: Record<Locale, Copy> = {
   "en-CH": {
-    title: "Pollen Watch drafts",
-    note: "Private saved settings. Station measurements do not describe the exact pollen level at your home. Live observations and forecasts are not available here.",
+    title: "Pollen Watch",
+    note: "Your private pollen monitors and saved settings. Station measurements do not describe the exact pollen level at your home. Live data depends on verified source coverage.",
     station: "Station",
     settings: "Saved settings",
     history: "Configuration history",
@@ -83,8 +83,8 @@ export const pollenDraftCopy: Record<Locale, Copy> = {
     email: { off: "Off", immediate: "Immediate", daily_digest: "Daily digest" },
   },
   "de-CH": {
-    title: "Pollen-Watch-Entwürfe",
-    note: "Privat gespeicherte Einstellungen. Stationsmessungen beschreiben nicht die genaue Pollenbelastung bei Ihnen zu Hause. Aktuelle Beobachtungen und Prognosen sind hier nicht verfügbar.",
+    title: "Pollen Watch",
+    note: "Ihre privaten Pollenmonitore und gespeicherten Einstellungen. Stationsmessungen beschreiben nicht die genaue Pollenbelastung bei Ihnen zu Hause. Aktuelle Daten benötigen eine geprüfte Quellenabdeckung.",
     station: "Station",
     settings: "Gespeicherte Einstellungen",
     history: "Einstellungsverlauf",
@@ -137,8 +137,8 @@ export const pollenDraftCopy: Record<Locale, Copy> = {
     },
   },
   "fr-CH": {
-    title: "Brouillons Pollen Watch",
-    note: "Paramètres enregistrés privés. Les mesures d’une station ne décrivent pas le niveau exact de pollen à votre domicile. Les observations et prévisions en direct ne sont pas disponibles ici.",
+    title: "Pollen Watch",
+    note: "Vos suivis privés du pollen et paramètres enregistrés. Les mesures d’une station ne décrivent pas le niveau exact à votre domicile. Les données actuelles dépendent de sources vérifiées.",
     station: "Station",
     settings: "Paramètres enregistrés",
     history: "Historique des paramètres",
@@ -192,8 +192,8 @@ export const pollenDraftCopy: Record<Locale, Copy> = {
     },
   },
   "it-CH": {
-    title: "Bozze Pollen Watch",
-    note: "Impostazioni private salvate. Le misurazioni di una stazione non descrivono il livello esatto di polline a casa vostra. Osservazioni e previsioni dal vivo non sono disponibili qui.",
+    title: "Pollen Watch",
+    note: "I vostri monitoraggi privati dei pollini e le impostazioni salvate. Le misurazioni di una stazione non descrivono il livello esatto a casa vostra. I dati attuali dipendono da fonti verificate.",
     station: "Stazione",
     settings: "Impostazioni salvate",
     history: "Cronologia delle impostazioni",
@@ -245,8 +245,8 @@ export const pollenDraftCopy: Record<Locale, Copy> = {
     },
   },
   "rm-CH": {
-    title: "Sbozs Pollen Watch",
-    note: "Parameters privats memorisads. Las mesiraziuns d’ina staziun na descrivan betg il nivel exact da pollen a chasa. Observaziuns e prognosas actualas n’èn betg disponiblas qua.",
+    title: "Pollen Watch",
+    note: "Tes monitorings privats da pollen e parameters memorisads. Las mesiraziuns d’ina staziun na descrivan betg il nivel exact a chasa. Datas actualas dependan da funtaunas verifitgadas.",
     station: "Staziun",
     settings: "Parameters memorisads",
     history: "Istorgia dals parameters",

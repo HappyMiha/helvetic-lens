@@ -1937,6 +1937,14 @@ def create_app(
 
     def check_job_access(request: Request, job_id: str):
         job = service.job_detail(job_id)
+        if job["target_type"] == "monitoring_subject":
+            from .monitoring_subjects import _actor, get_subject
+            actor = request.state.identity
+            if actor is None:
+                raise DomainError("Job not found.", 404, "not_found")
+            with service.db.session() as session:
+                _actor(session, actor.user_id, write=request.method != "GET")
+                get_subject(session, user_id=actor.user_id, subject_id=job["target_id"])
         if job["type"] == relation_reprocessing.JOB_TYPE and not platform_job_access(request):
             raise DomainError("A platform administrator must access this maintenance job.", 403, "platform_admin_required")
         return job
@@ -1950,7 +1958,8 @@ def create_app(
     ):
         if job_type and not platform_job_access(request):
             raise DomainError("A platform administrator must access this maintenance job.", 403, "platform_admin_required")
-        return service.jobs(limit, workload=workload, include_platform=platform_job_access(request), job_type=job_type)
+        return service.jobs(limit, workload=workload, include_platform=platform_job_access(request), job_type=job_type,
+                            monitoring_owner_id=request.state.identity.user_id if request.state.identity else None)
 
     @app.get("/api/jobs/{job_id}")
     def job(job_id: str, request: Request):

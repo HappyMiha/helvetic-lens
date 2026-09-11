@@ -2990,9 +2990,16 @@ class HelveticLens:
         with self.db.session() as session:
             return durable_jobs.serialize(session, get(session, Job, job_id))
 
-    def jobs(self, limit: int = 50, *, workload: str = "all", include_platform: bool = False, job_type: str | None = None):
+    def jobs(self, limit: int = 50, *, workload: str = "all", include_platform: bool = False, job_type: str | None = None, monitoring_owner_id: str | None = None):
         with self.db.session() as session:
             statement = select(Job)
+            from .models import MonitoringSubject
+            if monitoring_owner_id is None:
+                statement = statement.where(Job.target_type != "monitoring_subject")
+            else:
+                statement = statement.where(or_(Job.target_type != "monitoring_subject", Job.target_id.in_(
+                    select(MonitoringSubject.id).where(MonitoringSubject.owner_user_id == monitoring_owner_id,
+                                                       MonitoringSubject.organization_id == self.organization_id))))
             if not include_platform:
                 statement = statement.where(Job.type != relation_reprocessing.JOB_TYPE)
             if job_type is not None:
@@ -4031,6 +4038,22 @@ class HelveticLens:
                 result_type = "relation_impact_analysis"
                 result_id = result_json["id"]
                 result_url = f"/impact?candidate={target_id}"
+            elif job_type == "pollen_email":
+                from .pollen_delivery import deliver
+                result_json = await asyncio.to_thread(deliver, self.db, self.settings,
+                    subject_id=target_id, consent_version=payload.get("consent_version"))
+                result_type, result_id, result_url = "monitoring_subject", target_id, "/pollen-watch"
+            elif job_type == "pollen_refresh":
+                from .pollen_jobs import refresh
+                def pollen_checkpoint():
+                    with self.db.session() as heartbeat_session:
+                        active = durable_jobs.heartbeat(heartbeat_session, job_id, worker)
+                        heartbeat_session.commit()
+                    if not active:
+                        raise durable_jobs.JobCancelled()
+                result_json = await asyncio.to_thread(refresh, self.db, self.settings,
+                    subject_id=target_id, run_id=payload.get("run_id"), checkpoint=pollen_checkpoint)
+                result_type, result_id, result_url = "monitoring_subject", target_id, "/pollen-watch"
             elif job_type == "digest_delivery":
                 async with self.runtime_cache_scope():
                     digest_runtime = self.relation_runtime_observation()

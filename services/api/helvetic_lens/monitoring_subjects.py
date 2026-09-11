@@ -75,6 +75,8 @@ def _owned(session, organization_id, user_id, subject_id):
 
 
 def _view(session, subject):
+    from .monitoring_live_models import MonitoringRuntime
+    runtime = session.get(MonitoringRuntime, subject.id) if subject.status != "draft" else None
     revision = session.scalar(select(MonitoringSubjectRevision).where(
         MonitoringSubjectRevision.subject_id == subject.id,
         MonitoringSubjectRevision.organization_id == subject.organization_id,
@@ -83,6 +85,7 @@ def _view(session, subject):
     if revision is None:
         raise DomainError("Monitoring configuration is unavailable.", 503, "subject_revision_missing")
     return {"id": subject.id, "status": subject.status, "revision": subject.current_revision,
+            **({"runtime_version": runtime.version} if runtime else {}),
             "configuration": deepcopy(revision.configuration_json), "configuration_hash": revision.configuration_hash}
 
 

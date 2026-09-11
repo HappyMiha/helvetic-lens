@@ -77,8 +77,16 @@ evidence and round only display copy after an approved scale is available.
 
 The initial decoder experiment used native ecCodes 2.47.3 with COSMO 2.47.0.1
 and emitted a compatibility warning. On 2026-09-11 the retained bytes were decoded
-again using matching native/Python ecCodes 2.47.0, unchanged official COSMO
-v2.47.0.2 and numpy 2.4.3. No compatibility warning was emitted or suppressed.
+again using matching native/Python ecCodes 2.47.0, COSMO
+v2.47.0.2 and numpy 2.4.3. A later archive audit found that the Windows Git archive
+had converted 698 definition files from LF to CRLF. The original proof remains
+historical evidence and must not be described as byte-identical upstream files.
+The complete-feature decoder explicitly disables Git newline conversion. Its
+canonical upstream archive SHA-256 is
+`40269dfa8c5315e47c31d47ca9e4b3b2042b4ea6ec4010d1ecc837da61a0d8c5`, and its
+712-file definition tree is
+`45a9168efdf755dfe281cb00c0525e7c39d71cbc82513dbd6a819926c8509a1a`.
+No compatibility warning was emitted or suppressed.
 Observation, all 15 forecast station mappings/values and source provenance are
 identical to the initial result. The decoder now rejects mismatched releases
 before reading GRIB and records versions plus the definition-tree SHA-256.
@@ -86,6 +94,15 @@ The [isolated build recipe](../../scripts/pollen-decoder/README.md) pins the bas
 image, all 92 Conda package artifacts/hashes and the upstream COSMO archive.
 This resolves the technical version mismatch; it does not validate seasonal
 coverage, categories, model accuracy or production operating behavior.
+
+The [canonical rerun](evidence/mv2-031-canonical-decoder-proof.json) preserves
+exactly the same observation, source-file hashes and all 15 forecast points as
+the earlier retained proof. The [private decoder protocol result](evidence/mv2-031-decoder-rpc-proof.json)
+also records each nearest grid cell, distance, pollen number/kg, matching density
+and lossless product in number/m³. It was evaluated offline with no network,
+read-only container filesystem, temporary scratch and no mounted source volume.
+These September ragweed points are dated reproduction evidence, never live or
+birch/grass fallback data.
 
 ## Rights and open gates
 
