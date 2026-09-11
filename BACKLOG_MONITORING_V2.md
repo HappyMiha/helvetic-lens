@@ -160,7 +160,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 | ID | Task | Phase | Priority | Size | Status | Dependencies |
 |---|---|---|---|---|---|---|
-| [MV2-001](#mv2-001) | Establish extension contracts and MVP compatibility | F0 | P0 | M | VERIFYING | None |
+| [MV2-001](#mv2-001) | Establish extension contracts and MVP compatibility | F0 | P0 | M | DONE | None |
 | [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | PLANNED | None |
 | [MV2-003](#mv2-003) | Verify source rights, coverage and contracts for the nine active scenarios | F0 | P0 | L | PLANNED | [MV2-001](#mv2-001) |
 | [MV2-004](#mv2-004) | Personal workspace and team monitoring permissions | F1 | P0 | M | PLANNED | [MV2-001](#mv2-001) |
@@ -228,8 +228,8 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 | [MV2-066](#mv2-066) | Conditional: The next two cantonal regulatory packs | LATER | P2 | M | DEFERRED | [MV2-068](#mv2-068) |
 | [MV2-067](#mv2-067) | Beyond the ten source use cases: Opt-in public-discourse pilot | LATER | P2 | M | DEFERRED | [MV2-058](#mv2-058) |
 | [MV2-068](#mv2-068) | Complete legacy coverage verification and repair old artifacts | F1 | P0 | L | PLANNED | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-060](#mv2-060) |
-| [MV2-069](#mv2-069) | Pollen Watch FIRST: Confirm sources and the first-delivery contract | FIRST | P0 | M | PLANNED — first implementation priority | [MV2-001](#mv2-001) |
-| [MV2-070](#mv2-070) | Pollen Watch FIRST: Implement the shared platform within C5 scope | FIRST | P0 | L | PLANNED — first implementation priority | [MV2-069](#mv2-069) |
+| [MV2-069](#mv2-069) | Pollen Watch FIRST: Confirm sources and the first-delivery contract | FIRST | P0 | M | IN PROGRESS — first implementation priority | [MV2-001](#mv2-001) |
+| [MV2-070](#mv2-070) | Pollen Watch FIRST: Implement the shared platform within C5 scope | FIRST | P0 | L | IN PROGRESS — first implementation priority | [MV2-069](#mv2-069) |
 | [MV2-071](#mv2-071) | Pollen Watch FIRST: Accept the complete scenario and prepare for testing with real users | FIRST | P0 | M | PLANNED — first user-testing gate | [MV2-031](#mv2-031) |
 | [MV2-072](#mv2-072) | Isolated Monitoring deployment on HappyDucky02 | OPS | P0 | M | IN PROGRESS | None; user deployment decision |
 | [MV2-073](#mv2-073) | Show Monitoring backlog completion and deployment progress | OPS | P0 | M | VERIFYING | None; user progress-visibility request |
@@ -409,6 +409,8 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 **Work:** Explicit C5 contribution to shared MV2-004…022/024/025/052…056/060/068; boundaries are listed in the first-delivery table. Use the generic MV2-001 contracts, additive persistence/API changes and existing authentication/outbox/UI. Do not create a separate pollen-only service. Work is limited to the named C5 criteria; full parent tasks remain incomplete until the rest of their own scope is delivered.
 
 **C01 implementation refinement, 2026-09-11 (before implementation):** C01a adds generic subject/revision tables by an additive migration and an internal personal-draft repository using the MV2-069 v1 configuration contract. Acceptance: create/read/list/edit/delete drafts; immutable configuration history; scoped idempotency keys with conflicting-payload rejection; compare-and-swap edits; tenant and owner isolation, active membership recheck and revoked/viewer write denial; rollback/restart retention and unchanged legacy rows. No source activation, collector, Start, public endpoint or email is introduced by C01a. C01b follows with authenticated API/preview/explicit Start and lifecycle gates; C01c adds UI and job/evidence/cache permission checks. The original C01 acceptance remains mandatory. C01a may proceed while MV2-069's source/prototype gates are open because it only stores validated drafts.
+
+**C01a-R1 publication follow-up:** The previous c2ab0d6 automatic release failed its existing backlog consistency test because MV2-069's detail status had changed without its index row; later MV2-001/070 updates had the same omission. Synchronize those three index rows with the evidence-backed detail statuses and verify the existing parser. Preserve the parser's strict mismatch rejection and all deployment gates. This repairs publication metadata, not product acceptance.
 
 **Acceptance criteria:**
 
