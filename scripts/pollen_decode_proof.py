@@ -9,6 +9,8 @@ import csv
 import hashlib
 import io
 import json
+import re
+import sys
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
@@ -59,9 +61,29 @@ def validate_fields(fields, manifest):
     return issue, valid
 
 
-def read_fields(root, variable):
+def definition_runtime(cosmo_root, native_version):
+    release = (cosmo_root / "RELEASE").read_text(encoding="utf-8").strip()
+    match = re.fullmatch(r"v(\d+\.\d+\.\d+)\.\d+", release)
+    if not match or match[1] != native_version:
+        raise ValueError("COSMO definitions and native ecCodes versions must match exactly")
+    definitions = cosmo_root / "definitions"
+    files = sorted(path for path in definitions.rglob("*") if path.is_file())
+    if not files:
+        raise ValueError("COSMO definitions are absent")
+    digest = hashlib.sha256()
+    for path in files:
+        digest.update(path.relative_to(definitions).as_posix().encode("utf-8") + b"\0")
+        digest.update(hashlib.sha256(path.read_bytes()).digest())
+    return {"eccodes_native": native_version, "cosmo_release": release,
+            "cosmo_definitions_sha256": digest.hexdigest(), "cosmo_definition_files": len(files)}
+
+
+def read_fields(root, variable, cosmo_root):
     import eccodes as ec
 
+    runtime = definition_runtime(cosmo_root, ec.codes_get_api_version())
+    runtime["eccodes_python"] = ec.__version__
+    ec.codes_set_definitions_path(str(cosmo_root / "definitions") + ":" + ec.codes_definition_path())
     fields = {}
     keys = ("shortName", "units", "level", "typeOfLevel", "uuidOfHGrid", "numberOfValues",
             "dataDate", "dataTime", "validityDate", "validityTime", "bitmapPresent", "numberOfMissing")
@@ -80,15 +102,16 @@ def read_fields(root, variable):
                     fields[name] = ({key: ec.codes_get(handle, key) for key in keys}, ec.codes_get_values(handle))
                 finally:
                     ec.codes_release(handle)
-    return fields, ec.codes_get_api_version()
+    return fields, runtime
 
 
-def decode(root):
+def decode(root, cosmo_root):
     import numpy as np
 
     manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
     verify_files(root, manifest)
-    fields, library_version = read_fields(root, manifest["variable"])
+    fields, runtime = read_fields(root, manifest["variable"], cosmo_root)
+    runtime["numpy"] = np.__version__
     issue, valid = validate_fields(fields, manifest)
     latitudes, longitudes = fields["CLAT"][1], fields["CLON"][1]
     if (not all(np.all(np.isfinite(values)) for _, values in fields.values())
@@ -122,8 +145,9 @@ def decode(root):
     measured_at = datetime.strptime(latest["reference_timestamp"], "%d.%m.%Y %H:%M").replace(tzinfo=UTC)
     fetched_at = datetime.fromisoformat(manifest["files"][observation_name]["fetched_at"])
     return {"schema_version": 1, "status": "decoded_source_proof_not_live_service",
-            "attribution": "Source: MeteoSwiss", "decoder_library": library_version,
-            "acceptance": "Pending definition-version review, categories, lifecycle and product acceptance",
+            "attribution": "Source: MeteoSwiss", "decoder_library": runtime["eccodes_native"],
+            "decoder_runtime": runtime,
+            "acceptance": "Pending categories, lifecycle and product acceptance",
             "observation": {"station_id": manifest["station"], "observed_at": measured_at.isoformat(),
                             "age_at_fetch_seconds": (fetched_at - measured_at).total_seconds(), "source_row": latest},
             "forecast": {"variable": manifest["variable"], "issue_time": issue.isoformat(),
@@ -136,11 +160,17 @@ def decode(root):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--proof", type=Path, required=True)
-    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--cosmo-root", type=Path, required=True,
+                        help="Official matching COSMO release directory containing RELEASE and definitions/")
+    parser.add_argument("--output", type=Path, required=True, help="JSON destination; - writes to stdout")
     args = parser.parse_args()
-    result = decode(args.proof)
-    args.output.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(json.dumps({"status": result["status"], "stations": len(result["forecast"]["points"])}))
+    result = decode(args.proof, args.cosmo_root)
+    payload = json.dumps(result, indent=2, ensure_ascii=False) + "\n"
+    if args.output == Path("-"):
+        sys.stdout.write(payload)
+    else:
+        args.output.write_text(payload, encoding="utf-8")
+    print(json.dumps({"status": result["status"], "stations": len(result["forecast"]["points"])}), file=sys.stderr)
 
 
 if __name__ == "__main__":

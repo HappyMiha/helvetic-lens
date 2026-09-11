@@ -75,11 +75,17 @@ Do not compare it to observed grass or claim that this single ragweed capture
 proves birch/grass forecast acceptance. Preserve raw calculation precision as
 evidence and round only display copy after an approved scale is available.
 
-Decoder experiment: Python binding ecCodes 2.47.0, native library 2.47.3,
-COSMO definitions package 2.47.0.1, numpy 2.4.3. Explicit definitions directory was
-needed for the isolated `pip --target` installation. Native ecCodes emitted a
-**definition-version compatibility warning**. No warning was suppressed. A matching
-supported decoder and repeat comparison are required before production acceptance.
+The initial decoder experiment used native ecCodes 2.47.3 with COSMO 2.47.0.1
+and emitted a compatibility warning. On 2026-09-11 the retained bytes were decoded
+again using matching native/Python ecCodes 2.47.0, unchanged official COSMO
+v2.47.0.2 and numpy 2.4.3. No compatibility warning was emitted or suppressed.
+Observation, all 15 forecast station mappings/values and source provenance are
+identical to the initial result. The decoder now rejects mismatched releases
+before reading GRIB and records versions plus the definition-tree SHA-256.
+The [isolated build recipe](../../scripts/pollen-decoder/README.md) pins the base
+image, all 92 Conda package artifacts/hashes and the upstream COSMO archive.
+This resolves the technical version mismatch; it does not validate seasonal
+coverage, categories, model accuracy or production operating behavior.
 
 ## Rights and open gates
 
@@ -95,7 +101,6 @@ per-file bound, verify provided SHA-256, and resume only unchanged retained byte
 |---|---|
 | Infrastructure usage and lifecycle | Integration: complete FSDI/CSCS terms dossier, bounded polling/retry plan and repeated freshness/correction samples |
 | Official category semantics | Integration: retain the authoritative scale, units and aggregation period per allergen; review whether the same scale applies to forecasts |
-| Forecast decoding | Integration: resolve native-library/definitions version warning, repeat decoded comparison and retain a supported reproducible dependency set |
 | Required birch/grass forecast evidence | Integration: establish seasonal availability and a permitted retained official sample; never replace with ragweed or synthetic data |
 | Rights enforcement | MV2-070/030: implement attribution, evidence retention/deletion policy and permitted display/notification behavior |
 | UX and full product | MV2-069/031/071: prototype review, working journey and independent acceptance |
@@ -131,8 +136,9 @@ object-store policy. No new account, paid service or communication was initiated
 Choose an available issue; the retained 2026-09-11 URLs will expire. The manifest
 contains full hashes and request identities, not secret credentials or signed URLs.
 
-Run `scripts/pollen_decode_proof.py --proof <retained-directory> --output <json>`
-offline with ecCodes/numpy and the COSMO definitions configured. Raw binaries are
+Run `scripts/pollen_decode_proof.py --proof <retained-directory> --cosmo-root
+<official-release-directory> --output <json>` offline using the pinned recipe
+above; `--output -` emits JSON to stdout for read-only container mounts. Raw binaries are
 retained locally in the task's sibling `pollen-proof-20260911` directory (9 files,
 9,721,541 bytes); they are not committed to Git. Git contains the normalized proof
 and full hashes. Reproduction on another host requires a lawful copy of those

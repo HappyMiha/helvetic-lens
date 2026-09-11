@@ -2,8 +2,16 @@
   "schema_version": 1,
   "status": "decoded_source_proof_not_live_service",
   "attribution": "Source: MeteoSwiss",
-  "decoder_library": "2.47.3",
-  "acceptance": "Pending definition-version review, categories, lifecycle and product acceptance",
+  "decoder_library": "2.47.0",
+  "decoder_runtime": {
+    "eccodes_native": "2.47.0",
+    "cosmo_release": "v2.47.0.2",
+    "cosmo_definitions_sha256": "bda17a72b163a3ae7012bd4d48e80bdc168bb3b6317dcc9473a52e0bf26826a1",
+    "cosmo_definition_files": 712,
+    "eccodes_python": "2.47.0",
+    "numpy": "2.4.3"
+  },
+  "acceptance": "Pending categories, lifecycle and product acceptance",
   "observation": {
     "station_id": "PBS",
     "observed_at": "2026-09-11T06:00:00+00:00",

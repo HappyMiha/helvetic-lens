@@ -103,3 +103,32 @@ def test_rejects_incompatible_density(key, value):
 def test_missing_or_invalid_values_do_not_become_zero(number, density):
     with pytest.raises(ValueError):
         decode.concentration(number, density)
+
+
+@pytest.mark.parametrize("release,native", [
+    ("v2.47.0.2", "2.47.3"), ("v2.47.0.2", "2.46.0"),
+    ("development", "2.47.0"), ("v2.47.0", "2.47.0"),
+])
+def test_decoder_rejects_incompatible_or_unversioned_definitions(tmp_path, release, native):
+    (tmp_path / "RELEASE").write_text(release, encoding="utf-8")
+    with pytest.raises(ValueError, match="must match exactly"):
+        decode.definition_runtime(tmp_path, native)
+
+
+def test_decoder_requires_definitions_and_records_content_identity(tmp_path):
+    (tmp_path / "RELEASE").write_text("v2.47.0.2\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="absent"):
+        decode.definition_runtime(tmp_path, "2.47.0")
+    definitions = tmp_path / "definitions"
+    definitions.mkdir()
+    definition = definitions / "boot.def"
+    definition.write_bytes(b"original definition\n")
+    runtime = decode.definition_runtime(tmp_path, "2.47.0")
+    assert runtime["eccodes_native"] == "2.47.0"
+    assert runtime["cosmo_release"] == "v2.47.0.2"
+    assert runtime["cosmo_definition_files"] == 1
+    assert runtime == decode.definition_runtime(tmp_path, "2.47.0")
+    definition.write_bytes(b"changed definition\n")
+    assert runtime["cosmo_definitions_sha256"] != decode.definition_runtime(
+        tmp_path, "2.47.0",
+    )["cosmo_definitions_sha256"]
