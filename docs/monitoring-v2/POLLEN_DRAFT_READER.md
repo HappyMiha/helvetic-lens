@@ -3,9 +3,9 @@
 MV2-070 C01c1, 11 September 2026. `/pollen-watch` renders the existing private
 draft API's list, current saved configuration and immutable configuration history.
 The reader is now accompanied by C01c2a new-draft creation and configuration-only
-preview, plus C01c2b1 confirmed draft deletion. Existing-draft editing and
-delivery-preference editing remain C01c2b2; the live workflow is not implemented
-by this interface.
+preview, C01c2b1 confirmed draft deletion and C01c2b2 revision-checked numeric
+editing. Delivery-preference editing remains open; the live workflow is not
+implemented by this interface.
 
 The reader requires an authenticated user and workspace; anonymous development
 does not receive a private identity. The server's exact default-off shadow grant
@@ -15,6 +15,7 @@ by this change. Access the route directly in an explicitly configured test
 workspace. The reader uses GET; the manager-only creator uses preview and create
 POST requests through the existing CSRF-aware helper. Confirmed owned-draft
 deletion uses the same helper with DELETE and the reviewed expected revision.
+Existing-draft updates use PATCH with that same revision-checking contract.
 No Start request is made.
 
 Each component instance is keyed by user, workspace and role. Switching identity
@@ -107,3 +108,39 @@ removal, double clicks, CSRF, fresh-revision conflict recovery, uncertain-then-m
 revocation and active/viewer denial. Five post-deletion full-document axe checks
 bring the combined suite to sixteen. Existing API/DB checks verify the private
 cascades; no real user record is used by the browser fixtures.
+
+## C01c2b2 revision-checked editing
+
+An owner manager can edit a selected draft's supported numeric configuration.
+The form clones the reviewed configuration, including contract/template metadata
+and saved delivery preferences. Those preferences are displayed and preserved;
+this slice does not edit them or activate delivery. Unknown fields, future
+versions, units, allergens, periods and category rules keep the configuration
+read-only instead of silently dropping settings the form cannot represent.
+
+Every change invalidates the configuration-only preview. Saving requires another
+server check and appends a revision using the originally reviewed expected revision.
+There is no silent rebase onto an unseen revision. Conflicts freeze the attempted
+settings until explicit discard/reload and review; cancellation retains the edits.
+Duplicate clicks are synchronously guarded and access revocation clears private
+state. Create and delete retain their existing contracts.
+
+An uncertain PATCH locks the payload and original version. Check saved result
+reads both the current draft and its exact next immutable revision, bounded by
+`before_revision = expected_revision + 2` and `limit = 1`. A matching configuration
+hash proves the requested settings are present in history, even if later revisions
+exist. It does not attribute the write to this client or claim those settings are
+still current; View saved draft reads the current record again. This recovery
+does not issue another PATCH. Only a still-current original revision/hash in
+draft status unlocks a separate explicit save attempt; conflicting state requires
+reload/review. Original-revision CAS still protects against a delayed first write.
+
+The five-language production-browser suite covers exact Decimal and metadata
+preservation, saved delivery/digest/quiet hours, CSRF, duplicate submission,
+conflict/discard/reload, lost-response and later-revision history recovery,
+unchanged explicit retry, conflicting history, unsupported categories and revoked
+access. Its 21 full-document axe checkpoints include the existing reader,
+creation and deletion journeys. Compatibility tests reject future/unknown fields
+without mutation. These are synthetic component/contract checks. Real workspace,
+native-language, screen-reader, broader configuration editing, navigation/crash
+recovery, source and live workflow acceptance remain open.

@@ -6,6 +6,8 @@ import { useI18n } from "@/lib/i18n";
 import { pollenDraftCopy } from "@/lib/pollen-draft-copy";
 import { pollenCreateCopy } from "@/lib/pollen-create-copy";
 import { pollenDeleteCopy } from "@/lib/pollen-delete-copy";
+import { pollenEditCopy } from "@/lib/pollen-edit-copy";
+import { editablePollenConfiguration } from "@/lib/pollen-edit";
 import { PollenDraftCreate } from "./pollen-draft-create";
 import {
   draftFailure,
@@ -104,6 +106,7 @@ function Settings({
 function Reader({ allowed }: { allowed: boolean }) {
   const { canManage } = useAuth();
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<PollenDraft | null>(null);
   const { locale } = useI18n();
   const copy = pollenDraftCopy[locale];
   const [items, setItems] = useState<PollenDraft[]>([]);
@@ -150,6 +153,7 @@ function Reader({ allowed }: { allowed: boolean }) {
   }
   function failed(error: unknown) {
     setCreating(false);
+    setEditing(null);
     // Never keep potentially revoked private records visible after a failed read.
     listRequest.current?.abort();
     clearDetail();
@@ -326,12 +330,19 @@ function Reader({ allowed }: { allowed: boolean }) {
         </header>
         {!allowed ? (
           <p role="status">{copy.access}</p>
-        ) : creating ? (
+        ) : creating || editing ? (
           <PollenDraftCreate
-            onClose={() => setCreating(false)}
+            key={editing ? `${editing.id}:${editing.revision}` : "new"}
+            draft={editing ?? undefined}
+            onClose={() => {
+              setCreating(false);
+              setEditing(null);
+              if (editing) void openDraft(editing.id);
+            }}
             onDenied={failed}
             onSaved={(id) => {
               setCreating(false);
+              setEditing(null);
               void loadList();
               void openDraft(id);
             }}
@@ -430,6 +441,31 @@ function Reader({ allowed }: { allowed: boolean }) {
                       {copy.revision} {selected.revision}
                     </h3>
                     <Settings configuration={selected.configuration} />
+                    {canManage &&
+                      selected.status === "draft" &&
+                      (editablePollenConfiguration(selected.configuration) ? (
+                        <button
+                          className={styles.button}
+                          type="button"
+                          data-pollen-edit-open
+                          disabled={
+                            deleting ||
+                            loading ||
+                            detailLoading ||
+                            deleteNotice !== null
+                          }
+                          onClick={() => {
+                            const snapshot = selected;
+                            listRequest.current?.abort();
+                            clearDetail();
+                            setEditing(snapshot);
+                          }}
+                        >
+                          {pollenEditCopy[locale].edit}
+                        </button>
+                      ) : (
+                        <p>{pollenEditCopy[locale].unsupported}</p>
+                      ))}
                     {canManage && selected.status === "draft" && (
                       <button
                         className={styles.button}

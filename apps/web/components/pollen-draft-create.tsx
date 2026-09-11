@@ -5,11 +5,13 @@ import { api, ApiError } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { pollenCreateCopy } from "@/lib/pollen-create-copy";
 import { pollenDraftCopy } from "@/lib/pollen-draft-copy";
+import { pollenEditCopy } from "@/lib/pollen-edit-copy";
 import {
   draftFailure,
   type PollenConfiguration,
   type PollenDraft,
   type PollenRule,
+  type RevisionPage,
 } from "@/lib/pollen-drafts";
 import styles from "./pollen-draft-reader.module.css";
 
@@ -34,24 +36,32 @@ const newRule = (period: string): PollenRule => ({
 });
 
 export function PollenDraftCreate({
+  draft,
   onClose,
   onSaved,
   onDenied,
 }: {
+  draft?: PollenDraft;
   onClose: () => void;
   onSaved: (id: string) => void;
   onDenied: (error: unknown) => void;
 }) {
   const { locale } = useI18n(),
     copy = pollenCreateCopy[locale],
-    labels = pollenDraftCopy[locale];
-  const [configuration, setConfiguration] = useState(initial);
+    labels = pollenDraftCopy[locale],
+    edit = pollenEditCopy[locale];
+  const discard = draft ? edit.discard : copy.discard;
+  const [configuration, setConfiguration] = useState(() =>
+    structuredClone(draft?.configuration ?? initial()),
+  );
   const [preview, setPreview] = useState<Preview | null>(null);
   const [attempt, setAttempt] = useState<{
     request_key: string;
     configuration: PollenConfiguration;
   } | null>(null);
   const [saved, setSaved] = useState<PollenDraft | null>(null);
+  const [conflict, setConflict] = useState(false);
+  const [recorded, setRecorded] = useState(false);
   const [dirty, setDirty] = useState(false),
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState("");
@@ -71,7 +81,7 @@ export function PollenDraftCreate({
       event.returnValue = "";
     };
     const navigation = (event: Event) => {
-      if (!window.confirm(copy.discard)) event.preventDefault();
+      if (!window.confirm(discard)) event.preventDefault();
     };
     const link = (event: MouseEvent) => {
       if (!(event.target instanceof Element)) return;
@@ -79,7 +89,7 @@ export function PollenDraftCreate({
       if (
         anchor &&
         !anchor.getAttribute("href")?.startsWith("#") &&
-        !window.confirm(copy.discard)
+        !window.confirm(discard)
       ) {
         event.preventDefault();
         event.stopPropagation();
@@ -93,7 +103,7 @@ export function PollenDraftCreate({
       window.removeEventListener("helvetic:before-navigation", navigation);
       document.removeEventListener("click", link, true);
     };
-  }, [dirty, saved, copy.discard]);
+  }, [dirty, saved, discard]);
 
   function change(next: PollenConfiguration) {
     if (frozen || saved) return;
@@ -121,7 +131,9 @@ export function PollenDraftCreate({
   function denied(error: unknown) {
     if (
       error instanceof ApiError &&
-      ["disabled", "access"].includes(draftFailure(error.code))
+      ["disabled", "access", ...(draft ? ["missing"] : [])].includes(
+        draftFailure(error.code),
+      )
     ) {
       onDenied(error);
       return true;
@@ -174,8 +186,11 @@ export function PollenDraftCreate({
     }
   }
   async function save() {
-    if (inFlight.current || saved || (!preview && !attempt)) return;
+    if (inFlight.current || saved || conflict || (!preview && !attempt)) return;
     inFlight.current = true;
+    // Even saving unchanged settings can commit a new revision. Keep departure
+    // protection active until that write is confirmed or explicitly discarded.
+    setDirty(true);
     setBusy(true);
     setMessage("");
     const payload = attempt || {
@@ -186,9 +201,50 @@ export function PollenDraftCreate({
     const controller = new AbortController();
     request.current = controller;
     try {
-      const result = await api<PollenDraft>("/monitoring-subjects", {
-        method: "POST",
-        body: JSON.stringify(payload),
+      const path = draft
+        ? `/monitoring-subjects/${encodeURIComponent(draft.id)}`
+        : "/monitoring-subjects";
+      if (draft && attempt) {
+        // A lost PATCH response must not manufacture another revision. Read the
+        // immutable next revision as well as the current state before any retry.
+        const [current, history] = await Promise.all([
+          api<PollenDraft>(path, { signal: controller.signal }),
+          api<RevisionPage>(
+            `${path}/history?limit=1&before_revision=${draft.revision + 2}`,
+            { signal: controller.signal },
+          ),
+        ]);
+        if (controller.signal.aborted) return;
+        const next = history.items.find(
+          (item) => item.revision === draft.revision + 1,
+        );
+        if (next?.configuration_hash === preview!.configuration_hash) {
+          setRecorded(true);
+          setSaved(current);
+          setDirty(false);
+        } else if (
+          current.revision === draft.revision &&
+          current.configuration_hash === draft.configuration_hash &&
+          current.status === "draft"
+        ) {
+          setAttempt(null);
+          setMessage(edit.unchanged);
+        } else {
+          setConflict(true);
+          setMessage(edit.conflict);
+        }
+        return;
+      }
+      const result = await api<PollenDraft>(path, {
+        method: draft ? "PATCH" : "POST",
+        body: JSON.stringify(
+          draft
+            ? {
+                expected_revision: draft.revision,
+                configuration: payload.configuration,
+              }
+            : payload,
+        ),
         signal: controller.signal,
       });
       if (!controller.signal.aborted) {
@@ -198,6 +254,13 @@ export function PollenDraftCreate({
     } catch (error) {
       if (!controller.signal.aborted && !denied(error)) {
         if (
+          draft &&
+          error instanceof ApiError &&
+          error.code === "subject_revision_conflict"
+        ) {
+          setConflict(true);
+          setMessage(edit.conflict);
+        } else if (
           error instanceof ApiError &&
           ["subject_configuration_invalid", "invalid_input"].includes(
             error.code,
@@ -206,7 +269,7 @@ export function PollenDraftCreate({
           setAttempt(null);
           setPreview(null);
           setMessage(copy.invalid);
-        } else setMessage(copy.uncertain);
+        } else setMessage(draft ? edit.uncertain : copy.uncertain);
       }
     } finally {
       if (!controller.signal.aborted) {
@@ -217,14 +280,36 @@ export function PollenDraftCreate({
   }
 
   return (
-    <section className={styles.creator} data-pollen-create>
+    <section
+      className={styles.creator}
+      data-pollen-create
+      data-pollen-edit={draft ? "true" : undefined}
+    >
       <h2 ref={heading} tabIndex={-1}>
-        {copy.create}
+        {draft ? edit.edit : copy.create}
       </h2>
-      <p>{copy.intro}</p>
+      <p>{draft ? edit.intro : copy.intro}</p>
+      {draft && (
+        <p>
+          {labels.revision} {draft.revision} · {labels.delivery}:{" "}
+          {labels.email[draft.configuration.delivery.email]}
+          {draft.configuration.delivery.digest_at && (
+            <> · {draft.configuration.delivery.digest_at}</>
+          )}
+          {draft.configuration.delivery.quiet_hours && (
+            <>
+              {" "}
+              · {labels.quiet}: {draft.configuration.delivery.quiet_hours.start}
+              –{draft.configuration.delivery.quiet_hours.end}
+            </>
+          )}
+        </p>
+      )}
       {saved ? (
         <>
-          <p role="status">{copy.saved}</p>
+          <p role="status">
+            {draft ? (recorded ? edit.recorded : edit.saved) : copy.saved}
+          </p>
           <button
             className={styles.button}
             type="button"
@@ -482,14 +567,14 @@ export function PollenDraftCreate({
             )}
           </form>
           {preview && <p role="status">{copy.checked}</p>}
-          {(preview || attempt) && (
+          {(preview || attempt) && !conflict && (
             <button
               className={styles.button}
               type="button"
               onClick={() => void save()}
               disabled={busy}
             >
-              {copy.save}
+              {draft && attempt ? edit.recover : copy.save}
             </button>
           )}
           {busy && <p role="status">{copy.busy}</p>}
@@ -498,15 +583,27 @@ export function PollenDraftCreate({
               {message}
             </p>
           )}
+          {draft && conflict && (
+            <button
+              className={styles.button}
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                if (!dirty || window.confirm(discard)) onSaved(draft.id);
+              }}
+            >
+              {edit.reload}
+            </button>
+          )}
           <button
             className={styles.button}
             type="button"
             disabled={busy}
             onClick={() => {
-              if (!dirty || window.confirm(copy.discard)) onClose();
+              if (!dirty || window.confirm(discard)) onClose();
             }}
           >
-            {copy.cancel}
+            {draft ? edit.cancel : copy.cancel}
           </button>
         </>
       )}

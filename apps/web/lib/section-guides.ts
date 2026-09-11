@@ -140,7 +140,7 @@ const ai = c(
 export const SECTION_GUIDES: SectionGuide[] = [
   {
     id: "pollen-watch",
-    title: "Create and read Pollen Watch drafts",
+    title: "Create, edit and read Pollen Watch drafts",
     purpose: "Prepare private station, allergen and numeric rule settings, or inspect their saved history. This does not show live pollen or activate monitoring.",
     first: ["Check the current workspace, then select one of your saved drafts.", "Expand a configuration revision to compare earlier settings."],
     data: ["Only your own drafts and their configuration history are returned by the authenticated API.", "Saved delivery preferences do not send messages. Empty lists are not zero-pollen observations."],
@@ -149,7 +149,9 @@ export const SECTION_GUIDES: SectionGuide[] = [
     controls: [refresh, pages,
       c("new-draft", "New Pollen Watch draft", "Opens a private form for a station, multiple allergens and period-specific numeric rules. Email stays off.", "Requires a manager role and an explicitly enabled draft workspace.", "Edit draft", "[data-pollen-create]", "manager"),
       c("check-draft", "Check settings", "Validates the exact settings on the server without collecting sources or saving a draft. Editing invalidates this check.", "Complete the station, allergen and rule fields first; a successful check does not prove coverage.", "Read / navigate", "[data-pollen-create] button[type=submit]", "manager"),
-      c("save-draft", "Save private draft", "Stores the checked private settings. An unconfirmed save locks the payload so an explicit retry uses the same request key.", "Check settings first. This never starts monitoring; retry an uncertain save before leaving.", "Save a change", undefined, "manager"),
+      c("save-draft", "Save private draft", "Stores checked settings. New drafts retain a request key for retry. Existing drafts append a revision against the reviewed version; an uncertain update requires reading its saved result first.", "Check settings first. This never starts monitoring. Resolve uncertain results before leaving.", "Save a change", undefined, "manager"),
+      c("edit-draft", "Edit draft", "Opens supported numeric settings at the selected revision and preserves saved delivery preferences. Categories and unknown options remain read-only.", "Requires the owner manager and a draft. Check settings again before saving; conflicts require explicit discard, reload and review.", "Edit draft", "[data-pollen-edit-open]", "manager"),
+      c("recover-edit", "Check saved result", "Reads the current draft and the exact next historical revision without writing. Matching history proves the requested settings were recorded, not that they are still current.", "Use after an uncertain update. Only an unchanged original revision permits a separate explicit retry; otherwise reload and review.", "Read / navigate", undefined, "manager"),
       c("discard-new", "Discard new draft", "Closes the form after confirming loss of unfinished work. An unconfirmed save may already exist.", "Retry an uncertain save before discarding to avoid creating a duplicate later.", "Edit draft", undefined, "manager"),
       c("delete-draft", "Delete draft", "Permanently removes the selected private draft and its saved configuration/evaluation history after confirmation of its station and revision.", "Requires the owner manager and an editable draft. A revision conflict requires a fresh read before another confirmation; an uncertain result is not success.", "Remove data", "[data-pollen-delete]", "manager"),
       c("select-draft", "Select a station draft", "Reads the current saved settings and the first history page for that private draft.", "Use after the draft list loads; selecting another draft cancels the previous read.", "Read / navigate", "[data-pollen-drafts] button[aria-pressed]"),
