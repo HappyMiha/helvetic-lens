@@ -1,5 +1,11 @@
 # Monitoring v2 — requirements traceability
 
+**Foundation evidence, 2026-09-11:** MV2-001 contract v1, compatibility inventory,
+rollout boundary and populated-copy characterization are recorded in
+[MV2-001 evidence](evidence/MV2-001.md). This establishes preparatory architecture
+and compatibility contributions only; no C5 or CORE end-to-end criterion is closed
+by these checks. Live deployment acceptance remains pending for this task revision.
+
 **Requirements baseline:** Practical Use Case Specification v1.0, 4,534 lines; original source SHA-256 `a6f4e7da87a9ae30171164512d16ce4be411f2913c22d90ed7bf7e1bc94ece4c`.
 
 [English reading edition](requirements/HELVETIC_LENS_PRACTICAL_USE_CASE_SPECIFICATION_v1.0_EN.md) · [Unchanged original](requirements/HELVETIC_LENS_PRACTICAL_USE_CASE_SPECIFICATION_v1.0.md) · [Single backlog](../../BACKLOG_MONITORING_V2.md).

@@ -150,7 +150,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 | ID | Task | Phase | Priority | Size | Status | Dependencies |
 |---|---|---|---|---|---|---|
-| [MV2-001](#mv2-001) | Establish extension contracts and MVP compatibility | F0 | P0 | M | PLANNED | None |
+| [MV2-001](#mv2-001) | Establish extension contracts and MVP compatibility | F0 | P0 | M | VERIFYING | None |
 | [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | PLANNED | None |
 | [MV2-003](#mv2-003) | Verify source rights, coverage and contracts for the nine active scenarios | F0 | P0 | L | PLANNED | [MV2-001](#mv2-001) |
 | [MV2-004](#mv2-004) | Personal workspace and team monitoring permissions | F1 | P0 | M | PLANNED | [MV2-001](#mv2-001) |
@@ -294,7 +294,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ### MV2-001 — Establish extension contracts and MVP compatibility
 
-**Status:** PLANNED · **Priority:** P0 · **Owner:** Architect + Backend · **Size:** M
+**Status:** VERIFYING · **Priority:** P0 · **Owner:** Architect + Backend · **Size:** M
 
 **Dependencies:** None. **Requirements:** §§1–7,19,27,30.
 
@@ -310,7 +310,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** Review schemas and the compatibility matrix; run characterization tests on an isolated database copy.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Execution evidence, 2026-09-11:** Implemented [ADR and contract v1](docs/monitoring-v2/EXTENSION_CONTRACT.md), exact workspace/template/version rollout grants with default legacy fallback, and a reproducible Git inventory. Baseline/MVP commit `7109a2891f9c99e53572008cc7c1a86001792a57` and annotated tag object `c33f3094e51019bfe1083bec71a53858eef1917c` are unchanged. Against integration base `cb47c01c0ef4c3632e0e65388d4092801ca42c2d`, the inventory reports 174 API routes, 30 web pages, 75 models, no removed routes or changed legacy models, and all 35 open legacy items mapped. Three new boundary/copy-characterization tests and 18 existing corpus/Basel tests passed; targeted Ruff and diff checks passed. The copy test preserves all rows and evidence hashes through repeated migration and rejects pollen records under the legacy legal CHECK. [Evidence and limitations](docs/monitoring-v2/evidence/MV2-001.md). Reviewer: Codex implementation review, not independent human acceptance. **Next:** push, integrate through the Monitoring branch, and verify automatic release identity before DONE. This does not activate Pollen Watch or close source/human/production-migration gates.
 
 <a id="mv2-002"></a>
 
