@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { pollenDraftCopy } from "@/lib/pollen-draft-copy";
+import { pollenCreateCopy } from "@/lib/pollen-create-copy";
+import { PollenDraftCreate } from "./pollen-draft-create";
 import {
   draftFailure,
   privatePollenScope,
@@ -99,6 +101,8 @@ function Settings({
 }
 
 function Reader({ allowed }: { allowed: boolean }) {
+  const { canManage } = useAuth();
+  const [creating, setCreating] = useState(false);
   const { locale } = useI18n();
   const copy = pollenDraftCopy[locale];
   const [items, setItems] = useState<PollenDraft[]>([]);
@@ -131,6 +135,7 @@ function Reader({ allowed }: { allowed: boolean }) {
     setDetailLoading(false);
   }
   function failed(error: unknown) {
+    setCreating(false);
     // Never keep potentially revoked private records visible after a failed read.
     listRequest.current?.abort();
     clearDetail();
@@ -244,6 +249,16 @@ function Reader({ allowed }: { allowed: boolean }) {
         </header>
         {!allowed ? (
           <p role="status">{copy.access}</p>
+        ) : creating ? (
+          <PollenDraftCreate
+            onClose={() => setCreating(false)}
+            onDenied={failed}
+            onSaved={(id) => {
+              setCreating(false);
+              void loadList();
+              void openDraft(id);
+            }}
+          />
         ) : (
           <>
             <button
@@ -254,6 +269,18 @@ function Reader({ allowed }: { allowed: boolean }) {
             >
               {copy.refresh}
             </button>
+            {canManage && !loading && !failure && (
+              <button
+                className={styles.button}
+                type="button"
+                onClick={() => {
+                  clearDetail();
+                  setCreating(true);
+                }}
+              >
+                {pollenCreateCopy[locale].create}
+              </button>
+            )}
             {failure && (
               <p className={styles.notice} role="alert">
                 {copy[failure]}

@@ -2,15 +2,17 @@
 
 MV2-070 C01c1, 11 September 2026. `/pollen-watch` renders the existing private
 draft API's list, current saved configuration and immutable configuration history.
-It is a read-only interface, not the completed monitor creation or live workflow.
-Creation/edit/delete and configuration preview forms remain C01c2.
+The reader is now accompanied by C01c2a new-draft creation and configuration-only
+preview. Existing-draft editing/deletion and delivery-preference editing remain
+C01c2b; the live workflow is not implemented by this interface.
 
 The reader requires an authenticated user and workspace; anonymous development
 does not receive a private identity. The server's exact default-off shadow grant
 remains authoritative. A disabled workspace sees an unavailable explanation,
 not a fake empty list. No serving configuration or navigation rollout is enabled
 by this change. Access the route directly in an explicitly configured test
-workspace. No Start request or other draft mutation is made by this page.
+workspace. The reader uses GET; the manager-only creator uses preview and create
+POST requests through the existing CSRF-aware helper. No Start request is made.
 
 Each component instance is keyed by user, workspace and role. Switching identity
 remounts it before private data can render under another scope. Unmount, reload
@@ -42,3 +44,35 @@ desktop/narrow layouts, keyboard selection, exact thresholds, pagination,
 superseded requests and denied/default-off/missing/error/empty/anonymous/changed
 workspace states. Full-document axe results retain incomplete checks for human
 review. These checks establish component behavior, not live source or user readiness.
+
+## C01c2a new private drafts
+
+An authenticated manager sees New Pollen Watch draft only after the workspace's
+draft list loads successfully. The form accepts a station code, timezone, multiple
+allergens and optional per-period threshold/reset and rapid-increase rules. Rapid
+windows are offered only for hourly observations and forecast instants. Decimal
+inputs stay strings; the server validates the complete v1 contract. Categories
+cannot be enabled here, and email defaults to off. Station validation is not proof
+that the selected live coverage exists.
+
+Check settings performs a configuration-only preview without creating a record or
+loading measurements. Any edit invalidates it. A separate Save stores the checked
+server-normalized configuration. A synchronous in-flight guard blocks double
+submission. After a potentially committed save, input and request key remain
+frozen for an explicit retry. A lost response can therefore be retried within the
+same open form without a second draft. Confirmed input-validation failures allow
+correction; revoked access removes the form and private state.
+
+The retry payload lives only in memory and is not recoverable after closing or
+reloading the tab. Before-unload, clicked-link and workspace-navigation guards warn
+about losing unfinished/uncertain work; Discard asks explicitly. Full browser
+Back/Forward and crash recovery acceptance remains open for C01c2b. Retry uncertain
+saves before leaving; after reloading, inspect saved drafts before creating again.
+Successful saving offers explicit navigation to the saved record, with no Start.
+
+The browser suite additionally checks creation in all five locales, keyboard form
+entry, observation plus forecast rules, exact Decimal payloads, rejected preview,
+preview invalidation, CSRF, duplicate clicks, a simulated committed save with a
+lost response, same-key retry, saved navigation, discard decisions and revocation.
+Five creator axe checkpoints bring the suite total to eleven. Native-language,
+screen-reader, real workspace and source acceptance are still required.

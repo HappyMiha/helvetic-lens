@@ -7,6 +7,7 @@ import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { pollenDraftCopy } from "../apps/web/lib/pollen-draft-copy.ts";
+import { pollenCreateCopy } from "../apps/web/lib/pollen-create-copy.ts";
 import { AccessibilityAudit } from "./browser-accessibility.mjs";
 import { Cdp, evaluate, sleep } from "./browser-cdp.mjs";
 
@@ -24,6 +25,8 @@ const profile = await mkdtemp(join(tmpdir(), "helvetic-pollen-reader-"));
 const browser = spawn(chrome, ["--headless=new", "--no-first-run", "--no-default-browser-check", "--remote-debugging-port=0", `--user-data-dir=${profile}`, "about:blank"],
   { stdio: "ignore", windowsHide: true });
 let cdp, locale = "en-CH", mode = "ready", organization = "org-a", delayFirst = false;
+let manager = false, previewError = false, loseFirstSave = false, dialogAccept = false;
+const created = new Map();
 const requests = [], exceptions = [];
 const audit = new AccessibilityAudit("pollen-drafts");
 const config = station => ({ station_id: station, selections: [{ allergen: "birch", rules: [{ period: "observation_hourly", unit: "number/m3",
@@ -50,24 +53,38 @@ try {
   const target = await fetch(`http://127.0.0.1:${debugPort}/json/new?about:blank`, { method: "PUT" }).then(r => r.json());
   cdp = new Cdp(target.webSocketDebuggerUrl);
   await cdp.send("Page.enable"); await cdp.send("Runtime.enable");
+  await cdp.send("Network.setCookie", { name: "helvetic_lens_csrf", value: "synthetic-pollen-csrf", url: base });
+  cdp.on("Page.javascriptDialogOpening", async () => {
+    await cdp.send("Page.handleJavaScriptDialog", { accept: dialogAccept });
+  });
   cdp.on("Runtime.exceptionThrown", ({ exceptionDetails }) => exceptions.push(exceptionDetails.text));
   cdp.on("Fetch.requestPaused", async ({ requestId, request }) => {
-    const url = new URL(request.url); requests.push({ path: url.pathname, query: url.search, method: request.method });
+    const url = new URL(request.url); const payload = request.postData ? JSON.parse(request.postData) : null;
+    requests.push({ path: url.pathname, query: url.search, method: request.method, payload, headers: request.headers });
     let code = 200, body = {};
     if (url.pathname === "/api/auth/session") body = { authenticated: mode !== "anonymous", anonymous_development: mode === "anonymous",
       user: mode === "anonymous" ? undefined : { id: "qa", email: "qa@example.invalid", name: "QA", locale },
-      organization: { id: organization, name: organization }, role: "viewer", platform_admin: false };
+      organization: { id: organization, name: organization }, role: manager ? "organization_admin" : "viewer", platform_admin: false };
     else if (url.pathname === "/api/health") body = { status: "ok", database: "synthetic", apertus: { configured: false }, firecrawl: { configured: false } };
     else if (url.pathname.startsWith("/api/monitoring-subjects")) {
       if (["disabled", "revoked", "error", "missing"].includes(mode)) {
         code = mode === "revoked" ? 403 : mode === "error" ? 503 : 404;
         body = { code: { disabled: "monitoring_not_enabled", revoked: "membership_required", error: "unavailable", missing: "subject_not_found" }[mode] };
+      } else if (url.pathname === "/api/monitoring-subjects/preview") {
+        if (previewError) { code = 422; body = { code: "invalid_input" }; }
+        else body = { configuration: payload.configuration, configuration_hash: "c".repeat(64), preview_kind: "configuration_only", start_available: false,
+          coverage: "unverified", observations: [], forecasts: [] };
+      } else if (url.pathname === "/api/monitoring-subjects" && request.method === "POST") {
+        if (!created.has(payload.request_key)) created.set(payload.request_key, { ...draft(`created-${created.size}`, payload.configuration.station_id),
+          revision: 1, configuration: payload.configuration });
+        if (loseFirstSave) { loseFirstSave = false; code = 503; body = { code: "unavailable" }; }
+        else { code = 201; body = created.get(payload.request_key); }
       } else if (url.pathname === "/api/monitoring-subjects") body = mode === "empty" || organization === "org-b" ? { items: [], next_cursor: null }
         : url.searchParams.has("cursor") ? { items: [draft("b", "PZH")], next_cursor: null } : { items: [draft("a", "PBS")], next_cursor: "a" };
       else {
         const isA = url.pathname.split("/")[3] === "a";
         if (delayFirst && isA) await sleep(800);
-        const selected = draft(isA ? "a" : "b", isA ? "PBS" : "PZH");
+        const selected = [...created.values()].find(d => d.id === url.pathname.split("/")[3]) || draft(isA ? "a" : "b", isA ? "PBS" : "PZH");
         body = url.pathname.endsWith("/history") ? { items: [{ revision: url.searchParams.has("before_revision") ? 11 : 12,
           configuration: config("PGE"), configuration_hash: "b".repeat(64) }], next_before_revision: url.searchParams.has("before_revision") ? null : 12 } : selected;
       }
@@ -83,6 +100,7 @@ try {
     await cdp.send("Emulation.setDeviceMetricsOverride", { width: locale === "en-CH" ? 1280 : 390, height: 900, deviceScaleFactor: 1, mobile: false });
     await navigate();
     await wait(() => evaluate(cdp, "!!document.querySelector('[data-pollen-drafts] button[aria-pressed]')"), "Draft list missing");
+    assert.ok(!(await text()).includes(pollenCreateCopy[locale].create), "Viewer was offered creation");
     // A real keyboard activation, not a synthetic click event.
     await evaluate(cdp, "document.querySelector('[data-pollen-drafts] button[aria-pressed]').focus()");
     await cdp.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, text: "\r", unmodifiedText: "\r" });
@@ -128,9 +146,78 @@ try {
   await wait(async () => (await text()).includes(pollenDraftCopy[locale].access), "Anonymous state missing");
   assert.equal(requests.slice(requestStart).filter(r => r.path.startsWith("/api/monitoring-subjects")).length, 0);
   assert.equal(requests.filter(r => r.path.startsWith("/api/monitoring-subjects") && r.method !== "GET").length, 0);
+  const fill = (name, value) => evaluate(cdp, `(() => { const input=document.querySelector(${JSON.stringify(`[name="${name}"]`)}); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(value)}); input.dispatchEvent(new Event('input',{bubbles:true})); })()`);
+  const button = label => evaluate(cdp, `Array.from(document.querySelectorAll('[data-pollen-drafts] button')).find(b => b.textContent === ${JSON.stringify(label)}).click()`);
+  const posts = path => requests.filter(r => r.path === path && r.method === "POST");
+  mode = "ready"; organization = "org-a"; manager = true; delayFirst = false;
+  for (const language of Object.keys(pollenCreateCopy)) {
+    locale = language; const copy = pollenCreateCopy[locale];
+    await navigate();
+    await wait(async () => (await text()).includes(copy.create), "Manager creation entry missing");
+    await button(copy.create);
+    await wait(() => evaluate(cdp, "!!document.querySelector('[data-pollen-create] input')"), "Creation form missing");
+    await cdp.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 });
+    await cdp.send("Input.dispatchKeyEvent", { type: "keyUp", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 });
+    assert.equal(await evaluate(cdp, "document.activeElement?.getAttribute('name')"), "pollen-station");
+    await fill("pollen-station", "PBS");
+    await click('[name="allergen-birch"]'); await click('[name="allergen-grasses"]');
+    await click('[name="rule-birch-observation_hourly"]');
+    await fill("trigger-birch-observation_hourly", "12.500001");
+    await fill("reset-birch-observation_hourly", "5");
+    await click('[name="rapid-birch-observation_hourly"]');
+    await fill("increase-birch-observation_hourly", "3.000001");
+    await fill("window-birch-observation_hourly", "2");
+    await click('[name="rule-birch-forecast_instant"]');
+    await fill("trigger-birch-forecast_instant", "20"); await fill("reset-birch-forecast_instant", "4");
+    previewError = true; await button(copy.preview);
+    await wait(async () => (await text()).includes(copy.invalid), "Server validation was not shown");
+    previewError = false; await button(copy.preview);
+    await wait(async () => (await text()).includes(copy.checked), "Configuration-only preview missing");
+    assert.equal(posts("/api/monitoring-subjects").length, created.size * 2);
+    await fill("trigger-birch-observation_hourly", "13.500001");
+    assert.ok(!(await text()).includes(copy.checked));
+    await button(copy.preview);
+    await wait(async () => (await text()).includes(copy.checked), "Edited configuration not checked");
+    await audit.check(cdp, `create-${locale}`, "[data-pollen-create] form");
+    if (locale === "en-CH") {
+      await evaluate(cdp, "document.querySelector('[name=\"trigger-birch-observation_hourly\"]').scrollIntoView({block:'center'})");
+      const formImage = await cdp.send("Page.captureScreenshot", { format: "png" });
+      await writeFile(join(root, "test-results/pollen-create-mobile.png"), Buffer.from(formImage.data, "base64"));
+    }
+    assert.equal(await evaluate(cdp, "document.documentElement.scrollWidth <= innerWidth"), true);
+    loseFirstSave = true;
+    const oldPosts = posts("/api/monitoring-subjects").length;
+    await evaluate(cdp, `(() => {const b=Array.from(document.querySelectorAll('[data-pollen-create] button')).find(b => b.textContent === ${JSON.stringify(copy.save)}); b.click(); b.click();})()`);
+    await wait(async () => (await text()).includes(copy.uncertain), "Lost save response was not retained");
+    assert.equal(posts("/api/monitoring-subjects").length, oldPosts + 1);
+    assert.equal(await evaluate(cdp, "document.querySelector('[data-pollen-create] form > fieldset').disabled"), true);
+    await button(copy.save);
+    await wait(async () => (await text()).includes(copy.saved), "Idempotent save retry failed");
+    const [first, retry] = posts("/api/monitoring-subjects").slice(-2);
+    assert.deepEqual(first.payload, retry.payload);
+    assert.equal(first.payload.configuration.selections[0].rules[0].threshold.trigger_at_or_above, "13.500001");
+    assert.equal(first.payload.configuration.selections[0].rules[0].rapid_increase.minimum_increase, "3.000001");
+    assert.equal(first.payload.configuration.selections[0].rules[1].period, "forecast_instant");
+    assert.equal(first.payload.configuration.delivery.email, "off");
+    assert.equal(Object.entries(first.headers).find(([key]) => key.toLowerCase() === "x-csrf-token")?.[1], "synthetic-pollen-csrf");
+    await button(copy.view);
+    await wait(async () => (await text()).includes("13.500001"), "Saved draft navigation failed");
+  }
+  assert.equal(created.size, 5);
+  const copy = pollenCreateCopy[locale];
+  await button(copy.create); await fill("pollen-station", "PBS");
+  dialogAccept = false; await button(copy.cancel); assert.ok(await evaluate(cdp, "!!document.querySelector('[data-pollen-create]')"));
+  dialogAccept = true; await button(copy.cancel);
+  await wait(() => evaluate(cdp, "!document.querySelector('[data-pollen-create]')"), "Confirmed discard failed");
+  await button(copy.create); await fill("pollen-station", "PBS"); await click('[name="allergen-birch"]');
+  mode = "revoked"; await button(copy.preview);
+  await wait(async () => (await text()).includes(pollenDraftCopy[locale].access), "Creation access revocation was not shown");
+  assert.equal(await evaluate(cdp, "!!document.querySelector('[data-pollen-create]')"), false);
+  assert.equal(requests.filter(r => r.path.endsWith("/start")).length, 0);
   assert.deepEqual(exceptions, []);
-  audit.finish(6);
+  audit.finish(11);
   console.log("Pollen reader: five locales, desktop/mobile, keyboard activation, exact decimals, list/history pagination, obsolete responses, revoked/default-off/missing/error/empty/anonymous/workspace isolation passed. Synthetic APIs only; no live acceptance.");
+  console.log("Pollen creation: five locales, keyboard entry, multi-allergen observation/forecast rules, invalid preview, preview invalidation, CSRF, busy guard, lost-response same-key retry, saved navigation, confirmed/cancelled discard and revoked access passed. Email off; no Start requests.");
 } catch (error) {
   console.error({ locale, mode, requests: requests.slice(-12), exceptions,
     page: cdp ? await text().catch(() => "unavailable") : null,
