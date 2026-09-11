@@ -1668,9 +1668,62 @@ class MonitoringSubjectRevision(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class MonitoringEvaluationStream(Base):
+    """Versioned internal rehearsal checkpoint; not an active monitor or outbox."""
+
+    __tablename__ = "monitoring_evaluation_streams"
+    __table_args__ = (
+        ForeignKeyConstraint(["subject_id", "organization_id"],
+                             ["monitoring_subjects.id", "monitoring_subjects.organization_id"],
+                             ondelete="CASCADE", name="fk_evaluation_stream_scope"),
+        ForeignKeyConstraint(["subject_id", "configuration_revision"],
+                             ["monitoring_subject_revisions.subject_id", "monitoring_subject_revisions.revision"],
+                             ondelete="CASCADE", name="fk_evaluation_stream_revision"),
+        UniqueConstraint("id", "organization_id", name="uq_evaluation_stream_id_org"),
+        UniqueConstraint("subject_id", "binding_hash", name="uq_evaluation_stream_binding"),
+        CheckConstraint("sequence >= 1", name="ck_evaluation_stream_sequence"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"), index=True)
+    subject_id: Mapped[str] = mapped_column(String(36), index=True)
+    configuration_revision: Mapped[int] = mapped_column(Integer)
+    binding_hash: Mapped[str] = mapped_column(String(64))
+    binding_json: Mapped[dict] = mapped_column(JSON)
+    sequence: Mapped[int] = mapped_column(Integer)
+    state_json: Mapped[dict] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class MonitoringEvaluationEntry(Base):
+    """Immutable through the repository; private evidence removed with the subject."""
+
+    __tablename__ = "monitoring_evaluation_entries"
+    __table_args__ = (
+        ForeignKeyConstraint(["stream_id", "organization_id"],
+                             ["monitoring_evaluation_streams.id", "monitoring_evaluation_streams.organization_id"],
+                             ondelete="CASCADE", name="fk_evaluation_entry_scope"),
+        UniqueConstraint("stream_id", "sequence", name="uq_evaluation_entry_sequence"),
+        UniqueConstraint("stream_id", "request_key", name="uq_evaluation_entry_request"),
+        UniqueConstraint("stream_id", "material_id", name="uq_evaluation_entry_material"),
+        CheckConstraint("sequence >= 1", name="ck_evaluation_entry_sequence"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"), index=True)
+    stream_id: Mapped[str] = mapped_column(String(36), index=True)
+    sequence: Mapped[int] = mapped_column(Integer)
+    request_key: Mapped[str] = mapped_column(String(120))
+    request_hash: Mapped[str] = mapped_column(String(64))
+    decision_json: Mapped[dict] = mapped_column(JSON)
+    request_json: Mapped[dict] = mapped_column(JSON)
+    material_id: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 # Central policy used by the session boundary. Keeping this list beside the
 # models makes a newly persisted tenant-owned record difficult to forget.
 ORGANIZATION_SCOPED_MODELS = (
+    MonitoringEvaluationStream,
+    MonitoringEvaluationEntry,
     MonitoringSubject,
     MonitoringSubjectRevision,
     InterestBriefFeedback,
