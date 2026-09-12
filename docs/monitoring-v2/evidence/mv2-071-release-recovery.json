@@ -1,0 +1,10 @@
+{
+  "decoder_default_start_and_exact_health": "passed",
+  "old_restore_failure_reproduced": true,
+  "older_snapshot_after_new_foreign_keys": "passed",
+  "repeat_restore": "passed",
+  "sql_error_preserves_database_and_documents": "passed",
+  "unrelated_schema_refused": "passed",
+  "invalid_archive_refused_before_reset": "passed",
+  "production_access": false
+}

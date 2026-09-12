@@ -1,6 +1,28 @@
-# Monitoring deployment status — 11 September 2026
+# Monitoring deployment status — 12 September 2026
 
-**The isolated Monitoring site is live. MV2-072 remains IN PROGRESS: bootstrap, backup/restore and an actual subsequent automatic release passed; remaining account/email and protected progress-page acceptance are still open. MV2-073 remains VERIFYING.**
+**OUTAGE: complete Pollen candidate `0ec41a9` passed its full API gate and builds, but failed decoder health and then database rollback. Public readiness returns Cloudflare 1033; the stored previous SHA does not establish a currently serving site. MV2-072 remains IN PROGRESS and MV2-073 remains VERIFYING.**
+
+## Recovery checkpoint — 12 September
+
+The 00:10 UTC attempt passed **2328 API tests, 12 skipped**, then failed
+`start_release` at 01:36 UTC. Docker health exec could not find `python`; the
+micromamba entrypoint's PATH does not apply to Docker health probes. Restore of
+pre-release snapshot `20260912T013436Z` then failed because the newer delivery FK
+depends on the old users primary key. Application services were already stopped.
+An automatic retry started at 01:52 UTC and was still in its API gate when the
+incident was inspected. It has not been restarted or duplicated by this task.
+
+The dedicated recovery feature corrects the interpreter path and provides
+transactional older-schema restoration. Isolated Docker reproduction, SQL-failure
+preservation and 80 affected release/deployment/backlog tests pass. All five
+members of the exact production snapshot were independently checksum-verified;
+its metadata identifies `git-6d7a5997b480c7da8fd78ec7938bf12d50c05737` and the
+database archive is 51,479,280 bytes. No production restore or restart has been
+performed manually. See [the concrete recovery boundary](POLLEN_RELEASE_RECOVERY.md).
+
+Target-branch publication of this repair is held until the partial production
+database is recovered under explicit authorization; a successful startup against
+that partial state must not become a trusted new baseline.
 
 ## Current checkpoint — 11 September
 

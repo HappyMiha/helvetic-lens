@@ -497,6 +497,8 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Status:** IN PROGRESS — first user-testing gate · **Priority:** P0 · **Owner:** Product + QA + Operations + Independent reviewer · **Size:** M
 
+**Release-recovery refinement, 2026-09-12:** The first complete candidate passed real API tests/builds but failed its decoder health probe and then rollback to an older schema; the site is unavailable. One operational repair will verify normal decoder startup and the exact health probe, transactional older-backup restoration across new foreign keys, and failure preservation. Preserve published migrations and the exact pre-failure backup; do not bypass gates or claim activation. Scope and manual recovery boundary: [POLLEN_RELEASE_RECOVERY.md](docs/monitoring-v2/POLLEN_RELEASE_RECOVERY.md).
+
 **Complete-feature checkpoint, 2026-09-12:** The entire remaining Pollen block is implemented together in one unpublished feature worktree. The [pilot runbook](docs/monitoring-v2/POLLEN_PILOT_RUNBOOK.md) and [whole-feature record](docs/monitoring-v2/POLLEN_COMPLETE_FEATURE.md) define the reviewable scenario and evidence boundaries. Independent source/category/seasonal, language, accessibility, real-user and actual release acceptance remains **HOLD**. No invitations, real email or production source/rollout activation were performed. This status records implementation and review preparation, not accepted upstream dependencies or readiness for participants.
 
 **Dependencies:** [MV2-031](#mv2-031). **Requirements:** User decision 2026-09-10 on first delivery and real users; AC-C5-01…10; AC-CORE within C5 scope; §§31–34.
