@@ -22,6 +22,11 @@ The active Monitoring backlog is the file on main. Older integration/task branch
 and host aliases are historical, not development routes. Customs/C4 remain deferred.
 Keep scoped task acceptance distinct from broader shared-contract and human pilot gates.
 
+The [Monitoring Centre](docs/monitoring-v2/MONITORING_CENTRE.md) at `/monitoring`
+provides the shared entry point for saved Pollen, River/Lake and Air monitors and
+nine honestly gated scenario choices. Its code verification and release boundary
+are recorded separately; the broader MV2-017/018 tasks remain in progress.
+
 See [deployment evidence](docs/monitoring-v2/DEPLOYMENT_STATUS.md) for exact active
 commits and selector migration. A push is not proof of a successful release.
 Preserve the [frozen MVP tag](https://github.com/HappyMiha/helvetic-lens/releases/tag/v1.0.0-hackathon-mvp)

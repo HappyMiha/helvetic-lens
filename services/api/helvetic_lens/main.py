@@ -58,6 +58,7 @@ from .models import (
     Source,
     Version,
 )
+from .monitoring_centre import centre_router
 from .monitoring_subject_api import draft_router
 from .observability import correlation_context
 from .prompt_settings import PromptSettingsInput
@@ -2146,6 +2147,7 @@ def create_app(
     app.include_router(draft_router(service, settings))
     app.include_router(river_router(service, settings))
     app.include_router(air_router(service, settings))
+    app.include_router(centre_router(service, settings))
     return app
 
 

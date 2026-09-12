@@ -189,8 +189,8 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 | [MV2-014](#mv2-014) | Shared-feed API and read projections | F1 | P0 | L | PLANNED | [MV2-004](#mv2-004), [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-013](#mv2-013) |
 | [MV2-015](#mv2-015) | Geography, station and coverage catalogue | F1 | P0 | L | PLANNED | [MV2-003](#mv2-003), [MV2-006](#mv2-006) |
 | [MV2-016](#mv2-016) | Time windows, deadlines and reminders | F1 | P0 | L | PLANNED | [MV2-007](#mv2-007), [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-012](#mv2-012) |
-| [MV2-017](#mv2-017) | Create Monitor: nine understandable templates | F2 | P1 | L | PLANNED | [MV2-002](#mv2-002), [MV2-005](#mv2-005), [MV2-010](#mv2-010), [MV2-015](#mv2-015) |
-| [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | PLANNED | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
+| [MV2-017](#mv2-017) | Create Monitor: nine understandable templates | F2 | P1 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-005](#mv2-005), [MV2-010](#mv2-010), [MV2-015](#mv2-015) |
+| [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | PLANNED | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
 | [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
 | [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | PLANNED | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
@@ -884,7 +884,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ### MV2-017 — Create Monitor: nine understandable templates
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend + UX · **Size:** L
+**Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Frontend + UX · **Size:** L
 
 **Dependencies:** [MV2-002](#mv2-002), [MV2-005](#mv2-005), [MV2-010](#mv2-010), [MV2-015](#mv2-015). **Requirements:** §§5,25,33.
 
@@ -901,13 +901,13 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** Browser journeys for creation, editing and unavailability across the nine active templates.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Execution evidence:** [Monitoring Centre scoped feature](docs/monitoring-v2/MONITORING_CENTRE.md): nine scenario choices with explicit availability, owner-private C5/C6/C7 inventory, freshness and lifecycle filters, exact links to existing settings/history and a legacy bridge. Uses existing configuration, ownership and source contracts; adds no source permission or activation route. Full parent acceptance remains open for the other domain journeys, shared business subjects and timed commute pause. Code checks, release identity and human acceptance are tracked separately in the evidence document.
 
 <a id="mv2-018"></a>
 
 ### MV2-018 — Monitoring: manage saved subjects
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend · **Size:** M
+**Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Frontend · **Size:** M
 
 **Dependencies:** [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017). **Requirements:** §§9.12,25–26.
 
@@ -924,7 +924,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** Browser persistence, real-time status updates, stale recovery and legacy-link tests.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Execution evidence:** [Monitoring Centre scoped feature](docs/monitoring-v2/MONITORING_CENTRE.md): nine scenario choices with explicit availability, owner-private C5/C6/C7 inventory, freshness and lifecycle filters, exact links to existing settings/history and a legacy bridge. Uses existing configuration, ownership and source contracts; adds no source permission or activation route. Full parent acceptance remains open for the other domain journeys, shared business subjects and timed commute pause. Code checks, release identity and human acceptance are tracked separately in the evidence document.
 
 <a id="mv2-019"></a>
 

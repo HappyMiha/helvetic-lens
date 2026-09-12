@@ -139,6 +139,59 @@ const ai = c(
 
 export const SECTION_GUIDES: SectionGuide[] = [
   {
+    id: "monitoring-centre",
+    title: "Monitoring centre",
+    purpose:
+      "Choose a supported scenario and find your private monitors in the current workspace.",
+    first: [
+      "Choose a scenario or filter saved monitors by scenario and lifecycle.",
+      "Open settings and history to use the existing preview, start, pause, resume and archive controls.",
+    ],
+    data: [
+      "Only your own Pollen, River/Lake and Air monitors are listed, including archived records.",
+      "Source freshness is separate from lifecycle. Last check is an attempt, not proof of a successful observation.",
+      "Disabled scenarios retain private configuration metadata but expose no source values or activation link.",
+    ],
+    wait: "Saved status refreshes every minute and on returning to the window. Refresh reads saved results without collecting sources.",
+    setup:
+      "Membership is required. The existing domain forms enforce management permissions, source approval and explicit activation. Other scenarios explain pending source access; customs is deferred.",
+    controls: [
+      refresh,
+      pages,
+      c(
+        "filters",
+        "Scenario / Monitor status",
+        "Filters all saved records server-side, including those beyond the current page.",
+        "Change a filter if the list is empty.",
+        "Read / navigate",
+        "[data-monitoring-centre] select",
+      ),
+      c(
+        "open-monitor",
+        "Open settings and history",
+        "Opens the exact private monitor in its original domain editor without copying it.",
+        "Use its existing controls to edit thresholds, pause, resume or archive.",
+        "Read / navigate",
+        "[data-monitor] a",
+      ),
+      c(
+        "choose-template",
+        "Choose settings",
+        "Opens the supported domain form. It does not start monitoring or grant source rights.",
+        "Unavailable scenarios have no activation link.",
+        "Read / navigate",
+        "[data-template] a",
+      ),
+      c(
+        "legacy",
+        "Topics / Watched documents",
+        "Opens the original legal monitoring sections without migrating or duplicating records.",
+        "Use for existing topics and watched legal documents.",
+        "Read / navigate",
+      ),
+    ],
+  },
+  {
     id: "air-watch",
     title: "Follow air quality at a supported station",
     purpose:
@@ -1993,6 +2046,7 @@ export const GUIDE_ROUTES: Record<string, string> = {
   "/pollen-watch": "pollen-watch",
   "/river-watch": "river-watch",
   "/air-watch": "air-watch",
+  "/monitoring": "monitoring-centre",
   "/sources": "sources",
   "/impact": "impact",
   "/topic-review": "topic-review",

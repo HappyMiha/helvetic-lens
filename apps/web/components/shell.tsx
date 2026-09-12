@@ -42,6 +42,7 @@ import { MarvinCompanion } from "./marvin-companion";
 import { NotificationCentre } from "./notification-centre";
 import { SectionHelp } from "./section-help";
 import { marvinHistoryCopy } from "@/lib/marvin-history-copy";
+import { centreCopy } from "@/lib/monitoring-centre-copy";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "./ui/dialog";
 
 type NavigationItemProps = {
@@ -434,6 +435,10 @@ export function Shell({
           </section>
           <section className="nav-section">
             <span className="nav-heading">{t("shell.monitoring")}</span>
+            <NavigationItem active={pathname === "/monitoring"} href="/monitoring">
+              <LayoutGrid size={17} />
+              {centreCopy[locale].title}
+            </NavigationItem>
             <NavigationItem
               active={pathname === "/pollen-watch"}
               href="/pollen-watch"
@@ -621,6 +626,10 @@ export function Shell({
               </NavigationItem>
               <section className="nav-section">
                 <span className="nav-heading">{t("shell.monitoring")}</span>
+                <NavigationItem active={pathname === "/monitoring"} href="/monitoring">
+                  <LayoutGrid size={17} />
+                  {centreCopy[locale].title}
+                </NavigationItem>
                 <NavigationItem
                   active={pathname === "/pollen-watch"}
                   href="/pollen-watch"

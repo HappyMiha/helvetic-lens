@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { riverCopy, riverAttribution } from "@/lib/river-copy";
@@ -762,6 +763,7 @@ function Detail({
 
 export function RiverWatch() {
   const { session } = useAuth();
+  const params = useSearchParams();
   const scope = session?.authenticated
     ? `${session.user?.id}:${session.organization?.id}:${session.role}`
     : "unavailable";
@@ -770,6 +772,7 @@ export function RiverWatch() {
       key={scope}
       allowed={scope !== "unavailable"}
       canManage={session?.role === "organization_admin"}
+      initial={params.get("monitor") || ""}
     />
   );
 }
@@ -777,19 +780,25 @@ export function RiverWatch() {
 function Reader({
   allowed,
   canManage,
+  initial,
 }: {
   allowed: boolean;
   canManage: boolean;
+  initial: string;
 }) {
   const { locale } = useI18n();
   const c = riverCopy[locale];
   const [stations, setStations] = useState<RiverStation[]>([]);
   const [monitors, setMonitors] = useState<RiverMonitor[]>([]);
-  const [selected, setSelected] = useState("");
+  const [selected, setSelected] = useState(initial);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [refresh, setRefresh] = useState(0);
+  useEffect(() => {
+    setSelected(initial);
+    setCreating(false);
+  }, [initial]);
   useEffect(() => {
     if (!allowed) return;
     const controller = new AbortController();
