@@ -8,15 +8,26 @@
 
 **Principle:** authoritative source → material change → personal relevance → evidence → user decision.
 
-## Deployment channel
+## Development and deployment
 
-This is the active backlog on `codex/HappyDucky02/monitoring-v2`, with a dedicated deployment target of **HappyDucky02 → monitoring.helveticlens.ch**. Deployment activation is IN PROGRESS under MV2-072: the isolated site is live, first bootstrap and backup/restore checks passed, and automatic-update acceptance remains pending. The main product and hackathon connectors follow **main → HappySnowman → helveticlens.ch**. Preserve the frozen MVP tag. Support and grant activity remains parked. MV2-072 establishes this separate environment; it adds no product scenario and does not change Pollen Watch priority.
+The main-branch copy of this file is the sole active Monitoring backlog. The user's
+12 September 2026 instruction replaces multi-computer, host-alias, task-branch and
+separate Monitoring integration rules: **one agent, complete features, commit and
+push main**. Both sites keep separate deployments, private data and source approvals.
+See [the development cycle](docs/DEVELOPMENT.md) and [release evidence](docs/monitoring-v2/DEPLOYMENT_STATUS.md).
 
 ## How to use this backlog
 
-**Latest delivery instruction, 2026-09-11:** Work and publish by complete user-facing features: define the end-to-end outcome and its existing acceptance criteria, implement it across as many continuations as necessary, then run feature/regression tests, fix failures, update evidence and commit/push/integrate one feature release. Backlog tasks and technical substeps track dependencies; they are not individual release boundaries. Keep unfinished work in the same feature worktree. Do not publish separate documentation/instruction commits or run full suites merely because a heartbeat ends. Necessary focused diagnostics remain allowed. Every actual commit is immediately pushed to its feature branch; the next ready feature can be developed while auto-deployment runs. Existing source, privacy, human acceptance and verified-release requirements remain mandatory.
+Define a complete user outcome and its criteria, implement across as many continuations
+as needed, then run required tests, fix failures, update English evidence, commit and
+immediately push main. Continue the next feature while existing deployment checks run;
+never duplicate or interrupt them. Preserve unfinished work in the development checkout.
+Do not publish unfinished technical substeps or mark DONE merely because code was pushed.
 
-This is the **single source of scope, priorities, dependencies and acceptance for the Monitoring v2 workstream**. Use the [project map](PROJECT_MAP.md) and [BACKLOG.md](BACKLOG.md) to select an activity and product channel. Main-product and hackathon connector tasks remain in the main channel; support activity is parked. The [main-branch snapshot](https://github.com/HappyMiha/helvetic-lens/blob/main/BACKLOG_MONITORING_V2.md) preserves the published plan but is not the active v2 queue. The [previous backlog](BACKLOG_V1_ARCHIVE.md) is preserved as history, not a parallel queue. Reuse its completed work; 35 unfinished items have explicit successors in the [legacy disposition](docs/monitoring-v2/LEGACY_DISPOSITION.md). Their outstanding detailed criteria are inherited by the responsible v2 tasks, not lost through summarization.
+This is the single source of scope, priorities, dependencies and acceptance for Monitoring.
+Support is parked; hackathon work has its own entry page in [PROJECT_MAP.md](PROJECT_MAP.md).
+The [previous backlog](BACKLOG_V1_ARCHIVE.md) is history; its outstanding obligations remain
+in the [legacy disposition](docs/monitoring-v2/LEGACY_DISPOSITION.md).
 
 Input: [Practical Use Case Specification v1.0 — English reading edition](docs/monitoring-v2/requirements/HELVETIC_LENS_PRACTICAL_USE_CASE_SPECIFICATION_v1.0_EN.md). The [original source](docs/monitoring-v2/requirements/HELVETIC_LENS_PRACTICAL_USE_CASE_SPECIFICATION_v1.0.md) is preserved byte for byte, SHA-256 `a6f4e7da87a9ae30171164512d16ce4be411f2913c22d90ed7bf7e1bc94ece4c`. The English edition preserves line positions and all original AC wording; it translates the remaining source prose without changing requirements.
 
@@ -24,7 +35,7 @@ Input: [Practical Use Case Specification v1.0 — English reading edition](docs/
 
 The source document's statements about existing capabilities have been checked against the code and are not treated as implementation evidence. The plan and architectural decisions below result from that analysis; example amounts, dates, cities, thresholds and scores in the specification have not become implicit global defaults.
 
-Before starting a task, open the active backlog on the v2 branch, read its criteria, dependencies, source gate and inherited legacy obligations; assign an implementer to the stated role and create a separate branch/worktree from that channel. Record any new defect or required refinement as an MV2 task with acceptance criteria and dependencies **in the active backlog**, then implement it. Do not take an old HL ID as a standalone new task. An L-sized task may be split only into explicit subtasks with IDs and criteria in the active backlog; preserve coverage of the parent ID.
+Before implementation, read the task criteria, dependencies, source gate and inherited legacy obligations. Record necessary refinements as explicit MV2 subtasks in this backlog, then implement on main. Preserve the full acceptance coverage of parent tasks.
 
 Statuses: **PLANNED → READY → IN PROGRESS → VERIFYING → DONE**. **BLOCKED** always identifies a specific external dependency, owner and next action. **DEFERRED** is outside v2.0. READY means that dependencies are satisfied and the necessary contracts/data are available. The first C5 delivery uses the explicitly extracted MV2-069/070 contracts without waiting for the broader parent tasks to be DONE. Code in Git, a mock, passing JSON schema validation or a written document does not mean DONE.
 
@@ -193,8 +204,8 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 | [MV2-029](#mv2-029) | C1: Home/Office locations and the complete warning workflow | F3 | P1 | L | PLANNED | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-028](#mv2-028) |
 | [MV2-030](#mv2-030) | C5: official pollen observations and forecasts | F3 | P0 | M | IN PROGRESS | [MV2-069](#mv2-069), [MV2-070](#mv2-070) |
 | [MV2-031](#mv2-031) | Pollen Watch — the first complete end-to-end scenario (C5) | F3 | P0 | L | IN PROGRESS | [MV2-070](#mv2-070), [MV2-030](#mv2-030) |
-| [MV2-032](#mv2-032) | C6: hydrological stations, metrics and official danger levels | F3 | P1 | M | PLANNED | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
-| [MV2-033](#mv2-033) | C6: River / Lake thresholds, escalation and history | F3 | P1 | M | PLANNED | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-032](#mv2-032) |
+| [MV2-032](#mv2-032) | C6: hydrological stations, metrics and official danger levels | F3 | P1 | M | VERIFYING | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
+| [MV2-033](#mv2-033) | C6: River / Lake thresholds, escalation and history | F3 | P1 | M | VERIFYING | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-032](#mv2-032) |
 | [MV2-034](#mv2-034) | C7: official air-quality series and interpretation | F3 | P1 | M | PLANNED | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
 | [MV2-035](#mv2-035) | C7: Air Quality — metrics, changes and improvements | F3 | P1 | M | PLANNED | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-034](#mv2-034) |
 | [MV2-036](#mv2-036) | Related developments from multiple sources | F4 | P1 | M | PLANNED | [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-029](#mv2-029), [MV2-033](#mv2-033), [MV2-041](#mv2-041), [MV2-071](#mv2-071) |
@@ -1186,7 +1197,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ### MV2-032 — C6: hydrological stations, metrics and official danger levels
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** Integration · **Size:** M
+**Status:** VERIFYING · **Priority:** P1 · **Owner:** Integration · **Size:** M
 
 **Dependencies:** [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071). **Requirements:** §13.3–13.5; AC-C6-01,02,05,08.
 
@@ -1203,13 +1214,14 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** Metric/datum/quality fixtures and source-contract probe; hydrology sample review.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Authorized C6 feature scope, 12 September 2026:** The user selected the next complete direction after Pollen and main-only delivery. This scoped implementation uses existing authenticated workspace boundaries, durable jobs and deterministic monitoring patterns without waiting for the broader shared parents or human Pollen pilot to finish. It does not complete those parent tasks. Deliver River / Lake station search, official FOEN live measurements and independently sourced LINDAS station danger, validated absolute/change-window rules, explicit preview/start, pause/resume/edit/archive/delete, private web developments and review, separate measurement/change histories, stale/unknown handling and bounded recovery. Source contracts and verification are recorded in docs/monitoring-v2/RIVER_LAKE_WATCH.md. External email delivery is outside this C6 slice; changes are delivered in the authenticated web reader, with no implicit email consent. Pollen remains compatible and all current source/privacy gates apply.
+**Execution evidence:** Complete C6 implementation and acceptance mapping: [River / Lake Watch](docs/monitoring-v2/RIVER_LAKE_WATCH.md). Real FOEN probe: 243 stations, current Basel W/Q and independently sourced official danger; unavailable WT remains UNKNOWN. Focused source/lifecycle/privacy/worker/retention tests, 135 affected auth/release/backlog regressions, 271 Pollen/shared-runtime/job/isolation regressions, production frontend build and seven browser accessibility checkpoints across five locales passed. The feature publishes on main; exact release activation remains pending, so this task is VERIFYING rather than DONE. Broader shared parent and human pilot acceptance are not implied.
 
 <a id="mv2-033"></a>
 
 ### MV2-033 — C6: River / Lake thresholds, escalation and history
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** M
+**Status:** VERIFYING · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** M
 
 **Dependencies:** [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-032](#mv2-032). **Requirements:** §13; AC-C6-01…10.
 
@@ -1226,7 +1238,8 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** E2E threshold/window/danger override/reversal/duplicate/missing-reading checks.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Authorized C6 feature scope, 12 September 2026:** The user selected the next complete direction after Pollen and main-only delivery. This scoped implementation uses existing authenticated workspace boundaries, durable jobs and deterministic monitoring patterns without waiting for the broader shared parents or human Pollen pilot to finish. It does not complete those parent tasks. Deliver River / Lake station search, official FOEN live measurements and independently sourced LINDAS station danger, validated absolute/change-window rules, explicit preview/start, pause/resume/edit/archive/delete, private web developments and review, separate measurement/change histories, stale/unknown handling and bounded recovery. Source contracts and verification are recorded in docs/monitoring-v2/RIVER_LAKE_WATCH.md. External email delivery is outside this C6 slice; changes are delivered in the authenticated web reader, with no implicit email consent. Pollen remains compatible and all current source/privacy gates apply.
+**Execution evidence:** Complete C6 implementation and acceptance mapping: [River / Lake Watch](docs/monitoring-v2/RIVER_LAKE_WATCH.md). Real FOEN probe: 243 stations, current Basel W/Q and independently sourced official danger; unavailable WT remains UNKNOWN. Focused source/lifecycle/privacy/worker/retention tests, 135 affected auth/release/backlog regressions, 271 Pollen/shared-runtime/job/isolation regressions, production frontend build and seven browser accessibility checkpoints across five locales passed. The feature publishes on main; exact release activation remains pending, so this task is VERIFYING rather than DONE. Broader shared parent and human pilot acceptance are not implied.
 
 <a id="mv2-034"></a>
 
@@ -2049,4 +2062,4 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 | 1.6 | 2026-09-10 | Added MV2-073 for user-requested backlog progress on the deployment page: exact latest/deployed Git snapshots, required-only completion and the Pollen Watch path. 73 tasks: 64 required and 9 deferred. Product scenarios and original task definitions remain unchanged. Updated MV2-072 evidence to SMTP verified and bootstrap IN PROGRESS; no live acceptance claimed |
 
 
-**Authorized integration, 2026-09-12 (MV2-031):** The user explicitly requested a separate Monitoring navigation group, Pollen Watch for all authenticated users, and integration of the complete Monitoring implementation into main. This supersedes the earlier prohibition on this whole-branch merge. Both sites keep their own deployments, private data, configuration and source approvals. The dedicated Monitoring branch remains the sole active backlog. The frozen MVP tag remains immutable. Further cross-channel changes still require an explicit receiving task.
+**Integration history:** MV2-031 shared Monitoring code with main on 12 September. The later single-agent instruction makes main the sole active development and backlog branch; instance isolation remains mandatory.

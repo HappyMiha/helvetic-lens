@@ -61,6 +61,7 @@ from .monitoring_subject_api import draft_router
 from .observability import correlation_context
 from .prompt_settings import PromptSettingsInput
 from .registry import RegistryFilters
+from .river_api import river_router
 from .service import HelveticLens, as_dict, get, version_summary
 
 
@@ -312,6 +313,8 @@ class RelationReprocessingInput(Input):
 
 
 def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
+    if path.startswith("/api/river-watch"):
+        return "river_watch", 30, 60
     if path.startswith("/api/monitoring-subjects"):
         return "monitoring_subjects", 60, 60
     if method not in {"POST", "PUT", "PATCH", "DELETE"}:
@@ -1937,6 +1940,13 @@ def create_app(
 
     def check_job_access(request: Request, job_id: str):
         job = service.job_detail(job_id)
+        if job["target_type"] == "river_monitor":
+            from .river_runtime import owned
+            actor = request.state.identity
+            if actor is None:
+                raise DomainError("Job not found.", 404, "not_found")
+            with service.db.session() as session:
+                owned(session, actor.user_id, job["target_id"], write=request.method != "GET")
         if job["target_type"] == "monitoring_subject":
             from .monitoring_subjects import _actor, get_subject
             actor = request.state.identity
@@ -2124,6 +2134,7 @@ def create_app(
         return service.reset_prompt_settings()
 
     app.include_router(draft_router(service, settings))
+    app.include_router(river_router(service, settings))
     return app
 
 

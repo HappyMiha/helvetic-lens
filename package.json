@@ -40,6 +40,7 @@
     "check:capabilities:browser": "node scripts/check-capability-settings-browser.mjs",
     "check:shell:browser": "node scripts/check-shell-browser.mjs",
     "check:topics:browser": "node scripts/check-topic-editor-browser.mjs",
+    "check:river:browser": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/check-river-browser.mjs",
     "check:pollen:browser": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/check-pollen-drafts-browser.mjs",
     "check:feed:browser": "node scripts/check-interest-feed-browser.mjs",
     "check:topic-reviews:browser": "node scripts/check-topic-reviews-browser.mjs",

@@ -13,7 +13,7 @@ The persisted API shape is:
     "schema_version": 1,
     "source_path": "BACKLOG_MONITORING_V2.md",
     "updated_at": "<UTC ISO timestamp>",
-    "branch": "codex/HappyDucky02/monitoring-v2",
+    "branch": "main",
     "latest": {
       "sha": "<successfully fetched full commit SHA or null>",
       "state": "available",

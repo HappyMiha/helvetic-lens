@@ -1,59 +1,43 @@
-# Helvetic Lens: working on two computers
+# Helvetic Lens development
 
-Read `docs/MULTI_PC_DEVELOPMENT.md` before Git mutations. These rules apply to
-humans and Codex tasks on both computers; nested AGENTS.md instructions still apply.
+The user's instruction of 12 September 2026 replaces the previous multi-computer,
+host-alias, task-branch and separate Monitoring integration workflow.
 
-- At task start inspect the OS, `git config --get helvetic.host`, branch, worktree,
-  status and remotes. HappyDucky02 is the Windows development PC; HappySnowman is
-  the Ubuntu production host. These are explicit aliases, not inferred usernames.
-  Configure an unconfigured clone with `sh scripts/setup-git-workflow.sh <alias>`.
-  Do not change an existing alias just to pass a hook.
-- Fetch origin before starting a new task. Use a unique branch
-  `codex/<alias>/<task-id-or-short-slug>` based on the selected product channel:
-  current `origin/main` for main-product/hackathon work, or current
-  `origin/codex/HappyDucky02/monitoring-v2` for Monitoring v2 work.
-  Concurrent tasks on the SAME PC also need different branches AND worktrees.
-  Never switch another running task's checkout or discard its uncommitted work.
-- Do not develop in the checkout serving production. On HappySnowman mark that
-  checkout using the setup script's `--production` flag and create a sibling
-  development worktree or separate clone. Development services must not reuse
-  production ports, volumes, databases, secrets, or Compose project names.
-- Commit on the task branch, test the actual changes, then push that branch.
-  Installed hooks append `Development-Host: <alias>` without changing Git authors.
-  Check other remote task branches before choosing a backlog item; branch names
-  are coordination hints, not locks. Prefer independent tasks/files.
-- Before integrating into main: fetch origin again, inspect incoming commits and
-  merge `origin/main` into the task branch if needed. Preserve both tasks' intent,
-  review the combined diff, and rerun affected tests after every integration.
-  Push only a fast-forward update containing the latest remote main, or use a PR
-  if server rules require it. A racing push rejection means fetch/merge/test again.
-  Never use force-push, force-with-lease, hard reset, blanket ours/theirs conflict
-  resolution, or bypass hooks to make a push succeed.
-- Existing user authorization for routine tested commits/pushes persists; do not
-  request confirmation again solely because there is another computer. Publishing
-  code is not permission to restart/deploy production or run database migrations.
-- Report the host alias, task branch, tests and pushed commit. A clean Git merge
-  does not prove semantic compatibility; inspect overlapping behavior explicitly.
-
-Hooks are local safeguards and must be installed per clone. They are not a server
-security boundary. Keep them enabled; do not replace unrelated existing hooks.
-
-## Workstream routing
-
-- Read `PROJECT_MAP.md` and select one workstream before work: Support & Infrastructure, Legal Hackathon 2026, or Monitoring v2. Their entry pages are in `docs/workstreams/`; `BACKLOG.md` is the routing page. These are three organizational activities with two code/deployment channels.
-- Support & Infrastructure is parked by explicit user instruction: do not start further research, applications, outreach, signup or purchases until the user activates it.
-- Main-product changes, including hackathon connectors, integrate into `main` and follow its existing automatic deployment on HappySnowman at helveticlens.ch. Preserve the frozen MVP tag without pausing that deployment or freezing `main`. No hackathon connectors are started by this organization change.
-- Monitoring v2 integrates into `codex/HappyDucky02/monitoring-v2` and deploys independently on HappyDucky02 at monitoring.helveticlens.ch. Fetch/review/test against that branch before integrating v2 tasks; cross-channel integration requires an explicit user request and receiving task, including the authorized MV2-031 integration below. Never develop in either serving checkout.
-- `BACKLOG_MONITORING_V2.md` on the dedicated Monitoring branch is the sole active implementation backlog: 73 tasks, 64 required and 9 deferred. Its copy on `main` is a published snapshot with a link to this version. Keep hackathon-only tasks and support activity out of it; record any cross-workstream reuse as an explicit receiving task.
-- The separate v2 site is live after verified bootstrap and backup/restore rehearsal. MV2-072 remains IN PROGRESS until automatic-update acceptance passes; the pinned controller upgrade succeeded and the enabled Windows task has started the first automatic update through the full quality gates. SMTP STARTTLS/authentication is verified; registration delivery remains unverified. Follow its acceptance criteria and isolate deployment, data, credentials and resources from the main-product/hackathon environment; it does not complete any Pollen Watch feature or gate.
-- Customs rates (C4), Swiss Customs, CURRENCY and MV2-026/027/061 are DEFERRED possible future scope. Do not start their discovery, licensing, implementation or acceptance work without a new explicit user scope decision recorded in the backlog; they do not block v2.0. Shared numeric rules for active cases remain required.
-- First delivery is Pollen Watch: MV2-001 → MV2-069 → MV2-070 → MV2-030 → MV2-031 → MV2-071. The explicit C5 slices are independent of parent tasks for all sources/templates; partial C5 acceptance does not complete those parents. Do not substitute mock forecast for verified official forecast or wait for full-v2 business/pilot gates to start this scoped delivery.
-- Latest user instruction, 2026-09-11: develop and publish complete user-facing features, not individual backlog tasks or technical substeps. Define the feature's end-to-end outcome and acceptance criteria, implement it in one feature worktree across as many continuations as needed, then run its required checks, fix failures, update evidence, commit/push the feature branch and integrate one reviewed fast-forward update into Monitoring for the existing auto-deploy. Do not create commits, pushes or releases merely for a small substep, documentation edit, instruction change or heartbeat boundary. Keep unfinished work and a precise local checkpoint in that feature worktree. Necessary focused diagnostics during implementation are allowed; do not repeatedly run full builds/suites after every small change. Every actual commit still gets pushed immediately. After publishing a verified feature, implement the next ready feature while the preceding deployment runs; do not duplicate or restart active checks/deployments. This supersedes the earlier task/slice publication cadence. Keep unverified acceptance IN PROGRESS/VERIFYING, and require source rights, quality gates, human acceptance and actual public release identity before DONE.
-- For v2 implementation, use an MV2 task ID and its dependencies, source-readiness gates and acceptance criteria. Add any necessary new task or explicit subtask to that backlog before implementing it; do not silently expand scope.
-- `BACKLOG_V1_ARCHIVE.md` is historical, not a parallel queue. Remaining HL acceptance is inherited through `docs/monitoring-v2/LEGACY_DISPOSITION.md`; mapping an item does not complete it.
-- Preserve the frozen `v1.0.0-hackathon-mvp` tag, legacy evidence and compatibility. Planned v2 templates or source documentation must not be presented as implemented/live coverage.
-- Update task status and requirement evidence after verification. Source-access, native-language, independent evaluation, hardware and pilot gates require their stated evidence; mocks or local static checks do not satisfy them.
-- When changing Monitoring backlog status, update both the task detail and its index row. Before committing a backlog change, run the existing `services/api/tests/test_monitoring_progress.py::test_actual_backlog_has_complete_unique_sections_and_preserves_customs_deferral` check against this worktree. Keep strict index/detail validation enabled; a mismatch must be fixed before publication.
-
-
-**Authorized integration, 2026-09-12 (MV2-031):** The user explicitly requested a separate Monitoring navigation group, Pollen Watch for all authenticated users, and integration of the complete Monitoring implementation into main. This supersedes the earlier prohibition on this whole-branch merge. Both sites keep their own deployments, private data, configuration and source approvals. The dedicated Monitoring branch remains the sole active backlog. The frozen MVP tag remains immutable. Further cross-channel changes still require an explicit receiving task.
+- Work as one agent in the development checkout on `main`. Do not create task
+  branches, parallel agents or development worktrees. Read `docs/DEVELOPMENT.md`,
+  `PROJECT_MAP.md` and the relevant backlog; nested AGENTS.md instructions apply.
+- Fetch origin, inspect status and update safely before starting. Preserve
+  unfinished changes. If upstream changes arrive, integrate deliberately, review
+  the combined behavior and repeat affected checks. Never force-push, reset away
+  work, bypass hooks or replace the frozen `v1.0.0-hackathon-mvp` tag.
+- Deliver complete user-facing features across as many continuations as needed.
+  Implement the whole outcome, run required checks, fix failures, update English
+  acceptance evidence, then commit and immediately push `main` to `origin/main`.
+  Do not publish unfinished technical substeps merely at a continuation boundary.
+- Run the exact API lint gate `ruff check services/api deploy/release_manager.py`
+  for API changes, affected tests, and relevant frontend lint/type/build checks.
+  Tests must prove behavior, privacy and failure handling, not mirror code.
+- Routine tested commits, pushes and normal automatic deployments are already
+  authorized. Continue the next ready feature while a previous deployment runs;
+  never duplicate, interrupt or restart active checks or deployment jobs.
+- Serving checkouts are deployment-managed: never develop there. The two sites
+  can consume the same main branch while keeping separate Compose projects,
+  databases, volumes, credentials, source approvals and public release identity.
+  Read-only Python diagnostics near serving code must use `-B` or
+  `PYTHONDONTWRITEBYTECODE=1` to preserve immutable release directories.
+- Keep local Git safeguards enabled and preserve unrelated hooks. Historical
+  remote branches, worktrees and deployment evidence are not active workflow;
+  do not mass-delete them or disturb another existing checkout.
+- `BACKLOG_MONITORING_V2.md` on main is the sole active Monitoring backlog.
+  Before implementing a direction, record its MV2 scope, dependencies, source
+  readiness and acceptance criteria. A scoped shared-contract implementation
+  does not complete its broader parent task. The user has authorized the next
+  complete direction after Pollen while outstanding pilot/release gates continue.
+- Keep private ownership, membership, consent, source rights, quality and review
+  gates. Never invent source coverage or interpret unavailable data as safe.
+  DONE requires all stated evidence; unverified release or human acceptance stays
+  IN PROGRESS/VERIFYING. Report pushed code separately from verified activation.
+- Update both backlog index and task detail. Before publishing backlog edits,
+  run `services/api/tests/test_monitoring_progress.py::test_actual_backlog_has_complete_unique_sections_and_preserves_customs_deferral`.
+- Support/grants remain parked. Customs/C4 and MV2-026/027/061 remain DEFERRED.
+  Preserve legacy obligations, historical evidence and the frozen MVP tag.

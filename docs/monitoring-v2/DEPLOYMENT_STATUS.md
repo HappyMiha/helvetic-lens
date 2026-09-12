@@ -1,19 +1,30 @@
 # Monitoring deployment status — 12 September 2026
 
-## Current verified checkpoint — 12 September, 08:18 UTC
+## Current checkpoint — 12 September, 12:00 UTC
 
-The earlier outage below is historical and resolved. Public readiness currently
-serves git-c5a91550d5b57daedd102b099393730fadbae69c. The controller records successful
-activation at 04:30:50 UTC following the explicitly authorized recovery.
-Pollen has four approved source channels and a user-started Basel monitor.
+Both sites independently report ready on commit **14a496c12913f36cf125f0f2eef859c2dc28312b**:
+Monitoring exposes the full release identity; main exposes `git-14a496c12913`.
+Monitoring's normal automatic release completed successfully at 11:04:07 UTC, after
+its full quality gates. The scheduler is idle. The earlier Pollen outage and pending
+wildcard activation notes below are historical. Existing private Basel data and
+email consent remain unchanged.
 
-The user has now authorized all-user navigation/access and the complete Monitoring
-integration into main. See [implementation and activation boundaries](POLLEN_GENERAL_AVAILABILITY.md).
-The public workspace grant is staged for the next normal deployment; it is not yet
-effective on c5a9155. Do not restart an active deployment or claim new release
-acceptance from a push. Main readiness is available but its current response does
-not identify an immutable release.
+The user has now explicitly retired multi-computer/task-branch development: one agent,
+complete features, and publication only to **main**. See [the current workflow](../DEVELOPMENT.md).
+The River / Lake feature and tested controller/installer update consume main while
+preserving independent Compose projects, source approvals, credentials and data.
 
+At this recorded pre-publication checkpoint, the installed Monitoring selector still
+watches the historical branch and the pinned controller is `dc93efc`. The operational
+cutover must follow the tested installer: publish the reviewed commit on main, fetch it
+into the deployment-managed source repository, stage a main selector preserving all
+other fields, validate it, and install the exact controller under the existing lock.
+Never interrupt an active release or edit immutable application source. Preserve the
+old selector as rollback evidence. A successful push alone does not prove River activation.
+
+River acceptance and source proof: [River / Lake Watch](RIVER_LAKE_WATCH.md).
+MV2-032/033 are VERIFYING until the exact release is observed. This checkpoint does not
+claim a completed human pilot or whole-v2 acceptance.
 ## Historical outage checkpoint
 
 **OUTAGE: complete Pollen candidate `0ec41a9` passed its full API gate and builds, but failed decoder health and then database rollback. Public readiness returns Cloudflare 1033; the stored previous SHA does not establish a currently serving site. MV2-072 remains IN PROGRESS and MV2-073 remains VERIFYING.**

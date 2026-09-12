@@ -137,8 +137,8 @@ def load_config(path: Path) -> dict[str, Any]:
     for name in ("instance", "compose_project", "docker_context"):
         if not re.fullmatch(r"[a-z0-9][a-z0-9_-]{1,62}", value[name]):
             raise ValueError(f"Invalid deployment selector: {name}.")
-    if value["compose_project"] == "helvetic-lens" or value["branch"] == "main":
-        raise ValueError("An independent instance cannot target the main project or main branch.")
+    if value["compose_project"] == "helvetic-lens":
+        raise ValueError("An independent instance cannot target the main Compose project.")
     branch = value["branch"]
     if (not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]*", branch)
             or any(part in branch for part in ("..", "//"))

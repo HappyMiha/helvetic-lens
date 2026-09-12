@@ -71,7 +71,7 @@ function Get-MonitoringInstallPlan {
         }
     }
     if (($config.version -isnot [int] -and $config.version -isnot [long]) -or $config.version -ne 1 -or $config.instance -cne 'monitoring-v2' -or
-        $config.branch -cne 'codex/HappyDucky02/monitoring-v2' -or
+        $config.branch -cne 'main' -or
         $config.compose_project -cne 'helvetic-lens-v2' -or $config.docker_context -cne 'desktop-linux' -or
         $config.expected_repository -cne 'https://github.com/HappyMiha/helvetic-lens.git' -or
         $config.public_url -cne 'https://monitoring.helveticlens.ch' -or

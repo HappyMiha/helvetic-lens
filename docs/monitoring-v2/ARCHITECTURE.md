@@ -1,5 +1,7 @@
 # Monitoring v2 — product and architecture decisions
 
+**Development policy update, 12 September 2026:** One agent develops complete features on main and pushes origin/main. Both application instances keep isolated deployments, private data and source approvals. Any earlier separate-branch routing below is historical. See [the current development workflow](../DEVELOPMENT.md).
+
 **Date:** 2026-09-10. **Status:** target architecture for implementation through the [single backlog](../../BACKLOG_MONITORING_V2.md). This document does not deliver v2 code. Baseline: `7109a28`; MVP snapshot: [v1.0.0-hackathon-mvp](https://github.com/HappyMiha/helvetic-lens/releases/tag/v1.0.0-hackathon-mvp).
 
 **Product scope, unchanged in plan v1.6:** nine active scenarios C1/C2/C3/C5/C6/C7/B2/B7/B8. C4 is a possible future implementation following the user's decision of 2026-09-10; CURRENCY, Swiss Customs and customs-specific contracts are not being implemented now. Active scenarios require the generic kernel.

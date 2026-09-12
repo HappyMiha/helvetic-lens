@@ -1,7 +1,7 @@
 {
   "version": 1,
   "instance": "monitoring-v2",
-  "branch": "codex/HappyDucky02/monitoring-v2",
+  "branch": "main",
   "compose_project": "helvetic-lens-v2",
   "docker_context": "desktop-linux",
   "base_dir": "C:/Users/HappyDucky02/Documents/Codex/helvetic-lens-monitoring",

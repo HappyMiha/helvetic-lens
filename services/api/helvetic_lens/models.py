@@ -29,6 +29,7 @@ from .monitoring_live_models import (
     MonitoringReview,
     MonitoringRuntime,
 )
+from .river_models import RiverChange, RiverMonitor, RiverRevision
 
 
 def new_id() -> str:
@@ -1730,6 +1731,9 @@ class MonitoringEvaluationEntry(Base):
 # Central policy used by the session boundary. Keeping this list beside the
 # models makes a newly persisted tenant-owned record difficult to forget.
 ORGANIZATION_SCOPED_MODELS = (
+    RiverMonitor,
+    RiverRevision,
+    RiverChange,
     MonitoringCommand,
     MonitoringDelivery,
     MonitoringLiveEntry,

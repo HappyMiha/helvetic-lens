@@ -1,7 +1,7 @@
-# Monitoring v2 deployment on HappyDucky02
+# Isolated Monitoring deployment from main
 
 This runbook implements MV2-072. The Monitoring application follows
-`codex/HappyDucky02/monitoring-v2` and serves `https://monitoring.helveticlens.ch`.
+`main` and serves `https://monitoring.helveticlens.ch`.
 The main product and hackathon channel remains `main` on HappySnowman at
 `https://helveticlens.ch`. Keep the frozen `v1.0.0-hackathon-mvp` tag unchanged.
 An installed environment does not complete Pollen Watch or establish high availability.
@@ -9,7 +9,7 @@ An installed environment does not complete Pollen Watch or establish high availa
 ## Persistent instance layout
 
 Use `C:\Users\HappyDucky02\Documents\Codex\helvetic-lens-monitoring` as the durable
-instance root, outside development worktrees. The example configuration is
+instance root, outside the development checkout. The example configuration is
 [monitoring-instance.example.json](../deploy/monitoring-instance.example.json).
 Copy it to `<root>\monitoring-instance.json` and review the absolute paths.
 This file contains routing and resource configuration, never credentials.
@@ -34,9 +34,9 @@ shared deployment resources.
 
 ## Before installation
 
-1. Review and publish the controller commit on the dedicated Monitoring branch.
+1. Review and publish the controller commit on main.
    Clone/fetch the trusted repository into `source`. The installer checks the exact
-   commit against the fetched `origin/codex/HappyDucky02/monitoring-v2`; it never
+   commit against the fetched `origin/main`; it never
    fetches or trusts a moving branch as the controller revision.
 2. Select an existing native Windows Python 3.11+ executable by absolute path.
    Keep that interpreter installed for the life of the scheduled task. Do not use

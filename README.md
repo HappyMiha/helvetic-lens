@@ -15,7 +15,7 @@ The MVP must be a functional product with a narrow scope. Sources are configured
 
 > **Public-beta direction:** Local AI is the clean-install default; cloud providers are explicit optional adapters. The target remains one physical i7/32 GB/two-GTX-1080 server and one Compose deployment. Durable jobs, managed quantized models, account sessions, enforced organization roles, the normalized regulatory corpus, time-grouped registry, bounded official-source connectors, scheduled synchronization, cited fixed-budget analysis, and the organization impact inbox are implemented. The five-language UI and executable localization checks are implemented; native-language review, target-hardware acceptance, production operations rehearsal, and independent usefulness evaluation remain open. See the [architecture decision](docs/ARCHITECTURE.md), [current product review](docs/PRODUCT_REVIEW_2026-09-04.md), and acceptance gates in [BACKLOG.md](BACKLOG.md).
 
-**Project organization:** the [project map](PROJECT_MAP.md) separates three activities into two product channels. [Main-product and hackathon connector work](docs/workstreams/HACKATHON_2026.md) goes to **`main` → HappySnowman → helveticlens.ch**, through its existing automatic deployment. [Monitoring v2](docs/workstreams/MONITORING_V2.md) goes to **`codex/HappyDucky02/monitoring-v2` → HappyDucky02 → monitoring.helveticlens.ch**, with an independent deployment and data. Its [active backlog](https://github.com/HappyMiha/helvetic-lens/blob/codex/HappyDucky02/monitoring-v2/BACKLOG_MONITORING_V2.md) keeps Pollen Watch first and customs rates deferred; the [main-branch copy](https://github.com/HappyMiha/helvetic-lens/blob/main/BACKLOG_MONITORING_V2.md) is a planning snapshot. Pollen Watch is implemented and deployed on the isolated Monitoring site; broader acceptance and source availability remain evidence-gated. The authorized MV2-031 integration shares the implementation with main, without sharing private configuration or data. [Support & Infrastructure](docs/workstreams/SUPPORT.md) is parked until explicitly started. The [frozen Hackathon MVP](https://github.com/HappyMiha/helvetic-lens/releases/tag/v1.0.0-hackathon-mvp) remains the shared release reference while `main` continues to evolve. [BACKLOG.md](BACKLOG.md) routes work to the selected stream; the original backlog remains [history](BACKLOG_V1_ARCHIVE.md).
+**Project organization:** One agent develops complete features on **main**, following [the development workflow](docs/DEVELOPMENT.md). The [project map](PROJECT_MAP.md) links the [active Monitoring backlog](BACKLOG_MONITORING_V2.md), hackathon preparation and parked support activity. Both sites retain isolated deployments, private data and source approvals. Preserve the frozen MVP tag; customs/C4 remain deferred.
 Organization interests use explicit, revisioned [monitoring topics](docs/MONITORING_TOPICS.md) with a manual path, optional local-AI draft, and deterministic preview before activation.
 
 ## Run locally
@@ -265,7 +265,7 @@ Fedlex / Parliament / Federal Supreme Court / Federal Criminal Court
 
 ## Build order
 
-The following checklist records the historical MVP/public-beta baseline, not the current execution order. All further work follows [Monitoring v2](https://github.com/HappyMiha/helvetic-lens/blob/codex/HappyDucky02/monitoring-v2/BACKLOG_MONITORING_V2.md); unfinished HL obligations are carried through its [legacy mapping](docs/monitoring-v2/LEGACY_DISPOSITION.md).
+The following checklist records the historical MVP/public-beta baseline, not the current execution order. All further work follows [Monitoring v2](https://github.com/HappyMiha/helvetic-lens/blob/main/BACKLOG_MONITORING_V2.md); unfinished HL obligations are carried through its [legacy mapping](docs/monitoring-v2/LEGACY_DISPOSITION.md).
 
 - [x] Implement persistent source and law management, including direct document URLs.
 - [x] Add real HTML/PDF fetching, extraction previews, and bounded document discovery.
@@ -286,7 +286,7 @@ The following checklist records the historical MVP/public-beta baseline, not the
 
 ## Definition of done
 
-These are retained baseline requirements. Monitoring v2 adds the complete acceptance contract in [BACKLOG_MONITORING_V2.md](https://github.com/HappyMiha/helvetic-lens/blob/codex/HappyDucky02/monitoring-v2/BACKLOG_MONITORING_V2.md).
+These are retained baseline requirements. Monitoring v2 adds the complete acceptance contract in [BACKLOG_MONITORING_V2.md](https://github.com/HappyMiha/helvetic-lens/blob/main/BACKLOG_MONITORING_V2.md).
 
 - A user can connect a supported website, discover documents, and track a law without editing code. Direct HTML/PDF law URLs also work independently of discovery.
 - Sources, tracked laws, version history, and scan results survive an application restart.
@@ -302,7 +302,7 @@ Public-beta acceptance additionally requires local-only clean-install behavior, 
 
 ## Product boundaries
 
-These boundaries describe the existing MVP/public-beta baseline. The planned v2 scope, including source-specific access gates for business documents, is defined only in [BACKLOG_MONITORING_V2.md](https://github.com/HappyMiha/helvetic-lens/blob/codex/HappyDucky02/monitoring-v2/BACKLOG_MONITORING_V2.md).
+These boundaries describe the existing MVP/public-beta baseline. The planned v2 scope, including source-specific access gates for business documents, is defined only in [BACKLOG_MONITORING_V2.md](https://github.com/HappyMiha/helvetic-lens/blob/main/BACKLOG_MONITORING_V2.md).
 
 - The application already supports multiple isolated organizations, shared monitoring within each organization, and personal account state. Its loopback development Compose file is not a public deployment; the production configuration still requires the target-host and human-review acceptance gates.
 - Two organization roles and a separate platform administrator are implemented. Enterprise SSO, SCIM, arbitrary custom roles, and compliance certification are outside this release.
@@ -310,15 +310,10 @@ These boundaries describe the existing MVP/public-beta baseline. The planned v2 
 - It stores an evidence-backed relation graph as a data model, but a visual graph and pgvector wait for measured value.
 - Kubernetes, multi-host workers, database/broker high availability, OCR, login-gated ingestion, model training/fine-tuning, and automatic legal decisions remain outside the public-beta release.
 
-All current task definitions, dependencies, acceptance gates, and explicitly deferred work live in [BACKLOG_MONITORING_V2.md](https://github.com/HappyMiha/helvetic-lens/blob/codex/HappyDucky02/monitoring-v2/BACKLOG_MONITORING_V2.md).
+All current task definitions, dependencies, acceptance gates, and explicitly deferred work live in [BACKLOG_MONITORING_V2.md](https://github.com/HappyMiha/helvetic-lens/blob/main/BACKLOG_MONITORING_V2.md).
 
-## Development on HappyDucky02 and HappySnowman
+## Development workflow
 
-Use one `codex/<host-alias>/<task>` branch and worktree per concurrent task. Install
-the shared Git hooks once per clone to record the development host and reject
-unsafe history updates. Fetch, merge and retest other changes before updating
-`main`; never develop inside the checkout serving production. See
-[the two-computer workflow](docs/MULTI_PC_DEVELOPMENT.md) and [agent instructions](AGENTS.md).
-
-
-**Authorized integration, 2026-09-12 (MV2-031):** The user explicitly requested a separate Monitoring navigation group, Pollen Watch for all authenticated users, and integration of the complete Monitoring implementation into main. This supersedes the earlier prohibition on this whole-branch merge. Both sites keep their own deployments, private data, configuration and source approvals. The dedicated Monitoring branch remains the sole active backlog. The frozen MVP tag remains immutable. Further cross-channel changes still require an explicit receiving task.
+One agent develops complete features on main, tests the outcome and pushes origin/main.
+Install the main-only safeguards with `sh scripts/setup-git-workflow.sh`.
+See [the development workflow](docs/DEVELOPMENT.md) and [agent instructions](AGENTS.md).

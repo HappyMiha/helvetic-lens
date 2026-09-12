@@ -55,6 +55,14 @@ celery_app.conf.update(
             "task": "helvetic_lens.schedule_pollen_monitoring",
             "schedule": 60.0,
         },
+        "schedule-river-monitoring": {
+            "task": "helvetic_lens.schedule_river_monitoring",
+            "schedule": 60.0,
+        },
+        "cleanup-river-measurements": {
+            "task": "helvetic_lens.cleanup_river_measurements",
+            "schedule": 86400.0,
+        },
     },
 )
 
@@ -119,6 +127,26 @@ def schedule_pollen_monitoring():
     database = Database(settings)
     try:
         return {"refresh": enqueue_due(database, settings), "delivery": enqueue_mail(database, settings), "retention": cleanup(database, settings)}
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.schedule_river_monitoring")
+def schedule_river_monitoring():
+    from .river_jobs import enqueue_due
+    database = Database(settings)
+    try:
+        return enqueue_due(database, settings)
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.cleanup_river_measurements")
+def cleanup_river_measurements():
+    from .river_sources import cleanup
+    database = Database(settings)
+    try:
+        return cleanup(database)
     finally:
         database.engine.dispose()
 

@@ -21,7 +21,7 @@ Organizer-listed tools do not by themselves establish API access, quotas, datase
 
 ## Boundaries
 
-- Preserve [v1.0.0-hackathon-mvp](https://github.com/HappyMiha/helvetic-lens/releases/tag/v1.0.0-hackathon-mvp); start task branches/worktrees from current `origin/main`, verify changes and integrate them into `main`. Keep its existing automatic deployment active.
+- Preserve [v1.0.0-hackathon-mvp](https://github.com/HappyMiha/helvetic-lens/releases/tag/v1.0.0-hackathon-mvp); develop on current main with one agent, verify complete features and push origin/main. Keep its existing automatic deployment active.
 - Do not make the hackathon demo depend on Pollen Watch or the Monitoring v2 environment.
 - Do not add hackathon-only tasks to the Monitoring v2 backlog. If a result is useful for v2, add an explicit receiving task there and verify the integration.
 - Record the hackathon connector queue here when implementation is selected, with scope, resource contracts and acceptance criteria before coding. It belongs to the main-product channel and does not become a second Monitoring v2 backlog.

@@ -12,6 +12,7 @@ import {
   FileSearch,
   FileText,
   Flower2,
+  Waves,
   Globe2,
   History,
   Inbox,
@@ -433,9 +434,19 @@ export function Shell({
           </section>
           <section className="nav-section">
             <span className="nav-heading">{t("shell.monitoring")}</span>
-            <NavigationItem active={pathname === "/pollen-watch"} href="/pollen-watch">
+            <NavigationItem
+              active={pathname === "/pollen-watch"}
+              href="/pollen-watch"
+            >
               <Flower2 size={17} />
               {t("nav.pollenWatch")}
+            </NavigationItem>{" "}
+            <NavigationItem
+              active={pathname === "/river-watch"}
+              href="/river-watch"
+            >
+              <Waves size={17} />
+              {t("nav.riverWatch")}
             </NavigationItem>
           </section>
           <section className="nav-section">
@@ -603,9 +614,19 @@ export function Shell({
               </NavigationItem>
               <section className="nav-section">
                 <span className="nav-heading">{t("shell.monitoring")}</span>
-                <NavigationItem active={pathname === "/pollen-watch"} href="/pollen-watch">
+                <NavigationItem
+                  active={pathname === "/pollen-watch"}
+                  href="/pollen-watch"
+                >
                   <Flower2 size={15} />
                   {t("nav.pollenWatch")}
+                </NavigationItem>{" "}
+                <NavigationItem
+                  active={pathname === "/river-watch"}
+                  href="/river-watch"
+                >
+                  <Waves size={17} />
+                  {t("nav.riverWatch")}
                 </NavigationItem>
               </section>
               <span className="nav-heading">

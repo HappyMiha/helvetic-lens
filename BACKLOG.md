@@ -1,18 +1,13 @@
-# Helvetic Lens — choose a workstream
+# Helvetic Lens workstreams
 
-Start with **[PROJECT_MAP.md](PROJECT_MAP.md)**. Three organizational activities use two product channels: `main` for the main product and hackathon connectors, and `codex/HappyDucky02/monitoring-v2` for Monitoring v2. The frozen MVP tag remains a reference while both channels can evolve independently.
+Start with [PROJECT_MAP.md](PROJECT_MAP.md) and [the single-agent main workflow](docs/DEVELOPMENT.md).
 
-| Workstream | Entry point | Status |
+| Activity | Entry point | State |
 |---|---|---|
-| Support & Infrastructure | [Open support](docs/workstreams/SUPPORT.md) | Parked — wait for the user's explicit start |
-| Legal Hackathon — 23 September 2026 | [Open main-product hackathon preparation](docs/workstreams/HACKATHON_2026.md) | Changes go to `main` → HappySnowman → helveticlens.ch; connector implementation not started |
-| Helvetic Lens Monitoring v2 | [Open Monitoring v2](docs/workstreams/MONITORING_V2.md) | Dedicated v2 branch → HappyDucky02 → monitoring.helveticlens.ch; deployment setup in progress, not yet verified live |
+| Monitoring v2 | [Active backlog on main](BACKLOG_MONITORING_V2.md) | Complete feature delivery; Pollen followed by River / Lake Watch |
+| Legal Hackathon 2026 | [Preparation](docs/workstreams/HACKATHON_2026.md) | Main product |
+| Support and infrastructure | [Support](docs/workstreams/SUPPORT.md) | Parked |
 
-**Monitoring v2 implementation:** use the [active backlog on the dedicated v2 branch](https://github.com/HappyMiha/helvetic-lens/blob/codex/HappyDucky02/monitoring-v2/BACKLOG_MONITORING_V2.md), with Pollen Watch first and customs rates deferred. The [main-branch snapshot](https://github.com/HappyMiha/helvetic-lens/blob/main/BACKLOG_MONITORING_V2.md) preserves the published plan and is not the active implementation queue.
-
-[Frozen MVP release](https://github.com/HappyMiha/helvetic-lens/releases/tag/v1.0.0-hackathon-mvp) · [Historical v1 backlog](BACKLOG_V1_ARCHIVE.md) · [Outstanding legacy obligations](docs/monitoring-v2/LEGACY_DISPOSITION.md).
-
-The historical backlog is not a parallel queue. Record work in its selected workstream before implementation; do not mix support activity, hackathon integrations and Monitoring v2 features.
-
-
-**Authorized integration, 2026-09-12 (MV2-031):** The user explicitly requested a separate Monitoring navigation group, Pollen Watch for all authenticated users, and integration of the complete Monitoring implementation into main. This supersedes the earlier prohibition on this whole-branch merge. Both sites keep their own deployments, private data, configuration and source approvals. The dedicated Monitoring branch remains the sole active backlog. The frozen MVP tag remains immutable. Further cross-channel changes still require an explicit receiving task.
+All code is committed and pushed to main by one agent. Both sites retain isolated
+deployments and data. Customs/C4 remain deferred. [Historical v1 work](BACKLOG_V1_ARCHIVE.md)
+and the frozen MVP tag remain evidence, not a parallel active queue.

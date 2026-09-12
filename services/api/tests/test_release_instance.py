@@ -13,7 +13,7 @@ from test_release_manager import ROOT, release_manager
 @pytest.fixture
 def instance(tmp_path):
     configuration = {
-        "version": 1, "instance": "monitoring-v2", "branch": "codex/HappyDucky02/monitoring-v2",
+        "version": 1, "instance": "monitoring-v2", "branch": "main",
         "compose_project": "helvetic-lens-v2", "docker_context": "desktop-linux",
         "base_dir": str(tmp_path), "expected_repository": "https://github.com/HappyMiha/helvetic-lens.git",
         "public_url": "https://monitoring.helveticlens.ch", "self_update": False,
@@ -57,7 +57,7 @@ def test_config_roundtrip_ignores_ambient_main_selectors(instance, monkeypatch):
 
 @pytest.mark.parametrize("field,value", [
     ("PASSWORD", "secret"), ("version", True), ("self_update", True),
-    ("compose_project", "helvetic-lens"), ("branch", "main"), ("branch", "--upload-pack=evil"),
+    ("compose_project", "helvetic-lens"), ("branch", "--upload-pack=evil"),
     ("branch", "topic/../main"), ("public_url", "https://user:pass@monitoring.helveticlens.ch"),
     ("public_url", "https://monitoring.helveticlens.ch/other"), ("qa_user", "0:0"),
     ("api_test_timeout_seconds", 0), ("qa_memory", "unlimited"), ("source_repo", "relative"),

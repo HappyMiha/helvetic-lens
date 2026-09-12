@@ -2994,6 +2994,13 @@ class HelveticLens:
         with self.db.session() as session:
             statement = select(Job)
             from .models import MonitoringSubject
+            from .river_models import RiverMonitor
+            if monitoring_owner_id is None:
+                statement = statement.where(Job.target_type != "river_monitor")
+            else:
+                statement = statement.where(or_(Job.target_type != "river_monitor", Job.target_id.in_(
+                    select(RiverMonitor.id).where(RiverMonitor.owner_user_id == monitoring_owner_id,
+                                                 RiverMonitor.organization_id == self.organization_id))))
             if monitoring_owner_id is None:
                 statement = statement.where(Job.target_type != "monitoring_subject")
             else:
@@ -4038,6 +4045,17 @@ class HelveticLens:
                 result_type = "relation_impact_analysis"
                 result_id = result_json["id"]
                 result_url = f"/impact?candidate={target_id}"
+            elif job_type == "river_refresh":
+                from .river_jobs import refresh as refresh_river
+                def river_checkpoint():
+                    with self.db.session() as heartbeat_session:
+                        active = durable_jobs.heartbeat(heartbeat_session, job_id, worker)
+                        heartbeat_session.commit()
+                    if not active:
+                        raise durable_jobs.JobCancelled()
+                result_json = await asyncio.to_thread(refresh_river, self.db, self.settings,
+                    monitor_id=target_id, version=payload.get("version"), checkpoint=river_checkpoint)
+                result_type, result_id, result_url = "river_monitor", target_id, "/river-watch"
             elif job_type == "pollen_email":
                 from .pollen_delivery import deliver
                 result_json = await asyncio.to_thread(deliver, self.db, self.settings,

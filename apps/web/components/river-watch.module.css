@@ -1,0 +1,157 @@
+.root {
+  padding: clamp(16px, 3vw, 40px);
+  max-width: 1500px;
+  margin: auto;
+}
+.root h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+.root h2 {
+  font-size: 1.2rem;
+  font-weight: 650;
+  margin-bottom: 12px;
+}
+.root h3 {
+  font-weight: 600;
+  margin: 8px 0;
+}
+.root p,
+.root footer {
+  margin: 12px 0;
+  line-height: 1.6;
+}
+.root button {
+  border: 1px solid #738595;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: transparent;
+  text-align: left;
+}
+.root button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.root button:focus-visible,
+.root input:focus-visible,
+.root select:focus-visible {
+  outline: 3px solid #328cc1;
+  outline-offset: 2px;
+}
+.root button[aria-pressed="true"] {
+  border-color: #147bae;
+  box-shadow: inset 3px 0 #147bae;
+}
+.root a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.root label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 10px 0;
+}
+.root input:not([type="checkbox"]),
+.root select {
+  border: 1px solid #738595;
+  border-radius: 6px;
+  padding: 9px;
+  background: transparent;
+  color: inherit;
+  max-width: 100%;
+  min-width: 0;
+}
+.root select option {
+  color: #172b39;
+  background: #fff;
+}
+.root fieldset {
+  border: 1px solid #738595;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 14px 0;
+}
+.root .check {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+.layout {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 22px;
+  margin-top: 22px;
+}
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-self: start;
+}
+.list span {
+  display: block;
+  font-size: 0.85rem;
+  margin-top: 5px;
+}
+.card {
+  border: 1px solid #73859566;
+  border-radius: 12px;
+  padding: 20px;
+  min-width: 0;
+}
+.detail {
+  display: grid;
+  gap: 18px;
+}
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+.coverage {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+.sample {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.9rem;
+  padding: 10px 0;
+  overflow-wrap: anywhere;
+}
+.samples {
+  max-height: 550px;
+  overflow-y: auto;
+}
+.samples .sample,
+.event {
+  border-bottom: 1px solid #73859555;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+}
+.rule {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+}
+.rule label {
+  flex: 1 1 140px;
+}
+@media (max-width: 800px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .list {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .card {
+    padding: 14px;
+  }
+}

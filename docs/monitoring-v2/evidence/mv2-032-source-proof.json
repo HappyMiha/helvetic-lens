@@ -1,0 +1,69 @@
+{
+  "checked_at": "2026-09-12T11:46:41.510022+00:00",
+  "outcomes": {
+    "catalog": "updated",
+    "2289": "updated",
+    "danger": "updated"
+  },
+  "stations": 243,
+  "basel": [
+    {
+      "id": "2289",
+      "name": "Basel, Rheinhalle",
+      "waterbody": "Rhein",
+      "latitude": 47.559679022773985,
+      "longitude": 7.616517921080331,
+      "source_url": "https://www.hydrodaten.admin.ch/de/seen-und-fluesse/stationen/2289"
+    }
+  ],
+  "measurement_count": 1059,
+  "latest_basel": {
+    "Q": {
+      "station_id": "2289",
+      "metric": "Q",
+      "timestamp": "2026-09-12T11:30:00+00:00",
+      "value": "403.426",
+      "unit": "m3/s",
+      "source_unit": "m3/s",
+      "datum": null,
+      "aggregation": "live_observation",
+      "quality": "provisional",
+      "release_status": 0,
+      "source_url": "https://data.bafu.admin.ch/dataproduct-water-observations",
+      "source": "FOEN live hydrological observations",
+      "response_sha256": "05be2915a9843265ff0c04d21ed4f9cecfc6e83ab882a636062752ec4089477c",
+      "fetched_at": "2026-09-12T11:46:36.575864+00:00"
+    },
+    "W": {
+      "station_id": "2289",
+      "metric": "W",
+      "timestamp": "2026-09-12T11:30:00+00:00",
+      "value": "244.866",
+      "unit": "m",
+      "source_unit": "m ü.M.",
+      "datum": "FOEN:2289:m ü.M.",
+      "aggregation": "live_observation",
+      "quality": "provisional",
+      "release_status": 0,
+      "source_url": "https://data.bafu.admin.ch/dataproduct-water-observations",
+      "source": "FOEN live hydrological observations",
+      "response_sha256": "05be2915a9843265ff0c04d21ed4f9cecfc6e83ab882a636062752ec4089477c",
+      "fetched_at": "2026-09-12T11:46:36.575864+00:00"
+    },
+    "danger": {
+      "station_id": "2289",
+      "metric": "danger",
+      "timestamp": "2026-09-12T11:30:00+00:00",
+      "value": "1",
+      "unit": "official_level",
+      "source_unit": "official_level",
+      "datum": null,
+      "aggregation": "official_station_state",
+      "quality": "provisional",
+      "source_url": "https://www.bafu.admin.ch/de/aktuelle-hydrologische-daten-beziehen",
+      "source": "FOEN LINDAS station danger",
+      "response_sha256": "059393cb8445e3fe768ea2ae86c2c10a4d976758ff12ff3ccbb325cdb74d427d",
+      "fetched_at": "2026-09-12T11:46:41.057636+00:00"
+    }
+  }
+}

@@ -1,42 +1,24 @@
-# Helvetic Lens — project map
+# Helvetic Lens project map
 
-**Start here when choosing what to work on.** Helvetic Lens has three organizational activities and **two code and deployment channels**. The frozen MVP remains a release reference; the main product continues to evolve.
+One agent develops complete features on **main**, following [the development cycle](docs/DEVELOPMENT.md).
+Both sites consume that code while their deployments and private data remain isolated.
 
-## Two product channels
+| Activity | Queue | State |
+|---|---|---|
+| Monitoring v2 | [Active backlog](BACKLOG_MONITORING_V2.md) | Pollen implemented; next complete direction: River / Lake Watch |
+| Legal Hackathon 2026 | [Hackathon](docs/workstreams/HACKATHON_2026.md) | Main product; preserve the frozen MVP reference |
+| Support and infrastructure | [Support](docs/workstreams/SUPPORT.md) | Parked pending the user's explicit start |
 
-| Product | Integration branch | Deployment host | Website | Update route |
-|---|---|---|---|---|
-| **Main product, including hackathon connectors** | `main` | **HappySnowman** | **helveticlens.ch** | Existing automatic deployment from `main` |
-| **Monitoring v2** | `codex/HappyDucky02/monitoring-v2` | **HappyDucky02** | **monitoring.helveticlens.ch** | Isolated site live; see DEPLOYMENT_STATUS.md for exact activation evidence |
+| Instance | Code | Website |
+|---|---|---|
+| Main product | main | helveticlens.ch |
+| Monitoring v2 | main | monitoring.helveticlens.ch |
 
-Hackathon connector improvements belong to the main product and follow its existing release route. Monitoring v2 has a separate application instance, deployment trigger and data. Funding/support does not create a third application branch or website.
+The active Monitoring backlog is the file on main. Older integration/task branches
+and host aliases are historical, not development routes. Customs/C4 remain deferred.
+Keep scoped task acceptance distinct from broader shared-contract and human pilot gates.
 
-## Frozen reference — Hackathon MVP
-
-[Release v1.0.0-hackathon-mvp](https://github.com/HappyMiha/helvetic-lens/releases/tag/v1.0.0-hackathon-mvp) is the shared reference for demonstrations, support discussions and future development. Preserve its tag, source, artifacts and evidence. A frozen release does not by itself establish which version a live site currently serves.
-
-## Choose one workstream
-
-| Workstream | Status now | Purpose | Open this page |
-|---|---|---|---|
-| **01 — Support & Infrastructure** | **PARKED — wait for the user's explicit start** | Organize future requests for development compute, servers and infrastructure support | [Support & Infrastructure](docs/workstreams/SUPPORT.md) |
-| **02 — Legal Hackathon 2026** | **MAIN PRODUCT — connector implementation not started** | Prepare organizer-resource integrations for 23 September 2026 and deliver them through `main` | [Legal Hackathon](docs/workstreams/HACKATHON_2026.md) |
-| **03 — Monitoring v2** | **BACKLOG READY — separate deployment setup in progress** | Build the next product version on its dedicated branch, starting with Pollen Watch | [Monitoring v2](docs/workstreams/MONITORING_V2.md) |
-
-## Keep the work separate
-
-- Start each task with one workstream name. Suggested task titles: `HL / Support — …`, `HL / Hackathon — …`, or `HL / Monitoring v2 — …`.
-- Record work under its own entry page and backlog. Grant preparation is not a v2 feature; hackathon provider integration is not automatically part of Pollen Watch.
-- Monitoring v2 implementation follows the [active backlog on the v2 branch](https://github.com/HappyMiha/helvetic-lens/blob/codex/HappyDucky02/monitoring-v2/BACKLOG_MONITORING_V2.md). The [copy on main](https://github.com/HappyMiha/helvetic-lens/blob/main/BACKLOG_MONITORING_V2.md) preserves the published plan as a reference. The original 71 task definitions, C4 deferral and Pollen Watch first-delivery sequence are preserved. The active backlog adds [MV2-072](BACKLOG_MONITORING_V2.md#mv2-072) for this independent deployment and [MV2-073](BACKLOG_MONITORING_V2.md#mv2-073) for backlog progress visibility: 73 tasks in total, 64 required and 9 deferred.
-- Use a separate task branch/worktree for each implementation task, based on its product channel. Integrate hackathon work into `main`; integrate Monitoring v2 work into `codex/HappyDucky02/monitoring-v2`. Follow [the two-computer workflow](docs/MULTI_PC_DEVELOPMENT.md). Never develop in either site's serving checkout.
-- Share a fix or connector deliberately: record the source task/commit, identify the receiving workstream and verify compatibility there. Do not merge an entire experimental workstream into the MVP as an incidental step.
-- Preserve [the historical backlog](BACKLOG_V1_ARCHIVE.md). It is reference material, not a fourth active queue.
-
-## Current focus
-
-Support work is parked. Hackathon preparation has its own entry page within the main-product channel; no connectors are being implemented by this organization change. Monitoring v2 deployment setup is in progress for **HappyDucky02 → monitoring.helveticlens.ch**, using **`codex/HappyDucky02/monitoring-v2`**. HTTPS, isolated first deployment and backup/restore are verified; branch-triggered automatic update acceptance remains pending. The existing `main` deployment on HappySnowman remains active; freezing the MVP tag does not freeze `main`.
-
-Monitoring deployment evidence: [Site live; recovery verified; automatic update acceptance pending](docs/monitoring-v2/DEPLOYMENT_STATUS.md).
-
-
-**Authorized integration, 2026-09-12 (MV2-031):** The user explicitly requested a separate Monitoring navigation group, Pollen Watch for all authenticated users, and integration of the complete Monitoring implementation into main. This supersedes the earlier prohibition on this whole-branch merge. Both sites keep their own deployments, private data, configuration and source approvals. The dedicated Monitoring branch remains the sole active backlog. The frozen MVP tag remains immutable. Further cross-channel changes still require an explicit receiving task.
+See [deployment evidence](docs/monitoring-v2/DEPLOYMENT_STATUS.md) for exact active
+commits and selector migration. A push is not proof of a successful release.
+Preserve the [frozen MVP tag](https://github.com/HappyMiha/helvetic-lens/releases/tag/v1.0.0-hackathon-mvp)
+and [legacy obligations](docs/monitoring-v2/LEGACY_DISPOSITION.md).

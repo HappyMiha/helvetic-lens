@@ -118,7 +118,7 @@ try {
     Test-Git @('add', 'deploy/release_manager.py')
     Test-Git @('commit', '-qm', 'Test reviewed controller')
     $revision = (& $git -C $source rev-parse HEAD).Trim()
-    Test-Git @('update-ref', 'refs/remotes/origin/codex/HappyDucky02/monitoring-v2', $revision)
+    Test-Git @('update-ref', 'refs/remotes/origin/main', $revision)
     $config = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'monitoring-instance.example.json') -Raw | ConvertFrom-Json
     $config.base_dir = $base
     foreach ($entry in @{ source_repo = 'source'; control_dir = 'controller'; releases_dir = 'releases'; state_dir = 'state'; env_file = 'private\monitoring.env'; tunnel_dir = 'private\cloudflared' }.GetEnumerator()) {
@@ -146,7 +146,7 @@ try {
     foreach ($bad in @(
         @{ key = 'version'; value = $true },
         @{ key = 'version'; value = '1' },
-        @{ key = 'branch'; value = 'main' },
+        @{ key = 'branch'; value = 'unreviewed-feature' },
         @{ key = 'compose_project'; value = 'helvetic-lens' },
         @{ key = 'docker_context'; value = 'default' },
         @{ key = 'public_url'; value = 'https://helveticlens.ch' },
@@ -173,9 +173,9 @@ try {
     Test-Git @('remote', 'set-url', 'origin', 'https://example.invalid/untrusted.git')
     Assert-Rejected { Get-MonitoringInstallPlan $configPath $PythonExecutable $revision } 'An untrusted repository was accepted.'
     Test-Git @('remote', 'set-url', 'origin', 'https://github.com/HappyMiha/helvetic-lens.git')
-    Test-Git @('update-ref', '-d', 'refs/remotes/origin/codex/HappyDucky02/monitoring-v2')
+    Test-Git @('update-ref', '-d', 'refs/remotes/origin/main')
     Assert-Rejected { Get-MonitoringInstallPlan $configPath $PythonExecutable $revision } 'An unfetched branch was accepted.'
-    Test-Git @('update-ref', 'refs/remotes/origin/codex/HappyDucky02/monitoring-v2', $revision)
+    Test-Git @('update-ref', 'refs/remotes/origin/main', $revision)
 
     Install-MonitoringAutoDeploy $configPath $PythonExecutable $revision -StartDisabled
     Assert-True (-not $script:ExistingTask.Settings.Enabled) 'StartDisabled registered an enabled task.'

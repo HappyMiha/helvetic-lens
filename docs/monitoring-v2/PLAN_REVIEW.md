@@ -1,5 +1,8 @@
 # Monitoring v2 — plan review
 
+**Current user instruction, 12 September 2026:** One agent develops complete features on main and pushes origin/main. The main copy of BACKLOG_MONITORING_V2.md is the sole active queue. Earlier host aliases, task branches, integration branches and cross-computer rules below are historical. Both production instances retain separate data, credentials and deployment controls. See [the development workflow](../DEVELOPMENT.md).
+
+
 Date: 2026-09-10. Plan version: 1.6. This review covers **documentation and plan integrity**, not runtime acceptance. Version 1.3 translated the plan into English; version 1.4 recorded the product-channel split; version 1.5 added independent deployment and version 1.6 adds backlog progress visibility while preserving the published product requirements and Pollen Watch delivery order.
 
 ## Completeness checks
