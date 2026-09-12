@@ -7,7 +7,7 @@ from pydantic import AliasChoices, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .locales import normalize_locale
-from .monitoring_contracts import MonitoringRollout
+from .monitoring_contracts import MonitoringRollout, public_pollen_rollout
 from .pollen_sources import PollenSourcePolicy
 
 # The source checkout and the API container have different directory depths.
@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     )
     allow_anonymous_dev: bool = True
     monitoring_rollout: MonitoringRollout = Field(
-        default_factory=MonitoringRollout, validation_alias="MONITORING_V2_ROLLOUT",
+        default_factory=public_pollen_rollout, validation_alias="MONITORING_V2_ROLLOUT",
     )
     pollen_source_policy: PollenSourcePolicy = Field(
         default_factory=PollenSourcePolicy, validation_alias="POLLEN_SOURCE_POLICY",

@@ -48,9 +48,26 @@ class MonitoringRollout(BaseModel):
             and grant.template_id == template_id
             and grant.template_version == template_version
         )]
+        # An exact workspace decision (including revocation or ambiguity) wins.
+        # "*" is an explicit grant for current and future authenticated workspaces;
+        # callers must still enforce membership and private subject ownership.
+        if not matches:
+            matches = [grant for grant in self.grants if (
+                grant.workspace_id == "*"
+                and grant.template_id == template_id
+                and grant.template_version == template_version
+            )]
         if len(matches) != 1:
             return ReaderMode.LEGACY
         mode = matches[0].mode
         if mode == ReaderMode.ENABLED and not source_ready:
             return ReaderMode.LEGACY
         return mode
+
+
+def public_pollen_rollout() -> MonitoringRollout:
+    """General Pollen availability; never grants source rights or email consent."""
+    return MonitoringRollout(enabled=True, grants=(
+        RolloutGrant(workspace_id="*", template_id="pollen-watch",
+                     template_version=1, mode=ReaderMode.ENABLED),
+    ))

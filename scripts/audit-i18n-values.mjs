@@ -25,6 +25,8 @@ const approvedIdentical = {
   "rm-CH": new Set(["history.context", "monitor.document", "scan.apertus", "settings.infomaniak", "settings.model", "settings.topP", "logs.success", "logs.provider.website", "logs.provider.fedlex", "logs.provider.firecrawl", "logs.provider.infomaniak", "org.local", "org.prompts", "org.quotas", "companion.name", "companion.toneNeutral"]),
 };
 let failed = false;
+// Pollen Watch is the feature's proper name in all supported locales.
+for (const allowed of Object.values(approvedIdentical)) allowed.add("nav.pollenWatch");
 for (const locale of ["de-CH", "fr-CH", "it-CH", "rm-CH"]) {
   const identical = Object.keys(sourceLocale).filter((key) => catalog[locale][key] === sourceLocale[key]);
   const unexpected = identical.filter((key) => !approvedIdentical[locale].has(key));

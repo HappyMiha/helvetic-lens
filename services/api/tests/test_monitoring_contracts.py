@@ -51,6 +51,20 @@ def test_kill_switch_and_ambiguous_configuration_never_enable_delivery():
     assert mode(shadow, implementation_ready=False) == ReaderMode.LEGACY
 
 
+def test_public_workspace_grant_respects_exact_revocation_and_template_boundaries():
+    public = grant(workspace_id="*")
+    policy = MonitoringRollout(enabled=True, grants=(public,))
+    for workspace in ("existing", "newly-registered"):
+        assert mode(policy, workspace_id=workspace) == ReaderMode.ENABLED
+    for mismatch in ({"template_id": "river-watch"}, {"template_version": 2},
+                     {"source_ready": False}, {"implementation_ready": False}):
+        assert mode(policy, **mismatch) == ReaderMode.LEGACY
+    for overrides in ((grant(mode="legacy"),), (grant(), grant(mode="shadow"))):
+        assert mode(MonitoringRollout(enabled=True, grants=(public, *overrides))) == ReaderMode.LEGACY
+    assert mode(MonitoringRollout(enabled=True, grants=(public, public))) == ReaderMode.LEGACY
+    assert mode(MonitoringRollout(enabled=False, grants=(public,))) == ReaderMode.LEGACY
+
+
 def test_populated_database_copy_preserves_legacy_ids_artifacts_and_legal_constraints(harness, tmp_path, monkeypatch):
     # Stable pagination capture time permits exact response comparison.
     monkeypatch.setattr("helvetic_lens.timeline_pages.utcnow", lambda: datetime(2026, 9, 11, 12, tzinfo=UTC))

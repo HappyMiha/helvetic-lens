@@ -8,8 +8,11 @@ Start with **[PROJECT_MAP.md](PROJECT_MAP.md)**. Three organizational activities
 | Legal Hackathon — 23 September 2026 | [Open main-product hackathon preparation](docs/workstreams/HACKATHON_2026.md) | Changes go to `main` → HappySnowman → helveticlens.ch; connector implementation not started |
 | Helvetic Lens Monitoring v2 | [Open Monitoring v2](docs/workstreams/MONITORING_V2.md) | Dedicated v2 branch → HappyDucky02 → monitoring.helveticlens.ch; deployment setup in progress, not yet verified live |
 
-**Monitoring v2 implementation:** use the [active backlog on the dedicated v2 branch](BACKLOG_MONITORING_V2.md), with Pollen Watch first and customs rates deferred. The [main-branch snapshot](https://github.com/HappyMiha/helvetic-lens/blob/main/BACKLOG_MONITORING_V2.md) preserves the published plan and is not the active implementation queue.
+**Monitoring v2 implementation:** use the [active backlog on the dedicated v2 branch](https://github.com/HappyMiha/helvetic-lens/blob/codex/HappyDucky02/monitoring-v2/BACKLOG_MONITORING_V2.md), with Pollen Watch first and customs rates deferred. The [main-branch snapshot](https://github.com/HappyMiha/helvetic-lens/blob/main/BACKLOG_MONITORING_V2.md) preserves the published plan and is not the active implementation queue.
 
 [Frozen MVP release](https://github.com/HappyMiha/helvetic-lens/releases/tag/v1.0.0-hackathon-mvp) · [Historical v1 backlog](BACKLOG_V1_ARCHIVE.md) · [Outstanding legacy obligations](docs/monitoring-v2/LEGACY_DISPOSITION.md).
 
 The historical backlog is not a parallel queue. Record work in its selected workstream before implementation; do not mix support activity, hackathon integrations and Monitoring v2 features.
+
+
+**Authorized integration, 2026-09-12 (MV2-031):** The user explicitly requested a separate Monitoring navigation group, Pollen Watch for all authenticated users, and integration of the complete Monitoring implementation into main. This supersedes the earlier prohibition on this whole-branch merge. Both sites keep their own deployments, private data, configuration and source approvals. The dedicated Monitoring branch remains the sole active backlog. The frozen MVP tag remains immutable. Further cross-channel changes still require an explicit receiving task.

@@ -11,6 +11,7 @@ import {
   CircleHelp,
   FileSearch,
   FileText,
+  Flower2,
   Globe2,
   History,
   Inbox,
@@ -431,6 +432,13 @@ export function Shell({
             </NavigationItem>
           </section>
           <section className="nav-section">
+            <span className="nav-heading">{t("shell.monitoring")}</span>
+            <NavigationItem active={pathname === "/pollen-watch"} href="/pollen-watch">
+              <Flower2 size={17} />
+              {t("nav.pollenWatch")}
+            </NavigationItem>
+          </section>
+          <section className="nav-section">
             <span className="nav-heading">{t("shell.workspaceSettings")}</span>
             {workspaceItems}
           </section>
@@ -593,6 +601,13 @@ export function Shell({
                 <Radar size={15} />
                 {t("nav.topics")}
               </NavigationItem>
+              <section className="nav-section">
+                <span className="nav-heading">{t("shell.monitoring")}</span>
+                <NavigationItem active={pathname === "/pollen-watch"} href="/pollen-watch">
+                  <Flower2 size={15} />
+                  {t("nav.pollenWatch")}
+                </NavigationItem>
+              </section>
               <span className="nav-heading">
                 {t("shell.workspaceSettings")}
               </span>

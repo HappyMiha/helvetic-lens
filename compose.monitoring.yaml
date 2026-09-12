@@ -17,14 +17,14 @@ services:
     mem_limit: 1536m
     environment:
       POLLEN_DECODER_URL: http://pollen-decoder:8093
-      MONITORING_V2_ROLLOUT: '${MONITORING_V2_ROLLOUT:-{}}'
+      MONITORING_V2_ROLLOUT: '${MONITORING_V2_ROLLOUT:-{"enabled":true,"grants":[{"workspace_id":"*","template_id":"pollen-watch","template_version":1,"mode":"enabled"}]}}'
       POLLEN_SOURCE_POLICY: '${POLLEN_SOURCE_POLICY:-{}}'
   worker-cpu:
     cpus: 1.0
     mem_limit: 1g
     environment:
       POLLEN_DECODER_URL: http://pollen-decoder:8093
-      MONITORING_V2_ROLLOUT: '${MONITORING_V2_ROLLOUT:-{}}'
+      MONITORING_V2_ROLLOUT: '${MONITORING_V2_ROLLOUT:-{"enabled":true,"grants":[{"workspace_id":"*","template_id":"pollen-watch","template_version":1,"mode":"enabled"}]}}'
       POLLEN_SOURCE_POLICY: '${POLLEN_SOURCE_POLICY:-{}}'
     networks:
       - pollen-decode
@@ -40,7 +40,7 @@ services:
     mem_limit: 256m
     environment:
       POLLEN_DECODER_URL: http://pollen-decoder:8093
-      MONITORING_V2_ROLLOUT: '${MONITORING_V2_ROLLOUT:-{}}'
+      MONITORING_V2_ROLLOUT: '${MONITORING_V2_ROLLOUT:-{"enabled":true,"grants":[{"workspace_id":"*","template_id":"pollen-watch","template_version":1,"mode":"enabled"}]}}'
       POLLEN_SOURCE_POLICY: '${POLLEN_SOURCE_POLICY:-{}}'
   model-manager:
     cpus: 2.0
@@ -58,26 +58,3 @@ services:
     cpus: 0.5
     mem_limit: 256m
     command: ["tunnel", "--no-autoupdate", "--metrics", "0.0.0.0:20241", "run", "--token-file", "/etc/cloudflared/token"]
-  pollen-decoder:
-    image: helvetic-lens-pollen-decoder:${HELVETIC_LENS_RELEASE:?Set an immutable release identifier}
-    build:
-      context: .
-      dockerfile: services/pollen-decoder/Dockerfile
-    platform: linux/amd64
-    cpus: 1.0
-    mem_limit: 1g
-    read_only: true
-    tmpfs:
-      - /tmp:size=128m,mode=1777
-    cap_drop: [ALL]
-    security_opt: ["no-new-privileges:true"]
-    networks: [pollen-decode]
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "/opt/conda/bin/python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8093/health', timeout=3)"]
-      interval: 10s
-      timeout: 5s
-      retries: 6
-networks:
-  pollen-decode:
-    internal: true

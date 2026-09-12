@@ -59,3 +59,6 @@ The local backlog is authoritative on this branch; links to the main-branch snap
 The documentation changes reviewed here do not implement connectors, alter application code or migrations, or modify the MVP release tag. Deployment implementation and operational evidence are tracked separately on the v2 branch; this review is not evidence of a live site. The 71 published feature-task definitions gain no implementation evidence from routing changes; sources retain their own access and functional gates.
 
 KPI values, pilot samples and new performance targets are proposed criteria of this plan. They are neither the specification author's requirements nor measured results of the current product.
+
+
+**Authorized integration, 2026-09-12 (MV2-031):** The user explicitly requested a separate Monitoring navigation group, Pollen Watch for all authenticated users, and integration of the complete Monitoring implementation into main. This supersedes the earlier prohibition on this whole-branch merge. Both sites keep their own deployments, private data, configuration and source approvals. The dedicated Monitoring branch remains the sole active backlog. The frozen MVP tag remains immutable. Further cross-channel changes still require an explicit receiving task.

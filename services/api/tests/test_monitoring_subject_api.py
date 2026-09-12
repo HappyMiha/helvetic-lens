@@ -214,7 +214,32 @@ def test_rollout_defaults_off_and_exact_shadow_or_enabled_grant_allows_private_s
     assert preview.json()["blocking_reasons"] == ["pollen_source_not_ready"]
     grant(settings, identity["organization"]["id"])
     settings.deployment_instance = "main"
+    assert client.get(URL).status_code == 200
+    settings.deployment_instance = "unsupported-instance"
     assert client.get(URL).status_code == 404
+
+
+@pytest.mark.parametrize("instance", ["main", "monitoring-v2"])
+def test_general_availability_new_accounts_remain_private_and_source_gated(tmp_path, instance):
+    settings = _settings(tmp_path, deployment_instance=instance)
+    app = create_app(settings, fetcher=FakeFetcher(), model_client=ScriptedModel())
+    with TestClient(app) as owner, TestClient(app) as peer:
+        assert owner.get(URL).status_code == 401
+        assert _register(owner).status_code == 201
+        record = create(owner)
+        # No workspace allow-list update is required after registration.
+        assert _register(peer, "new@example.test", "New workspace").status_code == 201
+        assert peer.get(URL).json()["items"] == []
+        assert peer.get(URL + "/" + record["id"]).status_code == 404
+        own = create(peer)
+        assert own["id"] != record["id"]
+        preview = peer.post(URL + "/preview", json={"configuration": config()}, headers=_csrf(peer))
+        assert preview.status_code == 200 and preview.json()["start_available"] is False
+        start = peer.post(URL + "/" + own["id"] + "/start",
+                         json={"expected_revision": 1, "request_key": "source-gated-start"}, headers=_csrf(peer))
+        assert start.status_code == 409 and start.json()["code"] == "pollen_source_not_ready"
+        settings.monitoring_rollout = MonitoringRollout()
+        assert owner.get(URL).status_code == peer.get(URL).status_code == 404
 
 
 def test_cross_workspace_and_same_workspace_other_owner_are_denied(api):

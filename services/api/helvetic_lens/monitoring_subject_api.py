@@ -71,7 +71,7 @@ def draft_router(service, settings: Settings) -> APIRouter:
             workspace_id=actor.organization_id, template_id="pollen-watch", template_version=1,
             implementation_ready=True, source_ready=True,
         )
-        if settings.deployment_instance != "monitoring-v2" or mode not in {ReaderMode.SHADOW, ReaderMode.ENABLED}:
+        if settings.deployment_instance not in {"main", "monitoring-v2"} or mode not in {ReaderMode.SHADOW, ReaderMode.ENABLED}:
             raise DomainError("Monitoring drafts are not enabled for this workspace.", 404, "monitoring_not_enabled")
         return actor
 

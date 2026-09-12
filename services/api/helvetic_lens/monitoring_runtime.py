@@ -47,7 +47,7 @@ def _mode(settings, organization_id):
 
 
 def _require_live(settings, organization_id):
-    if settings.deployment_instance != "monitoring-v2" or _mode(settings, organization_id) != ReaderMode.ENABLED:
+    if settings.deployment_instance not in {"main", "monitoring-v2"} or _mode(settings, organization_id) != ReaderMode.ENABLED:
         raise DomainError("Live monitoring is not enabled for this workspace.", 409, "monitoring_live_not_enabled")
 
 
@@ -660,7 +660,7 @@ def artifact_path(session, *, settings, user_id, subject_id, entry_id, artifact_
 def today(session, *, settings, user_id, now, before_id=None):
     from sqlalchemy import and_, func, or_
     organization_id = _actor(session, user_id)
-    if settings.deployment_instance != "monitoring-v2" or _mode(settings, organization_id) != ReaderMode.ENABLED:
+    if settings.deployment_instance not in {"main", "monitoring-v2"} or _mode(settings, organization_id) != ReaderMode.ENABLED:
         return {"items": [], "next_cursor": None}
     latest = select(MonitoringLiveEntry.stream_id, func.max(MonitoringLiveEntry.sequence).label("sequence")).where(
         MonitoringLiveEntry.material_id.is_not(None)).group_by(MonitoringLiveEntry.stream_id).subquery()

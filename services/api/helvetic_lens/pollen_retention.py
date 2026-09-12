@@ -9,7 +9,7 @@ from .monitoring_live_models import MonitoringSourceArtifact, MonitoringSourceSa
 
 
 def cleanup(database, settings, *, now=None):
-    if settings.deployment_instance != "monitoring-v2":
+    if settings.deployment_instance not in {"main", "monitoring-v2"}:
         return {"artifacts": 0, "samples": 0}
     now = now or datetime.now(UTC)
     deleted = 0

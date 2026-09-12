@@ -7,7 +7,7 @@
 | Product | Integration branch | Deployment host | Website | Update route |
 |---|---|---|---|---|
 | **Main product, including hackathon connectors** | `main` | **HappySnowman** | **helveticlens.ch** | Existing automatic deployment from `main` |
-| **Monitoring v2** | `codex/HappyDucky02/monitoring-v2` | **HappyDucky02** | **monitoring.helveticlens.ch** | Isolated site live; automatic updates from the dedicated v2 branch awaiting acceptance |
+| **Monitoring v2** | `codex/HappyDucky02/monitoring-v2` | **HappyDucky02** | **monitoring.helveticlens.ch** | Isolated site live; see DEPLOYMENT_STATUS.md for exact activation evidence |
 
 Hackathon connector improvements belong to the main product and follow its existing release route. Monitoring v2 has a separate application instance, deployment trigger and data. Funding/support does not create a third application branch or website.
 
@@ -27,7 +27,7 @@ Hackathon connector improvements belong to the main product and follow its exist
 
 - Start each task with one workstream name. Suggested task titles: `HL / Support — …`, `HL / Hackathon — …`, or `HL / Monitoring v2 — …`.
 - Record work under its own entry page and backlog. Grant preparation is not a v2 feature; hackathon provider integration is not automatically part of Pollen Watch.
-- Monitoring v2 implementation follows the [active backlog on the v2 branch](BACKLOG_MONITORING_V2.md). The [copy on main](https://github.com/HappyMiha/helvetic-lens/blob/main/BACKLOG_MONITORING_V2.md) preserves the published plan as a reference. The original 71 task definitions, C4 deferral and Pollen Watch first-delivery sequence are preserved. The active backlog adds [MV2-072](BACKLOG_MONITORING_V2.md#mv2-072) for this independent deployment and [MV2-073](BACKLOG_MONITORING_V2.md#mv2-073) for backlog progress visibility: 73 tasks in total, 64 required and 9 deferred.
+- Monitoring v2 implementation follows the [active backlog on the v2 branch](https://github.com/HappyMiha/helvetic-lens/blob/codex/HappyDucky02/monitoring-v2/BACKLOG_MONITORING_V2.md). The [copy on main](https://github.com/HappyMiha/helvetic-lens/blob/main/BACKLOG_MONITORING_V2.md) preserves the published plan as a reference. The original 71 task definitions, C4 deferral and Pollen Watch first-delivery sequence are preserved. The active backlog adds [MV2-072](BACKLOG_MONITORING_V2.md#mv2-072) for this independent deployment and [MV2-073](BACKLOG_MONITORING_V2.md#mv2-073) for backlog progress visibility: 73 tasks in total, 64 required and 9 deferred.
 - Use a separate task branch/worktree for each implementation task, based on its product channel. Integrate hackathon work into `main`; integrate Monitoring v2 work into `codex/HappyDucky02/monitoring-v2`. Follow [the two-computer workflow](docs/MULTI_PC_DEVELOPMENT.md). Never develop in either site's serving checkout.
 - Share a fix or connector deliberately: record the source task/commit, identify the receiving workstream and verify compatibility there. Do not merge an entire experimental workstream into the MVP as an incidental step.
 - Preserve [the historical backlog](BACKLOG_V1_ARCHIVE.md). It is reference material, not a fourth active queue.
@@ -37,3 +37,6 @@ Hackathon connector improvements belong to the main product and follow its exist
 Support work is parked. Hackathon preparation has its own entry page within the main-product channel; no connectors are being implemented by this organization change. Monitoring v2 deployment setup is in progress for **HappyDucky02 → monitoring.helveticlens.ch**, using **`codex/HappyDucky02/monitoring-v2`**. HTTPS, isolated first deployment and backup/restore are verified; branch-triggered automatic update acceptance remains pending. The existing `main` deployment on HappySnowman remains active; freezing the MVP tag does not freeze `main`.
 
 Monitoring deployment evidence: [Site live; recovery verified; automatic update acceptance pending](docs/monitoring-v2/DEPLOYMENT_STATUS.md).
+
+
+**Authorized integration, 2026-09-12 (MV2-031):** The user explicitly requested a separate Monitoring navigation group, Pollen Watch for all authenticated users, and integration of the complete Monitoring implementation into main. This supersedes the earlier prohibition on this whole-branch merge. Both sites keep their own deployments, private data, configuration and source approvals. The dedicated Monitoring branch remains the sole active backlog. The frozen MVP tag remains immutable. Further cross-channel changes still require an explicit receiving task.

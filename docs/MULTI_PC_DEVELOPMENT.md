@@ -240,3 +240,6 @@ without publishing any of its refs. Ruff and shell syntax checks passed. GitHub
 `main` protection was enabled and read back with force pushes/deletion disabled,
 administrator enforcement enabled, and no required PR reviews. These checks do
 not constitute an Ubuntu-host deployment rehearsal.
+
+
+**Authorized integration, 2026-09-12 (MV2-031):** The user explicitly requested a separate Monitoring navigation group, Pollen Watch for all authenticated users, and integration of the complete Monitoring implementation into main. This supersedes the earlier prohibition on this whole-branch merge. Both sites keep their own deployments, private data, configuration and source approvals. The dedicated Monitoring branch remains the sole active backlog. The frozen MVP tag remains immutable. Further cross-channel changes still require an explicit receiving task.

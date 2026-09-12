@@ -35,7 +35,7 @@ def main():
         snapshot = backups / BACKUP
         snapshot.mkdir(parents=True)
         documents.mkdir()
-        production = yaml.safe_load((ROOT / "compose.monitoring.yaml").read_text())
+        production = yaml.safe_load((ROOT / "compose.production.yaml").read_text())
         decoder = production["services"]["pollen-decoder"]
         decoder = {key: value for key, value in decoder.items() if key not in {"build", "networks", "restart"}}
         decoder["image"] = options.decoder_image

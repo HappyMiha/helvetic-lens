@@ -15,7 +15,7 @@ from .pollen_sources import HOURLY_METHOD, OBSERVATION_SOURCE
 
 
 def enqueue_due(database, settings, *, now=None):
-    if settings.deployment_instance != "monitoring-v2" or not settings.monitoring_rollout.enabled:
+    if settings.deployment_instance not in {"main", "monitoring-v2"} or not settings.monitoring_rollout.enabled:
         return {"enqueued": 0}
     now = now or datetime.now(UTC)
     with database.session(include_all_organizations=True) as session:

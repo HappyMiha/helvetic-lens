@@ -2,7 +2,7 @@
 
 **Plan version:** 1.6 · **Date:** 10 September 2026 · **Code baseline:** `7109a2891f9c99e53572008cc7c1a86001792a57`
 
-**Status:** implementation plan; no new v2 capability is claimed as implemented.
+**Status:** implementation and acceptance tracking; individual task evidence distinguishes implemented, tested and deployed behavior.
 
 **Scope:** 9 required scenarios, 64 required tasks, 9 deferred tasks. 116 active acceptance criteria (AC); 10 AC-C4 criteria retained as deferred.
 
@@ -24,7 +24,7 @@ Input: [Practical Use Case Specification v1.0 — English reading edition](docs/
 
 The source document's statements about existing capabilities have been checked against the code and are not treated as implementation evidence. The plan and architectural decisions below result from that analysis; example amounts, dates, cities, thresholds and scores in the specification have not become implicit global defaults.
 
-Before starting a task, read its criteria, dependencies, source gate and inherited legacy obligations; assign an implementer to the stated role and create a separate branch/worktree. Record any new defect or required refinement as an MV2 task with acceptance criteria and dependencies **here**, then implement it. Do not take an old HL ID as a standalone new task. An L-sized task may be split only into explicit subtasks with IDs and criteria in this document; preserve coverage of the parent ID.
+Before starting a task, open the active backlog on the v2 branch, read its criteria, dependencies, source gate and inherited legacy obligations; assign an implementer to the stated role and create a separate branch/worktree from that channel. Record any new defect or required refinement as an MV2 task with acceptance criteria and dependencies **in the active backlog**, then implement it. Do not take an old HL ID as a standalone new task. An L-sized task may be split only into explicit subtasks with IDs and criteria in the active backlog; preserve coverage of the parent ID.
 
 Statuses: **PLANNED → READY → IN PROGRESS → VERIFYING → DONE**. **BLOCKED** always identifies a specific external dependency, owner and next action. **DEFERRED** is outside v2.0. READY means that dependencies are satisfied and the necessary contracts/data are available. The first C5 delivery uses the explicitly extracted MV2-069/070 contracts without waiting for the broader parent tasks to be DONE. Code in Git, a mock, passing JSON schema validation or a written document does not mean DONE.
 
@@ -1153,6 +1153,10 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ### MV2-031 — Pollen Watch — the first complete end-to-end scenario (C5)
 
+**Receiving subtask, 2026-09-12 — Monitoring navigation and general availability:** Add a distinct desktop/mobile Monitoring group with Pollen Watch in all five locales. Permit current and future authenticated workspaces, preserving explicit revocation, source approval, user ownership and delivery consent. Integrate all Monitoring commits into current main by explicit user request; preserve main changes and the frozen tag. Verify affected API, navigation, migration and deployment compatibility. Publication is not activation evidence; retain unverified acceptance as IN PROGRESS.
+
+**Receiving-subtask evidence:** [General availability and main integration](docs/monitoring-v2/POLLEN_GENERAL_AVAILABILITY.md) records the implementation, passing API/build/browser/Compose checks and staged wildcard grant. Exact public activation and independent pilot acceptance remain open.
+
 **Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Frontend + Backend + UX · **Size:** L
 
 **Complete-feature checkpoint, 2026-09-12:** The implementation joins explicit Start, current observation/forecast, material changes in Today, exact why/evidence, review history/reopening, pause/edit/resume/archive/delete/export and separately consented email. Five-language synthetic browser scenarios and isolated SQLite/PostgreSQL checks are recorded in the [whole-feature record](docs/monitoring-v2/POLLEN_COMPLETE_FEATURE.md). Full regression and publication are in progress; no DONE or user-testing acceptance is claimed.
@@ -2039,3 +2043,6 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 | 1.4 | 2026-09-10 | Organized three activities into two product channels. Main-product/hackathon changes use main → HappySnowman → helveticlens.ch; Monitoring v2 uses codex/HappyDucky02/monitoring-v2 → HappyDucky02 → monitoring.helveticlens.ch. Main retains a planning snapshot while this branch owns the active backlog. Support is parked; the original 71 task definitions remain unchanged |
 | 1.5 | 2026-09-10 | Added MV2-072 for the user-selected dedicated Monitoring branch, Windows host and hostname. 63 required/9 deferred tasks; original product task details and Pollen Watch order preserved |
 | 1.6 | 2026-09-10 | Added MV2-073 for user-requested backlog progress on the deployment page: exact latest/deployed Git snapshots, required-only completion and the Pollen Watch path. 73 tasks: 64 required and 9 deferred. Product scenarios and original task definitions remain unchanged. Updated MV2-072 evidence to SMTP verified and bootstrap IN PROGRESS; no live acceptance claimed |
+
+
+**Authorized integration, 2026-09-12 (MV2-031):** The user explicitly requested a separate Monitoring navigation group, Pollen Watch for all authenticated users, and integration of the complete Monitoring implementation into main. This supersedes the earlier prohibition on this whole-branch merge. Both sites keep their own deployments, private data, configuration and source approvals. The dedicated Monitoring branch remains the sole active backlog. The frozen MVP tag remains immutable. Further cross-channel changes still require an explicit receiving task.

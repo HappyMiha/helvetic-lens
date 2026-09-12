@@ -2,6 +2,8 @@
 
 from datetime import UTC, datetime, timedelta
 
+import pytest
+
 from test_auth import _csrf
 from test_monitoring_subject_api import URL, create, grant
 from test_monitoring_subject_api import api as api
@@ -19,8 +21,10 @@ def enable(settings, identity):
         "valid_until": now + timedelta(days=1), "freshness_seconds": 10800, "poll_seconds": 1200, "retention_days": 30}]})
 
 
-def test_live_http_start_lost_response_pause_edit_export_delete(api):
+@pytest.mark.parametrize("instance", ["main", "monitoring-v2"])
+def test_live_http_start_lost_response_pause_edit_export_delete(api, instance):
     client, app, settings, identity = api
+    settings.deployment_instance = instance
     enable(settings, identity)
     subject = create(client)
     base = URL + "/" + subject["id"]

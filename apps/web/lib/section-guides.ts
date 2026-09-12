@@ -140,12 +140,12 @@ const ai = c(
 export const SECTION_GUIDES: SectionGuide[] = [
   {
     id: "pollen-watch",
-    title: "Create, edit and read Pollen Watch drafts",
-    purpose: "Prepare private station, allergen and numeric rule settings, or inspect their saved history. This does not show live pollen or activate monitoring.",
+    title: "Set up and follow your Pollen Watch",
+    purpose: "Choose a station and allergens, check source coverage, then start your private monitor. Read observations, forecasts and saved history with their source and freshness.",
     first: ["Check the current workspace, then select one of your saved drafts.", "Expand a configuration revision to compare earlier settings."],
     data: ["Only your own drafts and their configuration history are returned by the authenticated API.", "Saved delivery preferences do not send messages. Empty lists are not zero-pollen observations."],
     wait: "Loading waits for saved settings only. Reload after an unavailable or deleted page; disabled rollout requires workspace enablement.",
-    setup: "An authenticated active membership and an explicitly enabled draft workspace are required. Official source acceptance and live Start remain pending.",
+    setup: "Open Monitoring → Pollen Watch with an active account. Workspace viewers can read; managers can create and change their own monitors. Start requires an approved source channel. Email requires separate consent.",
     controls: [refresh, pages,
       c("pollen-station", "Choose a station", "Selects a public station by name from the dated MeteoSwiss directory. Changing station invalidates the settings check while preserving other choices.", "Directory metadata does not prove current source coverage. Unknown saved codes remain available without being replaced.", "Edit draft", "[data-pollen-station-picker] select", "manager"),
       c("pollen-nearby", "Find nearby stations", "After explicit browser permission, calculates approximate distances locally and orders the station list. It does not choose a station or save/send coordinates.", "Optional: choosing by name always works. Clear device location cancels pending results and removes coordinates; the nearest station need not represent conditions at home.", "Read / navigate", "[data-pollen-locate]", "manager"),

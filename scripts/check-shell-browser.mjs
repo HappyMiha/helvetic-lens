@@ -317,6 +317,11 @@ try {
         );
         await openMenu();
         assert.ok(
+          await evaluate(cdp,
+            `(() => { const link = document.querySelector('.mobile-nav-menu a[href="/pollen-watch"]'); return link?.textContent.trim() === 'Pollen Watch' && !!link.closest('section')?.querySelector('.nav-heading')?.textContent.trim(); })()`),
+          "Every role and locale needs Pollen Watch in its own mobile Monitoring group",
+        );
+        assert.ok(
           await evaluate(
             cdp,
             `(() => { const before = document.activeElement; document.querySelector('.skip-link').focus(); return before === document.activeElement && document.querySelector('.mobile-nav-menu').contains(document.activeElement); })()`,
@@ -422,6 +427,11 @@ try {
           "Menu does not fit viewport",
         );
         await resize(1440);
+        assert.ok(
+          await evaluate(cdp,
+            `(() => { const link = document.querySelector('.nav-group a[href="/pollen-watch"]'); return link?.textContent.trim() === 'Pollen Watch' && !!link.closest('section')?.querySelector('.nav-heading')?.textContent.trim(); })()`),
+          "Every role and locale needs Pollen Watch in its own desktop Monitoring group",
+        );
         await closed();
         await waitFor(
           () => evaluate(cdp, `document.activeElement.id === 'main-content'`),

@@ -2,11 +2,11 @@
 
 [Back to the project map](../../PROJECT_MAP.md)
 
-**Status: isolated site live; automatic update acceptance pending under MV2-072. Backlog progress visibility is VERIFYING under MV2-073. Pollen Watch feature implementation has not started.**
+**Status: isolated site live; automatic update acceptance pending under MV2-072. Backlog progress visibility is VERIFYING under MV2-073. Pollen Watch is implemented and active on Monitoring; broader acceptance remains evidence-gated.**
 
 ## Where development is tracked
 
-Use **[BACKLOG_MONITORING_V2.md on the dedicated v2 branch](../../BACKLOG_MONITORING_V2.md)** as the single implementation backlog for this workstream. The [main-branch copy](https://github.com/HappyMiha/helvetic-lens/blob/main/BACKLOG_MONITORING_V2.md) is a published planning snapshot. This entry page provides navigation and deployment context; it is not another implementation queue.
+Use **[BACKLOG_MONITORING_V2.md on the dedicated v2 branch](https://github.com/HappyMiha/helvetic-lens/blob/codex/HappyDucky02/monitoring-v2/BACKLOG_MONITORING_V2.md)** as the single implementation backlog for this workstream. The [main-branch copy](https://github.com/HappyMiha/helvetic-lens/blob/main/BACKLOG_MONITORING_V2.md) is a published planning snapshot. This entry page provides navigation and deployment context; it is not another implementation queue.
 
 - First complete delivery: **Pollen Watch**, ready for testing with real users.
 - Sequence: **MV2-001 → MV2-069 → MV2-070 → MV2-030 → MV2-031 → MV2-071**.
@@ -39,3 +39,6 @@ The existing deployment manager has shared defaults and requires an isolation re
 ## Current environment status
 
 The isolated site is live after successful bootstrap and a database/document backup-and-restore rehearsal. The pinned controller and dedicated Windows task are installed; the controller upgrade succeeded and the enabled task has automatically started the next release through the full quality gates. SMTP STARTTLS/authentication is verified. See [verified evidence and remaining activation steps](../monitoring-v2/DEPLOYMENT_STATUS.md). Automatic-update acceptance and real user registration/email delivery remain pending.
+
+
+**Authorized integration, 2026-09-12 (MV2-031):** The user explicitly requested a separate Monitoring navigation group, Pollen Watch for all authenticated users, and integration of the complete Monitoring implementation into main. This supersedes the earlier prohibition on this whole-branch merge. Both sites keep their own deployments, private data, configuration and source approvals. The dedicated Monitoring branch remains the sole active backlog. The frozen MVP tag remains immutable. Further cross-channel changes still require an explicit receiving task.

@@ -5,6 +5,9 @@ x-api-environment: &api-environment
   HELVETIC_LENS_INSTANCE: ${HELVETIC_LENS_INSTANCE:-main}
   HELVETIC_LENS_RELEASE: ${HELVETIC_LENS_RELEASE:?Set an immutable release identifier}
   ALLOW_ANONYMOUS_DEV: "false"
+  MONITORING_V2_ROLLOUT: '${MONITORING_V2_ROLLOUT:-{"enabled":true,"grants":[{"workspace_id":"*","template_id":"pollen-watch","template_version":1,"mode":"enabled"}]}}'
+  POLLEN_SOURCE_POLICY: '${POLLEN_SOURCE_POLICY:-{}}'
+  POLLEN_DECODER_URL: http://pollen-decoder:8093
   SESSION_COOKIE_SECURE: "true"
   SESSION_TTL_DAYS: ${SESSION_TTL_DAYS:-14}
   PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?Set the public HTTPS URL}
@@ -190,8 +193,11 @@ services:
 
   worker-cpu:
     <<: *api-service
+    networks: [app, data, model-control, outbound, pollen-decode]
     command: ["celery", "-A", "helvetic_lens.celery_app:celery_app", "worker", "--loglevel=INFO", "-Q", "interactive,ingest,parse_diff,maintenance", "--concurrency=2"]
     depends_on:
+      pollen-decoder:
+        condition: service_healthy
       api:
         condition: service_healthy
       redis:
@@ -290,6 +296,27 @@ services:
       driver: json-file
       options: {max-size: 20m, max-file: "5"}
 
+  pollen-decoder:
+    image: helvetic-lens-pollen-decoder:${HELVETIC_LENS_RELEASE:?Set an immutable release identifier}
+    build:
+      context: .
+      dockerfile: services/pollen-decoder/Dockerfile
+    platform: linux/amd64
+    cpus: 1.0
+    mem_limit: 1g
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    networks: [pollen-decode]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/opt/conda/bin/python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8093/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
 volumes:
   postgres_data:
   redis_data:
@@ -300,6 +327,8 @@ volumes:
   backup_status:
 
 networks:
+  pollen-decode:
+    internal: true
   edge:
   outbound:
   app:

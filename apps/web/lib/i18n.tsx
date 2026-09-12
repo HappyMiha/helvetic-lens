@@ -417,6 +417,8 @@ const taskNavigationMessages: Record<Locale, Messages> = {
   "en-CH": {
     "nav.today": "Today",
     "nav.monitoring": "Monitoring",
+    "nav.pollenWatch": "Pollen Watch",
+    "shell.monitoring": "Monitoring",
     "nav.discover": "Discover",
     "nav.more": "More",
     "shell.dailyWork": "DAILY WORK",
@@ -439,6 +441,8 @@ const taskNavigationMessages: Record<Locale, Messages> = {
   "de-CH": {
     "nav.today": "Heute",
     "nav.monitoring": "Beobachtung",
+    "nav.pollenWatch": "Pollen Watch",
+    "shell.monitoring": "Beobachtung",
     "nav.discover": "Entdecken",
     "nav.more": "Mehr",
     "shell.dailyWork": "TÄGLICHE ARBEIT",
@@ -461,6 +465,8 @@ const taskNavigationMessages: Record<Locale, Messages> = {
   "fr-CH": {
     "nav.today": "Aujourd’hui",
     "nav.monitoring": "Veille",
+    "nav.pollenWatch": "Pollen Watch",
+    "shell.monitoring": "Veille",
     "nav.discover": "Découvrir",
     "nav.more": "Plus",
     "shell.dailyWork": "TRAVAIL QUOTIDIEN",
@@ -483,6 +489,8 @@ const taskNavigationMessages: Record<Locale, Messages> = {
   "it-CH": {
     "nav.today": "Oggi",
     "nav.monitoring": "Monitoraggio",
+    "nav.pollenWatch": "Pollen Watch",
+    "shell.monitoring": "Monitoraggio",
     "nav.discover": "Scopri",
     "nav.more": "Altro",
     "shell.dailyWork": "LAVORO QUOTIDIANO",
@@ -505,6 +513,8 @@ const taskNavigationMessages: Record<Locale, Messages> = {
   "rm-CH": {
     "nav.today": "Oz",
     "nav.monitoring": "Surveglianza",
+    "nav.pollenWatch": "Pollen Watch",
+    "shell.monitoring": "Surveglianza",
     "nav.discover": "Scuvrir",
     "nav.more": "Dapli",
     "shell.dailyWork": "LAVUR QUOTIDIANA",

@@ -64,13 +64,16 @@ def prepared(db):
     return subject_id
 
 
-def test_delivery_rechecks_and_sends_once_with_no_raw_source_in_email(db):
+@pytest.mark.parametrize("instance", ["main", "monitoring-v2"])
+def test_delivery_rechecks_and_sends_once_with_no_raw_source_in_email(db, instance):
     subject_id, mailer = prepared(db), Mailer()
-    assert enqueue_due(db, policy(), now=NOW + timedelta(hours=1))["enqueued"] == 1
-    assert enqueue_due(db, policy(), now=NOW + timedelta(hours=1))["enqueued"] == 0
-    assert deliver(db, policy(), subject_id=subject_id, consent_version=1,
+    settings = policy()
+    settings.deployment_instance = instance
+    assert enqueue_due(db, settings, now=NOW + timedelta(hours=1))["enqueued"] == 1
+    assert enqueue_due(db, settings, now=NOW + timedelta(hours=1))["enqueued"] == 0
+    assert deliver(db, settings, subject_id=subject_id, consent_version=1,
                    now=NOW + timedelta(hours=1), mailer=mailer)["status"] == "sent"
-    assert deliver(db, policy(), subject_id=subject_id, consent_version=1,
+    assert deliver(db, settings, subject_id=subject_id, consent_version=1,
                    now=NOW + timedelta(hours=1), mailer=mailer)["status"] == "no_eligible_changes"
     assert len(mailer.messages) == 1
     assert "number/m3" not in mailer.messages[0][0][2]

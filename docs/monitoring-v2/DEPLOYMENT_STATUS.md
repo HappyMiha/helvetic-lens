@@ -1,5 +1,21 @@
 # Monitoring deployment status — 12 September 2026
 
+## Current verified checkpoint — 12 September, 08:18 UTC
+
+The earlier outage below is historical and resolved. Public readiness currently
+serves git-c5a91550d5b57daedd102b099393730fadbae69c. The controller records successful
+activation at 04:30:50 UTC following the explicitly authorized recovery.
+Pollen has four approved source channels and a user-started Basel monitor.
+
+The user has now authorized all-user navigation/access and the complete Monitoring
+integration into main. See [implementation and activation boundaries](POLLEN_GENERAL_AVAILABILITY.md).
+The public workspace grant is staged for the next normal deployment; it is not yet
+effective on c5a9155. Do not restart an active deployment or claim new release
+acceptance from a push. Main readiness is available but its current response does
+not identify an immutable release.
+
+## Historical outage checkpoint
+
 **OUTAGE: complete Pollen candidate `0ec41a9` passed its full API gate and builds, but failed decoder health and then database rollback. Public readiness returns Cloudflare 1033; the stored previous SHA does not establish a currently serving site. MV2-072 remains IN PROGRESS and MV2-073 remains VERIFYING.**
 
 ## Recovery checkpoint — 12 September
