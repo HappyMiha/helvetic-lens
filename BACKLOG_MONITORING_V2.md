@@ -1157,6 +1157,8 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Receiving-subtask evidence:** [General availability and main integration](docs/monitoring-v2/POLLEN_GENERAL_AVAILABILITY.md) records the implementation, passing API/build/browser/Compose checks and staged wildcard grant. Exact public activation and independent pilot acceptance remain open.
 
+**Release repair, 2026-09-12:** The automatic rollout of 79b0147 stopped at API lint because the newly added pytest import has an extra blank line. Correct the import grouping and run the exact full deployment lint gate plus affected HTTP tests before republishing the same feature to both authorized channels. No source, consent, runtime or acceptance-gate behavior changes.
+
 **Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Frontend + Backend + UX · **Size:** L
 
 **Complete-feature checkpoint, 2026-09-12:** The implementation joins explicit Start, current observation/forecast, material changes in Today, exact why/evidence, review history/reopening, pause/edit/resume/archive/delete/export and separately consented email. Five-language synthetic browser scenarios and isolated SQLite/PostgreSQL checks are recorded in the [whole-feature record](docs/monitoring-v2/POLLEN_COMPLETE_FEATURE.md). Full regression and publication are in progress; no DONE or user-testing acceptance is claimed.

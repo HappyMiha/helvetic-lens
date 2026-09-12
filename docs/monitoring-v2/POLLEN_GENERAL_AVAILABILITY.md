@@ -63,3 +63,16 @@ Effective all-user access therefore awaits its normal deployment.
 This record establishes implementation and local verification, not activation of
 its own commit. Main source activation and exact public release identity require
 separate operational verification. Existing MV2-031/071 acceptance remains open.
+
+## Automatic-release correction — 09:28 UTC
+
+The 79b0147 attempt never reached its full API test gate: after removing the two
+accidental validation bytecode files from the previous immutable checkout, the
+controller passed checkout/configuration and rejected one extra blank line in the
+new pytest import block. The earlier verification list did not include API lint.
+This repair changes only that test import grouping and records the evidence.
+The exact deployment command, ruff check services/api deploy/release_manager.py,
+now passes across the complete scope. All five affected Pollen HTTP/backlog checks
+also pass. Runtime code, data, grants and source policy are unchanged; activation
+still requires the normal automatic deployment. Future publication must include
+the exact deployment lint gate alongside feature tests.

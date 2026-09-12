@@ -3,7 +3,6 @@
 from datetime import UTC, datetime, timedelta
 
 import pytest
-
 from test_auth import _csrf
 from test_monitoring_subject_api import URL, create, grant
 from test_monitoring_subject_api import api as api
