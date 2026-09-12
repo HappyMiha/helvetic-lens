@@ -242,6 +242,8 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ### MV2-072 — Isolated Monitoring deployment on HappyDucky02
 
+**Pollen release repair, 2026-09-12:** The bdb5947 gate exhausted memory while installing dependencies on the shared Docker host, before lint/tests ran. Bound dependency build/download/install concurrency in the versioned QA image, retain frozen dependencies and all gates, and validate a cold installation under a tighter memory limit. Apply this deployment fix to both channels receiving the authorized MV2-031 feature. Other services, host memory limits, source policies and the pinned controller stay unchanged.
+
 **Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Platform + Operations · **Size:** M
 
 **Dependencies:** None; independent of product source gates. **Requirements:** explicit user deployment decision, 2026-09-10.

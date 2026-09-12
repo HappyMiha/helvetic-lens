@@ -76,3 +76,27 @@ now passes across the complete scope. All five affected Pollen HTTP/backlog chec
 also pass. Runtime code, data, grants and source policy are unchanged; activation
 still requires the normal automatic deployment. Future publication must include
 the exact deployment lint gate alongside feature tests.
+
+## Bounded dependency installation — 09:38 UTC
+
+The bdb5947 automatic attempt then failed before lint execution while uv installed
+argon2-cffi-bindings: the operating system returned ENOMEM. Read-only diagnostics
+showed a 16 GiB Docker host with approximately 2.6 GiB available and an older,
+separate local worker consuming about 10 GiB. This indicates shared memory pressure;
+it does not establish an application failure in the new Pollen code.
+
+MV2-072 bounds the QA image's installation/build concurrency to one and downloads
+to two, using copy mode for the cache/environment filesystem boundary. These are
+[documented uv settings](https://docs.astral.sh/uv/reference/environment/#uv_concurrent_installs).
+The pinned base image, frozen lockfile, non-root user, read-only source mount,
+controller limits and every lint/test gate remain intact. No existing service or
+controller is restarted or reconfigured. The controller builds this versioned
+recipe directly from the candidate, so no pinned-controller upgrade is required.
+
+An isolated rehearsal used a fresh cache, 1 CPU, 1 GiB RAM with no extra swap,
+128 PIDs, the actual QA image and no production configuration/data. All 65 locked
+packages installed; the full deployment lint command passed, followed by 66
+release-manager, release-isolation, Pollen HTTP and backlog checks. Cgroup peak
+memory was 410,734,592 bytes (391.7 MiB). The container was removed after completion.
+This proves the bounded installation under the observed host load, not the later
+full regression gate or public activation. Normal auto-deployment remains required.
