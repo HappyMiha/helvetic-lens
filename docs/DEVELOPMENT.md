@@ -28,10 +28,15 @@ No host alias or commit trailer is required. Existing unrelated hooks are preser
 Use `--production` only to mark a serving checkout against accidental development.
 Historical branches and worktrees remain history; this policy does not delete them.
 
-## Deployment isolation
+## Active deployment
 
-Both helveticlens.ch and monitoring.helveticlens.ch consume main, but remain separate
-instances with separate data, source approvals, credentials, volumes and Compose
-projects. Never develop in serving checkouts. An independent Monitoring instance
-must still use its isolated project and pinned, reviewed deployment controller.
-See `monitoring-v2/DEPLOYMENT_STATUS.md` for the selector migration and verified releases.
+Deploy and verify only **helveticlens.ch on HappySnowman**, including Monitoring
+features, from main. Never develop in serving checkouts.
+
+The user retired the separate monitoring.helveticlens.ch site on 12 September
+2026. Do not recreate or restart its HappyDucky02 deployment, Windows scheduled
+task, Docker project `helvetic-lens-v2`, tunnel or hostname. Older controller,
+selector and retry instructions are historical evidence, not work to resume.
+Preserve retained databases, volumes, credentials, consent and source approvals;
+retirement does not authorize deleting or transferring private data.
+See `monitoring-v2/DEPLOYMENT_STATUS.md` for verified main-site releases.

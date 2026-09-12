@@ -20,9 +20,13 @@ host-alias, task-branch and separate Monitoring integration workflow.
 - Routine tested commits, pushes and normal automatic deployments are already
   authorized. Continue the next ready feature while a previous deployment runs;
   never duplicate, interrupt or restart active checks or deployment jobs.
-- Serving checkouts are deployment-managed: never develop there. The two sites
-  can consume the same main branch while keeping separate Compose projects,
-  databases, volumes, credentials, source approvals and public release identity.
+- The only active product site is `helveticlens.ch` on HappySnowman. The user
+  retired `monitoring.helveticlens.ch` on 12 September 2026. Do not recreate or
+  restart the HappyDucky02 Monitoring deployment, its Windows task, Docker project
+  `helvetic-lens-v2`, tunnel or hostname. Verify releases only on the main site.
+- Serving checkouts are deployment-managed: never develop there. Preserve private
+  data, volumes, credentials and source approvals; retirement is not authorization
+  to delete or transfer them. Historical deployment instructions are not active.
   Read-only Python diagnostics near serving code must use `-B` or
   `PYTHONDONTWRITEBYTECODE=1` to preserve immutable release directories.
 - Keep local Git safeguards enabled and preserve unrelated hooks. Historical

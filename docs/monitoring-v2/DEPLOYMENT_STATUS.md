@@ -1,6 +1,26 @@
 # Monitoring deployment status — 12 September 2026
 
-## Current checkpoint — 12 September, 13:49 UTC
+## Current checkpoint — 12 September, 16:21 UTC
+
+The user's latest instruction retires the separate `monitoring.helveticlens.ch`
+site. **Only `helveticlens.ch` on HappySnowman remains an active deployment target**,
+including Monitoring features. Do not recreate or restart the retired HappyDucky02
+Windows task, Docker project `helvetic-lens-v2`, tunnel, hostname or deployment.
+Do not resume historical retry/controller instructions below. Retained data,
+credentials, consent and source approvals must be preserved.
+
+The main site's `/api/ready` reports `ready`, instance `main`, release
+**git-113e914e39d6**, matching pushed Air Quality feature
+`113e914e39d636646b515ac781a3a1ce40812521`. This confirms code activation;
+authenticated feature/source and human acceptance remain separate. This check
+made no operational changes and did not audit or alter the retired host's shutdown.
+
+The retired site's previous Air attempt failed on one SQLite test-fixture startup
+error after 2380 passes. Targeted Windows (47) and Linux (12) checks passed;
+the underlying cause remains unresolved. It is historical
+diagnostic evidence, not a reason to restart the retired deployment.
+
+## Historical two-site checkpoint — 12 September, 13:49 UTC
 
 Both public readiness endpoints independently confirm River / Lake release
 **87c563db935bec92e809eb4c3d8d9f8f13c292c2**: Monitoring exposes its full SHA and

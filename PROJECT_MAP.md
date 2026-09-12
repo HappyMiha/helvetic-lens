@@ -1,18 +1,22 @@
 # Helvetic Lens project map
 
 One agent develops complete features on **main**, following [the development cycle](docs/DEVELOPMENT.md).
-Both sites consume that code while their deployments and private data remain isolated.
+The only active site is **helveticlens.ch on HappySnowman**, including Monitoring features.
 
 | Activity | Queue | State |
 |---|---|---|
-| Monitoring v2 | [Active backlog](BACKLOG_MONITORING_V2.md) | Pollen and River / Lake released; Air Quality Basel feature verifying |
+| Monitoring v2 | [Active backlog](BACKLOG_MONITORING_V2.md) | Pollen, River / Lake and Basel Air code released on the main site; applicable acceptance remains open |
 | Legal Hackathon 2026 | [Hackathon](docs/workstreams/HACKATHON_2026.md) | Main product; preserve the frozen MVP reference |
 | Support and infrastructure | [Support](docs/workstreams/SUPPORT.md) | Parked pending the user's explicit start |
 
 | Instance | Code | Website |
 |---|---|---|
-| Main product | main | helveticlens.ch |
-| Monitoring v2 | main | monitoring.helveticlens.ch |
+| Main product and Monitoring features (HappySnowman) | main | helveticlens.ch |
+
+The user retired `monitoring.helveticlens.ch` on 12 September 2026. Do not restart
+its HappyDucky02 deployment, Windows task, `helvetic-lens-v2` Docker project, tunnel
+or hostname. Retained private data and deployment evidence must not be deleted or
+transferred as part of routine development.
 
 The active Monitoring backlog is the file on main. Older integration/task branches
 and host aliases are historical, not development routes. Customs/C4 remain deferred.
