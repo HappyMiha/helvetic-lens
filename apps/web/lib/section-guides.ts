@@ -139,6 +139,84 @@ const ai = c(
 
 export const SECTION_GUIDES: SectionGuide[] = [
   {
+    id: "air-watch",
+    title: "Follow air quality at a supported station",
+    purpose:
+      "Follow official pollutant observations with personal thresholds, clear periods and private change history.",
+    first: [
+      "Choose a supported station and pollutants; unsupported areas explain their coverage limit.",
+      "Choose thresholds, periods, improvement margins and cooldown, preview the data, save and explicitly start.",
+    ],
+    data: [
+      "Basel-Binningen hourly observations are provisional and licensed CC BY 4.0. Local conditions can differ from the station.",
+      "Calculated 24-hour means require all 24 compatible hourly inputs. Missing readings remain unknown; no medical or invented official categories are inferred.",
+    ],
+    wait: "A shared hourly collector follows source backoff. Refresh reads saved results. New deterioration respects cooldown; improvements remain visible. History retains source corrections for 30 days.",
+    setup:
+      "Open Monitoring → Air Quality Watch. Your monitors and changes are private to you. Changes also appear in Today; email is not enabled.",
+    controls: [
+      refresh,
+      pages,
+      official,
+      c(
+        "air-create",
+        "Create monitor / Edit settings",
+        "Opens a private form; editing requires draft or paused status.",
+        "Choose a station, pollutants, explicit measurement periods and optional numeric thresholds.",
+        "Edit draft",
+      ),
+      c(
+        "air-preview",
+        "Preview official data",
+        "Reads the licensed shared source when its polling window permits; shows missing coverage.",
+        "Verify periods and source availability before saving or starting.",
+        "Read / navigate",
+      ),
+      c(
+        "air-save",
+        "Save draft / Save settings",
+        "Saves a private versioned configuration without implicitly starting it.",
+        "After previewing the selected pollutants.",
+        "Save a change",
+      ),
+      c(
+        "air-start",
+        "Start monitoring / Resume",
+        "Schedules private deterministic monitoring after current data is available.",
+        "Explicitly start a draft or resume a paused monitor after preview.",
+        "Start background work",
+      ),
+      c(
+        "air-mute",
+        "Mute pollutant / Unmute pollutant",
+        "Changes only the selected pollutant's alerting; observations and other pollutant rules remain available.",
+        "Suppress a pollutant without deleting its history.",
+        "Save a change",
+      ),
+      c(
+        "air-review",
+        "Reviewed / Not relevant / Continue monitoring / Action required",
+        "Records a private decision on the latest development version; a newer material change needs renewed review.",
+        "After reading previous/current evidence in this reader or Today.",
+        "Save a change",
+      ),
+      c(
+        "air-pause",
+        "Pause / Archive",
+        "Stops new private evaluations while preserving the evidence history.",
+        "Pause before editing; archive when no longer needed.",
+        "Save a change",
+      ),
+      c(
+        "air-delete",
+        "Delete monitor",
+        "After confirmation removes your monitor, settings and change history; shared official source data remains separate.",
+        "Only when you no longer need this private history.",
+        "Remove data",
+      ),
+    ],
+  },
+  {
     id: "river-watch",
     title: "Follow a river or lake station",
     purpose:
@@ -1914,6 +1992,7 @@ export const GUIDE_ROUTES: Record<string, string> = {
   "/topics": "topics",
   "/pollen-watch": "pollen-watch",
   "/river-watch": "river-watch",
+  "/air-watch": "air-watch",
   "/sources": "sources",
   "/impact": "impact",
   "/topic-review": "topic-review",

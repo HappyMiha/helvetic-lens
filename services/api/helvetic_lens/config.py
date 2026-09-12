@@ -49,6 +49,7 @@ class Settings(BaseSettings):
         pattern=r"^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$",
     )
     allow_anonymous_dev: bool = True
+    air_watch_enabled: bool = Field(default=True, validation_alias="AIR_WATCH_ENABLED")
     river_watch_enabled: bool = Field(default=True, validation_alias="RIVER_WATCH_ENABLED")
     monitoring_rollout: MonitoringRollout = Field(
         default_factory=public_pollen_rollout, validation_alias="MONITORING_V2_ROLLOUT",

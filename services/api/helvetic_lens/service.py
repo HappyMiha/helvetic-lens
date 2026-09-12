@@ -2993,8 +2993,15 @@ class HelveticLens:
     def jobs(self, limit: int = 50, *, workload: str = "all", include_platform: bool = False, job_type: str | None = None, monitoring_owner_id: str | None = None):
         with self.db.session() as session:
             statement = select(Job)
+            from .air_models import AirMonitor
             from .models import MonitoringSubject
             from .river_models import RiverMonitor
+            if monitoring_owner_id is None:
+                statement = statement.where(Job.target_type != "air_monitor")
+            else:
+                statement = statement.where(or_(Job.target_type != "air_monitor", Job.target_id.in_(
+                    select(AirMonitor.id).where(AirMonitor.owner_user_id == monitoring_owner_id,
+                                               AirMonitor.organization_id == self.organization_id))))
             if monitoring_owner_id is None:
                 statement = statement.where(Job.target_type != "river_monitor")
             else:
@@ -4045,6 +4052,17 @@ class HelveticLens:
                 result_type = "relation_impact_analysis"
                 result_id = result_json["id"]
                 result_url = f"/impact?candidate={target_id}"
+            elif job_type == "air_refresh":
+                from .air_jobs import refresh as refresh_air
+                def air_checkpoint():
+                    with self.db.session() as heartbeat_session:
+                        active = durable_jobs.heartbeat(heartbeat_session, job_id, worker)
+                        heartbeat_session.commit()
+                    if not active:
+                        raise durable_jobs.JobCancelled()
+                result_json = await asyncio.to_thread(refresh_air, self.db, self.settings,
+                    monitor_id=target_id, version=payload.get("version"), checkpoint=air_checkpoint)
+                result_type, result_id, result_url = "air_monitor", target_id, "/air-watch"
             elif job_type == "river_refresh":
                 from .river_jobs import refresh as refresh_river
                 def river_checkpoint():

@@ -1,0 +1,74 @@
+"""Durable C7 refreshes recheck private access after public network I/O."""
+
+from datetime import UTC, datetime, timedelta
+
+from sqlalchemy import select
+
+from .air_models import AirMonitor
+from .air_runtime import enqueue, evaluate
+from .air_sources import collect
+from .config import DomainError
+from .monitoring_subjects import _actor
+
+
+def enqueue_due(database, settings, *, now=None):
+    if not settings.air_watch_enabled:
+        return {"enqueued": 0}
+    now = now or datetime.now(UTC)
+    with database.session(include_all_organizations=True) as session:
+        candidates = list(
+            session.execute(
+                select(AirMonitor.id, AirMonitor.organization_id)
+                .where(AirMonitor.status == "active", AirMonitor.next_poll_at <= now)
+                .order_by(AirMonitor.next_poll_at, AirMonitor.id)
+                .limit(100)
+            )
+        )
+    count = 0
+    for monitor_id, organization_id in candidates:
+        with database.organization_context(organization_id), database.session() as session:
+            row = session.scalar(select(AirMonitor).where(AirMonitor.id == monitor_id).with_for_update())
+            if row is None or row.status != "active":
+                continue
+            try:
+                _actor(session, row.owner_user_id, write=True)
+                count += enqueue(session, row, now)
+                row.next_poll_at = now + timedelta(hours=1)
+            except DomainError:
+                row.health = "access_unavailable"
+                row.next_poll_at = now + timedelta(hours=1)
+            session.commit()
+    return {"enqueued": count}
+
+
+def refresh(database, settings, *, monitor_id, version, checkpoint=lambda: None, now=None):
+    now = now or datetime.now(UTC)
+    if not settings.air_watch_enabled:
+        return {"status": "disabled"}
+    checkpoint()
+    with database.session() as session:
+        row = session.get(AirMonitor, monitor_id)
+        if row is None or row.status != "active" or row.version != version:
+            return {"status": "inactive"}
+        try:
+            _actor(session, row.owner_user_id, write=True)
+        except DomainError:
+            return {"status": "access_unavailable"}
+        keys = ["catalog", row.configuration["station_id"]]
+    for key in keys:
+        checkpoint()
+        collect(database, key, now=now)
+    checkpoint()
+    with database.session() as session:
+        row = session.scalar(select(AirMonitor).where(AirMonitor.id == monitor_id).with_for_update())
+        if not settings.air_watch_enabled or row is None or row.status != "active" or row.version != version:
+            return {"status": "inactive"}
+        try:
+            _actor(session, row.owner_user_id, write=True)
+            result = evaluate(session, row, now)
+        except DomainError:
+            row.health = "access_or_source_unavailable"
+            row.next_poll_at = now + timedelta(hours=1)
+            result = {"status": row.health}
+        session.commit()
+        return result

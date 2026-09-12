@@ -30,6 +30,7 @@ from . import (
     relation_candidates,
     relation_reprocessing,
 )
+from .air_api import air_router
 from .assistant_contract import (
     AssistantChatInput,
     AssistantContextInput,
@@ -313,6 +314,8 @@ class RelationReprocessingInput(Input):
 
 
 def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
+    if path.startswith("/api/air-watch"):
+        return "air_watch", 30, 60
     if path.startswith("/api/river-watch"):
         return "river_watch", 30, 60
     if path.startswith("/api/monitoring-subjects"):
@@ -1940,6 +1943,13 @@ def create_app(
 
     def check_job_access(request: Request, job_id: str):
         job = service.job_detail(job_id)
+        if job["target_type"] == "air_monitor":
+            from .air_runtime import owned as owned_air
+            actor = request.state.identity
+            if actor is None:
+                raise DomainError("Job not found.", 404, "not_found")
+            with service.db.session() as session:
+                owned_air(session, actor.user_id, job["target_id"], write=request.method != "GET")
         if job["target_type"] == "river_monitor":
             from .river_runtime import owned
             actor = request.state.identity
@@ -2135,6 +2145,7 @@ def create_app(
 
     app.include_router(draft_router(service, settings))
     app.include_router(river_router(service, settings))
+    app.include_router(air_router(service, settings))
     return app
 
 

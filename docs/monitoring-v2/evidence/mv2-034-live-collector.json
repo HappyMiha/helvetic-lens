@@ -1,0 +1,127 @@
+{
+  "checked_at": "2026-09-12T13:48:33.321412+00:00",
+  "outcomes": {
+    "catalog": "updated",
+    "BAS": "updated"
+  },
+  "catalogue": {
+    "stations": [
+      {
+        "id": "BAS",
+        "name": "Basel-Binningen",
+        "area": "Basel / Binningen",
+        "representativeness": "suburban_station",
+        "source_url": "https://data.bs.ch/explore/dataset/100051/"
+      }
+    ],
+    "health": "ready",
+    "source_url": "https://data.bs.ch/explore/dataset/100051/",
+    "attribution": "Kanton Basel-Stadt · Luftqualität Station Basel-Binningen · MeteoSchweiz / NABEL",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "unsupported": [
+      {
+        "area": "Lugano",
+        "reason": "source_contract_pending"
+      }
+    ],
+    "coverage_scope": "verified_station_only"
+  },
+  "measurement_count": 384,
+  "latest": [
+    {
+      "station_id": "BAS",
+      "metric": "O3",
+      "timestamp": "2026-09-12T12:00:00+00:00",
+      "value": "116.9",
+      "unit": "µg/m³",
+      "period": "hourly_mean",
+      "quality": "provisional",
+      "method": "basel-100051-hourly-v1",
+      "source_url": "https://data.bs.ch/explore/dataset/100051/",
+      "source": "Kanton Basel-Stadt · Luftqualität Station Basel-Binningen · MeteoSchweiz / NABEL",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "response_sha256": "b11a02e6672c0c0091e65b3fa4448664bec48f7a0e756097b319473b735057e3",
+      "fetched_at": "2026-09-12T13:48:32.631278+00:00",
+      "value_hash": "8b7dc66de967dbf8d5a087a68090fb7fbfe7435e62fedd14129ae79474057dca",
+      "revision": 1,
+      "corrected": false,
+      "previous_value_hash": null,
+      "version_id": "dc2f65fa7a60ab3539586b395e408a1b6376a1036feb90a2842e96a637627a9d"
+    },
+    {
+      "station_id": "BAS",
+      "metric": "NO2",
+      "timestamp": "2026-09-12T12:00:00+00:00",
+      "value": "3.7",
+      "unit": "µg/m³",
+      "period": "hourly_mean",
+      "quality": "provisional",
+      "method": "basel-100051-hourly-v1",
+      "source_url": "https://data.bs.ch/explore/dataset/100051/",
+      "source": "Kanton Basel-Stadt · Luftqualität Station Basel-Binningen · MeteoSchweiz / NABEL",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "response_sha256": "b11a02e6672c0c0091e65b3fa4448664bec48f7a0e756097b319473b735057e3",
+      "fetched_at": "2026-09-12T13:48:32.631278+00:00",
+      "value_hash": "3cd3360246083e96796d8895e97b7980422057413a8850643c413e48f9c31ebd",
+      "revision": 1,
+      "corrected": false,
+      "previous_value_hash": null,
+      "version_id": "8c68f081aa63685b805e204f5fb4f501d7ff5b70fc035752165efdd3f14dd20c"
+    },
+    {
+      "station_id": "BAS",
+      "metric": "PM10",
+      "timestamp": "2026-09-12T12:00:00+00:00",
+      "value": "8.7",
+      "unit": "µg/m³",
+      "period": "hourly_mean",
+      "quality": "provisional",
+      "method": "basel-100051-hourly-v1",
+      "source_url": "https://data.bs.ch/explore/dataset/100051/",
+      "source": "Kanton Basel-Stadt · Luftqualität Station Basel-Binningen · MeteoSchweiz / NABEL",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "response_sha256": "b11a02e6672c0c0091e65b3fa4448664bec48f7a0e756097b319473b735057e3",
+      "fetched_at": "2026-09-12T13:48:32.631278+00:00",
+      "value_hash": "56a263bacc3eed362bc69debd3451e24e6530661a59fd906cee147588fd2e85b",
+      "revision": 1,
+      "corrected": false,
+      "previous_value_hash": null,
+      "version_id": "694415f0a33cd69eede54d5a09519fd489a51c84fe764f3ae532c085f3fddd6a"
+    },
+    {
+      "station_id": "BAS",
+      "metric": "PM25",
+      "timestamp": "2026-09-12T12:00:00+00:00",
+      "value": "4.3",
+      "unit": "µg/m³",
+      "period": "hourly_mean",
+      "quality": "provisional",
+      "method": "basel-100051-hourly-v1",
+      "source_url": "https://data.bs.ch/explore/dataset/100051/",
+      "source": "Kanton Basel-Stadt · Luftqualität Station Basel-Binningen · MeteoSchweiz / NABEL",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "response_sha256": "b11a02e6672c0c0091e65b3fa4448664bec48f7a0e756097b319473b735057e3",
+      "fetched_at": "2026-09-12T13:48:32.631278+00:00",
+      "value_hash": "872bd6e9b7cd492b587278a8c4cb699b81754719492b861f8fea5ae08e066b14",
+      "revision": 1,
+      "corrected": false,
+      "previous_value_hash": null,
+      "version_id": "ec8701ee395f07ff055d1d2b7f5fd69bd30a9f279d3343492481c9abe1d66ec6"
+    }
+  ],
+  "source_cache": {
+    "catalog": {
+      "schema_version": "basel-100051-hourly-v1",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "publisher": "MeteoSchweiz",
+      "source_url": "https://data.bs.ch/explore/dataset/100051/",
+      "metadata_sha256": "8f4c3102c8076c100b2a73e856e59156dc8527ad43664c07d9a5db182729edae"
+    },
+    "BAS": {
+      "response_sha256": "b11a02e6672c0c0091e65b3fa4448664bec48f7a0e756097b319473b735057e3",
+      "sample_count": 384,
+      "recovery_hours": 72
+    }
+  }
+}

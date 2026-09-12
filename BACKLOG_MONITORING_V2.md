@@ -206,8 +206,8 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 | [MV2-031](#mv2-031) | Pollen Watch — the first complete end-to-end scenario (C5) | F3 | P0 | L | IN PROGRESS | [MV2-070](#mv2-070), [MV2-030](#mv2-030) |
 | [MV2-032](#mv2-032) | C6: hydrological stations, metrics and official danger levels | F3 | P1 | M | VERIFYING | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
 | [MV2-033](#mv2-033) | C6: River / Lake thresholds, escalation and history | F3 | P1 | M | VERIFYING | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-032](#mv2-032) |
-| [MV2-034](#mv2-034) | C7: official air-quality series and interpretation | F3 | P1 | M | PLANNED | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
-| [MV2-035](#mv2-035) | C7: Air Quality — metrics, changes and improvements | F3 | P1 | M | PLANNED | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-034](#mv2-034) |
+| [MV2-034](#mv2-034) | C7: official air-quality series and interpretation | F3 | P1 | M | VERIFYING | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
+| [MV2-035](#mv2-035) | C7: Air Quality — metrics, changes and improvements | F3 | P1 | M | VERIFYING | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-034](#mv2-034) |
 | [MV2-036](#mv2-036) | Related developments from multiple sources | F4 | P1 | M | PLANNED | [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-029](#mv2-029), [MV2-033](#mv2-033), [MV2-041](#mv2-041), [MV2-071](#mv2-071) |
 | [MV2-037](#mv2-037) | Journey/Trip/Route/Stop and Road Corridor reference data | F4 | P0 | L | PLANNED | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-015](#mv2-015), [MV2-016](#mv2-016), [MV2-071](#mv2-071) |
 | [MV2-038](#mv2-038) | C2: Service Alerts and Trip Updates | F4 | P1 | L | PLANNED | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-037](#mv2-037), [MV2-071](#mv2-071) |
@@ -1245,7 +1245,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ### MV2-034 — C7: official air-quality series and interpretation
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** Integration · **Size:** M
+**Status:** VERIFYING · **Priority:** P1 · **Owner:** Integration · **Size:** M
 
 **Dependencies:** [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071). **Requirements:** §14.3–14.6; AC-C7-01,03,06,07.
 
@@ -1262,13 +1262,13 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** Unit/aggregation/category source conformance; provisional/missing/corrected data cases.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Execution evidence — complete Basel feature, 12 September 2026:** [Air Quality Watch](docs/monitoring-v2/AIR_QUALITY_WATCH.md) records the licensed source, six additive tables, private lifecycle/revisions, explicit hourly or complete 24-hour rules, hysteresis/cooldown, pollutant mute, immutable corrections, Today/review/reopen, history and five-language reader. The actual collector retrieved 384 samples and all four current Basel pollutants into an isolated scratch database. Focused behavior, worker, migration and privacy tests, affected regressions, full frontend build and eight browser accessibility checkpoints passed. The first enabled footprint is Basel-Binningen; Lugano and other areas explicitly remain unsupported pending their source contracts. Numeric user thresholds do not claim an official category scale. Exact release activation and applicable field/human acceptance remain unverified, so the task stays VERIFYING. Broader shared parents and national source coverage are not completed by this scoped feature.
 
 <a id="mv2-035"></a>
 
 ### MV2-035 — C7: Air Quality — metrics, changes and improvements
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** M
+**Status:** VERIFYING · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** M
 
 **Dependencies:** [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-034](#mv2-034). **Requirements:** §14; AC-C7-01…10.
 
@@ -1285,8 +1285,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** E2E pollutants/periods, improvement, noise suppression, unsupported-station and history checks.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
-
+**Execution evidence — complete Basel feature, 12 September 2026:** [Air Quality Watch](docs/monitoring-v2/AIR_QUALITY_WATCH.md) records the licensed source, six additive tables, private lifecycle/revisions, explicit hourly or complete 24-hour rules, hysteresis/cooldown, pollutant mute, immutable corrections, Today/review/reopen, history and five-language reader. The actual collector retrieved 384 samples and all four current Basel pollutants into an isolated scratch database. Focused behavior, worker, migration and privacy tests, affected regressions, full frontend build and eight browser accessibility checkpoints passed. The first enabled footprint is Basel-Binningen; Lugano and other areas explicitly remain unsupported pending their source contracts. Numeric user thresholds do not claim an official category scale. Exact release activation and applicable field/human acceptance remain unverified, so the task stays VERIFYING. Broader shared parents and national source coverage are not completed by this scoped feature.
 
 ## F4 — Mobility and related events
 

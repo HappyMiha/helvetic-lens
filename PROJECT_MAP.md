@@ -5,7 +5,7 @@ Both sites consume that code while their deployments and private data remain iso
 
 | Activity | Queue | State |
 |---|---|---|
-| Monitoring v2 | [Active backlog](BACKLOG_MONITORING_V2.md) | Pollen implemented; next complete direction: River / Lake Watch |
+| Monitoring v2 | [Active backlog](BACKLOG_MONITORING_V2.md) | Pollen and River / Lake released; Air Quality Basel feature verifying |
 | Legal Hackathon 2026 | [Hackathon](docs/workstreams/HACKATHON_2026.md) | Main product; preserve the frozen MVP reference |
 | Support and infrastructure | [Support](docs/workstreams/SUPPORT.md) | Parked pending the user's explicit start |
 

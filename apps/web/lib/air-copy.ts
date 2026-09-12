@@ -1,0 +1,221 @@
+import type { Locale } from "./i18n";
+import { riverCopy } from "./river-copy";
+
+const extra = {
+  title: "Air Quality Watch",
+  intro:
+    "Private station monitoring. Material changes appear here and in Today. Email is not enabled.",
+  station: "Supported station",
+  metrics: "Pollutants",
+  O3: "Ozone (O₃)",
+  NO2: "Nitrogen dioxide (NO₂)",
+  PM10: "PM10",
+  PM25: "PM2.5",
+  hourly_mean: "Hourly mean",
+  rolling_24h_mean: "Mean of 24 consecutive hourly values",
+  period: "Measurement period",
+  hysteresis: "Improvement margin (µg/m³)",
+  cooldown: "Minimum time between deteriorations (hours)",
+  ruleHelp:
+    "Above the threshold triggers a change. Improvement is reported at or below threshold minus the margin. Cooldown suppresses repeated deteriorations; improvements remain visible.",
+  scope:
+    "Available: Basel-Binningen, a suburban station. Local conditions may differ. Lugano and other areas are not enabled while their source contracts are being verified.",
+  limits:
+    "Provisional observations, not personal health advice. Missing data means unknown. History: 30 days; recovery: 72 hours. Only complete hourly inputs are used for a calculated 24-hour mean.",
+  derived: "Calculated by Helvetic Lens from official hourly observations",
+  corrected: "Source correction",
+  missing: "Missing",
+  invalid:
+    "Choose a station, name and pollutants, and check thresholds, margins and periods.",
+  incomplete_window: "Incomplete 24-hour window",
+  mute: "Mute pollutant",
+  unmute: "Unmute pollutant",
+  muted: "Muted",
+  threshold_crossed: "Pollution threshold exceeded",
+  threshold_cleared: "Pollution improved below your threshold",
+  license: "Licence: CC BY 4.0",
+  attribution: "Kanton Basel-Stadt · Basel-Binningen · MeteoSchweiz / NABEL",
+  why: "You monitor this station, pollutant and measurement period.",
+  open: "Open monitor",
+  today: "Air quality changes",
+  previous: "Previous observation",
+  currentValue: "Current observation",
+  noMatch: "No supported station matches this search.",
+};
+type Extra = Record<keyof typeof extra, string>;
+const translations: Record<Locale, Extra> = {
+  "en-CH": extra,
+  "de-CH": {
+    title: "Luftqualitäts-Monitoring",
+    intro:
+      "Privates Stationsmonitoring. Wesentliche Änderungen erscheinen hier und unter Heute. E-Mail ist nicht aktiviert.",
+    station: "Unterstützte Station",
+    metrics: "Schadstoffe",
+    O3: "Ozon (O₃)",
+    NO2: "Stickstoffdioxid (NO₂)",
+    PM10: "PM10",
+    PM25: "PM2.5",
+    hourly_mean: "Stundenmittel",
+    rolling_24h_mean: "Mittel aus 24 aufeinanderfolgenden Stundenwerten",
+    period: "Messzeitraum",
+    hysteresis: "Verbesserungsabstand (µg/m³)",
+    cooldown: "Mindestabstand zwischen Verschlechterungen (Stunden)",
+    ruleHelp:
+      "Über der Schwelle wird eine Änderung gemeldet. Verbesserung gilt bei höchstens Schwelle minus Abstand. Die Wartezeit unterdrückt wiederholte Verschlechterungen; Verbesserungen bleiben sichtbar.",
+    scope:
+      "Verfügbar: Basel-Binningen, eine vorstädtische Station. Lokale Bedingungen können abweichen. Lugano und weitere Gebiete sind bis zur Prüfung ihrer Quellenverträge nicht aktiviert.",
+    limits:
+      "Vorläufige Messungen, keine persönliche Gesundheitsberatung. Fehlende Daten bleiben unbekannt. Historie: 30 Tage; Wiederherstellung: 72 Stunden. Ein berechnetes 24-Stunden-Mittel erfordert vollständige Stundenwerte.",
+    derived: "Von Helvetic Lens aus amtlichen Stundenwerten berechnet",
+    corrected: "Quellenkorrektur",
+    missing: "Fehlend",
+    invalid:
+      "Station, Name und Schadstoffe wählen und Schwellen, Abstände und Zeiträume prüfen.",
+    incomplete_window: "Unvollständiges 24-Stunden-Fenster",
+    mute: "Schadstoff stummschalten",
+    unmute: "Schadstoff wieder aktivieren",
+    muted: "Stummgeschaltet",
+    threshold_crossed: "Schadstoffschwelle überschritten",
+    threshold_cleared: "Belastung unter Ihre Schwelle gesunken",
+    license: "Lizenz: CC BY 4.0",
+    attribution: "Kanton Basel-Stadt · Basel-Binningen · MeteoSchweiz / NABEL",
+    why: "Sie beobachten diese Station, diesen Schadstoff und diesen Messzeitraum.",
+    open: "Monitoring öffnen",
+    today: "Änderungen der Luftqualität",
+    previous: "Vorherige Messung",
+    currentValue: "Aktuelle Messung",
+    noMatch: "Keine unterstützte Station passt zur Suche.",
+  },
+  "fr-CH": {
+    title: "Suivi de la qualité de l’air",
+    intro:
+      "Suivi privé des stations. Les changements significatifs apparaissent ici et dans Aujourd’hui. Les e-mails ne sont pas activés.",
+    station: "Station prise en charge",
+    metrics: "Polluants",
+    O3: "Ozone (O₃)",
+    NO2: "Dioxyde d’azote (NO₂)",
+    PM10: "PM10",
+    PM25: "PM2.5",
+    hourly_mean: "Moyenne horaire",
+    rolling_24h_mean: "Moyenne de 24 valeurs horaires consécutives",
+    period: "Période de mesure",
+    hysteresis: "Marge d’amélioration (µg/m³)",
+    cooldown: "Délai minimal entre dégradations (heures)",
+    ruleHelp:
+      "Un dépassement du seuil déclenche un changement. L’amélioration est signalée au seuil moins la marge ou en dessous. Le délai limite les dégradations répétées ; les améliorations restent visibles.",
+    scope:
+      "Disponible : Basel-Binningen, une station périurbaine. Les conditions locales peuvent varier. Lugano et les autres régions attendent la vérification des contrats des sources.",
+    limits:
+      "Mesures provisoires, sans conseil médical individuel. Les données manquantes restent inconnues. Historique : 30 jours ; récupération : 72 heures. Une moyenne calculée sur 24 heures exige toutes les valeurs horaires.",
+    derived:
+      "Calculé par Helvetic Lens à partir des observations horaires officielles",
+    corrected: "Correction de la source",
+    missing: "Manquant",
+    invalid:
+      "Choisissez station, nom et polluants, puis vérifiez seuils, marges et périodes.",
+    incomplete_window: "Fenêtre de 24 heures incomplète",
+    mute: "Suspendre le polluant",
+    unmute: "Réactiver le polluant",
+    muted: "Suspendu",
+    threshold_crossed: "Seuil de pollution dépassé",
+    threshold_cleared: "Pollution redescendue sous votre seuil",
+    license: "Licence : CC BY 4.0",
+    attribution: "Canton de Bâle-Ville · Basel-Binningen · MétéoSuisse / NABEL",
+    why: "Vous suivez cette station, ce polluant et cette période de mesure.",
+    open: "Ouvrir le suivi",
+    today: "Changements de qualité de l’air",
+    previous: "Observation précédente",
+    currentValue: "Observation actuelle",
+    noMatch: "Aucune station prise en charge ne correspond à la recherche.",
+  },
+  "it-CH": {
+    title: "Monitoraggio della qualità dell’aria",
+    intro:
+      "Monitoraggio privato delle stazioni. Le variazioni rilevanti appaiono qui e in Oggi. Le e-mail non sono attivate.",
+    station: "Stazione supportata",
+    metrics: "Inquinanti",
+    O3: "Ozono (O₃)",
+    NO2: "Diossido di azoto (NO₂)",
+    PM10: "PM10",
+    PM25: "PM2.5",
+    hourly_mean: "Media oraria",
+    rolling_24h_mean: "Media di 24 valori orari consecutivi",
+    period: "Periodo di misura",
+    hysteresis: "Margine di miglioramento (µg/m³)",
+    cooldown: "Intervallo minimo tra peggioramenti (ore)",
+    ruleHelp:
+      "Il superamento della soglia genera una variazione. Il miglioramento è segnalato alla soglia meno il margine o al di sotto. L’intervallo limita i peggioramenti ripetuti; i miglioramenti restano visibili.",
+    scope:
+      "Disponibile: Basel-Binningen, stazione suburbana. Le condizioni locali possono variare. Lugano e le altre aree attendono la verifica dei contratti delle fonti.",
+    limits:
+      "Misure provvisorie, senza consigli sanitari individuali. I dati mancanti restano sconosciuti. Storico: 30 giorni; recupero: 72 ore. Una media calcolata su 24 ore richiede tutti i valori orari.",
+    derived: "Calcolato da Helvetic Lens dalle osservazioni orarie ufficiali",
+    corrected: "Correzione della fonte",
+    missing: "Mancante",
+    invalid:
+      "Scegliere stazione, nome e inquinanti e verificare soglie, margini e periodi.",
+    incomplete_window: "Finestra di 24 ore incompleta",
+    mute: "Silenzia inquinante",
+    unmute: "Riattiva inquinante",
+    muted: "Silenziato",
+    threshold_crossed: "Soglia di inquinamento superata",
+    threshold_cleared: "Inquinamento migliorato sotto la soglia",
+    license: "Licenza: CC BY 4.0",
+    attribution:
+      "Cantone di Basilea Città · Basel-Binningen · MeteoSvizzera / NABEL",
+    why: "Segui questa stazione, questo inquinante e questo periodo di misura.",
+    open: "Apri monitoraggio",
+    today: "Variazioni della qualità dell’aria",
+    previous: "Osservazione precedente",
+    currentValue: "Osservazione attuale",
+    noMatch: "Nessuna stazione supportata corrisponde alla ricerca.",
+  },
+  "rm-CH": {
+    title: "Monitoring da la qualitad da l’aria",
+    intro:
+      "Monitoring privat da staziuns. Midadas relevantas cumparan qua ed en Oz. E-mail n’è betg activà.",
+    station: "Staziun sustegnida",
+    metrics: "Substanzas nuschaivlas",
+    O3: "Ozon (O₃)",
+    NO2: "Dioxid d’azot (NO₂)",
+    PM10: "PM10",
+    PM25: "PM2.5",
+    hourly_mean: "Media orara",
+    rolling_24h_mean: "Media da 24 valurs oraras consecutivas",
+    period: "Perioda da mesiraziun",
+    hysteresis: "Distanza da meglieraziun (µg/m³)",
+    cooldown: "Interval minimal tranter pegiuraziuns (uras)",
+    ruleHelp:
+      "Sur la sava vegn annunziada ina midada. La meglieraziun vala tar la sava minus la distanza u sut quella. L’interval reducescha pegiuraziuns repetidas; meglieraziuns restan visiblas.",
+    scope:
+      "Disponibel: Basel-Binningen, ina staziun suburbana. Las cundiziuns localas pon variar. Lugano ed autras regiuns spetgan la verificaziun dals contracts da las funtaunas.",
+    limits:
+      "Mesiraziuns provisoricas, nagin cussegl da sanadad individual. Datas mancantas restan nunenconuschentas. Istorgia: 30 dis; recuperaziun: 72 uras. Ina media calculada da 24 uras pretenda tut las valurs oraras.",
+    derived: "Calculà da Helvetic Lens cun observaziuns oraras uffizialas",
+    corrected: "Correctura da la funtauna",
+    missing: "Mancant",
+    invalid:
+      "Tscherner staziun, num e substanzas e controllar savas, distanzas e periodas.",
+    incomplete_window: "Fanestrà da 24 uras incumplet",
+    mute: "Metter la substanza sin silenzi",
+    unmute: "Reactivar la substanza",
+    muted: "Sin silenzi",
+    threshold_crossed: "Sava da polluziun surpassada",
+    threshold_cleared: "Polluziun meglierada sut la sava",
+    license: "Licenza: CC BY 4.0",
+    attribution:
+      "Chantun Basilea-Citad · Basel-Binningen · MeteoSvizra / NABEL",
+    why: "Vus observais questa staziun, questa substanza e questa perioda da mesiraziun.",
+    open: "Avrir il monitoring",
+    today: "Midadas da la qualitad da l’aria",
+    previous: "Observaziun precedenta",
+    currentValue: "Observaziun actuala",
+    noMatch: "Nag ina staziun sustegnida correspunda a la tschertga.",
+  },
+};
+export const airCopy = Object.fromEntries(
+  Object.entries(translations).map(([locale, copy]) => [
+    locale,
+    { ...riverCopy[locale as Locale], ...copy },
+  ]),
+) as Record<Locale, (typeof riverCopy)["en-CH"] & Extra>;

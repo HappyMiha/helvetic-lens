@@ -1,0 +1,102 @@
+{
+  "checked_at": "2026-09-12T12:47:32.758021+00:00",
+  "requests": [
+    {
+      "name": "basel-metadata.json",
+      "url": "https://data.bs.ch/api/explore/v2.1/catalog/datasets/100051",
+      "method": "GET",
+      "request_body": null,
+      "retrieved_at": "2026-09-12T12:46:58.649411+00:00",
+      "bytes": 11825,
+      "sha256": "8bab5ece59e9d8c2ad043908a0385af22b3d133b772e9c21dea88034925a788e"
+    },
+    {
+      "name": "basel-recent.json",
+      "url": "https://data.bs.ch/api/explore/v2.1/catalog/datasets/100051/records?limit=100&order_by=datum_zeit%20desc",
+      "method": "GET",
+      "request_body": null,
+      "retrieved_at": "2026-09-12T12:46:58.981359+00:00",
+      "bytes": 29163,
+      "sha256": "7078e80a64b17eb87a13d89ce6aa2ca01806796857bb1e0a34743981f138711d"
+    },
+    {
+      "name": "basel-hourly.csv",
+      "url": "https://bafu.meteotest.ch/nabel/index.php/ausgabe/index/english?webgrab=no",
+      "method": "POST",
+      "request_body": "nach=station&station=5&schadstoffsliste%5B%5D=1&schadstoffsliste%5B%5D=2&schadstoffsliste%5B%5D=6&schadstoffsliste%5B%5D=7&datentyp=stunden&zeitraum=frei&von=2026-09-11&bis=2026-09-12&ausgabe=csv&abfrageflag=true",
+      "retrieved_at": "2026-09-12T12:46:59.196994+00:00",
+      "bytes": 1740,
+      "sha256": "006b8d89813c9c7eefc8827b69363815cd1b5a5ae67895bacd23db92da4322e8"
+    },
+    {
+      "name": "lugano-daily.csv",
+      "url": "https://bafu.meteotest.ch/nabel/index.php/ausgabe/index/english?webgrab=no",
+      "method": "POST",
+      "request_body": "nach=station&station=3&schadstoffsliste%5B%5D=1&schadstoffsliste%5B%5D=2&schadstoffsliste%5B%5D=6&schadstoffsliste%5B%5D=7&datentyp=tag&zeitraum=frei&von=2026-09-10&bis=2026-09-11&ausgabe=csv&abfrageflag=true",
+      "retrieved_at": "2026-09-12T12:46:59.396657+00:00",
+      "bytes": 304,
+      "sha256": "2e5aaadbe4b457670bc87e1c28dbcaa359772cd69ce0a603b21db0d747663388"
+    }
+  ],
+  "basel": {
+    "dataset_id": "100051",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "publisher_as_declared": "MeteoSchweiz",
+    "official_csv_source": "NABEL",
+    "station_type": "Suburban",
+    "pollutants": [
+      "o3_ug_m3",
+      "no2_ug_m3",
+      "pm10_ug_m3",
+      "pm2_5_ug_m3"
+    ],
+    "source_period": "hourly_mean",
+    "matched_hourly_values": 144,
+    "future_empty_rows": 11,
+    "latest": {
+      "datum_zeit": "2026-09-12T11:00:00+00:00",
+      "timestamp_text": "12.09.2026 12:00",
+      "o3_ug_m3": 110.5,
+      "no2_ug_m3": 4.9,
+      "pm10_ug_m3": 10.1,
+      "pm2_5_ug_m3": 4.7
+    }
+  },
+  "lugano": {
+    "station": "Lugano-Università",
+    "station_type": "Urban",
+    "header": [
+      "Station: Lugano-Università",
+      "Urban",
+      "Daily means, O3: Maximum hourly mean of the day",
+      "Source: NABEL",
+      "The measured values for the current year are preliminary and not yet definitively verified."
+    ],
+    "daily_rows": [
+      {
+        "Date/time": "10.09.2026",
+        "O3 [ug/m3]": "73.9",
+        "NO2 [ug/m3]": "10.7",
+        "PM10 [ug/m3]": "4.6",
+        "PM2.5 [ug/m3]": "1.4"
+      },
+      {
+        "Date/time": "11.09.2026",
+        "O3 [ug/m3]": "95.5",
+        "NO2 [ug/m3]": "9.3",
+        "PM10 [ug/m3]": "6.1",
+        "PM2.5 [ug/m3]": "2.4"
+      }
+    ],
+    "automated_reuse_rights": "NOT YET ESTABLISHED for NABEL CSV; do not infer from station geodata licence"
+  },
+  "limitations": [
+    "No production integration or source activation performed",
+    "Basel CC BY scope does not automatically license other stations",
+    "No numerical categories or medical risk classes inferred",
+    "API quota contract and correction semantics still require completion",
+    "NABEL CSV uses fixed CET, not Europe/Zurich daylight-saving time",
+    "Derived 24-hour means must be labelled and require complete compatible hourly inputs"
+  ]
+}

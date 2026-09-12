@@ -1,5 +1,6 @@
 "use client";
 
+import { AirToday } from "./air-watch";
 import { PollenToday } from './pollen-today';
 import { FeedTopicList } from "./feed-topic-list";
 import { FeedInterestBrief } from "./feed-interest-brief";
@@ -73,6 +74,7 @@ export function InterestFeedPage() {
       <Button variant="outline" onClick={() => { router.replace(href({ cursor: "" })); setPollenRefresh(value => value + 1); void invalidateResources(resourceTag("impact-inbox")); }}><RefreshCw size={16} />{t("inboxPaging.refresh")}</Button>
     </header>
     <PollenToday key={pollenRefresh} />
+    <AirToday key={`air-${pollenRefresh}`} />
     <nav className="flex flex-wrap gap-x-5 gap-y-2 mb-5 text-sm">
       <Link className="underline min-h-[44px] inline-flex items-center" href="/topics">{t("nav.topics")}</Link>
       <Link className="underline min-h-[44px] inline-flex items-center" href="/sources">{t("nav.sources")}</Link>

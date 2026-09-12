@@ -448,6 +448,13 @@ export function Shell({
               <Waves size={17} />
               {t("nav.riverWatch")}
             </NavigationItem>
+            <NavigationItem
+              active={pathname === "/air-watch"}
+              href="/air-watch"
+            >
+              <Waves size={17} />
+              {t("nav.airWatch")}
+            </NavigationItem>
           </section>
           <section className="nav-section">
             <span className="nav-heading">{t("shell.workspaceSettings")}</span>
@@ -627,6 +634,13 @@ export function Shell({
                 >
                   <Waves size={17} />
                   {t("nav.riverWatch")}
+                </NavigationItem>
+                <NavigationItem
+                  active={pathname === "/air-watch"}
+                  href="/air-watch"
+                >
+                  <Waves size={17} />
+                  {t("nav.airWatch")}
                 </NavigationItem>
               </section>
               <span className="nav-heading">

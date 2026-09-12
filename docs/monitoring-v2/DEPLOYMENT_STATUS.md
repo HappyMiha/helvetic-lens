@@ -1,30 +1,29 @@
 # Monitoring deployment status — 12 September 2026
 
-## Current checkpoint — 12 September, 12:00 UTC
+## Current checkpoint — 12 September, 13:49 UTC
 
-Both sites independently report ready on commit **14a496c12913f36cf125f0f2eef859c2dc28312b**:
-Monitoring exposes the full release identity; main exposes `git-14a496c12913`.
-Monitoring's normal automatic release completed successfully at 11:04:07 UTC, after
-its full quality gates. The scheduler is idle. The earlier Pollen outage and pending
-wildcard activation notes below are historical. Existing private Basel data and
-email consent remain unchanged.
+Both public readiness endpoints independently confirm River / Lake release
+**87c563db935bec92e809eb4c3d8d9f8f13c292c2**: Monitoring exposes its full SHA and
+main exposes `git-87c563db935b`. Monitoring's ordinary deployment
+`f03d9108-fa1e-4213-be3d-908fdf43ac19` completed at **13:42:57 UTC**. The complete
+API gate passed, followed by image builds, writer quiescence, a pre-release backup,
+activation and public health verification. The previous outage notes are historical.
 
-The user has now explicitly retired multi-computer/task-branch development: one agent,
-complete features, and publication only to **main**. See [the current workflow](../DEVELOPMENT.md).
-The River / Lake feature and tested controller/installer update consume main while
-preserving independent Compose projects, source approvals, credentials and data.
+The main-only operational cutover is complete. The active selector is
+`monitoring-instance.main.json`, with branch `main` and every other isolated
+instance field preserved. The reviewed pinned controller is `87c563d`; installation
+passed ValidateOnly and used the existing deployment lock. The old selector and
+controller backup remain rollback evidence. Both sites share code while their
+Compose projects, databases, credentials, approvals and private data stay separate.
+No manual or duplicate deployment was started.
 
-At this recorded pre-publication checkpoint, the installed Monitoring selector still
-watches the historical branch and the pinned controller is `dc93efc`. The operational
-cutover must follow the tested installer: publish the reviewed commit on main, fetch it
-into the deployment-managed source repository, stage a main selector preserving all
-other fields, validate it, and install the exact controller under the existing lock.
-Never interrupt an active release or edit immutable application source. Preserve the
-old selector as rollback evidence. A successful push alone does not prove River activation.
+The next complete Air Quality Basel feature has passed local implementation checks
+and is being prepared for a single main commit. Its exact activation is **pending**;
+do not confuse River's published identity with the Air feature. See
+[Air Quality Watch](AIR_QUALITY_WATCH.md) and [River / Lake Watch](RIVER_LAKE_WATCH.md).
+MV2-032/033 retain VERIFYING for applicable post-release acceptance; no completed
+human pilot or whole-v2 acceptance is claimed.
 
-River acceptance and source proof: [River / Lake Watch](RIVER_LAKE_WATCH.md).
-MV2-032/033 are VERIFYING until the exact release is observed. This checkpoint does not
-claim a completed human pilot or whole-v2 acceptance.
 ## Historical outage checkpoint
 
 **OUTAGE: complete Pollen candidate `0ec41a9` passed its full API gate and builds, but failed decoder health and then database rollback. Public readiness returns Cloudflare 1033; the stored previous SHA does not establish a currently serving site. MV2-072 remains IN PROGRESS and MV2-073 remains VERIFYING.**
