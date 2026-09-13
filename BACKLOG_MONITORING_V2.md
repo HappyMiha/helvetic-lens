@@ -914,6 +914,8 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** Browser journeys for creation, editing and unavailability across the nine active templates.
 
+**13 September navigation follow-up:** All nine implemented directions are now linked from the shared desktop/mobile Monitoring menu for every role, with a named current destination. Enabled production defaults and individual source-readiness checks are preserved. See [navigation scope and verification](docs/monitoring-v2/MONITORING_CENTRE.md#all-nine-sections-in-navigation--13-september-2026). This does not complete the broader nine-template live-source and user acceptance criteria.
+
 **Execution evidence:** [Monitoring Centre scoped feature](docs/monitoring-v2/MONITORING_CENTRE.md): nine scenario choices with explicit availability, owner-private C5/C6/C7 inventory, freshness and lifecycle filters, exact links to existing settings/history and a legacy bridge. Uses existing configuration, ownership and source contracts; adds no source permission or activation route. Full parent acceptance remains open for the other domain journeys, shared business subjects and timed commute pause. Code checks, release identity and human acceptance are tracked separately in the evidence document.
 
 <a id="mv2-018"></a>

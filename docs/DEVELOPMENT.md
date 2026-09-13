@@ -19,6 +19,13 @@ If remote main moves, fetch, integrate carefully and retest affected behavior be
 retrying. Never force-push or bypass hooks. Keep the frozen MVP tag immutable.
 Code publication does not prove activation or human acceptance.
 
+All nine active Monitoring sections must remain enabled in production and
+directly visible in desktop and mobile navigation for every user. Source
+credentials, reviewed permissions and freshness remain separate readiness
+checks inside each section. Do not hide a section because its source is not
+ready. This records the owner's 13 September 2026 visibility instruction;
+it does not reactivate deferred C4/customs.
+
 For an isolated local web check, set `HELVETIC_LENS_CHECK_BUILD` to a short name
 containing lowercase letters, digits and hyphens. Next writes to the ignored
 `apps/web/.next-check-<name>` directory; use the same value when serving that

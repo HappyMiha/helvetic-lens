@@ -5,6 +5,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Activity,
+  BellRing,
+  Car,
+  Gavel,
+  TrainFront,
+  Wind,
   ArrowUpRight,
   Check,
   ChevronDown,
@@ -43,6 +48,7 @@ import { NotificationCentre } from "./notification-centre";
 import { SectionHelp } from "./section-help";
 import { marvinHistoryCopy } from "@/lib/marvin-history-copy";
 import { centreCopy } from "@/lib/monitoring-centre-copy";
+import { monitoringNavigation } from "@/lib/monitoring-navigation";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "./ui/dialog";
 
 type NavigationItemProps = {
@@ -64,6 +70,47 @@ function NavigationItem({ active, children, href }: NavigationItemProps) {
 }
 
 type WorkspaceOption = NonNullable<AuthSession["organizations"]>[number];
+
+const monitoringIcons = {
+  pollen: Flower2,
+  river: Waves,
+  air: Wind,
+  warnings: BellRing,
+  commute: TrainFront,
+  traffic: Car,
+  tenders: FileSearch,
+  ip: ShieldCheck,
+  auctions: Gavel,
+};
+
+function MonitoringNavigation({ pathname }: { pathname: string }) {
+  const { locale, t } = useI18n();
+  const copy = centreCopy[locale];
+  return (
+    <section className="nav-section" data-monitoring-navigation>
+      <span className="nav-heading">{t("shell.monitoring")}</span>
+      <NavigationItem active={pathname === "/monitoring"} href="/monitoring">
+        <LayoutGrid size={17} />
+        {copy.title}
+      </NavigationItem>
+      {monitoringNavigation.map(({ id, href }) => {
+        const Icon = monitoringIcons[id];
+        return (
+          <NavigationItem key={id} active={pathname === href} href={href}>
+            <Icon size={17} />
+            {id === "pollen"
+              ? t("nav.pollenWatch")
+              : id === "river"
+                ? t("nav.riverWatch")
+                : id === "air"
+                  ? t("nav.airWatch")
+                  : copy.templates[id][0]}
+          </NavigationItem>
+        );
+      })}
+    </section>
+  );
+}
 
 function WorkspaceSwitcher({
   busy,
@@ -371,14 +418,31 @@ export function Shell({
     [pathname === "/connectors", "nav.sync"],
     [pathname === "/models", "nav.models"],
   ].find(([active]) => active);
+  const monitoringRoute = monitoringNavigation.find(
+    ({ href }) => href === pathname,
+  );
+  const monitoringLabel =
+    pathname === "/monitoring"
+      ? centreCopy[locale].title
+      : monitoringRoute
+        ? monitoringRoute.id === "pollen"
+          ? t("nav.pollenWatch")
+          : monitoringRoute.id === "river"
+            ? t("nav.riverWatch")
+            : monitoringRoute.id === "air"
+              ? t("nav.airWatch")
+              : centreCopy[locale].templates[monitoringRoute.id][0]
+        : null;
   const mobileOverflowActive =
-    Boolean(mobileOverflowRoute) || pathname === "/assistant-history";
+    Boolean(mobileOverflowRoute || monitoringLabel) ||
+    pathname === "/assistant-history";
   const mobileOverflowLabel =
-    pathname === "/assistant-history"
+    monitoringLabel ??
+    (pathname === "/assistant-history"
       ? historyCopy.title
       : mobileOverflowRoute
         ? t(mobileOverflowRoute[1] as string)
-        : t("nav.more");
+        : t("nav.more"));
 
   return (
     <div
@@ -433,34 +497,7 @@ export function Shell({
               {t("nav.sources")}
             </NavigationItem>
           </section>
-          <section className="nav-section">
-            <span className="nav-heading">{t("shell.monitoring")}</span>
-            <NavigationItem active={pathname === "/monitoring"} href="/monitoring">
-              <LayoutGrid size={17} />
-              {centreCopy[locale].title}
-            </NavigationItem>
-            <NavigationItem
-              active={pathname === "/pollen-watch"}
-              href="/pollen-watch"
-            >
-              <Flower2 size={17} />
-              {t("nav.pollenWatch")}
-            </NavigationItem>{" "}
-            <NavigationItem
-              active={pathname === "/river-watch"}
-              href="/river-watch"
-            >
-              <Waves size={17} />
-              {t("nav.riverWatch")}
-            </NavigationItem>
-            <NavigationItem
-              active={pathname === "/air-watch"}
-              href="/air-watch"
-            >
-              <Waves size={17} />
-              {t("nav.airWatch")}
-            </NavigationItem>
-          </section>
+          <MonitoringNavigation pathname={pathname} />
           <section className="nav-section">
             <span className="nav-heading">{t("shell.workspaceSettings")}</span>
             {workspaceItems}
@@ -624,34 +661,7 @@ export function Shell({
                 <Radar size={15} />
                 {t("nav.topics")}
               </NavigationItem>
-              <section className="nav-section">
-                <span className="nav-heading">{t("shell.monitoring")}</span>
-                <NavigationItem active={pathname === "/monitoring"} href="/monitoring">
-                  <LayoutGrid size={17} />
-                  {centreCopy[locale].title}
-                </NavigationItem>
-                <NavigationItem
-                  active={pathname === "/pollen-watch"}
-                  href="/pollen-watch"
-                >
-                  <Flower2 size={15} />
-                  {t("nav.pollenWatch")}
-                </NavigationItem>{" "}
-                <NavigationItem
-                  active={pathname === "/river-watch"}
-                  href="/river-watch"
-                >
-                  <Waves size={17} />
-                  {t("nav.riverWatch")}
-                </NavigationItem>
-                <NavigationItem
-                  active={pathname === "/air-watch"}
-                  href="/air-watch"
-                >
-                  <Waves size={17} />
-                  {t("nav.airWatch")}
-                </NavigationItem>
-              </section>
+              <MonitoringNavigation pathname={pathname} />
               <span className="nav-heading">
                 {t("shell.workspaceSettings")}
               </span>

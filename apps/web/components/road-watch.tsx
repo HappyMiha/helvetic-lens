@@ -776,13 +776,15 @@ export function RoadWatch() {
   }, []);
   const link = roadLink(params);
   return (
-    <Workspace
-      key={`${scope}:${link.monitor}:${link.event}:${link.sequence}:${link.invalid}:${epoch}:${visible}`}
-      allowed={visible && scope !== "unavailable"}
-      canManage={session?.role === "organization_admin"}
-      initial={link.monitor}
-      link={link}
-    />
+    <Shell>
+      <Workspace
+        key={`${scope}:${link.monitor}:${link.event}:${link.sequence}:${link.invalid}:${epoch}:${visible}`}
+        allowed={visible && scope !== "unavailable"}
+        canManage={session?.role === "organization_admin"}
+        initial={link.monitor}
+        link={link}
+      />
+    </Shell>
   );
 }
 function Workspace({
@@ -820,107 +822,105 @@ function Workspace({
   );
   return (
     <AccessFailure.Provider value={deny}>
-      <Shell>
-        <div className={styles.root}>
-          <Link href="/monitoring">{centreCopy[locale].title}</Link>
-          <h1>{c.title}</h1>
-          <p>{c.intro}</p>
-          <div className={styles.actions}>
+      <div className={styles.root}>
+        <Link href="/monitoring">{centreCopy[locale].title}</Link>
+        <h1>{c.title}</h1>
+        <p>{c.intro}</p>
+        <div className={styles.actions}>
+          <button
+            disabled={!allowed}
+            onClick={() => {
+              setBlocked(false);
+              setRevision((v) => v + 1);
+              setSelected("");
+              setCreating(false);
+            }}
+          >
+            {c.refresh}
+          </button>
+          {canManage && !blocked && capabilities.data && (
             <button
-              disabled={!allowed}
               onClick={() => {
-                setBlocked(false);
-                setRevision((v) => v + 1);
+                setCreating(true);
                 setSelected("");
-                setCreating(false);
               }}
             >
-              {c.refresh}
+              {c.create}
             </button>
-            {canManage && !blocked && capabilities.data && (
-              <button
-                onClick={() => {
-                  setCreating(true);
-                  setSelected("");
-                }}
-              >
-                {c.create}
-              </button>
-            )}
-          </div>
-          {blocked && <p role="alert">{c.accessChanged}</p>}
-          {link.invalid && <p role="alert">{c.linkUnavailable}</p>}
-          {!canManage && <p>{c.readonly}</p>}
-          {capabilities.error ? (
-            <p role="alert">{failure(c, capabilities.error)}</p>
-          ) : !capabilities.data && !blocked ? (
-            <p role="status">{c.loading}</p>
-          ) : null}
-          {capabilities.data && !capabilities.data.start_available && (
-            <p role="status">{c.sourceOff}</p>
           )}
-          {allowed && !blocked && capabilities.data && (
-            <div className={styles.layout}>
-              <aside className={styles.list} aria-label={c.title}>
-                <Pages<RoadMonitor> key={revision} path="/monitors">
-                  {(items) =>
-                    items.length ? (
-                      items.map((row) => (
-                        <button
-                          key={row.id}
-                          aria-pressed={selected === row.id}
-                          onClick={() => {
-                            setSelected(row.id);
-                            setCreating(false);
-                          }}
-                        >
-                          {row.configuration.name} ·{" "}
-                          {roadLabel(locale, row.status)}
-                        </button>
-                      ))
-                    ) : (
-                      <p>{c.empty}</p>
-                    )
-                  }
-                </Pages>
-              </aside>
-              {creating ? (
-                <Editor
-                  cancel={() => setCreating(false)}
-                  done={(row) => {
-                    setCreating(false);
-                    setSelected(row.id);
+        </div>
+        {blocked && <p role="alert">{c.accessChanged}</p>}
+        {link.invalid && <p role="alert">{c.linkUnavailable}</p>}
+        {!canManage && <p>{c.readonly}</p>}
+        {capabilities.error ? (
+          <p role="alert">{failure(c, capabilities.error)}</p>
+        ) : !capabilities.data && !blocked ? (
+          <p role="status">{c.loading}</p>
+        ) : null}
+        {capabilities.data && !capabilities.data.start_available && (
+          <p role="status">{c.sourceOff}</p>
+        )}
+        {allowed && !blocked && capabilities.data && (
+          <div className={styles.layout}>
+            <aside className={styles.list} aria-label={c.title}>
+              <Pages<RoadMonitor> key={revision} path="/monitors">
+                {(items) =>
+                  items.length ? (
+                    items.map((row) => (
+                      <button
+                        key={row.id}
+                        aria-pressed={selected === row.id}
+                        onClick={() => {
+                          setSelected(row.id);
+                          setCreating(false);
+                        }}
+                      >
+                        {row.configuration.name} ·{" "}
+                        {roadLabel(locale, row.status)}
+                      </button>
+                    ))
+                  ) : (
+                    <p>{c.empty}</p>
+                  )
+                }
+              </Pages>
+            </aside>
+            {creating ? (
+              <Editor
+                cancel={() => setCreating(false)}
+                done={(row) => {
+                  setCreating(false);
+                  setSelected(row.id);
+                  setRevision((v) => v + 1);
+                }}
+              />
+            ) : selected ? (
+              <div className={styles.detail}>
+                {link.event && selected === link.monitor && (
+                  <LinkedEvent
+                    key={`${selected}:${link.event}:${link.sequence}`}
+                    monitor={selected}
+                    event={link.event}
+                    sequence={link.sequence}
+                    canManage={canManage}
+                    changed={() => setRevision((v) => v + 1)}
+                  />
+                )}
+                <Monitor
+                  key={selected}
+                  id={selected}
+                  canManage={canManage}
+                  changed={() => setRevision((v) => v + 1)}
+                  removed={() => {
+                    setSelected("");
                     setRevision((v) => v + 1);
                   }}
                 />
-              ) : selected ? (
-                <div className={styles.detail}>
-                  {link.event && selected === link.monitor && (
-                    <LinkedEvent
-                      key={`${selected}:${link.event}:${link.sequence}`}
-                      monitor={selected}
-                      event={link.event}
-                      sequence={link.sequence}
-                      canManage={canManage}
-                      changed={() => setRevision((v) => v + 1)}
-                    />
-                  )}
-                  <Monitor
-                    key={selected}
-                    id={selected}
-                    canManage={canManage}
-                    changed={() => setRevision((v) => v + 1)}
-                    removed={() => {
-                      setSelected("");
-                      setRevision((v) => v + 1);
-                    }}
-                  />
-                </div>
-              ) : null}
-            </div>
-          )}
-        </div>
-      </Shell>
+              </div>
+            ) : null}
+          </div>
+        )}
+      </div>
     </AccessFailure.Provider>
   );
 }

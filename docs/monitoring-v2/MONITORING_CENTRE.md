@@ -1,5 +1,40 @@
 # Monitoring Centre — MV2-017/018 scoped feature
 
+## All nine sections in navigation — 13 September 2026
+
+The owner's instruction is now part of AGENTS.md and the development guide:
+all nine active sections stay enabled in production and visible to every user.
+The shared desktop/mobile Monitoring menu now links to Pollen, River/Lake, Air,
+Hazards, Commute, Road, Tender, IP and Auctions, plus the Centre. Previously the
+Centre linked to nine sections but the menus exposed only the first three.
+Existing five-language labels are reused. The mobile More button identifies the
+current Monitoring destination and its menu link exposes `aria-current=page`.
+Missing source access does not hide a navigation link. C4 remains absent.
+
+Road Watch keeps its shell mounted when focus/visibility revalidation replaces
+the private workspace. This preserves the menu's keyboard focus while retaining
+the private workspace reset and access checks. No source, consent, membership or
+administration authorization is bypassed.
+
+The isolated root production build passed, including translation, navigation,
+resource, report, help, lint and type gates. The synthetic production browser
+check passed 30 populated language/role/mobile-width journeys with all nine
+destinations in both menus, plus ten direct-route checks as a viewer with source
+APIs unavailable. It verifies keyboard focus, scrolling to the last destination,
+the current-page indicator, nested Escape, role-filtered administration links,
+route transitions and modal cleanup. The 390px screenshot was visually reviewed.
+The first direct-route test exposed the Road focus reset above; the completed
+rerun includes its repair. Required backlog consistency, production Compose
+defaults and exact API Ruff gates also passed. Generated build-directory edits
+were reviewed and removed. No live data was changed by these checks.
+
+Production activation remains separate; the live controller was observed
+deploying 4859c58 while serving 8082524. This commit publishes navigation and its
+focus repair; the next Auction source-journal work remains local and incomplete.
+
+The original 12 September scoped acceptance record follows. Its three-domain
+inventory and unavailable-direction statements describe that earlier release.
+
 Scope recorded 12 September 2026 before implementation. Deliver a complete
 entry point at `/monitoring` on the main product: nine Personal/Business choices,
 an owner-private paginated inventory of existing Pollen, River/Lake and Air

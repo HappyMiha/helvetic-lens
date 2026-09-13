@@ -39,6 +39,10 @@ host-alias, task-branch and separate Monitoring integration workflow.
   complete direction after Pollen while outstanding pilot/release gates continue.
 - Keep private ownership, membership, consent, source rights, quality and review
   gates. Never invent source coverage or interpret unavailable data as safe.
+  Keep all nine active Monitoring sections enabled in production and directly
+  visible in desktop/mobile navigation for every user, as requested on
+  13 September 2026. Missing source access must be explained inside the section,
+  not used to hide it. C4 remains deferred.
   DONE requires all stated evidence; unverified release or human acceptance stays
   IN PROGRESS/VERIFYING. Report pushed code separately from verified activation.
 - Update both backlog index and task detail. Before publishing backlog edits,

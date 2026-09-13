@@ -1,4 +1,19 @@
-# Monitoring deployment status — 12 September 2026
+# Monitoring deployment status — 13 September 2026
+
+## Nine-section visibility checkpoint — 13 September 2026
+
+Both `4859c58a8b255b40e30a6c2ae00d363e72f0d9dc` (integrated directions) and
+`395458d350591371e3ce767ac06551e48ca0cf22` (ninth Auction section) are published
+on origin/main. The authenticated main-site deployment page was inspected:
+automation reports **deploying 4859c58a8b25**, started at 20:46:02 UTC, while
+production still reports **80825246c7d5**. This proves automatic pickup, not
+activation of either new commit. No deployment was restarted or duplicated.
+
+The follow-up navigation feature makes all nine sections directly visible in
+desktop and mobile menus, in addition to the Centre. All implemented production
+feature/collector defaults remain enabled. Current source access, rights and
+freshness are separate checks inside each section; missing inputs do not become
+invented live coverage. See [navigation evidence](MONITORING_CENTRE.md#all-nine-sections-in-navigation--13-september-2026).
 
 ## Integrated publication candidate — 13 September 2026
 
@@ -14,8 +29,8 @@ directions now and continuing development afterward. All implemented feature and
 collector switches default to enabled in production Compose. Missing credentials,
 permissions and source evidence remain visible readiness constraints; no access
 or successful collection is fabricated. See the [exact scope and verification](evidence/2026-09-13-integrated-publication.md).
-Push and activation are pending at this preparation checkpoint. Earlier disabled
-defaults and uncommitted-state statements below are historical.
+Activation remains unverified. Earlier disabled defaults and uncommitted-state
+statements below are historical.
 
 ## Current checkpoint — 12 September, 19:45 UTC
 

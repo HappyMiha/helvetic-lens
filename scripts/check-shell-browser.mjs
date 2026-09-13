@@ -55,6 +55,17 @@ const browser = spawn(
 let cdp;
 const requests = [],
   exceptions = [];
+const monitoringRoutes = [
+  "/pollen-watch",
+  "/river-watch",
+  "/air-watch",
+  "/hazard-watch",
+  "/commute-watch",
+  "/road-watch",
+  "/tender-watch",
+  "/trademark-watch",
+  "/auction-watch",
+];
 let locale = "en-CH",
   role = "viewer",
   platform = false;
@@ -316,9 +327,30 @@ try {
           `getComputedStyle(document.body).overflow`,
         );
         await openMenu();
+        assert.deepEqual(
+          await evaluate(
+            cdp,
+            `Array.from(document.querySelectorAll('.mobile-nav-menu [data-monitoring-navigation] a')).map(a => a.getAttribute('href'))`,
+          ),
+          ["/monitoring", ...monitoringRoutes],
+          "Every user needs all nine mobile Monitoring destinations",
+        );
         assert.ok(
-          await evaluate(cdp,
-            `(() => { const link = document.querySelector('.mobile-nav-menu a[href="/pollen-watch"]'); return link?.textContent.trim() === 'Pollen Watch' && !!link.closest('section')?.querySelector('.nav-heading')?.textContent.trim(); })()`),
+          await evaluate(
+            cdp,
+            `(() => {
+          const link = document.querySelector('.mobile-nav-menu a[href="/auction-watch"]');
+          link.focus(); const r = link.getBoundingClientRect();
+          return r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth;
+        })()`,
+          ),
+          "The last Monitoring destination must be reachable in the scrollable mobile menu",
+        );
+        assert.ok(
+          await evaluate(
+            cdp,
+            `(() => { const link = document.querySelector('.mobile-nav-menu a[href="/pollen-watch"]'); return link?.textContent.trim() === 'Pollen Watch' && !!link.closest('section')?.querySelector('.nav-heading')?.textContent.trim(); })()`,
+          ),
           "Every role and locale needs Pollen Watch in its own mobile Monitoring group",
         );
         assert.ok(
@@ -427,9 +459,19 @@ try {
           "Menu does not fit viewport",
         );
         await resize(1440);
+        assert.deepEqual(
+          await evaluate(
+            cdp,
+            `Array.from(document.querySelectorAll('.nav-group [data-monitoring-navigation] a')).map(a => a.getAttribute('href'))`,
+          ),
+          ["/monitoring", ...monitoringRoutes],
+          "Every user needs all nine desktop Monitoring destinations",
+        );
         assert.ok(
-          await evaluate(cdp,
-            `(() => { const link = document.querySelector('.nav-group a[href="/pollen-watch"]'); return link?.textContent.trim() === 'Pollen Watch' && !!link.closest('section')?.querySelector('.nav-heading')?.textContent.trim(); })()`),
+          await evaluate(
+            cdp,
+            `(() => { const link = document.querySelector('.nav-group a[href="/pollen-watch"]'); return link?.textContent.trim() === 'Pollen Watch' && !!link.closest('section')?.querySelector('.nav-heading')?.textContent.trim(); })()`,
+          ),
           "Every role and locale needs Pollen Watch in its own desktop Monitoring group",
         );
         await closed();
@@ -498,6 +540,46 @@ try {
   assert.ok(
     await evaluate(cdp, `!document.body.hasAttribute('data-scroll-locked')`),
   );
+  // The active mobile destination remains named and reachable even when its
+  // source API is unavailable; a viewer can open every section.
+  role = "viewer";
+  platform = false;
+  locale = "en-CH";
+  await resize(390);
+  for (const destination of ["/monitoring", ...monitoringRoutes]) {
+    await cdp.send("Page.navigate", { url: `${base}${destination}` });
+    await waitFor(
+      () =>
+        evaluate(
+          cdp,
+          `document.querySelector('.mobile-nav-more')?.getAttribute('aria-current') === 'page'`,
+        ),
+      `Missing current mobile indicator on ${destination}`,
+    );
+    // Initial pageshow/session effects can replace the private workspace shell.
+    await sleep(400);
+    await openMenu();
+    const labels = await evaluate(
+      cdp,
+      `(() => {
+      const link = Array.from(document.querySelectorAll('.mobile-nav-menu a')).find(a => a.getAttribute('href') === ${JSON.stringify(destination)});
+      return { current: link?.getAttribute('aria-current'), name: link?.textContent.trim(),
+        trigger: document.querySelector('.mobile-nav-more')?.getAttribute('aria-label') };
+    })()`,
+    );
+    assert.equal(labels.current, "page");
+    assert.ok(labels.name && labels.trigger.includes(labels.name));
+    await evaluate(
+      cdp,
+      `document.querySelector('.mobile-nav-menu a[href="/sources"]').focus()`,
+    );
+    await press("Enter");
+    await waitFor(
+      () => evaluate(cdp, `location.pathname === '/sources'`),
+      "Monitoring navigation did not leave the section",
+    );
+    await closed();
+  }
   assert.deepEqual(exceptions, []);
   assert.equal(
     requests.some((path) => path.startsWith("/api/auth/session/organization")),
@@ -505,7 +587,7 @@ try {
     "The navigation test must not change organizations",
   );
   console.log(
-    "Shell production UI: 30 populated language/role/mobile-width journeys passed; first-stop skip link, focus containment, nested Escape, role-filtered links, backdrop/close restoration and desktop resize cleanup. Synthetic intercepted APIs only; no organization switch or actual message/model call.",
+    "Shell production UI: 30 populated language/role/mobile-width journeys passed with all nine Monitoring destinations; ten current-route and API-unavailable viewer checks passed. Verified skip link, focus containment, nested Escape, role-filtered admin links, backdrop/close restoration and desktop resize cleanup. Synthetic intercepted APIs only; no organization switch or actual message/model call.",
   );
 } catch (error) {
   if (cdp) {
