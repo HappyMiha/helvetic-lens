@@ -234,8 +234,8 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 | [MV2-046](#mv2-046) | B7: Official trademark publications and register updates | F5 | P1 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071) |
 | [MV2-047](#mv2-047) | B7: Exact, lexical and phonetic candidates | F5 | P1 | L | IN PROGRESS | [MV2-043](#mv2-043), [MV2-046](#mv2-046) |
 | [MV2-048](#mv2-048) | B7: IP review, review deadlines and register changes | F5 | P1 | L | IN PROGRESS | [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-046](#mv2-046), [MV2-047](#mv2-047) |
-| [MV2-049](#mv2-049) | B8: Official Ticino auctions | F5 | P1 | L | PLANNED | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071) |
-| [MV2-050](#mv2-050) | B8: Auction profiles, price limits and ending-soon alerts | F5 | P1 | L | PLANNED | [MV2-008](#mv2-008), [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022), [MV2-043](#mv2-043), [MV2-044](#mv2-044), [MV2-049](#mv2-049) |
+| [MV2-049](#mv2-049) | B8: Official Ticino auctions | F5 | P1 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071) |
+| [MV2-050](#mv2-050) | B8: Auction profiles, price limits and ending-soon alerts | F5 | P1 | L | IN PROGRESS | [MV2-008](#mv2-008), [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022), [MV2-043](#mv2-043), [MV2-044](#mv2-044), [MV2-049](#mv2-049) |
 | [MV2-051](#mv2-051) | Independent matching and local AI evaluation | F6 | P0 | L | PLANNED | [MV2-023](#mv2-023), [MV2-043](#mv2-043), [MV2-047](#mv2-047) |
 | [MV2-052](#mv2-052) | Operational metrics, degraded mode and source recovery | F6 | P0 | M | PLANNED | [MV2-011](#mv2-011), [MV2-012](#mv2-012), [MV2-025](#mv2-025) |
 | [MV2-053](#mv2-053) | Personal-location privacy and access control | F6 | P0 | M | PLANNED | [MV2-004](#mv2-004), [MV2-005](#mv2-005), [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-023](#mv2-023) |
@@ -1697,7 +1697,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ### MV2-049 — B8: Official Ticino auctions
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** Integration · **Size:** L
+**Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Integration · **Size:** L
 
 **Dependencies:** [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071). **Requirements:** §17.3–17.7,17.11; AC-B8-02,05,06,11.
 
@@ -1714,13 +1714,13 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** A bounded official sample, multiple-lot/unknown-field/cancellation fixtures and parser drift tests.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Active scope, 13 September 2026:** Implement the complete Auction Watch direction under [the B8 implementation contract](docs/monitoring-v2/AUCTION_WATCH.md). Official public listing/detail fields and sale terms were inspected; automated reuse, native feed, category coverage and current source-state evidence remain unverified. Build private profiles, typed-price matching, retained auction/lot state, internal review and consented material/deadline delivery. No live acquisition or completed acceptance is claimed.
 
 <a id="mv2-050"></a>
 
 ### MV2-050 — B8: Auction profiles, price limits and ending-soon alerts
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
+**Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
 
 **Dependencies:** [MV2-008](#mv2-008), [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022), [MV2-043](#mv2-043), [MV2-044](#mv2-044), [MV2-049](#mv2-049). **Requirements:** §17; AC-B8-01…12.
 
@@ -1738,8 +1738,10 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** End-to-end new auction→inspect→price/conditions/end change→reminder→cancel, unknown fields and an adapter-swap fixture.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Active scope, 13 September 2026:** Implement the complete Auction Watch direction under [the B8 implementation contract](docs/monitoring-v2/AUCTION_WATCH.md). Official public listing/detail fields and sale terms were inspected; automated reuse, native feed, category coverage and current source-state evidence remain unverified. Build private profiles, typed-price matching, retained auction/lot state, internal review and consented material/deadline delivery. No live acquisition or completed acceptance is claimed.
 
+
+**Profile-management evidence, 13 September 2026:** The private five-language Auction Watch profile workflow, immutable settings, typed-price/budget rules and enabled ninth Centre entry are implemented. Final integrated checks passed (30), browser checks passed (17), exact-money reader checks passed (3), and the root frontend build passed. Native source access/persistence, auction review/following, Today/Inbox and durable delivery remain open. See [implementation and acceptance boundaries](docs/monitoring-v2/AUCTION_WATCH.md#private-profiles-and-deterministic-rules--13-september-2108-utc). This does not complete AC-B8-01…12.
 
 ## F6 — Quality evidence, pilot and release
 

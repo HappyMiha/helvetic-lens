@@ -1,0 +1,102 @@
+# Auction Watch — B8
+
+Status: IN PROGRESS, 13 September 2026. Scope: MV2-049/050 and auction-specific
+contributions to MV2-043/044. Nine active directions remain; C4 stays deferred.
+The previous integrated Monitoring implementation was pushed to main as
+4859c58a8b255b40e30a6c2ae00d363e72f0d9dc. Auctions is the next complete direction.
+
+## Required outcome
+
+Private asset profile → official auction discovery → explained category/location/
+keyword/brand/budget match → follow individual auction or lot → internal
+Inspect/Bid/No-bid/Monitor → material price/deadline/conditions/cancellation change
+→ reopened review → Today/Inbox and separately consented delivery. Preserve all
+AC-B8-01…12 in the practical specification. Bid is only an internal decision.
+No bidding, auction registration, payment or contact with sellers is included.
+
+Auction and lot identities remain distinct. Current bid, starting price, minimum
+price and estimate retain their types; UNKNOWN is never zero. An explicit
+CHF 8,500→12,700 current-bid change crosses a CHF 12,000 profile limit once;
+further increments do not repeatedly notify without opt-in. Unknown gaps do not
+prove a crossing. End-time changes invalidate old reminders; cancellation and
+unknown deadlines suppress them. Keep current state and immutable versions.
+Document absence on an incomplete/failed listing is not removal. Another canton
+must pass the same adapter conformance cases without changing domain rules.
+
+Reuse the current private ownership/membership/CSRF, immutable configuration,
+source rights/retention, document-set comparison, durable jobs and consented
+outbox boundaries. All new section switches will default enabled in production,
+as requested, with missing source access and unsupported coverage shown explicitly.
+
+## Source investigation — 13 September 2026
+
+The [official Aste UEF listing](https://www.aste.ti.ch/it/) is publicly readable.
+[Lot 185](https://www.aste.ti.ch/it/auction/185) distinguishes starting price,
+bid count, minimum increment, start/end times and linked documents. A zero-bid
+starting price must not be normalized as a current bid. An older crawler render
+still describes bidding as not started; that is not evidence of current status.
+
+[eGant sale conditions](https://www.aste.ti.ch/it/condizioni_generali), dated
+9 April 2026, cover participation and sales. The inspected text does not establish
+a public API or automated republication permission. [Official contact](https://www.aste.ti.ch/it/contatto)
+is available; no inquiry or registration was sent. Separate official property
+auction notices exist, but current category coverage and a supported native
+acquisition contract remain unverified. Public visibility does not close MV2-049.
+
+Firecrawl CLI was available but its verification request returned insufficient
+credits. Official pages were inspected with the available web reader instead;
+no subscription, source account, bid or authenticated request was created.
+
+## Verification plan
+
+Test typed-price unknowns, explained filters, stable auction/lot separation,
+new/changed/cancelled/postponed/relisted records, low-noise price thresholds,
+stale/unknown source state, reminder recalculation, document gaps, source rights
+and parser drift. Test private CRUD/history, member revocation, review conflicts,
+current-version consented delivery and a second-canton adapter fixture. Complete
+five-language desktop/mobile browser journeys, required build/lint/migration
+checks and recorded source/release/human acceptance. No DONE claim yet.
+
+## Private profiles and deterministic rules — 13 September, 21:08 UTC
+
+The enabled `/auction-watch` section now provides owner-private create/edit,
+configuration history, archive and confirmed delete. Profiles retain categories,
+canton, explicit location/keyword/brand phrases, an exact CHF budget with a
+selected price type, and future material/ending-soon preferences. Saving a profile
+does not start ingestion or grant email consent. Unknown source coverage is
+shown in all five product languages, with a direct official-source link.
+
+The authenticated API uses normal session/CSRF and membership checks, a shared
+60/minute rate bucket, private no-store responses, idempotent creates, revision
+conflicts and bounded lists/history. Migration `6fac2d70ed61` adds private monitors
+and configuration revisions after `5efb1c69dc50`; organization-consistent foreign
+keys and the central ownership policy include both tables. Monitoring Centre
+now opens all nine directions when their implemented feature switches are enabled.
+IP and Auction cards display their own source attribution instead of falling
+through to the Air source label.
+
+Domain rules retain distinct auction/lot identities and typed prices, explain
+known matches/exclusions/unknowns, suppress repeated bid increments by default,
+detect a proven above-budget crossing and recalculate ending-soon eligibility.
+Incomplete document listings cannot prove removal. Reminder eligibility rejects
+stale/future observations, non-open/cancelled auctions and unknown/past deadlines.
+These are stateless rules, not a durable collector, review queue or delivery job.
+The second-canton fixture verifies domain equivalence only; native adapter
+conformance and live rollout remain open.
+
+Verification: 34 rule/backlog checks passed (0.34 s); 36 rule/API checks passed
+(7.91 s). After the final migration-retention assertion and Centre integration,
+30 API/Compose/Centre/trademark-regression/backlog checks passed (50.95 s).
+The root frontend production build passed. Three browser-reader tests passed for
+exact money entry, independent profile defaults and five-language copy. The
+synthetic headless browser passed 17 workflow/accessibility checkpoints including
+create/edit/history, exact CHF 12,000.50 storage, conflict preservation, archive/
+delete, viewer restrictions and membership-denial redaction. Desktop/mobile axe
+reported zero violations; images were visually inspected. Existing incomplete
+Marvin contrast checks are not counted as passed manual accessibility review.
+
+Official current acquisition and rights, source-state persistence, private auction
+discovery/following/review, Today/Inbox, durable reminder generations and actual
+consented delivery remain required. MV2-049/050 remain IN PROGRESS. This publishes
+the usable profile-management outcome and ninth navigable section, not completed
+B8 acceptance or live auction monitoring.

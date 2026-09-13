@@ -30,7 +30,8 @@ type Domain =
   | "commute"
   | "traffic"
   | "warnings"
-  | "ip";
+  | "ip"
+  | "auctions";
 type Monitor = {
   id: string;
   domain: Domain;
@@ -227,6 +228,7 @@ function Centre({
                     "traffic",
                     "warnings",
                     "ip",
+                    "auctions",
                   ] as const
                 ).map((id) => (
                   <option key={id} value={id}>
@@ -280,19 +282,23 @@ function Centre({
                 <p>{row.metrics.map((key) => metric(row, key)).join(" · ")}</p>
                 <p>
                   {c.source}:{" "}
-                  {row.domain === "warnings"
-                    ? c.unknown
-                    : row.domain === "traffic"
-                      ? centreSources.traffic
-                      : row.domain === "commute"
-                        ? centreSources.commute
-                        : row.domain === "river"
-                          ? riverAttribution[locale]
-                          : row.domain === "tenders"
-                            ? centreSources.tenders
-                            : row.domain === "pollen"
-                              ? centreSources.pollen
-                              : centreSources.air}
+                  {row.domain === "auctions"
+                    ? centreSources.auctions
+                    : row.domain === "ip"
+                      ? centreSources.ip
+                      : row.domain === "warnings"
+                        ? c.unknown
+                        : row.domain === "traffic"
+                          ? centreSources.traffic
+                          : row.domain === "commute"
+                            ? centreSources.commute
+                            : row.domain === "river"
+                              ? riverAttribution[locale]
+                              : row.domain === "tenders"
+                                ? centreSources.tenders
+                                : row.domain === "pollen"
+                                  ? centreSources.pollen
+                                  : centreSources.air}
                 </p>
                 <dl>
                   {(

@@ -139,6 +139,71 @@ const ai = c(
 
 export const SECTION_GUIDES: SectionGuide[] = [
   {
+    id: "auction-watch",
+    title: "Save your auction interests",
+    purpose:
+      "Keep a private profile of wanted assets, places, brands and price limits.",
+    first: [
+      "Create a named profile and select asset categories for the initial Ticino source area.",
+      "Add explicit locations, brands or phrases and choose the price type for your budget.",
+      "Save your draft and review its settings. Source access remains unconfigured.",
+    ],
+    data: [
+      "Profiles and configuration history are private to their owner within the current organization.",
+      "Current bids, starting prices, minimum prices and estimates are separate. Missing values do not satisfy a budget as zero.",
+      "This section currently saves interests and notification preferences. It does not collect live auctions, place bids or grant email consent.",
+    ],
+    wait: "Refresh reads saved profiles. No auction collector starts when a profile is saved.",
+    setup:
+      "Official automated source access and coverage must be verified before live collection. Saved ending-soon preferences do not themselves schedule messages.",
+    controls: [
+      refresh,
+      pages,
+      c(
+        "auction-create",
+        "Create auction profile / Save draft",
+        "Stores categories, locations, phrases, budget and future notification preferences.",
+        "Select the price type explicitly; leave the budget blank for no limit.",
+        "Save a change",
+      ),
+      c(
+        "auction-edit",
+        "Edit profile",
+        "Saves a new immutable configuration revision. Conflicting edits require a refresh.",
+        "Review all changes before saving.",
+        "Save a change",
+      ),
+      c(
+        "auction-history",
+        "Configuration history",
+        "Reads the exact settings saved at earlier revisions.",
+        "Use when checking how your interests or budget changed.",
+        "Read / navigate",
+      ),
+      c(
+        "auction-archive",
+        "Archive profile",
+        "Archives the draft while preserving its history.",
+        "When you no longer need to edit the profile.",
+        "Save a change",
+      ),
+      c(
+        "auction-delete",
+        "Delete profile",
+        "After confirmation deletes an archived profile and its private settings history.",
+        "Only when this history is no longer needed.",
+        "Remove data",
+      ),
+      c(
+        "auction-official",
+        "Open official Ticino auctions",
+        "Opens the official publisher in another tab.",
+        "Check the current listing and sale conditions directly at the source.",
+        "Read / navigate",
+      ),
+    ],
+  },
+  {
     id: "monitoring-centre",
     title: "Monitoring centre",
     purpose:
@@ -194,7 +259,8 @@ export const SECTION_GUIDES: SectionGuide[] = [
   {
     id: "trademark-watch",
     title: "Prepare a private Swiss trademark portfolio",
-    purpose: "Save multiple brands, explicit word variants and goods/services interests for later source-backed IP review.",
+    purpose:
+      "Save multiple brands, explicit word variants and goods/services interests for later source-backed IP review.",
     first: [
       "Name the portfolio, add brands and select each name language and matching preferences.",
       "Enter relevant Nice class numbers and explicit goods/services phrase variants, then save the draft.",
@@ -205,16 +271,59 @@ export const SECTION_GUIDES: SectionGuide[] = [
       "The same class number alone does not establish goods/services similarity. Unsupported language methods and missing calibration remain unavailable.",
     ],
     wait: "Draft operations validate and store local portfolio settings. They do not start source collection or AI work.",
-    setup: "The draft feature must be enabled. Official IPI access, approved data uses, calibration and the complete live workflow remain separate prerequisites.",
+    setup:
+      "The draft feature must be enabled. Official IPI access, approved data uses, calibration and the complete live workflow remain separate prerequisites.",
     controls: [
-      refresh, pages,
-      c("trademark-create", "Create portfolio / Edit portfolio", "Opens an unsaved private multi-brand form.", "Enter your brands and explicit language variants.", "Edit draft"),
-      c("trademark-brand", "Add brand / Remove brand", "Changes brands in the unsaved portfolio without deleting saved history.", "Keep at least one brand and review each language and matching choice.", "Edit draft"),
-      c("trademark-goods", "Add goods/service interest / Add phrase variant", "Adds your own goods/services phrases in explicit languages.", "Do not treat class numbers as proof of a legal conflict.", "Edit draft"),
-      c("trademark-save", "Save draft", "Saves an owner-private portfolio revision without starting a search or email.", "Check every brand and goods/services phrase first.", "Save a change"),
-      c("trademark-history", "Configuration history", "Reads previous settings without restoring or activating them.", "Compare the saved versions before changing your portfolio."),
-      c("trademark-archive", "Archive portfolio", "Archives a draft while retaining its private history.", "Use for a portfolio you no longer need.", "Save a change"),
-      c("trademark-delete", "Delete portfolio", "Permanently removes an archived portfolio and private configuration history after confirmation.", "Archive first and read the deletion confirmation.", "Remove data"),
+      refresh,
+      pages,
+      c(
+        "trademark-create",
+        "Create portfolio / Edit portfolio",
+        "Opens an unsaved private multi-brand form.",
+        "Enter your brands and explicit language variants.",
+        "Edit draft",
+      ),
+      c(
+        "trademark-brand",
+        "Add brand / Remove brand",
+        "Changes brands in the unsaved portfolio without deleting saved history.",
+        "Keep at least one brand and review each language and matching choice.",
+        "Edit draft",
+      ),
+      c(
+        "trademark-goods",
+        "Add goods/service interest / Add phrase variant",
+        "Adds your own goods/services phrases in explicit languages.",
+        "Do not treat class numbers as proof of a legal conflict.",
+        "Edit draft",
+      ),
+      c(
+        "trademark-save",
+        "Save draft",
+        "Saves an owner-private portfolio revision without starting a search or email.",
+        "Check every brand and goods/services phrase first.",
+        "Save a change",
+      ),
+      c(
+        "trademark-history",
+        "Configuration history",
+        "Reads previous settings without restoring or activating them.",
+        "Compare the saved versions before changing your portfolio.",
+      ),
+      c(
+        "trademark-archive",
+        "Archive portfolio",
+        "Archives a draft while retaining its private history.",
+        "Use for a portfolio you no longer need.",
+        "Save a change",
+      ),
+      c(
+        "trademark-delete",
+        "Delete portfolio",
+        "Permanently removes an archived portfolio and private configuration history after confirmation.",
+        "Archive first and read the deletion confirmation.",
+        "Remove data",
+      ),
     ],
   },
   {
@@ -2398,6 +2507,7 @@ export const SECTION_GUIDES: SectionGuide[] = [
 
 // Explicit routes: unknown routes never borrow instructions from an unrelated page.
 export const GUIDE_ROUTES: Record<string, string> = {
+  "/auction-watch": "auction-watch",
   "/": "today",
   "/registry": "registry",
   "/discover": "discover",

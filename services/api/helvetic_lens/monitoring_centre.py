@@ -9,6 +9,7 @@ from sqlalchemy import and_, or_, select
 
 from . import air_runtime, monitoring_runtime, river_runtime
 from .air_models import AirMonitor
+from .auction_models import AuctionMonitor
 from .auth import Identity
 from .commute_models import CommuteMonitor
 from .config import DomainError
@@ -24,8 +25,8 @@ from .tender_models import TenderMonitor
 from .trademark_models import TrademarkMonitor
 
 MODELS = {"air": AirMonitor, "pollen": MonitoringSubject, "river": RiverMonitor, "tenders": TenderMonitor,
-          "commute": CommuteMonitor, "traffic": RoadMonitor, "warnings": HazardMonitor, "ip": TrademarkMonitor}
-Domain = Literal["air", "pollen", "river", "tenders", "commute", "traffic", "warnings", "ip"]
+          "commute": CommuteMonitor, "traffic": RoadMonitor, "warnings": HazardMonitor, "ip": TrademarkMonitor, "auctions": AuctionMonitor}
+Domain = Literal["air", "pollen", "river", "tenders", "commute", "traffic", "warnings", "ip", "auctions"]
 Status = Literal["draft", "active", "paused", "archived"]
 
 
@@ -78,7 +79,8 @@ def capabilities(settings, organization):
         },
         {"id": "ip", "group": "business", "availability": "preview_only" if settings.trademark_watch_enabled else "blocked",
          "href": "/trademark-watch" if settings.trademark_watch_enabled else None},
-        {"id": "auctions", "group": "business", "availability": "blocked", "href": None},
+        {"id": "auctions", "group": "business", "availability": "preview_only" if settings.auction_watch_enabled else "blocked",
+         "href": "/auction-watch" if settings.auction_watch_enabled else None},
     ]
 
 
@@ -172,9 +174,10 @@ def summary(session, settings, kind, row, capability):
         config = row.configuration
         health = row.health if settings.commute_source_enabled else "source_unavailable"
         href = f"/commute-watch?monitor={row.id}"
-    elif kind == "ip":
+    elif kind in {"ip", "auctions"}:
         config, runtime = row.configuration, None
-        health, href = "source_unavailable", f"/trademark-watch?monitor={row.id}"
+        health = "source_unavailable"
+        href = f"/{'trademark' if kind == 'ip' else 'auction'}-watch?monitor={row.id}"
     elif kind == "tenders":
         config = row.configuration
         health = row.health if settings.simap_public_source_enabled else "source_unavailable"

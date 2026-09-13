@@ -20,6 +20,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
+from . import auction_models as auction_models
 from . import hazard_models as hazard_models
 from . import hazard_source_models as hazard_source_models
 from . import road_models as road_models
@@ -1760,6 +1761,8 @@ class MonitoringEvaluationEntry(Base):
 # Central policy used by the session boundary. Keeping this list beside the
 # models makes a newly persisted tenant-owned record difficult to forget.
 ORGANIZATION_SCOPED_MODELS = (
+    auction_models.AuctionMonitor,
+    auction_models.AuctionConfigurationRevision,
     hazard_models.HazardMonitor,
     trademark_models.TrademarkMonitor,
     trademark_models.TrademarkConfigurationRevision,

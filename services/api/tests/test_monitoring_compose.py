@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[3]
 SERVICES = ("api", "worker-cpu", "worker-ai", "scheduler", "migrate")
 FLAGS = ("COMMUTE_WATCH_ENABLED", "COMMUTE_SOURCE_ENABLED", "COMMUTE_STATIC_ENABLED",
          "ROAD_WATCH_ENABLED", "ROAD_SOURCE_ENABLED", "TRADEMARK_WATCH_ENABLED",
-         "HAZARD_WATCH_ENABLED", "HAZARD_SOURCE_ENABLED", "TENDER_WATCH_ENABLED", "SIMAP_PUBLIC_SOURCE_ENABLED")
+         "HAZARD_WATCH_ENABLED", "HAZARD_SOURCE_ENABLED", "TENDER_WATCH_ENABLED", "SIMAP_PUBLIC_SOURCE_ENABLED", "AUCTION_WATCH_ENABLED")
 
 
 def render(tmp_path, overrides):
@@ -42,7 +42,7 @@ def render(tmp_path, overrides):
 
 def settings(monkeypatch, values):
     for name, value in values.items():
-        if name.startswith(("COMMUTE_", "TENDER_", "SIMAP_", "AIR_WATCH_", "RIVER_WATCH_", "ROAD_", "TRADEMARK_", "HAZARD_")):
+        if name.startswith(("COMMUTE_", "TENDER_", "SIMAP_", "AIR_WATCH_", "RIVER_WATCH_", "ROAD_", "TRADEMARK_", "HAZARD_", "AUCTION_")):
             monkeypatch.setenv(name, str(value))
     return Settings(_env_file=None, app_environment="test")
 
@@ -61,7 +61,7 @@ def test_default_render_opens_all_implemented_sections_without_inventing_source_
         assert config.trademark_watch_enabled and config.hazard_watch_enabled
         choices = {item["id"]: item for item in capabilities(config, "release-test-organization")}
         assert len(choices) == 9
-        for domain in ("warnings", "commute", "traffic", "tenders", "ip", "river", "air"):
+        for domain in ("warnings", "commute", "traffic", "tenders", "ip", "river", "air", "auctions"):
             assert choices[domain]["href"]
         assert choices["tenders"]["availability"] == "available"
         for domain in ("warnings", "commute", "traffic", "ip"):

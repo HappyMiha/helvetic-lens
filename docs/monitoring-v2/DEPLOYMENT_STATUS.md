@@ -2,6 +2,13 @@
 
 ## Integrated publication candidate — 13 September 2026
 
+**Published:** integrated main commit `4859c58a8b255b40e30a6c2ae00d363e72f0d9dc`
+was successfully pushed to origin/main. The subsequent public readiness check
+still reported `git-80825246c7d5`, with database/Redis true. Publication is proved;
+activation of the integrated commit is not yet verified. The next Auction profile
+release makes the ninth Centre section navigable; its live source remains
+unconfigured. No controller/check process was restarted or duplicated.
+
 The owner's latest instruction authorizes publishing all implemented monitoring
 directions now and continuing development afterward. All implemented feature and
 collector switches default to enabled in production Compose. Missing credentials,

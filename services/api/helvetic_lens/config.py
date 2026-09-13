@@ -50,6 +50,7 @@ class Settings(BaseSettings):
     )
     allow_anonymous_dev: bool = True
     air_watch_enabled: bool = Field(default=True, validation_alias="AIR_WATCH_ENABLED")
+    auction_watch_enabled: bool = Field(default=False, validation_alias="AUCTION_WATCH_ENABLED")
     tender_watch_enabled: bool = Field(default=False, validation_alias="TENDER_WATCH_ENABLED")
     commute_watch_enabled: bool = Field(default=False, validation_alias="COMMUTE_WATCH_ENABLED")
     road_watch_enabled: bool = Field(default=False, validation_alias="ROAD_WATCH_ENABLED")

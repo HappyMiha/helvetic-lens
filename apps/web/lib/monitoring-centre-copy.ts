@@ -1,6 +1,8 @@
 import type { Locale } from "./i18n";
 
 export const centreSources = {
+  auctions: "Aste UEF · Ticino",
+  ip: "IPI / IGE · Swissreg",
   commute: "opentransportdata.swiss",
   traffic: "FEDRO · opentransportdata.swiss",
   pollen: "MeteoSwiss",
