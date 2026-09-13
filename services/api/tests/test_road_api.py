@@ -149,7 +149,7 @@ def test_monitoring_centre_keeps_road_inventory_private_and_source_gated(api):
     assert row["health"] == "not_started" and row["next_check_at"] is None
     assert row["metrics"] == payload["materiality"]["event_kinds"]
     template = next(t for t in page["templates"] if t["id"] == "traffic")
-    assert template["availability"] == "preview_only"
+    assert template["availability"] == "available"
     with TestClient(app) as peer:
         _register(peer, email="road-centre-peer@example.test")
         assert peer.get(route, params={"domain": "traffic"}).json()["items"] == []

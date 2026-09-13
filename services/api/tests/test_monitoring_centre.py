@@ -71,8 +71,14 @@ def pollen(client):
     return response.json()["id"]
 
 
-def test_nine_honest_choices_no_customs_no_implicit_activation(centre):
-    client, app, _, _ = centre
+@pytest.mark.parametrize("all_sections_enabled", [False, True])
+def test_nine_honest_choices_no_customs_no_implicit_activation(centre, all_sections_enabled):
+    client, app, settings, _ = centre
+    if all_sections_enabled:
+        for flag in ("hazard_watch_enabled", "commute_watch_enabled", "road_watch_enabled",
+                     "tender_watch_enabled", "simap_public_source_enabled", "trademark_watch_enabled",
+                     "auction_watch_enabled"):
+            setattr(settings, flag, True)
     with app.state.service.db.session(include_all_organizations=True) as session:
         before = [session.scalar(select(func.count()).select_from(model)) for model in (Job, OutboxMessage)]
     response = client.get(URL)
@@ -92,7 +98,9 @@ def test_nine_honest_choices_no_customs_no_implicit_activation(centre):
         "auctions",
     }
     assert sum(row["group"] == "personal" for row in templates) == 6
-    assert {row["id"] for row in templates if row["href"]} == {"pollen", "river", "air"}
+    expected = {row["id"] for row in templates} if all_sections_enabled else {"pollen", "river", "air"}
+    assert {row["id"] for row in templates if row["href"]} == expected
+    assert all(row["availability"] == "available" for row in templates if row["href"])
     assert all(row["availability"] == "blocked" for row in templates if not row["href"])
     with app.state.service.db.session(include_all_organizations=True) as session:
         assert before == [
@@ -280,7 +288,7 @@ def test_trademark_inventory_is_private_and_never_implies_source_checks(centre):
     payload = client.get(URL, params={"domain": "ip"}).json()
     assert len(payload["templates"]) == 9
     choice = next(item for item in payload["templates"] if item["id"] == "ip")
-    assert choice["availability"] == "preview_only"
+    assert choice["availability"] == "available"
     row, = payload["items"]
     assert row["id"] == identifier and row["href"] == f"/trademark-watch?monitor={identifier}"
     assert row["health"] == "not_started" and row["metrics"] == []

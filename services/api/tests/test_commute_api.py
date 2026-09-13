@@ -199,7 +199,7 @@ def test_commute_inventory_obeys_private_owner_and_feature_switch(api):
     assert response.status_code == 200 and "no-store" in response.headers["cache-control"]
     assert [item["id"] for item in response.json()["items"]] == [row["id"]]
     template = next(item for item in response.json()["templates"] if item["id"] == "commute")
-    assert template["href"] == "/commute-watch" and template["availability"] == "preview_only"
+    assert template["href"] == "/commute-watch" and template["availability"] == "available"
     with TestClient(app) as peer:
         _register(peer, email="centre-commute-peer@example.test")
         assert peer.get("/api/monitoring-centre", params={"domain": "commute"}).json()["items"] == []

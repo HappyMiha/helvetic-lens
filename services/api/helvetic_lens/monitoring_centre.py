@@ -32,17 +32,19 @@ Status = Literal["draft", "active", "paused", "archived"]
 
 
 def capabilities(settings, organization):
+    # "available" means configurable. Each section checks the selected source
+    # and current evidence before activation; this inventory cannot infer them.
     mode = monitoring_runtime._mode(settings, organization)
     pollen = settings.deployment_instance in {"main", "monitoring-v2"} and mode in {
         ReaderMode.ENABLED,
         ReaderMode.SHADOW,
     }
     return [
-        {"id": "warnings", "group": "personal", "availability": "preview_only" if settings.hazard_watch_enabled else "blocked",
+        {"id": "warnings", "group": "personal", "availability": "available" if settings.hazard_watch_enabled else "blocked",
          "href": "/hazard-watch" if settings.hazard_watch_enabled else None},
-        {"id": "commute", "group": "personal", "availability": "preview_only" if settings.commute_watch_enabled else "blocked",
+        {"id": "commute", "group": "personal", "availability": "available" if settings.commute_watch_enabled else "blocked",
          "href": "/commute-watch" if settings.commute_watch_enabled else None},
-        {"id": "traffic", "group": "personal", "availability": "preview_only" if settings.road_watch_enabled else "blocked",
+        {"id": "traffic", "group": "personal", "availability": "available" if settings.road_watch_enabled else "blocked",
          "href": "/road-watch" if settings.road_watch_enabled else None},
         {
             "id": "pollen",
@@ -78,9 +80,9 @@ def capabilities(settings, organization):
             else "blocked",
             "href": "/tender-watch" if settings.tender_watch_enabled else None,
         },
-        {"id": "ip", "group": "business", "availability": "preview_only" if settings.trademark_watch_enabled else "blocked",
+        {"id": "ip", "group": "business", "availability": "available" if settings.trademark_watch_enabled else "blocked",
          "href": "/trademark-watch" if settings.trademark_watch_enabled else None},
-        {"id": "auctions", "group": "business", "availability": "preview_only" if settings.auction_watch_enabled else "blocked",
+        {"id": "auctions", "group": "business", "availability": "available" if settings.auction_watch_enabled else "blocked",
          "href": "/auction-watch" if settings.auction_watch_enabled else None},
     ]
 

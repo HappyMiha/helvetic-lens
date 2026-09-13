@@ -102,15 +102,15 @@ export const centreCopy: Record<Locale, Copy> = {
     templates: {
       warnings: [
         "Local warnings",
-        "The official warning feed and permitted automated use still need verification.",
+        "Choose places and warning types. Preview checks current official source access and geographic coverage before Start.",
       ],
       commute: [
         "Regular commute",
-        "Official live transport access and timetable matching are not ready. No live journey alerts yet.",
+        "Configure a regular journey. Preview checks timetable matching and current official transport access before Start.",
       ],
       traffic: [
         "Road and tunnel traffic",
-        "FEDRO access and permitted traffic coverage are not yet verified.",
+        "Choose roads and tunnels. Preview checks current FEDRO source access and coverage before Start.",
       ],
       pollen: [
         "Pollen Watch",
@@ -130,11 +130,11 @@ export const centreCopy: Record<Locale, Copy> = {
       ],
       ip: [
         "IP Watch",
-        "Register access and permitted monitoring use still need verification.",
+        "Configure a private trademark portfolio. Live register discovery still requires a supported source and permitted monitoring use.",
       ],
       auctions: [
         "Ticino auctions",
-        "A supported official channel and permitted automated monitoring still need verification.",
+        "Configure asset interests and budgets. Preview checks current official source access before tracking lots.",
       ],
     },
   },
@@ -181,15 +181,15 @@ export const centreCopy: Record<Locale, Copy> = {
     templates: {
       warnings: [
         "Lokale Warnungen",
-        "Der offizielle Warnkanal und die erlaubte automatisierte Nutzung müssen noch geprüft werden.",
+        "Orte und Warnarten wählen. Die Vorschau prüft vor dem Start den aktuellen offiziellen Quellenzugang und die geografische Abdeckung.",
       ],
       commute: [
         "Regelmässiger Arbeitsweg",
-        "Offizieller Echtzeitzugang und Fahrplanabgleich sind noch nicht bereit. Noch keine Live-Reisewarnungen.",
+        "Einen regelmässigen Arbeitsweg konfigurieren. Die Vorschau prüft vor dem Start den Fahrplanabgleich und den aktuellen offiziellen Verkehrsdatenzugang.",
       ],
       traffic: [
         "Strassen und Tunnel",
-        "ASTRA-Zugang und erlaubte Verkehrsabdeckung sind noch nicht verifiziert.",
+        "Strassen und Tunnel wählen. Die Vorschau prüft vor dem Start den aktuellen ASTRA-Quellenzugang und die Abdeckung.",
       ],
       pollen: [
         "Pollen Watch",
@@ -209,11 +209,11 @@ export const centreCopy: Record<Locale, Copy> = {
       ],
       ip: [
         "Geistiges Eigentum",
-        "Registerzugang und erlaubte Nutzung zur Beobachtung müssen noch geprüft werden.",
+        "Ein privates Markenportfolio konfigurieren. Die Live-Registersuche erfordert weiterhin eine unterstützte Quelle und die erlaubte Nutzung zur Beobachtung.",
       ],
       auctions: [
         "Tessiner Auktionen",
-        "Ein unterstützter offizieller Kanal und die erlaubte automatisierte Beobachtung müssen noch geprüft werden.",
+        "Sachinteressen und Budgets konfigurieren. Die Vorschau prüft den aktuellen offiziellen Quellenzugang, bevor Lose verfolgt werden.",
       ],
     },
   },
@@ -260,15 +260,15 @@ export const centreCopy: Record<Locale, Copy> = {
     templates: {
       warnings: [
         "Alertes locales",
-        "Le flux officiel d’alertes et l’utilisation automatisée autorisée restent à vérifier.",
+        "Choisissez les lieux et types d’alertes. L’aperçu vérifie l’accès actuel à la source officielle et la couverture géographique avant le démarrage.",
       ],
       commute: [
         "Trajet régulier",
-        "L’accès officiel en direct et la correspondance avec les horaires ne sont pas prêts. Pas encore d’alertes de trajet en direct.",
+        "Configurez un trajet régulier. L’aperçu vérifie les correspondances horaires et l’accès actuel aux données officielles de transport avant le démarrage.",
       ],
       traffic: [
         "Routes et tunnels",
-        "L’accès OFROU et la couverture de trafic autorisée ne sont pas encore vérifiés.",
+        "Choisissez les routes et tunnels. L’aperçu vérifie l’accès actuel aux sources OFROU et la couverture avant le démarrage.",
       ],
       pollen: [
         "Pollen Watch",
@@ -288,11 +288,11 @@ export const centreCopy: Record<Locale, Copy> = {
       ],
       ip: [
         "Propriété intellectuelle",
-        "L’accès aux registres et l’utilisation autorisée pour la veille restent à vérifier.",
+        "Configurez un portefeuille privé de marques. La recherche en direct dans les registres exige encore une source prise en charge et un usage autorisé pour la veille.",
       ],
       auctions: [
         "Enchères tessinoises",
-        "Un canal officiel pris en charge et la veille automatisée autorisée restent à vérifier.",
+        "Configurez vos critères de biens et budgets. L’aperçu vérifie l’accès actuel à la source officielle avant le suivi des lots.",
       ],
     },
   },
@@ -339,15 +339,15 @@ export const centreCopy: Record<Locale, Copy> = {
     templates: {
       warnings: [
         "Allerte locali",
-        "Il canale ufficiale delle allerte e l’uso automatizzato consentito devono ancora essere verificati.",
+        "Scegli luoghi e tipi di allerta. L’anteprima verifica l’accesso attuale alla fonte ufficiale e la copertura geografica prima dell’avvio.",
       ],
       commute: [
         "Tragitto regolare",
-        "Accesso ufficiale in tempo reale e corrispondenza degli orari non ancora pronti. Nessuna allerta di viaggio dal vivo.",
+        "Configura un tragitto regolare. L’anteprima verifica la corrispondenza degli orari e l’accesso attuale ai dati ufficiali di trasporto prima dell’avvio.",
       ],
       traffic: [
         "Strade e gallerie",
-        "L’accesso USTRA e la copertura del traffico consentita non sono ancora verificati.",
+        "Scegli strade e gallerie. L’anteprima verifica l’accesso attuale alle fonti USTRA e la copertura prima dell’avvio.",
       ],
       pollen: [
         "Pollen Watch",
@@ -367,11 +367,11 @@ export const centreCopy: Record<Locale, Copy> = {
       ],
       ip: [
         "Proprietà intellettuale",
-        "Accesso ai registri e uso consentito per il monitoraggio ancora da verificare.",
+        "Configura un portafoglio privato di marchi. La ricerca dal vivo nei registri richiede ancora una fonte supportata e l’uso consentito per il monitoraggio.",
       ],
       auctions: [
         "Aste ticinesi",
-        "Un canale ufficiale supportato e il monitoraggio automatizzato consentito devono ancora essere verificati.",
+        "Configura interessi per i beni e budget. L’anteprima verifica l’accesso attuale alla fonte ufficiale prima di seguire i lotti.",
       ],
     },
   },
@@ -418,15 +418,15 @@ export const centreCopy: Record<Locale, Copy> = {
     templates: {
       warnings: [
         "Avertiments locals",
-        "Il chanàl uffizial d’avertiments e l’utilisaziun automatisada permessa ston anc vegnir verifitgads.",
+        "Tscherni lieus e tips d’avertiment. La prevista verifitgescha l’access actual a la funtauna uffiziala e la cuvrida geografica avant il cumenzament.",
       ],
       commute: [
         "Viadi regular",
-        "L’access uffizial en temp real e la cumparegliaziun cun l’urari n’èn anc betg pronts. Anc nagins avertiments da viadi directs.",
+        "Configurai in viadi regular. La prevista verifitgescha la correspundenza cun l’urari e l’access actual a las datas uffizialas da transport avant il cumenzament.",
       ],
       traffic: [
         "Vias e tunnels",
-        "L’access USTRA e la cuvrida dal traffic permessa n’èn anc betg verifitgads.",
+        "Tscherni vias e tunnels. La prevista verifitgescha l’access actual a las funtaunas USTRA e la cuvrida avant il cumenzament.",
       ],
       pollen: [
         "Pollen Watch",
@@ -446,11 +446,11 @@ export const centreCopy: Record<Locale, Copy> = {
       ],
       ip: [
         "Proprietad intellectuala",
-        "L’access als registers e l’utilisaziun permessa per la surveglianza ston anc vegnir verifitgads.",
+        "Configurai in portfolio privat da marcas. La tschertga directa en ils registers pretenda anc ina funtauna sustegnida e l’utilisaziun permessa per la surveglianza.",
       ],
       auctions: [
         "Inchants tessinais",
-        "In chanàl uffizial sustegnì e la surveglianza automatisada permessa ston anc vegnir verifitgads.",
+        "Configurai interess per bains e budgets. La prevista verifitgescha l’access actual a la funtauna uffiziala avant da suandar lots.",
       ],
     },
   },

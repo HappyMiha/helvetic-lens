@@ -1,5 +1,30 @@
 # Monitoring Centre — MV2-017/018 scoped feature
 
+## Configuration availability — 14 September 2026
+
+Enabled Hazard, Commute, Road, IP and Auction sections are now classified as
+available to configure. The inventory previously hard-coded them as preview-only
+even when their feature was enabled and the domain supported its own start flow.
+All nine production-enabled choices therefore open their settings without an
+incorrect blanket statement that live activation is disabled for the workspace.
+Source access, accepted use, coverage and freshness remain checked in the domain;
+Centre availability grants none of these and does not activate a monitor.
+IP copy explicitly limits the current outcome to portfolio configuration pending
+live register discovery. Five-language descriptions distinguish configuration from
+source readiness. Explicitly disabled flags and Pollen shadow mode retain their
+existing gates. C4 remains deferred.
+
+Verification: 22 authenticated Centre and affected Commute/Hazard/Road inventory
+checks passed (56.07 s), covering all nine enabled choices without implicit jobs
+or delivery, private ownership, revoked access, disabled switches and shadow
+behavior. Exact API Ruff, changed-copy Prettier and the isolated root frontend
+build passed. Existing domain start/source checks were not changed.
+
+The authenticated production Centre was inspected on release `4859c58`: eight
+settings links were available; Auction and the expanded menu require the later
+published commits. The public ready endpoint confirmed activation of `4859c58`.
+This record does not claim activation of subsequent commits or source acceptance.
+
 ## All nine sections in navigation — 13 September 2026
 
 The owner's instruction is now part of AGENTS.md and the development guide:

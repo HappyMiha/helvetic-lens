@@ -916,6 +916,8 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **13 September navigation follow-up:** All nine implemented directions are now linked from the shared desktop/mobile Monitoring menu for every role, with a named current destination. Enabled production defaults and individual source-readiness checks are preserved. See [navigation scope and verification](docs/monitoring-v2/MONITORING_CENTRE.md#all-nine-sections-in-navigation--13-september-2026). This does not complete the broader nine-template live-source and user acceptance criteria.
 
+**14 September configuration availability:** Enabled sections are available to configure in the Centre; Hazard/Commute/Road/IP/Auction no longer carry a hard-coded preview-only classification. Source readiness remains in the domain and is not inferred from section availability. See [scope and verification](docs/monitoring-v2/MONITORING_CENTRE.md#configuration-availability--14-september-2026). Broader live-source/user acceptance remains IN PROGRESS.
+
 **Execution evidence:** [Monitoring Centre scoped feature](docs/monitoring-v2/MONITORING_CENTRE.md): nine scenario choices with explicit availability, owner-private C5/C6/C7 inventory, freshness and lifecycle filters, exact links to existing settings/history and a legacy bridge. Uses existing configuration, ownership and source contracts; adds no source permission or activation route. Full parent acceptance remains open for the other domain journeys, shared business subjects and timed commute pause. Code checks, release identity and human acceptance are tracked separately in the evidence document.
 
 <a id="mv2-018"></a>

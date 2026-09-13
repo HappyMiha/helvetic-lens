@@ -130,7 +130,7 @@ def test_monitoring_centre_has_private_warning_drafts_without_coordinate_export_
     assert result.status_code == 200
     page = result.json()
     assert len(page["templates"]) == 9
-    assert next(t for t in page["templates"] if t["id"] == "warnings")["availability"] == "preview_only"
+    assert next(t for t in page["templates"] if t["id"] == "warnings")["availability"] == "available"
     row = page["items"][0]
     assert row["id"] == saved["id"] and row["health"] == "not_started"
     assert row["href"] == "/hazard-watch?monitor=" + saved["id"]
