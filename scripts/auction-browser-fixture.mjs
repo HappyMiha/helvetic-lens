@@ -43,6 +43,25 @@ let state = {
   history = [];
 const itemId = "00000000-0000-4000-8000-000000000072";
 const eventId = "00000000-0000-4000-8000-000000000073";
+const reminderId = "00000000-0000-4000-8000-000000000074";
+let acknowledged = false,
+  reminderVersion = 1,
+  email = null;
+function reminderView() {
+  if (!item?.following || !monitor?.configuration.notify.ending_soon_hours)
+    return null;
+  return {
+    id: reminderId,
+    version: reminderVersion,
+    state: acknowledged ? "acknowledged" : "ready",
+    hours: monitor.configuration.notify.ending_soon_hours,
+    eligible: !acknowledged && !state.revoked,
+    due_at: state.revoked ? null : "2026-09-19T12:00:00Z",
+    ends_at: state.revoked ? null : sourceFacts.ends_at,
+    current: itemView(),
+    href: `/auction-watch?monitor=${id}&reminder=${reminderId}`,
+  };
+}
 let sourceSequence = 1,
   item = null,
   versions = [],
@@ -184,6 +203,14 @@ const server = createServer(async (req, res) => {
         if (req.method !== "GET" && !state.manager)
           return json({ code: "subject_role_denied" }, 403);
         const route = path.slice("/api/auction-watch".length);
+        if (route === "/reminders") {
+          const reminder = reminderView();
+          return json({
+            items: reminder?.eligible ? [reminder] : [],
+            next_cursor: null,
+            unavailable_count: state.revoked ? 1 : 0,
+          });
+        }
         if (route === "/capabilities")
           return json({
             drafts_available: true,
@@ -239,6 +266,9 @@ const server = createServer(async (req, res) => {
               revision: 1,
             };
             item = null;
+            acknowledged = false;
+            reminderVersion = 1;
+            email = null;
             versions = [];
             history = [
               {
@@ -251,6 +281,68 @@ const server = createServer(async (req, res) => {
           return json({ items: monitor ? [monitor] : [], next_cursor: null });
         }
         if (!monitor) return json({ code: "auction_monitor_not_found" }, 404);
+        if (route === `/monitors/${id}/reminders`) {
+          const reminder = reminderView();
+          return json({
+            items: reminder ? [reminder] : [],
+            next_cursor: null,
+            unavailable_count: 0,
+          });
+        }
+        if (route.startsWith(`/monitors/${id}/reminders/${reminderId}`)) {
+          if (!reminderView())
+            return json({ code: "auction_reminder_not_found" }, 404);
+          if (route.endsWith("/acknowledge")) {
+            if (body.expected_version !== reminderVersion)
+              return json({ code: "auction_version_conflict" }, 409);
+            acknowledged = true;
+            reminderVersion += 1;
+          }
+          return json(reminderView());
+        }
+        if (route === `/monitors/${id}/email/preview`)
+          return json({
+            status:
+              email?.consent_active && !state.revoked ? "ready" : "unavailable",
+            quiet_hours: false,
+            more_available: false,
+            items:
+              email?.consent_active && reminderView()?.eligible
+                ? [
+                    {
+                      kind: "ending_soon",
+                      detected_at: sourceFacts.observed_at,
+                      href: reminderView().href,
+                    },
+                  ]
+                : [],
+          });
+        if (route === `/monitors/${id}/email`) {
+          if (req.method === "PUT") {
+            if (body.expected_version !== monitor.version || state.conflict)
+              return json({ code: "auction_version_conflict" }, 409);
+            email = {
+              revision: (email?.revision || 0) + 1,
+              configuration: body.configuration,
+              consent_active: body.consent,
+            };
+            monitor.version += 1;
+          }
+          return json({
+            revision: 0,
+            configuration: {
+              timezone: "Europe/Zurich",
+              delivery: { email: "off", digest_at: null, quiet_hours: null },
+            },
+            consent_active: false,
+            ...email,
+            monitor_version: monitor.version,
+            email_verified: true,
+            recipient_email: "synthetic@example.invalid",
+            mail_available: true,
+            uncertain_deliveries: 0,
+          });
+        }
         if (route === `/monitors/${id}/events/${eventId}` && item) {
           const snapshot = (v) =>
             !v

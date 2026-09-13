@@ -121,12 +121,16 @@ def start(session, user_id, monitor_id, version, *, now):
 
 
 def pause(session, user_id, monitor_id, version):
+    from .auction_email_preferences import cancel_email_work
+    from .auction_reminders import invalidate
     with _savepoint(session):
         monitor = _monitor(session, user_id, monitor_id, write=True)
         _version(version)
         if monitor.version != version or monitor.status != "active":
             _fail("auction_version_conflict")
         monitor.status, monitor.version = "paused", monitor.version + 1
+        invalidate(session, monitor.id)
+        cancel_email_work(session, monitor)
         runtime = session.get(AuctionRuntime, monitor.id)
         if runtime:
             runtime.next_check_at = None
@@ -231,6 +235,7 @@ def _sync_head(session, monitor, selection, head, *, now):
 
 
 def refresh(session, user_id, monitor_id, *, now):
+    from .auction_reminders import plan
     now = clock(now)
     with _savepoint(session):
         monitor = _monitor(session, user_id, monitor_id, write=True)
@@ -256,13 +261,21 @@ def refresh(session, user_id, monitor_id, *, now):
                 if head["state"] != "available":
                     stale = True
                     continue
-                pending |= _sync_head(session, monitor, selection, head, now=now)
+                item_pending = _sync_head(session, monitor, selection, head, now=now)
+                pending |= item_pending
+                if not item_pending:
+                    item = session.scalar(select(AuctionItem).where(AuctionItem.monitor_id == monitor.id,
+                        AuctionItem.record_key == head["record_key"]))
+                    if item is not None:
+                        plan(session, monitor, item, head["facts"], now=now)
             cursor.after_key = page["next_cursor"]
             pending |= cursor.after_key is not None
         runtime.health = "source_unavailable" if not options else "catching_up" if pending else "partial" if stale or unavailable else "current"
         runtime.last_check_at = now
         runtime.next_check_at = now + timedelta(seconds=15 if pending else 60)
         session.flush()
+        from .auction_delivery import prepare_monitor
+        prepare_monitor(session, monitor, now=now)
         return {"health": runtime.health, "examined": examined, "coverage_verified": False,
                 "last_check_at": now.isoformat(), "next_check_at": runtime.next_check_at.isoformat()}
 
@@ -340,6 +353,7 @@ def follow(session, user_id, monitor_id, item_id, *, expected_version, expected_
 
 
 def _act(session, user_id, monitor_id, item_id, *, expected_version, expected_state_hash, decision, following, now):
+    from .auction_reminders import invalidate, plan
     now = clock(now)
     with _savepoint(session):
         monitor, item = _item(session, user_id, monitor_id, item_id, write=True)
@@ -363,6 +377,10 @@ def _act(session, user_id, monitor_id, item_id, *, expected_version, expected_st
             item.decision, item.reviewed_sequence = decision, item.material_sequence
         if following is not None:
             item.following = following
+        if following is False:
+            invalidate(session, monitor.id, item_id=item.id)
+        elif following is True:
+            plan(session, monitor, item, facts, now=now)
         item.version += 1
         session.add(AuctionDecision(organization_id=monitor.organization_id, item_id=item.id, item_version=item.version,
             material_sequence=item.material_sequence, source_revision_id=item.source_revision_id,

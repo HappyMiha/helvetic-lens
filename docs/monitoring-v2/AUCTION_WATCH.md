@@ -181,3 +181,66 @@ Native acquisition/current official reuse/category evidence, durable ending-soon
 notifications and separately consented email remain open. The new panels display
 changes from permitted retained records; they do not claim a configured live
 Ticino collector. MV2-049/050 remain IN PROGRESS.
+
+## Durable reminders and consented email — 14 September 2026
+
+Following a lot with a configured ending-soon interval now retains a private
+reminder for its profile/deadline generation. Due work runs every 15 seconds and
+rechecks the current source, ownership, follow state and known future end time.
+Moving a deadline away and back creates a new generation; quiet bid increments
+do not create another reminder. Pause, unfollow, cancellation, postponement and
+unknown/expired deadlines invalidate obsolete work. Transient source staleness
+defers the check with bounded backoff. Acknowledgement survives replay and
+refollow without marking the lot reviewed or placing a bid.
+
+Each profile exposes its bounded reminder schedule. Due reminders also appear
+in Today and Impact inbox, with a private exact link to the reminder and current
+lot. Access and source evidence are rechecked on each read; revoked/superseded
+source deadlines and payloads are redacted. Filtered pages can continue even
+when empty; changed/foreign cursors do not disclose another user's work.
+
+Separate verified-account email consent supports immediate or daily delivery,
+IANA time zones and quiet hours. Saving profile notification choices does not
+grant email consent. Delivery considers new requested unread material changes
+after consent and current ready reminders, with a 48-hour intent horizon and
+at most one daily attempt per profile/local day, including consent changes.
+The private queue records references and hashes, not another licensed payload.
+Emails contain authenticated links and detection times, not auction source
+facts. Prepared work rechecks source display/matching/notification permissions,
+current evidence, membership, recipient binding, consent, review/follow state
+and reminder eligibility at claim and immediately before SMTP. Off/pause/archive
+cancels pending work; acknowledgement, changed deadlines and revocation also
+suppress stale prepared reminders at the final boundary.
+
+The existing durable maintenance worker sends at most 50 items per attempt.
+Deferred candidates move back so a stale lot does not continually block fresh
+work. SMTP exceptions and abandoned send claims are recorded as uncertain and
+never automatically resent. Signal identity survives consent changes; a sent
+or uncertain reminder is not resent for the same lot/deadline/interval merely
+because email was toggled. This is per-private-profile deduplication, not a claim
+of global deduplication across independently configured monitors.
+
+Migrations `92df5013b194` and `a3e06124c2a5` add organization-scoped reminders,
+append-only email policies, durable intents and the monitor consent revision.
+Both use explicit schema operations. Rollback/upgrade and metadata comparison
+preserve existing profile/source state. All routes retain authenticated private
+ownership, normal CSRF, strict input/CAS checks and no-store responses.
+
+The root isolated `auction-reminders` build and exact API Ruff gate passed.
+Initial integrated API/workflow/reminder/delivery checks passed (49), followed
+by a real HTTP-to-durable-worker dispatch check with a fake SMTP mailer (1).
+The synthetic browser passed 14 checkpoints covering Today/exact reminder,
+explicit email consent/preview, acknowledgement without lot review, five-language
+mobile readers, source revocation and membership loss. Desktop/mobile axe
+reported zero violations; both screenshots were visually inspected and no
+browser runtime exceptions were recorded. Incomplete manual axe items remain
+unverified. The final expanded source/rules/feed/API/workflow/reminder/delivery
+and backlog suite passed all 122 checks (86.80 s), including filtered reminder
+pagination, cursor invalidation and fair delivery behind a stale lot.
+
+This completes the private reminders/email outcome for permitted journal data.
+No live auction mail, source account, grant, collector, external bid or owner
+inquiry was created. Native official acquisition/current reuse/category evidence,
+native adapter conformance, verified activation and human acceptance remain open.
+All nine section switches remain enabled in production; missing source access
+is shown inside the section. MV2-049/050 remain IN PROGRESS.

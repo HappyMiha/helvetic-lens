@@ -9,6 +9,7 @@ import { auctionFeedCopy, auctionChangeLabel } from "@/lib/auction-feed-copy";
 import { useAuth } from "./auth-gate";
 import { useData } from "./auction-client";
 import { Timestamp } from "./auction-tracking";
+import { AuctionReminders } from "./auction-reminders";
 
 type Page = {
   items: {
@@ -171,6 +172,7 @@ function PrivateFeed({ inbox }: { inbox: boolean }) {
           {c.refresh}
         </button>
       </div>
+      <AuctionReminders />
     </section>
   );
 }

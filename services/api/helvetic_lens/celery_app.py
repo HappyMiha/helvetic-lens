@@ -91,6 +91,12 @@ celery_app.conf.update(
         "schedule-auction-monitoring": {
             "task": "helvetic_lens.schedule_auction_monitoring", "schedule": 15.0,
         },
+        "schedule-auction-reminders": {
+            "task": "helvetic_lens.schedule_auction_reminders", "schedule": 15.0,
+        },
+        "schedule-auction-email": {
+            "task": "helvetic_lens.schedule_auction_email", "schedule": 60.0,
+        },
         "schedule-hazard-email": {
             "task": "helvetic_lens.schedule_hazard_email", "schedule": 60.0,
         },
@@ -356,6 +362,28 @@ def schedule_auction_monitoring():
     database = Database(settings)
     try:
         return refresh_due(database, settings)
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.schedule_auction_reminders")
+def schedule_auction_reminders():
+    from datetime import UTC, datetime
+
+    from .auction_reminders import activate_due
+    database = Database(settings)
+    try:
+        return activate_due(database, settings, now=datetime.now(UTC))
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.schedule_auction_email")
+def schedule_auction_email():
+    from .auction_delivery import enqueue_due
+    database = Database(settings)
+    try:
+        return enqueue_due(database, settings)
     finally:
         database.engine.dispose()
 

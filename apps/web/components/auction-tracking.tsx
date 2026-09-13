@@ -432,7 +432,6 @@ export function AuctionTracking({
         </dl>
       )}
       <p>{w.internal}</p>
-      <p>{w.email}</p>
       {monitor.status !== "draft" && (
         <section>
           <h3>{w.items}</h3>

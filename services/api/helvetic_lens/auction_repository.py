@@ -158,6 +158,7 @@ def revisions(session, user_id, monitor_id, *, before=None, limit=20):
 
 
 def archive_monitor(session, user_id, monitor_id, version):
+    from .auction_email_preferences import cancel_email_work
     row = owned(session, user_id, monitor_id, write=True)
     _version(version)
     if row.version != version:
@@ -172,6 +173,7 @@ def archive_monitor(session, user_id, monitor_id, version):
         .execution_options(synchronize_session=False))
     if changed.rowcount != 1:
         _fail("auction_version_conflict")
+    cancel_email_work(session, row)
     return get_monitor(session, user_id, monitor_id)
 
 

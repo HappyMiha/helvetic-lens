@@ -112,3 +112,70 @@ class AuctionDecision(Base):
     following: Mapped[bool] = mapped_column(Boolean)
     actor_user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class AuctionReminder(Base):
+    __tablename__ = "auction_reminders"
+    __table_args__ = (
+        ForeignKeyConstraint(["monitor_id", "organization_id"], ["auction_monitors.id", "auction_monitors.organization_id"], ondelete="CASCADE"),
+        ForeignKeyConstraint(["item_id", "organization_id"], ["auction_items.id", "auction_items.organization_id"], ondelete="CASCADE"),
+        UniqueConstraint("item_id", "profile_revision", "deadline_generation", name="uq_auction_reminder_epoch"),
+        CheckConstraint("version >= 1 AND profile_revision >= 1 AND deadline_generation >= 1 AND hours >= 1 AND hours <= 720", name="ck_auction_reminder_versions"),
+        CheckConstraint("state IN ('scheduled','ready','acknowledged','invalidated')", name="ck_auction_reminder_state"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    monitor_id: Mapped[str] = mapped_column(String(36), index=True)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"), index=True)
+    item_id: Mapped[str] = mapped_column(String(36), index=True)
+    profile_revision: Mapped[int] = mapped_column(Integer)
+    deadline_generation: Mapped[int] = mapped_column(Integer)
+    deadline_hash: Mapped[str] = mapped_column(String(64))
+    hours: Mapped[int] = mapped_column(Integer)
+    due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    state: Mapped[str] = mapped_column(String(16), default="scheduled", index=True)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    check_after: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    activated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    acknowledged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class AuctionEmailPolicy(Base):
+    __tablename__ = "auction_email_policies"
+    __table_args__ = (
+        ForeignKeyConstraint(["monitor_id", "organization_id"], ["auction_monitors.id", "auction_monitors.organization_id"], ondelete="CASCADE"),
+        CheckConstraint("revision >= 1", name="ck_auction_email_revision"),
+    )
+    monitor_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    revision: Mapped[int] = mapped_column(Integer, primary_key=True)
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"), index=True)
+    configuration: Mapped[dict] = mapped_column(JSON)
+    recipient_email: Mapped[str | None] = mapped_column(String(320))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class AuctionDelivery(Base):
+    __tablename__ = "auction_deliveries"
+    __table_args__ = (
+        ForeignKeyConstraint(["monitor_id", "organization_id"], ["auction_monitors.id", "auction_monitors.organization_id"], ondelete="CASCADE"),
+        ForeignKeyConstraint(["item_id", "organization_id"], ["auction_items.id", "auction_items.organization_id"], ondelete="CASCADE"),
+        ForeignKeyConstraint(["monitor_id", "consent_revision"], ["auction_email_policies.monitor_id", "auction_email_policies.revision"], ondelete="CASCADE"),
+        UniqueConstraint("monitor_id", "signal_hash", "consent_revision", name="uq_auction_delivery_intent"),
+        CheckConstraint("state IN ('pending','sending','sent','uncertain','suppressed')", name="ck_auction_delivery_state"),
+        CheckConstraint("(event_id IS NOT NULL AND reminder_id IS NULL) OR (event_id IS NULL AND reminder_id IS NOT NULL)", name="ck_auction_delivery_signal"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"), index=True)
+    monitor_id: Mapped[str] = mapped_column(String(36), index=True)
+    owner_user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    item_id: Mapped[str] = mapped_column(String(36), index=True)
+    event_id: Mapped[str | None] = mapped_column(ForeignKey("auction_item_events.id", ondelete="CASCADE"))
+    reminder_id: Mapped[str | None] = mapped_column(ForeignKey("auction_reminders.id", ondelete="CASCADE"))
+    consent_revision: Mapped[int] = mapped_column(Integer)
+    signal_hash: Mapped[str] = mapped_column(String(64), index=True)
+    state: Mapped[str] = mapped_column(String(12), default="pending", index=True)
+    due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    claimed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

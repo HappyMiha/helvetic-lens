@@ -46,7 +46,7 @@ const en = {
   reminder: "Ending-soon reminder (hours before end; blank for none)",
   notices: "Changes to follow",
   settingsOnly:
-    "These preferences are saved for future monitoring. Email consent is separate and is not granted by this form.",
+    "These settings control changes and reminders for this profile. Email consent is separate and is not granted by this form.",
   official: "Open official Ticino auctions",
   none: "Not set",
   real_estate: "Real estate",
@@ -121,7 +121,7 @@ export const auctionCopy: Record<Locale, Copy> = {
     reminder: "Erinnerung vor Auktionsende (Stunden; leer für keine)",
     notices: "Zu beobachtende Änderungen",
     settingsOnly:
-      "Diese Einstellungen werden für künftiges Monitoring gespeichert. Dieses Formular erteilt keine E-Mail-Einwilligung.",
+      "Diese Einstellungen steuern Änderungen und Erinnerungen für dieses Profil. Dieses Formular erteilt keine E-Mail-Einwilligung.",
     official: "Offizielle Tessiner Auktionen öffnen",
     none: "Nicht festgelegt",
     real_estate: "Immobilien",
@@ -193,7 +193,7 @@ export const auctionCopy: Record<Locale, Copy> = {
     reminder: "Rappel de clôture (heures avant la fin ; vide pour aucun)",
     notices: "Changements à suivre",
     settingsOnly:
-      "Ces préférences sont conservées pour le suivi futur. Ce formulaire n’accorde pas de consentement aux e-mails.",
+      "Ces paramètres règlent les changements et rappels de ce profil. Ce formulaire n’accorde pas de consentement aux e-mails.",
     official: "Ouvrir les enchères officielles du Tessin",
     none: "Non défini",
     real_estate: "Immobilier",
@@ -265,7 +265,7 @@ export const auctionCopy: Record<Locale, Copy> = {
     reminder: "Promemoria scadenza (ore prima della fine; vuoto per nessuno)",
     notices: "Modifiche da seguire",
     settingsOnly:
-      "Preferenze salvate per il monitoraggio futuro. Questo modulo non concede il consenso alle e-mail.",
+      "Queste impostazioni controllano i cambiamenti e i promemoria del profilo. Questo modulo non concede il consenso alle e-mail.",
     official: "Apri le aste ufficiali del Ticino",
     none: "Non impostato",
     real_estate: "Immobili",
@@ -337,7 +337,7 @@ export const auctionCopy: Record<Locale, Copy> = {
     reminder: "Pro memoria (uras avant la fin; vid per nagin)",
     notices: "Midadas da suandar",
     settingsOnly:
-      "Quests parameters vegnan memorisads per l’observaziun futura. Quest formular na dat nagin consentiment per e-mails.",
+      "Quests parameters reglan las midadas e regurdanzas dal profil. Quest formular na dat nagin consentiment per e-mails.",
     official: "Avrir las aucziuns uffizialas dal Tessin",
     none: "Betg definì",
     real_estate: "Immobiglias",

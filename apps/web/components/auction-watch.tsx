@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ApiError } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
@@ -22,6 +22,8 @@ import ipStyles from "./auction-watch.module.css";
 import { Failure, useData, useMutation } from "./auction-client";
 import { AuctionTracking } from "./auction-tracking";
 import { AuctionChange } from "./auction-change";
+import { AuctionReminder, AuctionReminders } from "./auction-reminders";
+import { AuctionEmail } from "./auction-email";
 import { auctionTrackingCopy } from "@/lib/auction-tracking-copy";
 
 function ProfileForm({
@@ -325,6 +327,14 @@ function Detail({
   deleted: () => void;
 }) {
   const params = useSearchParams();
+  const onAccessFailure = useContext(Failure);
+  const reminders = params.getAll("reminder");
+  const reminder =
+    params.get("monitor") === id &&
+    reminders.length === 1 &&
+    /^[0-9a-f-]{36}$/i.test(reminders[0])
+      ? reminders[0]
+      : null;
   const events = params.getAll("event");
   const event =
     params.get("monitor") === id &&
@@ -422,6 +432,23 @@ function Detail({
         monitor={row}
         canManage={canManage}
         changed={reload}
+      />
+      {reminder && (
+        <AuctionReminder
+          key={`${reminder}:${row.version}`}
+          monitor={row}
+          reminder={reminder}
+          canManage={canManage}
+        />
+      )}
+      <AuctionReminders key={`reminders:${row.version}`} monitor={row} />
+      <AuctionEmail
+        key={`email:${row.version}`}
+        monitorId={row.id}
+        canManage={canManage}
+        archived={row.status === "archived"}
+        changed={reload}
+        onAccessFailure={onAccessFailure}
       />
       {history && <History key={row.version} id={id} />}
     </section>

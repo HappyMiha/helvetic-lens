@@ -7,8 +7,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
+from . import auction_delivery, auction_email_preferences, auction_reminders, auction_today
 from . import auction_repository as repository
-from . import auction_today
 from . import auction_workflow as workflow
 from .auction_contracts import AuctionProfile
 from .auth import Identity
@@ -34,6 +34,11 @@ class VersionBody(Input):
 
 class EditBody(ConfigurationBody, VersionBody):
     pass
+
+
+class EmailBody(VersionBody):
+    configuration: auction_email_preferences.EmailConfiguration
+    consent: bool = Field(strict=True)
 
 
 class ItemVersionBody(VersionBody):
@@ -187,5 +192,45 @@ def auction_router(service, settings):
                 expected_version=body.expected_version, expected_state_hash=body.expected_state_hash, decision=body.decision)
             session.commit()
             return result
+
+    @router.get("/reminders")
+    def reminders(cursor: UUID | None = None, limit: int = Query(default=20, ge=1, le=50), actor: Identity = Depends(identity)):
+        with service.db.session() as session:
+            return auction_reminders.page(session, actor.user_id, now=_now(), cursor=str(cursor) if cursor else None, limit=limit)
+
+    @router.get("/monitors/{monitor_id}/reminders")
+    def monitor_reminders(monitor_id: UUID, cursor: UUID | None = None, limit: int = Query(default=20, ge=1, le=50), actor: Identity = Depends(identity)):
+        with service.db.session() as session:
+            return auction_reminders.page(session, actor.user_id, monitor_id=str(monitor_id), now=_now(), cursor=str(cursor) if cursor else None, limit=limit)
+
+    @router.get("/monitors/{monitor_id}/reminders/{reminder_id}")
+    def reminder(monitor_id: UUID, reminder_id: UUID, actor: Identity = Depends(identity)):
+        with service.db.session() as session:
+            return auction_reminders.view(session, actor.user_id, str(monitor_id), str(reminder_id), now=_now())
+
+    @router.post("/monitors/{monitor_id}/reminders/{reminder_id}/acknowledge")
+    def acknowledge_reminder(monitor_id: UUID, reminder_id: UUID, body: VersionBody, actor: Identity = Depends(identity)):
+        with service.db.session() as session:
+            result = auction_reminders.acknowledge(session, actor.user_id, str(monitor_id), str(reminder_id), expected_version=body.expected_version, now=_now())
+            session.commit()
+            return result
+
+    @router.get("/monitors/{monitor_id}/email")
+    def email_preferences(monitor_id: UUID, actor: Identity = Depends(identity)):
+        with service.db.session() as session:
+            return {**auction_email_preferences.view(session, actor.user_id, str(monitor_id)), "mail_available": settings.auth_email_mode == "smtp"}
+
+    @router.put("/monitors/{monitor_id}/email")
+    def configure_email(monitor_id: UUID, body: EmailBody, actor: Identity = Depends(identity)):
+        with service.db.session() as session:
+            result = auction_email_preferences.configure(session, actor.user_id, str(monitor_id), expected_version=body.expected_version,
+                configuration=body.configuration.model_dump(mode="json"), consent=body.consent, now=_now())
+            session.commit()
+            return {**result, "mail_available": settings.auth_email_mode == "smtp"}
+
+    @router.get("/monitors/{monitor_id}/email/preview")
+    def email_preview(monitor_id: UUID, actor: Identity = Depends(identity)):
+        with service.db.session() as session:
+            return auction_delivery.preview(session, settings, actor.user_id, str(monitor_id), now=_now())
 
     return router

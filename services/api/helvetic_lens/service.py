@@ -4111,6 +4111,16 @@ class HelveticLens:
                 result_json = await asyncio.to_thread(deliver_commute, self.db, self.settings,
                     monitor_id=target_id, consent_revision=payload.get("consent_revision"), checkpoint=commute_email_checkpoint)
                 result_type, result_id, result_url = "commute_monitor", target_id, f"/commute-watch?monitor={target_id}"
+            elif job_type == "auction_email":
+                from .auction_delivery import deliver as deliver_auction
+                def auction_email_checkpoint():
+                    with self.db.session() as heartbeat_session:
+                        active = durable_jobs.heartbeat(heartbeat_session, job_id, worker)
+                        heartbeat_session.commit()
+                    return active
+                result_json = await asyncio.to_thread(deliver_auction, self.db, self.settings,
+                    monitor_id=target_id, consent_revision=payload.get("consent_revision"), checkpoint=auction_email_checkpoint)
+                result_type, result_id, result_url = "auction_monitor", target_id, f"/auction-watch?monitor={target_id}"
             elif job_type == "road_email":
                 from .road_delivery import deliver as deliver_road
                 def road_email_checkpoint():

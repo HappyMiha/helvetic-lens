@@ -68,7 +68,7 @@ def test_http_csrf_same_organization_peer_and_feature_denial(api):
             session.add(OrganizationMembership(organization_id=organization, user_id=identity["user"]["id"], role="organization_admin"))
             session.commit()
         assert peer.post("/api/auth/session/organization", headers=_csrf(peer), json={"organization_id": organization}).status_code == 200
-        for endpoint in (path, path + "/revisions"):
+        for endpoint in (path, path + "/revisions", path + "/email", path + "/email/preview", path + "/reminders"):
             response = peer.get(endpoint)
             assert response.status_code == 404 and response.headers["cache-control"] == "no-store"
         assert peer.get(ROOT + "/monitors").json()["items"] == []

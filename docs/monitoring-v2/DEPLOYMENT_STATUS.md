@@ -1,5 +1,17 @@
 # Monitoring deployment status — 14 September 2026
 
+## All-nine navigation activated — 14 September 2026
+
+A fresh public main-site `/api/ready` reports `git-f8a4304e658a`, instance
+`main`, status ready and database/Redis true. This verifies activation of the
+all-nine desktop/mobile navigation commit and the ninth Auction profile section.
+The later private Auction tracking, Centre readiness copy and Today/Inbox commits
+are published on main; their activation is not yet verified. The reminders/email
+follow-up passed 122 server checks, 14 browser checkpoints and the root build;
+its activation is not yet verified. No deployment, controller or
+check process was restarted or duplicated. Source credentials, reviewed rights,
+current observations and user email consent remain separate from section access.
+
 ## Integrated directions activated — 14 September 2026
 
 The public main-site `/api/ready` now reports `git-4859c58a8b25`, instance `main`,
