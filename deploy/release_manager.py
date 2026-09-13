@@ -1226,6 +1226,16 @@ class ReleaseManager:
 
         if deployed.get("sha") == target_sha:
             self.status["service"]["state"] = "idle"
+            last_run = self.status.get("last_run") or {}
+            if (last_run.get("kind") == "poll" and last_run.get("status") == "failed"
+                    and last_run.get("error_step") == "fetch"):
+                # A verified no-change poll recovers a transient fetch failure.
+                # Keep its immutable history, and show the latest actual release
+                # attempt (including failures), without inventing a deployment.
+                self.status["last_run"] = next(
+                    (run for run in self._history() if run.get("kind", "release") == "release"),
+                    None,
+                )
             self._save_status()
             return
 

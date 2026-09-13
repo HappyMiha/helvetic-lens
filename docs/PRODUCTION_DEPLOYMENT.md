@@ -135,6 +135,18 @@ Caddy stores certificates in its named volume and renews them automatically whil
 
 The host-side release manager can poll the trusted `origin/main` branch every two minutes. It never runs Git from inside the application and never exposes the Docker socket or arbitrary commands to the browser. Platform administrators receive a read-only **Deployments** page containing the active and remote commit, every release step, the commits included, the last error, rollback outcome, and the latest 30 runs.
 
+A transient Git fetch failure remains in deployment history. Once a successful
+poll verifies that the deployed commit already matches the remote branch, the
+latest-attempt panel returns to the latest retained release attempt (or no attempt
+if none is retained). A recovered fetch error is not shown as an active deployment
+failure; actual failed releases remain visible, and no successful deployment is
+fabricated by a no-change poll.
+
+Verified on HappySnowman on 13 September 2026: the regression and deployment
+manager/installer/instance/history suite passed all 87 tests. A live no-change
+poll recovered the stale GitHub DNS warning, retained the failed poll in history,
+and left the verified production release and running services unchanged.
+
 Install the manager and its user cron entry from the trusted production checkout:
 
 ```sh

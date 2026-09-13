@@ -24,6 +24,49 @@ def run(index, status="succeeded"):
             "error": None, "steps": [], "target_sha": "a" * 40}
 
 
+@pytest.mark.parametrize("release_status", ["succeeded", "failed", None])
+@pytest.mark.parametrize("fetch_fails", [False, True])
+def test_no_change_poll_recovers_fetch_warning_without_rewriting_history(tmp_path, release_status, fetch_fails):
+    host = manager(tmp_path)
+    host.expected_repository = "https://github.com/example/project.git"
+    host.branch, host.remote, host.poll_seconds = "main", "origin", 120
+    target = "a" * 40
+    previous = {"sha": target, "release": "git-current"}
+    host._bootstrap_deployed = lambda: previous
+    host._commit_summary = lambda sha: "Existing release"
+    host._refresh_monitoring_progress = lambda sha: None
+    failure = {**run("dns", "failed"), "kind": "poll", "target_sha": None,
+               "error_step": "fetch", "error": "Could not resolve host: github.com"}
+    release = {**run("release", release_status), "kind": "release"} if release_status else None
+    if release:
+        host._save_history(release)
+    host._save_history(failure)
+    host.status = {"last_run": failure}
+    before = host.history_path.read_bytes()
+
+    def git(*args, **kwargs):
+        if args[0] == "fetch" and fetch_fails:
+            raise release_manager.DeploymentError("fetch", "DNS still unavailable")
+        return host.expected_repository if args[0] == "remote" else target if args[0] == "rev-parse" else ""
+
+    host._git = git
+    if fetch_fails:
+        with pytest.raises(release_manager.DeploymentError):
+            host._poll_locked()
+        assert host.status["last_run"] == failure
+    else:
+        host._poll_locked()
+        assert host.status["service"]["state"] == "idle"
+        assert host.status["remote"]["sha"] == target
+        assert host.status["last_run"] == release
+        host._poll_locked()  # Subsequent healthy polls do not revive the warning.
+        assert host.status["last_run"] == release
+    assert host.history_path.read_bytes() == before
+    with sqlite3.connect(tmp_path / "history.sqlite3") as db:
+        saved = json.loads(db.execute("SELECT detail FROM runs WHERE id='run-dns'").fetchone()[0])
+        assert saved == failure
+
+
 def test_archive_retains_every_run_after_legacy_snapshot_rolls_over(tmp_path):
     host = manager(tmp_path)
     host.history_path.write_text(json.dumps([run("legacy")]))
