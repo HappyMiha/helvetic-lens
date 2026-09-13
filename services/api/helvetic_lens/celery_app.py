@@ -85,6 +85,12 @@ celery_app.conf.update(
         "cleanup-trademark-source": {
             "task": "helvetic_lens.cleanup_trademark_source", "schedule": 60.0,
         },
+        "cleanup-auction-source": {
+            "task": "helvetic_lens.cleanup_auction_source", "schedule": 60.0,
+        },
+        "schedule-auction-monitoring": {
+            "task": "helvetic_lens.schedule_auction_monitoring", "schedule": 15.0,
+        },
         "schedule-hazard-email": {
             "task": "helvetic_lens.schedule_hazard_email", "schedule": 60.0,
         },
@@ -330,6 +336,26 @@ def cleanup_trademark_source():
     database = Database(settings)
     try:
         return cleanup(database)
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.cleanup_auction_source")
+def cleanup_auction_source():
+    from .auction_sources import cleanup
+    database = Database(settings)
+    try:
+        return cleanup(database)
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.schedule_auction_monitoring")
+def schedule_auction_monitoring():
+    from .auction_jobs import refresh_due
+    database = Database(settings)
+    try:
+        return refresh_due(database, settings)
     finally:
         database.engine.dispose()
 

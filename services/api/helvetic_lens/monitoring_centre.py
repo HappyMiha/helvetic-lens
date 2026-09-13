@@ -10,6 +10,7 @@ from sqlalchemy import and_, or_, select
 from . import air_runtime, monitoring_runtime, river_runtime
 from .air_models import AirMonitor
 from .auction_models import AuctionMonitor
+from .auction_workflow_models import AuctionRuntime
 from .auth import Identity
 from .commute_models import CommuteMonitor
 from .config import DomainError
@@ -174,7 +175,12 @@ def summary(session, settings, kind, row, capability):
         config = row.configuration
         health = row.health if settings.commute_source_enabled else "source_unavailable"
         href = f"/commute-watch?monitor={row.id}"
-    elif kind in {"ip", "auctions"}:
+    elif kind == "auctions":
+        config = row.configuration
+        runtime = session.get(AuctionRuntime, row.id)
+        health = runtime.health if runtime else "not_started"
+        href = f"/auction-watch?monitor={row.id}"
+    elif kind == "ip":
         config, runtime = row.configuration, None
         health = "source_unavailable"
         href = f"/{'trademark' if kind == 'ip' else 'auction'}-watch?monitor={row.id}"
@@ -199,6 +205,8 @@ def summary(session, settings, kind, row, capability):
     health = "disabled" if not enabled else "not_started" if row.status == "draft" else health
     # Metadata remains manageable/discoverable when a source is disabled. Never
     # expose source values or read its runtime evidence through the kill switch.
+    last_check = getattr(runtime, "last_check_at" if kind == "auctions" else "last_poll_at", None)
+    next_check = getattr(runtime, "next_check_at" if kind == "auctions" else "next_poll_at", None)
     return {
         "id": row.id,
         "domain": kind,
@@ -211,13 +219,13 @@ def summary(session, settings, kind, row, capability):
         else config.get("materiality", {}).get("event_kinds", []) if kind == "traffic"
         else config.get("metrics", [item["allergen"] for item in config.get("selections", [])]),
         "last_observation_at": observation if row.status == "active" and enabled else None,
-        "last_check_at": utc(runtime.last_poll_at).isoformat()
-        if enabled and runtime and runtime.last_poll_at
+        "last_check_at": utc(last_check).isoformat()
+        if enabled and last_check
         else None,
-        "next_check_at": utc(runtime.next_poll_at).isoformat()
+        "next_check_at": utc(next_check).isoformat()
         if enabled
         and runtime
-        and runtime.next_poll_at
+        and next_check
         and row.status == "active"
         and (kind != "tenders" or settings.simap_public_source_enabled)
         and (kind != "commute" or settings.commute_source_enabled)

@@ -1718,6 +1718,8 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Active scope, 13 September 2026:** Implement the complete Auction Watch direction under [the B8 implementation contract](docs/monitoring-v2/AUCTION_WATCH.md). Official public listing/detail fields and sale terms were inspected; automated reuse, native feed, category coverage and current source-state evidence remain unverified. Build private profiles, typed-price matching, retained auction/lot state, internal review and consented material/deadline delivery. No live acquisition or completed acceptance is claimed.
 
+**Source-journal evidence, 14 September 2026:** Permission-scoped auction/lot versions, evidence integrity, generation/cursor admission, expiry/revocation redaction and cleanup now support private tracking. The 64 combined source/workflow/API/Centre checks passed. Native acquisition, current official rights and category coverage remain unverified. See [tracking evidence](docs/monitoring-v2/AUCTION_WATCH.md#private-source-backed-tracking--14-september-2026). Status remains IN PROGRESS.
+
 <a id="mv2-050"></a>
 
 ### MV2-050 — B8: Auction profiles, price limits and ending-soon alerts
@@ -1744,6 +1746,8 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 
 **Profile-management evidence, 13 September 2026:** The private five-language Auction Watch profile workflow, immutable settings, typed-price/budget rules and enabled ninth Centre entry are implemented. Final integrated checks passed (30), browser checks passed (17), exact-money reader checks passed (3), and the root frontend build passed. Native source access/persistence, auction review/following, Today/Inbox and durable delivery remain open. See [implementation and acceptance boundaries](docs/monitoring-v2/AUCTION_WATCH.md#private-profiles-and-deterministic-rules--13-september-2108-utc). This does not complete AC-B8-01…12.
+
+**Private-tracking evidence, 14 September 2026:** Start/resume, scheduled projection, pause, explained lots, individual follow/unfollow, internal decisions, reopened review and retained source history are implemented in all five languages. Combined API/source/workflow/Centre checks passed (64); browser tracking (16) and existing profile (17) checkpoints, root build, exact Ruff and changed-file formatting passed. Current official acquisition/rights, Today/Inbox, durable reminders/email and human acceptance remain open. See [tracking evidence](docs/monitoring-v2/AUCTION_WATCH.md#private-source-backed-tracking--14-september-2026). Status remains IN PROGRESS.
 
 ## F6 — Quality evidence, pilot and release
 

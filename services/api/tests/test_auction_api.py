@@ -37,7 +37,8 @@ def test_http_profile_roundtrip_and_no_forged_source_evidence(api):
     assert client.patch(path, headers=_csrf(client), json=body).status_code == 409
     assert len(client.get(path + "/revisions").json()["items"]) == 2
     assert client.get(path + "/revisions", params={"limit": 101}).status_code == 422
-    assert client.post(path + "/start", headers=_csrf(client), json={"expected_version": 2}).status_code == 404
+    denied_start = client.post(path + "/start", headers=_csrf(client), json={"expected_version": 2})
+    assert denied_start.status_code == 409 and denied_start.json()["code"] == "auction_source_not_configured"
     centre = client.get("/api/monitoring-centre", params={"domain": "auctions"})
     assert centre.status_code == 200, centre.text
     item, = centre.json()["items"]
@@ -76,6 +77,60 @@ def test_http_csrf_same_organization_peer_and_feature_denial(api):
     denied = client.get(path)
     assert denied.status_code == 404 and denied.headers["cache-control"] == "no-store"
     assert "Vehicle interests" not in denied.text
+
+
+def test_http_source_backed_follow_review_pause_and_delete(api, monkeypatch):
+    from datetime import timedelta
+
+    from sqlalchemy import func, select
+    from test_auction_rules import NOW
+    from test_auction_sources import accept, grant, price
+
+    from helvetic_lens import auction_api
+    from helvetic_lens.auction_workflow_models import AuctionDecision, AuctionItem
+
+    client, app, _ = api
+    now = NOW
+    monkeypatch.setattr(auction_api, "_now", lambda: now)
+    database = app.state.service.db
+    permission = grant(database, private_decisions_allowed=True)
+    accept(database, permission)
+    config = profile().model_dump(mode="json")
+    preview = client.post(ROOT + "/preview", headers=_csrf(client), json={"configuration": config}).json()
+    assert preview["start_available"] and preview["live_results_checked"] and not preview["coverage_verified"]
+    monitor = client.post(ROOT + "/monitors", headers=_csrf(client), json={"configuration": config, "request_key": str(uuid4())}).json()
+    path = ROOT + "/monitors/" + monitor["id"]
+    assert client.post(path + "/start", json={"expected_version": 1}).status_code == 403
+    started = client.post(path + "/start", headers=_csrf(client), json={"expected_version": 1})
+    assert started.status_code == 200 and started.json()["status"] == "active"
+    assert client.post(path + "/refresh", headers=_csrf(client)).json()["health"] == "current"
+    row, = client.get(path + "/items").json()["items"]
+    item_path = path + "/items/" + row["id"]
+    followed = client.post(item_path + "/follow", headers=_csrf(client), json={"expected_version": row["version"],
+        "expected_state_hash": row["state_hash"], "following": True})
+    assert followed.status_code == 200 and followed.json()["following"]
+    row = followed.json()
+    response = client.post(item_path + "/decision", headers=_csrf(client), json={"expected_version": row["version"],
+        "expected_state_hash": row["state_hash"], "decision": "bid"})
+    assert response.status_code == 200 and not response.json()["needs_review"]
+    assert response.headers["cache-control"] == "no-store"
+    assert client.post(item_path + "/bid", headers=_csrf(client), json={"amount": 999999}).status_code == 404
+    now = NOW + timedelta(seconds=1)
+    accept(database, permission, cursor=1, prices=[price(1270000)])
+    assert client.post(path + "/refresh", headers=_csrf(client)).status_code == 200
+    row, = client.get(path + "/items", params={"following_only": True}).json()["items"]
+    assert row["needs_review"] and row["decision"] == "bid"
+    versions = client.get(item_path + "/history", params={"limit": 1}).json()
+    assert versions["next_cursor"] and versions["items"][0]["facts"]["prices"][0]["amount_minor"] == 1270000
+    centre = client.get("/api/monitoring-centre", params={"domain": "auctions"}).json()["items"][0]
+    assert centre["last_check_at"] and centre["next_check_at"] and centre["health"] == "current"
+    assert client.post(path + "/pause", headers=_csrf(client), json={"expected_version": 2}).json()["status"] == "paused"
+    assert client.post(path + "/refresh", headers=_csrf(client)).status_code == 409
+    assert client.post(path + "/archive", headers=_csrf(client), json={"expected_version": 3}).json()["status"] == "archived"
+    assert client.request("DELETE", path, headers=_csrf(client), json={"expected_version": 4}).json() == {"deleted": True}
+    with database.session(include_all_organizations=True) as session:
+        assert session.scalar(select(func.count()).select_from(AuctionItem)) == 0
+        assert session.scalar(select(func.count()).select_from(AuctionDecision)) == 0
 
 
 def test_auction_migration_roundtrip_preserves_other_monitors(api):

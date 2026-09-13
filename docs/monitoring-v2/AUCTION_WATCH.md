@@ -100,3 +100,47 @@ discovery/following/review, Today/Inbox, durable reminder generations and actual
 consented delivery remain required. MV2-049/050 remain IN PROGRESS. This publishes
 the usable profile-management outcome and ninth navigable section, not completed
 B8 acceptance or live auction monitoring.
+
+## Private source-backed tracking — 14 September 2026
+
+The profile now supports start/resume against a fresh reviewed source, scheduled
+projection of retained source records, pause, explained private results, following
+individual lots, internal Inspect/Considering a bid/No bid/Monitor decisions and
+paged source-version history. A material change reopens review while retaining
+the earlier decision. The user can stop following and pause after source access
+is lost. All five languages expose this workflow in the enabled Auction section.
+The interface describes source readiness inside the section; it does not hide it.
+
+Migrations `70bd3e81fe72` and `81ce4f920a83` add the shared permission-scoped
+source journal and organization-scoped private tracking tables. Reviewed policies
+bind source identity, HTTPS subtree, permitted purposes, canton/category scope,
+freshness and retention. Admission verifies evidence hashes, record identity,
+generation and cursor; request replay is idempotent. Current heads and immutable
+versions distinguish evidence refresh from changed facts. Revocation/expiry
+redacts reads immediately; an independent cleanup job removes retained payloads.
+Private decisions and events retain references and codes, not duplicate licensed
+payloads. No live permission, source account or source write endpoint was created.
+
+The bounded scheduler projects only retained permitted records. It resumes source
+pages, rejects stale review submissions and pauses when ownership membership is
+revoked. Intermediate price/deadline revisions are considered between polls:
+CHF 8,500 → 12,700 reopens a CHF 12,000 review once, while subsequent ordinary bid
+increments remain quiet. A deadline changed away and back has distinct reminder
+generations. Unknown price remains unknown; incomplete source pages never imply
+cancellation. Coverage is explicitly unverified, even with readable records.
+
+Verification: 64 combined workflow/API/source/Centre tests passed in 70.70 s,
+including migration metadata and downgrade/upgrade preservation, private ownership,
+revocation, replay, price crossing, deadline generations and version-history
+retention. Exact API Ruff passed. The root isolated frontend build passed; changed
+frontend files pass Prettier and the patch passes whitespace checks. The synthetic
+browser passed 16 tracking checkpoints and the existing 17 profile checkpoints.
+Both desktop/mobile axe runs reported zero violations; tracking screenshots were
+visually inspected. Synthetic fixtures do not prove native source access or live
+auction behavior; incomplete manual accessibility checks remain unverified.
+
+This publishes a usable private tracking outcome for reviewed journal records.
+Native acquisition/current official reuse and category evidence, Today/Inbox,
+durable ending-soon delivery, separately consented email and real-user acceptance
+remain open. Notification preferences are retained but no delivery is claimed.
+MV2-049/050 remain IN PROGRESS; AC-B8-01…12 are not complete.

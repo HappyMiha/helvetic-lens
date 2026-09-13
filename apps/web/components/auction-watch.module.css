@@ -12,3 +12,15 @@
   outline: 3px solid #328cc1;
   outline-offset: 3px;
 }
+
+.root [data-auction-tracking] {
+  margin-top: 1.5rem;
+  border-top: 1px solid #738595;
+  padding-top: 1rem;
+}
+.root [data-auction-evidence] {
+  overflow-wrap: anywhere;
+}
+.root [data-auction-evidence] details p {
+  white-space: pre-wrap;
+}

@@ -1,4 +1,15 @@
-# Monitoring deployment status — 13 September 2026
+# Monitoring deployment status — 14 September 2026
+
+## Integrated directions activated — 14 September 2026
+
+The public main-site `/api/ready` now reports `git-4859c58a8b25`, instance `main`,
+status ready and database/Redis true. This verifies activation of the integrated
+directions commit. The subsequent Auction profile (`395458d`) and all-nine direct
+navigation (`f8a4304`) commits are published on main; their activation is not yet
+verified. The private Auction tracking follow-up has passed its local checks;
+see [scope and evidence](AUCTION_WATCH.md#private-source-backed-tracking--14-september-2026).
+No deployment was restarted or duplicated. Source credentials, rights, current
+observations and human acceptance remain separate from code activation.
 
 ## Nine-section visibility checkpoint — 13 September 2026
 

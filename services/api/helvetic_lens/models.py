@@ -21,6 +21,8 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column
 
 from . import auction_models as auction_models
+from . import auction_source_models as auction_source_models
+from . import auction_workflow_models as auction_workflow_models
 from . import hazard_models as hazard_models
 from . import hazard_source_models as hazard_source_models
 from . import road_models as road_models
@@ -1763,6 +1765,11 @@ class MonitoringEvaluationEntry(Base):
 ORGANIZATION_SCOPED_MODELS = (
     auction_models.AuctionMonitor,
     auction_models.AuctionConfigurationRevision,
+    auction_workflow_models.AuctionRuntime,
+    auction_workflow_models.AuctionSourceCursor,
+    auction_workflow_models.AuctionItem,
+    auction_workflow_models.AuctionItemEvent,
+    auction_workflow_models.AuctionDecision,
     hazard_models.HazardMonitor,
     trademark_models.TrademarkMonitor,
     trademark_models.TrademarkConfigurationRevision,

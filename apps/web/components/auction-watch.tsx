@@ -1,15 +1,8 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { api, ApiError } from "@/lib/api";
+import { ApiError } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { auctionCopy } from "@/lib/auction-copy";
 import {
@@ -26,78 +19,9 @@ import { useAuth } from "./auth-gate";
 import { Shell } from "./shell";
 import styles from "./commute-watch.module.css";
 import ipStyles from "./auction-watch.module.css";
-
-const Failure = createContext<(error: unknown) => void>(() => {});
-const base = "/auction-watch";
-function useData<T>(path: string | null, revision = 0) {
-  const deny = useContext(Failure),
-    key = `${path}:${revision}`;
-  const [value, setValue] = useState<{
-    key: string;
-    data?: T;
-    error?: unknown;
-  }>({ key: "" });
-  useEffect(() => {
-    if (!path) return;
-    const controller = new AbortController();
-    api<T>(base + path, { signal: controller.signal })
-      .then((data) => {
-        if (!controller.signal.aborted) setValue({ key, data });
-      })
-      .catch((error) => {
-        if (!controller.signal.aborted) {
-          deny(error);
-          setValue({ key, error });
-        }
-      });
-    return () => controller.abort();
-  }, [path, key, deny]);
-  return value.key === key ? value : { key };
-}
-function useMutation() {
-  const { locale } = useI18n(),
-    c = auctionCopy[locale],
-    deny = useContext(Failure);
-  const active = useRef<AbortController | null>(null);
-  const [busy, setBusy] = useState(false),
-    [error, setError] = useState("");
-  useEffect(() => () => active.current?.abort(), []);
-  async function run<T>(
-    path: string,
-    body: unknown,
-    done: (data: T) => void,
-    method = "POST",
-  ) {
-    if (active.current) return;
-    const controller = new AbortController();
-    active.current = controller;
-    setBusy(true);
-    setError("");
-    try {
-      const data = await api<T>(base + path, {
-        method,
-        body: JSON.stringify(body),
-        signal: controller.signal,
-      });
-      if (!controller.signal.aborted) done(data);
-    } catch (problem) {
-      if (!controller.signal.aborted) {
-        deny(problem);
-        setError(
-          problem instanceof ApiError && problem.code.includes("conflict")
-            ? c.conflict
-            : c.invalid,
-        );
-      }
-    } finally {
-      if (!controller.signal.aborted) {
-        active.current = null;
-        setBusy(false);
-      }
-    }
-  }
-  return { run, busy, error };
-}
+import { Failure, useData, useMutation } from "./auction-client";
+import { AuctionTracking } from "./auction-tracking";
+import { auctionTrackingCopy } from "@/lib/auction-tracking-copy";
 
 function ProfileForm({
   row,
@@ -435,7 +359,7 @@ function Detail({
       <div className={styles.actions}>
         <button onClick={reload}>{c.refresh}</button>
         <button onClick={() => setHistory((v) => !v)}>{c.history}</button>
-        {canManage && row.status === "draft" && (
+        {canManage && (row.status === "draft" || row.status === "paused") && (
           <>
             <button onClick={() => setEditing(true)}>{c.edit}</button>
             <button
@@ -476,6 +400,12 @@ function Detail({
         </div>
       )}
       {mutation.error && <p role="alert">{mutation.error}</p>}
+      <AuctionTracking
+        key={row.version}
+        monitor={row}
+        canManage={canManage}
+        changed={reload}
+      />
       {history && <History key={row.version} id={id} />}
     </section>
   );
@@ -519,7 +449,9 @@ function Content({
         <h1>{c.title}</h1>
         <p>{c.intro}</p>
         <p>{c.private}</p>
-        <p className={styles.notice}>{c.source}</p>
+        <p className={styles.notice}>
+          {auctionTrackingCopy[locale].sourceHelp}
+        </p>
         <p>
           <a href="https://www.aste.ti.ch/it/" target="_blank" rel="noreferrer">
             {c.official}

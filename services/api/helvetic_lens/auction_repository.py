@@ -8,6 +8,7 @@ from sqlalchemy.exc import IntegrityError
 
 from .auction_contracts import AuctionProfile
 from .auction_models import AuctionConfigurationRevision, AuctionMonitor
+from .auction_workflow_models import AuctionRuntime
 from .config import DomainError
 from .models import User
 from .monitoring_subjects import _actor, _savepoint
@@ -48,7 +49,15 @@ def _view(row):
 
 
 def get_monitor(session, user_id, monitor_id):
-    return _view(owned(session, user_id, monitor_id))
+    row = owned(session, user_id, monitor_id)
+    result = _view(row)
+    runtime = session.get(AuctionRuntime, row.id)
+    if runtime:
+        from .auction_sources import _utc
+        result["runtime"] = {"health": runtime.health,
+            "last_check_at": _utc(runtime.last_check_at).isoformat() if runtime.last_check_at else None,
+            "next_check_at": _utc(runtime.next_check_at).isoformat() if runtime.next_check_at and row.status == "active" else None}
+    return result
 
 
 def list_monitors(session, user_id, *, limit=20, after_id=None):
@@ -155,11 +164,11 @@ def archive_monitor(session, user_id, monitor_id, version):
         _fail("auction_version_conflict")
     if row.status == "archived":
         return _view(row)
-    if row.status != "draft":
+    if row.status not in {"draft", "paused"}:
         _fail("auction_stop_before_archive")
     changed = session.execute(update(AuctionMonitor).where(AuctionMonitor.id == row.id,
         AuctionMonitor.organization_id == row.organization_id, AuctionMonitor.owner_user_id == user_id,
-        AuctionMonitor.version == version, AuctionMonitor.status == "draft").values(status="archived", version=version + 1)
+        AuctionMonitor.version == version, AuctionMonitor.status.in_(("draft", "paused"))).values(status="archived", version=version + 1)
         .execution_options(synchronize_session=False))
     if changed.rowcount != 1:
         _fail("auction_version_conflict")

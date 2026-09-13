@@ -43,6 +43,11 @@ export type AuctionMonitor = {
   status: "draft" | "active" | "paused" | "archived";
   version: number;
   revision: number;
+  runtime?: {
+    health: string;
+    last_check_at: string | null;
+    next_check_at: string | null;
+  };
 };
 export type AuctionPage<T> = {
   items: T[];
