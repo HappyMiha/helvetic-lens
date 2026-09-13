@@ -21,6 +21,48 @@ Reviewed: **2026-09-10**. Coverage: ten use cases C1–C7, B2, B7, B8. This revi
 
 ## C1 — Alertswiss / cantonal hazards
 
+**13 September 2026 follow-up.** The [FOCP Polyalert page](https://www.babs.admin.ch/en/polyalert-en)
+links CAP Suisse 1.1 and describes third-party integration as planned by 2027.
+The protocol is documented; a current accessible feed is still unverified.
+[Alertswiss reproduction terms](https://www.alert.swiss/en/home/meta/legal-issues.html)
+are not an unrestricted commercial data licence. C1 local protocol/geography
+work has started under [Hazard Watch](HAZARD_WATCH.md), with synthetic evidence
+separate from source access, rights, current coverage and live acceptance.
+
+**Administrative geometry verified, 13 September 2026.** The official
+[swissBOUNDARIES3D January 2026 GeoPackage](https://data.geo.admin.ch/ch.swisstopo.swissboundaries3d/swissboundaries3d_2026-01/swissboundaries3d_2026-01_2056_5728.gpkg.zip)
+was retrieved through the public STAC catalogue and matched its SHA-256 checksum.
+An offline native reader verified 2,110 Swiss political municipalities, all 26
+cantons, Basel/Bern/Moutier membership, foreign/enclave exclusion and the obsolete
+Moutier code. [Swisstopo OGD terms](https://www.swisstopo.admin.ch/en/terms-of-use-free-geodata-and-geoservices)
+permit commercial processing with attribution, retained in the proof. Exact hashes,
+checks and the still-open runtime publication/renewal boundary are recorded in
+[Hazard Watch](HAZARD_WATCH.md#native-administrative-catalogue-and-radius-13-september-2026).
+This establishes native administrative geometry, not CAP access or warning coverage.
+
+**CAP filter precision, 13 September 2026.** CAP Suisse 1.1 pages 29–32 describe
+administrative geocodes as filters/list entries that may be only partly affected.
+They cannot expand an accompanying polygon to every address in a named canton.
+The local matcher preserves explicit extent versus administrative-filter basis;
+whole-municipality matching and precise point matching are distinct. Unknown or
+unbound historic code editions remain unavailable. Synthetic warnings passed
+checks against the verified native Basel boundaries; a current warning feed and
+its source-specific interpretation/rights contract remain unverified.
+
+**Local source journal, 13 September 2026.** Permission-bound CAP persistence,
+exact predecessors, immutable content/retention, independent usage rights and
+idempotent acquisition receipts are implemented and tested with synthetic grants.
+This does not establish a native endpoint, actual permission, polling continuity
+or complete current coverage. Those gates and private event/delivery work remain
+open; see [journal evidence](HAZARD_WATCH.md#durable-cap-source-journal-13-september-2026).
+
+**Private event follow-up.** Exact source-bound private events, review/type mute
+and gated readers now pass synthetic workflow tests. Retained private decisions
+require their own default-denied policy flag; journal rights alone cannot create
+them. Revocation purges derived content across tenants. This is local engineering
+evidence, not native feed access or actual user activation; see the
+[private event contract](HAZARD_WATCH.md#private-warning-events-review-and-type-mute-13-september-2026).
+
 **Facts.** Alertswiss is a federal and cantonal channel; BABS/FOCP operates the infrastructure, and cantonal authorities usually create messages. Levels: alarm, warning, information; all-clear/expiry/removal end their current applicability. Coverage includes Switzerland and Liechtenstein. DE/FR/IT/EN are supported, but the publisher is not required to provide every translation. The responsible authority decides whether to publish an event. [Alertswiss FAQ](https://www.alert.swiss/en/faq.html).
 
 **Unverified.** The reviewed official pages did not establish a supported external API contract, feed reuse terms, SLA or permitted poll rate. An unofficial JSON endpoint, even one used by the website, is insufficient proof.

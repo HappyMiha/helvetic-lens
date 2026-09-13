@@ -1,0 +1,178 @@
+.root {
+  padding: clamp(16px, 3vw, 40px);
+  max-width: 1400px;
+  margin: auto;
+  overflow-wrap: anywhere;
+}
+.root h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+.root h2 {
+  font-size: 1.2rem;
+  font-weight: 650;
+  margin-bottom: 12px;
+}
+.root h3,
+.root legend {
+  font-weight: 600;
+  margin: 8px 0;
+}
+.root p {
+  margin: 12px 0;
+  line-height: 1.6;
+}
+.root button {
+  border: 1px solid #738595;
+  border-radius: 8px;
+  padding: 9px 12px;
+  background: transparent;
+  text-align: left;
+}
+.root button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.root :is(button, input, select, textarea, summary, a):focus-visible {
+  outline: 3px solid #328cc1;
+  outline-offset: 3px;
+}
+.root button[aria-pressed="true"] {
+  border-color: #147bae;
+  box-shadow: inset 3px 0 #147bae;
+}
+.root a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.root label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 10px 0;
+}
+.root :is(input:not([type="checkbox"]), select, textarea) {
+  border: 1px solid #738595;
+  border-radius: 6px;
+  padding: 9px;
+  background: transparent;
+  color: inherit;
+  max-width: 100%;
+  min-width: 0;
+}
+.root textarea {
+  width: 100%;
+  resize: vertical;
+}
+.root select option {
+  color: #172b39;
+  background: #fff;
+}
+.root fieldset {
+  border: 1px solid #738595;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 14px 0;
+  min-width: 0;
+}
+.root .check {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+.root ul {
+  padding-left: 22px;
+  list-style: disc;
+}
+.root li {
+  margin: 7px 0;
+}
+.root details {
+  margin: 14px 0;
+}
+.root summary {
+  cursor: pointer;
+}
+.layout {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  gap: 22px;
+  margin-top: 22px;
+}
+.list,
+.detail {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  min-width: 0;
+}
+.card {
+  border: 1px solid #73859566;
+  border-radius: 12px;
+  padding: 20px;
+  min-width: 0;
+}
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 12px 0;
+}
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+.notice {
+  padding: 12px 16px;
+  border-left: 3px solid #147bae;
+  background: #147bae0a;
+}
+.source {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+  gap: 14px;
+}
+.profileField {
+  margin: 14px 0;
+}
+.profileField dt {
+  font-weight: 600;
+}
+.profileField dd {
+  margin-top: 5px;
+  white-space: pre-wrap;
+}
+.documentComparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 20px 0;
+}
+.documentComparison > section {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #73859566;
+  border-radius: 8px;
+}
+.documentComparison h4 {
+  font-weight: 650;
+}
+@media (max-width: 800px) {
+  .documentComparison {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 800px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .card {
+    padding: 14px;
+  }
+}

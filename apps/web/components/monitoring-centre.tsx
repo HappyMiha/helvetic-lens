@@ -12,18 +12,30 @@ import {
 } from "@/lib/monitoring-centre-copy";
 import { riverCopy, riverAttribution } from "@/lib/river-copy";
 import { airCopy } from "@/lib/air-copy";
+import { tenderCopy } from "@/lib/tender-copy";
+import { commuteCopy } from "@/lib/commute-copy";
+import { roadLabel } from "@/lib/road-copy";
+import { hazardCopy } from "@/lib/hazard-copy";
 import { pollenDraftCopy } from "@/lib/pollen-draft-copy";
 import { pollenStations } from "@/lib/pollen-stations";
 import { useAuth } from "./auth-gate";
 import { Shell } from "./shell";
 import styles from "./monitoring-centre.module.css";
 
-type Domain = "air" | "pollen" | "river";
+type Domain =
+  | "air"
+  | "pollen"
+  | "river"
+  | "tenders"
+  | "commute"
+  | "traffic"
+  | "warnings"
+  | "ip";
 type Monitor = {
   id: string;
   domain: Domain;
   name: string | null;
-  station_id: string;
+  station_id: string | null;
   status: string;
   health: string;
   href: string | null;
@@ -146,10 +158,15 @@ function Centre({
     return (
       (c as unknown as Record<string, string>)[key] ||
       (r as unknown as Record<string, string>)[key] ||
+      (tenderCopy[locale] as unknown as Record<string, string>)[key] ||
+      (commuteCopy[locale] as unknown as Record<string, string>)[key] ||
       c.unknown
     );
   }
   function metric(row: Monitor, key: string) {
+    if (row.domain === "warnings")
+      return (hazardCopy[locale] as Record<string, string>)[key] || c.unknown;
+    if (row.domain === "traffic") return roadLabel(locale, key);
     const labels =
       row.domain === "pollen"
         ? pollenDraftCopy[locale].allergens
@@ -200,7 +217,18 @@ function Centre({
                 onChange={(event) => setDomain(event.target.value)}
               >
                 <option value="">{c.all}</option>
-                {(["pollen", "river", "air"] as const).map((id) => (
+                {(
+                  [
+                    "pollen",
+                    "river",
+                    "air",
+                    "tenders",
+                    "commute",
+                    "traffic",
+                    "warnings",
+                    "ip",
+                  ] as const
+                ).map((id) => (
                   <option key={id} value={id}>
                     {c.templates[id][0]}
                   </option>
@@ -238,20 +266,33 @@ function Centre({
                     `${c.templates[row.domain][0]} · ${pollenStations.find((station) => station.id === row.station_id)?.name || row.station_id}`}
                 </h3>
                 <p>
-                  {c.templates[row.domain][0]} · {row.station_id}
+                  {c.templates[row.domain][0]}
+                  {row.station_id ? ` · ${row.station_id}` : ""}
                 </p>
                 <div className={styles.badges}>
                   <span className={styles.badge}>{label(row.status)}</span>
-                  <span className={styles.badge}>{label(row.health)}</span>
+                  <span className={styles.badge}>
+                    {row.domain === "traffic"
+                      ? roadLabel(locale, row.health)
+                      : label(row.health)}
+                  </span>
                 </div>
                 <p>{row.metrics.map((key) => metric(row, key)).join(" · ")}</p>
                 <p>
                   {c.source}:{" "}
-                  {row.domain === "river"
-                    ? riverAttribution[locale]
-                    : row.domain === "pollen"
-                      ? centreSources.pollen
-                      : centreSources.air}
+                  {row.domain === "warnings"
+                    ? c.unknown
+                    : row.domain === "traffic"
+                      ? centreSources.traffic
+                      : row.domain === "commute"
+                        ? centreSources.commute
+                        : row.domain === "river"
+                          ? riverAttribution[locale]
+                          : row.domain === "tenders"
+                            ? centreSources.tenders
+                            : row.domain === "pollen"
+                              ? centreSources.pollen
+                              : centreSources.air}
                 </p>
                 <dl>
                   {(

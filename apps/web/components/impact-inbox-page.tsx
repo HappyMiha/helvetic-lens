@@ -1,6 +1,8 @@
 "use client";
 
 import { MonitorThis } from "./monitor-this";
+import { RoadToday } from "./road-today";
+import { HazardToday } from "./hazard-today";
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -36,6 +38,7 @@ import { ErrorNote, Loading, Status, SuccessNote } from "./common";
 import { Shell } from "./shell";
 import { useAuth } from "./auth-gate";
 import { useI18n } from "@/lib/i18n";
+import { roadCopy } from "@/lib/road-copy";
 
 type InboxState = "unread" | "read" | "dismissed" | "muted";
 type InboxLaw = {
@@ -416,7 +419,7 @@ export function ImpactInboxPage() {
   const router = useRouter();
   const pathname = usePathname();
   const { canManage } = useAuth();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [busy, setBusy] = useState("");
   const [failure, setFailure] = useState("");
   const [lawSearch, setLawSearch] = useState("");
@@ -472,11 +475,15 @@ export function ImpactInboxPage() {
     <Shell section={t("nav.impact")} wide>
       <div className="page-heading">
         <div>
-          <span className="eyebrow">{t("impact.eyebrow")}</span>
-          <h1>{t("impact.title")}</h1>
-          <p className="muted m-0">{t("impact.body")}</p>
+          <h1>{t("nav.impact")}</h1>
+          <p className="muted m-0">{roadCopy[locale].impactScope}</p>
         </div>
       </div>
+      <RoadToday inbox />
+      <HazardToday inbox />
+      <span className="eyebrow">{t("impact.eyebrow")}</span>
+      <h2>{t("impact.title")}</h2>
+      <p className="muted">{t("impact.body")}</p>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <h2 className="text-sm m-0">{t("inboxPaging.scope")}</h2>
         <Button variant="outline" size="sm" onClick={() => void invalidateResources(resourceTag("impact-inbox", "organization"), resourceTag("laws", "organization"))}><RefreshCw size={14} /> {t("inboxPaging.refresh")}</Button>

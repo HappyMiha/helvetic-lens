@@ -4,6 +4,17 @@ The Apache License 2.0 in this repository covers original Helvetic Lens code
 and documentation, not third-party software or content. Retain the licenses and
 copyright notices shipped with each dependency when distributing it.
 
+## Transport protobuf runtime
+
+- **gtfs-realtime-bindings 2.2.0**: Apache-2.0, MobilityData and contributors.
+  https://github.com/MobilityData/gtfs-realtime-bindings
+  The generated classes are distributed as a dependency, not copied into this
+  repository. Preserve the package license and the repository Apache-2.0 license.
+- **protobuf 7.36.1**: BSD-3-Clause, Copyright 2008 Google Inc.
+  https://github.com/protocolbuffers/protobuf
+  Preserve the distribution's `protobuf-7.36.1.dist-info/LICENSE`, including its
+  redistribution conditions, disclaimer and generated-code ownership notice.
+
 ## PDF processing
 
 - **pdfminer.six 20260107** (runtime): MIT, Yusuke Shinyama and contributors.
@@ -75,6 +86,21 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
 
 ## Other dependencies and content
+
+Hazard Watch administrative geometry uses **pyproj 3.7.2** (MIT, with PROJ's
+distributed `LICENSE_proj`) and **Shapely 2.1.2** (BSD 3-Clause). Shapely wheels
+include GEOS under LGPL 2.1; retain the installed `LICENSE_GEOS`, the library and
+its applicable redistribution/relinking obligations. Windows wheels additionally
+carry their Visual C++ runtime notice (`LICENSE_win32`). NumPy's exact distribution
+contains BSD-3-Clause, 0BSD, MIT, Zlib and CC0-1.0 components and bundled notices.
+Keep each wheel's complete `dist-info/licenses` directory in built distributions;
+this summary does not replace those license texts or relicense GEOS.
+
+The native swissBOUNDARIES3D administrative dataset is attributed to **Federal
+Office of Topography swisstopo**, under its
+[OGD terms](https://www.swisstopo.admin.ch/en/terms-of-use-free-geodata-and-geoservices).
+The source archive stays outside Git; retained proofs include its version, hash
+and attribution. Geographic reuse rights do not grant access to warning feeds.
 
 This is not an exhaustive software bill of materials. Exact JavaScript and Python
 versions are recorded in `package-lock.json`, `services/api/uv.lock`, and the model

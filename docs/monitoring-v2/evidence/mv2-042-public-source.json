@@ -1,0 +1,26 @@
+{
+  "checked_at": "2026-09-12T18:28:51.916015+00:00",
+  "source": "official anonymous SIMAP API",
+  "permitted_search_results": 20,
+  "next_cursor": "20260904|42992",
+  "withheld_until": null,
+  "scope": "public search and publication detail only; documents/Q&A access not established",
+  "publication": {
+    "schema_version": "simap-publication-1.5.1-v1",
+    "project_id": "a07bd668-e1c0-4d48-a829-776f14c0e2b2",
+    "publication_id": "2520c9f8-7d53-4182-a38a-2f66476feef4",
+    "publication_date": "2026-09-12",
+    "publish_after": "2026-09-12T06:00:00+00:00",
+    "publication_type": "tender",
+    "corrected_publication_id": "dad78ffd-634f-4109-b0ff-176bd1232bf5",
+    "offer_deadline": {
+      "source_value": "2026-10-16T15:00:00+02:00",
+      "utc": "2026-10-16T13:00:00+00:00",
+      "status": "known",
+      "source_locator": "/dates/offerDeadline"
+    },
+    "document_coverage": "no_documents_indicated",
+    "qa_coverage": "not_verified",
+    "evidence_sha256": "43278514c4b671744fe66319c65b0c78b5d9e8b72bb18547bfdabb17a77e49a3"
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "verified_at": "2026-09-12T19:10:00.710260+00:00",
+  "scope": "saved_real_public_publication_projection_and_live_official_cpv_lookup",
+  "publication_source": "https://www.simap.ch/api/publications/v1/project/a07bd668-e1c0-4d48-a829-776f14c0e2b2/publication-details/2520c9f8-7d53-4182-a38a-2f66476feef4",
+  "publication_id": "2520c9f8-7d53-4182-a38a-2f66476feef4",
+  "publication_source_sha256": "43278514c4b671744fe66319c65b0c78b5d9e8b72bb18547bfdabb17a77e49a3",
+  "publication_capture_evidence": "mv2-042-public-source.json",
+  "project_id": "a07bd668-e1c0-4d48-a829-776f14c0e2b2",
+  "project_lot_count": 13,
+  "independent_lot_ids": [
+    "22d1a4a0-2f1d-40ad-aa68-dd1b03403c4b",
+    "4e5d53ca-6b96-4c3c-aa54-4a016d114f9f",
+    "f637aeaa-5065-4220-bb16-28dc9d6e9f8d",
+    "bcb57080-9162-4984-87d6-588e71b9c3f6",
+    "31691b53-86c5-4819-b950-6fd1ac7e4e8e",
+    "ada08c3f-323e-4b1a-8461-e916bd9ae7f2",
+    "330e442a-c04c-41f3-b675-35d0a141dd30",
+    "b7851234-f205-4894-97fb-dc99794fe845",
+    "78a7be15-9c47-461f-b958-9c15c9b4512f",
+    "87203f93-e145-4e72-83de-b257de8c252d",
+    "aa7b3b03-5d60-4936-ae45-718d140aa97a",
+    "00795010-fb6e-4be0-909f-651db930b436",
+    "e0a5db5c-6c47-460c-8325-d69656ffc2ea"
+  ],
+  "explicit_software_engineering_matches": [
+    {
+      "lot_id": "aa7b3b03-5d60-4936-ae45-718d140aa97a",
+      "verdict": "needs_review",
+      "matches": [
+        {
+          "code": "capability_phrase",
+          "capability": "Software Engineering",
+          "phrase": "Software Engineering",
+          "locator": "/lots/10/title/de",
+          "language": "de"
+        }
+      ]
+    }
+  ],
+  "lot_cpv_known_count": 0,
+  "qualification_coverage": "unknown",
+  "authenticated_document_capture": "not_verified",
+  "cpv_lookup_source": "https://www.simap.ch/api/codes/v1/cpv/search?query=72212000&language=en",
+  "cpv_lookup": {
+    "code": "72212000",
+    "ancestors": [
+      "72000000",
+      "72200000",
+      "72210000"
+    ],
+    "source_sha256": "bc8f7c6ea130394185c6d52b6cd9cf701f6aa0e749abb71c4b25d40d7a8e4a16"
+  },
+  "limitations": [
+    "Publication data is a retained official sample, not a fresh publication fetch.",
+    "Project-wide CPV was not copied into individual lots as confirmed lot classification.",
+    "Deterministic phrases do not establish company eligibility; no semantic model is enabled.",
+    "No production activation, authenticated source action, or bid submission occurred."
+  ]
+}

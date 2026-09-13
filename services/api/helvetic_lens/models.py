@@ -20,7 +20,21 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
+from . import hazard_models as hazard_models
+from . import hazard_source_models as hazard_source_models
+from . import road_models as road_models
+from . import trademark_models as trademark_models
+from . import trademark_source_models as trademark_source_models
 from .air_models import AirChange, AirMonitor, AirRevision
+from .commute_models import (
+    CommuteConfigurationRevision,
+    CommuteDelivery,
+    CommuteDevelopment,
+    CommuteEmailPolicy,
+    CommuteEventVersion,
+    CommuteMonitor,
+    CommuteSignal,
+)
 from .db import Base, utcnow
 from .monitoring_live_models import (
     MonitoringCommand,
@@ -31,6 +45,20 @@ from .monitoring_live_models import (
     MonitoringRuntime,
 )
 from .river_models import RiverChange, RiverMonitor, RiverRevision
+from .tender_models import (
+    TenderCollection,
+    TenderDecision,
+    TenderDelivery,
+    TenderDocumentAccess,
+    TenderDocumentObservation,
+    TenderDocumentSnapshot,
+    TenderDossier,
+    TenderDossierVersion,
+    TenderEmailPolicy,
+    TenderMonitor,
+    TenderProfileRevision,
+    TenderVersionSection,
+)
 
 
 def new_id() -> str:
@@ -1732,6 +1760,42 @@ class MonitoringEvaluationEntry(Base):
 # Central policy used by the session boundary. Keeping this list beside the
 # models makes a newly persisted tenant-owned record difficult to forget.
 ORGANIZATION_SCOPED_MODELS = (
+    hazard_models.HazardMonitor,
+    trademark_models.TrademarkMonitor,
+    trademark_models.TrademarkConfigurationRevision,
+    hazard_models.HazardConfigurationRevision,
+    hazard_models.HazardDevelopment,
+    hazard_models.HazardEventRevision,
+    hazard_models.HazardReviewAction,
+    hazard_models.HazardMute,
+    hazard_models.HazardMonitorAction,
+    hazard_models.HazardEmailPolicy,
+    hazard_models.HazardDelivery,
+    road_models.RoadMonitor,
+    road_models.RoadConfigurationRevision,
+    road_models.RoadDevelopment,
+    road_models.RoadEventVersion,
+    road_models.RoadEmailPolicy,
+    road_models.RoadDelivery,
+    CommuteMonitor,
+    CommuteConfigurationRevision,
+    CommuteDevelopment,
+    CommuteEventVersion,
+    CommuteSignal,
+    TenderDelivery,
+    CommuteDelivery,
+    CommuteEmailPolicy,
+    TenderEmailPolicy,
+    TenderCollection,
+    TenderVersionSection,
+    TenderMonitor,
+    TenderProfileRevision,
+    TenderDossier,
+    TenderDossierVersion,
+    TenderDocumentAccess,
+    TenderDocumentObservation,
+    TenderDocumentSnapshot,
+    TenderDecision,
     AirMonitor,
     AirRevision,
     AirChange,

@@ -266,6 +266,42 @@ def test_anonymous_never_reads_inventory(centre):
         assert anonymous.get(URL).status_code == 401
 
 
+def test_trademark_inventory_is_private_and_never_implies_source_checks(centre):
+    from test_trademark_matching import portfolio
+
+    client, app, settings, identity = centre
+    settings.trademark_watch_enabled = True
+    response = client.post(
+        "/api/trademark-watch/monitors", headers=_csrf(client),
+        json={"configuration": portfolio().model_dump(mode="json"), "request_key": str(uuid4())},
+    )
+    assert response.status_code == 201, response.text
+    identifier = response.json()["id"]
+    payload = client.get(URL, params={"domain": "ip"}).json()
+    assert len(payload["templates"]) == 9
+    choice = next(item for item in payload["templates"] if item["id"] == "ip")
+    assert choice["availability"] == "preview_only"
+    row, = payload["items"]
+    assert row["id"] == identifier and row["href"] == f"/trademark-watch?monitor={identifier}"
+    assert row["health"] == "not_started" and row["metrics"] == []
+    assert all(row[field] is None for field in ("last_check_at", "next_check_at", "last_observation_at"))
+    with TestClient(app) as peer:
+        foreign = _register(peer, "ip-centre-peer@example.ch").json()
+        with app.state.service.db.session(include_all_organizations=True) as session:
+            session.add(OrganizationMembership(
+                user_id=foreign["user"]["id"], organization_id=identity["organization"]["id"],
+                role="organization_admin",
+            ))
+            session.commit()
+        assert peer.post("/api/auth/session/organization", headers=_csrf(peer),
+                         json={"organization_id": identity["organization"]["id"]}).status_code == 200
+        assert peer.get(URL, params={"domain": "ip"}).json()["items"] == []
+        assert peer.get(URL, params={"cursor": f"ip:{identifier}"}).status_code == 422
+    settings.trademark_watch_enabled = False
+    row, = client.get(URL, params={"domain": "ip"}).json()["items"]
+    assert row["href"] is None and row["health"] == "disabled"
+
+
 def test_pollen_rechecks_source_approval_instead_of_trusting_saved_ready(centre):
     client, app, _, identity = centre
     identifier = pollen(client)

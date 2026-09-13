@@ -19,6 +19,15 @@ If remote main moves, fetch, integrate carefully and retest affected behavior be
 retrying. Never force-push or bypass hooks. Keep the frozen MVP tag immutable.
 Code publication does not prove activation or human acceptance.
 
+For an isolated local web check, set `HELVETIC_LENS_CHECK_BUILD` to a short name
+containing lowercase letters, digits and hyphens. Next writes to the ignored
+`apps/web/.next-check-<name>` directory; use the same value when serving that
+build. This allows useful independent checks without replacing an active check's
+default `.next` output. It does not authorize duplicating or stopping an active
+check. Next may update generated type imports and TypeScript includes for the
+temporary directory; remove only those generated changes after the check. Normal
+builds and deployments leave the variable unset.
+
 ## Local safeguards
 
 Run `sh scripts/setup-git-workflow.sh` in the development checkout. Hooks permit

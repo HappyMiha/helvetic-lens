@@ -1,0 +1,14 @@
+.root textarea {
+  width: 100%;
+  min-height: 90px;
+  border: 1px solid #738595;
+  border-radius: 6px;
+  padding: 9px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+.root textarea:focus-visible {
+  outline: 3px solid #328cc1;
+  outline-offset: 3px;
+}

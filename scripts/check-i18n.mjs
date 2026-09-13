@@ -11,7 +11,7 @@ const keys = new Set(
 const sourceFiles = [];
 function visit(directory) {
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
-    if (entry.isDirectory() && [".next", "node_modules"].includes(entry.name)) continue;
+    if (entry.isDirectory() && ([".next", "node_modules"].includes(entry.name) || entry.name.startsWith(".next-check-"))) continue;
     const target = path.join(directory, entry.name);
     if (entry.isDirectory()) visit(target);
     else if (/\.(ts|tsx)$/.test(entry.name) && target !== catalogPath) sourceFiles.push(target);

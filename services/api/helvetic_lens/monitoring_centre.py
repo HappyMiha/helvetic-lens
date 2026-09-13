@@ -10,16 +10,22 @@ from sqlalchemy import and_, or_, select
 from . import air_runtime, monitoring_runtime, river_runtime
 from .air_models import AirMonitor
 from .auth import Identity
+from .commute_models import CommuteMonitor
 from .config import DomainError
+from .hazard_models import HazardMonitor
 from .models import MonitoringSubject
 from .monitoring_contracts import ReaderMode
 from .monitoring_live_models import MonitoringRuntime
 from .monitoring_subjects import _actor, _view
 from .river_contracts import utc
 from .river_models import RiverMonitor
+from .road_models import RoadMonitor
+from .tender_models import TenderMonitor
+from .trademark_models import TrademarkMonitor
 
-MODELS = {"air": AirMonitor, "pollen": MonitoringSubject, "river": RiverMonitor}
-Domain = Literal["air", "pollen", "river"]
+MODELS = {"air": AirMonitor, "pollen": MonitoringSubject, "river": RiverMonitor, "tenders": TenderMonitor,
+          "commute": CommuteMonitor, "traffic": RoadMonitor, "warnings": HazardMonitor, "ip": TrademarkMonitor}
+Domain = Literal["air", "pollen", "river", "tenders", "commute", "traffic", "warnings", "ip"]
 Status = Literal["draft", "active", "paused", "archived"]
 
 
@@ -30,9 +36,12 @@ def capabilities(settings, organization):
         ReaderMode.SHADOW,
     }
     return [
-        {"id": "warnings", "group": "personal", "availability": "blocked", "href": None},
-        {"id": "commute", "group": "personal", "availability": "blocked", "href": None},
-        {"id": "traffic", "group": "personal", "availability": "blocked", "href": None},
+        {"id": "warnings", "group": "personal", "availability": "preview_only" if settings.hazard_watch_enabled else "blocked",
+         "href": "/hazard-watch" if settings.hazard_watch_enabled else None},
+        {"id": "commute", "group": "personal", "availability": "preview_only" if settings.commute_watch_enabled else "blocked",
+         "href": "/commute-watch" if settings.commute_watch_enabled else None},
+        {"id": "traffic", "group": "personal", "availability": "preview_only" if settings.road_watch_enabled else "blocked",
+         "href": "/road-watch" if settings.road_watch_enabled else None},
         {
             "id": "pollen",
             "group": "personal",
@@ -57,8 +66,18 @@ def capabilities(settings, organization):
             "availability": "available" if settings.air_watch_enabled else "disabled",
             "href": "/air-watch" if settings.air_watch_enabled else None,
         },
-        {"id": "tenders", "group": "business", "availability": "blocked", "href": None},
-        {"id": "ip", "group": "business", "availability": "blocked", "href": None},
+        {
+            "id": "tenders",
+            "group": "business",
+            "availability": "available"
+            if settings.tender_watch_enabled and settings.simap_public_source_enabled
+            else "preview_only"
+            if settings.tender_watch_enabled
+            else "blocked",
+            "href": "/tender-watch" if settings.tender_watch_enabled else None,
+        },
+        {"id": "ip", "group": "business", "availability": "preview_only" if settings.trademark_watch_enabled else "blocked",
+         "href": "/trademark-watch" if settings.trademark_watch_enabled else None},
         {"id": "auctions", "group": "business", "availability": "blocked", "href": None},
     ]
 
@@ -140,6 +159,26 @@ def summary(session, settings, kind, row, capability):
                 key=utc,
             )
         href = f"/pollen-watch#draft={row.id}"
+    elif kind == "warnings":
+        config = row.configuration
+        health = row.health if settings.hazard_source_enabled else "source_unavailable"
+        runtime = row
+        href = f"/hazard-watch?monitor={row.id}"
+    elif kind == "traffic":
+        config = row.configuration
+        health = row.health if settings.road_source_enabled else "source_unavailable"
+        href = f"/road-watch?monitor={row.id}"
+    elif kind == "commute":
+        config = row.configuration
+        health = row.health if settings.commute_source_enabled else "source_unavailable"
+        href = f"/commute-watch?monitor={row.id}"
+    elif kind == "ip":
+        config, runtime = row.configuration, None
+        health, href = "source_unavailable", f"/trademark-watch?monitor={row.id}"
+    elif kind == "tenders":
+        config = row.configuration
+        health = row.health if settings.simap_public_source_enabled else "source_unavailable"
+        href = f"/tender-watch?monitor={row.id}"
     else:
         config = row.configuration
         value = (air_runtime.view(row) if kind == "air" else river_runtime.view(row)) if enabled else {}
@@ -161,17 +200,26 @@ def summary(session, settings, kind, row, capability):
         "id": row.id,
         "domain": kind,
         "name": config.get("name"),
-        "station_id": config["station_id"],
+        "station_id": config.get("station_id"),
         "status": row.status,
         "health": health,
         "href": href if enabled else None,
-        "metrics": config.get("metrics", [item["allergen"] for item in config.get("selections", [])]),
+        "metrics": config.get("hazards", []) if kind == "warnings"
+        else config.get("materiality", {}).get("event_kinds", []) if kind == "traffic"
+        else config.get("metrics", [item["allergen"] for item in config.get("selections", [])]),
         "last_observation_at": observation if row.status == "active" and enabled else None,
         "last_check_at": utc(runtime.last_poll_at).isoformat()
         if enabled and runtime and runtime.last_poll_at
         else None,
         "next_check_at": utc(runtime.next_poll_at).isoformat()
-        if enabled and runtime and row.status == "active"
+        if enabled
+        and runtime
+        and runtime.next_poll_at
+        and row.status == "active"
+        and (kind != "tenders" or settings.simap_public_source_enabled)
+        and (kind != "commute" or settings.commute_source_enabled)
+        and (kind != "traffic" or settings.road_source_enabled)
+        and (kind != "warnings" or settings.hazard_source_enabled)
         else None,
     }
 

@@ -58,6 +58,45 @@ celery_app.conf.update(
         "schedule-air-monitoring": {
             "task": "helvetic_lens.schedule_air_monitoring", "schedule": 60.0,
         },
+        "schedule-tender-monitoring": {
+            "task": "helvetic_lens.schedule_tender_monitoring", "schedule": 15.0,
+        },
+        "schedule-commute-monitoring": {
+            "task": "helvetic_lens.schedule_commute_monitoring", "schedule": 30.0,
+        },
+        "collect-commute-sources": {
+            "task": "helvetic_lens.collect_commute_sources", "schedule": 60.0,
+        },
+        "collect-commute-static": {
+            "task": "helvetic_lens.collect_commute_static", "schedule": 60.0,
+        },
+        "collect-road-source": {
+            "task": "helvetic_lens.collect_road_source", "schedule": 60.0,
+        },
+        "schedule-road-monitoring": {
+            "task": "helvetic_lens.schedule_road_monitoring", "schedule": 60.0,
+        },
+        "schedule-hazard-monitoring": {
+            "task": "helvetic_lens.schedule_hazard_monitoring", "schedule": 60.0,
+        },
+        "cleanup-hazard-source": {
+            "task": "helvetic_lens.cleanup_hazard_source", "schedule": 60.0,
+        },
+        "cleanup-trademark-source": {
+            "task": "helvetic_lens.cleanup_trademark_source", "schedule": 60.0,
+        },
+        "schedule-hazard-email": {
+            "task": "helvetic_lens.schedule_hazard_email", "schedule": 60.0,
+        },
+        "schedule-road-email": {
+            "task": "helvetic_lens.schedule_road_email", "schedule": 60.0,
+        },
+        "cleanup-road-source": {
+            "task": "helvetic_lens.cleanup_road_source", "schedule": 60.0,
+        },
+        "schedule-commute-email": {
+            "task": "helvetic_lens.schedule_commute_email", "schedule": 60.0,
+        },
         "cleanup-air-measurements": {
             "task": "helvetic_lens.cleanup_air_measurements", "schedule": 86400.0,
         },
@@ -167,9 +206,149 @@ def schedule_air_monitoring():
         database.engine.dispose()
 
 
+@celery_app.task(name="helvetic_lens.schedule_tender_monitoring")
+def schedule_tender_monitoring():
+    from .tender_delivery import enqueue_due as enqueue_email
+    from .tender_documents import cleanup as cleanup_documents
+    from .tender_jobs import enqueue_due
+    database = Database(settings)
+    try:
+        cleanup = cleanup_documents(database)
+        return {"documents": cleanup, "refresh": enqueue_due(database, settings),
+                "delivery": enqueue_email(database, settings)}
+    finally:
+        database.engine.dispose()
+
+
 @celery_app.task(name="helvetic_lens.cleanup_air_measurements")
 def cleanup_air_measurements():
     from .air_sources import cleanup
+    database = Database(settings)
+    try:
+        return cleanup(database)
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.schedule_commute_monitoring")
+def schedule_commute_monitoring():
+    from .commute_jobs import enqueue_due
+    database = Database(settings)
+    try:
+        return enqueue_due(database, settings)
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.collect_commute_sources")
+def collect_commute_sources():
+    from .commute_acquisition import collect_due
+    database = Database(settings)
+    try:
+        return collect_due(database, settings)
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.schedule_road_email")
+def schedule_road_email():
+    from .road_delivery import enqueue_due
+    database = Database(settings)
+    try:
+        return enqueue_due(database, settings)
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.schedule_hazard_email")
+def schedule_hazard_email():
+    from .hazard_delivery import enqueue_due
+    database = Database(settings)
+    try:
+        return enqueue_due(database, settings)
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.schedule_commute_email")
+def schedule_commute_email():
+    from .commute_delivery import enqueue_due
+    database = Database(settings)
+    try:
+        return enqueue_due(database, settings)
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.collect_commute_static")
+def collect_commute_static():
+    from .commute_static_collector import collect
+    database = Database(settings)
+    try:
+        return collect(database, settings)
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.collect_road_source")
+def collect_road_source():
+    from .road_acquisition import collect
+    if not settings.road_watch_enabled or not settings.road_source_enabled:
+        return {"state": "disabled"}
+    database = Database(settings)
+    try:
+        return collect(database, settings)
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.schedule_hazard_monitoring")
+def schedule_hazard_monitoring():
+    from .hazard_jobs import enqueue_due
+    if not settings.hazard_watch_enabled or not settings.hazard_source_enabled:
+        return {"enqueued": 0}
+    database = Database(settings)
+    try:
+        return enqueue_due(database, settings)
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.cleanup_hazard_source")
+def cleanup_hazard_source():
+    from .hazard_jobs import cleanup
+    database = Database(settings)
+    try:
+        return cleanup(database)
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.cleanup_trademark_source")
+def cleanup_trademark_source():
+    from .trademark_sources import cleanup
+    database = Database(settings)
+    try:
+        return cleanup(database)
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.schedule_road_monitoring")
+def schedule_road_monitoring():
+    from .road_jobs import enqueue_due
+    if not settings.road_watch_enabled:
+        return {"enqueued": 0}
+    database = Database(settings)
+    try:
+        return enqueue_due(database, settings)
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.cleanup_road_source")
+def cleanup_road_source():
+    from .road_acquisition import cleanup
     database = Database(settings)
     try:
         return cleanup(database)

@@ -39,8 +39,10 @@ from .assistant_contract import (
 )
 from .auth import CSRF_COOKIE, SESSION_COOKIE, AuthService, RateLimiter
 from .auth_mail import AuthMailer
+from .commute_api import commute_router
 from .config import DomainError, Settings
 from .db import utcnow
+from .hazard_api import hazard_router
 from .impact_inbox import ImpactInboxFilters
 from .interest_policy import PolicyInput
 from .interest_requests import BriefRequest
@@ -64,7 +66,10 @@ from .observability import correlation_context
 from .prompt_settings import PromptSettingsInput
 from .registry import RegistryFilters
 from .river_api import river_router
+from .road_api import road_router
 from .service import HelveticLens, as_dict, get, version_summary
+from .tender_api import tender_router
+from .trademark_api import trademark_router
 
 
 class Input(BaseModel):
@@ -315,6 +320,16 @@ class RelationReprocessingInput(Input):
 
 
 def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
+    if path.startswith("/api/trademark-watch"):
+        return "trademark_watch", 60, 60
+    if path.startswith("/api/hazard-watch"):
+        return "hazard_watch", 60, 60
+    if path.startswith("/api/road-watch"):
+        return "road_watch", 30, 60
+    if path.startswith("/api/commute-watch"):
+        return "commute_watch", 120, 60
+    if path.startswith("/api/tender-watch"):
+        return "tender_watch", 120, 60
     if path.startswith("/api/air-watch"):
         return "air_watch", 30, 60
     if path.startswith("/api/river-watch"):
@@ -511,6 +526,16 @@ def create_app(
         if rate:
             try:
                 rate_path = "/api/monitoring-subjects" if path.startswith("/api/monitoring-subjects") else path
+                if path.startswith("/api/tender-watch"):
+                    rate_path = "/api/tender-watch"
+                if path.startswith("/api/commute-watch"):
+                    rate_path = "/api/commute-watch"
+                if path.startswith("/api/road-watch"):
+                    rate_path = "/api/road-watch"
+                if path.startswith("/api/hazard-watch"):
+                    rate_path = "/api/hazard-watch"
+                if path.startswith("/api/trademark-watch"):
+                    rate_path = "/api/trademark-watch"
                 await asyncio.to_thread(
                     limiter.check,
                     rate[0],
@@ -564,6 +589,10 @@ def create_app(
             status = response.status_code
             if request.url.path.startswith("/api/monitoring-subjects"):
                 response.headers["Cache-Control"] = "private, no-store"
+            if request.url.path.startswith(("/api/tender-watch", "/api/commute-watch", "/api/road-watch", "/api/hazard-watch", "/api/trademark-watch")):
+                # Dependency response headers are lost when an exception
+                # handler creates a new response. Apply to denial/errors too.
+                response.headers["Cache-Control"] = "no-store"
             response.headers["X-Request-ID"] = request_id
             return response
         finally:
@@ -1944,6 +1973,34 @@ def create_app(
 
     def check_job_access(request: Request, job_id: str):
         job = service.job_detail(job_id)
+        if job["target_type"] == "hazard_monitor":
+            from .hazard_repository import owned as owned_hazard
+            actor = request.state.identity
+            if actor is None:
+                raise DomainError("Job not found.", 404, "not_found")
+            with service.db.session() as session:
+                owned_hazard(session, actor.user_id, job["target_id"], write=request.method != "GET")
+        if job["target_type"] == "road_monitor":
+            from .road_repository import owned as owned_road
+            actor = request.state.identity
+            if actor is None:
+                raise DomainError("Job not found.", 404, "not_found")
+            with service.db.session() as session:
+                owned_road(session, actor.user_id, job["target_id"], write=request.method != "GET")
+        if job["target_type"] == "commute_monitor":
+            from .commute_repository import owned as owned_commute
+            actor = request.state.identity
+            if actor is None:
+                raise DomainError("Job not found.", 404, "not_found")
+            with service.db.session() as session:
+                owned_commute(session, actor.user_id, job["target_id"], write=request.method != "GET")
+        if job["target_type"] == "tender_monitor":
+            from .tender_repository import owned as owned_tender
+            actor = request.state.identity
+            if actor is None:
+                raise DomainError("Job not found.", 404, "not_found")
+            with service.db.session() as session:
+                owned_tender(session, actor.user_id, job["target_id"], write=request.method != "GET")
         if job["target_type"] == "air_monitor":
             from .air_runtime import owned as owned_air
             actor = request.state.identity
@@ -2147,6 +2204,11 @@ def create_app(
     app.include_router(draft_router(service, settings))
     app.include_router(river_router(service, settings))
     app.include_router(air_router(service, settings))
+    app.include_router(tender_router(service, settings))
+    app.include_router(commute_router(service, settings))
+    app.include_router(road_router(service, settings))
+    app.include_router(hazard_router(service, settings))
+    app.include_router(trademark_router(service, settings))
     app.include_router(centre_router(service, settings))
     return app
 

@@ -1,0 +1,63 @@
+{
+  "verified_at": "2026-09-12T19:41:07.589184+00:00",
+  "scope": "three_real_collector_steps_in_new_isolated_test_database",
+  "steps": [
+    {
+      "status": "collecting_public",
+      "changed_dossiers": 0
+    },
+    {
+      "status": "collecting_public",
+      "changed_dossiers": 0
+    },
+    {
+      "status": "collecting_public",
+      "changed_dossiers": 1
+    }
+  ],
+  "query_index": 0,
+  "pending_work_count": 22,
+  "source_evidence": [
+    {
+      "project_id": "a07bd668-e1c0-4d48-a829-776f14c0e2b2",
+      "publication_id": "2520c9f8-7d53-4182-a38a-2f66476feef4",
+      "source_hash": "43278514c4b671744fe66319c65b0c78b5d9e8b72bb18547bfdabb17a77e49a3",
+      "kind": "new_opportunity",
+      "match": {
+        "rule_version": "tender-deterministic-v1",
+        "profile_sha256": "ec96f848f3d12193b679e25ea21f75702ae068f8c5db881b4a33da75422792a2",
+        "source_sha256": "43278514c4b671744fe66319c65b0c78b5d9e8b72bb18547bfdabb17a77e49a3",
+        "project_id": "a07bd668-e1c0-4d48-a829-776f14c0e2b2",
+        "publication_id": "2520c9f8-7d53-4182-a38a-2f66476feef4",
+        "lot_id": "aa7b3b03-5d60-4936-ae45-718d140aa97a",
+        "verdict": "needs_review",
+        "matches": [
+          {
+            "code": "capability_phrase",
+            "capability": "Software",
+            "phrase": "software",
+            "locator": "/lots/10/title/de",
+            "language": "de"
+          }
+        ],
+        "exclusions": [],
+        "unknowns": [
+          {
+            "code": "qualification_evidence_incomplete"
+          }
+        ],
+        "qualification_gaps": [],
+        "eligibility": "not_determined",
+        "semantic_status": "disabled",
+        "semantic_score": null
+      },
+      "document_coverage": "no_documents_indicated"
+    }
+  ],
+  "limitations": [
+    "Bounded beginning of a cycle, not a completed scan or feature acceptance.",
+    "Only anonymous official public data; no documents/Q&A registration or restricted capture.",
+    "No production settings, user data, emails or bid actions were changed.",
+    "Private HTTP/UI, digest, source rights for attachments and live user acceptance remain unfinished."
+  ]
+}

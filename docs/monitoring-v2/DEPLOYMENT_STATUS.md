@@ -1,6 +1,30 @@
 # Monitoring deployment status — 12 September 2026
 
-## Current checkpoint — 12 September, 16:21 UTC
+## Integrated publication candidate — 13 September 2026
+
+The owner's latest instruction authorizes publishing all implemented monitoring
+directions now and continuing development afterward. All implemented feature and
+collector switches default to enabled in production Compose. Missing credentials,
+permissions and source evidence remain visible readiness constraints; no access
+or successful collection is fabricated. See the [exact scope and verification](evidence/2026-09-13-integrated-publication.md).
+Push and activation are pending at this preparation checkpoint. Earlier disabled
+defaults and uncommitted-state statements below are historical.
+
+## Current checkpoint — 12 September, 19:45 UTC
+
+The active main site's `/api/ready` reports `ready`, database/Redis checks true,
+instance `main`, and **git-0772edd2c381**, matching pushed main commit
+`0772edd2c3813bce7e98ff6365b2c08a139f3385` (private Monitoring centre and scenario
+chooser). Code activation is verified; authenticated user journeys and human
+acceptance remain separate. Only `helveticlens.ch` on HappySnowman is active;
+the retired Monitoring deployment was neither contacted nor restarted.
+
+Tender Watch remains uncommitted local development. Its isolated source rehearsal
+and local tests do not imply deployment, source enablement or completed B2
+acceptance. Both new tender/public-source switches default to false and no
+production configuration was changed.
+
+## Prior main-only checkpoint — 12 September, 16:21 UTC
 
 The user's latest instruction retires the separate `monitoring.helveticlens.ch`
 site. **Only `helveticlens.ch` on HappySnowman remains an active deployment target**,

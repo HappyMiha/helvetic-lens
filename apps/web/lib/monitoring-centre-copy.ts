@@ -1,8 +1,11 @@
 import type { Locale } from "./i18n";
 
 export const centreSources = {
+  commute: "opentransportdata.swiss",
+  traffic: "FEDRO · opentransportdata.swiss",
   pollen: "MeteoSwiss",
   air: "Basel-Stadt · data.bs.ch",
+  tenders: "SIMAP",
 };
 export const centreTimezone = "Europe/Zurich";
 
@@ -121,7 +124,7 @@ export const centreCopy: Record<Locale, Copy> = {
       ],
       tenders: [
         "Tender Watch",
-        "SIMAP integration and publication/document access terms still need verification.",
+        "Public SIMAP tender discovery. Document and Q&A coverage remains unverified.",
       ],
       ip: [
         "IP Watch",
@@ -200,7 +203,7 @@ export const centreCopy: Record<Locale, Copy> = {
       ],
       tenders: [
         "Ausschreibungen",
-        "SIMAP-Anbindung und Zugangsbedingungen für Publikationen und Dokumente müssen noch geprüft werden.",
+        "Öffentliche SIMAP-Ausschreibungen finden. Dokumente und Fragen/Antworten bleiben unverifiziert.",
       ],
       ip: [
         "Geistiges Eigentum",
@@ -279,7 +282,7 @@ export const centreCopy: Record<Locale, Copy> = {
       ],
       tenders: [
         "Appels d’offres",
-        "L’intégration SIMAP et les conditions d’accès aux publications et documents restent à vérifier.",
+        "Recherche d’appels d’offres publics SIMAP. Documents et questions/réponses restent non vérifiés.",
       ],
       ip: [
         "Propriété intellectuelle",
@@ -358,7 +361,7 @@ export const centreCopy: Record<Locale, Copy> = {
       ],
       tenders: [
         "Appalti",
-        "Integrazione SIMAP e condizioni di accesso a pubblicazioni e documenti ancora da verificare.",
+        "Ricerca di appalti pubblici SIMAP. Documenti e domande/risposte restano non verificati.",
       ],
       ip: [
         "Proprietà intellettuale",
@@ -437,7 +440,7 @@ export const centreCopy: Record<Locale, Copy> = {
       ],
       tenders: [
         "Appaltaziuns",
-        "L’integraziun SIMAP e las cundiziuns d’access a publicaziuns e documents ston anc vegnir verifitgadas.",
+        "Tschertga da submissiuns publicas SIMAP. Documents e dumondas/respostas restan betg verifitgads.",
       ],
       ip: [
         "Proprietad intellectuala",

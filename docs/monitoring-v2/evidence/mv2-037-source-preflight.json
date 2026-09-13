@@ -1,0 +1,30 @@
+{
+  "checked_at": "2026-09-12T14:37:09.921575+00:00",
+  "authenticated": false,
+  "requests": [
+    {
+      "name": "static_catalog",
+      "url": "https://data.opentransportdata.swiss/api/3/action/package_show?id=timetable-2026-gtfs2020",
+      "status": 403,
+      "content_type": "text/html",
+      "bytes": 146,
+      "sha256": "32f2fa940d4b4fe19aca1e53a24e5aac29c57b7c5ee78588325b87f1b649c864"
+    },
+    {
+      "name": "trip_updates",
+      "url": "https://api.opentransportdata.swiss/la/gtfs-rt",
+      "status": 401,
+      "content_type": "application/json",
+      "bytes": 46,
+      "sha256": "ef57418d0f0a24d74c66abc6872c2dfccc748e4b9dc39ab380c96bb5813d75e3"
+    },
+    {
+      "name": "service_alerts",
+      "url": "https://api.opentransportdata.swiss/la/gtfs-sa",
+      "status": 401,
+      "content_type": "application/json",
+      "bytes": 46,
+      "sha256": "ef57418d0f0a24d74c66abc6872c2dfccc748e4b9dc39ab380c96bb5813d75e3"
+    }
+  ]
+}

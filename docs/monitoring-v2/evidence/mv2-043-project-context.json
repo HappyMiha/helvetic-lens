@@ -1,0 +1,21 @@
+{
+  "recorded_at": "2026-09-12T20:46:11.495908+00:00",
+  "kind": "local_replay_of_previously_fetched_official_response",
+  "source": "https://www.simap.ch/api/publications/v1/project/a07bd668-e1c0-4d48-a829-776f14c0e2b2/publication-details/2520c9f8-7d53-4182-a38a-2f66476feef4",
+  "project_id": "a07bd668-e1c0-4d48-a829-776f14c0e2b2",
+  "publication_id": "2520c9f8-7d53-4182-a38a-2f66476feef4",
+  "original_sha256": "43278514c4b671744fe66319c65b0c78b5d9e8b72bb18547bfdabb17a77e49a3",
+  "rule_version": "tender-deterministic-v2",
+  "selected_cpv": "72000000",
+  "project_cpv": "72000000",
+  "lots": 13,
+  "lots_with_explicit_classification": 0,
+  "context_only_review_candidates": 13,
+  "verified_lot_matches": 0,
+  "limitations": [
+    "This is a local replay, not a new network fetch or production activation.",
+    "The synthetic CPV-only profile does not represent the user's company.",
+    "Project classification is unverified lot relevance, not eligibility or a semantic score.",
+    "Restricted documents and Q&A remain unverified."
+  ]
+}

@@ -13,10 +13,22 @@
 The main-branch copy of this file is the sole active Monitoring backlog. The user's
 12 September 2026 instruction replaces multi-computer, host-alias, task-branch and
 separate Monitoring integration rules: **one agent, complete features, commit and
-push main**. Both sites keep separate deployments, private data and source approvals.
+push main**. Only `helveticlens.ch` on HappySnowman is active. The user retired
+the separate Monitoring site; do not recreate its deployment. Preserve retained
+private data and source approvals.
 See [the development cycle](docs/DEVELOPMENT.md) and [release evidence](docs/monitoring-v2/DEPLOYMENT_STATUS.md).
 
 ## How to use this backlog
+
+**Publication instruction, 13 September 2026:** The owner requested an immediate
+main publication of all implemented directions and enabled, visible sections,
+followed by continued development. The integrated release includes public Tender
+Watch and the implemented Commute, Road, Hazard and Trademark workflows, with
+source readiness remaining explicit. All affected tasks retain their recorded
+IN PROGRESS/VERIFYING status; B8 remains PLANNED and C4 remains DEFERRED.
+See [release scope and checks](docs/monitoring-v2/evidence/2026-09-13-integrated-publication.md).
+Earlier dated statements about uncommitted code or disabled production defaults
+describe the checkpoints at which they were written, not this release's defaults.
 
 Define a complete user outcome and its criteria, implement across as many continuations
 as needed, then run required tests, fix failures, update English evidence, commit and
@@ -120,7 +132,8 @@ background, collect results without duplicate runs, prioritize failures and
 record implementation, push, test and release evidence separately. Keep pending
 acceptance IN PROGRESS/VERIFYING; DONE still requires all applicable gates.
 Source rights, missing required contracts and unsafe dependencies remain real
-blockers. See [the iteration workflow](docs/MULTI_PC_DEVELOPMENT.md#monitoring-iteration-continues-during-verification).
+blockers. The later whole-feature and main-only instruction supersedes technical
+slice publication: see [the current development cycle](docs/DEVELOPMENT.md).
 
 Start with MV2-001 and the first Pollen Watch work: MV2-069/070/030/031/071. UX MV2-002 and source dossiers MV2-003 for other active scenarios may proceed in parallel; their full DONE status does not block C5. Once the minimum persistence/rule/delivery contracts exist, build the **complete C5 delivery** without waiting for all domains or a perfect generic framework. Catalogues/interfaces for other sources may be investigated in parallel; activation requires their gates. Task IDs are not execution order: for example, MV2-060/068 provide early compatibility work, not post-release work.
 
@@ -200,8 +213,8 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 | [MV2-025](#mv2-025) | Admin: accurate source capabilities and access management | F2 | P0 | M | PLANNED | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-018](#mv2-018) |
 | [MV2-026](#mv2-026) | Possible future implementation: C4 official customs-rate connector | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011) |
 | [MV2-027](#mv2-027) | Possible future implementation: C4 currency, thresholds, history and digest | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-008](#mv2-008), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-022](#mv2-022), [MV2-026](#mv2-026) |
-| [MV2-028](#mv2-028) | C1: official warnings and hazard geography | F3 | P1 | L | PLANNED | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
-| [MV2-029](#mv2-029) | C1: Home/Office locations and the complete warning workflow | F3 | P1 | L | PLANNED | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-028](#mv2-028) |
+| [MV2-028](#mv2-028) | C1: official warnings and hazard geography | F3 | P1 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
+| [MV2-029](#mv2-029) | C1: Home/Office locations and the complete warning workflow | F3 | P1 | L | IN PROGRESS | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-028](#mv2-028) |
 | [MV2-030](#mv2-030) | C5: official pollen observations and forecasts | F3 | P0 | M | IN PROGRESS | [MV2-069](#mv2-069), [MV2-070](#mv2-070) |
 | [MV2-031](#mv2-031) | Pollen Watch — the first complete end-to-end scenario (C5) | F3 | P0 | L | IN PROGRESS | [MV2-070](#mv2-070), [MV2-030](#mv2-030) |
 | [MV2-032](#mv2-032) | C6: hydrological stations, metrics and official danger levels | F3 | P1 | M | VERIFYING | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
@@ -209,18 +222,18 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 | [MV2-034](#mv2-034) | C7: official air-quality series and interpretation | F3 | P1 | M | VERIFYING | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
 | [MV2-035](#mv2-035) | C7: Air Quality — metrics, changes and improvements | F3 | P1 | M | VERIFYING | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-034](#mv2-034) |
 | [MV2-036](#mv2-036) | Related developments from multiple sources | F4 | P1 | M | PLANNED | [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-029](#mv2-029), [MV2-033](#mv2-033), [MV2-041](#mv2-041), [MV2-071](#mv2-071) |
-| [MV2-037](#mv2-037) | Journey/Trip/Route/Stop and Road Corridor reference data | F4 | P0 | L | PLANNED | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-015](#mv2-015), [MV2-016](#mv2-016), [MV2-071](#mv2-071) |
-| [MV2-038](#mv2-038) | C2: Service Alerts and Trip Updates | F4 | P1 | L | PLANNED | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-037](#mv2-037), [MV2-071](#mv2-071) |
-| [MV2-039](#mv2-039) | C2: Regular commutes and low-noise transport alerts | F4 | P1 | L | PLANNED | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-038](#mv2-038) |
-| [MV2-040](#mv2-040) | C3: ASTRA traffic and planned closures | F4 | P1 | L | PLANNED | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-037](#mv2-037), [MV2-071](#mv2-071) |
-| [MV2-041](#mv2-041) | C3: My Route Watch for A2 / Gotthard / A13 | F4 | P1 | L | PLANNED | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-040](#mv2-040) |
-| [MV2-042](#mv2-042) | B2: SIMAP discovery and publication monitoring | F5 | P1 | L | PLANNED | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071) |
-| [MV2-043](#mv2-043) | B2/B7/B8: Structured profiles and semantic candidate ranking | F5 | P1 | L | PLANNED | [MV2-005](#mv2-005), [MV2-008](#mv2-008), [MV2-010](#mv2-010), [MV2-071](#mv2-071) |
-| [MV2-044](#mv2-044) | Versioned document sets and conditions | F5 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-071](#mv2-071) |
-| [MV2-045](#mv2-045) | B2: Tender discovery → review → material update | F5 | P1 | L | PLANNED | [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022), [MV2-042](#mv2-042), [MV2-043](#mv2-043), [MV2-044](#mv2-044) |
-| [MV2-046](#mv2-046) | B7: Official trademark publications and register updates | F5 | P1 | L | PLANNED | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071) |
-| [MV2-047](#mv2-047) | B7: Exact, lexical and phonetic candidates | F5 | P1 | L | PLANNED | [MV2-043](#mv2-043), [MV2-046](#mv2-046) |
-| [MV2-048](#mv2-048) | B7: IP review, review deadlines and register changes | F5 | P1 | L | PLANNED | [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-046](#mv2-046), [MV2-047](#mv2-047) |
+| [MV2-037](#mv2-037) | Journey/Trip/Route/Stop and Road Corridor reference data | F4 | P0 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-015](#mv2-015), [MV2-016](#mv2-016), [MV2-071](#mv2-071) |
+| [MV2-038](#mv2-038) | C2: Service Alerts and Trip Updates | F4 | P1 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-037](#mv2-037), [MV2-071](#mv2-071) |
+| [MV2-039](#mv2-039) | C2: Regular commutes and low-noise transport alerts | F4 | P1 | L | IN PROGRESS | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-038](#mv2-038) |
+| [MV2-040](#mv2-040) | C3: ASTRA traffic and planned closures | F4 | P1 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-037](#mv2-037), [MV2-071](#mv2-071) |
+| [MV2-041](#mv2-041) | C3: My Route Watch for A2 / Gotthard / A13 | F4 | P1 | L | IN PROGRESS | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-040](#mv2-040) |
+| [MV2-042](#mv2-042) | B2: SIMAP discovery and publication monitoring | F5 | P1 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071) |
+| [MV2-043](#mv2-043) | B2/B7/B8: Structured profiles and semantic candidate ranking | F5 | P1 | L | IN PROGRESS | [MV2-005](#mv2-005), [MV2-008](#mv2-008), [MV2-010](#mv2-010), [MV2-071](#mv2-071) |
+| [MV2-044](#mv2-044) | Versioned document sets and conditions | F5 | P1 | L | IN PROGRESS | [MV2-007](#mv2-007), [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-071](#mv2-071) |
+| [MV2-045](#mv2-045) | B2: Tender discovery → review → material update | F5 | P1 | L | IN PROGRESS | [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022), [MV2-042](#mv2-042), [MV2-043](#mv2-043), [MV2-044](#mv2-044) |
+| [MV2-046](#mv2-046) | B7: Official trademark publications and register updates | F5 | P1 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071) |
+| [MV2-047](#mv2-047) | B7: Exact, lexical and phonetic candidates | F5 | P1 | L | IN PROGRESS | [MV2-043](#mv2-043), [MV2-046](#mv2-046) |
+| [MV2-048](#mv2-048) | B7: IP review, review deadlines and register changes | F5 | P1 | L | IN PROGRESS | [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-046](#mv2-046), [MV2-047](#mv2-047) |
 | [MV2-049](#mv2-049) | B8: Official Ticino auctions | F5 | P1 | L | PLANNED | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071) |
 | [MV2-050](#mv2-050) | B8: Auction profiles, price limits and ending-soon alerts | F5 | P1 | L | PLANNED | [MV2-008](#mv2-008), [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022), [MV2-043](#mv2-043), [MV2-044](#mv2-044), [MV2-049](#mv2-049) |
 | [MV2-051](#mv2-051) | Independent matching and local AI evaluation | F6 | P0 | L | PLANNED | [MV2-023](#mv2-023), [MV2-043](#mv2-043), [MV2-047](#mv2-047) |
@@ -1094,7 +1107,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ### MV2-028 — C1: official warnings and hazard geography
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** Integration · **Size:** L
+**Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Integration · **Size:** L
 
 **Dependencies:** [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071). **Requirements:** §8.4–8.9; AC-C1-02,04,05,07,09.
 
@@ -1111,13 +1124,29 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** Source fixtures for creation/update/instructions/geography/cancellation; controlled live fetch with permission.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Active scope, 13 September 2026:** C1 is the next independent direction while C2/C3/B2 access gates remain open. Implement the complete private-location warning workflow under the [Hazard Watch contract](docs/monitoring-v2/HAZARD_WATCH.md). Official CAP Suisse 1.1 defines a usable protocol contract, but FOCP describes third-party integration as planned by 2027; a current feed and source-specific reuse agreement are unverified. Source discovery does not establish current warning coverage. The local bounded CAP decoder, tri-state point geography and immutable predecessor ledger are implemented with synthetic fixtures. The final affected suite passed 63 tests in 0.54s, including the backlog invariant; required API Ruff and whitespace checks passed. Translation/technical updates retain evidence without incrementing material review state; late ancestor cancellation cannot close a newer warning. The private location draft workflow is now implemented across two tenant-scoped tables, owner-checked HTTP routes and the five-language reader, with CAS/idempotency, bounded history, archive/delete confirmation and a gated Monitoring Centre inventory. The corrected private HTTP/repository/auth/migration/compose/backlog suite passed 36 tests; 26 hazard/centre/Road API regressions passed, and the root web build passed. Isolated synthetic Chrome verified save/edit/history/archive/delete, denial redaction and five-language mobile forms; two full-document axe audits had zero violations with shared Marvin contrast incomplete. Current source access, reviewed administrative/radius geometry, durable warning evidence, active event lifecycle, delivery, live release and human acceptance remain open; no real source or monitor has been activated.
+
+**Geography follow-up, 13 September 2026:** The 0–50 km radius matcher and offline native swissBOUNDARIES3D catalogue now pass 107 combined catalogue/radius/CAP/history/private-repository tests. Seven public-coordinate checks passed against the official January 2026 GeoPackage, whose archive matches the STAC SHA-256: 2,110 Swiss political municipalities, 26 cantons, Basel/Bern/Moutier membership, foreign/enclave exclusion and obsolete-code rejection. Version/hash/attribution and explicit review expiry accompany local membership proofs; uncertain borders and missing geography stay unavailable. Exact required API Ruff passed. Runtime catalogue installation/renewal, municipal warning-area intersections and the complete source/event/delivery workflow remain open; no feature completion, live warning coverage or release is claimed. See the [native geography evidence](docs/monitoring-v2/HAZARD_WATCH.md#native-administrative-catalogue-and-radius-13-september-2026).
+
+**Runtime geography follow-up:** The offline operator installer, atomically selected/hash-pinned catalogue and private HTTP preview now work together. Cache reuse never survives missing/corrupt/expired/revoked selection; explicit renewal requires the current selection hash. Fifty installation/catalogue/private-API/repository tests and the isolated root web build passed. Real Basel membership was verified through an installation in a new local QA directory; production was unchanged. Five-language browser previews show matched municipality or location/catalogue failures and clear stale proof on edit; desktop/mobile axe checks had zero violations (Marvin contrast incomplete). Municipality/CAP matching and the full active warning workflow remain open. See [runtime catalogue evidence](docs/monitoring-v2/HAZARD_WATCH.md#runtime-catalogue-and-private-preview-13-september-2026).
+
+**CAP geography follow-up:** Point/radius and whole-municipality matching now preserve the CAP Suisse distinction between precise extent and administrative filters. Canton/municipality labels cannot enlarge an explicit polygon to all addresses. Native multipart geometry/holes, circles, source-bound code editions, uncertain boundaries and revoked runtime catalogues are covered by 110 affected tests. Seven additional synthetic-warning checks passed against actual checksum-verified Basel geometry, separately from the seven native membership checks. API and operator-script Ruff passed. No source category/coverage/rights contract, durable warning events or delivery is implied; see [matching evidence](docs/monitoring-v2/HAZARD_WATCH.md#cap-municipalitycanton-matching-13-september-2026).
+
+**Durable source journal follow-up:** Five shared tables now retain permission-bound CAP evidence, exact current predecessors, generation/cursor CAS and idempotent receipts without private locations. Independent usage rights, immutable retention, revocation purge, non-rehydrating identity tombstones, bounded storage and stale/expired evidence handling are locally verified. The combined journal/CAP/private API suite passed 113 tests; the final tightened storage suite passed 38 journal tests, including migration roundtrip and metadata comparison. These are synthetic grants and warnings. Native feed rights/coverage, collection/maintenance and private event/delivery acceptance remain open; MV2-028 stays IN PROGRESS. See [journal evidence](docs/monitoring-v2/HAZARD_WATCH.md#durable-cap-source-journal-13-september-2026).
+
+**Private projection follow-up:** The journal now requires a separate default-denied permission for retained private decisions, and retention/revocation also erases derived content across organizations. Private projection binds exact current source and configuration revisions plus boundary proof, without establishing live coverage. The 87-test event/source/private API/repository run passed; final mute/API/source changes passed 65 tests and a separate two-organization purge check. Native acquisition/rights/coverage and scheduled maintenance remain open. See [private event evidence](docs/monitoring-v2/HAZARD_WATCH.md#private-warning-events-review-and-type-mute-13-september-2026).
+
+**Official reader follow-up:** The five-language reader preserves original instructions, source language, attribution, freshness and actual warning level. Unavailable evidence is redacted; administrative filters do not become house-level coverage. The root build and 22 synthetic event-browser checks passed; final screenshots were reviewed. Native rights/access/coverage and scheduled collection remain open; MV2-028 stays IN PROGRESS. See [reader evidence](docs/monitoring-v2/HAZARD_WATCH.md#official-warning-reader-and-private-actions-13-september-2026).
+
+**Today source-evidence follow-up:** Private Today/Inbox summaries recheck current rights, head, retention, configuration and boundary proof through the exact event reader. Missing/revoked/stale evidence cannot enter a card; no coverage or all-clear is inferred from an empty page. A mid-page revision cannot mix new evidence with the earlier cursor. The 44-test integration suite and final 16-test Today suite passed. Acquisition and maintenance remain open; MV2-028 stays IN PROGRESS. See [Today evidence](docs/monitoring-v2/HAZARD_WATCH.md#private-today-and-impact-inbox-13-september-2026).
+
+**Lifecycle/source readiness and notification follow-up:** A fresh completed-poll marker, reviewed per-hazard jurisdiction and the entire saved footprint now gate start/resume; individual warning receipts do not establish coverage. Processing rechecks current source/geography and leases; scheduled retention erases expired/revoked content even with acquisition off. Five checks on the official January 2026 Swiss boundaries passed with explicitly synthetic jurisdictions. Notification rights are independently rechecked before consented email. Lifecycle suites passed 95 and 43 tests; cleanup/migration passed two; extended email/API/event/migration passed 58. Native CAP channel/rights/current coverage and live acceptance remain open; MV2-028 stays IN PROGRESS and unpublished. See [lifecycle evidence](docs/monitoring-v2/HAZARD_WATCH.md#lifecycle-and-source-readiness-13-september-2026) and [email evidence](docs/monitoring-v2/HAZARD_WATCH.md#consented-warning-email-13-september-2026).
 
 <a id="mv2-029"></a>
 
 ### MV2-029 — C1: Home/Office locations and the complete warning workflow
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
+**Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
 
 **Dependencies:** [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-028](#mv2-028). **Requirements:** §8; AC-C1-01…10.
 
@@ -1134,7 +1163,23 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** E2E multi-location, boundary, changed instructions, reviewed→reopened→all-clear, mute and offline-model checks.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Active scope, 13 September 2026:** C1 is the next independent direction while C2/C3/B2 access gates remain open. Implement the complete private-location warning workflow under the [Hazard Watch contract](docs/monitoring-v2/HAZARD_WATCH.md). Official CAP Suisse 1.1 defines a usable protocol contract, but FOCP describes third-party integration as planned by 2027; a current feed and source-specific reuse agreement are unverified. Source discovery does not establish current warning coverage. The local bounded CAP decoder, tri-state point geography and immutable predecessor ledger are implemented with synthetic fixtures. The final affected suite passed 63 tests in 0.54s, including the backlog invariant; required API Ruff and whitespace checks passed. Translation/technical updates retain evidence without incrementing material review state; late ancestor cancellation cannot close a newer warning. The private location draft workflow is now implemented across two tenant-scoped tables, owner-checked HTTP routes and the five-language reader, with CAS/idempotency, bounded history, archive/delete confirmation and a gated Monitoring Centre inventory. The corrected private HTTP/repository/auth/migration/compose/backlog suite passed 36 tests; 26 hazard/centre/Road API regressions passed, and the root web build passed. Isolated synthetic Chrome verified save/edit/history/archive/delete, denial redaction and five-language mobile forms; two full-document axe audits had zero violations with shared Marvin contrast incomplete. Current source access, reviewed administrative/radius geometry, durable warning evidence, active event lifecycle, delivery, live release and human acceptance remain open; no real source or monitor has been activated.
+
+**Geography follow-up, 13 September 2026:** The native Swiss boundary catalogue and radius matcher are locally verified (107 combined tests plus seven checks against the checksum-verified official January 2026 file). They distinguish Swiss membership from source coverage and from whole-radius coverage. The draft API remains gated until the runtime catalogue and source permissions are installed; municipality warning matching, active lifecycle/review/mute/Today/Inbox and consented delivery remain unfinished. MV2-029 remains IN PROGRESS; no production source or user monitor changed.
+
+**Runtime preview follow-up:** The five-language private preview now reports actual installed-catalogue membership or specific geography failures, with attribution and edition. Editing clears stale proof; administrative confirmation does not enable source monitoring or prove whole-radius coverage. Fifty affected backend tests, root web build and isolated browser workflow/locale/accessibility checks passed. Runtime installation was exercised only in a fresh local QA directory with the official checksum-verified archive. Full C1 lifecycle, source access, municipal warning matching, review/delivery and live acceptance remain IN PROGRESS.
+
+**CAP geography follow-up:** The worker geometry entry point now distinguishes exact polygon/circle hits from whole-municipality administrative-filter matches. A matching filter alone never confirms a specific house; holes, radius overlap, unknown code editions and catalogue revocation are preserved. The 110-test affected suite and seven additional synthetic-warning checks on real Basel boundaries passed. Full official event persistence/lifecycle, review/mute/Today/Inbox, delivery and live acceptance remain unfinished; MV2-029 is IN PROGRESS.
+
+**Durable source journal follow-up:** The private workflow now has a tested shared CAP journal to build on: exact immutable revisions, material sequence, rights rechecks and unavailable states preserve official meaning. Synthetic persistence/private API tests passed (113 combined; 38 source tests after final bounds). No private warning projection, active monitor lifecycle, review/mute, Today/Inbox or email was added by this internal journal. Those remain the next work; MV2-029 is IN PROGRESS and unpublished.
+
+**Private event workflow follow-up:** Owner-private affected-place developments, exact historical source readers, material review/dismissal and immutable action history, plus per-place type mute are implemented in the gated API. New instructions reopen review; translation additions retain it; explicit all-clear and Cancel remain distinct. Multiple hazards cannot be silenced by muting only one selected type. Source/configuration/geography changes redact unconfirmed current data. The corrected 87-test backend/API suite, final 65-test mute suite and cross-organization cleanup check passed. Frontend event workflows, Today/Inbox, activation/pause/resume/archive, scheduling and consented delivery remain unfinished. MV2-029 remains IN PROGRESS and unpublished; synthetic active fixtures do not authorize real activation.
+
+**Event UI follow-up:** Exact current/historical readers, source-language selection, review/dismiss with exact-revision audit and per-place type mute are now available in five languages. New instructions reopen review; translation-only updates preserve it. Malformed historical links never fall back to current, and delayed requests cannot repopulate another location. Final root build, three link/URL helper tests, 22 event-browser checks and 19 draft regressions passed. Desktop/mobile axe reported zero violations with shared Marvin contrast incomplete; final screenshots were inspected. Today/Inbox, active lifecycle, polling/maintenance, consented delivery and native/live acceptance remain open. MV2-029 stays IN PROGRESS; these fixtures do not activate any real source or monitor. See [reader evidence](docs/monitoring-v2/HAZARD_WATCH.md#official-warning-reader-and-private-actions-13-september-2026).
+
+**Today/Inbox follow-up:** Five-language private summaries now show unread 48-hour material changes in Today and active/planned warnings or alarms in Impact inbox. Exact revision links open original instructions; review/dismiss/mute suppress cards and new material instructions reopen them. Translation does not renew the Today window. Pagination, unavailable states, retry and membership redaction are verified. The corrected 44-test integration suite, 16-test final Today suite, root build and 38 browser checks passed; four axe audits had zero violations with shared Marvin contrast incomplete. Active lifecycle/readiness, collection/maintenance, consented delivery and native/live acceptance remain open. MV2-029 remains IN PROGRESS and unpublished. See [Today evidence](docs/monitoring-v2/HAZARD_WATCH.md#private-today-and-impact-inbox-13-september-2026).
+
+**Lifecycle and consented delivery follow-up:** Owner/version-checked start, pause, resume and archive now retain action history and cancel old work; stopping remains possible after source loss. The five-language controls expose readiness, check times and audit. Email is separately opt-in to a verified owner address, with quiet hours/DST-aware daily scheduling, no translation/history resend, overlapping-place deduplication and source/geometry/consent/review/mute checks immediately before fake SMTP. Failed or abandoned sends are uncertain and never automatically replayed. The final lifecycle suite passed 43 tests; extended email/API/event/migration passed 58; root lifecycle/email builds, 50 lifecycle/event browser checks and 19 email browser checks passed. Eight combined document axe audits had zero violations (shared Marvin contrast incomplete); screenshots were inspected. The entire feature remains local and unpublished pending native access/rights/current coverage, runtime installation and live/human acceptance; MV2-029 stays IN PROGRESS. See [current workflow evidence](docs/monitoring-v2/HAZARD_WATCH.md#consented-warning-email-13-september-2026).
 
 <a id="mv2-030"></a>
 
@@ -1316,11 +1361,27 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ### MV2-037 — Journey/Trip/Route/Stop and Road Corridor reference data
 
-**Status:** PLANNED · **Priority:** P0 · **Owner:** Integration + Backend · **Size:** L
+**Current C2 iteration, 12 September 2026:** The transport subset of MV2-037 and MV2-038/039 is in source-contract discovery and local reference validation. [Transport Watch](docs/monitoring-v2/TRANSPORT_WATCH.md) records complete-feature acceptance and exact gaps: anonymous live feeds return 401; authenticated binary samples/static version matching and the 2/5 requests-per-minute contradiction remain open. No transport capability or road-reference completion is claimed; publish only after the entire feature is ready.
+
+**Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Integration + Backend · **Size:** L
 
 **Dependencies:** [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-015](#mv2-015), [MV2-016](#mv2-016), [MV2-071](#mv2-071). **Requirements:** §§9.4–9.8,10.3–10.5.
 
 **User outcome:** A transport subject is matched using a stable entity.
+
+**Active renewal scope, 13 September 2026:** Preserve saved reference UUIDs across service dates and pinned timetable versions by finding an exact, unique agency/route/direction/ordered-stop/departure match in the new static archive. Source trip IDs may change; city/name similarity is not a mapping. Acceptance requires calendar exceptions, overnight/DST dates, ambiguity/missing matches, immutable prior mappings and a private monitor resolving the renewed mapping without a configuration rewrite. The import remains bounded and off the request path; scheduled archive acquisition and actual feed matching are separate unfinished gates.
+
+**Automatic renewal integration scope, 13 September 2026:** Connect the shared static cache to durable bounded renewal of imported public references and known ordered connections for upcoming local departure dates. Preserve a shared continuation cursor, reuse the archive across users, perform long archive scans outside database transactions, and atomically publish exact dated mappings with progress only after source/lease/reference revalidation. Acceptance includes restart/replay, old-trip-ID replacement without private configuration changes, overnight dates, denied/ambiguous connections, and revocation or lease loss during scanning. This does not create source access or expand imported coverage into a full-network journey planner.
+
+**Shared static collector, 13 September 2026 (local):** Exact CKAN lookup and bounded public ZIP retrieval now run through a default-off shared Celery collector. Both fresh permitted live feeds must identify the same timetable version. A durable lease/cooldown prevents duplicate downloads; immutable dataset/resource/hash bindings, verified reuse, bounded cache retention and denial/backoff preserve source identity. Collector/retrieval/live-source/catalog/migration checks passed **92 tests in 11.78s**, with exact API Ruff passing. The automatic renewal integration below extends this verified boundary. HTTP/ZIP data is synthetic; permitted live catalog/download access, real-feed matching and complete C2 acceptance remain unfinished. No credentials, grants or production activation were created. See [Transport Watch](docs/monitoring-v2/TRANSPORT_WATCH.md).
+
+**Automatic renewal evidence, 13 September 2026 (local):** The collector now retains its shared lease while renewing imported public references and known connections from the cached archive. A durable cursor processes bounded batches over eight upcoming local departure dates, accounting for GTFS service-day offsets. Long scans hold no database connection; final source/lease/reference revalidation and mapping/cursor publication are atomic. New source trip IDs preserve private selections; changed/absent/ambiguous transfer rules retain their actual outcomes. The affected renewal/parser/catalog/collector/migration suite passed **125 tests in 24.98s**; final automatic-worker tests passed **10 tests in 7.47s**, including rollback/retry without another download and connection pagination. API Ruff passed. No source access, browser acceptance, release or full MV2-037/C2 completion is claimed.
+
+**Deployment configuration evidence, 13 September 2026 (local):** Production Compose now explicitly passes Tender/Commute source controls, keys, permission IDs, redirect origins and quotas to API-based containers. Defaults remain disabled with empty credentials; Air/River controls retain their existing true defaults. Both environment examples document the controls. Twelve read-only Compose/application deployment checks passed with synthetic configuration, proving matching backend settings, effective source disablement despite populated keys and no transport credentials in web/other service environments. This renders configuration only; no deployment or production environment was changed.
+
+**Road-reference evidence, 13 September 2026 (local):** `road_topology.py` validates normalized versioned TMC links and exact corridor flows, independently of railway references. Matching uses source-relative direction, reviewed adjacency and inward integer-metre offsets; missing topology/geometry, circular ambiguity and version mismatch stay unknown. The affected Road Watch suite passed 211 checks with temporal/materiality and source-pipeline compatibility (`.tmp/road-decisions.log`). `road_catalog.py` now persists reviewed topology grants, stable corridor UUIDs and exact-version maps, with distinct matching/display/notification rights, generation conflicts and retention. Latest denied revisions never fall back to older grants. The affected catalogue/source/collector/matching suite passed 148 tests in 17.84s (`.tmp/road-catalog.log`), including migration parity and rollback. Topology remains synthetic; licensed native-table import, actual A2/Gotthard/A13 coverage and full MV2-037 acceptance remain open.
+
+**Renewal evidence, 13 September 2026 (local):** Exact bounded archive matching and an operator dry-run/apply command are implemented. Unique matches preserve reference UUIDs and private settings while recording the new trip IDs, source sequences and archive hashes. Missing/ambiguous/frequency/outside-feed outcomes stay explicit. The combined renewal/static/catalog/backlog suite passed 58 tests in 6.74s; the command's help and required API Ruff passed. Scheduled archive acquisition/renewal, real-source matching and road references remain open. See [Transport Watch](docs/monitoring-v2/TRANSPORT_WATCH.md); no MV2-037 closure or source activation is claimed.
 
 **Work:** GTFS/static identifiers, timetable service dates, stop/line/trip/route/journey/direction; saved road segments and corridor geometry. Turn-by-turn routing is outside scope.
 
@@ -1339,11 +1400,15 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ### MV2-038 — C2: Service Alerts and Trip Updates
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** Integration · **Size:** L
+**Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Integration · **Size:** L
 
 **Dependencies:** [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-037](#mv2-037), [MV2-071](#mv2-071). **Requirements:** §9; AC-C2-02,06,07,08.
 
 **User outcome:** A regular journey receives the official disruption state.
+
+**Durable processing update, 13 September 2026:** Bounded latest-feed storage binds internal source permission, source time, static version and original hash. The private worker persists checkpoints, material event history and review candidates atomically through the existing durable dispatcher. A separate shared binary collector now enforces source grants, lease ownership, request cooldown/backoff, bounded compression and reviewed redirects without sending private routes or forwarding keys to storage origins. Replay, missing/stale/future data, source revocation and historical evidence remain distinct. Actual service-dispatch and HTTP-collector tests use synthetic grants and binary fixtures; authenticated samples, redirect-origin review and real-source acceptance remain open. See [Transport Watch](docs/monitoring-v2/TRANSPORT_WATCH.md).
+
+**Active local scope, 13 September 2026:** The binary GTFS adapter validates bounded full snapshots, preserves source IDs/languages/periods and distinguishes replay, disappearance, stale measurements and static-version changes. Exact stop-sequence projection covers explicit cancellation, skipped endpoints and boarding departure forecasts; changed-stop mappings and unsupported capabilities stay explicit. Local acquisition and durable processing are integrated; authenticated source samples and complete scenario acceptance remain open. No live release is claimed.
 
 **Work:** Official GTFS-RT alerts/trip updates; cancellation, partial cancellation, stop/platform changes, replacement and restoration; documented full/differential feed semantics. Implementation of this domain starts after the first Pollen Watch is ready (MV2-071); source discovery in MV2-003 can proceed in parallel.
 
@@ -1362,11 +1427,25 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ### MV2-039 — C2: Regular commutes and low-noise transport alerts
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
+**Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
 
 **Dependencies:** [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-038](#mv2-038). **Requirements:** §9; AC-C2-01…10.
 
 **User outcome:** Alerts relate to the route and the journey time.
+
+**Dated connection renewal, 13 September 2026 (local):** Renewal rechecks known ordered interchange pairs for new dates/versions, preserving old proof and private choices. It is now invoked by the shared cached-archive collector through a durable bounded cursor; unavailable mappings remain explicit. The automatic worker resolves archives outside database transactions and atomically records verified mappings, fresh connection outcomes and progress after revalidation. The affected combined suite passed 125 tests; final worker checks passed 10 tests, including a saved two-leg journey becoming startable only when the renewed interchange is usable. Actual feed coverage, complete browser evidence, release and acceptance remain open. See [Transport Watch](docs/monitoring-v2/TRANSPORT_WATCH.md); C2 remains IN PROGRESS and unpublished.
+
+**Interchange implementation, 13 September 2026 (local):** Exact pinned GTFS interchange evidence now replaces the blanket multi-leg start prohibition for verified connections. The importer retains endpoint, source rule, minimum time and immutable leg/archive proof; ambiguous, prohibited or unverified connections remain blocked. Preview explains rules in five languages, while processing and email recheck current proof. A synthetic two-leg journey starts, records source-backed history and stops producing new notifications after proof removal. The combined suite passed 120 tests, final focused suite 33 tests, and the root web build passed. The 25-checkpoint browser harness remains unverified. Automatic archive/interchange renewal, real source matching and pilot acceptance remain open; see [Transport Watch](docs/monitoring-v2/TRANSPORT_WATCH.md). No production activation or whole C2 completion is claimed.
+
+**Active notification scope, 13 September 2026:** Complete owner-opted-in immediate/daily transport email with verified-address consent, immutable settings revisions, quiet hours, exact event links, deduplication and a durable pre-send eligibility check. Enabling email must not backfill earlier signals or mark Today read. Outside-window candidates require daily-digest opt-in. Revoked source permission, changed identity/settings, pause/mute/review and ambiguous SMTP outcomes must prevent unsafe retries. Source activation, live email and human acceptance remain separate evidence gates.
+
+**Notification implementation evidence, 13 September 2026 (local):** The additive consent/delivery schema, owner-only settings/preview API, atomic intents, quiet-hours/daily scheduling and durable pre-send rechecks are implemented. The combined backend regression passed 89 tests and the final delivery suite passed 34 tests with a fake mailer, including the actual service dispatcher. Verified-address consent is separate from journey settings and Today review, and enabling mail creates no history backfill. Uncertain SMTP attempts are retained without automatic resend. Saved journeys now expose five-language email preferences with explicit consent, quiet hours, verified-address and role gates, saved-settings preview and conflict/denial redaction. The root web build passed; the extended browser harness is not yet verified. Live delivery, source acceptance and the full browser scenario remain unfinished; see [Transport Watch](docs/monitoring-v2/TRANSPORT_WATCH.md). C2 stays IN PROGRESS and unpublished.
+
+**Today integration, 13 September 2026 (local):** Private Today cards now project existing unread transport signals with current source rights, active configuration, pause/mute/review filters, bounded sparse pagination and stale/missing availability. Cards explain why an update appears and link to an exact immutable event version independently of history pagination. The reader preserves that version beside the latest known state and rechecks ownership and permission. The HTTP/privacy suite passed 23 tests; the combined transport/inventory/backlog suite passed 252 tests and the full root web build passed. Browser acceptance remains pending because the isolated test browser exited during startup and its harness stalled; no browser pass is claimed for this update. This adds no email delivery or source activation. C2 remains IN PROGRESS pending the complete scenario, real feeds and pilot acceptance.
+
+**Durable lifecycle update, 13 September 2026:** Start/resume check current source permission, fresh stored feeds and an eligible dated single-leg journey, then enqueue durable processing. Private event history, exact review/mute, scheduler, cancellation and generic job-owner guards are integrated locally with a separately gated shared collector. The five-language `/commute-watch` interface now supports catalog selection, preview, private drafts, full lifecycle and event/settings history, with owner-private Monitoring Centre discovery. Connected multi-leg start is explicitly gated on interchange evidence. Review candidates are not email delivery; outbound digest integration, live source setup and real acceptance remain open. No production activation is claimed.
+
+**Active local scope, 13 September 2026:** Private configuration and per-leg/journey evaluation cover weekdays/Zurich windows, thresholds/hysteresis, pause today, mute, outside-window policy and cancellation priority. A zero boarding delay cannot restore an unconfirmed skipped alighting stop. Additive catalog/private-state migrations and the authenticated CSRF-protected API cover owner isolation, dated static identity, CAS/replay/rollback and migration parity. Browser preview now resolves the exact permitted or uniquely dated timetable without requiring a technical archive identifier. Local UI tests cover source/role gates, lifecycle, review, pagination, conflicts and clearing denied or superseded responses. Notification integration, real-source matching and human acceptance remain open. See [Transport Watch](docs/monitoring-v2/TRANSPORT_WATCH.md); this task stays IN PROGRESS.
 
 **Work:** Journey/line/stop/trip selector, weekdays and time window, threshold in minutes, pause today, mute event; NORMAL→…→RESTORED state transitions.
 
@@ -1385,7 +1464,9 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ### MV2-040 — C3: ASTRA traffic and planned closures
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** Integration · **Size:** L
+**Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Integration · **Size:** L
+
+**Active complete-feature scope, 13 September 2026:** C3 is the next direction while C2 awaits external acceptance. [Road Watch](docs/monitoring-v2/ROAD_WATCH.md) defines the source/rights, versioned TMC corridor mapping, immutable lifecycle, private workflow and end-to-end gates for MV2-037/040/041. The local SOAP/DATEX decoder, full/delta reconciliation, permission-bound repository, default-off shared collector and retention schedule handle repeated version zero, replacement record sets, cancellation and private-note exclusion. Official historical examples replay as created/material_changed/revoked with 6/3/3 records. Unsupported extensions and unreviewed response contracts remain explicit. Licensed topology, private workflow and live acceptance remain unfinished. No live query, key, actual source permission or corridor coverage is claimed.
 
 **Dependencies:** [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-037](#mv2-037), [MV2-071](#mv2-071). **Requirements:** §10; AC-C3-02,04,05,07,08.
 
@@ -1402,13 +1483,15 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** Contract probe and replay of full/lane closures, roadworks, missing delay, planned rescheduling and reopening.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Local implementation evidence, 13 September 2026:** Source storage and Commute migration compatibility passed 138 checks (`.tmp/road-storage-verified.log`). Collector/storage/decoder/reconciliation/Compose passed 155 checks (`.tmp/road-collector-final.log`); the subsequent provider-clock overlap regression and affected collector suite passed 33 (`.tmp/road-collector-clock.log`). Source migrations `f2ce409d70f4` and `a3df51ae81a5` are locally verified, totaling seven road tables. Coverage includes bounded private-free SOAP requests, ownership/cooldown, full/delta recovery, rollback, permission expiry during storage, cleanup with acquisition disabled and main backend configuration. Actual live response behavior, licensed corridor mapping, private reader, full feature commit/push and activation remain unfinished. Full end-to-end and human acceptance remain open.
 
 <a id="mv2-041"></a>
 
 ### MV2-041 — C3: My Route Watch for A2 / Gotthard / A13
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
+**Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
+
+**Active scope, 13 September 2026:** Deliver C3 with the source work in MV2-040: verified corridor/direction selection, private profiles, material history/review, explicit missing-data state and consent-aware notifications. Exact TMC matching, durable reviewed corridor publication, private profiles/API, event processing/history/review and source-gated start/pause/resume/archive are implemented locally. The five-language reader and gated Monitoring Centre route inventory are implemented locally; TypeScript, reader/help checks and all 56 affected API/profile/worker/centre cases pass after correcting one test expectation; later browser/build evidence follows below. An A2/A13 name in text is not proof of northbound/southbound intersection. Source fixtures and licensed topology must prove the requested corridors before activation. See [Road Watch](docs/monitoring-v2/ROAD_WATCH.md). Today and exact-version comparisons are now implemented locally with permission rechecks, sparse pagination and independent mute/review state. The Today/jobs/API suite passed 48 tests and the final Today/exact-link HTTP suite passed 21 tests. Root and final web builds passed. Synthetic Chrome checks cover exact links with empty lists, previous/current comparison, sparse Today continuation, mute, stale data, permission redaction and five-language mobile layout. Four axe checkpoints reported zero violations; the shared Marvin contrast node remains incomplete. See Road Watch for evidence and limitations. Consented email is now implemented locally: explicit verified-owner policies, quiet hours/daily schedules, bounded intents, current rights and state rechecked before SMTP, and suppression of ambiguous retries. Delivery/source/worker/migration checks passed 78 tests; 69 API/Today/release-history checks and the corrected HTTP-to-fake-SMTP case passed. The final delivery suite passed 35 tests, including current mapping changes before SMTP and independent owners; five owner-isolation/backlog checks passed, and the root web build passed. Chrome verified consent, preview, access redaction and pause/edit/preview/save/start/resume/archive/delete; the email form had zero axe violations (shared Marvin contrast incomplete). Migration e71395e2c5e9 adds two tenant-scoped tables. Major-closure Impact Inbox is now implemented locally with private ownership, exact shared read/mute state, bounded sparse pagination, long-running current closures and honest unavailable-source metadata. The Inbox/Today/delivery suite passed 73 tests; the HTTP-to-fake-mail/shared-review case passed, and the final root build passed. Chrome verified sparse continuation, mute/unmute, stale-source redaction, mobile read and shared Today state; the desktop axe audit had zero violations (shared Marvin contrast incomplete). Native licensed-table import, complete acceptance and live verification remain unfinished; no actual source or user monitor was activated.
 
 **Dependencies:** [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-040](#mv2-040). **Requirements:** §10; AC-C3-01…10.
 
@@ -1425,7 +1508,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** End-to-end checks for the opposite direction, a planned date shift, no delay value, closure/reopening and duplicate language editions.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Local execution evidence, 13 September 2026:** Pure matching/time/source checks passed 211 tests (`.tmp/road-decisions.log`); private profile/API/catalogue/storage checks passed 73 (`.tmp/road-private-bounds.log`). The integrated worker/profile/API/catalogue/source/collector suite now passed **125 tests in 99.03s** (`.tmp/road-worker-final.log`), including stable material history across source record replacement/language editions, planned rescheduling, opposite-flow exclusion, source disappearance versus withdrawal/clearance, exact review/mute, source/topology redaction/retention, lifecycle cancellation, owner/job isolation and fourteen-table migration parity. Final job-lease/cancellation and probable-clearance regressions passed **23 worker tests in 37.85s** (`.tmp/road-worker-lease.log`), including real durable dispatch and authenticated HTTP review. Required API Ruff passed. Reader/Today/centre, consented delivery, native licensed-table import and real-user acceptance remain required before full feature commit/push and closure.
 
 
 ## F5 — Business scenarios
@@ -1434,13 +1517,15 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ### MV2-042 — B2: SIMAP discovery and publication monitoring
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** Integration · **Size:** L
+**Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Integration · **Size:** L
 
 **Dependencies:** [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071). **Requirements:** §15; AC-B2-02,05,06,11.
 
 **User outcome:** Public procurement notices arrive as new and changed entities.
 
 **Work:** Official SIMAP API/client registration, pages/cursors, publication IDs and tender dossier linking; authority/CPV/region/language/deadline/documents/Q&A. Implementation of this domain starts after the first Pollen Watch is ready (MV2-071); source discovery in MV2-003 can proceed in parallel.
+
+**Active scope (12 September):** The user authorized all nine active directions. Public API parsing, publication-time gating, cursor recovery and durable collection are implemented locally under [Tender Watch](docs/monitoring-v2/TENDER_WATCH.md). A bounded real collector rehearsal reached private evidence storage; this does not prove a complete scan or activation. Source registration, restricted document/Q&A acceptance and the complete user workflow remain open.
 
 **Acceptance criteria:**
 
@@ -1457,13 +1542,15 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ### MV2-043 — B2/B7/B8: Structured profiles and semantic candidate ranking
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** Backend + AI · **Size:** L
+**Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Backend + AI · **Size:** L
 
 **Dependencies:** [MV2-005](#mv2-005), [MV2-008](#mv2-008), [MV2-010](#mv2-010), [MV2-071](#mv2-071). **Requirements:** §§15.4,15.9,16.6,17.3,19.3,22.
 
 **User outcome:** Business matching goes beyond a word in the title and is understandable to the user.
 
 **Work:** Typed capability/brand/asset profiles, deterministic inclusion and exclusion rules; lexical candidates followed by bounded optional semantic assessment; match facets and unknown gaps.
+
+**Active scope (12 September):** B2 typed profiles, deterministic per-lot matching and immutable private profile revisions are implemented locally under [Tender Watch](docs/monitoring-v2/TENDER_WATCH.md). Official CPV tree edges bind descendant matches to source evidence; missing taxonomy and qualifications remain explicit unknowns. Disabled B2 semantic assessment and an offline development/validation evaluator now bind exact quotes, profile/facts/model/prompt/schema identities, preserve deterministic exclusions, detect split leakage and report abstentions separately. The 98 contract/evaluation/matching checks use synthetic outputs and do not measure actual model quality. A bounded identified-model run, B7/B8 contributions and the complete B2 user journey remain open; no semantic promotion is implied.
 
 **Acceptance criteria:**
 
@@ -1480,13 +1567,15 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ### MV2-044 — Versioned document sets and conditions
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** Backend + Frontend · **Size:** L
+**Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Backend + Frontend · **Size:** L
 
 **Dependencies:** [MV2-007](#mv2-007), [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-071](#mv2-071). **Requirements:** §§15.5,15.8,17.4,17.7,17.10.
 
 **User outcome:** Changes to a file, requirement or Q&A remain visible after an earlier review.
 
 **Work:** DocumentSetManifest: stable item ID, type, URL, hash, retrieval/version time and access status; add/replace/remove; link existing exact/legal diffs where applicable.
+
+**Active scope (12 September):** B2 document-set reconciliation now includes local exact parsed-text comparisons and bounded PDF/UTF-8 parsing under [Tender Watch](docs/monitoring-v2/TENDER_WATCH.md). Binary and parsed fingerprints bind both private originals; missing rights, incomplete extraction and incompatible parsers never imply unchanged requirements. 61 document-set/comparison/parser tests and the full API Ruff gate passed. Private attachment originals now have scoped grants, bounded storage, current-rights read APIs and scheduled retention cleanup; the combined 260-test run passed. Public SIMAP search/detail access is verified; private immutable manifests now create material dossier revisions, preserve prior decisions, reopen review and create consented email intents; history/comparison APIs recheck grants and per-file denial. The integrated 243-test run and 67 final affected checks passed. The five-language attachment reader/comparison UI now covers exact originals, partial text, historical sets and denial recovery; its build and 30 browser checkpoints passed. Bounded DOCX parsing now includes referenced text stories, explicit partial/failed coverage and correct private original-download filenames; real package fixtures pass through storage, HTTP and exact comparisons. Unsupported Office/ZIP formats and live capture remain open. A pinned chronological review window now retains all revisions since the last decision, including explicit unavailable gaps and document links; final verification is recorded in the feature evidence. Authenticated documents/Q&A collection, provider-wide document-event normalization and the full user journey remain open. This local shared-contract work does not complete MV2-044 or B2.
 
 **Acceptance criteria:**
 
@@ -1503,13 +1592,15 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ### MV2-045 — B2: Tender discovery → review → material update
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
+**Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
 
 **Dependencies:** [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022), [MV2-042](#mv2-042), [MV2-043](#mv2-043), [MV2-044](#mv2-044). **Requirements:** §15; AC-B2-01…12.
 
 **User outcome:** A company chooses Bid/No-bid/Monitor and sees changes to the conditions.
 
 **Work:** Tender profile wizard, discovery candidates, follow tender, explanations of matched capabilities and gaps, explicit deadline, Q&A/document changes and owner.
+
+**Active scope (12 September):** The local public-source journey now includes authenticated profile/lifecycle APIs, a five-language reader, private discovery/following/internal decisions, versioned originals and Monitoring Centre integration. Public evidence and common fields are deduplicated across lots; project CPV context never asserts verified lot relevance. Profile edits reassess unchanged publications and reopen review without rewriting prior decisions. Public-payload and private-version budgets now preserve all referenced history on capacity exhaustion; bounded cleanup checks references across tenants. Durable source restrictions gate retained reads, decisions and ingestion, including withdrawal during I/O and reuse of a restricted prior original for a diff. HTTP denials also carry no-store headers. HTTP and browser tests cover owner/tenant access, source gates, pagination, material updates, recovery and mobile accessibility. Owner-consented email now has separate immutable settings, exact-version intents, preview/send eligibility parity, quiet hours/DST, cross-monitor deduplication and current permission/review checks through the real job dispatcher. The five-language reader supports consent, unsubscribe, uncertainty, evidence deep links and paginated read-only profile history with current-profile differences; tests use fake SMTP only. Private document grants/storage/retention, material manifest revisions and the five-language original/text/comparison reader are implemented locally. Changes since the last decision have a separate chronological reader with current-rights gaps and pinned pagination. This remains unfinished whole-feature work: permitted live documents/Q&A collection, remaining-format coverage, semantic evaluation and live/human acceptance (including real email) are still required. Neither Tender Watch feature flag has been enabled in production; no feature commit or activation is claimed. See [current evidence](docs/monitoring-v2/TENDER_WATCH.md).
 
 **Acceptance criteria:**
 
@@ -1527,7 +1618,7 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ### MV2-046 — B7: Official trademark publications and register updates
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** Integration · **Size:** L
+**Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Integration · **Size:** L
 
 **Dependencies:** [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071). **Requirements:** §16; AC-B7-02,06,08,10.
 
@@ -1544,13 +1635,19 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** Official API contract fixtures, multilingual goods/services, status/owner corrections and a rights-policy test.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Active scope, 13 September 2026:** Implement the complete B7 direction under [Trademark Watch](docs/monitoring-v2/TRADEMARK_WATCH.md), including official source evidence, a versioned multi-brand portfolio, explained name/goods candidates and controlled IP review. Public IPI XML API documentation is available; signed terms/account access and notification/export rights remain unverified. Initial local contract and candidate work must preserve those gates and distinguish synthetic calibration from measured quality. Native acquisition, full user workflow and acceptance remain open; no source account or terms are changed.
+
+**Local evidence, 13 September 2026:** Versioned internal trademark-facts contracts preserve supplied official IDs, original fields, separate dates and material fingerprints. Public XML API/schema documentation was verified; native acquisition remains unimplemented. The subsequent source-rights journal is described below. No signed access, current coverage or source activation is claimed. See [local evidence and remaining boundaries](docs/monitoring-v2/TRADEMARK_WATCH.md#local-implementation-evidence-13-september-2026). Status remains IN PROGRESS.
+
+**Register journal, 13 September 2026:** Permission/generation-bound immutable register revisions, separate material/evidence sequences, idempotent receipts, rights-aware readers and background retention cleanup are implemented locally. Source/repository/migration checks passed (33); public XSD and official field mapping were inspected. Native item identity, XML/ZIP acquisition, publication-event mapping and completed traversal remain open. See [journal evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#register-journal-and-native-contract-investigation-13-september-2026). No live access or activation is claimed; status remains IN PROGRESS.
+
+**Offline native codec, 13 September 2026:** Bounded IPI XML/ZIP response and Swiss ST.96 field decoding is implemented, including full goods detail requests, opaque NextPage handling, separate publication/expiry/action dates and explicit business-number aliases. The request, record and response fixtures validate against official XSDs. Native/matcher/journal checks passed (112); two corrected integration checks also passed for owner changes and parent-document refresh. Durable identity resolution, page/traversal persistence, parent response retention and HTTP acquisition remain open. See [native codec evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#offline-native-codec-13-september-2026). No live source access or completed coverage is claimed.
 
 <a id="mv2-047"></a>
 
 ### MV2-047 — B7: Exact, lexical and phonetic candidates
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** Backend + AI/domain reviewer · **Size:** L
+**Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Backend + AI/domain reviewer · **Size:** L
 
 **Dependencies:** [MV2-043](#mv2-043), [MV2-046](#mv2-046). **Requirements:** §16.4–16.7; AC-B7-01,03,04,05,07.
 
@@ -1567,13 +1664,15 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** Independent exact/near/phonetic/goods-services cases, accents/transliterations and unrelated-class negative cases.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Active scope, 13 September 2026:** Implement the complete B7 direction under [Trademark Watch](docs/monitoring-v2/TRADEMARK_WATCH.md), including official source evidence, a versioned multi-brand portfolio, explained name/goods candidates and controlled IP review. Public IPI XML API documentation is available; signed terms/account access and notification/export rights remain unverified. Initial local contract and candidate work must preserve those gates and distinguish synthetic calibration from measured quality. Native acquisition, full user workflow and acceptance remain open; no source account or terms are changed.
+
+**Local evidence, 13 September 2026:** 37 candidate/contract tests passed for exact, bounded lexical/word-extension and scoped English phonetic candidates, distinct goods/class evidence, five goods-description languages and calibration uncertainty. Reviewed calibration and held-out quality are not established; unsupported pronunciation/transliteration remains unavailable. The owner-private multi-brand portfolio and configuration revisions are locally implemented. See [implementation and checks](docs/monitoring-v2/TRADEMARK_WATCH.md#local-implementation-evidence-13-september-2026). Status remains IN PROGRESS.
 
 <a id="mv2-048"></a>
 
 ### MV2-048 — B7: IP review, review deadlines and register changes
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
+**Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
 
 **Dependencies:** [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-046](#mv2-046), [MV2-047](#mv2-047). **Requirements:** §16; AC-B7-01…12.
 
@@ -1590,7 +1689,9 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Verification:** End-to-end multiple-brand→candidate→review→register update, missing date/rule, deadline changes and export rights.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Active scope, 13 September 2026:** Implement the complete B7 direction under [Trademark Watch](docs/monitoring-v2/TRADEMARK_WATCH.md), including official source evidence, a versioned multi-brand portfolio, explained name/goods candidates and controlled IP review. Public IPI XML API documentation is available; signed terms/account access and notification/export rights remain unverified. Initial local contract and candidate work must preserve those gates and distinguish synthetic calibration from measured quality. Native acquisition, full user workflow and acceptance remain open; no source account or terms are changed.
+
+**Local evidence, 13 September 2026:** Private portfolio create/edit/history/archive/delete, CSRF and owner isolation are implemented; API/repository/Compose/migration checks passed (11), Monitoring Centre regression passed (18), and the root frontend build passed. The five-language form passed 17 synthetic browser checks and two axe scans (zero violations, existing Marvin contrast incomplete). Candidate review, register-change reopening, deadlines, Today/Inbox and permitted export/delivery remain unfinished. No source is activated and no incomplete feature is published. See [evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#local-implementation-evidence-13-september-2026). Status remains IN PROGRESS.
 
 <a id="mv2-049"></a>
 

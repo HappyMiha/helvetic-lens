@@ -50,6 +50,32 @@ class Settings(BaseSettings):
     )
     allow_anonymous_dev: bool = True
     air_watch_enabled: bool = Field(default=True, validation_alias="AIR_WATCH_ENABLED")
+    tender_watch_enabled: bool = Field(default=False, validation_alias="TENDER_WATCH_ENABLED")
+    commute_watch_enabled: bool = Field(default=False, validation_alias="COMMUTE_WATCH_ENABLED")
+    road_watch_enabled: bool = Field(default=False, validation_alias="ROAD_WATCH_ENABLED")
+    hazard_watch_enabled: bool = Field(default=False, validation_alias="HAZARD_WATCH_ENABLED")
+    trademark_watch_enabled: bool = Field(default=False, validation_alias="TRADEMARK_WATCH_ENABLED")
+    hazard_source_enabled: bool = Field(default=False, validation_alias="HAZARD_SOURCE_ENABLED")
+    hazard_source_permission_id: str = ""
+    road_source_enabled: bool = Field(default=False, validation_alias="ROAD_SOURCE_ENABLED")
+    road_source_key: SecretStr = SecretStr("")
+    road_source_permission_id: str = ""
+    commute_source_enabled: bool = Field(default=False, validation_alias="COMMUTE_SOURCE_ENABLED")
+    commute_static_enabled: bool = Field(default=False, validation_alias="COMMUTE_STATIC_ENABLED")
+    commute_static_dataset_id: str = ""
+    commute_static_redirect_origins: tuple[str, ...] = ()
+    commute_static_cache_max_bytes: int = Field(default=2 * 1024**3, ge=512_000_000)
+    commute_gtfs_rt_key: SecretStr = SecretStr("")
+    commute_gtfs_sa_key: SecretStr = SecretStr("")
+    commute_gtfs_rt_permission_id: str = ""
+    commute_gtfs_sa_permission_id: str = ""
+    # Reviewed HTTPS origins for public/signed feed redirects. Keys never leave
+    # the API origin, even when a destination is explicitly listed here.
+    commute_feed_redirect_origins: tuple[str, ...] = ()
+    # Public SIMAP publication rights only; this never grants document/Q&A access.
+    simap_public_source_enabled: bool = Field(default=False, validation_alias="SIMAP_PUBLIC_SOURCE_ENABLED")
+    tender_public_storage_max_bytes: int = Field(default=2 * 1024**3, ge=1)
+    tender_monitor_max_versions: int = Field(default=10_000, ge=1)
     river_watch_enabled: bool = Field(default=True, validation_alias="RIVER_WATCH_ENABLED")
     monitoring_rollout: MonitoringRollout = Field(
         default_factory=public_pollen_rollout, validation_alias="MONITORING_V2_ROLLOUT",

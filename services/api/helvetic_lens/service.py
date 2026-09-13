@@ -2994,8 +2994,36 @@ class HelveticLens:
         with self.db.session() as session:
             statement = select(Job)
             from .air_models import AirMonitor
+            from .commute_models import CommuteMonitor
+            from .hazard_models import HazardMonitor
             from .models import MonitoringSubject
             from .river_models import RiverMonitor
+            from .road_models import RoadMonitor
+            from .tender_models import TenderMonitor
+            if monitoring_owner_id is None:
+                statement = statement.where(Job.target_type != "hazard_monitor")
+            else:
+                statement = statement.where(or_(Job.target_type != "hazard_monitor", Job.target_id.in_(
+                    select(HazardMonitor.id).where(HazardMonitor.owner_user_id == monitoring_owner_id,
+                                                  HazardMonitor.organization_id == self.organization_id))))
+            if monitoring_owner_id is None:
+                statement = statement.where(Job.target_type != "road_monitor")
+            else:
+                statement = statement.where(or_(Job.target_type != "road_monitor", Job.target_id.in_(
+                    select(RoadMonitor.id).where(RoadMonitor.owner_user_id == monitoring_owner_id,
+                                                RoadMonitor.organization_id == self.organization_id))))
+            if monitoring_owner_id is None:
+                statement = statement.where(Job.target_type != "commute_monitor")
+            else:
+                statement = statement.where(or_(Job.target_type != "commute_monitor", Job.target_id.in_(
+                    select(CommuteMonitor.id).where(CommuteMonitor.owner_user_id == monitoring_owner_id,
+                                                   CommuteMonitor.organization_id == self.organization_id))))
+            if monitoring_owner_id is None:
+                statement = statement.where(Job.target_type != "tender_monitor")
+            else:
+                statement = statement.where(or_(Job.target_type != "tender_monitor", Job.target_id.in_(
+                    select(TenderMonitor.id).where(TenderMonitor.owner_user_id == monitoring_owner_id,
+                                                  TenderMonitor.organization_id == self.organization_id))))
             if monitoring_owner_id is None:
                 statement = statement.where(Job.target_type != "air_monitor")
             else:
@@ -4052,6 +4080,92 @@ class HelveticLens:
                 result_type = "relation_impact_analysis"
                 result_id = result_json["id"]
                 result_url = f"/impact?candidate={target_id}"
+            elif job_type == "tender_email":
+                from .tender_delivery import deliver as deliver_tender
+                def tender_email_checkpoint():
+                    with self.db.session() as heartbeat_session:
+                        active = durable_jobs.heartbeat(heartbeat_session, job_id, worker)
+                        heartbeat_session.commit()
+                    return active
+                result_json = await asyncio.to_thread(deliver_tender, self.db, self.settings,
+                    monitor_id=target_id, consent_revision=payload.get("consent_revision"), checkpoint=tender_email_checkpoint)
+                result_type, result_id, result_url = "tender_monitor", target_id, "/tender-watch"
+            elif job_type == "tender_refresh":
+                from .tender_jobs import refresh as refresh_tender
+                def tender_checkpoint():
+                    with self.db.session() as heartbeat_session:
+                        active = durable_jobs.heartbeat(heartbeat_session, job_id, worker)
+                        heartbeat_session.commit()
+                    if not active:
+                        raise durable_jobs.JobCancelled()
+                result_json = await asyncio.to_thread(refresh_tender, self.db, self.settings,
+                    monitor_id=target_id, version=payload.get("version"), checkpoint=tender_checkpoint)
+                result_type, result_id, result_url = "tender_monitor", target_id, "/tender-watch"
+            elif job_type == "commute_email":
+                from .commute_delivery import deliver as deliver_commute
+                def commute_email_checkpoint():
+                    with self.db.session() as heartbeat_session:
+                        active = durable_jobs.heartbeat(heartbeat_session, job_id, worker)
+                        heartbeat_session.commit()
+                    return active
+                result_json = await asyncio.to_thread(deliver_commute, self.db, self.settings,
+                    monitor_id=target_id, consent_revision=payload.get("consent_revision"), checkpoint=commute_email_checkpoint)
+                result_type, result_id, result_url = "commute_monitor", target_id, f"/commute-watch?monitor={target_id}"
+            elif job_type == "road_email":
+                from .road_delivery import deliver as deliver_road
+                def road_email_checkpoint():
+                    with self.db.session() as heartbeat_session:
+                        active = durable_jobs.heartbeat(heartbeat_session, job_id, worker)
+                        heartbeat_session.commit()
+                    return active
+                result_json = await asyncio.to_thread(deliver_road, self.db, self.settings,
+                    monitor_id=target_id, consent_revision=payload.get("consent_revision"), checkpoint=road_email_checkpoint)
+                result_type, result_id, result_url = "road_monitor", target_id, f"/road-watch?monitor={target_id}"
+            elif job_type == "hazard_email":
+                from .hazard_delivery import deliver as deliver_hazard
+                def hazard_email_checkpoint():
+                    with self.db.session() as heartbeat_session:
+                        active = durable_jobs.heartbeat(heartbeat_session, job_id, worker)
+                        heartbeat_session.commit()
+                    return active
+                result_json = await asyncio.to_thread(deliver_hazard, self.db, self.settings,
+                    monitor_id=target_id, consent_revision=payload.get("consent_revision"), checkpoint=hazard_email_checkpoint)
+                result_type, result_id, result_url = "hazard_monitor", target_id, f"/hazard-watch?monitor={target_id}"
+            elif job_type == "hazard_refresh":
+                from .hazard_jobs import refresh as refresh_hazard
+                def hazard_checkpoint():
+                    with self.db.session() as heartbeat_session:
+                        active = durable_jobs.heartbeat(heartbeat_session, job_id, worker)
+                        heartbeat_session.commit()
+                    if not active:
+                        raise durable_jobs.JobCancelled()
+                result_json = await asyncio.to_thread(refresh_hazard, self.db, self.settings,
+                    monitor_id=target_id, version=payload.get("version"), checkpoint=hazard_checkpoint,
+                    job_id=job_id, lease_owner=worker)
+                result_type, result_id, result_url = "hazard_monitor", target_id, f"/hazard-watch?monitor={target_id}"
+            elif job_type == "road_refresh":
+                from .road_jobs import refresh as refresh_road
+                def road_checkpoint():
+                    with self.db.session() as heartbeat_session:
+                        active = durable_jobs.heartbeat(heartbeat_session, job_id, worker)
+                        heartbeat_session.commit()
+                    if not active:
+                        raise durable_jobs.JobCancelled()
+                result_json = await asyncio.to_thread(refresh_road, self.db, self.settings,
+                    monitor_id=target_id, version=payload.get("version"), checkpoint=road_checkpoint,
+                    job_id=job_id, lease_owner=worker)
+                result_type, result_id, result_url = "road_monitor", target_id, "/monitoring"
+            elif job_type == "commute_refresh":
+                from .commute_jobs import refresh as refresh_commute
+                def commute_checkpoint():
+                    with self.db.session() as heartbeat_session:
+                        active = durable_jobs.heartbeat(heartbeat_session, job_id, worker)
+                        heartbeat_session.commit()
+                    if not active:
+                        raise durable_jobs.JobCancelled()
+                result_json = await asyncio.to_thread(refresh_commute, self.db, self.settings,
+                    monitor_id=target_id, version=payload.get("version"), checkpoint=commute_checkpoint)
+                result_type, result_id, result_url = "commute_monitor", target_id, "/monitoring"
             elif job_type == "air_refresh":
                 from .air_jobs import refresh as refresh_air
                 def air_checkpoint():
