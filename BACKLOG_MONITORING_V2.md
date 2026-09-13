@@ -1751,6 +1751,8 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Private-tracking evidence, 14 September 2026:** Start/resume, scheduled projection, pause, explained lots, individual follow/unfollow, internal decisions, reopened review and retained source history are implemented in all five languages. Combined API/source/workflow/Centre checks passed (64); browser tracking (16) and existing profile (17) checkpoints, root build, exact Ruff and changed-file formatting passed. Current official acquisition/rights, Today/Inbox, durable reminders/email and human acceptance remain open. See [tracking evidence](docs/monitoring-v2/AUCTION_WATCH.md#private-source-backed-tracking--14-september-2026). Status remains IN PROGRESS.
 
+**Today/Inbox evidence, 14 September 2026:** Private auction signals now link to exact before/at-change source versions and the current lot decision. Combined server checks (25), browser checkpoints (13) and the root frontend build passed. Reads recheck source rights, retention, membership and current state; no source collection, bid or email is implied. See [material-change feed evidence](docs/monitoring-v2/AUCTION_WATCH.md#today-inbox-and-exact-material-changes--14-september-2026). Official acquisition/rights, durable ending-soon delivery, consented email and human acceptance remain open; IN PROGRESS.
+
 ## F6 — Quality evidence, pilot and release
 
 <a id="mv2-051"></a>

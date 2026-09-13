@@ -21,6 +21,7 @@ import styles from "./commute-watch.module.css";
 import ipStyles from "./auction-watch.module.css";
 import { Failure, useData, useMutation } from "./auction-client";
 import { AuctionTracking } from "./auction-tracking";
+import { AuctionChange } from "./auction-change";
 import { auctionTrackingCopy } from "@/lib/auction-tracking-copy";
 
 function ProfileForm({
@@ -323,6 +324,14 @@ function Detail({
   changed: () => void;
   deleted: () => void;
 }) {
+  const params = useSearchParams();
+  const events = params.getAll("event");
+  const event =
+    params.get("monitor") === id &&
+    events.length === 1 &&
+    /^[0-9a-f-]{36}$/i.test(events[0])
+      ? events[0]
+      : null;
   const { locale } = useI18n(),
     c = auctionCopy[locale];
   const [revision, setRevision] = useState(0),
@@ -400,6 +409,14 @@ function Detail({
         </div>
       )}
       {mutation.error && <p role="alert">{mutation.error}</p>}
+      {event && (
+        <AuctionChange
+          key={`${event}:${row.version}`}
+          monitor={row}
+          event={event}
+          canManage={canManage}
+        />
+      )}
       <AuctionTracking
         key={row.version}
         monitor={row}

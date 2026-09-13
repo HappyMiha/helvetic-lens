@@ -105,6 +105,12 @@ def test_http_source_backed_follow_review_pause_and_delete(api, monkeypatch):
     assert started.status_code == 200 and started.json()["status"] == "active"
     assert client.post(path + "/refresh", headers=_csrf(client)).json()["health"] == "current"
     row, = client.get(path + "/items").json()["items"]
+    first_feed = client.get(ROOT + "/today")
+    assert first_feed.status_code == 200 and first_feed.headers["cache-control"] == "no-store"
+    event, = first_feed.json()["items"]
+    exact = client.get(path + "/events/" + event["id"])
+    assert exact.status_code == 200 and exact.json()["item_id"] == row["id"]
+    assert client.get(ROOT + "/today", params={"limit": 51}).status_code == 422
     item_path = path + "/items/" + row["id"]
     followed = client.post(item_path + "/follow", headers=_csrf(client), json={"expected_version": row["version"],
         "expected_state_hash": row["state_hash"], "following": True})
@@ -114,12 +120,16 @@ def test_http_source_backed_follow_review_pause_and_delete(api, monkeypatch):
         "expected_state_hash": row["state_hash"], "decision": "bid"})
     assert response.status_code == 200 and not response.json()["needs_review"]
     assert response.headers["cache-control"] == "no-store"
+    assert client.get(ROOT + "/inbox").json()["items"] == []
     assert client.post(item_path + "/bid", headers=_csrf(client), json={"amount": 999999}).status_code == 404
     now = NOW + timedelta(seconds=1)
     accept(database, permission, cursor=1, prices=[price(1270000)])
     assert client.post(path + "/refresh", headers=_csrf(client)).status_code == 200
     row, = client.get(path + "/items", params={"following_only": True}).json()["items"]
     assert row["needs_review"] and row["decision"] == "bid"
+    crossing, = client.get(ROOT + "/inbox").json()["items"]
+    assert crossing["change_codes"] == ["price_above_limit"]
+    assert client.get(path + "/events/" + crossing["id"]).json()["previous"]["facts"]["prices"][0]["amount_minor"] == 850000
     versions = client.get(item_path + "/history", params={"limit": 1}).json()
     assert versions["next_cursor"] and versions["items"][0]["facts"]["prices"][0]["amount_minor"] == 1270000
     centre = client.get("/api/monitoring-centre", params={"domain": "auctions"}).json()["items"][0]

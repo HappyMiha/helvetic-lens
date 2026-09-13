@@ -144,3 +144,40 @@ Native acquisition/current official reuse and category evidence, Today/Inbox,
 durable ending-soon delivery, separately consented email and real-user acceptance
 remain open. Notification preferences are retained but no delivery is claimed.
 MV2-049/050 remain IN PROGRESS; AC-B8-01…12 are not complete.
+
+## Today, Inbox and exact material changes — 14 September 2026
+
+Auction changes now appear in owner-private Today and Impact inbox panels, with
+five-language reasons and links to a specific retained material event. Today has
+a 48-hour material-change window; Inbox retains eligible unread changes. The
+bounded reader selects one latest requested unread change per lot. A normal bid
+increment does not reset its detection time, and an unrequested later change
+cannot silently dismiss an earlier unread alert. Reviewing the current lot clears
+the eligible signal; unfollow, pause, archive, profile/source replacement and
+membership loss preserve their existing boundaries. An empty filtered page may
+still have a continuation; changed or foreign cursors fail without revealing data.
+
+The exact reader shows separately retained before/at-change snapshots and the
+current lot/decision. It verifies record identity, the saved profile revision,
+current ownership and each snapshot's permission/retention; expired or revoked
+payloads are redacted. Historical material links remain stable when newer changes
+arrive. Current review still requires the exact current state, permission and
+version. Feed reads do not create decisions, collect sources, place bids or send
+messages. No source URL or source description is copied into feed summaries.
+
+Verification: 25 combined feed/API/private-workflow checks passed (39.60 s),
+including exact CHF 8,500/12,700 snapshots, quiet bids, privacy, source revocation,
+staleness, pagination, cursor invalidation, Today cutoff and profile replacement.
+After hardening retention of an unread requested alert across an unrequested
+later change, all 12 feed/API checks passed again (21.06 s).
+The root isolated `auction-feed` build passed. The synthetic browser passed 13
+checkpoints: Today → exact comparison → internal decision → empty Inbox,
+five-language mobile viewer flows, source snapshot redaction and membership loss.
+Desktop/mobile axe reported zero violations, no browser runtime exceptions were
+recorded, and both screenshots were visually inspected. Unresolved manual axe
+checks remain unverified; this is not live auction/source or human acceptance.
+
+Native acquisition/current official reuse/category evidence, durable ending-soon
+notifications and separately consented email remain open. The new panels display
+changes from permitted retained records; they do not claim a configured live
+Ticino collector. MV2-049/050 remain IN PROGRESS.

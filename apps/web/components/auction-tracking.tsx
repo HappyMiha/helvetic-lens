@@ -12,7 +12,7 @@ import type {
 import { useData, useMutation } from "./auction-client";
 import styles from "./commute-watch.module.css";
 
-type Facts = {
+export type Facts = {
   title: string;
   description: string | null;
   canton: string;
@@ -34,7 +34,7 @@ type Facts = {
   source_url: string;
   documents: { state: string; items: { official_id: string; title: string }[] };
 };
-type Item = {
+export type Item = {
   id: string;
   version: number;
   following: boolean;
@@ -56,7 +56,7 @@ type Preview = {
   unverified_cantons: string[];
 };
 
-function Timestamp({ value }: { value: string | null }) {
+export function Timestamp({ value }: { value: string | null }) {
   const { locale } = useI18n();
   return value ? (
     <time dateTime={value}>
@@ -71,7 +71,7 @@ function Timestamp({ value }: { value: string | null }) {
   );
 }
 
-function Evidence({ facts }: { facts: Facts }) {
+export function Evidence({ facts }: { facts: Facts }) {
   const { locale } = useI18n(),
     c = auctionCopy[locale],
     w = auctionTrackingCopy[locale];
@@ -200,7 +200,7 @@ function SourceHistory({ path }: { path: string }) {
   );
 }
 
-function Lot({
+export function Lot({
   row,
   monitor,
   canManage,

@@ -42,6 +42,7 @@ let state = {
   monitor = null,
   history = [];
 const itemId = "00000000-0000-4000-8000-000000000072";
+const eventId = "00000000-0000-4000-8000-000000000073";
 let sourceSequence = 1,
   item = null,
   versions = [],
@@ -196,6 +197,38 @@ const server = createServer(async (req, res) => {
             unverified_cantons: [],
             coverage_verified: false,
           });
+        if (route === "/today" || route === "/inbox") {
+          const available = item && itemView().state === "available";
+          return json({
+            items:
+              available && item.needs_review && monitor.status === "active"
+                ? [
+                    {
+                      id: eventId,
+                      name: monitor.configuration.name,
+                      title: sourceFacts.title,
+                      canton: sourceFacts.canton,
+                      auction_id: sourceFacts.auction_id,
+                      lot_id: sourceFacts.lot_id,
+                      attribution: "Synthetic cantonal office",
+                      detected_at: sourceFacts.observed_at,
+                      change_codes: [
+                        sourceFacts.status === "cancelled"
+                          ? "cancelled"
+                          : sourceSequence > 1
+                            ? "price_above_limit"
+                            : "new_match",
+                      ],
+                      href: `/auction-watch?monitor=${id}&event=${eventId}`,
+                    },
+                  ]
+                : [],
+            next_cursor: null,
+            has_active_monitors: monitor?.status === "active",
+            unavailable_count: item && !available ? 1 : 0,
+            coverage_verified: false,
+          });
+        }
         if (route === "/monitors") {
           if (req.method === "POST") {
             monitor = {
@@ -218,6 +251,31 @@ const server = createServer(async (req, res) => {
           return json({ items: monitor ? [monitor] : [], next_cursor: null });
         }
         if (!monitor) return json({ code: "auction_monitor_not_found" }, 404);
+        if (route === `/monitors/${id}/events/${eventId}` && item) {
+          const snapshot = (v) =>
+            !v
+              ? null
+              : {
+                  state: state.revoked ? "unavailable" : "available",
+                  facts: state.revoked ? null : v.facts,
+                };
+          return json({
+            id: eventId,
+            detected_at: sourceFacts.observed_at,
+            change_codes: [
+              sourceFacts.status === "cancelled"
+                ? "cancelled"
+                : sourceSequence > 1
+                  ? "price_above_limit"
+                  : "new_match",
+            ],
+            current_configuration: true,
+            newer_available: false,
+            snapshot: snapshot(versions[0]),
+            previous: snapshot(versions[1]),
+            current: itemView(),
+          });
+        }
         if (route === `/monitors/${id}/revisions`)
           return json({ items: history, next_cursor: null });
         if (route === `/monitors/${id}/items`)
@@ -355,6 +413,13 @@ const server = createServer(async (req, res) => {
         }
         return json({ code: "fixture_unknown_route" }, 404);
       }
+      if (path === "/api/interest-feed")
+        return json({
+          items: [],
+          scanned_event_count: 0,
+          has_more: false,
+          next_cursor: null,
+        });
       return json({ code: "unavailable" }, 503);
     }
     const response = await fetch(`http://127.0.0.1:${nextPort}${req.url}`, {

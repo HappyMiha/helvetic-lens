@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from . import auction_repository as repository
+from . import auction_today
 from . import auction_workflow as workflow
 from .auction_contracts import AuctionProfile
 from .auth import Identity
@@ -75,6 +76,21 @@ def auction_router(service, settings):
     def preview(body: ConfigurationBody, actor: Identity = Depends(identity)):
         with service.db.session() as session:
             return workflow.preview(session, actor.user_id, body.configuration.model_dump(mode="json"), now=_now())
+
+    @router.get("/today")
+    def today(cursor: UUID | None = None, limit: int = Query(default=20, ge=1, le=50), actor: Identity = Depends(identity)):
+        with service.db.session() as session:
+            return auction_today.page(session, settings, actor.user_id, now=_now(), cursor=str(cursor) if cursor else None, limit=limit)
+
+    @router.get("/inbox")
+    def inbox(cursor: UUID | None = None, limit: int = Query(default=20, ge=1, le=50), actor: Identity = Depends(identity)):
+        with service.db.session() as session:
+            return auction_today.page(session, settings, actor.user_id, now=_now(), cursor=str(cursor) if cursor else None, limit=limit, inbox=True)
+
+    @router.get("/monitors/{monitor_id}/events/{event_id}")
+    def event(monitor_id: UUID, event_id: UUID, actor: Identity = Depends(identity)):
+        with service.db.session() as session:
+            return auction_today.detail(session, actor.user_id, str(monitor_id), str(event_id), now=_now())
 
     @router.get("/monitors")
     def monitors(limit: int = Query(default=20, ge=1, le=100), after_id: UUID | None = None,
