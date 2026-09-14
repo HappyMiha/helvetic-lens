@@ -5,6 +5,22 @@
 
 ## Active scope, 13 September 2026
 
+**Complete review feature scope, 14 September:** MV2-047/048's private
+source-backed candidate-to-review journey: source preview/start/pause, bounded
+scheduled projection for all portfolio brands, current explained candidates,
+immutable internal decisions, retained before/after changes and reopened review,
+and owner-private Today/Inbox links. Retain reviewed calibration revisions and
+invalidate current decisions when source/profile/evaluation evidence changes.
+Exact/owner-interest matching can operate with clearly disclosed unavailable
+similarity calibration; missing calibration never becomes a negative clearance
+result. Source data remain in the permission-scoped journal. Public writes cannot
+grant source rights or invent calibration. Include five-language desktop/mobile
+readers, membership/rights/retention/CAS tests, replay/reversion/cursor tests and
+the required migration/lint/build gates before publication. Native acquisition,
+actual IPI terms/account/traversal/identity evidence, reviewed quality, legal
+deadline rules, permitted export/delivery and human acceptance remain separate
+open requirements; the full B7 direction is not complete at this feature boundary.
+
 MV2-046/047/048 cover the complete organization-scoped brand portfolio, official
 IPI publication/register evidence, explained exact/lexical/phonetic candidates,
 goods/services relevance, retained decisions and changes, verified deadline
@@ -13,9 +29,55 @@ or external counsel message is sent by a review action. This work proceeds under
 the user's authorization to finish all nine active directions; C4 stays deferred.
 
 Dependencies include the shared profile/evidence/review contracts (MV2-043 and
-the dependencies listed in each task). The entire direction remains unpublished
-until its user-facing workflow and required checks are complete. Native source
+the dependencies listed in each task). Tested user-facing features are published
+as complete outcomes while the wider direction stays IN PROGRESS. Native source
 rights and human quality/acceptance evidence remain independent gates.
+
+## Private register review journey — 14 September 2026
+
+Implemented source-readiness preview, start/pause and bounded scheduled journal
+projection for private multi-brand portfolios. The source and calibration registries
+are internal; public requests cannot authorize source use or supply thresholds.
+Current exact-name and owner-interest matching can operate with an explicit
+similarity-language gap. All five language readers expose the section, readiness,
+runtime clocks, candidates, matching methods and explicit goods/service phrases.
+Class overlap and a name candidate never establish a legal conflict or clearance.
+
+The owner can mark reviewed/relevant/not relevant/keep monitoring/for counsel.
+Each decision checks membership, ownership, current profile/evaluation/source
+generation, evidence freshness and decision rights under the monitor lock. A
+version/hash conflict cannot silently overwrite another review. Counsel is an
+internal marker only: no outreach, filing, export, email or computed legal deadline.
+Source payloads remain in the permission-scoped journal, not copied into private
+events or decisions. New private tables use organization-scoped foreign keys and
+the migration `b4f17235d3b6` follows `a3e06124c2a5`.
+
+Retained material register revisions replay in order, including owner A→B→A
+between checks. Changed register facts, profile or calibration reopen the review
+while preserving the previous decision. Transport-only hashes do not reopen it.
+Missing intermediate evidence is explicitly recorded. Owner-private Today (48h)
+and Inbox link the exact event, with independently readable before/at/current
+evidence and private decision history. Pagination remains bounded even when all
+examined evidence is filtered. Expiry/revocation invalidates current reviews and
+redacts source snapshots; visibility/focus/session changes refetch private UI.
+
+Validation: 103 combined source, portfolio, matching, workflow, history, HTTP and
+Monitoring Centre tests passed (77.52s). Two focused follow-up checks passed
+(4.11s): malformed retained calibration and migration downgrade/re-upgrade
+preserving source and portfolio tables. The 32 browser checkpoints cover the
+existing multi-brand editor plus the complete start→review→owner change→Inbox
+journey, conflict handling, private counsel marker, source revocation, all five
+languages at 390px, pause/archive/delete and membership denial. Desktop, mobile
+editor and mobile review axe audits reported zero violations. Root build, exact
+Ruff and required backlog consistency checks are recorded at publication.
+Browser data and calibration are synthetic engineering evidence, not legal
+quality or actual IPI acquisition acceptance. No production source grant or email
+was created by these checks.
+
+Release activation is independent: the public main site currently reports
+`git-f8a4304e658a`. This follow-up is not yet verified active. MV2-046/047/048 remain
+IN PROGRESS for real IPI access, approved traversal/identity/coverage, calibrated
+quality, legal deadline rules, permitted export/delivery and human acceptance.
 
 ## Current official source evidence
 

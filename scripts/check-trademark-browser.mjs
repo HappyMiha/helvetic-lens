@@ -1,3 +1,4 @@
+import {checkReview} from "./check-trademark-review-journey.mjs";
 import assert from "node:assert/strict";
 import {spawn} from "node:child_process";
 import {existsSync} from "node:fs";
@@ -47,6 +48,7 @@ try{
   await until(`document.querySelector('[data-trademark-form] [role=alert]')?.textContent===${JSON.stringify(c.conflict)}`);
   assert.equal(await evaluate("document.querySelector('[data-trademark-form] > fieldset > label input').value"),"Conflict retains my changes");
   await json("/__qa/state",{conflict:false});await click(c.cancel);record("version-conflict-preserves-unsaved-input-until-cancelled");
+  await checkReview({click,until,evaluate,json,call,record,audit,base});
   await click(c.archive);await until(`document.querySelector('[data-trademark-detail]')?.textContent.includes(${JSON.stringify(c.archived)})`);await click(c.remove);await click(c.cancel);assert.ok(await evaluate("!!document.querySelector('[data-trademark-detail]')"));record("archive-retains-history-and-delete-can-be-cancelled");
   await click(c.remove);await evaluate(`(()=>{const buttons=[...document.querySelectorAll('[data-trademark-detail] button')].filter(b=>b.textContent.trim()===${JSON.stringify(c.remove)});buttons.at(-1).click();})()`);await until(`document.querySelector('[data-trademark-watch] aside')?.textContent.includes(${JSON.stringify(c.empty)})`);record("confirmed-delete-removes-portfolio");
   await json("/__qa/state",{manager:false});await navigate();assert.ok(!await evaluate(`!![...document.querySelectorAll('[data-trademark-watch] button')].find(b=>b.textContent.trim()===${JSON.stringify(c.create)})`));record("viewer-cannot-create-or-edit-portfolios");
@@ -55,7 +57,7 @@ try{
   await evaluate("document.querySelector('[data-trademark-form]').scrollIntoView({block:'start'})");await audit("mobile");
   await fill('[data-trademark-form] > fieldset > label input',"Hidden after denial");await fill('[data-trademark-brand] > label input',"PRIVATE-BRAND");await json("/__qa/state",{denied:true});await click(c.save);await until("!document.querySelector('[data-trademark-form]')");
   assert.ok(!await evaluate("document.body.textContent.includes('PRIVATE-BRAND')"));record("mutation-membership-denial-redacts-private-form");
-  const requests=await json("/__qa/requests");assert.ok(!requests.some(r=>/\/start|\/email|source.*poll|\/send/.test(r.path)));record("no-ipi-activation-email-or-legal-action");
+  const requests=await json("/__qa/requests");assert.ok(!requests.some(r=>/\/email|source.*poll|\/send/.test(r.path)));record("no-native-ipi-network-email-or-legal-action");
 }finally{
   await writeFile(join(output,"trademark-browser-checks.json"),JSON.stringify(checks,null,2));cdp?.close();child.kill();await json("/__qa/finish",{});
 }

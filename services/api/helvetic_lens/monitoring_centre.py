@@ -24,6 +24,7 @@ from .river_models import RiverMonitor
 from .road_models import RoadMonitor
 from .tender_models import TenderMonitor
 from .trademark_models import TrademarkMonitor
+from .trademark_workflow_models import TrademarkRuntime
 
 MODELS = {"air": AirMonitor, "pollen": MonitoringSubject, "river": RiverMonitor, "tenders": TenderMonitor,
           "commute": CommuteMonitor, "traffic": RoadMonitor, "warnings": HazardMonitor, "ip": TrademarkMonitor, "auctions": AuctionMonitor}
@@ -183,9 +184,10 @@ def summary(session, settings, kind, row, capability):
         health = runtime.health if runtime else "not_started"
         href = f"/auction-watch?monitor={row.id}"
     elif kind == "ip":
-        config, runtime = row.configuration, None
-        health = "source_unavailable"
-        href = f"/{'trademark' if kind == 'ip' else 'auction'}-watch?monitor={row.id}"
+        config = row.configuration
+        runtime = session.get(TrademarkRuntime, row.id)
+        health = runtime.health if runtime else "not_started"
+        href = f"/trademark-watch?monitor={row.id}"
     elif kind == "tenders":
         config = row.configuration
         health = row.health if settings.simap_public_source_enabled else "source_unavailable"
@@ -207,8 +209,8 @@ def summary(session, settings, kind, row, capability):
     health = "disabled" if not enabled else "not_started" if row.status == "draft" else health
     # Metadata remains manageable/discoverable when a source is disabled. Never
     # expose source values or read its runtime evidence through the kill switch.
-    last_check = getattr(runtime, "last_check_at" if kind == "auctions" else "last_poll_at", None)
-    next_check = getattr(runtime, "next_check_at" if kind == "auctions" else "next_poll_at", None)
+    last_check = getattr(runtime, "last_check_at" if kind in {"auctions", "ip"} else "last_poll_at", None)
+    next_check = getattr(runtime, "next_check_at" if kind in {"auctions", "ip"} else "next_poll_at", None)
     return {
         "id": row.id,
         "domain": kind,

@@ -28,6 +28,7 @@ from . import hazard_source_models as hazard_source_models
 from . import road_models as road_models
 from . import trademark_models as trademark_models
 from . import trademark_source_models as trademark_source_models
+from . import trademark_workflow_models as trademark_workflow_models
 from .air_models import AirChange, AirMonitor, AirRevision
 from .commute_models import (
     CommuteConfigurationRevision,
@@ -1776,6 +1777,11 @@ ORGANIZATION_SCOPED_MODELS = (
     hazard_models.HazardMonitor,
     trademark_models.TrademarkMonitor,
     trademark_models.TrademarkConfigurationRevision,
+    trademark_workflow_models.TrademarkRuntime,
+    trademark_workflow_models.TrademarkProjectionCursor,
+    trademark_workflow_models.TrademarkCandidate,
+    trademark_workflow_models.TrademarkCandidateEvent,
+    trademark_workflow_models.TrademarkReview,
     hazard_models.HazardConfigurationRevision,
     hazard_models.HazardDevelopment,
     hazard_models.HazardEventRevision,

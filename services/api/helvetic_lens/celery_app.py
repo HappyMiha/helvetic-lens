@@ -91,6 +91,9 @@ celery_app.conf.update(
         "schedule-auction-monitoring": {
             "task": "helvetic_lens.schedule_auction_monitoring", "schedule": 15.0,
         },
+        "schedule-trademark-monitoring": {
+            "task": "helvetic_lens.schedule_trademark_monitoring", "schedule": 15.0,
+        },
         "schedule-auction-reminders": {
             "task": "helvetic_lens.schedule_auction_reminders", "schedule": 15.0,
         },
@@ -352,6 +355,16 @@ def cleanup_auction_source():
     database = Database(settings)
     try:
         return cleanup(database)
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.schedule_trademark_monitoring")
+def schedule_trademark_monitoring():
+    from .trademark_jobs import refresh_due
+    database = Database(settings)
+    try:
+        return refresh_due(database, settings)
     finally:
         database.engine.dispose()
 

@@ -5,7 +5,7 @@ const en = {
     "Save the brands and goods or services you want to monitor in Switzerland.",
   private: "Your portfolios are private to your account in this organization.",
   source:
-    "Official IPI access and source rights are not configured. Saving a portfolio creates a draft; it does not start a search or send email.",
+    "Saving a portfolio creates a private draft. Check source readiness before starting monitoring; no email is sent.",
   assessment:
     "Name similarity produces candidates for IP review. It does not establish infringement or confirm a legal conflict. A class match alone does not prove similar goods or services.",
   calibration:
@@ -68,7 +68,7 @@ export const trademarkCopy: Record<Locale, Record<keyof typeof en, string>> = {
     private:
       "Ihre Portfolios sind innerhalb dieser Organisation nur für Ihr Konto sichtbar.",
     source:
-      "Der offizielle IGE-Zugang und die Quellenrechte sind nicht eingerichtet. Speichern erstellt einen Entwurf; es startet keine Suche und versendet keine E-Mails.",
+      "Das Speichern erstellt einen privaten Entwurf. Prüfen Sie vor dem Start die Quellenbereitschaft; es wird keine E-Mail gesendet.",
     assessment:
       "Namensähnlichkeit liefert Kandidaten zur IP-Prüfung. Sie bestätigt weder eine Verletzung noch einen Rechtskonflikt. Dieselbe Klasse allein beweist keine ähnlichen Waren oder Dienstleistungen.",
     calibration:
@@ -132,7 +132,7 @@ export const trademarkCopy: Record<Locale, Record<keyof typeof en, string>> = {
     private:
       "Vos portefeuilles sont privés à votre compte dans cette organisation.",
     source:
-      "L’accès officiel à l’IPI et les droits de la source ne sont pas configurés. L’enregistrement crée un brouillon ; il ne lance aucune recherche et n’envoie aucun e-mail.",
+      "L’enregistrement crée un brouillon privé. Vérifiez les sources avant de démarrer ; aucun e-mail n’est envoyé.",
     assessment:
       "La similitude des noms produit des candidats à examiner en PI. Elle ne confirme ni contrefaçon ni conflit juridique. Une classe commune ne prouve pas à elle seule la similitude des produits ou services.",
     calibration:
@@ -193,7 +193,7 @@ export const trademarkCopy: Record<Locale, Record<keyof typeof en, string>> = {
     private:
       "I portafogli sono privati per il tuo account in questa organizzazione.",
     source:
-      "L’accesso ufficiale IPI e i diritti della fonte non sono configurati. Il salvataggio crea una bozza; non avvia ricerche né invia e-mail.",
+      "Il salvataggio crea una bozza privata. Verifica le fonti prima dell’avvio; non viene inviata alcuna email.",
     assessment:
       "La somiglianza dei nomi genera candidati da esaminare per la PI. Non conferma contraffazioni o conflitti legali. Una classe comune da sola non dimostra prodotti o servizi simili.",
     calibration:
@@ -255,7 +255,7 @@ export const trademarkCopy: Record<Locale, Record<keyof typeof en, string>> = {
     private:
       "Voss portfolios èn privats per Voss conto en questa organisaziun.",
     source:
-      "L’access uffizial IPI ed ils dretgs da la funtauna n’èn betg configurads. Memorisar creescha in sboz; quai na lantscha nagina tschertga e na trametta nagins e-mails.",
+      "Memorisar creescha in sboz privat. Verifitgai las funtaunas avant il start; nagin e-mail vegn tramess.",
     assessment:
       "La sumeglientscha da nums producescha candidats per ina controlla da PI. Ella na conferma nagina violaziun u conflict giuridic. La medema classa suletta na cumprova betg products u servetschs sumegliants.",
     calibration:

@@ -23,6 +23,12 @@ export type TrademarkPortfolio = {
   brands: Brand[];
 };
 export type TrademarkMonitor = {
+  runtime?: {
+    health: string;
+    last_check_at: string | null;
+    next_check_at: string | null;
+    unavailable_count: number;
+  };
   id: string;
   configuration: TrademarkPortfolio;
   status: "draft" | "active" | "paused" | "archived";

@@ -258,21 +258,22 @@ export const SECTION_GUIDES: SectionGuide[] = [
   },
   {
     id: "trademark-watch",
-    title: "Prepare a private Swiss trademark portfolio",
+    title: "Monitor and privately review Swiss trademark candidates",
     purpose:
-      "Save multiple brands, explicit word variants and goods/services interests for later source-backed IP review.",
+      "Follow permitted register records for your brands, inspect changes and retain private IP review decisions.",
     first: [
       "Name the portfolio, add brands and select each name language and matching preferences.",
       "Enter relevant Nice class numbers and explicit goods/services phrase variants, then save the draft.",
+      "Check source readiness, start the portfolio and open a candidate or an exact change from Today/Inbox.",
     ],
     data: [
       "Portfolios and configuration history are private to their owner in the selected organization.",
       "Saving does not search IPI, grant source rights or send email. Similarity is a candidate for IP review, never confirmed infringement.",
       "The same class number alone does not establish goods/services similarity. Unsupported language methods and missing calibration remain unavailable.",
     ],
-    wait: "Draft operations validate and store local portfolio settings. They do not start source collection or AI work.",
+    wait: "Active portfolios periodically check the permitted register journal in bounded batches. Missing source evidence or calibration is disclosed; checking the journal does not acquire new IPI access.",
     setup:
-      "The draft feature must be enabled. Official IPI access, approved data uses, calibration and the complete live workflow remain separate prerequisites.",
+      "Current register evidence with matching/display rights is required to start. Similar-name methods need reviewed language calibration. Source acquisition, legal deadline rules and export/email permissions remain separate prerequisites.",
     controls: [
       refresh,
       pages,
@@ -313,16 +314,43 @@ export const SECTION_GUIDES: SectionGuide[] = [
       c(
         "trademark-archive",
         "Archive portfolio",
-        "Archives a draft while retaining its private history.",
-        "Use for a portfolio you no longer need.",
+        "Archives a draft or paused portfolio while retaining its private history.",
+        "Pause an active portfolio first. Use for a portfolio you no longer need.",
         "Save a change",
       ),
       c(
         "trademark-delete",
         "Delete portfolio",
-        "Permanently removes an archived portfolio and private configuration history after confirmation.",
+        "Permanently removes an archived portfolio, its candidates, decisions and private history after confirmation.",
         "Archive first and read the deletion confirmation.",
         "Remove data",
+      ),
+      c(
+        "trademark-readiness",
+        "Check source readiness / Start monitoring",
+        "Checks current source and language readiness. Start activates periodic private candidate projection.",
+        "Review unavailable languages and source coverage before starting.",
+        "Save a change",
+      ),
+      c(
+        "trademark-pause",
+        "Pause monitoring / Check register updates",
+        "Pausing stops scheduled projection and permits editing. Checking reads available journal updates immediately.",
+        "Neither action fetches an unapproved source or sends email.",
+        "Save a change",
+      ),
+      c(
+        "trademark-review",
+        "Reviewed / Relevant / Not relevant / Keep monitoring / Mark for counsel",
+        "Saves an internal decision against current evidence. Material register or evaluation changes reopen review.",
+        "Inspect current facts and explanations. Marking for counsel contacts nobody and sets no legal deadline.",
+        "Save a change",
+      ),
+      c(
+        "trademark-changes",
+        "Open evidence and review / Register change history",
+        "Reads the exact detected change, before/after evidence and separate current assessment.",
+        "Expired or revoked source facts are unavailable; prior private decisions remain retained.",
       ),
     ],
   },

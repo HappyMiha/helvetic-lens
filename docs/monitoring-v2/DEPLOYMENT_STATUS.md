@@ -1,5 +1,15 @@
 # Monitoring deployment status — 14 September 2026
 
+## Trademark private review follow-up — 14 September 2026
+
+The main-site `/api/ready` still reports `git-f8a4304e658a`, instance `main`,
+status ready and database/Redis true. The complete private Trademark candidate,
+review, register-change and Today/Inbox feature passed 103 combined server tests,
+two focused follow-up checks and 32 browser checkpoints. Its activation is not
+verified. No deployment was restarted or duplicated; the retired Monitoring host
+was not touched. All nine sections remain enabled and visible; real source access
+and acceptance stay separate. See [the feature evidence](TRADEMARK_WATCH.md#private-register-review-journey--14-september-2026).
+
 ## All-nine navigation activated — 14 September 2026
 
 A fresh public main-site `/api/ready` reports `git-f8a4304e658a`, instance

@@ -4,6 +4,7 @@ import { AirToday } from "./air-watch";
 import { CommuteToday } from "./commute-today";
 import { RoadToday } from "./road-today";
 import { HazardToday } from "./hazard-today";
+import { TrademarkToday } from "./trademark-today";
 import { AuctionToday } from "./auction-today";
 import { PollenToday } from "./pollen-today";
 import { FeedTopicList } from "./feed-topic-list";
@@ -159,6 +160,7 @@ export function InterestFeedPage() {
       <RoadToday key={`road-${pollenRefresh}`} />
       <HazardToday key={`hazard-${pollenRefresh}`} />
       <AuctionToday key={`auctions-${pollenRefresh}`} />
+      <TrademarkToday key={`trademarks-${pollenRefresh}`} />
       <nav className="flex flex-wrap gap-x-5 gap-y-2 mb-5 text-sm">
         <Link
           className="underline min-h-[44px] inline-flex items-center"

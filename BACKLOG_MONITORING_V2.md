@@ -1697,6 +1697,8 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Local evidence, 13 September 2026:** Private portfolio create/edit/history/archive/delete, CSRF and owner isolation are implemented; API/repository/Compose/migration checks passed (11), Monitoring Centre regression passed (18), and the root frontend build passed. The five-language form passed 17 synthetic browser checks and two axe scans (zero violations, existing Marvin contrast incomplete). Candidate review, register-change reopening, deadlines, Today/Inbox and permitted export/delivery remain unfinished. No source is activated and no incomplete feature is published. See [evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#local-implementation-evidence-13-september-2026). Status remains IN PROGRESS.
 
+**Private review feature, 14 September 2026:** Implemented permitted-source preview/start/pause, bounded scheduled candidate discovery, immutable private decisions, retained calibration provenance, register-change reopening and exact Today/Inbox evidence in all five languages. The 103 combined server checks plus two focused checks and 32 browser checkpoints passed; desktop/mobile axe audits reported zero violations. [Scope and acceptance evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#private-register-review-journey--14-september-2026) distinguish this complete user-facing feature from real source/quality, legal deadline, export/delivery, activation and human acceptance requirements. Index and detail remain IN PROGRESS.
+
 <a id="mv2-049"></a>
 
 ### MV2-049 — B8: Official Ticino auctions

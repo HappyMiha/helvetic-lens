@@ -48,7 +48,16 @@ def _view(row):
 
 
 def get_monitor(session, user_id, monitor_id):
-    return _view(owned(session, user_id, monitor_id))
+    from .trademark_sources import _utc
+    from .trademark_workflow_models import TrademarkRuntime
+    row = owned(session, user_id, monitor_id)
+    result = _view(row)
+    runtime = session.get(TrademarkRuntime, row.id)
+    if runtime:
+        result["runtime"] = {"health": runtime.health, "unavailable_count": runtime.unavailable_count,
+            "last_check_at": _utc(runtime.last_check_at).isoformat() if runtime.last_check_at else None,
+            "next_check_at": _utc(runtime.next_check_at).isoformat() if runtime.next_check_at else None}
+    return result
 
 
 def list_monitors(session, user_id, *, limit=20, after_id=None):
@@ -155,11 +164,11 @@ def archive_monitor(session, user_id, monitor_id, version):
         _fail("trademark_version_conflict")
     if row.status == "archived":
         return _view(row)
-    if row.status != "draft":
+    if row.status not in {"draft", "paused"}:
         _fail("trademark_stop_before_archive")
     changed = session.execute(update(TrademarkMonitor).where(TrademarkMonitor.id == row.id,
         TrademarkMonitor.organization_id == row.organization_id, TrademarkMonitor.owner_user_id == user_id,
-        TrademarkMonitor.version == version, TrademarkMonitor.status == "draft").values(status="archived", version=version + 1)
+        TrademarkMonitor.version == version, TrademarkMonitor.status.in_({"draft", "paused"})).values(status="archived", version=version + 1)
         .execution_options(synchronize_session=False))
     if changed.rowcount != 1:
         _fail("trademark_version_conflict")

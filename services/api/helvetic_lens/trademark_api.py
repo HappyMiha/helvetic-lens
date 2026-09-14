@@ -1,10 +1,13 @@
 """Private brand portfolio drafts under existing authentication/CSRF/tenant gates."""
 
+from datetime import UTC, datetime
+from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
+from . import trademark_history, trademark_today, trademark_workflow
 from . import trademark_repository as repository
 from .auth import Identity
 from .config import DomainError
@@ -32,6 +35,15 @@ class EditBody(ConfigurationBody, VersionBody):
     pass
 
 
+class ReviewBody(VersionBody):
+    expected_evaluation_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
+    decision: Literal["reviewed", "relevant", "not_relevant", "monitor", "counsel"]
+
+
+def _now():
+    return datetime.now(UTC)
+
+
 def trademark_router(service, settings):
     def identity(request: Request, response: Response):
         response.headers["Cache-Control"] = "no-store"
@@ -49,12 +61,13 @@ def trademark_router(service, settings):
     @router.get("/capabilities")
     def capabilities():
         return {"drafts_available": True, "start_available": False, "live_results_checked": False,
-                "blocking_reasons": ["trademark_source_not_configured", "trademark_similarity_calibration_unavailable"]}
+                "tracking_available": True, "profile_preview_required": True,
+                "blocking_reasons": ["trademark_profile_preview_required"]}
 
     @router.post("/preview")
     def preview(body: ConfigurationBody, actor: Identity = Depends(identity)):
         with service.db.session() as session:
-            return repository.preview(session, actor.user_id, body.configuration.model_dump(mode="json"))
+            return trademark_workflow.preview(session, actor.user_id, body.configuration.model_dump(mode="json"), now=_now())
 
     @router.get("/monitors")
     def monitors(limit: int = Query(default=20, ge=1, le=100), after_id: UUID | None = None,
@@ -101,5 +114,73 @@ def trademark_router(service, settings):
             repository.delete_monitor(session, actor.user_id, str(monitor_id), body.expected_version)
             session.commit()
             return {"deleted": True}
+
+    @router.post("/monitors/{monitor_id}/start")
+    def start(monitor_id: UUID, body: VersionBody, actor: Identity = Depends(identity)):
+        with service.db.session() as session:
+            result = trademark_workflow.start(session, actor.user_id, str(monitor_id), body.expected_version, now=_now())
+            session.commit()
+            return result
+
+    @router.post("/monitors/{monitor_id}/pause")
+    def pause(monitor_id: UUID, body: VersionBody, actor: Identity = Depends(identity)):
+        with service.db.session() as session:
+            result = trademark_workflow.pause(session, actor.user_id, str(monitor_id), body.expected_version)
+            session.commit()
+            return result
+
+    @router.post("/monitors/{monitor_id}/refresh")
+    def refresh(monitor_id: UUID, actor: Identity = Depends(identity)):
+        with service.db.session() as session:
+            result = trademark_workflow.refresh(session, actor.user_id, str(monitor_id), now=_now())
+            session.commit()
+            return result
+
+    @router.get("/monitors/{monitor_id}/candidates")
+    def candidates(monitor_id: UUID, after_id: UUID | None = None, limit: int = Query(default=20, ge=1, le=100), actor: Identity = Depends(identity)):
+        with service.db.session() as session:
+            return trademark_workflow.list_candidates(session, actor.user_id, str(monitor_id), now=_now(),
+                after=str(after_id) if after_id else None, limit=limit)
+
+    @router.get("/monitors/{monitor_id}/candidates/{candidate_id}")
+    def candidate(monitor_id: UUID, candidate_id: UUID, actor: Identity = Depends(identity)):
+        with service.db.session() as session:
+            monitor, row = trademark_workflow.candidate_for(session, actor.user_id, str(monitor_id), str(candidate_id))
+            return trademark_workflow.candidate_view(session, monitor, row, now=_now())
+
+    @router.post("/monitors/{monitor_id}/candidates/{candidate_id}/review")
+    def review(monitor_id: UUID, candidate_id: UUID, body: ReviewBody, actor: Identity = Depends(identity)):
+        with service.db.session() as session:
+            result = trademark_workflow.review(session, actor.user_id, str(monitor_id), str(candidate_id),
+                expected_version=body.expected_version, expected_evaluation_hash=body.expected_evaluation_hash, decision=body.decision, now=_now())
+            session.commit()
+            return result
+
+    @router.get("/monitors/{monitor_id}/candidates/{candidate_id}/history")
+    def history(monitor_id: UUID, candidate_id: UUID, before: int | None = Query(default=None, ge=1),
+                limit: int = Query(default=20, ge=1, le=100), actor: Identity = Depends(identity)):
+        with service.db.session() as session:
+            return trademark_history.history(session, actor.user_id, str(monitor_id), str(candidate_id), now=_now(), before=before, limit=limit)
+
+    @router.get("/monitors/{monitor_id}/candidates/{candidate_id}/reviews")
+    def reviews(monitor_id: UUID, candidate_id: UUID, before: int | None = Query(default=None, ge=1),
+                limit: int = Query(default=20, ge=1, le=100), actor: Identity = Depends(identity)):
+        with service.db.session() as session:
+            return trademark_history.reviews(session, actor.user_id, str(monitor_id), str(candidate_id), before=before, limit=limit)
+
+    @router.get("/monitors/{monitor_id}/candidates/{candidate_id}/events/{event_id}")
+    def event(monitor_id: UUID, candidate_id: UUID, event_id: UUID, actor: Identity = Depends(identity)):
+        with service.db.session() as session:
+            return trademark_history.event_detail(session, actor.user_id, str(monitor_id), str(candidate_id), str(event_id), now=_now())
+
+    @router.get("/today")
+    def today(cursor: UUID | None = None, limit: int = Query(default=20, ge=1, le=50), actor: Identity = Depends(identity)):
+        with service.db.session() as session:
+            return trademark_today.page(session, settings, actor.user_id, now=_now(), cursor=str(cursor) if cursor else None, limit=limit)
+
+    @router.get("/inbox")
+    def inbox(cursor: UUID | None = None, limit: int = Query(default=20, ge=1, le=50), actor: Identity = Depends(identity)):
+        with service.db.session() as session:
+            return trademark_today.page(session, settings, actor.user_id, now=_now(), inbox=True, cursor=str(cursor) if cursor else None, limit=limit)
 
     return router

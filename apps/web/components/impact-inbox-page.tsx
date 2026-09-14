@@ -3,6 +3,7 @@
 import { MonitorThis } from "./monitor-this";
 import { RoadToday } from "./road-today";
 import { HazardToday } from "./hazard-today";
+import { TrademarkToday } from "./trademark-today";
 import { AuctionToday } from "./auction-today";
 import { useState } from "react";
 import Link from "next/link";
@@ -483,6 +484,7 @@ export function ImpactInboxPage() {
       <RoadToday inbox />
       <HazardToday inbox />
       <AuctionToday inbox />
+      <TrademarkToday inbox />
       <span className="eyebrow">{t("impact.eyebrow")}</span>
       <h2>{t("impact.title")}</h2>
       <p className="muted">{t("impact.body")}</p>
