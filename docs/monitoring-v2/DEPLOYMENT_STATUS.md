@@ -10,11 +10,19 @@ automatic refresh after successful review actions. The affected API suite passed
 isolated build and 22 built-browser/axe checkpoints passed. See
 [scope, evidence and limits](TODAY_COUNTS.md).
 
-This is publication evidence, not verified activation. The last refreshed
-production status was `1188f18190e0` with `4434cf94da05` still Deploying. No active
-deployment/test run was interrupted or duplicated. The retired Monitoring
-deployment was not touched; source access, real-user acceptance and larger
-workspace capacity remain independent gates.
+The feature was pushed as `dcfbb1fb86337565541e43392f35193b6851cfe2` to main.
+Authenticated Refresh then confirmed production still at `1188f18190e0` and a
+new automatic attempt for `660edacc8e7a`, started at 13:00:03 local, Deploying.
+The preceding `4434cf94da05` attempt finished Failed at 12:58:59: 4,293 passed,
+14 skipped and one Trademark export fixture failure after 4,932.50 seconds.
+The Tender dispatcher regression is absent from that failure summary. The sole
+remaining reported failure is already repaired by `eed7fde`, which is included
+in the running `660edac` candidate. No duplicate fix or deployment retry was made.
+
+These records do not verify activation of `660edac` or the newer Today counts.
+No active deployment/test run was interrupted or duplicated. The retired
+Monitoring deployment was not touched; source access, real-user acceptance and
+larger workspace capacity remain independent gates.
 
 ## Monitoring companion guidance publication candidate — 14 September 2026
 
