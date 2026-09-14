@@ -75,6 +75,20 @@ def trademark_router(service, settings):
                 "tracking_available": True, "profile_preview_required": True,
                 "blocking_reasons": ["trademark_profile_preview_required"]}
 
+    @router.get("/source-status")
+    def source_status():
+        from . import ipi_acquisition, ipi_collector
+        state = ipi_collector.readiness(settings)
+        if state != "configured":
+            return {"state": state, "coverage_verified": False, "traversal": None}
+        with service.db.session() as session:
+            try:
+                ipi_acquisition._scope(session, settings.ipi_source_permission_id, _now())
+                result = ipi_acquisition.read_status(session, settings.ipi_source_permission_id, now=_now())
+                return {"state": "configured", "coverage_verified": False, "traversal": result}
+            except DomainError:
+                return {"state": "permission_unavailable", "coverage_verified": False, "traversal": None}
+
     @router.post("/preview")
     def preview(body: ConfigurationBody, actor: Identity = Depends(identity)):
         with service.db.session() as session:

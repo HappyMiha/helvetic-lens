@@ -40,6 +40,7 @@ const server=createServer(async(req,res)=>{
         const response=reviewRoute(route,req.method,body,monitor,state);
         if(response)return json(response.value,response.status);
         if(route==="/capabilities")return json({drafts_available:true,start_available:false,live_results_checked:false});
+        if(route==="/source-status")return json(state.ipiStatus || {state:"permission_required",coverage_verified:false,traversal:null});
         if(route==="/monitors"){
           if(req.method==="POST"){
             monitor={id,status:"draft",configuration:body.configuration,version:1,revision:1};history=[{revision:1,configuration:structuredClone(body.configuration)}];return json(monitor,201);

@@ -1622,6 +1622,26 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ### MV2-046 — B7: Official trademark publications and register updates
 
+**Native acquisition scope, 14 September 2026 (before implementation):** Complete
+durable native identity, atomic restartable page collection, retention-bound parent
+evidence, publisher backoff and visible source readiness through the existing
+private candidate journey. Repeated records during ascending traversal must not
+be mistaken for a snapshot or complete coverage. See [scope, dependencies and
+acceptance](docs/monitoring-v2/TRADEMARK_WATCH.md#native-acquisition-feature-scope--14-september-2026).
+Actual IPI access/rights, production volume, calibration and human acceptance
+remain open. Keep IN PROGRESS; publish only the completed user-facing feature.
+
+**Native acquisition feature evidence, 14 September 2026:** The permitted native
+IPI collector now reaches private candidates/review through durable identities,
+atomic pages, restartable continuations, encrypted reusable OIDC tokens and
+publisher backoff. The source-status panel is visible in all five languages and
+production collection defaults to enabled while missing access stays explicit.
+The final affected run passed 55 tests after the broader combined run; additional
+boundary checks, 49 browser checkpoints and the root build passed. See
+[implementation, exact checks and operational limits](docs/monitoring-v2/TRADEMARK_WATCH.md#native-acquisition-implementation-and-verification).
+Real IPI access, catalogue volume/coverage, calibration, legal deadline rules,
+human acceptance and actual release remain unverified. Status stays IN PROGRESS.
+
 **Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Integration · **Size:** L
 
 **Dependencies:** [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071). **Requirements:** §16; AC-B7-02,06,08,10.

@@ -11,6 +11,38 @@ from helvetic_lens.main import create_app
 ROOT = "/api/trademark-watch"
 
 
+def test_source_status_is_read_only_authenticated_and_never_exposes_credentials(api, monkeypatch):
+    from pydantic import SecretStr
+    from test_ipi_acquisition import claim, permission
+    from test_trademark_sources import NOW
+
+    from helvetic_lens import trademark_api
+    from helvetic_lens.trademark_source_models import TrademarkSourcePermission
+
+    client, app, settings = api
+    monkeypatch.setattr(trademark_api, "_now", lambda: NOW)
+    endpoint = ROOT + "/source-status"
+    assert client.get(endpoint).json()["state"] == "permission_required"
+    database = app.state.service.db
+    approved = permission(database)
+    settings.ipi_source_permission_id = approved
+    assert client.get(endpoint).json()["state"] == "credentials_required"
+    settings.ipi_username, settings.ipi_password = SecretStr("fixture@example.invalid"), SecretStr("secret-never-disclosed")
+    ticket = claim(database, approved)
+    status = client.get(endpoint)
+    assert status.headers["cache-control"] == "no-store"
+    assert status.json()["traversal"]["state"] == "running"
+    assert not any(value in status.text for value in ("secret-never-disclosed", "fixture@example.invalid", ticket["lease_token"], "ApiRequest"))
+    with database.session() as session:
+        session.get(TrademarkSourcePermission, approved).revoked_at = NOW
+        session.commit()
+    result = client.get(endpoint).json()
+    assert result == {"state": "permission_unavailable", "coverage_verified": False, "traversal": None}
+    assert client.post(endpoint, headers=_csrf(client)).status_code == 405
+    client.cookies.clear()
+    assert client.get(endpoint).status_code == 401
+
+
 @pytest.fixture
 def api(tmp_path):
     settings = _settings(tmp_path, trademark_watch_enabled=True)

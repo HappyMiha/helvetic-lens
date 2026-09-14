@@ -19,6 +19,7 @@ import styles from "./commute-watch.module.css";
 import ipStyles from "./trademark-watch.module.css";
 
 import { TrademarkTracking } from "./trademark-tracking";
+import { IPISourceStatus } from "./ipi-source-status";
 import { Failure, useData, useMutation } from "./trademark-client";
 
 function BrandForm({
@@ -651,6 +652,7 @@ function Content({
           <p role="status">{c.loading}</p>
         ) : (
           <>
+            <IPISourceStatus revision={revision} />
             <div className={styles.actions}>
               <button onClick={changed}>{c.refresh}</button>
               {canManage && (

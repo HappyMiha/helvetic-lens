@@ -1,5 +1,16 @@
 # Monitoring deployment status — 14 September 2026
 
+## Native IPI acquisition publication candidate — 14 September 2026
+
+The public main-site `/api/ready` still reports `git-3b48a00c92d6`, instance
+`main`, database/Redis true. Native IPI acquisition now passes its private
+candidate/review integration, source-status browser journey and root build;
+see [native acquisition evidence](TRADEMARK_WATCH.md#native-acquisition-implementation-and-verification).
+Its activation is not yet verified. All nine sections and implemented production
+collector switches remain enabled. Actual IPI credentials, source approval,
+catalogue capacity/coverage and human acceptance remain separate. No deployment
+was restarted or duplicated and the retired Monitoring host was not touched.
+
 ## Auction tracking and Inbox activated; counsel export follow-up — 14 September 2026
 
 The public main-site `/api/ready` reports `git-3b48a00c92d6`, instance `main`,

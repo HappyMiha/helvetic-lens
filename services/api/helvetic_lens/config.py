@@ -56,6 +56,10 @@ class Settings(BaseSettings):
     road_watch_enabled: bool = Field(default=False, validation_alias="ROAD_WATCH_ENABLED")
     hazard_watch_enabled: bool = Field(default=False, validation_alias="HAZARD_WATCH_ENABLED")
     trademark_watch_enabled: bool = Field(default=False, validation_alias="TRADEMARK_WATCH_ENABLED")
+    ipi_source_enabled: bool = Field(default=True, validation_alias="IPI_SOURCE_ENABLED")
+    ipi_source_permission_id: str = ""
+    ipi_username: SecretStr = SecretStr("")
+    ipi_password: SecretStr = SecretStr("")
     hazard_source_enabled: bool = Field(default=False, validation_alias="HAZARD_SOURCE_ENABLED")
     hazard_source_permission_id: str = ""
     road_source_enabled: bool = Field(default=False, validation_alias="ROAD_SOURCE_ENABLED")

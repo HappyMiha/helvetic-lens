@@ -320,8 +320,9 @@ def test_cleanup_worker_runs_with_feature_disabled_and_preserves_only_minimal_au
     original = source.cleanup
     monkeypatch.setattr(source, "cleanup", lambda database: original(database, now=NOW + timedelta(seconds=11)))
     result = worker.cleanup_trademark_source.run()
-    assert result == {"raw_rows": 1, "normalized_rows": 1}
-    assert worker.cleanup_trademark_source.run() == {"raw_rows": 0, "normalized_rows": 0}
+    assert result == {"raw_rows": 1, "normalized_rows": 1, "ipi": {"pages": 0, "checkpoints": 0, "tokens": 0}}
+    assert worker.cleanup_trademark_source.run() == {"raw_rows": 0, "normalized_rows": 0,
+        "ipi": {"pages": 0, "checkpoints": 0, "tokens": 0}}
     with db.session() as session:
         row = session.get(TrademarkRegisterRevision, saved["revision_id"])
         assert row.raw_payload is None and row.normalized_payload is None

@@ -371,3 +371,112 @@ proof, the permitted HTTP collector, then the private candidate/review/deadline/
 lifecycle/Today/Inbox and delivery/export workflows. Source accounts, actual source
 approval, calibration and human acceptance remain open. No incomplete feature was
 committed or pushed; MV2-046/047/048 remain IN PROGRESS.
+
+## Native acquisition feature scope — 14 September 2026
+
+Before implementation: finish MV2-046's native IPI ingestion through the existing
+private candidate/review journey. This includes durable business aliases, atomic
+page admission, retained parent response hashes and bounded licensed payloads,
+restartable opaque continuations, source-generation and worker lease checks,
+publisher backoff, scheduled permitted HTTP collection and visible acquisition
+readiness. Validation must exercise interrupted/replayed pages, bad later items,
+identity conflicts, repeated records, permission changes, retention expiry and
+native pages reaching private candidates without crossing workspace boundaries.
+No backend-only checkpoint is a publishable completed feature.
+
+The official [traversal contract](https://www.swissreg.ch/public/apidocs/getting-started/full-traversal.html)
+was rechecked on 14 September. Ascending LastUpdate traversal can repeat updated
+records; completion is not a consistent snapshot. Preserve duplicate and changing
+total evidence instead of rejecting every legitimate repeated record or claiming
+complete Swiss coverage. The [usage limits](https://www.swissreg.ch/public/apidocs/reference/limits.html)
+require Retry-After compliance; use one collector request at a time. The cached
+common XSD supports explicit timezone-aware LastUpdate bounds, but no incremental
+coverage claim is authorized without verified update/deletion semantics.
+
+Dependencies remain the existing journal, native codec, reviewed source permission
+and private workflow. Signed IPI access, real credentials, both requested register
+origins, production retention capacity, source coverage and reviewed calibration
+are unverified. Synthetic grants do not authorize production collection. All nine
+sections remain visible and enabled; missing prerequisites appear inside IP Watch.
+
+### Native acquisition implementation and verification
+
+The native collector now connects the official IPI protocol to the existing
+private portfolio, candidate, review and material-change journey. It claims one
+durable source lease, commits before HTTP, rechecks current rights before and
+after network access, and atomically admits the entire decoded page. An invalid
+later item rolls back earlier identities, journal records and cursor movement.
+Response-local identifiers never identify trademarks. Retained business-alias
+hashes resolve stable identities; conflicting identities or a missing previously
+selected canonical alias require attention instead of an invented merge.
+
+Parent response bytes and SHA-256 evidence, XML hashes, contiguous offsets,
+opaque continuation checkpoints, repeated identities and publisher total changes
+are retained. Replayed admission is idempotent; stale leases, changed permission
+generations, wrong request IDs and continuation cycles cannot advance the journal.
+An expired continuation starts an explicit abandoned state before a fresh traversal.
+Finished traversal always remains distinct from verified coverage or a snapshot.
+The source link opens Swissreg with the official identifier displayed alongside
+the facts; no unverified record deep link is fabricated.
+
+Authentication follows the official
+[IPI OIDC contract](https://www.swissreg.ch/public/apidocs/reference/authentication.html):
+fixed identity-provider origin, access-token reuse, renewal before refresh expiry
+and a new session when refreshed lifetime shortens. Shared tokens are encrypted
+with the existing deployment credential cipher, protected by a renewal lease and
+purged after expiry. Passwords, tokens and transport bodies never enter status
+responses or error messages. No redirect receives a token, password, private brand
+query, inherited cookie or injected HTTP-client authentication.
+
+Production configuration enables `IPI_SOURCE_ENABLED` by default. Operators must
+provide `IPI_USERNAME`, `IPI_PASSWORD` and a selected
+`IPI_SOURCE_PERMISSION_ID` for an actual approved account and reviewed policy.
+The full-register query requires permission for both national CH and the IPI
+channel's CH-designating international records; checkpoint retention must exceed
+the 120-second lease. The collector runs every five seconds, performs at most one
+page per tick and obeys durable source/account backoff. Ordinary new traversals
+respect the policy's minimum polling interval. Changing local permission
+generation does not bypass a publisher waiting period. Sixty-second maintenance
+removes expired/revoked parent and continuation bytes even when collection is
+disabled, along with expired encrypted token payloads.
+
+The authenticated read-only `/api/trademark-watch/source-status` endpoint and
+five-language IP Watch panel expose missing access, retrieval progress, counts,
+completion, interruption and next eligible attempt. Refreshing the panel does
+not start collection. Source credentials and lease/request bodies are not exposed.
+The section and saved private portfolios remain available while access is missing.
+
+Validation:
+
+- The combined protocol/journal/private API/workflow/configuration/backlog run
+  passed 120 checks; its one failure was an old exact cleanup-result assertion.
+  The final affected acquisition/HTTP/journal run passed all 55 checks in 19.63s,
+  including the corrected cleanup contract and a new disabled-worker purge test.
+  Additional transport/auth/count/authentication boundary checks passed separately.
+  Logs: `.tmp/ipi-feature-final.log`, `.tmp/ipi-affected-final.log`,
+  `.tmp/ipi-boundaries-final.log`. Earlier Compose expectation of preview-only
+  sections was updated to the already implemented available-to-configure behavior;
+  collectors still prove missing inputs do not trigger network requests.
+- The real native-page → private candidate → decision → corrected owner →
+  reopened review test passed, with peer-user and other-workspace denial.
+  Migration `d6b39457f5d8` creates six acquisition/cache tables; metadata and
+  downgrade/upgrade checks preserve private portfolios.
+- The root build with `HELVETIC_LENS_CHECK_BUILD=ipi-acquisition` passed, including
+  i18n, shell, resources, reports, help and web compilation. Generated build-only
+  type/tsconfig edits were restored after the owned check terminated.
+- The browser journey passed 49 checkpoints, including seven IPI status checks
+  and the existing 42 private review/export checks. All five languages and mobile
+  layouts were exercised; three application axe audits reported no violations.
+  All local fixtures used synthetic responses and terminated after verification.
+  Exact API Ruff, changed frontend formatting and whitespace checks passed.
+
+This is implemented acquisition, not real IPI account activation or acceptance of
+all B7 requirements. No signed terms, actual credentials, production grant,
+full-catalogue sample, independent calibration, approved legal deadline rule or
+human pilot acceptance was created. Production volume/retention sizing remains
+unverified: the parent-evidence budget is 512 MiB, page payloads are bounded at
+32 MiB, a traversal at 100,000 pages and aliases at 4,000,000 per source. Existing
+journal revision/receipt/storage limits also apply and fail explicitly. These
+limits must be validated against the licensed catalogue before full-coverage
+acceptance. Incremental update/deletion semantics remain unverified. MV2-046,
+MV2-047 and MV2-048 remain IN PROGRESS.

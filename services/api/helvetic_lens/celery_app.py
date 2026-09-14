@@ -94,6 +94,9 @@ celery_app.conf.update(
         "schedule-trademark-monitoring": {
             "task": "helvetic_lens.schedule_trademark_monitoring", "schedule": 15.0,
         },
+        "collect-ipi-source": {
+            "task": "helvetic_lens.collect_ipi_source", "schedule": 5.0,
+        },
         "schedule-auction-reminders": {
             "task": "helvetic_lens.schedule_auction_reminders", "schedule": 15.0,
         },
@@ -365,6 +368,19 @@ def schedule_trademark_monitoring():
     database = Database(settings)
     try:
         return refresh_due(database, settings)
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.collect_ipi_source")
+def collect_ipi_source():
+    from .ipi_collector import collect, readiness
+    state = readiness(settings)
+    if state != "configured":
+        return {"state": state}
+    database = Database(settings)
+    try:
+        return collect(database, settings)
     finally:
         database.engine.dispose()
 

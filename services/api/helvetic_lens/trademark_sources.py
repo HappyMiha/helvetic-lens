@@ -356,7 +356,10 @@ def revoke_permission(session, permission_id, *, now):
 
 def cleanup(database, *, now=None):
     """Retention remains enforced when feature/source switches are disabled."""
+    from .ipi_acquisition import cleanup as cleanup_ipi
     with database.session(include_all_organizations=True) as session:
-        result = purge_content(session, now=now or datetime.now(UTC))
+        instant = now or datetime.now(UTC)
+        result = purge_content(session, now=instant)
+        result["ipi"] = cleanup_ipi(session, now=instant)
         session.commit()
         return result

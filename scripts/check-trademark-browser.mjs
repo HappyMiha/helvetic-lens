@@ -1,5 +1,6 @@
 import {checkReview} from "./check-trademark-review-journey.mjs";
 import assert from "node:assert/strict";
+import { checkIPI } from "./check-ipi-source-journey.mjs";
 import {spawn} from "node:child_process";
 import {existsSync} from "node:fs";
 import {mkdir,mkdtemp,readFile,writeFile} from "node:fs/promises";
@@ -31,7 +32,8 @@ async function audit(name){
 try{
   const end=Date.now()+15000;let port;while(Date.now()<end){try{port=Number((await readFile(join(profile,"DevToolsActivePort"),"utf8")).split("\n")[0]);break;}catch{await delay(100);}}
   assert.ok(port);const tabs=await fetch(`http://127.0.0.1:${port}/json/list`,{signal:AbortSignal.timeout(3000)}).then(r=>r.json());cdp=new Cdp(tabs.find(t=>t.type==="page").webSocketDebuggerUrl);await bounded(cdp.ready);await call("Page.enable");await call("Runtime.enable");
-  await call("Emulation.setDeviceMetricsOverride",{width:1280,height:1000,deviceScaleFactor:1,mobile:false});await navigate();await click(c.create);
+  await call("Emulation.setDeviceMetricsOverride",{width:1280,height:1000,deviceScaleFactor:1,mobile:false});await navigate();
+  await checkIPI({click,until,evaluate,json,record});await click(c.create);
   await fill('[data-trademark-form] > fieldset > label input',"Private IP fixture");await fill('[data-trademark-brand] > label input',"ALMORA");
   await fill('[data-trademark-brand] > label select',"en");await fill('[data-trademark-brand] textarea',"ALMORA AI\nALMORA DIGITAL");
   assert.equal(await evaluate("document.querySelector('[data-trademark-brand] textarea').value"),"ALMORA AI\nALMORA DIGITAL");record("multiline-word-variants-remain-editable");
