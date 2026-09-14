@@ -1,4 +1,14 @@
-# Monitoring deployment status — 14 September 2026
+# Monitoring deployment status — 15 September 2026
+
+## Fresh main-site observation — 15 September 2026
+
+A newly loaded authenticated journal shows 6f1361883b55 Failed and
+7fd0c80a2686 Deploying, started at 00:24:02 Europe/Zurich. Verified production
+remains d961ebd54998. The new candidate includes d00e3f5, the tested history-query
+and diagnostic-lock repair described below, and selected evidence downloads.
+Neither is yet verified activated. The source-attention feature is a subsequent
+complete candidate; no active deployment has been interrupted or duplicated.
+
 
 ## Connector request setup and diagnostic lock gate repair — 14 September 2026
 

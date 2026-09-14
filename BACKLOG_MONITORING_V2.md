@@ -2122,6 +2122,31 @@ The broader task remains IN PROGRESS pending live source and human acceptance.
 
 **Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Operations + Backend · **Size:** M
 
+**Implemented whole-feature scope, 15 September 2026 — source attention inbox:**
+Provide a platform-administrator attention list alongside the existing nine-source
+operations overview. Derive actionable items from actual stored configuration,
+permission-record expiry/revocation, failed or missing acquisition and invalid
+clocks. Renewal windows are 30 days and 7 days; unknown remains unknown. Link to
+each native connector/settings workflow without renewing access or collecting data.
+An administrator may acknowledge only the exact currently observed issue; a
+changed permission/source binding, severity, outcome or acquisition/retry clock
+invalidates that acknowledgement. Acknowledged issues remain inspectable and
+never become healthy by acknowledgement. Store only bounded per-administrator
+issue keys, fingerprints and timestamps; account deletion removes these personal
+receipts. Require fresh platform role, session/CSRF, no-store, strict request
+binding, foreign-admin isolation and stale-write rejection. Existing source
+metadata readers, auth, connector settings and additive migrations are available
+dependencies; no external API access is needed for this workflow. Acceptance:
+all nine categories/two transport channels, renewal boundaries, recovery/retry/
+source replacement, no secrets/private monitor disclosure, bounded storage,
+concurrent/idempotent acknowledgements, migration/deletion, five-language desktop/
+mobile UI including access loss and late responses, exact lint/build and relevant
+API/browser checks. Complete the full API/UI feature before commit. Historical lag
+charts, queue/fairness measurement and independent operational acceptance remain
+open under MV2-052; this inbox does not complete the parent task.
+
+**Execution evidence, 15 September 2026:** The complete source-attention inbox now supports personal exact-state acknowledgements, renewal/failure review and connector links across all nine categories. 32 API checks, three observed PostgreSQL lock races, the full build and 24 five-language desktop/mobile axe checkpoints passed. See [behavior, verification and remaining gates](docs/monitoring-v2/SOURCE_ATTENTION.md). The index and detail remain IN PROGRESS; publication does not establish production activation or complete broader operational requirements.
+
 **Dependencies:** [MV2-011](#mv2-011), [MV2-012](#mv2-012), [MV2-025](#mv2-025). **Requirements:** §§23,28,33.11–12,34; legacy HL-094,099.
 
 **User outcome:** The administrator can see missing data and the reason for a delay.

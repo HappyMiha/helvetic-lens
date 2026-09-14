@@ -333,6 +333,8 @@ class RelationReprocessingInput(Input):
 
 
 def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
+    if path.startswith("/api/admin/monitoring-sources/attention"):
+        return "monitoring_source_attention", 30 if method == "POST" else 120, 60
     if path.startswith("/api/monitoring-centre/evidence/export/"):
         return "monitoring_evidence_export", 30, 60
     if path == "/api/account/deletion":
@@ -633,7 +635,7 @@ def create_app(
             status = response.status_code
             if request.url.path.startswith(("/api/monitoring-subjects", "/api/onboarding")):
                 response.headers["Cache-Control"] = "private, no-store"
-            if request.url.path.startswith(("/api/account/", "/api/auction-watch", "/api/tender-watch", "/api/commute-watch", "/api/road-watch", "/api/hazard-watch", "/api/trademark-watch", "/api/related-developments", "/api/monitoring-centre")):
+            if request.url.path.startswith(("/api/admin/monitoring-sources", "/api/account/", "/api/auction-watch", "/api/tender-watch", "/api/commute-watch", "/api/road-watch", "/api/hazard-watch", "/api/trademark-watch", "/api/related-developments", "/api/monitoring-centre")):
                 # Dependency response headers are lost when an exception
                 # handler creates a new response. Apply to denial/errors too.
                 response.headers["Cache-Control"] = "no-store"
@@ -2290,6 +2292,8 @@ def create_app(
     app.include_router(related_router(service, source_settings))
     from .monitoring_source_operations import source_operations_router
     app.include_router(source_operations_router(service, source_settings))
+    from .monitoring_source_attention import source_attention_router
+    app.include_router(source_attention_router(service, source_settings))
     return app
 
 

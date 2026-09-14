@@ -100,6 +100,15 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class MonitoringSourceAcknowledgement(Base):
+    """Personal operator receipt, never a source health or permission decision."""
+    __tablename__ = "monitoring_source_acknowledgements"
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    issue_key: Mapped[str] = mapped_column(String(100), primary_key=True)
+    fingerprint: Mapped[str] = mapped_column(String(64))
+    acknowledged_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class UserOnboarding(Base):
     """Personal starting intent; never inferred completion from shared documents."""
     __tablename__ = "user_onboarding"

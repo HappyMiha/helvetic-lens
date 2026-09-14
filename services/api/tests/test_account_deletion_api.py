@@ -20,6 +20,7 @@ from helvetic_lens.models import (
     AdministrativeAudit,
     AssistantConversation,
     Job,
+    MonitoringSourceAcknowledgement,
     Organization,
     OrganizationMembership,
     RegulatoryWork,
@@ -54,6 +55,8 @@ def test_confirmed_account_erasure_deletes_nine_categories_sessions_jobs_and_pri
                 queue="maintenance", idempotency_key="erasure-" + domain, payload={"private": "work"}, steps=[("Private step", {})])
         session.add(RegulatoryWork(id="retained-official-work", kind="act", authority="official",
             canonical_key="retained-official-work", title="Retained official corpus"))
+        session.add(MonitoringSourceAcknowledgement(user_id=identity["user"]["id"],
+            issue_key="air:air:acquisition_errors", fingerprint="a" * 64, acknowledged_at=datetime.now(UTC)))
         session.commit()
     cookie, headers = client.cookies.get(SESSION_COOKIE), _csrf(client)
     body = confirmation(client)
@@ -64,6 +67,7 @@ def test_confirmed_account_erasure_deletes_nine_categories_sessions_jobs_and_pri
     assert client.get(URL).status_code == 401
     assert client.post("/api/auth/login", json={"email": identity["user"]["email"], "password": PASSWORD}).status_code == 401
     with database.session(include_all_organizations=True) as session:
+        assert session.scalar(select(MonitoringSourceAcknowledgement.user_id)) is None
         assert session.get(User, identity["user"]["id"]) is None
         assert session.get(Organization, identity["organization"]["id"]) is None
         assert session.get(AssistantConversation, conversation.json()["id"]) is None

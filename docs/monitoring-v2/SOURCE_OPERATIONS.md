@@ -73,3 +73,11 @@ lag charts, alerts/renewal reminders, AI fairness and provider/user acceptance r
 separate work. A current permission *record* is not a full rights validation, and a
 recent acquisition is not proof of monitor coverage or an all-clear result. Push
 and production activation must be verified separately.
+
+## Source attention extension — 15 September 2026
+
+The original read-only overview remains unchanged in purpose. The new
+[source attention inbox](SOURCE_ATTENTION.md) adds personal exact-state receipts,
+renewal windows and failure review alongside it. Its additive migration and POST
+are described separately; the historical no-migration/no-write evidence above
+applies to the original overview feature. Broader MV2-052 requirements remain open.
