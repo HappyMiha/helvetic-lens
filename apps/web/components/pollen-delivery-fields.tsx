@@ -11,10 +11,12 @@ export function PollenDeliveryFields({
   delivery,
   timezone,
   onChange,
+  clockNote,
 }: {
   delivery: Delivery;
   timezone: string;
   onChange: (delivery: Delivery) => void;
+  clockNote?: string;
 }) {
   const { locale } = useI18n();
   const copy = pollenDeliveryCopy[locale],
@@ -28,7 +30,7 @@ export function PollenDeliveryFields({
       <legend>{copy.title}</legend>
       <p id="pollen-delivery-note">{copy.note}</p>
       <p id="pollen-delivery-clock">
-        {copy.clock.replace("{timezone}", timezone)}
+        {clockNote ?? copy.clock.replace("{timezone}", timezone)}
       </p>
       <label>
         {labels.delivery}

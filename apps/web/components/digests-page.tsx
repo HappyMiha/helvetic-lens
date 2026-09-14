@@ -3,6 +3,7 @@
 import { DigestInterests } from "./digest-interests";
 import { DigestBrief } from "./digest-brief";
 import { digestInterestCopy } from "@/lib/digest-interest-copy";
+import { monitoringEmailCentreCopy } from "@/lib/monitoring-email-centre-copy";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -62,7 +63,9 @@ export function DigestsPage() {
       setLocalTime(resource.data.preference.schedule?.time || "");
       setQuietStart(resource.data.preference.schedule?.quiet_start || "");
       setQuietEnd(resource.data.preference.schedule?.quiet_end || "");
-      setTimeZone(resource.data.preference.schedule?.timezone || "Europe/Zurich");
+      setTimeZone(
+        resource.data.preference.schedule?.timezone || "Europe/Zurich",
+      );
       setSelectedSeverities(resource.data.preference.severities);
       setSelectedSources(resource.data.preference.sources);
     }
@@ -72,10 +75,15 @@ export function DigestsPage() {
     }
   }, [resource.data]);
 
-  const savedZone = resource.data?.preference.schedule?.time ? resource.data.preference.schedule.timezone : "Europe/Zurich";
+  const savedZone = resource.data?.preference.schedule?.time
+    ? resource.data.preference.schedule.timezone
+    : "Europe/Zurich";
   let displayZone = savedZone;
-  try { new Intl.DateTimeFormat(locale, {timeZone: displayZone}); }
-  catch { displayZone = "UTC"; } // Older browser timezone databases may lag the server.
+  try {
+    new Intl.DateTimeFormat(locale, { timeZone: displayZone });
+  } catch {
+    displayZone = "UTC";
+  } // Older browser timezone databases may lag the server.
 
   function restartPreview() {
     focusPreview.current = true;
@@ -113,7 +121,12 @@ export function DigestsPage() {
           body: JSON.stringify({
             enabled,
             frequency,
-            schedule: {timezone: timeZone, time: localTime || null, quiet_start: quietStart || null, quiet_end: quietEnd || null},
+            schedule: {
+              timezone: timeZone,
+              time: localTime || null,
+              quiet_start: quietStart || null,
+              quiet_end: quietEnd || null,
+            },
             severities: selectedSeverities,
             sources: selectedSources,
           }),
@@ -159,6 +172,12 @@ export function DigestsPage() {
           <span className="eyebrow">{t("digests.eyebrow")}</span>
           <h1>{t("digests.title")}</h1>
           <p className="muted m-0">{digestInterestCopy[locale].selection}</p>
+          <Link
+            className="min-h-11 inline-flex items-center underline"
+            href="/monitoring/email"
+          >
+            {monitoringEmailCentreCopy[locale].title}
+          </Link>
         </div>
         <Mail className="muted" size={28} />
       </div>
@@ -213,28 +232,81 @@ export function DigestsPage() {
               </select>
             </label>
             <div data-digest-schedule className="grid gap-3 min-w-0">
-              <label className="grid gap-2 text-sm font-semibold">{t("digestSchedule.time")}
-                <input data-digest-time type="time" className="input min-w-0 w-full" value={localTime}
-                  onChange={event => setLocalTime(event.target.value)} />
+              <label className="grid gap-2 text-sm font-semibold">
+                {t("digestSchedule.time")}
+                <input
+                  data-digest-time
+                  type="time"
+                  className="input min-w-0 w-full"
+                  value={localTime}
+                  onChange={(event) => setLocalTime(event.target.value)}
+                />
               </label>
-              <label className="grid gap-2 text-sm font-semibold">{t("digestSchedule.zone")}
-                <input data-digest-zone className="input min-w-0 w-full" list="digest-timezones" value={timeZone}
-                  onChange={event => setTimeZone(event.target.value)} maxLength={64} />
-                <datalist id="digest-timezones">{["Europe/Zurich", "UTC", "Europe/London", "America/New_York", "Asia/Tokyo"].map(zone => <option key={zone} value={zone} />)}</datalist>
+              <label className="grid gap-2 text-sm font-semibold">
+                {t("digestSchedule.zone")}
+                <input
+                  data-digest-zone
+                  className="input min-w-0 w-full"
+                  list="digest-timezones"
+                  value={timeZone}
+                  onChange={(event) => setTimeZone(event.target.value)}
+                  maxLength={64}
+                />
+                <datalist id="digest-timezones">
+                  {[
+                    "Europe/Zurich",
+                    "UTC",
+                    "Europe/London",
+                    "America/New_York",
+                    "Asia/Tokyo",
+                  ].map((zone) => (
+                    <option key={zone} value={zone} />
+                  ))}
+                </datalist>
               </label>
               <fieldset data-digest-quiet className="grid gap-3">
-                <legend className="font-semibold text-sm">{t("digestQuiet.title")}</legend>
-                <label className="grid gap-2 text-sm">{t("digestQuiet.start")}
-                  <input data-quiet-start type="time" className="input min-w-0 w-full" value={quietStart} onChange={event => setQuietStart(event.target.value)} />
+                <legend className="font-semibold text-sm">
+                  {t("digestQuiet.title")}
+                </legend>
+                <label className="grid gap-2 text-sm">
+                  {t("digestQuiet.start")}
+                  <input
+                    data-quiet-start
+                    type="time"
+                    className="input min-w-0 w-full"
+                    value={quietStart}
+                    onChange={(event) => setQuietStart(event.target.value)}
+                  />
                 </label>
-                <label className="grid gap-2 text-sm">{t("digestQuiet.end")}
-                  <input data-quiet-end type="time" className="input min-w-0 w-full" value={quietEnd} onChange={event => setQuietEnd(event.target.value)} />
+                <label className="grid gap-2 text-sm">
+                  {t("digestQuiet.end")}
+                  <input
+                    data-quiet-end
+                    type="time"
+                    className="input min-w-0 w-full"
+                    value={quietEnd}
+                    onChange={(event) => setQuietEnd(event.target.value)}
+                  />
                 </label>
                 <p className="text-xs muted m-0">{t("digestQuiet.help")}</p>
-                {(quietStart || quietEnd) && <Button variant="outline" onClick={() => {setQuietStart(""); setQuietEnd("");}}>{t("digestQuiet.clear")}</Button>}
+                {(quietStart || quietEnd) && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setQuietStart("");
+                      setQuietEnd("");
+                    }}
+                  >
+                    {t("digestQuiet.clear")}
+                  </Button>
+                )}
               </fieldset>
               <p className="text-xs muted m-0">{t("digestSchedule.help")}</p>
-              {localTime && <Button variant="outline" onClick={() => setLocalTime("")}>{t("digestSchedule.clear")}</Button>}
+              {localTime && (
+                <Button variant="outline" onClick={() => setLocalTime("")}>
+                  {t("digestSchedule.clear")}
+                </Button>
+              )}
             </div>
             <fieldset className="grid gap-2">
               <legend className="text-sm font-semibold mb-2">
@@ -301,7 +373,12 @@ export function DigestsPage() {
               <CalendarClock size={13} className="inline mr-1" />
               {resource.data.preference.next_delivery_at
                 ? t("digests.next", {
-                    date: dateTime(resource.data.preference.next_delivery_at, {timeZone: displayZone, dateStyle: "medium", timeStyle: "short"}) + ` (${displayZone})`,
+                    date:
+                      dateTime(resource.data.preference.next_delivery_at, {
+                        timeZone: displayZone,
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }) + ` (${displayZone})`,
                   })
                 : t("digests.off")}
             </p>
@@ -319,7 +396,9 @@ export function DigestsPage() {
               >
                 {t("digests.preview")}
               </h2>
-                <p className="text-sm muted">{digestInterestCopy[locale].boundary}</p>
+              <p className="text-sm muted">
+                {digestInterestCopy[locale].boundary}
+              </p>
               <nav
                 aria-label={t("digestPage.navigation")}
                 className="rounded-lg border border-border p-4 text-sm mb-4"
@@ -445,7 +524,10 @@ export function DigestsPage() {
                         </div>
                       ))}
                       <DigestInterests event={event} />
-                      <DigestBrief brief={event.brief} eventUrl={event.event_url} />
+                      <DigestBrief
+                        brief={event.brief}
+                        eventUrl={event.event_url}
+                      />
                       {event.impacts_truncated &&
                         typeof event.impact_count === "number" && (
                           <p className="text-sm font-medium mt-3 mb-0">
@@ -479,7 +561,11 @@ export function DigestsPage() {
                         {t("digests.items", { count: delivery.item_count })}
                       </span>
                     </div>
-                    {delivery.deferred_reason === "quiet_hours" && <p className="muted" data-digest-quiet-wait>{t("digestQuiet.waiting")}</p>}
+                    {delivery.deferred_reason === "quiet_hours" && (
+                      <p className="muted" data-digest-quiet-wait>
+                        {t("digestQuiet.waiting")}
+                      </p>
+                    )}
                     <DigestCoverageNotice summary={delivery.summary} />
                   </div>
                 ))

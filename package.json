@@ -49,6 +49,7 @@
     "check:today-counts:browser": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/check-today-counts-browser.mjs",
     "check:monitoring-notifications:browser": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/check-monitoring-notifications-browser.mjs",
     "check:monitoring-first-run:browser": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/check-monitoring-first-run-browser.mjs",
+    "check:monitoring-email-centre:browser": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/check-monitoring-email-centre-browser.mjs",
     "check:topic-reviews:browser": "node scripts/check-topic-reviews-browser.mjs",
     "check:marvin:monitor:browser": "node scripts/check-marvin-monitor-browser.mjs",
     "check:notifications:browser": "node scripts/check-notifications-browser.mjs",

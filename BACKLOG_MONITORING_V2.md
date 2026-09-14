@@ -218,7 +218,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
 | [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
 | [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
-| [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
+| [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
 | [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
 | [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
 | [MV2-025](#mv2-025) | Admin: accurate source capabilities and access management | F2 | P0 | M | IN PROGRESS | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-018](#mv2-018) |
@@ -1077,6 +1077,18 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-022 — Notifications and Digests from the same developments
 
+**Implemented whole-feature scope, 14 September 2026:** Manage native email preferences
+for every private Monitoring direction from one centre, including Pollen's
+explicit pause/save/resume and consent boundaries. Reuse native policy and delivery
+contracts; see [acceptance scope](docs/monitoring-v2/MONITORING_EMAIL_CENTRE.md).
+
+**Email-centre verification:** 61 native API regressions, root build, 97 new
+browser/axe checkpoints, 36 native Tender checkpoints and 8 Monitoring Centre
+regressions passed. Pollen's explicit pause/save/resume and the other eight native
+consent/schedule/quiet-hour editors remain authoritative. Publication is distinct
+from activation; broader priority/event controls and source/human acceptance
+remain open. See the linked evidence and reproduction instructions.
+
 **Current whole-feature scope, 14 September 2026:** Extend the header notification
 centre from legal events to all nine Monitoring review queues, with native
 eligibility, bounded private pagination, synchronized review state and exact
@@ -1092,7 +1104,7 @@ shared Today eligibility and exact retained Pollen evidence. Local acceptance:
 evidence document. Exact activation, shared email/noise preferences and live/human
 acceptance remain open; this contribution does not close the broader task.
 
-**Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
+**Status:** IN PROGRESS — native email centre implemented · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
 
 **Dependencies:** [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019). **Requirements:** §§28,33; AC-B2-12; C4 digest deferred.
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { pollenDraftCopy } from "@/lib/pollen-draft-copy";
@@ -60,6 +60,7 @@ export function TenderEmail({
       <summary>{pollenDeliveryCopy[locale].title}</summary>
       {open && (
         <EmailForm
+          key={`${monitorId}:${locale}`}
           monitorId={monitorId}
           canManage={canManage}
           archived={archived}
@@ -94,8 +95,13 @@ function EmailForm({
     [error, setError] = useState(""),
     [preview, setPreview] = useState<Preview | null>(null);
   const path = `/tender-watch/monitors/${monitorId}`;
+  const lifetime = useRef<AbortController | null>(null);
+  const inFlight = useRef(false);
   useEffect(() => {
     const controller = new AbortController();
+    lifetime.current = controller;
+    inFlight.current = false;
+    setBusy(false);
     setSaved(null);
     setConfig(null);
     setPreview(null);
@@ -111,9 +117,26 @@ function EmailForm({
       .catch(() => {
         if (!controller.signal.aborted) setError(c.failed);
       });
-    return () => controller.abort();
+    const hide = () => {
+      controller.abort();
+      setSaved(null);
+      setConfig(null);
+      setPreview(null);
+      setConfirmed(false);
+    };
+    const show = (event: PageTransitionEvent) => {
+      if (event.persisted) setRevision((v) => v + 1);
+    };
+    window.addEventListener("pagehide", hide);
+    window.addEventListener("pageshow", show);
+    return () => {
+      controller.abort();
+      window.removeEventListener("pagehide", hide);
+      window.removeEventListener("pageshow", show);
+    };
   }, [path, revision, c.failed]);
   function update(delivery: Partial<Config["delivery"]>) {
+    setError("");
     setConfig(
       (previous) =>
         previous && {
@@ -125,7 +148,21 @@ function EmailForm({
     setPreview(null);
   }
   async function save() {
-    if (!saved || !config) return;
+    const controller = lifetime.current;
+    if (
+      !saved ||
+      !config ||
+      !canManage ||
+      inFlight.current ||
+      !controller ||
+      controller.signal.aborted
+    )
+      return;
+    if (
+      config.delivery.email !== "off" &&
+      (!confirmed || !saved.email_verified || archived)
+    )
+      return;
     if (
       config.delivery.quiet_hours?.start === config.delivery.quiet_hours?.end &&
       config.delivery.quiet_hours
@@ -133,38 +170,63 @@ function EmailForm({
       setError(d.invalidQuiet);
       return;
     }
+    inFlight.current = true;
     setBusy(true);
     setError("");
     try {
       await api(path + "/email", {
         method: "PATCH",
+        signal: controller.signal,
         body: JSON.stringify({
           expected_version: saved.monitor_version,
           configuration: config,
           consent: config.delivery.email !== "off" && confirmed,
         }),
       });
+      if (controller.signal.aborted) return;
       setRevision((v) => v + 1);
       changed();
     } catch (failure) {
+      if (controller.signal.aborted) return;
+      setSaved(null);
+      setConfig(null);
+      setPreview(null);
+      setConfirmed(false);
       setError(
         failure instanceof ApiError && failure.code.includes("conflict")
           ? c.conflict
           : c.failed,
       );
     } finally {
-      setBusy(false);
+      if (!controller.signal.aborted) {
+        inFlight.current = false;
+        setBusy(false);
+      }
     }
   }
   async function loadPreview() {
+    const controller = lifetime.current;
+    if (inFlight.current || !controller || controller.signal.aborted) return;
+    inFlight.current = true;
     setBusy(true);
     setError("");
     try {
-      setPreview(await api<Preview>(path + "/email-preview"));
+      const value = await api<Preview>(path + "/email-preview", {
+        signal: controller.signal,
+      });
+      if (!controller.signal.aborted) setPreview(value);
     } catch {
+      if (controller.signal.aborted) return;
+      setSaved(null);
+      setConfig(null);
+      setPreview(null);
+      setConfirmed(false);
       setError(c.failed);
     } finally {
-      setBusy(false);
+      if (!controller.signal.aborted) {
+        inFlight.current = false;
+        setBusy(false);
+      }
     }
   }
   return (
@@ -193,7 +255,7 @@ function EmailForm({
               void save();
             }}
           >
-            <fieldset disabled={!canManage || busy || !!error}>
+            <fieldset disabled={!canManage || busy}>
               <legend>{d.title}</legend>
               <label>
                 {labels.delivery}

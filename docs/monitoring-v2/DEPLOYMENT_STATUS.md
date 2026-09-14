@@ -1,5 +1,22 @@
 # Monitoring deployment status — 14 September 2026
 
+## Verified automatic activation and email-centre candidate — 14 September 2026
+
+Authenticated Refresh on the main site's deployment page now records
+`660edacc8e7afa5306b50fc97999bbc1616fd5f0` as both production and the verified
+activated commit. The automatic run succeeded at **14:27:46 Europe/Zurich**;
+its API test gate passed in **85 minutes 30 seconds**, followed by image build,
+backup, start, public health and publication checks. This release includes the
+Tender dispatcher-clock repair `4434cf9` and Trademark permission-fixture repair
+`eed7fde`; the earlier failures are historical, not the current release result.
+
+The next automatic run for `c66e77fc7721fbbd4ff11a522d4cc7183cc81523` started at
+14:28:02 and still reports Deploying. No active run was restarted or duplicated.
+The new shared email-preference feature is described in
+[its acceptance evidence](MONITORING_EMAIL_CENTRE.md); publication and activation
+of that newer feature remain distinct. Source rights and real-user acceptance
+are not implied by successful deployment checks.
+
 ## Nine-direction first-run candidate — 14 September 2026
 
 The post-registration guide now saves a personal Monitoring starting choice and

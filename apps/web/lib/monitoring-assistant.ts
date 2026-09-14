@@ -8,6 +8,7 @@ export type MonitoringAssistantRoute = keyof typeof help.locales["en-CH"]["route
 // Only exact section paths enter this context. Query values, private monitor
 // identities and forms never become part of a companion conversation.
 export function monitoringAssistantRoute(pathname: string): MonitoringAssistantRoute | null {
+  if (pathname === "/monitoring/email") return "/monitoring";
   return Object.hasOwn(help.locales["en-CH"].routes, pathname)
     ? pathname as MonitoringAssistantRoute
     : null;
