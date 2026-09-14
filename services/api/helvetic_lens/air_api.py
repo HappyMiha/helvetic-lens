@@ -13,7 +13,7 @@ from .air_contracts import AirConfiguration, utc
 from .air_email_preferences import EmailConfiguration
 from .air_models import AirChange, AirMonitor, AirReadingVersion, AirRevision
 from .air_runtime import change_view, command, create, edit, mute, owned, preview, remove, review, view
-from .air_sources import catalogue, collect
+from .air_sources import catalog_key, catalogue, collect
 from .auth import Identity
 from .config import DomainError
 from .monitoring_subjects import _actor
@@ -163,6 +163,7 @@ def air_router(service, settings):
     @router.get("/stations")
     def stations():
         collect(service.db, "catalog")
+        collect(service.db, "catalog:LUG")
         with service.db.session() as session:
             return catalogue(session)
 
@@ -170,7 +171,7 @@ def air_router(service, settings):
     def preview_configuration(body: ConfigurationBody, actor: Identity = Depends(identity)):
         with service.db.session() as session:
             _actor(session, actor.user_id, write=True)
-        collect(service.db, "catalog")
+        collect(service.db, catalog_key(body.configuration.station_id))
         collect(service.db, body.configuration.station_id)
         with service.db.session() as session:
             _actor(session, actor.user_id, write=True)

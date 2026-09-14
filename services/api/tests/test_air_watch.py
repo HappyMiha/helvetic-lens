@@ -370,7 +370,7 @@ def test_future_nulls_and_negative_withdrawals_are_not_zero(invalid_value):
 @pytest.mark.parametrize(
     "change",
     [
-        {"station_id": "LUG"},
+        {"station_id": "ZUR"},
         {"metrics": ["O3", "O3"]},
         {"muted_metrics": ["NO2"], "metrics": ["O3"]},
         {"rules": [{"metric": "O3", "threshold": "NaN"}]},

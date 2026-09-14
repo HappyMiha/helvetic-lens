@@ -15,6 +15,7 @@ from .air_email_preferences import EmailConfiguration, cancel_email_work, clock,
 from .air_models import AirChange, AirMonitor, AirSourceCache
 from .air_runtime import fresh
 from .air_runtime import preview as source_preview
+from .air_sources import catalog_key
 from .air_sources import digest as fingerprint
 from .auth_mail import AuthMailer
 from .config import DomainError
@@ -97,7 +98,7 @@ def current_condition(session, monitor, change, *, now):
     if (change.evidence.get("station_id") != config.station_id or evidence["station_id"] != config.station_id
             or evidence["metric"] != metric or evidence["period"] != period):
         return "suppressed"
-    for key, age in (("catalog", timedelta(hours=25)), (config.station_id, timedelta(hours=6))):
+    for key, age in ((catalog_key(config.station_id), timedelta(hours=25)), (config.station_id, timedelta(hours=6))):
         cache = session.get(AirSourceCache, key, populate_existing=True)
         if cache is None or cache.error or cache.fetched_at is None or not now - age <= _utc(cache.fetched_at) <= now:
             return "deferred"

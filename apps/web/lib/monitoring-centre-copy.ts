@@ -6,7 +6,7 @@ export const centreSources = {
   commute: "opentransportdata.swiss",
   traffic: "FEDRO · opentransportdata.swiss",
   pollen: "MeteoSwiss",
-  air: "Basel-Stadt · data.bs.ch",
+  air: "Basel-Stadt · data.bs.ch / BAFU · NABEL",
   tenders: "SIMAP",
 };
 export const centreTimezone = "Europe/Zurich";
@@ -122,7 +122,7 @@ export const centreCopy: Record<Locale, Copy> = {
       ],
       air: [
         "Air Quality Watch",
-        "Basel-Binningen: ozone, NO₂, PM10 and PM2.5. Other regions are not enabled.",
+        "Basel-Binningen and Lugano-Università: ozone, NO₂, PM10 and PM2.5, with current source availability shown in Air Quality Watch.",
       ],
       tenders: [
         "Tender Watch",
@@ -201,7 +201,7 @@ export const centreCopy: Record<Locale, Copy> = {
       ],
       air: [
         "Luftqualität",
-        "Basel-Binningen: Ozon, NO₂, PM10 und PM2.5. Andere Regionen sind nicht freigeschaltet.",
+        "Basel-Binningen und Lugano-Università: Ozon, NO₂, PM10 und PM2.5. Die aktuelle Quellenverfügbarkeit zeigt Air Quality Watch.",
       ],
       tenders: [
         "Ausschreibungen",
@@ -280,7 +280,7 @@ export const centreCopy: Record<Locale, Copy> = {
       ],
       air: [
         "Qualité de l’air",
-        "Bâle-Binningen : ozone, NO₂, PM10 et PM2.5. Les autres régions ne sont pas activées.",
+        "Basel-Binningen et Lugano-Università : ozone, NO₂, PM10 et PM2.5. Air Quality Watch indique la disponibilité actuelle des sources.",
       ],
       tenders: [
         "Appels d’offres",
@@ -359,7 +359,7 @@ export const centreCopy: Record<Locale, Copy> = {
       ],
       air: [
         "Qualità dell’aria",
-        "Basilea-Binningen: ozono, NO₂, PM10 e PM2.5. Le altre regioni non sono abilitate.",
+        "Basel-Binningen e Lugano-Università: ozono, NO₂, PM10 e PM2.5. Air Quality Watch indica la disponibilità attuale delle fonti.",
       ],
       tenders: [
         "Appalti",
@@ -438,7 +438,7 @@ export const centreCopy: Record<Locale, Copy> = {
       ],
       air: [
         "Qualitad da l’aria",
-        "Basilea-Binningen: ozon, NO₂, PM10 e PM2.5. Autras regiuns n’èn betg activadas.",
+        "Basel-Binningen e Lugano-Università: ozon, NO₂, PM10 e PM2.5. Air Quality Watch mussa la disponibladad actuala da las funtaunas.",
       ],
       tenders: [
         "Appaltaziuns",

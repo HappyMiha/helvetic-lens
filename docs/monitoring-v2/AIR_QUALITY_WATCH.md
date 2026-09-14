@@ -1,5 +1,10 @@
 # Air Quality Watch — source contract and implementation scope
 
+Current coverage: Basel-Binningen and Lugano-Università. Both station collectors
+are enabled; the scope and acceptance below distinguish historical Basel-only
+evidence from the complete Lugano extension. Exact release/human acceptance
+remains VERIFYING.
+
 ## Active whole feature: consented Air digest — 14 September 2026
 
 MV2-035 with scoped MV2-012/022 completes the Digest reuse in §14.8. Reuse the
@@ -218,11 +223,10 @@ Air files pass their formatting checks.
 
 1. The provider has not published a numerical quota in the inspected dataset
    contract. Keep the conservative shared budget and source backoff above.
-2. Document the exact NABEL CSV reuse/automation grant before enabling Lugano or
-   other national stations. The station-geodata licence and Basel dataset licence
-   do not automatically license national observation CSVs. Generic federal
-   website terms are not a substitute for a dataset-specific grant. Integration
-   owns this investigation; no user contact or paid access has been requested.
+2. The Lugano extension below resolves the exact data-query resource rights
+   record and live hourly contract. Other national stations remain outside this
+   verified footprint. Keep resource rights separate from geometry and Basel
+   licences; do not infer a grant from generic website terms.
 3. Official categories and daily O3 maxima remain separate unsupported
    interpretations; numerical per-period rules are the implemented fallback.
 4. Exact release identity and applicable field/human acceptance remain pending.
@@ -230,3 +234,73 @@ Air files pass their formatting checks.
 
 Keep this feature as one coherent local iteration. Commit and immediately push
 main only after the complete feature and required checks are ready.
+
+## Lugano station feature scope — 14 September 2026
+
+Scope: MV2-034 AC1 and MV2-035 AC-C7-01 through 10 for Lugano-Università,
+using the existing private monitor, versioned readings, Today/history and consented
+email infrastructure. Preserve Basel configurations and source independence.
+Deliver station selection, actual hourly O3/NO2/PM10/PM2.5 acquisition, corrections,
+withdrawals, bounded retry/retention, numeric thresholds and five-language UI as
+one feature. No new feature flag or database migration is required.
+
+Source discovery: the official BAFU query page links to the Meteotest NABEL CSV
+query. On 14 September it returned all four pollutants for station 3, hourly,
+12–14 September (SHA256 75ba43898ee0d5f4c3173b2a76633643c0ab4f0b7ba85409a385d2681fffce7c).
+Its own header specifies Latin-1-compatible German labels, hourly means, MEZ/CET
+and provisional current-year measurements. Preserve reported timestamps at fixed
+UTC+1; do not apply Swiss summer time or invent interval start/end semantics.
+
+The BAFU-owned opendata.swiss package
+`nationales-beobachtungsnetz-fur-luftfremdstoffe-nabel-stationen` explicitly lists
+resource `89870650-c833-4b92-8305-75cd7b5fa578`, **Datenabfrage NABEL**, URL
+https://www.bafu.admin.ch/de/datenabfrage-nabel, with resource-level rights and
+licence https://opendata.swiss/terms-of-use#terms_by. This is the data-query
+resource's own licence record, not an inference from the station geometry or
+Basel CC BY licence. Recheck this exact active resource and BAFU publisher daily;
+attribute BAFU/NABEL and link the data query and terms on every reading.
+No explicit numerical request quota was found: use one shared bounded four-day
+query per hour, independent source backoff and no authenticated access.
+
+Acceptance before publication: real CSV parser/live probe; fixed CET across DST;
+strict station/columns/units and schema failures; missing versus zero, future
+placeholders, revisions/withdrawal without rewinding; station-isolated catalogue,
+collection and email readiness; complete private Lugano lifecycle/Today/history
+and existing Basel/privacy regressions; five-language browser checks and root
+build. Exact activation and applicable human acceptance remain open.
+
+## Lugano acceptance evidence — 14 September 2026
+
+The whole Lugano scope is implemented with the same v1 private configuration
+shape and existing tables; previous Basel monitors and versions are preserved.
+Lugano catalogue, acquisition, worker and final-send checks use their own source
+keys. Catalogue errors are shown inside the visible Air section. Every reading
+links its actual source and reuse terms; no Basel attribution is applied to Lugano.
+
+The live probe at **07:43 UTC** retained **384** public Lugano readings and all
+four latest metrics at **07:00 UTC**. See [actual collector evidence](evidence/mv2-034-lugano-live-collector.json).
+The first live attempt revealed an official opendata.swiss redirect to
+`ckan.opendata.swiss`; the collector now uses that observed canonical endpoint
+and continues to reject redirects. No production state, accounts, source tokens
+or mail settings were changed by the isolated probe.
+
+Required API lint passed. The complete Air/consented delivery suite passed **71**
+tests; the final Lugano HTTP-boundary, durable refresh, rights-revocation, same-org
+owner privacy and backlog checks passed **24** (overlapping counts). Existing
+Basel lifecycle/migration/corrections and all consent races remain covered.
+The root build passed after the five-language Centre coverage update. The Lugano
+browser journey passed **nine full-document axe checkpoints**, five locales,
+mobile/viewer access, preview/save/start, threshold/review/history, mute, Today,
+pause/edit/resume/archive, explicit consent and exact private email links.
+Automated checks do not substitute for native-language or human field review.
+
+All nine active sections and implemented collectors remain enabled. C4/customs
+remains deferred. Public main-site readiness was healthy at `git-1188f18190e0`
+before publication; this does not verify activation of this feature. Exact
+activation and applicable human acceptance remain VERIFYING.
+
+Final regression: the unchanged Basel browser journey passed nine full-document
+axe checkpoints, and the Monitoring Centre passed eight checkpoints with nine
+choices, five languages, mobile/viewer visibility, source errors and privacy
+recovery. Four malformed-catalogue cases also passed. No provider credentials,
+production consent or deferred C4 state was changed.

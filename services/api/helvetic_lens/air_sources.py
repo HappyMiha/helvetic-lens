@@ -1,5 +1,6 @@
-"""Licensed Basel hourly observations; shared bounded polling and revision history."""
+"""Licensed Basel and Lugano observations; shared bounded polling and revision history."""
 
+import csv
 import json
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal, InvalidOperation
@@ -8,6 +9,7 @@ from uuid import uuid4
 import httpx
 from sqlalchemy import delete, or_, select, update
 
+from . import air_nabel
 from .air_contracts import METRICS, SOURCE_URL, STATION, utc
 from .air_models import AirMeasurement, AirReadingVersion, AirSourceCache
 from .river_sources import digest
@@ -156,8 +158,13 @@ def _ensure(session, key, now):
     )
 
 
-def collect(database, key="BAS", *, now=None, fetch=request_json):
-    if key not in {"catalog", "BAS"}:
+def catalog_key(station_id):
+    return "catalog:LUG" if station_id == "LUG" else "catalog"
+
+
+def collect(database, key="BAS", *, now=None, fetch=request_json,
+            fetch_nabel_metadata=air_nabel.request_metadata, fetch_nabel_csv=air_nabel.request_csv):
+    if key not in {"catalog", "catalog:LUG", "BAS", "LUG"}:
         raise ValueError("Unsupported air source")
     now, token = utc(now or datetime.now(UTC)), str(uuid4())
     with database.session(include_all_organizations=True) as session:
@@ -182,23 +189,29 @@ def collect(database, key="BAS", *, now=None, fetch=request_json):
         samples = []
         if key == "catalog":
             data = validate_metadata(fetch(API))
+        elif key == "catalog:LUG":
+            data = air_nabel.validate_metadata(fetch_nabel_metadata())
         else:
             with database.session(include_all_organizations=True) as session:
-                catalog = session.get(AirSourceCache, "catalog")
+                catalog = session.get(AirSourceCache, catalog_key(key))
                 if (
                     catalog is None
                     or catalog.error
                     or not catalog.fetched_at
-                    or now - utc(catalog.fetched_at) > timedelta(hours=25)
+                    or not timedelta(0) <= now - utc(catalog.fetched_at) <= timedelta(hours=25)
                 ):
                     raise ValueError("Current source contract unavailable")
-            pages = [
-                fetch(API + f"/records?limit=100&offset={offset}&order_by=datum_zeit%20desc")
-                for offset in (0, 100)
-            ]
-            samples = parse(pages, now)
-            data = {"response_sha256": digest(pages), "sample_count": len(samples), "recovery_hours": 72}
-    except (httpx.HTTPError, ValueError, KeyError, TypeError, InvalidOperation):
+            if key == "LUG":
+                samples = air_nabel.parse(fetch_nabel_csv(now), now)
+            else:
+                pages = [
+                    fetch(API + f"/records?limit=100&offset={offset}&order_by=datum_zeit%20desc")
+                    for offset in (0, 100)
+                ]
+                samples = parse(pages, now)
+            data = {"response_sha256": samples[0]["response_sha256"],
+                    "sample_count": len(samples), "recovery_hours": 72}
+    except (httpx.HTTPError, ValueError, KeyError, TypeError, InvalidOperation, csv.Error):
         with database.session(include_all_organizations=True) as session:
             row = session.scalar(
                 select(AirSourceCache)
@@ -235,7 +248,7 @@ def collect(database, key="BAS", *, now=None, fetch=request_json):
             session.add(
                 AirReadingVersion(
                     id=version_id,
-                    station_id="BAS",
+                    station_id=sample["station_id"],
                     metric=sample["metric"],
                     measured_at=utc(sample["timestamp"]),
                     evidence=sample,
@@ -247,13 +260,13 @@ def collect(database, key="BAS", *, now=None, fetch=request_json):
                 session.add(
                     AirMeasurement(
                         id=identity,
-                        station_id="BAS",
+                        station_id=sample["station_id"],
                         metric=sample["metric"],
                         measured_at=utc(sample["timestamp"]),
                         evidence=sample,
                     )
                 )
-        if key == "BAS":
+        if key in {"BAS", "LUG"}:
             # A withdrawal must not rewind the reader to an older apparently good hour.
             known = [s["timestamp"] for s in samples if s["value"] is not None]
             if row.data.get("latest_observation_at"):
@@ -261,7 +274,7 @@ def collect(database, key="BAS", *, now=None, fetch=request_json):
             data["latest_observation_at"] = max(known, default=None)
         row.data, row.fetched_at, row.error, row.failures = data, now, None, 0
         row.lease_until = row.lease_token = None
-        row.next_fetch_at = now + (timedelta(days=1) if key == "catalog" else timedelta(hours=1))
+        row.next_fetch_at = now + (timedelta(days=1) if key.startswith("catalog") else timedelta(hours=1))
         for model in (AirMeasurement, AirReadingVersion):
             session.execute(
                 delete(model)
@@ -272,21 +285,25 @@ def collect(database, key="BAS", *, now=None, fetch=request_json):
     return "updated"
 
 
-def catalogue(session):
-    row = session.get(AirSourceCache, "catalog")
-    ready = (
-        row is not None
-        and row.fetched_at is not None
-        and not row.error
-        and datetime.now(UTC) - utc(row.fetched_at) <= timedelta(hours=25)
-    )
+def catalogue(session, *, now=None):
+    now = utc(now or datetime.now(UTC))
+    stations = []
+    unsupported = []
+    for station in (STATION, air_nabel.STATION):
+        row = session.get(AirSourceCache, catalog_key(station["id"]))
+        ready = (row is not None and row.fetched_at is not None and not row.error
+                 and timedelta(0) <= now - utc(row.fetched_at) <= timedelta(hours=25))
+        if ready:
+            stations.append(station)
+        else:
+            unsupported.append({"area": station["area"], "reason": "source_contract_pending"})
     return {
-        "stations": [STATION] if ready else [],
-        "health": "ready" if ready else "source_unavailable",
+        "stations": stations,
+        "health": "ready" if len(stations) == 2 else "partial" if stations else "source_unavailable",
         "source_url": SOURCE_URL,
         "attribution": ATTRIBUTION,
         "license_url": LICENSE,
-        "unsupported": [{"area": "Lugano", "reason": "source_contract_pending"}],
+        "unsupported": unsupported,
         "coverage_scope": "verified_station_only",
     }
 

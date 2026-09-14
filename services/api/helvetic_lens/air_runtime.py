@@ -61,8 +61,8 @@ def view(row):
     }
 
 
-def station(session, station_id):
-    for row in catalogue(session)["stations"]:
+def station(session, station_id, *, now=None):
+    for row in catalogue(session, now=now)["stations"]:
         if row["id"] == station_id:
             return row
     raise DomainError("Choose an available official station.", 422, "air_station_unavailable")
@@ -113,7 +113,7 @@ def series(rows, metric, period):
 
 def preview(session, configuration, now):
     config = AirConfiguration.model_validate(configuration)
-    selected = station(session, config.station_id)
+    selected = station(session, config.station_id, now=now)
     rows = samples(session, config.station_id, start=now - timedelta(hours=96))
     # Empty rows beyond the latest populated hour are provider placeholders.
     # At that common hour, individual missing pollutants stay missing.

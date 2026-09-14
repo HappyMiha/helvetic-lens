@@ -71,20 +71,21 @@ let cdp,
 const exceptions = [],
   mutations = [];
 const audit = new AccessibilityAudit("air-watch");
-const station = {
+const station = process.env.AIR_BROWSER_STATION === "LUG" ? { id: "LUG", name: "Lugano-Università", area: "Lugano" } : {
   id: "BAS",
   name: "Basel-Binningen",
   area: "Basel / Binningen",
 };
 const sample = {
+  source: station.id === "LUG" ? "BAFU / NABEL · Lugano-Università" : "Kanton Basel-Stadt · Basel-Binningen",
   metric: "O3",
   timestamp: new Date().toISOString(),
   value: "60",
   unit: "µg/m³",
   quality: "provisional",
   period: "hourly_mean",
-  source_url: "https://data.bs.ch/explore/dataset/100051/",
-  license_url: "https://creativecommons.org/licenses/by/4.0/",
+  source_url: station.id === "LUG" ? "https://www.bafu.admin.ch/de/datenabfrage-nabel" : "https://data.bs.ch/explore/dataset/100051/",
+  license_url: station.id === "LUG" ? "https://opendata.swiss/terms-of-use#terms_by" : "https://creativecommons.org/licenses/by/4.0/",
   revision: 1,
 };
 const coverage = {
@@ -321,8 +322,8 @@ try {
   const c = airCopy[locale];
   await button(c.create);
   await field(c.name, "Basel air");
-  await field(c.search, "Basel");
-  await field(c.station, "BAS", true);
+  await field(c.search, station.area);
+  await field(c.station, station.id, true);
   await button(c.add);
   await field(c.threshold, "50");
   await button(c.preview);
@@ -331,6 +332,8 @@ try {
     "Realistic source preview missing",
   );
   assert.ok((await text()).includes(c.unknown));
+  assert.ok((await text()).includes(sample.source));
+  assert.equal(await evaluate(cdp,`document.querySelector('form a[href="${sample.license_url}"]') !== null`), true);
   await audit.check(cdp, "configuration-preview", "form");
   await button(c.save);
   await wait(() => monitor?.status === "draft", "Draft not saved");

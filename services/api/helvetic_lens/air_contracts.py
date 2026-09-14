@@ -40,7 +40,7 @@ class AirConfiguration(BaseModel):
     template_id: Literal["air-quality-watch"] = "air-quality-watch"
     template_version: Literal[1] = 1
     name: str = Field(min_length=1, max_length=100)
-    station_id: Literal["BAS"]
+    station_id: Literal["BAS", "LUG"]
     metrics: list[Metric] = Field(min_length=1, max_length=4)
     muted_metrics: list[Metric] = Field(default_factory=list, max_length=4)
     rules: list[AirRule] = Field(default_factory=list, max_length=8)

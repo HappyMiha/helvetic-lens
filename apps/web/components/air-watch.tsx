@@ -9,7 +9,7 @@ import { airCopy } from "@/lib/air-copy";
 import {
   AIR_METRICS,
   AIR_UNIT,
-  AIR_STATION_NAME,
+  AIR_STATIONS,
   invalidAir,
   type AirChange,
   type AirConfiguration,
@@ -62,13 +62,14 @@ function Sample({ sample }: { sample: AirSample }) {
       <span>
         {c.time}: {new Date(sample.timestamp).toLocaleString(locale)}
       </span>
+      {sample.source_time_label && <span>{sample.source_time_label} · {sample.source_timezone}</span>}
       <span>
         {c.quality}: {label(c, sample.quality)} · {c.revision} {sample.revision}
       </span>
       {sample.derived && <span>{c.derived}</span>}
       {sample.corrected && <span>{c.corrected}</span>}
       <a href={sample.source_url} target="_blank" rel="noreferrer">
-        {c.source} · {c.attribution}
+        {c.source} · {sample.source || c.attribution}
       </a>
       <a href={sample.license_url} target="_blank" rel="noreferrer">
         {c.license}
@@ -706,7 +707,7 @@ function Detail({
           {row.revision}
         </p>
         <p>
-          {AIR_STATION_NAME} · {c.scope}
+          {AIR_STATIONS[row.configuration.station_id] || row.configuration.station_id} · {c.scope}
         </p>
         {row.configuration.rules.map((r, i) => (
           <p key={i}>
@@ -903,6 +904,7 @@ function Reader({
   const c = airCopy[locale];
   const deny = useContext(AirAccessFailure);
   const [stations, setStations] = useState<AirStation[]>([]);
+  const [unavailableAreas, setUnavailableAreas] = useState<string[]>([]);
   const [rows, setRows] = useState<AirMonitor[]>([]);
   const [selected, setSelected] = useState(initial);
   const [creating, setCreating] = useState(false);
@@ -916,7 +918,7 @@ function Reader({
     if (!allowed) return;
     const abort = new AbortController();
     Promise.all([
-      api<{ stations: AirStation[] }>(`${base}/stations`, {
+      api<{ stations: AirStation[]; unsupported?: {area: string}[] }>(`${base}/stations`, {
         signal: abort.signal,
       }),
       api<{ items: AirMonitor[] }>(`${base}/monitors`, {
@@ -926,6 +928,7 @@ function Reader({
       .then(([catalog, monitors]) => {
         if (!abort.signal.aborted) {
           setStations(catalog.stations);
+          setUnavailableAreas((catalog.unsupported || []).map((entry) => entry.area));
           setRows(monitors.items);
           setError("");
           setLoading(false);
@@ -952,6 +955,7 @@ function Reader({
         </header>
         <p>{c.scope}</p>
         <p>{c.limits}</p>
+        {!loading && unavailableAreas.length > 0 && <p role="status">{unavailableAreas.join(" · ")}: {c.unavailable}</p>}
         <div className={styles.actions}>
           <button disabled={!allowed} onClick={changed}>
             {c.refresh}

@@ -1,5 +1,9 @@
 export const AIR_UNIT = "µg/m³";
 export const AIR_STATION_NAME = "Basel-Binningen";
+export const AIR_STATIONS: Record<string, string> = {
+  BAS: AIR_STATION_NAME,
+  LUG: "Lugano-Università",
+};
 export type AirMetric = "O3" | "NO2" | "PM10" | "PM25";
 export type AirPeriod = "hourly_mean" | "rolling_24h_mean";
 export type AirRule = {
@@ -25,6 +29,9 @@ export type AirSample = {
   quality: string;
   source_url: string;
   license_url: string;
+  source?: string;
+  source_time_label?: string;
+  source_timezone?: string;
   corrected?: boolean;
   derived?: boolean;
   revision: number;
@@ -71,7 +78,7 @@ export const AIR_METRICS: AirMetric[] = ["O3", "NO2", "PM10", "PM25"];
 export function invalidAir(c: AirConfiguration) {
   return (
     !c.name.trim() ||
-    c.station_id !== "BAS" ||
+    !Object.hasOwn(AIR_STATIONS, c.station_id) ||
     !c.metrics.length ||
     c.rules.some(
       (r) =>

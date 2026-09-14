@@ -1,0 +1,133 @@
+{
+  "verified_at": "2026-09-14T07:43:09.112422+00:00",
+  "station_id": "LUG",
+  "catalogue": "updated",
+  "collection": "updated",
+  "private_accounts_or_monitors": false,
+  "collection_evidence": {
+    "response_sha256": "24e3b8cab3fccfa01f24326d404e26645a0a6bf5596e7586be295f4d3d6ec913",
+    "sample_count": 384,
+    "recovery_hours": 72,
+    "latest_observation_at": "2026-09-14T07:00:00+00:00"
+  },
+  "source_contract": {
+    "schema_version": "nabel-lugano-hourly-cet-v1",
+    "source_url": "https://www.bafu.admin.ch/de/datenabfrage-nabel",
+    "license_url": "https://opendata.swiss/terms-of-use#terms_by",
+    "resource_id": "89870650-c833-4b92-8305-75cd7b5fa578",
+    "metadata_sha256": "6a556465f20de6f6708cac709c1593051e305c0e42f8c1f0253f6b7fa1e7a9d6"
+  },
+  "latest_observation_at": "2026-09-14T07:00:00+00:00",
+  "latest": [
+    {
+      "station_id": "LUG",
+      "metric": "O3",
+      "timestamp": "2026-09-14T07:00:00+00:00",
+      "value": "13.5",
+      "unit": "µg/m³",
+      "period": "hourly_mean",
+      "quality": "provisional",
+      "method": "nabel-lugano-hourly-cet-v1",
+      "source_url": "https://www.bafu.admin.ch/de/datenabfrage-nabel",
+      "source": "BAFU / NABEL · Lugano-Università · Stundenmittelwerte",
+      "license_url": "https://opendata.swiss/terms-of-use#terms_by",
+      "source_time_label": "14.09.2026 08:00",
+      "source_timezone": "MEZ/CET (UTC+01:00)",
+      "response_sha256": "24e3b8cab3fccfa01f24326d404e26645a0a6bf5596e7586be295f4d3d6ec913",
+      "fetched_at": "2026-09-14T07:43:09.112422+00:00",
+      "value_hash": "8d7baecbe2d70fd563cf69959e2d76aeab8958f2361f10e64143da84f249afd8",
+      "revision": 1,
+      "corrected": false,
+      "previous_value_hash": null,
+      "version_id": "f296b5860de03dd04e0f662d53cc72f9cf8842e8ad8db23d3979d350ea04fb12"
+    },
+    {
+      "station_id": "LUG",
+      "metric": "NO2",
+      "timestamp": "2026-09-14T07:00:00+00:00",
+      "value": "37.7",
+      "unit": "µg/m³",
+      "period": "hourly_mean",
+      "quality": "provisional",
+      "method": "nabel-lugano-hourly-cet-v1",
+      "source_url": "https://www.bafu.admin.ch/de/datenabfrage-nabel",
+      "source": "BAFU / NABEL · Lugano-Università · Stundenmittelwerte",
+      "license_url": "https://opendata.swiss/terms-of-use#terms_by",
+      "source_time_label": "14.09.2026 08:00",
+      "source_timezone": "MEZ/CET (UTC+01:00)",
+      "response_sha256": "24e3b8cab3fccfa01f24326d404e26645a0a6bf5596e7586be295f4d3d6ec913",
+      "fetched_at": "2026-09-14T07:43:09.112422+00:00",
+      "value_hash": "1bbf3940215cde00b4a70a041d1bdfe2273b51876326dec8caedf2d25a5d4e31",
+      "revision": 1,
+      "corrected": false,
+      "previous_value_hash": null,
+      "version_id": "a7240f6788c3ccf35098b7447bbed586885f2b19638c2b95274746eed3d4e6f8"
+    },
+    {
+      "station_id": "LUG",
+      "metric": "PM10",
+      "timestamp": "2026-09-14T07:00:00+00:00",
+      "value": "19.6",
+      "unit": "µg/m³",
+      "period": "hourly_mean",
+      "quality": "provisional",
+      "method": "nabel-lugano-hourly-cet-v1",
+      "source_url": "https://www.bafu.admin.ch/de/datenabfrage-nabel",
+      "source": "BAFU / NABEL · Lugano-Università · Stundenmittelwerte",
+      "license_url": "https://opendata.swiss/terms-of-use#terms_by",
+      "source_time_label": "14.09.2026 08:00",
+      "source_timezone": "MEZ/CET (UTC+01:00)",
+      "response_sha256": "24e3b8cab3fccfa01f24326d404e26645a0a6bf5596e7586be295f4d3d6ec913",
+      "fetched_at": "2026-09-14T07:43:09.112422+00:00",
+      "value_hash": "3268889feb46ee194a15fa37a43e1e9be74e07fb78d24851d4a8f55bb8837f9a",
+      "revision": 1,
+      "corrected": false,
+      "previous_value_hash": null,
+      "version_id": "d97518c3ba8208c7c702ff687c254a0b1faffe29b8e7f4a21b271ddd5427fa7d"
+    },
+    {
+      "station_id": "LUG",
+      "metric": "PM25",
+      "timestamp": "2026-09-14T07:00:00+00:00",
+      "value": "5.4",
+      "unit": "µg/m³",
+      "period": "hourly_mean",
+      "quality": "provisional",
+      "method": "nabel-lugano-hourly-cet-v1",
+      "source_url": "https://www.bafu.admin.ch/de/datenabfrage-nabel",
+      "source": "BAFU / NABEL · Lugano-Università · Stundenmittelwerte",
+      "license_url": "https://opendata.swiss/terms-of-use#terms_by",
+      "source_time_label": "14.09.2026 08:00",
+      "source_timezone": "MEZ/CET (UTC+01:00)",
+      "response_sha256": "24e3b8cab3fccfa01f24326d404e26645a0a6bf5596e7586be295f4d3d6ec913",
+      "fetched_at": "2026-09-14T07:43:09.112422+00:00",
+      "value_hash": "3914c68a0efec9c3bfbecb18798295da3dfc937fddb1fb5378e9987d3a7694a5",
+      "revision": 1,
+      "corrected": false,
+      "previous_value_hash": null,
+      "version_id": "30e201587b52dd6e0e7cd5d9222b2061d5d5f6dae9f97e1467c6e3945d0cde21"
+    }
+  ],
+  "catalogue_view": {
+    "stations": [
+      {
+        "id": "LUG",
+        "name": "Lugano-Università",
+        "area": "Lugano",
+        "representativeness": "urban_station",
+        "source_url": "https://www.bafu.admin.ch/de/datenabfrage-nabel"
+      }
+    ],
+    "health": "partial",
+    "source_url": "https://data.bs.ch/explore/dataset/100051/",
+    "attribution": "Kanton Basel-Stadt · Luftqualität Station Basel-Binningen · MeteoSchweiz / NABEL",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "unsupported": [
+      {
+        "area": "Basel / Binningen",
+        "reason": "source_contract_pending"
+      }
+    ],
+    "coverage_scope": "verified_station_only"
+  }
+}

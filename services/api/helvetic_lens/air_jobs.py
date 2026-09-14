@@ -6,7 +6,7 @@ from sqlalchemy import select
 
 from .air_models import AirMonitor
 from .air_runtime import enqueue, evaluate
-from .air_sources import collect
+from .air_sources import catalog_key, collect
 from .config import DomainError
 from .monitoring_subjects import _actor
 
@@ -54,7 +54,7 @@ def refresh(database, settings, *, monitor_id, version, checkpoint=lambda: None,
             _actor(session, row.owner_user_id, write=True)
         except DomainError:
             return {"status": "access_unavailable"}
-        keys = ["catalog", row.configuration["station_id"]]
+        keys = [catalog_key(row.configuration["station_id"]), row.configuration["station_id"]]
     for key in keys:
         checkpoint()
         collect(database, key, now=now)

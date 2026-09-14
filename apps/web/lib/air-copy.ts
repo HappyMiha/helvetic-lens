@@ -19,7 +19,7 @@ const extra = {
   ruleHelp:
     "Above the threshold triggers a change. Improvement is reported at or below threshold minus the margin. Cooldown suppresses repeated deteriorations; improvements remain visible.",
   scope:
-    "Available: Basel-Binningen, a suburban station. Local conditions may differ. Lugano and other areas are not enabled while their source contracts are being verified.",
+    "Basel-Binningen (suburban) and Lugano-Università (urban). These stations represent their surroundings, not every neighbourhood. Current source availability is shown here.",
   limits:
     "Provisional observations, not personal health advice. Missing data means unknown. History: 30 days; recovery: 72 hours. Only complete hourly inputs are used for a calculated 24-hour mean.",
   derived: "Calculated by Helvetic Lens from official hourly observations",
@@ -33,7 +33,7 @@ const extra = {
   muted: "Muted",
   threshold_crossed: "Pollution threshold exceeded",
   threshold_cleared: "Pollution improved below your threshold",
-  license: "Licence: CC BY 4.0",
+  license: "Source reuse terms",
   attribution: "Kanton Basel-Stadt · Basel-Binningen · MeteoSchweiz / NABEL",
   why: "You monitor this station, pollutant and measurement period.",
   open: "Open monitor",
@@ -63,7 +63,7 @@ const translations: Record<Locale, Extra> = {
     ruleHelp:
       "Über der Schwelle wird eine Änderung gemeldet. Verbesserung gilt bei höchstens Schwelle minus Abstand. Die Wartezeit unterdrückt wiederholte Verschlechterungen; Verbesserungen bleiben sichtbar.",
     scope:
-      "Verfügbar: Basel-Binningen, eine vorstädtische Station. Lokale Bedingungen können abweichen. Lugano und weitere Gebiete sind bis zur Prüfung ihrer Quellenverträge nicht aktiviert.",
+      "Basel-Binningen (vorstädtisch) und Lugano-Università (städtisch). Die Stationen repräsentieren ihre Umgebung, nicht jedes Quartier. Die aktuelle Quellenverfügbarkeit wird hier angezeigt.",
     limits:
       "Vorläufige Messungen, keine persönliche Gesundheitsberatung. Fehlende Daten bleiben unbekannt. Historie: 30 Tage; Wiederherstellung: 72 Stunden. Ein berechnetes 24-Stunden-Mittel erfordert vollständige Stundenwerte.",
     derived: "Von Helvetic Lens aus amtlichen Stundenwerten berechnet",
@@ -77,7 +77,7 @@ const translations: Record<Locale, Extra> = {
     muted: "Stummgeschaltet",
     threshold_crossed: "Schadstoffschwelle überschritten",
     threshold_cleared: "Belastung unter Ihre Schwelle gesunken",
-    license: "Lizenz: CC BY 4.0",
+    license: "Nutzungsbedingungen der Quelle",
     attribution: "Kanton Basel-Stadt · Basel-Binningen · MeteoSchweiz / NABEL",
     why: "Sie beobachten diese Station, diesen Schadstoff und diesen Messzeitraum.",
     open: "Monitoring öffnen",
@@ -104,7 +104,7 @@ const translations: Record<Locale, Extra> = {
     ruleHelp:
       "Un dépassement du seuil déclenche un changement. L’amélioration est signalée au seuil moins la marge ou en dessous. Le délai limite les dégradations répétées ; les améliorations restent visibles.",
     scope:
-      "Disponible : Basel-Binningen, une station périurbaine. Les conditions locales peuvent varier. Lugano et les autres régions attendent la vérification des contrats des sources.",
+      "Basel-Binningen (périurbaine) et Lugano-Università (urbaine). Ces stations représentent leurs alentours, pas chaque quartier. La disponibilité actuelle des sources est indiquée ici.",
     limits:
       "Mesures provisoires, sans conseil médical individuel. Les données manquantes restent inconnues. Historique : 30 jours ; récupération : 72 heures. Une moyenne calculée sur 24 heures exige toutes les valeurs horaires.",
     derived:
@@ -119,7 +119,7 @@ const translations: Record<Locale, Extra> = {
     muted: "Suspendu",
     threshold_crossed: "Seuil de pollution dépassé",
     threshold_cleared: "Pollution redescendue sous votre seuil",
-    license: "Licence : CC BY 4.0",
+    license: "Conditions de réutilisation de la source",
     attribution: "Canton de Bâle-Ville · Basel-Binningen · MétéoSuisse / NABEL",
     why: "Vous suivez cette station, ce polluant et cette période de mesure.",
     open: "Ouvrir le suivi",
@@ -146,7 +146,7 @@ const translations: Record<Locale, Extra> = {
     ruleHelp:
       "Il superamento della soglia genera una variazione. Il miglioramento è segnalato alla soglia meno il margine o al di sotto. L’intervallo limita i peggioramenti ripetuti; i miglioramenti restano visibili.",
     scope:
-      "Disponibile: Basel-Binningen, stazione suburbana. Le condizioni locali possono variare. Lugano e le altre aree attendono la verifica dei contratti delle fonti.",
+      "Basel-Binningen (suburbana) e Lugano-Università (urbana). Le stazioni rappresentano i dintorni, non ogni quartiere. Qui è indicata la disponibilità attuale delle fonti.",
     limits:
       "Misure provvisorie, senza consigli sanitari individuali. I dati mancanti restano sconosciuti. Storico: 30 giorni; recupero: 72 ore. Una media calcolata su 24 ore richiede tutti i valori orari.",
     derived: "Calcolato da Helvetic Lens dalle osservazioni orarie ufficiali",
@@ -160,7 +160,7 @@ const translations: Record<Locale, Extra> = {
     muted: "Silenziato",
     threshold_crossed: "Soglia di inquinamento superata",
     threshold_cleared: "Inquinamento migliorato sotto la soglia",
-    license: "Licenza: CC BY 4.0",
+    license: "Condizioni di riutilizzo della fonte",
     attribution:
       "Cantone di Basilea Città · Basel-Binningen · MeteoSvizzera / NABEL",
     why: "Segui questa stazione, questo inquinante e questo periodo di misura.",
@@ -188,7 +188,7 @@ const translations: Record<Locale, Extra> = {
     ruleHelp:
       "Sur la sava vegn annunziada ina midada. La meglieraziun vala tar la sava minus la distanza u sut quella. L’interval reducescha pegiuraziuns repetidas; meglieraziuns restan visiblas.",
     scope:
-      "Disponibel: Basel-Binningen, ina staziun suburbana. Las cundiziuns localas pon variar. Lugano ed autras regiuns spetgan la verificaziun dals contracts da las funtaunas.",
+      "Basel-Binningen (suburbana) e Lugano-Università (urbana). Las staziuns represchentan lur conturns, betg mintga quartier. La disponibladad actuala da las funtaunas vegn mussada qua.",
     limits:
       "Mesiraziuns provisoricas, nagin cussegl da sanadad individual. Datas mancantas restan nunenconuschentas. Istorgia: 30 dis; recuperaziun: 72 uras. Ina media calculada da 24 uras pretenda tut las valurs oraras.",
     derived: "Calculà da Helvetic Lens cun observaziuns oraras uffizialas",
@@ -202,7 +202,7 @@ const translations: Record<Locale, Extra> = {
     muted: "Sin silenzi",
     threshold_crossed: "Sava da polluziun surpassada",
     threshold_cleared: "Polluziun meglierada sut la sava",
-    license: "Licenza: CC BY 4.0",
+    license: "Cundiziuns da reutilisaziun da la funtauna",
     attribution:
       "Chantun Basilea-Citad · Basel-Binningen · MeteoSvizra / NABEL",
     why: "Vus observais questa staziun, questa substanza e questa perioda da mesiraziun.",
