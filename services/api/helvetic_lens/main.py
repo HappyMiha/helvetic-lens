@@ -333,6 +333,8 @@ class RelationReprocessingInput(Input):
 
 
 def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
+    if path == "/api/admin/monitoring-sources/history":
+        return "monitoring_source_history", 60, 60
     if path.startswith("/api/admin/monitoring-sources/attention"):
         return "monitoring_source_attention", 30 if method == "POST" else 120, 60
     if path.startswith("/api/monitoring-centre/evidence/export/"):
@@ -2294,6 +2296,8 @@ def create_app(
     app.include_router(source_operations_router(service, source_settings))
     from .monitoring_source_attention import source_attention_router
     app.include_router(source_attention_router(service, source_settings))
+    from .monitoring_source_history import source_history_router
+    app.include_router(source_history_router(service))
     return app
 
 

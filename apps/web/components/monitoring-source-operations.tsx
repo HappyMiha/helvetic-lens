@@ -8,6 +8,7 @@ import { sourceOperationsCopy } from "@/lib/source-operations-copy";
 import { useAuth } from "./auth-gate";
 import { Shell } from "./shell";
 import { MonitoringSourceAttention } from "./monitoring-source-attention";
+import { MonitoringSourceHistory } from "./monitoring-source-history";
 
 type Acquisition = {
   state: string;
@@ -158,6 +159,12 @@ function Reader({ allowed }: { allowed: boolean }) {
               }}
             />
             <p className="mb-4">{c.boundary}</p>
+            <MonitoringSourceHistory
+              denied={() => {
+                setData(null);
+                setError(true);
+              }}
+            />
             <p>
               {c.checked}: {dateTime(data.checked_at)} · {c.release}:{" "}
               <span className="break-all">{data.release}</span>

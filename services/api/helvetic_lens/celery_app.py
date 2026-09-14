@@ -32,6 +32,10 @@ celery_app.conf.update(
     broker_connection_retry_on_startup=True,
     task_default_queue="maintenance",
     beat_schedule={
+        "sample-monitoring-source-history": {
+            "task": "helvetic_lens.sample_monitoring_source_history", "schedule": 300.0,
+            "options": {"expires": 300},
+        },
         "dispatch-durable-outbox": {
             "task": "helvetic_lens.dispatch_outbox",
             "schedule": 2.0,
@@ -144,6 +148,17 @@ celery_app.conf.update(
         },
     },
 )
+
+
+@celery_app.task(name="helvetic_lens.sample_monitoring_source_history")
+def sample_monitoring_source_history():
+    from .monitoring_source_history import capture
+
+    database = Database(settings)
+    try:
+        return capture(database, load_connector_settings(database, settings))
+    finally:
+        database.engine.dispose()
 
 
 def _send(topic: str, queue: str, payload: dict, priority: int):

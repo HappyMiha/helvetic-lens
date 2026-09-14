@@ -30,6 +30,8 @@ are recorded separately; the broader MV2-017/018 tasks remain in progress.
 Platform administrators can inspect all nine directions and four source packs at
 `/admin/monitoring-sources`; see [source operations evidence](docs/monitoring-v2/SOURCE_OPERATIONS.md).
 Configuration, permission records and acquisition are distinct from verified coverage.
+The [source history reader](docs/monitoring-v2/SOURCE_HISTORY.md) adds 24-hour,
+7-day and 30-day sampled charts with explicit gaps and paginated hourly detail.
 
 The [Monitoring settings hub](docs/monitoring-v2/MONITORING_SETTINGS.md) at
 `/monitoring/settings` groups all nine native monitor editors with source connections.

@@ -185,6 +185,11 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ## Task index
 
+15 September source-history feature: MV2-052 remains IN PROGRESS in this index
+and its detail after the complete nine-category sampler/chart/table workflow.
+Historical sampling starts with activation; true processing/delivery latency and
+broader operational acceptance remain open. See [source history](docs/monitoring-v2/SOURCE_HISTORY.md).
+
 14 September timed-pause feature: MV2-018 and MV2-039 remain IN PROGRESS after
 the visible Commute notification-pause journey. The Centre and exact settings
 reader show its Europe/Zurich expiry, separate from source checks and permanent
@@ -2146,6 +2151,29 @@ charts, queue/fairness measurement and independent operational acceptance remain
 open under MV2-052; this inbox does not complete the parent task.
 
 **Execution evidence, 15 September 2026:** The complete source-attention inbox now supports personal exact-state acknowledgements, renewal/failure review and connector links across all nine categories. 32 API checks, three observed PostgreSQL lock races, the full build and 24 five-language desktop/mobile axe checkpoints passed. See [behavior, verification and remaining gates](docs/monitoring-v2/SOURCE_ATTENTION.md). The index and detail remain IN PROGRESS; publication does not establish production activation or complete broader operational requirements.
+
+**Implemented complete feature scope, 15 September 2026 — source history:**
+Persist bounded metadata-only samples for all nine source categories and both
+Commute channels every five minutes through the existing maintenance scheduler.
+Provide platform-admin 24-hour/7-day/30-day history with accessible charts and
+paginated numeric detail. Show acquisition/publication ages separately, source
+binding changes, error/unknown samples and missing sampling intervals. Do not
+infer transit/processing/delivery latency from unrelated timestamps, reconstruct
+old outages, silently interpolate missing observations or assert source coverage.
+Keep 30 days of operational metadata with bounded cleanup, separate from native
+source evidence, delivered revisions and personal decisions. Same-slot retries
+must be idempotent and cannot rewrite historical samples. APIs remain read-only,
+no-store and platform-admin-only; no credentials, payloads or private monitors
+enter samples. Accept only known category/channel/range selections. Test real
+scheduler integration, concurrency, retention/time travel, source changes and
+no-data/future-clock handling, five-language responsive chart/table interaction,
+access loss, late responses, migration and exact build/lint/backlog gates. Available
+dependencies are the existing metadata snapshots and maintenance worker; external
+source credentials are unnecessary. Broader processing/delivery lag, recovery and
+human/target-host acceptance remain separate MV2-052 obligations. Complete the
+whole sampler/API/UI feature before publishing.
+
+**Source-history evidence, 15 September 2026:** The sampler, no-store admin API and five-language chart/table reader are implemented for all nine categories/two Commute channels. 45 integrated API checks, an observed PostgreSQL unique-key race, migration/retention checks and 24 responsive browser/axe checkpoints passed. See [semantics, checks and remaining limits](docs/monitoring-v2/SOURCE_HISTORY.md). Publication and activation are distinct; broader latency/recovery/fairness requirements stay open.
 
 **Dependencies:** [MV2-011](#mv2-011), [MV2-012](#mv2-012), [MV2-025](#mv2-025). **Requirements:** §§23,28,33.11–12,34; legacy HL-094,099.
 

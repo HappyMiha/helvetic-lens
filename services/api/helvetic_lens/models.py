@@ -100,6 +100,15 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class MonitoringOperationalSample(Base):
+    """Operational metadata only, never retained source or personal evidence."""
+    __tablename__ = "monitoring_operational_samples"
+    channel: Mapped[str] = mapped_column(String(40), primary_key=True)
+    bucket_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), primary_key=True, index=True)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    values: Mapped[dict] = mapped_column(JSON)
+
+
 class MonitoringSourceAcknowledgement(Base):
     """Personal operator receipt, never a source health or permission decision."""
     __tablename__ = "monitoring_source_acknowledgements"

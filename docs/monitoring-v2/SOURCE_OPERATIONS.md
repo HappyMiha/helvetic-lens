@@ -81,3 +81,11 @@ The original read-only overview remains unchanged in purpose. The new
 renewal windows and failure review alongside it. Its additive migration and POST
 are described separately; the historical no-migration/no-write evidence above
 applies to the original overview feature. Broader MV2-052 requirements remain open.
+
+## Source history extension — 15 September 2026
+
+The [source history feature](SOURCE_HISTORY.md) records bounded operational
+metadata through the maintenance scheduler. The GET overview stays read-only;
+it never creates a historical sample. Five-language graphs and hourly detail
+distinguish missing samples, unknown clocks, brief outages and source changes.
+Native source evidence and personal decisions have separate retention.
