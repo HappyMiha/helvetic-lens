@@ -80,7 +80,7 @@ function Centre({
       request.current = controller;
       setBusy(true);
       setFailed(false);
-      const query = new URLSearchParams({ limit: "30" });
+      const query = new URLSearchParams({ limit: "30", personal_only: "true" });
       if (domain) query.set("domain", domain);
       if (cursor) query.set("cursor", cursor);
       try {

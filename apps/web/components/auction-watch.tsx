@@ -4,6 +4,7 @@ import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ApiError } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
+import { businessMonitorCopy } from "@/lib/business-monitor-copy";
 import { auctionCopy } from "@/lib/auction-copy";
 import {
   newAuctionProfile,
@@ -16,6 +17,7 @@ import {
   type AuctionPage,
 } from "@/lib/auction-watch";
 import { useAuth } from "./auth-gate";
+import { BusinessMonitorAccess } from "./business-monitor-access";
 import { Shell } from "./shell";
 import styles from "./commute-watch.module.css";
 import ipStyles from "./auction-watch.module.css";
@@ -343,6 +345,7 @@ function Detail({
     /^[0-9a-f-]{36}$/i.test(events[0])
       ? events[0]
       : null;
+  const { session } = useAuth();
   const { locale } = useI18n(),
     c = auctionCopy[locale];
   const [revision, setRevision] = useState(0),
@@ -443,14 +446,22 @@ function Detail({
         />
       )}
       <AuctionReminders key={`reminders:${row.version}`} monitor={row} />
-      <AuctionEmail
-        key={`email:${row.version}`}
-        monitorId={row.id}
-        canManage={canManage}
-        archived={row.status === "archived"}
+      <BusinessMonitorAccess
+        key={`access:${row.version}`}
+        domain="auctions"
+        monitor={row}
         changed={reload}
-        onAccessFailure={onAccessFailure}
       />
+      {row.owner_user_id === session?.user?.id && (
+        <AuctionEmail
+          key={`email:${row.version}`}
+          monitorId={row.id}
+          canManage={canManage}
+          archived={row.status === "archived"}
+          changed={reload}
+          onAccessFailure={onAccessFailure}
+        />
+      )}
       {history && <History key={row.version} id={id} />}
     </section>
   );
@@ -493,7 +504,7 @@ function Content({
       <div className={`${styles.root} ${ipStyles.root}`} data-auction-watch>
         <h1>{c.title}</h1>
         <p>{c.intro}</p>
-        <p>{c.private}</p>
+        <p>{businessMonitorCopy[locale].defaultScope}</p>
         <AsteSourceStatus revision={revision} />
         <p className={styles.notice}>
           {auctionTrackingCopy[locale].sourceHelp}

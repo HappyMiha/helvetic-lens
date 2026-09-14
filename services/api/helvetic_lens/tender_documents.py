@@ -47,7 +47,7 @@ def record_access(session, user_id, dossier_id, *, source_id, publication_id,
     No HTTP endpoint. References identify reviewed evidence, never credentials.
     General public source access does not permit calling this grant operation.
     """
-    dossier = owned_dossier(session, user_id, dossier_id, write=True)
+    dossier = owned_dossier(session, user_id, dossier_id, write=True, personal_only=True)
     now, valid_until, retain_until = map(aware, (now, valid_until, retain_until))
     if not now < valid_until <= retain_until:
         raise ValueError("Explicit future access and retention deadlines are required")
@@ -71,7 +71,7 @@ def record_access(session, user_id, dossier_id, *, source_id, publication_id,
 
 
 def access(session, user_id, dossier_id, access_id, now, *, write=False):
-    dossier = owned_dossier(session, user_id, dossier_id, write=write)
+    dossier = owned_dossier(session, user_id, dossier_id, write=write, personal_only=True)
     grant = session.scalar(select(TenderDocumentAccess).where(
         TenderDocumentAccess.id == access_id, TenderDocumentAccess.dossier_id == dossier.id,
         TenderDocumentAccess.organization_id == dossier.organization_id,
@@ -87,7 +87,7 @@ def store(session, user_id, dossier_id, parsed, body, *, content_type, now):
     now = aware(now)
     parsed = ParsedDocument.model_validate(parsed.model_dump())
     # Lock order matches monitor lifecycle commands; SQLite uses the no-op write.
-    dossier = owned_dossier(session, user_id, dossier_id, write=True)
+    dossier = owned_dossier(session, user_id, dossier_id, write=True, personal_only=True)
     session.execute(update(TenderMonitor).where(TenderMonitor.id == dossier.monitor_id)
                     .values(version=TenderMonitor.version))
     monitor = session.scalar(select(TenderMonitor).where(TenderMonitor.id == dossier.monitor_id)
@@ -135,7 +135,7 @@ def store(session, user_id, dossier_id, parsed, body, *, content_type, now):
 
 def read(session, user_id, dossier_id, snapshot_id, *, now=None, check_item_access=True):
     now = aware(now or datetime.now(UTC))
-    dossier = owned_dossier(session, user_id, dossier_id)
+    dossier = owned_dossier(session, user_id, dossier_id, personal_only=True)
     row = session.scalar(select(TenderDocumentSnapshot).where(
         TenderDocumentSnapshot.id == snapshot_id, TenderDocumentSnapshot.dossier_id == dossier.id,
         TenderDocumentSnapshot.organization_id == dossier.organization_id,
@@ -165,7 +165,7 @@ def read(session, user_id, dossier_id, snapshot_id, *, now=None, check_item_acce
 
 def index(session, user_id, dossier_id, *, limit=20, after_id=None, now=None):
     now = aware(now or datetime.now(UTC))
-    dossier = owned_dossier(session, user_id, dossier_id)
+    dossier = owned_dossier(session, user_id, dossier_id, personal_only=True)
     limit_value(limit)
     rows = select(TenderDocumentSnapshot.id, TenderDocumentSnapshot.item_id,
                   TenderDocumentSnapshot.content_sha256, TenderDocumentSnapshot.created_at,

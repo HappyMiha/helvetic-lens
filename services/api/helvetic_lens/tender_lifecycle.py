@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy import delete, select, update
 
+from .business_monitor_access import collection_actor, visible_to
 from .config import DomainError
 from .jobs import TERMINAL_STATES
 from .models import Job
@@ -44,6 +45,7 @@ def command(session, settings, user_id, monitor_id, version, action, *, now=None
     if row.version != version or row.status not in allowed:
         raise DomainError("The monitor changed. Reload before continuing.", 409, "tender_version_conflict")
     if target == "active":
+        collection_actor(session, row)
         if not enabled(settings):
             raise DomainError("The public SIMAP source is unavailable.", 409, "tender_source_not_ready")
         if not queries(row.configuration):
@@ -61,7 +63,7 @@ def command(session, settings, user_id, monitor_id, version, action, *, now=None
             .where(
                 TenderMonitor.id == row.id,
                 TenderMonitor.organization_id == row.organization_id,
-                TenderMonitor.owner_user_id == user_id,
+                visible_to(TenderMonitor, user_id),
                 TenderMonitor.version == version,
                 TenderMonitor.status.in_(allowed),
             )
@@ -91,7 +93,7 @@ def remove(session, user_id, monitor_id, version):
             .where(
                 TenderMonitor.id == row.id,
                 TenderMonitor.organization_id == row.organization_id,
-                TenderMonitor.owner_user_id == user_id,
+                visible_to(TenderMonitor, user_id),
                 TenderMonitor.version == version,
             )
             .execution_options(synchronize_session=False)

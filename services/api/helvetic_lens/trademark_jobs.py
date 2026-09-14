@@ -4,6 +4,7 @@ from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 
+from .business_monitor_access import collection_actor
 from .config import DomainError
 from .trademark_models import TrademarkMonitor
 from .trademark_sources import _clock as clock
@@ -37,7 +38,7 @@ def refresh_due(database, settings, *, now=None):
             if due_at is None or (due_at.replace(tzinfo=UTC) if due_at.tzinfo is None else due_at) > now:
                 continue
             try:
-                refreshed = refresh(session, owner, monitor_id, now=now)
+                refreshed = refresh(session, collection_actor(session, monitor), monitor_id, now=now)
                 result["unavailable" if refreshed["health"] == "source_unavailable" else "refreshed"] += 1
             except DomainError as error:
                 # Refresh's savepoint rolled back all partial source projections.

@@ -40,6 +40,7 @@ from .assistant_contract import (
 from .auction_api import auction_router
 from .auth import CSRF_COOKIE, SESSION_COOKIE, AuthService, RateLimiter
 from .auth_mail import AuthMailer
+from .business_monitor_api import business_monitor_router
 from .commute_api import commute_router
 from .config import DomainError, Settings
 from .db import utcnow
@@ -321,6 +322,8 @@ class RelationReprocessingInput(Input):
 
 
 def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
+    if path.startswith("/api/monitoring-centre/business"):
+        return "business_monitor_scope", 60, 60
     if path == "/api/monitoring-centre/today-counts":
         return "today_counts", 12, 60
     if path == "/api/monitoring-centre/notifications":
@@ -2004,13 +2007,15 @@ def create_app(
                 raise DomainError("Job not found.", 404, "not_found")
             with service.db.session() as session:
                 owned_commute(session, actor.user_id, job["target_id"], write=request.method != "GET")
-        if job["target_type"] == "tender_monitor":
-            from .tender_repository import owned as owned_tender
+        if job["target_type"] in {"tender_monitor", "trademark_monitor", "auction_monitor"}:
+            from .business_monitor_sharing import monitor_for
             actor = request.state.identity
             if actor is None:
                 raise DomainError("Job not found.", 404, "not_found")
+            domain = {"tender_monitor": "tenders", "trademark_monitor": "ip", "auction_monitor": "auctions"}[job["target_type"]]
             with service.db.session() as session:
-                owned_tender(session, actor.user_id, job["target_id"], write=request.method != "GET")
+                monitor_for(session, actor.user_id, domain, job["target_id"], write=request.method != "GET",
+                            personal_only=job["type"] in {"tender_email", "trademark_email", "auction_email"})
         if job["target_type"] == "air_monitor":
             from .air_runtime import owned as owned_air
             actor = request.state.identity
@@ -2221,6 +2226,7 @@ def create_app(
     app.include_router(trademark_router(service, settings))
     app.include_router(auction_router(service, settings))
     app.include_router(centre_router(service, settings))
+    app.include_router(business_monitor_router(service, settings))
     from .related_api import related_router
     app.include_router(related_router(service, settings))
     from .monitoring_source_operations import source_operations_router

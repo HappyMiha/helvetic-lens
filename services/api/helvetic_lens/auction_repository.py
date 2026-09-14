@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from .auction_contracts import AuctionProfile
 from .auction_models import AuctionConfigurationRevision, AuctionMonitor
 from .auction_workflow_models import AuctionRuntime
+from .business_monitor_access import scope_view, visible_to
 from .config import DomainError
 from .models import User
 from .monitoring_subjects import _actor, _savepoint
@@ -33,18 +34,18 @@ def _version(value):
         _fail("auction_version_invalid", 422)
 
 
-def owned(session, user_id, monitor_id, *, write=False):
-    org = _actor(session, user_id, write=write)
-    row = session.scalar(select(AuctionMonitor).where(AuctionMonitor.id == monitor_id,
-        AuctionMonitor.organization_id == org, AuctionMonitor.owner_user_id == user_id)
-        .execution_options(populate_existing=True))
-    if row is None:
-        _fail("auction_monitor_not_found", 404)
-    return row
+def owned(session, user_id, monitor_id, *, write=False, personal_only=False):
+    from .business_monitor_sharing import monitor_for
+    try:
+        return monitor_for(session, user_id, "auctions", monitor_id, write=write, personal_only=personal_only)
+    except DomainError as error:
+        if error.code == "business_monitor_not_found":
+            raise DomainError("Business monitor not found.", 404, "auction_monitor_not_found") from None
+        raise
 
 
 def _view(row):
-    return {"id": row.id, "configuration": deepcopy(row.configuration), "status": row.status,
+    return {**scope_view(row),"id": row.id, "configuration": deepcopy(row.configuration), "status": row.status,
             "revision": row.revision, "version": row.version}
 
 
@@ -64,7 +65,7 @@ def list_monitors(session, user_id, *, limit=20, after_id=None):
     org = _actor(session, user_id)
     if type(limit) is not int or not 1 <= limit <= 100:
         _fail("auction_page_invalid", 422)
-    query = select(AuctionMonitor).where(AuctionMonitor.organization_id == org, AuctionMonitor.owner_user_id == user_id)
+    query = select(AuctionMonitor).where(AuctionMonitor.organization_id == org, visible_to(AuctionMonitor, user_id))
     if after_id is not None:
         owned(session, user_id, after_id)
         query = query.where(AuctionMonitor.id > after_id)
@@ -128,7 +129,7 @@ def edit_monitor(session, user_id, monitor_id, version, payload):
         _fail("auction_revision_limit")
     with _savepoint(session):
         changed = session.execute(update(AuctionMonitor).where(AuctionMonitor.id == row.id,
-            AuctionMonitor.organization_id == row.organization_id, AuctionMonitor.owner_user_id == user_id,
+            AuctionMonitor.organization_id == row.organization_id, visible_to(AuctionMonitor, user_id),
             AuctionMonitor.version == version, AuctionMonitor.status.in_(("draft", "paused")))
             .values(configuration=values, version=version + 1, revision=row.revision + 1, status="draft")
             .execution_options(synchronize_session=False))
@@ -168,7 +169,7 @@ def archive_monitor(session, user_id, monitor_id, version):
     if row.status not in {"draft", "paused"}:
         _fail("auction_stop_before_archive")
     changed = session.execute(update(AuctionMonitor).where(AuctionMonitor.id == row.id,
-        AuctionMonitor.organization_id == row.organization_id, AuctionMonitor.owner_user_id == user_id,
+        AuctionMonitor.organization_id == row.organization_id, visible_to(AuctionMonitor, user_id),
         AuctionMonitor.version == version, AuctionMonitor.status.in_(("draft", "paused"))).values(status="archived", version=version + 1)
         .execution_options(synchronize_session=False))
     if changed.rowcount != 1:
@@ -183,7 +184,7 @@ def delete_monitor(session, user_id, monitor_id, version):
     if row.version != version or row.status != "archived":
         _fail("auction_archive_before_delete")
     changed = session.execute(delete(AuctionMonitor).where(AuctionMonitor.id == row.id,
-        AuctionMonitor.organization_id == row.organization_id, AuctionMonitor.owner_user_id == user_id,
+        AuctionMonitor.organization_id == row.organization_id, visible_to(AuctionMonitor, user_id),
         AuctionMonitor.version == version, AuctionMonitor.status == "archived")
         .execution_options(synchronize_session=False))
     if changed.rowcount != 1:

@@ -1,0 +1,52 @@
+.card {
+  border: 1px solid #738595;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+  overflow-wrap: anywhere;
+}
+.card summary {
+  cursor: pointer;
+  padding: 8px 0;
+  min-height: 44px;
+}
+.card p {
+  margin: 12px 0;
+  line-height: 1.6;
+}
+.card fieldset {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #738595;
+  border-radius: 8px;
+}
+.card label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+}
+.card .check {
+  flex-direction: row;
+  align-items: flex-start;
+}
+.card button,
+.card select {
+  min-height: 44px;
+  max-width: 100%;
+  border: 1px solid #738595;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+.card :is(button, select, input, summary):focus-visible {
+  outline: 3px solid #328cc1;
+  outline-offset: 3px;
+}
+.card button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.history {
+  padding-left: 24px;
+  margin-top: 12px;
+}

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
+import { businessMonitorCopy } from "@/lib/business-monitor-copy";
 import { simapNotice, tenderCopy } from "@/lib/tender-copy";
 import { tenderEmailCopy } from "@/lib/tender-email-copy";
 import { tenderHistoryCopy } from "@/lib/tender-history-copy";
@@ -28,6 +29,7 @@ import {
   type TenderReason,
 } from "@/lib/tender-watch";
 import { useAuth } from "./auth-gate";
+import { BusinessMonitorAccess } from "./business-monitor-access";
 import { Shell } from "./shell";
 import styles from "./tender-watch.module.css";
 
@@ -1321,6 +1323,7 @@ function Monitor({
   changed: () => void;
   deleted: () => void;
 }) {
+  const { session } = useAuth();
   const { locale } = useI18n(),
     c = tenderCopy[locale];
   const [revision, setRevision] = useState(0),
@@ -1456,13 +1459,21 @@ function Monitor({
             </div>
           </header>
           <ProfileHistory key={`profile-${row.revision}`} monitor={row} />
-          <TenderEmail
-            key={row.version}
-            monitorId={id}
-            canManage={canManage}
-            archived={row.status === "archived"}
+          <BusinessMonitorAccess
+            key={`access:${row.version}`}
+            domain="tenders"
+            monitor={row}
             changed={reload}
           />
+          {row.owner_user_id === session?.user?.id && (
+            <TenderEmail
+              key={row.version}
+              monitorId={id}
+              canManage={canManage}
+              archived={row.status === "archived"}
+              changed={reload}
+            />
+          )}
           {dossier ? (
             <Dossier
               key={dossier}
@@ -1494,12 +1505,34 @@ export function TenderWatch() {
   const scope = session?.authenticated
     ? `${session.user?.id}:${session.organization?.id}:${session.role}`
     : "unavailable";
+  const [visible, setVisible] = useState(true),
+    [epoch, setEpoch] = useState(0);
+  useEffect(() => {
+    const refresh = () => {
+      setVisible(!document.hidden);
+      setEpoch((value) => value + 1);
+    };
+    const hide = () => {
+      setVisible(false);
+      setEpoch((value) => value + 1);
+    };
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("pagehide", hide);
+    window.addEventListener("pageshow", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("pagehide", hide);
+      window.removeEventListener("pageshow", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, []);
   const requested = params.get("monitor") || "";
   const initial = /^[0-9a-f-]{36}$/i.test(requested) ? requested : "";
   return (
     <Reader
-      key={scope}
-      allowed={scope !== "unavailable"}
+      key={`${scope}:${visible}:${epoch}`}
+      allowed={visible && scope !== "unavailable"}
       canManage={session?.role === "organization_admin"}
       initial={initial}
       initialDossier={
@@ -1553,6 +1586,7 @@ function Reader({
         <header>
           <h1>{c.title}</h1>
           <p>{c.intro}</p>
+          <p>{businessMonitorCopy[locale].defaultScope}</p>
         </header>
         <p className={styles.notice}>{c.scope}</p>
         <p lang={locale === "rm-CH" ? "de" : locale.slice(0, 2)}>

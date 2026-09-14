@@ -2999,7 +2999,6 @@ class HelveticLens:
             from .models import MonitoringSubject
             from .river_models import RiverMonitor
             from .road_models import RoadMonitor
-            from .tender_models import TenderMonitor
             if monitoring_owner_id is None:
                 statement = statement.where(Job.target_type != "hazard_monitor")
             else:
@@ -3018,12 +3017,18 @@ class HelveticLens:
                 statement = statement.where(or_(Job.target_type != "commute_monitor", Job.target_id.in_(
                     select(CommuteMonitor.id).where(CommuteMonitor.owner_user_id == monitoring_owner_id,
                                                    CommuteMonitor.organization_id == self.organization_id))))
-            if monitoring_owner_id is None:
-                statement = statement.where(Job.target_type != "tender_monitor")
-            else:
-                statement = statement.where(or_(Job.target_type != "tender_monitor", Job.target_id.in_(
-                    select(TenderMonitor.id).where(TenderMonitor.owner_user_id == monitoring_owner_id,
-                                                  TenderMonitor.organization_id == self.organization_id))))
+            from .business_monitor_access import visible_to
+            from .business_monitor_sharing import MODELS, PREFIXES
+            for domain, model in MODELS.items():
+                target = PREFIXES[domain] + "_monitor"
+                if monitoring_owner_id is None:
+                    statement = statement.where(Job.target_type != target)
+                else:
+                    # Shared collection status is visible; personal mail work is not.
+                    statement = statement.where(or_(Job.target_type != target, Job.target_id.in_(
+                        select(model.id).where(model.organization_id == self.organization_id,
+                            visible_to(model, monitoring_owner_id),
+                            or_(Job.type != PREFIXES[domain] + "_email", model.owner_user_id == monitoring_owner_id)))))
             if monitoring_owner_id is None:
                 statement = statement.where(Job.target_type != "air_monitor")
             else:

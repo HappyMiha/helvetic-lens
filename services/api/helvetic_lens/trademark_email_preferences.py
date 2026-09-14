@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import func, select, update
 
 from . import jobs
+from .business_monitor_access import require_private_owner
 from .models import User
 from .monitoring_subjects import _savepoint
 from .pollen_contracts import PollenDelivery
@@ -46,6 +47,7 @@ def cancel_email_work(session, monitor):
 
 def view(session, user_id, monitor_id):
     monitor = owned(session, user_id, monitor_id)
+    require_private_owner(monitor, user_id)
     current = policy(session, monitor)
     config = EmailConfiguration.model_validate(current.configuration) if current else EmailConfiguration()
     user = session.get(User, user_id)
@@ -70,6 +72,7 @@ def configure(session, user_id, monitor_id, *, expected_version, configuration, 
         _fail("trademark_email_consent_required", 422)
     with _savepoint(session):
         monitor = monitor_for(session, user_id, monitor_id, write=True)
+        require_private_owner(monitor, user_id)
         user = session.scalar(select(User).where(User.id == user_id).with_for_update().execution_options(populate_existing=True))
         if monitor.version != expected_version:
             _fail("trademark_version_conflict")

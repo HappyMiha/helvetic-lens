@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy import and_, func, or_, select
 
+from .business_monitor_access import visible_to
 from .config import DomainError
 from .monitoring_subjects import _actor
 from .simap_sources import aware
@@ -25,8 +26,9 @@ def today(session, user_id, *, after_version=None, review_state=None, following=
     join = and_(version.dossier_id == dossier.id, version.organization_id == dossier.organization_id,
                 version.sequence == dossier.latest_sequence)
     scope = (dossier.organization_id == organization, monitor.organization_id == organization,
-        monitor.owner_user_id == user_id, monitor.status != "archived", version.publish_after <= now,
+        visible_to(monitor, user_id), monitor.status != "archived", version.publish_after <= now,
         permitted(dossier.project_id, version.publication_id),
+        or_(monitor.owner_user_id == user_id, version.document_observation_id.is_(None)),
         or_(dossier.following.is_(True), version.summary["verdict"].as_string().in_({"match", "needs_review"})))
     query = select(dossier, version.summary, version.id, version.profile_revision, version.observed_at,
         monitor.configuration["name"].as_string(), monitor.revision, monitor.status).join(version, join).join(
@@ -46,7 +48,8 @@ def today(session, user_id, *, after_version=None, review_state=None, following=
             and_(dossier.id == version.dossier_id, dossier.organization_id == version.organization_id)).join(
                 monitor, monitor.id == dossier.monitor_id).where(version.id == str(after_version),
                     dossier.organization_id == organization, monitor.organization_id == organization,
-                    monitor.owner_user_id == user_id)).first()
+                    visible_to(monitor, user_id),
+                    or_(monitor.owner_user_id == user_id, version.document_observation_id.is_(None)))).first()
         if anchor is None:
             raise DomainError("Refresh the tender page.", 422, "tender_cursor_invalid")
         query = query.where(or_(version.observed_at < anchor.observed_at,

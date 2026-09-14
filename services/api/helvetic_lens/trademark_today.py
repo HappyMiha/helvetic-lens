@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from sqlalchemy import and_, or_, select
 
+from .business_monitor_access import visible_to
 from .monitoring_subjects import _actor
 from .trademark_models import TrademarkMonitor
 from .trademark_repository import _fail
@@ -25,7 +26,7 @@ def page(session, settings, user_id, *, now, inbox=False, cursor=None, limit=20)
         TrademarkMonitor.id == TrademarkCandidate.monitor_id, TrademarkMonitor.organization_id == TrademarkCandidate.organization_id)).join(
         TrademarkCandidateEvent, and_(TrademarkCandidateEvent.candidate_id == TrademarkCandidate.id,
         TrademarkCandidateEvent.organization_id == organization, TrademarkCandidateEvent.sequence == TrademarkCandidate.sequence)).where(
-        TrademarkMonitor.owner_user_id == user_id, TrademarkMonitor.organization_id == organization, TrademarkMonitor.status == "active",
+        visible_to(TrademarkMonitor, user_id), TrademarkMonitor.organization_id == organization, TrademarkMonitor.status == "active",
         TrademarkCandidate.profile_revision == TrademarkMonitor.revision, TrademarkCandidate.sequence > TrademarkCandidate.reviewed_sequence,
         TrademarkCandidateEvent.created_at <= now)
     if not inbox:

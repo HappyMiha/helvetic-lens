@@ -9,8 +9,9 @@ from sqlalchemy.exc import IntegrityError
 
 from . import jobs
 from . import tender_scan as scan
+from .business_monitor_access import collection_actor
 from .config import DomainError
-from .monitoring_subjects import _actor, _savepoint
+from .monitoring_subjects import _savepoint
 from .simap_sources import PublicationEmbargo, PublicClient, SourceUnavailable
 from .tender_models import TenderCollection, TenderMonitor, TenderSourceLease
 from .tender_rights import SourceRestricted, require_permitted
@@ -82,7 +83,7 @@ def enqueue_due(database, settings, *, now=None):
             if row is None or row.status != "active" or utc(row.next_poll_at) > now:
                 continue
             try:
-                _actor(session, row.owner_user_id, write=True)
+                collection_actor(session, row)
                 count += enqueue(session, row, now)
                 row.next_poll_at = now + timedelta(seconds=15)
             except DomainError:
@@ -156,7 +157,7 @@ def _acquire(database, settings, monitor_id, version, token, now):
             or monitor.version != version
         ):
             return None
-        _actor(session, monitor.owner_user_id, write=True)
+        collection_actor(session, monitor)
         collection = session.get(TenderCollection, monitor_id)
         if collection is None:
             collection = TenderCollection(
@@ -308,7 +309,7 @@ def refresh(database, settings, *, monitor_id, version, checkpoint=lambda: None,
             ):
                 return {"status": "inactive_or_superseded"}
             try:
-                _actor(session, monitor.owner_user_id, write=True)
+                collection_actor(session, monitor)
             except DomainError:
                 return {"status": "access_unavailable"}
             original_state = deepcopy(collection.state)

@@ -6,6 +6,7 @@ from pydantic import ValidationError
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 
+from .business_monitor_access import scope_view, visible_to
 from .config import DomainError
 from .models import User
 from .monitoring_subjects import _actor, _savepoint
@@ -32,18 +33,18 @@ def _version(value):
         _fail("trademark_version_invalid", 422)
 
 
-def owned(session, user_id, monitor_id, *, write=False):
-    org = _actor(session, user_id, write=write)
-    row = session.scalar(select(TrademarkMonitor).where(TrademarkMonitor.id == monitor_id,
-        TrademarkMonitor.organization_id == org, TrademarkMonitor.owner_user_id == user_id)
-        .execution_options(populate_existing=True))
-    if row is None:
-        _fail("trademark_monitor_not_found", 404)
-    return row
+def owned(session, user_id, monitor_id, *, write=False, personal_only=False):
+    from .business_monitor_sharing import monitor_for
+    try:
+        return monitor_for(session, user_id, "ip", monitor_id, write=write, personal_only=personal_only)
+    except DomainError as error:
+        if error.code == "business_monitor_not_found":
+            raise DomainError("Business monitor not found.", 404, "trademark_monitor_not_found") from None
+        raise
 
 
 def _view(row):
-    return {"id": row.id, "configuration": deepcopy(row.configuration), "status": row.status,
+    return {**scope_view(row),"id": row.id, "configuration": deepcopy(row.configuration), "status": row.status,
             "revision": row.revision, "version": row.version}
 
 
@@ -64,7 +65,7 @@ def list_monitors(session, user_id, *, limit=20, after_id=None):
     org = _actor(session, user_id)
     if type(limit) is not int or not 1 <= limit <= 100:
         _fail("trademark_page_invalid", 422)
-    query = select(TrademarkMonitor).where(TrademarkMonitor.organization_id == org, TrademarkMonitor.owner_user_id == user_id)
+    query = select(TrademarkMonitor).where(TrademarkMonitor.organization_id == org, visible_to(TrademarkMonitor, user_id))
     if after_id is not None:
         owned(session, user_id, after_id)
         query = query.where(TrademarkMonitor.id > after_id)
@@ -128,7 +129,7 @@ def edit_monitor(session, user_id, monitor_id, version, payload):
         _fail("trademark_revision_limit")
     with _savepoint(session):
         changed = session.execute(update(TrademarkMonitor).where(TrademarkMonitor.id == row.id,
-            TrademarkMonitor.organization_id == row.organization_id, TrademarkMonitor.owner_user_id == user_id,
+            TrademarkMonitor.organization_id == row.organization_id, visible_to(TrademarkMonitor, user_id),
             TrademarkMonitor.version == version, TrademarkMonitor.status.in_(("draft", "paused")))
             .values(configuration=values, version=version + 1, revision=row.revision + 1, status="draft")
             .execution_options(synchronize_session=False))
@@ -169,7 +170,7 @@ def archive_monitor(session, user_id, monitor_id, version):
     if row.status not in {"draft", "paused"}:
         _fail("trademark_stop_before_archive")
     changed = session.execute(update(TrademarkMonitor).where(TrademarkMonitor.id == row.id,
-        TrademarkMonitor.organization_id == row.organization_id, TrademarkMonitor.owner_user_id == user_id,
+        TrademarkMonitor.organization_id == row.organization_id, visible_to(TrademarkMonitor, user_id),
         TrademarkMonitor.version == version, TrademarkMonitor.status.in_({"draft", "paused"})).values(status="archived", version=version + 1)
         .execution_options(synchronize_session=False))
     if changed.rowcount != 1:
@@ -184,7 +185,7 @@ def delete_monitor(session, user_id, monitor_id, version):
     if row.version != version or row.status != "archived":
         _fail("trademark_archive_before_delete")
     changed = session.execute(delete(TrademarkMonitor).where(TrademarkMonitor.id == row.id,
-        TrademarkMonitor.organization_id == row.organization_id, TrademarkMonitor.owner_user_id == user_id,
+        TrademarkMonitor.organization_id == row.organization_id, visible_to(TrademarkMonitor, user_id),
         TrademarkMonitor.version == version, TrademarkMonitor.status == "archived")
         .execution_options(synchronize_session=False))
     if changed.rowcount != 1:

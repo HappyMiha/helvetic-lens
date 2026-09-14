@@ -6,8 +6,9 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 from sqlalchemy import func, select, update
 
+from .business_monitor_access import collection_actor
 from .config import DomainError
-from .monitoring_subjects import _actor, _savepoint
+from .monitoring_subjects import _savepoint
 from .simap_sources import aware, parse_publication
 from .simap_tender_facts import facts_from_publication
 from .tender_contracts import TenderProfile, match_lot
@@ -195,7 +196,7 @@ def observe_publication(
     )
     if monitor is None or monitor.status != "active":
         return []
-    _actor(session, monitor.owner_user_id, write=True)
+    collection_actor(session, monitor)
     require_permitted(session, record["project_id"], record["publication_id"])
     checked = parse_publication(
         record["original"], project_id=record["project_id"], publication_id=record["publication_id"], now=now

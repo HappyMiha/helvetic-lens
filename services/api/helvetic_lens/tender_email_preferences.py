@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from pydantic import Field, field_validator
 from sqlalchemy import func, select, update
 
+from .business_monitor_access import require_private_owner
 from .config import DomainError
 from .models import User
 from .monitoring_subjects import _savepoint
@@ -40,6 +41,7 @@ def policy(session, monitor):
 
 def view(session, user_id, monitor_id):
     monitor = owned(session, user_id, monitor_id)
+    require_private_owner(monitor, user_id)
     current = policy(session, monitor)
     config = EmailConfiguration.model_validate(current.configuration) if current else EmailConfiguration()
     user = session.get(User, user_id)
@@ -71,7 +73,7 @@ def configure(session, user_id, monitor_id, *, expected_version, configuration, 
     from .tender_lifecycle import cancel_work
 
     now = aware(now or datetime.now(UTC))
-    owned(session, user_id, monitor_id, write=True)
+    require_private_owner(owned(session, user_id, monitor_id, write=True), user_id)
     positive(expected_version)
     config = EmailConfiguration.model_validate(configuration)
     wants_email = config.delivery.email != "off"

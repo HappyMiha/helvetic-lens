@@ -8,6 +8,7 @@ from sqlalchemy import and_, exists, func, select, update
 
 from . import jobs
 from .auth_mail import AuthMailer
+from .business_monitor_access import require_private_owner
 from .config import DomainError
 from .models import User
 from .monitoring_subjects import _actor
@@ -160,6 +161,7 @@ def preview(session, settings, user_id, monitor_id, *, now=None):
     from .trademark_repository import owned
     now = _now(now)
     monitor = owned(session, user_id, monitor_id)
+    require_private_owner(monitor, user_id)
     result = {"items": [], "more_available": False, "quiet_hours": False, "status": "unavailable"}
     if settings.auth_email_mode != "smtp":
         return result

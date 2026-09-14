@@ -8,6 +8,7 @@ from . import trademark_calibrations as calibrations
 from . import trademark_deadlines as deadlines
 from . import trademark_matching as matching
 from . import trademark_sources as sources
+from .business_monitor_access import collection_actor
 from .config import DomainError
 from .monitoring_subjects import _actor, _savepoint
 from .trademark_contracts import TrademarkPortfolio
@@ -84,6 +85,7 @@ def start(session, user_id, monitor_id, version, *, now):
     now = _clock(now)
     with _savepoint(session):
         monitor = monitor_for(session, user_id, monitor_id, write=True)
+        collection_actor(session, monitor)
         _version(version)
         if monitor.version != version or monitor.status not in {"draft", "paused"}:
             _fail("trademark_version_conflict")
@@ -218,6 +220,7 @@ def refresh(session, user_id, monitor_id, *, now):
     now = _clock(now)
     with _savepoint(session):
         monitor = monitor_for(session, user_id, monitor_id, write=True)
+        collection_actor(session, monitor)
         if monitor.status != "active":
             _fail("trademark_monitor_not_active")
         portfolio = TrademarkPortfolio.model_validate(monitor.configuration)

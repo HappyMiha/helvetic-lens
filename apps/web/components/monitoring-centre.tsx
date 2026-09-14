@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
+import { businessMonitorCopy } from "@/lib/business-monitor-copy";
 import { relatedCopy } from "@/lib/related-copy";
 import { monitoringEmailCentreCopy } from "@/lib/monitoring-email-centre-copy";
 import {
@@ -36,6 +37,7 @@ type Domain =
   | "ip"
   | "auctions";
 type Monitor = {
+  visibility?: "private" | "workspace";
   id: string;
   domain: Domain;
   name: string | null;
@@ -199,8 +201,16 @@ function Centre({
         <header>
           <h1>{c.title}</h1>
           <p>{c.intro}</p>
-          <p><Link href="/related-developments">{relatedCopy[locale].title}</Link></p>
-          <p><Link href="/monitoring/email">{monitoringEmailCentreCopy[locale].title}</Link></p>
+          <p>
+            <Link href="/related-developments">
+              {relatedCopy[locale].title}
+            </Link>
+          </p>
+          <p>
+            <Link href="/monitoring/email">
+              {monitoringEmailCentreCopy[locale].title}
+            </Link>
+          </p>
           <a href="#choose-monitor">{c.choose}</a>
         </header>
         {!canManage && <p>{r.readonly}</p>}
@@ -279,15 +289,22 @@ function Centre({
                 </p>
                 <div className={styles.badges}>
                   <span className={styles.badge}>{label(row.status)}</span>
+                  {row.visibility === "workspace" && (
+                    <span className={styles.badge}>
+                      {businessMonitorCopy[locale].workspace}
+                    </span>
+                  )}
                   <span className={styles.badge}>
                     {row.domain === "traffic"
                       ? roadLabel(locale, row.health)
                       : label(row.health)}
                   </span>
                 </div>
-                {row.domain === "commute" && row.status === "active" && row.href && (
-                  <CommutePauseNotice until={row.notification_pause_until} />
-                )}
+                {row.domain === "commute" &&
+                  row.status === "active" &&
+                  row.href && (
+                    <CommutePauseNotice until={row.notification_pause_until} />
+                  )}
                 <p>{row.metrics.map((key) => metric(row, key)).join(" · ")}</p>
                 <p>
                   {c.source}:{" "}

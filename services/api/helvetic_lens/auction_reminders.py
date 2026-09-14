@@ -9,6 +9,7 @@ from .auction_models import AuctionMonitor
 from .auction_repository import _fail, _version
 from .auction_rules import ending_soon
 from .auction_workflow_models import AuctionItem, AuctionReminder
+from .business_monitor_access import collection_actor, visible_to
 from .config import DomainError
 from .monitoring_subjects import _actor, _savepoint
 
@@ -104,7 +105,7 @@ def activate_due(database, settings, *, now):
                 continue
             item = session.get(AuctionItem, reminder.item_id)
             try:
-                _actor(session, monitor.owner_user_id, write=True)
+                collection_actor(session, monitor)
                 ready, reason = eligible(session, monitor, item, reminder, now=now)
             except DomainError as error:
                 ready, reason = False, error.code
@@ -178,7 +179,7 @@ def page(session, user_id, *, now, monitor_id=None, cursor=None, limit=20):
     query = select(AuctionReminder).join(AuctionMonitor, and_(AuctionMonitor.id == AuctionReminder.monitor_id,
         AuctionMonitor.organization_id == AuctionReminder.organization_id)).join(AuctionItem, and_(
         AuctionItem.id == AuctionReminder.item_id, AuctionItem.organization_id == organization)).where(
-        AuctionMonitor.owner_user_id == user_id, AuctionMonitor.organization_id == organization,
+        visible_to(AuctionMonitor, user_id), AuctionMonitor.organization_id == organization,
         AuctionReminder.organization_id == organization)
     if monitor_id:
         query = query.where(AuctionMonitor.id == monitor_id)

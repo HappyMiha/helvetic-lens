@@ -12,6 +12,7 @@ from .air_models import AirMonitor
 from .auction_models import AuctionMonitor
 from .auction_workflow_models import AuctionRuntime
 from .auth import Identity
+from .business_monitor_access import scope_view, visible_to
 from .commute_models import CommuteMonitor
 from .commute_pause import notification_pause_until
 from .config import DomainError
@@ -89,14 +90,15 @@ def capabilities(settings, organization):
     ]
 
 
-def scoped(model, organization, user):
-    query = select(model).where(model.organization_id == organization, model.owner_user_id == user)
+def scoped(model, organization, user, *, personal_only=False):
+    audience = visible_to(model, user, personal_only=personal_only) if model in {TenderMonitor, TrademarkMonitor, AuctionMonitor} else model.owner_user_id == user
+    query = select(model).where(model.organization_id == organization, audience)
     if model is MonitoringSubject:
         query = query.where(model.template_id == "pollen-watch", model.template_version == 1)
     return query
 
 
-def inventory(session, settings, user_id, *, domain=None, status=None, cursor=None, limit=30):
+def inventory(session, settings, user_id, *, domain=None, status=None, cursor=None, limit=30, personal_only=False):
     organization = _actor(session, user_id)
     templates = capabilities(settings, organization)
     available = {item["id"]: item for item in templates}
@@ -108,7 +110,7 @@ def inventory(session, settings, user_id, *, domain=None, status=None, cursor=No
             identifier = str(UUID(identifier))
         except (ValueError, KeyError) as error:
             raise DomainError("Invalid monitor cursor.", 422, "monitor_cursor_invalid") from error
-        row = session.scalar(scoped(model, organization, user_id).where(model.id == identifier))
+        row = session.scalar(scoped(model, organization, user_id, personal_only=personal_only).where(model.id == identifier))
         if row is None:
             raise DomainError("Refresh the monitor list.", 422, "monitor_cursor_invalid")
         anchor = (utc(row.created_at), kind, row.id)
@@ -116,7 +118,7 @@ def inventory(session, settings, user_id, *, domain=None, status=None, cursor=No
     for kind, model in MODELS.items():
         if domain and domain != kind:
             continue
-        query = scoped(model, organization, user_id)
+        query = scoped(model, organization, user_id, personal_only=personal_only)
         if status:
             query = query.where(model.status == status)
         if anchor:
@@ -215,6 +217,7 @@ def summary(session, settings, kind, row, capability, *, now=None):
     return {
         "id": row.id,
         "domain": kind,
+        **(scope_view(row) if kind in {"tenders", "ip", "auctions"} else {"visibility": "private", "owner_user_id": row.owner_user_id, "responsible_user_id": None}),
         "name": config.get("name"),
         "station_id": config.get("station_id"),
         "status": row.status,
@@ -271,11 +274,12 @@ def centre_router(service, settings):
         status: Status | None = None,
         cursor: str | None = Query(default=None, max_length=64),
         limit: int = Query(default=30, ge=1, le=50),
+        personal_only: bool = False,
         actor: Identity = Depends(identity),
     ):
         with service.db.session() as session:
             return inventory(
-                session, settings, actor.user_id, domain=domain, status=status, cursor=cursor, limit=limit
+                session, settings, actor.user_id, domain=domain, status=status, cursor=cursor, limit=limit, personal_only=personal_only
             )
 
     return router

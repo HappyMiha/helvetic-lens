@@ -44,7 +44,7 @@ def review_changes(session, user_id, dossier_id, *, through_sequence, reviewed_s
     for row in rows[:limit]:
         item = {"id": row.id, "sequence": row.sequence, "available": False}
         try:
-            source_readable(row, now)
+            source_readable(row, now, user_id=user_id)
         except DomainError as error:
             if error.status != 404:
                 raise

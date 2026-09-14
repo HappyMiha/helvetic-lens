@@ -8,6 +8,7 @@ from .auction_contracts import clock
 from .auction_models import AuctionMonitor
 from .auction_workflow import refresh
 from .auction_workflow_models import AuctionRuntime
+from .business_monitor_access import collection_actor
 from .config import DomainError
 
 MAX_DUE = 20
@@ -37,7 +38,7 @@ def refresh_due(database, settings, *, now=None):
             if due_at is None or (due_at.replace(tzinfo=UTC) if due_at.tzinfo is None else due_at) > now:
                 continue
             try:
-                refreshed = refresh(session, owner, monitor_id, now=now)
+                refreshed = refresh(session, collection_actor(session, monitor), monitor_id, now=now)
                 result["unavailable" if refreshed["health"] == "source_unavailable" else "refreshed"] += 1
             except DomainError as error:
                 # Refresh's savepoint rolled back all partial source projections.

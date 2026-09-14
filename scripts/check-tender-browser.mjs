@@ -589,6 +589,7 @@ try {
       ) {
         monitor = {
           id: monitorId,
+          visibility: "private", owner_user_id: "qa", responsible_user_id: null,
           configuration: payload.configuration,
           version: 1,
           revision: 1,

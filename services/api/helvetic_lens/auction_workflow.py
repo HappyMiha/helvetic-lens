@@ -26,6 +26,7 @@ from .auction_workflow_models import (
     AuctionRuntime,
     AuctionSourceCursor,
 )
+from .business_monitor_access import collection_actor
 from .config import DomainError
 from .monitoring_subjects import _savepoint
 
@@ -104,6 +105,7 @@ def start(session, user_id, monitor_id, version, *, now):
     now = clock(now)
     with _savepoint(session):
         monitor = _monitor(session, user_id, monitor_id, write=True)
+        collection_actor(session, monitor)
         _version(version)
         if monitor.version != version or monitor.status not in {"draft", "paused"}:
             _fail("auction_version_conflict")
@@ -239,6 +241,7 @@ def refresh(session, user_id, monitor_id, *, now):
     now = clock(now)
     with _savepoint(session):
         monitor = _monitor(session, user_id, monitor_id, write=True)
+        collection_actor(session, monitor)
         if monitor.status != "active":
             _fail("auction_monitor_not_active")
         runtime = session.get(AuctionRuntime, monitor.id)

@@ -12,6 +12,7 @@ from sqlalchemy import func, select, update
 
 from . import jobs
 from .auth_mail import AuthMailer
+from .business_monitor_access import require_private_owner
 from .config import DomainError
 from .models import User
 from .monitoring_subjects import _actor
@@ -112,7 +113,7 @@ def eligibility(session, monitor, intent, now):
     elif version.kind != "material_update" or not dossier.following:
         return "suppressed", None
     try:
-        source_readable(version, now)
+        source_readable(version, now, user_id=monitor.owner_user_id)
     except DomainError:
         return "suppressed", None
     duplicate_states = set(
@@ -217,6 +218,7 @@ def prune(session, monitor, now):
 def preview(session, settings, user_id, monitor_id, *, now=None):
     now = aware(now or datetime.now(UTC))
     monitor = owned(session, user_id, monitor_id)
+    require_private_owner(monitor, user_id)
     result = {
         "items": [],
         "more_available": False,

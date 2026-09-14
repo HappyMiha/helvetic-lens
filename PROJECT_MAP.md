@@ -51,3 +51,5 @@ See [deployment evidence](docs/monitoring-v2/DEPLOYMENT_STATUS.md) for exact act
 commits and selector migration. A push is not proof of a successful release.
 Preserve the [frozen MVP tag](https://github.com/HappyMiha/helvetic-lens/releases/tag/v1.0.0-hackathon-mvp)
 and [legacy obligations](docs/monitoring-v2/LEGACY_DISPOSITION.md).
+
+Tender, IP and Auctions now support [explicit workspace sharing and monitor responsibility](docs/monitoring-v2/BUSINESS_MONITOR_SHARING.md). Shared native review retains source gates; personal email and authenticated SIMAP documents stay owner-private. Physical account deletion, per-development assignments/comments and exact production/human acceptance remain open.

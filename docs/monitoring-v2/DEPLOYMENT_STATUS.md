@@ -1,5 +1,18 @@
 # Monitoring deployment status — 14 September 2026
 
+## Business workspace sharing candidate — 14 September 2026
+
+The complete three-domain sharing/responsibility feature and its native privacy,
+PostgreSQL, browser and regression evidence are recorded in
+[Business monitor sharing](BUSINESS_MONITOR_SHARING.md). This is a main-branch
+release candidate; a push does not establish production activation. All existing
+monitors remain private unless their creator explicitly shares them.
+
+The fresh authenticated deployment-page Refresh still reports `660edacc8e7a`
+as production/verified activation and the automatic `c66e77fc7721` attempt as
+Deploying. No active release checks were restarted or duplicated. Source grants,
+personal email consent and independent human acceptance remain separate.
+
 ## Verified automatic activation and email-centre candidate — 14 September 2026
 
 Authenticated Refresh on the main site's deployment page now records

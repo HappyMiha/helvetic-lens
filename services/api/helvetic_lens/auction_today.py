@@ -11,6 +11,7 @@ from .auction_repository import _fail
 from .auction_source_models import AuctionSourceRecordRevision
 from .auction_workflow import _item, _utc, item_view
 from .auction_workflow_models import AuctionDecision, AuctionItem, AuctionItemEvent
+from .business_monitor_access import visible_to
 from .config import DomainError
 from .monitoring_subjects import _actor
 
@@ -67,7 +68,7 @@ def page(session, settings, user_id, *, now, cursor=None, limit=20, inbox=False)
               "unavailable_count": 0, "coverage_verified": False}
     if not settings.auction_watch_enabled:
         return result
-    owners = (AuctionMonitor.organization_id == organization, AuctionMonitor.owner_user_id == user_id,
+    owners = (AuctionMonitor.organization_id == organization, visible_to(AuctionMonitor, user_id),
               AuctionMonitor.status == "active")
     result["has_active_monitors"] = session.scalar(select(AuctionMonitor.id).where(*owners).limit(1)) is not None
     # Keep the newest requested, unread change per lot. A later change whose

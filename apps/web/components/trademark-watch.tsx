@@ -4,6 +4,7 @@ import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ApiError } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
+import { businessMonitorCopy } from "@/lib/business-monitor-copy";
 import { trademarkCopy } from "@/lib/trademark-copy";
 import {
   newBrand,
@@ -14,6 +15,7 @@ import {
   type TrademarkPage,
 } from "@/lib/trademark-watch";
 import { useAuth } from "./auth-gate";
+import { BusinessMonitorAccess } from "./business-monitor-access";
 import { Shell } from "./shell";
 import styles from "./commute-watch.module.css";
 import ipStyles from "./trademark-watch.module.css";
@@ -524,6 +526,7 @@ function Detail({
   changed: () => void;
   deleted: () => void;
 }) {
+  const { session } = useAuth();
   const { locale } = useI18n(),
     c = trademarkCopy[locale];
   const [revision, setRevision] = useState(0),
@@ -609,14 +612,22 @@ function Detail({
         canManage={canManage}
         changed={reload}
       />
-      <TrademarkEmail
-        key={`email:${row.version}`}
-        monitorId={row.id}
-        canManage={canManage}
-        archived={row.status === "archived"}
+      <BusinessMonitorAccess
+        key={`access:${row.version}`}
+        domain="ip"
+        monitor={row}
         changed={reload}
-        onAccessFailure={onAccessFailure}
       />
+      {row.owner_user_id === session?.user?.id && (
+        <TrademarkEmail
+          key={`email:${row.version}`}
+          monitorId={row.id}
+          canManage={canManage}
+          archived={row.status === "archived"}
+          changed={reload}
+          onAccessFailure={onAccessFailure}
+        />
+      )}
     </section>
   );
 }
@@ -658,7 +669,7 @@ function Content({
       <div className={`${styles.root} ${ipStyles.root}`} data-trademark-watch>
         <h1>{c.title}</h1>
         <p>{c.intro}</p>
-        <p>{c.private}</p>
+        <p>{businessMonitorCopy[locale].defaultScope}</p>
         <p className={styles.notice}>{c.source}</p>
         {!canManage && <p>{c.readonly}</p>}
         {!allowed || capabilities.error ? (

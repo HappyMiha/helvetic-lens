@@ -33,7 +33,7 @@ def _source(session, candidate, revision_id, *, now):
         "source_revision": revision.id, "received_at": _utc(revision.received_at).isoformat()}
 
 
-def document(session, monitor, candidate, preparation, *, now):
+def document(session, monitor, candidate, preparation, *, now, user_id):
     # Current() acquires calibration locks before source locks, as at review.
     facts, assessment, _, _, deadline = current(session, monitor, candidate, now=now, with_deadline=True)
     if candidate.version != preparation.candidate_version or candidate.source_revision_id != preparation.source_revision_id:
@@ -47,7 +47,7 @@ def document(session, monitor, candidate, preparation, *, now):
             _fail("trademark_event_not_found", 404)
         after = _source(session, candidate, event.source_revision_id, now=now)
         before = _source(session, candidate, event.previous_revision_id, now=now) if event.previous_revision_id else None
-        historical = event_detail(session, monitor.owner_user_id, monitor.id, candidate.id, event.id, now=now)
+        historical = event_detail(session, user_id, monitor.id, candidate.id, event.id, now=now)
         change = {"id": event.id, "sequence": event.sequence, "detected_at": historical["detected_at"],
             "profile_revision": event.profile_revision, "change_codes": event.change_codes,
             "after": after, "before": before, "assessment": historical["assessment"],
@@ -97,7 +97,7 @@ def prepare(session, user_id, monitor_id, candidate_id, *, expected_version, exp
         row = TrademarkExportPreparation(id=str(uuid4()), organization_id=monitor.organization_id, candidate_id=candidate.id,
             request_key=request_key, candidate_version=candidate.version, source_revision_id=candidate.source_revision_id,
             event_id=event_id, locale=locale, created_at=now, expires_at=now + timedelta(minutes=15))
-        content, row.content_hash = document(session, monitor, candidate, row, now=now)
+        content, row.content_hash = document(session, monitor, candidate, row, now=now, user_id=user_id)
         session.add(row)
         session.flush()
         return _response(row, content)
@@ -114,7 +114,7 @@ def read(session, user_id, monitor_id, candidate_id, preparation_id, *, now, dow
         _fail("trademark_export_not_found", 404)
     if not _utc(preparation.created_at) <= now < _utc(preparation.expires_at):
         _fail("trademark_export_expired")
-    content, digest = document(session, monitor, candidate, preparation, now=now)
+    content, digest = document(session, monitor, candidate, preparation, now=now, user_id=user_id)
     if not hmac.compare_digest(digest, preparation.content_hash):
         _fail("trademark_export_changed")
     if download_hash is not None:

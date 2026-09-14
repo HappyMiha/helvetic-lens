@@ -32,12 +32,15 @@ class TenderMonitor(Base):
         UniqueConstraint("organization_id", "owner_user_id", "request_key", name="uq_tender_monitor_request"),
         CheckConstraint("version >= 1 AND revision >= 1", name="ck_tender_monitor_version"),
         CheckConstraint("status IN ('draft','active','paused','archived')", name="ck_tender_monitor_status"),
+        CheckConstraint("visibility IN ('private','workspace')", name="ck_tender_monitor_visibility"),
     )
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=identifier)
     organization_id: Mapped[str] = mapped_column(
         ForeignKey("organizations.id", ondelete="CASCADE"), index=True
     )
     owner_user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    visibility: Mapped[str] = mapped_column(String(12), default="private", server_default="private")
+    responsible_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     request_key: Mapped[str] = mapped_column(String(100))
     request_hash: Mapped[str] = mapped_column(String(64))
     configuration: Mapped[dict] = mapped_column(JSON)

@@ -1,3 +1,4 @@
+import type { BusinessScope } from "./business-monitor-copy";
 export type TenderProfile = {
   template_id: "tender-watch";
   template_version: 1;
@@ -18,7 +19,7 @@ export type TenderProfile = {
   certificates: string[] | null;
   minimum_semantic_score: number | null;
 };
-export type TenderMonitor = {
+export type TenderMonitor = BusinessScope & {
   id: string;
   configuration: TenderProfile;
   revision: number;

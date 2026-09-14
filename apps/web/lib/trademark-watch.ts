@@ -1,3 +1,4 @@
+import type { BusinessScope } from "./business-monitor-copy";
 export const trademarkLanguages = ["de", "fr", "it", "rm", "en"] as const;
 export type TrademarkLanguage = (typeof trademarkLanguages)[number];
 export type GoodsInterest = {
@@ -26,7 +27,7 @@ export type TrademarkPortfolio = {
     domicile_basis: "party" | "representative";
   };
 };
-export type TrademarkMonitor = {
+export type TrademarkMonitor = BusinessScope & {
   runtime?: {
     health: string;
     last_check_at: string | null;

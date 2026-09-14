@@ -200,7 +200,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-001](#mv2-001) | Establish extension contracts and MVP compatibility | F0 | P0 | M | DONE | None |
 | [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS | None |
 | [MV2-003](#mv2-003) | Verify source rights, coverage and contracts for the nine active scenarios | F0 | P0 | L | PLANNED | [MV2-001](#mv2-001) |
-| [MV2-004](#mv2-004) | Personal workspace and team monitoring permissions | F1 | P0 | M | PLANNED | [MV2-001](#mv2-001) |
+| [MV2-004](#mv2-004) | Personal workspace and team monitoring permissions | F1 | P0 | M | IN PROGRESS | [MV2-001](#mv2-001) |
 | [MV2-005](#mv2-005) | MonitoringSubject and versioned Monitoring Templates | F1 | P0 | L | PLANNED | [MV2-001](#mv2-001), [MV2-004](#mv2-004) |
 | [MV2-006](#mv2-006) | ObservedEntity: stable source identity | F1 | P0 | M | PLANNED | [MV2-001](#mv2-001), [MV2-003](#mv2-003) |
 | [MV2-007](#mv2-007) | ObservedState and immutable evidence | F1 | P0 | L | PLANNED | [MV2-003](#mv2-003), [MV2-006](#mv2-006) |
@@ -209,7 +209,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-010](#mv2-010) | Structural relevance with evidence for every match | F1 | P0 | L | PLANNED | [MV2-005](#mv2-005), [MV2-008](#mv2-008), [MV2-009](#mv2-009) |
 | [MV2-011](#mv2-011) | Reliable state ingestion, queues and freshness | F1 | P0 | L | PLANNED | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-009](#mv2-009) |
 | [MV2-012](#mv2-012) | Notification policy and transactional outbox | F1 | P0 | L | PLANNED | [MV2-004](#mv2-004), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-011](#mv2-011) |
-| [MV2-013](#mv2-013) | Review, Decision and owner assignment | F1 | P0 | M | PLANNED | [MV2-004](#mv2-004), [MV2-009](#mv2-009) |
+| [MV2-013](#mv2-013) | Review, Decision and owner assignment | F1 | P0 | M | IN PROGRESS | [MV2-004](#mv2-004), [MV2-009](#mv2-009) |
 | [MV2-014](#mv2-014) | Shared-feed API and read projections | F1 | P0 | L | PLANNED | [MV2-004](#mv2-004), [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-013](#mv2-013) |
 | [MV2-015](#mv2-015) | Geography, station and coverage catalogue | F1 | P0 | L | PLANNED | [MV2-003](#mv2-003), [MV2-006](#mv2-006) |
 | [MV2-016](#mv2-016) | Time windows, deadlines and reminders | F1 | P0 | L | PLANNED | [MV2-007](#mv2-007), [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-012](#mv2-012) |
@@ -576,7 +576,7 @@ not replace the required observed human journeys or close MV2-002.
 
 ### MV2-004 — Personal workspace and team monitoring permissions
 
-**Status:** PLANNED · **Priority:** P0 · **Owner:** Backend + UX · **Size:** M
+**Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Backend + UX · **Size:** M
 
 **Dependencies:** [MV2-001](#mv2-001). **Requirements:** §§5,27.1,27.7.
 
@@ -592,7 +592,7 @@ not replace the required observed human journeys or close MV2-002.
 
 **Verification:** API role matrix, negative cross-tenant tests and browser switching/revocation checks.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Execution evidence:** Explicit workspace sharing for Tender, IP and Auctions is implemented with code verification; see [whole-feature scope and acceptance](docs/monitoring-v2/BUSINESS_MONITOR_SHARING.md). Existing private defaults, personal email and authenticated source audiences remain separate. Complete native/API/role/privacy, PostgreSQL concurrency/migration and five-language browser checks are recorded there. Exact production activation, physical account deletion and independent human acceptance remain open.
 
 <a id="mv2-005"></a>
 
@@ -779,7 +779,7 @@ not replace the required observed human journeys or close MV2-002.
 
 ### MV2-013 — Review, Decision and owner assignment
 
-**Status:** PLANNED · **Priority:** P0 · **Owner:** Backend + Frontend · **Size:** M
+**Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Backend + Frontend · **Size:** M
 
 **Dependencies:** [MV2-004](#mv2-004), [MV2-009](#mv2-009). **Requirements:** §§6,21,27.7,31.
 
@@ -796,7 +796,7 @@ not replace the required observed human journeys or close MV2-002.
 
 **Verification:** Optimistic concurrency, roles, reopening, reassignment and personal/shared-state tests.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Execution evidence:** [Business monitor responsibility](docs/monitoring-v2/BUSINESS_MONITOR_SHARING.md) now retains assignment/scope history, allows a current colleague administrator to manage shared native reviews and preserves unresolved work after creator/responsible deactivation. Native decisions retain their own version/source gates. Per-development owner/comments, broader shared review states, physical account deletion and exact activation/human acceptance remain open.
 
 <a id="mv2-014"></a>
 

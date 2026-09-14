@@ -109,7 +109,7 @@ def view(session, user_id, dossier_id, observation_id, *, now, limit=20, after_i
 
 
 def read_observation(session, user_id, dossier_id, observation_id, *, now):
-    dossier = owned_dossier(session, user_id, dossier_id)
+    dossier = owned_dossier(session, user_id, dossier_id, personal_only=True)
     row = session.scalar(select(TenderDocumentObservation).where(
         TenderDocumentObservation.id == observation_id,
         TenderDocumentObservation.dossier_id == dossier.id,
@@ -134,7 +134,7 @@ def observe(session, user_id, dossier_id, manifest, *, now, storage_limits=Stora
     manifest = Manifest.model_validate(manifest.model_dump())
     if manifest.observed_at > now:
         raise ValueError("Future document observation")
-    dossier = owned_dossier(session, user_id, dossier_id, write=True)
+    dossier = owned_dossier(session, user_id, dossier_id, write=True, personal_only=True)
     with _savepoint(session):
         session.execute(update(TenderMonitor).where(TenderMonitor.id == dossier.monitor_id)
                         .values(version=TenderMonitor.version))

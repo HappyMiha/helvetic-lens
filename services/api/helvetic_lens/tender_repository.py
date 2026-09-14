@@ -13,6 +13,7 @@ from pydantic import ValidationError
 from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 
+from .business_monitor_access import scope_view, visible_to
 from .config import DomainError
 from .models import User
 from .monitoring_subjects import _actor, _savepoint
@@ -56,20 +57,14 @@ def limit_value(limit):
         raise DomainError("Choose a page size from 1 to 100.", 422, "tender_limit_invalid")
 
 
-def owned(session, user_id, monitor_id, *, write=False):
-    organization = _actor(session, user_id, write=write)
-    row = session.scalar(
-        select(TenderMonitor)
-        .where(
-            TenderMonitor.id == monitor_id,
-            TenderMonitor.organization_id == organization,
-            TenderMonitor.owner_user_id == user_id,
-        )
-        .execution_options(populate_existing=True)
-    )
-    if row is None:
-        raise DomainError("Tender monitor not found.", 404, "tender_not_found")
-    return row
+def owned(session, user_id, monitor_id, *, write=False, personal_only=False):
+    from .business_monitor_sharing import monitor_for
+    try:
+        return monitor_for(session, user_id, "tenders", monitor_id, write=write, personal_only=personal_only)
+    except DomainError as error:
+        if error.code == "business_monitor_not_found":
+            raise DomainError("Business monitor not found.", 404, "tender_not_found") from None
+        raise
 
 
 def timestamp(value):
@@ -79,7 +74,7 @@ def timestamp(value):
 
 
 def view(row):
-    return {
+    return {**scope_view(row),
         "id": row.id,
         "configuration": deepcopy(row.configuration),
         "revision": row.revision,
@@ -103,7 +98,7 @@ def list_monitors(session, user_id, *, limit=50, after_id=None):
     organization = _actor(session, user_id)
     limit_value(limit)
     statement = select(TenderMonitor).where(
-        TenderMonitor.organization_id == organization, TenderMonitor.owner_user_id == user_id
+        TenderMonitor.organization_id == organization, visible_to(TenderMonitor, user_id)
     )
     if after_id:
         anchor = owned(session, user_id, after_id)
@@ -206,7 +201,7 @@ def revise_profile(session, user_id, monitor_id, version, payload):
             .where(
                 TenderMonitor.id == row.id,
                 TenderMonitor.organization_id == row.organization_id,
-                TenderMonitor.owner_user_id == user_id,
+                visible_to(TenderMonitor, user_id),
                 TenderMonitor.version == version,
                 TenderMonitor.status.in_(("draft", "paused")),
             )
@@ -254,7 +249,7 @@ def profile_history(session, user_id, monitor_id, *, limit=50, before_revision=N
     }
 
 
-def owned_dossier(session, user_id, dossier_id, *, write=False):
+def owned_dossier(session, user_id, dossier_id, *, write=False, personal_only=False):
     organization = _actor(session, user_id, write=write)
     row = session.scalar(
         select(TenderDossier)
@@ -263,16 +258,20 @@ def owned_dossier(session, user_id, dossier_id, *, write=False):
             TenderDossier.id == dossier_id,
             TenderDossier.organization_id == organization,
             TenderMonitor.organization_id == organization,
-            TenderMonitor.owner_user_id == user_id,
+            visible_to(TenderMonitor, user_id, personal_only=personal_only),
         )
         .execution_options(populate_existing=True)
     )
     if row is None:
         raise DomainError("Tender dossier not found.", 404, "tender_dossier_not_found")
+    # Recheck scope under the monitor lock before any native dossier mutation.
+    if write:
+        owned(session, user_id, row.monitor_id, write=True, personal_only=personal_only)
+        session.refresh(row)
     return row
 
 
-def source_readable(row, now, *, include_documents=True):
+def source_readable(row, now, *, include_documents=True, user_id=None):
     from sqlalchemy.orm import object_session
 
     from .tender_rights import require_permitted
@@ -309,10 +308,12 @@ def source_readable(row, now, *, include_documents=True):
 
         dossier = session.get(TenderDossier, row.dossier_id)
         monitor = session.get(TenderMonitor, dossier.monitor_id)
+        if user_id != monitor.owner_user_id:
+            raise DomainError("Personal document evidence is unavailable.", 404, "tender_document_unavailable")
         require_current_changes(session, monitor.owner_user_id, dossier.id, row.document_observation_id, now=now)
 
 
-def dossier_view(session, row, now):
+def dossier_view(session, row, now, *, user_id):
     latest = session.scalar(
         select(TenderDossierVersion).where(
             TenderDossierVersion.dossier_id == row.id,
@@ -322,7 +323,7 @@ def dossier_view(session, row, now):
     )
     if latest is None:
         raise DomainError("Tender evidence is unavailable.", 503, "tender_evidence_missing")
-    source_readable(latest, now)
+    source_readable(latest, now, user_id=user_id)
     return {
         "id": row.id,
         "monitor_id": row.monitor_id,
@@ -351,7 +352,7 @@ def dossier_view(session, row, now):
 
 
 def get_dossier(session, user_id, dossier_id, *, now=None):
-    return dossier_view(session, owned_dossier(session, user_id, dossier_id), now or datetime.now(UTC))
+    return dossier_view(session, owned_dossier(session, user_id, dossier_id), now or datetime.now(UTC), user_id=user_id)
 
 
 def list_dossiers(
@@ -391,6 +392,8 @@ def list_dossiers(
             permitted(TenderDossier.project_id, TenderDossierVersion.publication_id),
         )
     )
+    if monitor.owner_user_id != user_id:
+        query = query.where(TenderDossierVersion.document_observation_id.is_(None))
     if following is not None:
         query = query.where(TenderDossier.following == following)
     if review_state is not None:
@@ -456,6 +459,8 @@ def version_index(session, user_id, dossier_id, *, limit=20, before_sequence=Non
         TenderDossierVersion.publish_after <= aware(now or datetime.now(UTC)),
         permitted(row.project_id, TenderDossierVersion.publication_id),
     )
+    if owned(session, user_id, row.monitor_id).owner_user_id != user_id:
+        query = query.where(TenderDossierVersion.document_observation_id.is_(None))
     if before_sequence is not None:
         positive(before_sequence)
         query = query.where(TenderDossierVersion.sequence < before_sequence)
@@ -480,6 +485,8 @@ def dossier_history(session, user_id, dossier_id, *, limit=50, before_sequence=N
         TenderDossierVersion.publish_after <= now,
         permitted(row.project_id, TenderDossierVersion.publication_id),
     )
+    if owned(session, user_id, row.monitor_id).owner_user_id != user_id:
+        statement = statement.where(TenderDossierVersion.document_observation_id.is_(None))
     if before_sequence is not None:
         positive(before_sequence)
         statement = statement.where(TenderDossierVersion.sequence < before_sequence)
@@ -487,7 +494,7 @@ def dossier_history(session, user_id, dossier_id, *, limit=50, before_sequence=N
         session.scalars(statement.order_by(TenderDossierVersion.sequence.desc()).limit(limit + 1))
     )
     for version in versions[:limit]:
-        source_readable(version, now)
+        source_readable(version, now, user_id=user_id)
     return {
         "items": [
             {
@@ -517,7 +524,7 @@ def evidence_version(session, user_id, dossier_id, version_id, *, now=None):
     )
     if version is None:
         raise DomainError("Tender evidence not found.", 404, "tender_evidence_not_found")
-    source_readable(version, now or datetime.now(UTC))
+    source_readable(version, now or datetime.now(UTC), user_id=user_id)
     return deepcopy(version.evidence)
 
 
@@ -541,7 +548,7 @@ def record_decision(session, user_id, dossier_id, *, version, sequence, decision
             raise DomainError("This decision request has different values.", 409, "tender_request_conflict")
         # A retry after a material update must not mark the new evidence reviewed.
         return get_dossier(session, user_id, dossier_id, now=now)
-    dossier_view(session, row, now or datetime.now(UTC))
+    dossier_view(session, row, now or datetime.now(UTC), user_id=user_id)
     with _savepoint(session):
         changed = session.execute(
             update(TenderDossier)

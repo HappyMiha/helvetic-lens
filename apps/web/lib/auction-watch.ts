@@ -1,3 +1,4 @@
+import type { BusinessScope } from "./business-monitor-copy";
 export const auctionCategories = [
   "real_estate",
   "vehicles",
@@ -37,7 +38,7 @@ export type AuctionProfile = {
     ending_soon_hours: number | null;
   };
 };
-export type AuctionMonitor = {
+export type AuctionMonitor = BusinessScope & {
   id: string;
   configuration: AuctionProfile;
   status: "draft" | "active" | "paused" | "archived";
