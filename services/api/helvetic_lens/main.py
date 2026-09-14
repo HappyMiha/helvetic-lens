@@ -321,6 +321,8 @@ class RelationReprocessingInput(Input):
 
 
 def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
+    if path == "/api/monitoring-centre/today-counts":
+        return "today_counts", 12, 60
     if path.startswith("/api/auction-watch"):
         return "auction_watch", 60, 60
     if path.startswith("/api/trademark-watch"):
@@ -594,7 +596,7 @@ def create_app(
             status = response.status_code
             if request.url.path.startswith("/api/monitoring-subjects"):
                 response.headers["Cache-Control"] = "private, no-store"
-            if request.url.path.startswith(("/api/auction-watch", "/api/tender-watch", "/api/commute-watch", "/api/road-watch", "/api/hazard-watch", "/api/trademark-watch", "/api/related-developments")):
+            if request.url.path.startswith(("/api/auction-watch", "/api/tender-watch", "/api/commute-watch", "/api/road-watch", "/api/hazard-watch", "/api/trademark-watch", "/api/related-developments", "/api/monitoring-centre")):
                 # Dependency response headers are lost when an exception
                 # handler creates a new response. Apply to denial/errors too.
                 response.headers["Cache-Control"] = "no-store"

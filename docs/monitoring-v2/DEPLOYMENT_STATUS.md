@@ -1,5 +1,21 @@
 # Monitoring deployment status — 14 September 2026
 
+## Shared Today review counts publication candidate — 14 September 2026
+
+All nine Monitoring directions and the legal feed now contribute to a private
+Today review-count overview, with native source/review eligibility, complete
+pagination, null totals for incomplete scans, five-language section links and
+automatic refresh after successful review actions. The affected API suite passed
+57 checks; the final contract/snapshot/backlog run passed 14 checks. The root
+isolated build and 22 built-browser/axe checkpoints passed. See
+[scope, evidence and limits](TODAY_COUNTS.md).
+
+This is publication evidence, not verified activation. The last refreshed
+production status was `1188f18190e0` with `4434cf94da05` still Deploying. No active
+deployment/test run was interrupted or duplicated. The retired Monitoring
+deployment was not touched; source access, real-user acceptance and larger
+workspace capacity remain independent gates.
+
 ## Monitoring companion guidance publication candidate — 14 September 2026
 
 Marvin now identifies all nine Monitoring sections and their centre, with a

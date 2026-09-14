@@ -6,14 +6,14 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import and_, exists, or_, select
-from sqlalchemy.orm import aliased
+from sqlalchemy import and_, or_, select
 
 from .air_contracts import AirConfiguration, utc
 from .air_email_preferences import EmailConfiguration
 from .air_models import AirChange, AirMonitor, AirReadingVersion, AirRevision
 from .air_runtime import change_view, command, create, edit, mute, owned, preview, remove, review, view
 from .air_sources import catalogue, collect, refresh_keys
+from .air_today import today as today_page
 from .auth import Identity
 from .config import DomainError
 from .monitoring_subjects import _actor
@@ -114,51 +114,8 @@ def air_router(service, settings):
     def today(
         before: datetime | None = None, before_id: UUID | None = None, actor: Identity = Depends(identity)
     ):
-        if bool(before) != bool(before_id):
-            raise DomainError("Both history cursor fields are required.", 422, "air_cursor_invalid")
         with service.db.session() as session:
-            newer = aliased(AirChange)
-            query = (
-                select(AirChange, AirMonitor)
-                .join(AirMonitor, AirMonitor.id == AirChange.monitor_id)
-                .where(
-                    AirMonitor.owner_user_id == actor.user_id,
-                    AirMonitor.status != "archived",
-                    ~exists(
-                        select(newer.id).where(
-                            newer.development_id == AirChange.development_id,
-                            newer.sequence > AirChange.sequence,
-                        )
-                    ),
-                )
-            )
-            if before:
-                query = query.where(
-                    or_(
-                        AirChange.created_at < utc(before),
-                        and_(AirChange.created_at == utc(before), AirChange.id < str(before_id)),
-                    )
-                )
-            rows = list(
-                session.execute(query.order_by(AirChange.created_at.desc(), AirChange.id.desc()).limit(51))
-            )
-            items = [
-                {
-                    **change_view(event),
-                    "monitor_id": monitor.id,
-                    "monitor_name": monitor.configuration["name"],
-                    "monitor_status": monitor.status,
-                    "health": view(monitor)["health"],
-                    "muted": event.evidence["sample"]["metric"] in monitor.configuration["muted_metrics"],
-                }
-                for event, monitor in rows[:50]
-            ]
-            return {
-                "items": items,
-                "next": {"before": utc(rows[49][0].created_at).isoformat(), "before_id": rows[49][0].id}
-                if len(rows) > 50
-                else None,
-            }
+            return today_page(session, actor.user_id, before=before, before_id=before_id)
 
     @router.get("/stations")
     def stations():

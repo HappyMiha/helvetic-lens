@@ -42,6 +42,11 @@ identities, decisions and deliveries remain independent; see
 [workflow and acceptance evidence](docs/monitoring-v2/RELATED_DEVELOPMENTS.md).
 Its release activation and permitted live/human acceptance remain separate gates.
 
+Today includes a [shared review-count overview](docs/monitoring-v2/TODAY_COUNTS.md)
+for all nine active directions and the legal feed, with native visibility rules,
+complete-count boundaries and direct section links. Code checks are distinct from
+source coverage, large-workspace capacity and exact production activation.
+
 See [deployment evidence](docs/monitoring-v2/DEPLOYMENT_STATUS.md) for exact active
 commits and selector migration. A push is not proof of a successful release.
 Preserve the [frozen MVP tag](https://github.com/HappyMiha/helvetic-lens/releases/tag/v1.0.0-hackathon-mvp)

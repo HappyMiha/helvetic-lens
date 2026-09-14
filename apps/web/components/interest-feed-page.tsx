@@ -9,6 +9,7 @@ import { HazardToday } from "./hazard-today";
 import { TrademarkToday } from "./trademark-today";
 import { AuctionToday } from "./auction-today";
 import { PollenToday } from "./pollen-today";
+import { TodayReviewCounts } from "./today-review-counts";
 import { FeedTopicList } from "./feed-topic-list";
 import { FeedInterestBrief } from "./feed-interest-brief";
 import { FeedWatchList } from "./feed-watch-list";
@@ -156,6 +157,7 @@ export function InterestFeedPage() {
           {t("inboxPaging.refresh")}
         </Button>
       </header>
+      <TodayReviewCounts key={`counts-${pollenRefresh}`} />
       <PollenToday key={pollenRefresh} />
       <AirToday key={`air-${pollenRefresh}`} />
       <RiverToday key={`river-${pollenRefresh}`} />
@@ -165,7 +167,10 @@ export function InterestFeedPage() {
       <HazardToday key={`hazard-${pollenRefresh}`} />
       <AuctionToday key={`auctions-${pollenRefresh}`} />
       <TrademarkToday key={`trademarks-${pollenRefresh}`} />
-      <nav className="flex flex-wrap gap-x-5 gap-y-2 mb-5 text-sm">
+      <nav
+        id="legal-feed"
+        className="flex flex-wrap gap-x-5 gap-y-2 mb-5 text-sm"
+      >
         <Link
           className="underline min-h-[44px] inline-flex items-center"
           href="/topics"

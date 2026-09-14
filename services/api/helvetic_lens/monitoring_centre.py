@@ -252,6 +252,11 @@ def centre_router(service, settings):
 
     router = APIRouter(prefix="/api/monitoring-centre", tags=["monitoring-centre"])
 
+    @router.get("/today-counts")
+    def today_counts(actor: Identity = Depends(identity)):
+        from .today_counts import read
+        return read(service, settings, actor.user_id)
+
     @router.get("")
     def listing(
         domain: Domain | None = None,

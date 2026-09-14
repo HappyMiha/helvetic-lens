@@ -215,7 +215,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-016](#mv2-016) | Time windows, deadlines and reminders | F1 | P0 | L | PLANNED | [MV2-007](#mv2-007), [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-012](#mv2-012) |
 | [MV2-017](#mv2-017) | Create Monitor: nine understandable templates | F2 | P1 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-005](#mv2-005), [MV2-010](#mv2-010), [MV2-015](#mv2-015) |
 | [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
-| [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
+| [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
 | [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
 | [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | PLANNED | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
@@ -970,13 +970,23 @@ still includes shared business subjects, live sources and human verification.
 
 ### MV2-019 — Today: one card across all domains
 
-**Active whole-feature scope, 14 September 2026:** Add the missing River / Lake
+**Shared review summary, 14 September 2026:** Implemented all nine active
+directions plus the legal feed using native visibility rules beyond the first
+page, private database snapshots, explicit unavailable totals, five-language
+section links and review-triggered refresh. The affected API suite passed 57
+checks, the root build passed and 22 built-browser/axe checkpoints passed.
+See [scope, evidence and limits](docs/monitoring-v2/TODAY_COUNTS.md). Large-workspace
+capacity, source/human acceptance and exact activation remain unverified; this
+does not complete cross-domain grouping or shared business ownership.
+
+**Earlier whole-feature scope, 14 September 2026:** Add the missing River / Lake
 Today and Impact Inbox cards, owner-private latest developments, review filtering,
 bounded pagination and existing exact evidence/review actions. See [scope](docs/monitoring-v2/RIVER_TODAY.md).
 This is a scoped MV2-033/019/021 contribution; broader cross-domain aggregation,
-global unread counts and shared business-subject acceptance remain open.
+shared business-subject acceptance remain open. The later shared-count contribution
+above supersedes the River-only count limitation for readable Today queues.
 
-**Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Frontend + UX · **Size:** L
+**Status:** IN PROGRESS — shared review counts implemented · **Priority:** P1 · **Owner:** Frontend + UX · **Size:** L
 
 **Dependencies:** [MV2-014](#mv2-014), [MV2-017](#mv2-017). **Requirements:** §§20,26.1,33.
 

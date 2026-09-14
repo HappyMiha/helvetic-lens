@@ -79,6 +79,16 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
       data?.params || {},
     );
   }
+  if (
+    !["GET", "HEAD", "OPTIONS"].includes(method) &&
+    /^\/(?:monitoring-subjects|air-watch|river-watch|tender-watch|commute-watch|road-watch|hazard-watch|trademark-watch|auction-watch|interest-feed)(?:\/|$)/.test(
+      path,
+    )
+  ) {
+    // Only a signal, never private IDs or payloads. Mounted Today summaries
+    // re-read their authenticated scope after decisions/configuration changes.
+    window.dispatchEvent(new Event("helvetic-lens:today-changed"));
+  }
   return data as T;
 }
 
