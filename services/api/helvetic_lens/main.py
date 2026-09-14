@@ -2216,6 +2216,8 @@ def create_app(
     app.include_router(trademark_router(service, settings))
     app.include_router(auction_router(service, settings))
     app.include_router(centre_router(service, settings))
+    from .monitoring_source_operations import source_operations_router
+    app.include_router(source_operations_router(service, settings))
     return app
 
 

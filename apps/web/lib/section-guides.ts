@@ -139,6 +139,46 @@ const ai = c(
 
 export const SECTION_GUIDES: SectionGuide[] = [
   {
+    id: "monitoring-source-operations",
+    title: "Monitoring source operations",
+    purpose:
+      "Inspect the recorded acquisition and access state of the nine active Monitoring directions, grouped into four source packs.",
+    access: "platform",
+    first: [
+      "Find the direction in its source pack and check the section switch and collector configuration separately.",
+      "Inspect the permission record, successful acquisition timestamps, failures and the next scheduled request.",
+      "Open the direction's source and coverage workflow before relying on a monitor result.",
+    ],
+    data: [
+      "Only stored source metadata is read. Private monitor names, locations, credentials, source content and raw error text are excluded.",
+      "Permission-record validity is not coverage approval. A recent acquisition is not a provider publication time or an all-clear result.",
+      "Oldest and latest acquisition timestamps summarize retained channels; unknown values mean evidence is not recorded, not zero delay.",
+    ],
+    wait: "Loading reads the local source records. A scheduled request in the past may need investigation; this page does not restart it or establish that a worker is live.",
+    setup:
+      "Platform administrator access is required. Source credentials, reviewed permissions and operational channel coverage are configured and checked separately.",
+    controls: [
+      c(
+        "reload",
+        "Reload evidence",
+        "Reads stored source metadata again and clears the previous snapshot while loading.",
+        "Use after access/configuration changes or a temporary read failure.",
+        "Read / navigate",
+        "[data-monitoring-source-operations] header button",
+        "platform",
+      ),
+      c(
+        "direction",
+        "Open source and coverage workflow",
+        "Opens the selected Monitoring direction without changing a source, monitor or consent.",
+        "Inspect the domain's exact coverage and access requirements.",
+        "Read / navigate",
+        "[data-source-direction] a",
+        "platform",
+      ),
+    ],
+  },
+  {
     id: "auction-watch",
     title: "Save your auction interests",
     purpose:
@@ -2570,6 +2610,7 @@ export const GUIDE_ROUTES: Record<string, string> = {
   "/models": "models",
   "/deployments": "deployments",
   "/admin/relation-reprocessing": "reprocessing",
+  "/admin/monitoring-sources": "monitoring-source-operations",
   "/assistant-history": "assistant-history",
   "/onboarding": "onboarding",
   "/onboarding/basel-stadt": "basel-stadt",

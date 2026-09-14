@@ -27,6 +27,10 @@ provides the shared entry point for saved Pollen, River/Lake and Air monitors an
 nine honestly gated scenario choices. Its code verification and release boundary
 are recorded separately; the broader MV2-017/018 tasks remain in progress.
 
+Platform administrators can inspect all nine directions and four source packs at
+`/admin/monitoring-sources`; see [source operations evidence](docs/monitoring-v2/SOURCE_OPERATIONS.md).
+Configuration, permission records and acquisition are distinct from verified coverage.
+
 See [deployment evidence](docs/monitoring-v2/DEPLOYMENT_STATUS.md) for exact active
 commits and selector migration. A push is not proof of a successful release.
 Preserve the [frozen MVP tag](https://github.com/HappyMiha/helvetic-lens/releases/tag/v1.0.0-hackathon-mvp)

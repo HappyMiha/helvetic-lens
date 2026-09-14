@@ -215,7 +215,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | PLANNED | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
 | [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | PLANNED | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
 | [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | PLANNED | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
-| [MV2-025](#mv2-025) | Admin: accurate source capabilities and access management | F2 | P0 | M | PLANNED | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-018](#mv2-018) |
+| [MV2-025](#mv2-025) | Admin: accurate source capabilities and access management | F2 | P0 | M | IN PROGRESS | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-018](#mv2-018) |
 | [MV2-026](#mv2-026) | Possible future implementation: C4 official customs-rate connector | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011) |
 | [MV2-027](#mv2-027) | Possible future implementation: C4 currency, thresholds, history and digest | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-008](#mv2-008), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-022](#mv2-022), [MV2-026](#mv2-026) |
 | [MV2-028](#mv2-028) | C1: official warnings and hazard geography | F3 | P1 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
@@ -242,7 +242,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-049](#mv2-049) | B8: Official Ticino auctions — native collection implemented; access/coverage open | F5 | P1 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071) |
 | [MV2-050](#mv2-050) | B8: Auction profiles, price limits and ending-soon alerts | F5 | P1 | L | IN PROGRESS | [MV2-008](#mv2-008), [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022), [MV2-043](#mv2-043), [MV2-044](#mv2-044), [MV2-049](#mv2-049) |
 | [MV2-051](#mv2-051) | Independent matching and local AI evaluation | F6 | P0 | L | PLANNED | [MV2-023](#mv2-023), [MV2-043](#mv2-043), [MV2-047](#mv2-047) |
-| [MV2-052](#mv2-052) | Operational metrics, degraded mode and source recovery | F6 | P0 | M | PLANNED | [MV2-011](#mv2-011), [MV2-012](#mv2-012), [MV2-025](#mv2-025) |
+| [MV2-052](#mv2-052) | Operational metrics, degraded mode and source recovery | F6 | P0 | M | IN PROGRESS | [MV2-011](#mv2-011), [MV2-012](#mv2-012), [MV2-025](#mv2-025) |
 | [MV2-053](#mv2-053) | Personal-location privacy and access control | F6 | P0 | M | PLANNED | [MV2-004](#mv2-004), [MV2-005](#mv2-005), [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-023](#mv2-023) |
 | [MV2-054](#mv2-054) | Single-server capacity and queues with different priorities | F6 | P0 | L | PLANNED | [MV2-011](#mv2-011), [MV2-014](#mv2-014), [MV2-043](#mv2-043), [MV2-052](#mv2-052) |
 | [MV2-055](#mv2-055) | History storage, retention and permitted exports | F6 | P0 | M | PLANNED | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-020](#mv2-020), [MV2-044](#mv2-044) |
@@ -1090,7 +1090,13 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 
 ### MV2-025 — Admin: accurate source capabilities and access management
 
-**Status:** PLANNED · **Priority:** P0 · **Owner:** Integration + Frontend · **Size:** M
+**Active whole-feature scope, 14 September 2026:** Deliver the platform-admin
+source-operations overview for all nine directions/four active packs. Show actual
+stored acquisition/access/retry evidence with unknowns and source gaps, without
+private data, network collection or permission mutation. See [scope and acceptance](docs/monitoring-v2/SOURCE_OPERATIONS.md).
+This contributes to MV2-052; reprocessing and broader policy/operational gates remain.
+
+**Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Integration + Frontend · **Size:** M
 
 **Dependencies:** [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-018](#mv2-018). **Requirements:** §§23,26.5,38.
 
@@ -1107,7 +1113,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 
 **Verification:** API permission tests, licence-expiry clock, source failure/recovery and reprocess browser checks.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Execution evidence, 14 September 2026:** Scoped source-operations overview implemented at `/admin/monitoring-sources` for all nine directions and four packs. The platform-admin-only metadata reader distinguishes configuration, permission-record validity, receipt/provider/retry clocks, errors and unknowns, excluding private monitors and secrets. Five-language mobile/keyboard and access-redaction checks pass. See [verification and remaining gates](docs/monitoring-v2/SOURCE_OPERATIONS.md). Broader policy/reprocessing, lag charts and operational acceptance remain open; this contribution does not complete the parent task.
 
 
 ## F3 — Numeric states, environment and hazards
@@ -1929,7 +1935,7 @@ The broader task remains IN PROGRESS pending live source and human acceptance.
 
 ### MV2-052 — Operational metrics, degraded mode and source recovery
 
-**Status:** PLANNED · **Priority:** P0 · **Owner:** Operations + Backend · **Size:** M
+**Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Operations + Backend · **Size:** M
 
 **Dependencies:** [MV2-011](#mv2-011), [MV2-012](#mv2-012), [MV2-025](#mv2-025). **Requirements:** §§23,28,33.11–12,34; legacy HL-094,099.
 
@@ -1946,7 +1952,7 @@ The broader task remains IN PROGRESS pending live source and human acceptance.
 
 **Verification:** Failure injection for source/queue/provider/email/DB telemetry and regression checks for bounded diagnostic locking.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Execution evidence, 14 September 2026:** Scoped source-operations overview implemented at `/admin/monitoring-sources` for all nine directions and four packs. The platform-admin-only metadata reader distinguishes configuration, permission-record validity, receipt/provider/retry clocks, errors and unknowns, excluding private monitors and secrets. Five-language mobile/keyboard and access-redaction checks pass. See [verification and remaining gates](docs/monitoring-v2/SOURCE_OPERATIONS.md). Broader policy/reprocessing, lag charts and operational acceptance remain open; this contribution does not complete the parent task.
 
 <a id="mv2-053"></a>
 

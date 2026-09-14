@@ -24,6 +24,7 @@ import { label, resources, useResource } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import type { PlatformStatus } from "@/lib/types";
 import { reprocessingCopy } from "@/lib/reprocessing-copy";
+import { sourceOperationsCopy } from "@/lib/source-operations-copy";
 
 function bytes(value = 0) {
   return `${(value / 1024 ** 3).toFixed(value < 1024 ** 3 ? 2 : 1)} GB`;
@@ -70,6 +71,9 @@ export function PlatformAdminPage() {
         <ErrorNote message={t("admin.denied")} />
       ) : (
         <>
+          <Link href="/admin/monitoring-sources" className="card block p-5 mb-5 hover:border-primary">
+            <strong className="block mb-2">{sourceOperationsCopy[locale].title}</strong><span className="text-sm muted">{sourceOperationsCopy[locale].body}</span>
+          </Link>
           <Link href="/admin/relation-reprocessing" className="card block p-5 mb-5 hover:border-primary">
             <strong className="block mb-2">{reprocessingCopy[locale].title}</strong><span className="text-sm muted">{reprocessingCopy[locale].body}</span>
           </Link>
