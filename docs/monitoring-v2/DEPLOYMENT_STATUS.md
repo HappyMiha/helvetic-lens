@@ -1,5 +1,35 @@
 # Monitoring deployment status — 14 September 2026
 
+## Connector request setup and diagnostic lock gate repair — 14 September 2026
+
+A fresh authenticated main-site journal read shows `82eefcfd4119` Failed and
+`6f1361883b55` Deploying, started at 22:34:02 Europe/Zurich. Verified production
+remains `d961ebd54998`. The user's new API failure excerpt concerns document
+history query counts and a whole-reader stopwatch assertion, not the earlier
+Aste child-record migration failure. No active release gate was restarted.
+
+All three history-page variants reproduced the stale query-count assertion
+locally. The connector settings feature adds one bounded configuration query to
+HTTP request setup. The test now requires exactly one read of each of the four
+configuration tables and retains the separate four-query history budget, full
+equal-time traversal, no historical body hydration and no source/model calls.
+The history implementation and pagination limits are unchanged.
+
+The diagnostic lock test measures the actual database protection at each INSERT:
+250 ms lock timeout, plus 500 ms PostgreSQL statement timeout. It requires the
+real lock-conflict error while the other transaction remains active, one attempt
+per diagnostic writer, the unchanged saved answer, restored pooled connection
+settings and later successful telemetry. This replaces the whole-reader two-second
+stopwatch, which also measured unrelated runtime validation and host scheduling.
+It does not increase any database timeout or remove a release test.
+
+Local history/metadata/diagnostic checks passed: **29 passed, 1 PostgreSQL-only
+skip**. The combined run also passed 29 checks for the separate, unpublished
+evidence-download work. The exact API Ruff gate and backlog integrity check passed.
+All **five affected PostgreSQL cases passed** in an isolated disposable PostgreSQL
+16 container: both held-lock cases and all three history-page variants. Publication
+of this tested repair remains distinct from its production activation.
+
 ## Verified Aste repair activation — 14 September 2026
 
 A fresh authenticated main-site journal read confirms **Succeeded** for requested
