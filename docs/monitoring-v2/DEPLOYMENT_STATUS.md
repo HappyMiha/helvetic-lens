@@ -339,3 +339,29 @@ The captured progress snapshot reports available latest data at the new SHA (73 
 Earlier affected regressions passed: **79 native Windows** and **92 Linux** tests plus Ruff, synthetic image builds and rendered Compose isolation checks. A preliminary broader run was stopped while external setup was incomplete; it was not a full-suite pass. The completed first-bootstrap result above supersedes that preliminary checkpoint.
 
 The preview remains one Windows host: login, Docker Desktop readiness, sleep/power and shared GPU capacity affect availability. This setup does not establish high availability or implement Pollen Watch. Follow the [runbook](../MONITORING_DEPLOYMENT.md); Pollen Watch remains first, support remains parked and C4 customs remains deferred.
+
+## Release-blocking Tender dispatcher clock regression — 14 September 2026
+
+The authenticated main-site deployment journal was refreshed: attempt
+9b34ecb96842 (08:50:02–10:10:16 local UI time) failed after 4,210 passed,
+14 skipped and one failing private Tender SMTP-dispatch test. The actual active
+attempt 11ef1765d8f3, started 10:12:02, is running api_tests; it was not restarted,
+duplicated or interrupted. Production remains 1188f18190e0. All nine Monitoring
+navigation links are visible on the authenticated main site.
+
+The same test fails locally on current main. Its synthetic consent and event use
+12 September 06:00 UTC while real dispatcher delivery uses the wall clock. The
+48-hour expiry therefore correctly suppresses the event from 14 September onward.
+Repair scope: make the dispatcher test's delivery clock explicit; prove current,
+exactly-48-hour and just-expired outcomes through the actual durable dispatcher
+and fake SMTP. Preserve production expiry, privacy, consent and all release gates.
+Run the affected Tender API/delivery suite and exact API lint before publication.
+This is a verification repair for the complete Tender feature, not a waiver of
+source or human acceptance. No real email or source access approval is involved.
+
+Verification completed: the full affected Tender API/delivery suite passed
+**33 tests**, including actual dispatcher sends at age zero and exactly 48 hours,
+and suppression one second beyond 48 hours. The persisted job outcome is asserted
+as sent/no_eligible_changes, as well as fake SMTP calls. Exact API lint passed.
+The production delivery implementation and its expiry guard are unchanged. This
+fix will be picked up by a subsequent normal deployment; activation remains open.

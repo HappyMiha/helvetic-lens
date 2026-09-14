@@ -1,4 +1,5 @@
 import copy
+from datetime import datetime, timedelta
 from uuid import uuid4
 
 import pytest
@@ -218,7 +219,8 @@ def test_http_email_consent_requires_verified_owner_and_csrf_and_stays_private(a
 
 
 @pytest.mark.asyncio
-async def test_tender_email_uses_the_actual_private_job_dispatcher_with_fake_smtp(api, monkeypatch):
+@pytest.mark.parametrize("age", [timedelta(0), timedelta(days=2), timedelta(days=2, seconds=1)])
+async def test_tender_email_uses_the_actual_private_job_dispatcher_with_fake_smtp(api, monkeypatch, age):
     from test_tender_delivery import Mailer
 
     from helvetic_lens import tender_delivery as email
@@ -230,6 +232,15 @@ async def test_tender_email_uses_the_actual_private_job_dispatcher_with_fake_smt
     database, organization = app.state.service.db, identity["organization"]["id"]
     sender = Mailer()
     monkeypatch.setattr(email, "AuthMailer", lambda _settings: sender)
+    class DeliveryClock(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            value = NOW + age
+            return value.astimezone(tz) if tz is not None else value.replace(tzinfo=None)
+
+    # The real worker omits `now`; control its clock rather than ageing a fixed
+    # synthetic publication against the date on which the release suite runs.
+    monkeypatch.setattr(email, "datetime", DeliveryClock)
     settings.auth_email_mode = "smtp"
     with database.organization_context(organization), database.session() as session:
         user_id = identity["user"]["id"]
@@ -252,8 +263,14 @@ async def test_tender_email_uses_the_actual_private_job_dispatcher_with_fake_smt
     with database.organization_context(organization):
         result = await app.state.service.execute_job(job_id)
         assert result["state"] == "succeeded", result
-    assert len(sender.calls) == 1
-    assert sender.calls[0][0][0] == identity["user"]["email"]
+    expected = int(age <= email.MAX_AGE)
+    assert len(sender.calls) == expected
+    if expected:
+        assert sender.calls[0][0][0] == identity["user"]["email"]
+    with database.organization_context(organization), database.session() as session:
+        assert session.get(Job, job_id).result_json["status"] == (
+            "sent" if expected else "no_eligible_changes"
+        )
     assert client.get(f"/api/jobs/{job_id}").status_code == 200
 
 
