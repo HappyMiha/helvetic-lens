@@ -117,6 +117,21 @@ class BoundaryStore:
                 return {"state": "unavailable", "reason": reason}
             return asdict(catalogue.verify_location(location, on_date=now.date()))
 
+    def municipality_identity(self, code, *, now):
+        """Current public area identity for separately reviewed source bindings."""
+        if not isinstance(now, datetime) or now.tzinfo is None or now.utcoffset() is None:
+            return {"state": "unavailable", "reason": "boundary_clock_invalid"}
+        with self._lock:
+            catalogue, reason = self._current(now.astimezone(UTC))
+            if catalogue is None:
+                return {"state": "unavailable", "reason": reason}
+            entry = catalogue.municipalities.get(code)
+            if entry is None:
+                return {"state": "unavailable", "reason": "municipality_not_in_version"}
+            return {"state": "verified", "version": catalogue.version, "sha256": catalogue.sha256,
+                    "municipality_code": entry.code, "municipality_name": entry.name,
+                    "expires_on": catalogue.expires_on.isoformat()}
+
     def match_warning(self, areas, location, *, geocode_version=None, now=None):
         """Internal worker entry point; geometry matching does not grant source use."""
         from .hazard_matching import match_location

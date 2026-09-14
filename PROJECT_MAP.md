@@ -31,6 +31,12 @@ Platform administrators can inspect all nine directions and four source packs at
 `/admin/monitoring-sources`; see [source operations evidence](docs/monitoring-v2/SOURCE_OPERATIONS.md).
 Configuration, permission records and acquisition are distinct from verified coverage.
 
+The shared `/related-developments` view groups owner-private Hazard, River and
+Road events using reviewed geography and explicit source times. Exact source
+identities, decisions and deliveries remain independent; see
+[workflow and acceptance evidence](docs/monitoring-v2/RELATED_DEVELOPMENTS.md).
+Its release activation and permitted live/human acceptance remain separate gates.
+
 See [deployment evidence](docs/monitoring-v2/DEPLOYMENT_STATUS.md) for exact active
 commits and selector migration. A push is not proof of a successful release.
 Preserve the [frozen MVP tag](https://github.com/HappyMiha/helvetic-lens/releases/tag/v1.0.0-hackathon-mvp)

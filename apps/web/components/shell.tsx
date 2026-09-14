@@ -23,6 +23,7 @@ import {
   Inbox,
   Landmark,
   LayoutGrid,
+  Layers3,
   Loader2,
   Mail,
   MoreHorizontal,
@@ -49,6 +50,7 @@ import { SectionHelp } from "./section-help";
 import { marvinHistoryCopy } from "@/lib/marvin-history-copy";
 import { centreCopy } from "@/lib/monitoring-centre-copy";
 import { monitoringNavigation } from "@/lib/monitoring-navigation";
+import { relatedCopy } from "@/lib/related-copy";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "./ui/dialog";
 
 type NavigationItemProps = {
@@ -108,6 +110,10 @@ function MonitoringNavigation({ pathname }: { pathname: string }) {
           </NavigationItem>
         );
       })}
+      <NavigationItem active={pathname === "/related-developments"} href="/related-developments">
+        <Layers3 size={17} />
+        {relatedCopy[locale].title}
+      </NavigationItem>
     </section>
   );
 }
@@ -422,7 +428,9 @@ export function Shell({
     ({ href }) => href === pathname,
   );
   const monitoringLabel =
-    pathname === "/monitoring"
+    pathname === "/related-developments"
+      ? relatedCopy[locale].title
+      : pathname === "/monitoring"
       ? centreCopy[locale].title
       : monitoringRoute
         ? monitoringRoute.id === "pollen"

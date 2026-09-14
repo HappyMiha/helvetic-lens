@@ -231,7 +231,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-033](#mv2-033) | C6: River / Lake thresholds, history and consented digest | F3 | P1 | M | VERIFYING | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-032](#mv2-032) |
 | [MV2-034](#mv2-034) | C7: official air-quality series and interpretation | F3 | P1 | M | VERIFYING | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
 | [MV2-035](#mv2-035) | C7: Air Quality — changes, improvements and consented digest | F3 | P1 | M | VERIFYING | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-034](#mv2-034) |
-| [MV2-036](#mv2-036) | Related developments from multiple sources | F4 | P1 | M | PLANNED | [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-029](#mv2-029), [MV2-033](#mv2-033), [MV2-041](#mv2-041), [MV2-071](#mv2-071) |
+| [MV2-036](#mv2-036) | Related developments from multiple sources | F4 | P1 | M | IN PROGRESS | [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-029](#mv2-029), [MV2-033](#mv2-033), [MV2-041](#mv2-041), [MV2-071](#mv2-071) |
 | [MV2-037](#mv2-037) | Journey/Trip/Route/Stop and Road Corridor reference data | F4 | P0 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-015](#mv2-015), [MV2-016](#mv2-016), [MV2-071](#mv2-071) |
 | [MV2-038](#mv2-038) | C2: Service Alerts and Trip Updates | F4 | P1 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-037](#mv2-037), [MV2-071](#mv2-071) |
 | [MV2-039](#mv2-039) | C2: Regular commutes and low-noise transport alerts | F4 | P1 | L | IN PROGRESS — renewal regression fixed | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-038](#mv2-038) |
@@ -1418,7 +1418,14 @@ No real mail, broader national source coverage or production activation is claim
 
 ### MV2-036 — Related developments from multiple sources
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** Backend + UX · **Size:** M
+**Active whole-feature scope, 14 September 2026:** Implement the three-source
+location-story workflow, verified geography/time associations, exact private
+source readers and reversible grouping/splits. Road's TMC identity currently
+has no cross-source geographic mapping; a separately reviewed binding is
+required. Retain all four acceptance criteria and live source gates. See
+[scope and acceptance](docs/monitoring-v2/RELATED_DEVELOPMENTS.md).
+
+**Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Backend + UX · **Size:** M
 
 **Dependencies:** [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-029](#mv2-029), [MV2-033](#mv2-033), [MV2-041](#mv2-041), [MV2-071](#mv2-071). **Requirements:** §§13.7,29.
 
@@ -1435,7 +1442,18 @@ No real mail, broader national source coverage or production activation is claim
 
 **Verification:** A three-source fixture, an unrelated nearby-location negative case, and correction/split replay.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Execution evidence, 14 September 2026:** Complete private `/related-developments`
+workflow implemented with actual Hazard/River/Road readers, additive durable
+stories/revisions, explicit operator-reviewed municipality bindings, grouping,
+reversible membership splits, exact source links, history and current-reference
+refresh. Shared desktop/mobile navigation exposes the five-language view without
+a rollout flag. Contract/storage/repository/real HTTP/backlog suite: 34 passed;
+affected boundary/domain regressions: 79 passed; root production build passed;
+13 full-document browser axe checkpoints passed with synthetic source responses.
+See [detailed evidence and operator workflow](docs/monitoring-v2/RELATED_DEVELOPMENTS.md).
+No domain decision or delivery is transferred. All four AC remain in force;
+exact main-site activation, permitted live three-source geography/source review
+and human usefulness acceptance remain open, so this task is not DONE.
 
 <a id="mv2-037"></a>
 

@@ -28,6 +28,7 @@ from . import auction_workflow_models as auction_workflow_models
 from . import hazard_models as hazard_models
 from . import hazard_source_models as hazard_source_models
 from . import ipi_models as ipi_models
+from . import related_models as related_models
 from . import river_email_models as river_email_models
 from . import road_models as road_models
 from . import trademark_deadline_models as trademark_deadline_models
@@ -1770,6 +1771,8 @@ class MonitoringEvaluationEntry(Base):
 # Central policy used by the session boundary. Keeping this list beside the
 # models makes a newly persisted tenant-owned record difficult to forget.
 ORGANIZATION_SCOPED_MODELS = (
+    related_models.RelatedStory,
+    related_models.RelatedStoryRevision,
     auction_models.AuctionMonitor,
     auction_models.AuctionConfigurationRevision,
     auction_workflow_models.AuctionRuntime,

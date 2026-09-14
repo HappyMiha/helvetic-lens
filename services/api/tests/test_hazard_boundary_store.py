@@ -31,6 +31,19 @@ def install(tmp_path, **kwargs):
         expires_on=kwargs.pop("expires_on", EXPIRY), now=NOW, **kwargs)
 
 
+def test_related_area_identity_rechecks_current_edition_and_never_returns_stale_geometry(tmp_path):
+    store = BoundaryStore(tmp_path)
+    assert store.municipality_identity("1", now=NOW)["state"] == "unavailable"
+    install(tmp_path)
+    result = store.municipality_identity("1", now=NOW)
+    assert result["state"] == "verified" and result["municipality_code"] == "1"
+    assert result["version"] == "2026-01" and len(result["sha256"]) == 64
+    assert store.municipality_identity("9999", now=NOW)["state"] == "unavailable"
+    assert store.municipality_identity("1", now=NOW + timedelta(days=30))["state"] == "unavailable"
+    (tmp_path / "hazard-boundaries/current.json").write_text("{}")
+    assert store.municipality_identity("1", now=NOW)["state"] == "unavailable"
+
+
 def test_source_scope_covers_entire_radius_not_just_its_verified_center(tmp_path):
     from test_hazard_boundaries import point_from_lv95
 

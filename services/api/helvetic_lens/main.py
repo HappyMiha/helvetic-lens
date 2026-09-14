@@ -594,7 +594,7 @@ def create_app(
             status = response.status_code
             if request.url.path.startswith("/api/monitoring-subjects"):
                 response.headers["Cache-Control"] = "private, no-store"
-            if request.url.path.startswith(("/api/auction-watch", "/api/tender-watch", "/api/commute-watch", "/api/road-watch", "/api/hazard-watch", "/api/trademark-watch")):
+            if request.url.path.startswith(("/api/auction-watch", "/api/tender-watch", "/api/commute-watch", "/api/road-watch", "/api/hazard-watch", "/api/trademark-watch", "/api/related-developments")):
                 # Dependency response headers are lost when an exception
                 # handler creates a new response. Apply to denial/errors too.
                 response.headers["Cache-Control"] = "no-store"
@@ -2216,6 +2216,8 @@ def create_app(
     app.include_router(trademark_router(service, settings))
     app.include_router(auction_router(service, settings))
     app.include_router(centre_router(service, settings))
+    from .related_api import related_router
+    app.include_router(related_router(service, settings))
     from .monitoring_source_operations import source_operations_router
     app.include_router(source_operations_router(service, settings))
     return app

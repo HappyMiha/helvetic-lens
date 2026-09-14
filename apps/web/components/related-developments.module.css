@@ -1,0 +1,127 @@
+.root {
+  max-width: 1080px;
+  margin: auto;
+  padding: 1.25rem;
+  color: var(--text, #18342d);
+}
+.root h1 {
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  font-weight: 700;
+}
+.root h2 {
+  font-size: 1.4rem;
+  margin: 1.5rem 0 0.8rem;
+  font-weight: 650;
+}
+.root h3 {
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+.root p {
+  margin: 0.6rem 0;
+  line-height: 1.6;
+}
+.root a {
+  color: #145944;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.root button,
+.root select,
+.root input:not([type="checkbox"]) {
+  min-height: 44px;
+  border: 1px solid #708f82;
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+  color: #18342d;
+  background: white;
+  max-width: 100%;
+}
+.root button {
+  cursor: pointer;
+}
+.root button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.root label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.65rem 0;
+}
+.root input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.root :is(a, button, input, select, summary):focus-visible {
+  outline: 3px solid #116c50;
+  outline-offset: 3px;
+}
+.root details {
+  margin: 1rem 0;
+}
+.root summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding: 0.5rem 0;
+}
+.root pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.8rem;
+  max-width: 100%;
+}
+.root fieldset {
+  border: 1px solid #bacbc5;
+  border-radius: 12px;
+  padding: 1rem;
+  margin: 1rem 0;
+  min-width: 0;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+  gap: 1rem;
+}
+.card {
+  border: 1px solid #bacbc5;
+  border-radius: 12px;
+  padding: 1rem;
+  background: white;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.card dl {
+  font-size: 0.9rem;
+}
+.card dt {
+  font-weight: 650;
+  margin-top: 0.6rem;
+}
+.card dd {
+  margin: 0;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0.8rem 0;
+}
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background: #e8efec;
+  border-radius: 6px;
+}
+.field {
+  flex-direction: column;
+  align-items: stretch !important;
+}
+.message {
+  padding: 0.8rem;
+  background: #f4f7f5;
+  border-left: 3px solid #426d59;
+}

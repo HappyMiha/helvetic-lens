@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
+import { relatedCopy } from "@/lib/related-copy";
 import {
   centreCopy,
   centreSources,
@@ -197,6 +198,7 @@ function Centre({
         <header>
           <h1>{c.title}</h1>
           <p>{c.intro}</p>
+          <p><Link href="/related-developments">{relatedCopy[locale].title}</Link></p>
           <a href="#choose-monitor">{c.choose}</a>
         </header>
         {!canManage && <p>{r.readonly}</p>}
