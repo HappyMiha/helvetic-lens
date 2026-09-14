@@ -34,6 +34,7 @@ class TrademarkMonitor(Base):
     configuration: Mapped[dict] = mapped_column(JSON)
     revision: Mapped[int] = mapped_column(Integer, default=1)
     version: Mapped[int] = mapped_column(Integer, default=1)
+    email_revision: Mapped[int] = mapped_column(Integer, default=0)
     status: Mapped[str] = mapped_column(String(12), default="draft")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 

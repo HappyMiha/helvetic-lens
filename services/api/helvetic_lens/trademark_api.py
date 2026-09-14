@@ -13,6 +13,7 @@ from .auth import Identity
 from .config import DomainError
 from .monitoring_subjects import _actor
 from .trademark_contracts import TrademarkPortfolio
+from .trademark_email_preferences import EmailConfiguration
 
 
 class Input(BaseModel):
@@ -47,6 +48,11 @@ class ExportBody(VersionBody):
     locale: Literal["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"] = "en-CH"
 
 
+class EmailBody(VersionBody):
+    configuration: EmailConfiguration
+    consent: bool = Field(strict=True)
+
+
 class DownloadBody(Input):
     expected_content_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
 
@@ -68,6 +74,27 @@ def trademark_router(service, settings):
         return actor
 
     router = APIRouter(prefix="/api/trademark-watch", tags=["trademark-watch"], dependencies=[Depends(identity)])
+
+    @router.get("/monitors/{monitor_id}/email")
+    def email_preferences(monitor_id: UUID, actor: Identity = Depends(identity)):
+        from .trademark_email_preferences import view
+        with service.db.session() as session:
+            return {**view(session, actor.user_id, str(monitor_id)), "mail_available": settings.auth_email_mode == "smtp"}
+
+    @router.put("/monitors/{monitor_id}/email")
+    def configure_email(monitor_id: UUID, body: EmailBody, actor: Identity = Depends(identity)):
+        from .trademark_email_preferences import configure
+        with service.db.session() as session:
+            result = configure(session, actor.user_id, str(monitor_id), expected_version=body.expected_version,
+                configuration=body.configuration.model_dump(mode="json"), consent=body.consent, now=_now())
+            session.commit()
+            return {**result, "mail_available": settings.auth_email_mode == "smtp"}
+
+    @router.get("/monitors/{monitor_id}/email/preview")
+    def email_preview(monitor_id: UUID, actor: Identity = Depends(identity)):
+        from .trademark_delivery import preview
+        with service.db.session() as session:
+            return preview(session, settings, actor.user_id, str(monitor_id), now=_now())
 
     @router.get("/capabilities")
     def capabilities():

@@ -29,6 +29,7 @@ from . import hazard_source_models as hazard_source_models
 from . import ipi_models as ipi_models
 from . import road_models as road_models
 from . import trademark_deadline_models as trademark_deadline_models
+from . import trademark_email_models as trademark_email_models
 from . import trademark_models as trademark_models
 from . import trademark_source_models as trademark_source_models
 from . import trademark_workflow_models as trademark_workflow_models
@@ -1786,6 +1787,8 @@ ORGANIZATION_SCOPED_MODELS = (
     trademark_workflow_models.TrademarkCandidateEvent,
     trademark_workflow_models.TrademarkReview,
     trademark_workflow_models.TrademarkExportPreparation,
+    trademark_email_models.TrademarkEmailPolicy,
+    trademark_email_models.TrademarkDelivery,
     hazard_models.HazardConfigurationRevision,
     hazard_models.HazardDevelopment,
     hazard_models.HazardEventRevision,

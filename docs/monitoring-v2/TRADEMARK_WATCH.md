@@ -1,5 +1,55 @@
 # Trademark & IP Watch — B7
 
+## Private IP notifications — 14 September 2026
+
+MV2-048 with scoped MV2-012/022 contributions completes the IP watch summary
+required by specification §16.12. Deliver explicit verified-owner email consent,
+immediate/daily modes, local digest time and quiet hours, a read-only preview,
+durable bounded delivery and exact private candidate/event links in five
+languages. Settings remain visible for all permitted readers; consent is never
+inferred from enabling a section, creating a portfolio or choosing counsel.
+
+Only new unread source candidates/material register changes after consent are
+eligible. Portfolio/calibration/calendar-only changes do not themselves create
+email. Current matching, source notification/display rights, recipient binding,
+ownership, active configuration and unreviewed event identity must hold at claim
+and immediately before SMTP. Changed or withdrawn source evidence must not be
+replaced by an old preview. Review, pause/archive, opt-out, consent changes and
+membership loss suppress pending work. Failed or abandoned SMTP is uncertain,
+never automatically retried. Sending does not review a candidate or contact
+counsel. Source facts/legal dates are read through authenticated links, not
+copied into emails. Existing source-access/quality/legal/pilot gates remain open.
+
+Acceptance requires real local API→projection→queue→fake-SMTP delivery, privacy/
+rights/review races, idempotency, daily/quiet-hour/DST behavior, five-language
+desktop/mobile settings and browser preview, migration preservation, affected
+tests, exact API lint and the root frontend build. Publish only this complete
+tested user-facing outcome; no backend-only continuation commit.
+
+Implemented as one complete publication: private versioned email policies,
+reference-only intents, the existing durable worker and SMTP adapter, scheduled
+delivery, owner settings and read-only preview. Migration `09e6c78028ab` adds
+tenant-scoped consent/delivery tables and defaults existing portfolios to no
+email consent. All nine sections and existing collector switches remain enabled.
+Opening a section does not subscribe its owner to email.
+
+Verification: 259 affected trademark/IPI, auction-delivery and backlog tests
+passed, including migrated schemas, the real authenticated HTTP→projection→job
+worker→fake-SMTP journey, CSRF/CAS, tenant isolation, source/review/recipient
+changes at the final boundary, freshness recovery, opt-out, ambiguous SMTP,
+quiet hours and DST/local-day digest limits. The exact API Ruff gate and root
+frontend build passed. Headless Chrome completed 71 checks, including saved
+consent/schedule, five-language mobile forms, viewer restrictions, source-aware
+preview and membership redaction; four axe checkpoints reported zero violations.
+Changed frontend files pass Prettier. The browser fixture required an explicit
+portfolio selection after navigation; no product permission rule was relaxed.
+
+This is synthetic delivery and implementation acceptance, not permission to send
+real register notifications. Actual IPI credentials/approved notification rights,
+measured quality, reviewed legal rules and human pilot acceptance remain open.
+Production activation of this feature has not yet been verified. MV2-048 and
+the broader shared MV2-012/022 parents therefore remain IN PROGRESS/open.
+
 ## Reviewed deadline feature — 14 September 2026
 
 MV2-048 connects explicit private domicile/calendar selection to a reviewed rule

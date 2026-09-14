@@ -1,4 +1,5 @@
 import {trademarkReviewFixture} from "./trademark-review-fixture.mjs";
+import {trademarkEmailFixture} from "./trademark-email-fixture.mjs";
 // Disposable localhost UI fixture; synthetic identities and brands, no IPI access.
 import {createServer} from "node:http";
 import {spawn} from "node:child_process";
@@ -15,6 +16,7 @@ child.stdout.on("data",data=>process.stdout.write(data));child.stderr.on("data",
 let state={locale:"en-CH",manager:true,denied:false,conflict:false},monitor=null,history=[];
 const requests=[],audits=[];
 const reviewRoute=trademarkReviewFixture();
+const emailRoute=trademarkEmailFixture();
 const server=createServer(async(req,res)=>{
   const url=new URL(req.url,"http://127.0.0.1"),path=url.pathname;
   const json=(value,status=200)=>{res.writeHead(status,{"Content-Type":"application/json","Cache-Control":"no-store"});res.end(JSON.stringify(value));};
@@ -37,6 +39,8 @@ const server=createServer(async(req,res)=>{
         if(state.denied)return json({code:"membership_required"},403);
         if(req.method!=="GET"&&!state.manager)return json({code:"subject_role_denied"},403);
         const route=path.slice("/api/trademark-watch".length);
+        const email=emailRoute(route,req.method,body,monitor,state);
+        if(email)return json(email.value,email.status);
         const response=reviewRoute(route,req.method,body,monitor,state);
         if(response)return json(response.value,response.status);
         if(route==="/capabilities")return json({drafts_available:true,start_available:false,live_results_checked:false});

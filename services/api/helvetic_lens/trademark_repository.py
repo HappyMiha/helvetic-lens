@@ -158,11 +158,13 @@ def revisions(session, user_id, monitor_id, *, before=None, limit=20):
 
 
 def archive_monitor(session, user_id, monitor_id, version):
+    from .trademark_email_preferences import cancel_email_work
     row = owned(session, user_id, monitor_id, write=True)
     _version(version)
     if row.version != version:
         _fail("trademark_version_conflict")
     if row.status == "archived":
+        cancel_email_work(session, row)
         return _view(row)
     if row.status not in {"draft", "paused"}:
         _fail("trademark_stop_before_archive")
@@ -172,6 +174,7 @@ def archive_monitor(session, user_id, monitor_id, version):
         .execution_options(synchronize_session=False))
     if changed.rowcount != 1:
         _fail("trademark_version_conflict")
+    cancel_email_work(session, row)
     return get_monitor(session, user_id, monitor_id)
 
 

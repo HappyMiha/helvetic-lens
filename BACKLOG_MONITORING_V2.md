@@ -238,7 +238,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-045](#mv2-045) | B2: Tender discovery → review → material update | F5 | P1 | L | IN PROGRESS | [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022), [MV2-042](#mv2-042), [MV2-043](#mv2-043), [MV2-044](#mv2-044) |
 | [MV2-046](#mv2-046) | B7: Official trademark publications and register updates | F5 | P1 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071) |
 | [MV2-047](#mv2-047) | B7: Exact, lexical and phonetic candidates | F5 | P1 | L | IN PROGRESS | [MV2-043](#mv2-043), [MV2-046](#mv2-046) |
-| [MV2-048](#mv2-048) | B7: IP review, review deadlines and register changes | F5 | P1 | L | IN PROGRESS | [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-046](#mv2-046), [MV2-047](#mv2-047) |
+| [MV2-048](#mv2-048) | B7: IP review, review deadlines, register changes and consented digest | F5 | P1 | L | IN PROGRESS | [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-046](#mv2-046), [MV2-047](#mv2-047) |
 | [MV2-049](#mv2-049) | B8: Official Ticino auctions — native collection implemented; access/coverage open | F5 | P1 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071) |
 | [MV2-050](#mv2-050) | B8: Auction profiles, price limits and ending-soon alerts | F5 | P1 | L | IN PROGRESS | [MV2-008](#mv2-008), [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022), [MV2-043](#mv2-043), [MV2-044](#mv2-044), [MV2-049](#mv2-049) |
 | [MV2-051](#mv2-051) | Independent matching and local AI evaluation | F6 | P0 | L | PLANNED | [MV2-023](#mv2-023), [MV2-043](#mv2-043), [MV2-047](#mv2-047) |
@@ -1707,7 +1707,26 @@ human acceptance and actual release remain unverified. Status stays IN PROGRESS.
 
 <a id="mv2-048"></a>
 
-### MV2-048 — B7: IP review, review deadlines and register changes
+### MV2-048 — B7: IP review, review deadlines, register changes and consented digest
+
+**Active notification feature, 14 September 2026:** Complete the specification
+§16.12 IP watch summary with explicit verified-owner immediate/daily consent,
+quiet hours, saved-settings preview and durable delivery of new unread source
+candidates/register changes. Recheck matching, rights, source/calibration,
+recipient, ownership and review state before SMTP; preserve uncertain outcomes
+without retries and never contact counsel. See the [complete feature evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#private-ip-notifications--14-september-2026).
+
+**Notification implementation verified:** The complete private settings→preview→
+durable delivery feature passes 259 affected API/source/workflow/migration tests,
+including real HTTP→worker→fake SMTP, plus the exact Ruff gate, root web build,
+changed-file Prettier and 71 Chrome checks with four zero-violation axe audits.
+Five-language controls preserve explicit owner consent, quiet hours, daily time,
+opt-out, current source rights and private access. No source facts or legal dates
+are copied into email and no counsel is contacted. Actual IPI access, approved
+notification rights, quality/legal/pilot acceptance and production activation
+remain unverified; this does not close the broader MV2-012/022 or MV2-048 gates.
+All nine sections stay enabled; actual source access and human acceptance remain
+independent. Finish UI/API/worker and all acceptance checks before publication.
 
 **Deadline feature, 14 September 2026:** Delivered private explicit domicile/calendar
 configuration, reviewed immutable rules, source-specific publication mapping,

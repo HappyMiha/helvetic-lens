@@ -101,12 +101,14 @@ def start(session, user_id, monitor_id, version, *, now):
 
 
 def pause(session, user_id, monitor_id, version):
+    from .trademark_email_preferences import cancel_email_work
     with _savepoint(session):
         monitor = monitor_for(session, user_id, monitor_id, write=True)
         _version(version)
         if monitor.version != version or monitor.status != "active":
             _fail("trademark_version_conflict")
         monitor.status, monitor.version = "paused", monitor.version + 1
+        cancel_email_work(session, monitor)
         runtime = session.get(TrademarkRuntime, monitor.id)
         if runtime:
             runtime.next_check_at = None
@@ -247,6 +249,8 @@ def refresh(session, user_id, monitor_id, *, now):
         runtime.last_check_at, runtime.next_check_at = now, now + timedelta(seconds=15 if pending else 60)
         runtime.unavailable_count = unknown
         session.flush()
+        from .trademark_delivery import prepare_monitor
+        prepare_monitor(session, monitor, now=now)
         return {"health": runtime.health, "examined": examined, "unavailable_count": unknown, "similarity_unavailable_languages": missing,
             "coverage_verified": False, "last_check_at": now.isoformat(), "next_check_at": runtime.next_check_at.isoformat()}
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ApiError } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
@@ -19,6 +19,7 @@ import styles from "./commute-watch.module.css";
 import ipStyles from "./trademark-watch.module.css";
 
 import { TrademarkTracking } from "./trademark-tracking";
+import { TrademarkEmail } from "./trademark-email";
 import { IPISourceStatus } from "./ipi-source-status";
 import { TrademarkDeadlineChoice } from "./trademark-deadline";
 import { Failure, useData, useMutation } from "./trademark-client";
@@ -529,6 +530,7 @@ function Detail({
     [editing, setEditing] = useState(false),
     [history, setHistory] = useState(false),
     [confirm, setConfirm] = useState(false);
+  const onAccessFailure = useContext(Failure);
   const result = useData<TrademarkMonitor>(`/monitors/${id}`, revision),
     mutation = useMutation(),
     row = result.data;
@@ -606,6 +608,14 @@ function Detail({
         row={row}
         canManage={canManage}
         changed={reload}
+      />
+      <TrademarkEmail
+        key={`email:${row.version}`}
+        monitorId={row.id}
+        canManage={canManage}
+        archived={row.status === "archived"}
+        changed={reload}
+        onAccessFailure={onAccessFailure}
       />
     </section>
   );
