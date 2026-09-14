@@ -1,5 +1,24 @@
 # Monitoring deployment status — 14 September 2026
 
+## Verified Aste repair activation — 14 September 2026
+
+A fresh authenticated main-site journal read confirms **Succeeded** for requested
+and verified activated commit `d961ebd54998c124458b7185f0258c9d9197dd0f` on
+HappySnowman production. The run started at 19:10:03 and finished at 20:51:57
+Europe/Zurich. API lint and the complete API test gate passed (API tests took
+98m 28s), followed by image build, backup `20260914T184956Z`, release start,
+model-runtime restoration, public health verification and release publication.
+
+This release includes SQLite retained-child repair `9a0a9e6`, native evidence
+search and batch review. The Aste failure reported for `f07b164` and subsequently
+`9e631d9` is superseded by this verified activation; no test was disabled.
+
+The next immutable candidate `82eefcfd411929970442c42e63d77f31fb426472` started at
+20:52:03 and is recorded as Deploying. It includes nine-category settings,
+encrypted connector controls, configuration drafts and owned settings download.
+Those newer features are not yet verified activated. No active deployment was
+restarted, interrupted or duplicated. Earlier observations below remain history.
+
 ## Owned settings download candidate — 14 September 2026
 
 All nine categories now offer owned current-configuration JSON downloads in
