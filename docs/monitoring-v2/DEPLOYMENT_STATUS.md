@@ -9,11 +9,17 @@ evidence-bound audit and native assignment filters. See
 their current private/shared scope; no source permission or personal email
 consent is inferred. No new runtime flag hides this feature.
 
-This is a main-branch release candidate. Its local API, PostgreSQL race and
-browser checks are separate from production activation. A fresh authenticated
-release observation will follow publication; no active automatic checks or
-deployment are restarted or duplicated. Broader MV2-013/MV2-021 and human/source
-acceptance remain open.
+Published to origin/main as `026ec818ada898152197dcb2cc4b77baa463d984` after its
+local API, PostgreSQL race and browser checks. The fresh authenticated production
+journal confirms `c66e77fc7721fbbd4ff11a522d4cc7183cc81523` as both production and
+verified activation. That automatic release succeeded at **15:59:46 Europe/Zurich**
+on 14 September, including its full API gate (**88 minutes 26 seconds**), build,
+backup, startup, model-runtime restoration, public health and publication checks.
+
+The next automatic candidate `f07b1641a351deddb5b7a73e47f52e99ec2fa4f3` started
+at 16:00:05 and is still Deploying. The newer item-work commit `026ec81` is pushed
+but not verified activated. No running checks or deployment were restarted or
+duplicated. Broader MV2-013/MV2-021 and human/source acceptance remain open.
 
 ## Business workspace sharing candidate — 14 September 2026
 
