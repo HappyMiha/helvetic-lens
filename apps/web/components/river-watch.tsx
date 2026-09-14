@@ -1,5 +1,7 @@
 "use client";
 
+import { MonitoringEvidenceAsk } from "./monitoring-evidence-ask";
+
 import { useContext, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
@@ -438,6 +440,12 @@ function ExactChange({
           </p>
           {value.newer_available && <p>{e.newer}</p>}
           {!value.current_configuration && <p>{e.historical}</p>}
+          <MonitoringEvidenceAsk
+            domain="river"
+            monitorId={monitorId}
+            itemId={changeId}
+            contextVersion={value.event.revision}
+          />
           <Sample sample={value.event.evidence.sample} />
           {value.event.evidence.baseline && (
             <Sample sample={value.event.evidence.baseline} />
@@ -748,6 +756,12 @@ function Detail({
         {!changes.items.length && <p>{c.noChanges}</p>}
         {changes.items.map((event) => (
           <article className={styles.event} key={event.id}>
+            <MonitoringEvidenceAsk
+              domain="river"
+              monitorId={id}
+              itemId={event.id}
+              contextVersion={event.revision}
+            />
             <h3>
               {label(c, event.kind)} · {c.priority} {event.priority}
             </h3>

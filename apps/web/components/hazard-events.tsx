@@ -1,5 +1,7 @@
 "use client";
 
+import { MonitoringEvidenceAsk } from "./monitoring-evidence-ask";
+
 import { useState } from "react";
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n";
@@ -223,6 +225,13 @@ function Reader({
             {row.revision}
           </h4>
           <EventState row={row} />
+          <MonitoringEvidenceAsk
+            domain="warnings"
+            monitorId={monitor}
+            itemId={target.event}
+            sequence={row.revision}
+            contextVersion={row.version}
+          />
           {row.historical && (
             <Link prefetch={false} href={hazardHref(monitor, target.event)}>
               {c.openCurrent}

@@ -8,6 +8,7 @@ import { tenderCopy } from "@/lib/tender-copy";
 import { trademarkReviewCopy } from "@/lib/trademark-review-copy";
 import { auctionTrackingCopy } from "@/lib/auction-tracking-copy";
 import { useAuth } from "./auth-gate";
+import { MonitoringEvidenceAsk } from "./monitoring-evidence-ask";
 import styles from "./business-item-work.module.css";
 
 type Domain = "tenders" | "ip" | "auctions";
@@ -86,21 +87,29 @@ export function BusinessItemWork(props: Props) {
   const [open, setOpen] = useState(false);
   const key = `${session?.user?.id}:${session?.organization?.id}:${session?.role}:${locale}:${props.domain}:${props.monitorId}:${props.itemId}:${props.version}`;
   return (
-    <details
-      className={styles.panel}
-      data-business-item-work
-      data-item-version={props.version}
-      onToggle={(e) => setOpen(e.currentTarget.open)}
-    >
-      <summary>{businessItemCopy[locale].title}</summary>
-      {open && session?.authenticated && (
-        <WorkForm
-          key={key}
-          {...props}
-          canManage={props.canManage && session.role === "organization_admin"}
-        />
-      )}
-    </details>
+    <>
+      <MonitoringEvidenceAsk
+        domain={props.domain}
+        monitorId={props.monitorId}
+        itemId={props.itemId}
+        contextVersion={props.version}
+      />
+      <details
+        className={styles.panel}
+        data-business-item-work
+        data-item-version={props.version}
+        onToggle={(e) => setOpen(e.currentTarget.open)}
+      >
+        <summary>{businessItemCopy[locale].title}</summary>
+        {open && session?.authenticated && (
+          <WorkForm
+            key={key}
+            {...props}
+            canManage={props.canManage && session.role === "organization_admin"}
+          />
+        )}
+      </details>
+    </>
   );
 }
 

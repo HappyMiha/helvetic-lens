@@ -9,6 +9,7 @@ import { pollenRuntimeCopy } from "@/lib/pollen-runtime-copy";
 import { pollenDraftCopy } from "@/lib/pollen-draft-copy";
 import type { PollenActivity, PollenSample } from "@/lib/pollen-runtime";
 import styles from "./pollen-draft-reader.module.css";
+import { MonitoringEvidenceAsk } from "./monitoring-evidence-ask";
 
 type Props = {
   id: string;
@@ -179,6 +180,12 @@ function Pinned({
         <>
           {value.newer_available && <p>{copy.newer}</p>}
           {!value.current_configuration && <p>{copy.oldSettings}</p>}
+          <MonitoringEvidenceAsk
+            domain="pollen"
+            monitorId={id}
+            itemId={entryId}
+            contextVersion={entry.configuration_revision}
+          />
           <p>
             {labels.revision}: {entry.configuration_revision} ·{" "}
             {dateTime(entry.created_at, {

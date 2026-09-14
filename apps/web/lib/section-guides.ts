@@ -2705,6 +2705,32 @@ export const SECTION_GUIDES: SectionGuide[] = [
 ];
 
 // Explicit routes: unknown routes never borrow instructions from an unrelated page.
+const monitoringEvidenceControl = c(
+  "monitoring-evidence-ask",
+  "Ask about this evidence",
+  "Searches exact saved source fields without a model. Each request checks your access and the selected evidence again. It does not change monitoring, mark a record reviewed or send anything externally.",
+  "Open an individual record first. Use terms from the original source; a keyword match may not answer the question. Read the source context and units, and reload if evidence or permissions change.",
+  "Read / navigate",
+  "[data-monitoring-evidence-ask] > summary",
+);
+for (const guide of SECTION_GUIDES) {
+  if (
+    [
+      "pollen-watch",
+      "river-watch",
+      "air-watch",
+      "hazard-watch",
+      "commute-watch",
+      "road-watch",
+      "tender-watch",
+      "trademark-watch",
+      "auction-watch",
+    ].includes(guide.id)
+  ) {
+    guide.controls.push(monitoringEvidenceControl);
+  }
+}
+
 export const GUIDE_ROUTES: Record<string, string> = {
   "/auction-watch": "auction-watch",
   "/": "today",

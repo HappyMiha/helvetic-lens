@@ -1,5 +1,7 @@
 "use client";
 
+import { MonitoringEvidenceAsk } from "./monitoring-evidence-ask";
+
 import {
   createContext,
   useCallback,
@@ -449,6 +451,13 @@ function EventCard({
         availability={item.availability}
         attribution={item.attribution}
       />
+      <MonitoringEvidenceAsk
+        domain="traffic"
+        monitorId={item.monitor_id}
+        itemId={item.id}
+        sequence={item.sequence}
+        contextVersion={item.version}
+      />
       {canManage && (
         <div className={styles.actions}>
           <button
@@ -517,6 +526,13 @@ function LinkedEvent({
   const item = data.data;
   return (
     <section className={styles.card} aria-label={c.selectedChange}>
+      <MonitoringEvidenceAsk
+        domain="traffic"
+        monitorId={monitor}
+        itemId={event}
+        sequence={item.snapshot.sequence}
+        contextVersion={item.event.version}
+      />
       <h2>
         {c.selectedChange} · {c.version} {item.snapshot.sequence}
       </h2>

@@ -1,5 +1,7 @@
 "use client";
 
+import { MonitoringEvidenceAsk } from "./monitoring-evidence-ask";
+
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -713,6 +715,13 @@ function EventCard({
   }
   return (
     <article className={styles.card} data-commute-event>
+      <MonitoringEvidenceAsk
+        domain="commute"
+        monitorId={monitor.id}
+        itemId={event.id}
+        sequence={event.sequence}
+        contextVersion={`${monitor.version}:${event.version}`}
+      />
       <h3>
         {event.service_day} · {reviewed ? c.reviewed : c.unread}
       </h3>
@@ -824,6 +833,13 @@ function LinkedEvent({
     return <p role="alert">{c.unavailable}</p>;
   return (
     <section data-commute-linked>
+      <MonitoringEvidenceAsk
+        domain="commute"
+        monitorId={monitor.id}
+        itemId={event.id}
+        sequence={snapshot.sequence}
+        contextVersion={`${monitor.version}:${event.version}`}
+      />
       {newer_available && <p role="status">{c.newerUpdate}</p>}
       <section className={styles.card}>
         <h3>

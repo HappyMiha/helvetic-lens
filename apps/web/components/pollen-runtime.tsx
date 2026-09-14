@@ -14,6 +14,7 @@ import type {
   RuntimeCommand,
 } from "@/lib/pollen-runtime";
 import styles from "./pollen-draft-reader.module.css";
+import { MonitoringEvidenceAsk } from "./monitoring-evidence-ask";
 
 export function PollenRuntime({
   id,
@@ -488,6 +489,12 @@ export function PollenRuntime({
                     : copy.state}
               </h3>
               {sampleView(entry.current)}
+              <MonitoringEvidenceAsk
+                domain="pollen"
+                monitorId={id}
+                itemId={entry.id}
+                contextVersion={entry.configuration_revision}
+              />
               {entry.reasons.length > 0 && (
                 <>
                   <h4>{copy.why}</h4>

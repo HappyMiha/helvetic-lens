@@ -51,6 +51,7 @@
     "check:monitoring-first-run:browser": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/check-monitoring-first-run-browser.mjs",
     "check:business-monitor:browser": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/check-business-monitor-browser.mjs",
     "check:business-item:browser": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/check-business-item-browser.mjs",
+    "check:monitoring-evidence:browser": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/check-monitoring-evidence-browser.mjs",
     "check:monitoring-email-centre:browser": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/check-monitoring-email-centre-browser.mjs",
     "check:topic-reviews:browser": "node scripts/check-topic-reviews-browser.mjs",
     "check:marvin:monitor:browser": "node scripts/check-marvin-monitor-browser.mjs",

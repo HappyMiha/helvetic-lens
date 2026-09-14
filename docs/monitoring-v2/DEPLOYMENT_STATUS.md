@@ -1,5 +1,25 @@
 # Monitoring deployment status — 14 September 2026
 
+## Native evidence-search feature candidate — 14 September 2026
+
+All nine native Monitoring readers now offer bounded word matching in selected
+saved evidence, exact literal extracts with available units, and authenticated
+references bound to the same record. The interface is available in five locales
+under the existing enabled sections. It performs no model calls, collection,
+monitor changes or email delivery. See [scope and verification](MONITORING_EVIDENCE_ASK.md).
+
+Local acceptance includes 25 feature API checks after the migration repair,
+26 citation/backlog checks, a further seven elapsed-request/backlog checks, the
+root build, exact API Ruff gate and 81 built-browser accessibility/workflow
+checkpoints. Generative conclusions, natural-language drafts, independent human
+review and source/live acceptance remain open; MV2-023 remains IN PROGRESS.
+
+The prerequisite SQLite repair was pushed to origin/main as `9a0a9e6`.
+At the latest authenticated journal observation, production is still `c66e77f`
+and the older `9e631d9` candidate is Deploying. This newer feature is a tested
+release candidate, not a verified production activation. Normal automatic
+deployment remains responsible for the complete release gates.
+
 ## SQLite retained-child migration repair — 14 September 2026
 
 The authenticated main-site journal records `f07b1641a351` as Failed, finished

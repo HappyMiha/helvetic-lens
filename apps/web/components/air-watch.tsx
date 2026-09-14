@@ -1,5 +1,7 @@
 "use client";
 
+import { MonitoringEvidenceAsk } from "./monitoring-evidence-ask";
+
 import { useContext, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -62,9 +64,15 @@ function Sample({ sample }: { sample: AirSample }) {
         {c.period}: {c[sample.period]}
       </span>
       <span>
-        {sample.source_date ? c.sourceDate : c.time}: {sample.source_date || new Date(sample.timestamp).toLocaleString(locale)}
+        {sample.source_date ? c.sourceDate : c.time}:{" "}
+        {sample.source_date ||
+          new Date(sample.timestamp).toLocaleString(locale)}
       </span>
-      {sample.source_time_label && <span>{sample.source_time_label} · {sample.source_timezone}</span>}
+      {sample.source_time_label && (
+        <span>
+          {sample.source_time_label} · {sample.source_timezone}
+        </span>
+      )}
       <span>
         {c.quality}: {label(c, sample.quality)} · {c.revision} {sample.revision}
       </span>
@@ -88,7 +96,8 @@ function Coverage({ coverage }: { coverage: AirCoverage }) {
       {Object.entries(coverage).map(([key, entry]) => (
         <section key={key} className={styles.card}>
           <h3>
-            {label(c, key.split(":")[0])} · {label(c, key.split(":")[1])} · {label(c, entry.status)}
+            {label(c, key.split(":")[0])} · {label(c, key.split(":")[1])} ·{" "}
+            {label(c, entry.status)}
           </h3>
           {entry.sample ? <Sample sample={entry.sample} /> : <p>{c.unknown}</p>}
         </section>
@@ -256,8 +265,13 @@ function Editor({
             <select
               value={r.metric}
               onChange={(e) =>
-                rule(i, { ...r, metric: e.target.value as AirMetric,
-                  period: r.period.startsWith("daily_") ? airDailyPeriod(e.target.value as AirMetric) : r.period })
+                rule(i, {
+                  ...r,
+                  metric: e.target.value as AirMetric,
+                  period: r.period.startsWith("daily_")
+                    ? airDailyPeriod(e.target.value as AirMetric)
+                    : r.period,
+                })
               }
             >
               {config.metrics.map((m) => (
@@ -382,11 +396,13 @@ function Editor({
 
 export function AirEvent({
   event,
+  monitorId,
   canManage,
   busy,
   onReview,
 }: {
   event: AirChange;
+  monitorId: string;
   canManage: boolean;
   busy: boolean;
   onReview: (e: AirChange, decision: string) => void;
@@ -395,6 +411,12 @@ export function AirEvent({
   const c = airCopy[locale];
   return (
     <article className={styles.event}>
+      <MonitoringEvidenceAsk
+        domain="air"
+        monitorId={monitorId}
+        itemId={event.id}
+        contextVersion={event.revision}
+      />
       <h3>{label(c, event.kind)}</h3>
       <p>{c.why}</p>
       <p>
@@ -494,6 +516,12 @@ function ExactChange({
           </p>
           {value.newer_available && <p>{e.newer}</p>}
           {!value.current_configuration && <p>{e.historical}</p>}
+          <MonitoringEvidenceAsk
+            domain="air"
+            monitorId={monitorId}
+            itemId={changeId}
+            contextVersion={value.event.revision}
+          />
           <Sample sample={value.event.evidence.sample} />
           {value.event.evidence.baseline && (
             <Sample sample={value.event.evidence.baseline} />
@@ -710,7 +738,9 @@ function Detail({
           {row.revision}
         </p>
         <p>
-          {AIR_STATIONS[row.configuration.station_id] || row.configuration.station_id} · {c.scope}
+          {AIR_STATIONS[row.configuration.station_id] ||
+            row.configuration.station_id}{" "}
+          · {c.scope}
         </p>
         {row.configuration.rules.map((r, i) => (
           <p key={i}>
@@ -798,6 +828,7 @@ function Detail({
         {changes.items.map((e) => (
           <AirEvent
             key={e.id}
+            monitorId={id}
             event={e}
             busy={busy}
             canManage={
@@ -921,9 +952,12 @@ function Reader({
     if (!allowed) return;
     const abort = new AbortController();
     Promise.all([
-      api<{ stations: AirStation[]; unsupported?: {area: string}[] }>(`${base}/stations`, {
-        signal: abort.signal,
-      }),
+      api<{ stations: AirStation[]; unsupported?: { area: string }[] }>(
+        `${base}/stations`,
+        {
+          signal: abort.signal,
+        },
+      ),
       api<{ items: AirMonitor[] }>(`${base}/monitors`, {
         signal: abort.signal,
       }),
@@ -931,7 +965,9 @@ function Reader({
       .then(([catalog, monitors]) => {
         if (!abort.signal.aborted) {
           setStations(catalog.stations);
-          setUnavailableAreas((catalog.unsupported || []).map((entry) => entry.area));
+          setUnavailableAreas(
+            (catalog.unsupported || []).map((entry) => entry.area),
+          );
           setRows(monitors.items);
           setError("");
           setLoading(false);
@@ -959,7 +995,11 @@ function Reader({
         <p>{c.scope}</p>
         <p>{c.limits}</p>
         <p>{c.dailyHelp}</p>
-        {!loading && unavailableAreas.length > 0 && <p role="status">{unavailableAreas.join(" · ")}: {c.unavailable}</p>}
+        {!loading && unavailableAreas.length > 0 && (
+          <p role="status">
+            {unavailableAreas.join(" · ")}: {c.unavailable}
+          </p>
+        )}
         <div className={styles.actions}>
           <button disabled={!allowed} onClick={changed}>
             {c.refresh}
@@ -1123,6 +1163,7 @@ function TodayReader({
           </p>
           <AirEvent
             event={e}
+            monitorId={e.monitor_id}
             canManage={canManage}
             busy={busy}
             onReview={(event, decision) => void review(e, event, decision)}
