@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { monitoringAssistantMessages } from "./monitoring-assistant";
 
 export const locales = ["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"] as const;
 export type Locale = (typeof locales)[number];
@@ -4622,7 +4623,8 @@ const briefPolicyMessages: Record<Locale, Messages> = {
 for (const locale of locales) Object.assign(catalogTarget(locale), briefPolicyMessages[locale]);
 
 export function translate(locale: Locale, key: string, values: Values = {}): string | null {
-  const message = catalog[locale][key];
+  const message = key.startsWith("companion.monitoring.")
+    ? monitoringAssistantMessages(locale)[key] : catalog[locale][key];
   return message ? formatMessage(message, locale, values) : null;
 }
 

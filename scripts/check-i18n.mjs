@@ -5,8 +5,10 @@ import ts from "typescript";
 const root = process.cwd();
 const catalogPath = path.join(root, "apps", "web", "lib", "i18n.tsx");
 const catalogSource = fs.readFileSync(catalogPath, "utf8");
+const monitoringCatalogSource = fs.readFileSync(path.join(root, "apps/web/lib/monitoring-assistant.ts"), "utf8");
+const registeredCatalogSources = catalogSource + "\n" + monitoringCatalogSource;
 const keys = new Set(
-  [...catalogSource.matchAll(/["']([a-z][a-zA-Z0-9_-]*\.[a-zA-Z0-9_.-]+)["']\s*:/g)].map((match) => match[1]),
+  [...registeredCatalogSources.matchAll(/["']([a-z][a-zA-Z0-9_-]*\.[a-zA-Z0-9_.-]+)["']\s*:/g)].map((match) => match[1]),
 );
 const sourceFiles = [];
 function visit(directory) {

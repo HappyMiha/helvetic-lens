@@ -219,8 +219,8 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
 | [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | PLANNED | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
-| [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | PLANNED | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
-| [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | PLANNED | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
+| [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
+| [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
 | [MV2-025](#mv2-025) | Admin: accurate source capabilities and access management | F2 | P0 | M | IN PROGRESS | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-018](#mv2-018) |
 | [MV2-026](#mv2-026) | Possible future implementation: C4 official customs-rate connector | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011) |
 | [MV2-027](#mv2-027) | Possible future implementation: C4 currency, thresholds, history and digest | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-008](#mv2-008), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-022](#mv2-022), [MV2-026](#mv2-026) |
@@ -1072,7 +1072,7 @@ global unread counts and shared business-subject acceptance remain open.
 
 ### MV2-023 — Ask and Marvin in the context of v2 evidence
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** AI + Frontend · **Size:** M
+**Status:** IN PROGRESS · **Priority:** P1 · **Owner:** AI + Frontend · **Size:** M
 
 **Dependencies:** [MV2-010](#mv2-010), [MV2-020](#mv2-020). **Requirements:** §§21–22,26.3,31; legacy HL-083–087,089.
 
@@ -1089,13 +1089,13 @@ global unread counts and shared business-subject acceptance remain open.
 
 **Verification:** Context revocation, stale briefs, prompt-injection fixtures and cited-answer checks under a feature flag. DONE means integration with manual/extractive fallback; production model enablement separately passes MV2-051.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Active whole-feature scope, 14 September 2026:** Correct Marvin section context and provide model-independent navigation help across all nine Monitoring directions and their centre. Reuse private conversations and source readers; no record access or source permission is inferred. See [scope and acceptance](docs/monitoring-v2/MARVIN_MONITORING_GUIDANCE.md). Broader evidence-aware Ask/drafts, language review and parent acceptance remain open.
 
 <a id="mv2-024"></a>
 
 ### MV2-024 — Clear guidance, accessibility and five languages
 
-**Status:** PLANNED · **Priority:** P0 · **Owner:** UX + Frontend + Language reviewers · **Size:** L
+**Status:** IN PROGRESS · **Priority:** P0 · **Owner:** UX + Frontend + Language reviewers · **Size:** L
 
 **Dependencies:** [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022). **Requirements:** §§20–21,25–26; legacy HL-057,073,095–097.
 
@@ -1112,7 +1112,7 @@ global unread counts and shared business-subject acceptance remain open.
 
 **Verification:** Browser/axe + screen-reader/device review + language sign-off; automated checks do not replace human acceptance.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Active whole-feature scope, 14 September 2026:** Correct Marvin section context and provide model-independent navigation help across all nine Monitoring directions and their centre. Reuse private conversations and source readers; no record access or source permission is inferred. See [scope and acceptance](docs/monitoring-v2/MARVIN_MONITORING_GUIDANCE.md). Broader evidence-aware Ask/drafts, language review and parent acceptance remain open.
 
 <a id="mv2-025"></a>
 

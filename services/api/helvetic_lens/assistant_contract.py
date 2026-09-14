@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import json
 import re
+from importlib.resources import files
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 ASSISTANT_CONTEXT_VERSION = "assistant-context.v1"
+MONITORING_HELP = json.loads(files("helvetic_lens").joinpath("monitoring_assistant_help.json").read_text(encoding="utf-8"))["locales"]
+MONITORING_ROUTES = frozenset(MONITORING_HELP["en-CH"]["routes"])
 ASSISTANT_PERSONA_VERSION = "marvin-local-v1"
 ASSISTANT_REMARK_ANGLES = ["bureaucracy", "evidence", "queue", "progress"]
 ASSISTANT_REMARK_SCHEMA = {
@@ -44,6 +48,16 @@ AssistantRoute = Literal[
     "/organization",
     "/laws",
     "/compare",
+    "/monitoring",
+    "/pollen-watch",
+    "/river-watch",
+    "/air-watch",
+    "/hazard-watch",
+    "/commute-watch",
+    "/road-watch",
+    "/tender-watch",
+    "/trademark-watch",
+    "/auction-watch",
 ]
 AssistantEntityKind = Literal["law", "comparison", "monitoring_topic", "job", "regulatory_event"]
 
@@ -103,8 +117,16 @@ class AssistantContextInput(ContractModel):
     signals: AssistantSignals = Field(default_factory=AssistantSignals)
     locale: Literal["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"] = "en-CH"
 
+    @property
+    def suppresses_quips(self) -> bool:
+        return self.signals.suppresses_quips or self.route in MONITORING_ROUTES
+
     @model_validator(mode="after")
     def validate_intent_context(self):
+        if self.route in MONITORING_ROUTES and (self.entity is not None or self.intent not in {
+            "explain_screen", "find_saved_item", "propose_next_step",
+        }):
+            raise ValueError("Monitoring screen guidance accepts navigation only, without record context")
         requirements = {
             "explain_change": "comparison",
             "ask_with_citations": "comparison",
@@ -225,6 +247,11 @@ _SCREEN_HELP_PATTERNS = {
 
 
 def assistant_route_help(message: str, locale: str, route: str, tone: str) -> str | None:
+    if route in MONITORING_ROUTES:
+        # This screen-only context does not authorize reading private records or
+        # generating factual answers. It remains useful with the model offline.
+        copy = MONITORING_HELP[locale]
+        return f"{copy['routes'][route]} {copy['boundary']}"
     if not re.search(_SCREEN_HELP_PATTERNS[locale], message.lower()):
         return None
     reply = _ROUTE_HELP[locale].get(route, _ROUTE_HELP[locale]["/"])
@@ -264,7 +291,8 @@ def assistant_chat_messages(
         "/organization": "Review the organization profile, members, and roles.",
         "/laws": "Review one monitored law's saved timeline, comparisons, and source provenance.",
         "/compare": "Review meaningful changes, exact evidence, cited impact, and cited questions.",
-    }.get(route, "Navigate the Helvetic Lens regulatory monitoring workspace.")
+    }.get(route, MONITORING_HELP["en-CH"]["routes"].get(route,
+        "Navigate the Helvetic Lens regulatory monitoring workspace."))
     system = (
         f"Persona {ASSISTANT_PERSONA_VERSION}. You are Marvin, Helvetic Lens's original local robot "
         "companion. Be concise, useful, mildly fatalistic and dry when the requested tone allows it. "
@@ -329,7 +357,7 @@ def assistant_remark_messages(data: AssistantRemarkInput) -> list[dict[str, str]
         "/organization": "organization profile",
         "/laws": "monitored law record",
         "/compare": "saved document comparison",
-    }[data.route]
+    }.get(data.route, MONITORING_HELP["en-CH"]["routes"].get(data.route))
     preferred = assistant_remark_schema(data)["properties"]["angle"]["enum"][0]
     system = (
         f"Persona {ASSISTANT_PERSONA_VERSION}. Select the most relevant dry-robot remark angle for "
@@ -424,8 +452,9 @@ def build_assistant_context(data: AssistantContextInput, *, role: str) -> dict:
             "signals": data.signals.model_dump(exclude_none=True),
         },
         "persona": {
-            "quip_allowed": not data.signals.suppresses_quips,
-            "suppression_reason": "sensitive_product_state" if data.signals.suppresses_quips else None,
+            "quip_allowed": not data.suppresses_quips,
+            "suppression_reason": "sensitive_product_state" if data.signals.suppresses_quips else (
+                "monitoring_screen_without_record_state" if data.route in MONITORING_ROUTES else None),
         },
         "visibility": {
             "conversation_default": "personal_draft",

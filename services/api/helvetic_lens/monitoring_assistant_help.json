@@ -1,0 +1,90 @@
+{
+  "version": "monitoring-screen-help.v1",
+  "locales": {
+    "en-CH": {
+      "question": "What can I do on this page?",
+      "button": "Explain this section",
+      "boundary": "This is section guidance, not a reading of your records. Check source availability and the dated evidence in the section. Starting a monitor and consenting to email are separate choices.",
+      "routes": {
+        "/monitoring": "Choose one of nine monitoring directions or open a saved monitor to inspect its settings, source status, history and pause controls.",
+        "/pollen-watch": "Choose a supported station and allergens. Read observations and forecasts separately, with their times, coverage and personal thresholds. Pollen information is not treatment advice.",
+        "/river-watch": "Choose a water station and available measurements. Compare your thresholds with the recorded level, flow or temperature; official danger levels are a separate source fact.",
+        "/air-watch": "Choose a supported location and pollutant. Check hourly versus daily measurements, units and freshness before reviewing a threshold crossing or improvement.",
+        "/hazard-watch": "Choose a place and hazard types. Check actual source coverage, warning validity and the original official instructions. Missing or stale warnings do not establish an all-clear.",
+        "/commute-watch": "Choose your journey, weekdays and travel window. Inspect service alerts and trip changes affecting that journey. A pause for today shows when notifications resume.",
+        "/road-watch": "Choose a supported road corridor, direction and time window. Review closures, congestion and planned changes with their source times; an absent record does not prove a clear road.",
+        "/tender-watch": "Define a tender profile, inspect explained candidates and follow a dossier. Compare publication, document and Q&A revisions before recording an internal Bid, No-bid or Monitor decision.",
+        "/trademark-watch": "Define a trademark portfolio and inspect exact, lexical or phonetic candidates. Review register changes, source evidence and deadline assumptions. A candidate is not an infringement finding or a guaranteed deadline.",
+        "/auction-watch": "Choose asset types, budget and location. Review official lot conditions, price changes and deadlines before following a lot or setting reminders. Internal review does not place a bid."
+      }
+    },
+    "de-CH": {
+      "question": "Was kann ich auf dieser Seite tun?",
+      "button": "Diesen Bereich erklären",
+      "boundary": "Dies ist eine Anleitung zum Bereich, keine Auswertung deiner Daten. Prüfe Quellenverfügbarkeit und datierte Belege im Bereich. Monitoring starten und E-Mails erlauben sind getrennte Entscheidungen.",
+      "routes": {
+        "/monitoring": "Wähle eine von neun Monitoring-Richtungen oder öffne eine gespeicherte Beobachtung, um Einstellungen, Quellenstatus, Verlauf und Pausen zu prüfen.",
+        "/pollen-watch": "Wähle eine unterstützte Station und Pollenarten. Lies Messungen und Prognosen getrennt, mit Zeit, Abdeckung und persönlichen Schwellen. Polleninformationen sind keine Behandlungsempfehlung.",
+        "/river-watch": "Wähle eine Wasserstation und verfügbare Messgrössen. Vergleiche persönliche Schwellen mit Wasserstand, Abfluss oder Temperatur; offizielle Gefahrenstufen sind eine getrennte Quellenangabe.",
+        "/air-watch": "Wähle einen unterstützten Ort und Schadstoff. Prüfe Stunden- und Tageswerte, Einheiten und Aktualität, bevor du eine Schwellenüberschreitung oder Verbesserung beurteilst.",
+        "/hazard-watch": "Wähle einen Ort und Gefahrenarten. Prüfe tatsächliche Quellenabdeckung, Gültigkeit der Warnung und offizielle Originalanweisungen. Fehlende oder veraltete Warnungen bedeuten keine Entwarnung.",
+        "/commute-watch": "Wähle deine Verbindung, Wochentage und Reisezeiten. Prüfe betroffene Betriebsmeldungen und Fahrtänderungen. Eine Pause für heute zeigt, wann Benachrichtigungen wieder beginnen.",
+        "/road-watch": "Wähle einen unterstützten Strassenabschnitt, die Richtung und das Zeitfenster. Prüfe Sperrungen, Staus und geplante Änderungen mit Quellenzeiten; ein fehlender Eintrag belegt keine freie Strasse.",
+        "/tender-watch": "Erstelle ein Ausschreibungsprofil, prüfe begründete Treffer und beobachte ein Dossier. Vergleiche Publikationen, Unterlagen und Fragen/Antworten vor einer internen Teilnahme- oder Beobachtungsentscheidung.",
+        "/trademark-watch": "Erstelle ein Markenportfolio und prüfe exakte, lexikalische oder phonetische Kandidaten. Prüfe Registeränderungen, Belege und Fristannahmen. Ein Kandidat ist weder Verletzungsfeststellung noch garantierte Frist.",
+        "/auction-watch": "Wähle Objektarten, Budget und Ort. Prüfe offizielle Bedingungen, Preisänderungen und Fristen, bevor du ein Los beobachtest oder Erinnerungen setzt. Eine interne Prüfung gibt kein Gebot ab."
+      }
+    },
+    "fr-CH": {
+      "question": "Que puis-je faire sur cette page ?",
+      "button": "Expliquer cette rubrique",
+      "boundary": "Ceci explique la rubrique sans analyser vos données. Vérifiez la disponibilité des sources et les preuves datées dans la rubrique. Démarrer un suivi et consentir aux e-mails sont deux choix distincts.",
+      "routes": {
+        "/monitoring": "Choisissez une des neuf rubriques ou ouvrez un suivi enregistré pour examiner ses réglages, ses sources, son historique et ses pauses.",
+        "/pollen-watch": "Choisissez une station prise en charge et des pollens. Lisez séparément observations et prévisions, avec leurs dates, couverture et seuils personnels. Ces informations ne sont pas des conseils de traitement.",
+        "/river-watch": "Choisissez une station hydrologique et des mesures disponibles. Comparez vos seuils au niveau, au débit ou à la température; les degrés de danger officiels sont une donnée distincte.",
+        "/air-watch": "Choisissez un lieu pris en charge et un polluant. Vérifiez les mesures horaires ou journalières, les unités et la fraîcheur avant d’examiner un dépassement ou une amélioration.",
+        "/hazard-watch": "Choisissez un lieu et des dangers. Vérifiez la couverture réelle, la validité des alertes et les consignes officielles originales. Une alerte absente ou périmée ne prouve pas la fin du danger.",
+        "/commute-watch": "Choisissez votre trajet, les jours et la plage horaire. Examinez les perturbations et changements qui concernent ce trajet. Une pause pour aujourd’hui indique la reprise des notifications.",
+        "/road-watch": "Choisissez un axe pris en charge, un sens et une plage horaire. Examinez fermetures, bouchons et changements prévus avec leurs dates; une absence d’entrée ne prouve pas une route libre.",
+        "/tender-watch": "Définissez un profil, examinez les résultats expliqués et suivez un dossier. Comparez publications, documents et questions-réponses avant une décision interne de participation ou de suivi.",
+        "/trademark-watch": "Définissez un portefeuille et examinez les candidats exacts, lexicaux ou phonétiques. Vérifiez le registre, les preuves et les hypothèses de délai. Un candidat n’établit ni contrefaçon ni délai garanti.",
+        "/auction-watch": "Choisissez les biens, le budget et le lieu. Vérifiez conditions officielles, prix et délais avant de suivre un lot ou de créer des rappels. Un examen interne ne dépose aucune offre."
+      }
+    },
+    "it-CH": {
+      "question": "Cosa posso fare su questa pagina?",
+      "button": "Spiega questa sezione",
+      "boundary": "Questa è una guida alla sezione, non un’analisi dei tuoi dati. Controlla disponibilità delle fonti e prove datate nella sezione. Avviare il monitoraggio e consentire le e-mail sono scelte separate.",
+      "routes": {
+        "/monitoring": "Scegli una delle nove sezioni oppure apri un monitoraggio salvato per controllare impostazioni, fonti, cronologia e pause.",
+        "/pollen-watch": "Scegli una stazione supportata e i pollini. Leggi separatamente osservazioni e previsioni, con date, copertura e soglie personali. Le informazioni sui pollini non sono consigli terapeutici.",
+        "/river-watch": "Scegli una stazione idrologica e le misure disponibili. Confronta le tue soglie con livello, portata o temperatura; i gradi di pericolo ufficiali sono un dato distinto della fonte.",
+        "/air-watch": "Scegli una località supportata e un inquinante. Controlla misure orarie o giornaliere, unità e aggiornamento prima di valutare un superamento o un miglioramento.",
+        "/hazard-watch": "Scegli un luogo e i pericoli. Controlla copertura effettiva, validità degli avvisi e istruzioni ufficiali originali. Avvisi assenti o obsoleti non provano la cessazione del pericolo.",
+        "/commute-watch": "Scegli il percorso, i giorni e la fascia oraria. Esamina avvisi di servizio e cambiamenti pertinenti al viaggio. La pausa per oggi indica quando riprendono le notifiche.",
+        "/road-watch": "Scegli un corridoio supportato, la direzione e la fascia oraria. Esamina chiusure, code e cambiamenti previsti con le date; l’assenza di una voce non dimostra una strada libera.",
+        "/tender-watch": "Definisci un profilo, esamina i risultati motivati e segui un dossier. Confronta pubblicazioni, documenti e domande-risposte prima di una decisione interna di partecipazione o monitoraggio.",
+        "/trademark-watch": "Definisci un portafoglio e valuta candidati esatti, lessicali o fonetici. Controlla registro, prove e ipotesi sui termini. Un candidato non accerta una violazione né garantisce una scadenza.",
+        "/auction-watch": "Scegli beni, budget e località. Controlla condizioni ufficiali, variazioni di prezzo e scadenze prima di seguire un lotto o creare promemoria. Una valutazione interna non presenta un’offerta."
+      }
+    },
+    "rm-CH": {
+      "question": "Tge poss jau far sin questa pagina?",
+      "button": "Expligar questa rubrica",
+      "boundary": "Quai è ina guida da la rubrica, betg in’analisa da tias datas. Controlla la disponibladad da las funtaunas e las cumprovas datadas en la rubrica. Cumenzar la surveglianza e consentir ad e-mails èn decisiuns separadas.",
+      "routes": {
+        "/monitoring": "Tscherna ina da nov rubricas u avra ina surveglianza memorisada per examinar configuraziuns, funtaunas, cronologia e pausas.",
+        "/pollen-watch": "Tscherna ina staziun sustegnida ed ils pollens. Legia separadamain observaziuns e prognosas, cun temps, cuverta e limitas persunalas. Las infurmaziuns na dattan nagin cussegl da tractament.",
+        "/river-watch": "Tscherna ina staziun idrologica e mesiras disponiblas. Cumpareglia tias limitas cun nivel, deflussiun u temperatura; ils grads da privel uffizials èn ina indicaziun separada da la funtauna.",
+        "/air-watch": "Tscherna in lieu sustegnì ed ina substanza nuschaivla. Controlla valurs uraras u quotidianas, unitads ed actualitad avant d’examinar ina surpassada u meglieraziun.",
+        "/hazard-watch": "Tscherna in lieu ed ils privels. Controlla la cuverta effectiva, la validitad dals avis e las instrucziuns uffizialas originalas. Avis mancants u vegls na cumprovan betg la fin dal privel.",
+        "/commute-watch": "Tscherna tes viadi, dis e fanestra da temp. Examina avis da servetsch e midadas che pertutgan il viadi. Ina pausa per oz mussa cura ch’ils avis cumenzan puspè.",
+        "/road-watch": "Tscherna in corridor sustegnì, la direcziun e la fanestra da temp. Examina serradas, colonnas e midadas planisadas cun lur temps; in’entrada mancanta na cumprova betg ina via libra.",
+        "/tender-watch": "Definescha in profil, examina resultats motivads e suonda in dossier. Cumpareglia publicaziuns, documents e dumondas-respostas avant ina decisiun interna da participaziun u surveglianza.",
+        "/trademark-watch": "Definescha in portfolio ed examinescha candidats exacts, lexicals u fonetics. Controlla register, cumprovas e premissas da termins. In candidat na constatescha nagina violaziun e na garantescha nagin termin.",
+        "/auction-watch": "Tscherna objects, budget e lieu. Controlla cundiziuns uffizialas, midadas da pretsch e termins avant da suandar in lot u crear regurdientschas. Ina controlla interna na dat nagina offerta."
+      }
+    }
+  }
+}

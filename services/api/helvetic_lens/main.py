@@ -1092,7 +1092,7 @@ def create_app(
     @app.post("/api/assistant/remark")
     async def assistant_remark(data: AssistantRemarkInput):
         validate_assistant_entity(data)
-        if data.signals.suppresses_quips:
+        if data.suppresses_quips:
             raise DomainError(
                 "A spontaneous remark is disabled for the current product state.",
                 409,

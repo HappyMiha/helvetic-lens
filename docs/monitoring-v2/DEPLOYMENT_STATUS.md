@@ -1,5 +1,19 @@
 # Monitoring deployment status — 14 September 2026
 
+## Monitoring companion guidance publication candidate — 14 September 2026
+
+Marvin now identifies all nine Monitoring sections and their centre, with a
+shared five-language screen guide, direct centre navigation and an offline help
+action. Exact route-only conversations do not read private records or start
+monitoring. See [scope and checks](MARVIN_MONITORING_GUIDANCE.md).
+The final 44 affected API/backlog checks, root build and 55 built-browser/axe
+checkpoints passed; prior private history/context checks passed as well.
+
+After authenticated Refresh, production still reports `1188f18190e0` and
+`4434cf94da05` remains Deploying. No active test/deployment was restarted or
+duplicated. The current candidate and newer source features are not yet verified
+activated. All nine sections stay enabled and visible; C4/grants remain deferred.
+
 ## Trademark export fixture diagnosis — 14 September 2026
 
 Native Hazard commit `2799a7a579a172f24efcb65a630c7996c7f4a2f1` was pushed to

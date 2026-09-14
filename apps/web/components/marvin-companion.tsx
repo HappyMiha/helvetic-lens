@@ -8,6 +8,7 @@ import { SavedBriefContent } from "@/components/feed-interest-brief";
 import {ASSISTANT_BRIEF_EVENT,assistantBriefEventId,assistantBriefCopy} from "@/lib/assistant-brief";
 import { useAuth } from "./auth-gate";
 import { marvinPrivacyCopy } from "@/lib/marvin-privacy-copy";
+import { monitoringAssistantRoute } from "@/lib/monitoring-assistant";
 import { marvinHistoryCopy } from "@/lib/marvin-history-copy";
 import {
   clearDeletedDraft,
@@ -144,6 +145,8 @@ function runtimeStatusKey(
 }
 
 function contractRoute(pathname: string) {
+  const monitoring = monitoringAssistantRoute(pathname);
+  if (monitoring) return monitoring;
   if (pathname.startsWith("/compare/")) return "/compare";
   if (pathname.startsWith("/laws/")) return "/laws";
   const allowed = new Set([
@@ -173,6 +176,17 @@ function routeEntity(pathname: string): AssistantEntityRef | null {
 }
 
 function routeContext(pathname: string): RouteContext {
+  const monitoring = monitoringAssistantRoute(pathname);
+  if (monitoring) return {
+    actionHref: "/monitoring",
+    actionKey: "companion.monitoring.action",
+    descriptionKey: `companion.monitoring.${monitoring}.description`,
+    titleKey: monitoring === "/pollen-watch" ? "nav.pollenWatch"
+      : monitoring === "/river-watch" ? "nav.riverWatch"
+      : monitoring === "/air-watch" ? "nav.airWatch"
+      : `companion.monitoring.${monitoring}.title`,
+    quipKey: "companion.monitoring.boundary",
+  };
   if (pathname.startsWith("/compare/")) {
     return {
       actionHref: `${pathname}?task=impact`,
@@ -576,6 +590,7 @@ export function MarvinCompanion({
       fallbackKey: string,
     ) => {
       if (
+        monitoringAssistantRoute(pathname) ||
         entity?.kind === "regulatory_event" ||
         document.visibilityState !== "visible" ||
         open ||
@@ -961,14 +976,14 @@ export function MarvinCompanion({
     }
   }
 
-  async function chatWithMarvin(event: React.FormEvent) {
+  async function chatWithMarvin(event: React.FormEvent, preset?: string) {
     event.preventDefault();
-    const message = chatDraft.trim();
+    const message = (preset ?? chatDraft).trim();
     if (!contextActive || !conversationId || !message || chatPending) return;
     const requestId = ++chatRequestId.current;
     setChatPending(true);
     setChatError(false);
-    setChatDraft("");
+    if (!preset) setChatDraft("");
     const optimistic = {
       id: `pending-${Date.now()}`,
       role: "user" as const,
@@ -999,7 +1014,7 @@ export function MarvinCompanion({
       setChatMessages((current) =>
         current.filter((item) => item.id !== optimistic.id),
       );
-      setChatDraft(message);
+      if (!preset) setChatDraft(message);
       setChatError(true);
     } finally {
       if (requestId === chatRequestId.current) setChatPending(false);
@@ -1036,7 +1051,8 @@ export function MarvinCompanion({
       : null;
   }
 
-  const showQuip = preferences.tone !== "neutral";
+  const monitoringRoute = monitoringAssistantRoute(pathname);
+  const showQuip = preferences.tone !== "neutral" && !monitoringRoute;
   const runtimeReady = runtime?.ready ?? localAiReady;
   const voiceControls = (
     <div className="marvin-voice-controls">
@@ -1156,6 +1172,7 @@ export function MarvinCompanion({
               <div className="marvin-message">
                 <span className="eyebrow">{t("companion.observation")}</span>
                 <p>{t(context.descriptionKey)}</p>
+                {monitoringRoute && <p>{t("companion.monitoring.boundary")}</p>}
               </div>
             ) : (
               <div className="marvin-message">
@@ -1270,6 +1287,17 @@ export function MarvinCompanion({
                     {t("companion.chatError")}
                   </p>
                 )}
+                {monitoringRoute && (
+                  <button
+                    type="button"
+                    className="button secondary"
+                    data-monitoring-assistant-help
+                    disabled={chatPending || !conversationLoaded}
+                    onClick={(event) => void chatWithMarvin(event, t("companion.monitoring.question"))}
+                  >
+                    {t("companion.monitoring.help")}
+                  </button>
+                )}
                 <form onSubmit={chatWithMarvin}>
                   <textarea
                     aria-label={t("companion.chatPlaceholder")}
@@ -1285,7 +1313,7 @@ export function MarvinCompanion({
                       !chatDraft.trim() ||
                       chatPending ||
                       !conversationLoaded ||
-                      !runtimeReady
+                      (!runtimeReady && !monitoringRoute)
                     }
                     type="submit"
                   >
