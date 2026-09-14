@@ -7,6 +7,7 @@ import { auctionTrackingCopy } from "@/lib/auction-tracking-copy";
 import { auctionChangeLabel, auctionFeedCopy } from "@/lib/auction-feed-copy";
 import type { AuctionMonitor } from "@/lib/auction-watch";
 import { useData } from "./auction-client";
+import { MonitoringEvidenceExport } from "./monitoring-evidence-export";
 import {
   Evidence,
   Lot,
@@ -18,6 +19,7 @@ import {
 type Snapshot = { state: string; facts: Facts | null };
 type Change = {
   id: string;
+  item_id: string;
   detected_at: string;
   change_codes: string[];
   current_configuration: boolean;
@@ -96,6 +98,13 @@ export function AuctionChange({
               <p>{w.unavailableVersion}</p>
             )}
           </details>
+          <MonitoringEvidenceExport
+            domain="auctions"
+            monitorId={monitor.id}
+            itemId={data.item_id}
+            revisionId={event}
+            contextVersion={revision}
+          />
           <h3>{f.current}</h3>
           <Lot
             row={data.current}

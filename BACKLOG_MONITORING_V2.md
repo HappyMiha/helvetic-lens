@@ -251,7 +251,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-052](#mv2-052) | Operational metrics, degraded mode and source recovery | F6 | P0 | M | IN PROGRESS | [MV2-011](#mv2-011), [MV2-012](#mv2-012), [MV2-025](#mv2-025) |
 | [MV2-053](#mv2-053) | Personal-location privacy and access control | F6 | P0 | M | IN PROGRESS — account erasure and ownership handover implemented | [MV2-004](#mv2-004), [MV2-005](#mv2-005), [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-023](#mv2-023) |
 | [MV2-054](#mv2-054) | Single-server capacity and queues with different priorities | F6 | P0 | L | PLANNED | [MV2-011](#mv2-011), [MV2-014](#mv2-014), [MV2-043](#mv2-043), [MV2-052](#mv2-052) |
-| [MV2-055](#mv2-055) | History storage, retention and permitted exports | F6 | P0 | M | PLANNED | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-020](#mv2-020), [MV2-044](#mv2-044) |
+| [MV2-055](#mv2-055) | History storage, retention and permitted exports | F6 | P0 | M | IN PROGRESS | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-020](#mv2-020), [MV2-044](#mv2-044) |
 | [MV2-056](#mv2-056) | Migration, compatibility and rollback rehearsal | F6 | P0 | L | PLANNED | [MV2-001](#mv2-001), [MV2-053](#mv2-053), [MV2-055](#mv2-055), [MV2-060](#mv2-060) |
 | [MV2-057](#mv2-057) | Executable checks for 116 active AC and adversarial regression | F6 | P0 | L | PLANNED | [MV2-029](#mv2-029), [MV2-031](#mv2-031), [MV2-033](#mv2-033), [MV2-035](#mv2-035), [MV2-036](#mv2-036), [MV2-039](#mv2-039), [MV2-041](#mv2-041), [MV2-045](#mv2-045), [MV2-048](#mv2-048), [MV2-050](#mv2-050), [MV2-024](#mv2-024), [MV2-051](#mv2-051), [MV2-053](#mv2-053), [MV2-056](#mv2-056), [MV2-068](#mv2-068), [MV2-071](#mv2-071) |
 | [MV2-058](#mv2-058) | Measured B2C/B2B pilot | F6 | P0 | L | PLANNED | [MV2-002](#mv2-002), [MV2-024](#mv2-024), [MV2-051](#mv2-051), [MV2-054](#mv2-054), [MV2-057](#mv2-057), [MV2-071](#mv2-071) |
@@ -2244,7 +2244,27 @@ independent privacy review and exact release activation remain open.
 
 ### MV2-055 — History storage, retention and permitted exports
 
-**Status:** PLANNED · **Priority:** P0 · **Owner:** Backend + Operations · **Size:** M
+**Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Backend + Operations · **Size:** M
+
+**Whole-feature scope, 14 September 2026 — selected evidence downloads:**
+Add a user-visible export of a selected current or historical native change in
+all nine categories. The packet must preserve the selected old/new state,
+source/provenance and configuration/rule binding, distinguish private decisions
+from source facts, and include a versioned manifest and content hash. The browser
+must recheck current membership, exact record binding and source export rights
+before writing a download. Historical selection must never silently substitute
+the current source head. Source outages must not invalidate permitted retained
+evidence, while revoked/expired permissions and retention gaps require an explicit
+unavailable result. Never redistribute ASTRA raw payloads or authenticated SIMAP
+originals; apply explicit IPI/auction export rights. Preserve existing Pollen and
+IP exports. The dependencies are native exact-version readers, source rights,
+private ownership and browser download contracts. No collection/model call or
+external account action is required. Acceptance includes all nine mappings,
+historical before/after fixtures, source revocation between preview/download,
+scope changes, private/shared/foreign access, content integrity, cancellation and
+five-locale desktop/mobile browser checks. Finish the complete API and UI feature
+before commit; telemetry compaction, source rights review and broader retention
+and recovery acceptance remain separate open gates.
 
 **Dependencies:** [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-020](#mv2-020), [MV2-044](#mv2-044). **Requirements:** §§27,29–30,38.
 
@@ -2261,7 +2281,7 @@ independent privacy review and exact release activation remain open.
 
 **Verification:** Retention time travel, restoration of archived evidence, prohibited raw-export checks and negative cross-tenant export tests.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Execution evidence:** Selected-evidence downloads are implemented in all nine native readers and explicit Tender/IP/Auction historical versions. The versioned private packet, signed preview and fresh authorized download passed 57 API/native cases, five isolated PostgreSQL cases (including observed source/scope revocation lock races), and 129 real browser downloads/full-document accessibility checkpoints across five locales and desktop/mobile widths. Cancellation, late replies, revoked/changed access, corrupted bytes and historical binding are verified. The complete root build and exact API Ruff gate passed. [Feature acceptance evidence](docs/monitoring-v2/MONITORING_EVIDENCE_EXPORT.md) records reproducible checks and source limits. Main publication uses the complete tested feature; production activation is not yet verified. Broader retention, recovery, source-rights and human acceptance remain open.
 
 <a id="mv2-056"></a>
 

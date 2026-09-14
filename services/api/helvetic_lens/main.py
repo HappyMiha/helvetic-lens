@@ -333,6 +333,8 @@ class RelationReprocessingInput(Input):
 
 
 def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
+    if path.startswith("/api/monitoring-centre/evidence/export/"):
+        return "monitoring_evidence_export", 30, 60
     if path == "/api/account/deletion":
         return ("account_deletion", 6, 60) if method == "POST" else ("account_deletion_preview", 30, 60)
     if path.startswith("/api/monitoring-centre/configuration/export"):
@@ -501,6 +503,8 @@ def create_app(
             path.startswith("/api/connectors/") and path.endswith("/sync")
         )
         viewer_allowed_mutations = {
+            "/api/monitoring-centre/evidence/export/preview",
+            "/api/monitoring-centre/evidence/export/download",
             "/api/account/deletion",
             "/api/monitoring-centre/configuration/export/verify",
             "/api/auth/logout",

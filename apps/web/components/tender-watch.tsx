@@ -1,5 +1,6 @@
 "use client";
 import { MonitoringConfigurationDraft } from "./monitoring-configuration-draft";
+import { MonitoringEvidenceExport } from "./monitoring-evidence-export";
 
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -772,10 +773,12 @@ function ReviewChanges({
 }
 
 function Versions({
+  monitorId,
   dossierId,
   onOriginal,
   onDocuments,
 }: {
+  monitorId: string;
   dossierId: string;
   onOriginal: (id: string) => void;
   onDocuments: (id: string, sequence: number) => void;
@@ -806,6 +809,13 @@ function Versions({
                 {c.retainedRevision} {item.profile_revision}
               </p>
               <Deadline value={item.summary.deadline} />
+              <MonitoringEvidenceExport
+                domain="tenders"
+                monitorId={monitorId}
+                itemId={dossierId}
+                revisionId={item.id}
+                contextVersion={item.sequence}
+              />
               <button onClick={() => onOriginal(item.id)}>{c.original}</button>
               {item.document_observation_id && (
                 <button
@@ -1204,6 +1214,7 @@ function Dossier({
           />
           <Versions
             key={revision}
+            monitorId={monitorId}
             dossierId={id}
             onOriginal={(version) => void original(version)}
             onDocuments={(documentId, sequence) =>

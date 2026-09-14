@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { monitoringEvidenceCopy } from "@/lib/monitoring-evidence-copy";
 import { useAuth } from "./auth-gate";
+import { MonitoringEvidenceExport } from "./monitoring-evidence-export";
 import styles from "./monitoring-evidence-ask.module.css";
 
 type Props = {
@@ -53,26 +54,29 @@ export function MonitoringEvidenceAsk(props: Props) {
   const detail = useRef<HTMLDetailsElement | null>(null);
   const key = `${session?.user?.id}:${session?.organization?.id}:${session?.role}:${locale}:${props.domain}:${props.monitorId}:${props.itemId}:${props.sequence}:${props.contextVersion}`;
   return (
-    <details
-      ref={detail}
-      className={styles.panel}
-      data-monitoring-evidence-ask={props.domain}
-      onToggle={(event) => setOpen(event.currentTarget.open)}
-    >
-      <summary>{monitoringEvidenceCopy[locale].title}</summary>
-      {open && session?.authenticated && (
-        <EvidenceForm
-          key={key}
-          {...props}
-          close={() => {
-            if (detail.current) {
-              detail.current.open = false;
-              detail.current.querySelector("summary")?.focus();
-            }
-          }}
-        />
-      )}
-    </details>
+    <>
+      <details
+        ref={detail}
+        className={styles.panel}
+        data-monitoring-evidence-ask={props.domain}
+        onToggle={(event) => setOpen(event.currentTarget.open)}
+      >
+        <summary>{monitoringEvidenceCopy[locale].title}</summary>
+        {open && session?.authenticated && (
+          <EvidenceForm
+            key={key}
+            {...props}
+            close={() => {
+              if (detail.current) {
+                detail.current.open = false;
+                detail.current.querySelector("summary")?.focus();
+              }
+            }}
+          />
+        )}
+      </details>
+      <MonitoringEvidenceExport {...props} />
+    </>
   );
 }
 

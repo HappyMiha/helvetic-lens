@@ -12,6 +12,7 @@ import {
 import type { TrademarkMonitor, TrademarkPage } from "@/lib/trademark-watch";
 import { useData, useMutation } from "./trademark-client";
 import { TrademarkExport } from "./trademark-export";
+import { MonitoringEvidenceExport } from "./monitoring-evidence-export";
 import { BusinessItemWork, AssignmentFilter } from "./business-item-work";
 import { TrademarkDeadline, type DeadlineContext } from "./trademark-deadline";
 import styles from "./commute-watch.module.css";
@@ -248,7 +249,17 @@ function ReviewHistory({ path }: { path: string }) {
     </section>
   );
 }
-function Change({ path, id }: { path: string; id: string }) {
+function Change({
+  path,
+  id,
+  monitor,
+  candidate,
+}: {
+  path: string;
+  id: string;
+  monitor: string;
+  candidate: string;
+}) {
   const { locale } = useI18n(),
     c = trademarkReviewCopy[locale],
     b = trademarkCopy[locale];
@@ -278,6 +289,13 @@ function Change({ path, id }: { path: string; id: string }) {
       <RegisterFacts facts={e.snapshot.facts} />
       <Explanation value={e.assessment} />
       <TrademarkDeadline value={e.deadline_context} />
+      <MonitoringEvidenceExport
+        domain="ip"
+        monitorId={monitor}
+        itemId={candidate}
+        revisionId={id}
+        contextVersion={e.sequence}
+      />
     </section>
   );
 }
@@ -374,7 +392,15 @@ function CandidateDetail({
       {/* Remount all retained source evidence on each refresh; never retain a stale snapshot during a new request. */}
       {row && (
         <div key={revision}>
-          {selected && <Change key={selected} path={path} id={selected} />}
+          {selected && (
+            <Change
+              key={selected}
+              path={path}
+              id={selected}
+              monitor={monitor}
+              candidate={id}
+            />
+          )}
           <ReviewHistory path={path} />
         </div>
       )}
