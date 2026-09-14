@@ -77,6 +77,16 @@ def auction_router(service, settings):
                 "profile_preview_required": True, "tracking_available": True,
                 "blocking_reasons": ["auction_profile_preview_required"]}
 
+    @router.get("/source-status")
+    def source_status():
+        from .aste_collector import status
+        with service.db.session() as session:
+            try:
+                return status(session, settings, now=_now())
+            except DomainError as error:
+                return {"state": "permission_unavailable", "coverage_verified": False,
+                    "collection": None, "reason": error.code}
+
     @router.post("/preview")
     def preview(body: ConfigurationBody, actor: Identity = Depends(identity)):
         with service.db.session() as session:

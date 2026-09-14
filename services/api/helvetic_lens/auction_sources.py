@@ -12,10 +12,11 @@ from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from urllib.parse import unquote, urlsplit
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_serializer, model_validator
 from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError
 
+from .aste_contracts import AsteAccess
 from .auction_contracts import CANTONS, AuctionFacts, Category, fingerprint, visible
 from .auction_source_models import (
     AuctionSourcePermission,
@@ -93,9 +94,22 @@ class AuctionSourcePolicy(BaseModel):
     notifications_allowed: bool = False
     export_allowed: bool = False
     private_decisions_allowed: bool = False
+    native_access: AsteAccess | None = None
+
+    @model_serializer(mode="wrap")
+    def preserve_existing_policies(self, handler):
+        result = handler(self)
+        if self.native_access is None:
+            result.pop("native_access", None)
+        return result
 
     @model_validator(mode="after")
     def reviewed(self):
+        if self.native_access and (
+                self.source_key != "aste-ti" or self.endpoint != "https://www.aste.ti.ch/"
+                or self.cantons != ("TI",) or self.raw_retention_seconds < 120
+                or not {v.category for v in self.native_access.category_mapping.values()}.issubset(self.categories)):
+            raise ValueError("The native access plan must fit the reviewed source scope")
         for value in (self.reference, self.attribution):
             visible(value)
         address = urlsplit(self.endpoint)

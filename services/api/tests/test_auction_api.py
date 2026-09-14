@@ -11,6 +11,23 @@ from helvetic_lens.main import create_app
 ROOT = "/api/auction-watch"
 
 
+def test_native_source_status_is_authenticated_read_only_and_never_starts_collection(api):
+    from sqlalchemy import func, select
+
+    from helvetic_lens.aste_models import AsteCollector
+    client, app, settings = api
+    response = client.get(ROOT + "/source-status")
+    assert response.status_code == 200 and response.headers["cache-control"] == "no-store"
+    assert response.json() == {"state": "permission_required", "coverage_verified": False, "collection": None}
+    settings.aste_source_permission_id = str(uuid4())
+    assert client.get(ROOT + "/source-status").json()["state"] == "permission_unavailable"
+    with app.state.service.db.session() as session:
+        assert session.scalar(select(func.count()).select_from(AsteCollector)) == 0
+    assert client.post(ROOT + "/source-status", headers=_csrf(client), json={}).status_code == 405
+    client.cookies.clear()
+    assert client.get(ROOT + "/source-status").status_code == 401
+
+
 @pytest.fixture
 def api(tmp_path):
     settings = _settings(tmp_path, auction_watch_enabled=True)

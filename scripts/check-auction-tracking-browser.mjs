@@ -7,6 +7,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { Cdp } from "./browser-cdp.mjs";
 import { auctionCopy } from "../apps/web/lib/auction-copy.ts";
 import { auctionTrackingCopy } from "../apps/web/lib/auction-tracking-copy.ts";
+import { checkAste } from "./check-aste-source-journey.mjs";
 const w = auctionTrackingCopy["en-CH"];
 const origin = new URL(process.argv[2]);
 assert.equal(origin.hostname, "127.0.0.1");
@@ -165,6 +166,7 @@ try {
     mobile: false,
   });
   await navigate();
+  await checkAste({ click, until, evaluate, json, record, call, navigate, audit });
   await click(c.create);
   await fill(
     "[data-auction-form] > fieldset > label input",

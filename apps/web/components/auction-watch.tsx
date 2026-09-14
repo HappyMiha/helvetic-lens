@@ -24,6 +24,7 @@ import { AuctionTracking } from "./auction-tracking";
 import { AuctionChange } from "./auction-change";
 import { AuctionReminder, AuctionReminders } from "./auction-reminders";
 import { AuctionEmail } from "./auction-email";
+import { AsteSourceStatus } from "./aste-source-status";
 import { auctionTrackingCopy } from "@/lib/auction-tracking-copy";
 
 function ProfileForm({
@@ -493,6 +494,7 @@ function Content({
         <h1>{c.title}</h1>
         <p>{c.intro}</p>
         <p>{c.private}</p>
+        <AsteSourceStatus revision={revision} />
         <p className={styles.notice}>
           {auctionTrackingCopy[locale].sourceHelp}
         </p>

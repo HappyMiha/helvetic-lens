@@ -239,7 +239,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-046](#mv2-046) | B7: Official trademark publications and register updates | F5 | P1 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071) |
 | [MV2-047](#mv2-047) | B7: Exact, lexical and phonetic candidates | F5 | P1 | L | IN PROGRESS | [MV2-043](#mv2-043), [MV2-046](#mv2-046) |
 | [MV2-048](#mv2-048) | B7: IP review, review deadlines and register changes | F5 | P1 | L | IN PROGRESS | [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-046](#mv2-046), [MV2-047](#mv2-047) |
-| [MV2-049](#mv2-049) | B8: Official Ticino auctions | F5 | P1 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071) |
+| [MV2-049](#mv2-049) | B8: Official Ticino auctions — native collection implemented; access/coverage open | F5 | P1 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071) |
 | [MV2-050](#mv2-050) | B8: Auction profiles, price limits and ending-soon alerts | F5 | P1 | L | IN PROGRESS | [MV2-008](#mv2-008), [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022), [MV2-043](#mv2-043), [MV2-044](#mv2-044), [MV2-049](#mv2-049) |
 | [MV2-051](#mv2-051) | Independent matching and local AI evaluation | F6 | P0 | L | PLANNED | [MV2-023](#mv2-023), [MV2-043](#mv2-043), [MV2-047](#mv2-047) |
 | [MV2-052](#mv2-052) | Operational metrics, degraded mode and source recovery | F6 | P0 | M | PLANNED | [MV2-011](#mv2-011), [MV2-012](#mv2-012), [MV2-025](#mv2-025) |
@@ -1753,6 +1753,28 @@ rule/calendar review and real source acceptance remain open.
 
 ### MV2-049 — B8: Official Ticino auctions
 
+**Whole native acquisition scope, 14 September 2026:**
+Implement bounded resumable official discovery/detail/status/document ingestion
+into the existing journal/private tracking and material/reminder journey, with
+five-language source readiness/status. Validate typed prices, explicit timestamp
+basis, category provenance, stable IDs, byte changes, missing/partial listings,
+lease/rate/rights/generation boundaries and native HTTP→private review behavior.
+The [active source contract](docs/monitoring-v2/AUCTION_WATCH.md#required-outcome)
+records inspected official read formats and remaining permissions/coverage.
+Keep IN PROGRESS until all required B8 evidence is verified; no partial parser or
+collector commit at a continuation boundary and no production licence is implied.
+
+**Native collection evidence, 14 September 2026:** Complete bounded source
+discovery/detail/status/PDF hashing now feeds private tracking, reopened review
+and deadline-generation reminders, with durable leases/backoff/retention and a
+five-language source-status panel. All 189 affected checks passed across combined
+and focused runs; the isolated root build, exact API lint, formatting and 29
+browser checkpoints (four axe audits with zero violations) passed. See
+[native collection evidence](docs/monitoring-v2/AUCTION_WATCH.md#native-collection-and-visible-source-status--14-september-2026).
+Source access/reuse, actual category coverage, operational capacity, verified
+activation and human acceptance remain open. IN PROGRESS; all nine sections
+and the implemented native collector remain enabled.
+
 **Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Integration · **Size:** L
 
 **Dependencies:** [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071). **Requirements:** §17.3–17.7,17.11; AC-B8-02,05,06,11.
@@ -1777,6 +1799,14 @@ rule/calendar review and real source acceptance remain open.
 <a id="mv2-050"></a>
 
 ### MV2-050 — B8: Auction profiles, price limits and ending-soon alerts
+
+**Native-source integration evidence, 14 September 2026:** The complete native
+collector now drives the existing private review/Today/reminder workflow.
+Synthetic HTTP source changes replace the old deadline reminder, reopen review
+for price/conditions/document changes and preserve owner-only access. Revoked
+source rights remove stale feed/reminder facts. See the
+[native feature validation](docs/monitoring-v2/AUCTION_WATCH.md#native-collection-and-visible-source-status--14-september-2026).
+The broader task remains IN PROGRESS pending live source and human acceptance.
 
 **Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
 

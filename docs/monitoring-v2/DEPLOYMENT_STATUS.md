@@ -1,5 +1,16 @@
 # Monitoring deployment status — 14 September 2026
 
+## Native auction collection publication candidate — 14 September 2026
+
+The main-site ready endpoint still reports `git-99da831d934a`, instance `main`,
+database/Redis healthy. The complete native Auction acquisition→private review/
+reminder feature and five-language source-status panel passed affected server,
+root build and browser checks; see [acceptance evidence](AUCTION_WATCH.md#native-collection-and-visible-source-status--14-september-2026).
+Activation is not yet verified. All nine sections and implemented native source
+switches remain enabled; actual access approvals and coverage remain independent.
+No deployment was restarted, duplicated or interrupted; the retired Monitoring
+host was not touched.
+
 ## Trademark deadline publication candidate — 14 September 2026
 
 The public main-site ready endpoint was last verified at `git-99da831d934a`,

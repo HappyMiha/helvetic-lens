@@ -60,6 +60,8 @@ class Settings(BaseSettings):
     ipi_source_permission_id: str = ""
     ipi_username: SecretStr = SecretStr("")
     ipi_password: SecretStr = SecretStr("")
+    aste_source_enabled: bool = Field(default=True, validation_alias="ASTE_SOURCE_ENABLED")
+    aste_source_permission_id: str = ""
     hazard_source_enabled: bool = Field(default=False, validation_alias="HAZARD_SOURCE_ENABLED")
     hazard_source_permission_id: str = ""
     road_source_enabled: bool = Field(default=False, validation_alias="ROAD_SOURCE_ENABLED")

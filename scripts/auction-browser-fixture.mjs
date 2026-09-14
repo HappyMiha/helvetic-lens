@@ -203,6 +203,10 @@ const server = createServer(async (req, res) => {
         if (req.method !== "GET" && !state.manager)
           return json({ code: "subject_role_denied" }, 403);
         const route = path.slice("/api/auction-watch".length);
+        if (route === "/source-status")
+          return state.sourceStatusError
+            ? json({ code: "fixture_source_unavailable" }, 503)
+            : json(state.asteStatus || { state: "permission_required", collection: null, coverage_verified: false });
         if (route === "/reminders") {
           const reminder = reminderView();
           return json({

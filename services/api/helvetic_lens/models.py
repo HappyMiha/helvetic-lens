@@ -20,6 +20,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
+from . import aste_models as aste_models
 from . import auction_models as auction_models
 from . import auction_source_models as auction_source_models
 from . import auction_workflow_models as auction_workflow_models

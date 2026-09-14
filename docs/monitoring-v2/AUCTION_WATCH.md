@@ -1,11 +1,62 @@
 # Auction Watch — B8
 
-Status: IN PROGRESS, 13 September 2026. Scope: MV2-049/050 and auction-specific
+Status: IN PROGRESS, 14 September 2026. Scope: MV2-049/050 and auction-specific
 contributions to MV2-043/044. Nine active directions remain; C4 stays deferred.
 The previous integrated Monitoring implementation was pushed to main as
 4859c58a8b255b40e30a6c2ae00d363e72f0d9dc. Auctions is the next complete direction.
 
 ## Required outcome
+
+**Native acquisition feature scope, 14 September 2026:**
+Finish official Aste UEF discovery/current-status/document acquisition through
+the existing permission-scoped journal into private tracking, changes, reminders
+and Today/Inbox. Include durable bounded resumable discovery, rediscovery and
+known-item refresh, source lease/generation/rate/backoff checks, evidence retention,
+parser-drift/partial-failure handling and a five-language read-only source-status
+panel. Publish only once the whole collector→private workflow→visible status
+journey and required tests/build/evidence pass. This is not a source licence or
+completion of the broader B8 rights/category/human acceptance gates.
+
+Current source inspection: two bounded anonymous HTML responses and the official
+public JavaScript confirm listing links with `rel=next`, `/it/preview`, numbered
+`/it/auction/{id}` pages and the read-only GET
+`/it/api/auction/auction-status/{id}`. Status supplies an explicit end timestamp
+and Europe/Zurich timezone, bid count and distinct highest-bid/current values.
+The zero-bid detail labels its displayed amount as starting price; a current bid
+must not be fabricated from it. Category filters belong to discovery evidence,
+not guessed title words; missing location/brand/category stay unknown. Stable
+document paths and hashes must distinguish list availability from byte changes.
+Missing listings or inactive status alone cannot prove cancellation or removal.
+The public robots file permits crawling, which does not establish reuse rights.
+Firecrawl CLI is currently absent from PATH; primary HTML/JavaScript were inspected
+via bounded public reads and the available web fallback. No production source
+approval, account, bid, registration, contact or Firecrawl subscription was created.
+
+Implemented parser boundary: `aste_parser.py` decodes bounded
+HTML listings, acknowledged category filters, strictly advancing pagination,
+detail identity, distinct typed prices, explicit status timestamps and stable
+document references. Anonymous status amounts must agree with the formatted
+highest bid before being admitted as a current bid. Unknown count/amount, missing
+category/location/brand and unverified document bytes stay unknown. Ambiguous DST
+start dates are not guessed. Inactive status cannot establish cancellation.
+`aste_transport.py` admits only fixed-origin public GET listing/detail/status/PDF
+paths; it rejects action endpoints, inherited auth/cookies/queries, redirects,
+unbounded or encoded responses and false PDF bodies. It calls the supplied lease/
+rights guard before and after every transfer and preserves publisher Retry-After.
+The final parser/transport suite passed 50 checks (0.37s); exact API Ruff passed.
+
+Offline replay of captured official responses decoded 50 current-list entries
+with a page-2 continuation, 69 upcoming entries and 32 explicitly filtered bicycle
+entries. These are individual observed pages, not a verified complete catalogue.
+The upcoming list contains additional art categories; no real-estate/vehicles/
+equipment coverage is established. The captured auction 185 response produced a
+CHF 20 starting price, zero current bids, an explicit Zurich end time and two PDF
+references. Document contents were not downloaded. Source captures remain ignored
+local research files; committed tests use synthetic content and claims.
+
+The whole acquisition feature is now implemented and tested; see the
+[native collection evidence](#native-collection-and-visible-source-status--14-september-2026).
+No production source approval or full-category coverage is implied.
 
 Private asset profile → official auction discovery → explained category/location/
 keyword/brand/budget match → follow individual auction or lot → internal
@@ -244,3 +295,66 @@ inquiry was created. Native official acquisition/current reuse/category evidence
 native adapter conformance, verified activation and human acceptance remain open.
 All nine section switches remain enabled in production; missing source access
 is shown inside the section. MV2-049/050 remain IN PROGRESS.
+
+## Native collection and visible source status — 14 September 2026
+
+The Aste UEF worker now connects current/upcoming listings and acknowledged
+category-filter pages to complete detail/status/document observations in the
+existing journal, private tracking, material-change history and reminders.
+Missing auctions are revisited by their known public identity. Neither absence
+from a listing nor inactive source status invents cancellation.
+
+Migration `f8d5b67917fa` adds durable acquisition state, per-item stages and
+listing evidence without changing private decisions. One committed source lease
+guards each anonymous fixed-origin GET before and after transfer and again at
+journal admission. Crashed claims expire; late workers and replaced permissions
+cannot admit old responses. Publisher backoff survives restart and permission
+replacement. Discovery alternates with item refresh, prioritizing in-flight
+observations so bounded HTML/status/PDF acquisition can finish before expiry.
+Limits are 5,000 known identities, 1,000 pages per scan, 10,000 retained listing
+proofs and 128 MiB of acquisition payloads. Capacity failures preserve the retry
+checkpoint and do not publish a partially accepted page.
+
+An approved native access plan explicitly names request spacing, permission to
+download documents and exact official category ID/label mappings within the
+source's reviewed category scope. Fresh, intact category listing evidence is
+required; mismatches, stale proofs and conflicting mapped categories remain
+unknown. Each PDF is bounded to 16 MiB, checked as a PDF and hashed; only the
+hash, byte count and receipt timestamp are retained, not a downloadable PDF copy.
+The final status is fetched again after documents. The journal bundle retains
+exact HTML/status bytes, category provenance and document receipts under source
+retention. Raw/normalized listing expiry and revoked transient payloads are
+cleaned even when the section is disabled. Historical licensed journal data and
+private decisions remain governed by their existing independent retention gates.
+
+`ASTE_SOURCE_ENABLED` defaults to true in production and application settings.
+`ASTE_SOURCE_PERMISSION_ID` must name a reviewed, selected source permission
+with `native_access.adapter_version = "aste-public-v1"`; no grant, default
+category mapping or credentials are seeded. The five-second scheduler is only a
+wakeup: durable request spacing, source refresh periods and backoff govern GETs.
+The authenticated no-store source-status reader never starts collection. The
+five-language Auction Watch panel exposes missing access, collection counts,
+retry attention, the latest complete observation, listing completion and partial
+coverage. All nine active sections remain visible on desktop and mobile.
+
+Validation: 189 affected checks passed across the combined and final focused
+runs. The final 44-check acquisition/source run passed in 28.91 s, including
+native HTTP→private review, PDF/end/price changes, reminder replacement,
+owner-private Today, revocation redaction, restart/lease replay, permission
+replacement, malformed/capacity rollback, category freshness/integrity and
+migration downgrade/upgrade preserving decisions. The other 145 affected
+parser/transport/profile/rules/API/workflow/feed/reminder/delivery/backlog
+checks passed in the combined run. No live SMTP or official PDF request is
+part of these tests.
+
+The isolated root `aste-source` build, exact API Ruff and changed frontend
+formatting passed. The built browser journey passed 29 checkpoints, including
+all five mobile languages, read-only refresh, failure clearing, private tracking
+and membership/source revocation. Four axe audits reported zero violations;
+the source-status desktop/mobile screenshots were visually inspected. Manual
+accessibility and human pilot acceptance are not claimed.
+
+Source reuse/access approval, real category/canton coverage, operational request
+budget sizing and verified activation remain open. The main site's ready
+endpoint still reports `git-99da831d934a`, instance main, database/Redis healthy.
+No deployment was restarted or duplicated. MV2-049/050 remain IN PROGRESS.

@@ -224,8 +224,10 @@ def test_retention_worker_purges_payloads_even_with_section_switched_off(db, mon
     monkeypatch.setattr(worker, "Database", lambda settings: db)
     original = source.cleanup
     monkeypatch.setattr(source, "cleanup", lambda database: original(database, now=NOW + timedelta(seconds=11)))
-    assert worker.cleanup_auction_source.run() == {"raw_rows": 1, "normalized_rows": 1}
-    assert worker.cleanup_auction_source.run() == {"raw_rows": 0, "normalized_rows": 0}
+    assert worker.cleanup_auction_source.run() == {"raw_rows": 1, "normalized_rows": 1,
+        "acquisition": {"item_payloads": 0, "listing_payloads": 0, "listing_proofs": 0}}
+    assert worker.cleanup_auction_source.run() == {"raw_rows": 0, "normalized_rows": 0,
+        "acquisition": {"item_payloads": 0, "listing_payloads": 0, "listing_proofs": 0}}
     with db.session() as session:
         row = session.get(AuctionSourceRecordRevision, saved["revision_id"])
         assert row.raw_payload is None and row.normalized_payload is None

@@ -97,6 +97,9 @@ celery_app.conf.update(
         "collect-ipi-source": {
             "task": "helvetic_lens.collect_ipi_source", "schedule": 5.0,
         },
+        "collect-aste-source": {
+            "task": "helvetic_lens.collect_aste_source", "schedule": 5.0,
+        },
         "schedule-auction-reminders": {
             "task": "helvetic_lens.schedule_auction_reminders", "schedule": 15.0,
         },
@@ -354,10 +357,17 @@ def cleanup_trademark_source():
 
 @celery_app.task(name="helvetic_lens.cleanup_auction_source")
 def cleanup_auction_source():
+    from datetime import UTC, datetime
+
+    from .aste_collection import cleanup as cleanup_acquisition
     from .auction_sources import cleanup
     database = Database(settings)
     try:
-        return cleanup(database)
+        result = cleanup(database)
+        with database.session() as session:
+            result["acquisition"] = cleanup_acquisition(session, now=datetime.now(UTC))
+            session.commit()
+        return result
     finally:
         database.engine.dispose()
 
@@ -375,6 +385,19 @@ def schedule_trademark_monitoring():
 @celery_app.task(name="helvetic_lens.collect_ipi_source")
 def collect_ipi_source():
     from .ipi_collector import collect, readiness
+    state = readiness(settings)
+    if state != "configured":
+        return {"state": state}
+    database = Database(settings)
+    try:
+        return collect(database, settings)
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.collect_aste_source")
+def collect_aste_source():
+    from .aste_collector import collect, readiness
     state = readiness(settings)
     if state != "configured":
         return {"state": state}
