@@ -1,5 +1,34 @@
 # Monitoring deployment status — 14 September 2026
 
+## SQLite retained-child migration repair — 14 September 2026
+
+The authenticated main-site journal records `f07b1641a351` as Failed, finished
+at 17:31:50 Europe/Zurich. Its API gate reported **1 failed, 4441 passed,
+14 skipped** in 5455.62 seconds. The failing assertion was
+`test_aste_collection.py::test_native_migration_preserves_private_decisions`.
+Production remains `c66e77fc7721fbbd4ff11a522d4cc7183cc81523`; the next immutable
+candidate `9e631d93c13c` started at 17:32:02 and is Deploying. No active check or
+deployment was interrupted, restarted or duplicated. These observations supersede
+the earlier in-progress entry for `f07b164` below.
+
+The failure reproduced locally: SQLite's parent-table replacement during the
+business-scope downgrade fired `ON DELETE CASCADE` into retained native auction
+decisions. The repair wraps online SQLite migrations on enforced connections in
+an owned schema savepoint with foreign keys temporarily off, verifies all foreign
+keys before success, rolls failed schema work back, and restores enforcement.
+Pending caller writes are refused without commit or rollback. A populated Commute
+migration fixture now persists its old-version draft before upgrading, matching
+the real upgrade boundary. Existing migration definitions and the PostgreSQL
+migration path are unchanged; no test assertion or release gate was removed.
+
+Local verification: the original failing migration plus lifecycle/guard checks
+passed (8 tests); the expanded actual upgrade/downgrade and lifecycle matrix
+passed **48 tests in 177.94 seconds**. Four guard cases exercise retained children,
+schema/data rollback, orphan rejection and preservation of pending caller writes.
+The nine-direction evidence feature passed its 25 checks on the repaired migration
+path. The exact API Ruff gate passed. This is a tested repair candidate; publication
+does not establish successful activation of this newer code.
+
 ## Individual business responsibility and decision notes candidate — 14 September 2026
 
 The complete Tender/IP/Auction item-work feature adds individual assignment,

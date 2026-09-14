@@ -4,15 +4,17 @@ from alembic import context
 from helvetic_lens import models  # noqa: F401
 from helvetic_lens.config import Settings
 from helvetic_lens.db import Base
+from helvetic_lens.migration_runtime import migration_foreign_keys
 
 config = context.config
 target_metadata = Base.metadata
 
 
 def run(connection):
-    context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
-    with context.begin_transaction():
-        context.run_migrations()
+    with migration_foreign_keys(connection):
+        context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
+        with context.begin_transaction():
+            context.run_migrations()
 
 
 if context.is_offline_mode():

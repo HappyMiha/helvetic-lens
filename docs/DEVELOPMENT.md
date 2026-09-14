@@ -19,6 +19,14 @@ If remote main moves, fetch, integrate carefully and retest affected behavior be
 retrying. Never force-push or bypass hooks. Keep the frozen MVP tag immutable.
 Code publication does not prove activation or human acceptance.
 
+SQLite migrations require a connection without pending application writes when
+foreign-key enforcement is enabled. Commit or roll back fixture/application data
+before handing the connection to Alembic. The migration runner temporarily gates
+enforcement only around its own atomic schema work, checks referential integrity,
+and restores enforcement before returning the connection. It never commits a
+caller's pending writes. This prevents SQLite batch table replacement from
+cascading into retained child records; PostgreSQL uses its existing migration path.
+
 All nine active Monitoring sections must remain enabled in production and
 directly visible in desktop and mobile navigation for every user. Source
 credentials, reviewed permissions and freshness remain separate readiness

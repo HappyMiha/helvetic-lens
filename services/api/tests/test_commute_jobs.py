@@ -283,8 +283,12 @@ def test_worker_migration_preserves_populated_private_drafts(db):
     with db.engine.begin() as connection:
         config.attributes["connection"] = connection
         command.downgrade(config, "f6c8da371a9e")
+    # Model a persisted pre-upgrade draft, not an application's pending write.
+    with db.engine.begin() as connection:
         connection.execute(text("INSERT INTO commute_monitors (id, organization_id, owner_user_id, request_key, request_hash, configuration, revision, version, status, health, created_at) VALUES (:id, 'org-a', 'owner', 'migration-old', :hash, :config, 1, 1, 'draft', 'not_started', :now)"),
             {"id": identifier, "hash": digest(payload), "config": json.dumps(payload), "now": NOW.isoformat()})
+    with db.engine.begin() as connection:
+        config.attributes["connection"] = connection
         command.upgrade(config, "head")
     with db.session() as session:
         row = session.get(CommuteMonitor, identifier)
