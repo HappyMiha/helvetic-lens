@@ -98,6 +98,8 @@ def collect(database, settings, *, downloader=download, now=clock, prepare=None)
         return {"state": "deferred"}
 
     def guard():
+        from .monitoring_connector_settings import assert_current
+        assert_current(database, settings, "warnings")
         if not enabled():
             _error("hazard_source_configuration_changed")
         with database.session() as session:

@@ -207,6 +207,8 @@ def collect(database, settings, *, downloader=download, now=clock):
         return {"state": "deferred"}
 
     def guard():
+        from .monitoring_connector_settings import assert_current
+        assert_current(database, settings, "traffic")
         if not enabled():
             raise RoadAcquisitionError("road_source_disabled")
         if settings.road_source_permission_id != permission_id or settings.road_source_key.get_secret_value() != key:

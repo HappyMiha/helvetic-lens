@@ -12,6 +12,7 @@ from .config import Settings
 from .db import Database
 from .maintenance import cleanup_operational_data
 from .models import Job
+from .monitoring_connector_settings import load as load_connector_settings
 from .observability import correlation_context
 
 settings = Settings()
@@ -202,9 +203,11 @@ def schedule_pollen_monitoring():
     from .pollen_delivery import enqueue_due as enqueue_mail
     from .pollen_jobs import enqueue_due
     from .pollen_retention import cleanup
+
     database = Database(settings)
     try:
-        return {"refresh": enqueue_due(database, settings), "delivery": enqueue_mail(database, settings), "retention": cleanup(database, settings)}
+        task_settings = load_connector_settings(database, settings)
+        return {"refresh": enqueue_due(database, task_settings), "delivery": enqueue_mail(database, task_settings), "retention": cleanup(database, task_settings)}
     finally:
         database.engine.dispose()
 
@@ -212,9 +215,11 @@ def schedule_pollen_monitoring():
 @celery_app.task(name="helvetic_lens.schedule_river_monitoring")
 def schedule_river_monitoring():
     from .river_jobs import enqueue_due
+
     database = Database(settings)
     try:
-        return enqueue_due(database, settings)
+        task_settings = load_connector_settings(database, settings)
+        return enqueue_due(database, task_settings)
     finally:
         database.engine.dispose()
 
@@ -232,9 +237,11 @@ def cleanup_river_measurements():
 @celery_app.task(name="helvetic_lens.schedule_air_monitoring")
 def schedule_air_monitoring():
     from .air_jobs import enqueue_due
+
     database = Database(settings)
     try:
-        return enqueue_due(database, settings)
+        task_settings = load_connector_settings(database, settings)
+        return enqueue_due(database, task_settings)
     finally:
         database.engine.dispose()
 
@@ -244,11 +251,13 @@ def schedule_tender_monitoring():
     from .tender_delivery import enqueue_due as enqueue_email
     from .tender_documents import cleanup as cleanup_documents
     from .tender_jobs import enqueue_due
+
     database = Database(settings)
     try:
+        task_settings = load_connector_settings(database, settings)
         cleanup = cleanup_documents(database)
-        return {"documents": cleanup, "refresh": enqueue_due(database, settings),
-                "delivery": enqueue_email(database, settings)}
+        return {"documents": cleanup, "refresh": enqueue_due(database, task_settings),
+                "delivery": enqueue_email(database, task_settings)}
     finally:
         database.engine.dispose()
 
@@ -266,9 +275,11 @@ def cleanup_air_measurements():
 @celery_app.task(name="helvetic_lens.schedule_commute_monitoring")
 def schedule_commute_monitoring():
     from .commute_jobs import enqueue_due
+
     database = Database(settings)
     try:
-        return enqueue_due(database, settings)
+        task_settings = load_connector_settings(database, settings)
+        return enqueue_due(database, task_settings)
     finally:
         database.engine.dispose()
 
@@ -276,9 +287,11 @@ def schedule_commute_monitoring():
 @celery_app.task(name="helvetic_lens.collect_commute_sources")
 def collect_commute_sources():
     from .commute_acquisition import collect_due
+
     database = Database(settings)
     try:
-        return collect_due(database, settings)
+        task_settings = load_connector_settings(database, settings)
+        return collect_due(database, task_settings)
     finally:
         database.engine.dispose()
 
@@ -286,9 +299,11 @@ def collect_commute_sources():
 @celery_app.task(name="helvetic_lens.schedule_road_email")
 def schedule_road_email():
     from .road_delivery import enqueue_due
+
     database = Database(settings)
     try:
-        return enqueue_due(database, settings)
+        task_settings = load_connector_settings(database, settings)
+        return enqueue_due(database, task_settings)
     finally:
         database.engine.dispose()
 
@@ -296,9 +311,11 @@ def schedule_road_email():
 @celery_app.task(name="helvetic_lens.schedule_hazard_email")
 def schedule_hazard_email():
     from .hazard_delivery import enqueue_due
+
     database = Database(settings)
     try:
-        return enqueue_due(database, settings)
+        task_settings = load_connector_settings(database, settings)
+        return enqueue_due(database, task_settings)
     finally:
         database.engine.dispose()
 
@@ -306,9 +323,11 @@ def schedule_hazard_email():
 @celery_app.task(name="helvetic_lens.schedule_commute_email")
 def schedule_commute_email():
     from .commute_delivery import enqueue_due
+
     database = Database(settings)
     try:
-        return enqueue_due(database, settings)
+        task_settings = load_connector_settings(database, settings)
+        return enqueue_due(database, task_settings)
     finally:
         database.engine.dispose()
 
@@ -316,9 +335,11 @@ def schedule_commute_email():
 @celery_app.task(name="helvetic_lens.collect_commute_static")
 def collect_commute_static():
     from .commute_static_collector import collect
+
     database = Database(settings)
     try:
-        return collect(database, settings)
+        task_settings = load_connector_settings(database, settings)
+        return collect(database, task_settings)
     finally:
         database.engine.dispose()
 
@@ -326,11 +347,13 @@ def collect_commute_static():
 @celery_app.task(name="helvetic_lens.collect_road_source")
 def collect_road_source():
     from .road_acquisition import collect
-    if not settings.road_watch_enabled or not settings.road_source_enabled:
-        return {"state": "disabled"}
+
     database = Database(settings)
     try:
-        return collect(database, settings)
+        task_settings = load_connector_settings(database, settings)
+        if not task_settings.road_watch_enabled or not task_settings.road_source_enabled:
+            return {"state": "disabled"}
+        return collect(database, task_settings)
     finally:
         database.engine.dispose()
 
@@ -338,11 +361,13 @@ def collect_road_source():
 @celery_app.task(name="helvetic_lens.schedule_hazard_monitoring")
 def schedule_hazard_monitoring():
     from .hazard_jobs import enqueue_due
-    if not settings.hazard_watch_enabled or not settings.hazard_source_enabled:
-        return {"enqueued": 0}
+
     database = Database(settings)
     try:
-        return enqueue_due(database, settings)
+        task_settings = load_connector_settings(database, settings)
+        if not task_settings.hazard_watch_enabled or not task_settings.hazard_source_enabled:
+            return {"enqueued": 0}
+        return enqueue_due(database, task_settings)
     finally:
         database.engine.dispose()
 
@@ -352,13 +377,15 @@ def collect_hazard_source():
     from .hazard_acquisition import clock, collect
     from .hazard_native_boundaries import ensure
     from .hazard_native_source import initialize
-    if not settings.hazard_watch_enabled or not settings.hazard_source_enabled:
-        return {"state": "disabled"}
+
     database = Database(settings)
     try:
-        initialize(database, settings, now=clock())
-        return collect(database, settings,
-            prepare=lambda guard: ensure(settings.storage_path, now=clock(), checkpoint=guard))
+        task_settings = load_connector_settings(database, settings)
+        if not task_settings.hazard_watch_enabled or not task_settings.hazard_source_enabled:
+            return {"state": "disabled"}
+        initialize(database, task_settings, now=clock())
+        return collect(database, task_settings,
+            prepare=lambda guard: ensure(task_settings.storage_path, now=clock(), checkpoint=guard))
     finally:
         database.engine.dispose()
 
@@ -403,9 +430,11 @@ def cleanup_auction_source():
 @celery_app.task(name="helvetic_lens.schedule_trademark_monitoring")
 def schedule_trademark_monitoring():
     from .trademark_jobs import refresh_due
+
     database = Database(settings)
     try:
-        return refresh_due(database, settings)
+        task_settings = load_connector_settings(database, settings)
+        return refresh_due(database, task_settings)
     finally:
         database.engine.dispose()
 
@@ -413,12 +442,14 @@ def schedule_trademark_monitoring():
 @celery_app.task(name="helvetic_lens.collect_ipi_source")
 def collect_ipi_source():
     from .ipi_collector import collect, readiness
-    state = readiness(settings)
-    if state != "configured":
-        return {"state": state}
+
     database = Database(settings)
     try:
-        return collect(database, settings)
+        task_settings = load_connector_settings(database, settings)
+        state = readiness(task_settings)
+        if state != "configured":
+            return {"state": state}
+        return collect(database, task_settings)
     finally:
         database.engine.dispose()
 
@@ -426,12 +457,14 @@ def collect_ipi_source():
 @celery_app.task(name="helvetic_lens.collect_aste_source")
 def collect_aste_source():
     from .aste_collector import collect, readiness
-    state = readiness(settings)
-    if state != "configured":
-        return {"state": state}
+
     database = Database(settings)
     try:
-        return collect(database, settings)
+        task_settings = load_connector_settings(database, settings)
+        state = readiness(task_settings)
+        if state != "configured":
+            return {"state": state}
+        return collect(database, task_settings)
     finally:
         database.engine.dispose()
 
@@ -439,9 +472,11 @@ def collect_aste_source():
 @celery_app.task(name="helvetic_lens.schedule_auction_monitoring")
 def schedule_auction_monitoring():
     from .auction_jobs import refresh_due
+
     database = Database(settings)
     try:
-        return refresh_due(database, settings)
+        task_settings = load_connector_settings(database, settings)
+        return refresh_due(database, task_settings)
     finally:
         database.engine.dispose()
 
@@ -461,9 +496,11 @@ def schedule_auction_reminders():
 @celery_app.task(name="helvetic_lens.schedule_auction_email")
 def schedule_auction_email():
     from .auction_delivery import enqueue_due
+
     database = Database(settings)
     try:
-        return enqueue_due(database, settings)
+        task_settings = load_connector_settings(database, settings)
+        return enqueue_due(database, task_settings)
     finally:
         database.engine.dispose()
 
@@ -471,9 +508,11 @@ def schedule_auction_email():
 @celery_app.task(name="helvetic_lens.schedule_trademark_email")
 def schedule_trademark_email():
     from .trademark_delivery import enqueue_due
+
     database = Database(settings)
     try:
-        return enqueue_due(database, settings)
+        task_settings = load_connector_settings(database, settings)
+        return enqueue_due(database, task_settings)
     finally:
         database.engine.dispose()
 
@@ -481,9 +520,11 @@ def schedule_trademark_email():
 @celery_app.task(name="helvetic_lens.schedule_river_email")
 def schedule_river_email():
     from .river_delivery import enqueue_due
+
     database = Database(settings)
     try:
-        return enqueue_due(database, settings)
+        task_settings = load_connector_settings(database, settings)
+        return enqueue_due(database, task_settings)
     finally:
         database.engine.dispose()
 
@@ -491,9 +532,11 @@ def schedule_river_email():
 @celery_app.task(name="helvetic_lens.schedule_air_email")
 def schedule_air_email():
     from .air_delivery import enqueue_due
+
     database = Database(settings)
     try:
-        return enqueue_due(database, settings)
+        task_settings = load_connector_settings(database, settings)
+        return enqueue_due(database, task_settings)
     finally:
         database.engine.dispose()
 
@@ -505,7 +548,7 @@ def schedule_road_monitoring():
         return {"enqueued": 0}
     database = Database(settings)
     try:
-        return enqueue_due(database, settings)
+        return enqueue_due(database, load_connector_settings(database, settings))
     finally:
         database.engine.dispose()
 

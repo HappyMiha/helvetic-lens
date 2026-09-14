@@ -316,6 +316,45 @@ export const SECTION_GUIDES: SectionGuide[] = [
     ],
   },
   {
+    id: "monitoring-settings",
+    title: "Monitoring settings",
+    purpose:
+      "Manage native monitors and source connections in nine categories.",
+    first: [
+      "Choose a monitoring category.",
+      "Use its native monitor settings and email preferences.",
+      "Platform administrators can save connector settings and explicitly check saved access.",
+    ],
+    data: [
+      "Native private monitoring settings.",
+      "Masked platform connector configuration and bounded access results.",
+    ],
+    wait: "Saving applies to new requests and worker operations without restarting the deployment.",
+    setup:
+      "Public sources do not need website passwords. Access checks do not grant coverage, source rights or email consent. Replace or clear credentials explicitly.",
+    controls: [
+      refresh,
+      c(
+        "save-connection",
+        "Save connection",
+        "Saves an encrypted, versioned source configuration.",
+        "Review changed fields and credentials before saving.",
+        "Save a change",
+        undefined,
+        "platform",
+      ),
+      c(
+        "check-connection",
+        "Check saved access",
+        "Makes a bounded request to the fixed source endpoint.",
+        "Save your changes first. A successful login does not prove coverage.",
+        "External action",
+        undefined,
+        "platform",
+      ),
+    ],
+  },
+  {
     id: "monitoring-email-centre",
     title: "Monitoring email preferences",
     purpose:
@@ -2746,6 +2785,7 @@ export const GUIDE_ROUTES: Record<string, string> = {
   "/hazard-watch": "hazard-watch",
   "/trademark-watch": "trademark-watch",
   "/monitoring": "monitoring-centre",
+  "/monitoring/settings": "monitoring-settings",
   "/monitoring/email": "monitoring-email-centre",
   "/related-developments": "related-developments",
   "/sources": "sources",

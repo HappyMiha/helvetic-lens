@@ -33,6 +33,8 @@ def collect(database, settings, *, now=None, client=None):
             return {"state": "waiting"}
 
         def guard():
+            from .monitoring_connector_settings import assert_current
+            assert_current(database, settings, "auctions")
             with database.session() as session:
                 collection.guard(session, ticket, now=clock())
 

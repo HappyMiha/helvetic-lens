@@ -35,6 +35,8 @@ def collect(database, settings, *, client=None, now=clock):
             return ticket
 
         def guard():
+            from .monitoring_connector_settings import assert_current
+            assert_current(database, settings, "ip")
             if readiness(settings) != "configured":
                 raise IPIProtocolError("ipi_source_configuration_changed")
             with database.session() as session:

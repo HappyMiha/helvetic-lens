@@ -310,9 +310,12 @@ def test_scheduler_runs_cleanup_with_sources_disabled_and_disposes_database(db, 
     monkeypatch.setattr(runtime, "Database", database)
     monkeypatch.setattr(db.engine, "dispose", close)
     monkeypatch.setattr(acquisition, "cleanup", lambda database: cleanup(database, now=lambda: NOW + timedelta(seconds=31)))
-    assert runtime.collect_road_source.run() == {"state": "disabled"} and not opened
-    assert runtime.cleanup_road_source.run() == {"state": "retention_checked"}
+    # Read persisted connector overrides before deciding whether collection is
+    # disabled; an environment flag alone no longer establishes that decision.
+    assert runtime.collect_road_source.run() == {"state": "disabled"}
     assert opened == disposed == [True]
+    assert runtime.cleanup_road_source.run() == {"state": "retention_checked"}
+    assert opened == disposed == [True, True]
     assert runtime.celery_app.conf.beat_schedule["cleanup-road-source"]["schedule"] == 60.0
     with db.session() as session:
         assert session.scalar(select(func.count()).select_from(RoadSourceEvidence)) == 0

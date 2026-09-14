@@ -1,5 +1,20 @@
 # Monitoring deployment status — 14 September 2026
 
+## Nine-category settings candidate — 14 September 2026
+
+`/monitoring/settings` brings native editors and appropriate source credential
+controls into nine categories. Encrypted, revisioned platform settings are adopted
+by new requests and scheduled collectors; explicit bounded access checks do not
+grant rights or coverage. See [implementation and checks](MONITORING_SETTINGS.md).
+This feature is a main-branch candidate, not a verified production activation.
+
+Fresh authenticated main-site inspection confirmed `d961ebd54998` deploying,
+started **14 September 2026, 19:10:03 Europe/Zurich**. Production remains
+`c66e77fc7721fbbd4ff11a522d4cc7183cc81523`. The preceding `9e631d93c13c` failed
+at **19:09:27**, with the same Aste preservation test (1 failed, 4466 passed,
+14 skipped); it predates repair `9a0a9e6`. The running d961 candidate includes
+that repair. No running check or deployment was interrupted or restarted.
+
 ## Nine-direction native batch review candidate — 14 September 2026
 
 The notification queues now offer explicit selection, evidence preview and atomic

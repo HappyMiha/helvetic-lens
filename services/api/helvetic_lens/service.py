@@ -290,6 +290,8 @@ class HelveticLens:
                 and model_record is None
             ):
                 settings = self._fallback_settings
+            from .monitoring_connector_settings import resolve as resolve_connectors
+            settings = resolve_connectors(session, settings, self.credential_cipher)
             effective_prompt = prompt_record or platform_prompt
             prompts = resolved_prompt_settings(effective_prompt)
             revision = effective_prompt.revision if effective_prompt else 1

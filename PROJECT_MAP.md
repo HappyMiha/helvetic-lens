@@ -31,6 +31,12 @@ Platform administrators can inspect all nine directions and four source packs at
 `/admin/monitoring-sources`; see [source operations evidence](docs/monitoring-v2/SOURCE_OPERATIONS.md).
 Configuration, permission records and acquisition are distinct from verified coverage.
 
+The [Monitoring settings hub](docs/monitoring-v2/MONITORING_SETTINGS.md) at
+`/monitoring/settings` groups all nine native monitor editors with source connections.
+Platform administrators can save encrypted API credentials and native collector
+options, select existing permissions and explicitly test saved access. Requests
+and workers adopt new settings without a restart; source coverage remains separate.
+
 The native [Hazard wind/thunderstorm workflow](docs/monitoring-v2/HAZARD_WATCH.md#native-source-activation-and-complete-vertical-workflow-14-september-2026)
 uses the public Swiss MeteoAlarm channel and pinned swisstopo geometry through
 the normal collector. Existing operator decisions remain authoritative. Other

@@ -200,6 +200,8 @@ def collect(database, settings, source, *, downloader=download, now=clock):
         return {"state": "deferred"}
 
     def guard():
+        from .monitoring_connector_settings import assert_current
+        assert_current(database, settings, "commute")
         with database.session() as session:
             owned_poll(session, source, permission_id, token, now())
 

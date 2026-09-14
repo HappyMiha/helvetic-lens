@@ -2218,23 +2218,27 @@ def create_app(
     def reset_prompt_settings():
         return service.reset_prompt_settings()
 
-    app.include_router(draft_router(service, settings))
-    app.include_router(river_router(service, settings))
-    app.include_router(air_router(service, settings))
-    app.include_router(tender_router(service, settings))
-    app.include_router(commute_router(service, settings))
-    app.include_router(road_router(service, settings))
-    app.include_router(hazard_router(service, settings))
-    app.include_router(trademark_router(service, settings))
-    app.include_router(auction_router(service, settings))
-    app.include_router(centre_router(service, settings))
-    app.include_router(business_monitor_router(service, settings))
-    app.include_router(evidence_router(service, settings))
-    app.include_router(batch_router(service, settings))
+    from .monitoring_connector_api import connector_router
+    from .monitoring_connector_settings import RequestSettings
+    source_settings = RequestSettings(service, settings)
+    app.include_router(connector_router(service))
+    app.include_router(draft_router(service, source_settings))
+    app.include_router(river_router(service, source_settings))
+    app.include_router(air_router(service, source_settings))
+    app.include_router(tender_router(service, source_settings))
+    app.include_router(commute_router(service, source_settings))
+    app.include_router(road_router(service, source_settings))
+    app.include_router(hazard_router(service, source_settings))
+    app.include_router(trademark_router(service, source_settings))
+    app.include_router(auction_router(service, source_settings))
+    app.include_router(centre_router(service, source_settings))
+    app.include_router(business_monitor_router(service, source_settings))
+    app.include_router(evidence_router(service, source_settings))
+    app.include_router(batch_router(service, source_settings))
     from .related_api import related_router
-    app.include_router(related_router(service, settings))
+    app.include_router(related_router(service, source_settings))
     from .monitoring_source_operations import source_operations_router
-    app.include_router(source_operations_router(service, settings))
+    app.include_router(source_operations_router(service, source_settings))
     return app
 
 

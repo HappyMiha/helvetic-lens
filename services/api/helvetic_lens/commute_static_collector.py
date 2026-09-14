@@ -130,6 +130,8 @@ def collect(database, settings, *, catalog=fetch_catalog, downloader=acquire_arc
     directory = (settings.storage_path / "commute-static").absolute()
 
     def guard():
+        from .monitoring_connector_settings import assert_current
+        assert_current(database, settings, "commute")
         with database.session() as session:
             owned(session, settings, token, permissions, now())
 

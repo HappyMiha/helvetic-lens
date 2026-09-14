@@ -1774,6 +1774,7 @@ class MonitoringEvaluationEntry(Base):
 # models makes a newly persisted tenant-owned record difficult to forget.
 from .business_item_models import BusinessItemWorkEvent  # noqa: E402
 from .business_monitor_models import BusinessMonitorScopeEvent  # noqa: E402
+from .monitoring_connector_models import MonitoringConnectorConfiguration  # noqa: E402, F401
 
 ORGANIZATION_SCOPED_MODELS = (
     BusinessItemWorkEvent,

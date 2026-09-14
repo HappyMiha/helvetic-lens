@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useContext, useEffect, useId, useRef, useState } from "react";
+import { EmbeddedMonitoring } from "./embedded-monitoring";
+import { monitoringSettingsCopy } from "@/lib/monitoring-settings-copy";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -95,6 +97,13 @@ function MonitoringNavigation({ pathname }: { pathname: string }) {
         <LayoutGrid size={17} />
         {copy.title}
       </NavigationItem>
+      <NavigationItem
+        active={pathname === "/monitoring/settings"}
+        href="/monitoring/settings"
+      >
+        <Settings2 size={17} />
+        {monitoringSettingsCopy[locale].title}
+      </NavigationItem>
       {monitoringNavigation.map(({ id, href }) => {
         const Icon = monitoringIcons[id];
         return (
@@ -110,7 +119,10 @@ function MonitoringNavigation({ pathname }: { pathname: string }) {
           </NavigationItem>
         );
       })}
-      <NavigationItem active={pathname === "/related-developments"} href="/related-developments">
+      <NavigationItem
+        active={pathname === "/related-developments"}
+        href="/related-developments"
+      >
         <Layers3 size={17} />
         {relatedCopy[locale].title}
       </NavigationItem>
@@ -226,7 +238,16 @@ function WorkspaceSwitcher({
   );
 }
 
-export function Shell({
+export function Shell(props: {
+  children: React.ReactNode;
+  section?: string;
+  wide?: boolean;
+}) {
+  const embedded = useContext(EmbeddedMonitoring);
+  return embedded ? <>{props.children}</> : <ShellContent {...props} />;
+}
+
+function ShellContent({
   children,
   section = "Overview",
   wide = false,
@@ -431,16 +452,16 @@ export function Shell({
     pathname === "/related-developments"
       ? relatedCopy[locale].title
       : pathname === "/monitoring"
-      ? centreCopy[locale].title
-      : monitoringRoute
-        ? monitoringRoute.id === "pollen"
-          ? t("nav.pollenWatch")
-          : monitoringRoute.id === "river"
-            ? t("nav.riverWatch")
-            : monitoringRoute.id === "air"
-              ? t("nav.airWatch")
-              : centreCopy[locale].templates[monitoringRoute.id][0]
-        : null;
+        ? centreCopy[locale].title
+        : monitoringRoute
+          ? monitoringRoute.id === "pollen"
+            ? t("nav.pollenWatch")
+            : monitoringRoute.id === "river"
+              ? t("nav.riverWatch")
+              : monitoringRoute.id === "air"
+                ? t("nav.airWatch")
+                : centreCopy[locale].templates[monitoringRoute.id][0]
+          : null;
   const mobileOverflowActive =
     Boolean(mobileOverflowRoute || monitoringLabel) ||
     pathname === "/assistant-history";
