@@ -6,6 +6,7 @@ from datetime import timedelta
 from sqlalchemy import update
 
 from .config import DomainError
+from .hazard_native_source import permission_id as selected_permission_id
 from .hazard_source_models import HazardSourceSelection
 from .hazard_sources import _clock, _selection, _utc, require_permission
 
@@ -39,12 +40,13 @@ def record_completed_poll(session, permission_id, *, generation, cursor, request
         fail("hazard_poll_source_changed")
 
 
-def ready(session, settings, config, *, store, now):
+def current_source(session, settings, *, now):
     now = _clock(now)
-    if (settings is None or not settings.hazard_watch_enabled or not settings.hazard_source_enabled
-            or not settings.hazard_source_permission_id):
+    if settings is None or not settings.hazard_watch_enabled or not settings.hazard_source_enabled:
         fail("hazard_source_not_configured")
-    permission_id = settings.hazard_source_permission_id
+    permission_id = selected_permission_id(session, settings)
+    if not permission_id:
+        fail("hazard_source_not_configured")
     permission, policy = require_permission(session, permission_id, now=now, purpose="matching")
     require_permission(session, permission_id, now=now, purpose="display")
     if not policy.private_decisions_allowed:
@@ -52,10 +54,31 @@ def ready(session, settings, config, *, store, now):
     selected = _selection(session, policy.source_key)
     if selected is None or selected.permission_id != permission_id:
         fail("hazard_source_selection_changed")
+    if policy.protocol == "meteoalarm-v2" and (selected.feed_updated_at is None or not selected.feed_content_hash):
+        fail("hazard_source_poll_not_current")
     if (selected.last_poll_at is None or selected.poll_cursor_version != selected.cursor_version
             or not selected.last_poll_hash or re.fullmatch(r"[0-9a-f]{64}", selected.last_poll_hash) is None
             or not timedelta(0) <= now - _utc(selected.last_poll_at) <= timedelta(seconds=policy.max_age_seconds)):
         fail("hazard_source_poll_not_current")
+    return permission, policy, selected
+
+
+def source_summary(session, settings, *, now):
+    """Public channel status, never a saved-place coverage or all-clear claim."""
+    now = _clock(now)
+    try:
+        _, policy, selected = current_source(session, settings, now=now)
+    except DomainError as error:
+        return {"state": "unavailable", "reason": error.code, "supported_hazards": []}
+    return {"state": "current", "supported_hazards": [entry.hazard for entry in policy.coverage
+        if entry.checked_at <= now < entry.valid_until], "attribution": policy.attribution,
+        "last_poll_at": _utc(selected.last_poll_at).isoformat()}
+
+
+def ready(session, settings, config, *, store, now):
+    now = _clock(now)
+    permission, policy, selected = current_source(session, settings, now=now)
+    permission_id = permission.id
     geography = store.verify_location(config.location, now=now)
     if geography.get("state") != "verified":
         fail("hazard_location_not_verified")

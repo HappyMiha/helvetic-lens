@@ -41,6 +41,20 @@ class HazardSourceSelection(Base):
     last_poll_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_poll_hash: Mapped[str | None] = mapped_column(String(64))
     poll_cursor_version: Mapped[int | None] = mapped_column(Integer)
+    feed_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    feed_content_hash: Mapped[str | None] = mapped_column(String(64))
+
+
+class HazardSourcePoll(Base):
+    __tablename__ = "hazard_source_polls"
+    source_key: Mapped[str] = mapped_column(ForeignKey("hazard_source_selections.source_key"), primary_key=True)
+    permission_id: Mapped[str] = mapped_column(ForeignKey("hazard_source_permissions.id"))
+    next_request_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    lease_token: Mapped[str | None] = mapped_column(String(36))
+    lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_success_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_code: Mapped[str] = mapped_column(String(100), default="pending")
+    failures: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class HazardMessageEvidence(Base):
@@ -70,6 +84,7 @@ class HazardMessageEvidence(Base):
     material: Mapped[bool] = mapped_column(Boolean)
     classification: Mapped[dict] = mapped_column(JSON)
     reference_keys: Mapped[list] = mapped_column(JSON)
+    history_complete: Mapped[bool] = mapped_column(Boolean, default=True, server_default="1")
 
 
 class HazardCurrentWarning(Base):
@@ -87,6 +102,7 @@ class HazardCurrentWarning(Base):
     generation: Mapped[int] = mapped_column(Integer)
     material_sequence: Mapped[int] = mapped_column(Integer)
     state: Mapped[str] = mapped_column(String(12))
+    present: Mapped[bool] = mapped_column(Boolean, default=True, server_default="1")
 
 
 class HazardSourceReceipt(Base):

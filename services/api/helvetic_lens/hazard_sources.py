@@ -58,6 +58,7 @@ class HazardSourcePolicy(BaseModel):
     attribution: str = Field(min_length=1, max_length=1000)
     endpoint: str = Field(min_length=1, max_length=2048)
     sender: str = Field(min_length=1, max_length=256)
+    protocol: Literal["cap-suisse", "meteoalarm-v2"] = "cap-suisse"
     accepted_at: datetime
     valid_until: datetime
     min_poll_seconds: int = Field(ge=30, le=86400)
@@ -98,6 +99,12 @@ class HazardSourcePolicy(BaseModel):
                     or not set(entry.cantons) <= set(self.covered_cantons)
                     or entry.valid_until > self.valid_until for entry in self.coverage)):
             raise ValueError("Coverage must stay within the reviewed source contract")
+        if self.protocol == "meteoalarm-v2":
+            from .hazard_meteoalarm import FEED_URL, MAX_CURRENT_SECONDS, POLL_SECONDS
+            if (self.endpoint != FEED_URL or self.source_key != "meteoswiss-meteoalarm"
+                    or self.sender != "meteoalarm-switzerland-channel"
+                    or self.max_age_seconds > MAX_CURRENT_SECONDS or self.min_poll_seconds > POLL_SECONDS):
+                raise ValueError("MeteoAlarm requires its exact Swiss channel and current redistribution timing")
         return self
 
 
@@ -197,7 +204,7 @@ def activate_permission(session, permission_id, *, expected_generation, now):
                     HazardSourceSelection.generation == expected_generation).values(
                     permission_id=permission_id, generation=expected_generation + 1, cursor_version=0,
                     last_received_at=None, last_poll_at=None, last_poll_hash=None,
-                    poll_cursor_version=None).execution_options(synchronize_session=False))
+                    poll_cursor_version=None, feed_updated_at=None, feed_content_hash=None).execution_options(synchronize_session=False))
                 if updated.rowcount != 1:
                     _error("hazard_source_selection_conflict")
             session.flush()
@@ -264,7 +271,7 @@ def _state(session, permission_id, sender, now):
         _error("hazard_history_limit")
     retained = {r.id: r for r in rows}
     entries = tuple(StoredHazard(_restore(r), r.development_key, r.material_sequence, _utc(r.last_seen_at),
-                                len(r.normalized_payload)) for r in rows)
+                                len(r.normalized_payload), r.history_complete) for r in rows)
     current = list(session.scalars(select(HazardCurrentWarning).join(
         HazardMessageEvidence, HazardMessageEvidence.id == HazardCurrentWarning.evidence_id)
         .where(*retained_filter, HazardCurrentWarning.permission_id == permission_id)
@@ -281,6 +288,9 @@ def _state(session, permission_id, sender, now):
 def classify(message, policy):
     if not message.infos:
         return {"hazards": [], "importance": None, "complete": False}
+    if policy.protocol == "meteoalarm-v2":
+        from .hazard_meteoalarm import classify_weather
+        return classify_weather(message, importance=dict(policy.importance))
     info = message.infos[0]
     rules = {(r.value_name, r.value): r.hazard for r in policy.rules}
     known_names = {name for name, _ in rules}
@@ -309,8 +319,12 @@ def accept_message(session, permission_id, payload, *, request_key, request_url,
     selected = _selection(session, policy.source_key)
     if selected is None or selected.permission_id != permission_id or selected.generation != expected_generation:
         _error("hazard_source_selection_conflict")
-    message = decode_cap(payload, received_at=received_at)
-    if message.identity.sender != policy.sender:
+    message = decode_cap(payload, received_at=received_at, profile=policy.protocol)
+    if policy.protocol == "meteoalarm-v2":
+        from .hazard_meteoalarm import ISSUER_PREFIX
+        if not message.identity.identifier.startswith(ISSUER_PREFIX):
+            _error("hazard_source_sender_mismatch")
+    elif message.identity.sender != policy.sender:
         _error("hazard_source_sender_mismatch")
     replay = session.scalar(select(HazardSourceReceipt).where(HazardSourceReceipt.permission_id == permission_id,
         HazardSourceReceipt.generation == expected_generation, HazardSourceReceipt.request_key == request_key))
@@ -334,8 +348,8 @@ def accept_message(session, permission_id, payload, *, request_key, request_url,
                 _error("hazard_conflicting_identity")
             if existing and (existing.normalized_payload is None or _utc(existing.normalized_expires_at) <= now):
                 _error("hazard_evidence_expired")
-            state = _state(session, permission_id, policy.sender, now)
-            next_state, change = reconcile_cap(state, message)
+            state = _state(session, permission_id, message.identity.sender, now)
+            next_state, change = reconcile_cap(state, message, allow_initial_update=policy.protocol == "meteoalarm-v2")
             if session.scalar(select(func.count()).select_from(HazardSourceReceipt).where(
                     HazardSourceReceipt.permission_id == permission_id)) >= MAX_RECEIPTS:
                 _error("hazard_receipt_limit")
@@ -364,7 +378,7 @@ def accept_message(session, permission_id, payload, *, request_key, request_url,
                     normalized_expires_at=min(received_at + timedelta(seconds=policy.normalized_retention_seconds), _clock(policy.valid_until)),
                     first_received_at=received_at, last_seen_at=received_at, material_sequence=change.material_sequence,
                     kind=change.kind, material=change.material, classification=classification,
-                    reference_keys=[r.key for r in message.references])
+                    reference_keys=[r.key for r in message.references], history_complete=change.history_complete)
                 session.add(existing)
                 session.flush()
             else:
@@ -377,6 +391,7 @@ def accept_message(session, permission_id, payload, *, request_key, request_url,
                     session.add(head)
                 head.evidence_id, head.generation = existing.id, expected_generation
                 head.material_sequence, head.state = next_head.material_sequence, next_head.state
+                head.present = True
             changed = session.execute(update(HazardSourceSelection).where(
                 HazardSourceSelection.source_key == policy.source_key, HazardSourceSelection.permission_id == permission_id,
                 HazardSourceSelection.generation == expected_generation, HazardSourceSelection.cursor_version == expected_cursor_version)
@@ -402,6 +417,15 @@ def read_message(session, permission_id, evidence_id, *, now, purpose="display",
     if (row is None or row.normalized_payload is None or _utc(row.normalized_expires_at) <= now
             or _utc(row.first_received_at) > now or _utc(row.last_seen_at) > now):
         _error("hazard_evidence_unavailable")
+    if fresh and policy.protocol == "meteoalarm-v2":
+        selected = _selection(session, policy.source_key)
+        if (selected is None or selected.permission_id != permission_id or selected.last_poll_at is None
+                or selected.poll_cursor_version != selected.cursor_version or selected.feed_updated_at is None
+                or not timedelta(0) <= now - _utc(selected.last_poll_at) <= timedelta(seconds=policy.max_age_seconds)):
+            _error("hazard_source_poll_not_current")
+        head = session.get(HazardCurrentWarning, (permission_id, row.development_key), populate_existing=True)
+        if head is None or not head.present or head.evidence_id != row.id or head.generation != selected.generation:
+            _error("hazard_source_no_longer_listed")
     if fresh and (now - _utc(row.last_seen_at)).total_seconds() > policy.max_age_seconds:
         _error("hazard_evidence_stale")
     message = _restore(row)
@@ -441,7 +465,8 @@ def read_current(session, source_key, *, now, purpose="matching", limit=50, afte
             items.append({"development_key": head.development_key, "evidence_id": head.evidence_id,
                           "material_sequence": head.material_sequence, "state": head.state, "message": message})
         except DomainError as exc:
-            if exc.code not in {"hazard_evidence_unavailable", "hazard_evidence_stale", "hazard_warning_period_expired"}:
+            if exc.code not in {"hazard_evidence_unavailable", "hazard_evidence_stale", "hazard_warning_period_expired",
+                                "hazard_source_poll_not_current", "hazard_source_no_longer_listed"}:
                 raise
             items.append({"development_key": head.development_key, "evidence_id": head.evidence_id,
                           "state": "unavailable", "reason": exc.code})

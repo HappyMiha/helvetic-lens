@@ -13,6 +13,7 @@ import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from typing import Literal
 from urllib.parse import urlsplit
 
 from .hazard_geometry import canonical_polygon, valid_polygon
@@ -208,15 +209,16 @@ class CAPInfo:
                 self.certainty, self.effective, self.onset, self.expires,
                 tuple(sorted({digest(a.semantic) for a in self.areas})),
                 tuple(p for p in self.parameters if p[0] not in
-                      {"GENUpdateType", "GENWebURL", "GENWEBLINKTEXT", "GENDISSEMINATIONMANDATORY-Language"}))
+                      {"GENUpdateType", "GENWebURL", "GENWEBLINKTEXT", "GENDISSEMINATIONMANDATORY-Language", "impacts"}))
 
     @property
     def texts(self):
         return tuple(" ".join((text or "").split()) for text in
-                     (self.event, self.headline, self.description, self.instruction))
+                     (self.event, self.headline, self.description, self.instruction,
+                      *(value for name, value in self.parameters if name == "impacts")))
 
 
-def _info(node, issues):
+def _info(node, issues, *, profile="cap-suisse"):
     names = {"language", "category", "event", "eventCode", "responseType", "urgency", "severity", "certainty",
              "effective", "onset", "expires", "senderName", "headline", "description", "instruction", "web",
              "parameter", "area", "resource", "contact", "audience"}
@@ -234,8 +236,10 @@ def _info(node, issues):
     if web:
         try:
             parsed = urlsplit(web)
-            if (parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password
-                    or parsed.port not in (None, 443) or any(c.isspace() for c in web)):
+            schemes = {"http", "https"} if profile == "meteoalarm-v2" else {"https"}
+            if (parsed.scheme not in schemes or not parsed.hostname or parsed.username or parsed.password
+                    or parsed.port not in (None, 443 if parsed.scheme == "https" else 80)
+                    or any(c.isspace() for c in web)):
                 reject("hazard_invalid_link")
         except ValueError:
             reject("hazard_invalid_link")
@@ -270,6 +274,7 @@ class CAPMessage:
     received_at: datetime
     evidence_hash: str
     unsupported: tuple[str, ...]
+    profile: Literal["cap-suisse", "meteoalarm-v2"] = "cap-suisse"
 
     @property
     def state(self):
@@ -307,7 +312,7 @@ def _parse(payload):
         reject("hazard_invalid_xml")
 
 
-def decode_cap(payload: bytes, *, received_at: datetime) -> CAPMessage:
+def decode_cap(payload: bytes, *, received_at: datetime, profile="cap-suisse") -> CAPMessage:
     """Decode one atomic message. The caller must verify issuer and use rights.
 
     Unknown extensions are explicit. This function neither creates user events
@@ -315,6 +320,8 @@ def decode_cap(payload: bytes, *, received_at: datetime) -> CAPMessage:
     """
     if received_at.tzinfo is None or received_at.utcoffset() is None:
         reject("hazard_receipt_clock")
+    if profile not in {"cap-suisse", "meteoalarm-v2"}:
+        reject("hazard_unknown_profile")
     root = _parse(payload)
     if root.tag != _tag("alert"):
         reject("hazard_cap_namespace")
@@ -344,7 +351,7 @@ def decode_cap(payload: bytes, *, received_at: datetime) -> CAPMessage:
         references.append(ref)
     if (message_type in {"Update", "Cancel"}) != bool(references):
         reject("hazard_reference_required")
-    infos = tuple(_info(n, issues) for n in _nodes(root, "info", 16))
+    infos = tuple(_info(n, issues, profile=profile) for n in _nodes(root, "info", 16))
     # Repeated language editions often carry exactly the same geometry. Bound
     # unique geometry before the quadratic simplicity check, then validate once.
     polygons = {canonical_polygon(p) for i in infos for a in i.areas for p in a.polygons}
@@ -370,7 +377,7 @@ def decode_cap(payload: bytes, *, received_at: datetime) -> CAPMessage:
     if "NAT=Teaser" in codes:
         issues.add("teaser_not_full_warning")
     return CAPMessage(identity, message_type, tuple(sorted(references)), codes, infos,
-                      received_at.astimezone(UTC), hashlib.sha256(payload).hexdigest(), tuple(sorted(issues)))
+                      received_at.astimezone(UTC), hashlib.sha256(payload).hexdigest(), tuple(sorted(issues)), profile)
 
 
 def material_change(previous: CAPMessage, current: CAPMessage) -> str:

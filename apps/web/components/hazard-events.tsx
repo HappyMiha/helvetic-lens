@@ -193,7 +193,12 @@ function Reader({
     infos.find((i) => i.language === language) ||
     infos.find((i) => i.language.split("-")[0] === locale.split("-")[0]) ||
     infos[0];
-  const link = officialLink(info?.web);
+  const link = officialLink(
+    info?.web,
+    row?.source?.message.profile === "meteoalarm-v2",
+  );
+  const redistribution = row?.source?.redistribution;
+  const sourceLink = officialLink(redistribution?.url);
   return (
     <section data-hazard-event-reader>
       <div className={styles.actions}>
@@ -224,9 +229,33 @@ function Reader({
             </Link>
           )}
           {row.state === "unavailable" || !row.source ? (
-            <p className={styles.notice}>{c.unavailableDetail}</p>
+            <p className={styles.notice}>
+              {row.reason === "hazard_source_no_longer_listed"
+                ? c.noLongerListed
+                : row.reason === "hazard_source_poll_not_current"
+                  ? c.sourceNotCurrent
+                  : c.unavailableDetail}
+              {[
+                "hazard_source_no_longer_listed",
+                "hazard_source_poll_not_current",
+              ].includes(row.reason || "") && (
+                <>
+                  {" "}
+                  <a
+                    href="https://meteoalarm.org/en/live/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {c.meteoalarm}
+                  </a>
+                </>
+              )}
+            </p>
           ) : (
             <>
+              {row.source.history_complete === false && (
+                <p className={styles.notice}>{c.incompleteHistory}</p>
+              )}
               {row.state === "cancelled" && (
                 <p className={styles.notice}>{c.cancelledDetail}</p>
               )}
@@ -270,13 +299,35 @@ function Reader({
                 {info?.description && (
                   <p className={styles.source}>{info.description}</p>
                 )}
+                {info?.parameters
+                  ?.filter(([name]) => name === "impacts")
+                  .map(([, value], index) => (
+                    <div key={index}>
+                      <h5>{c.impacts}</h5>
+                      <p className={styles.source}>{value}</p>
+                    </div>
+                  ))}
                 <p>{row.source.attribution}</p>
                 {link && (
                   <a href={link} target="_blank" rel="noopener noreferrer">
                     {c.openOfficial}
                   </a>
                 )}
+                {sourceLink && (
+                  <p>
+                    <a
+                      href={sourceLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {c.meteoalarm}
+                    </a>
+                  </p>
+                )}
               </article>
+              {redistribution?.disclaimer && (
+                <p lang="en">{redistribution.disclaimer}</p>
+              )}
               <dl>
                 {row.decision?.importance && (
                   <>

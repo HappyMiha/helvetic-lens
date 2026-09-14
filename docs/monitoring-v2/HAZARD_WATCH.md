@@ -10,6 +10,159 @@ deferred. A protocol implementation does not establish an operational source.
 
 ## Source decision
 
+### Native MeteoAlarm feature selected, 14 September 2026
+
+Scope: complete MV2-028/029 weather-warning acquisition and its existing private
+workflow, not a standalone Atom parser. Existing CAP journal, private locations,
+boundary catalogue, lifecycle, Today/Inbox and consented delivery are dependencies.
+Keep all nine sections visible; this channel does not cover civil protection or
+power outages. The broader C1 acceptance remains open.
+
+The official [redistribution hub](https://meteoalarm.org/en/live/page/redistribution-hub)
+links the public Switzerland Atom feed and describes it as an active-warning
+summary. Full warnings are linked CAP resources. Cancel messages are omitted;
+their referenced entries disappear. An absent entry must therefore cease being
+presented as current without inventing an official cancellation or all-clear.
+Initial Updates can lack their earlier publication; missing history must be
+identified rather than fabricated. Failed or partial polls must not remove data.
+
+The [current terms](https://meteoalarm.org/en/live/page/terms-and-conditions),
+retrieved from the site's public CMS content endpoint on 14 September, permit
+Information reuse under CC BY 4.0-equivalent terms with additional conditions:
+preserve the unmodified information alongside any transformation, attribute the
+Swiss participant, retain issue time, link MeteoAlarm, publish the required delay
+disclaimer and maintain operational latency averaging under five minutes and
+never exceeding ten minutes. The feed's rights statement explicitly references
+these extra conditions. This does not grant a general licence to unrelated site
+Content or prove access to the separately restricted EDR/MQTT API.
+
+Acceptance for this complete feature:
+
+1. Bounded shared Swiss Atom and linked CAP acquisition, verified issuer/identity,
+   immutable originals, retries/rate limits and no private coordinates on the wire.
+2. Atomic complete snapshots, explicit withdrawn/expired/unavailable states,
+   exact known predecessor comparisons and clearly unavailable earlier history.
+3. Provider-supported weather types and geometry only; no inferred Swiss power,
+   civil-protection or other unverified coverage. Start/resume checks actual scope.
+4. Existing private events, review/mute, Today/Inbox and opted-in email recheck
+   current membership, source snapshot, validity and consent at consumption.
+5. Five-language source/status/reader UI, original instructions and source issue
+   time, attribution/link/disclaimer, including mobile and unavailable states.
+6. Required API lint, affected acquisition/journal/private/delivery tests, frontend
+   build/browser checks and public source probe. Publish only the whole feature.
+7. Exact production activation and live/human acceptance remain separate evidence.
+
+Discovery evidence: Switzerland Atom returned HTTP 200 with zero entries and
+feed update `2026-09-14T08:05:09.601543Z`. An Austrian Atom/CAP example was used
+only to inspect the actual transport shape, not to assert Swiss warning coverage.
+It included an already-expired warning, confirming that a successful feed request
+alone cannot establish warning validity. No production source permission or
+private monitor has been changed by this investigation.
+
+Native transport work in progress: `hazard_meteoalarm.py` fetches a bounded shared
+Swiss Atom snapshot and deduplicated linked originals without forwarding client
+cookies/authentication or accepting arbitrary download URLs. Unsupported feed
+structure, wrong issuer/identity, partial failures, redirects and oversized XML
+cannot become a successful empty snapshot. Source Retry-After is preserved.
+The live route needed standard Accept negotiation fallback (Atom-only returned
+406); successful responses still undergo strict MIME and XML validation.
+The native probe completed at `2026-09-14T08:49:18Z`, with no current originals
+and feed update `2026-09-14T08:35:26.960468Z`. This verifies the empty transport
+path only. The 29 synthetic transport tests plus backlog invariant passed
+(30 checks, 0.24 seconds), and required API Ruff passed.
+
+Further local implementation, 14 September: the native profile retains original
+HTTP source links and translated impact parameters. Atomic complete snapshots
+preserve immutable CAP originals, explicitly record missing earlier history,
+and track source presence independently of official cancellation/all-clear.
+Partial or conflicting batches cannot advance freshness. A durable source lease
+enforces the shared polling budget, provider backoff, and in-flight permission,
+configuration and lease rechecks. The scheduled collector is wired to Celery.
+The private reader exposes native attribution, issue time, link/disclaimer,
+incomplete history and precise stale/withdrawn explanations in five languages.
+
+Synthetic verification: journal/profile/source checks passed 128 tests; the
+later collector and migration/source checks passed 46 tests in 15.28s. Private
+workflow/lifecycle/delivery initially passed 51 checks with one incorrect new
+test expectation: stale source status is `unavailable`, whereas a withdrawn
+individual warning yields `no_eligible_changes`. Corrected native workflow and
+journal/history guards passed 19 tests in 11.61s. The paths include saved-place
+start, Today/Inbox, exact reader/review, material updates and consented fake SMTP;
+withdrawn/stale originals cannot send or appear as current. No real user mail
+or source permission was created. The isolated `hazard-native` root web build
+passed after moving the source brand label into the common locale dictionary.
+The expanded browser suite passed 59 checks, including all five mobile locales,
+native HTTP originals, escaped impact prose, attribution/disclaimer, missing
+history and withdrawn/stale current views. Seven axe audits had no violations;
+the shared Marvin contrast checks remain incomplete. The new mobile screenshot
+was inspected; the disposable fixture and Chrome exited normally. Generated
+Next type/config changes were inspected and restored. Final API Ruff, whitespace
+and the active-backlog invariant passed (one backlog check in 0.18s).
+
+### Native source activation and complete vertical workflow, 14 September 2026
+
+The normal enabled Celery collector now initializes the reviewed public Swiss
+MeteoAlarm contract when no earlier Hazard permission exists and no explicit
+permission is configured. It never replaces an explicit source or re-creates,
+renews or reactivates an existing/revoked/deselected permission. GET capabilities
+and administration diagnostics remain read-only. The initial source review is
+valid until 1 January 2027; renewal is an explicit reviewed operation.
+
+MeteoSwiss [describes its weather warning types](https://www.meteoswiss.admin.ch/weather/hazards/how-severe-weather-warnings-are-prepared.html)
+and [national remit](https://www.meteoswiss.admin.ch/about-us/legal-mandate.html).
+Together with the MeteoAlarm provider directory and Swiss channel, these support
+native **wind/thunderstorm** monitoring for verified Swiss places. Only `storm`
+has a default jurisdiction record. Other C1 choices remain visible but do not
+inherit this coverage. Snow/ice, flooding, forest fire, power outages and civil
+protection require their own confirmed source/type coverage. Blowing-snow and
+blizzard codes cannot be relabelled as snowfall. A native Snow code can be
+recognized without granting snow coverage or activating a monitor.
+
+Reviewed source evidence identifiers (SHA-256 of downloaded public CMS JSON):
+
+- Terms: `7b317929f32b5f7903b574e6c54be822bfe0e30677b3f6155a55d522cc87957c`.
+- Redistribution hub: `b84a5d1a50cd2c7824deb46c45e45d1b0b7a6ff66d72a20c75dddf55cf32af4e`.
+- Warning providers: `2486a23cf78007848d5aef477d3833a4b353fe756656f404cf8c76403fdd8b04`.
+
+The same worker prepares the pinned January 2026 swisstopo catalogue in the
+shared configured data volume. The downloader is bounded, credential-free and
+hash-checked; it supports the publisher's observed `application/x.geopackage+zip`
+MIME. The installer atomically requires a new catalogue directory. Existing,
+revoked, corrupt, expired or interrupted installations are left for the operator,
+including a competing installation created during download/decoding. It cannot
+silently restore removed geography. The edition review expires 1 January 2027.
+
+Capabilities now report actual completed-source freshness and confirmed types;
+the page refreshes that status every minute without starting private monitors.
+Source administration reports actual native successes, backoff and failures.
+Native consented link emails retain issue time, attribution, MeteoAlarm link and
+delay disclaimer. They do not export the original instructions or coordinates.
+
+Final candidate evidence:
+
+- All Hazard modules plus source operations: **360 tests passed in 159.05s**,
+  `.tmp/hazard-all.log`. The final snow-code and native diagnostic guards passed
+  **34 tests in 10.90s**, `.tmp/hazard-last-guards.log`. Earlier native default,
+  geometry, acquisition, lifecycle and delivery checks passed 72 tests in 47.84s.
+- The complete isolated `hazard-native-final` root build passed. The expanded
+  browser suite passed **60 checks** with seven axe audits reporting zero
+  violations; shared Marvin contrast remained incomplete. The mobile image was
+  inspected, generated Next files restored, and disposable processes closed.
+- A real, isolated first installation validated the official archive checksum,
+  loaded **26 cantons / 2,110 municipalities**, and verified Basel municipality
+  `2701`. Its GeoPackage hash equals the pinned official edition above.
+- At **2026-09-14T09:47:53.945445Z**, a fresh local database initialized the
+  reviewed native permission, collected the real Swiss feed, atomically recorded
+  its empty complete snapshot and passed the actual Basel storm readiness gate
+  against the native geography. Poll evidence SHA-256:
+  `033473afd6578399d09105318b48b689a98efd53365f9be79d6d649519425d72`.
+  No private monitor, production data, real email or source account was changed.
+
+This completes the native wind/thunderstorm acquisition-through-private-workflow
+implementation for publication. It does not complete broader C1: a nonempty
+real Swiss CAP event, production activation/operation, additional hazard coverage
+and human acceptance are still unverified. MV2-028/029 remain IN PROGRESS.
+
 The [FOCP Polyalert page](https://www.babs.admin.ch/en/polyalert-en) describes
 third-party CAP Suisse dissemination as a planned integration by 2027. It links
 the [CAP Suisse 1.1 specification](https://www.babs.admin.ch/dam/de/sd-web/H6vSh6NHF65G/Spezifikation%20CAP%20Suisse%201-1.pdf),
@@ -57,10 +210,13 @@ Language-only updates and formatting do not create duplicate private alerts.
 
 ## Current external gate
 
-No current CAP endpoint, publisher fixture, source agreement, approved poll rate
-or cancellation/all-clear feed continuity has been obtained. CAP Suisse is a
-future-compatible contract, not a claim that Alertswiss already serves this
-protocol. Native source acquisition and live acceptance remain open.
+The Alertswiss/CAP Suisse channel still has no verified operational endpoint or
+source agreement. The MeteoAlarm weather channel located on 14 September is a
+separate source with the scope and conditions above. A real Swiss CAP fixture,
+actual provider geometry/type coverage, native journal/private integration and
+live acceptance remain open. Feed disappearance cannot provide the missing
+official cancellation/all-clear message. CAP Suisse remains a future-compatible
+contract, not a claim that Alertswiss already serves it.
 
 ## Local protocol, geography and history implementation
 

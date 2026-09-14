@@ -13,7 +13,8 @@ from .aste_models import AsteCollector
 from .auction_source_models import AuctionSourcePermission, AuctionSourceSelection
 from .commute_models import CommuteFeedState, CommuteSourcePermission, CommuteSourcePoll
 from .config import DomainError
-from .hazard_source_models import HazardSourcePermission, HazardSourceSelection
+from .hazard_native_source import permission_id as hazard_permission_id
+from .hazard_source_models import HazardSourcePermission, HazardSourcePoll, HazardSourceSelection
 from .ipi_models import IPITraversal
 from .monitoring_live_models import MonitoringSourceChannel
 from .river_models import RiverSourceCache
@@ -110,11 +111,22 @@ def snapshot(session, settings, *, now=None):
             summary(session, model, success=model.fetched_at, error=model.error, next_at=model.next_fetch_at, now=now),
             "station_scope")
 
-    identifier = settings.hazard_source_permission_id
+    identifier = hazard_permission_id(session, settings)
+    protocol = session.scalar(select(HazardSourcePermission.policy["protocol"].as_string())
+        .where(HazardSourcePermission.id == identifier)) if identifier else None
+    native = protocol == "meteoalarm-v2"
+    data = summary(session, HazardSourceSelection, success=HazardSourceSelection.last_poll_at,
+        where=(HazardSourceSelection.permission_id == identifier,), now=now)
+    if native:
+        data = summary(session, HazardSourcePoll, success=HazardSourcePoll.last_success_at,
+            next_at=HazardSourcePoll.next_request_at, where=(HazardSourcePoll.permission_id == identifier,), now=now)
+        failures = session.scalar(select(HazardSourcePoll.failures).where(HazardSourcePoll.permission_id == identifier))
+        data["error_count"] = int(bool(failures)) if failures is not None else None
+        if failures and not data["invalid_clock"]:
+            data["state"] = "errors"
     add("warnings", PACKS[0], "/hazard-watch", settings.hazard_watch_enabled,
-        "channel_required" if settings.hazard_source_enabled else "disabled", permission(session, HazardSourcePermission, identifier, now),
-        summary(session, HazardSourceSelection, success=HazardSourceSelection.last_poll_at,
-            where=(HazardSourceSelection.permission_id == identifier,), now=now), "warning_channel")
+        ("configured" if native else "channel_required") if settings.hazard_source_enabled else "disabled",
+        permission(session, HazardSourcePermission, identifier, now), data, "warning_channel")
 
     feeds = []
     for source, identifier, key in ((TRIPS, settings.commute_gtfs_rt_permission_id, settings.commute_gtfs_rt_key),

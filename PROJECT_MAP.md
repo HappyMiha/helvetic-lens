@@ -31,6 +31,11 @@ Platform administrators can inspect all nine directions and four source packs at
 `/admin/monitoring-sources`; see [source operations evidence](docs/monitoring-v2/SOURCE_OPERATIONS.md).
 Configuration, permission records and acquisition are distinct from verified coverage.
 
+The native [Hazard wind/thunderstorm workflow](docs/monitoring-v2/HAZARD_WATCH.md#native-source-activation-and-complete-vertical-workflow-14-september-2026)
+uses the public Swiss MeteoAlarm channel and pinned swisstopo geometry through
+the normal collector. Existing operator decisions remain authoritative. Other
+hazard coverage, exact production activation and live/human acceptance stay open.
+
 The shared `/related-developments` view groups owner-private Hazard, River and
 Road events using reviewed geography and explicit source times. Exact source
 identities, decisions and deliveries remain independent; see

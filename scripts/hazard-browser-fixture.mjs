@@ -27,6 +27,7 @@ function eventFixture(){return {id:eventId,monitor_id:id,version:1,revision:1,hi
       effective:"2026-09-13T09:00:00+00:00",expires:"2026-09-14T09:00:00+00:00"},
     {language:"de-CH",event:"Synthetischer Sturm",headline:"Warnung für den gespeicherten Ort",instruction:"Bleiben Sie im Haus.",web:"https://example.invalid/official-warning"}]}}};}
 function eventView(row,historical=false){
+  if(state.nativeUnavailable&&!historical)return {id:row.id,monitor_id:id,version:eventRows[0].version,revision:row.revision,historical,state:"unavailable",reason:state.nativeUnavailable};
   if(state.evidenceUnavailable)return {id:row.id,monitor_id:id,version:eventRows[0].version,revision:row.revision,historical,state:"unavailable",reason:"hazard_evidence_unavailable"};
   return {...structuredClone(row),version:eventRows[0].version,historical,muted:mutedHazards.includes("storm")};
 }
@@ -43,7 +44,14 @@ const server=createServer(async(req,res)=>{
         monitor={id,status:"active",version:2,revision:1,configuration:{template_id:"hazard-watch",template_version:1,name:"Home warning fixture",
           location:{kind:"point",country:"CH",canton:"BS",latitude:47.56,longitude:7.59,radius_km:0},hazards:["storm"],minimum_importance:"warning"}};
         history=[{revision:1,configuration:monitor.configuration}];eventRows=[eventFixture()];reviewAudit=[];mutedHazards=[];
-        state={...state,denied:false,manager:true,evidenceUnavailable:false};return json({id,eventId});
+        if(body.native){
+          const source=eventRows[0].source;
+          source.history_complete=false;source.message.profile="meteoalarm-v2";
+          source.message.infos[0].web="http://example.invalid/official-warning";
+          source.message.infos[0].parameters=[["impacts","Falling branches. <script>window.__hazardInjected=true</script>"]];
+          source.redistribution={url:"https://meteoalarm.org/en/live/",terms_url:"https://meteoalarm.org/en/live/page/terms-and-conditions",disclaimer:"Synthetic redistribution delay disclaimer."};
+        }
+        state={...state,denied:false,manager:true,evidenceUnavailable:false,nativeUnavailable:null,nativeSource:!!body.native};return json({id,eventId});
       }
       if(path==="/__qa/seed-lifecycle"&&req.method==="POST"){
         emailConfig={timezone:"Europe/Zurich",delivery:{email:"off",digest_at:null,quiet_hours:null}};emailRevision=0;
@@ -89,7 +97,9 @@ const server=createServer(async(req,res)=>{
             coverage_verified:false,has_active_places:!!monitor,unavailable_count:state.evidenceUnavailable?1:0};
           if(state.delayFeedMs)await new Promise(done=>setTimeout(done,state.delayFeedMs));return json(payload);
         }
-        if(route==="/capabilities")return json({drafts_available:true,start_available:false,live_results_checked:false});
+        if(route==="/capabilities")return json({drafts_available:true,start_available:false,live_results_checked:false,
+          ...(state.nativeSource?{source:state.nativeUnavailable?{state:"unavailable",supported_hazards:[]}:
+            {state:"current",supported_hazards:["storm"],attribution:"Synthetic warning authority",last_poll_at:"2026-09-14T09:00:00Z"}}:{})});
         if(route==="/preview")return json({configuration:body.configuration,draft_available:true,start_available:false,live_results_checked:false,
           geography:state.geography==="verified"?{state:"verified",reason:"point_in_municipality",version:"2026-01",municipality_name:"Basel fixture",municipality_code:"2701",attribution:"Synthetic geography fixture",radius_coverage_verified:false}
           :{state:["outside_switzerland","municipality_canton_mismatch"].includes(state.geography)?"no_match":"unavailable",reason:state.geography}});

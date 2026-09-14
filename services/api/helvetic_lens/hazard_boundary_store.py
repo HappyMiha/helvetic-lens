@@ -184,7 +184,7 @@ class BoundaryStore:
 
 
 def install_catalogue(data_dir, archive_path, *, archive_sha256, version, expires_on,
-                      expected_selection_sha256=None, now=None):
+                      expected_selection_sha256=None, now=None, require_new_root=False):
     """Operator-only offline install/renewal; never called by a user HTTP route.
 
     The archive checksum must be copied from the reviewed official STAC asset.
@@ -222,7 +222,9 @@ def install_catalogue(data_dir, archive_path, *, archive_sha256, version, expire
     if catalogue.valid_from > now.astimezone(UTC).date():
         raise BoundaryError("boundary_version_outside_review")
     root = (Path(data_dir) / "hazard-boundaries").resolve()
-    root.mkdir(parents=True, exist_ok=True)
+    # Native first installation must not adopt an existing/revoked catalogue,
+    # including one created while the archive was being downloaded or decoded.
+    root.mkdir(parents=True, exist_ok=not require_new_root)
     objects = root / "objects"
     objects.mkdir(exist_ok=True)
     if objects.resolve().parent != root:

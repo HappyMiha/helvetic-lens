@@ -2,6 +2,34 @@ import type { Locale } from "./i18n";
 
 const locales: Locale[] = ["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"];
 const words = {
+  sourceStatus: [
+    "Warnquelle",
+    "Source des alertes",
+    "Fonte degli avvisi",
+    "Funtauna dals avertiments",
+    "Warning source",
+  ],
+  sourceCurrent: [
+    "Die Warnquelle wurde kürzlich vollständig geprüft. Die gewählten Warnarten und der gesamte Ort werden vor dem Start geprüft.",
+    "La source d’alertes a été entièrement vérifiée récemment. Les types choisis et tout le lieu seront vérifiés avant le démarrage.",
+    "La fonte degli avvisi è stata verificata completamente di recente. I tipi selezionati e l’intero luogo saranno verificati prima dell’avvio.",
+    "La funtauna dals avertiments è vegnida verifitgada cumplainamain dacurt. Ils tips tschernids e l’entir lieu vegnan verifitgads avant l’avertura.",
+    "The warning source was fully checked recently. The selected warning types and entire place are verified before starting.",
+  ],
+  sourceWaiting: [
+    "Eine aktuelle vollständige Quellenprüfung steht aus. Sie können Orte als Entwurf speichern.",
+    "Une vérification complète et actuelle de la source reste à effectuer. Vous pouvez enregistrer des lieux comme brouillons.",
+    "È in attesa una verifica completa e aggiornata della fonte. Puoi salvare i luoghi come bozze.",
+    "Ina verificaziun cumpletta ed actuala da la funtauna manca anc. Vus pudais memorisar lieus sco sbozs.",
+    "A current complete source check is pending. You can save places as drafts.",
+  ],
+  sourceTypes: [
+    "Bestätigte Warnarten dieser Quelle",
+    "Types d’alertes confirmés pour cette source",
+    "Tipi di avviso confermati per questa fonte",
+    "Tips d’avertiment confermads per questa funtauna",
+    "Confirmed warning types for this source",
+  ],
   title: [
     "Warnungen für meine Orte",
     "Alertes pour mes lieux",

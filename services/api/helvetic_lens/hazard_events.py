@@ -232,11 +232,20 @@ def read_event(session, user_id, monitor_id, development_id, *, store, now, revi
         return {**summary, "state": row.decision["state"], "decision": deepcopy(row.decision),
                 "reviewed": reviewed, "dismissed": dismissed, "material_sequence": row.material_sequence,
                 "needs_review": not reviewed and not dismissed, "muted": muted, "source": {"attribution": policy.attribution,
-                "message": asdict(message), "last_seen_at": _utc(evidence.last_seen_at).isoformat()}, "proof": deepcopy(row.proof)}
+                "message": asdict(message), "last_seen_at": _utc(evidence.last_seen_at).isoformat(),
+                "history_complete": evidence.history_complete,
+                "redistribution": _redistribution(policy)}, "proof": deepcopy(row.proof)}
     except DomainError as error:
         if error.status == 404:
             raise
         return {**summary, "state": "unavailable", "reason": error.code}
+
+
+def _redistribution(policy):
+    if policy.protocol != "meteoalarm-v2":
+        return None
+    from .hazard_meteoalarm import DELAY_DISCLAIMER, SOURCE_URL, TERMS_URL
+    return {"url": SOURCE_URL, "terms_url": TERMS_URL, "disclaimer": DELAY_DISCLAIMER}
 
 
 def set_review(session, user_id, monitor_id, development_id, *, version, expected_revision, action, store, now):

@@ -41,11 +41,14 @@ export function hazardHref(
   if (event && revision != null) params.set("revision", String(revision));
   return `/hazard-watch?${params}`;
 }
-export function officialLink(value?: string | null) {
+export function officialLink(value?: string | null, allowHttp = false) {
   if (!value) return null;
   try {
     const url = new URL(value);
-    return url.protocol === "https:" && !url.username && !url.password
+    return (url.protocol === "https:" ||
+      (allowHttp && url.protocol === "http:")) &&
+      !url.username &&
+      !url.password
       ? url.href
       : null;
   } catch {
@@ -61,6 +64,7 @@ export type WarningInfo = {
   web?: string | null;
   effective?: string | null;
   expires?: string | null;
+  parameters?: [string, string][];
 };
 export type HazardEvent = {
   id: string;
@@ -90,7 +94,17 @@ export type HazardEvent = {
   source?: {
     attribution: string;
     last_seen_at: string;
-    message: { identity: { sent: string }; infos: WarningInfo[] };
+    history_complete?: boolean;
+    redistribution?: {
+      url: string;
+      terms_url: string;
+      disclaimer: string;
+    } | null;
+    message: {
+      identity: { sent: string };
+      infos: WarningInfo[];
+      profile?: string;
+    };
   };
 };
 export type HazardMutes = {

@@ -50,6 +50,29 @@ try{
   await call("Emulation.setDeviceMetricsOverride",{width:1280,height:1000,deviceScaleFactor:1,mobile:false});
   await json("/__qa/state",{suite:"events"});
   const {id,eventId}=await json("/__qa/seed-events",{}),path=hazardHref(id,eventId);
+  await json("/__qa/seed-events",{native:true});
+  await call("Emulation.setDeviceMetricsOverride",{width:390,height:844,deviceScaleFactor:1,mobile:true});
+  for(const locale of ["de-CH","fr-CH","it-CH","rm-CH","en-CH"]){
+    await navigate(path,locale);await ready();const copy=hazardEventCopy[locale];
+    assert.ok(await evaluate(`document.querySelector('[data-hazard-source]')?.textContent.includes(${JSON.stringify(hazardCopy[locale].sourceCurrent)})`));
+    assert.ok((await readerText()).includes(copy.incompleteHistory));
+    assert.ok((await readerText()).includes("Synthetic redistribution delay disclaimer."));
+    assert.ok(await evaluate("!!document.querySelector('[data-hazard-official] a[href=\"https://meteoalarm.org/en/live/\"]')"));
+    assert.ok(await evaluate("document.documentElement.scrollWidth<=window.innerWidth"));record(`native-warning-mobile:${locale}`);
+  }
+  assert.ok((await readerText()).includes("Falling branches."));assert.ok(!await evaluate("window.__hazardInjected===true"));
+  assert.ok(await evaluate("!!document.querySelector('[data-hazard-official] a[href=\"http://example.invalid/official-warning\"]')"));
+  await audit("native-warning-mobile");
+  for(const [reason,label] of [["hazard_source_no_longer_listed",c.noLongerListed],["hazard_source_poll_not_current",c.sourceNotCurrent]]){
+    await json("/__qa/state",{nativeUnavailable:reason});await refresh();
+    await until(`document.querySelector('[data-hazard-event-reader]')?.textContent.includes(${JSON.stringify(label)})`);
+    assert.ok(!await evaluate("!!document.querySelector('[data-hazard-official]')"));
+    assert.ok(!await evaluate("!!document.querySelector('[data-hazard-review-actions]')"));record(`native-warning-unavailable:${reason}`);
+  }
+  await navigate(path+"&revision=1");await ready();assert.ok((await readerText()).includes(c.incompleteHistory));record("native-unavailable-warning-retains-labelled-history");
+  assert.ok(await evaluate(`document.querySelector('[data-hazard-source]')?.textContent.includes(${JSON.stringify(h.sourceWaiting)})`));record("native-source-status-refreshes-and-keeps-drafts-visible");
+  await json("/__qa/seed-events",{});
+  await call("Emulation.setDeviceMetricsOverride",{width:1280,height:1000,deviceScaleFactor:1,mobile:false});
   await navigate(path);await ready();
   assert.ok((await readerText()).includes("Stay indoors."));assert.ok(!await evaluate("window.__hazardInjected===true"));
   assert.ok((await readerText()).includes(c.importance));assert.ok(!(await readerText()).includes(h.importance));assert.ok(!(await readerText()).includes(h.warning));

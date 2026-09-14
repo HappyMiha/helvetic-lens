@@ -91,7 +91,8 @@ def refresh(database, settings, *, monitor_id, version, now=None, store=None, ch
                             monitor_version=version, source_generation=proof["generation"], source_cursor=proof["cursor"],
                             store=store, now=started)
                     except DomainError as error:
-                        if error.code not in {"hazard_evidence_unavailable", "hazard_evidence_stale", "hazard_warning_period_expired"}:
+                        if error.code not in {"hazard_evidence_unavailable", "hazard_evidence_stale", "hazard_warning_period_expired",
+                                             "hazard_source_poll_not_current", "hazard_source_no_longer_listed"}:
                             raise
                         unavailable += 1
                         continue

@@ -15,7 +15,7 @@ from .config import DomainError
 from .db import utcnow
 from .hazard_boundary_store import BoundaryStore
 from .hazard_contracts import Hazard, HazardConfiguration
-from .hazard_readiness import ready
+from .hazard_readiness import ready, source_summary
 from .monitoring_subjects import _actor
 
 
@@ -74,8 +74,13 @@ def hazard_router(service, settings):
 
     @router.get("/capabilities")
     def capabilities():
+        with service.db.session() as session:
+            source = source_summary(session, settings, now=utcnow())
+        reasons = ["hazard_location_not_verified"]
+        if source["state"] != "current":
+            reasons.insert(0, source["reason"])
         return {"drafts_available": True, "commands_available": True, "start_available": False, "live_results_checked": False,
-                "blocking_reasons": ["hazard_source_not_configured", "hazard_location_not_verified"]}
+                "blocking_reasons": reasons, "source": source}
 
     @router.get("/today")
     def today(limit: int = Query(default=20, ge=1, le=20), cursor: UUID | None = None,

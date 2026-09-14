@@ -29,6 +29,34 @@ def save(client):
     return response.json()
 
 
+def test_public_channel_capabilities_follow_default_native_poll_without_claiming_place_readiness(api, monkeypatch):
+    from datetime import timedelta
+
+    from test_hazard_meteoalarm_store import snapshot
+
+    from helvetic_lens import hazard_acquisition as acquisition
+    from helvetic_lens import hazard_api as routes
+    from helvetic_lens import hazard_native_source as native
+
+    client, app, settings = api
+    settings.hazard_source_enabled = True
+    now = native.REVIEWED_AT + timedelta(hours=1)
+    monkeypatch.setattr(routes, "utcnow", lambda: now)
+    assert client.get(ROOT + "/capabilities").json()["source"]["state"] == "unavailable"
+    database = app.state.service.db
+    native.initialize(database, settings, now=now)
+    acquisition.collect(database, settings, downloader=lambda **_: snapshot(when=now), now=lambda: now)
+    response = client.get(ROOT + "/capabilities")
+    result = response.json()
+    assert response.headers["cache-control"] == "no-store"
+    assert result["source"]["state"] == "current" and result["source"]["supported_hazards"] == ["storm"]
+    assert result["start_available"] is False and not result["live_results_checked"]
+    assert result["blocking_reasons"] == ["hazard_location_not_verified"]
+    now += timedelta(minutes=6)
+    result = client.get(ROOT + "/capabilities").json()
+    assert result["source"]["state"] == "unavailable" and "attribution" not in result["source"]
+
+
 def test_http_email_consent_csrf_owner_and_recipient_binding(api):
     from sqlalchemy import select
 

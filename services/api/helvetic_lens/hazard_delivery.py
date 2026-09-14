@@ -21,6 +21,7 @@ from .hazard_models import (
     HazardDevelopment,
     HazardMonitor,
 )
+from .hazard_native_source import permission_id as selected_permission_id
 from .hazard_readiness import ready
 from .hazard_repository import configuration, owned
 from .hazard_sources import _clock, _encoded, _hash, require_permission
@@ -103,7 +104,7 @@ def eligibility(session, settings, monitor, intent, config, now, store):
             HazardDevelopment.monitor_id == monitor.id, HazardDevelopment.organization_id == monitor.organization_id))
         if (event is None or event.configuration_revision != monitor.revision
                 or event.material_sequence != intent.material_sequence
-                or event.permission_id != settings.hazard_source_permission_id):
+                or event.permission_id != selected_permission_id(session, settings)):
             return "suppressed", None
         require_permission(session, event.permission_id, now=now, purpose="notification")
         current = read_event(session, monitor.owner_user_id, monitor.id, event.id, store=store, now=now)
@@ -121,9 +122,13 @@ def eligibility(session, settings, monitor, intent, config, now, store):
         return "suppressed", None
     if "sending" in duplicates:
         return "duplicate_wait", None
-    return "eligible", {"event_id": event.id, "revision": snapshot.revision,
+    item = {"event_id": event.id, "revision": snapshot.revision,
         "detected_at": utc(intent.created_at).isoformat(),
         "href": f"/hazard-watch?monitor={monitor.id}&event={event.id}&revision={snapshot.revision}"}
+    if current["source"]["message"].get("profile") == "meteoalarm-v2":
+        item["native_source"] = {"attribution": current["source"]["attribution"],
+                                 "issued_at": current["source"]["message"]["identity"]["sent"].isoformat()}
+    return "eligible", item
 
 
 def pending(monitor, now):
@@ -265,6 +270,15 @@ def render(settings, user, monitor, items):
     body = "\n\n".join([monitor.configuration["name"], intro, *lines, f"{action}: {link}", stop])
     html = f"<p>{escape(monitor.configuration['name'])}</p><p>{escape(intro)}</p><ul>{''.join(links)}</ul>"
     html += f'<p><a href="{escape(link, quote=True)}">{escape(action)}</a></p><p>{escape(stop)}</p>'
+    native = [item["native_source"] for item in items if "native_source" in item]
+    if native:
+        from .hazard_meteoalarm import DELAY_DISCLAIMER, SOURCE_URL
+        issued = {"en": "Issued", "de": "Herausgegeben", "fr": "Publié", "it": "Emesso", "rm": "Publitgà"}.get(
+            (user.locale or "en").split("-")[0], "Issued")
+        originals = [f"{source['attribution']} · {issued}: {source['issued_at']}" for source in native]
+        body += "\n\n" + "\n".join(originals) + f"\n{SOURCE_URL}\n\n{DELAY_DISCLAIMER}"
+        html += "".join(f"<p>{escape(original)}</p>" for original in originals)
+        html += f'<p><a href="{SOURCE_URL}">MeteoAlarm</a></p><p lang="en">{DELAY_DISCLAIMER}</p>'
     return title, body, html
 
 

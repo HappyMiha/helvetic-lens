@@ -11,6 +11,15 @@ export const hazardKinds = [
   "civil_protection_warning",
 ] as const;
 export type HazardKind = (typeof hazardKinds)[number];
+export type HazardCapabilities = {
+  drafts_available: boolean;
+  source?: {
+    state: "current" | "unavailable";
+    supported_hazards: HazardKind[];
+    attribution?: string;
+    last_poll_at?: string;
+  };
+};
 export type Location = { country: "CH"; canton: string } & (
   | { kind: "point"; latitude: number; longitude: number; radius_km: number }
   | { kind: "municipality"; municipality_code: string }

@@ -113,7 +113,8 @@ The [source feasibility review](docs/monitoring-v2/SOURCE_FEASIBILITY.md) contai
 
 | Gate | Current planning finding | Owner / next action |
 |---|---|---|
-| G(C1), G(B8) | Official pages exist; supported APIs/automated reuse have not been established | Integration, MV2-028/049: supported channel and permitted monitoring contract |
+| G(C1) | Native Swiss MeteoAlarm wind/thunderstorm source implemented with reviewed public terms and geography; live warning/pilot and other hazard coverage remain open | Integration, MV2-028/029: verify activation and remaining source coverage |
+| G(B8) | Official pages exist; supported APIs/automated reuse have not been established | Integration, MV2-049: supported channel and permitted monitoring contract |
 | G(C3) | FEDRO access term and raw-data export restrictions | Integration/Operations, MV2-040: permitted derived fields, renewal and retention |
 | G(B2) | SIMAP API, publication terms and separate attachment rights | Integration, MV2-042: client contract, publication timing/corrections and access-gated documents |
 | G(B7) | IPI API through an account/terms; permission for monitoring emails needs clarification | Product/Integration, MV2-046: document the channel scope in writing |
@@ -1149,6 +1150,28 @@ This contributes to MV2-052; reprocessing and broader policy/operational gates r
 
 ### MV2-028 — C1: official warnings and hazard geography
 
+**Native source publication candidate, 14 September 2026:** The normal collector
+now initializes the reviewed public MeteoAlarm wind/thunderstorm contract and
+hash-pinned swisstopo geometry while preserving explicit and revoked operator
+decisions. Complete snapshots feed existing private history, Today/Inbox and
+consented email with original-source attribution. Source status is visible in
+five locales. All Hazard/source-operation tests passed (360), final guards (34),
+root build and 60 browser checks passed; a real empty Swiss poll and native Basel
+readiness were verified locally. Full C1, nonempty live warning/pilot and exact
+production activation remain IN PROGRESS. See [source and acceptance evidence](docs/monitoring-v2/HAZARD_WATCH.md#native-source-activation-and-complete-vertical-workflow-14-september-2026).
+
+**Active whole-feature scope, 14 September 2026:** Native MeteoAlarm Switzerland
+Atom/linked-CAP collection through the existing private warning workflow. The
+public feed and its additional redistribution terms are now located; Swiss feed
+discovery was empty, so a real Swiss warning/geometry fixture and live acceptance
+remain unverified. Implement complete-snapshot presence/withdrawal, source and
+issue-time attribution, unmodified warning reader, permitted weather coverage,
+bounded fresh collection, private events/Today/Inbox/consented delivery and the
+required backend/frontend checks together before publication. Existing journal,
+boundary catalogue and private lifecycle are dependencies. Do not claim power
+outage/civil protection coverage from MeteoSwiss. See the
+[complete source feature contract](docs/monitoring-v2/HAZARD_WATCH.md#native-meteoalarm-feature-selected-14-september-2026).
+
 **Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Integration · **Size:** L
 
 **Dependencies:** [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071). **Requirements:** §8.4–8.9; AC-C1-02,04,05,07,09.
@@ -1187,6 +1210,14 @@ This contributes to MV2-052; reprocessing and broader policy/operational gates r
 <a id="mv2-029"></a>
 
 ### MV2-029 — C1: Home/Office locations and the complete warning workflow
+
+**Native source integration, 14 September 2026:** Private start, source-bound
+events, original reader, material re-review, Today/Inbox and consented delivery
+now consume the native complete Swiss MeteoAlarm snapshot. Withdrawn or stale
+warnings cannot become current instructions or mail; retained history stays
+explicitly historical. The full 360-test Hazard suite and 60 browser checks
+passed. Default source coverage is wind/thunderstorm only; other hazard types,
+production operation and human acceptance remain open. Status stays IN PROGRESS.
 
 **Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
 

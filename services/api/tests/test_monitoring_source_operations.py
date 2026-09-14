@@ -67,6 +67,33 @@ def test_future_source_clock_is_unknown_age_not_zero(db):
     assert air["latest_success_age_seconds"] is None
 
 
+def test_native_warning_collector_reports_actual_poll_and_backoff_without_policy_text(db):
+    from test_hazard_meteoalarm_store import snapshot as batch
+
+    from helvetic_lens import hazard_acquisition as acquisition
+    from helvetic_lens import hazard_native_source as native
+    from helvetic_lens.hazard_meteoalarm import MeteoAlarmError
+
+    config = settings(hazard_watch_enabled=True, hazard_source_enabled=True)
+    native.initialize(db, config, now=NOW)
+    acquisition.collect(db, config, downloader=lambda **_: batch(when=NOW), now=lambda: NOW)
+
+    def limited(**_):
+        raise MeteoAlarmError("meteoalarm_rate_limited", retry_after_seconds=600)
+
+    later = NOW + timedelta(minutes=2)
+    acquisition.collect(db, config, downloader=limited, now=lambda: later)
+    with db.session() as session:
+        result = snapshot(session, config, now=later)
+        assert not session.new and not session.dirty
+    item = next(row for row in result["items"] if row["id"] == "warnings")
+    assert item["collector"] == "configured" and item["access"]["state"] == "record_current"
+    assert item["acquisition"]["latest_success_at"] == NOW.isoformat()
+    assert item["acquisition"]["state"] == "errors" and item["acquisition"]["error_count"] == 1
+    assert item["acquisition"]["next_request_at"] == (later + timedelta(minutes=10)).isoformat()
+    assert native.TERMS_SHA256 not in json.dumps(item) and "reference" not in json.dumps(item)
+
+
 @pytest.mark.parametrize("state,accepted,expires,revoked", [
     ("record_current", -1, 1, False), ("expired", -2, 0, False),
     ("not_yet_valid", 1, 2, False), ("revoked", -1, 1, True)])

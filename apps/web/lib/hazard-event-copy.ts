@@ -2,6 +2,41 @@ import type { Locale } from "./i18n";
 
 const locales: Locale[] = ["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"];
 const words = {
+  meteoalarm: [
+    "MeteoAlarm",
+    "MeteoAlarm",
+    "MeteoAlarm",
+    "MeteoAlarm",
+    "MeteoAlarm",
+  ],
+  incompleteHistory: [
+    "Diese Warnung wurde als Aktualisierung übernommen. Frühere amtliche Fassungen sind hier nicht verfügbar.",
+    "Cette alerte a été reçue sous forme de mise à jour. Les versions officielles antérieures ne sont pas disponibles ici.",
+    "Questo avviso è stato ricevuto come aggiornamento. Le versioni ufficiali precedenti non sono disponibili qui.",
+    "Quest avertiment è vegnì retschavì sco actualisaziun. Versiuns uffizialas anteriuras n’èn betg disponiblas qua.",
+    "This warning was received as an update. Earlier official versions are not available here.",
+  ],
+  noLongerListed: [
+    "Die Quelle führt diese Warnung nicht mehr auf. Das ist keine amtliche Entwarnung. Frühere Fassungen bleiben im Verlauf verfügbar.",
+    "La source ne répertorie plus cette alerte. Cela ne constitue pas une levée officielle de l’alerte. Les versions précédentes restent dans l’historique.",
+    "La fonte non elenca più questo avviso. Non equivale a un cessato allarme ufficiale. Le versioni precedenti restano nella cronologia.",
+    "La funtauna na mussa betg pli quest avertiment. Quai n’è betg ina fin uffiziala da l’alarm. Las versiuns anteriuras restan en l’istorgia.",
+    "The source no longer lists this warning. This is not an official all-clear. Earlier versions remain in the history.",
+  ],
+  sourceNotCurrent: [
+    "Die Quelle konnte nicht rechtzeitig vollständig geprüft werden. Die aktuellen Anweisungen können nicht bestätigt werden; prüfen Sie die amtliche Quelle.",
+    "La source n’a pas pu être entièrement vérifiée à temps. Les consignes actuelles ne peuvent pas être confirmées ; consultez la source officielle.",
+    "Non è stato possibile verificare completamente la fonte in tempo. Le istruzioni attuali non possono essere confermate; consultare la fonte ufficiale.",
+    "La funtauna n’ha betg pudì vegnir controllada cumplainamain a temp. Las instrucziuns actualas na pon betg vegnir confermadas; consultai la funtauna uffiziala.",
+    "The source could not be fully checked in time. Current instructions cannot be confirmed; check the official source.",
+  ],
+  impacts: [
+    "Amtlich beschriebene Auswirkungen",
+    "Impacts décrits par la source officielle",
+    "Impatti descritti dalla fonte ufficiale",
+    "Consequenzas descrittas da la funtauna uffiziala",
+    "Officially described impacts",
+  ],
   today: [
     "Neue Warnungen für meine Orte",
     "Nouvelles alertes pour mes lieux",

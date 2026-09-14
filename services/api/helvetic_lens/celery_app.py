@@ -79,6 +79,9 @@ celery_app.conf.update(
         "schedule-hazard-monitoring": {
             "task": "helvetic_lens.schedule_hazard_monitoring", "schedule": 60.0,
         },
+        "collect-hazard-source": {
+            "task": "helvetic_lens.collect_hazard_source", "schedule": 30.0,
+        },
         "cleanup-hazard-source": {
             "task": "helvetic_lens.cleanup_hazard_source", "schedule": 60.0,
         },
@@ -340,6 +343,22 @@ def schedule_hazard_monitoring():
     database = Database(settings)
     try:
         return enqueue_due(database, settings)
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.collect_hazard_source")
+def collect_hazard_source():
+    from .hazard_acquisition import clock, collect
+    from .hazard_native_boundaries import ensure
+    from .hazard_native_source import initialize
+    if not settings.hazard_watch_enabled or not settings.hazard_source_enabled:
+        return {"state": "disabled"}
+    database = Database(settings)
+    try:
+        initialize(database, settings, now=clock())
+        return collect(database, settings,
+            prepare=lambda guard: ensure(settings.storage_path, now=clock(), checkpoint=guard))
     finally:
         database.engine.dispose()
 

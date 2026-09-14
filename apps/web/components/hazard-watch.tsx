@@ -18,6 +18,7 @@ import { hazardTarget, type HazardTarget } from "@/lib/hazard-events";
 import {
   cantons,
   hazardKinds,
+  type HazardCapabilities,
   type HazardConfiguration,
   type HazardMonitor,
   type HazardPreview,
@@ -570,9 +571,18 @@ function View(p: WorkspaceState) {
   const { locale } = useI18n(),
     { c, r } = p,
     available = p.allowed && !p.blocked;
-  const capabilities = useData<{ drafts_available: boolean }>(
+  const [sourceTick, setSourceTick] = useState(0);
+  useEffect(() => {
+    if (!available) return;
+    const timer = setInterval(
+      () => setSourceTick((value) => value + 1),
+      60_000,
+    );
+    return () => clearInterval(timer);
+  }, [available]);
+  const capabilities = useData<HazardCapabilities>(
     available ? "/capabilities" : null,
-    p.revision,
+    p.revision + sourceTick,
   );
   const anchor = p.anchors[p.anchors.length - 1];
   const result = useData<Page<HazardMonitor>>(
@@ -596,6 +606,41 @@ function View(p: WorkspaceState) {
         <h1>{c.title}</h1>
         <p>{c.intro}</p>
         <p className={styles.notice}>{c.pending}</p>
+        {available && capabilities.data?.source && (
+          <section data-hazard-source aria-label={c.sourceStatus}>
+            <h2>{c.sourceStatus}</h2>
+            <p>
+              {capabilities.data.source.state === "current"
+                ? c.sourceCurrent
+                : c.sourceWaiting}
+            </p>
+            {!!capabilities.data.source.supported_hazards.length && (
+              <p>
+                {c.sourceTypes}:{" "}
+                {capabilities.data.source.supported_hazards
+                  .map((kind) => c[kind])
+                  .join(", ")}
+              </p>
+            )}
+            {capabilities.data.source.attribution && (
+              <p>{capabilities.data.source.attribution}</p>
+            )}
+            {capabilities.data.source.last_poll_at &&
+              Number.isFinite(
+                Date.parse(capabilities.data.source.last_poll_at),
+              ) && (
+                <p>
+                  {hazardEventCopy[locale].fetched}:{" "}
+                  <time dateTime={capabilities.data.source.last_poll_at}>
+                    {new Intl.DateTimeFormat(locale, {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    }).format(new Date(capabilities.data.source.last_poll_at))}
+                  </time>
+                </p>
+              )}
+          </section>
+        )}
         <div className={styles.actions}>
           <button disabled={!p.allowed} onClick={reset}>
             {r.refresh}

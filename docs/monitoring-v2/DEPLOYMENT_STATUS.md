@@ -1,5 +1,21 @@
 # Monitoring deployment status — 14 September 2026
 
+## Native Swiss wind/thunderstorm publication candidate — 14 September 2026
+
+The complete native Hazard source-to-private-workflow feature passed 360 affected
+API/source-operation tests, 34 final guards, the root build and 60 browser checks.
+The normal enabled collector initializes the reviewed public channel and pinned
+geography only for a fresh configuration; explicit permissions and existing or
+revoked source/catalogue decisions are preserved. A real empty Swiss feed poll
+and native Basel readiness were verified in an isolated local database.
+See [scope and evidence](HAZARD_WATCH.md#native-source-activation-and-complete-vertical-workflow-14-september-2026).
+
+This candidate includes the already-pushed Tender dispatcher clock fix `4434cf9`.
+Exact production activation is not yet verified. The last inspected active
+attempt was `11ef1765d8f3`; no active check/deployment was duplicated or restarted.
+The retired Monitoring deployment was not touched. Broader C1 hazard coverage
+and real-warning/human acceptance remain open.
+
 ## Diagnosed release-test failure and confirmed navigation — 14 September 2026
 
 After reloading the authenticated main-site Deployments page, all nine

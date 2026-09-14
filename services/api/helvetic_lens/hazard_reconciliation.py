@@ -23,6 +23,7 @@ class StoredHazard:
     material_sequence: int
     last_seen_at: datetime
     retained_bytes: int
+    history_complete: bool = True
 
 
 @dataclass(frozen=True)
@@ -48,9 +49,10 @@ class HazardSourceChange:
     kind: str
     material_sequence: int
     material: bool
+    history_complete: bool = True
 
 
-def reconcile_cap(previous: HazardSourceState | None, message: CAPMessage):
+def reconcile_cap(previous: HazardSourceState | None, message: CAPMessage, *, allow_initial_update=False):
     """Return new state/change together; no database/network/owner side effects.
 
     Only an explicitly referenced current head may be replaced. Joining unrelated
@@ -74,17 +76,29 @@ def reconcile_cap(previous: HazardSourceState | None, message: CAPMessage):
             reject("hazard_receipt_rollback")
         entries[current_key] = replace(old, last_seen_at=message.received_at)
         change = HazardSourceChange(old.development_id, current_key,
-            tuple(r.key for r in message.references), "refreshed", old.material_sequence, False)
+            tuple(r.key for r in message.references), "refreshed", old.material_sequence, False, old.history_complete)
         return HazardSourceState(message.identity.sender, tuple(entries.values()), tuple(heads.values())), change
     if any(e.message.identity.identifier == message.identity.identifier for e in entries.values()):
         reject("hazard_identifier_reused")
+    if any(ref.identifier == known.message.identity.identifier and ref.key != known.message.identity.key
+           for ref in message.references for known in entries.values()):
+        reject("hazard_reference_identity_conflict")
+    if (allow_initial_update and any(message.identity in known.message.references for known in entries.values())):
+        reject("hazard_late_missing_predecessor")
     if len(entries) >= MAX_MESSAGES:
         reject("hazard_history_limit")
     size = len(json.dumps(asdict(message), ensure_ascii=False, default=str, separators=(",", ":")).encode())
     if size + sum(e.retained_bytes for e in entries.values()) > MAX_RETAINED_BYTES:
         reject("hazard_history_byte_limit")
+    history_complete = True
     if message.message_type == "Alert":
         development_id, sequence, kind = current_key, 1, "created"
+    elif (allow_initial_update and message.profile == "meteoalarm-v2" and message.message_type == "Update"
+          and message.references and all(r.key not in entries for r in message.references)):
+        # An active-only feed can begin mid-history. Retain the exact Update and
+        # its unresolved references; neither invent an Alert nor claim a diff.
+        # A later receipt of older history never silently rewrites this root.
+        development_id, sequence, kind, history_complete = current_key, 1, "imported", False
     else:
         if any(r.key not in entries for r in message.references):
             reject("hazard_predecessor_missing")
@@ -101,12 +115,13 @@ def reconcile_cap(previous: HazardSourceState | None, message: CAPMessage):
         if head.state == "cancelled":
             reject("hazard_cancelled_history_requires_new_alert")
         before = referenced[0].message
+        history_complete = referenced[0].history_complete
         kind = material_change(before, message)
         if kind == "unavailable":
             reject("hazard_unsupported_contract")
         sequence = head.material_sequence + int(kind != "refreshed")
-    entries[current_key] = StoredHazard(message, development_id, sequence, message.received_at, size)
+    entries[current_key] = StoredHazard(message, development_id, sequence, message.received_at, size, history_complete)
     heads[development_id] = HazardHead(development_id, current_key, sequence, message.state)
     change = HazardSourceChange(development_id, current_key, tuple(r.key for r in message.references),
-                                kind, sequence, kind != "refreshed")
+                                kind, sequence, kind != "refreshed", history_complete)
     return HazardSourceState(message.identity.sender, tuple(entries.values()), tuple(heads.values())), change

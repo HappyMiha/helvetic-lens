@@ -22,3 +22,9 @@ test("official links cannot execute script, reveal embedded credentials or use a
   }
   assert.equal(officialLink("https://example.invalid/official"), "https://example.invalid/official");
 });
+test("native original HTTP links remain unmodified without weakening scheme or credential guards", () => {
+  assert.equal(officialLink("http://example.invalid/official", true), "http://example.invalid/official");
+  for (const link of ["javascript:alert(1)", "file:///private", "http://secret:password@example.invalid", "data:text/html,test"]) {
+    assert.equal(officialLink(link, true), null);
+  }
+});
