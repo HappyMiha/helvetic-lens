@@ -8,6 +8,7 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { centreCopy } from "../apps/web/lib/monitoring-centre-copy.ts";
 import { riverCopy } from "../apps/web/lib/river-copy.ts";
+import { commutePauseCopy } from "../apps/web/lib/commute-pause-copy.ts";
 import { AccessibilityAudit } from "./browser-accessibility.mjs";
 import { Cdp, evaluate, sleep } from "./browser-cdp.mjs";
 
@@ -422,6 +423,25 @@ try {
   );
   await audit.check(cdp, "disabled-scenarios", "[data-template]");
   disabled = false;
+  const pausedCommute = {
+    ...rows[0],
+    id: "commute-qa",
+    domain: "commute",
+    name: "Paused private commute",
+    station_id: null,
+    metrics: [],
+    href: "/commute-watch?monitor=commute-qa",
+    notification_pause_until: new Date(Date.now() + 1500).toISOString(),
+  };
+  rows.unshift(pausedCommute);
+  await navigate();
+  await wait(
+    async () => (await text()).includes(commutePauseCopy[locale].ended),
+    "Open pause notice did not expire",
+  );
+  pausedCommute.notification_pause_until = new Date(
+    Date.now() + 3600000,
+  ).toISOString();
   for (const language of Object.keys(centreCopy)) {
     locale = language;
     manager = false;
@@ -433,6 +453,25 @@ try {
     });
     await navigate();
     assert.ok((await text()).includes(riverCopy[locale].readonly));
+    await wait(
+      async () => (await text()).includes(commutePauseCopy[locale].title),
+      "Localized pause state missing",
+    );
+    assert.equal(
+      await evaluate(
+        cdp,
+        "document.querySelector('[data-commute-pause] time')?.dateTime",
+      ),
+      pausedCommute.notification_pause_until,
+    );
+    assert.ok((await text()).includes(commutePauseCopy[locale].help));
+    assert.equal(
+      await evaluate(
+        cdp,
+        "document.querySelector('[data-monitor=\"commute-qa\"] a')?.getAttribute('href')",
+      ),
+      pausedCommute.href,
+    );
     assert.equal(
       await evaluate(cdp, "document.documentElement.scrollWidth<=innerWidth"),
       true,
@@ -443,6 +482,27 @@ try {
       "[data-monitoring-centre]",
     );
   }
+  disabled = true;
+  await navigate();
+  assert.equal(
+    await evaluate(cdp, "!!document.querySelector('[data-commute-pause]')"),
+    false,
+  );
+  disabled = false;
+  denied = true;
+  await button(riverCopy[locale].refresh);
+  await wait(
+    () =>
+      evaluate(
+        cdp,
+        "!!document.querySelector('[data-monitoring-centre] [role=alert]')",
+      ),
+    "Pause access loss missing",
+  );
+  assert.equal(
+    await evaluate(cdp, "!!document.querySelector('[data-commute-pause]')"),
+    false,
+  );
   assert.deepEqual(mutations, []);
   assert.deepEqual(exceptions, []);
   audit.finish(8);

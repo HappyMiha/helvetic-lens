@@ -9,6 +9,7 @@ import { basename, dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { AccessibilityAudit } from "./browser-accessibility.mjs";
 import { Cdp, evaluate, sleep } from "./browser-cdp.mjs";
+import { commutePauseCopy } from "../apps/web/lib/commute-pause-copy.ts";
 
 const root = resolve(import.meta.dirname, "..");
 const { commuteCopy } = await import(
@@ -511,10 +512,14 @@ try {
           code = 409;
         } else {
           monitor.version++;
-          if (["pause_today", "unpause_today"].includes(payload.action))
+          if (["pause_today", "unpause_today"].includes(payload.action)) {
             monitor.paused_on =
               payload.action === "pause_today" ? zurichDate() : null;
-          else
+            monitor.notification_pause_until =
+              payload.action === "pause_today"
+                ? new Date(Date.now() + 3600000).toISOString()
+                : null;
+          } else
             monitor.status = {
               start: "active",
               resume: "active",
@@ -727,8 +732,28 @@ try {
   await navigate();
   await button(c.pause_today);
   await wait(() => monitor.paused_on !== null, "Pause today failed");
+  await wait(
+    async () => (await text()).includes(commutePauseCopy[locale].title),
+    "Pause end notice missing",
+  );
+  assert.equal(
+    await evaluate(
+      cdp,
+      "document.querySelector('[data-commute-pause] time')?.dateTime",
+    ),
+    monitor.notification_pause_until,
+  );
+  await navigate();
+  await wait(
+    async () => (await text()).includes(commutePauseCopy[locale].title),
+    "Pause lost on reload",
+  );
   await button(c.unpause_today);
   await wait(() => monitor.paused_on === null, "Resume today failed");
+  await wait(
+    () => evaluate(cdp, "!document.querySelector('[data-commute-pause]')"),
+    "Continue today left pause notice",
+  );
   conflict = true;
   await button(c.pause);
   await wait(
@@ -744,6 +769,10 @@ try {
   await wait(() => monitor.revision === 2, "Settings revision not saved");
   await button(c.start);
   await wait(() => monitor.status === "active", "Restart failed");
+  monitor.paused_on = zurichDate();
+  monitor.notification_pause_until = new Date(
+    Date.now() + 3600000,
+  ).toISOString();
   for (const lang of Object.keys(commuteCopy)) {
     locale = lang;
     await navigate();
@@ -751,6 +780,7 @@ try {
       async () => (await text()).includes(commuteCopy[locale].cancelled),
       `Locale detail missing: ${locale}`,
     );
+    assert.ok((await text()).includes(commutePauseCopy[locale].title));
     await audit.check(cdp, `desktop-${locale}`, "[data-commute-watch]");
     await cdp.send("Emulation.setDeviceMetricsOverride", {
       width: 390,
@@ -790,6 +820,8 @@ try {
   }
   locale = "en-CH";
   manager = false;
+  monitor.paused_on = null;
+  monitor.notification_pause_until = null;
   await navigate();
   await wait(
     async () => (await text()).includes(c.readonly),
@@ -962,6 +994,16 @@ try {
   );
   await button(commuteEmailCopy[locale].save, "[data-commute-email]");
   await wait(() => emailRevision === 1, "Email consent not saved");
+  // A successful save reloads the private monitor and remounts the form.
+  // Await that visible result, not merely the fixture's request counter.
+  await wait(
+    () =>
+      evaluate(
+        cdp,
+        `Array.from(document.querySelectorAll('[data-commute-detail] summary')).find(x=>x.textContent===${JSON.stringify(pollenDeliveryCopy[locale].title)})?.parentElement.open === false`,
+      ),
+    "Saved email settings did not finish reloading",
+  );
   await openEmail();
   assert.equal(
     monitor.revision,

@@ -13,6 +13,7 @@ from .auction_models import AuctionMonitor
 from .auction_workflow_models import AuctionRuntime
 from .auth import Identity
 from .commute_models import CommuteMonitor
+from .commute_pause import notification_pause_until
 from .config import DomainError
 from .hazard_models import HazardMonitor
 from .models import MonitoringSubject
@@ -136,9 +137,9 @@ def inventory(session, settings, user_id, *, domain=None, status=None, cursor=No
     }
 
 
-def summary(session, settings, kind, row, capability):
+def summary(session, settings, kind, row, capability, *, now=None):
     enabled = capability["href"] is not None
-    now = datetime.now(UTC)
+    now = now or datetime.now(UTC)
     runtime = row
     observation = None
     if kind == "pollen":
@@ -218,6 +219,8 @@ def summary(session, settings, kind, row, capability):
         "station_id": config.get("station_id"),
         "status": row.status,
         "health": health,
+        "notification_pause_until": notification_pause_until(row, now=now)
+        if kind == "commute" and enabled else None,
         "href": href if enabled else None,
         "metrics": config.get("hazards", []) if kind == "warnings"
         else config.get("materiality", {}).get("event_kinds", []) if kind == "traffic"

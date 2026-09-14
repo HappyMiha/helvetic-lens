@@ -10,6 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from .commute_catalog import preview_version, require_references, resolve_configuration
 from .commute_contracts import CommuteConfiguration
 from .commute_models import CommuteConfigurationRevision, CommuteLegReference, CommuteMonitor
+from .commute_pause import notification_pause_until
 from .commute_sources import utc
 from .config import DomainError
 from .models import User
@@ -39,18 +40,19 @@ def owned(session, user_id, monitor_id, *, write=False):
     return row
 
 
-def view(row, session):
+def view(row, session, *, now=None):
     return {"id": row.id, "configuration": deepcopy(row.configuration), "revision": row.revision,
             "version": row.version, "status": row.status, "health": row.health,
             "paused_on": row.paused_on.isoformat() if row.paused_on else None,
+            "notification_pause_until": notification_pause_until(row, now=now),
             "last_check_at": utc(row.last_poll_at).isoformat() if row.last_poll_at else None,
             "next_check_at": utc(row.next_poll_at).isoformat() if row.status == "active" else None,
             "reference_labels": reference_labels(session, row.configuration)}
 
 
-def get_monitor(session, user_id, monitor_id):
+def get_monitor(session, user_id, monitor_id, *, now=None):
     row = owned(session, user_id, monitor_id)
-    return view(row, session)
+    return view(row, session, now=now)
 
 
 def reference_labels(session, config):
@@ -218,7 +220,7 @@ def command(session, user_id, monitor_id, version, action, *, now=None, settings
         session.refresh(row)
         if row.status == "active":
             enqueue(session, row, now)
-    return get_monitor(session, user_id, monitor_id)
+    return get_monitor(session, user_id, monitor_id, now=now)
 
 
 def remove_monitor(session, user_id, monitor_id, version):

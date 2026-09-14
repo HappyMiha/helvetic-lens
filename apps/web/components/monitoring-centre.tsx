@@ -20,6 +20,7 @@ import { pollenDraftCopy } from "@/lib/pollen-draft-copy";
 import { pollenStations } from "@/lib/pollen-stations";
 import { useAuth } from "./auth-gate";
 import { Shell } from "./shell";
+import { CommutePauseNotice } from "./commute-pause-notice";
 import styles from "./monitoring-centre.module.css";
 
 type Domain =
@@ -44,6 +45,7 @@ type Monitor = {
   last_observation_at: string | null;
   last_check_at: string | null;
   next_check_at: string | null;
+  notification_pause_until?: string | null;
 };
 type Page = {
   items: Monitor[];
@@ -279,6 +281,9 @@ function Centre({
                       : label(row.health)}
                   </span>
                 </div>
+                {row.domain === "commute" && row.status === "active" && row.href && (
+                  <CommutePauseNotice until={row.notification_pause_until} />
+                )}
                 <p>{row.metrics.map((key) => metric(row, key)).join(" · ")}</p>
                 <p>
                   {c.source}:{" "}

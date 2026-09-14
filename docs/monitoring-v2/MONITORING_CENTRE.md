@@ -1,5 +1,18 @@
 # Monitoring Centre — MV2-017/018 scoped feature
 
+## Timed Commute notification pause — 14 September 2026
+
+Saved Commute cards now expose the active notification pause and its next
+Europe/Zurich midnight expiry, using the same notice as the exact settings
+reader. This is separate from the active monitor lifecycle and its source-check
+schedule. Open settings to continue today or pause indefinitely. Expiry returns
+to saved weekdays/windows, subject to source availability; archive has no timed
+resume. See [scope and evidence](COMMUTE_TIMED_PAUSE.md).
+
+The current inventory covers all nine directions through their existing owner
+and organization contracts. Earlier three-domain descriptions below document
+the original release; they are not the current list of supported inventory models.
+
 ## Configuration availability — 14 September 2026
 
 Enabled Hazard, Commute, Road, IP and Auction sections are now classified as

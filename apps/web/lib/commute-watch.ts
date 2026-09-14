@@ -23,6 +23,7 @@ export type CommuteMonitor = {
   status: "draft" | "active" | "paused" | "archived";
   health: string;
   paused_on: string | null;
+  notification_pause_until?: string | null;
   last_check_at: string | null;
   next_check_at: string | null;
 };

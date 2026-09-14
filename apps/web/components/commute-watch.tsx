@@ -38,6 +38,7 @@ import {
 import { useAuth } from "./auth-gate";
 import { Shell } from "./shell";
 import { CommuteEmail } from "./commute-email";
+import { CommutePauseNotice } from "./commute-pause-notice";
 import styles from "./commute-watch.module.css";
 
 const base = "/commute-watch";
@@ -914,6 +915,9 @@ function Monitor({
           config={row.configuration}
           references={row.reference_labels}
         />
+        {row.status === "active" && (
+          <CommutePauseNotice until={row.notification_pause_until} />
+        )}
         <p>
           {c.lastCheck}: <Time value={row.last_check_at} />
         </p>

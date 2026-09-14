@@ -188,10 +188,14 @@ def test_pause_today_uses_zurich_date_and_edit_requires_pause(db):
         now = NOW.replace(hour=23, minute=30)
         paused = commutes.command(session, "owner", row["id"], 1, "pause_today", now=now)
         assert paused["paused_on"] == "2026-09-15" and paused["status"] == "active"
+        assert paused["notification_pause_until"] == "2026-09-15T22:00:00+00:00"
+        assert commutes.get_monitor(session, "owner", row["id"], now=now)["notification_pause_until"] == paused["notification_pause_until"]
+        assert commutes.get_monitor(session, "owner", row["id"], now=now + timedelta(days=1))["notification_pause_until"] is None
         with pytest.raises(DomainError):
             commutes.edit_monitor(session, "owner", row["id"], 2, {**row["configuration"], "name": "edited"})
         paused = commutes.command(session, "owner", row["id"], 2, "pause")
         assert paused["status"] == "paused" and paused["paused_on"] is None
+        assert paused["notification_pause_until"] is None
         edited = commutes.edit_monitor(session, "owner", row["id"], 3, {**row["configuration"], "name": "edited"})
         assert edited["status"] == "draft" and edited["version"] == 4
 

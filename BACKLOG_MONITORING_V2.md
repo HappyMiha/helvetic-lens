@@ -184,6 +184,11 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ## Task index
 
+14 September timed-pause feature: MV2-018 and MV2-039 remain IN PROGRESS after
+the visible Commute notification-pause journey. The Centre and exact settings
+reader show its Europe/Zurich expiry, separate from source checks and permanent
+pause. See [scope and checks](docs/monitoring-v2/COMMUTE_TIMED_PAUSE.md).
+
 14 September deadline feature: MV2-048 remains IN PROGRESS in this index and
 its detail after the tested five-language calculation/review/export feature.
 Independent rule/calendar review, real source and release/human acceptance remain
@@ -929,6 +934,18 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 
 ### MV2-018 — Monitoring: manage saved subjects
 
+**Active whole-feature scope, 14 September 2026:** Make the existing Commute
+calendar-day notification pause visible in both its exact settings reader and
+the Monitoring Centre, with the actual Europe/Zurich midnight expiry. Keep source
+checking and permanent pause/archive separate, including DST and year rollover.
+Reuse owner-private lifecycle commands; no new source or delivery permission.
+See [scope and acceptance](docs/monitoring-v2/COMMUTE_TIMED_PAUSE.md).
+
+**Scoped implementation evidence:** The shared pause reader and five-language
+notice cover the calendar-day portion of AC3. The existing persisted command,
+notification rules and source checks remain authoritative. Parent acceptance
+still includes shared business subjects, live sources and human verification.
+
 **Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Frontend · **Size:** M
 
 **Dependencies:** [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017). **Requirements:** §§9.12,25–26.
@@ -1489,6 +1506,13 @@ No real mail, broader national source coverage or production activation is claim
 <a id="mv2-039"></a>
 
 ### MV2-039 — C2: Regular commutes and low-noise transport alerts
+
+**Visible timed-pause evidence, 14 September 2026:** The existing pause-today
+journey now shows its precise Zurich midnight expiry in Commute settings and
+the shared Centre. DST, persistence, expiry, privacy and full browser workflows
+passed (127 combined API tests; 33 full-document axe checkpoints across both
+readers; root build and exact Ruff). See [evidence](docs/monitoring-v2/COMMUTE_TIMED_PAUSE.md).
+This completes the scoped visible-pause feature, not live transport acceptance.
 
 **Release regression, 14 September 2026:** Reproduced the failed production
 connection-renewal replay across a ZIP timestamp change. Fixed the synthetic

@@ -10,13 +10,55 @@ from sqlalchemy import delete, func, select
 from test_auth import _csrf, _register, _settings
 
 from helvetic_lens.air_models import AirMonitor
+from helvetic_lens.commute_models import CommuteMonitor
 from helvetic_lens.main import create_app
 from helvetic_lens.models import Job, MonitoringSubject, OrganizationMembership, OutboxMessage
 from helvetic_lens.monitoring_contracts import MonitoringRollout, public_pollen_rollout
 from helvetic_lens.monitoring_live_models import MonitoringRuntime
 from helvetic_lens.river_models import RiverMonitor
+from helvetic_lens.transport_reference import ZURICH
 
 URL = "/api/monitoring-centre"
+
+
+def test_commute_pause_is_visible_without_confusing_polling_and_notification_resume(centre):
+    client, app, settings, identity = centre
+    settings.commute_watch_enabled = settings.commute_source_enabled = True
+    now = datetime.now(UTC)
+    identifier = str(uuid4())
+    with app.state.service.db.session(include_all_organizations=True) as session:
+        session.add(CommuteMonitor(id=identifier, organization_id=identity["organization"]["id"],
+            owner_user_id=identity["user"]["id"], request_key=identifier, request_hash="0" * 64,
+            configuration={"name": "Paused private commute"}, status="active", health="waiting",
+            paused_on=now.astimezone(ZURICH).date(), next_poll_at=now + timedelta(minutes=10)))
+        session.commit()
+    response = client.get(URL + "?domain=commute")
+    assert response.status_code == 200 and "no-store" in response.headers["cache-control"]
+    row, = response.json()["items"]
+    assert row["status"] == "active" and row["health"] == "waiting"
+    end = datetime.fromisoformat(row["notification_pause_until"]).astimezone(ZURICH)
+    assert end.date() == now.astimezone(ZURICH).date() + timedelta(days=1)
+    assert (end.hour, end.minute, end.second) == (0, 0, 0)
+    assert datetime.fromisoformat(row["next_check_at"]) == now + timedelta(minutes=10)
+    assert row["href"] == f"/commute-watch?monitor={identifier}"
+    with app.state.service.db.session(include_all_organizations=True) as session:
+        saved = session.get(CommuteMonitor, identifier)
+        assert saved.version == 1 and saved.paused_on == now.astimezone(ZURICH).date()
+        for model in (Job, OutboxMessage):
+            assert session.scalar(select(func.count()).select_from(model)) == 0
+    settings.commute_watch_enabled = False
+    disabled, = client.get(URL + "?domain=commute").json()["items"]
+    assert disabled["notification_pause_until"] is None and disabled["href"] is None
+    settings.commute_watch_enabled = True
+    with app.state.service.db.session(include_all_organizations=True) as session:
+        session.get(CommuteMonitor, identifier).status = "archived"
+        session.commit()
+    archived, = client.get(URL + "?domain=commute").json()["items"]
+    assert archived["notification_pause_until"] is None and archived["next_check_at"] is None
+    with app.state.service.db.session(include_all_organizations=True) as session:
+        session.execute(delete(OrganizationMembership).where(OrganizationMembership.user_id == identity["user"]["id"]))
+        session.commit()
+    assert client.get(URL).status_code == 401
 
 
 @pytest.fixture
