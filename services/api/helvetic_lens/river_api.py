@@ -69,6 +69,15 @@ def river_router(service, settings):
 
     router = APIRouter(prefix="/api/river-watch", tags=["river-watch"], dependencies=[Depends(identity)])
 
+    @router.get("/today")
+    def today_changes(before: datetime | None = None, before_id: UUID | None = None,
+                      unreviewed: bool = False, limit: int = Query(default=30, ge=1, le=50),
+                      actor: Identity = Depends(identity)):
+        from .river_today import today
+        with service.db.session() as session:
+            return today(session, actor.user_id, before=before, before_id=before_id,
+                unreviewed=unreviewed, limit=limit, now=_now())
+
     @router.get("/monitors/{monitor_id}/email")
     def email_preferences(monitor_id: UUID, actor: Identity = Depends(identity)):
         from .river_email_preferences import view as email_view

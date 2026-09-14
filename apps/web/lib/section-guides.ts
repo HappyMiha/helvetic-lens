@@ -137,6 +137,16 @@ const ai = c(
   ],
 );
 
+const riverReview = c(
+  "river-review",
+  "River: Reviewed / Not relevant",
+  "Saves your decision against the exact displayed River change. A newer change or concurrent review requires a fresh read.",
+  "Read the exact retained evidence first. This decision does not change the water state or email settings.",
+  "Save a change",
+  "[data-river-today] [data-river-review]",
+  "manager",
+);
+
 export const SECTION_GUIDES: SectionGuide[] = [
   {
     id: "monitoring-source-operations",
@@ -1080,6 +1090,7 @@ export const SECTION_GUIDES: SectionGuide[] = [
       "Review its impact or monitoring choice; use reading states to organize your queue.",
     ],
     data: [
+      "River cards show your latest retained change per development, separately from the legal feed. Their Unreviewed filter/count covers River changes only; older samples and earlier monitor settings are labelled. Empty results do not prove safe water conditions. Exact evidence opens without marking it reviewed.",
       "Events come from enabled source packages or monitored documents admitted to this organization. A detected date is when the system observed an event, not necessarily when law changed.",
       "Topic matches are rule-based candidates. A brief or impact explanation is a separate saved model result with its own evidence and freshness; it is not publisher text.",
     ],
@@ -1088,6 +1099,7 @@ export const SECTION_GUIDES: SectionGuide[] = [
       "For an empty workspace, enable a source package in Sources and save an interest in Topics. Invited viewers can ask their administrator. Filters, incomplete collection or a limited page can also explain an empty feed.",
     controls: [
       filters,
+      riverReview,
       refresh,
       evidence,
       official,
@@ -1364,6 +1376,7 @@ export const SECTION_GUIDES: SectionGuide[] = [
       "Confirm, reject or annotate with a review note; keep uncertainty visible.",
     ],
     data: [
+      "River changes are owner-private and start with the Unreviewed filter. They share exact evidence and review decisions with Today and River Watch. Their filter and count are separate from the legal impact list.",
       "Warnings for saved places and road closures are owner-private and share review/mute state with Today. Open a warning's exact revision to read original official instructions. Legal filters below do not filter these private monitoring cards. Missing or stale data is not an all-clear.",
       "Candidates combine recorded source relationships or matching signals with saved analysis. A possible effect is not a confirmed legal conclusion.",
       "Analysis history and human review history are separate. New analysis does not silently replace what an earlier reviewer saw.",
@@ -1373,6 +1386,7 @@ export const SECTION_GUIDES: SectionGuide[] = [
       "You need a monitored document and available candidate evidence. Organization administrators perform shared reviews and reanalysis; viewers can inspect evidence and manage their inbox state.",
     controls: [
       filters,
+      riverReview,
       evidence,
       official,
       c(

@@ -209,9 +209,9 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-016](#mv2-016) | Time windows, deadlines and reminders | F1 | P0 | L | PLANNED | [MV2-007](#mv2-007), [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-012](#mv2-012) |
 | [MV2-017](#mv2-017) | Create Monitor: nine understandable templates | F2 | P1 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-005](#mv2-005), [MV2-010](#mv2-010), [MV2-015](#mv2-015) |
 | [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
-| [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | PLANNED | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
+| [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
 | [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
-| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | PLANNED | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
+| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | PLANNED | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
 | [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | PLANNED | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
 | [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | PLANNED | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
@@ -952,7 +952,13 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 
 ### MV2-019 — Today: one card across all domains
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend + UX · **Size:** L
+**Active whole-feature scope, 14 September 2026:** Add the missing River / Lake
+Today and Impact Inbox cards, owner-private latest developments, review filtering,
+bounded pagination and existing exact evidence/review actions. See [scope](docs/monitoring-v2/RIVER_TODAY.md).
+This is a scoped MV2-033/019/021 contribution; broader cross-domain aggregation,
+global unread counts and shared business-subject acceptance remain open.
+
+**Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Frontend + UX · **Size:** L
 
 **Dependencies:** [MV2-014](#mv2-014), [MV2-017](#mv2-017). **Requirements:** §§20,26.1,33.
 
@@ -969,7 +975,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 
 **Verification:** Populated mixed-feed browser replay; keyboard, narrow viewport and live revision updates.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Execution evidence, 14 September 2026:** Scoped River Today / Impact Inbox integration adds latest owner-private retained changes, all/unreviewed filtering and River-only count, bounded stable pagination, exact evidence links and existing CAS review actions. Five-language cards distinguish recorded observations, old settings, correction/recovery and personal thresholds from official danger. See [scope, verification and limits](docs/monitoring-v2/RIVER_TODAY.md). Cross-domain aggregation/global unread counts, shared business ownership and broader parent acceptance remain open.
 
 <a id="mv2-020"></a>
 
@@ -998,7 +1004,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 
 ### MV2-021 — Workspace: Impact Inbox, decisions and Impact Matrix
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** M
+**Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** M
 
 **Dependencies:** [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020). **Requirements:** §§15–17,26.4,27.7.
 
@@ -1015,7 +1021,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 
 **Verification:** Concurrent revision/decision browser journeys, owner filters and legacy Matrix regression.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Execution evidence, 14 September 2026:** Scoped River Today / Impact Inbox integration adds latest owner-private retained changes, all/unreviewed filtering and River-only count, bounded stable pagination, exact evidence links and existing CAS review actions. Five-language cards distinguish recorded observations, old settings, correction/recovery and personal thresholds from official danger. See [scope, verification and limits](docs/monitoring-v2/RIVER_TODAY.md). Cross-domain aggregation/global unread counts, shared business ownership and broader parent acceptance remain open.
 
 <a id="mv2-022"></a>
 
@@ -1280,6 +1286,8 @@ This contributes to MV2-052; reprocessing and broader policy/operational gates r
 <a id="mv2-033"></a>
 
 ### MV2-033 — C6: River / Lake thresholds, history and consented digest
+
+**Today / Inbox follow-up, 14 September 2026:** The missing River cards now reuse retained changes and exact review/evidence on Today and Impact Inbox. See [complete scoped journey and verification](docs/monitoring-v2/RIVER_TODAY.md). River-only unreviewed counts do not claim a global unread total. Existing release and human acceptance remain VERIFYING.
 
 **Active whole-feature scope, 14 September 2026:** Complete the C6 digest reuse
 in specification §13.8: explicit verified-owner delivery settings, preview,

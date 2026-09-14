@@ -1,5 +1,15 @@
 # River / Lake Watch — C6 v1
 
+## Today and Impact Inbox — 14 September 2026
+
+River's latest retained changes now appear on Today and `/impact`, with private
+all/unreviewed filtering, a River-only count, stable pagination, exact evidence
+links and existing version-checked review actions. Read the [complete feature
+scope and verification](RIVER_TODAY.md). Archived histories remain in River Watch;
+old settings and stale observations do not imply current or safe water conditions.
+This scoped MV2-033/019/021 addition does not complete the broader shared feed or
+human/source acceptance gates.
+
 ## Active complete feature: consented River digest — 14 September 2026
 
 MV2-033 with scoped MV2-012/022 delivery completes the Digest reuse in §13.8.
