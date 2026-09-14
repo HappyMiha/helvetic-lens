@@ -20,6 +20,7 @@ import ipStyles from "./trademark-watch.module.css";
 
 import { TrademarkTracking } from "./trademark-tracking";
 import { IPISourceStatus } from "./ipi-source-status";
+import { TrademarkDeadlineChoice } from "./trademark-deadline";
 import { Failure, useData, useMutation } from "./trademark-client";
 
 function BrandForm({
@@ -371,6 +372,10 @@ function PortfolioForm({
             onChange={(e) => setConfig({ ...config, name: e.target.value })}
           />
         </label>
+        <TrademarkDeadlineChoice
+          value={config.deadline_context}
+          change={(value) => setConfig({ ...config, deadline_context: value })}
+        />
         <h3>{c.brands}</h3>
         {config.brands.map((brand) => (
           <BrandForm

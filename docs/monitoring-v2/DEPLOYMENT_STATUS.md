@@ -1,5 +1,17 @@
 # Monitoring deployment status — 14 September 2026
 
+## Trademark deadline publication candidate — 14 September 2026
+
+The public main-site ready endpoint was last verified at `git-99da831d934a`,
+instance `main`, database/Redis true, after native acquisition publication
+`fe5978d`. This confirms Auction reminders and consented email activation.
+Later Trademark review/export/acquisition activation is not yet confirmed.
+The [complete deadline feature](TRADEMARK_WATCH.md#reviewed-deadline-feature--14-september-2026)
+passes private workflow/export, five-language browser and isolated build gates.
+All nine sections remain enabled and visible; approved rules/calendars and source
+access remain independent. No deployment was restarted, duplicated or interrupted,
+and the retired Monitoring host was not touched.
+
 ## Native IPI acquisition publication candidate — 14 September 2026
 
 The public main-site `/api/ready` still reports `git-3b48a00c92d6`, instance

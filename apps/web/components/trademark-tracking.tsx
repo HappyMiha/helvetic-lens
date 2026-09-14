@@ -12,6 +12,7 @@ import {
 import type { TrademarkMonitor, TrademarkPage } from "@/lib/trademark-watch";
 import { useData, useMutation } from "./trademark-client";
 import { TrademarkExport } from "./trademark-export";
+import { TrademarkDeadline, type DeadlineContext } from "./trademark-deadline";
 import styles from "./commute-watch.module.css";
 
 type Facts = {
@@ -52,6 +53,7 @@ type Assessment = {
 type Decision =
   "reviewed" | "relevant" | "not_relevant" | "monitor" | "counsel";
 type Candidate = {
+  deadline_context?: DeadlineContext | null;
   id: string;
   brand_key: string;
   version: number;
@@ -74,6 +76,7 @@ type Event = {
   href: string;
 };
 type EventDetail = Event & {
+  deadline_context?: DeadlineContext | null;
   newer_available: boolean;
   assessment: Assessment | null;
   snapshot: { facts: Facts | null };
@@ -273,6 +276,7 @@ function Change({ path, id }: { path: string; id: string }) {
       )}
       <RegisterFacts facts={e.snapshot.facts} />
       <Explanation value={e.assessment} />
+      <TrademarkDeadline value={e.deadline_context} />
     </section>
   );
 }
@@ -322,6 +326,7 @@ function CandidateDetail({
           </p>
           <RegisterFacts facts={row.facts} />
           <Explanation value={row.assessment} />
+          <TrademarkDeadline value={row.deadline_context} />
           <p>{row.attribution}</p>
           <p>{c.internal}</p>
           <div className={styles.actions}>

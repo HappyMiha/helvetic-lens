@@ -56,6 +56,7 @@ class TrademarkProjectionCursor(Base):
 
 
 class TrademarkCandidate(Base):
+    deadline_binding: Mapped[dict | None] = mapped_column(JSON)
     __tablename__ = "trademark_candidates"
     __table_args__ = (
         ForeignKeyConstraint(["monitor_id", "organization_id"], ["trademark_monitors.id", "trademark_monitors.organization_id"], ondelete="CASCADE"),
@@ -83,6 +84,7 @@ class TrademarkCandidate(Base):
 
 
 class TrademarkCandidateEvent(Base):
+    deadline_binding: Mapped[dict | None] = mapped_column(JSON)
     __tablename__ = "trademark_candidate_events"
     __table_args__ = (
         ForeignKeyConstraint(["candidate_id", "organization_id"], ["trademark_candidates.id", "trademark_candidates.organization_id"], ondelete="CASCADE"),

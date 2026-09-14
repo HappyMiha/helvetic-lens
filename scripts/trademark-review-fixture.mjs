@@ -1,5 +1,6 @@
 // Synthetic browser responses; source permissions and tenant isolation are tested by the real API suite.
 import { trademarkExportFixture } from "./trademark-export-fixture.mjs";
+import { deadlineFixture } from "./trademark-deadline-fixture.mjs";
 export function trademarkReviewFixture() {
   const exportRoute = trademarkExportFixture();
   let candidate = null,
@@ -43,6 +44,7 @@ export function trademarkReviewFixture() {
   const view = (state) =>
     candidate && {
       ...structuredClone(candidate),
+      deadline_context: deadlineFixture(state),
       ...(state.sourceRevoked
         ? {
             state: "unavailable",
@@ -112,6 +114,7 @@ export function trademarkReviewFixture() {
             ? [
                 {
                   ...events[0],
+                  deadline_context: deadlineFixture(state),
                   name: monitor.configuration.name,
                   mark: candidate.facts.mark,
                   brand: "ALMORA",
@@ -178,6 +181,7 @@ export function trademarkReviewFixture() {
     if (event)
       return ok({
         ...event,
+        deadline_context: deadlineFixture(state),
         newer_available: event.sequence < candidate.sequence,
         ...(state.sourceRevoked
           ? {

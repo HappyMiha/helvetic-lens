@@ -89,6 +89,12 @@ def trademark_router(service, settings):
             except DomainError:
                 return {"state": "permission_unavailable", "coverage_verified": False, "traversal": None}
 
+    @router.get("/deadline-calendars")
+    def deadline_calendars():
+        from . import trademark_deadlines
+        with service.db.session() as session:
+            return {"items": trademark_deadlines.calendars(session, now=_now())}
+
     @router.post("/preview")
     def preview(body: ConfigurationBody, actor: Identity = Depends(identity)):
         with service.db.session() as session:

@@ -5,6 +5,7 @@ from datetime import timedelta
 from sqlalchemy import func, select
 
 from . import trademark_calibrations as calibrations
+from . import trademark_deadlines as deadlines
 from . import trademark_matching as matching
 from . import trademark_sources as sources
 from .config import DomainError
@@ -67,6 +68,7 @@ def source_options(session, *, now):
 def preview(session, user_id, payload, *, now):
     _actor(session, user_id)
     portfolio = configuration(payload)
+    deadlines.guard(session)
     values, missing = calibrations.current(session, portfolio, now=now)
     options, problems = source_options(session, now=now)
     usable = any(b.exact_name or b.owners_of_interest or b.language in {c.language for c in values} for b in portfolio.brands)
@@ -119,9 +121,11 @@ def assess(portfolio, facts, values, *, now):
 
 
 def _apply(session, monitor, portfolio, selection, revision, facts, values, *, now, gap=False):
+    _, deadline_binding = deadlines.evaluate(session, selection.source_key, facts, portfolio.deadline_context, now=now)
     assessments, identifiers = assess(portfolio, facts, values, now=now)
     unknown = 0
     for result, evaluation in assessments:
+        evaluation = deadlines.evaluation_hash(evaluation, deadline_binding)
         row = session.scalar(select(TrademarkCandidate).where(TrademarkCandidate.monitor_id == monitor.id,
             TrademarkCandidate.source_key == selection.source_key, TrademarkCandidate.record_key == revision.record_key,
             TrademarkCandidate.brand_key == result["brand_key"]))
@@ -134,7 +138,8 @@ def _apply(session, monitor, portfolio, selection, revision, facts, values, *, n
             row = TrademarkCandidate(organization_id=monitor.organization_id, monitor_id=monitor.id,
                 source_key=selection.source_key, record_key=revision.record_key, brand_key=result["brand_key"],
                 permission_id=revision.permission_id, source_generation=selection.generation, source_revision_id=revision.id,
-                profile_revision=monitor.revision, evaluation_hash=evaluation, calibration_ids=identifiers, created_at=now)
+                profile_revision=monitor.revision, evaluation_hash=evaluation, calibration_ids=identifiers,
+                deadline_binding=deadline_binding, created_at=now)
             session.add(row)
             session.flush()
             codes, previous = ["new_candidate"], None
@@ -150,6 +155,8 @@ def _apply(session, monitor, portfolio, selection, revision, facts, values, *, n
                 codes.append("portfolio_changed")
             if row.calibration_ids != identifiers:
                 codes.append("evaluation_changed")
+            if row.deadline_binding != deadline_binding:
+                codes.append("deadline_changed")
             if previous.material_hash != revision.material_hash:
                 try:
                     before = sources.read_revision(session, previous.permission_id, previous.id, now=now, purpose="matching")
@@ -166,11 +173,13 @@ def _apply(session, monitor, portfolio, selection, revision, facts, values, *, n
                 row.sequence, row.version = row.sequence + 1, row.version + 1
             row.permission_id, row.source_generation, row.source_revision_id = revision.permission_id, selection.generation, revision.id
             row.profile_revision, row.evaluation_hash, row.calibration_ids = monitor.revision, evaluation, identifiers
+            row.deadline_binding = deadline_binding
         if codes:
             if row.sequence > MAX_EVENTS:
                 _fail("trademark_event_capacity")
             session.add(TrademarkCandidateEvent(organization_id=monitor.organization_id, candidate_id=row.id,
                 sequence=row.sequence, source_revision_id=revision.id, previous_revision_id=previous.id if previous else None,
+                deadline_binding=deadline_binding,
                 profile_revision=monitor.revision, evaluation_hash=evaluation, calibration_ids=identifiers,
                 change_codes=sorted(set(codes)), created_at=now))
         session.flush()
@@ -210,6 +219,7 @@ def refresh(session, user_id, monitor_id, *, now):
         if monitor.status != "active":
             _fail("trademark_monitor_not_active")
         portfolio = TrademarkPortfolio.model_validate(monitor.configuration)
+        deadlines.guard(session)
         values, missing = calibrations.current(session, portfolio, now=now)
         options, problems = source_options(session, now=now)
         pending, unknown, examined = False, 0, 0
@@ -251,9 +261,10 @@ def candidate_for(session, user_id, monitor_id, candidate_id, *, write=False):
     return monitor, row
 
 
-def current(session, monitor, row, *, now, purpose="display"):
+def current(session, monitor, row, *, now, purpose="display", with_deadline=False):
     now = _clock(now)
     portfolio = TrademarkPortfolio.model_validate(monitor.configuration)
+    deadlines.guard(session)
     values, missing = calibrations.current(session, portfolio, now=now)
     _, policy = sources.require_permission(session, row.permission_id, now=now, purpose=purpose)
     sources.require_permission(session, row.permission_id, now=now, purpose="matching")
@@ -264,13 +275,15 @@ def current(session, monitor, row, *, now, purpose="display"):
     if head is None or head.generation != selected.generation or not timedelta(0) <= now - _utc(head.last_seen_at) <= timedelta(seconds=policy.max_age_seconds):
         _fail("trademark_evidence_stale")
     facts = sources.read_revision(session, row.permission_id, head.revision_id, now=now, purpose=purpose)
+    deadline, deadline_binding = deadlines.evaluate(session, row.source_key, facts, portfolio.deadline_context, now=now)
     assessments, identifiers = assess(portfolio, facts, values, now=now)
-    found = next(((result, key) for result, key in assessments if result["brand_key"] == row.brand_key), None)
+    found = next(((result, deadlines.evaluation_hash(key, deadline_binding)) for result, key in assessments if result["brand_key"] == row.brand_key), None)
     applied = session.get(TrademarkRegisterRevision, row.source_revision_id)
     if (found is None or row.profile_revision != monitor.revision or found[1] != row.evaluation_hash
             or identifiers != row.calibration_ids or applied.material_sequence != session.get(TrademarkRegisterRevision, head.revision_id).material_sequence):
         _fail("trademark_candidate_refresh_required")
-    return facts, found[0], policy, missing
+    result = (facts, found[0], policy, missing)
+    return (*result, deadline) if with_deadline else result
 
 
 def candidate_view(session, monitor, row, *, now):
@@ -279,10 +292,10 @@ def candidate_view(session, monitor, row, *, now):
         "decision": row.decision, "state": "unavailable", "facts": None, "assessment": None, "can_review": False,
         "legal_conflict_confirmed": False, "coverage_verified": False}
     try:
-        facts, assessment, policy, missing = current(session, monitor, row, now=now)
+        facts, assessment, policy, missing, deadline = current(session, monitor, row, now=now, with_deadline=True)
         result.update(state="available", facts=facts.model_dump(mode="json"), assessment=assessment,
             evaluation_hash=row.evaluation_hash, attribution=policy.attribution, similarity_unavailable_languages=missing,
-            can_review=monitor.status != "archived" and policy.private_decisions_allowed)
+            can_review=monitor.status != "archived" and policy.private_decisions_allowed, deadline_context=deadline)
     except DomainError as error:
         result["reason"] = error.code
     return result

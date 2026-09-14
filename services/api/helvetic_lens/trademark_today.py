@@ -47,6 +47,7 @@ def page(session, settings, user_id, *, now, inbox=False, cursor=None, limit=20)
             "name": monitor.configuration["name"], "brand": brand["name"], "mark": current["facts"]["mark"],
             "priority": current["assessment"]["priority"] or "review", "change_codes": event.change_codes,
             "attribution": current["attribution"], "detected_at": _utc(event.created_at).isoformat(),
+            "deadline_context": current.get("deadline_context"),
             "href": f"/trademark-watch?monitor={monitor.id}&candidate={candidate.id}&event={event.id}"})
         if len(result["items"]) == limit:
             result["next_cursor"] = event.id if index + 1 < len(rows) else None

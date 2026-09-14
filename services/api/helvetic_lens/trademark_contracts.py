@@ -8,7 +8,9 @@ from datetime import date, datetime
 from typing import Annotated, Literal
 from urllib.parse import urlsplit
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_serializer, model_validator
+
+from .trademark_deadline_contracts import DeadlinePreference
 
 Language = Literal["de", "fr", "it", "rm", "en"]
 NiceClass = Annotated[int, Field(strict=True, ge=1, le=45)]
@@ -103,6 +105,14 @@ class TrademarkPortfolio(Contract):
     jurisdiction: Literal["CH"] = "CH"
     name: str = Field(min_length=1, max_length=100)
     brands: tuple[Brand, ...] = Field(min_length=1, max_length=20)
+    deadline_context: DeadlinePreference | None = None
+
+    @model_serializer(mode="wrap")
+    def optional_deadline(self, handler):
+        result = handler(self)
+        if self.deadline_context is None:
+            result.pop("deadline_context", None)
+        return result
 
     @model_validator(mode="after")
     def consistent(self):

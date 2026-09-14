@@ -27,6 +27,7 @@ from . import hazard_models as hazard_models
 from . import hazard_source_models as hazard_source_models
 from . import ipi_models as ipi_models
 from . import road_models as road_models
+from . import trademark_deadline_models as trademark_deadline_models
 from . import trademark_models as trademark_models
 from . import trademark_source_models as trademark_source_models
 from . import trademark_workflow_models as trademark_workflow_models

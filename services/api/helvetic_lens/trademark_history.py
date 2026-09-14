@@ -3,6 +3,7 @@
 from sqlalchemy import select
 
 from . import trademark_calibrations as calibrations
+from . import trademark_deadlines as deadlines
 from . import trademark_sources as sources
 from .config import DomainError
 from .trademark_contracts import TrademarkPortfolio
@@ -45,6 +46,7 @@ def event_detail(session, user_id, monitor_id, candidate_id, event_id, *, now):
         _fail("trademark_event_configuration_invalid", 503)
     after = snapshot(session, candidate, event.source_revision_id, now=now)
     explanation = None
+    deadline = None
     if after["facts"]:
         from .trademark_contracts import TrademarkFacts
         try:
@@ -53,14 +55,17 @@ def event_detail(session, user_id, monitor_id, candidate_id, event_id, *, now):
             values = [calibrations.read(session, identifier, now=now, historical=True) for identifier in event.calibration_ids]
             assessments, _ = assess(portfolio, TrademarkFacts.model_validate(after["facts"]), values, now=_utc(event.created_at))
             explanation, key = next((result, key) for result, key in assessments if result["brand_key"] == candidate.brand_key)
-            if key != event.evaluation_hash:
+            if deadlines.evaluation_hash(key, event.deadline_binding) != event.evaluation_hash:
                 explanation = None
+            if event.deadline_binding is not None or portfolio.deadline_context is None:
+                deadline, _ = deadlines.evaluate(session, candidate.source_key, TrademarkFacts.model_validate(after["facts"]),
+                    portfolio.deadline_context, now=now, binding=event.deadline_binding, historical_at=_utc(event.created_at))
         except (DomainError, ValueError, StopIteration):
             explanation = None
     return {"id": event.id, "candidate_id": candidate.id, "monitor_id": monitor.id, "sequence": event.sequence,
         "detected_at": _utc(event.created_at).isoformat(), "profile_revision": event.profile_revision,
         "current_configuration": event.profile_revision == monitor.revision, "newer_available": event.sequence < candidate.sequence,
-        "change_codes": event.change_codes, "assessment": explanation, "snapshot": after,
+        "change_codes": event.change_codes, "assessment": explanation, "deadline_context": deadline, "snapshot": after,
         "previous": snapshot(session, candidate, event.previous_revision_id, now=now), "current": current,
         "legal_conflict_confirmed": False}
 

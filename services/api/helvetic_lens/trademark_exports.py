@@ -35,7 +35,7 @@ def _source(session, candidate, revision_id, *, now):
 
 def document(session, monitor, candidate, preparation, *, now):
     # Current() acquires calibration locks before source locks, as at review.
-    facts, assessment, _, _ = current(session, monitor, candidate, now=now)
+    facts, assessment, _, _, deadline = current(session, monitor, candidate, now=now, with_deadline=True)
     if candidate.version != preparation.candidate_version or candidate.source_revision_id != preparation.source_revision_id:
         _fail("trademark_export_changed")
     source = _source(session, candidate, candidate.source_revision_id, now=now)
@@ -51,16 +51,14 @@ def document(session, monitor, candidate, preparation, *, now):
         change = {"id": event.id, "sequence": event.sequence, "detected_at": historical["detected_at"],
             "profile_revision": event.profile_revision, "change_codes": event.change_codes,
             "after": after, "before": before, "assessment": historical["assessment"],
-            "newer_available": historical["newer_available"]}
+            "newer_available": historical["newer_available"], "deadline_context": historical.get("deadline_context")}
     brand = next(b for b in monitor.configuration["brands"] if b["key"] == candidate.brand_key)
     packet = {"schema": "helvetic-lens-trademark-evidence-v1", "prepared_at": _utc(preparation.created_at).isoformat(),
         "monitor_id": monitor.id, "candidate_id": candidate.id, "profile_revision": monitor.revision,
         "portfolio_name": monitor.configuration["name"], "brand": brand, "source": source, "assessment": assessment,
         "candidate_sequence": candidate.sequence, "decision": candidate.decision, "needs_review": candidate.sequence > candidate.reviewed_sequence,
         "selected_change": change, "evaluation_hash": candidate.evaluation_hash,
-        "deadline_context": {"official_publication_date": facts.publication_date.isoformat() if facts.publication_date else None,
-            "applicable_deadline_rule": None, "calculated_review_deadline": None, "days_remaining": None,
-            "verification_required": True, "reason": "approved_rule_unavailable"},
+        "deadline_context": deadline,
         "coverage_verified": False, "legal_conflict_confirmed": False}
     content = render(packet, preparation.locale)
     encoded = content.encode("utf-8")

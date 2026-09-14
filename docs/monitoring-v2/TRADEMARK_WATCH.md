@@ -1,5 +1,76 @@
 # Trademark & IP Watch — B7
 
+## Reviewed deadline feature — 14 September 2026
+
+MV2-048 connects explicit private domicile/calendar selection to a reviewed rule
+registry, source-specific publication mapping, calendar-month arithmetic, current
+candidate/history/Today/Inbox readers and the inspected counsel packet. All nine
+sections remain enabled and visible. No production rule, calendar, source approval
+or IPI credential is manufactured by this implementation.
+
+The [IPI guidelines](https://www.ige.ch/fileadmin/user_upload/schuetzen/marken/d/richtlinien_marken/Richtlinien_Marken_D_2025.pdf)
+were checked on 14 September. The filename says 2025 but the cover is dated
+1 January 2026. Part 1 §§5.5.2 and 5.5.6 (printed pages 34 and 37) describe
+calendar-month arithmetic, non-working-day extension and the exclusion of
+day-based suspensions for month-based periods. Part 6 §2.5 (printed page 251)
+distinguishes national publication from the relevant international CH-extension
+publication in the WIPO Gazette. National publication anchors on the publication
+day; international publication on the first day of the following month. Both add
+three calendar months, clamping a missing final-month day. Weekend or explicitly
+recognized holidays advance to the next working day, with reviewed coverage for
+every examined day. The user chooses the relevant party/representative domicile;
+device location, profile language and a guessed canton never determine it.
+
+This lookup is implementation evidence, not operational legal approval. A dated
+independently reviewed rule must map the actual source/category/office to its
+applicable publication event, with reviewer reference and hashed HTTPS citations.
+A WO registration event is not automatically a WIPO Gazette CH-extension event.
+Missing, ambiguous, future or inapplicable events and missing/expired/revoked/
+incomplete calendars produce no deadline. The guidance's two July 2022 examples,
+month-end/leap-year cases, successive holidays, Zurich midnight and DST use
+synthetic reviewed test inputs. UI and export always require independent legal
+verification before filing or paying a fee; neither performs either action.
+
+Immutable rule/calendar payloads and compare-and-set selections live in shared
+internal tables. Migration `e7c4a56806e9` adds a registry guard and nullable
+reference-only private candidate/event bindings. Old portfolios omit absent
+deadline context when serialized, preserving stored hashes and idempotency.
+Readers acquire a PostgreSQL shared registry lock before calibration/source locks;
+registry changes use an exclusive lock. Rule/calendar/publication changes reopen
+review while preserving previous decisions; daily countdown and transport hashes
+do not. History pins original versions subject to current source rights and
+revocations. Download reconstructs the packet under current rights: changed inputs,
+historical revocation or Zurich day invalidate a previously inspected document.
+
+Operational procedure: obtain authoritative publication mapping and complete
+recognized-holiday evidence for the actual jurisdiction/date range. Validate
+`DeadlineRule` / `DeadlineCalendar` inputs, including reviewer, validity, citations
+and document hashes. In a dedicated registry-only transaction use
+`trademark_deadlines.retain` then `select_current`, passing the previously observed
+selected ID (null for the first selection); commit atomically. Use `revoke` in
+an isolated registry transaction when approval is withdrawn. Do not acquire
+private-monitor, calibration or source locks before registry writes. These are
+internal operator functions; the authenticated public calendar endpoint is
+read-only. No production selection was created by this feature.
+
+Verification: 56 combined deadline, workflow/history, export and HTTP checks
+passed (71.27s), including metadata comparison and downgrade/re-upgrade preserving
+source/portfolio tables. The 60 browser checkpoints passed for the complete
+portfolio→review→Inbox→history→export journey, including explicit domicile, saved
+configuration, unavailable calendars, source revocation, five languages, mobile
+overflow and three axe audits with zero violations. Browser responses are
+synthetic; real database tests prove arithmetic and download invalidation. The
+isolated root build `trademark-deadline`, exact API Ruff and label synchronization
+passed. Broader B7 live-source, independent rule/calendar and similarity-quality
+review, release activation and human acceptance stay open. MV2-048 stays
+IN PROGRESS in both index and detail.
+
+The final boundary/backlog run passed 22 checks (4.07s), including explicit
+boolean-only calendar coverage confirmation. A completed follow-up browser run
+captured the actual deadline card at 390px for visual inspection; its 60
+checkpoints and three zero-violation axe audits passed. No active test or
+deployment was duplicated or interrupted; both owned fixture servers exited.
+
 **Integrated publication, 13 September 2026:** The owner requested all implemented code be published to main now and all implemented sections enabled. The production defaults and remaining source/acceptance limits are recorded in the [integrated release evidence](evidence/2026-09-13-integrated-publication.md). Earlier dated references to uncommitted or disabled work are historical; the broader task remains IN PROGRESS.
 
 
@@ -371,6 +442,34 @@ proof, the permitted HTTP collector, then the private candidate/review/deadline/
 lifecycle/Today/Inbox and delivery/export workflows. Source accounts, actual source
 approval, calibration and human acceptance remain open. No incomplete feature was
 committed or pushed; MV2-046/047/048 remain IN PROGRESS.
+
+## Deadline feature scope — 14 September 2026
+
+Implement the complete MV2-048 review-deadline journey: immutable reviewed rule
+and jurisdiction-calendar registries, explicit private domicile-calendar context,
+auditable month/end-of-month/working-day calculation, date-based days remaining
+in Europe/Zurich, and evidence in candidates, history, Today/Inbox and exports.
+Registry updates/revocation must invalidate an obsolete inspected packet and reopen
+affected candidate review without sending or filing anything. Missing evidence
+must remain visible and unavailable. Old portfolios must retain their identities
+and hashes when the new optional context is absent.
+
+Primary-source review on 14 September:
+[IPI guidelines](https://www.ige.ch/fileadmin/user_upload/schuetzen/marken/d/richtlinien_marken/Richtlinien_Marken_D_2025.pdf),
+Part 1 §§5.5.2/5.5.6 and Part 6 §2.5, printed pp.34/37/251. The document's cover
+says 1 January 2026 despite its URL filename. National publication and international
+CH-extension Gazette publication have different anchors. Month-based periods use
+calendar arithmetic; recognized holidays depend on the party/representative
+domicile and must not be inferred from a user's browser location. The implementation
+will require a reviewed source-field mapping and a complete applicable calendar,
+not assume that every IPI WO publication is the Gazette protection-extension event.
+No production legal rule or holiday calendar has been independently approved.
+
+Acceptance checks include national/international anchors, leap/end-of-month dates,
+weekends/consecutive holidays, incomplete calendar ranges, DST/local-midnight day
+counts, changed/revoked rules, publication corrections, historical evidence,
+legacy-hash compatibility, private ownership and export revalidation. Five-language
+browser presentation and whole-feature API/build checks precede commit and push.
 
 ## Native acquisition feature scope — 14 September 2026
 

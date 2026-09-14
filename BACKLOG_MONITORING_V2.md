@@ -184,6 +184,11 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ## Task index
 
+14 September deadline feature: MV2-048 remains IN PROGRESS in this index and
+its detail after the tested five-language calculation/review/export feature.
+Independent rule/calendar review, real source and release/human acceptance remain
+open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-deadline-feature--14-september-2026).
+
 | ID | Task | Phase | Priority | Size | Status | Dependencies |
 |---|---|---|---|---|---|---|
 | [MV2-001](#mv2-001) | Establish extension contracts and MVP compatibility | F0 | P0 | M | DONE | None |
@@ -1695,6 +1700,29 @@ human acceptance and actual release remain unverified. Status stays IN PROGRESS.
 <a id="mv2-048"></a>
 
 ### MV2-048 — B7: IP review, review deadlines and register changes
+
+**Deadline feature, 14 September 2026:** Delivered private explicit domicile/calendar
+configuration, reviewed immutable rules, source-specific publication mapping,
+traced Zurich calculations and current/history/Today/Inbox/counsel-packet readers
+in five languages. Input revisions reopen review without erasing decisions; days
+alone do not. Prepared exports recheck rules, calendars, rights and day at download.
+The combined 56 server checks, 60 browser checkpoints and root build passed.
+[Deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-deadline-feature--14-september-2026)
+keeps actual source, independent legal/calendar/quality reviews, release and human
+acceptance open. Index and detail remain IN PROGRESS; all nine sections stay visible.
+
+**Deadline feature scope, 14 September 2026 (before implementation):** Deliver
+approved versioned source-to-publication rules and complete jurisdiction calendars,
+an explicit private party/representative calendar choice, a traced timezone-aware
+deadline calculation, candidate/history/Today/Inbox presentation and inspected
+counsel export. Rule/calendar/publication changes must invalidate stale review and
+export evidence; elapsed days alone must not reopen review. Preserve legacy
+portfolios with no deadline context. Missing/ambiguous publication, unavailable
+rule, missing domicile calendar and expired/revoked approvals produce no invented
+date. No filing, new source permission or production legal-rule approval is implied.
+Official IPI guidance distinguishes national Swissreg publication from the
+international CH protection-extension publication in the WIPO Gazette. Independent
+rule/calendar review and real source acceptance remain open.
 
 **Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
 

@@ -21,6 +21,10 @@ export type TrademarkPortfolio = {
   jurisdiction: "CH";
   name: string;
   brands: Brand[];
+  deadline_context?: {
+    calendar_key: string;
+    domicile_basis: "party" | "representative";
+  };
 };
 export type TrademarkMonitor = {
   runtime?: {

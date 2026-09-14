@@ -8,7 +8,7 @@ LABELS = json.loads(Path(__file__).with_name("trademark_export_labels.json").rea
 
 
 def render(packet, locale):
-    c, r = LABELS["packet"][locale], LABELS["review"][locale]
+    c, r, d = LABELS["packet"][locale], LABELS["review"][locale], LABELS["deadline"][locale]
 
     def text(value):
         return escape(str(value), quote=True)
@@ -29,6 +29,42 @@ def render(packet, locale):
             f'<p><a href="{text(url)}" rel="noopener noreferrer">{text(r["source"])}</a></p>'
             f'<details><summary>{text(c["provenance"])}</summary>{value({k:v for k,v in item.items() if k!="facts"})}</details></section>')
 
+    def deadline(item):
+        result = f'<section><h2>{text(d["title"])}</h2>'
+        if not item:
+            return result + f'<p>{text(d["unavailable"])}</p><p>{text(d["warning"])}</p></section>'
+        reason = item.get("reason") or ""
+        label = ("context" if reason == "deadline_context_required" else
+            "historicalMissing" if "historical" in reason or "binding" in reason else
+            "calendarMissing" if "calendar" in reason else
+            "publicationMissing" if "publication" in reason else
+            "ruleMissing" if "rule" in reason else "unavailable")
+        if item["state"] == "available":
+            for key, field in (("due", "calculated_review_deadline"), ("days", "days_remaining"),
+                               ("asOf", "as_of_date"), ("end", "exclusive_end")):
+                result += f'<p>{text(d[key])}: {value(item[field])}</p>'
+            result += f'<p>{text(item["timezone"])} · {text(d["dayHelp"])}</p>'
+        else:
+            result += f'<p>{text(d[label])}</p>'
+        result += f'<p>{text(d["publication"])}: {value(item["official_publication_date"])}</p>'
+        steps = {"publication": "publication", "swissreg_registration_publication": "national",
+            "wipo_ch_extension_publication": "international", "calendar_months": "months",
+            "non_working_day": "skipped", "deadline": "due"}
+        result += f'<details open><summary>{text(d["trace"])}</summary><ol>'
+        for step in item["calculation_trace"]:
+            result += f'<li>{text(d[steps.get(step["step"], "trace")])}: {text(step["date"])}</li>'
+        result += "</ol>"
+        for field, label in (("applicable_deadline_rule", "rule"), ("calendar", "version")):
+            evidence = item.get(field)
+            if evidence:
+                result += f'<p>{text(d[label])}: {text(evidence["id"])}</p>'
+                if field == "calendar":
+                    result += f'<p>{text(evidence["name"])} · {text(evidence["jurisdiction"])} · {text(d[evidence["domicile_basis"]])}</p>'
+                for citation in evidence["citations"]:
+                    result += f'<p><a href="{text(citation["url"])}" rel="noopener noreferrer">{text(citation["section"])}</a> · SHA-256: {text(citation["sha256"])}</p>'
+        result += value(item.get("publication_evidence"))
+        return result + f'</details><p>{text(d["warning"])}</p></section>'
+
     review = r.get(packet["decision"], r["unknown"])
     state = r["needsReview"] if packet["needs_review"] else r["reviewed"]
     body = (f'<h1>{text(c["title"])}</h1><p>{text(c["warning"])}</p><p>{text(c["static"])}</p>'
@@ -46,9 +82,9 @@ def render(packet, locale):
         if change["before"]:
             body += source(change["before"], c["previous"])
         body += source(change["after"], r["at"]) + f'<h3>{text(c["assessment"])}</h3>{value(change["assessment"])}'
-    body += (f'<h2>{text(c["deadline"])}</h2><p>{text(c["deadlineUnavailable"])}</p>'
-        f'<p>{text(r["publication_date"])}: {value(packet["deadline_context"]["official_publication_date"])}</p>'
-        f'<p>{text(c["warning"])}</p><details><summary>{text(c["provenance"])}</summary>'
+        body += deadline(change.get("deadline_context"))
+    body += (deadline(packet["deadline_context"])
+        + f'<p>{text(c["warning"])}</p><details><summary>{text(c["provenance"])}</summary>'
         + value({k:packet[k] for k in ("schema", "monitor_id", "candidate_id", "evaluation_hash")}) + '</details>')
     return (f'<!doctype html><html lang="{locale}"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'

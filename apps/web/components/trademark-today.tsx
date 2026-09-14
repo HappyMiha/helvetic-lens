@@ -12,9 +12,11 @@ import {
 import { useAuth } from "./auth-gate";
 import { useData } from "./trademark-client";
 import { TrademarkTime as Timestamp } from "./trademark-tracking";
+import { TrademarkDeadline, type DeadlineContext } from "./trademark-deadline";
 
 type Page = {
   items: {
+    deadline_context?: DeadlineContext | null;
     id: string;
     name: string;
     mark: string | null;
@@ -133,6 +135,7 @@ function PrivateFeed({ inbox }: { inbox: boolean }) {
                   {f.detected}: <Timestamp value={item.detected_at} />
                 </p>
                 <p>{item.attribution}</p>
+                <TrademarkDeadline value={item.deadline_context} compact />
                 <Link
                   className="underline min-h-[44px] inline-flex items-center"
                   href={item.href}

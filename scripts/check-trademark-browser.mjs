@@ -1,6 +1,7 @@
 import {checkReview} from "./check-trademark-review-journey.mjs";
 import assert from "node:assert/strict";
 import { checkIPI } from "./check-ipi-source-journey.mjs";
+import { checkDeadlineChoice } from "./check-trademark-deadline-journey.mjs";
 import {spawn} from "node:child_process";
 import {existsSync} from "node:fs";
 import {mkdir,mkdtemp,readFile,writeFile} from "node:fs/promises";
@@ -34,6 +35,7 @@ try{
   assert.ok(port);const tabs=await fetch(`http://127.0.0.1:${port}/json/list`,{signal:AbortSignal.timeout(3000)}).then(r=>r.json());cdp=new Cdp(tabs.find(t=>t.type==="page").webSocketDebuggerUrl);await bounded(cdp.ready);await call("Page.enable");await call("Runtime.enable");
   await call("Emulation.setDeviceMetricsOverride",{width:1280,height:1000,deviceScaleFactor:1,mobile:false});await navigate();
   await checkIPI({click,until,evaluate,json,record});await click(c.create);
+  await checkDeadlineChoice({click,fill,until,evaluate,json,record,copy:c});
   await fill('[data-trademark-form] > fieldset > label input',"Private IP fixture");await fill('[data-trademark-brand] > label input',"ALMORA");
   await fill('[data-trademark-brand] > label select',"en");await fill('[data-trademark-brand] textarea',"ALMORA AI\nALMORA DIGITAL");
   assert.equal(await evaluate("document.querySelector('[data-trademark-brand] textarea').value"),"ALMORA AI\nALMORA DIGITAL");record("multiline-word-variants-remain-editable");
@@ -41,10 +43,10 @@ try{
   await fill('[data-trademark-brand] > label:last-of-type input',"9, 42");await evaluate("document.querySelector('[data-trademark-brand] details').open=true");await click(c.addGoods);
   await fill('[data-trademark-goods] > label input',"Software");await fill('[data-trademark-goods] div input',"computer software");await click(c.addPhrase);
   await fill('[data-trademark-goods] div:nth-of-type(2) select',"fr");await fill('[data-trademark-goods] div:nth-of-type(2) input',"logiciels informatiques");
-  await click(c.addBrand);await fill('[data-trademark-brand]:nth-of-type(2) > label input',"PULSANTO");await fill('[data-trademark-brand]:nth-of-type(2) > label select',"it");
+  await click(c.addBrand);await fill('[data-trademark-brand]:nth-last-of-type(1) > label input',"PULSANTO");await fill('[data-trademark-brand]:nth-last-of-type(1) > label select',"it");
   await click(c.save);await until("document.querySelector('[data-trademark-detail] h2')?.textContent==='Private IP fixture'");
   assert.equal(await evaluate("document.querySelectorAll('[data-trademark-detail] [data-trademark-facts] > details').length"),2);record("save-private-multi-brand-portfolio-and-language-phrases");
-  await audit("desktop");await click(c.edit);await fill('[data-trademark-form] > fieldset > label input',"Revised IP fixture");await click(c.save);
+  await audit("desktop");await click(c.edit);await until("document.querySelector('[data-deadline-domicile]')?.value==='representative'");record("saved-deadline-context-survives-edit");await fill('[data-trademark-form] > fieldset > label input',"Revised IP fixture");await click(c.save);
   await until("document.querySelector('[data-trademark-detail] h2')?.textContent==='Revised IP fixture'");await click(c.history);await until("document.querySelectorAll('[data-trademark-history] > details').length===2");record("edit-preserves-selected-portfolio-and-version-history");
   await click(c.edit);await fill('[data-trademark-form] > fieldset > label input',"Conflict retains my changes");await json("/__qa/state",{conflict:true});await click(c.save);
   await until(`document.querySelector('[data-trademark-form] [role=alert]')?.textContent===${JSON.stringify(c.conflict)}`);

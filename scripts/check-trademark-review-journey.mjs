@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { checkExport } from "./check-trademark-export-journey.mjs";
+import { checkDeadlineView } from "./check-trademark-deadline-journey.mjs";
+import { trademarkDeadlineCopy } from "../apps/web/lib/trademark-deadline-copy.ts";
 import { trademarkReviewCopy } from "../apps/web/lib/trademark-review-copy.ts";
 import { trademarkCopy } from "../apps/web/lib/trademark-copy.ts";
 
@@ -73,6 +75,12 @@ export async function checkReview({
     exact,
   );
   record("inbox-links-exact-private-change");
+  assert.ok(
+    await evaluate(
+      "document.querySelector('[data-trademark-inbox] [data-trademark-deadline]')?.textContent.includes('2026-09-15')",
+    ),
+  );
+  record("deadline-shown-in-inbox");
   await evaluate(
     "document.querySelector('[data-trademark-inbox] li a').click()",
   );
@@ -107,12 +115,25 @@ export async function checkReview({
       locale,
     );
     record("mobile-review:" + locale);
+    await checkDeadlineView({ locale, evaluate, until, record });
     await checkExport({ locale, click, until, evaluate, json, call, record });
   }
   await evaluate(
-    "document.querySelector('[data-trademark-candidate-detail]').scrollIntoView({block:'start'})",
+    "document.querySelector('[data-trademark-candidate-detail] [data-trademark-deadline]').scrollIntoView({block:'center'})",
   );
   await audit("review-mobile");
+  await json("/__qa/state", { deadlineMissing: true });
+  await evaluate("window.dispatchEvent(new Event('focus'))");
+  await until(
+    `document.querySelector('[data-trademark-candidate-detail] [data-trademark-deadline]')?.textContent.includes(${JSON.stringify(trademarkDeadlineCopy["en-CH"].calendarMissing)})`,
+  );
+  assert.ok(
+    !(await evaluate(
+      "document.querySelector('[data-trademark-candidate-detail] [data-trademark-deadline]').textContent.includes('2026-09-15')",
+    )),
+  );
+  record("missing-calendar-redacts-date-with-visible-explanation");
+  await json("/__qa/state", { deadlineMissing: false });
   await json("/__qa/state", { sourceRevoked: true });
   await evaluate("window.dispatchEvent(new Event('focus'))");
   await until(
@@ -130,6 +151,12 @@ export async function checkReview({
     ),
   );
   record("focus-refresh-redacts-current-and-historical-source-facts");
+  assert.ok(
+    !(await evaluate(
+      "document.querySelector('[data-trademark-tracking]').textContent.includes('SYNTHETIC-PUBLICATION')",
+    )),
+  );
+  record("source-revocation-redacts-deadline-source-evidence");
   await json("/__qa/state", { sourceRevoked: false });
   await call("Page.navigate", { url: base + exact });
   await until(

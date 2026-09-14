@@ -11,6 +11,30 @@ from helvetic_lens.main import create_app
 ROOT = "/api/trademark-watch"
 
 
+def test_deadline_calendar_catalog_is_authenticated_read_only_and_revocation_aware(api, monkeypatch):
+    from test_trademark_deadlines import install
+    from test_trademark_sources import NOW
+
+    from helvetic_lens import trademark_api, trademark_deadlines
+    client, app, _ = api
+    monkeypatch.setattr(trademark_api, "_now", lambda: NOW)
+    endpoint = ROOT + "/deadline-calendars"
+    assert client.get(endpoint).json() == {"items": []}
+    database = app.state.service.db
+    _, calendar_id = install(database)
+    result = client.get(endpoint)
+    assert result.headers["cache-control"] == "no-store"
+    assert result.json()["items"][0]["version"] == calendar_id
+    assert "reviewer_reference" not in result.text
+    assert client.post(endpoint, headers=_csrf(client), json={}).status_code == 405
+    with database.session() as session:
+        trademark_deadlines.revoke(session, "calendar", calendar_id, now=NOW)
+        session.commit()
+    assert client.get(endpoint).json() == {"items": []}
+    client.cookies.clear()
+    assert client.get(endpoint).status_code == 401
+
+
 def test_source_status_is_read_only_authenticated_and_never_exposes_credentials(api, monkeypatch):
     from pydantic import SecretStr
     from test_ipi_acquisition import claim, permission
