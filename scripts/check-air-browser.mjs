@@ -76,20 +76,23 @@ const station = process.env.AIR_BROWSER_STATION === "LUG" ? { id: "LUG", name: "
   name: "Basel-Binningen",
   area: "Basel / Binningen",
 };
+const daily = process.env.AIR_BROWSER_PERIOD === "daily";
+const nabel = daily || station.id === "LUG";
 const sample = {
-  source: station.id === "LUG" ? "BAFU / NABEL · Lugano-Università" : "Kanton Basel-Stadt · Basel-Binningen",
+  source: nabel ? `BAFU / NABEL · ${station.name}` : "Kanton Basel-Stadt · Basel-Binningen",
   metric: "O3",
-  timestamp: new Date().toISOString(),
+  timestamp: daily ? "2026-09-13T00:00:00+00:00" : new Date().toISOString(),
+  ...(daily ? { source_date: "2026-09-13" } : {}),
   value: "60",
   unit: "µg/m³",
   quality: "provisional",
-  period: "hourly_mean",
-  source_url: station.id === "LUG" ? "https://www.bafu.admin.ch/de/datenabfrage-nabel" : "https://data.bs.ch/explore/dataset/100051/",
-  license_url: station.id === "LUG" ? "https://opendata.swiss/terms-of-use#terms_by" : "https://creativecommons.org/licenses/by/4.0/",
+  period: daily ? "daily_max_hourly" : "hourly_mean",
+  source_url: nabel ? "https://www.bafu.admin.ch/de/datenabfrage-nabel" : "https://data.bs.ch/explore/dataset/100051/",
+  license_url: nabel ? "https://opendata.swiss/terms-of-use#terms_by" : "https://creativecommons.org/licenses/by/4.0/",
   revision: 1,
 };
 const coverage = {
-  "O3:hourly_mean": { status: "current", sample },
+  [`O3:${sample.period}`]: { status: "current", sample },
   "PM25:hourly_mean": { status: "unknown", sample: null },
 };
 let changes = [];
@@ -320,12 +323,14 @@ try {
   });
   await navigate();
   const c = airCopy[locale];
+  if (daily) await cdp.send("Emulation.setTimezoneOverride", { timezoneId: "America/Los_Angeles" });
   await button(c.create);
   await field(c.name, "Basel air");
   await field(c.search, station.area);
   await field(c.station, station.id, true);
   await button(c.add);
   await field(c.threshold, "50");
+  await field(c.period, sample.period, true);
   await button(c.preview);
   await wait(
     async () => (await text()).includes("60"),
@@ -333,6 +338,7 @@ try {
   );
   assert.ok((await text()).includes(c.unknown));
   assert.ok((await text()).includes(sample.source));
+  if (daily) assert.ok((await text()).includes(sample.source_date));
   assert.equal(await evaluate(cdp,`document.querySelector('form a[href="${sample.license_url}"]') !== null`), true);
   await audit.check(cdp, "configuration-preview", "form");
   await button(c.save);
@@ -472,6 +478,7 @@ try {
       `Overflow ${locale}`,
     );
     await openEmail();
+    if (daily) assert.ok((await text()).includes(sample.source_date));
     assert.ok(await evaluate(cdp,"document.querySelector('[data-air-email]').textContent.includes('air@example.invalid')"));
     await audit.check(cdp, `reader-${locale}`, "[data-air-watch]");
   }

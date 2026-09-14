@@ -229,7 +229,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-031](#mv2-031) | Pollen Watch — the first complete end-to-end scenario (C5) | F3 | P0 | L | IN PROGRESS | [MV2-070](#mv2-070), [MV2-030](#mv2-030) |
 | [MV2-032](#mv2-032) | C6: hydrological stations, metrics and official danger levels | F3 | P1 | M | VERIFYING | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
 | [MV2-033](#mv2-033) | C6: River / Lake thresholds, history and consented digest | F3 | P1 | M | VERIFYING | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-032](#mv2-032) |
-| [MV2-034](#mv2-034) | C7: Basel and Lugano official air-quality series and interpretation | F3 | P1 | M | VERIFYING | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
+| [MV2-034](#mv2-034) | C7: Basel and Lugano hourly/daily air-quality series and interpretation | F3 | P1 | M | VERIFYING | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
 | [MV2-035](#mv2-035) | C7: Air Quality — changes, improvements and consented digest | F3 | P1 | M | VERIFYING | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-034](#mv2-034) |
 | [MV2-036](#mv2-036) | Related developments from multiple sources | F4 | P1 | M | IN PROGRESS | [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-029](#mv2-029), [MV2-033](#mv2-033), [MV2-041](#mv2-041), [MV2-071](#mv2-071) |
 | [MV2-037](#mv2-037) | Journey/Trip/Route/Stop and Road Corridor reference data | F4 | P0 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-015](#mv2-015), [MV2-016](#mv2-016), [MV2-071](#mv2-071) |
@@ -1350,7 +1350,7 @@ Actual release and human/source acceptance remain open.
 
 <a id="mv2-034"></a>
 
-### MV2-034 — C7: Basel and Lugano official air-quality series and interpretation
+### MV2-034 — C7: Basel and Lugano hourly/daily air-quality series and interpretation
 
 **Status:** VERIFYING · **Priority:** P1 · **Owner:** Integration · **Size:** M
 
@@ -1373,9 +1373,13 @@ Actual release and human/source acceptance remain open.
 
 **Lugano feature evidence — 14 September 2026:** The complete station feature adds independently checked NABEL data-query rights, bounded hourly collection and revision history for O3/NO2/PM10/PM2.5, fixed CET source labels, station selection/attribution in five languages, and the existing private lifecycle, Today/history and consented digest. The actual collector retained 384 readings, including all four metrics at 07:00 UTC. Root build and the Lugano browser journey passed nine full-document axe checkpoints. See [scope, rights and evidence](docs/monitoring-v2/AIR_QUALITY_WATCH.md#lugano-station-feature-scope--14-september-2026). Exact activation and human acceptance remain VERIFYING; other national stations and official category/daily-max interpretations are not claimed.
 
+**Official daily feature evidence — 14 September 2026:** Native Basel and Lugano daily acquisition, period-separated immutable history, O3 daily maximum of hourly means and other pollutant daily means, completed-source-date display, independent thresholds/recency/gaps and consented final-send checks are implemented. Actual collectors retrieved seven complete dated reports per station (28 readings each). The full Air suite passed 96 tests; root build and two nine-checkpoint browser journeys passed. See [daily scope and evidence](docs/monitoring-v2/AIR_QUALITY_WATCH.md#official-daily-air-feature-scope--14-september-2026). Exact activation and applicable human acceptance remain VERIFYING; no official risk category is invented.
+
 <a id="mv2-035"></a>
 
 ### MV2-035 — C7: Air Quality — changes, improvements and consented digest
+
+**Official daily feature evidence — 14 September 2026:** Native Basel and Lugano daily acquisition, period-separated immutable history, O3 daily maximum of hourly means and other pollutant daily means, completed-source-date display, independent thresholds/recency/gaps and consented final-send checks are implemented. Actual collectors retrieved seven complete dated reports per station (28 readings each). The full Air suite passed 96 tests; root build and two nine-checkpoint browser journeys passed. See [daily scope and evidence](docs/monitoring-v2/AIR_QUALITY_WATCH.md#official-daily-air-feature-scope--14-september-2026). Exact activation and applicable human acceptance remain VERIFYING; no official risk category is invented.
 
 **Lugano feature evidence — 14 September 2026:** The complete station feature adds independently checked NABEL data-query rights, bounded hourly collection and revision history for O3/NO2/PM10/PM2.5, fixed CET source labels, station selection/attribution in five languages, and the existing private lifecycle, Today/history and consented digest. The actual collector retained 384 readings, including all four metrics at 07:00 UTC. Root build and the Lugano browser journey passed nine full-document axe checkpoints. See [scope, rights and evidence](docs/monitoring-v2/AIR_QUALITY_WATCH.md#lugano-station-feature-scope--14-september-2026). Exact activation and human acceptance remain VERIFYING; other national stations and official category/daily-max interpretations are not claimed.
 

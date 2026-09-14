@@ -7,9 +7,10 @@ from decimal import Decimal
 from sqlalchemy import func, select, update
 
 from . import jobs
-from .air_contracts import AirConfiguration, utc
+from .air_contracts import DAILY_PERIODS, AirConfiguration, utc
 from .air_models import AirChange, AirMeasurement, AirMonitor, AirRevision, AirSourceCache
-from .air_sources import catalogue, digest
+from .air_nabel import CET
+from .air_sources import catalog_key, catalogue, contract_ready, digest, observation_key
 from .config import DomainError
 from .models import Job
 from .monitoring_subjects import _actor, _savepoint
@@ -77,12 +78,15 @@ def samples(session, station_id, *, start=None):
 
 
 def fresh(sample, now):
+    if sample is not None and sample.get("source_date"):
+        return sample["source_date"] == (now.astimezone(CET).date() - timedelta(days=1)).isoformat()
     return sample is not None and timedelta(0) <= now - utc(sample["timestamp"]) <= timedelta(hours=6)
 
 
 def series(rows, metric, period):
-    timeline = [s for s in rows if s["metric"] == metric]
-    if period == "hourly_mean":
+    source_period = "hourly_mean" if period == "rolling_24h_mean" else period
+    timeline = [s for s in rows if s["metric"] == metric and s["period"] == source_period]
+    if period != "rolling_24h_mean":
         return timeline
     by_time = {utc(s["timestamp"]): s for s in timeline}
     derived = []
@@ -117,18 +121,26 @@ def preview(session, configuration, now):
     rows = samples(session, config.station_id, start=now - timedelta(hours=96))
     # Empty rows beyond the latest populated hour are provider placeholders.
     # At that common hour, individual missing pollutants stay missing.
-    cutoff = max((s["timestamp"] for s in rows if s["value"] is not None), default=None)
     coverage = {}
-    definitions = {(m, "hourly_mean") for m in config.metrics} | {(r.metric, r.period) for r in config.rules}
-    cache = session.get(AirSourceCache, config.station_id)
-    if cache and cache.data.get("latest_observation_at"):
-        cutoff = max(cutoff or "", cache.data["latest_observation_at"])
+    definitions = ({(m, "hourly_mean") for m in config.metrics}
+                   | {(m, DAILY_PERIODS[m]) for m in config.metrics}
+                   | {(r.metric, r.period) for r in config.rules})
     for metric, period in sorted(definitions):
+        daily = period in DAILY_PERIODS.values()
+        source_rows = [s for s in rows if (s["period"] in DAILY_PERIODS.values()) == daily]
+        cutoff = max((s["timestamp"] for s in source_rows if s["value"] is not None), default=None)
+        cache = session.get(AirSourceCache, observation_key(config.station_id, period))
+        if cache and cache.data.get("latest_observation_at"):
+            cutoff = max(cutoff or "", cache.data["latest_observation_at"])
         timeline = series(rows, metric, period)
         sample = next((s for s in reversed(timeline) if s["timestamp"] == cutoff), None)
         status = "unknown"
         if sample and sample["value"] is not None:
-            status = "current" if fresh(sample, now) and cache is not None and not cache.error else "stale"
+            ready = (fresh(sample, now) and cache is not None and not cache.error
+                     and contract_ready(session, catalog_key(config.station_id, period), now)
+                     and cache.fetched_at is not None
+                     and timedelta(0) <= now - utc(cache.fetched_at) <= timedelta(hours=25 if daily else 6))
+            status = "current" if ready else "stale"
         coverage[f"{metric}:{period}"] = {"status": status, "sample": sample}
     return {
         "station": selected,
@@ -354,7 +366,8 @@ def evaluate(session, row, now):
         elif not pending and timeline and timeline[-1]["value_hash"] != prior["last_hash"]:
             pending = timeline[-1:]  # Re-evaluate corrected current values and corrected 24h inputs.
         for sample in pending:
-            if prior["watermark"] and utc(sample["timestamp"]) - utc(prior["watermark"]) > timedelta(hours=1):
+            step = 24 if rule.period in DAILY_PERIODS.values() else 1
+            if prior["watermark"] and utc(sample["timestamp"]) - utc(prior["watermark"]) > timedelta(hours=step):
                 state["last_gap"] = {
                     "from": prior["watermark"],
                     "to": sample["timestamp"],

@@ -9,8 +9,8 @@ from uuid import uuid4
 import httpx
 from sqlalchemy import delete, or_, select, update
 
-from . import air_nabel
-from .air_contracts import METRICS, SOURCE_URL, STATION, utc
+from . import air_daily, air_nabel
+from .air_contracts import DAILY_PERIODS, METRICS, SOURCE_URL, STATION, utc
 from .air_models import AirMeasurement, AirReadingVersion, AirSourceCache
 from .river_sources import digest
 
@@ -158,13 +158,29 @@ def _ensure(session, key, now):
     )
 
 
-def catalog_key(station_id):
-    return "catalog:LUG" if station_id == "LUG" else "catalog"
+def catalog_key(station_id, period="hourly_mean"):
+    # Retain the published cache key for the shared NABEL data-query rights resource.
+    return "catalog:LUG" if station_id == "LUG" or period in DAILY_PERIODS.values() else "catalog"
+
+
+def observation_key(station_id, period):
+    return f"daily:{station_id}" if period in DAILY_PERIODS.values() else station_id
+
+
+def refresh_keys(station_id):
+    return list(dict.fromkeys([catalog_key(station_id), station_id, "catalog:LUG", f"daily:{station_id}"]))
+
+
+def contract_ready(session, key, now):
+    row = session.get(AirSourceCache, key)
+    return (row is not None and row.fetched_at is not None and not row.error
+            and timedelta(0) <= now - utc(row.fetched_at) <= timedelta(hours=25))
 
 
 def collect(database, key="BAS", *, now=None, fetch=request_json,
-            fetch_nabel_metadata=air_nabel.request_metadata, fetch_nabel_csv=air_nabel.request_csv):
-    if key not in {"catalog", "catalog:LUG", "BAS", "LUG"}:
+            fetch_nabel_metadata=air_nabel.request_metadata, fetch_nabel_csv=air_nabel.request_csv,
+            fetch_daily_csv=air_daily.request_csv):
+    if key not in {"catalog", "catalog:LUG", "BAS", "LUG", "daily:BAS", "daily:LUG"}:
         raise ValueError("Unsupported air source")
     now, token = utc(now or datetime.now(UTC)), str(uuid4())
     with database.session(include_all_organizations=True) as session:
@@ -193,15 +209,13 @@ def collect(database, key="BAS", *, now=None, fetch=request_json,
             data = air_nabel.validate_metadata(fetch_nabel_metadata())
         else:
             with database.session(include_all_organizations=True) as session:
-                catalog = session.get(AirSourceCache, catalog_key(key))
-                if (
-                    catalog is None
-                    or catalog.error
-                    or not catalog.fetched_at
-                    or not timedelta(0) <= now - utc(catalog.fetched_at) <= timedelta(hours=25)
-                ):
+                contract = "catalog:LUG" if key.startswith("daily:") else catalog_key(key)
+                if not contract_ready(session, contract, now):
                     raise ValueError("Current source contract unavailable")
-            if key == "LUG":
+            if key.startswith("daily:"):
+                station_id = key.split(":")[1]
+                samples = air_daily.parse(fetch_daily_csv(station_id, now), station_id, now)
+            elif key == "LUG":
                 samples = air_nabel.parse(fetch_nabel_csv(now), now)
             else:
                 pages = [
@@ -234,7 +248,10 @@ def collect(database, key="BAS", *, now=None, fetch=request_json,
         if row is None:
             return "lease_lost"
         for sample in samples:
-            identity = digest([sample["station_id"], sample["metric"], sample["timestamp"]])
+            parts = [sample["station_id"], sample["metric"], sample["timestamp"]]
+            if sample["period"] in DAILY_PERIODS.values():
+                parts.append(sample["period"])
+            identity = digest(parts)
             previous = session.get(AirMeasurement, identity)
             if previous and previous.evidence["value_hash"] == sample["value_hash"]:
                 continue
@@ -266,7 +283,7 @@ def collect(database, key="BAS", *, now=None, fetch=request_json,
                         evidence=sample,
                     )
                 )
-        if key in {"BAS", "LUG"}:
+        if not key.startswith("catalog"):
             # A withdrawal must not rewind the reader to an older apparently good hour.
             known = [s["timestamp"] for s in samples if s["value"] is not None]
             if row.data.get("latest_observation_at"):
@@ -274,7 +291,8 @@ def collect(database, key="BAS", *, now=None, fetch=request_json,
             data["latest_observation_at"] = max(known, default=None)
         row.data, row.fetched_at, row.error, row.failures = data, now, None, 0
         row.lease_until = row.lease_token = None
-        row.next_fetch_at = now + (timedelta(days=1) if key.startswith("catalog") else timedelta(hours=1))
+        interval = 24 if key.startswith("catalog") else 6 if key.startswith("daily:") else 1
+        row.next_fetch_at = now + timedelta(hours=interval)
         for model in (AirMeasurement, AirReadingVersion):
             session.execute(
                 delete(model)
@@ -290,9 +308,8 @@ def catalogue(session, *, now=None):
     stations = []
     unsupported = []
     for station in (STATION, air_nabel.STATION):
-        row = session.get(AirSourceCache, catalog_key(station["id"]))
-        ready = (row is not None and row.fetched_at is not None and not row.error
-                 and timedelta(0) <= now - utc(row.fetched_at) <= timedelta(hours=25))
+        ready = (contract_ready(session, catalog_key(station["id"]), now)
+                 or contract_ready(session, "catalog:LUG", now))
         if ready:
             stations.append(station)
         else:

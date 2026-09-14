@@ -1,6 +1,7 @@
 # Air Quality Watch — source contract and implementation scope
 
-Current coverage: Basel-Binningen and Lugano-Università. Both station collectors
+Current coverage: Basel-Binningen and Lugano-Università, with hourly and official
+daily statistics. Both station collectors
 are enabled; the scope and acceptance below distinguish historical Basel-only
 evidence from the complete Lugano extension. Exact release/human acceptance
 remains VERIFYING.
@@ -227,8 +228,9 @@ Air files pass their formatting checks.
    record and live hourly contract. Other national stations remain outside this
    verified footprint. Keep resource rights separate from geometry and Basel
    licences; do not infer a grant from generic website terms.
-3. Official categories and daily O3 maxima remain separate unsupported
-   interpretations; numerical per-period rules are the implemented fallback.
+3. Official risk categories remain unsupported; numerical per-period rules are
+   the fallback. Native O3 daily maxima and other daily means are implemented
+   in the complete daily feature below.
 4. Exact release identity and applicable field/human acceptance remain pending.
    No DONE claim is made merely from local tests or a push.
 
@@ -304,3 +306,78 @@ axe checkpoints, and the Monitoring Centre passed eight checkpoints with nine
 choices, five languages, mobile/viewer visibility, source errors and privacy
 recovery. Four malformed-catalogue cases also passed. No provider credentials,
 production consent or deferred C4 state was changed.
+
+## Official daily Air feature scope — 14 September 2026
+
+MV2-034 AC2 and MV2-035 AC-C7-03/04/05/06/09/10: deliver native NABEL
+calendar-day reports for Basel-Binningen and Lugano-Università, including O3's
+maximum hourly mean per day and NO2/PM10/PM2.5 daily means. Keep these independent
+from hourly observations and Helvetic Lens rolling-24-hour calculations. Scope
+includes bounded acquisition, period-separated immutable identity/history,
+correction/withdrawal handling, daily freshness and gaps, private numeric rules,
+Today and consented delivery, five-language period labels/selection and browser
+acceptance. Reuse existing station contracts and tables, preserving hourly IDs.
+
+Source readiness: actual Lugano daily query on 14 September returned header
+`Tagesmittelwerte, O3: Maximales Stundenmittel des Tages`, dated daily rows for
+10–13 September and an empty current-day placeholder. SHA256
+3ff48387d80da955015a3454f97a3a7c707fabd53d30fc870d6e2df4013b6c96.
+The existing verified BAFU data-query resource grant covers this query interface.
+Dates are source calendar dates, not timestamps of an instantaneous measurement.
+Store an explicit source_date and display it without browser timezone conversion;
+a UTC midnight sort key is internal ordering only. Use the query's NABEL fixed
+CET clock for completed-day requests and conservative recency policy; do not
+claim the daily CSV itself declares exact interval endpoints. Never ingest a
+populated current/future day as a completed daily observation.
+
+Acceptance: both real station queries/collector, strict source daily schema,
+metric/period restrictions and identity collision prevention, unchanged hourly
+and rolling results, missing/corrected/withdrawn day without rewind, daily gap
+semantics and independent hourly/daily source failures, actual private lifecycle
+and final-send rechecks, period-aware history, source-date rendering in five
+locales, root build and exact API lint. Publish only the whole completed feature;
+exact release and applicable human/source operational acceptance remain open.
+
+## Official daily acceptance evidence — 14 September 2026
+
+The completed feature polls one shared seven-day daily query per station every
+six hours, with independent source backoff and the verified NABEL data-query
+rights check. No station, source or user feature switch is disabled. The previous
+hourly cache keys and identities remain unchanged; daily identity adds its period.
+No schema migration or private configuration rewrite is required. Twelve distinct
+metric/period rules are allowed, with O3 daily means and other pollutants' daily
+maxima explicitly rejected because this source does not provide those statistics.
+
+Daily observations use source_date for display, with an explicitly identified UTC
+sort key for bounded history pagination. Recency requires the previous completed
+NABEL calendar day and a current source/cache; older values are stale. No current
+or future populated daily report is accepted as complete. Missing and withdrawn
+reports cannot rewind the latest date to an older good reading. Consecutive daily
+reports are not misclassified as 23-hour gaps. Hourly and daily source failures,
+threshold baselines, improvements, revisions and delivery checks stay independent.
+Every selected metric's daily report is visible alongside hourly data even without
+a daily notification rule. Source statistics are never relabelled as Helvetic Lens
+rolling-24-hour means or an official health index.
+
+At **08:06 UTC**, the actual collector retained **28** public observations per
+station (seven dates, four pollutants), with all four latest reports dated
+**13 September**. See [live daily collection evidence](evidence/mv2-034-daily-live-collector.json).
+The isolated database contained no private accounts or monitors. Existing rights,
+production accounts, mail settings and deployment jobs were not modified.
+
+Full Air/Lugano/daily/delivery suite: **96 passed**. This includes private HTTP
+lifecycle/history/Today, period-isolated thresholds and corrections, withdrawals,
+unchanged hourly and rolling results, source independence and final-send races.
+Root build, types/localization gates and exact API lint passed. Daily Lugano and
+existing hourly Basel browser journeys each passed **nine full-document axe
+checkpoints**, five locales, mobile/viewer privacy and explicit consent flows.
+The daily browser used America/Los_Angeles while retaining the exact source date
+in all locales; this proves the UI does not shift the date through a timezone.
+Automated localization checks do not claim native-language or human field review.
+
+Code publication, exact activation and field/human acceptance remain distinct;
+MV2-034/035 remain VERIFYING. C4/customs and grants remain deferred.
+
+Final source-budget/backlog checks: **2 passed**, including the six-hour shared
+poll interval and a daily acquisition failure leaving current hourly coverage
+intact. Coverage headings identify the period even when no value is available.

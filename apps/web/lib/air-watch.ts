@@ -5,7 +5,15 @@ export const AIR_STATIONS: Record<string, string> = {
   LUG: "Lugano-Università",
 };
 export type AirMetric = "O3" | "NO2" | "PM10" | "PM25";
-export type AirPeriod = "hourly_mean" | "rolling_24h_mean";
+export type AirPeriod =
+  "hourly_mean" | "rolling_24h_mean" | "daily_mean" | "daily_max_hourly";
+export const airDailyPeriod = (metric: AirMetric): AirPeriod =>
+  metric === "O3" ? "daily_max_hourly" : "daily_mean";
+export const airPeriods = (metric: AirMetric): AirPeriod[] => [
+  "hourly_mean",
+  "rolling_24h_mean",
+  airDailyPeriod(metric),
+];
 export type AirRule = {
   metric: AirMetric;
   period: AirPeriod;
@@ -32,6 +40,7 @@ export type AirSample = {
   source?: string;
   source_time_label?: string;
   source_timezone?: string;
+  source_date?: string;
   corrected?: boolean;
   derived?: boolean;
   revision: number;
@@ -82,6 +91,7 @@ export function invalidAir(c: AirConfiguration) {
     !c.metrics.length ||
     c.rules.some(
       (r) =>
+        !airPeriods(r.metric).includes(r.period) ||
         !r.threshold.trim() ||
         !Number.isFinite(Number(r.threshold)) ||
         Number(r.threshold) <= 0 ||

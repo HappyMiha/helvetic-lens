@@ -12,7 +12,12 @@ const extra = {
   PM10: "PM10",
   PM25: "PM2.5",
   hourly_mean: "Hourly mean",
-  rolling_24h_mean: "Mean of 24 consecutive hourly values",
+  daily_mean: "Official daily mean",
+  daily_max_hourly: "Official daily maximum of hourly ozone means",
+  sourceDate: "Source calendar date",
+  dailyHelp:
+    "Daily reports describe completed days. Ozone uses the highest hourly mean, other pollutants the daily mean. Hourly conditions may differ; an older report is shown as stale.",
+  rolling_24h_mean: "Calculated mean of 24 consecutive hourly values",
   period: "Measurement period",
   hysteresis: "Improvement margin (µg/m³)",
   cooldown: "Minimum time between deteriorations (hours)",
@@ -56,6 +61,11 @@ const translations: Record<Locale, Extra> = {
     PM10: "PM10",
     PM25: "PM2.5",
     hourly_mean: "Stundenmittel",
+    daily_mean: "Offizielles Tagesmittel",
+    daily_max_hourly: "Offizielles Tagesmaximum der Ozon-Stundenmittel",
+    sourceDate: "Kalenderdatum der Quelle",
+    dailyHelp:
+      "Tagesberichte beschreiben abgeschlossene Tage. Ozon verwendet das höchste Stundenmittel, andere Schadstoffe das Tagesmittel. Stundenwerte können abweichen; ältere Berichte werden als veraltet angezeigt.",
     rolling_24h_mean: "Mittel aus 24 aufeinanderfolgenden Stundenwerten",
     period: "Messzeitraum",
     hysteresis: "Verbesserungsabstand (µg/m³)",
@@ -97,6 +107,12 @@ const translations: Record<Locale, Extra> = {
     PM10: "PM10",
     PM25: "PM2.5",
     hourly_mean: "Moyenne horaire",
+    daily_mean: "Moyenne journalière officielle",
+    daily_max_hourly:
+      "Maximum journalier officiel des moyennes horaires d’ozone",
+    sourceDate: "Date civile de la source",
+    dailyHelp:
+      "Les rapports journaliers décrivent des jours terminés. L’ozone utilise la moyenne horaire maximale, les autres polluants la moyenne journalière. Les conditions horaires peuvent différer ; un rapport ancien est signalé comme périmé.",
     rolling_24h_mean: "Moyenne de 24 valeurs horaires consécutives",
     period: "Période de mesure",
     hysteresis: "Marge d’amélioration (µg/m³)",
@@ -139,6 +155,12 @@ const translations: Record<Locale, Extra> = {
     PM10: "PM10",
     PM25: "PM2.5",
     hourly_mean: "Media oraria",
+    daily_mean: "Media giornaliera ufficiale",
+    daily_max_hourly:
+      "Massimo giornaliero ufficiale delle medie orarie dell’ozono",
+    sourceDate: "Data di calendario della fonte",
+    dailyHelp:
+      "I rapporti giornalieri descrivono giorni conclusi. Per l’ozono si usa la media oraria più alta, per gli altri inquinanti la media giornaliera. Le condizioni orarie possono differire; un rapporto vecchio è indicato come non aggiornato.",
     rolling_24h_mean: "Media di 24 valori orari consecutivi",
     period: "Periodo di misura",
     hysteresis: "Margine di miglioramento (µg/m³)",
@@ -181,6 +203,11 @@ const translations: Record<Locale, Extra> = {
     PM10: "PM10",
     PM25: "PM2.5",
     hourly_mean: "Media orara",
+    daily_mean: "Media quotidiana uffiziala",
+    daily_max_hourly: "Maximum quotidian uffizial da las medias oraras d’ozon",
+    sourceDate: "Data da chalender da la funtauna",
+    dailyHelp:
+      "Ils rapports quotidians descrivan dis terminads. Per l’ozon vala la media orara la pli auta, per autras substanzas la media quotidiana. Las cundiziuns oraras pon variar; rapports pli vegls vegnan inditgads sco antiquads.",
     rolling_24h_mean: "Media da 24 valurs oraras consecutivas",
     period: "Perioda da mesiraziun",
     hysteresis: "Distanza da meglieraziun (µg/m³)",

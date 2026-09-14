@@ -199,7 +199,7 @@ def test_lugano_worker_uses_own_source_keys(api, monkeypatch):
     keys = []
     monkeypatch.setattr(air_jobs, "collect", lambda database, key, **kwargs: keys.append(key))
     air_jobs.refresh(service.db, settings, monitor_id=row["id"], version=row["version"], now=now)
-    assert keys == ["catalog:LUG", "LUG"]
+    assert keys == ["catalog:LUG", "LUG", "daily:LUG"]
     with service.db.session() as session:
         monitor = session.get(AirMonitor, row["id"])
         assert monitor.state["coverage"]["O3:hourly_mean"]["sample"]["station_id"] == "LUG"

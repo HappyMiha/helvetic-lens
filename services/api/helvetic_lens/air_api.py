@@ -13,7 +13,7 @@ from .air_contracts import AirConfiguration, utc
 from .air_email_preferences import EmailConfiguration
 from .air_models import AirChange, AirMonitor, AirReadingVersion, AirRevision
 from .air_runtime import change_view, command, create, edit, mute, owned, preview, remove, review, view
-from .air_sources import catalog_key, catalogue, collect
+from .air_sources import catalogue, collect, refresh_keys
 from .auth import Identity
 from .config import DomainError
 from .monitoring_subjects import _actor
@@ -171,8 +171,8 @@ def air_router(service, settings):
     def preview_configuration(body: ConfigurationBody, actor: Identity = Depends(identity)):
         with service.db.session() as session:
             _actor(session, actor.user_id, write=True)
-        collect(service.db, catalog_key(body.configuration.station_id))
-        collect(service.db, body.configuration.station_id)
+        for key in refresh_keys(body.configuration.station_id):
+            collect(service.db, key)
         with service.db.session() as session:
             _actor(session, actor.user_id, write=True)
             return preview(session, body.configuration.model_dump(mode="json"), datetime.now(UTC))

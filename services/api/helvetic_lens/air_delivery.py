@@ -8,14 +8,14 @@ from sqlalchemy import exists, func, select, update
 from sqlalchemy.orm import aliased
 
 from . import jobs
-from .air_contracts import AirConfiguration
+from .air_contracts import DAILY_PERIODS, AirConfiguration
 from .air_contracts import utc as _utc
 from .air_email_models import AirDelivery
 from .air_email_preferences import EmailConfiguration, cancel_email_work, clock, policy
 from .air_models import AirChange, AirMonitor, AirSourceCache
 from .air_runtime import fresh
 from .air_runtime import preview as source_preview
-from .air_sources import catalog_key
+from .air_sources import catalog_key, observation_key
 from .air_sources import digest as fingerprint
 from .auth_mail import AuthMailer
 from .config import DomainError
@@ -98,7 +98,9 @@ def current_condition(session, monitor, change, *, now):
     if (change.evidence.get("station_id") != config.station_id or evidence["station_id"] != config.station_id
             or evidence["metric"] != metric or evidence["period"] != period):
         return "suppressed"
-    for key, age in ((catalog_key(config.station_id), timedelta(hours=25)), (config.station_id, timedelta(hours=6))):
+    observation_age = timedelta(hours=25 if period in DAILY_PERIODS.values() else 6)
+    for key, age in ((catalog_key(config.station_id, period), timedelta(hours=25)),
+                     (observation_key(config.station_id, period), observation_age)):
         cache = session.get(AirSourceCache, key, populate_existing=True)
         if cache is None or cache.error or cache.fetched_at is None or not now - age <= _utc(cache.fetched_at) <= now:
             return "deferred"

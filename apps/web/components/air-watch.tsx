@@ -10,6 +10,8 @@ import {
   AIR_METRICS,
   AIR_UNIT,
   AIR_STATIONS,
+  airDailyPeriod,
+  airPeriods,
   invalidAir,
   type AirChange,
   type AirConfiguration,
@@ -60,7 +62,7 @@ function Sample({ sample }: { sample: AirSample }) {
         {c.period}: {c[sample.period]}
       </span>
       <span>
-        {c.time}: {new Date(sample.timestamp).toLocaleString(locale)}
+        {sample.source_date ? c.sourceDate : c.time}: {sample.source_date || new Date(sample.timestamp).toLocaleString(locale)}
       </span>
       {sample.source_time_label && <span>{sample.source_time_label} · {sample.source_timezone}</span>}
       <span>
@@ -86,7 +88,7 @@ function Coverage({ coverage }: { coverage: AirCoverage }) {
       {Object.entries(coverage).map(([key, entry]) => (
         <section key={key} className={styles.card}>
           <h3>
-            {label(c, key.split(":")[0])} · {label(c, entry.status)}
+            {label(c, key.split(":")[0])} · {label(c, key.split(":")[1])} · {label(c, entry.status)}
           </h3>
           {entry.sample ? <Sample sample={entry.sample} /> : <p>{c.unknown}</p>}
         </section>
@@ -254,7 +256,8 @@ function Editor({
             <select
               value={r.metric}
               onChange={(e) =>
-                rule(i, { ...r, metric: e.target.value as AirMetric })
+                rule(i, { ...r, metric: e.target.value as AirMetric,
+                  period: r.period.startsWith("daily_") ? airDailyPeriod(e.target.value as AirMetric) : r.period })
               }
             >
               {config.metrics.map((m) => (
@@ -272,7 +275,7 @@ function Editor({
                 rule(i, { ...r, period: e.target.value as AirRule["period"] })
               }
             >
-              {(["hourly_mean", "rolling_24h_mean"] as const).map((p) => (
+              {airPeriods(r.metric).map((p) => (
                 <option key={p} value={p}>
                   {c[p]}
                 </option>
@@ -332,7 +335,7 @@ function Editor({
       ))}
       <button
         type="button"
-        disabled={!config.metrics.length || config.rules.length >= 8}
+        disabled={!config.metrics.length || config.rules.length >= 12}
         onClick={() =>
           change({
             ...config,
@@ -955,6 +958,7 @@ function Reader({
         </header>
         <p>{c.scope}</p>
         <p>{c.limits}</p>
+        <p>{c.dailyHelp}</p>
         {!loading && unavailableAreas.length > 0 && <p role="status">{unavailableAreas.join(" · ")}: {c.unavailable}</p>}
         <div className={styles.actions}>
           <button disabled={!allowed} onClick={changed}>

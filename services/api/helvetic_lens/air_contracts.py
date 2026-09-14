@@ -9,6 +9,7 @@ from .river_contracts import utc  # Shared UTC normalization; no hydrological se
 
 __all__ = ["utc", "AirConfiguration", "AirRule", "METRICS", "SOURCE_URL", "STATION"]
 METRICS = {"O3": "o3_ug_m3", "NO2": "no2_ug_m3", "PM10": "pm10_ug_m3", "PM25": "pm2_5_ug_m3"}
+DAILY_PERIODS = {"O3": "daily_max_hourly", "NO2": "daily_mean", "PM10": "daily_mean", "PM25": "daily_mean"}
 SOURCE_URL = "https://data.bs.ch/explore/dataset/100051/"
 STATION = {
     "id": "BAS",
@@ -23,13 +24,15 @@ Metric = Literal["O3", "NO2", "PM10", "PM25"]
 class AirRule(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
     metric: Metric
-    period: Literal["hourly_mean", "rolling_24h_mean"] = "hourly_mean"
+    period: Literal["hourly_mean", "rolling_24h_mean", "daily_mean", "daily_max_hourly"] = "hourly_mean"
     threshold: Decimal = Field(gt=0, le=10000)
     hysteresis: Decimal = Field(default=Decimal("0"), ge=0, le=10000)
     cooldown_hours: int = Field(default=6, strict=True, ge=1, le=48)
 
     @model_validator(mode="after")
     def validate_rule(self):
+        if self.period in {"daily_mean", "daily_max_hourly"} and self.period != DAILY_PERIODS[self.metric]:
+            raise ValueError("Choose the official daily statistic for this pollutant.")
         if self.hysteresis >= self.threshold:
             raise ValueError("The improvement margin must be smaller than the threshold.")
         return self
@@ -43,7 +46,7 @@ class AirConfiguration(BaseModel):
     station_id: Literal["BAS", "LUG"]
     metrics: list[Metric] = Field(min_length=1, max_length=4)
     muted_metrics: list[Metric] = Field(default_factory=list, max_length=4)
-    rules: list[AirRule] = Field(default_factory=list, max_length=8)
+    rules: list[AirRule] = Field(default_factory=list, max_length=12)
 
     @model_validator(mode="after")
     def validate_selection(self):
