@@ -22,6 +22,7 @@ const { airCopy } = await import(
 );
 import { AccessibilityAudit } from "./browser-accessibility.mjs";
 import { Cdp, evaluate, sleep } from "./browser-cdp.mjs";
+import { roadEmailCopy } from "../apps/web/lib/road-email-copy.ts";
 
 const root = resolve(import.meta.dirname, "..");
 const chrome = [
@@ -91,6 +92,16 @@ const coverage = {
   "PM25:hourly_mean": { status: "unknown", sample: null },
 };
 let changes = [];
+let emailPolicy = null, emailDenied = false, emailStale = false;
+const changeId = "00000000-0000-4000-8000-000000000096";
+async function openEmail() {
+  await wait(()=>evaluate(cdp,"!!document.querySelector('[data-air-email]')"),"Email section missing");
+  await evaluate(cdp,"document.querySelector('[data-air-email]').open=true");
+  await wait(()=>evaluate(cdp,"!!document.querySelector('[data-air-email] select')"),"Email settings missing");
+}
+async function emailMode(mode) {
+  await evaluate(cdp,`(()=>{const e=document.querySelector('[data-air-email] select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(e,${JSON.stringify(mode)});e.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+}
 async function wait(check, message) {
   for (let i = 0; i < 200; i++) {
     if (
@@ -191,7 +202,19 @@ try {
     else if (url.pathname.startsWith("/api/air-watch")) {
       if (request.method !== "GET")
         mutations.push({ path: url.pathname, method: request.method, payload });
-      if (url.pathname.endsWith("/stations"))
+      if (url.pathname.includes('/email') && emailDenied) {
+        code=403; body={code:'membership_required',detail:'Private access removed'};
+      } else if (url.pathname.endsWith('/email/preview')) {
+        body={status:'ready',quiet_hours:false,more_available:false,items:emailStale?[]:[{href:`/air-watch?monitor=${monitor.id}&change=${changeId}`,detected_at:sample.timestamp}]};
+      } else if (url.pathname.endsWith('/email')) {
+        if (request.method==='PUT') {
+          assert.equal(payload.expected_version,monitor.version);monitor.version++;
+          emailPolicy={revision:(emailPolicy?.revision||0)+1,configuration:payload.configuration,consent_active:payload.consent};
+        }
+        body={revision:0,configuration:{timezone:'Europe/Zurich',delivery:{email:'off',digest_at:null,quiet_hours:null}},consent_active:false,...emailPolicy,monitor_version:monitor.version,email_verified:true,recipient_email:'air@example.invalid',uncertain_deliveries:0,mail_available:true};
+      } else if (url.pathname.endsWith(`/changes/${changeId}`)) {
+        body={event:changes[0],newer_available:false,current_configuration:true};
+      } else if (url.pathname.endsWith("/stations"))
         body = { stations: [station], health: "ready" };
       else if (url.pathname.endsWith("/today"))
         body = {
@@ -219,7 +242,7 @@ try {
         request.method === "POST"
       ) {
         monitor = {
-          id: "air-qa",
+          id: "00000000-0000-4000-8000-000000000095",
           configuration: payload.configuration,
           status: "draft",
           version: 1,
@@ -316,7 +339,7 @@ try {
   await wait(() => monitor?.status === "active", "Monitor did not start");
   changes = [
     {
-      id: "change-1",
+      id: changeId,
       development_id: "a".repeat(64),
       sequence: 1,
       revision: 1,
@@ -343,6 +366,25 @@ try {
   await button(c.measurements);
   await button(c.settings);
   await audit.check(cdp, "active-history-review", "[data-air-watch]");
+  await openEmail(); const email=roadEmailCopy['en-CH'];
+  assert.equal(await evaluate(cdp,"document.querySelector('[data-air-email] select').value"),'off');
+  await emailMode('daily_digest');
+  assert.ok(await evaluate(cdp,"document.querySelector('[data-air-email] button[type=submit]').disabled"));
+  await evaluate(cdp,"(()=>{const e=document.querySelector('[data-air-email] input[type=time]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(e,'09:30');e.dispatchEvent(new Event('input',{bubbles:true}));})()");
+  await evaluate(cdp,"document.querySelector('[data-air-email] input[type=checkbox]').click()");
+  await evaluate(cdp,"document.querySelector('[data-air-email] input[type=checkbox][required]').click()");
+  await button(email.save);
+  await wait(()=>evaluate(cdp,"!document.querySelector('[data-air-email] select')"),'Saved email did not reload');
+  await openEmail(); assert.equal(await evaluate(cdp,"document.querySelector('[data-air-email] select').value"),'daily_digest');
+  assert.equal(emailPolicy.configuration.delivery.digest_at,'09:30');assert.deepEqual(emailPolicy.configuration.delivery.quiet_hours,{start:'22:00',end:'07:00'});
+  assert.ok(emailPolicy.consent_active);assert.equal(mutations.filter(r=>r.path.endsWith('/email')).length,1);
+  await button(email.preview);await wait(()=>evaluate(cdp,"!!document.querySelector('[data-air-email] a[href*=change]')"),'Exact email preview missing');
+  emailStale=true;await button(email.preview);await wait(()=>evaluate(cdp,"!document.querySelector('[data-air-email] a[href*=change]')"),'Stale preview leaked');emailStale=false;
+  await audit.check(cdp,'email-consent-preview','[data-air-email]');
+  await emailMode('off');await button(email.save);await wait(()=>!emailPolicy.consent_active,'Opt-out failed');
+  await cdp.send('Page.navigate',{url:`${base}/air-watch?monitor=${monitor.id}&change=${changeId}`});
+  await wait(()=>evaluate(cdp,"document.querySelector('[data-air-exact-change]')?.textContent.includes('Ozone (O₃): 60')"),'Exact change link missing');
+  assert.equal(changes[0].decision,'reviewed');
   await button(`${c.mute}: ${c.O3}`);
   await wait(
     () => monitor.configuration.muted_metrics.includes("O3"),
@@ -426,6 +468,8 @@ try {
       true,
       `Overflow ${locale}`,
     );
+    await openEmail();
+    assert.ok(await evaluate(cdp,"document.querySelector('[data-air-email]').textContent.includes('air@example.invalid')"));
     await audit.check(cdp, `reader-${locale}`, "[data-air-watch]");
   }
   manager = false;
@@ -447,7 +491,13 @@ try {
     ),
   );
   assert.deepEqual(exceptions, []);
-  audit.finish(8);
+  await evaluate(cdp,"document.querySelector('[data-air-watch] aside button').click()");
+  await openEmail();
+  assert.ok(await evaluate(cdp,"document.querySelector('[data-air-email] fieldset').disabled"));
+  emailDenied=true;await button(roadEmailCopy[locale].preview);
+  await wait(()=>evaluate(cdp,"!document.querySelector('[data-air-watch]')"),'Denied reader was not redacted');
+  assert.ok(!(await evaluate(cdp,"document.body.innerText")).includes('Basel updated'));
+  audit.finish(9);
   console.log(
     "Air browser: preview/save/start/threshold/review/history/mute/unmute/Today/pause/edit/resume/archive, five locales, mobile and viewer gates passed.",
   );

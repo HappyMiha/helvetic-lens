@@ -225,7 +225,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-032](#mv2-032) | C6: hydrological stations, metrics and official danger levels | F3 | P1 | M | VERIFYING | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
 | [MV2-033](#mv2-033) | C6: River / Lake thresholds, history and consented digest | F3 | P1 | M | VERIFYING | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-032](#mv2-032) |
 | [MV2-034](#mv2-034) | C7: official air-quality series and interpretation | F3 | P1 | M | VERIFYING | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
-| [MV2-035](#mv2-035) | C7: Air Quality — metrics, changes and improvements | F3 | P1 | M | VERIFYING | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-034](#mv2-034) |
+| [MV2-035](#mv2-035) | C7: Air Quality — changes, improvements and consented digest | F3 | P1 | M | VERIFYING | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-034](#mv2-034) |
 | [MV2-036](#mv2-036) | Related developments from multiple sources | F4 | P1 | M | PLANNED | [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-029](#mv2-029), [MV2-033](#mv2-033), [MV2-041](#mv2-041), [MV2-071](#mv2-071) |
 | [MV2-037](#mv2-037) | Journey/Trip/Route/Stop and Road Corridor reference data | F4 | P0 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-015](#mv2-015), [MV2-016](#mv2-016), [MV2-071](#mv2-071) |
 | [MV2-038](#mv2-038) | C2: Service Alerts and Trip Updates | F4 | P1 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-037](#mv2-037), [MV2-071](#mv2-071) |
@@ -1338,7 +1338,25 @@ Actual release and human/source acceptance remain open.
 
 <a id="mv2-035"></a>
 
-### MV2-035 — C7: Air Quality — metrics, changes and improvements
+### MV2-035 — C7: Air Quality — changes, improvements and consented digest
+
+**Active whole-feature scope, 14 September 2026:** Complete the §14.8 Air digest
+with explicit owner consent, saved preview, durable delivery and exact private
+change reader. Preserve pollutant/period/hysteresis semantics and recheck current
+source versions, complete windows, review and access before SMTP. Existing licensed
+Basel access is sufficient; no national coverage or medical claims are implied.
+See [scope and acceptance](docs/monitoring-v2/AIR_QUALITY_WATCH.md#active-whole-feature-consented-air-digest--14-september-2026).
+MV2-012/022 are scoped contributions; field/human acceptance remains VERIFYING.
+
+**Digest execution evidence, 14 September 2026:** Complete owner consent/settings,
+saved preview, durable email and exact private reader implemented. Final-send checks
+bind current pollutant/period input revisions and the hysteresis projection; muted,
+withdrawn, stale, superseded or unreviewable evidence cannot send. Migration preserves
+existing observations and changes. Final Air delivery suite: 26 passed; 89 tests
+passed in the expanded Air/River/Centre run before correcting one hourly fixture
+(overlapping counts). Root build, formatting, exact API lint and nine browser axe
+checkpoints passed across five locales/mobile/viewer access. See [digest acceptance](docs/monitoring-v2/AIR_QUALITY_WATCH.md#consented-digest-acceptance--14-september-2026).
+No real mail, broader national source coverage or production activation is claimed.
 
 **Status:** VERIFYING · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** M
 

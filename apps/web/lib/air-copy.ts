@@ -4,7 +4,7 @@ import { riverCopy } from "./river-copy";
 const extra = {
   title: "Air Quality Watch",
   intro:
-    "Private station monitoring. Material changes appear here and in Today. Email is not enabled.",
+    "Private station monitoring. Material changes appear here and in Today. Choose email delivery in monitor settings.",
   station: "Supported station",
   metrics: "Pollutants",
   O3: "Ozone (O₃)",
@@ -48,7 +48,7 @@ const translations: Record<Locale, Extra> = {
   "de-CH": {
     title: "Luftqualitäts-Monitoring",
     intro:
-      "Privates Stationsmonitoring. Wesentliche Änderungen erscheinen hier und unter Heute. E-Mail ist nicht aktiviert.",
+      "Privates Stationsmonitoring. Wesentliche Änderungen erscheinen hier und unter Heute. Wählen Sie E-Mail in den Monitoreinstellungen.",
     station: "Unterstützte Station",
     metrics: "Schadstoffe",
     O3: "Ozon (O₃)",
@@ -89,7 +89,7 @@ const translations: Record<Locale, Extra> = {
   "fr-CH": {
     title: "Suivi de la qualité de l’air",
     intro:
-      "Suivi privé des stations. Les changements significatifs apparaissent ici et dans Aujourd’hui. Les e-mails ne sont pas activés.",
+      "Suivi privé des stations. Les changements significatifs apparaissent ici et dans Aujourd’hui. Choisissez les e-mails dans les réglages du suivi.",
     station: "Station prise en charge",
     metrics: "Polluants",
     O3: "Ozone (O₃)",
@@ -131,7 +131,7 @@ const translations: Record<Locale, Extra> = {
   "it-CH": {
     title: "Monitoraggio della qualità dell’aria",
     intro:
-      "Monitoraggio privato delle stazioni. Le variazioni rilevanti appaiono qui e in Oggi. Le e-mail non sono attivate.",
+      "Monitoraggio privato delle stazioni. Le variazioni rilevanti appaiono qui e in Oggi. Scegli le e-mail nelle impostazioni del monitoraggio.",
     station: "Stazione supportata",
     metrics: "Inquinanti",
     O3: "Ozono (O₃)",
@@ -173,7 +173,7 @@ const translations: Record<Locale, Extra> = {
   "rm-CH": {
     title: "Monitoring da la qualitad da l’aria",
     intro:
-      "Monitoring privat da staziuns. Midadas relevantas cumparan qua ed en Oz. E-mail n’è betg activà.",
+      "Monitoring privat da staziuns. Midadas relevantas cumparan qua ed en Oz. Tscherna e-mails en ils parameters da l’observaziun.",
     station: "Staziun sustegnida",
     metrics: "Substanzas nuschaivlas",
     O3: "Ozon (O₃)",

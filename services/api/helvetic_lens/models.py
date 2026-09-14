@@ -20,6 +20,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
+from . import air_email_models as air_email_models
 from . import aste_models as aste_models
 from . import auction_models as auction_models
 from . import auction_source_models as auction_source_models
@@ -1792,6 +1793,8 @@ ORGANIZATION_SCOPED_MODELS = (
     trademark_email_models.TrademarkDelivery,
     river_email_models.RiverEmailPolicy,
     river_email_models.RiverDelivery,
+    air_email_models.AirEmailPolicy,
+    air_email_models.AirDelivery,
     hazard_models.HazardConfigurationRevision,
     hazard_models.HazardDevelopment,
     hazard_models.HazardEventRevision,

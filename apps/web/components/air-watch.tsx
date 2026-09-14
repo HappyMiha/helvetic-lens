@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
@@ -24,6 +24,9 @@ import {
 } from "@/lib/air-watch";
 import { useAuth } from "./auth-gate";
 import { Shell } from "./shell";
+import { AirEmail } from "./air-email";
+import { airEmailCopy } from "@/lib/air-email-copy";
+import { AirAccessFailure, AirPrivateBoundary } from "./air-private-boundary";
 import styles from "./river-watch.module.css";
 
 const base = "/air-watch";
@@ -104,6 +107,7 @@ function Editor({
 }) {
   const { locale } = useI18n();
   const c = airCopy[locale];
+  const deny = useContext(AirAccessFailure);
   const [config, setConfig] = useState<AirConfiguration>(
     monitor?.configuration || {
       name: "",
@@ -156,6 +160,7 @@ function Editor({
           ),
         );
     } catch (e) {
+      deny(e);
       setError(failure(c, e));
     } finally {
       setBusy(false);
@@ -432,6 +437,71 @@ type RevisionPage = {
   next_before: number | null;
 };
 
+function ExactChange({
+  monitorId,
+  changeId,
+}: {
+  monitorId: string;
+  changeId: string;
+}) {
+  const { locale } = useI18n(),
+    c = airCopy[locale],
+    e = airEmailCopy[locale];
+  const deny = useContext(AirAccessFailure);
+  const [value, setValue] = useState<{
+    event: AirChange;
+    newer_available: boolean;
+    current_configuration: boolean;
+  } | null>(null);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    const controller = new AbortController();
+    api<{
+      event: AirChange;
+      newer_available: boolean;
+      current_configuration: boolean;
+    }>(`${base}/monitors/${monitorId}/changes/${changeId}`, {
+      signal: controller.signal,
+    })
+      .then((data) => {
+        if (!controller.signal.aborted) setValue(data);
+      })
+      .catch((problem) => {
+        if (!controller.signal.aborted) {
+          deny(problem);
+          setError(c.failed);
+        }
+      });
+    return () => controller.abort();
+  }, [monitorId, changeId, c.failed, deny]);
+  return (
+    <section className={styles.card} data-air-exact-change>
+      <h2>{e.exact}</h2>
+      {error ? (
+        <p role="alert">{error}</p>
+      ) : !value ? (
+        <p role="status">{c.loading}</p>
+      ) : (
+        <>
+          <h3>{label(c, value.event.kind)}</h3>
+          <p>
+            {c.development} {value.event.development_id.slice(0, 8)} ·{" "}
+            {c.revision} {value.event.revision}
+          </p>
+          {value.newer_available && <p>{e.newer}</p>}
+          {!value.current_configuration && <p>{e.historical}</p>}
+          <Sample sample={value.event.evidence.sample} />
+          {value.event.evidence.baseline && (
+            <Sample sample={value.event.evidence.baseline} />
+          )}
+          {value.event.evidence.recovered && <p>{c.recovered}</p>}
+          {value.event.decision && <p>{label(c, value.event.decision)}</p>}
+        </>
+      )}
+    </section>
+  );
+}
+
 function Detail({
   id,
   stations,
@@ -450,6 +520,16 @@ function Detail({
   const { locale } = useI18n();
   const c = airCopy[locale];
   const [row, setRow] = useState<AirMonitor | null>(null);
+  const deny = useContext(AirAccessFailure);
+  const params = useSearchParams();
+  const requestedChange = params.get("change");
+  const exactChange =
+    requestedChange &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      requestedChange,
+    )
+      ? requestedChange
+      : null;
   const [changes, setChanges] = useState<ChangePage>({
     items: [],
     next_before: null,
@@ -479,7 +559,10 @@ function Detail({
           setError("");
         }
       } catch (e) {
-        if (!abort.signal.aborted) setError(failure(c, e));
+        if (!abort.signal.aborted) {
+          deny(e);
+          setError(failure(c, e));
+        }
       }
     }
     void load();
@@ -528,6 +611,7 @@ function Detail({
         changed();
       }
     } catch (e) {
+      deny(e);
       setError(failure(c, e));
     } finally {
       setBusy(false);
@@ -545,6 +629,7 @@ function Detail({
         items: old.items.map((e) => (e.id === saved.id ? saved : e)),
       }));
     } catch (e) {
+      deny(e);
       setError(failure(c, e));
     } finally {
       setBusy(false);
@@ -583,6 +668,7 @@ function Detail({
         });
       }
     } catch (e) {
+      deny(e);
       setError(failure(c, e));
     } finally {
       setBusy(false);
@@ -605,7 +691,14 @@ function Detail({
       />
     );
   return (
-    <section className={styles.detail}>
+    <section className={styles.detail} data-air-detail>
+      {exactChange && (
+        <ExactChange
+          key={`${id}:${exactChange}:${refreshToken}`}
+          monitorId={id}
+          changeId={exactChange}
+        />
+      )}
       <div className={styles.card}>
         <h2>{row.configuration.name}</h2>
         <p>
@@ -687,6 +780,14 @@ function Detail({
         <Coverage coverage={preview?.coverage || row.state.coverage || {}} />
         {Boolean(row.state.last_gap) && <p>{c.gap}</p>}
       </div>
+      <AirEmail
+        key={`email:${row.version}`}
+        monitorId={id}
+        canManage={canManage}
+        archived={row.status === "archived"}
+        changed={changed}
+        onAccessFailure={deny}
+      />
       <section className={styles.card}>
         <h2>{c.changes}</h2>
         {!changes.items.length && <p>{c.noChanges}</p>}
@@ -780,12 +881,13 @@ export function AirWatch() {
     ? `${session.user?.id}:${session.organization?.id}:${session.role}`
     : "unavailable";
   return (
-    <Reader
-      key={scope}
-      allowed={scope !== "unavailable"}
-      canManage={session?.role === "organization_admin"}
-      initial={params.get("monitor") || ""}
-    />
+    <AirPrivateBoundary key={scope}>
+      <Reader
+        allowed={scope !== "unavailable"}
+        canManage={session?.role === "organization_admin"}
+        initial={params.get("monitor") || ""}
+      />
+    </AirPrivateBoundary>
   );
 }
 function Reader({
@@ -799,6 +901,7 @@ function Reader({
 }) {
   const { locale } = useI18n();
   const c = airCopy[locale];
+  const deny = useContext(AirAccessFailure);
   const [stations, setStations] = useState<AirStation[]>([]);
   const [rows, setRows] = useState<AirMonitor[]>([]);
   const [selected, setSelected] = useState(initial);
@@ -830,6 +933,7 @@ function Reader({
       })
       .catch((e) => {
         if (!abort.signal.aborted) {
+          deny(e);
           setError(failure(c, e));
           setLoading(false);
         }

@@ -61,6 +61,7 @@ class AirMonitor(Base):
     configuration: Mapped[dict] = mapped_column(JSON)
     revision: Mapped[int] = mapped_column(Integer, default=1)
     version: Mapped[int] = mapped_column(Integer, default=1)
+    email_revision: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     status: Mapped[str] = mapped_column(String(12), default="draft")
     health: Mapped[str] = mapped_column(String(40), default="waiting")
     state: Mapped[dict] = mapped_column(JSON, default=dict)

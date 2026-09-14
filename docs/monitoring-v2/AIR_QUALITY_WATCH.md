@@ -1,10 +1,66 @@
 # Air Quality Watch — source contract and implementation scope
 
+## Active whole feature: consented Air digest — 14 September 2026
+
+MV2-035 with scoped MV2-012/022 completes the Digest reuse in §14.8. Reuse the
+verified private River consent/delivery pattern, keeping Air's station, pollutant,
+period, hysteresis/cooldown and immutable source-version semantics. Deliver verified
+owner opt-in/opt-out, immediate/daily/quiet-hour settings with IANA timezone, saved
+preview, durable worker delivery and exact private change links in all five locales.
+Opening a link never implies review. All nine sections remain enabled and visible.
+
+Before SMTP, require the latest unreviewed post-consent change in the current
+configuration and current unmuted condition. Recheck source contract freshness,
+observation freshness, period and current input revisions; incomplete 24-hour means,
+withdrawn/corrected evidence, worker lag and superseded changes cannot send stale
+claims. Preserve hysteresis rather than recalculate a threshold without its state.
+No old backfill, implicit consent, repeated local-day digest or uncertain SMTP retry.
+Email contains private links rather than copied pollutant readings or health advice.
+
+Acceptance: real HTTP → source projection → durable worker → fake SMTP; tenant,
+CSRF/CAS, recipient/membership/review/mute/pause/archive/deletion races; stale source
+contract, missing/withdrawn hourly values and corrected 24-hour inputs; migration
+preservation, quiet/DST and duplicate suppression; five-language/mobile/viewer
+browser journey, exact-reader redaction, root build and exact API lint. Existing
+licensed Basel access suffices; Lugano/national access, source operational and human
+acceptance remain open. This scope does not close broader shared parent tasks.
+
 Status: the complete Basel feature is implemented and locally verified on
 12 September 2026; publication and activation are pending. MV2-034/035 remain
 VERIFYING. The initial enabled footprint is the licensed Basel-Binningen station;
 Lugano and other areas explicitly show unsupported source coverage. National
 coverage and human acceptance are not implied by this scoped implementation.
+
+## Consented digest acceptance — 14 September 2026
+
+The complete scope above is implemented: owner-bound consent, saved preview,
+immediate/daily/quiet-hour delivery, durable scheduler and exact private reader.
+The reader preserves original measurements and periods, identifies newer or
+historical changes and never marks them reviewed on arrival. Known authorization
+denials unmount private content, and browser page restoration forces a fresh read.
+
+Delivery rechecks current source-contract and observation freshness, configuration,
+mute state, latest review state and source input hashes immediately before SMTP.
+An unchanged latest hourly reading cannot hide a correction to an older 24-hour
+input. Delivery waits for the stateful projection to catch up, retaining hysteresis
+and cooldown semantics. Corrections and missing windows cannot send obsolete
+claims. Mail contains exact private links rather than copied pollution readings.
+No source access, production consent or real recipient mail was changed.
+
+Verification: the expanded Air/River/Monitoring Centre run passed 89 tests and
+exposed one new HTTP-fixture error: a non-hour timestamp was correctly rejected by
+the source parser. Correcting that fixture and adding an isolated older-window-input
+case produced a final **26/26 Air delivery tests passed**, including the real
+HTTP → durable worker → fake SMTP journey. Counts overlap. Migration
+`2b08e9a24acd` round-trips without losing source measurements or private changes;
+schema comparison passes. Strict consent/CSRF/CAS, source withdrawals/freshness,
+tenant/access/recipient/review/mute races, no backfill, daily/quiet/DST and uncertain
+SMTP behavior passed. The root production build, changed frontend formatting and
+exact API lint passed. The browser journey passed **nine full-document axe
+checkpoints without violations**, five locales, mobile/viewer controls, saved
+consent/preview/opt-out and exact-link/access-redaction checks. Automated checks do
+not claim native-language or human acceptance. MV2-035 remains VERIFYING pending
+actual release and applicable source operational/human acceptance.
 
 ## Source findings
 

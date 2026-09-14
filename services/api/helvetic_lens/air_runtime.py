@@ -1,4 +1,4 @@
-"""Private C7 lifecycle and deterministic web developments, without email opt-in."""
+"""Private C7 lifecycle and deterministic developments with separate email consent."""
 
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
@@ -32,6 +32,15 @@ def owned(session, user_id, monitor_id, *, write=False):
 
 
 def view(row):
+    from sqlalchemy.orm import object_session
+
+    from .air_email_preferences import policy
+    from .models import User
+    session = object_session(row)
+    email = policy(session, row) if session is not None else None
+    user = session.get(User, row.owner_user_id) if email is not None else None
+    consented = bool(email and email.configuration["delivery"]["email"] != "off"
+                     and user and user.email_verified_at is not None and email.recipient_email == user.email)
     state = deepcopy(row.state)
     health = row.health
     for coverage in state.get("coverage", {}).values():
@@ -48,7 +57,7 @@ def view(row):
         "state": state,
         "last_poll_at": utc(row.last_poll_at).isoformat() if row.last_poll_at else None,
         "delivery": "private_web",
-        "email_enabled": False,
+        "email_enabled": consented,
     }
 
 
@@ -266,6 +275,8 @@ def command(session, user_id, monitor_id, version, action, now):
         row.next_poll_at = now
         enqueue(session, row, now)
     else:
+        from .air_email_preferences import cancel_email_work
+        cancel_email_work(session, row)
         session.execute(
             update(Job)
             .where(
@@ -280,8 +291,10 @@ def command(session, user_id, monitor_id, version, action, now):
 
 
 def remove(session, user_id, monitor_id, version):
+    from .air_email_preferences import cancel_email_work
     row = owned(session, user_id, monitor_id, write=True)
     expected(row, version)
+    cancel_email_work(session, row)
     session.execute(
         update(Job)
         .where(
@@ -399,6 +412,7 @@ def evaluate(session, row, now):
                     "recovered": not fresh(sample, now),
                 },
                 review_version=0,
+                created_at=now,
             )
             session.add(event)
             session.flush()
@@ -407,6 +421,8 @@ def evaluate(session, row, now):
         row.health = "partial_unknown"
     row.state, row.last_poll_at, row.next_poll_at = state, now, now + timedelta(hours=1)
     session.flush()
+    from .air_delivery import prepare_monitor
+    prepare_monitor(session, row, now=now)
     return {"status": row.health, "sequence": sequence}
 
 
