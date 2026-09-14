@@ -1,5 +1,19 @@
 # Monitoring deployment status — 14 September 2026
 
+## Native configuration draft candidate — 14 September 2026
+
+All nine native editors now expose explicit natural-language configuration drafts
+with manual fallback and separately reviewed model capability. Loading a proposal
+does not save or activate a monitor. See [scope and local checks](MONITORING_CONFIGURATION_DRAFTS.md).
+The preceding settings feature was pushed as `96bede19d244204d6f3126087fafda2d38a321b4`.
+
+A fresh authenticated main-site journal read still reports production
+`c66e77fc7721fbbd4ff11a522d4cc7183cc81523` and `d961ebd54998` Deploying, started
+14 September at 19:10:03 Europe/Zurich. This candidate includes Aste migration
+repair `9a0a9e6`; the recorded Aste failures concern older immutable candidates.
+Neither the settings feature nor this draft feature is verified activated.
+No active deployment or quality gate was restarted or duplicated.
+
 ## Nine-category settings candidate — 14 September 2026
 
 `/monitoring/settings` brings native editors and appropriate source credential

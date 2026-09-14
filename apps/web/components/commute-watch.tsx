@@ -1,4 +1,5 @@
 "use client";
+import { MonitoringConfigurationDraft } from "./monitoring-configuration-draft";
 
 import { MonitoringEvidenceAsk } from "./monitoring-evidence-ask";
 
@@ -293,6 +294,13 @@ function Editor({
       >
         <fieldset disabled={mutation.busy}>
           <legend>{c.settings}</legend>
+          <MonitoringConfigurationDraft
+            domain="commute"
+            configuration={config}
+            disabled={mutation.busy}
+            context={monitor?.id}
+            onUse={update}
+          />
           <label>
             {c.name}
             <input

@@ -1,4 +1,5 @@
 "use client";
+import { MonitoringConfigurationDraft } from "./monitoring-configuration-draft";
 
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -59,6 +60,28 @@ function ProfileForm({
   }));
   const [invalid, setInvalid] = useState(false);
   const request = useRef<{ body: string; key: string } | null>(null);
+  const draftConfiguration: AuctionProfile = {
+    ...config,
+    ...Object.fromEntries(
+      Object.entries(text).map(([key, value]) => [
+        key,
+        value
+          .split("\n")
+          .map((v) => v.trim())
+          .filter(Boolean),
+      ]),
+    ),
+    maximum_price_chf_cents:
+      parseAuctionBudget(budget) ?? (budget.trim() ? NaN : null),
+    notify: {
+      ...config.notify,
+      ending_soon_hours: hours.trim()
+        ? /^\d+$/.test(hours)
+          ? Number(hours)
+          : NaN
+        : null,
+    },
+  };
   function submit() {
     const amount = parseAuctionBudget(budget);
     const reminder = !hours.trim()
@@ -118,6 +141,31 @@ function ProfileForm({
     >
       <fieldset disabled={mutation.busy}>
         <legend>{row ? c.edit : c.create}</legend>
+        <MonitoringConfigurationDraft
+          domain="auctions"
+          configuration={draftConfiguration}
+          disabled={
+            mutation.busy ||
+            Number.isNaN(draftConfiguration.maximum_price_chf_cents) ||
+            Number.isNaN(draftConfiguration.notify.ending_soon_hours)
+          }
+          context={row?.id}
+          onUse={(value) => {
+            setConfig(value);
+            setBudget(
+              value.maximum_price_chf_cents === null
+                ? ""
+                : (value.maximum_price_chf_cents / 100).toFixed(2),
+            );
+            setHours(value.notify.ending_soon_hours?.toString() || "");
+            setText({
+              locations: value.locations.join("\n"),
+              keywords: value.keywords.join("\n"),
+              brands: value.brands.join("\n"),
+            });
+            setInvalid(false);
+          }}
+        />
         <label>
           {c.portfolio}
           <input

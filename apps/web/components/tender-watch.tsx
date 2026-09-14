@@ -1,4 +1,5 @@
 "use client";
+import { MonitoringConfigurationDraft } from "./monitoring-configuration-draft";
 
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -230,6 +231,13 @@ function Editor({
       >
         <fieldset disabled={busy}>
           <legend>{c.settings}</legend>
+          <MonitoringConfigurationDraft
+            domain="tenders"
+            configuration={config}
+            disabled={busy}
+            context={monitor?.id}
+            onUse={update}
+          />
           <label>
             {c.name}
             <input

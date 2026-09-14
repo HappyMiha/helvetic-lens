@@ -324,6 +324,8 @@ class RelationReprocessingInput(Input):
 
 
 def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
+    if path.startswith("/api/monitoring-centre/configuration"):
+        return "monitoring_configuration", 6, 60
     if path.startswith("/api/monitoring-centre/business"):
         return "business_monitor_scope", 60, 60
     if path == "/api/monitoring-centre/today-counts":
@@ -2235,6 +2237,8 @@ def create_app(
     app.include_router(business_monitor_router(service, source_settings))
     app.include_router(evidence_router(service, source_settings))
     app.include_router(batch_router(service, source_settings))
+    from .monitoring_configuration_api import configuration_router
+    app.include_router(configuration_router(service))
     from .related_api import related_router
     app.include_router(related_router(service, source_settings))
     from .monitoring_source_operations import source_operations_router

@@ -136,7 +136,7 @@ def test_each_task_and_locale_requires_its_own_verified_artifact(artifacts):
     path = write()
     profile = data["profiles"][0]
     profile["grants"] = []
-    for task in ("ask", "impact_report"):
+    for task in ("ask", "impact_report", "interest_brief", "monitoring_configuration"):
         for locale in ("de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"):
             filename = f"{task}-{locale}.json"
             raw = json.dumps({**review, "task": task, "locale": locale}).encode()
@@ -151,7 +151,7 @@ def test_each_task_and_locale_requires_its_own_verified_artifact(artifacts):
         decide(registry, identity, task=grant.task, locale=grant.locale).fingerprint
         for grant in registry.profiles[0].grants
     }
-    assert len(fingerprints) == 10
+    assert len(fingerprints) == 20
     assert all(
         decide(registry, identity, task=grant.task, locale=grant.locale).mode == "generated_explanation"
         for grant in registry.profiles[0].grants

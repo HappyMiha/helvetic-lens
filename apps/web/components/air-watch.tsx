@@ -1,4 +1,5 @@
 "use client";
+import { MonitoringConfigurationDraft } from "./monitoring-configuration-draft";
 
 import { MonitoringEvidenceAsk } from "./monitoring-evidence-ask";
 
@@ -193,6 +194,13 @@ function Editor({
       }}
     >
       <h2>{monitor ? c.edit : c.create}</h2>
+      <MonitoringConfigurationDraft
+        domain="air"
+        configuration={config}
+        disabled={busy}
+        context={monitor?.id}
+        onUse={change}
+      />
       <p>{c.scope}</p>
       <label>
         {c.name}

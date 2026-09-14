@@ -1,4 +1,5 @@
 "use client";
+import { MonitoringConfigurationDraft } from "./monitoring-configuration-draft";
 
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -366,6 +367,16 @@ function PortfolioForm({
     >
       <fieldset disabled={mutation.busy}>
         <legend>{row ? c.edit : c.create}</legend>
+        <MonitoringConfigurationDraft
+          domain="ip"
+          configuration={config}
+          disabled={mutation.busy}
+          context={row?.id}
+          onUse={(value) => {
+            setConfig(value);
+            setInvalid(false);
+          }}
+        />
         <label>
           {c.portfolio}
           <input

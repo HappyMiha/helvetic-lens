@@ -1,0 +1,218 @@
+{
+  "pollen": {
+    "contract_version": 1,
+    "template_id": "pollen-watch",
+    "template_version": 1,
+    "station_id": "PBS",
+    "selections": [
+      {
+        "allergen": "birch",
+        "rules": [
+          {
+            "period": "observation_hourly",
+            "unit": "number/m3",
+            "threshold": {
+              "trigger_at_or_above": "20.125",
+              "reset_at_or_below": "15.125"
+            },
+            "rapid_increase": null,
+            "category_change": false
+          }
+        ]
+      },
+      {
+        "allergen": "grasses",
+        "rules": [
+          {
+            "period": "forecast_instant",
+            "unit": "number/m3",
+            "threshold": null,
+            "rapid_increase": {
+              "minimum_increase": "10.5",
+              "window_hours": 3
+            },
+            "category_change": false
+          }
+        ]
+      }
+    ],
+    "timezone": "Europe/Zurich",
+    "delivery": {
+      "email": "off",
+      "digest_at": null,
+      "quiet_hours": null
+    }
+  },
+  "river": {
+    "template_id": "river-lake-watch",
+    "template_version": 1,
+    "name": "My Rhine",
+    "station_id": "2289",
+    "metrics": [
+      "W",
+      "Q",
+      "WT"
+    ],
+    "official_danger": true,
+    "rules": [
+      {
+        "metric": "W",
+        "kind": "absolute",
+        "threshold": "2.5",
+        "unit": "m",
+        "window_minutes": null
+      }
+    ]
+  },
+  "air": {
+    "template_id": "air-quality-watch",
+    "template_version": 1,
+    "name": "Basel air",
+    "station_id": "BAS",
+    "metrics": [
+      "O3",
+      "NO2",
+      "PM10",
+      "PM25"
+    ],
+    "muted_metrics": [],
+    "rules": [
+      {
+        "metric": "O3",
+        "period": "hourly_mean",
+        "threshold": "50",
+        "hysteresis": "5",
+        "cooldown_hours": 3
+      }
+    ]
+  },
+  "warnings": {
+    "template_id": "hazard-watch",
+    "template_version": 1,
+    "name": "Basel warnings",
+    "location": {
+      "kind": "municipality",
+      "country": "CH",
+      "canton": "BS",
+      "municipality_code": "2701"
+    },
+    "hazards": [
+      "storm"
+    ],
+    "minimum_importance": "warning"
+  },
+  "commute": {
+    "template_id": "commute-watch",
+    "template_version": 1,
+    "name": "Basel commute",
+    "leg_reference_ids": [
+      "130fc41e-d00c-4983-b9d8-adadb62c7dd0"
+    ],
+    "weekdays": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "window_start": "07:00",
+    "window_end": "09:00",
+    "delay_threshold_minutes": 10,
+    "delay_reset_minutes": 8,
+    "cancellations": true,
+    "skipped_boarding_or_alighting": true,
+    "service_notices": true,
+    "outside_window": "ignore"
+  },
+  "traffic": {
+    "template_id": "road-watch",
+    "template_version": 1,
+    "name": "Basel road",
+    "corridor_reference_ids": [
+      "9d3c6f05-5d2d-491e-8a63-b286e374efa0"
+    ],
+    "materiality": {
+      "event_kinds": [
+        "road_closure",
+        "carriageway_closure",
+        "lane_restriction",
+        "congestion",
+        "accident",
+        "roadworks"
+      ],
+      "minimum_delay_seconds": 900,
+      "include_planned": true
+    }
+  },
+  "tenders": {
+    "template_id": "tender-watch",
+    "template_version": 1,
+    "name": "Basel software",
+    "company_name": "Example GmbH",
+    "capabilities": [
+      {
+        "name": "Software",
+        "phrases": [
+          "software development"
+        ]
+      }
+    ],
+    "cpv_codes": [],
+    "cpv_include_descendants": true,
+    "contract_cantons": [],
+    "offer_languages": [],
+    "authority_levels": [],
+    "excluded_phrases": [],
+    "excluded_cpv_codes": [],
+    "excluded_contract_types": [],
+    "minimum_contract_chf": null,
+    "maximum_contract_chf": null,
+    "available_reference_count": null,
+    "certificates": null,
+    "minimum_semantic_score": null
+  },
+  "ip": {
+    "template_id": "trademark-watch",
+    "template_version": 1,
+    "jurisdiction": "CH",
+    "name": "My brands",
+    "brands": [
+      {
+        "key": "brand",
+        "name": "Example",
+        "language": "en",
+        "exact_name": true,
+        "similar_names": true,
+        "word_variants": [],
+        "owners_of_interest": [],
+        "relevant_classes": [],
+        "goods_services": []
+      }
+    ]
+  },
+  "auctions": {
+    "schema_version": 1,
+    "name": "Equipment",
+    "categories": [
+      "equipment"
+    ],
+    "cantons": [
+      "TI"
+    ],
+    "locations": [],
+    "keywords": [],
+    "brands": [],
+    "maximum_price_chf_cents": null,
+    "budget_price_kind": "current_bid",
+    "notify": {
+      "new_match": true,
+      "price_above_limit": true,
+      "every_bid_change": false,
+      "deadline_change": true,
+      "documents_change": true,
+      "conditions_change": true,
+      "cancellation": true,
+      "ending_soon_hours": null
+    }
+  }
+}

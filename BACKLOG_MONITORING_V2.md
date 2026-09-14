@@ -219,7 +219,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
 | [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — native batch review implemented | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
-| [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — native evidence extracts implemented | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
+| [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — native evidence and configuration drafts implemented | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
 | [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
 | [MV2-025](#mv2-025) | Admin: accurate source capabilities and access management | F2 | P0 | M | IN PROGRESS — encrypted connector settings implemented | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-018](#mv2-018) |
 | [MV2-026](#mv2-026) | Possible future implementation: C4 official customs-rate connector | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011) |
@@ -1138,6 +1138,13 @@ Broader email/noise controls and live/human/release gates remain open.
 
 ### MV2-023 — Ask and Marvin in the context of v2 evidence
 
+**Completed scoped feature, 14 September 2026:** Natural-language proposals in all
+nine native configuration editors, with explicit unsaved application and manual
+fallback. Scope, source readiness, dependencies and acceptance are recorded in
+[Configuration drafts](docs/monitoring-v2/MONITORING_CONFIGURATION_DRAFTS.md).
+Local API, build and 94 browser/axe checkpoints passed. Production activation,
+model approval and broader parent acceptance remain open.
+
 **Current whole-feature scope, 14 September 2026:** Implement evidence questions
 from exact native records across all nine active directions, with model-offline
 extracts, citations, binding/revocation checks and five-language reader actions.
@@ -1148,7 +1155,7 @@ references, source-unit context, locale bindings and access/changed-evidence
 redaction. Scoped checks and publication evidence are recorded in the linked
 contract. Broader draft/generative/human acceptance remains open.
 
-**Status:** IN PROGRESS — native evidence extracts implemented · **Priority:** P1 · **Owner:** AI + Frontend · **Size:** M
+**Status:** IN PROGRESS — native evidence and configuration drafts implemented · **Priority:** P1 · **Owner:** AI + Frontend · **Size:** M
 
 **Dependencies:** [MV2-010](#mv2-010), [MV2-020](#mv2-020). **Requirements:** §§21–22,26.3,31; legacy HL-083–087,089.
 

@@ -1,4 +1,5 @@
 "use client";
+import { MonitoringConfigurationDraft } from "./monitoring-configuration-draft";
 
 import { MonitoringEvidenceAsk } from "./monitoring-evidence-ask";
 
@@ -223,6 +224,13 @@ function Editor({
   return (
     <section className={styles.card} aria-label={row ? c.edit : c.create}>
       <h2>{row ? c.edit : c.create}</h2>
+      <MonitoringConfigurationDraft
+        domain="traffic"
+        configuration={draft}
+        disabled={mutation.busy}
+        context={row?.id}
+        onUse={change}
+      />
       <fieldset disabled={mutation.busy}>
         <legend>{c.name}</legend>
         <input

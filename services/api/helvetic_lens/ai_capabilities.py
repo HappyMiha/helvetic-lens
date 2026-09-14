@@ -16,7 +16,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validato
 
 Digest = Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")]
 Identifier = Annotated[str, Field(pattern=r"^[a-zA-Z0-9][a-zA-Z0-9._/-]{0,199}$")]
-Task = Literal["ask", "impact_report", "interest_brief"]
+Task = Literal["ask", "impact_report", "interest_brief", "monitoring_configuration"]
 Locale = Literal["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"]
 MAX_ARTIFACT_BYTES = 1024 * 1024
 
@@ -78,7 +78,7 @@ class CapabilityProfile(Contract):
     revision: int = Field(ge=1)
     status: Literal["candidate", "approved", "revoked"]
     identity: RuntimeIdentity
-    grants: tuple[CapabilityGrant, ...] = Field(max_length=10)
+    grants: tuple[CapabilityGrant, ...] = Field(max_length=20)
 
     @model_validator(mode="after")
     def unique_scope(self):

@@ -67,10 +67,15 @@
   background: #fff;
 }
 .root fieldset {
+  min-width: 0;
   border: 1px solid #738595;
   border-radius: 8px;
   padding: 12px;
   margin: 14px 0;
+}
+.root legend {
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 .root .check {
   flex-direction: row;

@@ -1,4 +1,5 @@
 "use client";
+import { MonitoringConfigurationDraft } from "./monitoring-configuration-draft";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { api, ApiError } from "@/lib/api";
@@ -377,6 +378,13 @@ export function PollenDraftCreate({
       ) : (
         <>
           <form onSubmit={(event) => void check(event)}>
+            <MonitoringConfigurationDraft
+              domain="pollen"
+              configuration={configuration}
+              disabled={frozen}
+              context={draft?.id}
+              onUse={change}
+            />
             <fieldset disabled={frozen} className={styles.formFields}>
               <PollenStationPicker
                 value={configuration.station_id}

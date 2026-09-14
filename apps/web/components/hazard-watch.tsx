@@ -1,4 +1,5 @@
 "use client";
+import { MonitoringConfigurationDraft } from "./monitoring-configuration-draft";
 
 import {
   useCallback,
@@ -129,6 +130,41 @@ function Editor({
     [error, setError] = useState("");
   const requestKey = useRef<string | null>(null),
     loc = row?.configuration.location;
+  const [fields, setFields] = useState(() => ({
+    name: row?.configuration.name || "",
+    canton: loc?.canton || "",
+    latitude: loc?.kind === "point" ? String(loc.latitude) : "",
+    longitude: loc?.kind === "point" ? String(loc.longitude) : "",
+    radius: loc?.kind === "point" ? String(loc.radius_km) : "0",
+    municipality: loc?.kind === "municipality" ? loc.municipality_code : "",
+    importance: row?.configuration.minimum_importance || "warning",
+  }));
+  const common = { country: "CH" as const, canton: fields.canton };
+  const config: HazardConfiguration = {
+    template_id: "hazard-watch",
+    template_version: 1,
+    name: fields.name,
+    hazards,
+    minimum_importance: fields.importance,
+    location:
+      kind === "point"
+        ? {
+            ...common,
+            kind: "point",
+            latitude: fields.latitude.trim() ? Number(fields.latitude) : NaN,
+            longitude: fields.longitude.trim() ? Number(fields.longitude) : NaN,
+            radius_km: fields.radius.trim() ? Number(fields.radius) : NaN,
+          }
+        : {
+            ...common,
+            kind: "municipality",
+            municipality_code: fields.municipality,
+          },
+  };
+  function field(key: keyof typeof fields, value: string) {
+    setFields((current) => ({ ...current, [key]: value }));
+    setPreview(null);
+  }
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
@@ -137,31 +173,6 @@ function Editor({
       setError(c.required);
       return;
     }
-    const form = new FormData(event.currentTarget),
-      common = { country: "CH" as const, canton: String(form.get("canton")) };
-    const config: HazardConfiguration = {
-      template_id: "hazard-watch",
-      template_version: 1,
-      name: String(form.get("name")),
-      hazards,
-      minimum_importance: String(
-        form.get("importance"),
-      ) as HazardConfiguration["minimum_importance"],
-      location:
-        kind === "point"
-          ? {
-              ...common,
-              kind: "point",
-              latitude: Number(form.get("latitude")),
-              longitude: Number(form.get("longitude")),
-              radius_km: Number(form.get("radius")),
-            }
-          : {
-              ...common,
-              kind: "municipality",
-              municipality_code: String(form.get("municipality")),
-            },
-    };
     const action = (event.nativeEvent as SubmitEvent).submitter?.getAttribute(
       "value",
     );
@@ -193,6 +204,22 @@ function Editor({
       onChange={() => setPreview(null)}
     >
       <h2>{row ? r.edit : c.create}</h2>
+      <MonitoringConfigurationDraft
+        domain="warnings"
+        configuration={config}
+        disabled={mutation.busy}
+        context={row?.id}
+        onUse={(value) => {
+          setFields((current) => ({
+            ...current,
+            name: value.name,
+            importance: value.minimum_importance,
+          }));
+          setHazards(value.hazards);
+          setPreview(null);
+          setError("");
+        }}
+      />
       <fieldset disabled={mutation.busy}>
         <label>
           {c.name}
@@ -200,12 +227,18 @@ function Editor({
             name="name"
             required
             maxLength={100}
-            defaultValue={row?.configuration.name || ""}
+            value={fields.name}
+            onChange={(event) => field("name", event.target.value)}
           />
         </label>
         <label>
           {c.canton}
-          <select name="canton" required defaultValue={loc?.canton || ""}>
+          <select
+            name="canton"
+            required
+            value={fields.canton}
+            onChange={(event) => field("canton", event.target.value)}
+          >
             <option value="">{c.choose}</option>
             {cantons.map((value) => (
               <option key={value}>{value}</option>
@@ -233,7 +266,8 @@ function Editor({
                 required
                 min={44}
                 max={49}
-                defaultValue={loc?.kind === "point" ? loc.latitude : ""}
+                value={fields.latitude}
+                onChange={(event) => field("latitude", event.target.value)}
               />
             </label>
             <label>
@@ -245,7 +279,8 @@ function Editor({
                 required
                 min={4}
                 max={12}
-                defaultValue={loc?.kind === "point" ? loc.longitude : ""}
+                value={fields.longitude}
+                onChange={(event) => field("longitude", event.target.value)}
               />
             </label>
             <label>
@@ -257,7 +292,8 @@ function Editor({
                 required
                 min={0}
                 max={50}
-                defaultValue={loc?.kind === "point" ? loc.radius_km : 0}
+                value={fields.radius}
+                onChange={(event) => field("radius", event.target.value)}
               />
             </label>
           </div>
@@ -269,9 +305,8 @@ function Editor({
               required
               pattern="[1-9][0-9]{0,3}"
               inputMode="numeric"
-              defaultValue={
-                loc?.kind === "municipality" ? loc.municipality_code : ""
-              }
+              value={fields.municipality}
+              onChange={(event) => field("municipality", event.target.value)}
             />
           </label>
         )}
@@ -298,7 +333,8 @@ function Editor({
           {c.importance}
           <select
             name="importance"
-            defaultValue={row?.configuration.minimum_importance || "warning"}
+            value={fields.importance}
+            onChange={(event) => field("importance", event.target.value)}
           >
             {(["information", "warning", "alarm"] as const).map((value) => (
               <option key={value} value={value}>

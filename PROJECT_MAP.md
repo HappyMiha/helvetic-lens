@@ -37,6 +37,11 @@ Platform administrators can save encrypted API credentials and native collector
 options, select existing permissions and explicitly test saved access. Requests
 and workers adopt new settings without a restart; source coverage remains separate.
 
+All nine native editors offer [natural-language configuration drafts](docs/monitoring-v2/MONITORING_CONFIGURATION_DRAFTS.md).
+An explicit proposal opens as unsaved native fields for review. Reviewed model
+capability and source identity boundaries remain in force; manual editing is
+available when inference is unavailable.
+
 The native [Hazard wind/thunderstorm workflow](docs/monitoring-v2/HAZARD_WATCH.md#native-source-activation-and-complete-vertical-workflow-14-september-2026)
 uses the public Swiss MeteoAlarm channel and pinned swisstopo geometry through
 the normal collector. Existing operator decisions remain authoritative. Other

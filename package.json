@@ -7,6 +7,7 @@
     "apps/web"
   ],
   "scripts": {
+    "check:monitoring-configuration:browser": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/check-monitoring-configuration-browser.mjs",
     "check:monitoring-batch:browser": "node scripts/check-monitoring-batch-browser.mjs",
     "dev": "concurrently -k -n api,web \"npm:dev:api\" \"npm:dev:web\"",
     "dev:web": "npm run dev --workspace apps/web",
