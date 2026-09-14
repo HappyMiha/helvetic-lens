@@ -109,6 +109,9 @@ celery_app.conf.update(
         "schedule-trademark-email": {
             "task": "helvetic_lens.schedule_trademark_email", "schedule": 60.0,
         },
+        "schedule-river-email": {
+            "task": "helvetic_lens.schedule_river_email", "schedule": 60.0,
+        },
         "schedule-hazard-email": {
             "task": "helvetic_lens.schedule_hazard_email", "schedule": 60.0,
         },
@@ -446,6 +449,16 @@ def schedule_auction_email():
 @celery_app.task(name="helvetic_lens.schedule_trademark_email")
 def schedule_trademark_email():
     from .trademark_delivery import enqueue_due
+    database = Database(settings)
+    try:
+        return enqueue_due(database, settings)
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.schedule_river_email")
+def schedule_river_email():
+    from .river_delivery import enqueue_due
     database = Database(settings)
     try:
         return enqueue_due(database, settings)

@@ -7,6 +7,7 @@ import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { riverCopy } from "../apps/web/lib/river-copy.ts";
+import { roadEmailCopy } from "../apps/web/lib/road-email-copy.ts";
 import { AccessibilityAudit } from "./browser-accessibility.mjs";
 import { Cdp, evaluate, sleep } from "./browser-cdp.mjs";
 
@@ -28,6 +29,16 @@ const station = { id: "2289", name: "Basel, Rheinhalle", waterbody: "Rhein", sou
 const sample = { metric: "W", timestamp: new Date().toISOString(), value: "244.9", unit: "m", quality: "provisional", datum: "FOEN:2289:m ü.M.", aggregation: "live_observation", source_url: station.source_url };
 const coverage = { W: { status: "current", sample }, WT: { status: "unknown", sample: null } };
 let changes = [];
+let emailPolicy = null, emailDenied = false, emailStale = false;
+const changeId = "00000000-0000-4000-8000-000000000086";
+async function openEmail() {
+  await wait(()=>evaluate(cdp,"!!document.querySelector('[data-river-email]')"),"Email section missing");
+  await evaluate(cdp,"document.querySelector('[data-river-email]').open=true");
+  await wait(()=>evaluate(cdp,"!!document.querySelector('[data-river-email] select')"),"Email settings missing");
+}
+async function emailMode(mode) {
+  await evaluate(cdp,`(()=>{const e=document.querySelector('[data-river-email] select');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(e,${JSON.stringify(mode)});e.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+}
 async function wait(check, message) { for (let i = 0; i < 200; i++) { if (await Promise.resolve().then(check).catch(() => false)) return; await sleep(100); } throw new Error(message); }
 const text = () => evaluate(cdp, "document.querySelector('[data-river-watch]')?.innerText || ''");
 async function button(name) { await wait(() => evaluate(cdp, `!!Array.from(document.querySelectorAll('[data-river-watch] button')).find(b=>b.textContent.trim()===${JSON.stringify(name)}&&!b.disabled)`), `Missing enabled button ${name}`); await evaluate(cdp, `Array.from(document.querySelectorAll('[data-river-watch] button')).find(b=>b.textContent.trim()===${JSON.stringify(name)}&&!b.disabled).click()`); }
@@ -51,9 +62,16 @@ try {
     else if (url.pathname === "/api/jobs") body = [];
     else if (url.pathname.startsWith("/api/river-watch")) {
       if (request.method !== "GET") mutations.push({ path: url.pathname, method: request.method, payload });
-      if (url.pathname.endsWith("/stations")) body = { stations: [station], health: "ready" };
+      if (emailDenied && url.pathname.includes('/email')) {code=403;body={code:'membership_required'};}
+      else if (url.pathname.endsWith('/email/preview')) body={status:emailStale?'unavailable':'ready',quiet_hours:false,more_available:false,items:emailStale||!emailPolicy?.consent_active?[]:[{href:`/river-watch?monitor=${monitor.id}&change=${changeId}`,detected_at:sample.timestamp}]};
+      else if (url.pathname.endsWith('/email')) {
+        if(request.method==='PUT'){assert.equal(payload.expected_version,monitor.version);monitor.version++;emailPolicy={revision:(emailPolicy?.revision||0)+1,configuration:payload.configuration,consent_active:payload.consent};}
+        body={revision:0,configuration:{timezone:'Europe/Zurich',delivery:{email:'off',digest_at:null,quiet_hours:null}},consent_active:false,...emailPolicy,monitor_version:monitor.version,email_verified:true,recipient_email:'river@example.invalid',uncertain_deliveries:0,mail_available:true};
+      }
+      else if (url.pathname.endsWith('/changes/'+changeId)) body={event:changes[0],newer_available:changes.length>1,current_configuration:changes[0].revision===monitor.revision};
+      else if (url.pathname.endsWith("/stations")) body = { stations: [station], health: "ready" };
       else if (url.pathname.endsWith("/preview")) body = { station, coverage, start_available: previewReady };
-      else if (url.pathname.endsWith("/monitors") && request.method === "POST") { monitor = { id: "river-qa", configuration: payload.configuration, status: "draft", version: 1, revision: 1, health: "waiting", state: {}, last_poll_at: null }; body = monitor; code = 201; }
+      else if (url.pathname.endsWith("/monitors") && request.method === "POST") { monitor = { id: "00000000-0000-4000-8000-000000000085", configuration: payload.configuration, status: "draft", version: 1, revision: 1, health: "waiting", state: {}, last_poll_at: null }; body = monitor; code = 201; }
       else if (url.pathname.endsWith("/monitors")) body = { items: monitor ? [monitor] : [] };
       else if (url.pathname.endsWith("/command")) { assert.equal(payload.expected_version, monitor.version); monitor.version++; monitor.status = { start: "active", pause: "paused", resume: "active", archive: "archived" }[payload.action]; monitor.state = { coverage }; monitor.health = "partial_unknown"; body = monitor; }
       else if (url.pathname.endsWith("/changes")) body = { items: changes, next_before: null };
@@ -74,11 +92,31 @@ try {
   await audit.check(cdp, "configuration-preview", "form");
   await button(c.save); await wait(() => monitor?.status === "draft", "Draft not saved");
   await button(c.preview); await button(c.start); await wait(() => monitor?.status === "active", "Monitor did not start");
-  changes = [{ id: "change-1", development_id: "a".repeat(64), sequence: 1, revision: 1, kind: "danger_escalation", priority: 1, review_version: 0, decision: null, evidence: { sample: { ...sample, metric: "danger", value: "3", unit: "official_level", datum: null }, baseline: null, rule: null, evaluated_value: "3", recovered: false } }];
+  changes = [{ id: changeId, development_id: "a".repeat(64), sequence: 1, revision: 1, kind: "danger_escalation", priority: 1, review_version: 0, decision: null, evidence: { sample: { ...sample, metric: "danger", value: "3", unit: "official_level", datum: null }, baseline: null, rule: null, evaluated_value: "3", recovered: false } }];
   await button(c.refresh); await wait(async () => (await text()).includes(c.danger_escalation), "Danger development missing");
   await button(c.reviewed); await wait(() => changes[0].decision === "reviewed", "Review not saved");
   await button(c.measurements); await button(c.settings);
   await audit.check(cdp, "active-history-review", "[data-river-watch]");
+  await openEmail(); const email=roadEmailCopy['en-CH'];
+  assert.equal(await evaluate(cdp,"document.querySelector('[data-river-email] select').value"),'off');
+  await emailMode('daily_digest');
+  assert.ok(await evaluate(cdp,"document.querySelector('[data-river-email] button[type=submit]').disabled"));
+  await evaluate(cdp,"(()=>{const e=document.querySelector('[data-river-email] input[type=time]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(e,'09:30');e.dispatchEvent(new Event('input',{bubbles:true}));})()");
+  await evaluate(cdp,"document.querySelector('[data-river-email] input[type=checkbox]').click()");
+  await evaluate(cdp,"document.querySelector('[data-river-email] input[type=checkbox][required]').click()");
+  await button(email.save);
+  await wait(()=>evaluate(cdp,"!document.querySelector('[data-river-email] select')"),'Saved email did not reload');
+  await openEmail(); assert.equal(await evaluate(cdp,"document.querySelector('[data-river-email] select').value"),'daily_digest');
+  assert.equal(emailPolicy.configuration.delivery.digest_at,'09:30');assert.deepEqual(emailPolicy.configuration.delivery.quiet_hours,{start:'22:00',end:'07:00'});
+  assert.ok(emailPolicy.consent_active);assert.equal(mutations.filter(r=>r.path.endsWith('/email')).length,1);
+  await button(email.preview);await wait(()=>evaluate(cdp,"!!document.querySelector('[data-river-email] a[href*=change]')"),'Exact email preview missing');
+  emailStale=true;await button(email.preview);await wait(()=>evaluate(cdp,"!document.querySelector('[data-river-email] a[href*=change]')"),'Stale preview leaked');emailStale=false;
+  await audit.check(cdp,'email-consent-preview','[data-river-email]');
+  await emailMode('off');await button(email.save);await wait(()=>!emailPolicy.consent_active,'Opt-out failed');
+  await cdp.send('Page.navigate',{url:`${base}/river-watch?monitor=${monitor.id}&change=${changeId}`});
+  await wait(()=>evaluate(cdp,"document.querySelector('[data-river-exact-change]')?.textContent.includes('Official station danger: 3')"),'Exact change link missing');
+  assert.equal(changes[0].decision,'reviewed');
+  console.log('River email: explicit consent, digest/quiet settings, preview, opt-out and exact private link passed.');
   await button(c.pause); await button(c.edit); await field(c.name, "Basel updated"); await button(c.preview); await button(c.saveEdit);
   await wait(() => monitor?.revision === 2, "Edit did not create revision");
   previewReady = false; await button(c.preview);
@@ -89,13 +127,19 @@ try {
     await navigate(); await wait(async () => (await text()).includes("Basel updated"), "Saved monitor missing");
     await evaluate(cdp, "Array.from(document.querySelectorAll('[data-river-watch] nav button')).find(b=>b.textContent.includes('Basel updated')).click()");
     await wait(async () => (await text()).includes(riverCopy[locale].changes), "Localized detail missing");
+    await openEmail();assert.ok(await evaluate(cdp,"document.querySelector('[data-river-email]').textContent.includes('river@example.invalid')"));
     assert.equal(await evaluate(cdp, "document.documentElement.scrollWidth <= innerWidth + 1"), true, `Overflow ${locale}`);
     await audit.check(cdp, `reader-${locale}`, "[data-river-watch]");
   }
   manager = false; await navigate(); await wait(async () => (await text()).includes(riverCopy[locale].readonly), "Viewer explanation missing");
   assert.equal(await evaluate(cdp, `Array.from(document.querySelectorAll('[data-river-watch] button')).some(b=>b.textContent===${JSON.stringify(riverCopy[locale].create)})`), false);
+  await evaluate(cdp,"Array.from(document.querySelectorAll('[data-river-watch] nav button')).find(b=>b.textContent.includes('Basel updated')).click()");
+  await openEmail();assert.ok(await evaluate(cdp,"document.querySelector('[data-river-email] fieldset').disabled"));
+  emailDenied=true;await button(roadEmailCopy[locale].preview);
+  await wait(()=>evaluate(cdp,"!document.querySelector('[data-river-detail]')"),'Denied private reader remained visible');
+  assert.ok(!await evaluate(cdp,"document.body.textContent.includes('Basel updated')||document.body.textContent.includes('river@example.invalid')"));
   assert.ok(mutations.every(r => !JSON.stringify(r.payload).includes("email_consent")));
-  assert.deepEqual(exceptions, []); audit.finish(7);
+  assert.deepEqual(exceptions, []); audit.finish(8);
   console.log("River browser: preview/save/start/priority/review/history/pause/edit/resume/archive, five locales, mobile and viewer gates passed.");
 } catch (error) {
   console.error(JSON.stringify({ text: cdp ? await text().catch(() => "") : "", mutations, exceptions }));

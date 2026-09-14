@@ -1,7 +1,36 @@
 # River / Lake Watch — C6 v1
 
+## Active complete feature: consented River digest — 14 September 2026
+
+MV2-033 with scoped MV2-012/022 delivery completes the Digest reuse in §13.8.
+Implement private verified-owner consent, immediate/daily mode, IANA timezone,
+quiet hours and a saved-settings preview, followed by bounded durable delivery
+through the existing job/SMTP service. No automatic opt-in follows section or
+monitor activation. All nine sections remain visible and enabled.
+
+Eligible changes must be new after consent, unread, in the active configuration
+and latest for their development. Recheck source freshness, station/metric/rule,
+current condition, recipient binding, ownership and consent immediately before
+SMTP. Recovery must not send obsolete historical alerts; corrected or superseded
+data cannot use an old preview. Email links to the exact private change without
+copying measurements. Review, pause/archive, deletion and opt-out suppress work;
+uncertain SMTP outcomes never automatically retry.
+
+Acceptance: real HTTP→numeric projection→durable job→fake SMTP, tenant/role/CSRF/
+CAS and source/consent/review races, duplicate suppression, daily/quiet/DST,
+configuration/measurement preservation through migration, five-language controls,
+exact change reader and mobile/browser redaction, root build and exact API lint.
+Existing FOEN access is the documented public channel; do not create source keys,
+change production consent or infer unsupported station coverage. Human pilot and
+source operational acceptance and broader shared parents remain open.
+
+MV2-036 was inspected first but remains PLANNED: a reviewed source-bound geographic
+mapping for road TMC references is missing. Complete this mandatory C6 digest
+before adopting the cross-source intelligence opportunity from §13.7.
+
+
 MV2-032/033 deliver private station monitoring through **Monitoring → River / Lake Watch**
-(`/river-watch`) on both application instances. The same authenticated account and
+(`/river-watch`) on the active main site, helveticlens.ch. The same authenticated account and
 workspace boundaries apply. An administrator creates their own monitor; viewers can
 read monitors they already own. Other administrators cannot read those private records.
 
@@ -17,8 +46,38 @@ invalidate the preview and never silently activate monitoring.
 Changes appear in the private web reader with a stable development identity, priority,
 source evidence and review decision. A later escalation or downgrade is a new reviewable
 version of that development. Measurement history, change history and settings history
-are separate paginated views. This C6 slice delivers in the web reader; it does not enable
-email or infer consent. Broader shared delivery and human pilot tasks remain open.
+are separate paginated views. The owner can additionally opt into immediate or daily
+email with quiet hours and an IANA timezone, inspect a saved-settings preview and opt
+out again. No section activation implies consent. Broader shared delivery and human
+pilot tasks remain open.
+
+## Consented digest acceptance — 14 September 2026
+
+The complete C6 email feature implements the scope above. A private exact-change
+reader retains the original evidence, flags newer developments and never marks a
+change reviewed merely by opening its email link. Known access denial and browser
+page restoration clear private content before a fresh authenticated read.
+
+Freshness and numeric conditions are checked again immediately before SMTP. A
+same-clock correction to the current measurement or a rise-window baseline creates
+a new development version when the result changes; original evidence remains intact.
+An obsolete version cannot send. Paused/archived/deleted monitors, reviewed changes,
+revoked membership, opt-out and changed/unverified recipients suppress pending work.
+The saved preview never sends mail. Ambiguous delivery is retained for inspection
+and never automatically retried. Migration `1af7d89139bc` adds consent/delivery tables
+and the email revision; its round trip preserves existing measurements and changes.
+
+Verified locally: **89 passed** across River source/runtime/delivery, Air and IP
+delivery regressions plus backlog integrity; **40 passed** in the final River
+delivery/Monitoring Centre run, including the added rise-baseline correction test.
+These runs overlap and are not a unique-test total. The real HTTP-to-durable-worker
+flow used fake SMTP and sent no real email. Daily/quiet-hour/DST, tenant/CSRF/CAS,
+final-send races and migration preservation passed. The complete browser journey
+passed **eight full-document axe checkpoints with no violations**, including five
+locales, mobile/viewer controls, consent/preview/opt-out, exact links and access
+redaction. Root production build, changed frontend formatting and exact API lint
+passed. Production activation, native-language review and human/source operational
+acceptance remain unverified; MV2-033 remains VERIFYING.
 
 ## Official source contract and rights
 

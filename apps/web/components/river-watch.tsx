@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
@@ -21,6 +21,12 @@ import {
 } from "@/lib/river-watch";
 import { useAuth } from "./auth-gate";
 import { Shell } from "./shell";
+import { RiverEmail } from "./river-email";
+import { riverEmailCopy } from "@/lib/river-email-copy";
+import {
+  RiverAccessFailure,
+  RiverPrivateBoundary,
+} from "./river-private-boundary";
 import styles from "./river-watch.module.css";
 
 const base = "/river-watch";
@@ -103,6 +109,7 @@ function Editor({
       rules: [],
     },
   );
+  const deny = useContext(RiverAccessFailure);
   const [search, setSearch] = useState("");
   const [preview, setPreview] = useState<RiverPreview | null>(null);
   const [busy, setBusy] = useState(false);
@@ -143,6 +150,7 @@ function Editor({
           await api<RiverPreview>(`${base}/preview`, post({ configuration })),
         );
     } catch (err) {
+      deny(err);
       setError(failure(c, err));
     } finally {
       setBusy(false);
@@ -375,6 +383,73 @@ function Editor({
   );
 }
 
+function ExactChange({
+  monitorId,
+  changeId,
+}: {
+  monitorId: string;
+  changeId: string;
+}) {
+  const { locale } = useI18n(),
+    c = riverCopy[locale],
+    e = riverEmailCopy[locale];
+  const deny = useContext(RiverAccessFailure);
+  const [value, setValue] = useState<{
+    event: RiverChange;
+    newer_available: boolean;
+    current_configuration: boolean;
+  } | null>(null);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    const controller = new AbortController();
+    api<{
+      event: RiverChange;
+      newer_available: boolean;
+      current_configuration: boolean;
+    }>(`${base}/monitors/${monitorId}/changes/${changeId}`, {
+      signal: controller.signal,
+    })
+      .then((data) => {
+        if (!controller.signal.aborted) setValue(data);
+      })
+      .catch((problem) => {
+        if (!controller.signal.aborted) {
+          deny(problem);
+          setError(c.failed);
+        }
+      });
+    return () => controller.abort();
+  }, [monitorId, changeId, c.failed, deny]);
+  return (
+    <section className={styles.card} data-river-exact-change>
+      <h2>{e.exact}</h2>
+      {error ? (
+        <p role="alert">{error}</p>
+      ) : !value ? (
+        <p role="status">{c.loading}</p>
+      ) : (
+        <>
+          <h3>
+            {label(c, value.event.kind)} · {c.priority} {value.event.priority}
+          </h3>
+          <p>
+            {c.development} {value.event.development_id.slice(0, 8)} ·{" "}
+            {c.revision} {value.event.revision}
+          </p>
+          {value.newer_available && <p>{e.newer}</p>}
+          {!value.current_configuration && <p>{e.historical}</p>}
+          <Sample sample={value.event.evidence.sample} />
+          {value.event.evidence.baseline && (
+            <Sample sample={value.event.evidence.baseline} />
+          )}
+          {value.event.evidence.recovered && <p>{c.recovered}</p>}
+          {value.event.decision && <p>{label(c, value.event.decision)}</p>}
+        </>
+      )}
+    </section>
+  );
+}
+
 function Detail({
   id,
   canManage,
@@ -393,6 +468,16 @@ function Detail({
   const { locale } = useI18n();
   const c = riverCopy[locale];
   const [row, setRow] = useState<RiverMonitor | null>(null);
+  const deny = useContext(RiverAccessFailure);
+  const params = useSearchParams();
+  const requestedChange = params.get("change");
+  const exactChange =
+    requestedChange &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      requestedChange,
+    )
+      ? requestedChange
+      : null;
   const [changes, setChanges] = useState<{
     items: RiverChange[];
     next_before: number | null;
@@ -429,7 +514,10 @@ function Detail({
           setError("");
         }
       } catch (err) {
-        if (!stopped) setError(failure(c, err));
+        if (!stopped) {
+          deny(err);
+          setError(failure(c, err));
+        }
       }
     }
     void load();
@@ -473,6 +561,7 @@ function Detail({
         onChanged();
       }
     } catch (err) {
+      deny(err);
       setError(failure(c, err));
     } finally {
       setBusy(false);
@@ -513,6 +602,7 @@ function Detail({
         });
       }
     } catch (err) {
+      deny(err);
       setError(failure(c, err));
     } finally {
       setBusy(false);
@@ -531,6 +621,7 @@ function Detail({
         items: old.items.map((item) => (item.id === event.id ? changed : item)),
       }));
     } catch (err) {
+      deny(err);
       setError(failure(c, err));
     } finally {
       setBusy(false);
@@ -554,7 +645,14 @@ function Detail({
       />
     );
   return (
-    <section className={styles.detail}>
+    <section className={styles.detail} data-river-detail>
+      {exactChange && (
+        <ExactChange
+          key={`${id}:${exactChange}:${refresh}:${refreshToken}`}
+          monitorId={id}
+          changeId={exactChange}
+        />
+      )}
       <div className={styles.card}>
         <h2>{row.configuration.name}</h2>
         <p>
@@ -634,6 +732,17 @@ function Detail({
         )}
         {row.state.last_gap && <p>{c.gap}</p>}
       </div>
+      <RiverEmail
+        key={`email:${row.version}`}
+        monitorId={id}
+        canManage={canManage}
+        archived={row.status === "archived"}
+        changed={() => {
+          setRefresh((v) => v + 1);
+          onChanged();
+        }}
+        onAccessFailure={deny}
+      />
       <section className={styles.card}>
         <h2>{c.changes}</h2>
         {!changes.items.length && <p>{c.noChanges}</p>}
@@ -768,12 +877,13 @@ export function RiverWatch() {
     ? `${session.user?.id}:${session.organization?.id}:${session.role}`
     : "unavailable";
   return (
-    <Reader
-      key={scope}
-      allowed={scope !== "unavailable"}
-      canManage={session?.role === "organization_admin"}
-      initial={params.get("monitor") || ""}
-    />
+    <RiverPrivateBoundary key={scope}>
+      <Reader
+        allowed={scope !== "unavailable"}
+        canManage={session?.role === "organization_admin"}
+        initial={params.get("monitor") || ""}
+      />
+    </RiverPrivateBoundary>
   );
 }
 
@@ -789,6 +899,7 @@ function Reader({
   const { locale } = useI18n();
   const c = riverCopy[locale];
   const [stations, setStations] = useState<RiverStation[]>([]);
+  const deny = useContext(RiverAccessFailure);
   const [monitors, setMonitors] = useState<RiverMonitor[]>([]);
   const [selected, setSelected] = useState(initial);
   const [creating, setCreating] = useState(false);
@@ -820,6 +931,7 @@ function Reader({
       })
       .catch((err) => {
         if (!controller.signal.aborted) {
+          deny(err);
           setError(failure(c, err));
           setLoading(false);
         }

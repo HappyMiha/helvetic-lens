@@ -223,7 +223,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-030](#mv2-030) | C5: official pollen observations and forecasts | F3 | P0 | M | IN PROGRESS | [MV2-069](#mv2-069), [MV2-070](#mv2-070) |
 | [MV2-031](#mv2-031) | Pollen Watch — the first complete end-to-end scenario (C5) | F3 | P0 | L | IN PROGRESS | [MV2-070](#mv2-070), [MV2-030](#mv2-030) |
 | [MV2-032](#mv2-032) | C6: hydrological stations, metrics and official danger levels | F3 | P1 | M | VERIFYING | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
-| [MV2-033](#mv2-033) | C6: River / Lake thresholds, escalation and history | F3 | P1 | M | VERIFYING | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-032](#mv2-032) |
+| [MV2-033](#mv2-033) | C6: River / Lake thresholds, history and consented digest | F3 | P1 | M | VERIFYING | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-032](#mv2-032) |
 | [MV2-034](#mv2-034) | C7: official air-quality series and interpretation | F3 | P1 | M | VERIFYING | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-015](#mv2-015), [MV2-071](#mv2-071) |
 | [MV2-035](#mv2-035) | C7: Air Quality — metrics, changes and improvements | F3 | P1 | M | VERIFYING | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-034](#mv2-034) |
 | [MV2-036](#mv2-036) | Related developments from multiple sources | F4 | P1 | M | PLANNED | [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-029](#mv2-029), [MV2-033](#mv2-033), [MV2-041](#mv2-041), [MV2-071](#mv2-071) |
@@ -1273,7 +1273,25 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 
 <a id="mv2-033"></a>
 
-### MV2-033 — C6: River / Lake thresholds, escalation and history
+### MV2-033 — C6: River / Lake thresholds, history and consented digest
+
+**Active whole-feature scope, 14 September 2026:** Complete the C6 digest reuse
+in specification §13.8: explicit verified-owner delivery settings, preview,
+durable quiet-hour/daily email and exact private change links. Current numeric
+condition, source freshness, configuration, review and consent must hold before
+SMTP; no historical backfill or ambiguous retry. See the [complete acceptance
+scope](docs/monitoring-v2/RIVER_LAKE_WATCH.md#active-complete-feature-consented-river-digest--14-september-2026).
+MV2-012/022 are scoped contributions; C6/human acceptance remains VERIFYING.
+
+**Digest execution evidence, 14 September 2026:** Complete consent/settings/preview,
+durable delivery and exact private reader implemented with final source/numeric and
+access revalidation. Same-clock current-reading and rise-baseline corrections retain
+original evidence and suppress obsolete alerts. Regression runs: 89 passed and final
+40 passed (overlapping); eight browser axe checkpoints without violations, five
+locales/mobile/viewer redaction, root build, formatting and exact API lint passed.
+Migration preserves source observations and prior changes. Tests used fake SMTP.
+See [digest acceptance](docs/monitoring-v2/RIVER_LAKE_WATCH.md#consented-digest-acceptance--14-september-2026).
+Actual release and human/source acceptance remain open.
 
 **Status:** VERIFYING · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** M
 

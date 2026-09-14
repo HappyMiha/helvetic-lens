@@ -13,7 +13,7 @@ export const riverAttribution: Record<Locale, string> = {
 const en = {
   title: "River / Lake Watch",
   intro:
-    "Private monitoring of official station readings and flood danger levels. Changes appear here; email is not enabled.",
+    "Private monitoring of official station readings and flood danger levels. Review changes here and choose email delivery in your monitor settings.",
   create: "Create monitor",
   name: "Monitor name",
   station: "Station or waterbody",
@@ -102,7 +102,7 @@ export const riverCopy: Record<Locale, Copy> = {
   "de-CH": {
     title: "Fluss- / See-Monitoring",
     intro:
-      "Privates Monitoring amtlicher Stationsmessungen und Hochwassergefahrenstufen. Änderungen erscheinen hier; E-Mail ist nicht aktiviert.",
+      "Privates Monitoring amtlicher Stationsmessungen und Hochwassergefahrenstufen. Prüfen Sie Änderungen hier und wählen Sie E-Mail in Ihren Monitoreinstellungen.",
     create: "Monitoring erstellen",
     name: "Name",
     station: "Station oder Gewässer",
@@ -190,7 +190,7 @@ export const riverCopy: Record<Locale, Copy> = {
   "fr-CH": {
     title: "Suivi des rivières et lacs",
     intro:
-      "Suivi privé des mesures officielles et des niveaux de danger de crue. Les changements apparaissent ici ; les e-mails ne sont pas activés.",
+      "Suivi privé des mesures officielles et des niveaux de danger de crue. Consultez les changements ici et choisissez les e-mails dans les réglages du suivi.",
     create: "Créer un suivi",
     name: "Nom du suivi",
     station: "Station ou cours d’eau",
@@ -277,7 +277,7 @@ export const riverCopy: Record<Locale, Copy> = {
   "it-CH": {
     title: "Monitoraggio di fiumi e laghi",
     intro:
-      "Monitoraggio privato delle misure ufficiali e dei livelli di pericolo di piena. Le modifiche appaiono qui; le e-mail non sono attivate.",
+      "Monitoraggio privato delle misure ufficiali e dei livelli di pericolo di piena. Esamina le modifiche qui e scegli le e-mail nelle impostazioni del monitoraggio.",
     create: "Crea monitoraggio",
     name: "Nome",
     station: "Stazione o corso d’acqua",
@@ -364,7 +364,7 @@ export const riverCopy: Record<Locale, Copy> = {
   "rm-CH": {
     title: "Surveglianza da flums e lais",
     intro:
-      "Surveglianza privata da mesiraziuns uffizialas e stgalims da privel d’aua gronda. Las midadas cumparan qua; e-mails n’èn betg activads.",
+      "Surveglianza privata da mesiraziuns uffizialas e stgalims da privel d’aua gronda. Controllai las midadas qua e tschernai e-mails en ils parameters da l’observaziun.",
     create: "Crear surveglianza",
     name: "Num",
     station: "Staziun u aua",

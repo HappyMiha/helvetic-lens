@@ -11,6 +11,7 @@ from .auth import Identity
 from .config import DomainError
 from .monitoring_subjects import _actor
 from .river_contracts import RiverConfiguration, utc
+from .river_email_preferences import EmailConfiguration
 from .river_models import RiverChange, RiverMeasurement, RiverMonitor, RiverRevision
 from .river_runtime import change_view, command, create, edit, owned, preview, remove, review, view
 from .river_sources import catalogue, collect
@@ -36,6 +37,15 @@ class EditBody(ConfigurationBody, VersionBody):
     pass
 
 
+class EmailBody(VersionBody):
+    configuration: EmailConfiguration
+    consent: bool = Field(strict=True)
+
+
+def _now():
+    return datetime.now(UTC)
+
+
 class CommandBody(VersionBody):
     action: Literal["start", "pause", "resume", "archive"]
 
@@ -58,6 +68,40 @@ def river_router(service, settings):
         return actor
 
     router = APIRouter(prefix="/api/river-watch", tags=["river-watch"], dependencies=[Depends(identity)])
+
+    @router.get("/monitors/{monitor_id}/email")
+    def email_preferences(monitor_id: UUID, actor: Identity = Depends(identity)):
+        from .river_email_preferences import view as email_view
+        with service.db.session() as session:
+            return {**email_view(session, actor.user_id, str(monitor_id)), "mail_available": settings.auth_email_mode == "smtp"}
+
+    @router.put("/monitors/{monitor_id}/email")
+    def configure_email(monitor_id: UUID, body: EmailBody, actor: Identity = Depends(identity)):
+        from .river_email_preferences import configure
+        with service.db.session() as session:
+            result = configure(session, actor.user_id, str(monitor_id), expected_version=body.expected_version,
+                configuration=body.configuration.model_dump(mode="json"), consent=body.consent, now=_now())
+            session.commit()
+            return {**result, "mail_available": settings.auth_email_mode == "smtp"}
+
+    @router.get("/monitors/{monitor_id}/email/preview")
+    def email_preview(monitor_id: UUID, actor: Identity = Depends(identity)):
+        from .river_delivery import preview as email_preview
+        with service.db.session() as session:
+            return email_preview(session, settings, actor.user_id, str(monitor_id), now=_now())
+
+    @router.get("/monitors/{monitor_id}/changes/{change_id}")
+    def exact_change(monitor_id: UUID, change_id: UUID, actor: Identity = Depends(identity)):
+        with service.db.session() as session:
+            monitor = owned(session, actor.user_id, str(monitor_id))
+            change = session.scalar(select(RiverChange).where(RiverChange.id == str(change_id),
+                RiverChange.monitor_id == monitor.id, RiverChange.organization_id == monitor.organization_id))
+            if change is None:
+                raise DomainError("Change not found.", 404, "river_not_found")
+            newer = session.scalar(select(RiverChange.id).where(RiverChange.monitor_id == monitor.id,
+                RiverChange.development_id == change.development_id, RiverChange.sequence > change.sequence).limit(1))
+            return {"event": change_view(change), "newer_available": newer is not None,
+                    "current_configuration": change.revision == monitor.revision}
 
     @router.get("/stations")
     def stations():

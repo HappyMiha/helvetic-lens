@@ -24,6 +24,15 @@ def owned(session, user_id, monitor_id, *, write=False):
 
 
 def view(row):
+    from sqlalchemy.orm import object_session
+
+    from .models import User
+    from .river_email_preferences import policy
+    session = object_session(row)
+    email = policy(session, row) if session is not None else None
+    user = session.get(User, row.owner_user_id) if email is not None else None
+    consented = bool(email and email.configuration["delivery"]["email"] != "off"
+                     and user and user.email_verified_at is not None and email.recipient_email == user.email)
     state = deepcopy(row.state)
     health = row.health
     for coverage in state.get("coverage", {}).values():
@@ -33,7 +42,7 @@ def view(row):
     return {"id": row.id, "configuration": deepcopy(row.configuration), "revision": row.revision,
             "version": row.version, "status": row.status, "health": health, "state": state,
             "last_poll_at": utc(row.last_poll_at).isoformat() if row.last_poll_at else None,
-            "delivery": "private_web", "email_enabled": False}
+            "delivery": "private_web", "email_enabled": consented}
 
 
 def station(session, station_id):
@@ -148,6 +157,8 @@ def command(session, user_id, monitor_id, version, action, now):
         row.next_poll_at = now
         enqueue(session, row, now)
     else:
+        from .river_email_preferences import cancel_email_work
+        cancel_email_work(session, row)
         session.execute(update(Job).where(Job.target_type == "river_monitor", Job.target_id == row.id,
             Job.state.in_({"queued", "dispatched", "running", "retrying"})).values(cancel_requested=True))
     session.flush()
@@ -155,8 +166,10 @@ def command(session, user_id, monitor_id, version, action, now):
 
 
 def remove(session, user_id, monitor_id, version):
+    from .river_email_preferences import cancel_email_work
     row = owned(session, user_id, monitor_id, write=True)
     expected(row, version)
+    cancel_email_work(session, row)
     session.execute(update(Job).where(Job.target_type == "river_monitor", Job.target_id == row.id,
         Job.state.in_({"queued", "dispatched", "running", "retrying"})).values(cancel_requested=True))
     session.delete(row)
@@ -201,7 +214,12 @@ def evaluate(session, row, now):
         pending = [sample for sample in timeline if previous["watermark"] is None or utc(sample["timestamp"]) > utc(previous["watermark"])]
         if previous["watermark"] is None:
             pending = timeline[-1:]  # Starting is not a replay of past alerts.
+        elif not pending and previous.get("source_hash") != digest(timeline):
+            # Corrections to the current reading or its rise-window baseline
+            # must be evaluated even when the observation clock did not advance.
+            pending = timeline[-1:]
         for sample in pending:
+            corrected = previous["watermark"] == sample["timestamp"]
             if previous["watermark"] and utc(sample["timestamp"]) - utc(previous["watermark"]) > timedelta(minutes=20):
                 state["last_gap"] = {"from": previous["watermark"], "to": sample["timestamp"], "recovery_limit_hours": 12}
             value, baseline = (Decimal(sample["value"]), None) if rule is None else _rule_value(rule, sample, timeline)
@@ -223,14 +241,18 @@ def evaluate(session, row, now):
                 sequence=sequence, revision=row.revision, kind=kind, priority=1 if kind == "danger_escalation" else 2,
                 evidence={"sample": sample, "baseline": baseline, "rule": rule.model_dump(mode="json") if rule else None,
                           "previous_state": before, "current_state": observed, "evaluated_value": str(value),
-                          "station_id": config.station_id, "recovered": not fresh(sample, now)}, review_version=0)
+                          "station_id": config.station_id, "recovered": not fresh(sample, now),
+                          "corrected": corrected}, review_version=0, created_at=now)
             session.add(event)
             session.flush()
             previous["latest_change_id"] = event.id
+        previous["source_hash"] = digest(timeline)
     if any(condition["status"] == "unknown" for condition in conditions.values()):
         row.health = "partial_unknown"
     row.state, row.last_poll_at, row.next_poll_at = state, now, now + timedelta(minutes=10)
     session.flush()
+    from .river_delivery import prepare_monitor
+    prepare_monitor(session, row, now=now)
     return {"status": row.health, "sequence": sequence}
 
 

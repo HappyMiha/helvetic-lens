@@ -4121,6 +4121,16 @@ class HelveticLens:
                 result_json = await asyncio.to_thread(deliver_auction, self.db, self.settings,
                     monitor_id=target_id, consent_revision=payload.get("consent_revision"), checkpoint=auction_email_checkpoint)
                 result_type, result_id, result_url = "auction_monitor", target_id, f"/auction-watch?monitor={target_id}"
+            elif job_type == "river_email":
+                from .river_delivery import deliver as deliver_river
+                def river_email_checkpoint():
+                    with self.db.session() as heartbeat_session:
+                        active = durable_jobs.heartbeat(heartbeat_session, job_id, worker)
+                        heartbeat_session.commit()
+                    return active
+                result_json = await asyncio.to_thread(deliver_river, self.db, self.settings,
+                    monitor_id=target_id, consent_revision=payload.get("consent_revision"), checkpoint=river_email_checkpoint)
+                result_type, result_id, result_url = "river_monitor", target_id, f"/river-watch?monitor={target_id}"
             elif job_type == "trademark_email":
                 from .trademark_delivery import deliver as deliver_trademark
                 def trademark_email_checkpoint():
