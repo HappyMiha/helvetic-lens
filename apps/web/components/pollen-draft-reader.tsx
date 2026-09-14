@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { api, ApiError } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
@@ -16,6 +16,7 @@ import {
 import { pollenRecoveryCopy } from "@/lib/pollen-recovery-copy";
 import { PollenDraftCreate } from "./pollen-draft-create";
 import { PollenRuntime } from "./pollen-runtime";
+import { PollenPinnedEvidence } from "./pollen-pinned-evidence";
 import { PollenDraftExport, PollenDraftImport } from "./pollen-draft-backup";
 import { PollenChannelOverview } from "./pollen-station-picker";
 import { pollenStations } from "@/lib/pollen-stations";
@@ -596,6 +597,14 @@ function Reader({ allowed }: { allowed: boolean }) {
                         {removal.reload}
                       </button>
                     )}
+                    <Suspense fallback={null}>
+                      <PollenPinnedEvidence
+                        id={selected.id}
+                        canManage={canManage}
+                        onDenied={failed}
+                        onChanged={() => void openDraft(selected.id)}
+                      />
+                    </Suspense>
                     <PollenRuntime
                       key={`${selected.id}:${selected.revision}:${selected.status}`}
                       id={selected.id}

@@ -257,6 +257,14 @@ def centre_router(service, settings):
         from .today_counts import read
         return read(service, settings, actor.user_id)
 
+    @router.get("/notifications")
+    def notifications(domain: Domain, cursor: str | None = Query(default=None, max_length=2048),
+                      actor: Identity = Depends(identity)):
+        from .monitoring_notifications import page
+        with service.db.session() as session:
+            return page(session, settings, actor.user_id, domain=domain, cursor=cursor,
+                        now=datetime.now(UTC), prompts=service.prompt_settings)
+
     @router.get("")
     def listing(
         domain: Domain | None = None,

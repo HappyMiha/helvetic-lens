@@ -444,6 +444,38 @@ def state(session, *, settings, user_id, subject_id, now):
             "start_available": not blocking, "blocking_reasons": blocking}
 
 
+def _history_entry(session, entry, organization_id, *, settings=None, now=None):
+    review = session.scalar(select(MonitoringReview).where(MonitoringReview.entry_id == entry.id,
+        MonitoringReview.organization_id == organization_id).order_by(MonitoringReview.version.desc()).limit(1))
+    value = _evidence(entry)
+    if settings is not None:
+        sample = PollenSample.model_validate(entry.evidence_json["current"])
+        approval = settings.pollen_source_policy.approval(sample.series, _now(now or datetime.now(UTC)))
+        value["raw_export_available"] = bool(approval and approval.raw_export_allowed)
+        if approval is None:
+            value.update(current=sample.model_copy(update={"value": None, "quality": "unavailable", "rights": "unverified"}).model_dump(mode="json"),
+                previous=None, baseline=None, decision=None, category=None, provenance={}, reasons=[], source_withheld=True)
+    return {**value, "review": {"version": review.version, "decision": review.decision} if review else None}
+
+
+def exact_entry(session, *, settings, user_id, subject_id, entry_id, now):
+    organization_id = _actor(session, user_id)
+    subject = _owned(session, organization_id, user_id, subject_id)
+    entry = session.scalar(select(MonitoringLiveEntry).join(MonitoringLiveStream,
+        MonitoringLiveStream.id == MonitoringLiveEntry.stream_id).where(
+        MonitoringLiveEntry.id == entry_id, MonitoringLiveStream.subject_id == subject.id,
+        MonitoringLiveStream.organization_id == organization_id))
+    if entry is None:
+        raise DomainError("History entry not found.", 404, "monitoring_entry_not_found")
+    runtime = session.get(MonitoringRuntime, subject.id)
+    newer = session.scalar(select(MonitoringLiveEntry.id).where(
+        MonitoringLiveEntry.stream_id == entry.stream_id, MonitoringLiveEntry.sequence > entry.sequence).limit(1))
+    return {"entry": _history_entry(session, entry, organization_id, settings=settings, now=now),
+            "subject_id": subject.id,
+            "current_configuration": entry.evidence_json.get("configuration_revision") == subject.current_revision,
+            "newer_available": newer is not None or runtime is None or entry.stream_id not in runtime.current_stream_ids}
+
+
 def history(session, *, user_id, subject_id, limit=20, before_id=None, material_only=False, settings=None, now=None):
     organization_id = _actor(session, user_id)
     _owned(session, organization_id, user_id, subject_id)
@@ -462,19 +494,7 @@ def history(session, *, user_id, subject_id, limit=20, before_id=None, material_
         statement = statement.where(or_(MonitoringLiveEntry.created_at < anchor.created_at,
             and_(MonitoringLiveEntry.created_at == anchor.created_at, MonitoringLiveEntry.id < anchor.id)))
     rows = list(session.scalars(statement.order_by(MonitoringLiveEntry.created_at.desc(), MonitoringLiveEntry.id.desc()).limit(limit + 1)))
-    items = []
-    for entry in rows[:limit]:
-        review = session.scalar(select(MonitoringReview).where(MonitoringReview.entry_id == entry.id,
-            MonitoringReview.organization_id == organization_id).order_by(MonitoringReview.version.desc()).limit(1))
-        value = _evidence(entry)
-        if settings is not None:
-            sample = PollenSample.model_validate(entry.evidence_json["current"])
-            approval = settings.pollen_source_policy.approval(sample.series, _now(now or datetime.now(UTC)))
-            value["raw_export_available"] = bool(approval and approval.raw_export_allowed)
-            if approval is None:
-                value.update(current=sample.model_copy(update={"value": None, "quality": "unavailable", "rights": "unverified"}).model_dump(mode="json"),
-                    previous=None, baseline=None, decision=None, category=None, provenance={}, reasons=[], source_withheld=True)
-        items.append({**value, "review": {"version": review.version, "decision": review.decision} if review else None})
+    items = [_history_entry(session, entry, organization_id, settings=settings, now=now) for entry in rows[:limit]]
     return {"items": items, "next_cursor": rows[limit - 1].id if len(rows) > limit else None}
 
 

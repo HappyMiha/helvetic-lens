@@ -108,14 +108,16 @@ function PrivatePollenToday() {
       data-pollen-today
       aria-busy={busy}
     >
-      <h2>{labels.title} · {copy.today}</h2>
+      <h2>
+        {labels.title} · {copy.today}
+      </h2>
       {failed && <p role="alert">{copy.failed}</p>}
       <ul>
         {page?.items.map((item) => (
           <li key={item.id} className="py-2">
             <Link
               className="underline min-h-[44px] inline-flex items-center"
-              href={`/pollen-watch#draft=${encodeURIComponent(item.subject_id)}`}
+              href={`/pollen-watch?entry=${encodeURIComponent(item.id)}#draft=${encodeURIComponent(item.subject_id)}`}
             >
               {item.station_id} ·{" "}
               {labels.allergens[item.allergen] || labels.unknown}

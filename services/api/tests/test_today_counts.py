@@ -13,11 +13,13 @@ from test_river_today import monitor as river_monitor
 from test_tender_repository import db as db
 from test_tender_repository import template as template
 
+from helvetic_lens import monitoring_review_queue as review_queues
 from helvetic_lens import today_counts as summary
 from helvetic_lens.air_models import AirChange, AirMonitor
 from helvetic_lens.config import DomainError, Settings
 from helvetic_lens.models import OrganizationMembership
 from helvetic_lens.monitoring_contracts import public_pollen_rollout
+from helvetic_lens.monitoring_notifications import page as notification_page
 from helvetic_lens.prompt_settings import PromptSettings
 
 NOW = datetime(2026, 9, 14, 12, tzinfo=UTC)
@@ -42,6 +44,17 @@ def count(db, domain, expected, *, settings=None, now=NOW, user="owner"):
     try:
         with db.session() as session:
             result = summary.counts(session, enabled(settings), user, now=now, prompts=PromptSettings())
+            if domain != "legal":
+                cursor, notifications = None, []
+                for _ in range(100):
+                    queue = notification_page(session, enabled(settings), user, domain=domain, now=now,
+                                              prompts=PromptSettings(), cursor=cursor)
+                    notifications.extend(queue["items"])
+                    cursor = queue["next_cursor"]
+                    if cursor is None:
+                        break
+                assert cursor is None and len(notifications) == expected
+                assert all(item["domain"] == domain and item["href"].startswith("/") for item in notifications)
             assert not session.new and not session.dirty and not session.deleted
     finally:
         event.remove(db.engine, "before_cursor_execute", capture)
@@ -171,7 +184,7 @@ def test_road_source_permission_rechecked(db):
 def test_hazard_geometry_rechecked_and_review_suppressed(db, monkeypatch):
     from test_hazard_events import NOW, GeometryFixture, review, setup
     store = GeometryFixture()
-    monkeypatch.setattr(summary, "BoundaryStore", lambda path: store)
+    monkeypatch.setattr(review_queues, "BoundaryStore", lambda path: store)
     monitor, _, _, development = setup(db, store)
     count(db, "warnings", 1, now=NOW)
     store.available = False
@@ -259,7 +272,7 @@ def test_snapshot_does_not_mix_a_concurrent_new_change_into_later_domain(db, mon
         river_change(session, monitor)
         monitor_id = monitor.id
         session.commit()
-    original = summary.air_today.today
+    original = review_queues.air_today.today
     changed = False
     def while_counting(session, user_id, **kwargs):
         nonlocal changed
@@ -273,7 +286,7 @@ def test_snapshot_does_not_mix_a_concurrent_new_change_into_later_domain(db, mon
                 river_change(writer, writer.get(RiverMonitor, monitor_id), sequence=2)
                 writer.commit()
         return result
-    monkeypatch.setattr(summary.air_today, "today", while_counting)
+    monkeypatch.setattr(review_queues.air_today, "today", while_counting)
     settings = enabled()
     service = SimpleNamespace(db=db, prompt_settings=PromptSettings(), relation_runtime_observation=lambda: None)
     first = summary.read(service, settings, "owner")

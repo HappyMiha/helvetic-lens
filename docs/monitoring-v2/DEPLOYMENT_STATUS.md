@@ -1,5 +1,21 @@
 # Monitoring deployment status — 14 September 2026
 
+## All-direction notification centre candidate — 14 September 2026
+
+The header centre now exposes nine private native Monitoring review queues plus
+legal notifications, with exact retained Pollen evidence links. Local acceptance
+passed: 48 affected API checks, 13 final HTTP/backlog checks, the exact API lint
+gate, root isolated build, 65 new browser/axe checkpoints, 80 legal regression
+checkpoints and 22 Today checkpoints. See
+[implementation and limits](MONITORING_NOTIFICATION_CENTRE.md).
+
+A fresh authenticated Refresh during final acceptance still showed production
+`1188f18190e0` and automatic candidate `660edacc8e7a` Deploying. It includes the
+already-pushed Tender clock repair `4434cf9` and Trademark fixture repair
+`eed7fde`. No production run was interrupted or retried. The new notification
+feature is not yet verified activated; source access and human acceptance remain
+independent. The retired Monitoring deployment was not touched.
+
 ## Shared Today review counts publication candidate — 14 September 2026
 
 All nine Monitoring directions and the legal feed now contribute to a private

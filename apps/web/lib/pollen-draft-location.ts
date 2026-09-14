@@ -6,6 +6,8 @@ export function pollenDraftIdFromHash(hash: string): string | null {
 
 export function replacePollenDraftLocation(id: string | null) {
   const url = new URL(window.location.href);
+  if (!id || pollenDraftIdFromHash(url.hash) !== id)
+    url.searchParams.delete("entry");
   url.hash = id ? `draft=${encodeURIComponent(id)}` : "";
   window.history.replaceState(window.history.state, "", url);
 }

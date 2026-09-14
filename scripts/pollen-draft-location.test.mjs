@@ -19,3 +19,16 @@ test("fragment replacement preserves route/query and existing Next history state
     assert.equal(String(calls[1][2]), "https://example.invalid/pollen-watch?mode=read");
   } finally { globalThis.window = original; }
 });
+
+test("exact evidence survives opening its own draft and clears on a different draft", () => {
+  const original=globalThis.window, calls=[];
+  globalThis.window={location:{href:"https://example.invalid/pollen-watch?entry=saved&mode=read#draft=one"},history:{state:{},replaceState:(...args)=>calls.push(String(args[2]))}};
+  try {
+    replacePollenDraftLocation("one");
+    assert.equal(calls.at(-1),"https://example.invalid/pollen-watch?entry=saved&mode=read#draft=one");
+    replacePollenDraftLocation("two");
+    assert.equal(calls.at(-1),"https://example.invalid/pollen-watch?mode=read#draft=two");
+    replacePollenDraftLocation(null);
+    assert.equal(calls.at(-1),"https://example.invalid/pollen-watch?mode=read");
+  } finally {globalThis.window=original;}
+});

@@ -323,6 +323,8 @@ class RelationReprocessingInput(Input):
 def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
     if path == "/api/monitoring-centre/today-counts":
         return "today_counts", 12, 60
+    if path == "/api/monitoring-centre/notifications":
+        return "monitoring_notifications", 60, 60
     if path.startswith("/api/auction-watch"):
         return "auction_watch", 60, 60
     if path.startswith("/api/trademark-watch"):

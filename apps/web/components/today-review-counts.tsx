@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { centreCopy } from "@/lib/monitoring-centre-copy";
@@ -21,7 +21,9 @@ type Counts = {
   }>;
 };
 
-export function TodayReviewCounts() {
+type Props = { onSelect?: (domain: string) => void };
+
+export function TodayReviewCounts({ onSelect }: Props = {}) {
   const { session } = useAuth();
   const [visible, setVisible] = useState(true);
   const [epoch, setEpoch] = useState(0);
@@ -48,11 +50,13 @@ export function TodayReviewCounts() {
   return (
     <PrivateCounts
       key={`${session.user.id}:${session.organization.id}:${session.role}:${epoch}`}
+      onSelect={onSelect}
     />
   );
 }
 
-function PrivateCounts() {
+function PrivateCounts({ onSelect }: Props) {
+  const heading = useId();
   const { locale, t, dateTime } = useI18n();
   const copy = todayCountsCopy[locale];
   const [page, setPage] = useState<Counts | null>(null);
@@ -124,23 +128,28 @@ function PrivateCounts() {
   return (
     <section
       className="surface-card mb-6 p-4 sm:p-6"
-      aria-labelledby="today-counts-heading"
+      aria-labelledby={heading}
       data-testid="today-review-counts"
       aria-busy={busy}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <h2 id="today-counts-heading" className="text-lg font-semibold">
+        <h2
+          id={heading}
+          tabIndex={onSelect ? -1 : undefined}
+          className="text-lg font-semibold"
+        >
           {copy.title}
         </h2>
         <Button
           variant="outline"
+          className="min-h-11 h-auto whitespace-normal"
           onClick={() => setRevision((value) => value + 1)}
           disabled={busy}
         >
           {copy.refresh}
         </Button>
       </div>
-      <p className="muted mt-2 max-w-4xl text-sm">{copy.body}</p>
+      {!onSelect && <p className="muted mt-2 max-w-4xl text-sm">{copy.body}</p>}
       <div aria-live="polite" className="my-3">
         {busy ? (
           <p>{copy.loading}</p>
@@ -158,22 +167,38 @@ function PrivateCounts() {
       <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {queues.map((queue) => {
           const row = page?.items.find((item) => item.domain === queue.id);
+          const content = (
+            <>
+              <span>{queue.name}</span>
+              <span className="font-semibold tabular-nums">
+                {busy
+                  ? "…"
+                  : row?.count != null && row.state === "complete"
+                    ? row.count.toLocaleString(locale)
+                    : copy.unavailable}
+              </span>
+            </>
+          );
           return (
             <li key={queue.id}>
-              <Link
-                href={queue.href}
-                className="flex h-full items-center justify-between gap-3 rounded border p-3 text-sm hover:bg-muted/40"
-                data-domain={queue.id}
-              >
-                <span>{queue.name}</span>
-                <span className="font-semibold tabular-nums">
-                  {busy
-                    ? "…"
-                    : row?.count != null && row.state === "complete"
-                      ? row.count.toLocaleString(locale)
-                      : copy.unavailable}
-                </span>
-              </Link>
+              {onSelect ? (
+                <button
+                  type="button"
+                  onClick={() => onSelect(queue.id)}
+                  data-domain={queue.id}
+                  className="flex min-h-11 w-full items-center justify-between gap-3 rounded border p-3 text-left text-sm hover:bg-muted/40"
+                >
+                  {content}
+                </button>
+              ) : (
+                <Link
+                  href={queue.href}
+                  className="flex h-full items-center justify-between gap-3 rounded border p-3 text-sm hover:bg-muted/40"
+                  data-domain={queue.id}
+                >
+                  {content}
+                </Link>
+              )}
             </li>
           );
         })}

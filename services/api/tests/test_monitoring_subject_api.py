@@ -257,7 +257,7 @@ def test_cross_workspace_and_same_workspace_other_owner_are_denied(api):
             session.commit()
         switched = second.post("/api/auth/session/organization", json={"organization_id": owner["organization"]["id"]}, headers=_csrf(second))
         assert switched.status_code == 200, switched.text
-        for suffix in ("", "/history"):
+        for suffix in ("", "/history", f"/activity/{uuid4()}"):
             assert second.get(URL + "/" + record["id"] + suffix).status_code == 404
         for method, suffix, body in (("PATCH", "", {"expected_revision": 1, "configuration": config()}),
                                       ("DELETE", "", {"expected_revision": 1}),
@@ -287,6 +287,9 @@ def test_anonymous_development_still_requires_a_personal_session(tmp_path):
         response = client.get(URL)
         assert response.status_code == 401
         assert response.headers["cache-control"] == "private, no-store"
+        exact = client.get(f"{URL}/{uuid4()}/activity/{uuid4()}")
+        assert exact.status_code == 401
+        assert exact.headers["cache-control"] == "private, no-store"
 
 
 def test_rate_limit_is_shared_across_subject_paths(api):

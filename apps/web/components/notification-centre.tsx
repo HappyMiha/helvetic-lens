@@ -28,6 +28,9 @@ import {
 import { ErrorNote } from "./common";
 import { NotificationBrief } from "./notification-brief";
 import type { DigestBrief } from "@/lib/interest-brief";
+import { monitoringNotificationsCopy } from "@/lib/monitoring-notifications-copy";
+import { TodayReviewCounts } from "./today-review-counts";
+import { MonitoringNotificationQueue } from "./monitoring-notification-queue";
 
 type Event = {
   event_id: string;
@@ -43,14 +46,20 @@ export function NotificationCentre() {
   const { locale } = useI18n();
   return (
     <Centre
-      key={`${session?.user?.id}:${session?.organization?.id}:${locale}`}
+      key={`${session?.user?.id}:${session?.organization?.id}:${session?.role}:${locale}`}
     />
   );
 }
 
 function Centre() {
   const { locale } = useI18n();
+  const { session } = useAuth();
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const hide = () => setOpen(false);
+    window.addEventListener("pagehide", hide);
+    return () => window.removeEventListener("pagehide", hide);
+  }, []);
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -67,10 +76,57 @@ function Centre() {
         <DialogTitle className="pr-10">
           {notificationCopy[locale].title}
         </DialogTitle>
-        <DialogDescription>{notificationCopy[locale].body}</DialogDescription>
-        {open && <Notifications onNavigate={() => setOpen(false)} />}
+        <DialogDescription>
+          {session?.authenticated
+            ? monitoringNotificationsCopy[locale].body
+            : notificationCopy[locale].body}
+        </DialogDescription>
+        {open &&
+          (session?.authenticated ? (
+            <MonitoringNotifications onNavigate={() => setOpen(false)} />
+          ) : (
+            <Notifications onNavigate={() => setOpen(false)} />
+          ))}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function MonitoringNotifications({ onNavigate }: { onNavigate: () => void }) {
+  const { locale } = useI18n();
+  const copy = monitoringNotificationsCopy[locale];
+  const [queue, setQueue] = useState<string | null>(null);
+  const panel = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    panel.current
+      ?.querySelector<HTMLHeadingElement>("h2[tabindex]")
+      ?.focus({ preventScroll: true });
+  }, [queue]);
+  return (
+    <div ref={panel} data-monitoring-notifications>
+      {queue === null ? (
+        <TodayReviewCounts onSelect={setQueue} />
+      ) : (
+        <>
+          <Button
+            className="mb-4 min-h-11"
+            variant="outline"
+            onClick={() => setQueue(null)}
+          >
+            {copy.overview}
+          </Button>
+          {queue === "legal" ? (
+            <Notifications onNavigate={onNavigate} />
+          ) : (
+            <MonitoringNotificationQueue
+              key={queue}
+              domain={queue}
+              onNavigate={onNavigate}
+            />
+          )}
+        </>
+      )}
+    </div>
   );
 }
 
@@ -201,7 +257,13 @@ function Notifications({ onNavigate }: { onNavigate: () => void }) {
                 timeStyle: "short",
               })}
             </p>
-            <NotificationBrief brief={event.brief} eventTitle={event.title} eventUrl={`/?event=${encodeURIComponent(event.event_id)}`} onNavigate={onNavigate} stale={!!error} />
+            <NotificationBrief
+              brief={event.brief}
+              eventTitle={event.title}
+              eventUrl={`/?event=${encodeURIComponent(event.event_id)}`}
+              onNavigate={onNavigate}
+              stale={!!error}
+            />
             <div className="flex flex-wrap gap-2 mt-3">
               <Button
                 data-notification-read

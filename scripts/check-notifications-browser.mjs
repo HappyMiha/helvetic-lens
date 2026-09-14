@@ -95,9 +95,10 @@ try {
     await cdp.send("Emulation.setDeviceMetricsOverride",{width,height:900,deviceScaleFactor:1,mobile:width<500});
     const before=requests.length;
     await cdp.send("Page.navigate",{url:`${base}/overview?locale=${locale}&qa=${user}`});
-    await waitFor(()=>evaluate(cdp,`window.__qaNotificationDocument===${JSON.stringify(user)} && document.documentElement.lang===${JSON.stringify(locale)} && !!document.querySelector('[data-notifications-trigger]')`),"Notification entry missing");
+    await waitFor(()=>evaluate(cdp,`window.__qaNotificationDocument===${JSON.stringify(user)} && document.documentElement.lang===${JSON.stringify(locale)} && [...document.querySelectorAll('button[title]')].some(b=>b.title.includes('QA'))`),"Authenticated notification entry missing");
     assert.equal(requests.slice(before).filter(r=>r.path==='/api/interest-feed/notifications').length,0,'Closed centre fetched notifications');
     await click('[data-notifications-trigger]');
+    await click('[data-notification-centre] [data-domain="legal"]');
     await waitFor(()=>evaluate(cdp,`document.querySelector('[data-notification-centre]').innerText.includes('Synthetic notification read failure')`),'First-load error missing');
     await click('[data-notification-retry]');
     await waitFor(()=>evaluate(cdp,`document.querySelectorAll('[data-notification-event]').length===2`),'First page missing');
@@ -155,6 +156,7 @@ try {
     await cdp.send('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
     await waitFor(()=>evaluate(cdp,`!document.querySelector('[data-notification-centre]') && document.activeElement.matches('[data-notifications-trigger]')`),'Close did not return focus');
     await click('[data-notifications-trigger]');
+    await click('[data-notification-centre] [data-domain="legal"]');
     await waitFor(()=>evaluate(cdp,`document.querySelectorAll('[data-notification-event]').length===2`),'Reopen failed');
     await click('[data-notification-next]');
     await waitFor(()=>evaluate(cdp,`!!document.querySelector('[data-notification-empty]')`),'Saved read state did not persist after reopen');

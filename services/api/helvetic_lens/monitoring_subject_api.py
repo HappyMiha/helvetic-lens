@@ -187,6 +187,12 @@ def draft_router(service, settings: Settings) -> APIRouter:
         return FileResponse(path, media_type="application/octet-stream", filename=f"pollen-source-{artifact_hash}.bin",
                             headers={"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
 
+    @router.get("/{subject_id}/activity/{entry_id}")
+    def exact_entry(subject_id: UUID, entry_id: UUID, actor: AuthIdentity = Depends(identity)):
+        with service.db.session() as session:
+            return runtime.exact_entry(session, settings=settings, user_id=actor.user_id,
+                subject_id=str(subject_id), entry_id=str(entry_id), now=datetime.now(UTC))
+
     @router.get("/{subject_id}/activity/{entry_id}/reviews")
     def reviews(subject_id: UUID, entry_id: UUID, before_version: int | None = Query(default=None, ge=1),
                 actor: AuthIdentity = Depends(identity)):

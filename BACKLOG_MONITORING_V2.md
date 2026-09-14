@@ -218,7 +218,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
 | [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
 | [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
-| [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | PLANNED | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
+| [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
 | [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
 | [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
 | [MV2-025](#mv2-025) | Admin: accurate source capabilities and access management | F2 | P0 | M | IN PROGRESS | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-018](#mv2-018) |
@@ -1059,7 +1059,22 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-022 — Notifications and Digests from the same developments
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
+**Current whole-feature scope, 14 September 2026:** Extend the header notification
+centre from legal events to all nine Monitoring review queues, with native
+eligibility, bounded private pagination, synchronized review state and exact
+evidence links. Add the missing pinned Pollen entry reader/panel as a dependency.
+See [scope and acceptance](docs/monitoring-v2/MONITORING_NOTIFICATION_CENTRE.md).
+Shared email preferences and broader source/human acceptance remain separate.
+
+**14 September implementation evidence:** The complete in-app centre now exposes
+all nine private native review queues and the legal feed, with scoped pagination,
+shared Today eligibility and exact retained Pollen evidence. Local acceptance:
+48 affected API checks, root build, exact API lint, 65 new browser/axe checkpoints,
+80 legal notification checkpoints and 22 Today checkpoints passed. See the linked
+evidence document. Exact activation, shared email/noise preferences and live/human
+acceptance remain open; this contribution does not close the broader task.
+
+**Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
 
 **Dependencies:** [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019). **Requirements:** §§28,33; AC-B2-12; C4 digest deferred.
 
@@ -1076,7 +1091,9 @@ above supersedes the River-only count limitation for readable Today queues.
 
 **Verification:** Send-preview parity, race/unsubscribe tests, multi-monitor deduplication and bounded-period queries.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Execution evidence:** In-app queue and pinned Pollen acceptance is recorded in
+[Monitoring notification centre](docs/monitoring-v2/MONITORING_NOTIFICATION_CENTRE.md).
+Broader email/noise controls and live/human/release gates remain open.
 
 <a id="mv2-023"></a>
 
