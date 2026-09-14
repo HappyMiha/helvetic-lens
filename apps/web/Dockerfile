@@ -7,6 +7,7 @@ RUN npm ci
 # the runtime stage below copies only the standalone app and static assets.
 COPY scripts/*.mjs scripts/
 COPY docs/monitoring-v2/evidence/mv2-069-source-proof.json docs/monitoring-v2/evidence/mv2-069-source-proof.json
+COPY services/api/helvetic_lens/trademark_export_labels.json services/api/helvetic_lens/trademark_export_labels.json
 COPY apps/web apps/web
 ARG HELVETIC_LENS_API_URL=http://api:8000
 ENV HELVETIC_LENS_API_URL=$HELVETIC_LENS_API_URL

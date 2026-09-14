@@ -1699,6 +1699,8 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 **Private review feature, 14 September 2026:** Implemented permitted-source preview/start/pause, bounded scheduled candidate discovery, immutable private decisions, retained calibration provenance, register-change reopening and exact Today/Inbox evidence in all five languages. The 103 combined server checks plus two focused checks and 32 browser checkpoints passed; desktop/mobile axe audits reported zero violations. [Scope and acceptance evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#private-register-review-journey--14-september-2026) distinguish this complete user-facing feature from real source/quality, legal deadline, export/delivery, activation and human acceptance requirements. Index and detail remain IN PROGRESS.
 
+**Counsel packet feature, 14 September 2026:** Implemented prepare→inspect→explicit HTML download for a current candidate and optionally its selected register change. Every included source version is revalidated at download; preparation storage retains only references/hash. The 54 combined server checks, focused prior-permission check and 42 browser checkpoints passed, including exact downloaded bytes and revocation after preview. No sending or filing. [Scope and acceptance](docs/monitoring-v2/TRADEMARK_WATCH.md#counsel-packet-feature--14-september-2026) keep approved legal deadline rules, real source/human acceptance and release activation open. Index and detail remain IN PROGRESS.
+
 <a id="mv2-049"></a>
 
 ### MV2-049 — B8: Official Ticino auctions

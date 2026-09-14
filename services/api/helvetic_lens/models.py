@@ -1782,6 +1782,7 @@ ORGANIZATION_SCOPED_MODELS = (
     trademark_workflow_models.TrademarkCandidate,
     trademark_workflow_models.TrademarkCandidateEvent,
     trademark_workflow_models.TrademarkReview,
+    trademark_workflow_models.TrademarkExportPreparation,
     hazard_models.HazardConfigurationRevision,
     hazard_models.HazardDevelopment,
     hazard_models.HazardEventRevision,

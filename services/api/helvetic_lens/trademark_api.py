@@ -7,7 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
-from . import trademark_history, trademark_today, trademark_workflow
+from . import trademark_exports, trademark_history, trademark_today, trademark_workflow
 from . import trademark_repository as repository
 from .auth import Identity
 from .config import DomainError
@@ -38,6 +38,17 @@ class EditBody(ConfigurationBody, VersionBody):
 class ReviewBody(VersionBody):
     expected_evaluation_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
     decision: Literal["reviewed", "relevant", "not_relevant", "monitor", "counsel"]
+
+
+class ExportBody(VersionBody):
+    expected_evaluation_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
+    request_key: UUID
+    event_id: UUID | None = None
+    locale: Literal["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"] = "en-CH"
+
+
+class DownloadBody(Input):
+    expected_content_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
 
 
 def _now():
@@ -177,6 +188,28 @@ def trademark_router(service, settings):
     def today(cursor: UUID | None = None, limit: int = Query(default=20, ge=1, le=50), actor: Identity = Depends(identity)):
         with service.db.session() as session:
             return trademark_today.page(session, settings, actor.user_id, now=_now(), cursor=str(cursor) if cursor else None, limit=limit)
+
+    @router.post("/monitors/{monitor_id}/candidates/{candidate_id}/exports")
+    def prepare_export(monitor_id: UUID, candidate_id: UUID, body: ExportBody, actor: Identity = Depends(identity)):
+        with service.db.session() as session:
+            result = trademark_exports.prepare(session, actor.user_id, str(monitor_id), str(candidate_id),
+                expected_version=body.expected_version, expected_evaluation_hash=body.expected_evaluation_hash,
+                request_key=str(body.request_key), event_id=str(body.event_id) if body.event_id else None, locale=body.locale, now=_now())
+            session.commit()
+            return result
+
+    @router.get("/monitors/{monitor_id}/candidates/{candidate_id}/exports/{preparation_id}")
+    def read_export(monitor_id: UUID, candidate_id: UUID, preparation_id: UUID, actor: Identity = Depends(identity)):
+        with service.db.session() as session:
+            return trademark_exports.read(session, actor.user_id, str(monitor_id), str(candidate_id), str(preparation_id), now=_now())
+
+    @router.post("/monitors/{monitor_id}/candidates/{candidate_id}/exports/{preparation_id}/download")
+    def download_export(monitor_id: UUID, candidate_id: UUID, preparation_id: UUID, body: DownloadBody, actor: Identity = Depends(identity)):
+        with service.db.session() as session:
+            result = trademark_exports.read(session, actor.user_id, str(monitor_id), str(candidate_id), str(preparation_id),
+                download_hash=body.expected_content_sha256, now=_now())
+            session.commit()
+            return result
 
     @router.get("/inbox")
     def inbox(cursor: UUID | None = None, limit: int = Query(default=20, ge=1, le=50), actor: Identity = Depends(identity)):

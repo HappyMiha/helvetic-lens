@@ -20,6 +20,44 @@ def api(tmp_path):
         yield client, app, settings
 
 
+def test_http_explicit_export_preview_download_csrf_and_rights_revalidation(api, monkeypatch):
+    from test_trademark_sources import NOW, accept, grant
+
+    from helvetic_lens import trademark_api
+    from helvetic_lens import trademark_sources as sources
+    client, app, _ = api
+    monkeypatch.setattr(trademark_api, "_now", lambda: NOW)
+    database = app.state.service.db
+    permission = grant(database, private_decisions_allowed=True, export_allowed=True)
+    accept(database, permission)
+    config = portfolio().model_dump(mode="json")
+    monitor = client.post(ROOT + "/monitors", headers=_csrf(client), json={"configuration": config, "request_key": str(uuid4())}).json()
+    path = ROOT + "/monitors/" + monitor["id"]
+    client.post(path + "/start", headers=_csrf(client), json={"expected_version": 1})
+    client.post(path + "/refresh", headers=_csrf(client))
+    row, = client.get(path + "/candidates").json()["items"]
+    cp = path + "/candidates/" + row["id"]
+    body = {"expected_version": row["version"], "expected_evaluation_hash": row["evaluation_hash"], "request_key": str(uuid4()), "locale": "fr-CH"}
+    assert client.post(cp + "/exports", json=body).status_code == 403
+    assert client.post(cp + "/exports", headers=_csrf(client), json={**body, "export_allowed": True}).status_code == 422
+    result = client.post(cp + "/exports", headers=_csrf(client), json=body)
+    assert result.status_code == 200 and result.headers["cache-control"] == "no-store"
+    prepared = result.json()
+    assert 'lang="fr-CH"' in prepared["document"] and prepared["filename"].endswith(".html")
+    endpoint = cp + "/exports/" + prepared["id"]
+    assert client.get(endpoint).json() == prepared
+    download = {"expected_content_sha256": prepared["content_sha256"]}
+    assert client.post(endpoint + "/download", json=download).status_code == 403
+    assert client.post(endpoint + "/download", headers=_csrf(client), json={"expected_content_sha256": "a"*64}).status_code == 409
+    assert client.post(endpoint + "/download", headers=_csrf(client), json=download).json() == prepared
+    with database.session() as session:
+        sources.revoke_permission(session, permission, now=NOW)
+        session.commit()
+    for result in (client.get(endpoint), client.post(endpoint + "/download", headers=_csrf(client), json=download)):
+        assert result.status_code == 409 and result.headers["cache-control"] == "no-store"
+        assert "ALMORA" not in result.text and "document" not in result.json()
+
+
 def test_http_portfolio_roundtrip_no_source_activation_and_no_forged_calibration(api):
     client, _, _ = api
     config = portfolio().model_dump(mode="json")

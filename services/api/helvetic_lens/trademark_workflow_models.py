@@ -119,3 +119,25 @@ class TrademarkReview(Base):
     decision: Mapped[str] = mapped_column(String(20))
     actor_user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class TrademarkExportPreparation(Base):
+    """Short-lived private references; the permitted document is rebuilt on every read."""
+    __tablename__ = "trademark_export_preparations"
+    __table_args__ = (
+        ForeignKeyConstraint(["candidate_id", "organization_id"], ["trademark_candidates.id", "trademark_candidates.organization_id"], ondelete="CASCADE"),
+        UniqueConstraint("candidate_id", "request_key", name="uq_trademark_export_request"),
+        CheckConstraint("candidate_version >= 1 AND expires_at > created_at", name="ck_trademark_export_validity"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"), index=True)
+    candidate_id: Mapped[str] = mapped_column(String(36), index=True)
+    request_key: Mapped[str] = mapped_column(String(36))
+    candidate_version: Mapped[int] = mapped_column(Integer)
+    source_revision_id: Mapped[str] = mapped_column(ForeignKey("trademark_register_revisions.id"))
+    event_id: Mapped[str | None] = mapped_column(ForeignKey("trademark_candidate_events.id", ondelete="CASCADE"))
+    locale: Mapped[str] = mapped_column(String(5))
+    content_hash: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    downloaded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

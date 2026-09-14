@@ -1,5 +1,18 @@
 # Monitoring deployment status — 14 September 2026
 
+## Auction tracking and Inbox activated; counsel export follow-up — 14 September 2026
+
+The public main-site `/api/ready` reports `git-3b48a00c92d6`, instance `main`,
+status ready and database/Redis true. This verifies activation of private Auction
+tracking, the Centre configuration copy and Auction Today/Inbox. Later Auction
+reminders/email and Trademark review commits are published; activation remains
+unverified. The new explicit Trademark counsel-packet export passed 54 combined
+server tests, one focused prior-permission check and 42 browser checkpoints;
+its activation is likewise unverified. All nine sections remain enabled and
+visible. Source access, approved legal deadline rules and human acceptance remain
+separate. No deployment was restarted or duplicated and the retired host was
+not touched. See [counsel packet evidence](TRADEMARK_WATCH.md#counsel-packet-feature--14-september-2026).
+
 ## Trademark private review follow-up — 14 September 2026
 
 The main-site `/api/ready` still reports `git-f8a4304e658a`, instance `main`,

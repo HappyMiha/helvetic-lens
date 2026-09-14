@@ -352,6 +352,13 @@ export const SECTION_GUIDES: SectionGuide[] = [
         "Reads the exact detected change, before/after evidence and separate current assessment.",
         "Expired or revoked source facts are unavailable; prior private decisions remain retained.",
       ),
+      c(
+        "trademark-export",
+        "Prepare evidence packet / Download HTML packet",
+        "Prepares an exact, expiring private preview. Download rebuilds and checks every included source version before saving the inspected document locally.",
+        "Export rights must cover each source version. Choose whether to include the selected change. Changed decisions, evidence or revoked rights invalidate preparation. No sending or filing occurs; verify the legal deadline separately.",
+        "Save a change",
+      ),
     ],
   },
   {

@@ -1,5 +1,7 @@
 // Synthetic browser responses; source permissions and tenant isolation are tested by the real API suite.
+import { trademarkExportFixture } from "./trademark-export-fixture.mjs";
 export function trademarkReviewFixture() {
+  const exportRoute = trademarkExportFixture();
   let candidate = null,
     events = [],
     reviews = [];
@@ -138,6 +140,13 @@ export function trademarkReviewFixture() {
     if (route === base + "/candidates")
       return ok({ items: candidate ? [view(state)] : [], next_cursor: null });
     if (!candidate) return;
+    const exported = exportRoute(route, method, body, {
+      monitor,
+      candidate,
+      events,
+      state,
+    });
+    if (exported) return exported;
     const path = base + "/candidates/" + candidateId;
     if (route === path) return ok(view(state));
     if (route === path + "/review") {

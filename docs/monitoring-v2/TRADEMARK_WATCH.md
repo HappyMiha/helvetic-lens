@@ -81,6 +81,69 @@ quality, legal deadline rules, permitted export/delivery and human acceptance.
 
 ## Current official source evidence
 
+### Counsel packet feature — 14 September 2026
+
+MV2-048's next complete user outcome is a permitted, owner-private evidence
+packet for counsel review: prepare and inspect the exact packet, then explicitly
+download it. Preparation and download independently recheck membership, current
+candidate/profile/evaluation/source generation, retention and export rights for
+every included source version. The retained preparation stores references and a
+content hash, not licensed payload copies. Changed evidence/decision, expired
+preparation or revoked rights invalidates download. The UI remains visible with
+an explicit unavailable reason when source terms do not permit export. No external
+recipient, email, filing or automated sending is added. Five-language desktop/mobile
+readers, exact-event/current-only selection, CSRF/tenant/expiry/change tests and
+the required migration/lint/build gates form the feature acceptance.
+
+Deadline context remains a separate open part of MV2-048: it needs an approved
+applicable rule, verified publication basis, calendar/timezone and calculation
+trace. On 14 September the [IPI opposition page](https://www.ige.ch/de/etwas-schuetzen/marken/nach-der-eintragung/ueberwachung-und-verteidigung/widerspruch-einlegen)
+and [2025 guidelines](https://www.ige.ch/fileadmin/user_upload/schuetzen/marken/d/richtlinien_marken/Richtlinien_Marken_D_2025.pdf)
+were checked. National Swissreg publication and international publication must
+not be conflated. No operational legal rule or holiday calendar is approved by
+this lookup. The packet must preserve official source dates and explicitly state
+that the calculated deadline is unavailable and requires verification. Firecrawl
+CLI was not present on PATH; official pages were read through the web fallback.
+
+Implemented and verified: explicit preparation, a sandboxed offline HTML preview
+and a separate download action, all in the five UI languages. Current-only export
+and selected-change export are distinct; the latter rechecks both before/after
+versions under their own source permissions. A static downloaded file cannot
+update or redact itself, which is explained before download. The source strings
+are escaped, the document has a restrictive CSP, and its preview permits neither
+scripts nor same-origin access. No source markup becomes executable content.
+
+The private `TrademarkExportPreparation` stores only identifiers, candidate
+version, locale, checksum and timestamps. It expires after 15 minutes; no more
+than 20 preparations per candidate are retained without expiry cleanup. Idempotent
+retries preserve a preparation; conflicting reuse is rejected. The parent lock
+serializes prepare/download with review and projection. Every read/download
+rebuilds the exact document and verifies its digest, current evidence, membership,
+ownership and rights. No licensed packet body is retained on the server. Migration
+`c5a28346e4c7` follows `b4f17235d3b6`; private organization registration is included.
+Document labels are generated from authored UI translations by
+`scripts/sync-trademark-export-labels.mjs`; the root i18n check rejects drift.
+
+Evidence: 54 combined export/API/workflow/history/source tests passed (49.04s),
+plus a focused old/new permission test (2.73s). This covers explicit CSRF-protected
+download, stale decision/evidence, expiry, wrong hash, idempotency/conflicts,
+source rights on every included version, deleted evidence, tenant isolation,
+five-language HTML escaping, capacity and migration preservation. The built UI
+passed 42 browser checkpoints (8.80s), including byte-for-byte equality between
+the inspected preview and the explicitly downloaded test file, current-only
+selection, missing rights and revocation between preview and download. The three
+application axe audits reported zero violations. The packet iframe is deliberately
+sandboxed; these application audits are not an independent legal review of the
+document. Root build, exact Ruff, formatting, label synchronization and required
+backlog consistency checks are recorded at publication. Tests use synthetic rights
+and sources; no real IPI account, source grant, email, filing or counsel contact was
+created. The complete B7 direction and approved legal deadline rules remain open.
+
+At this feature boundary the main site's ready endpoint reports `git-3b48a00c92d6`,
+which verifies earlier Auction tracking, Centre copy and Auction Today/Inbox.
+The later reminders/email, Trademark review and counsel packet activations remain
+unverified. No deployment was restarted or duplicated.
+
 On 13 September, the [IPI data-delivery page](https://www.ige.ch/de/uebersicht-dienstleistungen/digitales-angebot/ip-daten/datenabgabe-api)
 still requires signed acceptance and account access. The [terms dated 31 October
 2024](https://www.ige.ch/fileadmin/user_upload/schuetzen/marken/d/Nutzungsbedingungen-Datenabgabe.pdf)

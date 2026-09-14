@@ -11,6 +11,7 @@ import {
 } from "@/lib/trademark-review-copy";
 import type { TrademarkMonitor, TrademarkPage } from "@/lib/trademark-watch";
 import { useData, useMutation } from "./trademark-client";
+import { TrademarkExport } from "./trademark-export";
 import styles from "./commute-watch.module.css";
 
 type Facts = {
@@ -363,6 +364,14 @@ function CandidateDetail({
           <ReviewHistory path={path} />
         </div>
       )}
+      <TrademarkExport
+        key={selected}
+        path={path}
+        version={row?.version}
+        evaluationHash={row?.evaluation_hash}
+        event={selected}
+        canManage={canManage}
+      />
       <h4>{c.history}</h4>
       {history.error ? (
         <p role="alert">{b.failed}</p>

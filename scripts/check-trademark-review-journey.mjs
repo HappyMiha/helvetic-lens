@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { checkExport } from "./check-trademark-export-journey.mjs";
 import { trademarkReviewCopy } from "../apps/web/lib/trademark-review-copy.ts";
 import { trademarkCopy } from "../apps/web/lib/trademark-copy.ts";
 
@@ -106,6 +107,7 @@ export async function checkReview({
       locale,
     );
     record("mobile-review:" + locale);
+    await checkExport({ locale, click, until, evaluate, json, call, record });
   }
   await evaluate(
     "document.querySelector('[data-trademark-candidate-detail]').scrollIntoView({block:'start'})",
