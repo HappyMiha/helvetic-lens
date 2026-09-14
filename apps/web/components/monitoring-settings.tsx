@@ -8,6 +8,7 @@ import { useI18n } from "@/lib/i18n";
 import { centreCopy, type TemplateId } from "@/lib/monitoring-centre-copy";
 import { monitoringNavigation } from "@/lib/monitoring-navigation";
 import { monitoringSettingsCopy } from "@/lib/monitoring-settings-copy";
+import { accountCopy } from "@/lib/account-copy";
 import { useAuth } from "./auth-gate";
 import { EmbeddedMonitoring } from "./embedded-monitoring";
 import { Shell } from "./shell";
@@ -111,6 +112,12 @@ function Settings({ allowed }: { allowed: boolean }) {
           <h1 className="text-3xl font-semibold">{c.title}</h1>
           <p>{c.intro}</p>
           <p>{c.note}</p>
+          <Link
+            href="/account"
+            className="inline-flex min-h-11 items-center underline"
+          >
+            {accountCopy[locale].title}
+          </Link>
         </header>
         <nav
           aria-label={c.category}

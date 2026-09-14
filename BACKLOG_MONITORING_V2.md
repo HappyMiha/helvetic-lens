@@ -249,7 +249,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-050](#mv2-050) | B8: Auction profiles, price limits and ending-soon alerts | F5 | P1 | L | IN PROGRESS | [MV2-008](#mv2-008), [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022), [MV2-043](#mv2-043), [MV2-044](#mv2-044), [MV2-049](#mv2-049) |
 | [MV2-051](#mv2-051) | Independent matching and local AI evaluation | F6 | P0 | L | PLANNED | [MV2-023](#mv2-023), [MV2-043](#mv2-043), [MV2-047](#mv2-047) |
 | [MV2-052](#mv2-052) | Operational metrics, degraded mode and source recovery | F6 | P0 | M | IN PROGRESS | [MV2-011](#mv2-011), [MV2-012](#mv2-012), [MV2-025](#mv2-025) |
-| [MV2-053](#mv2-053) | Personal-location privacy and access control | F6 | P0 | M | IN PROGRESS | [MV2-004](#mv2-004), [MV2-005](#mv2-005), [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-023](#mv2-023) |
+| [MV2-053](#mv2-053) | Personal-location privacy and access control | F6 | P0 | M | IN PROGRESS — account erasure and ownership handover implemented | [MV2-004](#mv2-004), [MV2-005](#mv2-005), [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-023](#mv2-023) |
 | [MV2-054](#mv2-054) | Single-server capacity and queues with different priorities | F6 | P0 | L | PLANNED | [MV2-011](#mv2-011), [MV2-014](#mv2-014), [MV2-043](#mv2-043), [MV2-052](#mv2-052) |
 | [MV2-055](#mv2-055) | History storage, retention and permitted exports | F6 | P0 | M | PLANNED | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-020](#mv2-020), [MV2-044](#mv2-044) |
 | [MV2-056](#mv2-056) | Migration, compatibility and rollback rehearsal | F6 | P0 | L | PLANNED | [MV2-001](#mv2-001), [MV2-053](#mv2-053), [MV2-055](#mv2-055), [MV2-060](#mv2-060) |
@@ -2144,6 +2144,38 @@ The broader task remains IN PROGRESS pending live source and human acceptance.
 ### MV2-053 — Personal-location privacy and access control
 
 **Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Backend + Security reviewer · **Size:** M
+
+**Whole-feature scope, 14 September 2026 — account deletion:**
+Add an authenticated preview and password-confirmed account deletion workflow.
+Delete owned personal monitor state, conversations, sessions and account secrets;
+preserve shared official corpus and colleagues' decisions. Shared business
+monitors require explicit handover to a current administrator before the owner
+can be deleted; no colleague's identity or consent may be borrowed. The last
+administrator of a populated workspace must complete administrator handover.
+Single-member workspaces require explicit private-workspace erasure in the
+preview. Retained shared decisions/audit lose the personal actor link rather
+than cascading away. Cancel/remove private queued work and prove that in-flight
+work cannot restore private data after deletion. Source access is not needed;
+physical deletion, migration/rollback limits, foreign keys, concurrent handover,
+roles/CSRF/password checks and five-language browser confirmation all require
+evidence before this feature is committed. Backup and third-party delivery
+retention must be described honestly; no production account is deleted by
+development/testing. Dependencies are the existing auth/native ownership,
+business sharing, job and export contracts. Broader privacy and live/human gates
+remain separate. Do not publish a partial deletion endpoint or schema substep.
+
+**Execution evidence, account privacy:** `/account` now provides a current,
+password-confirmed nine-category deletion preview and transactional online
+private-state erasure. Native Tender/IP/Auction access panels support explicit
+ownership handover while retaining decisions and revoking personal source/email
+access. Foreign-key, migration, retained corpus/file, session/CSRF/role and late
+assistant/job checks cover the actual deletion workflow. Six isolated PostgreSQL
+concurrency scenarios, 15 account browser and 99 business-access browser workflow
+and full-document axe checkpoints passed; five locales and two widths are covered.
+Root build and exact Ruff gate passed. See [account privacy evidence and recovery
+limits](docs/monitoring-v2/ACCOUNT_PRIVACY.md). Production activation, independent
+privacy review, backup-aware recovery and broader parent acceptance remain open;
+MV2-053 remains IN PROGRESS.
 
 **Whole-feature scope, 14 September 2026:** Download current owned monitor
 configurations from all nine categories in Monitoring settings, including saved

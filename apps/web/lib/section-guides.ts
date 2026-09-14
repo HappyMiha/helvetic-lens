@@ -149,6 +149,43 @@ const riverReview = c(
 
 export const SECTION_GUIDES: SectionGuide[] = [
   {
+    id: "account",
+    title: "Account and privacy",
+    purpose:
+      "Review and explicitly erase your own account and private data while retaining shared source evidence and colleagues' work.",
+    first: [
+      "Download any owned monitoring settings you need to retain.",
+      "Review all nine categories and every workspace in the deletion preview.",
+      "Resolve ownership and administrator handovers, then enter your password and explicitly confirm account and private-workspace erasure.",
+    ],
+    data: [
+      "Personal monitors, conversations, preferences and sign-in sessions belong to the account.",
+      "Shared decisions lose their account link; their workspace notes and evidence remain.",
+      "Backups, delivered messages and source retention records are not immediately erased. Orphan files follow scheduled cleanup.",
+    ],
+    wait: "A preview reads data only. Deletion rechecks its short-lived confirmation and current scope, commits once, then signs you out. An uncertain response needs a fresh sign-in or preview.",
+    setup:
+      "Every signed-in user can erase their own account. Shared monitors and the last administrator need an explicit successor; another person's private records cannot be erased through this workflow.",
+    controls: [
+      c(
+        "preview",
+        "Review account deletion",
+        "Shows owned monitors, private records, workspace consequences and blocking responsibilities.",
+        "Read the preview before deciding. Loading or cancelling it deletes nothing.",
+        "Read / navigate",
+        "[data-account-preview]",
+      ),
+      c(
+        "erase",
+        "Delete my account",
+        "Permanently removes the confirmed account and private database scope, revokes sessions and removes private queued work.",
+        "Resolve blockers, enter the current password and explicitly confirm each applicable consequence. Changed data requires a new preview.",
+        "Remove data",
+        "[data-account-erase]",
+      ),
+    ],
+  },
+  {
     id: "monitoring-source-operations",
     title: "Monitoring source operations",
     purpose:
@@ -2771,6 +2808,7 @@ for (const guide of SECTION_GUIDES) {
 }
 
 export const GUIDE_ROUTES: Record<string, string> = {
+  "/account": "account",
   "/auction-watch": "auction-watch",
   "/": "today",
   "/registry": "registry",

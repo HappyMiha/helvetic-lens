@@ -7,6 +7,7 @@ import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { businessMonitorCopy } from "../apps/web/lib/business-monitor-copy.ts";
+import { businessHandoverCopy } from "../apps/web/lib/business-handover-copy.ts";
 import { AccessibilityAudit } from "./browser-accessibility.mjs";
 import { Cdp, evaluate, sleep } from "./browser-cdp.mjs";
 
@@ -183,9 +184,9 @@ function scope(before) {
   return {
     monitor_version: row.version,
     visibility: row.visibility,
-    creator: person(owner),
+    creator: person(row.owner_user_id),
     responsible: person(row.responsible_user_id),
-    can_change_scope: user === owner,
+    can_change_scope: user === row.owner_user_id,
     history: items.slice(0, 1),
     next_before_version: items.length > 1 ? items[0].version : null,
   };
@@ -359,7 +360,36 @@ try {
           ],
           next_cursor: null,
         };
-      else if (request.method === "PUT") {
+      else if (path.endsWith("/handover") && request.method === "POST") {
+        mutations.push({ domain, body, user });
+        assert.deepEqual(body, {
+          expected_version: row.version,
+          successor_user_id: peer,
+          confirmed: true,
+        });
+        assert.equal(user, row.owner_user_id);
+        assert.equal(role, "organization_admin");
+        assert.equal(row.visibility, "workspace");
+        const previous = row.owner_user_id;
+        row = {
+          ...row,
+          owner_user_id: peer,
+          responsible_user_id: peer,
+          status: "paused",
+          version: row.version + 1,
+        };
+        history.unshift({
+          version: row.version,
+          action: "handover",
+          actor: person(user),
+          previous_owner: person(previous),
+          owner: person(peer),
+          scope: "workspace",
+          responsible: person(peer),
+          created_at: "2026-09-14T12:01:00Z",
+        });
+        data = scope();
+      } else if (request.method === "PUT") {
         mutations.push({ domain, body, user });
         if (conflict) {
           code = 409;
@@ -476,6 +506,47 @@ try {
               (await cdp.send("Page.captureScreenshot", { format: "png" }))
                 .data,
               "base64",
+            ),
+          );
+        }
+        if (!visual) {
+          assert.equal(
+            await evaluate(
+              cdp,
+              "document.querySelector('[data-business-handover] select').value",
+            ),
+            "",
+          );
+          assert.ok(
+            await evaluate(
+              cdp,
+              "document.querySelector('[data-business-handover] button[type=submit]').disabled",
+            ),
+          );
+          await value("[data-business-handover] select", peer);
+          assert.ok(
+            await evaluate(
+              cdp,
+              "document.querySelector('[data-business-handover] button[type=submit]').disabled",
+            ),
+          );
+          await click("[data-business-handover] input[type=checkbox]");
+          await check(`${kind}-${language}-${width}-handover`);
+          await click("[data-business-handover] button[type=submit]");
+          await wait(() => row.owner_user_id === peer, "Handover did not save");
+          await navigate();
+          await open();
+          assert.equal(
+            await evaluate(
+              cdp,
+              "!!document.querySelector('[data-business-handover]')",
+            ),
+            false,
+          );
+          assert.ok(
+            await evaluate(
+              cdp,
+              `document.querySelector('[data-business-access]').innerText.includes(${JSON.stringify(businessHandoverCopy[locale].previous)})`,
             ),
           );
         }
@@ -597,7 +668,7 @@ try {
   }
   assert.deepEqual(errors, []);
   assert.ok(mutations.every((item) => item.body && item.body.expected_version));
-  audit.finish(visual ? 4 : 69);
+  audit.finish(visual ? 4 : 99);
   console.log(
     visual
       ? "Desktop and mobile scope-panel screenshots saved; four accessibility checkpoints passed."

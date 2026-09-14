@@ -57,9 +57,11 @@ from .models import (
     Job,
     Law,
     MonitoringTopic,
+    Organization,
     Profile,
     Scan,
     Source,
+    User,
     Version,
 )
 from .monitoring_batch_api import batch_router
@@ -175,6 +177,13 @@ class RegisterInput(Input):
 class LoginInput(Input):
     email: str = Field(min_length=3, max_length=320)
     password: str = Field(min_length=1, max_length=1024)
+
+
+class AccountDeletionInput(Input):
+    password: str = Field(min_length=1, max_length=1024)
+    confirmation_token: str = Field(min_length=1, max_length=1024)
+    confirmed: bool = Field(strict=True)
+    erase_workspaces: list[uuid.UUID] = Field(max_length=1000)
 
 
 class AccountEmailInput(Input):
@@ -324,6 +333,8 @@ class RelationReprocessingInput(Input):
 
 
 def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
+    if path == "/api/account/deletion":
+        return ("account_deletion", 6, 60) if method == "POST" else ("account_deletion_preview", 30, 60)
     if path.startswith("/api/monitoring-centre/configuration/export"):
         return "monitoring_configuration_export", 120, 60
     if path.startswith("/api/monitoring-centre/configuration"):
@@ -490,6 +501,7 @@ def create_app(
             path.startswith("/api/connectors/") and path.endswith("/sync")
         )
         viewer_allowed_mutations = {
+            "/api/account/deletion",
             "/api/monitoring-centre/configuration/export/verify",
             "/api/auth/logout",
             "/api/invitations/accept",
@@ -577,13 +589,22 @@ def create_app(
         if path.startswith("/api/") and request.method in {"POST", "PUT", "PATCH", "DELETE"}:
             excluded = {"/api/auth/login", "/api/auth/register"}
             if path not in excluded:
+                erased_account = getattr(request.state, "account_erased", False) and response.status_code < 400
                 with service.db.session(include_all_organizations=True) as session:
+                    # An earlier authenticated request may finish after account
+                    # erasure. Recheck references before recording its outcome;
+                    # PostgreSQL key-share locks serialize this audit with erase.
+                    audit_organization = None if erased_account else session.scalar(select(Organization.id)
+                        .where(Organization.id == organization_id).with_for_update(read=True, key_share=True))
+                    audit_user = None if erased_account or identity is None else session.scalar(select(User.id)
+                        .where(User.id == identity.user_id).with_for_update(read=True, key_share=True))
+                    former_account = erased_account or (identity is not None and audit_user is None)
                     session.add(
                         AdministrativeAudit(
-                            organization_id=organization_id,
-                            actor_user_id=identity.user_id if identity else None,
-                            actor_kind="authenticated_user" if identity else "anonymous_development",
-                            scope="platform" if platform_path else "organization",
+                            organization_id=audit_organization,
+                            actor_user_id=audit_user,
+                            actor_kind="erased_account" if former_account else "authenticated_user" if identity else "anonymous_development",
+                            scope="account" if erased_account else "platform" if platform_path else "organization",
                             action=path.removeprefix("/api/")[:120],
                             method=request.method,
                             path=path[:2000],
@@ -608,7 +629,7 @@ def create_app(
             status = response.status_code
             if request.url.path.startswith(("/api/monitoring-subjects", "/api/onboarding")):
                 response.headers["Cache-Control"] = "private, no-store"
-            if request.url.path.startswith(("/api/auction-watch", "/api/tender-watch", "/api/commute-watch", "/api/road-watch", "/api/hazard-watch", "/api/trademark-watch", "/api/related-developments", "/api/monitoring-centre")):
+            if request.url.path.startswith(("/api/account/", "/api/auction-watch", "/api/tender-watch", "/api/commute-watch", "/api/road-watch", "/api/hazard-watch", "/api/trademark-watch", "/api/related-developments", "/api/monitoring-centre")):
                 # Dependency response headers are lost when an exception
                 # handler creates a new response. Apply to denial/errors too.
                 response.headers["Cache-Control"] = "no-store"
@@ -798,6 +819,25 @@ def create_app(
         if identity:
             auth.logout(identity)
         response = JSONResponse(content={"authenticated": False})
+        response.delete_cookie(SESSION_COOKIE, path="/")
+        response.delete_cookie(CSRF_COOKIE, path="/")
+        return response
+
+    @app.get("/api/account/deletion")
+    def account_deletion_preview(request: Request):
+        from .account_deletion import preview
+        return preview(auth, request.state.identity)
+
+    @app.post("/api/account/deletion")
+    def delete_account(data: AccountDeletionInput, request: Request):
+        from .account_deletion import erase
+        result = erase(auth, request.state.identity, password=data.password,
+            confirmation_token=data.confirmation_token, confirmed=data.confirmed,
+            erase_workspaces=[str(value) for value in data.erase_workspaces])
+        # Only set after the erasure transaction committed. The normal audit
+        # middleware must not reintroduce a deleted user/workspace foreign key.
+        request.state.account_erased = True
+        response = JSONResponse(content=result)
         response.delete_cookie(SESSION_COOKIE, path="/")
         response.delete_cookie(CSRF_COOKIE, path="/")
         return response

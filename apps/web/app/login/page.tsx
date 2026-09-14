@@ -17,6 +17,7 @@ import { LanguageSelector, useI18n } from "@/lib/i18n";
 import styles from "./login.module.css";
 import { SectionHelp } from "@/components/section-help";
 import { monitoringFirstRunCopy } from "@/lib/monitoring-first-run-copy";
+import { accountCopy } from "@/lib/account-copy";
 
 export default function LoginPage() {
   const { locale, t, setLocale } = useI18n();
@@ -32,6 +33,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [accountToken, setAccountToken] = useState("");
+  const [accountDeleted, setAccountDeleted] = useState(false);
   const initialized = useRef(false);
 
   useEffect(() => {
@@ -41,6 +43,10 @@ export default function LoginPage() {
       new URLSearchParams(window.location.search).get("invite") || "";
     setInvitationToken(token);
     const parameters = new URLSearchParams(window.location.search);
+    if (parameters.get("account_deleted") === "1") {
+      setAccountDeleted(true);
+      setMode("login");
+    }
     const verify = parameters.get("verify") || "";
     const reset = parameters.get("reset") || "";
     const requestedLocale = parameters.get("locale");
@@ -228,6 +234,11 @@ export default function LoginPage() {
                         ? t("login.registerHelp")
                         : t("login.signInHelp")}
             </p>
+            {accountDeleted && (
+              <p role="status" className={styles.message}>
+                {accountCopy[locale].deleted}
+              </p>
+            )}
             {mode === "verify" ? (
               <div className={styles.form}>
                 {busy && (

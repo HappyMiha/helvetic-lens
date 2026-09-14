@@ -120,7 +120,7 @@ class TrademarkReview(Base):
     profile_revision: Mapped[int] = mapped_column(Integer)
     evaluation_hash: Mapped[str] = mapped_column(String(64))
     decision: Mapped[str] = mapped_column(String(20))
-    actor_user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    actor_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 

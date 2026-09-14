@@ -11,7 +11,7 @@ const en = {
   defaultScope:
     "New monitors are private. You can explicitly share a saved monitor with this workspace.",
   workspace: "Workspace",
-  creator: "Created by",
+  creator: "Owner",
   responsible: "Responsible administrator",
   unassigned: "Unassigned",
   unavailable: "No longer an active administrator",
@@ -23,9 +23,9 @@ const en = {
   effect:
     "Changing access or responsibility pauses active monitoring and revokes existing email consent. Resume separately after checking the responsible person and sources.",
   boundary:
-    "Workspace administrators can manage shared monitoring; viewers can read permitted evidence. Personal email settings and authenticated SIMAP documents remain with their original owner.",
+    "Workspace administrators can manage shared monitoring; viewers can read permitted evidence. Personal email settings are not shared. Authenticated SIMAP documents require valid personal access; ownership handover revokes previous access.",
   privateEffect:
-    "Restoring private access removes colleagues’ access, including through saved links. Only the creator can change the access scope.",
+    "Restoring private access removes colleagues’ access, including through saved links. Only the current owner can change the access scope.",
   history: "Access history",
   empty: "No access changes yet",
   more: "Earlier changes",
@@ -47,7 +47,7 @@ export const businessMonitorCopy: Record<
     defaultScope:
       "Neue Überwachungen sind privat. Sie können eine gespeicherte Überwachung ausdrücklich mit diesem Arbeitsbereich teilen.",
     workspace: "Arbeitsbereich",
-    creator: "Erstellt von",
+    creator: "Eigentümer",
     responsible: "Verantwortliche Administration",
     unassigned: "Nicht zugewiesen",
     unavailable: "Nicht mehr als Administration aktiv",
@@ -59,9 +59,9 @@ export const businessMonitorCopy: Record<
     effect:
       "Änderungen an Zugriff oder Verantwortung pausieren eine aktive Überwachung und widerrufen die bestehende E-Mail-Zustimmung. Prüfen Sie die verantwortliche Person und die Quellen vor dem separaten Fortsetzen.",
     boundary:
-      "Die Administration verwaltet geteilte Überwachungen; Lesende sehen zulässige Belege. Persönliche E-Mail-Einstellungen und authentifizierte SIMAP-Dokumente bleiben bei der ursprünglichen Person.",
+      "Die Administration verwaltet geteilte Überwachungen; Lesende sehen zulässige Belege. Persönliche E-Mail-Einstellungen werden nicht geteilt. Authentifizierte SIMAP-Dokumente benötigen einen gültigen persönlichen Zugang; ein Eigentümerwechsel widerruft den bisherigen Zugang.",
     privateEffect:
-      "Privater Zugriff entzieht anderen Mitgliedern den Zugang, auch über gespeicherte Links. Nur die erstellende Person kann den Zugriffskreis ändern.",
+      "Privater Zugriff entzieht anderen Mitgliedern den Zugang, auch über gespeicherte Links. Nur die aktuell besitzende Person kann den Zugriffskreis ändern.",
     history: "Zugriffsverlauf",
     empty: "Noch keine Zugriffsänderungen",
     more: "Frühere Änderungen",
@@ -79,7 +79,7 @@ export const businessMonitorCopy: Record<
     defaultScope:
       "Les nouveaux suivis sont privés. Vous pouvez partager explicitement un suivi enregistré avec cet espace de travail.",
     workspace: "Espace de travail",
-    creator: "Créé par",
+    creator: "Propriétaire",
     responsible: "Administrateur responsable",
     unassigned: "Non attribué",
     unavailable: "N’est plus administrateur actif",
@@ -91,9 +91,9 @@ export const businessMonitorCopy: Record<
     effect:
       "Changer l’accès ou la responsabilité suspend le suivi actif et révoque le consentement aux e-mails. Reprenez séparément après avoir vérifié la personne responsable et les sources.",
     boundary:
-      "Les administrateurs gèrent les suivis partagés ; les lecteurs consultent les preuves autorisées. Les réglages personnels d’e-mail et les documents SIMAP authentifiés restent réservés à leur propriétaire d’origine.",
+      "Les administrateurs gèrent les suivis partagés ; les lecteurs consultent les preuves autorisées. Les réglages personnels d’e-mail ne sont pas partagés. Les documents SIMAP authentifiés nécessitent un accès personnel valide ; le transfert de propriété révoque les accès précédents.",
     privateEffect:
-      "Le retour à un accès privé retire l’accès des collègues, y compris par les liens enregistrés. Seul le créateur peut modifier le périmètre d’accès.",
+      "Le retour à un accès privé retire l’accès des collègues, y compris par les liens enregistrés. Seul le propriétaire actuel peut modifier le périmètre d’accès.",
     history: "Historique des accès",
     empty: "Aucun changement d’accès",
     more: "Changements antérieurs",
@@ -110,7 +110,7 @@ export const businessMonitorCopy: Record<
     defaultScope:
       "I nuovi monitoraggi sono privati. Puoi condividere esplicitamente un monitoraggio salvato con questo spazio di lavoro.",
     workspace: "Spazio di lavoro",
-    creator: "Creato da",
+    creator: "Proprietario",
     responsible: "Amministratore responsabile",
     unassigned: "Non assegnato",
     unavailable: "Non è più amministratore attivo",
@@ -122,9 +122,9 @@ export const businessMonitorCopy: Record<
     effect:
       "Cambiare accesso o responsabilità sospende il monitoraggio attivo e revoca il consenso e-mail esistente. Riprendi separatamente dopo aver verificato il responsabile e le fonti.",
     boundary:
-      "Gli amministratori gestiscono i monitoraggi condivisi; i lettori consultano le prove consentite. Le impostazioni e-mail personali e i documenti SIMAP autenticati restano al proprietario originario.",
+      "Gli amministratori gestiscono i monitoraggi condivisi; i lettori consultano le prove consentite. Le impostazioni e-mail personali non sono condivise. I documenti SIMAP autenticati richiedono un accesso personale valido; il trasferimento di proprietà revoca gli accessi precedenti.",
     privateEffect:
-      "Ripristinare l’accesso privato rimuove l’accesso dei colleghi, anche dai link salvati. Solo il creatore può modificare l’ambito di accesso.",
+      "Ripristinare l’accesso privato rimuove l’accesso dei colleghi, anche dai link salvati. Solo il proprietario attuale può modificare l’ambito di accesso.",
     history: "Cronologia degli accessi",
     empty: "Nessuna modifica degli accessi",
     more: "Modifiche precedenti",
@@ -142,7 +142,7 @@ export const businessMonitorCopy: Record<
     defaultScope:
       "Novas surveglianzas èn privatas. Vus pudais parter explicitamain ina surveglianza memorisada cun quest spazi da lavur.",
     workspace: "Spazi da lavur",
-    creator: "Creà da",
+    creator: "Possessur",
     responsible: "Administratur responsabel",
     unassigned: "Betg attribuì",
     unavailable: "Betg pli administratur activ",
@@ -154,9 +154,9 @@ export const businessMonitorCopy: Record<
     effect:
       "Midar l’access u la responsabladad metta en pausa la surveglianza activa e revocca il consentiment existent per e-mails. Cuntinuai separadamain suenter avair controllà la persuna responsabla e las funtaunas.",
     boundary:
-      "Administraturs administreschan surveglianzas partidas; lecturs vesan cumprovas permessas. Ils parameters persunals d’e-mail ed ils documents SIMAP autentifitgads restan tar il possessur original.",
+      "Administraturs administreschan surveglianzas partidas; lecturs vesan cumprovas permessas. Ils parameters persunals d’e-mail na vegnan betg partids. Documents SIMAP autentifitgads dovran in access persunal valaivel; la surdada revoghescha ils access precedents.",
     privateEffect:
-      "Restabilir l’access privat retira l’access dals collegas, era via colliaziuns memorisadas. Mo il creatur po midar il circul d’access.",
+      "Restabilir l’access privat retira l’access dals collegas, era via colliaziuns memorisadas. Mo il possessur actual po midar il circul d’access.",
     history: "Istorgia da l’access",
     empty: "Anc naginas midadas d’access",
     more: "Midadas anteriuras",

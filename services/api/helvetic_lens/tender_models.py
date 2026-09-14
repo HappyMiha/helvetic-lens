@@ -372,7 +372,7 @@ class TenderDecision(Base):
         ForeignKey("organizations.id", ondelete="CASCADE"), index=True
     )
     dossier_id: Mapped[str] = mapped_column(String(36), index=True)
-    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     sequence: Mapped[int] = mapped_column(Integer)
     decision: Mapped[str] = mapped_column(String(12))
     request_key: Mapped[str] = mapped_column(String(100))

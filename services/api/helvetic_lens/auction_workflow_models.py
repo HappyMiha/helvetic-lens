@@ -111,7 +111,7 @@ class AuctionDecision(Base):
     source_revision_id: Mapped[str] = mapped_column(ForeignKey("auction_source_record_revisions.id"))
     decision: Mapped[str | None] = mapped_column(String(12))
     following: Mapped[bool] = mapped_column(Boolean)
-    actor_user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    actor_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 

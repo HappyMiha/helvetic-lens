@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
+import { businessHandoverCopy } from "@/lib/business-handover-copy";
 import {
   businessMonitorCopy,
   type BusinessScope,
@@ -18,6 +19,9 @@ type Scope = {
   responsible: Person | null;
   can_change_scope: boolean;
   history: {
+    action?: "scope" | "handover";
+    previous_owner?: Person | null;
+    owner?: Person | null;
     version: number;
     actor: Person | null;
     scope: "private" | "workspace";
@@ -71,6 +75,9 @@ function AccessForm({
 }: Props & { canManage: boolean }) {
   const { locale } = useI18n(),
     c = businessMonitorCopy[locale];
+  const h = businessHandoverCopy[locale];
+  const [successor, setSuccessor] = useState("");
+  const [handoverConfirmed, setHandoverConfirmed] = useState(false);
   const [saved, setSaved] = useState<Scope | null>(null),
     [members, setMembers] = useState<Members | null>(null);
   const [visibility, setVisibility] = useState<"private" | "workspace">(
@@ -106,6 +113,8 @@ function AccessForm({
     setFailed(false);
     setBusy(true);
     setConfirmed(false);
+    setSuccessor("");
+    setHandoverConfirmed(false);
     try {
       const [scope, directory] = await Promise.all([
         api<Scope>(path, { signal: controller.signal }),
@@ -136,6 +145,8 @@ function AccessForm({
       setSaved(null);
       setMembers(null);
       setConfirmed(false);
+      setSuccessor("");
+      setHandoverConfirmed(false);
     };
     window.addEventListener("pagehide", hide);
     return () => {
@@ -205,6 +216,46 @@ function AccessForm({
         setFailed(true);
       }
     } finally {
+      if (!controller.signal.aborted) setBusy(false);
+    }
+  }
+  async function transfer() {
+    if (
+      !saved ||
+      busy ||
+      !canManage ||
+      !saved.can_change_scope ||
+      saved.visibility !== "workspace" ||
+      !successor ||
+      !handoverConfirmed
+    )
+      return;
+    request.current?.abort();
+    const controller = new AbortController();
+    request.current = controller;
+    setBusy(true);
+    setFailed(false);
+    try {
+      await api(path.replace(/\/scope$/, "/handover"), {
+        method: "POST",
+        signal: controller.signal,
+        body: JSON.stringify({
+          expected_version: saved.monitor_version,
+          successor_user_id: successor,
+          confirmed: handoverConfirmed,
+        }),
+      });
+      if (!controller.signal.aborted) changed();
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        revoked(error);
+        setSaved(null);
+        setMembers(null);
+        setFailed(true);
+      }
+    } finally {
+      setSuccessor("");
+      setHandoverConfirmed(false);
       if (!controller.signal.aborted) setBusy(false);
     }
   }
@@ -324,6 +375,62 @@ function AccessForm({
           ) : (
             <p>{c.readOnly}</p>
           )}
+          {canManage &&
+            saved.can_change_scope &&
+            saved.visibility === "workspace" && (
+              <form
+                data-business-handover
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void transfer();
+                }}
+              >
+                <fieldset disabled={busy}>
+                  <legend>{h.title}</legend>
+                  <p>{h.effect}</p>
+                  <label>
+                    {h.successor}
+                    <select
+                      value={successor}
+                      onChange={(event) => {
+                        setSuccessor(event.target.value);
+                        setHandoverConfirmed(false);
+                      }}
+                    >
+                      <option value="">{h.choose}</option>
+                      {members?.items
+                        .filter((member) => member.id !== saved.creator.id)
+                        .map((member) => (
+                          <option key={member.id} value={member.id}>
+                            {member.name || c.unknown}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                  {members?.next_cursor && (
+                    <button type="button" onClick={() => void more("members")}>
+                      {c.moreMembers}
+                    </button>
+                  )}
+                  <label className={styles.check}>
+                    <input
+                      type="checkbox"
+                      checked={handoverConfirmed}
+                      onChange={(event) =>
+                        setHandoverConfirmed(event.target.checked)
+                      }
+                    />
+                    {h.confirm}
+                  </label>
+                  <button
+                    type="submit"
+                    disabled={!successor || !handoverConfirmed}
+                  >
+                    {h.save}
+                  </button>
+                </fieldset>
+              </form>
+            )}
           <h3>{c.history}</h3>
           {saved.history.length ? (
             <ol className={styles.history}>
@@ -338,6 +445,16 @@ function AccessForm({
                     {person(event.actor)} · {c[event.scope]} · {c.responsible}:{" "}
                     {person(event.responsible)}
                   </p>
+                  {event.action === "handover" && (
+                    <p>
+                      {h.title} · {h.previous}:{" "}
+                      {event.previous_owner
+                        ? person(event.previous_owner)
+                        : c.unknown}{" "}
+                      · {h.successor}:{" "}
+                      {event.owner ? person(event.owner) : c.unknown}
+                    </p>
+                  )}
                 </li>
               ))}
             </ol>

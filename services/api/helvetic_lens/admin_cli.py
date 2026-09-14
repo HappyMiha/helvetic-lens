@@ -9,6 +9,7 @@ from sqlalchemy import func, select
 
 from .auth import normalize_email, token_hash
 from .config import DomainError, Settings
+from .membership_locks import lock_platform_users
 from .models import SecurityEvent, User
 from .service import HelveticLens
 
@@ -45,13 +46,17 @@ def run(arguments: list[str] | None = None, *, settings: Settings | None = None)
                 raise DomainError(
                     "Create the local account before assigning platform access.", 404, "user_not_found"
                 )
+            lock_platform_users(session, user.id)
+            user = session.get(User, user.id, populate_existing=True)
+            if user is None:
+                raise DomainError("The account is no longer available.", 409, "user_not_found")
             desired = args.command == "promote"
             if user.platform_admin == desired:
                 print(f"{email} is already {'a platform administrator' if desired else 'a regular user'}.")
                 return 0
             if not desired:
                 count = session.scalar(
-                    select(func.count()).select_from(User).where(User.platform_admin.is_(True))
+                    select(func.count()).select_from(User).where(User.platform_admin.is_(True), User.active.is_(True))
                 )
                 if count <= 1:
                     raise DomainError(

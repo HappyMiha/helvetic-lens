@@ -30,7 +30,7 @@ class RelatedPlaceBinding(Base):
     source_revision: Mapped[str] = mapped_column(String(64), index=True)
     binding: Mapped[dict] = mapped_column(JSON)
     fingerprint: Mapped[str] = mapped_column(String(64))
-    reviewed_by: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    reviewed_by: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 

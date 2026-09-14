@@ -73,6 +73,9 @@ def read(session, user_id, domain, monitor_id, *, before_version=None, limit=30)
         "responsible": _person(session, row.organization_id, row.responsible_user_id),
         "can_change_scope": row.owner_user_id == user_id,
         "history": [{"version": event.monitor_version, "actor": _person(session, row.organization_id, event.actor_user_id),
+            "action": event.action,
+            "previous_owner": _person(session, row.organization_id, event.previous_owner_user_id),
+            "owner": _person(session, row.organization_id, event.owner_user_id),
             "previous_scope": event.previous_scope, "scope": event.scope,
             "responsible": _person(session, row.organization_id, event.responsible_user_id),
             "created_at": event.created_at.replace(tzinfo=UTC).isoformat() if event.created_at.tzinfo is None else event.created_at.isoformat()}

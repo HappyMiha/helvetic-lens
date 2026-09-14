@@ -21,6 +21,7 @@ from sqlalchemy import select
 from .config import DomainError, Settings
 from .db import Database, utcnow
 from .locales import normalize_locale
+from .membership_locks import require_current_admin
 from .models import (
     AccountToken,
     Organization,
@@ -606,6 +607,7 @@ class AuthService:
         if role not in {"organization_admin", "viewer"}:
             raise DomainError("Choose administrator or viewer.", 422, "invalid_role")
         with self.db.session(include_all_organizations=True) as session:
+            require_current_admin(session, identity)
             membership = session.get(OrganizationMembership, membership_id)
             self._same_organization(identity, membership)
             if membership.role == "organization_admin" and role != membership.role:
@@ -617,6 +619,7 @@ class AuthService:
     def remove_member(self, identity: Identity, membership_id: str):
         self.require_admin(identity)
         with self.db.session(include_all_organizations=True) as session:
+            require_current_admin(session, identity)
             membership = session.get(OrganizationMembership, membership_id)
             self._same_organization(identity, membership)
             if membership.user_id == identity.user_id:
@@ -639,8 +642,12 @@ class AuthService:
     def handover(self, identity: Identity, membership_id: str):
         self.require_admin(identity)
         with self.db.session(include_all_organizations=True) as session:
+            require_current_admin(session, identity)
             target = session.get(OrganizationMembership, membership_id)
             self._same_organization(identity, target)
+            target_user = session.get(User, target.user_id, populate_existing=True)
+            if not target_user or not target_user.active:
+                raise DomainError("Choose an active workspace member.", 409, "invalid_handover")
             if target.user_id == identity.user_id:
                 raise DomainError("Choose another member for the handover.", 422, "invalid_handover")
             current = session.scalar(
@@ -662,7 +669,8 @@ class AuthService:
     @staticmethod
     def _require_another_admin(session, organization_id: str, excluded_id: str):
         other = session.scalar(
-            select(OrganizationMembership.id).where(
+            select(OrganizationMembership.id).join(User, User.id == OrganizationMembership.user_id).where(
+                User.active.is_(True),
                 OrganizationMembership.organization_id == organization_id,
                 OrganizationMembership.role == "organization_admin",
                 OrganizationMembership.id != excluded_id,

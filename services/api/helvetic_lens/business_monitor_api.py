@@ -23,6 +23,13 @@ class ScopeBody(BaseModel):
     confirmed: bool = Field(strict=True)
 
 
+class HandoverBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    expected_version: int = Field(strict=True, ge=1)
+    successor_user_id: UUID
+    confirmed: bool = Field(strict=True)
+
+
 class EvidenceBinding(BaseModel):
     model_config = ConfigDict(extra="forbid")
     sequence: int = Field(strict=True, ge=1)
@@ -68,6 +75,16 @@ def business_monitor_router(service, settings):
         available(domain)
         with service.db.session() as session:
             return sharing.read(session, actor.user_id, domain, str(monitor_id), before_version=before_version, limit=limit)
+
+    @router.post("/{domain}/{monitor_id}/handover")
+    def handover(domain: Domain, monitor_id: UUID, body: HandoverBody, actor: Identity = Depends(identity)):
+        from .business_monitor_handover import handover
+        with service.db.session() as session:
+            result = handover(session, actor.user_id, domain, str(monitor_id),
+                expected_version=body.expected_version, successor_user_id=str(body.successor_user_id),
+                confirmed=body.confirmed, now=datetime.now(UTC))
+            session.commit()
+            return result
 
     @router.put("/{domain}/{monitor_id}/scope")
     def configure(domain: Domain, monitor_id: UUID, body: ScopeBody, actor: Identity = Depends(identity)):

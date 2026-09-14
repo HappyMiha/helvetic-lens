@@ -48,6 +48,12 @@ The private JSON export includes configuration revisions and email preferences,
 with pagination, integrity checks and final ownership/content verification.
 Historical evidence, source credentials and colleagues' monitors are excluded.
 
+The [account privacy workflow](docs/monitoring-v2/ACCOUNT_PRIVACY.md) at `/account`
+previews deletion across all nine monitor categories and requires the current
+password and explicit confirmations. Shared business monitors have owner handover
+in their native access panels. Shared history, source and backup retention limits
+are documented separately from online private-state erasure.
+
 The native [Hazard wind/thunderstorm workflow](docs/monitoring-v2/HAZARD_WATCH.md#native-source-activation-and-complete-vertical-workflow-14-september-2026)
 uses the public Swiss MeteoAlarm channel and pinned swisstopo geometry through
 the normal collector. Existing operator decisions remain authoritative. Other
