@@ -249,7 +249,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-050](#mv2-050) | B8: Auction profiles, price limits and ending-soon alerts | F5 | P1 | L | IN PROGRESS | [MV2-008](#mv2-008), [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022), [MV2-043](#mv2-043), [MV2-044](#mv2-044), [MV2-049](#mv2-049) |
 | [MV2-051](#mv2-051) | Independent matching and local AI evaluation | F6 | P0 | L | PLANNED | [MV2-023](#mv2-023), [MV2-043](#mv2-043), [MV2-047](#mv2-047) |
 | [MV2-052](#mv2-052) | Operational metrics, degraded mode and source recovery | F6 | P0 | M | IN PROGRESS | [MV2-011](#mv2-011), [MV2-012](#mv2-012), [MV2-025](#mv2-025) |
-| [MV2-053](#mv2-053) | Personal-location privacy and access control | F6 | P0 | M | PLANNED | [MV2-004](#mv2-004), [MV2-005](#mv2-005), [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-023](#mv2-023) |
+| [MV2-053](#mv2-053) | Personal-location privacy and access control | F6 | P0 | M | IN PROGRESS | [MV2-004](#mv2-004), [MV2-005](#mv2-005), [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-023](#mv2-023) |
 | [MV2-054](#mv2-054) | Single-server capacity and queues with different priorities | F6 | P0 | L | PLANNED | [MV2-011](#mv2-011), [MV2-014](#mv2-014), [MV2-043](#mv2-043), [MV2-052](#mv2-052) |
 | [MV2-055](#mv2-055) | History storage, retention and permitted exports | F6 | P0 | M | PLANNED | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-020](#mv2-020), [MV2-044](#mv2-044) |
 | [MV2-056](#mv2-056) | Migration, compatibility and rollback rehearsal | F6 | P0 | L | PLANNED | [MV2-001](#mv2-001), [MV2-053](#mv2-053), [MV2-055](#mv2-055), [MV2-060](#mv2-060) |
@@ -2143,7 +2143,21 @@ The broader task remains IN PROGRESS pending live source and human acceptance.
 
 ### MV2-053 — Personal-location privacy and access control
 
-**Status:** PLANNED · **Priority:** P0 · **Owner:** Backend + Security reviewer · **Size:** M
+**Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Backend + Security reviewer · **Size:** M
+
+**Whole-feature scope, 14 September 2026:** Download current owned monitor
+configurations from all nine categories in Monitoring settings, including saved
+configuration revision, lifecycle state and explicit email preferences. Paginated
+collection and a final ownership/content check must reject incomplete, changed or
+revoked downloads. Include a versioned manifest with collection times and hashes.
+This is a configuration export, not a historical evidence archive or import tool.
+It reads existing private data without source access, credentials, collection or
+model calls; disabled sources do not prevent users exporting their own settings.
+Native ownership and configuration contracts are available dependencies. Verify
+all nine mappings, pagination, private/shared ownership boundaries, current roles,
+no source/secret inclusion and browser cancellation/download in five locales.
+Account deletion, historical evidence retention and independent privacy review
+remain open under this parent task.
 
 **Dependencies:** [MV2-004](#mv2-004), [MV2-005](#mv2-005), [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-023](#mv2-023). **Requirements:** §§5,27,31; inherited personal/organization access contract.
 
@@ -2160,7 +2174,16 @@ The broader task remains IN PROGRESS pending live source and human acceptance.
 
 **Verification:** API privacy-boundary tests, deletion/export workflow, revocation during a job and browser workspace switching.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Execution evidence, 14 September 2026:** Current owned configuration export is
+implemented in `/monitoring/settings` for all nine categories, including archived
+monitors and saved email preferences. It uses current owner/membership checks,
+paginated reads, exact payload hashes, final record verification and cancellable
+browser downloads. The feature/shared configuration/backlog suite passed 62 API
+checks; the root build and exact Ruff gate passed. The compiled-browser protocol
+checks real JSON downloads and 25 full-document accessibility/workflow checkpoints
+in five locales and two widths. See [scope, evidence and limits](docs/monitoring-v2/MONITORING_CONFIGURATION_EXPORT.md).
+This is a current-configuration export; account deletion, historical evidence,
+independent privacy review and exact release activation remain open.
 
 <a id="mv2-054"></a>
 

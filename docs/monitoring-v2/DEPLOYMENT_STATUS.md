@@ -1,5 +1,19 @@
 # Monitoring deployment status — 14 September 2026
 
+## Owned settings download candidate — 14 September 2026
+
+All nine categories now offer owned current-configuration JSON downloads in
+`/monitoring/settings`, with revision numbers, saved email preferences, scoped
+pagination, payload integrity and final ownership/content verification. See
+[workflow and checks](MONITORING_CONFIGURATION_EXPORT.md). Publication of this
+feature does not establish live source coverage or a verified production release.
+The preceding natural-language draft feature was pushed as
+`5a51903df8d5de1ada2abb4d245ff8ea67910057`. The active automatic deployment has not
+been restarted or duplicated; its exact activated commit is tracked separately.
+A fresh authenticated journal refresh still reports `c66e77fc7721` as production
+and `d961ebd54998` as Deploying. This settings-export candidate is not verified
+activated; the d961 candidate includes the earlier Aste migration repair.
+
 ## Native configuration draft candidate — 14 September 2026
 
 All nine native editors now expose explicit natural-language configuration drafts

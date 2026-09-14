@@ -20,6 +20,7 @@ import { RoadWatch } from "./road-watch";
 import { TenderWatch } from "./tender-watch";
 import { TrademarkWatch } from "./trademark-watch";
 import { AuctionWatch } from "./auction-watch";
+import { MonitoringConfigurationExport } from "./monitoring-configuration-export";
 
 const editors = {
   pollen: PollenDraftReader,
@@ -129,6 +130,7 @@ function Settings({ allowed }: { allowed: boolean }) {
         {failed && <p role="alert">{c.failed}</p>}
         {allowed && visible && (
           <div key={domain} className="space-y-8">
+            <MonitoringConfigurationExport domain={domain} />
             <Connector domain={domain} admin={admin} />
             <section aria-label={c.monitors} data-native-settings>
               <EmbeddedMonitoring.Provider value={true}>

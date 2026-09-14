@@ -42,6 +42,12 @@ An explicit proposal opens as unsaved native fields for review. Reviewed model
 capability and source identity boundaries remain in force; manual editing is
 available when inference is unavailable.
 
+Users can [download owned current monitor settings](docs/monitoring-v2/MONITORING_CONFIGURATION_EXPORT.md)
+from `/monitoring/settings` for all nine categories or the selected category.
+The private JSON export includes configuration revisions and email preferences,
+with pagination, integrity checks and final ownership/content verification.
+Historical evidence, source credentials and colleagues' monitors are excluded.
+
 The native [Hazard wind/thunderstorm workflow](docs/monitoring-v2/HAZARD_WATCH.md#native-source-activation-and-complete-vertical-workflow-14-september-2026)
 uses the public Swiss MeteoAlarm channel and pinned swisstopo geometry through
 the normal collector. Existing operator decisions remain authoritative. Other
