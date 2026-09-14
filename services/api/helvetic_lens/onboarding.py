@@ -3,7 +3,7 @@
 from datetime import UTC
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
@@ -26,7 +26,14 @@ from .models import (
 
 class OnboardingInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    action: Literal["topic", "law", "explore", "later"]
+    action: Literal["topic", "law", "explore", "later", "monitoring"]
+    monitoring_template: Literal["pollen", "river", "air", "warnings", "commute", "traffic", "tenders", "ip", "auctions"] | None = None
+
+    @model_validator(mode="after")
+    def selected_template(self):
+        if (self.action == "monitoring") != (self.monitoring_template is not None):
+            raise ValueError("Choose one Monitoring direction only with the monitoring action")
+        return self
 
 
 def needed(session, organization_id, principal_key):
@@ -46,6 +53,7 @@ def read(session, organization_id, principal_key):
     state = session.execute(
         select(
             UserOnboarding.intent,
+            UserOnboarding.monitoring_template,
             UserOnboarding.started_at,
             UserOnboarding.deferred_at,
             UserOnboarding.updated_at,
@@ -96,6 +104,7 @@ def read(session, organization_id, principal_key):
         ],
         "state": "new" if state is None else "deferred" if state.deferred_at else "started",
         "intent": state.intent if state else None,
+        "monitoring_template": state.monitoring_template if state else None,
         "started_at": timestamp(state.started_at) if state else None,
         "deferred_at": timestamp(state.deferred_at) if state else None,
         "updated_at": timestamp(state.updated_at) if state else None,
@@ -109,7 +118,11 @@ def read(session, organization_id, principal_key):
     }
 
 
-def save(session, organization_id, principal_key, user_id, action):
+def save(session, organization_id, principal_key, user_id, action, *, monitoring_template=None):
+    choice = OnboardingInput(action=action, monitoring_template=monitoring_template)
+    # Existing releases can still read a valid exploratory intent after rollback.
+    # The additional column records which native Monitoring journey was selected.
+    stored_intent = "explore" if choice.action == "monitoring" else choice.action
     # A unique insert plus row lock coalesces first-use requests from two tabs.
     insert = pg_insert if session.bind.dialect.name == "postgresql" else sqlite_insert
     now = utcnow()
@@ -135,8 +148,10 @@ def save(session, organization_id, principal_key, user_id, action):
         if record.deferred_at is None:
             record.deferred_at = now
             record.updated_at = now
-    elif record.intent != action or record.deferred_at is not None:
-        record.intent = action
+    elif (record.intent != stored_intent or record.monitoring_template != choice.monitoring_template
+            or record.deferred_at is not None):
+        record.intent = stored_intent
+        record.monitoring_template = choice.monitoring_template
         record.started_at = record.started_at or now
         record.deferred_at = None
         record.updated_at = now

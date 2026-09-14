@@ -1515,6 +1515,7 @@ export type OnboardingState = {
   milestones: Array<{kind: "interest_saved" | "notifications_saved" | "evidence_displayed"; object_kind: string; recorded_at: string}>;
   state: "new" | "deferred" | "started";
   intent: "topic" | "law" | "explore" | null;
+  monitoring_template?: import("./monitoring-centre-copy").TemplateId | null;
   started_at: string | null;
   deferred_at: string | null;
   updated_at: string | null;

@@ -1,5 +1,20 @@
 # Monitoring deployment status — 14 September 2026
 
+## Nine-direction first-run candidate — 14 September 2026
+
+The post-registration guide now saves a personal Monitoring starting choice and
+opens any of the nine native setup screens, with later continuation, optional
+company guidance and explicit source/Start/email boundaries. Local acceptance:
+31 API checks, an isolated PostgreSQL 17 migration/concurrency rehearsal, root
+build, 35 new browser/axe checkpoints and 40 legal onboarding regressions passed.
+See [implementation and limits](MONITORING_FIRST_RUN.md).
+
+Authenticated Refresh still shows production `1188f18190e0` and `660edacc8e7a`
+Deploying. The previous notification-centre feature was pushed as
+`d21d0d96aa7db2a831986446ff1d79d4eb43b48c`; its activation and this newer feature's
+activation are not verified. The running deployment was not restarted or
+duplicated. Source and real-user acceptance remain independent gates.
+
 ## All-direction notification centre candidate — 14 September 2026
 
 The header centre now exposes nine private native Monitoring review queues plus

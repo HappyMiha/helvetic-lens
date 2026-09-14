@@ -19,13 +19,18 @@ import {
 import { resources } from "@/lib/resource-keys";
 import { useI18n } from "@/lib/i18n";
 import type { OnboardingState } from "@/lib/types";
+import type { TemplateId } from "@/lib/monitoring-centre-copy";
+import { monitoringFirstRunCopy } from "@/lib/monitoring-first-run-copy";
+import { MonitoringFirstRun } from "@/components/monitoring-first-run";
 
 export default function OnboardingPage() {
   const { session } = useAuth();
   const { t } = useI18n();
   return (
     <Shell section={t("gettingStarted.title")}>
-      <Guide key={`${session?.user?.id}/${session?.organization?.id}`} />
+      <Guide
+        key={`${session?.user?.id}/${session?.organization?.id}/${session?.role}`}
+      />
     </Shell>
   );
 }
@@ -38,42 +43,92 @@ function Guide() {
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const mounted = useRef(true);
+  const pending = useRef<AbortController | null>(null);
   useEffect(() => {
     mounted.current = true;
+    const hide = () => {
+      pending.current?.abort();
+      pending.current = null;
+      setBusy("");
+    };
+    window.addEventListener("pagehide", hide);
     return () => {
       mounted.current = false;
+      pending.current?.abort();
+      window.removeEventListener("pagehide", hide);
     };
   }, []);
   async function choose(
-    action: "topic" | "law" | "explore" | "later",
+    action: "topic" | "law" | "explore" | "later" | "monitoring",
     href: string,
+    monitoringTemplate?: TemplateId,
   ) {
-    if (busy) return;
+    if (pending.current) return;
+    const request = new AbortController();
+    pending.current = request;
     const epoch = resourceScopeEpoch("session");
     setBusy(action);
     setError("");
     try {
       const saved = await api<OnboardingState>("/onboarding", {
         method: "PATCH",
-        body: JSON.stringify({ action }),
+        signal: request.signal,
+        body: JSON.stringify({
+          action,
+          ...(monitoringTemplate
+            ? { monitoring_template: monitoringTemplate }
+            : {}),
+        }),
       });
-      if (!mounted.current || epoch !== resourceScopeEpoch("session")) return;
+      if (
+        !mounted.current ||
+        request.signal.aborted ||
+        epoch !== resourceScopeEpoch("session")
+      )
+        return;
       resource.setData(saved);
       void invalidateResources(resources.authSession());
       router.push(href);
     } catch (cause) {
-      if (mounted.current && epoch === resourceScopeEpoch("session"))
+      if (
+        mounted.current &&
+        !request.signal.aborted &&
+        epoch === resourceScopeEpoch("session")
+      )
         setError(errorText(cause));
     } finally {
+      if (pending.current === request) pending.current = null;
       if (mounted.current && epoch === resourceScopeEpoch("session"))
         setBusy("");
     }
   }
-  const stateLabels = { new: "gettingStarted.new", deferred: "gettingStarted.deferred", started: "gettingStarted.started" };
-  const intentLabels = { topic: "gettingStarted.topic", law: "gettingStarted.law", explore: "gettingStarted.explore" };
-  const descriptions = { topic: "gettingStarted.topicBody", law: "gettingStarted.lawBody", explore: "gettingStarted.exploreBody" };
-  const stepLabels: Record<string, string> = { sources: "gettingStarted.sources", interests: "gettingStarted.interests", notifications: "gettingStarted.notifications", evidence: "gettingStarted.evidence" };
-  const stepDescriptions: Record<string, string> = { sources: "gettingStarted.sourcesBody", interests: "gettingStarted.interestsBody", notifications: "gettingStarted.notificationsBody", evidence: "gettingStarted.evidenceBody" };
+  const stateLabels = {
+    new: "gettingStarted.new",
+    deferred: "gettingStarted.deferred",
+    started: "gettingStarted.started",
+  };
+  const intentLabels = {
+    topic: "gettingStarted.topic",
+    law: "gettingStarted.law",
+    explore: "gettingStarted.explore",
+  };
+  const descriptions = {
+    topic: "gettingStarted.topicBody",
+    law: "gettingStarted.lawBody",
+    explore: "gettingStarted.exploreBody",
+  };
+  const stepLabels: Record<string, string> = {
+    sources: "gettingStarted.sources",
+    interests: "gettingStarted.interests",
+    notifications: "gettingStarted.notifications",
+    evidence: "gettingStarted.evidence",
+  };
+  const stepDescriptions: Record<string, string> = {
+    sources: "gettingStarted.sourcesBody",
+    interests: "gettingStarted.interestsBody",
+    notifications: "gettingStarted.notificationsBody",
+    evidence: "gettingStarted.evidenceBody",
+  };
   const choices = [
     { action: "topic" as const, href: "/topics", icon: Radar },
     { action: "law" as const, href: "/discover", icon: FileSearch },
@@ -90,7 +145,21 @@ function Guide() {
           {t("gettingStarted.body")}
         </p>
       </header>
-      <Link className="block rounded-xl border bg-card p-5 underline" href="/onboarding/basel-stadt">{baselCopy[locale].open}</Link>
+      {error && <ErrorNote message={error} />}
+      {busy && <p role="status">{t("gettingStarted.saving")}</p>}
+      <MonitoringFirstRun
+        selected={resource.data?.monitoring_template}
+        busy={Boolean(busy)}
+        ready={Boolean(resource.data)}
+        canManage={canManage}
+        onChoose={(domain, href) => void choose("monitoring", href, domain)}
+      />
+      <Link
+        className="block rounded-xl border bg-card p-5 underline"
+        href="/onboarding/basel-stadt"
+      >
+        {baselCopy[locale].open}
+      </Link>
       {resource.error && (
         <>
           <ErrorNote message={resource.error} />
@@ -108,7 +177,7 @@ function Guide() {
             data-onboarding-status
           >
             {t(stateLabels[resource.data.state])}
-            {resource.data.intent && (
+            {resource.data.intent && !resource.data.monitoring_template && (
               <span className="mt-1 block">
                 {t("gettingStarted.savedIntent", {
                   intent: t(intentLabels[resource.data.intent]),
@@ -137,8 +206,6 @@ function Guide() {
               </button>
             ))}
           </div>
-          {error && <ErrorNote message={error} />}
-          {busy && <p role="status">{t("gettingStarted.saving")}</p>}
           <Button
             variant="outline"
             disabled={Boolean(busy)}
@@ -147,25 +214,68 @@ function Guide() {
           >
             {t("gettingStarted.later")}
           </Button>
-          <section className="rounded-2xl border bg-card p-5" aria-labelledby="recorded-progress" data-onboarding-milestones>
-            <h2 id="recorded-progress" className="text-xl font-semibold">{t("onboardingProgress.title")}</h2>
-            <p className="text-sm text-muted-foreground mt-2">{t("onboardingProgress.boundary")}</p>
-            {resource.data.source_review && <p className="mt-3 text-sm" data-onboarding-source-review>
-              {t(resource.data.source_review.current ? "sourceReview.saved" : "sourceReview.changed")} {dateTime(resource.data.source_review.reviewed_at)} {" "}
-              <Link className="underline" href="/sources#source-packs">{t("sourceReview.title")}</Link>
-            </p>}
+          <section
+            className="rounded-2xl border bg-card p-5"
+            aria-labelledby="recorded-progress"
+            data-onboarding-milestones
+          >
+            <h2 id="recorded-progress" className="text-xl font-semibold">
+              {t("onboardingProgress.title")}
+            </h2>
+            <p className="text-sm mt-2">
+              {monitoringFirstRunCopy[locale].legacy}
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              {t("onboardingProgress.boundary")}
+            </p>
+            {resource.data.source_review && (
+              <p className="mt-3 text-sm" data-onboarding-source-review>
+                {t(
+                  resource.data.source_review.current
+                    ? "sourceReview.saved"
+                    : "sourceReview.changed",
+                )}{" "}
+                {dateTime(resource.data.source_review.reviewed_at)}{" "}
+                <Link className="underline" href="/sources#source-packs">
+                  {t("sourceReview.title")}
+                </Link>
+              </p>
+            )}
             <ul className="mt-3 space-y-3">
-              {([
-                ["interest_saved", "onboardingProgress.interest"],
-                ["notifications_saved", "onboardingProgress.notifications"],
-                ["evidence_displayed", "onboardingProgress.evidence"],
-              ] as const).map(([kind, key]) => {
-                const recorded = resource.data?.milestones?.find(item => item.kind === kind);
-                return <li key={kind} data-milestone-kind={kind} className="rounded-lg border p-3">
-                  <strong className="block">{t(key)}</strong>
-                  {recorded ? <p data-milestone-recorded className="mt-1 text-sm">{t("onboardingProgress.recorded")} <time dateTime={recorded.recorded_at}>{dateTime(recorded.recorded_at, {dateStyle:"medium", timeStyle:"short"})}</time></p> :
-                    <p className="mt-1 text-sm text-muted-foreground">{t("onboardingProgress.notRecorded")}</p>}
-                </li>;
+              {(
+                [
+                  ["interest_saved", "onboardingProgress.interest"],
+                  ["notifications_saved", "onboardingProgress.notifications"],
+                  ["evidence_displayed", "onboardingProgress.evidence"],
+                ] as const
+              ).map(([kind, key]) => {
+                const recorded = resource.data?.milestones?.find(
+                  (item) => item.kind === kind,
+                );
+                return (
+                  <li
+                    key={kind}
+                    data-milestone-kind={kind}
+                    className="rounded-lg border p-3"
+                  >
+                    <strong className="block">{t(key)}</strong>
+                    {recorded ? (
+                      <p data-milestone-recorded className="mt-1 text-sm">
+                        {t("onboardingProgress.recorded")}{" "}
+                        <time dateTime={recorded.recorded_at}>
+                          {dateTime(recorded.recorded_at, {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })}
+                        </time>
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {t("onboardingProgress.notRecorded")}
+                      </p>
+                    )}
+                  </li>
+                );
               })}
             </ul>
           </section>

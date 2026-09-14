@@ -198,7 +198,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | ID | Task | Phase | Priority | Size | Status | Dependencies |
 |---|---|---|---|---|---|---|
 | [MV2-001](#mv2-001) | Establish extension contracts and MVP compatibility | F0 | P0 | M | DONE | None |
-| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | PLANNED | None |
+| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS | None |
 | [MV2-003](#mv2-003) | Verify source rights, coverage and contracts for the nine active scenarios | F0 | P0 | L | PLANNED | [MV2-001](#mv2-001) |
 | [MV2-004](#mv2-004) | Personal workspace and team monitoring permissions | F1 | P0 | M | PLANNED | [MV2-001](#mv2-001) |
 | [MV2-005](#mv2-005) | MonitoringSubject and versioned Monitoring Templates | F1 | P0 | L | PLANNED | [MV2-001](#mv2-001), [MV2-004](#mv2-004) |
@@ -369,7 +369,13 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 
 ### MV2-002 — Validate first-value journeys and shared navigation
 
-**Status:** PLANNED · **Priority:** P0 · **Owner:** Product + UX · **Size:** M
+**Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Product + UX · **Size:** M
+
+**Whole-feature scope, 14 September 2026:** Give new users a persisted personal
+choice across all nine Monitoring directions on the first-run page, direct native
+configuration and a return path, with source/Start/consent distinct from setup
+intent. See [scope and acceptance](docs/monitoring-v2/MONITORING_FIRST_RUN.md).
+Measured first value, independent users and language acceptance remain open.
 
 **Dependencies:** None. **Requirements:** §§20–21,25–26,34.
 
@@ -385,7 +391,13 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 
 **Verification:** Observe users without prompting; use the results to refine copy and configuration without expanding the nine active cases.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Execution evidence, 14 September 2026:** The personal first-run choice across
+all nine directions is implemented, with saved continuation, five-language
+registration guidance and explicit source/Start/consent boundaries. Corrected API
+acceptance passed 31 tests; isolated PostgreSQL migration/concurrency passed;
+root build, 35 new browser/axe checkpoints and 40 legal regressions passed.
+See [evidence and limits](docs/monitoring-v2/MONITORING_FIRST_RUN.md). This does
+not replace the required observed human journeys or close MV2-002.
 
 <a id="mv2-003"></a>
 
@@ -907,6 +919,12 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 <a id="mv2-017"></a>
 
 ### MV2-017 — Create Monitor: nine understandable templates
+
+**First-run contribution, 14 September 2026:** All nine templates now appear on
+the post-registration guide with an owner-private persisted starting choice,
+direct native setup and a return link. See
+[first-run acceptance](docs/monitoring-v2/MONITORING_FIRST_RUN.md). Selection is
+not activation; source, shared ownership and broader parent criteria stay open.
 
 **Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Frontend + UX · **Size:** L
 

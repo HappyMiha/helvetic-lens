@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { LanguageSelector, useI18n } from "@/lib/i18n";
 import styles from "./login.module.css";
 import { SectionHelp } from "@/components/section-help";
+import { monitoringFirstRunCopy } from "@/lib/monitoring-first-run-copy";
 
 export default function LoginPage() {
   const { locale, t, setLocale } = useI18n();
@@ -280,6 +281,9 @@ export default function LoginPage() {
                           maxLength={200}
                           autoComplete="organization"
                         />
+                        <span className={styles.hint}>
+                          {monitoringFirstRunCopy[locale].company}
+                        </span>
                       </label>
                     )}
                   </>

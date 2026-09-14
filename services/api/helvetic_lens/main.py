@@ -596,7 +596,7 @@ def create_app(
             with correlation_context(request_id=request_id):
                 response = await call_next(request)
             status = response.status_code
-            if request.url.path.startswith("/api/monitoring-subjects"):
+            if request.url.path.startswith(("/api/monitoring-subjects", "/api/onboarding")):
                 response.headers["Cache-Control"] = "private, no-store"
             if request.url.path.startswith(("/api/auction-watch", "/api/tender-watch", "/api/commute-watch", "/api/road-watch", "/api/hazard-watch", "/api/trademark-watch", "/api/related-developments", "/api/monitoring-centre")):
                 # Dependency response headers are lost when an exception
@@ -920,7 +920,8 @@ def create_app(
     def save_onboarding(data: onboarding.OnboardingInput, request: Request):
         user_id, principal = assistant_principal(request)
         with service.db.session() as session:
-            return onboarding.save(session, service.organization_id, principal, user_id, data.action)
+            return onboarding.save(session, service.organization_id, principal, user_id, data.action,
+                                   monitoring_template=data.monitoring_template)
 
     @app.post("/api/assistant/context")
     def assistant_context(data: AssistantContextInput, request: Request):
