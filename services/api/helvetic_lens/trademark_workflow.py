@@ -308,11 +308,13 @@ def candidate_view(session, monitor, row, *, now):
     return result
 
 
-def list_candidates(session, user_id, monitor_id, *, now, after=None, limit=20):
+def list_candidates(session, user_id, monitor_id, *, now, after=None, limit=20, assignment=None):
+    from .business_item_work import assigned_filter
     monitor = monitor_for(session, user_id, monitor_id)
     if type(limit) is not int or not 1 <= limit <= 100:
         _fail("trademark_page_invalid", 422)
     query = select(TrademarkCandidate).where(TrademarkCandidate.monitor_id == monitor.id)
+    query = assigned_filter(query, TrademarkCandidate, user_id, assignment)
     if after:
         candidate_for(session, user_id, monitor_id, after)
         query = query.where(TrademarkCandidate.id > after)
@@ -321,7 +323,8 @@ def list_candidates(session, user_id, monitor_id, *, now, after=None, limit=20):
         "next_cursor": rows[limit - 1].id if len(rows) > limit else None, "coverage_verified": False}
 
 
-def review(session, user_id, monitor_id, candidate_id, *, expected_version, expected_evaluation_hash, decision, now):
+def review(session, user_id, monitor_id, candidate_id, *, expected_version, expected_evaluation_hash, decision, now, work=None):
+    from . import business_item_work
     now = _clock(now)
     if decision not in DECISIONS:
         _fail("trademark_decision_invalid", 422)
@@ -334,13 +337,15 @@ def review(session, user_id, monitor_id, candidate_id, *, expected_version, expe
         sources.require_permission(session, row.permission_id, now=now, purpose="decision")
         if row.evaluation_hash != expected_evaluation_hash:
             _fail("trademark_candidate_refresh_required")
-        if row.reviewed_sequence == row.sequence and row.decision == decision:
+        if work is None and row.reviewed_sequence == row.sequence and row.decision == decision:
             return candidate_view(session, monitor, row, now=now)
         if session.scalar(select(func.count()).select_from(TrademarkReview).where(TrademarkReview.candidate_id == row.id)) >= MAX_REVIEWS:
             _fail("trademark_review_capacity")
+        comment = business_item_work.prepare(session, monitor, row, work)
         row.version, row.reviewed_sequence, row.decision = row.version + 1, row.sequence, decision
         session.add(TrademarkReview(organization_id=monitor.organization_id, candidate_id=row.id,
             candidate_version=row.version, sequence=row.sequence, source_revision_id=row.source_revision_id,
             profile_revision=monitor.revision, evaluation_hash=row.evaluation_hash, decision=decision, actor_user_id=user_id, created_at=now))
         session.flush()
+        business_item_work.record(session, "ip", row, user_id, decision=decision, comment=comment, now=now)
         return candidate_view(session, monitor, row, now=now)

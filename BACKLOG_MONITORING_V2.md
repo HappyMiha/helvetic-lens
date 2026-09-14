@@ -209,7 +209,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-010](#mv2-010) | Structural relevance with evidence for every match | F1 | P0 | L | PLANNED | [MV2-005](#mv2-005), [MV2-008](#mv2-008), [MV2-009](#mv2-009) |
 | [MV2-011](#mv2-011) | Reliable state ingestion, queues and freshness | F1 | P0 | L | PLANNED | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-009](#mv2-009) |
 | [MV2-012](#mv2-012) | Notification policy and transactional outbox | F1 | P0 | L | PLANNED | [MV2-004](#mv2-004), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-011](#mv2-011) |
-| [MV2-013](#mv2-013) | Review, Decision and owner assignment | F1 | P0 | M | IN PROGRESS | [MV2-004](#mv2-004), [MV2-009](#mv2-009) |
+| [MV2-013](#mv2-013) | Review, Decision and owner assignment | F1 | P0 | M | IN PROGRESS — native business item workflow implemented | [MV2-004](#mv2-004), [MV2-009](#mv2-009) |
 | [MV2-014](#mv2-014) | Shared-feed API and read projections | F1 | P0 | L | PLANNED | [MV2-004](#mv2-004), [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-013](#mv2-013) |
 | [MV2-015](#mv2-015) | Geography, station and coverage catalogue | F1 | P0 | L | PLANNED | [MV2-003](#mv2-003), [MV2-006](#mv2-006) |
 | [MV2-016](#mv2-016) | Time windows, deadlines and reminders | F1 | P0 | L | PLANNED | [MV2-007](#mv2-007), [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-012](#mv2-012) |
@@ -217,7 +217,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
 | [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
-| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
+| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — native business assignment filters implemented | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
 | [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
 | [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
@@ -779,7 +779,7 @@ not replace the required observed human journeys or close MV2-002.
 
 ### MV2-013 — Review, Decision and owner assignment
 
-**Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Backend + Frontend · **Size:** M
+**Status:** IN PROGRESS — native business item workflow implemented · **Priority:** P0 · **Owner:** Backend + Frontend · **Size:** M
 
 **Dependencies:** [MV2-004](#mv2-004), [MV2-009](#mv2-009). **Requirements:** §§6,21,27.7,31.
 
@@ -796,7 +796,7 @@ not replace the required observed human journeys or close MV2-002.
 
 **Verification:** Optimistic concurrency, roles, reopening, reassignment and personal/shared-state tests.
 
-**Execution evidence:** [Business monitor responsibility](docs/monitoring-v2/BUSINESS_MONITOR_SHARING.md) now retains assignment/scope history, allows a current colleague administrator to manage shared native reviews and preserves unresolved work after creator/responsible deactivation. Native decisions retain their own version/source gates. Per-development owner/comments, broader shared review states, physical account deletion and exact activation/human acceptance remain open.
+**Execution evidence:** [Business monitor responsibility](docs/monitoring-v2/BUSINESS_MONITOR_SHARING.md) retains collection assignment/scope history and shared native access. [Business item work](docs/monitoring-v2/BUSINESS_ITEM_WORK.md) adds individual Tender/IP/Auction responsibility, comment-only work and atomic native decisions with evidence-bound owner/comment snapshots. Native entry points retain the same audit; deactivated assignees do not lose unresolved work. Broader shared/personal review-state coverage, physical account deletion and exact activation/human acceptance remain open.
 
 <a id="mv2-014"></a>
 
@@ -1052,7 +1052,7 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-021 — Workspace: Impact Inbox, decisions and Impact Matrix
 
-**Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** M
+**Status:** IN PROGRESS — native business assignment filters implemented · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** M
 
 **Dependencies:** [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020). **Requirements:** §§15–17,26.4,27.7.
 
@@ -1071,7 +1071,9 @@ above supersedes the River-only count limitation for readable Today queues.
 
 **Execution evidence, 14 September 2026:** Scoped River Today / Impact Inbox integration adds latest owner-private retained changes, all/unreviewed filtering and River-only count, bounded stable pagination, exact evidence links and existing CAS review actions. Five-language cards distinguish recorded observations, old settings, correction/recovery and personal thresholds from official danger. See [scope, verification and limits](docs/monitoring-v2/RIVER_TODAY.md). Cross-domain aggregation/global unread counts, shared business ownership and broader parent acceptance remain open.
 
-**Tender integration, 14 September 2026:** Owner-private public-summary cards now span saved Tender profiles on Today and Impact Inbox, with pending/following filters, retained prior decisions on reopen, restriction/embargo-aware counts and exact evidence/version links. See [feature evidence](docs/monitoring-v2/TENDER_TODAY.md). This remains a scoped contribution; shared ownership and cross-domain aggregation are not complete.
+**Tender integration, 14 September 2026:** Public-summary cards span saved permitted Tender profiles on Today and Impact Inbox, with pending/following filters, retained prior decisions on reopen, restriction/embargo-aware counts and exact evidence/version links. See [feature evidence](docs/monitoring-v2/TENDER_TODAY.md). Explicit business sharing is recorded separately in [scope evidence](docs/monitoring-v2/BUSINESS_MONITOR_SHARING.md).
+
+**Individual business work, 14 September 2026:** Native Tender/IP/Auction lists now support assigned-to-me and unassigned filters; item details offer individual responsibility, comments and atomic native decisions with paginated evidence-bound history. Private/authenticated document audiences, viewers and current source rights remain enforced. See [complete feature scope and checks](docs/monitoring-v2/BUSINESS_ITEM_WORK.md). Broader Inbox assignment/batch aggregation, personal directions and exact release/human acceptance remain open; the regulatory Matrix remains in its existing context.
 
 <a id="mv2-022"></a>
 

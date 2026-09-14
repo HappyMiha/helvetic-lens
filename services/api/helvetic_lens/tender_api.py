@@ -215,6 +215,7 @@ def tender_router(service, settings):
         after_id: UUID | None = None,
         following: bool | None = None,
         review_state: Literal["new", "needs_review", "reviewed"] | None = None,
+        assignment: Literal["mine", "unassigned"] | None = None,
         actor: Identity = Depends(identity),
     ):
         with service.db.session() as session:
@@ -226,6 +227,7 @@ def tender_router(service, settings):
                 after_id=str(after_id) if after_id else None,
                 following=following,
                 review_state=review_state,
+                assignment=assignment,
             )
 
     @router.get("/dossiers/{dossier_id}")

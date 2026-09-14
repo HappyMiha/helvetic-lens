@@ -117,6 +117,7 @@ class TenderCpvCache(Base):
 
 
 class TenderDossier(Base):
+    assigned_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
     __tablename__ = "tender_dossiers"
     __table_args__ = (
         ForeignKeyConstraint(

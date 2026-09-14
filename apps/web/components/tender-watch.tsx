@@ -30,6 +30,7 @@ import {
 } from "@/lib/tender-watch";
 import { useAuth } from "./auth-gate";
 import { BusinessMonitorAccess } from "./business-monitor-access";
+import { BusinessItemWork, AssignmentFilter } from "./business-item-work";
 import { Shell } from "./shell";
 import styles from "./tender-watch.module.css";
 
@@ -1114,6 +1115,17 @@ function Dossier({
                 </div>
               </fieldset>
             )}
+            <BusinessItemWork
+              domain="tenders"
+              monitorId={monitorId}
+              itemId={id}
+              version={row.version}
+              canManage={canManage && !archived}
+              changed={() => {
+                setRevision((value) => value + 1);
+                changed();
+              }}
+            />
             <p>{c.scope}</p>
             <button
               disabled={busy}
@@ -1223,10 +1235,12 @@ function Cards({
     c = tenderCopy[locale];
   const [following, setFollowing] = useState(false),
     [review, setReview] = useState("");
+  const [assignment, setAssignment] = useState("");
   const [cursor, setCursor] = useState<string | null>(null);
   const query = new URLSearchParams();
   if (following) query.set("following", "true");
   if (review) query.set("review_state", review);
+  if (assignment) query.set("assignment", assignment);
   if (cursor) query.set("after_id", cursor);
   const result = useData<TenderPage<TenderCard>>(
     `/monitors/${monitor.id}/dossiers?${query}`,
@@ -1234,6 +1248,13 @@ function Cards({
   return (
     <section>
       <h2>{c.tenders}</h2>
+      <AssignmentFilter
+        value={assignment}
+        changed={(value) => {
+          setAssignment(value);
+          setCursor(null);
+        }}
+      />
       <div className={styles.actions}>
         <label className={styles.check}>
           <input

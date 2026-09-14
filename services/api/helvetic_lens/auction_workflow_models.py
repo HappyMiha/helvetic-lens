@@ -46,6 +46,7 @@ class AuctionSourceCursor(Base):
 
 
 class AuctionItem(Base):
+    assigned_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
     __tablename__ = "auction_items"
     __table_args__ = (
         ForeignKeyConstraint(["monitor_id", "organization_id"], ["auction_monitors.id", "auction_monitors.organization_id"], ondelete="CASCADE"),

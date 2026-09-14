@@ -324,11 +324,13 @@ def item_view(session, monitor, item, *, now):
     return result
 
 
-def list_items(session, user_id, monitor_id, *, now, limit=20, after=None, following_only=False):
+def list_items(session, user_id, monitor_id, *, now, limit=20, after=None, following_only=False, assignment=None):
+    from .business_item_work import assigned_filter
     monitor = _monitor(session, user_id, monitor_id)
     if type(limit) is not int or not 1 <= limit <= 100 or type(following_only) is not bool:
         _fail("auction_page_invalid", 422)
     query = select(AuctionItem).where(AuctionItem.monitor_id == monitor.id, AuctionItem.organization_id == monitor.organization_id)
+    query = assigned_filter(query, AuctionItem, user_id, assignment)
     if after is not None:
         _item(session, user_id, monitor_id, after)
         query = query.where(AuctionItem.id > after)
@@ -341,11 +343,11 @@ def list_items(session, user_id, monitor_id, *, now, limit=20, after=None, follo
         "health": runtime.health if runtime else "not_started", "coverage_verified": False}
 
 
-def decide(session, user_id, monitor_id, item_id, *, expected_version, expected_state_hash, decision, now):
+def decide(session, user_id, monitor_id, item_id, *, expected_version, expected_state_hash, decision, now, work=None):
     if decision not in {"inspect", "bid", "no_bid", "monitor"}:
         _fail("auction_decision_invalid", 422)
     return _act(session, user_id, monitor_id, item_id, expected_version=expected_version,
-        expected_state_hash=expected_state_hash, decision=decision, following=None, now=now)
+        expected_state_hash=expected_state_hash, decision=decision, following=None, now=now, work=work)
 
 
 def follow(session, user_id, monitor_id, item_id, *, expected_version, expected_state_hash, following, now):
@@ -355,7 +357,8 @@ def follow(session, user_id, monitor_id, item_id, *, expected_version, expected_
         expected_state_hash=expected_state_hash, decision=None, following=following, now=now)
 
 
-def _act(session, user_id, monitor_id, item_id, *, expected_version, expected_state_hash, decision, following, now):
+def _act(session, user_id, monitor_id, item_id, *, expected_version, expected_state_hash, decision, following, now, work=None):
+    from . import business_item_work
     from .auction_reminders import invalidate, plan
     now = clock(now)
     with _savepoint(session):
@@ -371,11 +374,12 @@ def _act(session, user_id, monitor_id, item_id, *, expected_version, expected_st
             if facts.state_hash() != expected_state_hash:
                 _fail("auction_item_refresh_required")
             item.source_revision_id = head.revision_id
-        if ((decision is not None and item.decision == decision and item.reviewed_sequence == item.material_sequence)
+        if work is None and ((decision is not None and item.decision == decision and item.reviewed_sequence == item.material_sequence)
                 or following is not None and item.following == following):
             return item_view(session, monitor, item, now=now)
         if session.scalar(select(func.count()).select_from(AuctionDecision).where(AuctionDecision.item_id == item.id)) >= MAX_DECISIONS:
             _fail("auction_decision_capacity")
+        comment = business_item_work.prepare(session, monitor, item, work)
         if decision is not None:
             item.decision, item.reviewed_sequence = decision, item.material_sequence
         if following is not None:
@@ -389,6 +393,8 @@ def _act(session, user_id, monitor_id, item_id, *, expected_version, expected_st
             material_sequence=item.material_sequence, source_revision_id=item.source_revision_id,
             decision=item.decision, following=item.following, actor_user_id=user_id, created_at=now))
         session.flush()
+        if decision is not None:
+            business_item_work.record(session, "auctions", item, user_id, decision=decision, comment=comment, now=now)
         return item_view(session, monitor, item, now=now)
 
 

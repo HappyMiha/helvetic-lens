@@ -176,10 +176,11 @@ def auction_router(service, settings):
 
     @router.get("/monitors/{monitor_id}/items")
     def items(monitor_id: UUID, limit: int = Query(default=20, ge=1, le=100), after_id: UUID | None = None,
-              following_only: bool = False, actor: Identity = Depends(identity)):
+              following_only: bool = False, assignment: Literal["mine", "unassigned"] | None = None,
+              actor: Identity = Depends(identity)):
         with service.db.session() as session:
             return workflow.list_items(session, actor.user_id, str(monitor_id), now=_now(), limit=limit,
-                after=str(after_id) if after_id else None, following_only=following_only)
+                after=str(after_id) if after_id else None, following_only=following_only, assignment=assignment)
 
     @router.get("/monitors/{monitor_id}/items/{item_id}/history")
     def item_history(monitor_id: UUID, item_id: UUID, before: int | None = Query(default=None, ge=1),

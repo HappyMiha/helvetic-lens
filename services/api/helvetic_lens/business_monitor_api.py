@@ -7,6 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
+from . import business_item_work as item_work
 from . import business_monitor_sharing as sharing
 from .auth import Identity
 from .config import DomainError
@@ -20,6 +21,23 @@ class ScopeBody(BaseModel):
     visibility: Literal["private", "workspace"]
     responsible_user_id: UUID | None
     confirmed: bool = Field(strict=True)
+
+
+class EvidenceBinding(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    sequence: int = Field(strict=True, ge=1)
+    revision_id: UUID
+    profile_revision: int = Field(strict=True, ge=1)
+    fingerprint: str = Field(pattern=r"^[a-f0-9]{64}$")
+
+
+class ItemWorkBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    expected_version: int = Field(strict=True, ge=1)
+    expected_binding: EvidenceBinding
+    assigned_user_id: UUID | None
+    comment: str = Field(strict=True, max_length=4000)
+    decision: Literal["bid", "no_bid", "monitor", "inspect", "reviewed", "relevant", "not_relevant", "counsel"] | None = None
 
 
 def business_monitor_router(service, settings):
@@ -61,5 +79,26 @@ def business_monitor_router(service, settings):
                 confirmed=body.confirmed, now=datetime.now(UTC))
             session.commit()
             return value
+
+    @router.get("/{domain}/{monitor_id}/items/{item_id}/work")
+    def item_history(domain: Domain, monitor_id: UUID, item_id: UUID,
+                     before_version: int | None = Query(default=None, ge=1),
+                     limit: int = Query(default=20, ge=1, le=50), actor: Identity = Depends(identity)):
+        available(domain)
+        with service.db.session() as session:
+            return item_work.read(session, actor.user_id, domain, str(monitor_id), str(item_id),
+                now=datetime.now(UTC), before_version=before_version, limit=limit)
+
+    @router.post("/{domain}/{monitor_id}/items/{item_id}/work")
+    def save_item_work(domain: Domain, monitor_id: UUID, item_id: UUID,
+                       body: ItemWorkBody, actor: Identity = Depends(identity)):
+        available(domain)
+        with service.db.session() as session:
+            result = item_work.act(session, actor.user_id, domain, str(monitor_id), str(item_id),
+                expected_version=body.expected_version, expected_binding=body.expected_binding.model_dump(mode="json"),
+                assigned_user_id=str(body.assigned_user_id) if body.assigned_user_id else None,
+                comment=body.comment, decision=body.decision, now=datetime.now(UTC))
+            session.commit()
+            return result
 
     return router

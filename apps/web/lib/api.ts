@@ -81,7 +81,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   }
   if (
     !["GET", "HEAD", "OPTIONS"].includes(method) &&
-    /^\/(?:monitoring-subjects|air-watch|river-watch|tender-watch|commute-watch|road-watch|hazard-watch|trademark-watch|auction-watch|interest-feed)(?:\/|$)/.test(
+    /^\/(?:monitoring-subjects|monitoring-centre\/business|air-watch|river-watch|tender-watch|commute-watch|road-watch|hazard-watch|trademark-watch|auction-watch|interest-feed)(?:\/|$)/.test(
       path,
     )
   ) {

@@ -12,6 +12,7 @@ import {
 import type { TrademarkMonitor, TrademarkPage } from "@/lib/trademark-watch";
 import { useData, useMutation } from "./trademark-client";
 import { TrademarkExport } from "./trademark-export";
+import { BusinessItemWork, AssignmentFilter } from "./business-item-work";
 import { TrademarkDeadline, type DeadlineContext } from "./trademark-deadline";
 import styles from "./commute-watch.module.css";
 
@@ -329,6 +330,14 @@ function CandidateDetail({
           <TrademarkDeadline value={row.deadline_context} />
           <p>{row.attribution}</p>
           <p>{c.internal}</p>
+          <BusinessItemWork
+            domain="ip"
+            monitorId={monitor}
+            itemId={id}
+            version={row.version}
+            canManage={canManage}
+            changed={() => setRevision((v) => v + 1)}
+          />
           <div className={styles.actions}>
             {(
               [
@@ -437,10 +446,11 @@ export function TrademarkTracking({
     params.get("monitor") === row.id ? uuid("candidate") : "",
   );
   const event = params.get("candidate") === selected ? uuid("event") : "";
+  const [assignment, setAssignment] = useState("");
   const mutation = useMutation(),
     cursor = anchors.at(-1);
   const result = useData<TrademarkPage<Candidate>>(
-    `/monitors/${row.id}/candidates?limit=10${cursor ? `&after_id=${cursor}` : ""}`,
+    `/monitors/${row.id}/candidates?limit=10${cursor ? `&after_id=${cursor}` : ""}${assignment ? `&assignment=${assignment}` : ""}`,
     revision,
   );
   useEffect(() => {
@@ -529,6 +539,13 @@ export function TrademarkTracking({
       )}
       {mutation.error && <p role="alert">{mutation.error}</p>}
       <h3>{c.candidates}</h3>
+      <AssignmentFilter
+        value={assignment}
+        changed={(value) => {
+          setAssignment(value);
+          setAnchors([null]);
+        }}
+      />
       {result.error ? (
         <p role="alert">{b.failed}</p>
       ) : !result.data ? (

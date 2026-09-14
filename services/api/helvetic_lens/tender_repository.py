@@ -356,8 +356,9 @@ def get_dossier(session, user_id, dossier_id, *, now=None):
 
 
 def list_dossiers(
-    session, user_id, monitor_id, *, limit=20, after_id=None, following=None, review_state=None, now=None
+    session, user_id, monitor_id, *, limit=20, after_id=None, following=None, review_state=None, now=None, assignment=None
 ):
+    from .business_item_work import assigned_filter
     from .tender_rights import permitted
 
     monitor = owned(session, user_id, monitor_id)
@@ -396,6 +397,7 @@ def list_dossiers(
         query = query.where(TenderDossierVersion.document_observation_id.is_(None))
     if following is not None:
         query = query.where(TenderDossier.following == following)
+    query = assigned_filter(query, TenderDossier, user_id, assignment)
     if review_state is not None:
         query = query.where(TenderDossier.review_state == review_state)
     if after_id:
@@ -528,7 +530,10 @@ def evidence_version(session, user_id, dossier_id, version_id, *, now=None):
     return deepcopy(version.evidence)
 
 
-def record_decision(session, user_id, dossier_id, *, version, sequence, decision, key, now=None):
+def record_decision(session, user_id, dossier_id, *, version, sequence, decision, key, now=None, work=None):
+    from . import business_item_work
+
+    now = now or datetime.now(UTC)
     row = owned_dossier(session, user_id, dossier_id, write=True)
     positive(version)
     positive(sequence)
@@ -536,6 +541,8 @@ def record_decision(session, user_id, dossier_id, *, version, sequence, decision
     if decision not in {"bid", "no_bid", "monitor"}:
         raise DomainError("Choose Bid, No-bid or Monitor.", 422, "tender_decision_invalid")
     hashed = digest({"version": version, "sequence": sequence, "decision": decision})
+    if work is not None:
+        hashed = digest({"version": version, "sequence": sequence, "decision": decision, "work": work})
     previous = session.scalar(
         select(TenderDecision).where(
             TenderDecision.dossier_id == row.id,
@@ -550,6 +557,8 @@ def record_decision(session, user_id, dossier_id, *, version, sequence, decision
         return get_dossier(session, user_id, dossier_id, now=now)
     dossier_view(session, row, now or datetime.now(UTC), user_id=user_id)
     with _savepoint(session):
+        monitor = session.get(TenderMonitor, row.monitor_id)
+        comment = business_item_work.prepare(session, monitor, row, work)
         changed = session.execute(
             update(TenderDossier)
             .where(
@@ -580,7 +589,10 @@ def record_decision(session, user_id, dossier_id, *, version, sequence, decision
                 decision=decision,
                 request_key=key,
                 request_hash=hashed,
+                created_at=now,
             )
         )
         session.flush()
+        session.refresh(row)
+        business_item_work.record(session, "tenders", row, user_id, decision=decision, comment=comment, now=now)
     return get_dossier(session, user_id, dossier_id, now=now)

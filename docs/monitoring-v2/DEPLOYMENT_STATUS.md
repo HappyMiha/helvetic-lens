@@ -1,5 +1,20 @@
 # Monitoring deployment status — 14 September 2026
 
+## Individual business responsibility and decision notes candidate — 14 September 2026
+
+The complete Tender/IP/Auction item-work feature adds individual assignment,
+plain-text comments, atomic native decision/owner/comment writes, paginated
+evidence-bound audit and native assignment filters. See
+[scope and verification](BUSINESS_ITEM_WORK.md). Existing monitors remain in
+their current private/shared scope; no source permission or personal email
+consent is inferred. No new runtime flag hides this feature.
+
+This is a main-branch release candidate. Its local API, PostgreSQL race and
+browser checks are separate from production activation. A fresh authenticated
+release observation will follow publication; no active automatic checks or
+deployment are restarted or duplicated. Broader MV2-013/MV2-021 and human/source
+acceptance remain open.
+
 ## Business workspace sharing candidate — 14 September 2026
 
 The complete three-domain sharing/responsibility feature and its native privacy,

@@ -195,10 +195,11 @@ def trademark_router(service, settings):
             return result
 
     @router.get("/monitors/{monitor_id}/candidates")
-    def candidates(monitor_id: UUID, after_id: UUID | None = None, limit: int = Query(default=20, ge=1, le=100), actor: Identity = Depends(identity)):
+    def candidates(monitor_id: UUID, after_id: UUID | None = None, limit: int = Query(default=20, ge=1, le=100),
+                   assignment: Literal["mine", "unassigned"] | None = None, actor: Identity = Depends(identity)):
         with service.db.session() as session:
             return trademark_workflow.list_candidates(session, actor.user_id, str(monitor_id), now=_now(),
-                after=str(after_id) if after_id else None, limit=limit)
+                after=str(after_id) if after_id else None, limit=limit, assignment=assignment)
 
     @router.get("/monitors/{monitor_id}/candidates/{candidate_id}")
     def candidate(monitor_id: UUID, candidate_id: UUID, actor: Identity = Depends(identity)):

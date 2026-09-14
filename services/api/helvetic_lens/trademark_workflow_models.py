@@ -56,6 +56,7 @@ class TrademarkProjectionCursor(Base):
 
 
 class TrademarkCandidate(Base):
+    assigned_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
     deadline_binding: Mapped[dict | None] = mapped_column(JSON)
     __tablename__ = "trademark_candidates"
     __table_args__ = (

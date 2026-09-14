@@ -10,6 +10,7 @@ import type {
   AuctionProfile,
 } from "@/lib/auction-watch";
 import { useData, useMutation } from "./auction-client";
+import { BusinessItemWork, AssignmentFilter } from "./business-item-work";
 import styles from "./commute-watch.module.css";
 
 export type Facts = {
@@ -223,6 +224,14 @@ export function Lot({
   };
   return (
     <article className={styles.card} data-auction-item={row.id}>
+      <BusinessItemWork
+        domain="auctions"
+        monitorId={monitor.id}
+        itemId={row.id}
+        version={row.version}
+        canManage={canAct}
+        changed={changed}
+      />
       <p>
         <strong>{row.needs_review ? w.needsReview : w.reviewed}</strong>
       </p>
@@ -326,11 +335,12 @@ export function AuctionTracking({
     [revision, setRevision] = useState(0);
   const [onlyFollowed, setOnlyFollowed] = useState(false),
     [anchors, setAnchors] = useState<(string | null)[]>([null]);
+  const [assignment, setAssignment] = useState("");
   const mutation = useMutation(),
     after = anchors.at(-1);
   const result = useData<AuctionPage<Item>>(
     monitor.status !== "draft"
-      ? `/monitors/${monitor.id}/items?limit=20&following_only=${onlyFollowed}${after ? `&after_id=${after}` : ""}`
+      ? `/monitors/${monitor.id}/items?limit=20&following_only=${onlyFollowed}${after ? `&after_id=${after}` : ""}${assignment ? `&assignment=${assignment}` : ""}`
       : null,
     revision,
   );
@@ -447,6 +457,13 @@ export function AuctionTracking({
             />
             {w.onlyFollowed}
           </label>
+          <AssignmentFilter
+            value={assignment}
+            changed={(value) => {
+              setAssignment(value);
+              setAnchors([null]);
+            }}
+          />
           <button onClick={reload}>{c.refresh}</button>
           {result.error ? (
             <p role="alert">{w.unavailable}</p>
