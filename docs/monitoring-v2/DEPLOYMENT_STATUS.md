@@ -1,5 +1,22 @@
 # Monitoring deployment status — 14 September 2026
 
+## Diagnosed release-test failure and confirmed navigation — 14 September 2026
+
+After reloading the authenticated main-site Deployments page, all nine
+Monitoring links are visible, including warnings, commute, roads, tenders, IP
+and auctions. The current active release remains `99da831d934a`.
+Attempt `ec4874618b1e` failed at `api_tests` after 75m 13s:
+3,968 passed, 14 skipped, one failure in
+`test_new_date_and_trip_ids_recheck_source_rules_and_keep_old_proof[arrival-insufficient_time]`.
+The following attempt `79c7a0abf02b` is already deploying; it has not been
+interrupted or duplicated. Auction acquisition `ce8f954` was pushed to main.
+
+The recorded failure was reproduced locally as clock-dependent synthetic ZIP
+metadata causing a new archive hash on an unchanged replay. The fixture fix
+passed all 141 affected static/renewal/collector checks and retains the real
+source-conflict guard. See [regression evidence](TRANSPORT_WATCH.md).
+Production activation of the fix and newer features remains unverified.
+
 ## Native auction collection publication candidate — 14 September 2026
 
 The main-site ready endpoint still reports `git-99da831d934a`, instance `main`,

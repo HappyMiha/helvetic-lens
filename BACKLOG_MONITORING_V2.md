@@ -229,7 +229,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-036](#mv2-036) | Related developments from multiple sources | F4 | P1 | M | PLANNED | [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-029](#mv2-029), [MV2-033](#mv2-033), [MV2-041](#mv2-041), [MV2-071](#mv2-071) |
 | [MV2-037](#mv2-037) | Journey/Trip/Route/Stop and Road Corridor reference data | F4 | P0 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-015](#mv2-015), [MV2-016](#mv2-016), [MV2-071](#mv2-071) |
 | [MV2-038](#mv2-038) | C2: Service Alerts and Trip Updates | F4 | P1 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-037](#mv2-037), [MV2-071](#mv2-071) |
-| [MV2-039](#mv2-039) | C2: Regular commutes and low-noise transport alerts | F4 | P1 | L | IN PROGRESS | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-038](#mv2-038) |
+| [MV2-039](#mv2-039) | C2: Regular commutes and low-noise transport alerts | F4 | P1 | L | IN PROGRESS — renewal regression fixed | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-038](#mv2-038) |
 | [MV2-040](#mv2-040) | C3: ASTRA traffic and planned closures | F4 | P1 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-037](#mv2-037), [MV2-071](#mv2-071) |
 | [MV2-041](#mv2-041) | C3: My Route Watch for A2 / Gotthard / A13 | F4 | P1 | L | IN PROGRESS | [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-010](#mv2-010), [MV2-012](#mv2-012), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-040](#mv2-040) |
 | [MV2-042](#mv2-042) | B2: SIMAP discovery and publication monitoring | F5 | P1 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071) |
@@ -1435,6 +1435,14 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 <a id="mv2-039"></a>
 
 ### MV2-039 — C2: Regular commutes and low-noise transport alerts
+
+**Release regression, 14 September 2026:** Reproduced the failed production
+connection-renewal replay across a ZIP timestamp change. Fixed the synthetic
+archive's nondeterministic metadata; unchanged inputs now replay identically,
+while changed source evidence still conflicts. All 141 fixture-consumer tests
+and exact API Ruff passed. See [Transport Watch evidence](docs/monitoring-v2/TRANSPORT_WATCH.md).
+No source permission, production validation or deployment gate was weakened;
+live access and whole-direction acceptance remain open.
 
 **Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
 

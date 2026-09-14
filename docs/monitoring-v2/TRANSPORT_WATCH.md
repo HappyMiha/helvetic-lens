@@ -1,5 +1,23 @@
 # Transport Watch — C2 implementation gate
 
+**Release-regression fix, 14 September 2026:** The main-site `ec4874618b1e`
+release failed after 3,968 passing checks on the arrival-change connection
+renewal test. Its shared synthetic ZIP helper used wall-clock member timestamps;
+recreating unchanged tables across a two-second ZIP timestamp boundary changed
+the archive hash and correctly triggered the pinned-source conflict guard.
+A forced four-second clock change reproduced the exact production exception.
+The fixture now writes an explicit constant ZIP timestamp while preserving
+compression and UTF-8 CSV bytes. The new regression proves both idempotent replay
+across a clock change and continued rejection of changed arrival evidence under
+the same pinned version. Production provenance validation is unchanged.
+
+All 141 tests consuming the shared archive fixture passed in 29.60 s, covering
+static parsing, acquisition, collectors, catalogue workers, dated renewal and
+interchanges. Exact API Ruff passed. No frontend or deployment configuration
+changed, so no additional frontend build was needed. MV2-038/039 and shared
+MV2-057 acceptance remain open; all nine sections stay enabled. The already
+running `79c7a0abf02b` production attempt was not interrupted or duplicated.
+
 **Integrated publication, 13 September 2026:** The owner requested all implemented code be published to main now and all implemented sections enabled. The production defaults and remaining source/acceptance limits are recorded in the [integrated release evidence](evidence/2026-09-13-integrated-publication.md). Earlier dated references to uncommitted or disabled work are historical; the broader task remains IN PROGRESS.
 
 

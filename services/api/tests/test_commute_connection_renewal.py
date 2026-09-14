@@ -2,6 +2,7 @@
 
 from datetime import date
 from hashlib import sha256
+from types import SimpleNamespace
 
 import pytest
 from sqlalchemy import select
@@ -15,6 +16,7 @@ from test_transport_static import tables as _tables_fixture
 from helvetic_lens import commute_renewal as renewal
 from helvetic_lens.commute_interchanges import publish_interchanges, resolve_interchange_pairs
 from helvetic_lens.commute_models import CommuteDatedLeg, CommuteInterchange
+from helvetic_lens.config import DomainError
 from helvetic_lens.transport_static import StaticArchive
 
 db, template, tables, connected = _database_fixture, _template_fixture, _tables_fixture, _connected_fixture
@@ -70,6 +72,29 @@ def test_trip_specific_rule_for_old_trip_is_not_reused(db, tmp_path, connected):
     connected["transfers.txt"][1][4:6] = ["trip", "next"]
     ids, _ = seed(db, tmp_path, connected)
     assert renew(db, tmp_path, connected, ids)["interchanges"][0]["state"] == "unverified"
+
+
+def test_identical_renewal_replays_across_archive_creation_clock_change(db, tmp_path, connected, monkeypatch):
+    # ZIP member timestamps must not turn the same synthetic input into a new
+    # purported source archive when a slower release host crosses a DOS time tick.
+    import zipfile
+    clock = SimpleNamespace(time=lambda: 0, localtime=lambda *_: (2026, 9, 14, 4, 0, 0, 0, 257, 0))
+    monkeypatch.setattr(zipfile, "time", clock)
+    ids, old = seed(db, tmp_path, connected)
+    connected["stop_times.txt"][3][3] = "26:03:00"
+    first = renew(db, tmp_path, connected, ids)
+    clock.localtime = lambda *_: (2026, 9, 14, 4, 0, 4, 0, 257, 0)
+    assert renew(db, tmp_path, connected, ids) == first
+    assert first["interchanges"][0]["state"] == "insufficient_time"
+    with db.session() as session:
+        rows = list(session.scalars(select(CommuteInterchange).order_by(CommuteInterchange.service_day)))
+        assert len(rows) == 2 and rows[0].proof == old
+
+    # Real changed evidence under the same pinned version must still conflict.
+    connected["stop_times.txt"][3][3] = "26:02:00"
+    with pytest.raises(DomainError) as error:
+        renew(db, tmp_path, connected, ids)
+    assert error.value.code == "commute_catalog_conflict"
 
 
 def test_unmapped_endpoint_produces_no_new_connection_proof(db, tmp_path, connected):

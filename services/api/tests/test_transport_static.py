@@ -3,7 +3,7 @@
 import csv
 from datetime import UTC, date, datetime
 from io import StringIO
-from zipfile import ZIP_DEFLATED, ZipFile
+from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 import pytest
 
@@ -50,7 +50,10 @@ def archive(tmp_path, tables):
         for name, rows in tables.items():
             text = StringIO(newline="")
             csv.writer(text).writerows(rows)
-            target.writestr(name, text.getvalue().encode("utf-8-sig"))
+            # A repeated fixture import must replay the same archive bytes.
+            # Host-clock ZIP metadata would otherwise change its source hash.
+            target.writestr(ZipInfo(name, date_time=(2026, 1, 1, 0, 0, 0)),
+                text.getvalue().encode("utf-8-sig"), compress_type=ZIP_DEFLATED)
     return path
 
 
