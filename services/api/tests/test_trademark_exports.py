@@ -13,7 +13,11 @@ from test_trademark_workflow import review, rows, running, source_facts, sync
 from helvetic_lens import trademark_exports as exports
 from helvetic_lens import trademark_sources as sources
 from helvetic_lens.config import DomainError
-from helvetic_lens.trademark_workflow_models import TrademarkCandidateEvent, TrademarkExportPreparation
+from helvetic_lens.trademark_workflow_models import (
+    TrademarkCandidate,
+    TrademarkCandidateEvent,
+    TrademarkExportPreparation,
+)
 
 db, template = _db, _template
 
@@ -71,13 +75,30 @@ def test_prepare_preview_explicit_download_keep_references_not_payloads(db):
         assert session.get(TrademarkExportPreparation, prepared["id"]).downloaded_at is not None
 
 
-def test_matching_and_display_do_not_grant_export_and_preparation_cannot_bypass_revoke(db):
-    _, blocked = running(db)
+@pytest.mark.parametrize("export_first", [False, True])
+def test_matching_and_display_do_not_grant_export_and_preparation_cannot_bypass_revoke(db, export_first):
+    denied_permission, blocked = running(db)
     with pytest.raises(DomainError, match="permission"):
         prepare(db, blocked)
     permission, monitor = setup(db, source_key="export-fixture")
-    prepared = prepare(db, monitor)
-    candidate = rows(db, monitor)[0]
+    # Both active sources are projected into this portfolio. UUID pagination
+    # order cannot tell us which candidate has export rights. Exercise both
+    # orders while keeping the requested candidate bound to its actual source.
+    with db.session() as session:
+        bindings = dict(session.execute(select(TrademarkCandidate.id, TrademarkCandidate.permission_id)
+            .where(TrademarkCandidate.monitor_id == monitor)).all())
+    candidates = rows(db, monitor)
+    assert len(candidates) == 2 and set(bindings.values()) == {denied_permission, permission}
+    candidate = prepared = None
+    for row in sorted(candidates, key=lambda item: bindings[item["id"]] == permission, reverse=export_first):
+        if bindings[row["id"]] == denied_permission:
+            with pytest.raises(DomainError) as denied:
+                prepare(db, monitor, candidate=row)
+            assert denied.value.code == "trademark_source_use_denied"
+        else:
+            candidate = row
+            prepared = prepare(db, monitor, candidate=row)
+    assert candidate is not None and prepared is not None
     with db.session() as session:
         sources.revoke_permission(session, permission, now=NOW)
         session.commit()

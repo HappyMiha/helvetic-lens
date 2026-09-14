@@ -1,5 +1,27 @@
 # Monitoring deployment status — 14 September 2026
 
+## Trademark export fixture diagnosis — 14 September 2026
+
+Native Hazard commit `2799a7a579a172f24efcb65a630c7996c7f4a2f1` was pushed to
+origin/main; the checkout is synchronized. A fresh authenticated release read
+found `11ef1765d8f3` failed at 11:34:21 local after 4,271 passed and two failures:
+the known Tender clock test and the Trademark export permission test.
+The automatic attempt for `4434cf94da05` started at 11:36:02 and is Deploying.
+It contains the Tender fix; it has not been restarted or duplicated.
+
+The Trademark failure was reproduced locally. The fixture created two active
+source channels, one permitted for matching/display only and one permitted for
+export. Both produce candidates in the second portfolio; choosing `items[0]`
+made the test depend on random UUID ordering and could select the denied source.
+The repair binds the candidate to its actual stored permission, exercises both
+source orders, confirms denied-source export remains forbidden, then revokes
+the allowed permission and checks that both preview and download are rejected.
+Production export permissions and runtime behavior are unchanged.
+
+Validation: all 28 affected Trademark export, workflow and API tests passed
+in 50.63 seconds. The exact API Ruff gate and diff whitespace check passed.
+This repair is a publication candidate; production activation is not yet verified.
+
 ## Native Swiss wind/thunderstorm publication candidate — 14 September 2026
 
 The complete native Hazard source-to-private-workflow feature passed 360 affected
