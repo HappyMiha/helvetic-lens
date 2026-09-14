@@ -3,6 +3,7 @@
 import { MonitorThis } from "./monitor-this";
 import { RoadToday } from "./road-today";
 import { RiverToday } from "./river-today";
+import { TenderToday } from "./tender-today";
 import { HazardToday } from "./hazard-today";
 import { TrademarkToday } from "./trademark-today";
 import { AuctionToday } from "./auction-today";
@@ -484,6 +485,7 @@ export function ImpactInboxPage() {
       </div>
       <RoadToday inbox />
       <RiverToday inbox />
+      <TenderToday inbox />
       <HazardToday inbox />
       <AuctionToday inbox />
       <TrademarkToday inbox />

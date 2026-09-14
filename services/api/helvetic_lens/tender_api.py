@@ -70,6 +70,16 @@ def tender_router(service, settings):
 
     router = APIRouter(prefix="/api/tender-watch", tags=["tender-watch"], dependencies=[Depends(identity)])
 
+    @router.get("/today")
+    def today_dossiers(after_version: UUID | None = None,
+                       review_state: Literal["pending", "new", "needs_review", "reviewed"] | None = None,
+                       following: bool = False, limit: int = Query(default=20, ge=1, le=50),
+                       actor: Identity = Depends(identity)):
+        from .tender_today import today
+        with service.db.session() as session:
+            return today(session, actor.user_id, after_version=after_version, review_state=review_state,
+                following=following, limit=limit)
+
     @router.get("/capabilities")
     def capabilities():
         return {

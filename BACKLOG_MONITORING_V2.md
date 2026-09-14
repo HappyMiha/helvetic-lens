@@ -235,7 +235,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-042](#mv2-042) | B2: SIMAP discovery and publication monitoring | F5 | P1 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071) |
 | [MV2-043](#mv2-043) | B2/B7/B8: Structured profiles and semantic candidate ranking | F5 | P1 | L | IN PROGRESS | [MV2-005](#mv2-005), [MV2-008](#mv2-008), [MV2-010](#mv2-010), [MV2-071](#mv2-071) |
 | [MV2-044](#mv2-044) | Versioned document sets and conditions | F5 | P1 | L | IN PROGRESS | [MV2-007](#mv2-007), [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-071](#mv2-071) |
-| [MV2-045](#mv2-045) | B2: Tender discovery → review → material update | F5 | P1 | L | IN PROGRESS | [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022), [MV2-042](#mv2-042), [MV2-043](#mv2-043), [MV2-044](#mv2-044) |
+| [MV2-045](#mv2-045) | B2: Tender discovery, Today review and material updates | F5 | P1 | L | IN PROGRESS | [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022), [MV2-042](#mv2-042), [MV2-043](#mv2-043), [MV2-044](#mv2-044) |
 | [MV2-046](#mv2-046) | B7: Official trademark publications and register updates | F5 | P1 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071) |
 | [MV2-047](#mv2-047) | B7: Exact, lexical and phonetic candidates | F5 | P1 | L | IN PROGRESS | [MV2-043](#mv2-043), [MV2-046](#mv2-046) |
 | [MV2-048](#mv2-048) | B7: IP review, review deadlines, register changes and consented digest | F5 | P1 | L | IN PROGRESS | [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-046](#mv2-046), [MV2-047](#mv2-047) |
@@ -977,6 +977,8 @@ global unread counts and shared business-subject acceptance remain open.
 
 **Execution evidence, 14 September 2026:** Scoped River Today / Impact Inbox integration adds latest owner-private retained changes, all/unreviewed filtering and River-only count, bounded stable pagination, exact evidence links and existing CAS review actions. Five-language cards distinguish recorded observations, old settings, correction/recovery and personal thresholds from official danger. See [scope, verification and limits](docs/monitoring-v2/RIVER_TODAY.md). Cross-domain aggregation/global unread counts, shared business ownership and broader parent acceptance remain open.
 
+**Tender integration, 14 September 2026:** Owner-private public-summary cards now span saved Tender profiles on Today and Impact Inbox, with pending/following filters, retained prior decisions on reopen, restriction/embargo-aware counts and exact evidence/version links. See [feature evidence](docs/monitoring-v2/TENDER_TODAY.md). This remains a scoped contribution; shared ownership and cross-domain aggregation are not complete.
+
 <a id="mv2-020"></a>
 
 ### MV2-020 — Investigate: states, diffs, evidence and history
@@ -1022,6 +1024,8 @@ global unread counts and shared business-subject acceptance remain open.
 **Verification:** Concurrent revision/decision browser journeys, owner filters and legacy Matrix regression.
 
 **Execution evidence, 14 September 2026:** Scoped River Today / Impact Inbox integration adds latest owner-private retained changes, all/unreviewed filtering and River-only count, bounded stable pagination, exact evidence links and existing CAS review actions. Five-language cards distinguish recorded observations, old settings, correction/recovery and personal thresholds from official danger. See [scope, verification and limits](docs/monitoring-v2/RIVER_TODAY.md). Cross-domain aggregation/global unread counts, shared business ownership and broader parent acceptance remain open.
+
+**Tender integration, 14 September 2026:** Owner-private public-summary cards now span saved Tender profiles on Today and Impact Inbox, with pending/following filters, retained prior decisions on reopen, restriction/embargo-aware counts and exact evidence/version links. See [feature evidence](docs/monitoring-v2/TENDER_TODAY.md). This remains a scoped contribution; shared ownership and cross-domain aggregation are not complete.
 
 <a id="mv2-022"></a>
 
@@ -1657,7 +1661,14 @@ live access and whole-direction acceptance remain open.
 
 <a id="mv2-045"></a>
 
-### MV2-045 — B2: Tender discovery → review → material update
+### MV2-045 — B2: Tender discovery, Today review and material updates
+
+**Active whole-feature scope, 14 September 2026:** Add the missing Tender Today
+and Impact Inbox entry across the owner's saved profiles, pending/following
+filters, bounded public-summary cards and exact version links to the existing
+evidence and internal decision workflow. Current restrictions and embargo apply
+before pagination/counting. See [scope and acceptance](docs/monitoring-v2/TENDER_TODAY.md).
+MV2-019/021 are scoped contributions; documents/Q&A access and broader B2 gates remain.
 
 **Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
 
@@ -1667,7 +1678,7 @@ live access and whole-direction acceptance remain open.
 
 **Work:** Tender profile wizard, discovery candidates, follow tender, explanations of matched capabilities and gaps, explicit deadline, Q&A/document changes and owner.
 
-**Active scope (12 September):** The local public-source journey now includes authenticated profile/lifecycle APIs, a five-language reader, private discovery/following/internal decisions, versioned originals and Monitoring Centre integration. Public evidence and common fields are deduplicated across lots; project CPV context never asserts verified lot relevance. Profile edits reassess unchanged publications and reopen review without rewriting prior decisions. Public-payload and private-version budgets now preserve all referenced history on capacity exhaustion; bounded cleanup checks references across tenants. Durable source restrictions gate retained reads, decisions and ingestion, including withdrawal during I/O and reuse of a restricted prior original for a diff. HTTP denials also carry no-store headers. HTTP and browser tests cover owner/tenant access, source gates, pagination, material updates, recovery and mobile accessibility. Owner-consented email now has separate immutable settings, exact-version intents, preview/send eligibility parity, quiet hours/DST, cross-monitor deduplication and current permission/review checks through the real job dispatcher. The five-language reader supports consent, unsubscribe, uncertainty, evidence deep links and paginated read-only profile history with current-profile differences; tests use fake SMTP only. Private document grants/storage/retention, material manifest revisions and the five-language original/text/comparison reader are implemented locally. Changes since the last decision have a separate chronological reader with current-rights gaps and pinned pagination. This remains unfinished whole-feature work: permitted live documents/Q&A collection, remaining-format coverage, semantic evaluation and live/human acceptance (including real email) are still required. Neither Tender Watch feature flag has been enabled in production; no feature commit or activation is claimed. See [current evidence](docs/monitoring-v2/TENDER_WATCH.md).
+**Active scope (12 September):** The local public-source journey now includes authenticated profile/lifecycle APIs, a five-language reader, private discovery/following/internal decisions, versioned originals and Monitoring Centre integration. Public evidence and common fields are deduplicated across lots; project CPV context never asserts verified lot relevance. Profile edits reassess unchanged publications and reopen review without rewriting prior decisions. Public-payload and private-version budgets now preserve all referenced history on capacity exhaustion; bounded cleanup checks references across tenants. Durable source restrictions gate retained reads, decisions and ingestion, including withdrawal during I/O and reuse of a restricted prior original for a diff. HTTP denials also carry no-store headers. HTTP and browser tests cover owner/tenant access, source gates, pagination, material updates, recovery and mobile accessibility. Owner-consented email now has separate immutable settings, exact-version intents, preview/send eligibility parity, quiet hours/DST, cross-monitor deduplication and current permission/review checks through the real job dispatcher. The five-language reader supports consent, unsubscribe, uncertainty, evidence deep links and paginated read-only profile history with current-profile differences; tests use fake SMTP only. Private document grants/storage/retention, material manifest revisions and the five-language original/text/comparison reader are implemented locally. Changes since the last decision have a separate chronological reader with current-rights gaps and pinned pagination. This remains unfinished whole-feature work: permitted live documents/Q&A collection, remaining-format coverage, semantic evaluation and live/human acceptance (including real email) are still required. The earlier unpublished/disabled state was superseded by the 13 September integrated publication and enabled production defaults; actual serving releases are verified separately. See [current evidence](docs/monitoring-v2/TENDER_WATCH.md).
 
 **Acceptance criteria:**
 
@@ -1679,7 +1690,7 @@ live access and whole-direction acceptance remain open.
 
 **Verification:** End-to-end profile→publication→review→3-field revision→reopen→digest, negative cases and an unavailable attachment.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Execution evidence, 14 September 2026:** Tender Today and Impact Inbox now provide a private queue across profiles with pending/following filters, bounded public-summary projections and exact version links into existing evidence/internal decisions. Current restriction/embargo gates precede pagination and counts; no source collection or decision occurs on read. Source publication, document and user acceptance gates remain open. See [verification and limits](docs/monitoring-v2/TENDER_TODAY.md).
 
 <a id="mv2-046"></a>
 

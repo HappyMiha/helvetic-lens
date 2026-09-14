@@ -2,6 +2,7 @@
 
 import { AirToday } from "./air-watch";
 import { RiverToday } from "./river-today";
+import { TenderToday } from "./tender-today";
 import { CommuteToday } from "./commute-today";
 import { RoadToday } from "./road-today";
 import { HazardToday } from "./hazard-today";
@@ -158,6 +159,7 @@ export function InterestFeedPage() {
       <PollenToday key={pollenRefresh} />
       <AirToday key={`air-${pollenRefresh}`} />
       <RiverToday key={`river-${pollenRefresh}`} />
+      <TenderToday key={`tender-${pollenRefresh}`} />
       <CommuteToday key={`commute-${pollenRefresh}`} />
       <RoadToday key={`road-${pollenRefresh}`} />
       <HazardToday key={`hazard-${pollenRefresh}`} />

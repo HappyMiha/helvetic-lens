@@ -1,5 +1,13 @@
 # Tender Watch — B2 implementation
 
+## Today and Impact Inbox — 14 September 2026
+
+Saved Tender profiles now contribute a private queue to Today and `/impact`,
+including pending/following filters, current permitted public summaries, retained
+previous decisions on reopen and exact version links to the existing evidence and
+internal decision workflow. See [scope, verification and limits](TENDER_TODAY.md).
+Source access, document/Q&A acquisition and broader B2 acceptance remain open.
+
 **Integrated publication, 13 September 2026:** The owner requested all implemented code be published to main now and all implemented sections enabled. The production defaults and remaining source/acceptance limits are recorded in the [integrated release evidence](evidence/2026-09-13-integrated-publication.md). Earlier dated references to uncommitted or disabled work are historical; the broader task remains IN PROGRESS.
 
 

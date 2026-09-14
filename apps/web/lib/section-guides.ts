@@ -1091,6 +1091,7 @@ export const SECTION_GUIDES: SectionGuide[] = [
     ],
     data: [
       "River cards show your latest retained change per development, separately from the legal feed. Their Unreviewed filter/count covers River changes only; older samples and earlier monitor settings are labelled. Empty results do not prove safe water conditions. Exact evidence opens without marking it reviewed.",
+      "Tender cards show permitted saved public summaries across your profiles. Pending counts and following/review filters belong to the tender queue only. Open exact evidence and changes since your last decision before recording Bid, No-bid or Monitor in the tender workspace; nothing is submitted externally.",
       "Events come from enabled source packages or monitored documents admitted to this organization. A detected date is when the system observed an event, not necessarily when law changed.",
       "Topic matches are rule-based candidates. A brief or impact explanation is a separate saved model result with its own evidence and freshness; it is not publisher text.",
     ],
@@ -1377,6 +1378,7 @@ export const SECTION_GUIDES: SectionGuide[] = [
     ],
     data: [
       "River changes are owner-private and start with the Unreviewed filter. They share exact evidence and review decisions with Today and River Watch. Their filter and count are separate from the legal impact list.",
+      "The owner-private tender queue starts with pending reviews. A material update retains your previous decision and reopens review. Summaries do not establish qualification or document/Q&A coverage; use the exact linked dossier to inspect evidence and record an internal decision.",
       "Warnings for saved places and road closures are owner-private and share review/mute state with Today. Open a warning's exact revision to read original official instructions. Legal filters below do not filter these private monitoring cards. Missing or stale data is not an all-clear.",
       "Candidates combine recorded source relationships or matching signals with saved analysis. A possible effect is not a confirmed legal conclusion.",
       "Analysis history and human review history are separate. New analysis does not silently replace what an earlier reviewer saw.",
