@@ -310,19 +310,22 @@ def tender_router(service, settings):
             _, parsed = read(session, actor.user_id, str(dossier_id), str(snapshot_id))
             # Access-account and policy evidence stays inside the private store.
             return {"snapshot_id": str(parsed.snapshot_id), "content_sha256": parsed.content_sha256,
-                    "parse_status": parsed.parse_status,
+                    "parse_status": parsed.parse_status, "extractor_version": parsed.extractor_version,
                     "passages": [p.model_dump() for p in parsed.passages]}
 
     @router.get("/dossiers/{dossier_id}/documents/{snapshot_id}/original")
     def document_original(dossier_id: UUID, snapshot_id: UUID, actor: Identity = Depends(identity)):
         from .docx_reader import EXTRACTOR as DOCX_EXTRACTOR
         from .tender_documents import read
+        from .xlsx_reader import EXTRACTOR as XLSX_EXTRACTOR
 
         with service.db.session() as session:
             row, parsed = read(session, actor.user_id, str(dossier_id), str(snapshot_id))
             extension = "pdf" if row.body.startswith(b"%PDF") else "bin"
             if parsed.extractor_version == DOCX_EXTRACTOR and parsed.parse_status in {"complete", "partial"}:
                 extension = "docx"
+            if parsed.extractor_version == XLSX_EXTRACTOR and parsed.parse_status in {"complete", "partial"}:
+                extension = "xlsx"
             return Response(row.body, media_type="application/octet-stream", headers={
                 "Content-Disposition": f'attachment; filename="tender-{snapshot_id}.{extension}"',
                 "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff",

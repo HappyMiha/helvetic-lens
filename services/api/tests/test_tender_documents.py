@@ -29,12 +29,12 @@ def seed(db):
     return monitor, dossier, grant_id, raw
 
 
-def capture(db, dossier, grant_id, body=b"3 references required", *, item_id="requirements"):
-    parsed, _ = parse_document(body, content_type="text/plain", snapshot_id=uuid4(),
+def capture(db, dossier, grant_id, body=b"3 references required", *, item_id="requirements", content_type="text/plain"):
+    parsed, _ = parse_document(body, content_type=content_type, snapshot_id=uuid4(),
                                access_scope_id=UUID(grant_id), source_id="simap", dossier_id=dossier,
                                item_id=item_id, language="en")
     with db.session() as session:
-        identifier = documents.store(session, "owner", dossier, parsed, body, content_type="text/plain", now=NOW)
+        identifier = documents.store(session, "owner", dossier, parsed, body, content_type=content_type, now=NOW)
         session.commit()
     return identifier
 

@@ -43,9 +43,15 @@ def record(db, dossier, grant, step, *items, coverage="complete", observation_id
     return result, value
 
 
-def test_material_file_and_qa_revision_reopens_decision_and_queues_same_publication_email(db):
+@pytest.mark.parametrize("xlsx_format", [False, True])
+def test_material_file_and_qa_revision_reopens_decision_and_queues_same_publication_email(db, xlsx_format):
+    from xlsx_fixture import xlsx
+
+    from helvetic_lens.xlsx_reader import XLSX_MIME
+
+    mime = XLSX_MIME if xlsx_format else "text/plain"
     monitor, dossier, grant, _ = seed(db)
-    initial = item(db, dossier, capture(db, dossier, grant))
+    initial = item(db, dossier, capture(db, dossier, grant, xlsx() if xlsx_format else b"3 references required", content_type=mime))
     baseline, _ = record(db, dossier, grant, 1, initial)
     with db.session() as session:
         before = tenders.get_dossier(session, "owner", dossier, now=NOW)
@@ -56,7 +62,7 @@ def test_material_file_and_qa_revision_reopens_decision_and_queues_same_publicat
         email.configure(session, "owner", monitor["id"], expected_version=1,
                         configuration={"delivery": {"email": "immediate"}}, consent=True, now=NOW)
         session.commit()
-    replacement = item(db, dossier, capture(db, dossier, grant, b"5 references required"))
+    replacement = item(db, dossier, capture(db, dossier, grant, xlsx("5 references required") if xlsx_format else b"5 references required", content_type=mime))
     qa = item(db, dossier, capture(db, dossier, grant, b"Q&A version 3", item_id="qa-v3"), kind="qa")
     changed, value = record(db, dossier, grant, 2, replacement, qa)
     with db.session() as session:

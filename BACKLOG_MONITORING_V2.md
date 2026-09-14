@@ -185,6 +185,11 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ## Task index
 
+15 September XLSX feature: MV2-044 and MV2-045 remain IN PROGRESS in this index
+and their details after the complete permitted-original spreadsheet reader,
+comparison, private revision and download workflow. Live source and broader B2
+acceptance remain open. See [XLSX evidence](docs/monitoring-v2/TENDER_XLSX.md).
+
 15 September source-history feature: MV2-052 remains IN PROGRESS in this index
 and its detail after the complete nine-category sampler/chart/table workflow.
 Historical sampling starts with activation; true processing/delivery latency and
@@ -1811,6 +1816,36 @@ live access and whole-direction acceptance remain open.
 
 **Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Backend + Frontend · **Size:** L
 
+**Completed local feature scope, 15 September 2026 — XLSX tender conditions:**
+Read already-permitted XLSX originals through the existing private attachment
+store, preserving workbook/worksheet/cell locators and exact literal cell values.
+Support referenced worksheets, inline/shared rich strings and finite numeric,
+boolean and ISO-date literals without executing Office, macros, links or formulas.
+Formula text is distinct and cached results are not asserted as current values;
+formulas, unsupported formatting/embedded content and hidden structures make the
+projection explicitly partial. Reject malformed/ambiguous/encrypted/macro or
+oversized packages and preserve original bytes/hash on parse failure. Spreadsheet
+comparisons must retain cell identity so moving a value cannot appear unchanged;
+partial extraction cannot prove unchanged or removed requirements. Recognized
+complete/partial originals download with .xlsx names, with five-language guidance
+on literal values and limitations. Native owner/current-grant/retention checks,
+immutable document revisions, source-specific collection rights and exact-byte
+hashes remain authoritative. No source acquisition permission is added. Existing
+OPC bounds, document store, comparison and reader are available dependencies;
+Microsoft SpreadsheetML structure/shared-string/formula documentation defines the
+format. Acceptance includes actual byte fixtures, hard negatives/quotas, literal
+3-to-5 changes, moved cells/renamed sheets, formula/format unknowns, private HTTP
+text/original/comparison and browser download/read/denial journeys, exact lint,
+frontend build and backlog integrity. Finish the whole outcome before commit.
+Live SIMAP documents/Q&A access, other formats and broader B2 acceptance remain open.
+
+**XLSX verification:** 147 integrated checks and 73 final affected checks passed,
+including actual XLSX HTTP comparison and a 3-to-5 replacement that preserves
+the earlier decision and reopens review. Five-language reader/download checks,
+36 browser axe checkpoints and the isolated frontend build passed.
+See [scope, boundaries and evidence](docs/monitoring-v2/TENDER_XLSX.md).
+Release activation is not yet verified.
+
 **Dependencies:** [MV2-007](#mv2-007), [MV2-008](#mv2-008), [MV2-009](#mv2-009), [MV2-071](#mv2-071). **Requirements:** §§15.5,15.8,17.4,17.7,17.10.
 
 **User outcome:** Changes to a file, requirement or Q&A remain visible after an earlier review.
@@ -1833,6 +1868,12 @@ live access and whole-direction acceptance remain open.
 <a id="mv2-045"></a>
 
 ### MV2-045 — B2: Tender discovery, Today review and material updates
+
+**15 September XLSX increment:** Already-permitted spreadsheet conditions now
+retain sheet/cell evidence through private originals, exact comparisons and
+material review reopening; see [acceptance](docs/monitoring-v2/TENDER_XLSX.md).
+This closes the local XLSX format gap, with live documents/Q&A and broader B2
+acceptance still open.
 
 **Active whole-feature scope, 14 September 2026:** Add the missing Tender Today
 and Impact Inbox entry across the owner's saved profiles, pending/following

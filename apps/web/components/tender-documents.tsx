@@ -16,6 +16,7 @@ type Passage = {
 };
 type TextResult = {
   snapshot_id: string;
+  extractor_version?: string;
   parse_status: "complete" | "partial" | "failed";
   passages: Passage[];
 };
@@ -177,7 +178,7 @@ function DocumentReader({
         link = document.createElement("a");
       link.href = url;
       const extension =
-        /\.(pdf|docx)"?$/.exec(
+        /\.(pdf|docx|xlsx)"?$/.exec(
           response.headers.get("Content-Disposition") || "",
         )?.[1] || "bin";
       link.download = `tender-${id}.${extension}`;
@@ -394,6 +395,9 @@ function Evidence({
           <p className={styles.notice}>
             {value.parse_status === "partial" ? d.partial : d.failed}
           </p>
+        )}
+        {value.extractor_version === "tender-xlsx-cells-v1" && (
+          <p className={styles.notice}>{d.spreadsheet}</p>
         )}
         <button
           disabled={busy}

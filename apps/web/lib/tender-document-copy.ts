@@ -2,6 +2,8 @@ import type { Locale } from "./i18n";
 
 const en = {
   qa: "Questions and answers",
+  spreadsheet:
+    "Spreadsheet text uses sheet and cell references. Literal values are shown without Excel number or date formatting. Formula text is not evaluated; cached results are omitted. Verify calculations, formatting and hidden content in the original workbook.",
   title: "Tender documents",
   files: "Retained originals",
   set: "Saved document set",
@@ -19,7 +21,7 @@ const en = {
   failed:
     "No verified text extraction is available. The original file may still be readable in a suitable application.",
   unchanged:
-    "No text difference was found after whitespace normalization. The file bytes may still differ.",
+    "No difference was found in the supported extracted text. The file bytes may still differ.",
   truncated:
     "This is a bounded extract. Download both originals for the full evidence.",
   unavailable:
@@ -37,6 +39,8 @@ export const tenderDocumentCopy: Record<
   "en-CH": en,
   "de-CH": {
     qa: "Fragen und Antworten",
+    spreadsheet:
+      "Tabellentext verweist auf Blatt und Zelle. Rohwerte erscheinen ohne Zahlen- oder Datumsformatierung von Excel. Formeln werden nicht berechnet; zwischengespeicherte Ergebnisse werden ausgelassen. Prüfen Sie Berechnungen, Formatierung und ausgeblendete Inhalte in der Originaldatei.",
     title: "Ausschreibungsunterlagen",
     files: "Gespeicherte Originale",
     set: "Gespeicherter Dokumentensatz",
@@ -54,7 +58,7 @@ export const tenderDocumentCopy: Record<
     failed:
       "Keine geprüfte Textextraktion verfügbar. Die Originaldatei lässt sich möglicherweise in einer geeigneten Anwendung lesen.",
     unchanged:
-      "Nach Vereinheitlichung der Leerzeichen wurde kein Textunterschied gefunden. Die Dateibytes können dennoch abweichen.",
+      "Im unterstützten extrahierten Text wurde kein Unterschied gefunden. Die Dateibytes können dennoch abweichen.",
     truncated:
       "Dies ist ein begrenzter Auszug. Laden Sie beide Originale für die vollständigen Belege herunter.",
     unavailable:
@@ -67,6 +71,8 @@ export const tenderDocumentCopy: Record<
   },
   "fr-CH": {
     qa: "Questions et réponses",
+    spreadsheet:
+      "Le texte du classeur indique la feuille et la cellule. Les valeurs brutes sont affichées sans format numérique ou de date Excel. Les formules ne sont pas calculées ; leurs résultats en cache sont omis. Vérifiez calculs, mise en forme et contenu masqué dans le classeur original.",
     title: "Documents de l’appel d’offres",
     files: "Originaux conservés",
     set: "Ensemble de documents enregistré",
@@ -84,7 +90,7 @@ export const tenderDocumentCopy: Record<
     failed:
       "Aucune extraction de texte vérifiée n’est disponible. Le fichier original peut rester lisible dans une application adaptée.",
     unchanged:
-      "Aucune différence textuelle après normalisation des espaces. Les octets du fichier peuvent néanmoins différer.",
+      "Aucune différence dans le texte extrait pris en charge. Les octets du fichier peuvent néanmoins différer.",
     truncated:
       "Cet extrait est limité. Téléchargez les deux originaux pour consulter les preuves complètes.",
     unavailable:
@@ -97,6 +103,8 @@ export const tenderDocumentCopy: Record<
   },
   "it-CH": {
     qa: "Domande e risposte",
+    spreadsheet:
+      "Il testo del foglio indica foglio e cella. I valori grezzi sono mostrati senza formati numerici o di data di Excel. Le formule non vengono calcolate; i risultati memorizzati sono omessi. Verifica calcoli, formattazione e contenuti nascosti nel file originale.",
     title: "Documenti del bando",
     files: "Originali conservati",
     set: "Insieme di documenti salvato",
@@ -114,7 +122,7 @@ export const tenderDocumentCopy: Record<
     failed:
       "Non è disponibile un’estrazione di testo verificata. Il file originale potrebbe essere leggibile in un’applicazione adatta.",
     unchanged:
-      "Nessuna differenza testuale dopo la normalizzazione degli spazi. I byte del file possono comunque differire.",
+      "Nessuna differenza nel testo estratto supportato. I byte del file possono comunque differire.",
     truncated:
       "Questo estratto è limitato. Scarica entrambi gli originali per consultare le prove complete.",
     unavailable:
@@ -127,6 +135,8 @@ export const tenderDocumentCopy: Record<
   },
   "rm-CH": {
     qa: "Dumondas e respostas",
+    spreadsheet:
+      "Il text inditgescha il fegl e la cella. Las valurs originalas vegnan mussadas senza formats da cifras u datas dad Excel. Las furmlas na vegnan betg calculadas; ils resultats en il cache vegnan omess. Verifitgai calculaziuns, formataziun e cuntegns zuppads en la datoteca originala.",
     title: "Documents da la publicaziun",
     files: "Originals conservads",
     set: "Gruppa da documents memorisada",
@@ -144,7 +154,7 @@ export const tenderDocumentCopy: Record<
     failed:
       "Naginas extracziuns dal text verifitgadas disponiblas. Il document original po esser legibel cun in’applicaziun adattada.",
     unchanged:
-      "Naginas differenzas dal text suenter normalisar ils spazis. Ils bytes dal document pon tuttina differir.",
+      "Naginas differenzas en il text extratg sustegnì. Ils bytes dal document pon tuttina differir.",
     truncated:
       "Quest extract è limità. Telechargiai omadus originals per las cumprovas cumplettas.",
     unavailable:

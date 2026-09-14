@@ -828,3 +828,10 @@ downloads remain denied and no fixture was saved to the user's Downloads folder.
 The complete API Ruff gate and diff whitespace check passed. This extends local
 format coverage; production source rights, live Q&A/document collection, remaining
 formats and complete B2 acceptance remain open.
+
+
+## XLSX conditions — 15 September 2026
+
+The next supported original format is XLSX: exact sheet/cell literals, conservative
+partial coverage, private original downloads and material revision comparisons.
+See [complete feature evidence and remaining gates](TENDER_XLSX.md).

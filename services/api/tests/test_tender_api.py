@@ -38,31 +38,36 @@ def create(client, configuration=None):
     return response.json()
 
 
-def test_document_original_and_text_routes_enforce_current_private_access(api):
+@pytest.mark.parametrize("xlsx_format", [False, True])
+def test_document_original_and_text_routes_enforce_current_private_access(api, xlsx_format):
     from datetime import timedelta
     from uuid import UUID
+
+    from xlsx_fixture import xlsx
 
     from helvetic_lens import tender_documents as documents
     from helvetic_lens.document_parsing import parse_document
     from helvetic_lens.tender_models import TenderDocumentAccess
+    from helvetic_lens.xlsx_reader import XLSX_MIME
 
     client, app, _, identity = api
     monitor = transition(client, create(client), "start")
     raw = publication()
     dossier = ingest(app, identity, monitor, raw)[0]
     database = app.state.service.db
-    body = b"5 references required"
+    body = xlsx("5 references required") if xlsx_format else b"5 references required"
+    mime = XLSX_MIME if xlsx_format else "text/plain"
     with database.organization_context(identity["organization"]["id"]), database.session() as session:
         grant = documents.record_access(session, identity["user"]["id"], dossier, source_id="simap",
                                         publication_id=raw["id"], account_reference="fixture-private-account",
                                         policy_reference="fixture-reviewed-policy", now=NOW,
                                         valid_until=NOW + timedelta(days=365), retain_until=NOW + timedelta(days=366))
         grant_id = grant.id
-        parsed_doc, _ = parse_document(body, content_type="text/plain", snapshot_id=uuid4(),
+        parsed_doc, _ = parse_document(body, content_type=mime, snapshot_id=uuid4(),
                                        access_scope_id=UUID(grant_id), source_id="simap", dossier_id=dossier,
                                        item_id="requirements", language="en")
         snapshot = documents.store(session, identity["user"]["id"], dossier, parsed_doc, body,
-                                   content_type="text/plain", now=NOW)
+                                   content_type=mime, now=NOW)
         session.commit()
     path = ROOT + f"/dossiers/{dossier}/documents"
     listing = client.get(path)
@@ -74,7 +79,7 @@ def test_document_original_and_text_routes_enforce_current_private_access(api):
     assert original.headers["content-disposition"].startswith("attachment;")
     assert original.headers["x-content-type-options"] == "nosniff"
     projection = client.get(path + f"/{snapshot}/text")
-    assert projection.status_code == 200 and projection.json()["passages"][0]["text"] == body.decode()
+    assert projection.status_code == 200 and projection.json()["passages"][0]["text"] == "5 references required"
     assert "access_scope_id" not in projection.json()
     from helvetic_lens import tender_document_observations as observations
     from helvetic_lens.document_sets import DocumentItem, Manifest
@@ -91,12 +96,12 @@ def test_document_original_and_text_routes_enforce_current_private_access(api):
                         items=(manifest_item(parsed_doc),))
     with database.organization_context(identity["organization"]["id"]), database.session() as session:
         observations.observe(session, identity["user"]["id"], dossier, baseline, now=NOW)
-        revised_body = b"7 references required"
-        revised_doc, _ = parse_document(revised_body, content_type="text/plain", snapshot_id=uuid4(),
+        revised_body = xlsx("7 references required") if xlsx_format else b"7 references required"
+        revised_doc, _ = parse_document(revised_body, content_type=mime, snapshot_id=uuid4(),
                                         access_scope_id=UUID(grant_id), source_id="simap", dossier_id=dossier,
                                         item_id="requirements", language="en")
         documents.store(session, identity["user"]["id"], dossier, revised_doc, revised_body,
-                        content_type="text/plain", now=NOW)
+                        content_type=mime, now=NOW)
         observed_id = str(uuid4())
         revised = baseline.model_copy(update={"observation_id": UUID(observed_id),
                                              "observed_at": NOW + timedelta(seconds=1),
@@ -132,15 +137,18 @@ def test_document_original_and_text_routes_enforce_current_private_access(api):
         assert "references" not in denied.text
 
 
-def test_docx_originals_and_text_round_trip_through_private_http_routes(api):
+@pytest.mark.parametrize("office_format", ["docx", "xlsx"])
+def test_office_originals_and_text_round_trip_through_private_http_routes(api, office_format):
     from datetime import timedelta
     from uuid import UUID
 
     from docx_fixture import docx, paragraph
+    from xlsx_fixture import cell, xlsx
 
     from helvetic_lens import tender_documents as documents
     from helvetic_lens.document_parsing import parse_document
     from helvetic_lens.docx_reader import DOCX_MIME
+    from helvetic_lens.xlsx_reader import XLSX_MIME
 
     client, app, _, identity = api
     monitor = transition(client, create(client), "start")
@@ -150,6 +158,13 @@ def test_docx_originals_and_text_round_trip_through_private_http_routes(api):
     bodies = [(docx("5 references required"), "complete", "docx"),
               (docx(content=paragraph("Unnumbered text") + '<w:p><w:pPr><w:numPr/></w:pPr></w:p>'), "partial", "docx"),
               (b"PK\x03\x04malformed original", "failed", "bin")]
+    mime = DOCX_MIME
+    locator_prefix = "part:word/document.xml/"
+    if office_format == "xlsx":
+        mime, locator_prefix = XLSX_MIME, "part:xl/worksheets/sheet1.xml/sheet:Conditions/cell:A1/text"
+        bodies = [(xlsx("5 references required"), "complete", "xlsx"),
+                  (xlsx(rows='<row r="1">' + cell("A1", "Visible condition") + cell("B1", "999", "n", formula="SUM(C1:C3)") + '</row>'), "partial", "xlsx"),
+                  (b"PK\x03\x04malformed original", "failed", "bin")]
     stored = []
     with database.organization_context(identity["organization"]["id"]), database.session() as session:
         grant = documents.record_access(session, identity["user"]["id"], dossier, source_id="simap",
@@ -157,11 +172,11 @@ def test_docx_originals_and_text_round_trip_through_private_http_routes(api):
                                         policy_reference="fixture-docx-policy", now=NOW,
                                         valid_until=NOW + timedelta(days=365), retain_until=NOW + timedelta(days=366))
         for index, (body, state, extension) in enumerate(bodies):
-            parsed_doc, _ = parse_document(body, content_type=DOCX_MIME, snapshot_id=uuid4(),
+            parsed_doc, _ = parse_document(body, content_type=mime, snapshot_id=uuid4(),
                                            access_scope_id=UUID(grant.id), source_id="simap", dossier_id=dossier,
                                            item_id=f"attachment-{index}", language="en")
             snapshot = documents.store(session, identity["user"]["id"], dossier, parsed_doc, body,
-                                       content_type=DOCX_MIME, now=NOW)
+                                       content_type=mime, now=NOW)
             stored.append((snapshot, body, state, extension))
         session.commit()
     for snapshot, body, state, extension in stored:
@@ -172,9 +187,14 @@ def test_docx_originals_and_text_round_trip_through_private_http_routes(api):
         assert original.headers["cache-control"] == "no-store"
         text = client.get(path + "/text")
         assert text.status_code == 200 and text.json()["parse_status"] == state
+        assert text.headers["cache-control"] == "no-store"
+        if office_format == "xlsx":
+            assert text.json()["extractor_version"] == "tender-xlsx-cells-v1"
+            if state == "partial":
+                assert [p["text"] for p in text.json()["passages"]] == ["Visible condition", "SUM(C1:C3)"]
         if state == "complete":
             assert text.json()["passages"][0]["text"] == "5 references required"
-            assert text.json()["passages"][0]["locator"].startswith("part:word/document.xml/")
+            assert text.json()["passages"][0]["locator"].startswith(locator_prefix)
             assert text.json()["passages"][0]["page"] is None
         with TestClient(app) as peer:
             _register(peer, email=f"docx-peer-{snapshot}@example.test")

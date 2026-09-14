@@ -400,12 +400,13 @@ try {
           body = {
             snapshot_id: docAfter,
             parse_status: docParse,
+            extractor_version: "tender-xlsx-cells-v1",
             passages:
               docParse === "failed"
                 ? []
                 : Array.from({ length: 51 }, (_, i) => ({
-                    page: i + 1,
-                    locator: `page:${i + 1}/block:1`,
+                    page: null,
+                    locator: `part:xl/worksheets/sheet1.xml/sheet:Conditions/cell:A${i + 1}/text`,
                     text:
                       i === 0
                         ? '5 references required <img src=x onerror="window.documentInjected=true">'
@@ -589,7 +590,9 @@ try {
       ) {
         monitor = {
           id: monitorId,
-          visibility: "private", owner_user_id: "qa", responsible_user_id: null,
+          visibility: "private",
+          owner_user_id: "qa",
+          responsible_user_id: null,
           configuration: payload.configuration,
           version: 1,
           revision: 1,
@@ -641,7 +644,7 @@ try {
             : [
                 {
                   name: "Content-Disposition",
-                  value: 'attachment; filename="synthetic.docx"',
+                  value: `attachment; filename="synthetic.${originalDownloads > 1 ? "xlsx" : "docx"}"`,
                 },
               ]),
         ],
@@ -892,6 +895,26 @@ try {
       "Saved document text missing",
     );
     assert.ok((await text()).includes(dc.partial));
+    assert.ok((await text()).includes(dc.spreadsheet));
+    assert.ok((await text()).includes("/sheet:Conditions/cell:A1/text"));
+    assert.equal(
+      await evaluate(
+        cdp,
+        "document.documentElement.scrollWidth <= innerWidth + 1",
+      ),
+      true,
+      "Spreadsheet text overflow",
+    );
+    if (locale === "en-CH") {
+      await writeFile(
+        join(root, "test-results/tender-xlsx-mobile.png"),
+        Buffer.from(
+          (await cdp.send("Page.captureScreenshot", { format: "png" })).data,
+          "base64",
+        ),
+      );
+    }
+
     assert.equal(
       await evaluate(
         cdp,
@@ -962,6 +985,15 @@ try {
             `window.tenderDownloadNames.includes(${JSON.stringify(`tender-${docAfter}.docx`)})`,
           ),
         "DOCX original download lost its validated extension",
+      );
+      await button(`${dc.after} · ${dc.download}`, "[data-document-evidence]");
+      await wait(
+        () =>
+          evaluate(
+            cdp,
+            `window.tenderDownloadNames.includes(${JSON.stringify(`tender-${docAfter}.xlsx`)})`,
+          ),
+        "XLSX original download lost its validated extension",
       );
       docDenied = true;
       await button(tenderCopy[locale].refresh, "[data-document-evidence]");

@@ -16,6 +16,8 @@ from .config import DomainError
 from .document_comparison import MAX_PASSAGES, MAX_TEXT_BYTES, ParsedDocument, Passage, text_fingerprint
 from .docx_reader import DOCX_MIME, EXTRACTOR, read_docx
 from .pdf_reader import PDF_EXTRACTOR_VERSION, read_pdf
+from .xlsx_reader import EXTRACTOR as XLSX_EXTRACTOR
+from .xlsx_reader import XLSX_MIME, is_xlsx, read_xlsx
 
 MAX_DOCUMENT_BYTES = 8 * 1024 * 1024
 MAX_DOCUMENT_PAGES = 200
@@ -59,6 +61,15 @@ def parse_document(body: bytes, *, content_type: str, snapshot_id: UUID,
             passages, status, reason = [], "failed", "parsed_limit_exceeded"
         except (DomainError, ValidationError):
             passages, status, reason = [], "failed", "pdf_extraction_failed"
+    elif mime == XLSX_MIME or (mime == "application/octet-stream" and body.startswith(b"PK\x03\x04") and is_xlsx(body)):
+        extractor = XLSX_EXTRACTOR
+        try:
+            if read_xlsx(body, append):
+                status, reason = "partial", "xlsx_literal_values_only"
+        except OverflowError:
+            passages, status, reason = [], "failed", "parsed_limit_exceeded"
+        except (ValueError, BadZipFile, RuntimeError, NotImplementedError):
+            passages, status, reason = [], "failed", "xlsx_extraction_failed"
     elif mime == DOCX_MIME or (mime == "application/octet-stream" and body.startswith(b"PK\x03\x04")):
         extractor = EXTRACTOR
         try:

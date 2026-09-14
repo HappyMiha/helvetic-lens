@@ -151,8 +151,15 @@ def compare_documents(delta: DocumentDelta, manifest: Manifest,
     if before.language != after.language:
         return unavailable("language_changed")
     changes, total, truncated = [], 0, False
+    def key(passage):
+        text = _key(passage)
+        if before.extractor_version == "tender-xlsx-cells-v1":
+            # Cell movement/type/sheet changes are material to a spreadsheet.
+            # OPC part filenames may change without changing sheet/cell identity.
+            return passage.locator.partition("/sheet:")[2], passage.text
+        return text
     for kind, i, j, k, m in SequenceMatcher(
-        None, [_key(p) for p in before.passages], [_key(p) for p in after.passages],
+        None, [key(p) for p in before.passages], [key(p) for p in after.passages],
         autojunk=False,
     ).get_opcodes():
         if kind == "equal":
