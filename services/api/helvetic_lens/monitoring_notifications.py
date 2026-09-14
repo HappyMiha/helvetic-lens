@@ -51,7 +51,12 @@ def _item(domain, row):
     else:
         href = row["href"]
         name = row.get("monitor_name", row.get("name"))
-    return {"id": row["id"], "domain": domain, "monitor_name": name, "href": href,
+    item_key = {"ip": "candidate_id", "auctions": "item_id", "warnings": "event_id",
+        "commute": "event_id", "traffic": "event_id"}.get(domain, "id")
+    selected = {"domain": domain, "monitor_id": row["subject_id" if domain == "pollen" else "monitor_id"],
+        "item_id": row[item_key],
+        "sequence": row.get("revision") if domain == "warnings" else row.get("sequence") if domain in {"commute", "traffic"} else None}
+    return {"id": row["id"], "domain": domain, "monitor_name": name, "href": href, "record": selected,
             "detected_at": row.get("detected_at", row.get("created_at", row.get("observed_at"))),
             "allergen": row.get("allergen") if domain == "pollen" else None}
 

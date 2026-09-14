@@ -10,6 +10,12 @@ import { monitoringNotificationsCopy } from "@/lib/monitoring-notifications-copy
 import { documentHistoryCopy } from "@/lib/document-history-copy";
 import { pollenDraftCopy } from "@/lib/pollen-draft-copy";
 import { Button } from "./ui/button";
+import { useAuth } from "./auth-gate";
+import {
+  MonitoringBatchReview,
+  type BatchRecord,
+} from "./monitoring-batch-review";
+import { monitoringBatchCopy } from "@/lib/monitoring-batch-copy";
 
 type Page = {
   state: "available" | "unavailable";
@@ -21,10 +27,25 @@ type Page = {
     monitor_name: string;
     detected_at: string;
     allergen: string | null;
+    record?: BatchRecord;
   }>;
 };
 
-export function MonitoringNotificationQueue({
+export function MonitoringNotificationQueue(props: {
+  domain: string;
+  onNavigate: () => void;
+}) {
+  const { session } = useAuth(),
+    { locale } = useI18n();
+  return (
+    <Queue
+      key={`${props.domain}:${session?.user?.id}:${session?.organization?.id}:${session?.role}:${locale}`}
+      {...props}
+    />
+  );
+}
+
+function Queue({
   domain,
   onNavigate,
 }: {
@@ -32,6 +53,11 @@ export function MonitoringNotificationQueue({
   onNavigate: () => void;
 }) {
   const { locale, t, dateTime } = useI18n();
+  const { canManage } = useAuth();
+  const batchCopy = monitoringBatchCopy[locale];
+  const [selected, setSelected] = useState<string[]>([]),
+    [applied, setApplied] = useState(false),
+    [batchFailed, setBatchFailed] = useState(false);
   const copy = monitoringNotificationsCopy[locale],
     paging = documentHistoryCopy[locale];
   const section = monitoringNavigation.find((item) => item.id === domain);
@@ -47,6 +73,8 @@ export function MonitoringNotificationQueue({
     const controller = new AbortController();
     request.current = controller;
     setPage(null);
+    setSelected([]);
+    setBatchFailed(false);
     setBusy(true);
     setFailed(false);
     void api<Page>(
@@ -74,6 +102,7 @@ export function MonitoringNotificationQueue({
     const changed = () => {
       request.current?.abort();
       setPage(null);
+      setSelected([]);
       setCursors([]);
       setRevision((v) => v + 1);
     };
@@ -101,6 +130,8 @@ export function MonitoringNotificationQueue({
       </h2>
       {busy && <p role="status">{paging.loading}</p>}
       {failed && <p role="alert">{copy.failed}</p>}
+      {batchFailed && <p role="alert">{batchCopy.failed}</p>}
+      {applied && <p role="status">{batchCopy.saved}</p>}
       {page?.state === "unavailable" && <p>{copy.unavailable}</p>}
       {!busy && page?.state === "available" && !page.items.length && (
         <p>{page.next_cursor ? copy.sparse : copy.empty}</p>
@@ -112,6 +143,26 @@ export function MonitoringNotificationQueue({
             data-monitoring-notification
             className="rounded-lg border p-3 break-words"
           >
+            {canManage && item.record && (
+              <label className="flex min-h-11 items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={selected.includes(item.id)}
+                  disabled={
+                    !selected.includes(item.id) && selected.length >= 20
+                  }
+                  onChange={(event) => {
+                    setApplied(false);
+                    setSelected((current) =>
+                      event.target.checked
+                        ? [...current, item.id]
+                        : current.filter((id) => id !== item.id),
+                    );
+                  }}
+                />
+                {batchCopy.select}: {item.monitor_name}
+              </label>
+            )}
             <p className="font-semibold">
               {item.monitor_name}
               {item.allergen
@@ -136,6 +187,26 @@ export function MonitoringNotificationQueue({
           </li>
         ))}
       </ul>
+      {!!selected.length && canManage && page && (
+        <MonitoringBatchReview
+          key={selected.join(":")}
+          items={page.items
+            .filter((item) => selected.includes(item.id) && item.record)
+            .map((item) => ({ ...item, record: item.record! }))}
+          clear={() => setSelected([])}
+          failed={() => {
+            setSelected([]);
+            setPage(null);
+            setFailed(true);
+            setBatchFailed(true);
+          }}
+          applied={() => {
+            setApplied(true);
+            setSelected([]);
+            window.dispatchEvent(new Event("helvetic-lens:today-changed"));
+          }}
+        />
+      )}
       <div className="flex flex-wrap gap-2">
         <Button
           variant="outline"

@@ -1,5 +1,21 @@
 # Monitoring deployment status — 14 September 2026
 
+## Nine-direction native batch review candidate — 14 September 2026
+
+The notification queues now offer explicit selection, evidence preview and atomic
+native decisions for up to twenty records. Changed versions or access reject the
+whole batch; business actions have no default bid decision and send no external
+submission. [The acceptance record](MONITORING_BATCH_REVIEW.md) includes 34 API
+checks, PostgreSQL concurrent opposite-order batches, the root build, exact Ruff
+gate and 186 compiled-browser/axe checkpoints in five locales and two widths.
+
+The SQLite repair `9a0a9e6` and native evidence search `60776ad` are already pushed
+to origin/main. The owner's repeated Aste failure log identifies the earlier
+`f07b164` attempt, which predates that repair. No newer activation is claimed from
+that historical failure. This batch feature remains a candidate until its own
+exact main-site release is verified; the active automatic deployment is not
+interrupted or duplicated. Source rights and human acceptance remain separate.
+
 ## Native evidence-search feature candidate — 14 September 2026
 
 All nine native Monitoring readers now offer bounded word matching in selected

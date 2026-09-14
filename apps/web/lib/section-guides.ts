@@ -2844,6 +2844,14 @@ export const SHARED_CONTROLS: GuideControl[] = [
     ["Open Marvin", "Open assistant"],
   ),
   c(
+    "monitoring-batch-review",
+    "Review selected Monitoring changes",
+    "Select up to twenty records in a Monitoring notification queue, preview their selected evidence and explicitly save native decisions together. New versions or changed access reject the entire batch.",
+    "Business decisions require an explicit choice. This records internal decisions and sends no message, bid or submission. After a lost response, read the current records before retrying.",
+    "Save a change",
+    "[data-monitoring-batch]",
+  ),
+  c(
     "assistant-context",
     "Attach / Detach page context",
     "Changes whether Marvin uses the current page context for its conversation. It does not remove saved evidence or delete earlier messages.",

@@ -62,6 +62,7 @@ from .models import (
     Source,
     Version,
 )
+from .monitoring_batch_api import batch_router
 from .monitoring_centre import centre_router
 from .monitoring_evidence_api import evidence_router
 from .monitoring_subject_api import draft_router
@@ -2229,6 +2230,7 @@ def create_app(
     app.include_router(centre_router(service, settings))
     app.include_router(business_monitor_router(service, settings))
     app.include_router(evidence_router(service, settings))
+    app.include_router(batch_router(service, settings))
     from .related_api import related_router
     app.include_router(related_router(service, settings))
     from .monitoring_source_operations import source_operations_router
