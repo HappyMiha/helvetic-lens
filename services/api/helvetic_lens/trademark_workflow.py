@@ -237,11 +237,20 @@ def refresh(session, user_id, monitor_id, *, now):
             if cursor.permission_id != selection.permission_id or cursor.generation != selection.generation:
                 cursor.permission_id, cursor.generation, cursor.after_key = selection.permission_id, selection.generation, None
             page = sources.read_current(session, selection.source_key, now=now, purpose="matching", limit=PAGE_SIZE, after=cursor.after_key)
+            existing_keys = set(session.scalars(select(TrademarkCandidate.record_key).where(
+                TrademarkCandidate.monitor_id == monitor.id, TrademarkCandidate.organization_id == monitor.organization_id,
+                TrademarkCandidate.source_key == selection.source_key,
+                TrademarkCandidate.record_key.in_([head["record_key"] for head in page["items"]]),
+                TrademarkCandidate.brand_key.in_([brand.key for brand in portfolio.brands]))))
             for head in page["items"]:
                 examined += 1
                 if head["state"] != "available":
                     unknown += 1
                     continue
+                if head["record_key"] not in existing_keys:
+                    assessments, _ = assess(portfolio, head["facts"], values, now=now)
+                    if all(result["state"] == "not_selected" for result, _ in assessments):
+                        continue
                 item_pending, unavailable = _sync_head(session, monitor, portfolio, selection, head, values, now=now)
                 pending |= item_pending
                 unknown += unavailable

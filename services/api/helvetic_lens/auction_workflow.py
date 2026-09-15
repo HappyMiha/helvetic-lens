@@ -259,10 +259,16 @@ def refresh(session, user_id, monitor_id, *, now):
             if cursor.permission_id != selection.permission_id or cursor.generation != selection.generation:
                 cursor.permission_id, cursor.generation, cursor.after_key = selection.permission_id, selection.generation, None
             page = sources.read_current(session, selection.source_key, now=now, purpose="matching", limit=PAGE_SIZE, after=cursor.after_key)
+            existing_keys = set(session.scalars(select(AuctionItem.record_key).where(
+                AuctionItem.monitor_id == monitor.id, AuctionItem.organization_id == monitor.organization_id,
+                AuctionItem.record_key.in_([head["record_key"] for head in page["items"]]))))
+            profile = _profile(monitor)
             for head in page["items"]:
                 examined += 1
                 if head["state"] != "available":
                     stale = True
+                    continue
+                if head["record_key"] not in existing_keys and rules.assessment(profile, head["facts"])["status"] == "excluded":
                     continue
                 item_pending = _sync_head(session, monitor, selection, head, now=now)
                 pending |= item_pending

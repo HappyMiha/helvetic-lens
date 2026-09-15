@@ -409,21 +409,16 @@ def accept_message(session, permission_id, payload, *, request_key, request_url,
         _error("hazard_source_concurrent_change")
 
 
-def read_message(session, permission_id, evidence_id, *, now, purpose="display", fresh=False):
-    now = _clock(now)
-    _, policy = require_permission(session, permission_id, now=now, purpose=purpose)
-    row = session.scalar(select(HazardMessageEvidence).where(HazardMessageEvidence.id == evidence_id,
-        HazardMessageEvidence.permission_id == permission_id).execution_options(populate_existing=True))
+def _read_retained(row, policy, *, now, fresh=False, selected=None, head=None):
+    """Validate one retained row under the caller's locked source permission."""
     if (row is None or row.normalized_payload is None or _utc(row.normalized_expires_at) <= now
             or _utc(row.first_received_at) > now or _utc(row.last_seen_at) > now):
         _error("hazard_evidence_unavailable")
     if fresh and policy.protocol == "meteoalarm-v2":
-        selected = _selection(session, policy.source_key)
-        if (selected is None or selected.permission_id != permission_id or selected.last_poll_at is None
+        if (selected is None or selected.permission_id != row.permission_id or selected.last_poll_at is None
                 or selected.poll_cursor_version != selected.cursor_version or selected.feed_updated_at is None
                 or not timedelta(0) <= now - _utc(selected.last_poll_at) <= timedelta(seconds=policy.max_age_seconds)):
             _error("hazard_source_poll_not_current")
-        head = session.get(HazardCurrentWarning, (permission_id, row.development_key), populate_existing=True)
         if head is None or not head.present or head.evidence_id != row.id or head.generation != selected.generation:
             _error("hazard_source_no_longer_listed")
     if fresh and (now - _utc(row.last_seen_at)).total_seconds() > policy.max_age_seconds:
@@ -432,6 +427,18 @@ def read_message(session, permission_id, evidence_id, *, now, purpose="display",
     if fresh and message.infos and message.infos[0].expires is not None and message.infos[0].expires <= now:
         _error("hazard_warning_period_expired")
     return message
+
+
+def read_message(session, permission_id, evidence_id, *, now, purpose="display", fresh=False):
+    now = _clock(now)
+    _, policy = require_permission(session, permission_id, now=now, purpose=purpose)
+    row = session.scalar(select(HazardMessageEvidence).where(HazardMessageEvidence.id == evidence_id,
+        HazardMessageEvidence.permission_id == permission_id).execution_options(populate_existing=True))
+    selected = head = None
+    if fresh and policy.protocol == "meteoalarm-v2" and row is not None:
+        selected = _selection(session, policy.source_key)
+        head = session.get(HazardCurrentWarning, (permission_id, row.development_key), populate_existing=True)
+    return _read_retained(row, policy, now=now, fresh=fresh, selected=selected, head=head)
 
 
 def read_current(session, source_key, *, now, purpose="matching", limit=50, after_key=None):

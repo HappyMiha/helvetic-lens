@@ -347,29 +347,37 @@ def read_current(session, source_key, *, now, purpose="display", limit=50, after
     selected = _selection(session, source_key)
     if selected.permission_id != permission_id or selected.generation != generation:
         _error("auction_source_selection_conflict")
-    query = select(AuctionSourceRecordHead).where(AuctionSourceRecordHead.permission_id == selected.permission_id,
-        AuctionSourceRecordHead.generation == selected.generation)
+    query = select(AuctionSourceRecordHead, AuctionSourceRecordRevision).outerjoin(AuctionSourceRecordRevision,
+        (AuctionSourceRecordRevision.id == AuctionSourceRecordHead.revision_id)
+        & (AuctionSourceRecordRevision.permission_id == AuctionSourceRecordHead.permission_id)
+        & (AuctionSourceRecordRevision.record_key == AuctionSourceRecordHead.record_key)).where(
+            AuctionSourceRecordHead.permission_id == selected.permission_id, AuctionSourceRecordHead.generation == selected.generation)
     if after:
         query = query.where(AuctionSourceRecordHead.record_key > after)
-    heads = list(session.scalars(query.order_by(AuctionSourceRecordHead.record_key).limit(limit + 1)
-        .execution_options(populate_existing=True)))
-    items = []
-    for head in heads[:limit]:
-        item = {"record_key": head.record_key, "revision_id": head.revision_id}
-        try:
-            if now - _utc(head.last_seen_at) > timedelta(seconds=policy.max_age_seconds) or _utc(head.last_seen_at) > now:
-                _error("auction_evidence_stale")
-            facts = read_revision(session, selected.permission_id, head.revision_id, now=now, purpose=purpose)
-            item.update(state="available", facts=facts)
-        except DomainError as error:
-            if error.code not in {"auction_evidence_stale", "auction_evidence_unavailable"}:
-                raise
-            item.update(state="unavailable", reason=error.code)
-        items.append(item)
+    items, next_cursor = [], None
+    # The permission and selection remain locked for the whole page. Stream a
+    # bounded group of payloads; do not reload that permission for every row.
+    with session.execute(query.order_by(AuctionSourceRecordHead.record_key).limit(limit + 1)
+            .execution_options(populate_existing=True, yield_per=10)) as rows:
+        for index, (head, revision) in enumerate(rows):
+            if index == limit:
+                next_cursor = items[-1]["record_key"]
+                break
+            item = {"record_key": head.record_key, "revision_id": head.revision_id}
+            try:
+                if now - _utc(head.last_seen_at) > timedelta(seconds=policy.max_age_seconds) or _utc(head.last_seen_at) > now:
+                    _error("auction_evidence_stale")
+                if revision is None or _utc(revision.normalized_expires_at) <= now:
+                    _error("auction_evidence_unavailable")
+                item.update(state="available", facts=_restore(revision))
+            except DomainError as error:
+                if error.code not in {"auction_evidence_stale", "auction_evidence_unavailable"}:
+                    raise
+                item.update(state="unavailable", reason=error.code)
+            items.append(item)
     return {"permission_id": selected.permission_id, "generation": selected.generation,
         "cursor_version": selected.cursor_version, "items": items,
-        "next_cursor": heads[limit - 1].record_key if len(heads) > limit else None,
-        "coverage_verified": False}
+        "next_cursor": next_cursor, "coverage_verified": False}
 
 
 def purge_content(session, *, now, permission_id=None):

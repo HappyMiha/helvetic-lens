@@ -6,8 +6,8 @@ from sqlalchemy import select, update
 
 from . import jobs
 from .config import DomainError
+from .hazard_batch_projection import project_batch
 from .hazard_boundary_store import BoundaryStore
-from .hazard_events import project_message
 from .hazard_lifecycle import cancel_work, enqueue
 from .hazard_models import HazardMonitor
 from .hazard_readiness import ready
@@ -84,19 +84,10 @@ def refresh(database, settings, *, monitor_id, version, now=None, store=None, ch
                     .order_by(HazardCurrentWarning.development_key).limit(MAX_MESSAGES + 1)))
                 if len(heads) > MAX_MESSAGES:
                     raise DomainError("Warning source batch exceeds the bound.", 409, "hazard_source_batch_limit")
-                changed, unavailable = 0, 0
-                for evidence in heads:
-                    try:
-                        result = project_message(session, row.owner_user_id, monitor_id, proof["permission_id"], evidence,
-                            monitor_version=version, source_generation=proof["generation"], source_cursor=proof["cursor"],
-                            store=store, now=started)
-                    except DomainError as error:
-                        if error.code not in {"hazard_evidence_unavailable", "hazard_evidence_stale", "hazard_warning_period_expired",
-                                             "hazard_source_poll_not_current", "hazard_source_no_longer_listed"}:
-                            raise
-                        unavailable += 1
-                        continue
-                    changed += int(result["changed"])
+                result = project_batch(session, row.owner_user_id, monitor_id, proof["permission_id"], heads,
+                    monitor_version=version, source_generation=proof["generation"], source_cursor=proof["cursor"],
+                    store=store, now=started)
+                changed, unavailable = result["changed"], result["unavailable"]
                 finished = _clock(current_time())
                 if ready(session, settings, config, store=store, now=finished) != proof:
                     raise DomainError("Warning source changed during processing.", 409, "hazard_processing_evidence_changed")
