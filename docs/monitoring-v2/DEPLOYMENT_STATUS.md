@@ -1,5 +1,28 @@
 # Monitoring deployment status — 15 September 2026
 
+## Verified queue isolation and handoff activation — 15 September 2026
+
+The authenticated main-site journal confirms **Succeeded** for requested and
+verified activated commit `336a9db47ed3c2beab12be8b92363fc4c4ed2809` on
+HappySnowman production. Run `dbf35f8f-30e2-4dfe-83b7-84284b8b859e` started at
+10:04:02 and finished at 11:58:43 Europe/Zurich. The complete API test gate passed
+in **112m 20s**. API lint, image build, writer quiescence, backup
+`20260915T095643Z`, release start, restoration of `apertus-8b-q4km`, public health
+verification and release publication all succeeded. Its previous release was
+`e0af3fc848b6bcfc2f17413856e01d53eb0c97e3`.
+
+The pinned release notes contain Monitoring worker isolation and fair durable
+queue handoff. This closes their recorded activation gap, not the separate
+1000-monitor/million-observation capacity, fresh-delta, inference, recovery or
+human acceptance gates. The transient Cloudflare 1033 observed at 09:56:59 UTC
+cleared without intervention; the authenticated site is available again.
+
+The same fresh journal shows `c712abf79124` Deploying, started at 12:00:02. That
+candidate includes the later native batching and complete business-scan health
+repairs; neither is claimed activated here. No deployment or source collector
+was restarted. The incomplete capacity generator/measurement/report feature
+remains local development and is not part of this activated release.
+
 ## Verified query-budget repair and settings activation — 15 September 2026
 
 The authenticated main-site journal confirms **Succeeded** for requested and
