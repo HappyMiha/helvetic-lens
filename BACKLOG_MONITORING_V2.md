@@ -269,7 +269,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-054](#mv2-054) | Single-server capacity and queues with different priorities | F6 | P0 | L | PLANNED | [MV2-011](#mv2-011), [MV2-014](#mv2-014), [MV2-043](#mv2-043), [MV2-052](#mv2-052) |
 | [MV2-055](#mv2-055) | History storage, retention and permitted exports | F6 | P0 | M | IN PROGRESS | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-020](#mv2-020), [MV2-044](#mv2-044) |
 | [MV2-056](#mv2-056) | Migration, compatibility and rollback rehearsal | F6 | P0 | L | PLANNED | [MV2-001](#mv2-001), [MV2-053](#mv2-053), [MV2-055](#mv2-055), [MV2-060](#mv2-060) |
-| [MV2-057](#mv2-057) | Executable checks for 116 active AC and adversarial regression | F6 | P0 | L | IN PROGRESS | [MV2-029](#mv2-029), [MV2-031](#mv2-031), [MV2-033](#mv2-033), [MV2-035](#mv2-035), [MV2-036](#mv2-036), [MV2-039](#mv2-039), [MV2-041](#mv2-041), [MV2-045](#mv2-045), [MV2-048](#mv2-048), [MV2-050](#mv2-050), [MV2-024](#mv2-024), [MV2-051](#mv2-051), [MV2-053](#mv2-053), [MV2-056](#mv2-056), [MV2-068](#mv2-068), [MV2-071](#mv2-071) |
+| [MV2-057](#mv2-057) | Executable checks for 116 active AC and adversarial regression | F6 | P0 | L | IN PROGRESS — AC protocols linked | [MV2-029](#mv2-029), [MV2-031](#mv2-031), [MV2-033](#mv2-033), [MV2-035](#mv2-035), [MV2-036](#mv2-036), [MV2-039](#mv2-039), [MV2-041](#mv2-041), [MV2-045](#mv2-045), [MV2-048](#mv2-048), [MV2-050](#mv2-050), [MV2-024](#mv2-024), [MV2-051](#mv2-051), [MV2-053](#mv2-053), [MV2-056](#mv2-056), [MV2-068](#mv2-068), [MV2-071](#mv2-071) |
 | [MV2-058](#mv2-058) | Measured B2C/B2B pilot | F6 | P0 | L | PLANNED | [MV2-002](#mv2-002), [MV2-024](#mv2-024), [MV2-051](#mv2-051), [MV2-054](#mv2-054), [MV2-057](#mv2-057), [MV2-071](#mv2-071) |
 | [MV2-059](#mv2-059) | Helvetic Lens Monitoring v2.0 acceptance and release | F6 | P0 | M | PLANNED | [MV2-025](#mv2-025), [MV2-052](#mv2-052), [MV2-054](#mv2-054), [MV2-055](#mv2-055), [MV2-056](#mv2-056), [MV2-057](#mv2-057), [MV2-058](#mv2-058) |
 | [MV2-060](#mv2-060) | Legacy bridge for Topics, watches and legal events | F1 | P0 | L | PLANNED | [MV2-004](#mv2-004), [MV2-005](#mv2-005), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
@@ -2469,6 +2469,20 @@ and recovery acceptance remain separate open gates.
 ### MV2-057 — Executable checks for 116 active AC and adversarial regression
 
 **Status:** IN PROGRESS · **Priority:** P0 · **Owner:** QA + Domain reviewers · **Size:** L
+
+**Complete protocol scope and evidence, 15 September 2026:** The
+[acceptance protocol](docs/monitoring-v2/ACCEPTANCE_PROTOCOL.md) now supplies one
+concrete reviewer procedure for each of the 116 active AC, plus native suite
+entry points, source prerequisites and required evidence fields. It covers all
+nine directions and cross-domain CORE checks. The original traceability table
+links each active row to its exact protocol anchor while preserving NOT VERIFIED,
+all criterion wording and the ten deferred C4 rows. This is a completed review
+preparation artifact, not a completed acceptance run or a test-coverage claim.
+All 116 unique anchors and local suite/document references were checked. The
+audit identified that B8's existing second-canton check compares rule outputs
+only; full source-to-private-workflow conformance remains required in MV2-050.
+Live source evidence, actual executions, independent human review, the 79
+supplemental requirements and broader task/legacy obligations remain open.
 
 **Dependencies:** [MV2-029](#mv2-029), [MV2-031](#mv2-031), [MV2-033](#mv2-033), [MV2-035](#mv2-035), [MV2-036](#mv2-036), [MV2-039](#mv2-039), [MV2-041](#mv2-041), [MV2-045](#mv2-045), [MV2-048](#mv2-048), [MV2-050](#mv2-050), [MV2-024](#mv2-024), [MV2-051](#mv2-051), [MV2-053](#mv2-053), [MV2-056](#mv2-056), [MV2-068](#mv2-068), [MV2-071](#mv2-071). **Requirements:** Active AC-CORE/C1/C2/C3/C5/C6/C7/B2/B7/B8; AC-C4 deferred; §§29–34.
 

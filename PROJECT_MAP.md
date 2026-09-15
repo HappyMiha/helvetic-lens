@@ -86,3 +86,8 @@ prepares and checks independent B2/B7/B8 relevance evidence, source-field citati
 and complete-output factual audits. Reproducible reports retain failed/missing
 rows and separate business/language results. It never promotes a model; real
 reviewer evidence and broader MV2-051 acceptance remain open.
+
+[Acceptance procedures for all nine directions](docs/monitoring-v2/ACCEPTANCE_PROTOCOL.md)
+cover the 116 active criteria with source prerequisites, concrete reviewer steps
+and existing test entry points. The traceability table links each criterion;
+procedures and test references remain distinct from executed acceptance evidence.
