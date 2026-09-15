@@ -2,6 +2,16 @@
 
 ## Fresh main-site observation — 15 September 2026
 
+A newly loaded authenticated journal shows 7fd0c80a2686 Failed and
+6f8b91244a95 Deploying, started at 02:14:02 Europe/Zurich. Verified production
+still remains d961ebd54998. This is a newer observation than the earlier entry
+below. The new business evaluation workflow is a subsequent candidate; no active
+release check was duplicated, interrupted or restarted. The collapsed journal
+does not establish the failed candidate's gate/error, and the current candidate
+is not yet a verified activation.
+
+Earlier observation:
+
 A newly loaded authenticated journal shows 6f1361883b55 Failed and
 7fd0c80a2686 Deploying, started at 00:24:02 Europe/Zurich. Verified production
 remains d961ebd54998. The new candidate includes d00e3f5, the tested history-query

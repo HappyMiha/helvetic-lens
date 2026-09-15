@@ -263,7 +263,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-048](#mv2-048) | B7: IP review, review deadlines, register changes and consented digest | F5 | P1 | L | IN PROGRESS | [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-046](#mv2-046), [MV2-047](#mv2-047) |
 | [MV2-049](#mv2-049) | B8: Official Ticino auctions — native collection implemented; access/coverage open | F5 | P1 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071) |
 | [MV2-050](#mv2-050) | B8: Auction profiles, price limits and ending-soon alerts | F5 | P1 | L | IN PROGRESS | [MV2-008](#mv2-008), [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022), [MV2-043](#mv2-043), [MV2-044](#mv2-044), [MV2-049](#mv2-049) |
-| [MV2-051](#mv2-051) | Independent matching and local AI evaluation | F6 | P0 | L | PLANNED | [MV2-023](#mv2-023), [MV2-043](#mv2-043), [MV2-047](#mv2-047) |
+| [MV2-051](#mv2-051) | Independent matching and local AI evaluation | F6 | P0 | L | IN PROGRESS | [MV2-023](#mv2-023), [MV2-043](#mv2-043), [MV2-047](#mv2-047) |
 | [MV2-052](#mv2-052) | Operational metrics, degraded mode and source recovery | F6 | P0 | M | IN PROGRESS | [MV2-011](#mv2-011), [MV2-012](#mv2-012), [MV2-025](#mv2-025) |
 | [MV2-053](#mv2-053) | Personal-location privacy and access control | F6 | P0 | M | IN PROGRESS — account erasure and ownership handover implemented | [MV2-004](#mv2-004), [MV2-005](#mv2-005), [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-023](#mv2-023) |
 | [MV2-054](#mv2-054) | Single-server capacity and queues with different priorities | F6 | P0 | L | PLANNED | [MV2-011](#mv2-011), [MV2-014](#mv2-014), [MV2-043](#mv2-043), [MV2-052](#mv2-052) |
@@ -2180,7 +2180,7 @@ The broader task remains IN PROGRESS pending live source and human acceptance.
 
 ### MV2-051 — Independent matching and local AI evaluation
 
-**Status:** PLANNED · **Priority:** P0 · **Owner:** AI + Independent domain reviewers · **Size:** L
+**Status:** IN PROGRESS · **Priority:** P0 · **Owner:** AI + Independent domain reviewers · **Size:** L
 
 **Dependencies:** [MV2-023](#mv2-023), [MV2-043](#mv2-043), [MV2-047](#mv2-047). **Requirements:** §§7,22,31,34; legacy HL-064,089,091–094,100.
 
@@ -2197,7 +2197,34 @@ The broader task remains IN PROGRESS pending live source and human acceptance.
 
 **Verification:** A reproducible offline benchmark with report/hash/config; independent review by people who did not author the same expected answers.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Implemented complete feature scope, 15 September 2026 — business evaluation package:**
+Provide an offline, reproducible B2/B7/B8 evaluation command and authoring schemas.
+Reuse the existing bounded artifact, independent vote and confusion-matrix
+primitives; preserve the separate HL-093 and Tender experiment contracts.
+Bind frozen datasets, permitted source fields, captured outputs, configuration,
+runtime revision, gold labels and independent output audits by exact hashes.
+Report all three business cases, five languages, negative examples, missing
+predictions, unresolved disagreements and unsupported citations without dropping
+failed rows. Require 200 reviewed pairs and 50 per business case, held-out
+positive/negative coverage and the stated precision/recall targets. Human audits
+must inspect complete captured output for invented facts/deadlines; exact quote
+checks cannot establish entailment. Synthetic fixtures never satisfy acceptance.
+Dependencies: existing offline evaluation primitives and the implemented business
+matchers; this reporting feature requires no source credentials, live calls or
+model approval. Acceptance: usable schema-to-report CLI, deterministic bounded
+private-file processing, tamper/leakage/reviewer/rights/denominator rejection,
+explicit unmeasured outcomes and no runtime promotion or application writes.
+Real independent labels, reviewer authenticity, target-machine runs, approved
+profiles, live release and human acceptance remain open under this parent task.
+
+**Execution evidence, 15 September 2026:** The complete offline business evaluation
+workflow exports versioned authoring schemas, reads bounded hash-bound private
+packages and produces reproducible reports with separate B2/B7/B8 and five-language
+metrics, precise source-field citations and independent complete-output audits.
+101 new/legacy evaluation checks and exact API/script lint passed. See
+[operator procedure, evidence and remaining acceptance](docs/monitoring-v2/BUSINESS_MATCHING_EVALUATION.md).
+No independent corpus, measured model quality, runtime approval, production
+activation or human acceptance is claimed; the parent remains IN PROGRESS.
 
 <a id="mv2-052"></a>
 

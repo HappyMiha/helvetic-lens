@@ -80,3 +80,9 @@ and [legacy obligations](docs/monitoring-v2/LEGACY_DISPOSITION.md).
 Tender, IP and Auctions support [explicit workspace sharing and monitor responsibility](docs/monitoring-v2/BUSINESS_MONITOR_SHARING.md), plus [individual item responsibility and decision comments](docs/monitoring-v2/BUSINESS_ITEM_WORK.md). Assigned-to-me/unassigned filters lead to native item histories pinned to the reviewed evidence. Shared native review retains source gates; personal email and authenticated SIMAP documents stay owner-private. Physical account deletion, broader review-state coverage and exact production/human acceptance remain open.
 
 All nine native readers expose [word matching in selected saved evidence](docs/monitoring-v2/MONITORING_EVIDENCE_ASK.md), with literal extracts and authenticated references to the same evidence. This model-independent feature adds no source collection, monitoring actions or outgoing messages. Generative conclusions, natural-language drafts and broader MV2-023 acceptance remain open.
+
+The [offline business evaluation workflow](docs/monitoring-v2/BUSINESS_MATCHING_EVALUATION.md)
+prepares and checks independent B2/B7/B8 relevance evidence, source-field citations
+and complete-output factual audits. Reproducible reports retain failed/missing
+rows and separate business/language results. It never promotes a model; real
+reviewer evidence and broader MV2-051 acceptance remain open.
