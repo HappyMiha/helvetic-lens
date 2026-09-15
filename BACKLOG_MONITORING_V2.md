@@ -262,7 +262,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-047](#mv2-047) | B7: Exact, lexical and phonetic candidates | F5 | P1 | L | IN PROGRESS | [MV2-043](#mv2-043), [MV2-046](#mv2-046) |
 | [MV2-048](#mv2-048) | B7: IP review, review deadlines, register changes and consented digest | F5 | P1 | L | IN PROGRESS | [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-046](#mv2-046), [MV2-047](#mv2-047) |
 | [MV2-049](#mv2-049) | B8: Official Ticino auctions — native collection implemented; access/coverage open | F5 | P1 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071) |
-| [MV2-050](#mv2-050) | B8: Auction profiles, price limits and ending-soon alerts | F5 | P1 | L | IN PROGRESS | [MV2-008](#mv2-008), [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022), [MV2-043](#mv2-043), [MV2-044](#mv2-044), [MV2-049](#mv2-049) |
+| [MV2-050](#mv2-050) | B8: Auction profiles, price limits and ending-soon alerts | F5 | P1 | L | IN PROGRESS — adapter conformance checked | [MV2-008](#mv2-008), [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022), [MV2-043](#mv2-043), [MV2-044](#mv2-044), [MV2-049](#mv2-049) |
 | [MV2-051](#mv2-051) | Independent matching and local AI evaluation | F6 | P0 | L | IN PROGRESS | [MV2-023](#mv2-023), [MV2-043](#mv2-043), [MV2-047](#mv2-047) |
 | [MV2-052](#mv2-052) | Operational metrics, degraded mode and source recovery | F6 | P0 | M | IN PROGRESS | [MV2-011](#mv2-011), [MV2-012](#mv2-012), [MV2-025](#mv2-025) |
 | [MV2-053](#mv2-053) | Personal-location privacy and access control | F6 | P0 | M | IN PROGRESS — account erasure and ownership handover implemented | [MV2-004](#mv2-004), [MV2-005](#mv2-005), [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-023](#mv2-023) |
@@ -2137,6 +2137,26 @@ and the implemented native collector remain enabled.
 
 ### MV2-050 — B8: Auction profiles, price limits and ending-soon alerts
 
+**Adapter-conformance evidence, 15 September 2026:** Seven integrated fixture
+checks passed (33.21s) for TI/ZH admission-to-private-HTTP, scheduled projection,
+review/history, price/terms/end changes, replacement reminders and cancellation,
+plus unknown fields, identical publisher IDs and private/revoked access.
+The domain implementation is unchanged. See [scope and evidence](docs/monitoring-v2/AUCTION_ADAPTER_CONFORMANCE.md).
+This verifies normalized adapter output conformance, not a Zurich parser, source
+rights, live rollout, broad B8 acceptance or production activation. IN PROGRESS.
+
+**Active conformance scope, 15 September 2026:** Close the second-canton fixture
+gap in AC-B8-12 at the normalized adapter boundary. Run the same complete private
+HTTP journey for synthetic TI and ZH source outputs through the real permission
+journal, scheduled projection, review/history, deadline reminders and cancellation.
+Also verify unknown fields, colliding publisher identifiers and revoked/private
+access. Dependencies are the existing MV2-049 journal and MV2-050 workflow; no
+additional source credentials are needed for this isolated fixture verification.
+Both fixtures use reserved `.invalid` URLs and explicit synthetic permissions.
+Acceptance requires retained source identity, no duplicate events/reminders on
+replay, and no second-canton live coverage or native-parser claim. Existing native
+Ticino collector tests remain separate; live source and human gates remain open.
+
 **Native-source integration evidence, 14 September 2026:** The complete native
 collector now drives the existing private review/Today/reminder workflow.
 Synthetic HTTP source changes replace the old deadline reminder, reopen review
@@ -2480,7 +2500,8 @@ all criterion wording and the ten deferred C4 rows. This is a completed review
 preparation artifact, not a completed acceptance run or a test-coverage claim.
 All 116 unique anchors and local suite/document references were checked. The
 audit identified that B8's existing second-canton check compares rule outputs
-only; full source-to-private-workflow conformance remains required in MV2-050.
+only. MV2-050 now adds [complete normalized-adapter fixture conformance](docs/monitoring-v2/AUCTION_ADAPTER_CONFORMANCE.md);
+live source, release and human acceptance remain separate requirements.
 Live source evidence, actual executions, independent human review, the 79
 supplemental requirements and broader task/legacy obligations remain open.
 

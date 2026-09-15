@@ -283,7 +283,7 @@ conditions/documents updates and cancellation. No internal decision places a bid
 | <a id="ac-b8-09"></a>AC-B8-09 | Set a non-default ending-soon interval and explicit test-email consent. Verify the exact deadline revision, once-only delivery, rescheduling and suppression for unknown/stale/cancelled end times. |
 | <a id="ac-b8-10"></a>AC-B8-10 | Exercise Bid, No-bid, Inspect and Monitor, then stop/continue following one auction. Check internal history and unchanged discovery for the rest of the profile; no bid is sent. |
 | <a id="ac-b8-11"></a>AC-B8-11 | Traverse source and decision versions after cancellation/restart. Retain earlier conditions/documents and typed prices without presenting obsolete evidence as current. |
-| <a id="ac-b8-12"></a>AC-B8-12 | Run TI and a clearly synthetic second-canton adapter fixture through admission, discovery, update, review, reminder and cancellation using the unchanged domain workflow. Existing rule-only parity is partial evidence; complete source-to-private conformance remains to be demonstrated. No live second-canton rollout is authorized by this check. |
+| <a id="ac-b8-12"></a>AC-B8-12 | Run TI and a clearly synthetic second-canton adapter fixture through admission, discovery, update, review, reminder and cancellation using the unchanged domain workflow. [Normalized adapter conformance](AUCTION_ADAPTER_CONFORMANCE.md) now provides executable fixture evidence beyond rule-only parity; review the run and its source/release limits. No live second-canton rollout is authorized by this check. |
 
 ## Audit findings and next implementation work
 
@@ -293,7 +293,9 @@ This document fills that procedural gap without changing criteria or declaring
 unrun checks passed. In particular, inspection of
 `test_another_canton_adapter_uses_identical_domain_rules` shows TI/ZH **rule-output
 parity only**; it does not exercise the full B8 adapter-swap workflow required by
-MV2-050. That remains a concrete independent implementation/verification action.
+MV2-050. The subsequent [adapter conformance suite](AUCTION_ADAPTER_CONFORMANCE.md)
+now covers that complete normalized-output-to-private-workflow fixture boundary.
+It does not establish a second native publisher parser or live source rights.
 
 Across the source-dependent rows, capture real permitted acquisition evidence
 before closing acceptance. C1's remaining hazard coverage and B2/B7/B8 access,
