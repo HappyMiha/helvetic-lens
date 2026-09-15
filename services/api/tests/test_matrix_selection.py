@@ -3,6 +3,7 @@
 from datetime import timedelta
 
 import pytest
+from request_query_budget import page_queries
 from sqlalchemy import event, insert, select, update
 from sqlalchemy.orm import Session
 from test_analysis_selection import seed
@@ -25,7 +26,8 @@ def reader(service):
 
 
 def observe(harness):
-    client, _, service, _ = harness
+    client, fetcher, service, _ = harness
+    fetches = len(fetcher.calls)
     loaded, queries = [], []
 
     def load(_session, value):
@@ -44,6 +46,7 @@ def observe(harness):
     finally:
         event.remove(Session, "loaded_as_persistent", load)
         event.remove(service.db.engine, "before_cursor_execute", sql)
+    assert len(fetcher.calls) == fetches
     return response.json(), loaded, queries
 
 
@@ -74,7 +77,7 @@ def test_matrix_large_history_loads_only_selected_comparison_and_result(harness)
     assert row["analysis_id"] == current["id"]
     assert row["report_state"] == "current" and row["latest_attempt_status"] == "failed"
     assert loaded == [("Comparison", comparison["id"])]
-    assert len(queries) == 9  # Includes three request configuration reads.
+    assert len(page_queries(queries)) == 6  # Fixed request setup is checked separately.
     assert not any("analyses.analysis_plan" in query or "analyses.provenance" in query for query in queries)
     assert len(model.calls) == calls
 
@@ -211,7 +214,7 @@ def test_matrix_batches_51_documents_without_per_document_history_queries(harnes
     matrix, loaded, queries = observe(harness)
     assert matrix["summary"]["documents"] == matrix["summary"]["current_reports"] == 51
     assert len(loaded) == 51 and all(kind == "Comparison" for kind, _ in loaded)
-    assert len(queries) == 13  # Second 50-law batch adds four reads.
+    assert len(page_queries(queries)) == 10  # Second 50-law batch adds four page reads.
     assert len(model.calls) == calls
 
 

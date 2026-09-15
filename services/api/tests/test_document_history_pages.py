@@ -1,10 +1,10 @@
 """Complete saved history through bounded metadata pages, without inference."""
 
-from collections import Counter
 from datetime import timedelta
 from pathlib import Path
 
 import pytest
+from request_query_budget import page_queries
 from sqlalchemy import delete, inspect, select, update
 from test_law_history_metadata import prepare as prepare_metadata
 from test_law_history_metadata import recording
@@ -53,12 +53,7 @@ def test_complete_history_pages_are_bounded_and_keep_equal_time_order(harness, k
         # Keep the four metadata reads bounded independently of request setup.
         # Connectors are loaded once per request so saved credentials/settings
         # take effect immediately; this is not an extra read per history row.
-        configuration_tables = ("apertus_configuration", "prompt_configuration",
-            "platform_prompt_configuration", "monitoring_connector_configurations")
-        configuration_reads = Counter(table for query in queries for table in configuration_tables
-            if f"FROM {table}" in query)
-        assert configuration_reads == Counter(configuration_tables)
-        assert loaded == [] and len(queries) - sum(configuration_reads.values()) == 4
+        assert loaded == [] and len(page_queries(queries)) == 4
         assert all("artifact_key" not in query for query in queries)
         assert all("text" not in row and "passages" not in row and "diff" not in row for row in page["items"])
         found.extend(item["id"] for item in page["items"])

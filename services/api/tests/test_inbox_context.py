@@ -4,6 +4,7 @@ from datetime import timedelta
 from hashlib import sha256
 
 import pytest
+from request_query_budget import page_queries
 from sqlalchemy import event, inspect
 from sqlalchemy.orm import Session
 from test_digest_periods import seed_events
@@ -29,8 +30,9 @@ from helvetic_lens.models import (
 
 
 def test_context_queries_do_not_grow_between_one_and_fifty_event_pages(harness):
-    client, _, service, model = harness
+    client, fetcher, service, model = harness
     seed_events(harness, [{"id": new_id(), "connector": "context-batch"} for _ in range(50)])
+    fetches = len(fetcher.calls)
     counts = []
     for limit in (1, 50):
         queries, loaded = [], []
@@ -53,14 +55,15 @@ def test_context_queries_do_not_grow_between_one_and_fifty_event_pages(harness):
         finally:
             event.remove(service.db.engine, "before_cursor_execute", query)
             event.remove(Session, "loaded_as_persistent", record)
-        counts.append(len(queries))
+        counts.append(len(page_queries(queries)))
         assert not any(kind in (Law, Version, Comparison, RegulatoryDocumentVersion) for kind, _ in loaded)
         assert all("evidence_json" in unloaded for kind, unloaded in loaded if kind == RelationCandidate)
         assert all("metadata_json" in unloaded for kind, unloaded in loaded if kind == RegulatoryWork)
-    # Includes three configuration reads, event keys/state/deliveries, two empty
-    # history selections and eight context queries. Populated histories add reads.
-    assert counts[0] == counts[1] and counts[0] <= 16, counts
-    assert model.calls == []
+    # Request setup has its own exact once-per-table budget. Keep the original
+    # 13 page reads: event keys/state/deliveries, two empty history selections
+    # and eight context queries. Populated histories add reads.
+    assert counts[0] == counts[1] and counts[0] <= 13, counts
+    assert model.calls == [] and len(fetcher.calls) == fetches
 
 
 def test_comparison_and_artifact_links_use_visible_scalar_ids_only(harness):

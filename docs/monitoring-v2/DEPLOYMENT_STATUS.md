@@ -1,5 +1,42 @@
 # Monitoring deployment status — 15 September 2026
 
+## Inbox and matrix query-budget repair — 15 September 2026
+
+The owner's latest deployment excerpt identifies `api_tests` failures in
+`test_context_queries_do_not_grow_between_one_and_fifty_event_pages` (17/17
+queries against the old 16-query ceiling) and
+`test_matrix_large_history_loads_only_selected_comparison_and_result` (10 against
+9). A subsequent authenticated journal read matched this exact excerpt to run
+`ca332a6a-0cba-4d3a-8866-0f42fe7a1751`, candidate `60d87fcdb481`, started at
+04:06:02 and failed at 05:56:47 Europe/Zurich on 15 September. Both assertions
+reproduced on main.
+The adjacent 51-document matrix boundary also reproduced (14 against 13).
+
+Each failure was the same fixed connector-configuration read introduced by the
+monitoring settings workflow. HTTP requests now load four configuration tables,
+once each. The query-budget helper explicitly requires exactly those four reads
+and rejects repeated, missing or combined/subquery configuration reads. Remaining
+page queries keep their original limits: 13 for Inbox, independent of a one- or
+fifty-event page; six for one matrix batch; ten for 51 matrix documents; four for
+each paginated document-history page. No page budget, runtime query, cache,
+timeout or release gate was relaxed or disabled.
+
+The full Inbox-context, matrix-selection and document-history suites passed:
+**31 passed in 111.31 seconds**, `.tmp/request-query-fixed.log`. The preceding
+reproduction run failed all three stale assertions as expected,
+`.tmp/request-query-reproduce.log`. Checks retain no heavy archive hydration,
+current selected-report eligibility, tenant boundaries, full tied-date history
+ordering, unchanged model calls and no source fetches. A repository scan of other
+fixed SQL budgets confirmed that the remaining discovered checks operate on
+internal readers, outside HTTP setup; their limits are unchanged.
+
+Exact API lint passed. This is a complete repair of the identified release-gate
+regressions, not proof of full-suite success or activation. No active deployment
+was interrupted or restarted, and no serving checkout or production data changed.
+The same journal shows a new attempt for `60d87fcdb481` started at 06:12:02 and
+still Deploying. It does not include this subsequent repair. Verified production
+remains `d961ebd54998`; the older `6f8b91244a95` attempt is now Failed.
+
 ## Fresh main-site observation — 15 September 2026
 
 A newly loaded authenticated journal shows 7fd0c80a2686 Failed and

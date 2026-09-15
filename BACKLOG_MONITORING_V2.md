@@ -269,7 +269,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-054](#mv2-054) | Single-server capacity and queues with different priorities | F6 | P0 | L | PLANNED | [MV2-011](#mv2-011), [MV2-014](#mv2-014), [MV2-043](#mv2-043), [MV2-052](#mv2-052) |
 | [MV2-055](#mv2-055) | History storage, retention and permitted exports | F6 | P0 | M | IN PROGRESS | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-020](#mv2-020), [MV2-044](#mv2-044) |
 | [MV2-056](#mv2-056) | Migration, compatibility and rollback rehearsal | F6 | P0 | L | PLANNED | [MV2-001](#mv2-001), [MV2-053](#mv2-053), [MV2-055](#mv2-055), [MV2-060](#mv2-060) |
-| [MV2-057](#mv2-057) | Executable checks for 116 active AC and adversarial regression | F6 | P0 | L | PLANNED | [MV2-029](#mv2-029), [MV2-031](#mv2-031), [MV2-033](#mv2-033), [MV2-035](#mv2-035), [MV2-036](#mv2-036), [MV2-039](#mv2-039), [MV2-041](#mv2-041), [MV2-045](#mv2-045), [MV2-048](#mv2-048), [MV2-050](#mv2-050), [MV2-024](#mv2-024), [MV2-051](#mv2-051), [MV2-053](#mv2-053), [MV2-056](#mv2-056), [MV2-068](#mv2-068), [MV2-071](#mv2-071) |
+| [MV2-057](#mv2-057) | Executable checks for 116 active AC and adversarial regression | F6 | P0 | L | IN PROGRESS | [MV2-029](#mv2-029), [MV2-031](#mv2-031), [MV2-033](#mv2-033), [MV2-035](#mv2-035), [MV2-036](#mv2-036), [MV2-039](#mv2-039), [MV2-041](#mv2-041), [MV2-045](#mv2-045), [MV2-048](#mv2-048), [MV2-050](#mv2-050), [MV2-024](#mv2-024), [MV2-051](#mv2-051), [MV2-053](#mv2-053), [MV2-056](#mv2-056), [MV2-068](#mv2-068), [MV2-071](#mv2-071) |
 | [MV2-058](#mv2-058) | Measured B2C/B2B pilot | F6 | P0 | L | PLANNED | [MV2-002](#mv2-002), [MV2-024](#mv2-024), [MV2-051](#mv2-051), [MV2-054](#mv2-054), [MV2-057](#mv2-057), [MV2-071](#mv2-071) |
 | [MV2-059](#mv2-059) | Helvetic Lens Monitoring v2.0 acceptance and release | F6 | P0 | M | PLANNED | [MV2-025](#mv2-025), [MV2-052](#mv2-052), [MV2-054](#mv2-054), [MV2-055](#mv2-055), [MV2-056](#mv2-056), [MV2-057](#mv2-057), [MV2-058](#mv2-058) |
 | [MV2-060](#mv2-060) | Legacy bridge for Topics, watches and legal events | F1 | P0 | L | PLANNED | [MV2-004](#mv2-004), [MV2-005](#mv2-005), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
@@ -2468,7 +2468,7 @@ and recovery acceptance remain separate open gates.
 
 ### MV2-057 — Executable checks for 116 active AC and adversarial regression
 
-**Status:** PLANNED · **Priority:** P0 · **Owner:** QA + Domain reviewers · **Size:** L
+**Status:** IN PROGRESS · **Priority:** P0 · **Owner:** QA + Domain reviewers · **Size:** L
 
 **Dependencies:** [MV2-029](#mv2-029), [MV2-031](#mv2-031), [MV2-033](#mv2-033), [MV2-035](#mv2-035), [MV2-036](#mv2-036), [MV2-039](#mv2-039), [MV2-041](#mv2-041), [MV2-045](#mv2-045), [MV2-048](#mv2-048), [MV2-050](#mv2-050), [MV2-024](#mv2-024), [MV2-051](#mv2-051), [MV2-053](#mv2-053), [MV2-056](#mv2-056), [MV2-068](#mv2-068), [MV2-071](#mv2-071). **Requirements:** Active AC-CORE/C1/C2/C3/C5/C6/C7/B2/B7/B8; AC-C4 deferred; §§29–34.
 
@@ -2486,7 +2486,24 @@ and recovery acceptance remain separate open gates.
 
 **Verification:** The full suite, recordings of all nine active domain demos, contract reports and independent evidence spot-checks.
 
-**Execution evidence:** None yet; record the commit, tests/protocol, source/fixture version, reviewer and limitations at closure.
+**Release regression scope, 15 September 2026:** Repair inherited Inbox/matrix
+query-budget checks after connector settings added one bounded HTTP setup read.
+Reproduce both reported failures and the 51-document matrix boundary, then assert
+exactly one read per each of the four configuration tables independently of the
+original page budgets: at most 13 Inbox reads for both one/fifty events, six
+single-batch matrix reads, ten reads for 51 documents and four per history page.
+Preserve heavy-body exclusion, correct saved report selection, tenant isolation,
+history ordering and no model/source calls. Reuse the assertion in the existing
+document-history regression; do not increase page budgets, skip tests or change
+runtime behavior. These checks require no source credentials or human labels.
+Full 116-AC traceability, independent review protocols, live source evidence and
+release acceptance remain open; this repair does not complete the parent task.
+
+**Execution evidence, 15 September 2026:** All three stale query-count assertions
+reproduced, and all 31 Inbox-context, matrix-selection and document-history tests
+passed after the repair (111.31s). Exact API lint passed. See
+[release regression evidence](docs/monitoring-v2/DEPLOYMENT_STATUS.md#inbox-and-matrix-query-budget-repair--15-september-2026).
+Full-suite success, activation and broader 116-AC acceptance remain unverified.
 
 <a id="mv2-058"></a>
 
