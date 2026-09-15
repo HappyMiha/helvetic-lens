@@ -53,6 +53,8 @@ class TrademarkProjectionCursor(Base):
     permission_id: Mapped[str] = mapped_column(ForeignKey("trademark_source_permissions.id"))
     generation: Mapped[int] = mapped_column(Integer)
     after_key: Mapped[str | None] = mapped_column(String(64))
+    # NULL identifies a legacy scan whose earlier page health was not retained.
+    scan_unavailable_count: Mapped[int | None] = mapped_column(Integer)
 
 
 class TrademarkCandidate(Base):

@@ -236,6 +236,9 @@ def refresh(session, user_id, monitor_id, *, now):
                 session.add(cursor)
             if cursor.permission_id != selection.permission_id or cursor.generation != selection.generation:
                 cursor.permission_id, cursor.generation, cursor.after_key = selection.permission_id, selection.generation, None
+            if cursor.scan_unavailable_count is None or cursor.after_key is None:
+                cursor.after_key, cursor.scan_unavailable_count = None, 0
+            page_unknown = 0
             page = sources.read_current(session, selection.source_key, now=now, purpose="matching", limit=PAGE_SIZE, after=cursor.after_key)
             existing_keys = set(session.scalars(select(TrademarkCandidate.record_key).where(
                 TrademarkCandidate.monitor_id == monitor.id, TrademarkCandidate.organization_id == monitor.organization_id,
@@ -245,7 +248,7 @@ def refresh(session, user_id, monitor_id, *, now):
             for head in page["items"]:
                 examined += 1
                 if head["state"] != "available":
-                    unknown += 1
+                    page_unknown += 1
                     continue
                 if head["record_key"] not in existing_keys:
                     assessments, _ = assess(portfolio, head["facts"], values, now=now)
@@ -253,7 +256,9 @@ def refresh(session, user_id, monitor_id, *, now):
                         continue
                 item_pending, unavailable = _sync_head(session, monitor, portfolio, selection, head, values, now=now)
                 pending |= item_pending
-                unknown += unavailable
+                page_unknown += unavailable
+            cursor.scan_unavailable_count += page_unknown
+            unknown += cursor.scan_unavailable_count
             cursor.after_key = page["next_cursor"]
             pending |= cursor.after_key is not None
         runtime = session.get(TrademarkRuntime, monitor.id)

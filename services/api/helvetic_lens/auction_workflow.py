@@ -258,6 +258,8 @@ def refresh(session, user_id, monitor_id, *, now):
                 session.flush()
             if cursor.permission_id != selection.permission_id or cursor.generation != selection.generation:
                 cursor.permission_id, cursor.generation, cursor.after_key = selection.permission_id, selection.generation, None
+            if cursor.scan_unavailable_count is None or cursor.after_key is None:
+                cursor.after_key, cursor.scan_unavailable_count = None, 0
             page = sources.read_current(session, selection.source_key, now=now, purpose="matching", limit=PAGE_SIZE, after=cursor.after_key)
             existing_keys = set(session.scalars(select(AuctionItem.record_key).where(
                 AuctionItem.monitor_id == monitor.id, AuctionItem.organization_id == monitor.organization_id,
@@ -266,7 +268,7 @@ def refresh(session, user_id, monitor_id, *, now):
             for head in page["items"]:
                 examined += 1
                 if head["state"] != "available":
-                    stale = True
+                    cursor.scan_unavailable_count += 1
                     continue
                 if head["record_key"] not in existing_keys and rules.assessment(profile, head["facts"])["status"] == "excluded":
                     continue
@@ -277,6 +279,7 @@ def refresh(session, user_id, monitor_id, *, now):
                         AuctionItem.record_key == head["record_key"]))
                     if item is not None:
                         plan(session, monitor, item, head["facts"], now=now)
+            stale |= cursor.scan_unavailable_count > 0
             cursor.after_key = page["next_cursor"]
             pending |= cursor.after_key is not None
         runtime.health = "source_unavailable" if not options else "catching_up" if pending else "partial" if stale or unavailable else "current"
