@@ -14,6 +14,8 @@ from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 
+from .road_recurrence import RoadCalendar, RoadDaily, canonical_periods
+
 D2 = "http://datex2.eu/schema/2/2_0"
 SOAP = "http://schemas.xmlsoap.org/soap/envelope/"
 XSI = "http://www.w3.org/2001/XMLSchema-instance"
@@ -109,6 +111,7 @@ def _shape(parent, names, unsupported, path):
         local = parent.tag.rsplit("}", 1)[-1]
         supported = {
             "validityTimeSpecification": {"OverallPeriod"}, "validPeriod": {"Period"}, "exceptionPeriod": {"Period"},
+            "recurringTimePeriodOfDay": {"TimePeriodByHour"}, "recurringDayWeekMonthPeriod": {"DayWeekMonth"},
             "groupOfLocations": {"Linear"}, "alertCLinear": {"AlertCMethod4Linear"},
             "payloadPublication": {"SituationPublication"},
             "situationRecord": {"RoadOrCarriagewayOrLaneManagement", "AbnormalTraffic", "Accident",
@@ -175,6 +178,8 @@ def _type(element, scopes):
 class RoadPeriod:
     start: datetime | None
     end: datetime | None
+    daily: tuple[RoadDaily, ...] = ()
+    calendar: tuple[RoadCalendar, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -276,15 +281,78 @@ def _digest(value):
             return item.isoformat()
         raise TypeError("Unsupported internal road fingerprint value")
 
-    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":"), default=encode).encode()).hexdigest()
+    return hashlib.sha256(json.dumps(canonical_periods(value), sort_keys=True, separators=(",", ":"), default=encode).encode()).hexdigest()
 
 
 def _period(node, start, end, unsupported, path):
-    _shape(node, {start, end, "periodName"}, unsupported, path)
-    result = RoadPeriod(_optional_time(node, start), _optional_time(node, end))
+    _shape(node, {start, end, "periodName", "recurringTimePeriodOfDay", "recurringDayWeekMonthPeriod"}, unsupported, path)
+    daily_nodes = node.findall(_tag("recurringTimePeriodOfDay"))
+    calendar_nodes = node.findall(_tag("recurringDayWeekMonthPeriod"))
+    if len(daily_nodes) > 16 or len(calendar_nodes) > 16:
+        _reject("road_recurrence_limit")
+    daily = set()
+    for item in daily_nodes:
+        _shape(item, {"startTimeOfPeriod", "endTimeOfPeriod"}, unsupported, path)
+        if item.get(f"{{{XSI}}}type", "").rsplit(":", 1)[-1] != "TimePeriodByHour":
+            unsupported.add("recurring_period")
+            continue
+        values = [_daily_time(_text(item, field), unsupported)
+                  for field in ("startTimeOfPeriod", "endTimeOfPeriod")]
+        if None in values:
+            continue
+        (a, offset), (b, end_offset) = values
+        if offset != end_offset or a == b or a == 86400 * 1000000:
+            unsupported.add("recurring_period")
+            continue
+        daily.add(RoadDaily(a, b, offset))
+    calendars = set()
+    for item in calendar_nodes:
+        _shape(item, {"applicableDay", "applicableWeek", "applicableMonth"}, unsupported, path)
+        values = []
+        for field, vocabulary, first_index in (
+            ("applicableDay", "monday tuesday wednesday thursday friday saturday sunday".split(), 0),
+            ("applicableWeek", "firstWeekOfMonth secondWeekOfMonth thirdWeekOfMonth fourthWeekOfMonth fifthWeekOfMonth".split(), 1),
+            ("applicableMonth", "january february march april may june july august september october november december".split(), 1),
+        ):
+            nodes = item.findall(_tag(field))
+            if len(nodes) > len(vocabulary):
+                _reject("road_recurrence_limit")
+            selected = set()
+            for value in nodes:
+                if len(value) or (value.text or "").strip() not in vocabulary:
+                    _reject("road_invalid_calendar")
+                selected.add(vocabulary.index(value.text.strip()) + first_index)
+            values.append(tuple(sorted(selected)))
+        calendars.add(RoadCalendar(*values))
+    if calendars and not daily:
+        unsupported.add("recurring_period")  # No source calendar timezone.
+    result = RoadPeriod(_optional_time(node, start), _optional_time(node, end),
+                        tuple(sorted(daily, key=lambda p: (p.start_us, p.end_us, p.offset_minutes))),
+                        tuple(sorted(calendars, key=lambda p: (p.days, p.weeks, p.months))))
     if result.start and result.end and result.end < result.start:
         _reject("road_reversed_period")
     return result
+
+
+def _daily_time(value, unsupported):
+    match = re.fullmatch(r"(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,6}))?(Z|[+-]\d{2}:\d{2})?", value)
+    if not match:
+        _reject("road_invalid_recurring_time")
+    h, m, s, fraction, zone = match.groups()
+    h, m, s = int(h), int(m), int(s)
+    micros = int((fraction or "").ljust(6, "0"))
+    if h > 24 or m > 59 or s > 59 or (h == 24 and (m or s or micros)):
+        _reject("road_invalid_recurring_time")
+    if zone is None:
+        unsupported.add("recurring_period")
+        return None
+    offset = 0
+    if zone != "Z":
+        hours, minutes = int(zone[1:3]), int(zone[4:6])
+        if hours > 14 or minutes > 59 or (hours == 14 and minutes):
+            _reject("road_invalid_recurring_time")
+        offset = (hours * 60 + minutes) * (-1 if zone[0] == "-" else 1)
+    return (h * 3600 + m * 60 + s) * 1000000 + micros, offset
 
 
 def _validity(record, unsupported):
@@ -304,7 +372,7 @@ def _validity(record, unsupported):
         if len(nodes) > 128:
             _reject("road_period_limit")
         periods = {_period(item, "startOfPeriod", "endOfPeriod", unsupported, "recurring_period") for item in nodes}
-        groups.append(tuple(sorted(periods, key=lambda p: (str(p.start), str(p.end)))))
+        groups.append(tuple(sorted(periods, key=lambda p: (str(p.start), str(p.end), str(p.daily), str(p.calendar)))))
     return RoadValidity(status, RoadPeriod(start, end), *groups, _boolean(node, "overrunning"))
 
 

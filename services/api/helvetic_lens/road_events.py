@@ -13,7 +13,7 @@ from sqlalchemy import func, or_, select, update
 
 from .config import DomainError
 from .road_catalog import CatalogReadBudget, _map_hash, _reference, _rights, resolve_reference
-from .road_evaluation import evaluate_record
+from .road_evaluation import evaluate_record, temporal_state
 from .road_models import (
     RoadConfigurationRevision,
     RoadCorridorMap,
@@ -24,6 +24,7 @@ from .road_models import (
     RoadSourcePermission,
     RoadTopologyRevision,
 )
+from .road_recurrence import ExpansionBudget, has_recurrence
 from .road_repository import configuration, owned
 from .road_sources import _clock, _encoded, _hash, _head, _utc, read_state, read_version, require_permission
 from .road_topology import RoadIntersection
@@ -59,6 +60,8 @@ def _fact(record, decision, fields):
     result = {"kind": record.kind, "phase": decision.temporal.phase, "probability": record.probability,
               "valid_from": window.start.isoformat() if window else None,
               "valid_until": window.end.isoformat() if window and window.end else None}
+    if window is not None and has_recurrence(record.validity):
+        result["recurring"] = True
     if "delay" in fields and record.kind == "congestion":
         result["delay_seconds"] = record.delay_seconds
     if "lanes" in fields:
@@ -81,7 +84,7 @@ def _material(payload):
     return _hash(_encoded(value))
 
 
-def _project(session, entry, config, old, *, now, fields, budget, mappings):
+def _project(session, entry, config, old, *, now, fields, budget, mappings, temporal_cache, recurrence_budget):
     situation = entry.situation
     unavailable = {ref: {"state": "unavailable", "facts": [], "coverage": "unknown"}
                    for ref in (old or {}).get("corridors", {})}
@@ -108,7 +111,15 @@ def _project(session, entry, config, old, *, now, fields, budget, mappings):
                 resolved = mappings[key]
                 if resolved is not None:
                     match = resolved.topology.intersection(location, resolved.corridor)
-            decision = evaluate_record(record, match, config.materiality, now=now)
+            if match.state == "no_match":
+                continue
+            if match.state == "unknown":
+                uncertain = True
+                continue
+            temporal_key = record.semantic_hash
+            if temporal_key not in temporal_cache:
+                temporal_cache[temporal_key] = temporal_state(record, now=now, budget=recurrence_budget)
+            decision = evaluate_record(record, match, config.materiality, now=now, temporal=temporal_cache[temporal_key])
             # A delay-derived eligibility decision itself requires delay use,
             # even when the exact number is omitted from the eventual response.
             if record.kind == "congestion" and "delay" not in fields:
@@ -171,6 +182,7 @@ def process_snapshot(session, monitor, permission_id, *, now):
     versions, history_bytes = session.execute(select(func.count(), func.coalesce(func.sum(RoadEventVersion.content_size), 0))
         .select_from(RoadEventVersion).join(RoadDevelopment).where(RoadDevelopment.monitor_id == monitor.id)).one()
     changed, degraded, budget, mappings = 0, False, CatalogReadBudget(), {}
+    temporal_cache, recurrence_budget = {}, ExpansionBudget(100_000)
     for entry in state.situations:
         row = previous.get(entry.situation.source_id)
         old = _read(row.payload, row.payload_hash) if row and row.payload is not None else None
@@ -180,7 +192,7 @@ def process_snapshot(session, monitor, permission_id, *, now):
         if source_version is None or source_version.content is None or _utc(source_version.expires_at) <= now:
             _fail("road_event_source_binding_invalid", 503)
         projected, partial = _project(session, entry, config, old, now=now, fields=policy.allowed_fields,
-                                      budget=budget, mappings=mappings)
+                                      budget=budget, mappings=mappings, temporal_cache=temporal_cache, recurrence_budget=recurrence_budget)
         degraded = degraded or partial
         if projected is None:
             continue

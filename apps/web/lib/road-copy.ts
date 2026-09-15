@@ -3,6 +3,13 @@ import type { Locale } from "./i18n";
 const languages: Locale[] = ["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"];
 // Columns: German, French, Italian, Romansh, English.
 const words = {
+  recurring: [
+    "Wiederkehrender Zeitraum der Quelle. Angezeigt wird das aktuelle oder nächste gültige Zeitfenster in Schweizer Ortszeit. Sein Ende bestätigt keine freie Strasse.",
+    "Période récurrente de la source. Le créneau actuel ou suivant est affiché à l’heure suisse. Sa fin ne confirme pas que la route est libre.",
+    "Periodo ricorrente della fonte. È mostrato l’intervallo valido attuale o successivo nell’ora svizzera. La sua fine non conferma che la strada sia libera.",
+    "Perioda recurrenta da la funtauna. La fanestra valaivla actuala u proxima vegn mussada en l’ura svizra. Sia fin na conferma betg ina via libra.",
+    "Recurring source period. The current or next valid window is shown in Swiss local time. Its end does not confirm a clear road.",
+  ],
   impactScope: [
     "Prüfen Sie Warnungen für Ihre Orte, aktuelle Routensperrungen und Belege für Änderungen, die Ihre beobachteten Erlasse betreffen.",
     "Examinez les alertes pour vos lieux, les fermetures actuelles de vos itinéraires et les preuves des changements concernant les actes suivis.",

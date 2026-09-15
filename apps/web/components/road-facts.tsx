@@ -49,6 +49,7 @@ export function RoadFacts({
                 {roadLabel(locale, fact.probability)}
                 {" · "}
                 {roadLabel(locale, fact.phase)}
+                {fact.recurring && <p>{c.recurring}</p>}
                 {fact.delay_seconds != null && (
                   <p>
                     {new Intl.NumberFormat(locale, {

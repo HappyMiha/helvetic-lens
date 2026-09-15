@@ -551,3 +551,11 @@ marked fully verified in the requirements traceability register.
 | AC-C3-08 evidence | Source/history retention and revocation tests in `test_road_sources.py` and `test_road_jobs.py` | Actual retention/display/notification grant and native TMC rights |
 | AC-C3-09 materiality | Profile validation/preview, numeric congestion thresholds, planned preferences and worker band tests | User validation of route/materiality settings |
 | AC-C3-10 history | Owner-scoped immutable history and exact links, permission rechecks and sparse cursors | Live history under retention policy and human acceptance |
+
+
+## Recurring closure windows — 15 September 2026
+
+The previously unsupported explicit-offset TimePeriodByHour/DayWeekMonth subset
+now drives current and next closure intervals, private history and the reader.
+Unqualified clocks and unsupported schedules remain unknown. See
+[complete local feature evidence and limits](ROAD_RECURRING_CLOSURES.md).

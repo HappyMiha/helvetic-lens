@@ -185,6 +185,12 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ## Task index
 
+15 September recurring-closure feature: MV2-040 and MV2-041 remain IN PROGRESS
+in this index and their details. The explicit-offset source/calendar, private
+history/delivery and five-language interval reader are implemented; live
+permission/topology and broader acceptance remain open. See
+[recurring closure evidence](docs/monitoring-v2/ROAD_RECURRING_CLOSURES.md).
+
 15 September XLSX feature: MV2-044 and MV2-045 remain IN PROGRESS in this index
 and their details after the complete permitted-original spreadsheet reader,
 comparison, private revision and download workflow. Live source and broader B2
@@ -1711,6 +1717,28 @@ live access and whole-direction acceptance remain open.
 
 ### MV2-040 — C3: ASTRA traffic and planned closures
 
+**Completed local feature scope, 15 September 2026 — recurring closures:** Decode the
+source's DATEX II 2.2 Period / TimePeriodByHour and DayWeekMonth selectors,
+including repeated night windows and exception periods, with explicit source
+clock offsets. Resolve current and next eligible intervals under overall bounds;
+preserve start-day semantics across midnight, month/week filters and exception
+precedence. Never infer a timezone from an instant or silently convert missing
+calendar/clock semantics into a closure, reopening or safe route. Unsupported
+extensions and unqualified clocks remain explicit unavailable capabilities.
+Use bounded expansion and preserve pre-feature stored evidence/hash identities.
+The existing licensed topology, source freshness/rights, private profile, review,
+Today and consented delivery workflows are dependencies, not new permissions.
+Show recurring-source context and the evaluated interval in all five languages.
+Acceptance: actual XML fixtures, midnight/offset/calendar/exception boundaries,
+rescheduling and repeated polling, current interval transitions through private
+history and notification eligibility, stale/revoked source denial, old-evidence
+compatibility, browser presentation, lint/build and backlog integrity. No live
+ASTRA feed or licensed corridor coverage is claimed by synthetic examples.
+**Verification:** 139 core, 110 integrated and 73 final affected checks passed;
+final compatibility/mapping checks passed (4), as did 12 five-language browser
+axe checkpoints, root build and exact lint. See [evidence](docs/monitoring-v2/ROAD_RECURRING_CLOSURES.md).
+
+
 **Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Integration · **Size:** L
 
 **Active complete-feature scope, 13 September 2026:** C3 is the next direction while C2 awaits external acceptance. [Road Watch](docs/monitoring-v2/ROAD_WATCH.md) defines the source/rights, versioned TMC corridor mapping, immutable lifecycle, private workflow and end-to-end gates for MV2-037/040/041. The local SOAP/DATEX decoder, full/delta reconciliation, permission-bound repository, default-off shared collector and retention schedule handle repeated version zero, replacement record sets, cancellation and private-note exclusion. Official historical examples replay as created/material_changed/revoked with 6/3/3 records. Unsupported extensions and unreviewed response contracts remain explicit. Licensed topology, private workflow and live acceptance remain unfinished. No live query, key, actual source permission or corridor coverage is claimed.
@@ -1735,6 +1763,15 @@ live access and whole-direction acceptance remain open.
 <a id="mv2-041"></a>
 
 ### MV2-041 — C3: My Route Watch for A2 / Gotthard / A13
+
+**Recurring closures, 15 September 2026:** Explicit-offset daily and calendar
+recurrences now flow through private history, current/next interval display and
+consented delivery. Existing review stays attached to its original version;
+ending a window is not physical reopening. Decoder, private workflow and browser
+checks passed; see [source limits and acceptance evidence](docs/monitoring-v2/ROAD_RECURRING_CLOSURES.md).
+Missing source timezone semantics remain unknown. Live source/corridor permission
+and broader C3 acceptance remain open.
+
 
 **Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
 

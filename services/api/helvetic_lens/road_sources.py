@@ -159,7 +159,9 @@ def revoke_permission(session, permission_id, *, now):
 
 
 def _encode_situation(situation):
-    encoded = _encoded(SITUATION_CODEC.dump_python(situation, mode="json"))
+    from .road_recurrence import canonical_periods
+
+    encoded = _encoded(canonical_periods(SITUATION_CODEC.dump_python(situation, mode="json")))
     if len(encoded) > MAX_SITUATION_BYTES:
         _error("road_situation_storage_limit")
     return encoded

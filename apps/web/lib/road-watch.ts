@@ -52,6 +52,7 @@ export type RoadPayload = {
         probability: string;
         valid_from: string | null;
         valid_until: string | null;
+        recurring?: boolean;
         delay_seconds?: number | null;
         lanes_restricted?: number | null;
         lanes_operational?: number | null;
