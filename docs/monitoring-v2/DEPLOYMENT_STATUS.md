@@ -1,5 +1,30 @@
 # Monitoring deployment status — 15 September 2026
 
+## Verified query-budget repair and settings activation — 15 September 2026
+
+The authenticated main-site journal confirms **Succeeded** for requested and
+verified activated commit `e0af3fc848b6bcfc2f17413856e01d53eb0c97e3` on
+HappySnowman production. Run `66c4f009-fdb7-4779-a1af-d5f0c2a2dcae` started at
+08:06:02 and finished at 10:02:35 Europe/Zurich. The complete API test gate passed
+in **113m 26s**, following successful API lint. Image build, writer quiescence,
+backup `20260915T080033Z`, release start, restoration of `apertus-8b-q4km`, public
+health verification and release publication all succeeded.
+
+This release includes `769795b525f11f90d4c67795164d671256cbb46a`, repairing the
+Inbox/matrix failures in the owner's supplied deployment log, and the earlier
+bounded-history query repair. Its pinned release notes also include the
+nine-category settings and encrypted connector access, configuration drafts and
+downloads, selected evidence downloads, private account erasure and handover,
+source attention/history, Tender XLSX, recurring Road closures and independent
+business evaluation tooling. Activation does not establish live source rights,
+human acceptance or the separate capacity/inference/recovery gates.
+
+The same fresh journal shows `336a9db47ed3` Deploying, started at 10:04:02. That
+subsequent candidate includes worker isolation and handoff fairness; neither is
+claimed activated here. No active deployment, check or serving checkout was
+restarted or modified. The unfinished synthetic capacity workload remains local
+development and is not part of this verified release.
+
 ## Queue handoff verification — 15 September 2026
 
 The authenticated main-site journal, refreshed during handoff-fairness checks,
