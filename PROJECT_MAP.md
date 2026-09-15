@@ -39,6 +39,12 @@ Platform administrators can save encrypted API credentials and native collector
 options, select existing permissions and explicitly test saved access. Requests
 and workers adopt new settings without a restart; source coverage remains separate.
 
+[Monitoring worker isolation](docs/monitoring-v2/MONITORING_QUEUE_ISOLATION.md)
+separates operational acquisition, bulk feeds, private projection, scheduling
+and email from legal ingestion and AI. All CPU consumers share the existing
+deployment-managed container lifecycle. Local verification and target-host
+capacity/activation evidence are recorded separately.
+
 All nine native editors offer [natural-language configuration drafts](docs/monitoring-v2/MONITORING_CONFIGURATION_DRAFTS.md).
 An explicit proposal opens as unsaved native fields for review. Reviewed model
 capability and source identity boundaries remain in force; manual editing is

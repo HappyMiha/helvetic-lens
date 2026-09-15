@@ -6,6 +6,13 @@ The gate is strict and fail-closed. A run does not pass without 100 actual uniqu
 
 ## What is bounded
 
+Monitoring v2 additionally has [dedicated control, source, projection and delivery
+consumers](monitoring-v2/MONITORING_QUEUE_ISOLATION.md) inside the existing
+worker-cpu container. Its recovery step restarts the entire group and its
+healthcheck requires every consumer to reply. Include their CPU/RAM/connection
+use in the measured budget; queue isolation alone does not pass this gate or
+the additional 1000-subject/1M-observation workload.
+
 - Every API/worker process has a PostgreSQL pool of 4 connections plus at most 2 overflow connections by default. Production refuses a per-process total above 16.
 - The CPU worker remains at concurrency 2 and the AI worker at concurrency 1. The model gateway owns each runner slot and prefers a waiting organization that does not already own a slot. If no other organization waits, one organization may use all idle slots.
 - The resource sampler records host RAM/swap through `psutil` or Linux `/proc`, Docker CPU/RAM/network/block I/O, host disk use and `nvidia-smi` GPU utilization/VRAM/temperature. Platform status adds queue depth and age, retries, connector timing, model slots and admission wait state, API latency, database/Redis latency, retention and backup age. The release gate requires at least two complete RAM/swap samples, peak host memory below 85%, swap growth no greater than 256 MiB, at least 5 GiB free disk, and no more than 1 GiB disk growth during the run. Windows CIM cannot distinguish swap from virtual memory, so a Windows-host report remains diagnostic unless `psutil` is installed.

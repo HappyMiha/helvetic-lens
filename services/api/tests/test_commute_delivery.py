@@ -209,7 +209,7 @@ def test_scheduler_is_idempotent_claims_one_attempt_and_recovers_abandoned_sends
     assert mail.enqueue_due(db, settings, now=NOW + timedelta(minutes=1))["enqueued"] == 0
     with db.session() as session:
         job = session.scalar(select(Job).where(Job.type == "commute_email"))
-        assert job.max_attempts == 1 and job.target_id == row["id"] and job.queue == "maintenance"
+        assert job.max_attempts == 1 and job.target_id == row["id"] and job.queue == "monitoring_delivery"
         intent = session.scalar(select(CommuteDelivery))
         intent.state, intent.claimed_at = "sending", NOW - timedelta(minutes=6)
         session.commit()

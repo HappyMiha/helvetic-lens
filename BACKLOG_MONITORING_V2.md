@@ -266,7 +266,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-051](#mv2-051) | Independent matching and local AI evaluation | F6 | P0 | L | IN PROGRESS | [MV2-023](#mv2-023), [MV2-043](#mv2-043), [MV2-047](#mv2-047) |
 | [MV2-052](#mv2-052) | Operational metrics, degraded mode and source recovery | F6 | P0 | M | IN PROGRESS | [MV2-011](#mv2-011), [MV2-012](#mv2-012), [MV2-025](#mv2-025) |
 | [MV2-053](#mv2-053) | Personal-location privacy and access control | F6 | P0 | M | IN PROGRESS — account erasure and ownership handover implemented | [MV2-004](#mv2-004), [MV2-005](#mv2-005), [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-023](#mv2-023) |
-| [MV2-054](#mv2-054) | Single-server capacity and queues with different priorities | F6 | P0 | L | PLANNED | [MV2-011](#mv2-011), [MV2-014](#mv2-014), [MV2-043](#mv2-043), [MV2-052](#mv2-052) |
+| [MV2-054](#mv2-054) | Single-server capacity and queues with different priorities | F6 | P0 | L | IN PROGRESS — queue isolation verified locally | [MV2-011](#mv2-011), [MV2-014](#mv2-014), [MV2-043](#mv2-043), [MV2-052](#mv2-052) |
 | [MV2-055](#mv2-055) | History storage, retention and permitted exports | F6 | P0 | M | IN PROGRESS | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-020](#mv2-020), [MV2-044](#mv2-044) |
 | [MV2-056](#mv2-056) | Migration, compatibility and rollback rehearsal | F6 | P0 | L | PLANNED | [MV2-001](#mv2-001), [MV2-053](#mv2-053), [MV2-055](#mv2-055), [MV2-060](#mv2-060) |
 | [MV2-057](#mv2-057) | Executable checks for 116 active AC and adversarial regression | F6 | P0 | L | IN PROGRESS — AC protocols linked | [MV2-029](#mv2-029), [MV2-031](#mv2-031), [MV2-033](#mv2-033), [MV2-035](#mv2-035), [MV2-036](#mv2-036), [MV2-039](#mv2-039), [MV2-041](#mv2-041), [MV2-045](#mv2-045), [MV2-048](#mv2-048), [MV2-050](#mv2-050), [MV2-024](#mv2-024), [MV2-051](#mv2-051), [MV2-053](#mv2-053), [MV2-056](#mv2-056), [MV2-068](#mv2-068), [MV2-071](#mv2-071) |
@@ -2399,7 +2399,38 @@ independent privacy review and exact release activation remain open.
 
 ### MV2-054 — Single-server capacity and queues with different priorities
 
-**Status:** PLANNED · **Priority:** P0 · **Owner:** Operations + Backend + AI · **Size:** L
+**Queue-isolation evidence, 15 September 2026:** Independent control,
+operational-source, bulk-source, projection and delivery consumers run inside
+the existing worker-cpu container, retaining compatibility with the pinned
+production controller. Native jobs keep their identity, consent and retry
+semantics. The broad native/routing suite passed 358 checks; the subsequent
+supervisor/recovery checkpoint passed 117; final bulk isolation and affected
+Tender checks passed 33. Real Linux stop/crash/ignored-signal scenarios stopped
+all six consumer parents and their six child processes. Live ping readiness
+covers every consumer. See [evidence and resource limits](docs/monitoring-v2/MONITORING_QUEUE_ISOLATION.md).
+These overlapping local checks do not prove the full target-host workload,
+production activation or MV2-056 rollback acceptance. The parent stays IN PROGRESS.
+
+**Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Operations + Backend + AI · **Size:** L
+
+**Whole-feature scope, 15 September 2026 — Monitoring queue isolation:** The
+production CPU worker currently consumes ingestion, parsing and maintenance;
+all periodic tasks, including outbox dispatch and nine-direction scheduling,
+route to maintenance. An isolated real Celery worker experiment observed both
+CPU slots occupied and the control task unable to start until their release
+(1.015s controlled observation; no production job or broker touched).
+Separate bounded control, operational source acquisition, bulk source work, deterministic projection and
+consented delivery workers from legal ingestion and AI. Preserve all nine
+directions, native source/ownership checks, job IDs, retry/idempotency semantics
+and legacy queues during rolling recovery. Use independent consumer processes
+inside the existing worker-cpu container: the separately pinned production
+controller must stop every writer without knowing new service names. Include
+production/development Compose, supervised shutdown/failure/recovery, existing
+recovery-runner coverage and scheduler retention separation. Verify broker task progress while
+ingestion is occupied, durable old/new queue dispatch/retry, complete task routing
+and rendered service configuration. No additional source rights are required.
+This is the queue-isolation feature within MV2-054; the full 1000-subject/1M-row
+workload and measured target-host capacity, recovery and GPU gates remain open.
 
 **Dependencies:** [MV2-011](#mv2-011), [MV2-014](#mv2-014), [MV2-043](#mv2-043), [MV2-052](#mv2-052). **Requirements:** §§22,28,34; legacy HL-032,048,049,084,099.
 

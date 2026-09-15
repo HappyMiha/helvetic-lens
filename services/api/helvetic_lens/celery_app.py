@@ -13,6 +13,7 @@ from .db import Database
 from .maintenance import cleanup_operational_data
 from .models import Job
 from .monitoring_connector_settings import load as load_connector_settings
+from .monitoring_queues import PERIODIC_QUEUES
 from .observability import correlation_context
 
 settings = Settings()
@@ -31,7 +32,14 @@ celery_app.conf.update(
     broker_transport_options={"priority_steps": list(range(10)), "queue_order_strategy": "round_robin"},
     broker_connection_retry_on_startup=True,
     task_default_queue="maintenance",
+    task_routes={name: {"queue": queue} for name, queue in PERIODIC_QUEUES.items()},
     beat_schedule={
+        "cleanup-pollen-monitoring": {
+            "task": "helvetic_lens.cleanup_pollen_monitoring", "schedule": 60.0,
+        },
+        "cleanup-tender-documents": {
+            "task": "helvetic_lens.cleanup_tender_documents", "schedule": 15.0,
+        },
         "sample-monitoring-source-history": {
             "task": "helvetic_lens.sample_monitoring_source_history", "schedule": 300.0,
             "options": {"expires": 300},
@@ -149,6 +157,11 @@ celery_app.conf.update(
     },
 )
 
+# A timer wakeup is replaceable; durable work it creates is not. Do not let
+# obsolete timer messages pile up behind a slow source or an offline worker.
+for _entry in celery_app.conf.beat_schedule.values():
+    _entry.setdefault("options", {}).setdefault("expires", _entry["schedule"])
+
 
 @celery_app.task(name="helvetic_lens.sample_monitoring_source_history")
 def sample_monitoring_source_history():
@@ -217,12 +230,11 @@ def cleanup_data():
 def schedule_pollen_monitoring():
     from .pollen_delivery import enqueue_due as enqueue_mail
     from .pollen_jobs import enqueue_due
-    from .pollen_retention import cleanup
 
     database = Database(settings)
     try:
         task_settings = load_connector_settings(database, settings)
-        return {"refresh": enqueue_due(database, task_settings), "delivery": enqueue_mail(database, task_settings), "retention": cleanup(database, task_settings)}
+        return {"refresh": enqueue_due(database, task_settings), "delivery": enqueue_mail(database, task_settings)}
     finally:
         database.engine.dispose()
 
@@ -264,14 +276,12 @@ def schedule_air_monitoring():
 @celery_app.task(name="helvetic_lens.schedule_tender_monitoring")
 def schedule_tender_monitoring():
     from .tender_delivery import enqueue_due as enqueue_email
-    from .tender_documents import cleanup as cleanup_documents
     from .tender_jobs import enqueue_due
 
     database = Database(settings)
     try:
         task_settings = load_connector_settings(database, settings)
-        cleanup = cleanup_documents(database)
-        return {"documents": cleanup, "refresh": enqueue_due(database, task_settings),
+        return {"refresh": enqueue_due(database, task_settings),
                 "delivery": enqueue_email(database, task_settings)}
     finally:
         database.engine.dispose()
@@ -280,6 +290,26 @@ def schedule_tender_monitoring():
 @celery_app.task(name="helvetic_lens.cleanup_air_measurements")
 def cleanup_air_measurements():
     from .air_sources import cleanup
+    database = Database(settings)
+    try:
+        return cleanup(database)
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.cleanup_pollen_monitoring")
+def cleanup_pollen_monitoring():
+    from .pollen_retention import cleanup
+    database = Database(settings)
+    try:
+        return cleanup(database, load_connector_settings(database, settings))
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.cleanup_tender_documents")
+def cleanup_tender_documents():
+    from .tender_documents import cleanup
     database = Database(settings)
     try:
         return cleanup(database)

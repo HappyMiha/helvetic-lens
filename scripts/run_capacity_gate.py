@@ -743,6 +743,21 @@ class CapacityGate:
         )
         return result.returncode == 0 and service in result.stdout.splitlines()
 
+    async def wait_for_cpu_consumers(self, timeout: float = 150) -> bool:
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            try:
+                result = await asyncio.to_thread(subprocess.run,
+                    self.compose_command("exec", "-T", "worker-cpu", "python", "-m",
+                        "helvetic_lens.worker_supervisor", "--healthcheck"),
+                    capture_output=True, text=True, timeout=8)
+                if result.returncode == 0:
+                    return True
+            except (OSError, subprocess.TimeoutExpired):
+                pass
+            await asyncio.sleep(1)
+        return False
+
     async def exercise_recovery(self):
         if not self.arguments.recovery:
             return
@@ -764,12 +779,15 @@ class CapacityGate:
                 timeout=180,
             )
             service_running = result.returncode == 0 and await self.service_is_running(service)
-            api_recovered = service_running and await self.wait_for_api()
+            consumers_ready = service_running and (
+                service != "worker-cpu" or await self.wait_for_cpu_consumers())
+            api_recovered = consumers_ready and await self.wait_for_api()
             results.append(
                 {
                     "service": service,
                     "return_code": result.returncode,
                     "service_running": service_running,
+                    "consumers_ready": consumers_ready if service == "worker-cpu" else None,
                     "api_recovered": api_recovered,
                     "duration_ms": round((time.perf_counter() - started) * 1000, 2),
                 }

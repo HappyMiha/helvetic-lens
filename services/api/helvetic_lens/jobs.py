@@ -10,11 +10,13 @@ from sqlalchemy.orm import Session
 
 from .db import utcnow
 from .models import Job, JobStep, OutboxMessage
+from .monitoring_queues import QUEUES as MONITORING_QUEUES
+from .monitoring_queues import durable_queue
 from .observability import current_correlation
 
 TERMINAL_STATES = frozenset({"succeeded", "failed", "cancelled"})
 CLAIMABLE_STATES = frozenset({"queued", "dispatched", "retrying", "waiting_for_model"})
-QUEUES = frozenset(
+QUEUES = MONITORING_QUEUES | frozenset(
     {
         "interactive",
         "ingest",
@@ -71,6 +73,7 @@ def enqueue(
 ) -> tuple[Job, bool]:
     if queue not in QUEUES:
         raise ValueError(f"Unknown durable queue: {queue}")
+    queue = durable_queue(job_type, queue)
     organization_id = organization_id or session.info["organization_id"]
     existing = session.scalar(
         select(Job).where(
@@ -492,6 +495,10 @@ def dispatch(session: Session, sender: Callable[[str, str, dict, int], None], li
             message.available_at = job.available_at
             continue
         job.state, job.dispatched_at, job.updated_at = "dispatched", now, now
+        # Pending/recovered jobs from an older release keep their identity and
+        # payload. Change only their next transport route under the same locks.
+        # Already dispatched broker messages remain consumable by legacy workers.
+        job.queue = message.queue = durable_queue(job.type, message.queue)
         session.flush()
         try:
             sender(message.topic, message.queue, message.payload,
