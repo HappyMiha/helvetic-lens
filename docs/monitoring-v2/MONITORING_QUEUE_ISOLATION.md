@@ -90,6 +90,57 @@ worker-cpu. Downgrading to code that predates these queue names still requires
 the corresponding verified database restore; this feature does not certify
 code-only downgrade or the broader MV2-056 migration/rollback gate.
 
+## Durable handoff turns
+
+Separate consumers only help after jobs reach the broker. A regression fixture
+with 110 older ingestion jobs showed that the old 100-row outbox page hid all
+three newer Pollen, Road and Auction-email jobs. Admission now ranks ready work
+within each queue class before applying the page limit. Each class receives one
+turn before its second candidate; the least recently served class wins ties.
+Existing persisted dispatch sequences retain these turns across new sessions,
+restarts and equal clocks, without a schema migration. Old pending Monitoring
+jobs are classified by their native type before pagination and rerouted under
+the existing job/outbox locks when sent.
+
+A lone busy queue still fills the batch. AI retains its tenant selection,
+priority aging and bounded unclaimed handoff window. A full AI window does not
+consume CPU handoff capacity. Broker failures retain their job/outbox identity
+and backoff and do not advance the queue turn. Dispatch uses the existing
+host-wide transaction lock, then job/outbox row locks in worker order. Locked,
+terminal and future work cannot be sent as a ready candidate.
+
+Within non-AI queues, requested priority earns one extra point per eligible
+minute, capped at nine. Time before either job or outbox availability does not
+earn priority. Requested priority remains stored unchanged. The job API returns
+null for queue position because a FIFO ordinal cannot describe changing queue
+turns, priority and worker claims; existing clients support this value.
+
+These are queue-class turns, not new non-AI tenant quotas or a wall-clock latency
+guarantee. A busy queue can still delay work within its own class. Source rights,
+private ownership and consent are checked by the unchanged native workflows.
+
+The [handoff tests](../../services/api/tests/test_monitoring_dispatch.py) reproduce
+the old ingestion prefix and check full batches, one-item rotation across new
+database sessions, eligible priority aging, delayed/terminal prefixes, private
+scope, broker retries and AI-window throughput. The isolated
+[PostgreSQL verifier](../../scripts/check_monitoring_dispatch_postgres.py) passed
+all eight cases on PostgreSQL 16, including actual row and advisory locks. It
+requires a fresh empty localhost database named `hl_monitoring_dispatch` for
+each case and uses synthetic jobs and broker sends. The test container was
+removed after execution. An earlier SQLite dispatcher/queue checkpoint passed
+38 tests in 105.23s, with the existing PostgreSQL-only advisory-lock test skipped.
+
+Final integrated verification passed **130 tests in 459.63s**:
+`.tmp/dispatch-integrated-final.log`. It includes the dispatcher and queue suites,
+interest jobs/automation, live topic matching/history, Inbox context, matrix
+selection and paginated document history. Three PostgreSQL-only lock tests were
+skipped by this SQLite run; the separate eight-case PostgreSQL run above verifies
+the new handoff behavior and actual row/advisory locks. These overlapping results
+are not additive counts. The backlog guard passed, as did
+`ruff check services/api deploy/release_manager.py` and verifier lint. The only
+warning was the existing Starlette/httpx deprecation. No full release-suite or
+target-host capacity result is inferred from these focused checks.
+
 ## Validation and acceptance boundary
 
 15 September 2026:

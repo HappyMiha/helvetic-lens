@@ -1,5 +1,15 @@
 # Monitoring deployment status — 15 September 2026
 
+## Queue handoff verification — 15 September 2026
+
+The authenticated main-site journal, refreshed during handoff-fairness checks,
+still shows candidate `e0af3fc848b6` Deploying, started at 08:06:02 Europe/Zurich,
+and production `d961ebd54998c124458b7185f0258c9d9197dd0f`. The 06:12:02 retry of
+`60d87fcdb481` is Failed. Candidate e0af3fc contains the Inbox/matrix query-budget
+repair below; the newer worker isolation and queue-handoff changes are subsequent
+code. No successful activation of those changes has been recorded. No running
+deployment, test process or serving checkout was restarted or modified.
+
 ## Inbox and matrix query-budget repair — 15 September 2026
 
 The owner's latest deployment excerpt identifies `api_tests` failures in

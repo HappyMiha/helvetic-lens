@@ -41,7 +41,9 @@ and workers adopt new settings without a restart; source coverage remains separa
 
 [Monitoring worker isolation](docs/monitoring-v2/MONITORING_QUEUE_ISOLATION.md)
 separates operational acquisition, bulk feeds, private projection, scheduling
-and email from legal ingestion and AI. All CPU consumers share the existing
+and email from legal ingestion and AI. Persistent queue turns also prevent an
+old ingestion prefix from hiding new Monitoring work before broker handoff.
+All CPU consumers share the existing
 deployment-managed container lifecycle. Local verification and target-host
 capacity/activation evidence are recorded separately.
 

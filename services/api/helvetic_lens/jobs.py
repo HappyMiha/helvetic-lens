@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import func, literal, or_, select
+from sqlalchemy import literal, or_, select
 from sqlalchemy.orm import Session
 
 from .db import utcnow
@@ -448,7 +448,7 @@ def reconcile(session: Session, lease_seconds: int) -> dict:
 
 
 def dispatch(session: Session, sender: Callable[[str, str, dict, int], None], limit: int = 100, *, ai_window: int = 1) -> dict:
-    from . import ai_dispatch
+    from . import ai_dispatch, dispatch_turns
     if limit < 1:
         return {"sent": 0, "failed": 0}
     if not 1 <= ai_window <= 16:
@@ -457,23 +457,22 @@ def dispatch(session: Session, sender: Callable[[str, str, dict, int], None], li
         return {"sent": 0, "failed": 0}
     now = utcnow()
     ai_slots = ai_dispatch.free_slots(session, ai_window)
-    candidates = ai_dispatch.candidates(session, now, limit) if ai_slots else []
+    candidates = dispatch_turns.candidates(session, now, limit, ai_slots)
     candidates += list(
         session.execute(
-            select(OutboxMessage.id, OutboxMessage.job_id, literal(None))
+            select(OutboxMessage.id, OutboxMessage.job_id, literal(None), literal(False))
             .join(Job, Job.id == OutboxMessage.job_id)
             .where(OutboxMessage.state == "pending", OutboxMessage.available_at <= now)
-            .where(or_(OutboxMessage.queue.not_in(ai_dispatch.QUEUES),
-                       Job.state.not_in(ai_dispatch.READY), Job.available_at > now))
+            .where(or_(Job.state.not_in(ai_dispatch.READY), Job.available_at > now))
             .order_by(OutboxMessage.created_at)
             .limit(limit)
         )
     )
     sent, failed = 0, 0
-    for message_id, job_id, effective_priority in candidates:
+    for message_id, job_id, effective_priority, is_ai in candidates:
         if sent + failed >= limit:
             break
-        if effective_priority is not None and ai_slots <= 0:
+        if is_ai and ai_slots <= 0:
             continue
         # Match worker/recovery lock order: job first, then its outbox. Locking
         # an outbox first can deadlock a worker checkpointing a retry under its
@@ -513,8 +512,8 @@ def dispatch(session: Session, sender: Callable[[str, str, dict, int], None], li
         message.state, message.dispatched_at = "dispatched", now
         message.attempts += 1
         message.error_detail = None
-        if effective_priority is not None:
-            ai_dispatch.record_turn(session, job)
+        ai_dispatch.record_turn(session, job)
+        if is_ai:
             ai_slots -= 1
         sent += 1
     return {"sent": sent, "failed": failed}
@@ -525,21 +524,8 @@ def serialize(session: Session, job: Job) -> dict:
         session.scalars(select(JobStep).where(JobStep.job_id == job.id).order_by(JobStep.position))
     )
     queue_position = None
-    # AI order changes with tenant turns, aging and worker claims; a FIFO number
+    # Queue turns, aging and worker claims change admission order. A FIFO number
     # would falsely promise an exact position. Clients already support null.
-    if job.queue not in {"ai_interactive", "ai_background"} and job.state in {"queued", "dispatched", "retrying", "waiting_for_model"}:
-        queue_position = 1 + int(
-            session.scalar(
-                select(func.count())
-                .select_from(Job)
-                .where(
-                    Job.queue == job.queue,
-                    Job.state.in_(["queued", "dispatched", "retrying", "waiting_for_model"]),
-                    Job.created_at < job.created_at,
-                )
-            )
-            or 0
-        )
     request = None
     if job.type == "ask":
         payload = job.payload or {}
