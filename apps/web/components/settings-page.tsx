@@ -36,7 +36,7 @@ import { InterestBriefPolicyCard } from "./interest-brief-policy";
 import { CapabilityProfileSelect } from "./capability-profile-select";
 
 type KeyAction = "keep" | "replace" | "remove" | "environment";
-type Provider = "custom" | "docker" | "infomaniak";
+type Provider = ApertusSettings["provider"];
 type ConnectionResult = {
   model: string;
   base_url: string;
@@ -85,39 +85,45 @@ export function SettingsPage() {
         <div>
           <span className="eyebrow">{t("settings.eyebrow")}</span>
           <h1>{t("settings.title")}</h1>
-          <p className="muted m-0">
-            {t("settings.body")}
-          </p>
+          <p className="muted m-0">{t("settings.body")}</p>
         </div>
         <SlidersHorizontal className="muted" size={28} />
       </div>
+      <Button asChild variant="outline" className="mb-6">
+        <Link href="/settings/partners">{t("partners.title")}</Link>
+      </Button>
       <InterestBriefPolicyCard />
       <ErrorNote message={configuration.error} />
       {notice && <SuccessNote>{notice}</SuccessNote>}
-      <div className={`grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px] items-start ${canManage ? "" : "viewer-settings"}`}>
+      <div
+        className={`grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px] items-start ${canManage ? "" : "viewer-settings"}`}
+      >
         {configuration.data ? (
-          <fieldset disabled={!canManage} className="border-0 p-0 m-0 min-w-0"><ApertusForm
-            key={
-              configuration.data.source + (configuration.data.updated_at || "")
-            }
-            initial={configuration.data}
-            onSaved={(settings, message) => {
-              configuration.setData(settings);
-              setNotice(message);
-              void invalidateResources(
-                resources.health(),
-                resources.organizationStatus(),
-                resourceTag("comparison", "organization"),
-                resourceTag("ai-history", "organization"),
-                resourceTag("impact-matrix", "organization"),
-                resourceTag("impact-inbox", "organization"),
-                resourceTag("relation-analyses", "organization"),
-                resourceTag("digests", "organization"),
-                resourceTag("registry", "organization"),
-              );
-            }}
-            onEdit={() => setNotice("")}
-          /></fieldset>
+          <fieldset disabled={!canManage} className="border-0 p-0 m-0 min-w-0">
+            <ApertusForm
+              key={
+                configuration.data.source +
+                (configuration.data.updated_at || "")
+              }
+              initial={configuration.data}
+              onSaved={(settings, message) => {
+                configuration.setData(settings);
+                setNotice(message);
+                void invalidateResources(
+                  resources.health(),
+                  resources.organizationStatus(),
+                  resourceTag("comparison", "organization"),
+                  resourceTag("ai-history", "organization"),
+                  resourceTag("impact-matrix", "organization"),
+                  resourceTag("impact-inbox", "organization"),
+                  resourceTag("relation-analyses", "organization"),
+                  resourceTag("digests", "organization"),
+                  resourceTag("registry", "organization"),
+                );
+              }}
+              onEdit={() => setNotice("")}
+            />
+          </fieldset>
         ) : (
           <div className="panel p-6">
             <Loading />
@@ -129,14 +135,37 @@ export function SettingsPage() {
             <h2 className="mb-3">{t("settings.connection")}</h2>
             <p className="text-sm muted">
               {configuration.data?.configured
-                ? t("settings.configured", { provider: configuration.data.provider === "infomaniak" ? t("settings.infomaniak") : configuration.data.provider === "docker" ? t("settings.local") : t("settings.custom") })
+                ? t("settings.configured", {
+                    provider:
+                      configuration.data.provider === "anthropic"
+                        ? t("partners.anthropic")
+                        : configuration.data.provider === "swisscom"
+                          ? t("partners.swisscom")
+                          : configuration.data.provider === "infomaniak"
+                            ? t("settings.infomaniak")
+                            : configuration.data.provider === "docker"
+                              ? t("settings.local")
+                              : t("settings.custom"),
+                  })
                 : t("settings.notConfigured")}
             </p>
             <p className="text-sm muted">
-              {t("settings.currentModel", { model: configuration.data?.model || t("settings.notSelected") })}
+              {configuration.data?.provider === "anthropic" ||
+              configuration.data?.provider === "swisscom"
+                ? `${t("settings.modelId")}: ${configuration.data.model || t("settings.notSelected")}`
+                : t("settings.currentModel", {
+                    model:
+                      configuration.data?.model || t("settings.notSelected"),
+                  })}
             </p>
             <a
-              href={`https://huggingface.co/${configuration.data?.model || "swiss-ai/Apertus-v1.5-8B"}`}
+              href={
+                configuration.data?.provider === "anthropic"
+                  ? "https://platform.claude.com/docs/en/api/models/list"
+                  : configuration.data?.provider === "swisscom"
+                    ? "https://digital.swisscom.com/products/swiss-ai-platform/info"
+                    : `https://huggingface.co/${configuration.data?.model || "swiss-ai/Apertus-v1.5-8B"}`
+              }
               target="_blank"
               rel="noreferrer"
               className="text-sm inline-flex gap-2 items-center"
@@ -151,24 +180,25 @@ export function SettingsPage() {
               {profile?.name || t("settings.myCompany")}
             </p>
             <p className="text-sm muted break-words">
-              {profile?.business_areas.join(" · ") ||
-                t("settings.areas")}
+              {profile?.business_areas.join(" · ") || t("settings.areas")}
             </p>
-            {canManage && <Button asChild variant="outline" size="sm">
-              <Link href="/organization#company-profile">{t("settings.editCompany")}</Link>
-            </Button>}
+            {canManage && (
+              <Button asChild variant="outline" size="sm">
+                <Link href="/organization#company-profile">
+                  {t("settings.editCompany")}
+                </Link>
+              </Button>
+            )}
           </section>
           <section className="panel p-6">
             <h2 className="mb-3">{t("settings.workspace")}</h2>
             <p className="text-sm muted">
-              {t("settings.database", { database: health?.database || t("settings.checking") })}
+              {t("settings.database", {
+                database: health?.database || t("settings.checking"),
+              })}
             </p>
-            <p className="text-sm muted">
-              {t("settings.persistence")}
-            </p>
-            <p className="text-xs muted">
-              {t("settings.privacy")}
-            </p>
+            <p className="text-sm muted">{t("settings.persistence")}</p>
+            <p className="text-xs muted">{t("settings.privacy")}</p>
           </section>
         </div>
       </div>
@@ -215,6 +245,17 @@ function ApertusForm({
     setModels([]);
     setModelsMessage("");
     setDraft((current) => {
+      if (provider === "anthropic" || provider === "swisscom") {
+        return {
+          ...current,
+          provider,
+          base_url:
+            provider === "anthropic" ? "https://api.anthropic.com/v1" : "",
+          model: "",
+          explanation_profile: "",
+          json_mode: false,
+        };
+      }
       if (provider === "docker") {
         return {
           ...current,
@@ -234,7 +275,7 @@ function ApertusForm({
         base_url:
           provider === "infomaniak"
             ? infomaniakBaseUrl(current.product_id)
-            : current.provider === "infomaniak" || current.provider === "docker"
+            : current.provider !== "custom"
               ? ""
               : current.base_url,
       };
@@ -276,18 +317,16 @@ function ApertusForm({
   }
   function confirmNewCloudDestination(action: string) {
     if (draft.provider === "docker") return true;
-    const nextBase = draft.provider === "infomaniak"
-      ? infomaniakBaseUrl(draft.product_id)
-      : draft.base_url;
+    const nextBase =
+      draft.provider === "infomaniak"
+        ? infomaniakBaseUrl(draft.product_id)
+        : draft.base_url;
     const newlySelected =
       initial.provider === "docker" ||
       initial.provider !== draft.provider ||
       initial.base_url !== nextBase;
     return (
-      !newlySelected ||
-      window.confirm(
-        t("settings.confirmContact", { action }),
-      )
+      !newlySelected || window.confirm(t("settings.confirmContact", { action }))
     );
   }
   async function save(event: React.FormEvent) {
@@ -295,10 +334,9 @@ function ApertusForm({
     if (
       draft.provider !== "docker" &&
       (initial.provider === "docker" || initial.provider !== draft.provider) &&
-      !window.confirm(
-        t("settings.confirmCloud"),
-      )
-    ) return;
+      !window.confirm(t("settings.confirmCloud"))
+    )
+      return;
     setBusy("save");
     setError("");
     try {
@@ -307,10 +345,7 @@ function ApertusForm({
         body: body(),
       });
       setApiKey("");
-      onSaved(
-        result,
-        t("settings.saveSuccess"),
-      );
+      onSaved(result, t("settings.saveSuccess"));
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -384,10 +419,7 @@ function ApertusForm({
         method: "POST",
       });
       setApiKey("");
-      onSaved(
-        result,
-        t("settings.resetSuccess"),
-      );
+      onSaved(result, t("settings.resetSuccess"));
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -422,30 +454,40 @@ function ApertusForm({
                 <option value="infomaniak">{t("settings.infomaniak")}</option>
                 <option value="docker">{t("settings.local")}</option>
                 <option value="custom">{t("settings.custom")}</option>
+                <option value="anthropic">{t("partners.anthropic")}</option>
+                <option value="swisscom">{t("partners.swisscom")}</option>
               </select>
               <span className="field-help">
-                {t("settings.providerHelp")}
+                {draft.provider === "anthropic" || draft.provider === "swisscom"
+                  ? t("partners.providerHelp")
+                  : t("settings.providerHelp")}
               </span>
             </label>
             <div className="rounded-lg border p-4 text-sm">
               <strong>
-                {draft.provider === "infomaniak"
-                  ? t("settings.infomaniak")
-                  : draft.provider === "docker"
-                    ? t("settings.local")
-                    : t("settings.custom")}
+                {draft.provider === "anthropic"
+                  ? t("partners.anthropic")
+                  : draft.provider === "swisscom"
+                    ? t("partners.swisscom")
+                    : draft.provider === "infomaniak"
+                      ? t("settings.infomaniak")
+                      : draft.provider === "docker"
+                        ? t("settings.local")
+                        : t("settings.custom")}
               </strong>
-              <p className="field-help !mb-0">
-                {t("settings.activeProvider")}
-              </p>
+              <p className="field-help !mb-0">{t("settings.activeProvider")}</p>
             </div>
           </div>
           {draft.provider === "infomaniak" ? (
             <div className="rounded-lg border p-4 form-stack min-w-0">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-sm font-semibold mb-1">{t("settings.infomaniak")}</h3>
-                  <p className="field-help !m-0">{t("settings.infomaniakEndpointManaged")}</p>
+                  <h3 className="text-sm font-semibold mb-1">
+                    {t("settings.infomaniak")}
+                  </h3>
+                  <p className="field-help !m-0">
+                    {t("settings.infomaniakEndpointManaged")}
+                  </p>
                 </div>
                 <a
                   href="https://developer.infomaniak.com/docs/api/post/2/ai/%7Bproduct_id%7D/openai/v1/chat/completions"
@@ -510,7 +552,9 @@ function ApertusForm({
                     </option>
                   ))}
                 </select>
-                <span className="field-help">{t("settings.infomaniakModelHelp")}</span>
+                <span className="field-help">
+                  {t("settings.infomaniakModelHelp")}
+                </span>
               </label>
               <div className="flex flex-wrap gap-3 items-center">
                 <Button
@@ -525,7 +569,9 @@ function ApertusForm({
                   ) : (
                     <RotateCcw size={14} />
                   )}
-                  {models.length ? t("settings.refreshModels") : t("settings.loadModels")}
+                  {models.length
+                    ? t("settings.refreshModels")
+                    : t("settings.loadModels")}
                 </Button>
                 {modelsMessage && (
                   <span role="status" className="text-xs text-primary">
@@ -538,8 +584,12 @@ function ApertusForm({
             <div className="rounded-lg border p-4 form-stack min-w-0">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-sm font-semibold mb-1">{t("settings.local")}</h3>
-                  <p className="field-help !m-0">{t("settings.localProviderBody")}</p>
+                  <h3 className="text-sm font-semibold mb-1">
+                    {t("settings.local")}
+                  </h3>
+                  <p className="field-help !m-0">
+                    {t("settings.localProviderBody")}
+                  </p>
                 </div>
                 <a
                   href="https://github.com/ggml-org/llama.cpp/blob/master/docs/docker.md"
@@ -557,7 +607,9 @@ function ApertusForm({
                   readOnly
                   aria-readonly="true"
                 />
-                <span className="field-help">{t("settings.localBaseUrlHelp")}</span>
+                <span className="field-help">
+                  {t("settings.localBaseUrlHelp")}
+                </span>
               </label>
               <label>
                 {t("settings.model")}
@@ -575,7 +627,9 @@ function ApertusForm({
                     </option>
                   ))}
                 </select>
-                <span className="field-help">{t("settings.localModelHelp")}</span>
+                <span className="field-help">
+                  {t("settings.localModelHelp")}
+                </span>
               </label>
               <div className="flex flex-wrap gap-3 items-center">
                 <Button
@@ -589,7 +643,9 @@ function ApertusForm({
                   ) : (
                     <RotateCcw size={14} />
                   )}
-                  {models.length ? t("settings.refreshLocal") : t("settings.loadLocal")}
+                  {models.length
+                    ? t("settings.refreshLocal")
+                    : t("settings.loadLocal")}
                 </Button>
                 {modelsMessage && (
                   <span role="status" className="text-xs text-primary">
@@ -600,67 +656,72 @@ function ApertusForm({
             </div>
           ) : (
             <>
-              <div className="rounded-lg border p-4">
-                <div className="flex flex-wrap gap-3 items-center">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      customPreset(
-                        "https://router.huggingface.co/v1",
-                        "swiss-ai/Apertus-v1.5-8B:publicai",
-                      )
-                    }
-                  >
-                    {t("settings.useHuggingFace")}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      customPreset(
-                        "https://api.publicai.co/v1",
-                        "swiss-ai/apertus-v1.5-8b",
-                      )
-                    }
-                  >
-                    {t("settings.usePublicAi")}
-                  </Button>
-                  <a
-                    href="https://platform.publicai.co/docs"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs inline-flex items-center gap-1"
-                  >
-                     {t("settings.publicAiSetup")} <ArrowUpRight size={12} />
-                  </a>
-                  <a
-                    href="https://huggingface.co/docs/inference-providers/providers/publicai"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs inline-flex items-center gap-1"
-                  >
-                     {t("settings.huggingFaceSetup")} <ArrowUpRight size={12} />
-                  </a>
+              {draft.provider === "custom" && (
+                <div className="rounded-lg border p-4">
+                  <div className="flex flex-wrap gap-3 items-center">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        customPreset(
+                          "https://router.huggingface.co/v1",
+                          "swiss-ai/Apertus-v1.5-8B:publicai",
+                        )
+                      }
+                    >
+                      {t("settings.useHuggingFace")}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        customPreset(
+                          "https://api.publicai.co/v1",
+                          "swiss-ai/apertus-v1.5-8b",
+                        )
+                      }
+                    >
+                      {t("settings.usePublicAi")}
+                    </Button>
+                    <a
+                      href="https://platform.publicai.co/docs"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs inline-flex items-center gap-1"
+                    >
+                      {t("settings.publicAiSetup")} <ArrowUpRight size={12} />
+                    </a>
+                    <a
+                      href="https://huggingface.co/docs/inference-providers/providers/publicai"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs inline-flex items-center gap-1"
+                    >
+                      {t("settings.huggingFaceSetup")}{" "}
+                      <ArrowUpRight size={12} />
+                    </a>
+                  </div>
+                  <p className="field-help !mb-0">{t("settings.presetHelp")}</p>
                 </div>
-                <p className="field-help !mb-0">
-                   {t("settings.presetHelp")}
-                </p>
-              </div>
+              )}
               <label>
                 {t("settings.baseUrl")}
                 <Input
                   type="url"
                   autoComplete="url"
-                  placeholder="http://localhost:8080/v1"
+                  placeholder="https://…"
+                  readOnly={draft.provider === "anthropic"}
                   value={draft.base_url}
                   onChange={(event) => update("base_url", event.target.value)}
                   maxLength={2000}
                 />
                 <span className="field-help">
-                   {t("settings.customUrlHelp")}
+                  {draft.provider === "anthropic" ||
+                  draft.provider === "swisscom"
+                    ? t("partners.providerHelp")
+                    : t("settings.customUrlHelp")}
                 </span>
               </label>
               <label>
@@ -668,14 +729,45 @@ function ApertusForm({
                 <Input
                   value={draft.model}
                   onChange={(event) => update("model", event.target.value)}
-                  required
+                  required={
+                    draft.provider !== "anthropic" &&
+                    draft.provider !== "swisscom"
+                  }
                   maxLength={300}
                 />
-                <span className="field-help">
-                   {t("settings.modelIdHelp")}
-                </span>
+                <span className="field-help">{t("settings.modelIdHelp")}</span>
               </label>
             </>
+          )}
+          {(draft.provider === "anthropic" ||
+            draft.provider === "swisscom") && (
+            <div className="grid gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={loadModels}
+                disabled={!!busy || !draft.base_url}
+              >
+                {t("settings.loadModels")}
+              </Button>
+              {models.length > 0 && (
+                <label>
+                  {t("settings.modelId")}
+                  <select
+                    value={draft.model}
+                    onChange={(e) => update("model", e.target.value)}
+                  >
+                    <option value="">{t("settings.notSelected")}</option>
+                    {models.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.id}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {modelsMessage && <p role="status">{modelsMessage}</p>}
+            </div>
           )}
           <CapabilityProfileSelect
             settings={initial}
@@ -687,17 +779,23 @@ function ApertusForm({
               <div className="flex items-center gap-2 font-semibold mb-2">
                 <KeyRound size={15} /> {t("settings.noLocalCredential")}
               </div>
-              <p className="field-help !mb-0">{t("settings.localCredentialBoundary")}</p>
+              <p className="field-help !mb-0">
+                {t("settings.localCredentialBoundary")}
+              </p>
             </div>
           ) : (
             <div className="rounded-lg border p-4 min-w-0">
               <div className="flex items-center gap-2 text-sm font-semibold mb-2">
                 <KeyRound size={15} />
-                {draft.provider === "infomaniak" ? t("settings.apiToken") : t("settings.apiKey")}
+                {draft.provider === "infomaniak"
+                  ? t("settings.apiToken")
+                  : t("settings.apiKey")}
               </div>
               <p className="text-xs muted">
                 {initial.api_key_configured
-                  ? t("settings.credentialConfigured", { source: initial.key_source })
+                  ? t("settings.credentialConfigured", {
+                      source: initial.key_source,
+                    })
                   : t("settings.credentialMissing")}
               </p>
               <label>
@@ -792,7 +890,9 @@ function ApertusForm({
                     update("batch_concurrency", event.target.value)
                   }
                 />
-                <span className="field-help">{t("settings.concurrencyHelp")}</span>
+                <span className="field-help">
+                  {t("settings.concurrencyHelp")}
+                </span>
               </label>
               <label>
                 {t("settings.context")}
@@ -809,7 +909,9 @@ function ApertusForm({
                 />
                 <span className="field-help">
                   {t("settings.contextHelp")}
-                  {draft.provider === "docker" ? ` ${t("settings.localContextPreset")}` : ""}
+                  {draft.provider === "docker"
+                    ? ` ${t("settings.localContextPreset")}`
+                    : ""}
                 </span>
               </label>
               <label>
@@ -823,7 +925,9 @@ function ApertusForm({
                   value={draft.max_tokens}
                   onChange={(event) => update("max_tokens", event.target.value)}
                 />
-                <span className="field-help">{t("settings.maxTokensHelp")}</span>
+                <span className="field-help">
+                  {t("settings.maxTokensHelp")}
+                </span>
               </label>
               <label>
                 {t("settings.temperature")}
@@ -834,11 +938,14 @@ function ApertusForm({
                   step="any"
                   required
                   value={draft.temperature}
+                  disabled={draft.provider === "anthropic"}
                   onChange={(event) =>
                     update("temperature", event.target.value)
                   }
                 />
-                <span className="field-help">{t("settings.temperatureHelp")}</span>
+                <span className="field-help">
+                  {t("settings.temperatureHelp")}
+                </span>
               </label>
               <label>
                 {t("settings.topP")}
@@ -849,6 +956,7 @@ function ApertusForm({
                   step="any"
                   required
                   value={draft.top_p}
+                  disabled={draft.provider === "anthropic"}
                   onChange={(event) => update("top_p", event.target.value)}
                 />
                 <span className="field-help">{t("settings.topPHelp")}</span>
@@ -862,18 +970,18 @@ function ApertusForm({
                   step="any"
                   required
                   value={draft.presence_penalty}
+                  disabled={draft.provider === "anthropic"}
                   onChange={(event) =>
                     update("presence_penalty", event.target.value)
                   }
                 />
-                <span className="field-help">
-                   {t("settings.presenceHelp")}
-                </span>
+                <span className="field-help">{t("settings.presenceHelp")}</span>
               </label>
               <label>
                 {t("settings.reasoning")}
                 <select
                   value={draft.reasoning_effort}
+                  disabled={draft.provider === "anthropic"}
                   onChange={(event) =>
                     update(
                       "reasoning_effort",
@@ -887,7 +995,9 @@ function ApertusForm({
                   <option value="medium">{t("settings.medium")}</option>
                   <option value="high">{t("settings.high")}</option>
                 </select>
-                <span className="field-help">{t("settings.reasoningHelp")}</span>
+                <span className="field-help">
+                  {t("settings.reasoningHelp")}
+                </span>
               </label>
             </div>
           </div>
@@ -895,7 +1005,9 @@ function ApertusForm({
             <input
               type="checkbox"
               checked={draft.json_mode}
-              disabled={draft.provider === "docker"}
+              disabled={
+                draft.provider === "anthropic" || draft.provider === "docker"
+              }
               onChange={(event) => update("json_mode", event.target.checked)}
             />
             {t("settings.json")}
@@ -905,12 +1017,16 @@ function ApertusForm({
               ? t("settings.localJsonHelp")
               : t("settings.remoteJsonHelp")}
           </p>
-          <div className="info-note text-xs">{t("settings.fixedRequestHelp")}</div>
+          <div className="info-note text-xs">
+            {t("settings.fixedRequestHelp")}
+          </div>
           <ErrorNote message={error} />
           {testResult && (
             <div role="status" className="info-note break-words">
               <strong>
-                {t("settings.verified", { latency: number(testResult.latency_ms) })}
+                {t("settings.verified", {
+                  latency: number(testResult.latency_ms),
+                })}
               </strong>
               <p>{t("settings.received", { model: testResult.model })}</p>
               <p className="text-xs">{t("settings.testOnlyHelp")}</p>
@@ -923,6 +1039,7 @@ function ApertusForm({
               onClick={test}
               disabled={
                 !!busy ||
+                !draft.model.trim() ||
                 (draft.provider === "infomaniak"
                   ? !draft.product_id.trim()
                   : draft.provider === "custom"

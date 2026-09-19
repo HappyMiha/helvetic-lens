@@ -1123,6 +1123,17 @@ class Profile(Base):
     revision: Mapped[int] = mapped_column(Integer, default=1)
 
 
+class PartnerConfiguration(Base):
+    __tablename__ = "partner_configurations"
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"), primary_key=True)
+    provider: Mapped[str] = mapped_column(String(30), primary_key=True)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    api_key: Mapped[str | None] = mapped_column(Text)
+    values: Mapped[dict] = mapped_column(JSON, default=dict)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class ApertusConfiguration(Base):
     __tablename__ = "apertus_configuration"
     id: Mapped[str] = mapped_column(String(80), primary_key=True, default="default")
@@ -1900,6 +1911,7 @@ ORGANIZATION_SCOPED_MODELS = (
     ScanItem,
     Profile,
     ApertusConfiguration,
+    PartnerConfiguration,
     PromptConfiguration,
     PromptRevision,
     OrganizationQuota,

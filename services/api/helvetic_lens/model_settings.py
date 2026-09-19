@@ -6,7 +6,14 @@ from urllib.parse import urlsplit
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
 
 from .capability_execution import public_capability_profiles
-from .config import DomainError, Settings, infomaniak_base_url, local_docker_base_url
+from .config import (
+    DomainError,
+    InferenceProvider,
+    Settings,
+    infomaniak_base_url,
+    local_docker_base_url,
+    partner_inference_url,
+)
 from .extraction import canonical_url
 from .models import ApertusConfiguration
 
@@ -30,7 +37,7 @@ PUBLIC_FIELDS = (
 
 class ApertusSettingsInput(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
-    provider: Literal["custom", "docker", "infomaniak"] = "custom"
+    provider: InferenceProvider = "custom"
     product_id: str = Field(default="", max_length=30, pattern=r"^\d*$")
     base_url: str = Field(default="", max_length=2000)
     model: str = Field(min_length=1, max_length=300)
@@ -77,6 +84,7 @@ class ApertusSettingsInput(BaseModel):
             self.base_url = local_docker_base_url()
         else:
             self.product_id = ""
+            self.base_url = partner_inference_url(self.provider, self.base_url)
         key = self.api_key.get_secret_value().strip()
         if self.key_action == "replace" and not key:
             raise ValueError("Enter a new API key, or choose Keep existing key.")
@@ -89,6 +97,12 @@ class ApertusSettingsInput(BaseModel):
 
     def public_values(self):
         return {name: getattr(self, name) for name in PUBLIC_FIELDS}
+
+
+class ModelDiscoveryInput(ApertusSettingsInput):
+    # Listing models must work before a model has been selected. Save/test retain
+    # the stricter ApertusSettingsInput contract.
+    model: str = Field(default="", max_length=300)
 
 
 def resolve_key(
@@ -110,6 +124,12 @@ def resolve_key(
     effective_key = (
         environment.apertus_api_key.get_secret_value() if source == "environment" else stored_key or ""
     )
+    previous = record.values if record else {}
+    origin_provider = environment.apertus_provider if source == "environment" else previous.get("provider")
+    origin_url = environment.apertus_base_url if source == "environment" else previous.get("base_url", "")
+    if data and data.provider != "docker" and effective_key and {data.provider, origin_provider} & {"anthropic", "swisscom"}:
+        if data.key_action != "replace" and (origin_provider != data.provider or origin_url.rstrip("/") != data.base_url):
+            raise DomainError("Enter the credential issued for the selected provider and endpoint.", 422, "provider_key_required")
     return source, stored_key, SecretStr(effective_key)
 
 

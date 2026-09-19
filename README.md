@@ -20,6 +20,11 @@ Organization interests use explicit, revisioned [monitoring topics](docs/MONITOR
 
 ## Run locally
 
+**Legal Hackathon, 23 September 2026:** [partner activation and resource inventory](docs/hackathon/RESOURCES.md),
+and [verification evidence](docs/hackathon/VERIFICATION.md). Optional adapters support Anthropic Messages,
+Swisscom inference, Supertext AI translation and ElevenLabs speech. The Lovable development handoff is documented.
+Participant keys, quotas, compute allocations and permission to reuse the existing project still require organizer confirmation.
+
 Use Docker Desktop with Compose for the complete PostgreSQL stack:
 
 ```sh

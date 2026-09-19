@@ -149,6 +149,72 @@ const riverReview = c(
 
 export const SECTION_GUIDES: SectionGuide[] = [
   {
+    id: "partners",
+    title: "Partner tools",
+    purpose:
+      "Translate or speak a short reviewed briefing using explicitly enabled external providers.",
+    first: [
+      "An organization administrator saves the issued key and enables the provider.",
+      "For ElevenLabs, choose an accessible voice ID. Test saved access.",
+      "Paste up to 3,000 characters, review them and approve the named provider before submitting.",
+    ],
+    data: [
+      "Credentials are encrypted in this organization. The interface never returns them.",
+      "Translation and speech use only the text in the briefing box, not whole documents or workspace history.",
+      "Results stay in this page session. Preserve original evidence links separately; AI translations are not human verified.",
+    ],
+    wait: "Requests have a 45-second total deadline and bounded response size. Failed billable requests are not retried automatically.",
+    setup:
+      "API access, credits and model/voice permissions must be supplied by your provider or the hackathon organizers. Read-only members cannot submit text.",
+    controls: [
+      c(
+        "save-partner",
+        "Save settings",
+        "Saves encrypted credentials and explicit enablement for the current organization.",
+        "Use the key issued for this provider. Removing a key also requires disabling the integration.",
+        "Save a change",
+        undefined,
+        "manager",
+      ),
+      c(
+        "test-partner",
+        "Test saved access",
+        "Checks Supertext features or the selected ElevenLabs voice without sending briefing text.",
+        "Save settings first. Access success does not prove translation or speech quality.",
+        "External action",
+        undefined,
+        "manager",
+      ),
+      c(
+        "translate",
+        "Translate with Supertext",
+        "Sends the reviewed text to Supertext and shows an unverified AI translation.",
+        "Enable Supertext, enter a supported target language and approve the text. May consume credits.",
+        "External action",
+        undefined,
+        "manager",
+      ),
+      c(
+        "speech",
+        "Speak with ElevenLabs",
+        "Sends the reviewed text to ElevenLabs and returns playable MP3 audio.",
+        "Enable ElevenLabs and choose a permitted voice. Review and approve text; may consume credits.",
+        "External action",
+        undefined,
+        "manager",
+      ),
+      c(
+        "reuse-translation",
+        "Review this translation for speech",
+        "Copies the translation into the text box and clears the earlier approval.",
+        "Review wording and approve again before speaking; it does not send anything by itself.",
+        "Edit draft",
+        undefined,
+        "manager",
+      ),
+    ],
+  },
+  {
     id: "account",
     title: "Account and privacy",
     purpose:
@@ -2833,6 +2899,7 @@ export const GUIDE_ROUTES: Record<string, string> = {
   "/digests": "digests",
   "/organization": "organization",
   "/settings": "settings",
+  "/settings/partners": "partners",
   "/prompts": "prompts",
   "/logs": "logs",
   "/admin": "admin",

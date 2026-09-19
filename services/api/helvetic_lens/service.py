@@ -726,6 +726,11 @@ class HelveticLens:
                 "required": ["status"],
             },
         )
+        try:
+            if json.loads(reply) != {"status": "ok"}:
+                raise ValueError("Unexpected connection response")
+        except (ValueError, TypeError) as exc:
+            raise DomainError("The provider answered but failed the structured connection check.", 502, "model_test_failed") from exc
         return {
             "status": "connected",
             "model": settings.apertus_model,

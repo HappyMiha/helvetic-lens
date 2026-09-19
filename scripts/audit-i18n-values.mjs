@@ -27,6 +27,11 @@ const approvedIdentical = {
 let failed = false;
 // Pollen Watch is the feature's proper name in all supported locales.
 for (const allowed of Object.values(approvedIdentical)) allowed.add("nav.pollenWatch");
+// Provider brands retain their registered spelling in every language.
+for (const allowed of Object.values(approvedIdentical)) {
+  allowed.add("partners.anthropic");
+  allowed.add("partners.swisscom");
+}
 for (const locale of ["de-CH", "fr-CH", "it-CH", "rm-CH"]) {
   const identical = Object.keys(sourceLocale).filter((key) => catalog[locale][key] === sourceLocale[key]);
   const unexpected = identical.filter((key) => !approvedIdentical[locale].has(key));

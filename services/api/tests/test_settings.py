@@ -193,7 +193,7 @@ def test_infomaniak_completion_uses_provider_contract(harness, monkeypatch):
 
     def respond(request):
         requests.append(request)
-        return httpx.Response(200, json={"choices": [{"message": {"content": "ok"}}]})
+        return httpx.Response(200, json={"choices": [{"message": {"content": '{"status":"ok"}'}}]})
 
     transport(monkeypatch, respond)
     response = client.post(
@@ -383,7 +383,7 @@ def test_transient_completion_failures_are_retried_and_each_attempt_is_logged(ha
             raise httpx.ReadTimeout("Test-only timeout", request=request)
         if len(requests) == 2:
             return httpx.Response(503, text="Test-only transient upstream failure")
-        return httpx.Response(200, json={"choices": [{"message": {"content": "ok"}}]})
+        return httpx.Response(200, json={"choices": [{"message": {"content": '{"status":"ok"}'}}]})
 
     transport(monkeypatch, respond)
     response = client.post(

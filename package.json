@@ -7,6 +7,7 @@
     "apps/web"
   ],
   "scripts": {
+    "check:hackathon": "npm run typecheck && uv run --project services/api ruff check services/api deploy/release_manager.py && uv run --project services/api pytest services/api/tests/test_hackathon_partners.py services/api/tests/test_settings.py services/api/tests/test_workflow.py services/api/tests/test_auth.py services/api/tests/test_integration_logs.py services/api/tests/test_migration_foreign_keys.py services/api/tests/test_account_erasure_store.py -q",
     "check:monitoring-configuration:browser": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/check-monitoring-configuration-browser.mjs",
     "check:monitoring-batch:browser": "node scripts/check-monitoring-batch-browser.mjs",
     "dev": "concurrently -k -n api,web \"npm:dev:api\" \"npm:dev:web\"",

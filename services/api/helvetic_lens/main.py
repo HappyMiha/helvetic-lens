@@ -49,7 +49,7 @@ from .impact_inbox import ImpactInboxFilters
 from .interest_policy import PolicyInput
 from .interest_requests import BriefRequest
 from .locales import locale_from_accept_language
-from .model_settings import ApertusSettingsInput
+from .model_settings import ApertusSettingsInput, ModelDiscoveryInput
 from .models import (
     AdministrativeAudit,
     AssistantConversation,
@@ -333,6 +333,8 @@ class RelationReprocessingInput(Input):
 
 
 def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
+    if path.startswith(("/api/partner-tools/", "/api/settings/partners")):
+        return "partner_tools", 12 if method == "POST" else 30, 60
     if path == "/api/admin/monitoring-sources/history":
         return "monitoring_source_history", 60, 60
     if path.startswith("/api/admin/monitoring-sources/attention"):
@@ -2244,7 +2246,7 @@ def create_app(
         return await service.test_model_settings(data)
 
     @app.post("/api/settings/apertus/models")
-    async def model_options(data: ApertusSettingsInput):
+    async def model_options(data: ModelDiscoveryInput):
         return await service.list_model_settings(data)
 
     @app.post("/api/settings/apertus/reset")
@@ -2274,6 +2276,8 @@ def create_app(
     from .monitoring_connector_api import connector_router
     from .monitoring_connector_settings import RequestSettings
     source_settings = RequestSettings(service, settings)
+    from .partner_tools import partner_router
+    app.include_router(partner_router(service))
     app.include_router(connector_router(service))
     app.include_router(draft_router(service, source_settings))
     app.include_router(river_router(service, source_settings))

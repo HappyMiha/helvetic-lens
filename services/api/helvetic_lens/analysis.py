@@ -442,6 +442,10 @@ class ModelClient:
 
     @property
     def provider_name(self) -> str:
+        if self.settings.apertus_provider == "anthropic":
+            return "Anthropic Claude"
+        if self.settings.apertus_provider == "swisscom":
+            return "Swisscom"
         if self.settings.apertus_provider == "infomaniak":
             return "Infomaniak"
         if self.settings.apertus_provider == "docker":
@@ -461,6 +465,8 @@ class ModelClient:
         )
         if key:
             headers["Authorization"] = f"Bearer {key}"
+        if self.settings.apertus_provider == "anthropic":
+            headers["anthropic-version"] = "2023-06-01"
         return headers
 
     def endpoint(self, path: str) -> str:
@@ -695,6 +701,18 @@ class ModelClient:
                 503,
                 "model_not_configured",
             )
+        if self.settings.apertus_provider == "anthropic":
+            # Messages has a top-level system prompt, no system message, n,
+            # presence_penalty, response_format or OpenAI reasoning_effort.
+            if response_schema is not None:
+                system += "\nReturn only JSON conforming to this schema:\n" + json.dumps(response_schema)
+            return {
+                "model": self.settings.apertus_model,
+                "system": system,
+                "messages": [{"role": "user", "content": user}],
+                "max_tokens": self.settings.apertus_max_tokens,
+                "stream": False,
+            }
         payload = {
             "model": self.settings.apertus_model,
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
@@ -811,11 +829,12 @@ class ModelClient:
             }})
             if not self.evidence_fits(measured):
                 raise DomainError("This request exceeds the independently reviewed task budget. No explanation was generated.", 422, "capability_budget_exceeded")
-        url, headers = self.endpoint("chat/completions"), self.headers()
+        path = "messages" if self.settings.apertus_provider == "anthropic" else "chat/completions"
+        url, headers = self.endpoint(path), self.headers()
         if runtime is not None:
             headers["X-Helvetic-Runtime-Binding"] = runtime.binding_fingerprint
         total_attempts = self.settings.apertus_request_retries + 1
-        retryable_statuses = {408, 425, 429, 500, 502, 503, 504}
+        retryable_statuses = {408, 425, 429, 500, 502, 503, 504, 529}
 
         async def pause(attempt: int, response: httpx.Response | None = None):
             retry_after = response.headers.get("retry-after", "") if response is not None else ""
@@ -896,7 +915,17 @@ class ModelClient:
                     if runtime is not None and response.headers.get("x-helvetic-runtime-binding") != runtime.binding_fingerprint:
                         raise DomainError("The local runner response does not match this analysis's deployment.", 409, "runtime_binding_changed")
                     envelope = response.json()
-                    content = self.message_content(envelope)
+                    if not isinstance(envelope, dict):
+                        raise ValueError("Expected a model response object")
+                    if self.settings.apertus_provider == "anthropic":
+                        if envelope.get("stop_reason") not in {"end_turn", "stop_sequence"}:
+                            raise DomainError("Claude did not finish a complete answer. Check the output limit or model access.", 502, "model_incomplete")
+                        content = "\n".join(item["text"] for item in envelope.get("content", [])
+                            if isinstance(item, dict) and item.get("type") == "text" and isinstance(item.get("text"), str))
+                        if not content.strip():
+                            raise ValueError("empty Claude reply")
+                    else:
+                        content = self.message_content(envelope)
                     self.trace_event(
                         {
                             "outcome": "success",

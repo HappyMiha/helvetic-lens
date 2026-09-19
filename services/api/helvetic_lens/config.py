@@ -18,6 +18,22 @@ ROOT = next(
 INFOMANIAK_API_ROOT = "https://api.infomaniak.com"
 LOCAL_DOCKER_HOST_URL = "http://127.0.0.1:12436/openai/v1"
 LOCAL_DOCKER_CONTAINER_URL = "http://model-manager:8090/openai/v1"
+ANTHROPIC_BASE_URL = "https://api.anthropic.com/v1"
+InferenceProvider = Literal["custom", "docker", "infomaniak", "anthropic", "swisscom"]
+
+
+def partner_inference_url(provider: str, value: str) -> str:
+    if provider == "anthropic":
+        return ANTHROPIC_BASE_URL
+    if provider == "swisscom" and value:
+        parsed = urlsplit(value)
+        if (parsed.scheme != "https" or parsed.netloc != "api.swisscom.com"
+                or parsed.query or parsed.fragment
+                or not parsed.path.startswith(("/layer/swiss-ai-platform/", "/layer/swiss-ai-weeks/"))
+                or not parsed.path.rstrip("/").endswith("/v1")
+                or any(part in {".", ".."} for part in parsed.path.split("/"))):
+            raise ValueError("Use the Swisscom-issued HTTPS inference base URL on api.swisscom.com ending in /v1.")
+    return value.rstrip("/")
 
 
 def infomaniak_base_url(product_id: str) -> str:
@@ -145,7 +161,7 @@ class Settings(BaseSettings):
             "CREDENTIAL_ENCRYPTION_KEY",
         ),
     )
-    apertus_provider: Literal["custom", "docker", "infomaniak"] = "docker"
+    apertus_provider: InferenceProvider = "docker"
     apertus_product_id: str = Field(default="", pattern=r"^\d*$")
     apertus_base_url: str = ""
     apertus_model: str = "apertus-1.5b-q4km"
@@ -210,6 +226,8 @@ class Settings(BaseSettings):
         elif self.apertus_provider == "docker":
             self.apertus_product_id = ""
             self.apertus_base_url = local_docker_base_url()
+        elif self.apertus_provider in {"anthropic", "swisscom"}:
+            self.apertus_base_url = partner_inference_url(self.apertus_provider, self.apertus_base_url)
         return self
 
     @property

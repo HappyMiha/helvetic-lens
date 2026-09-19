@@ -6,7 +6,7 @@ The only active site is **helveticlens.ch on HappySnowman**, including Monitorin
 | Activity | Queue | State |
 |---|---|---|
 | Monitoring v2 | [Active backlog](BACKLOG_MONITORING_V2.md) | Pollen, River / Lake and Basel Air code released on the main site; applicable acceptance remains open |
-| Legal Hackathon 2026 | [Hackathon](docs/workstreams/HACKATHON_2026.md) | Main product; preserve the frozen MVP reference |
+| Legal Hackathon 2026 | [Hackathon](docs/workstreams/HACKATHON_2026.md) | Optional partner adapters and technical activation guide; live access and acceptance remain open; frozen MVP preserved |
 | Support and infrastructure | [Support](docs/workstreams/SUPPORT.md) | Parked pending the user's explicit start |
 
 | Instance | Code | Website |

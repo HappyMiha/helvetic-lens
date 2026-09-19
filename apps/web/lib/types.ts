@@ -73,7 +73,7 @@ export type DigestPreviewOverview = Omit<DigestOverview, "preview"> & {
   };
 };
 export type ApertusSettings = {
-  provider: "custom" | "docker" | "infomaniak";
+  provider: "custom" | "docker" | "infomaniak" | "anthropic" | "swisscom";
   product_id: string;
   base_url: string;
   model: string;
@@ -108,7 +108,7 @@ export type ApertusModelOption = {
   created?: number;
 };
 export type ApertusModelList = {
-  provider: "custom" | "docker" | "infomaniak";
+  provider: "custom" | "docker" | "infomaniak" | "anthropic" | "swisscom";
   base_url: string;
   models: ApertusModelOption[];
   count: number;
