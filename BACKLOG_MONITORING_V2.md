@@ -261,6 +261,13 @@ The host's full API suite reached 99% when its existing 7,200-second budget
 expired. Use the existing bounded operator setting for 10,800 seconds on future
 scheduled runs, retaining all required tests and the current CPU/memory budgets.
 An already-started run is not interrupted or reconfigured.
+The subsequent full run exposed three measured-token tests that import an
+unidentified synthetic document without the required explicit assignment. Keep
+the production identity guard, make that fixture's operator confirmation explicit,
+and prove measured coverage, evidence preservation and cache reuse still execute.
+All 55 token-evidence, identity, guidance, workflow and backlog checks passed;
+the three originally failing cases also passed separately. The complete release
+gate remains required; no production identity exception was added.
 The same live pilot reproduced relation-analysis schema failures and unsupported
 generated conclusions on an unreviewed small model. Apply the existing capability
 policy to the separate relation-impact task, use a compact cited-row selection
@@ -2376,6 +2383,21 @@ activation or human acceptance is claimed; the parent remains IN PROGRESS.
 <a id="mv2-052"></a>
 
 ### MV2-052 — Operational metrics, degraded mode and source recovery
+
+**Measured-token release fixture, 21 September 2026:** The full 402b4ad run
+reproduced three failures before any inference: importing the unnamed synthetic
+multi-article fixture correctly returns `document_identity_unknown`. The fixture
+must use the existing explicit assignment contract. Preserve identity rejection
+for unconfirmed documents and all measured-coverage/cache assertions. Validate
+the complete token-evidence tests and identity/workflow boundaries; no production
+identity exception or model approval is part of this correction.
+
+The original three failures reproduced before inference and passed after the
+fixture explicitly confirmed assignment. All 55 token-evidence, identity,
+guidance, workflow and backlog regressions passed with exact API Ruff. The
+402b4ad automatic run also reached its original 7,200-second deadline at 93%.
+The next normal run started with the previously configured 10,800-second budget;
+no active check was interrupted or replaced. Final activation remains pending.
 
 **Basel/Bern relation noise, 21 September 2026:** Read-only inventory of the
 demonstration watches found 22 BaselTech and 60 personal active candidates. Many

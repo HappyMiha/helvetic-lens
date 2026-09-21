@@ -572,3 +572,25 @@ topic and backlog checks passed with one existing skip. Nine additional candidat
 benchmark and relation-graph checks passed with the repository on PYTHONPATH.
 Production recovery
 and final account verification remain pending normal automatic activation.
+
+## Explicit assignment in the measured-token test fixture
+
+The 402b4ad full gate exposed three token-evidence integration failures before
+any model call. Its synthetic multi-article document has no official identifier.
+The corrected identity rules therefore reject an imported copy without explicit
+assignment, as the production contract requires. The fixture now records its
+test operator's confirmation using that existing import parameter. It does not
+claim official identity, bypass the import guard or approve a model capability.
+
+All original assertions still execute: measured HTTP token allocation, persisted
+actual coverage and selected evidence, unchanged deterministic differences and
+repeat requests without extra generation. The three cases passed individually;
+the complete related token-evidence, identity, guidance, workflow and backlog
+selection passed 55 tests. Existing identity tests also prove rejection before
+confirmation and its audit record afterward. Exact API Ruff passed.
+
+The same automatic 402b4ad run reached its original 7,200-second deadline at 93%
+on 21 September at 21:16 UTC. It is a failed gate, not completed QA. The following
+normal run for 8993ce1 began at 21:18 UTC before this fixture correction was
+published; it remains untouched. A later normal release must include the tested
+fixture correction and complete all gates before final production acceptance.

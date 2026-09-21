@@ -271,7 +271,9 @@ def test_real_http_analysis_persists_executed_coverage_and_reuses_it_without_new
 
     fetcher.values[LAW_URL] = document(30)
     law = add_law(client)
-    previous = import_old(client, law["id"], body=document(10))["version"]
+    # This deliberately unnamed synthetic document has no official identifier.
+    # Its test operator explicitly assigns the previous fixture to this watch.
+    previous = import_old(client, law["id"], body=document(10), confirm_identity="true")["version"]
     compared = client.post("/api/comparisons", json={"old_version_id": previous["id"], "new_version_id": law["current_version_id"]}).json()
     with service.db.session() as session:
         original_diff = copy.deepcopy(session.get(Comparison, compared["id"]).diff)
