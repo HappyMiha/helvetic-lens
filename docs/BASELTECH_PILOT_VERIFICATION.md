@@ -4,6 +4,22 @@ This records operator preparation of demonstration workspaces with real public
 sources. It is not independent pilot feedback or evidence of legal completeness.
 Accounts, credentials and private workspace records are not repository artifacts.
 
+## Ukrainian attachment language
+
+The retained Bern Status S Ukrainian leaflet is under a German `/de/` website
+asset directory. New artifact identities now prefer a bounded predominantly
+Cyrillic sample containing Ukrainian-specific letters over this weak path hint.
+Ambiguous Cyrillic stays unknown, and verified publisher language metadata keeps
+precedence. A German document quoting a short Ukrainian passage remains German.
+The registry displays the source-language autonym `Українська`; the five supported
+interface locales are unchanged. Existing evidence/confirmed identities are not
+globally rewritten. The operator-created pilot baselines will be re-acquired.
+
+Ten identity/backlog checks, the final focused classification test, exact API
+Ruff and web TypeScript checks passed. The actual retained Bern leaflet was
+classified as `uk` by the corrected code; its serving registry still awaits
+release and baseline correction.
+
 ## HTML parser transition
 
 Direct-document scans and newly requested comparisons now re-extract older HTML

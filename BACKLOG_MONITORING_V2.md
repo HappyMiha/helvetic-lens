@@ -218,6 +218,10 @@ evidence and provenance; an extractor upgrade alone must not become a legal
 change, while concurrent source edits must still be detected. Missing or damaged
 originals must stop the comparison. Cantonal acts also need a jurisdiction-neutral
 document-type label in all five interface languages.
+For newly acquired Ukrainian guidance, a German-language website directory must
+not override predominantly Ukrainian document text. Retain explicit publisher
+language metadata as authoritative, use conservative bounded script evidence,
+and display the Ukrainian source-language label without adding a new UI locale.
 Daily-watch API, migration, frontend and local browser checks passed; production
 scheduled execution remains pending activation, with MV2-052 IN PROGRESS.
 The expanded live source audit also requires complete Fedlex HTML annex evidence
@@ -2291,6 +2295,15 @@ activation or human acceptance is claimed; the parent remains IN PROGRESS.
 <a id="mv2-052"></a>
 
 ### MV2-052 — Operational metrics, degraded mode and source recovery
+
+**Ukrainian source-language scope, 21 September 2026:** The Bern Ukrainian
+Status S leaflet is under a `/de/` asset directory and was labelled German.
+Use a bounded predominantly Cyrillic sample with Ukrainian-specific letters
+before the weak URL-path hint; ambiguous Cyrillic remains unknown. Explicit
+verified publisher language metadata retains precedence. Verify German pages
+quoting Ukrainian and ambiguous samples, preserve the five UI locales, and
+re-acquire only the operator-created affected demo baselines after activation.
+Existing evidence and confirmed identities are not globally rewritten.
 
 **Extraction-transition scope, 21 September 2026:** The pilot's complete-text
 repair must not compare a partial old extraction against a full new extraction.

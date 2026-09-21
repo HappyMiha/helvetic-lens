@@ -75,6 +75,18 @@ def _sr_ids(title: str, passages: list[dict]) -> list[str]:
     return list(dict.fromkeys(values))[:5]
 
 
+def _cyrillic_language(passages: list[dict]) -> str | None:
+    """A hosting site's locale is not the language of its translated attachment."""
+    sample = " ".join(str(item.get("text", "")) for item in passages[:50])[:12000]
+    letters = [char for char in sample.casefold() if char.isalpha()]
+    cyrillic = [char for char in letters if "\u0400" <= char <= "\u052f"]
+    if len(cyrillic) < 80 or len(cyrillic) < 0.6 * len(letters):
+        return None
+    if sum(char in "їєґ" for char in cyrillic) >= 2:
+        return "uk"
+    return "und"
+
+
 def build_artifact_identity(
     *, title: str, source_url: str | None, passages: list[dict], extractor: str,
     content_type: str, filename: str, declared_date: str | None = None,
@@ -97,6 +109,8 @@ def build_artifact_identity(
     official_eli = _eli_work(str(metadata.get("eli_work_uri") or "")) or _eli_work(source_url)
     sr_ids = _sr_ids(detected_title, passages)
     language = metadata.get("eli_language") or (lexwork.language if valid_lexwork else None)
+    if not language:
+        language = _cyrillic_language(passages)
     if not language and source_url:
         match = _LANG_PATH.search(urlsplit(source_url).path)
         language = match.group(1).lower() if match else None

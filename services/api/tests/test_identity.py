@@ -33,6 +33,22 @@ def test_watched_faq_continuity_is_probable_and_does_not_verify_a_legal_work():
     assert wrong_law["status"] == "mismatch"
 
 
+def test_ukrainian_attachment_language_is_not_its_german_hosting_directory():
+    from helvetic_lens.identity import build_artifact_identity
+
+    ukrainian = "Інформація для українців про соціальну допомогу, навчання дітей і роботу в кантоні Берн. " * 4
+    base = dict(title="Merkblatt", source_url="https://www.asyl.sites.be.ch/content/dam/de/status-s-uk.pdf",
+                extractor="native-pdf", content_type="application/pdf", filename="status-s-uk.pdf")
+    assert build_artifact_identity(**base, passages=[{"text": ukrainian}])["language"] == "uk"
+    german = "Informationen zu Arbeit, Integration und Unterstützung im Kanton Bern. " * 30
+    mixed = build_artifact_identity(**base, passages=[{"text": german}, {"text": ukrainian}])
+    assert mixed["language"] == "de"
+    ambiguous = build_artifact_identity(**base, passages=[{"text": "Право на работу и помощь в кантоне. " * 10}])
+    assert ambiguous["language"] == "und"
+    official = build_artifact_identity(**base, passages=[{"text": ukrainian}], metadata={"eli_language": "de"})
+    assert official["language"] == "de"
+
+
 def test_artifact_identity_is_persisted_with_official_metadata(harness):
     client, fetcher, _, _ = harness
     fetcher.values[NATURALIZATION_ELI] = policy()

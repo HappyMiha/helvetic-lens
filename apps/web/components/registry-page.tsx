@@ -120,6 +120,7 @@ const LANGUAGES: Record<string, string> = {
   it: "Italiano",
   rm: "Rumantsch",
   en: "English",
+  uk: "Українська",
 };
 const VALUE_LABELS: Record<string, string> = {
   parliament: "registryFilters.value.parliament",
