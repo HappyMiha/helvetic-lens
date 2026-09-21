@@ -2222,15 +2222,17 @@ class HelveticLens:
             candidates = session.scalars(
                 select(Law).where(
                     Law.canonical_identity.in_(lookup_identities),
-                    Law.owner_organization_id.is_(None)
+                    or_(Law.owner_organization_id.is_(None), Law.owner_organization_id == self.organization_id)
                     if shared_official
                     else Law.owner_organization_id == self.organization_id,
                 )
             )
             # Legacy records used one identity across all official languages.
             # Reuse only the exact requested edition, without rewriting history.
-            existing = next((row for row in candidates
-                             if self.canonical_document_identity(row.url) == canonical_identity), None)
+            editions = [row for row in candidates
+                        if self.canonical_document_identity(row.url) == canonical_identity]
+            existing = next((row for row in editions if self.watch(session, row.id, required=False)),
+                            next(iter(editions), None))
             if existing and self.watch(session, existing.id, required=False):
                 raise DomainError(
                     f"This document is already tracked as '{existing.name}'.", 409, "duplicate_law"
@@ -2256,7 +2258,7 @@ class HelveticLens:
             if session.scalar(
                 select(Law.id).where(
                     Law.canonical_identity == canonical_identity,
-                    Law.owner_organization_id.is_(None)
+                    or_(Law.owner_organization_id.is_(None), Law.owner_organization_id == self.organization_id)
                     if shared_official
                     else Law.owner_organization_id == self.organization_id,
                 )

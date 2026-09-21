@@ -32,3 +32,22 @@ def test_direct_fedlex_watches_keep_requested_language_and_pinned_edition(harnes
     saved = client.get("/api/laws/" + original["id"]).json()
     assert saved["url"] == italian
     assert saved["current_version_id"] == original["current_version_id"]
+
+
+def test_www_alias_and_existing_private_edition_deduplicate_without_republishing(harness):
+    client, fetcher, service, _ = harness
+    url = "https://www.fedlex.admin.ch/eli/cc/2007/758/de"
+    fetcher.values[url] = policy()
+    saved = client.post("/api/laws", json={"url": url})
+    assert saved.status_code == 201, saved.text
+    assert saved.json()["corpus_scope"] == "shared_public"
+    assert client.post("/api/laws", json={"url": url}).status_code == 409
+    with service.db.session() as session:
+        law = session.get(Law, saved.json()["id"])
+        law.owner_organization_id = service.organization_id
+        law.canonical_identity = "https://fedlex.data.admin.ch/eli/cc/2007/758"
+        session.commit()
+    duplicate = client.post("/api/laws", json={"url": url.replace("www.fedlex.admin.ch", "fedlex.data.admin.ch")})
+    assert duplicate.status_code == 409, duplicate.text
+    with service.db.session() as session:
+        assert session.get(Law, saved.json()["id"]).owner_organization_id == service.organization_id

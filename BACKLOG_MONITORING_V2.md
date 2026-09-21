@@ -203,6 +203,8 @@ article. Tests preserve navigation exclusion and detect edits in later answers.
 Direct Fedlex watches must also retain the requested language and pinned date;
 existing work-wide records remain readable without being reused for another
 language or edition. The shared regulatory-work identity remains unchanged.
+The same recovery reconciles the accepted `www.fedlex.admin.ch` host with shared
+record assignment and reuses existing tenant-private editions without disclosure.
 
 15 September recurring-closure feature: MV2-040 and MV2-041 remain IN PROGRESS
 in this index and their details. The explicit-offset source/calendar, private
@@ -2306,6 +2308,9 @@ fallback to legacy records. Preserve all existing IDs, artifacts and watches;
 do not merge/delete records or change the native multilingual regulatory corpus.
 Acceptance verifies different-language and pinned-date isolation plus alias
 deduplication for both new and legacy records.
+The ORM's official-host list must agree with the resolver, including the `www`
+alias. Existing private records are not republished; only the requesting tenant
+may reuse its own record, with its existing watch preferred over shared aliases.
 
 **Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Operations + Backend · **Size:** M
 

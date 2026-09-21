@@ -110,3 +110,10 @@ Eleven focused requested-edition, authentication, synchronization and backlog
 checks passed, including alias duplicates and preservation of a legacy Italian
 record. The exact API Ruff gate passed. The pilot DSG watch awaits correction
 through the normal document API after activation.
+
+The ORM official-host list now also recognizes `www.fedlex.admin.ch`. Direct-watch
+lookup may reuse a requesting tenant's own legacy private edition while retaining
+its privacy; an existing watch takes precedence over shared aliases. Twelve
+requested-edition/authentication/synchronization/backlog tests and exact API Ruff
+passed. This also prevents repeated `www` adds from reaching a private uniqueness
+error after an incorrectly scoped shared lookup.

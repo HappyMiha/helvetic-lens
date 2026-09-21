@@ -83,7 +83,7 @@ class Database:
                     record.canonical_identity = record.canonical_identity or record.url.lower()
                     if record.owner_organization_id is None and (
                         urlsplit(record.url).hostname or ""
-                    ).lower() not in {"fedlex.admin.ch", "fedlex.data.admin.ch"}:
+                    ).lower() not in {"fedlex.admin.ch", "www.fedlex.admin.ch", "fedlex.data.admin.ch"}:
                         record.owner_organization_id = organization_id
 
         @event.listens_for(self._session_factory, "do_orm_execute")
