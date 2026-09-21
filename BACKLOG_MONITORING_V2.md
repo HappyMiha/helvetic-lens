@@ -207,6 +207,8 @@ The same recovery reconciles the accepted `www.fedlex.admin.ch` host with shared
 record assignment and reuses existing tenant-private editions without disclosure.
 Small-context AI requests must measure the actual batch count before admission;
 excess change units stay in the exact diff with explicitly limited AI coverage.
+Current/history cantonal scans must consume the resolver's verified publisher
+identity; ordinary FAQ URL continuity must not be confused with legal-work proof.
 
 15 September recurring-closure feature: MV2-040 and MV2-041 remain IN PROGRESS
 in this index and their details. The explicit-offset source/calendar, private
@@ -2320,6 +2322,15 @@ aggregate size still produced more than three actual batches. Fit whole change
 units to the existing provider-call budget using the actual batch planner, retain
 the complete exact diff, and report every coverage limitation. Keep runtime token
 measurement, citations and independent explanation-quality gates unchanged.
+
+**Direct-source identity scope, 21 September 2026:** Preserve verified LexWork
+publisher/number/language/version provenance in artifact identity so Basel/Bern
+scans and historical imports do not depend on translated display titles. For
+ordinary non-legal, identifier-free pages, an exact watched URL may establish
+probable page continuity only, never verified legal identity. Changed legal
+titles, conflicting identifiers, foreign PDFs and unknown uploads retain the
+existing quarantine/confirmation behavior. Verify real current/historical probes
+and negative identity tests before activating daily document checks.
 
 **Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Operations + Backend · **Size:** M
 

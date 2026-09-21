@@ -2,7 +2,9 @@ import hashlib
 import json
 import re
 import unicodedata
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
+
+from .lexwork import reference as lexwork_reference
 
 IDENTITY_REVISION = "artifact-identity-v2"
 _ELI_WORK = re.compile(r"/eli/(?P<collection>cc|oc|fga)/(?P<year>[^/]+)/(?P<id>[^/]+)", re.I)
@@ -79,17 +81,31 @@ def build_artifact_identity(
     metadata: dict | None = None,
 ) -> dict:
     metadata = metadata or {}
-    detected_title = str(metadata.get("eli_title") or _identity_title(title, passages))[:500]
+    lexwork = lexwork_reference(str(metadata.get("lexwork_source_url") or ""))
+    lexwork_version = metadata.get("lexwork_version_id")
+    valid_lexwork = bool(
+        metadata.get("lexwork") is True and lexwork
+        and metadata.get("lexwork_systematic_number") == lexwork.number
+        and metadata.get("lexwork_language") == lexwork.language
+        and type(lexwork_version) is int and lexwork_version > 0
+        and source_url in {f"{lexwork.origin}/api/{lexwork.language}/versions/{lexwork_version}/{suffix}"
+                           for suffix in ("pdf_file", "pdf_file_with_annexes")}
+    )
+    cantonal_id = f"{lexwork.origin}/texts_of_law/{quote(lexwork.number, safe='.')}" if valid_lexwork else None
+    detected_title = str(metadata.get("eli_title") or (metadata.get("lexwork_title") if valid_lexwork else None)
+                         or _identity_title(title, passages))[:500]
     official_eli = _eli_work(str(metadata.get("eli_work_uri") or "")) or _eli_work(source_url)
     sr_ids = _sr_ids(detected_title, passages)
-    language = metadata.get("eli_language")
+    language = metadata.get("eli_language") or (lexwork.language if valid_lexwork else None)
     if not language and source_url:
         match = _LANG_PATH.search(urlsplit(source_url).path)
         language = match.group(1).lower() if match else None
-    canonical = official_eli or (f"sr:{sr_ids[0]}" if sr_ids else None)
+    canonical = official_eli or cantonal_id or (f"sr:{sr_ids[0]}" if sr_ids else None)
     evidence = []
     if official_eli:
         evidence.append({"type": "official_identifier", "source": "Fedlex ELI metadata or URL", "value": official_eli})
+    if cantonal_id:
+        evidence.append({"type": "official_identifier", "source": "Verified official cantonal version metadata", "value": cantonal_id})
     if sr_ids:
         evidence.append({"type": "official_identifier", "source": "Extracted SR/RS label", "value": sr_ids[0]})
     if detected_title:
@@ -98,7 +114,9 @@ def build_artifact_identity(
         "revision": IDENTITY_REVISION,
         "authority": "Swiss Confederation / Fedlex" if official_eli else (urlsplit(source_url).hostname if source_url else "User-provided artifact"),
         "canonical_work_id": canonical,
-        "official_identifiers": ([{"scheme": "ELI", "value": official_eli}] if official_eli else []) + [{"scheme": "SR/RS", "value": value} for value in sr_ids],
+        "official_identifiers": ([{"scheme": "ELI", "value": official_eli}] if official_eli else [])
+        + ([{"scheme": "LEXWORK", "value": cantonal_id}] if cantonal_id else [])
+        + [{"scheme": "SR/RS", "value": value} for value in sr_ids],
         "document_kind": "legal_work" if _LEGAL_TITLE_WORDS.search(detected_title) else "document",
         "title": detected_title,
         "language": language or "unknown",
@@ -127,11 +145,20 @@ def assess_document_identity(
         content_type=content_type, filename=filename, declared_date=declared_date, metadata=metadata,
     )
     tracked_eli = _eli_work(law_url)
+    tracked_canton = lexwork_reference(law_url or "")
+    tracked_cantonal_id = (f"{tracked_canton.origin}/texts_of_law/{quote(tracked_canton.number, safe='.')}"
+                          if tracked_canton else None)
+    detected_canton = next((item["value"] for item in artifact.get("official_identifiers", []) if item.get("scheme") == "LEXWORK"), None)
     detected_eli = next((item["value"] for item in artifact.get("official_identifiers", []) if item.get("scheme") == "ELI"), None)
     tracked_sr = next(iter(_sr_ids(law_name, [])), None)
     detected_sr = next((item["value"] for item in artifact.get("official_identifiers", []) if item.get("scheme") == "SR/RS"), None)
     score = _title_score(law_name, artifact.get("title", ""))
-    if tracked_eli and detected_eli:
+    if tracked_cantonal_id and detected_canton:
+        status = "verified" if tracked_cantonal_id == detected_canton and artifact.get("language") == tracked_canton.language else "mismatch"
+        reason_code = "official_cantonal_match" if status == "verified" else "official_cantonal_mismatch"
+        reason = ("The official cantonal publisher, systematic number and language match the monitored law."
+                  if status == "verified" else "The official cantonal artifact belongs to a different law or language.")
+    elif tracked_eli and detected_eli:
         status = "verified" if tracked_eli == detected_eli else "mismatch"
         reason_code = "official_eli_match" if status == "verified" else "official_eli_mismatch"
         reason = "The official Fedlex ELI work identifier matches the monitored document." if status == "verified" else "The official Fedlex ELI identifier belongs to a different legal work."
@@ -145,6 +172,11 @@ def assess_document_identity(
     elif score >= 0.45:
         reason_code = "title_strong_probable"
         status, reason = "probable", "The extracted legal title is strongly consistent with the monitored document, but no matching official identifier was available."
+    elif (not tracked_eli and not tracked_canton and not tracked_sr and not detected_sr
+          and artifact.get("document_kind") == "document" and law_url
+          and law_url.rstrip("/") == (artifact.get("source_url") or "").rstrip("/")):
+        reason_code = "watched_page_continuity"
+        status, reason = "probable", "The document was retrieved from the exact watched page URL. This establishes page continuity, not verified legal-work identity."
     elif score >= 0.12:
         reason_code = "title_partial_unknown"
         status, reason = "unknown", "The title is partly consistent, but stable official identity metadata is missing."
@@ -157,7 +189,7 @@ def assess_document_identity(
     return {
         "revision": IDENTITY_REVISION, "status": status, "reason_code": reason_code, "reason": reason, "score": score,
         "tracked_title": law_name, "detected_title": artifact.get("title"),
-        "tracked_identifier": tracked_eli or (f"sr:{tracked_sr}" if tracked_sr else None),
+        "tracked_identifier": tracked_eli or tracked_cantonal_id or (f"sr:{tracked_sr}" if tracked_sr else None),
         "detected_identifier": artifact.get("canonical_work_id"), "artifact": artifact,
         "fingerprint": artifact.get("fingerprint"),
     }

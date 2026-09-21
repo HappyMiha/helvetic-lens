@@ -7,6 +7,7 @@ from pdf_fixture import make_pdf
 from helvetic_lens.config import DomainError, Settings
 from helvetic_lens.diffing import compare_passages
 from helvetic_lens.extraction import Fetcher, extract
+from helvetic_lens.identity import assess_document_identity
 from helvetic_lens.lexwork import reference
 
 ORIGIN = "https://www.belex.sites.be.ch"
@@ -87,6 +88,14 @@ async def test_explicit_history_does_not_silently_select_current_version(monkeyp
     assert requested[0].endswith("/texts_of_law/124.1/versions/2113")
     assert result.metadata["lexwork_version_selection"] == "historical"
     assert result.metadata["lexwork_version_id"] == 2113
+    document = extract(result.body, result.content_type)
+    identity = assess_document_identity(law_name="Берн: інтеграція", law_url=LAW,
+        title=document.title, source_url=result.url, passages=document.passages, metadata=result.metadata)
+    assert identity["status"] == "verified"
+    assert identity["reason_code"] == "official_cantonal_match"
+    wrong = assess_document_identity(law_name="Берн: інтеграція", law_url=LAW.replace("124.1", "122.20"),
+        title=document.title, source_url=result.url, passages=document.passages, metadata=result.metadata)
+    assert wrong["status"] == "mismatch"
 
 
 @pytest.mark.parametrize("damage", ["law", "version", "foreign_pdf", "language", "malformed", "redirect", "not_pdf"])

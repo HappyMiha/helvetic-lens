@@ -134,3 +134,13 @@ using the real partitioner before admission, keeps the full audit diff, and
 reports limited coverage. Fifty-four analysis and backlog tests passed, including
 1k/3k/4k/5k/12k context budgets, exact evidence coverage and an unchanged audit.
 The exact API Ruff gate passed. Production replay remains pending activation.
+
+## Cantonal identity and FAQ replay
+
+Artifact identity now consumes the verified LexWork publisher, systematic number,
+language and exact PDF version. This allows translated watch names without title
+guessing. Live Basel-Stadt 122.510 and Bern 122.20 probes both verified their exact
+official identities. Non-legal pages without official identifiers may establish
+only probable continuity at the exact watched URL. Conflicting legal identities,
+different page URLs and unknown uploads retain quarantine/confirmation behavior.
+Twenty-five identity, LexWork and backlog tests plus exact API Ruff passed.

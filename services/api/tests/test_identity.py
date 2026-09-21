@@ -2,6 +2,7 @@ from conftest import LAW_URL, add_law, policy, run_scan
 from sqlalchemy import func, select
 
 from helvetic_lens.diffing import compare_passages
+from helvetic_lens.identity import assess_document_identity
 from helvetic_lens.models import Analysis, AskRecord, Comparison, IdentityDecision, Version
 
 NATURALIZATION_ELI = "https://fedlex.data.admin.ch/eli/oc/2017/259/de"
@@ -17,6 +18,19 @@ DZV = """
 <p>Diese Verordnung regelt landwirtschaftliche Direktzahlungen.</p>
 </main></body></html>
 """.encode()
+
+
+def test_watched_faq_continuity_is_probable_and_does_not_verify_a_legal_work():
+    url = "https://www.sem.admin.ch/sem/de/home/sem/aktuell/ukraine-krieg.html"
+    values = dict(law_name="Status S — український FAQ", law_url=url,
+        title="Fragen und Antworten für Geflüchtete", source_url=url,
+        passages=[{"id": "p1", "text": "Questions and answers for people seeking protection."}])
+    report = assess_document_identity(**values)
+    assert report["status"] == "probable" and report["reason_code"] == "watched_page_continuity"
+    changed_source = assess_document_identity(**{**values, "source_url": url + "/other"})
+    assert changed_source["status"] == "unknown"
+    wrong_law = assess_document_identity(**{**values, "title": "Verordnung über die Direktzahlungen", "passages": [{"text": "SR 910.13"}]})
+    assert wrong_law["status"] == "mismatch"
 
 
 def test_artifact_identity_is_persisted_with_official_metadata(harness):
