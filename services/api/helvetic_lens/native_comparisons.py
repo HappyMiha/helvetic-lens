@@ -60,6 +60,16 @@ def _pair(session, organization_id, event, before_id, after_id):
     # watch baseline. Do not bypass those checks through a new native wrapper.
     if old_native.legacy_version_id or new_native.legacy_version_id:
         unavailable()
+    # Native source-version keys are immutable. Unlike direct watches, this
+    # boundary cannot derive a new extraction from the retained original. A
+    # parser upgrade must therefore stop a mixed HTML pair, not invent an act
+    # amendment from newly visible sections. Existing evidence remains readable.
+    if (before.content_type == after.content_type == "text/html"
+            and before.extractor != after.extractor):
+        raise DomainError(
+            "These HTML versions use different extraction revisions. Compare retained originals "
+            "through direct document monitoring before interpreting their differences as source changes.",
+            409, "native_comparison_extraction_mismatch")
     binding = {"before": old_binding, "after": new_binding, "work": event.work_id,
                "expression": expression.id, "language": expression.language,
                "schema_version": DIFF_SCHEMA_VERSION}

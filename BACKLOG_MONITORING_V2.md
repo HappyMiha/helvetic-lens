@@ -224,6 +224,11 @@ language metadata as authoritative, use conservative bounded script evidence,
 and display the Ukrainian source-language label without adding a new UI locale.
 Daily-watch API, migration, frontend and local browser checks passed; production
 scheduled execution remains pending activation, with MV2-052 IN PROGRESS.
+Native catalogue comparisons must also reject HTML pairs acquired with different
+extractor revisions. Retain their immutable evidence and existing comparison
+history; do not interpret parser completeness changes as legal amendments.
+Verify that new selections fail without writes and stale selections cannot feed
+AI or the comparison page. Same-parser comparisons remain available.
 The expanded live source audit also requires complete Fedlex HTML annex evidence
 and root-work-only catalogue discovery; historical dated members are versions.
 Shared language-specific watches must still bind to one official corpus work,
@@ -2295,6 +2300,15 @@ activation or human acceptance is claimed; the parent remains IN PROGRESS.
 <a id="mv2-052"></a>
 
 ### MV2-052 — Operational metrics, degraded mode and source recovery
+
+**Native comparison guard, 21 September 2026:** Native corpus versions have
+immutable official-version keys and cannot use the direct-watch derived-version
+path. Reject comparisons between HTML versions with different extractor stamps,
+retain compatible comparisons without invalidating them, and preserve source
+versions and old comparison history. Test rejected selection without writes,
+fail-closed existing selection/AI reads, and valid same-parser comparisons. The
+existing native ownership and source grants remain prerequisites. This bounded
+guard does not claim catalogue reprocessing or complete historical extraction.
 
 **Ukrainian source-language scope, 21 September 2026:** The Bern Ukrainian
 Status S leaflet is under a `/de/` asset directory and was labelled German.

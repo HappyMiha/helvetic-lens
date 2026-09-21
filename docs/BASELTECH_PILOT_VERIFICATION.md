@@ -4,6 +4,20 @@ This records operator preparation of demonstration workspaces with real public
 sources. It is not independent pilot feedback or evidence of legal completeness.
 Accounts, credentials and private workspace records are not repository artifacts.
 
+## Native HTML comparison boundary
+
+Native corpus comparisons now reject HTML pairs with different extractor stamps.
+The immutable official-version evidence remains readable; old comparison history
+is retained, while an incompatible selected pair cannot feed an AI request or
+the comparison page. Compatible existing comparisons keep their fingerprints.
+This prevents a newly complete extraction from appearing as a legal amendment.
+Direct watches can instead compare separately derived, hash-verified originals.
+Historical native corpus reprocessing is not claimed by this bounded guard.
+
+All 47 native comparison/view/backlog tests passed. After removing an unnecessary
+global fingerprint change, the three affected same-parser/mixed-parser/history
+tests passed again. The exact API Ruff gate passed.
+
 ## Ukrainian attachment language
 
 The retained Bern Status S Ukrainian leaflet is under a German `/de/` website

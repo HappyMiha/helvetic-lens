@@ -74,6 +74,50 @@ def read(service, event_id):
         return current_key(session, service.organization_id, event_id, model=model_identity())
 
 
+def test_mixed_html_parsers_cannot_create_an_amendment(harness):
+    service, event_id, _, _ = setup(harness)
+    before, after = baseline(service, event_id)
+    with service.db.session() as session:
+        for version_id, extractor in ((before, "official_connector-v3"),
+                                      (after, "official_connector-html-v5")):
+            row = session.get(RegulatoryDocumentVersion, version_id)
+            row.content_type, row.extractor = "text/html", extractor
+        session.commit()
+    with pytest.raises(DomainError) as error:
+        choose(service, event_id, before, after)
+    assert error.value.code == "native_comparison_extraction_mismatch"
+    with service.db.session() as session:
+        assert session.scalar(select(func.count()).select_from(NativeDocumentComparison)) == 0
+        assert session.scalar(select(func.count()).select_from(NativeEventComparisonSelection)) == 0
+        assert session.get(RegulatoryDocumentVersion, before).extractor == "official_connector-v3"
+
+
+def test_html_parser_guard_preserves_history_and_stops_stale_ai(harness):
+    from helvetic_lens.native_comparison_views import page
+
+    service, event_id, _, _ = setup(harness)
+    before, after = baseline(service, event_id)
+    with service.db.session() as session:
+        for version_id in (before, after):
+            row = session.get(RegulatoryDocumentVersion, version_id)
+            row.content_type, row.extractor = "text/html", "official_connector-html-v5"
+        session.commit()
+    selected = choose(service, event_id, before, after)
+    read(service, event_id)
+    with service.db.session() as session:
+        assert page(session, service.organization_id, event_id)["status"] == "ready"
+        saved_diff = copy.deepcopy(session.get(NativeDocumentComparison, selected.comparison_id).diff)
+        session.get(RegulatoryDocumentVersion, before).extractor = "official_connector-v3"
+        session.commit()
+    with pytest.raises(DomainError) as error:
+        read(service, event_id)
+    assert error.value.code == "native_comparison_extraction_mismatch"
+    with service.db.session() as session:
+        result = page(session, service.organization_id, event_id)
+        assert result["status"] == "stale" and result["items"] == []
+        assert session.get(NativeDocumentComparison, selected.comparison_id).diff == saved_diff
+
+
 def test_complete_large_native_pair_persists_and_reuses_without_import_order_guess(harness):
     service, event_id, _, _ = setup(harness, units=400)
     before, after = baseline(service, event_id)
