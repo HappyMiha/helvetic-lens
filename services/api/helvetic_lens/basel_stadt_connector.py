@@ -32,7 +32,7 @@ MAX_BYTES = 12_000_000
 STARTER_WHERE = 'info_badge = "current" AND (systematic_number = "153.260" OR systematic_number = "730.100")'
 MANIFEST = ConnectorManifest(
     name="basel-stadt-legislation", authority="basel_stadt",
-    connector_version="1.0.0", schema_version="basel-ogd-laws-v1",
+    connector_version="1.0.1", schema_version="basel-ogd-laws-v1",
     allowed_hosts=frozenset({"data.bs.ch", "www.gesetzessammlung.bs.ch"}),
     attribution="Zentraler Rechtsdienst / Open Data Basel-Stadt, dataset 100354, CC BY 4.0. "
                 "OGD text representation; authoritative publication: Kantonsblatt.",
@@ -55,6 +55,15 @@ def drift(message):
     return DomainError(message, 502, "connector_contract_drift")
 
 
+def record_url(row):
+    return DATASET + "/records?" + urlencode({"where": f'v_id = {row["v_id"]}', "limit": 2})
+
+
+def evidence_url(row):
+    # A null publisher link is an observed OGD gap, not an invented law version.
+    return row.get("version_url_de") or record_url(row)
+
+
 def validate_row(row):
     if not isinstance(row, dict) or type(row.get("v_id")) is not int or row["v_id"] <= 0:
         raise drift("Basel-Stadt omitted its numeric version identity.")
@@ -64,11 +73,12 @@ def validate_row(row):
     if not row["id"].isdigit() or row.get("is_active") not in ("True", "False"):
         raise drift("Basel-Stadt changed its identity or lifecycle schema.")
     url = row.get("version_url_de")
-    if not isinstance(url, str):
-        raise drift("Basel-Stadt omitted its exact publisher version link.")
-    validate_official_url(url, frozenset({"www.gesetzessammlung.bs.ch"}))
-    if not urlsplit(url).path.startswith("/app/de/texts_of_law/") or "/versions/" not in urlsplit(url).path:
-        raise drift("Basel-Stadt returned a non-version publication link.")
+    if url is not None:
+        if not isinstance(url, str):
+            raise drift("Basel-Stadt returned an invalid publisher version link.")
+        validate_official_url(url, frozenset({"www.gesetzessammlung.bs.ch"}))
+        if not urlsplit(url).path.startswith("/app/de/texts_of_law/") or "/versions/" not in urlsplit(url).path:
+            raise drift("Basel-Stadt returned a non-version publication link.")
     for field in ("version_active_since", "version_inactive_since"):
         if row.get(field) is not None:
             try:
@@ -139,8 +149,7 @@ class BaselStadtConnector(OfficialConnector):
             if key in self.rows:
                 continue
             self.rows[key] = row
-            items.append(DiscoveryReference(row["id"], revision, row["version_url_de"],
-                                            DATASET + "/records?" + urlencode({"where": f'v_id = {row["v_id"]}', "limit": 2})))
+            items.append(DiscoveryReference(row["id"], revision, evidence_url(row), record_url(row)))
         complete = len(rows) >= data["total_count"] or not rows or (self.stream == "latest-de" and remaining <= len(rows))
         next_cursor = {"cycle": cycle + 1} if complete else {
             "cycle": cycle, "before": ids[-1], "remaining": max(1, remaining - len(rows)) if self.stream == "latest-de" else 50,
@@ -159,7 +168,7 @@ class BaselStadtConnector(OfficialConnector):
                 raise drift("Basel-Stadt retained an invalid version lookup.")
             data, _ = await self._query({"where": where, "limit": 2})
             row = next((validate_row(item) for item in data["results"] if fingerprint(item) == reference.source_revision), None)
-        if row is None or row["id"] != reference.external_identity or fingerprint(row) != reference.source_revision or row["version_url_de"] != reference.canonical_url:
+        if row is None or row["id"] != reference.external_identity or fingerprint(row) != reference.source_revision or evidence_url(row) != reference.canonical_url:
             raise drift("The Basel-Stadt record changed during ingestion; retry discovery.")
         self.rows[(reference.external_identity, reference.source_revision)] = row
         dates = tuple(DateInput("version", kind, row[field], "day", "official_metadata", reference.canonical_url,
@@ -176,10 +185,11 @@ class BaselStadtConnector(OfficialConnector):
             dates=dates, metadata={"jurisdiction": "CH-BS", "jurisdictions": ["CH-BS"], "canton": "BS",
                                    "municipality": municipal, "language": "de", "systematic_number": row["systematic_number"],
                                    "version_status": row.get("info_badge"), "category": row.get("category_name"),
+                                   "publisher_version_available": row.get("version_url_de") is not None,
                                    "keywords": row.get("keywords_de") or [], "dataset": "100354",
                                    "coverage": "OGD text only; annexes and other source families excluded"},
             raw_provenance={"record_url": reference.raw_provenance_ref, "record_sha256": reference.source_revision,
-                            "publisher_version": reference.canonical_url, "dataset": DATASET_PAGE},
+                            "publisher_version": row.get("version_url_de"), "dataset": DATASET_PAGE},
         )
 
     async def list_expressions(self, metadata):
@@ -188,10 +198,14 @@ class BaselStadtConnector(OfficialConnector):
                                     version_key=f'{row["v_id"]}:{metadata.source_revision}', artifact_url=metadata.raw_provenance["record_url"],
                                     metadata={"ogd_version_id": row["v_id"], "record_sha256": metadata.source_revision,
                                               "source_status": row.get("info_badge"), "annexes_included": False,
+                                              "publisher_version_available": row.get("version_url_de") is not None,
+                                              "artifact_unavailable_reason": None if row.get("version_url_de") else "publisher_version_link_missing",
                                               "record_key": [metadata.external_identity, metadata.source_revision]}),)
 
     async def fetch_official_artifact(self, expression):
         row = self.rows[tuple(expression.metadata["record_key"])]
+        if row.get("version_url_de") is None:
+            return None
         body = row.get("gesetzestext_html")
         if not isinstance(body, str) or not body.strip():
             # Metadata-only stays explicit; never invent source text or swap versions.

@@ -91,6 +91,31 @@ async def test_missing_html_and_history_are_not_invented(tmp_path):
     assert await connector.extract_relations(metadata) == ()
 
 
+def test_null_publisher_link_preserves_gap_and_does_not_block_valid_laws(harness):
+    _, _, service, _ = harness
+    rows = [row(301, id="124", version_url_de=None, gesetzestext_html=None), row(300)]
+    connector = source(service.settings, rows, stream="catalogue-de")
+    result = asyncio.run(service.connector_runner.run_page(connector, stream="catalogue-de"))
+    assert result.status == "persisted" and result.persisted == 2, result.error
+    with service.db.session(include_all_organizations=True) as session:
+        versions = list(session.scalars(select(RegulatoryDocumentVersion)))
+        assert len(versions) == 2
+        missing = next(item for item in versions if not item.text)
+        assert "v_id+%3D+301" in missing.source_url
+        assert missing.metadata_json["publisher_version_available"] is False
+        assert missing.metadata_json["artifact_unavailable_reason"] == "publisher_version_link_missing"
+        assert missing.artifact_key is None
+        assert next(item for item in versions if item.text).artifact_key
+    repeated = asyncio.run(service.connector_runner.run_page(source(service.settings, rows), stream="catalogue-de"))
+    assert repeated.status == "persisted"
+    page = asyncio.run(source(service.settings, rows).discover_since(None, {}))
+    metadata = asyncio.run(source(service.settings, rows).fetch_metadata(page.items[0]))
+    assert metadata.raw_provenance["publisher_version"] is None
+    assert metadata.metadata["publisher_version_available"] is False
+    with service.db.session(include_all_organizations=True) as session:
+        assert session.scalar(select(func.count()).select_from(RegulatoryDocumentVersion)) == 2
+
+
 def plan():
     return {"name": "Basel privacy", "goal": "Follow Datenschutz", "concepts": ["Datenschutz"],
             "synonyms": [], "exclusions": [], "jurisdictions": ["CH-BS"], "languages": ["de"],

@@ -185,6 +185,16 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ## Task index
 
+21 September BaselTech / Ukraine pilot recovery: scoped MV2-052 work verifies
+the existing legal connectors and live scenario readiness before populating two
+isolated demonstration workspaces. Basel-Stadt null publisher links must retain
+explicit metadata-only evidence without blocking valid records; Fedlex must fetch
+the exact official filestore artifact and avoid consultation query multiplication.
+Regression checks cover provenance, malicious URLs, replay and preserved limits.
+Existing public source contracts and tenant roles are dependencies. No source
+permission or unavailable scenario is invented, and broader pilot acceptance stays
+open. See the task detail and `docs/BASELTECH_PILOT_VERIFICATION.md`.
+
 15 September recurring-closure feature: MV2-040 and MV2-041 remain IN PROGRESS
 in this index and their details. The explicit-offset source/calendar, private
 history/delivery and five-language interval reader are implemented; live
@@ -2249,6 +2259,17 @@ activation or human acceptance is claimed; the parent remains IN PROGRESS.
 <a id="mv2-052"></a>
 
 ### MV2-052 — Operational metrics, degraded mode and source recovery
+
+**Scoped recovery, 21 September 2026 — IN PROGRESS:** Repair Basel-Stadt optional
+publisher-version metadata, Fedlex manifestation dereferencing and consultation
+artifact cardinality; exercise real shared-source acquisition and isolated
+BaselTech/Ukraine workspaces. Acceptance requires exact saved official evidence,
+successful replay, source-bound URL checks, real role/tenant checks and an honest
+inventory of all nine native monitor source gates. Local checks, publication,
+production activation and independent human pilot results are separate evidence.
+No global credential, consent, source-rights or quality gate is relaxed. The
+existing connector, authentication and durable job contracts are available;
+restricted external APIs remain dependent on their existing approved access.
 
 **Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Operations + Backend · **Size:** M
 

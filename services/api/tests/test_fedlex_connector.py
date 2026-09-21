@@ -29,6 +29,10 @@ CURRENT_FR = CURRENT_VERSION + "/fr"
 FUTURE_DE = WORK + "/20290101/de"
 
 
+def official_file(expression, file_format="html"):
+    return expression.replace("https://fedlex.data.admin.ch/", "https://fedlex.data.admin.ch/filestore/fedlex.data.admin.ch/") + f"/{file_format}/publication.{'html' if file_format == 'html' else 'pdf'}"
+
+
 def sparql(rows):
     return httpx.Response(200, json={"head": {"vars": []}, "results": {"bindings": rows}})
 
@@ -92,7 +96,7 @@ def expression_rows():
             "language": binding("http://publications.europa.eu/resource/authority/language/DEU"),
             "manifestation": binding(FUTURE_DE + "/html"),
             "format": binding("https://fedlex.data.admin.ch/vocabulary/user-format/html"),
-            "file": binding("https://fedlex.data.admin.ch/filestore/future.html"),
+            "file": binding(official_file(FUTURE_DE)),
         },
         {
             "version": binding(CURRENT_VERSION),
@@ -101,7 +105,7 @@ def expression_rows():
             "language": binding("http://publications.europa.eu/resource/authority/language/DEU"),
             "manifestation": binding(CURRENT_DE + "/pdf-a"),
             "format": binding("https://fedlex.data.admin.ch/vocabulary/user-format/pdf-a"),
-            "file": binding("https://fedlex.data.admin.ch/filestore/current-de.pdf"),
+            "file": binding(official_file(CURRENT_DE, "pdf-a")),
         },
         {
             "version": binding(CURRENT_VERSION),
@@ -110,7 +114,7 @@ def expression_rows():
             "language": binding("http://publications.europa.eu/resource/authority/language/DEU"),
             "manifestation": binding(CURRENT_DE + "/html"),
             "format": binding("https://fedlex.data.admin.ch/vocabulary/user-format/html"),
-            "file": binding("https://fedlex.data.admin.ch/filestore/current-de.html"),
+            "file": binding(official_file(CURRENT_DE)),
         },
         {
             "version": binding(CURRENT_VERSION),
@@ -119,7 +123,7 @@ def expression_rows():
             "language": binding("http://publications.europa.eu/resource/authority/language/FRA"),
             "manifestation": binding(CURRENT_FR + "/html"),
             "format": binding("https://fedlex.data.admin.ch/vocabulary/user-format/html"),
-            "file": binding("https://fedlex.data.admin.ch/filestore/current-fr.html"),
+            "file": binding(official_file(CURRENT_FR)),
         },
     ]
 
@@ -183,11 +187,9 @@ def fedlex_transport(*, feed_items=None, reconciliation_rows=None, requests=None
                 return sparql(relation_rows())
             return sparql([{"work": binding(WORK)}])
         if request.url.path.endswith("/html"):
-            return httpx.Response(
-                302,
-                headers={"location": "https://fedlex.data.admin.ch/filestore/fedlex-current.html"},
-            )
-        if request.url.path.endswith("fedlex-current.html"):
+            # The live manifestation URI resolves to a JS metadata viewer.
+            return httpx.Response(200, headers={"content-type": "text/html"}, content=b"<html><title>Casemates</title><app-root></app-root></html>")
+        if str(request.url) in {official_file(CURRENT_DE), official_file(CURRENT_FR)}:
             return httpx.Response(
                 200,
                 headers={"content-type": "text/html; charset=utf-8"},
@@ -277,9 +279,7 @@ async def test_jolux_metadata_versions_manifestations_and_relations_are_preserve
     assert metadata.identifiers[1].scheme == "sr_rs" and metadata.identifiers[1].value == "101"
     assert metadata.metadata["available_languages"] == ["de", "fr"]
     assert {item.language for item in expressions} == {"de", "fr"}
-    assert next(item for item in expressions if item.expression_key == CURRENT_DE).artifact_url.endswith(
-        "/html"
-    )
+    assert next(item for item in expressions if item.expression_key == CURRENT_DE).artifact_url == official_file(CURRENT_DE)
     assert next(item for item in expressions if item.expression_key == FUTURE_DE).artifact_url is None
     assert (
         next(item for item in expressions if item.expression_key == CURRENT_DE).metadata["manifestations"][0][
@@ -291,8 +291,53 @@ async def test_jolux_metadata_versions_manifestations_and_relations_are_preserve
     artifact = await source.fetch_official_artifact(
         next(item for item in expressions if item.expression_key == CURRENT_DE)
     )
-    assert artifact and artifact.url.endswith("fedlex-current.html")
-    assert any(url.endswith(CURRENT_DE + "/html") for url in requests)
+    assert artifact and artifact.url == official_file(CURRENT_DE)
+    assert artifact.raw_provenance["eli_manifestation_uri"] == CURRENT_DE + "/html"
+    assert official_file(CURRENT_DE) in requests
+    assert CURRENT_DE + "/html" not in requests
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("file_url", [
+    "https://evil.example/legal.html",
+    official_file(CURRENT_FR),
+    official_file(CURRENT_DE) + "?redirect=other",
+])
+async def test_official_file_must_belong_to_exact_manifestation(tmp_path, file_url):
+    original = fedlex_transport()
+
+    async def respond(request):
+        if "?manifestation ?format ?file" in request.url.params.get("query", ""):
+            rows = expression_rows()
+            rows[2]["file"] = binding(file_url)
+            return sparql(rows)
+        return await original.handle_async_request(request)
+
+    source = FedlexConnector(Settings(_env_file=None, data_dir=tmp_path, allow_private_sources=True),
+                             transport=httpx.MockTransport(respond), sleep=lambda _: asyncio.sleep(0))
+    metadata = await source.fetch_metadata((await source.discover_since(None, {})).items[0])
+    with pytest.raises(DomainError) as error:
+        await source.list_expressions(metadata)
+    assert error.value.code == "fedlex_metadata_error"
+
+
+@pytest.mark.asyncio
+async def test_official_file_redirect_cannot_swap_the_evidence_language(tmp_path):
+    original = fedlex_transport()
+
+    async def respond(request):
+        if str(request.url) == official_file(CURRENT_DE):
+            return httpx.Response(302, headers={"location": official_file(CURRENT_FR)})
+        return await original.handle_async_request(request)
+
+    source = FedlexConnector(Settings(_env_file=None, data_dir=tmp_path, allow_private_sources=True),
+                             transport=httpx.MockTransport(respond), sleep=lambda _: asyncio.sleep(0),
+                             now=lambda: datetime(2026, 9, 3, tzinfo=UTC))
+    metadata = await source.fetch_metadata((await source.discover_since(None, {})).items[0])
+    expression = next(item for item in await source.list_expressions(metadata) if item.expression_key == CURRENT_DE)
+    with pytest.raises(DomainError) as error:
+        await source.fetch_official_artifact(expression)
+    assert error.value.code == "fedlex_metadata_error"
 
 
 def test_runner_deduplicates_catalogue_with_existing_add_law_flow(harness):

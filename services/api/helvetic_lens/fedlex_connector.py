@@ -24,7 +24,7 @@ from .connectors import (
     OfficialConnector,
 )
 from .db import utcnow
-from .extraction import FEDLEX_DATA_ORIGIN, FEDLEX_SPARQL_ENDPOINT, fedlex_eli_reference
+from .extraction import FEDLEX_DATA_ORIGIN, FEDLEX_SPARQL_ENDPOINT, Fetcher, fedlex_eli_reference
 from .integration_logs import IntegrationLogger
 from .official_source_contracts import FEDLEX_CONTRACT, _validate_payload
 from .regulatory_corpus import DateInput, DocumentInput, ExpressionInput, IdentifierInput
@@ -586,8 +586,13 @@ LIMIT {FEDLEX_EXPRESSION_LIMIT}
                 (entry for entry in manifestations if entry["format"] in {"html", "pdf-a", "pdf-x"}),
                 None,
             )
+            if selected:
+                prefix = f'/filestore/fedlex.data.admin.ch{urlsplit(selected["uri"]).path}/'
+                if not isinstance(selected["file"], str):
+                    raise DomainError("Fedlex omitted its exact publication file.", 502, "connector_contract_drift")
+                Fetcher._validate_fedlex_artifact(selected["file"], prefix)
             artifact_url = (
-                selected["uri"]
+                selected["file"]
                 if selected and latest_applicable.get(item["language"]) == expression_uri
                 else None
             )
@@ -629,17 +634,22 @@ LIMIT {FEDLEX_EXPRESSION_LIMIT}
     async def fetch_official_artifact(self, expression: ConnectorExpression) -> ConnectorArtifact | None:
         if not expression.artifact_url:
             return None
+        manifestation = expression.metadata["selected_manifestation"]["uri"]
+        prefix = f"/filestore/fedlex.data.admin.ch{urlsplit(manifestation).path}/"
+        Fetcher._validate_fedlex_artifact(expression.artifact_url, prefix)
         artifact = await self.http.get(
             expression.artifact_url,
             operation="fedlex_artifact",
             max_bytes=self.settings.max_document_bytes,
             headers={"Accept": "text/html, application/pdf;q=0.9, */*;q=0.1"},
         )
+        Fetcher._validate_fedlex_artifact(artifact.url, prefix)
         return replace(
             artifact,
             filename=PurePosixPath(urlsplit(artifact.url).path).name or f"fedlex-{expression.language}.html",
             raw_provenance={
-                "eli_manifestation_uri": expression.artifact_url,
+                "eli_manifestation_uri": manifestation,
+                "official_file_url": expression.artifact_url,
                 "dereferenced_url": artifact.url,
                 "retrieved_at": utcnow().isoformat(),
             },
@@ -762,7 +772,7 @@ class FedlexConsultationConnector(OfficialConnector):
 
     manifest = replace(
         FEDLEX_CONTRACT.manifest,
-        connector_version="1.2.0",
+        connector_version="1.2.1",
         schema_version="fedlex-consultation-v1",
         source_contract={
             **FEDLEX_CONTRACT.manifest.source_contract,
@@ -957,7 +967,18 @@ SELECT DISTINCT ?title ?description ?eventId ?status ?statusLabel ?previousStatu
         for language, title in sorted(metadata.metadata["titles"].items()):
             if language not in FEDLEX_LANGUAGES:
                 continue
-            query = f"""PREFIX jolux: <{_JOLUX}> SELECT DISTINCT ?title ?description ?status ?start ?end ?institution ?draft ?relatedDraft ?impact WHERE {{ OPTIONAL {{ <{metadata.external_identity}> jolux:eventTitle ?title . FILTER(LANG(?title)={json.dumps(language)}) }} OPTIONAL {{ <{metadata.external_identity}> jolux:eventDescription ?description . FILTER(LANG(?description)={json.dumps(language)}) }} OPTIONAL {{ <{metadata.external_identity}> jolux:consultationStatus ?status . }} OPTIONAL {{ <{metadata.external_identity}> jolux:foreseenImpactToLegalResource ?impact . }} OPTIONAL {{ <{metadata.external_identity}> jolux:hasSubTask ?task . OPTIONAL {{ ?task jolux:eventStartDate ?start . }} OPTIONAL {{ ?task jolux:eventEndDate ?end . }} OPTIONAL {{ ?task jolux:institutionInChargeOfTheEvent ?institution . }} OPTIONAL {{ ?task jolux:opinionIsAboutDraftDocument ?draft . }} OPTIONAL {{ ?task jolux:opinionHasDraftRelatedDocument ?relatedDraft . }} }} }}"""
+            # Independent facts avoid multiplying drafts × attachments × impacts.
+            # Task identity stays with every task fact in the saved official JSON.
+            branches = []
+            for field, predicate in (("title", "eventTitle"), ("description", "eventDescription"),
+                                     ("status", "consultationStatus"), ("impact", "foreseenImpactToLegalResource")):
+                language_filter = f' FILTER(LANG(?value)={json.dumps(language)})' if field in {"title", "description"} else ""
+                branches.append(f'{{ <{metadata.external_identity}> jolux:{predicate} ?value . BIND("{field}" AS ?field){language_filter} }}')
+            for field, predicate in (("start", "eventStartDate"), ("end", "eventEndDate"),
+                                     ("institution", "institutionInChargeOfTheEvent"),
+                                     ("draft", "opinionIsAboutDraftDocument"), ("relatedDraft", "opinionHasDraftRelatedDocument")):
+                branches.append(f'{{ <{metadata.external_identity}> jolux:hasSubTask ?task . ?task jolux:{predicate} ?value . BIND("{field}" AS ?field) }}')
+            query = f'PREFIX jolux: <{_JOLUX}> SELECT DISTINCT ?task ?field ?value WHERE {{ {" UNION ".join(branches)} }} ORDER BY ?task ?field ?value'
             artifact_url = (
                 FEDLEX_SPARQL_ENDPOINT
                 + "?"
