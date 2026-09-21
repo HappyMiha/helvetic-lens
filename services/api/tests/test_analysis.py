@@ -1035,6 +1035,30 @@ def test_oversized_single_change_uses_exact_bounded_windows():
     assert dossier["audit_complete"] is True and dossier["complete"] is False
 
 
+@pytest.mark.parametrize("context_chars", [1000, 3000, 4000, 5000, 12000])
+def test_small_context_planning_limits_actual_calls_without_losing_the_audit(context_chars):
+    old = Version(id="bounded-old", origin="uploaded", synthetic=True, passages=[
+        {"id": f"p{i:05}", "text": f"Art. {i} Synthetic obligation number {i}: report within 30 days.", "page": 1}
+        for i in range(1, 51)
+    ])
+    new = Version(id="bounded-new", origin="live", synthetic=True, passages=[
+        {**p, "text": p["text"].replace("30 days", "60 days")} for p in old.passages
+    ])
+    comparison = Comparison(id="bounded-comparison", mode="saved_versions",
+                            diff=compare_passages(old.passages, new.passages))
+    exact = json.dumps(comparison.diff, sort_keys=True)
+    evidence, dossier, coverage, batches = planned_diff_evidence(
+        old, new, comparison, max_chars=context_chars, max_batches=3,
+    )
+    assert 1 <= len(batches) <= 3
+    assert coverage["limited"] and not coverage["complete"]
+    assert dossier["audit_complete"] and not dossier["complete"]
+    assert coverage["reviewed_material_items"] == len(dossier["items"]) < 50
+    assert {p["change_id"] for p in evidence} == {item["id"] for item in dossier["items"]}
+    assert sum(len(batch["evidence"]) for batch in batches) == len(evidence)
+    assert json.dumps(comparison.diff, sort_keys=True) == exact
+
+
 @pytest.mark.asyncio
 async def test_formatting_only_plan_and_impact_use_zero_model_calls(harness):
     _, _, service, model = harness

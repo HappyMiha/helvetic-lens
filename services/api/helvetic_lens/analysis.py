@@ -1275,6 +1275,18 @@ def planned_diff_evidence(
         selected_items.append(item)
         selected_evidence.extend(rows)
         used += planned_size
+    # Aggregate character estimates omit per-request framing and may overfill
+    # the call budget on small local contexts. Keep whole change units, dropping
+    # the lowest-priority selections until the actual partition fits.
+    while selected_items:
+        tentative_ids = {item["id"] for item in selected_items}
+        tentative_evidence = [row for row in full_evidence if row["change_id"] in tentative_ids]
+        tentative_context = {**full_context, "items": [
+            item for item in material_items if item["id"] in tentative_ids
+        ]}
+        if len(batch_diff_evidence(tentative_evidence, tentative_context, per_batch_chars)) <= max_batches:
+            break
+        selected_items.pop()
     selected_ids = {item["id"] for item in selected_items}
     selected_items = [item for item in material_items if item["id"] in selected_ids]
     selected_evidence = [passage for passage in full_evidence if passage["change_id"] in selected_ids]

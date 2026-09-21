@@ -117,3 +117,20 @@ its privacy; an existing watch takes precedence over shared aliases. Twelve
 requested-edition/authentication/synchronization/backlog tests and exact API Ruff
 passed. This also prevents repeated `www` adds from reaching a private uniqueness
 error after an incorrectly scoped shared lookup.
+
+## Local AI runtime and bounded planning
+
+The running local runtime is Apertus 8B Q4_K_M with a measured 4,096-token context;
+new workspace defaults referenced the inactive 1.5B model. Only the two pilot
+workspaces were configured to use the running model, a 4,000-character evidence
+budget and 900 completion tokens. The Basel AIG comparison then completed as
+`selected_evidence`: exact cited passages, explicitly **no generated impact
+assessment**. Independent explanation-quality gates remain closed; successful
+execution is not evidence of a complete legal explanation.
+
+The AsylG request also reproduced HTTP 500 when estimated total evidence size
+produced more than three actual batches. Planning now fits whole change units
+using the real partitioner before admission, keeps the full audit diff, and
+reports limited coverage. Fifty-four analysis and backlog tests passed, including
+1k/3k/4k/5k/12k context budgets, exact evidence coverage and an unchanged audit.
+The exact API Ruff gate passed. Production replay remains pending activation.

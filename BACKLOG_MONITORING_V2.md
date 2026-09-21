@@ -205,6 +205,8 @@ existing work-wide records remain readable without being reused for another
 language or edition. The shared regulatory-work identity remains unchanged.
 The same recovery reconciles the accepted `www.fedlex.admin.ch` host with shared
 record assignment and reuses existing tenant-private editions without disclosure.
+Small-context AI requests must measure the actual batch count before admission;
+excess change units stay in the exact diff with explicitly limited AI coverage.
 
 15 September recurring-closure feature: MV2-040 and MV2-041 remain IN PROGRESS
 in this index and their details. The explicit-offset source/calendar, private
@@ -2311,6 +2313,13 @@ deduplication for both new and legacy records.
 The ORM's official-host list must agree with the resolver, including the `www`
 alias. Existing private records are not republished; only the requesting tenant
 may reuse its own record, with its existing watch preferred over shared aliases.
+
+**Small-context planning scope, 21 September 2026:** A real AsylG comparison with
+the configured 4k-character evidence budget returned HTTP 500 because estimated
+aggregate size still produced more than three actual batches. Fit whole change
+units to the existing provider-call budget using the actual batch planner, retain
+the complete exact diff, and report every coverage limitation. Keep runtime token
+measurement, citations and independent explanation-quality gates unchanged.
 
 **Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Operations + Backend · **Size:** M
 
