@@ -18,12 +18,17 @@ __all__ = ["artifacts", "execution"]
 @pytest.fixture
 def bound(execution, monkeypatch):
     service, runner, *_ = execution
+    # The registry is deployment-owned, not part of saved public model settings.
+    # Both settings resolution and the synthetic execution use that same policy.
+    service.environment_settings.ai_capability_registry = runner.client.settings.ai_capability_registry
+    service.environment_settings.ai_capability_evidence_root = runner.client.settings.ai_capability_evidence_root
     monkeypatch.setattr("helvetic_lens.model_settings.local_docker_base_url",
                         lambda: runner.client.settings.apertus_base_url)
     values = {name: getattr(runner.client.settings, f"apertus_{name}") for name in PUBLIC_FIELDS}
     with service.db.session() as session:
         session.add(ApertusConfiguration(id=service.tenant_record_id, values=values, key_source="none"))
         session.commit()
+        assert service.brief_configuration(session) == configuration_key(runner.client.settings)
     service.model_client = runner.client
     return (service, service.interest_runner(), *execution[2:])
 

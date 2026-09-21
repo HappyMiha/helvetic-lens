@@ -185,6 +185,18 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ## Task index
 
+22 September AI-configuration release recovery: the full gate exposed interest-
+brief configuration tests whose synthetic client uses a reviewed capability
+registry while the fixture's environment resolver still sees the default registry.
+The reproduced failure occurs before the intended runtime/edit hook. Align only
+that fixture's deployment-owned registry paths, preserving saved public settings,
+real configuration fencing and capability revocation. Acceptance: complete
+interest/configuration/reader/job regressions, relation freshness checks and exact
+API Ruff. MV2-052 remains IN PROGRESS until the normal full gate and activation.
+All 390 related checks passed, with five existing environment-dependent skips,
+in 686 seconds. Exact API Ruff passed. All eleven reproduced configuration cases
+are included; no production policy or test selection was weakened.
+
 22 September SIMAP pilot recovery: scoped MV2-052 work repairs the public IWB
 abandonment record rejected by lot projection. The official SIMAP 1.5.1 schema
 uses `abandonedLot` for a specific cancelled lot. Preserve that exact identity,
@@ -2423,6 +2435,29 @@ activation or human acceptance is claimed; the parent remains IN PROGRESS.
 <a id="mv2-052"></a>
 
 ### MV2-052 — Operational metrics, degraded mode and source recovery
+
+**Interest-brief configuration fixture recovery, 22 September 2026 (before
+implementation):** The 01016c4 full gate reported failures in persisted model-
+configuration tests. Local reproduction rejects the request at its initial
+configuration check before the requested generation-time edit. The fixture
+installs a synthetic reviewed registry only on the execution client's settings;
+the persisted-settings reader resolves deployment-owned registry paths from the
+unchanged environment. The answer fingerprint now correctly includes capability
+policy. Model production's shared deployment policy in this fixture by aligning
+those two private registry paths, not by removing the policy from fingerprints,
+loosening configuration checks or adding a production grant. Require initial
+configuration agreement, then rerun all interest execution, reader, policy, job
+and configuration cases and affected relation freshness checks. Verify old-worker
+fencing, revocation, history preservation and credential/transport-only reuse.
+The user has authorized stopping this failed QA run after a tested correction is
+published, so normal full QA can select the corrected descendant.
+
+All interest-brief tests and the relation configuration, prompt and runtime
+freshness regressions passed: 390 passed, five existing skips, in 686 seconds.
+This includes all eleven full-run failures, initial persisted-policy agreement,
+runtime/count/generation edits, queued-work refusal, historical reader behavior,
+transport-only reuse, scope isolation and concurrent-attempt protection. Exact
+API Ruff passed. A normal complete release gate remains required.
 
 **SIMAP abandonment recovery, 22 September 2026 (before implementation):** The
 IWB public collection recorded one `invalid_source_contract` gap for publication

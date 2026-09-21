@@ -687,5 +687,30 @@ whole-project/multiple-lot input is covered by the final focused check.
 
 The final focused malformed-scope, durable observation, collector and backlog
 selection passed all 37 checks in 25 seconds. Exact API Ruff passed. The active
-01016c4 QA run continues because it contains the complete legal-demo fixes;
-the additional SIMAP repair will use the subsequent normal full deployment gate.
+01016c4 QA run initially continued because it contains the complete legal-demo
+fixes. It subsequently reported the configuration fixture failures below; the
+corrected descendant includes the SIMAP repair and requires the normal full gate.
+
+## Persisted AI configuration fixture recovery
+
+The 01016c4 full run reached 44% and exposed eleven failures in
+`test_interest_configuration.py`. A local stop-at-first-failure replay reproduced
+the first generation-stage case failing at the initial configuration check,
+before contacting the synthetic model. The test client carried the fixture's
+reviewed capability registry, but the persisted-settings reader resolved private
+registry paths from the unchanged environment. The answer fingerprint now binds
+capability policy, so these were different initial configurations.
+
+The bound fixture now uses the same synthetic deployment-owned registry and
+evidence directory for its environment and execution client, with an explicit
+initial agreement check. Saved public model settings still use the actual
+database path. Production configuration fencing, capability revocation, source
+rights and model approvals are unchanged. The affected selection covers every
+interest-brief test plus relation configuration, prompt and runtime freshness.
+
+That complete affected selection passed **390 checks, with five existing
+environment-dependent skips**, in 685.69 seconds. It includes all eleven
+full-run failures, persistence and worker fencing, revocation, source/tenant
+isolation, current/historical reads and credential/transport-only reuse. Exact
+API Ruff passed. The failed 01016c4 gate cannot activate; the corrected descendant
+requires the normal complete gate before production acceptance.
