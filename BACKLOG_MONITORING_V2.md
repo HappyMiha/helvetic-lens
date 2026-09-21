@@ -257,6 +257,10 @@ unchanged exact-expression/work/tenant binding.
 The repaired inbox path passed 46 context, paging, history, title and digest
 checks, including the unchanged query budget. Normal release validation remains
 in progress; this does not complete MV2-052.
+The host's full API suite reached 99% when its existing 7,200-second budget
+expired. Use the existing bounded operator setting for 10,800 seconds on future
+scheduled runs, retaining all required tests and the current CPU/memory budgets.
+An already-started run is not interrupted or reconfigured.
 The direct Basel BPG preflight additionally requires bounded support for its
 2.44 MB official metadata envelope, which embeds full XHTML. Retain publisher,
 language, version and PDF checks and prove oversized metadata still fails closed.
@@ -2409,6 +2413,16 @@ routes, one/fifty-event query counts, wrong-work expressions and tenant denial.
 All 46 scoped checks passed locally, including the exact original query-budget
 assertion and no heavy-document/expression hydration. Full automatic acceptance
 and production activation remain pending.
+
+**Full-suite host time budget, 21 September 2026:** Release 867d2a7 reached 99%
+at the 7,200-second deadline without completing the API gate. Its known inbox
+query-budget failure was fixed separately; timeout is not a passing result.
+Use the existing validated `HELVETIC_LENS_API_TEST_TIMEOUT_SECONDS` operator knob
+to allow 10,800 seconds for future scheduled runs on this host. Preserve the
+two-minute cron schedule, deployment lock, all required tests, two QA CPUs and
+4 GB QA memory. Record the exact cron change and retain a private rollback copy.
+Never interrupt/restart an active run or alter its frozen test inputs. Acceptance
+requires a naturally completed full API result and ordinary release activation.
 
 **Direct Basel BPG metadata envelope, 21 September 2026:** The live official
 730.100 response is 2,439,258 bytes because it includes the complete law XHTML.

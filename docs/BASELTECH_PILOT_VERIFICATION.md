@@ -483,3 +483,20 @@ visibility and bounded hundred-candidate batching. Exact API Ruff and diff check
 passed. The current automatic test run is allowed to finish normally; its failed
 target is not activated or manually bypassed. The next ordinary release will
 validate the completed repair with the other queued pilot changes.
+
+## Host deadline for the complete API gate
+
+The 867d2a7 run was ultimately terminated by its existing 7,200-second deadline
+at 99%, before a complete pytest result. This is not passing evidence. The sole
+failure visible before timeout was the separately repaired inbox query budget.
+The following scheduled run for 402b4ad began normally at 19:16 UTC; it was not
+interrupted or reconfigured.
+
+The host's existing validated operator setting is now 10,800 seconds for future
+scheduled API gates. Only the marked cron command received
+`HELVETIC_LENS_API_TEST_TIMEOUT_SECONDS=10800`; the two-minute cadence, process
+lock, complete test command, two-CPU and 4 GB limits remain in place. A private
+copy of the original crontab and a timestamped exact-entry audit are retained.
+No serving checkout, active test input, timeout result or release status was
+rewritten. Existing operator-budget and invalid-value tests verify the bounded
+setting; activation still requires a naturally completed successful full gate.
