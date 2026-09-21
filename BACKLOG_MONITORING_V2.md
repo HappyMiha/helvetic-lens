@@ -194,6 +194,9 @@ Regression checks cover provenance, malicious URLs, replay and preserved limits.
 Existing public source contracts and tenant roles are dependencies. No source
 permission or unavailable scenario is invented, and broader pilot acceptance stays
 open. See the task detail and `docs/BASELTECH_PILOT_VERIFICATION.md`.
+The explicit Basel/Bern request also includes bounded native resolution of a
+single LexWork law URL to its current official PDF, plus exact historical URLs.
+This is direct document monitoring, not the deferred national/cantonal pack work.
 
 15 September recurring-closure feature: MV2-040 and MV2-041 remain IN PROGRESS
 in this index and their details. The explicit-offset source/calendar, private
@@ -2270,6 +2273,17 @@ production activation and independent human pilot results are separate evidence.
 No global credential, consent, source-rights or quality gate is relaxed. The
 existing connector, authentication and durable job contracts are available;
 restricted external APIs remain dependent on their existing approved access.
+
+**Direct-law scope, 21 September 2026:** The owner explicitly requested Basel and
+Bern cantonal law monitoring. Both official LexWork publishers expose the current
+version and exact PDF through their public law metadata used by the publisher UI.
+Accept only these two HTTPS publishers, validate the requested systematic number,
+language and selected version, retain exact PDF/metadata provenance, and preserve
+current-versus-historical selection. Repeated scans must re-resolve the current
+version; external URLs, mismatched identities and unavailable PDFs fail closed.
+Use the existing extraction, evidence, comparison and tenant contracts. Acceptance
+requires mock negative boundaries, a two-version lifecycle and real current-law
+probes. This bounded direct-URL repair does not activate the deferred MV2-066 pack.
 
 **Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Operations + Backend · **Size:** M
 

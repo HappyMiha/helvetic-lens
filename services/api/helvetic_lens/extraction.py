@@ -246,6 +246,11 @@ class Fetcher:
             return fetched
         if provider != "native":
             raise DomainError("Choose native extraction or Firecrawl.")
+        from .lexwork import fetch_law
+        from .lexwork import reference as lexwork_reference
+        lexwork = lexwork_reference(url)
+        if lexwork:
+            return await fetch_law(self, lexwork)
         try:
             fedlex = fedlex_eli_reference(url)
             fedlex_metadata = {}

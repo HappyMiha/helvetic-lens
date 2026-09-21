@@ -62,3 +62,25 @@ material. New demo identities have no platform-wide administrator privileges.
 
 Publication, production activation, scenario testing and independent human
 acceptance are separate gates. Broader MV2-052 and MV2-058 acceptance stays open.
+
+## Direct cantonal law monitoring
+
+The pilot exposed a second acquisition problem: stable Basel-Stadt and Bern law
+links serve JavaScript shells. The bounded native resolver now reads the official
+publisher's current-version metadata, verifies the systematic number, language
+and selected version, then downloads that exact official PDF. Stable links follow
+the publisher's current selection on each scan; explicit historical-version
+links remain pinned. Metadata URL/hash and selected version are retained in
+provenance. Annexes are included only when the selected publisher metadata
+explicitly supplies an annex-inclusive PDF. No catalogue-wide Bern coverage is
+claimed, and existing download/extraction limits and source boundaries remain.
+
+Live read-only probes retrieved Basel-Stadt 153.260 version 6649 (22 PDF pages),
+Bern 124.1 version 2114 (11 pages), and Bern 122.20 version 3417 (17 pages).
+Explicit historical resolution of Bern 124.1/2114 returned the same source PDF.
+
+The focused extraction, resolver and backlog tests passed: 52 tests. They verify
+that the same stable URL produces a real text difference when the publisher
+changes its selected version, historical selection is preserved, and mismatched
+law/version/language, foreign URLs, redirects and non-PDF responses fail closed.
+The exact API Ruff gate passed. Production activation is a separate pending gate.
