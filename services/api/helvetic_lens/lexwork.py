@@ -18,7 +18,9 @@ PUBLISHERS = {"www.gesetzessammlung.bs.ch": "CH-BS", "www.belex.sites.be.ch": "C
 LAW_NUMBER = r"(?:RiE |RiB |BeE |BeB |BaB )?[0-9]+(?:\.[0-9]+)*"
 LAW_PATH = re.compile(rf"^/app/(?P<language>de|fr|it)/texts_of_law/(?P<number>{LAW_NUMBER})(?:/versions/(?P<version>[1-9][0-9]*))?/?$")
 DATA_PATH = re.compile(rf"^/data/(?P<number>{LAW_NUMBER})/(?P<language>de|fr|it)/?$")
-METADATA_LIMIT = 2_000_000
+# The publisher embeds full law XHTML: Basel BPG's verified envelope exceeds
+# 2 MB. Keep a separate finite envelope cap below the general document limit.
+METADATA_LIMIT = 4_000_000
 
 
 @dataclass(frozen=True)
@@ -60,7 +62,9 @@ async def fetch_law(fetcher, ref: LawReference):
     if ref.version:
         metadata_url += f"/versions/{ref.version}"
     metadata = await fetcher.fetch(metadata_url, boundary=(ref.origin, f"/api/{ref.language}/texts_of_law"))
-    if canonical_url(metadata.url) != metadata_url or len(metadata.body) > METADATA_LIMIT:
+    if len(metadata.body) > METADATA_LIMIT:
+        raise unavailable("The cantonal publisher metadata exceeds the supported size limit.")
+    if canonical_url(metadata.url) != metadata_url:
         raise unavailable("The cantonal publisher returned an unexpected metadata document.")
     try:
         law = json.loads(metadata.body)["text_of_law"]

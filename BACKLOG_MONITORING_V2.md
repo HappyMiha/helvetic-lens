@@ -238,6 +238,9 @@ views and brief inputs; the shared multilingual work title is only a fallback.
 Italian articles alone must not create related-law candidates. Preserve bounded
 queries, ownership and exact-reference paths, version the relation retrieval rule,
 and use the existing recovery workflow for retained candidates.
+The direct Basel BPG preflight additionally requires bounded support for its
+2.44 MB official metadata envelope, which embeds full XHTML. Retain publisher,
+language, version and PDF checks and prove oversized metadata still fails closed.
 The expanded live source audit also requires complete Fedlex HTML annex evidence
 and root-work-only catalogue discovery; historical dated members are versions.
 Shared language-specific watches must still bind to one official corpus work,
@@ -2330,6 +2333,15 @@ topic matching's separate rule contract. Verify multilingual title provenance,
 foreign-work rejection, meaningful Italian subject matches and non-matches from
 function words. Recheck affected retained candidates through the existing bounded
 operator recovery workflow; do not erase evidence or manufacture approvals.
+
+**Direct Basel BPG metadata envelope, 21 September 2026:** The live official
+730.100 response is 2,439,258 bytes because it includes the complete law XHTML.
+The direct LexWork resolver's 2 MB metadata cap rejects this otherwise valid
+current-version document. Raise only that bounded envelope cap to 4 MB, with a
+specific size error and retained exact publisher/language/version/PDF checks.
+Acceptance: a representative full-text envelope above 2 MB resolves the exact
+official PDF; an envelope over 4 MB fails before PDF fetch; the actual Basel BPG
+preflight succeeds. This does not assert complete cantonal catalogue coverage.
 
 **Native comparison guard, 21 September 2026:** Native corpus versions have
 immutable official-version keys and cannot use the direct-watch derived-version

@@ -291,3 +291,14 @@ The affected corpus, feed, brief-admission, evidence-page, native-comparison,
 bounded-inbox, relation and backlog suites passed: 150 passed, one skipped. Exact
 API Ruff and `git diff --check` passed. Production verification remains pending
 the normal deployment queue.
+
+## Basel building-law envelope
+
+The direct Basel 730.100 preflight exposed a separate size limit: the official
+metadata embeds full XHTML and is 2,439,258 bytes, exceeding the resolver's 2 MB
+cap. The cap is now 4 MB with a distinct size error; exact publisher, language,
+version and PDF verification remain unchanged. A live replay resolved official
+version 6877, retrieved its 1,614,854-byte PDF and extracted 147,023 characters.
+Nineteen LexWork/backlog tests passed, including a large valid envelope and
+oversize rejection before PDF fetching. Exact API Ruff and diff checks passed.
+Production import remains pending activation of this fix.

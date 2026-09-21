@@ -132,3 +132,28 @@ def test_basel_and_bern_data_links_share_exact_law_identity():
     assert basel.number == "153.260" and basel.jurisdiction == "CH-BS"
     bern = reference(LAW)
     assert bern.number == "124.1" and bern.jurisdiction == "CH-BE"
+
+
+@pytest.mark.parametrize("size, succeeds", [(2_500_000, True), (4_000_001, False)])
+@pytest.mark.asyncio
+async def test_embedded_full_law_metadata_remains_bounded(monkeypatch, size, succeeds):
+    record = metadata()
+    record["text_of_law"]["selected_version"]["xhtml_tol"] = "Synthetic law text. " * (size // 20 + 1)
+    requests = []
+
+    def respond(request):
+        requests.append(str(request.url))
+        if "/texts_of_law/" in request.url.path:
+            return httpx.Response(200, json=record)
+        return httpx.Response(200, content=make_pdf(["Synthetic law text with a verified official PDF binding."]))
+
+    fetcher = fetcher_with_transport(monkeypatch, respond)
+    if succeeds:
+        fetched = await fetcher.fetch(LAW)
+        assert fetched.url == ORIGIN + "/api/de/versions/2114/pdf_file"
+        assert fetched.metadata["lexwork_version_id"] == 2114
+        assert len(requests) == 2
+    else:
+        with pytest.raises(DomainError, match="metadata exceeds"):
+            await fetcher.fetch(LAW)
+        assert requests == [ORIGIN + "/api/de/texts_of_law/124.1"]
