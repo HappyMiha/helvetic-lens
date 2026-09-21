@@ -4,19 +4,32 @@ from datetime import datetime
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 from test_auth import _csrf, _register
 from test_business_item_api import seed
 from test_tender_api import api as api
 
 from helvetic_lens import business_monitor_api, monitoring_evidence_api
+from helvetic_lens.models import OrganizationMembership
 
 PATH = "/api/monitoring-centre/evidence/ask"
 
 
 @pytest.mark.parametrize("domain", ["tenders", "ip", "auctions"])
-def test_http_evidence_scope_csrf_binding_validation_and_no_model(api, domain, monkeypatch):
+@pytest.mark.parametrize("role", ["organization_admin", "viewer"])
+def test_http_evidence_scope_csrf_binding_validation_and_no_model(api, domain, role, monkeypatch):
     client, app, settings, identity = api
     monitor, item, _ = seed(api, domain, monkeypatch)
+    if role == "viewer":
+        with app.state.service.db.session(include_all_organizations=True) as session:
+            membership = session.scalar(select(OrganizationMembership).where(
+                OrganizationMembership.user_id == identity["user"]["id"],
+                OrganizationMembership.organization_id == identity["organization"]["id"]))
+            membership.role = role
+            session.commit()
+        assert client.get("/api/auth/session").json()["role"] == role
+        blocked = client.post("/api/laws", json={"url": "https://example.test/law"}, headers=_csrf(client))
+        assert blocked.status_code == 403 and blocked.json()["code"] == "viewer_read_only"
     model_calls = len(app.state.service.model_client.calls)
     now = business_monitor_api.datetime.now()
 

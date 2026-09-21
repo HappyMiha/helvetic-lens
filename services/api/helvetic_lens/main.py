@@ -510,6 +510,8 @@ def create_app(
             path.startswith("/api/connectors/") and path.endswith("/sync")
         )
         viewer_allowed_mutations = {
+            # POST carries the bounded query; this reader has no model or writes.
+            "/api/monitoring-centre/evidence/ask",
             "/api/monitoring-centre/evidence/export/preview",
             "/api/monitoring-centre/evidence/export/download",
             "/api/account/deletion",

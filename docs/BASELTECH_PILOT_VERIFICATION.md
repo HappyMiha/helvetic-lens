@@ -4,6 +4,33 @@ This records operator preparation of demonstration workspaces with real public
 sources. It is not independent pilot feedback or evidence of legal completeness.
 Accounts, credentials and private workspace records are not repository artifacts.
 
+## Read-only native evidence queries
+
+The live Basel viewer could export shared tender evidence but the extractive
+question endpoint returned `viewer_read_only`. The route uses POST to carry a
+bounded query; it performs no model call and no mutation. It now has the same
+viewer read exception as evidence export, with CSRF and native current-source,
+ownership, sharing and binding checks intact. Twenty-seven HTTP/native-reader,
+authentication and backlog tests passed, including both organization roles for
+tenders, IP and auctions, revoked/private source boundaries, stale citations and
+continued denial of administrator-only writes. Exact API Ruff passed.
+
+The real IWB woodland-management procurement identifies Lange Erlen, Basel-Stadt.
+The operator recorded an internal demonstration `monitor` decision, assigned it
+to the demo administrator, and explicitly left supplier eligibility unverified.
+The shared viewer can read this history and export the selected source revision;
+the unrelated personal workspace receives 404. Browser verification and private
+export hash manifests are retained locally. The viewer extractive-query HTTP
+replay awaits this fix's activation.
+
+## First production activation
+
+Release `ad9426c` passed the full automatic API gate and activated on 21 September.
+The normal Basel-Stadt catalogue and latest-version jobs then succeeded at
+15:11 and 15:12 UTC respectively and reported healthy. This verifies the initial
+connector repair only; the later direct-law, extraction, daily-check and viewer
+changes have separate deployment and live scenario gates.
+
 ## Native HTML comparison boundary
 
 Native corpus comparisons now reject HTML pairs with different extractor stamps.

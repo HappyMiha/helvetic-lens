@@ -229,6 +229,10 @@ extractor revisions. Retain their immutable evidence and existing comparison
 history; do not interpret parser completeness changes as legal amendments.
 Verify that new selections fail without writes and stale selections cannot feed
 AI or the comparison page. Same-parser comparisons remain available.
+The live Basel viewer scenario exposed a POST transport mismatch for the purely
+extractive native evidence reader. Permit that reader under existing source and
+ownership checks, retaining CSRF and all write/model restrictions. Exercise both
+administrator and viewer roles through real HTTP before release.
 The expanded live source audit also requires complete Fedlex HTML annex evidence
 and root-work-only catalogue discovery; historical dated members are versions.
 Shared language-specific watches must still bind to one official corpus work,
@@ -2300,6 +2304,14 @@ activation or human acceptance is claimed; the parent remains IN PROGRESS.
 <a id="mv2-052"></a>
 
 ### MV2-052 — Operational metrics, degraded mode and source recovery
+
+**Viewer evidence scope, 21 September 2026:** The native selected-evidence reader
+returns quoted existing fields with no model call or mutation, but its POST route
+was incorrectly blocked by the viewer write guard. Add only this exact endpoint
+to the read exception list. Preserve CSRF, current native source permissions,
+tenant/private ownership, input binding, and administrator-only writes. Verify
+HTTP access, citation resolution, stale binding and foreign-tenant denial under
+both supported organization roles. Existing source and sharing contracts suffice.
 
 **Native comparison guard, 21 September 2026:** Native corpus versions have
 immutable official-version keys and cannot use the direct-watch derived-version
