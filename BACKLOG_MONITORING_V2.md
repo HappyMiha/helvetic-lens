@@ -250,6 +250,13 @@ views and brief inputs; the shared multilingual work title is only a fallback.
 Italian articles alone must not create related-law candidates. Preserve bounded
 queries, ownership and exact-reference paths, version the relation retrieval rule,
 and use the existing recovery workflow for retained candidates.
+The full release gate found one extra scalar label query per inbox page. Merge
+the language/title read into the existing bounded event query, preserving the
+13-read budget for both one and fifty events, with no document hydration and
+unchanged exact-expression/work/tenant binding.
+The repaired inbox path passed 46 context, paging, history, title and digest
+checks, including the unchanged query budget. Normal release validation remains
+in progress; this does not complete MV2-052.
 The direct Basel BPG preflight additionally requires bounded support for its
 2.44 MB official metadata envelope, which embeds full XHTML. Retain publisher,
 language, version and PDF checks and prove oversized metadata still fails closed.
@@ -2392,6 +2399,16 @@ topic matching's separate rule contract. Verify multilingual title provenance,
 foreign-work rejection, meaningful Italian subject matches and non-matches from
 function words. Recheck affected retained candidates through the existing bounded
 operator recovery workflow; do not erase evidence or manufacture approvals.
+
+The full release check exposed a constant fourteenth page read after expression
+labels were added. Combine those scalar labels with the existing event metadata
+query rather than widening the established thirteen-read acceptance budget.
+Retain the hundred-candidate batch cap, absent-title fallback, expression-to-work
+binding, private-work visibility and deferred document bodies. Verify both inbox
+routes, one/fifty-event query counts, wrong-work expressions and tenant denial.
+All 46 scoped checks passed locally, including the exact original query-budget
+assertion and no heavy-document/expression hydration. Full automatic acceptance
+and production activation remain pending.
 
 **Direct Basel BPG metadata envelope, 21 September 2026:** The live official
 730.100 response is 2,439,258 bytes because it includes the complete law XHTML.

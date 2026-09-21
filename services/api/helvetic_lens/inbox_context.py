@@ -6,7 +6,7 @@ from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session, load_only
 
 from .config import DomainError
-from .corpus_access import event_evidence_links, event_expression_labels
+from .corpus_access import event_evidence_links, expression_title_column
 from .corpus_access import visible as visible
 from .models import (
     Comparison,
@@ -15,6 +15,7 @@ from .models import (
     LegacyDocumentMapping,
     OrganizationRelationCandidate,
     RegulatoryEvent,
+    RegulatoryExpression,
     RegulatoryRelation,
     RegulatoryWork,
     RelationCandidate,
@@ -68,10 +69,17 @@ def load_context(
             RelationCandidate.rule_revision,
         ),
     )
-    events = records(
-        RegulatoryEvent,
-        {candidate.event_id for candidate in candidates.values()},
-        (
+    event_ids = {candidate.event_id for candidate in candidates.values()}
+    event_rows = session.execute(
+        select(RegulatoryEvent, RegulatoryExpression.language, expression_title_column())
+        .select_from(RegulatoryEvent)
+        .join(RegulatoryWork, (RegulatoryWork.id == RegulatoryEvent.work_id)
+              & visible(RegulatoryWork, organization_id))
+        .outerjoin(RegulatoryExpression,
+                   (RegulatoryExpression.id == RegulatoryEvent.expression_id)
+                   & (RegulatoryExpression.work_id == RegulatoryEvent.work_id))
+        .where(RegulatoryEvent.id.in_(event_ids))
+        .options(load_only(
             RegulatoryEvent.id,
             RegulatoryEvent.impact,
             RegulatoryEvent.event_type,
@@ -80,8 +88,12 @@ def load_context(
             RegulatoryEvent.detected_at,
             RegulatoryEvent.source_url,
             RegulatoryEvent.document_version_id,
-        ),
-    )
+            raiseload=True,
+        ))
+    ).all() if event_ids else []
+    events = {event.id: event for event, _, _ in event_rows}
+    expression_labels = {event.id: {"language": language, "title": title}
+                         for event, language, title in event_rows}
     works = records(
         RegulatoryWork,
         {
@@ -188,5 +200,5 @@ def load_context(
         }
     return InboxContext(
         candidates, events, works, watches, law_ids, relations, comparisons, artifacts, successors,
-        event_expression_labels(session, organization_id, events),
+        expression_labels,
     )

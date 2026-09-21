@@ -464,3 +464,22 @@ history. The earlier preflight is retained privately. Ninety-four related tests
 passed, including citation retention beyond four rows, the ten-row bound, exact
 links, invalid-reference guards, AI history and Ask/report regressions. Exact API
 Ruff and backlog checks passed. The final production job replay remains pending.
+
+## Preserving the inbox query budget
+
+The automatic release check for 867d2a7 identified one regression in the earlier
+source-title change: page reads stayed constant for one and fifty events, but
+increased from the accepted thirteen to fourteen. The established limit was kept.
+The inbox now loads scalar expression language/title alongside its existing
+bounded event metadata query. The exact expression must belong to the event's
+work, and that work must be visible to the requesting organization. Missing or
+wrong-work expressions retain the accessible work-title fallback. Document and
+expression objects with heavy fields are not hydrated for these labels.
+
+Forty-six context, title, inbox, page/history, digest and backlog checks passed.
+They include the original one/fifty-event thirteen-query assertion, both inbox
+routes, wrong-work title rejection, private-work denial, comparison/artifact
+visibility and bounded hundred-candidate batching. Exact API Ruff and diff checks
+passed. The current automatic test run is allowed to finish normally; its failed
+target is not activated or manually bypassed. The next ordinary release will
+validate the completed repair with the other queued pilot changes.

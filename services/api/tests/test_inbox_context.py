@@ -22,6 +22,7 @@ from helvetic_lens.models import (
     Organization,
     OrganizationRelationCandidate,
     RegulatoryDocumentVersion,
+    RegulatoryExpression,
     RegulatoryWork,
     RelationCandidate,
     Version,
@@ -56,7 +57,7 @@ def test_context_queries_do_not_grow_between_one_and_fifty_event_pages(harness):
             event.remove(service.db.engine, "before_cursor_execute", query)
             event.remove(Session, "loaded_as_persistent", record)
         counts.append(len(page_queries(queries)))
-        assert not any(kind in (Law, Version, Comparison, RegulatoryDocumentVersion) for kind, _ in loaded)
+        assert not any(kind in (Law, Version, Comparison, RegulatoryDocumentVersion, RegulatoryExpression) for kind, _ in loaded)
         assert all("evidence_json" in unloaded for kind, unloaded in loaded if kind == RelationCandidate)
         assert all("metadata_json" in unloaded for kind, unloaded in loaded if kind == RegulatoryWork)
     # Request setup has its own exact once-per-table budget. Keep the original

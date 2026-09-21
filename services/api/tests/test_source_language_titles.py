@@ -8,7 +8,13 @@ from test_topic_validity import evaluate
 
 from helvetic_lens.corpus_access import event_expression_labels
 from helvetic_lens.interest_admission import current_key
-from helvetic_lens.models import RegulatoryEvent, RegulatoryExpression, RegulatoryWork, RelationCandidate
+from helvetic_lens.models import (
+    Organization,
+    RegulatoryEvent,
+    RegulatoryExpression,
+    RegulatoryWork,
+    RelationCandidate,
+)
 from helvetic_lens.relation_candidates import score_candidate
 
 
@@ -48,8 +54,9 @@ def test_inbox_uses_expression_title_and_rejects_foreign_work_labels(harness):
         session.get(RegulatoryWork, event.work_id).title = "Titolo italiano retention"
         session.commit()
         event_id = event.id
-    rows = client.get("/api/impact-inbox").json()["items"]
-    assert next(row for row in rows if row["event_id"] == event_id)["title"] == "Selected English retention proposal"
+    for route in ("/api/impact-inbox", "/api/impact-inbox/page"):
+        rows = client.get(route).json()["items"]
+        assert next(row for row in rows if row["event_id"] == event_id)["title"] == "Selected English retention proposal"
     with service.db.session() as session:
         other = RegulatoryWork(kind="act", authority="synthetic", canonical_key="foreign-title-test",
                                title="Foreign work")
@@ -64,6 +71,22 @@ def test_inbox_uses_expression_title_and_rejects_foreign_work_labels(harness):
         assert event_expression_labels(session, service.organization_id, [event_id]) == {}
         with pytest.raises(ValueError):
             event_expression_labels(session, service.organization_id, [str(n) for n in range(101)])
+        session.commit()
+    for route in ("/api/impact-inbox", "/api/impact-inbox/page"):
+        response = client.get(route)
+        assert response.status_code == 200
+        assert next(row for row in response.json()["items"] if row["event_id"] == event_id)["title"] == "Titolo italiano retention"
+        assert "This unrelated title" not in response.text
+    with service.db.session() as session:
+        private = Organization(name="Private source owner", slug="private-title-owner")
+        session.add(private)
+        session.flush()
+        event = session.get(RegulatoryEvent, event_id)
+        session.get(RegulatoryWork, event.work_id).owner_organization_id = private.id
+        session.commit()
+    for route in ("/api/impact-inbox", "/api/impact-inbox/page"):
+        response = client.get(route)
+        assert response.status_code == 200 and response.json()["items"] == []
 
 
 @pytest.mark.parametrize("source, expected", [
