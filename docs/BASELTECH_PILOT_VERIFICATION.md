@@ -319,3 +319,21 @@ document-history and AI-history checks passed, with foreign keys enabled. Tests
 cover shared and private documents, a second populated workspace, retained shared
 versions and rollback on queued/running related analysis. Exact API Ruff and diff
 checks passed. Production removal will be replayed after normal activation.
+
+## Dated Fedlex relation resources
+
+Production RSS replay reached OC 2026/480 and exposed an official JOLux relation
+to `eli/cc/2022/172/20260919`. Relation targets now resolve this calendar-validated
+dated resource to its exact canonical parent while retaining the original URI
+and version token. The token is not asserted as a legal effective date. Root
+discovery remains strict, foreign and artifact paths remain rejected, and a
+version-to-own-parent reference does not create an inter-work edge.
+
+All 50 items on the current live German RSS page passed metadata and relation
+replay. The formerly failing OC 2026/480 produced 126 relations and its German,
+French and Italian official artifacts all extracted successfully. This bounded
+page check does not assert complete historical catalogue coverage. Forty-four
+Fedlex, connector and backlog tests passed, including all three language paths,
+invalid dates, publisher/path rejection and numeric root IDs. Exact API Ruff and
+diff checks passed. Production schedules will retry after normal activation;
+their cursors and retained failure history are not rewritten.

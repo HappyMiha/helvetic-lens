@@ -245,6 +245,9 @@ The live pilot also exposed a watch-removal foreign-key failure after related
 events were delivered. Complete the existing explicit document/history deletion
 contract for the requesting workspace, preserving shared corpus and other tenants,
 and refuse removal while its related analysis is still running or queued.
+Replay of the enabled Fedlex RSS streams found an official relation targeting a
+dated JOLux Work URI. Resolve that verified parent work while retaining the exact
+dated reference as evidence; do not widen root discovery or accept foreign URLs.
 The expanded live source audit also requires complete Fedlex HTML annex evidence
 and root-work-only catalogue discovery; historical dated members are versions.
 Shared language-specific watches must still bind to one official corpus work,
@@ -2356,6 +2359,15 @@ candidate, source version and other organizations' watches and reviews. Lock the
 selected watch and reject active relation-analysis jobs with the existing 409
 background-work guidance. Verify shared and private deletion, two populated
 workspace histories and busy-work rollback with real foreign-key enforcement.
+
+**Dated Fedlex relation targets, 21 September 2026:** All three enabled RSS
+streams stopped at OC 2026/480 because its official relation points to
+`eli/cc/2022/172/20260919`. Resolve this bounded date-suffixed JOLux resource to
+its validated canonical parent for the relation target. Retain the original URI
+and version token without inferring a legal effective date. Keep ordinary work
+discovery strict, reject foreign/malformed/language/artifact paths, and omit
+version-to-parent self-edges. Acceptance includes all three live language paths
+and current RSS-page relation replay, not only the first discovered article.
 
 **Native comparison guard, 21 September 2026:** Native corpus versions have
 immutable official-version keys and cannot use the direct-watch derived-version

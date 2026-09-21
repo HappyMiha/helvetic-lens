@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from email.utils import parsedate_to_datetime
@@ -675,6 +676,18 @@ LIMIT {FEDLEX_EXPRESSION_LIMIT}
 
     @staticmethod
     def _target_document(work_uri: str, title: str | None = None) -> DocumentInput:
+        source_resource = work_uri
+        version_token = None
+        parent, _, suffix = work_uri.rpartition("/")
+        parent_reference = fedlex_eli_reference(parent)
+        if (re.fullmatch(r"\d{8}", suffix) and parent_reference
+                and parent_reference.work_uri == parent):
+            try:
+                datetime.strptime(suffix, "%Y%m%d")
+            except ValueError as exc:
+                raise DomainError("Fedlex returned an invalid dated relation resource.",
+                                  502, "connector_contract_drift") from exc
+            work_uri, version_token = parent, suffix
         collection = _eli_collection(work_uri)
         return DocumentInput(
             kind=_kind(collection),
@@ -688,7 +701,9 @@ LIMIT {FEDLEX_EXPRESSION_LIMIT}
                 title=title or work_uri,
                 official_url=work_uri,
             ),
-            metadata={"collection": collection, "placeholder_from_official_relation": True},
+            metadata={"collection": collection, "placeholder_from_official_relation": True,
+                      **({"relation_resource_uri": source_resource, "relation_version_token": version_token}
+                         if version_token else {})},
         )
 
     async def extract_relations(self, metadata: ConnectorMetadata) -> tuple[ConnectorRelation, ...]:
@@ -748,7 +763,8 @@ LIMIT 250
                     502,
                     "connector_contract_drift",
                 )
-            if target == work_uri:
+            target_document = self._target_document(target)
+            if target_document.stable_official_url == work_uri:
                 continue
             if relation_class == "citation":
                 relation_type = "cites"
@@ -762,7 +778,7 @@ LIMIT 250
             seen.add(key)
             relations.append(
                 ConnectorRelation(
-                    target=self._target_document(target),
+                    target=target_document,
                     relation_type=relation_type,
                     state="confirmed",
                     provenance_method="official_metadata",
