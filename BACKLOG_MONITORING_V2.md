@@ -214,6 +214,12 @@ watch, existing records off, bounded durable scans, pause/revocation checks, and
 visible next-check state. This does not complete the broader MV2-060 bridge.
 Daily-watch API, migration, frontend and local browser checks passed; production
 scheduled execution remains pending activation, with MV2-052 IN PROGRESS.
+The expanded live source audit also requires complete Fedlex HTML annex evidence
+and root-work-only catalogue discovery; historical dated members are versions.
+Shared language-specific watches must still bind to one official corpus work,
+without exposing private legacy watches to global catalogue ingestion.
+Historical federal-gazette archive references remain metadata-only; recognize
+the court's German `Entscheid vom` heading while retaining docket/date checks.
 
 15 September recurring-closure feature: MV2-040 and MV2-041 remain IN PROGRESS
 in this index and their details. The explicit-offset source/calendar, private
@@ -2351,6 +2357,23 @@ migration compatibility, frontend checks and a live scheduled pilot check.
 Thirty-five affected API/migration/backlog checks, exact API Ruff and the full
 frontend build passed. Local browser verification covered persisted opt-in,
 pause/opt-out and mobile layout; production execution remains pending activation.
+
+**Expanded Fedlex audit scope, 21 September 2026:** The live publication for
+OC 2026/483 retained only 272 characters because its annex is a sibling of
+`main#maintext` inside `#lawcontent`. Prefer the complete legal container and
+retain preamble, annex tables and their citations, with an extraction revision.
+The CC reconciliation query also returns dated members typed as JOLux Work;
+bound discovery to canonical root work URIs before paging. Verify changed annex
+rows and current official artifacts, preserve foreign URL rejection, and do not
+present repaired pilot extraction baselines as newly enacted legal changes.
+Retain one shared corpus work for direct Fedlex language/date editions while
+keeping separate legacy watches/expressions. Catalogue binding must only use
+shared mappings; private legacy documents remain private.
+The same 26-stream audit found historical FGA files at the publisher-linked
+Federal Archives endpoint and current Federal Criminal Court PDFs headed
+`Entscheid vom`. Retain the exact archive reference as metadata without following
+it or claiming extracted archive text; foreign references still fail closed.
+Accept the verified German heading with regression tests for date/docket gates.
 
 **Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Operations + Backend · **Size:** M
 

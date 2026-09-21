@@ -8,7 +8,7 @@ from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from email.utils import parsedate_to_datetime
 from pathlib import PurePosixPath
-from urllib.parse import urlencode, urlsplit
+from urllib.parse import parse_qs, urlencode, urlsplit
 from xml.etree import ElementTree
 
 from .config import DomainError, Settings
@@ -42,6 +42,19 @@ _JOLUX = "http://data.legilux.public.lu/resource/ontology/jolux#"
 def _binding(row: dict, key: str) -> str | None:
     value = row.get(key)
     return value.get("value") if isinstance(value, dict) else None
+
+
+def _archive_reference(value: str | None) -> bool:
+    """Recognize a published historical reference; never fetch it implicitly."""
+    if not isinstance(value, str):
+        return False
+    parsed = urlsplit(value)
+    query = parse_qs(parsed.query, keep_blank_values=True)
+    return bool(parsed.scheme == "https" and parsed.netloc == "www.amtsdruckschriften.bar.admin.ch"
+                and parsed.path == "/viewOrigDoc.do" and not parsed.fragment
+                and set(query) == {"id", "action"} and len(query["id"]) == 1
+                and query["id"][0].isascii() and query["id"][0].isdigit()
+                and query["action"] == ["open"])
 
 
 def _rows(payload: bytes, *, required: frozenset[str] = frozenset()) -> list[dict]:
@@ -332,6 +345,7 @@ SELECT ?work (MAX(?publicationDate0) AS ?publicationDate)
              (SAMPLE(?status0) AS ?status) WHERE {{
   ?work a jolux:Work .
   FILTER(STRSTARTS(STR(?work), "{prefix}"))
+  FILTER(REGEX(STRAFTER(STR(?work), "{prefix}"), "^[^/]+/[^/]+$"))
   FILTER(STR(?work) > {json.dumps(last_key)})
   OPTIONAL {{ ?work jolux:publicationDate ?publicationDate0 . }}
   OPTIONAL {{ ?work jolux:dateDocument ?documentDate0 . }}
@@ -586,14 +600,17 @@ LIMIT {FEDLEX_EXPRESSION_LIMIT}
                 (entry for entry in manifestations if entry["format"] in {"html", "pdf-a", "pdf-x"}),
                 None,
             )
+            archive_reference = bool(selected and metadata.metadata.get("collection") == "fga"
+                                     and _archive_reference(selected["file"]))
             if selected:
                 prefix = f'/filestore/fedlex.data.admin.ch{urlsplit(selected["uri"]).path}/'
                 if not isinstance(selected["file"], str):
                     raise DomainError("Fedlex omitted its exact publication file.", 502, "connector_contract_drift")
-                Fetcher._validate_fedlex_artifact(selected["file"], prefix)
+                if not archive_reference:
+                    Fetcher._validate_fedlex_artifact(selected["file"], prefix)
             artifact_url = (
                 selected["file"]
-                if selected and latest_applicable.get(item["language"]) == expression_uri
+                if selected and not archive_reference and latest_applicable.get(item["language"]) == expression_uri
                 else None
             )
             version_key = item["date"] or item["version"]
@@ -626,6 +643,7 @@ LIMIT {FEDLEX_EXPRESSION_LIMIT}
                         "manifestations": manifestations,
                         "selected_manifestation": selected,
                         "artifact_deferred": artifact_url is None,
+                        "artifact_deferred_reason": "official_archive_reference" if archive_reference else None,
                     },
                 )
             )

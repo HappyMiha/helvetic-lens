@@ -7,10 +7,12 @@ from conftest import policy
 from sqlalchemy import func, select
 
 from helvetic_lens.config import DomainError, Settings
+from helvetic_lens.connectors import ConnectorMetadata
 from helvetic_lens.fedlex_connector import FedlexConnector, fedlex_connectors
 from helvetic_lens.models import (
     ConnectorReceipt,
     ConnectorState,
+    Law,
     LegacyDocumentMapping,
     RegulatoryDocumentVersion,
     RegulatoryEvent,
@@ -248,6 +250,9 @@ async def test_reconciliation_is_keyset_paged_and_resets_after_bounded_cycle(tmp
     }
     query = httpx.URL(requests[-1]).params["query"]
     assert "GROUP BY ?work" in query and "FILTER(STR(?work) >" in query
+    # JOLux dates such as /cc/1/116_97_116/18740918 are also typed Work.
+    # Paging must be bounded to the two root-work path components upstream.
+    assert 'FILTER(REGEX(STRAFTER(STR(?work), "https://fedlex.data.admin.ch/eli/cc/"), "^[^/]+/[^/]+$"))' in query
 
     completed = FedlexConnector(
         settings,
@@ -322,6 +327,80 @@ async def test_official_file_must_belong_to_exact_manifestation(tmp_path, file_u
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("url,accepted", [
+    ("https://www.amtsdruckschriften.bar.admin.ch/viewOrigDoc.do?id=10000011&action=open", True),
+    ("https://evil.example/viewOrigDoc.do?id=10000011&action=open", False),
+    ("https://www.amtsdruckschriften.bar.admin.ch/elsewhere?id=10000011&action=open", False),
+    ("https://www.amtsdruckschriften.bar.admin.ch/viewOrigDoc.do?id=10000011&action=open&redirect=", False),
+])
+async def test_historical_gazette_reference_is_retained_without_implicit_archive_fetch(tmp_path, url, accepted):
+    work = "https://fedlex.data.admin.ch/eli/fga/1849/1_108__"
+    seen = []
+
+    def respond(request):
+        seen.append(str(request.url))
+        return sparql([{"version": binding(work), "expression": binding(work + "/de"),
+            "language": binding("http://publications.europa.eu/resource/authority/language/DEU"),
+            "manifestation": binding(work + "/de/pdf-a"),
+            "format": binding("https://fedlex.data.admin.ch/vocabulary/file-format/pdf-a"), "file": binding(url)}])
+
+    source = FedlexConnector(Settings(_env_file=None, data_dir=tmp_path),
+        mode="reconcile", collection="fga", transport=httpx.MockTransport(respond))
+    metadata = ConnectorMetadata(work, "revision", "federal_gazette_publication", "Historical gazette",
+                                 work, (), metadata={"collection": "fga"})
+    if not accepted:
+        with pytest.raises(DomainError):
+            await source.list_expressions(metadata)
+        return
+    expression, = await source.list_expressions(metadata)
+    assert expression.metadata["selected_manifestation"]["file"] == url
+    assert expression.metadata["artifact_deferred_reason"] == "official_archive_reference"
+    assert await source.fetch_official_artifact(expression) is None
+    assert len(seen) == 1 and seen[0].startswith("https://fedlex.data.admin.ch/sparqlendpoint")
+
+
+def test_catalogue_binding_never_promotes_private_legacy_watch(harness):
+    client, fetcher, service, _ = harness
+    private_url = "https://regulator.example/private-retention"
+    fetcher.values[private_url] = policy()
+    added = client.post("/api/laws", json={"url": private_url}).json()
+    with service.db.session(include_all_organizations=True) as session:
+        law = session.get(Law, added["id"])
+        assert law.owner_organization_id is not None
+        # Reproduce a legacy Fedlex alias saved before official-host recognition.
+        law.url, law.canonical_identity = WORK, WORK
+        mapping = session.scalar(select(LegacyDocumentMapping).where(LegacyDocumentMapping.law_id == law.id))
+        private_work = mapping.work_id
+        session.commit()
+    source = FedlexConnector(service.settings, transport=fedlex_transport(),
+        sleep=lambda _: asyncio.sleep(0), now=lambda: datetime(2026, 9, 3, tzinfo=UTC))
+    result = asyncio.run(service.connector_runner.run_page(source, stream=source.stream))
+    assert result.status == "persisted"
+    with service.db.session(include_all_organizations=True) as session:
+        work = session.get(RegulatoryWork, private_work)
+        assert work.owner_organization_id == service.organization_id
+        assert work.authority != "fedlex"
+        official = session.scalar(select(RegulatoryIdentifier).where(
+            RegulatoryIdentifier.scheme == "eli_uri", RegulatoryIdentifier.normalized_value == WORK))
+        assert official.work_id != private_work
+
+
+def test_shared_language_watches_keep_distinct_documents_but_one_provisional_work(harness):
+    client, fetcher, service, _ = harness
+    laws = []
+    for language in ("de", "fr"):
+        url = WORK + "/" + language
+        fetcher.values[url] = policy()
+        result = client.post("/api/laws", json={"url": url})
+        assert result.status_code == 201
+        laws.append(result.json()["id"])
+    assert len(set(laws)) == 2
+    with service.db.session(include_all_organizations=True) as session:
+        mappings = list(session.scalars(select(LegacyDocumentMapping).where(LegacyDocumentMapping.law_id.in_(laws))))
+        assert len({m.work_id for m in mappings}) == 1
+
+
+@pytest.mark.asyncio
 async def test_official_file_redirect_cannot_swap_the_evidence_language(tmp_path):
     original = fedlex_transport()
 
@@ -340,10 +419,11 @@ async def test_official_file_redirect_cannot_swap_the_evidence_language(tmp_path
     assert error.value.code == "fedlex_metadata_error"
 
 
-def test_runner_deduplicates_catalogue_with_existing_add_law_flow(harness):
+@pytest.mark.parametrize("suffix", ["", "/de", "/fr", "/20240303/de"])
+def test_runner_deduplicates_catalogue_with_existing_add_law_flow(harness, suffix):
     client, fetcher, service, _ = harness
-    fetcher.values[WORK] = policy()
-    added = client.post("/api/laws", json={"url": WORK})
+    fetcher.values[WORK + suffix] = policy()
+    added = client.post("/api/laws", json={"url": WORK + suffix})
     assert added.status_code == 201, added.text
 
     source = FedlexConnector(

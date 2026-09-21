@@ -165,3 +165,31 @@ help and TypeScript checks. Browser verification against an isolated local app
 confirmed opt-in persistence after reload, paused state, opt-out and the 390px
 mobile layout. Test evidence was explicitly synthetic and never uploaded to the
 pilot accounts. Production scheduled execution remains pending activation.
+
+## Expanded live source audit
+
+All 26 configured official legal/news source streams passed a bounded live health
+and discovery probe. Twenty-one probes extracted one real selected artifact;
+three historical Fedlex samples retained metadata only, and two bounded discovery
+pages were empty. See [the dated source evidence](monitoring-v2/evidence/baseltech-official-source-probes-2026-09-21.json).
+This does not enable every schedule or prove complete catalogue coverage.
+
+The audit found and fixed three further source defects. Fedlex's `#lawcontent`
+contains preamble and annex siblings outside `main#maintext`; HTML extraction v5
+retains the whole legal container. OC 2026/483 now yields 28,118 German characters
+instead of 272, including the annex. The French and Italian artifacts yield
+28,542 and 28,365 characters. Reconciliation excludes dated JOLux Work members
+before root-work keyset paging. Historical Bundesblatt Federal Archives links
+are retained as explicit metadata-only references without following them or
+weakening the publication-store URL check. The Federal Criminal Court parser
+recognizes `Entscheid vom`; RR.2026.58 verified the cover date and retained 28,765
+characters with its original PDF hash.
+
+The expanded regression run also caught an interaction with language-specific
+direct watches. Shared editions retain distinct document/expression identities
+but now map to one provisional corpus work. Official connector binding explicitly
+excludes private legacy mappings. Eighty-seven extraction, Fedlex, corpus, court,
+workflow and backlog tests passed, including multilingual/pinned edition reuse,
+private binding refusal, archive reference rejection and annex-only changes.
+Exact API Ruff passed. Repaired pilot extraction baselines must be established
+after activation before scheduled monitoring; these repairs are not legal changes.

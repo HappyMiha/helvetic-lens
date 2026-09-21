@@ -41,7 +41,7 @@ _ARTICLE_ACT = re.compile(
     re.I,
 )
 _DATE_HEADING = {
-    "de": re.compile(r"\b(?:Urteil|Beschluss)\s+vom\s+(\d{1,2})\.?\s+([^\s]+)\s+(\d{4})", re.I),
+    "de": re.compile(r"\b(?:Urteil|Beschluss|Entscheid)\s+vom\s+(\d{1,2})\.?\s+([^\s]+)\s+(\d{4})", re.I),
     "fr": re.compile(r"\b(?:Jugement|Arr[eê]t|D[ée]cision)\s+du\s+(\d{1,2})\s+([^\s]+)\s+(\d{4})", re.I),
     "it": re.compile(r"\b(?:Sentenza|Decisione)\s+del\s+(\d{1,2})\s+([^\s]+)\s+(\d{4})", re.I),
 }

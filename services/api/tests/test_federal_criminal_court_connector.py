@@ -2,12 +2,13 @@ import asyncio
 from datetime import UTC, datetime
 
 import httpx
+import pytest
 from pdf_fixture import make_pdf
 from sqlalchemy import func, select
 
-from helvetic_lens.config import Settings
+from helvetic_lens.config import DomainError, Settings
 from helvetic_lens.extraction import extract
-from helvetic_lens.federal_criminal_court_connector import FederalCriminalCourtConnector
+from helvetic_lens.federal_criminal_court_connector import FederalCriminalCourtConnector, _pdf_metadata
 from helvetic_lens.models import (
     ConnectorReceipt,
     ConnectorState,
@@ -21,6 +22,17 @@ DOCUMENTS = (
     ("39fa0bc1-1f50-4f6b-85dd-dddad405a087", "SK.2026.12"),
     ("b2f4cc68-85a8-46df-8eca-225923d36f44", "BB.2026.60"),
 )
+
+
+@pytest.mark.parametrize("heading", ["Entscheid", "Urteil", "Beschluss"])
+def test_german_decision_heading_uses_cover_date_and_preserves_docket_validation(heading):
+    body = make_pdf([f"Bundesstrafgericht RR.2026.58 {heading} vom 22. Juli 2026 Beschwerdekammer",
+                     "The reasoning cites an earlier Urteil vom 1. Januar 2025."])
+    metadata = _pdf_metadata(body, ["RR.2026.58"])
+    assert metadata["language"] == "de" and metadata["decision_date"] == "2026-07-22"
+    assert metadata["chamber"] == "Beschwerdekammer"
+    with pytest.raises(DomainError, match="docket"):
+        _pdf_metadata(body, ["RR.2026.999"])
 
 
 def home(*, broken=False, changed=False):

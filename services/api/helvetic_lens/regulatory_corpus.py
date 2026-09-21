@@ -252,13 +252,21 @@ class RegulatoryCorpus:
         )
         if existing:
             return
-        mapping = session.scalar(
-            select(LegacyDocumentMapping)
+        from .extraction import fedlex_eli_reference
+
+        root = fedlex_eli_reference(value) if scheme == "eli_uri" else None
+        candidates = session.execute(
+            select(LegacyDocumentMapping, Law)
             .join(Law, Law.id == LegacyDocumentMapping.law_id)
-            .where(Law.canonical_identity == value)
+            .where(Law.owner_organization_id.is_(None),
+                   or_(Law.canonical_identity == value,
+                       Law.canonical_identity.startswith(value + "/", autoescape=True))
+                   if root else Law.canonical_identity == value)
             .order_by(LegacyDocumentMapping.created_at)
-            .limit(1)
-        )
+        ).all()
+        mapping = next((mapping for mapping, law in candidates
+                        if not root or ((reference := fedlex_eli_reference(law.url))
+                                        and reference.work_uri == root.work_uri)), None)
         if not mapping:
             return
         work = session.get(RegulatoryWork, mapping.work_id)
@@ -542,7 +550,11 @@ class RegulatoryCorpus:
         if language == "unknown":
             language = "und"
         owner = law.owner_organization_id
-        legacy_identity = f"{owner}:{law.canonical_identity}" if owner else law.canonical_identity
+        from .extraction import fedlex_eli_reference
+
+        reference = fedlex_eli_reference(law.url) if owner is None else None
+        public_identity = reference.work_uri if reference else law.canonical_identity
+        legacy_identity = f"{owner}:{law.canonical_identity}" if owner else public_identity
         return self.merge_document(
             session,
             DocumentInput(
@@ -550,7 +562,7 @@ class RegulatoryCorpus:
                 authority=law.provider or "direct_url",
                 identifiers=(IdentifierInput("legacy_canonical_identity", legacy_identity, law.url),),
                 title=law.name,
-                stable_official_url=law.url if owner is None else None,
+                stable_official_url=(reference.work_uri if reference else law.url) if owner is None else None,
                 expression=ExpressionInput(
                     language=language,
                     key=law.canonical_identity,

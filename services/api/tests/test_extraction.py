@@ -76,7 +76,26 @@ def test_faq_keeps_sibling_answers_and_detects_changes_outside_the_first_article
     assert compare_passages(before.passages, after.passages)["counts"]["modified"] == 1
     links = discover_links(Fetched("https://example.com/faq", body, "text/html"))
     assert [item["url"] for item in links["candidates"]] == ["https://example.com/files/details.pdf"]
-    assert before.extractor == "native-html-v4"
+    assert before.extractor == "native-html-v5"
+
+
+def test_fedlex_retains_preface_and_annex_outside_main_and_detects_annex_only_change():
+    body = b'''<html><body><nav>Not evidence</nav><div id="lawcontent">
+    <div id="preface"><h1>Synthetic ordinance</h1></div>
+    <div id="preamble"><p>The authority adopts the following test provisions.</p></div>
+    <main id="maintext"><p>The annex determines the fictional regional values.</p></main>
+    <div id="annex"><h2>Annex 1</h2><table><tr><th>Region</th><th>Value</th></tr>
+    <tr><td>Basel</td><td>123</td></tr></table><p>Final annex provision.</p>
+    <a href="/annex.pdf">Official annex</a></div></div><footer>Footer noise</footer></body></html>'''
+    before = extract(body, "text/html")
+    after = extract(body.replace(b">123<", b">456<"), "text/html")
+    assert "authority adopts" in before.text and "Final annex provision" in before.text
+    assert "Basel 123" in before.text and "Footer noise" not in before.text
+    changed = compare_passages(before.passages, after.passages)
+    assert changed["counts"]["modified"] == 1
+    assert any(item.get("new", {}).get("text") == "Basel 456" for item in changed["items"] if item.get("new"))
+    links = discover_links(Fetched("https://example.com/law", body, "text/html"))
+    assert [item["url"] for item in links["candidates"]] == ["https://example.com/annex.pdf"]
 
 
 def test_pdf_text_and_page_references_with_scanned_pdf_error():
