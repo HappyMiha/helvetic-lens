@@ -241,6 +241,10 @@ and use the existing recovery workflow for retained candidates.
 The direct Basel BPG preflight additionally requires bounded support for its
 2.44 MB official metadata envelope, which embeds full XHTML. Retain publisher,
 language, version and PDF checks and prove oversized metadata still fails closed.
+The live pilot also exposed a watch-removal foreign-key failure after related
+events were delivered. Complete the existing explicit document/history deletion
+contract for the requesting workspace, preserving shared corpus and other tenants,
+and refuse removal while its related analysis is still running or queued.
 The expanded live source audit also requires complete Fedlex HTML annex evidence
 and root-work-only catalogue discovery; historical dated members are versions.
 Shared language-specific watches must still bind to one official corpus work,
@@ -2342,6 +2346,16 @@ specific size error and retained exact publisher/language/version/PDF checks.
 Acceptance: a representative full-text envelope above 2 MB resolves the exact
 official PDF; an envelope over 4 MB fails before PDF fetch; the actual Basel BPG
 preflight succeeds. This does not assert complete cantonal catalogue coverage.
+
+**Document/watch deletion with related history, 21 September 2026:** Removing the
+pilot's wrong-language shared watch returned HTTP 500 because its organization
+relation deliveries still referenced it. Under the existing explicit document
+and history deletion action, remove that watch's own delivery records and their
+dependent private reviews/analyses in the same transaction. Retain global work,
+candidate, source version and other organizations' watches and reviews. Lock the
+selected watch and reject active relation-analysis jobs with the existing 409
+background-work guidance. Verify shared and private deletion, two populated
+workspace histories and busy-work rollback with real foreign-key enforcement.
 
 **Native comparison guard, 21 September 2026:** Native corpus versions have
 immutable official-version keys and cannot use the direct-watch derived-version

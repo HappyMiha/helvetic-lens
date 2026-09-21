@@ -2401,6 +2401,7 @@ class HelveticLens:
         with self.write_guard, self.db.session() as session:
             law = get(session, Law, law_id)
             watch = self.watch(session, law_id)
+            session.refresh(watch, with_for_update=True)
             busy = session.scalar(
                 select(ScanItem.id)
                 .join(Scan)
@@ -2413,6 +2414,21 @@ class HelveticLens:
                     409,
                     "scan_in_progress",
                 )
+            deliveries = select(OrganizationRelationCandidate.id).where(
+                OrganizationRelationCandidate.watch_id == watch.id)
+            if session.scalar(select(Job.id).where(
+                Job.target_type == "organization_relation_candidate",
+                Job.target_id.in_(deliveries), Job.state.not_in(durable_jobs.TERMINAL_STATES),
+            ).limit(1)):
+                raise DomainError(
+                    "This document still has background work in progress. Cancel it or wait for completion before deleting the document.",
+                    409, "job_in_progress",
+                )
+            # The explicit delete-document-and-history action removes only this
+            # workspace's delivery graph. Its review/analysis FKs cascade; the
+            # shared candidate, source corpus and other tenant watches survive.
+            relation_deliveries = session.execute(delete(OrganizationRelationCandidate).where(
+                OrganizationRelationCandidate.watch_id == watch.id)).rowcount
             if law.owner_organization_id is None:
                 name = watch.display_name
                 session.delete(watch)
@@ -2421,6 +2437,7 @@ class HelveticLens:
                     "deleted": True,
                     "name": name,
                     "watch_removed": True,
+                    "relation_deliveries": relation_deliveries,
                     "shared_corpus_retained": True,
                     "versions": 0,
                     "comparisons": 0,
@@ -2524,6 +2541,7 @@ class HelveticLens:
         return {
             "deleted": True,
             "name": name,
+            "relation_deliveries": relation_deliveries,
             "versions": len(versions),
             "comparisons": len(comparisons),
             "scan_entries": len(scan_items),

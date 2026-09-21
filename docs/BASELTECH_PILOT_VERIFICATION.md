@@ -302,3 +302,20 @@ version 6877, retrieved its 1,614,854-byte PDF and extracted 147,023 characters.
 Nineteen LexWork/backlog tests passed, including a large valid envelope and
 oversize rejection before PDF fetching. Exact API Ruff and diff checks passed.
 Production import remains pending activation of this fix.
+
+## Watch deletion with related history
+
+Removing the pilot's mistaken Italian DSG watch exposed a production foreign-key
+failure: delivered related-event records still referenced the watch. The existing
+explicit document-and-history deletion action now locks the selected watch,
+rejects its queued/running relation analyses, and removes only its workspace's
+delivery graph before the watch. Dependent private reviews and analyses follow
+their existing cascade contract. Shared candidates, source corpus, other tenant
+watches and their reviews remain intact. Until activation, the mistaken pilot
+watch is paused and the German edition is monitored separately.
+
+Seven deletion/isolation/backlog checks and forty existing workflow,
+document-history and AI-history checks passed, with foreign keys enabled. Tests
+cover shared and private documents, a second populated workspace, retained shared
+versions and rollback on queued/running related analysis. Exact API Ruff and diff
+checks passed. Production removal will be replayed after normal activation.
