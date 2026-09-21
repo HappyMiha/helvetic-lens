@@ -137,11 +137,11 @@ def test_cached_outputs_citations_and_last_valid_report_are_guarded_together(har
 
     model.fail = False
     model.invalid = True
-    invalid_answer = client.post(ask_url, json={"question": "Explain Article 2"})
+    invalid_answer = client.post(ask_url, json={"question": "Summarize the whole document"})
     assert invalid_answer.status_code == 502
     assert invalid_answer.json()["code"] == "invalid_citation"
     history = client.get(f"/api/comparisons/{comparison['id']}/ai-history").json()["items"]
-    rejected = next(item for item in history if item.get("question") == "Explain Article 2")
+    rejected = next(item for item in history if item.get("question") == "Summarize the whole document")
     assert rejected["status"] == "failed" and rejected["result"] is None
 
 

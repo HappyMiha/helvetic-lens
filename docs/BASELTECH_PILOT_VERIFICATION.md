@@ -418,3 +418,29 @@ replay: 33 distinct version/passage/quote tuples matched the owned saved evidenc
 Each result recorded three provider calls and explicitly partial selected-evidence
 coverage with impact not assessed. This does not satisfy an independent human
 quality gate or claim complete legal interpretation.
+
+## Specific-provision Ask routing and coverage
+
+The real IDG question "Which exact wording changed about Besoldung in § 39?"
+was misclassified as a general change question. It reused an unrelated earlier
+cover/preamble report and incorrectly marked that partial report as complete.
+Ask routing v2 recognizes paragraph signs independently of word boundaries,
+preserves number suffixes, and invalidates previously cached question answers.
+Explicit provisions select their bounded saved body, including separately
+extracted headings and titles, rather than unrelated keyword matches or an
+ordinal paragraph position. Missing provision numbers return no supporting
+evidence and make no model request. The next legal heading bounds the selection.
+
+Reusing a general report remains available, but both the plan and returned answer
+retain its coverage limits and original available/material counts. Unknown
+coverage cannot become complete. This does not bypass tenant/source checks,
+runtime budgets, citation validation or the independent interpretation gate.
+
+148 related Ask, selected-evidence, AI-history, decision-report and capability
+tests passed, along with the backlog check, exact API Ruff and diff checks.
+Regression coverage includes § 39 / §39a, Ukrainian spacing, unrelated reports,
+missing/suffixed provisions, the next-section boundary, repair behavior and old
+question-cache invalidation. Read-only preflight against the actual retained IDG
+PDFs selected six passages in one bounded batch, including old p00320 and new
+p00319 and the added Besoldung sentence. Normal deployed Ask replay remains
+pending; the earlier unhelpful answer is retained as audit history.

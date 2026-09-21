@@ -33,7 +33,7 @@ from .token_evidence import allocated_coverage, fit_numbered_evidence
 PROMPT_VERSION = "helvetic-lens-v12-evidenced-decision-review"
 IMPACT_REPORT_SCHEMA_VERSION = "impact-report-v5"
 DEFAULT_OUTPUT_LOCALE = "en-CH"
-ASK_ROUTER_VERSION = "ask-intent-v1"
+ASK_ROUTER_VERSION = "ask-intent-v2"
 MAX_IMPACT_BATCHES = 3
 MAX_ASK_BATCHES = 1
 MAX_IMPACT_HTTP_REQUESTS = 5
@@ -1535,10 +1535,7 @@ def build_ask_plan(
         coverage = {"limited": False, "scope": "No document inference required."}
     elif report_answer:
         context_mode, evidence, batches = "impact_report", [], []
-        coverage = {
-            "limited": False,
-            "scope": "Reused the current validated impact report; no model call was required.",
-        }
+        coverage = impact_report_answer_coverage(impact_report, report_answer)
     elif intent == "explain_changes" and not comparison.diff.get("changed"):
         context_mode, evidence, batches = "deterministic_diff", [], []
         coverage = {"limited": False, "scope": "No text change; deterministic answer."}
@@ -1639,7 +1636,9 @@ def build_ask_plan(
             "reused_impact_report_id": (impact_report or {}).get("id") if report_answer else None,
         },
         "coverage": {
-            "included_passages": len(evidence),
+            "included_passages": coverage.get("included_passages", len(evidence)),
+            "available_passages": coverage.get("available_passages"),
+            "complete": bool(coverage.get("complete")),
             "limited": bool(coverage.get("limited")),
             "scope": coverage.get("scope"),
         },
@@ -2048,22 +2047,20 @@ def targeted_version_evidence(
                 candidates.append((score, side, version, index))
     explicit_unit = _SPECIFIC_UNIT.search(question)
     if explicit_unit:
-        number_match = re.search(r"\d+", explicit_unit.group(0))
-        unit_number = int(number_match.group(0)) if number_match else 0
+        # A legal provision number is not an ordinal passage position. Do not
+        # substitute term matches or the 39th extracted paragraph for missing § 39.
+        candidates = []
+        unit_number = explicit_unit.group("number").casefold()
         for side, version in versions:
-            exact = [
-                index
-                for index, passage in enumerate(version.passages)
-                if re.match(
-                    rf"\s*(?:art(?:icle|ikel|icolo|itgel)?\.?|§|статт(?:я|і)|стать(?:я|и))\s*{unit_number}\b",
-                    passage["text"],
-                    re.IGNORECASE,
-                )
-            ]
-            if exact:
-                candidates.extend((100, side, version, index) for index in exact)
-            elif 0 < unit_number <= len(version.passages):
-                candidates.append((50, side, version, unit_number - 1))
+            exact = []
+            for index, passage in enumerate(version.passages):
+                text = passage["text"].strip()
+                heading = _SPECIFIC_UNIT.match(text)
+                if heading and heading.group("number").casefold() == unit_number:
+                    # Prefer a standalone heading over an amendment-table reference.
+                    score = 150 if not text[heading.end():].strip(" .:") else 100
+                    exact.append((score, side, version, index))
+            candidates.extend(sorted(exact, key=lambda item: (-item[0], item[3]))[:1])
     candidates.sort(key=lambda item: (-item[0], item[1], item[3]))
     anchors = []
     for side in ("old", "new"):
@@ -2091,7 +2088,17 @@ def targeted_version_evidence(
 
     selected: dict[tuple[str, int], tuple[str, Version, int]] = {}
     for _, side, version, index in anchors:
-        for neighbour in range(max(0, index - 1), min(len(version.passages), index + 2)):
+        if explicit_unit:
+            # PDF extraction often separates number, title and provision body.
+            # Include the bounded provision, stopping at the next legal heading.
+            start, stop = index, min(len(version.passages), index + 12)
+            for neighbour in range(index + 1, stop):
+                if _SPECIFIC_UNIT.match(version.passages[neighbour]["text"].lstrip()):
+                    stop = neighbour
+                    break
+        else:
+            start, stop = max(0, index - 1), min(len(version.passages), index + 2)
+        for neighbour in range(start, stop):
             selected[(side, neighbour)] = (side, version, neighbour)
     evidence: list[dict] = []
     per_side = {
@@ -3513,7 +3520,7 @@ _APPLICABILITY_MARKERS = (
     "nossa organisaziun",
 )
 _SPECIFIC_UNIT = re.compile(
-    r"(?:\b(?:art(?:icle|ikel|icolo|itgel)?\.?|section|§|paragraph|paragraphe|absatz|alin[eé]a|capoverso|статт(?:я|і|ю)|стать(?:я|и|ю))\s*\d+[a-z]?\b)",
+    r"(?:(?<!\w)§{1,2}|\b(?:art(?:icle|ikel|icolo|itgel)?\.?|section|paragraph|paragraphe|absatz|alin[eé]a|capoverso|статт(?:я|і|ю)|стать(?:я|и|ю)))\s*(?P<number>\d+[a-z]?)\b",
     re.IGNORECASE,
 )
 
@@ -3677,6 +3684,32 @@ def _distinct_report_citations(values: list[dict], limit: int = 10) -> list[dict
         if len(result) == limit:
             break
     return result
+
+
+def impact_report_answer_coverage(impact_report: dict | None, answer: dict) -> dict:
+    """Reuse the report's evidence limits without claiming a new complete review."""
+
+    wrapper = impact_report or {}
+    original = wrapper.get("coverage") or (wrapper.get("result") or {}).get("evidence_coverage") or {}
+    complete = original.get("complete") is True and not original.get("limited")
+    citations = answer.get("citations", [])
+    scope = "Reused the current validated impact report; no model call was made."
+    if original.get("scope"):
+        scope += " " + original["scope"]
+    if not complete:
+        scope += " This answer does not establish complete document coverage."
+    return {
+        **{key: original[key] for key in (
+            "available_passages", "material_items", "reviewed_material_items",
+            "suppressed_non_material_items", "changed_items",
+        ) if key in original},
+        "included_passages": len(citations),
+        "included_characters": sum(len(item.get("quote", "")) for item in citations),
+        "limited": not complete,
+        "complete": complete,
+        "provider_calls": 0,
+        "scope": scope,
+    }
 
 
 def answer_from_impact_report(intent: str, locale: str, impact_report: dict | None) -> dict | None:
@@ -3931,15 +3964,7 @@ async def answer_question(
 
     report_answer = answer_from_impact_report(intent, output_locale, impact_report)
     if report_answer:
-        coverage = {
-            "included_passages": len(report_answer["citations"]),
-            "available_passages": len(report_answer["citations"]),
-            "included_characters": sum(len(item.get("quote", "")) for item in report_answer["citations"]),
-            "limited": False,
-            "complete": True,
-            "provider_calls": 0,
-            "scope": "Reused the current validated impact report; no model call was made.",
-        }
+        coverage = impact_report_answer_coverage(impact_report, report_answer)
         return routed(
             report_answer,
             coverage,

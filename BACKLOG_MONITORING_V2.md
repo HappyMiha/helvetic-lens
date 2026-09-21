@@ -233,6 +233,13 @@ The live Basel viewer scenario exposed a POST transport mismatch for the purely
 extractive native evidence reader. Permit that reader under existing source and
 ownership checks, retaining CSRF and all write/model restrictions. Exercise both
 administrator and viewer roles through real HTTP before release.
+The live IDG question about § 39 must retrieve that provision instead of reusing
+an unrelated general report. Correct legal-unit routing and exact provision
+selection, invalidate the old Ask cache revision, and retain partial coverage
+when reusing a limited report. Verify the actual saved before/after evidence;
+the independent interpretation-quality gate remains unchanged.
+The specific-provision implementation and retained-IDG preflight passed locally;
+the deployed question replay remains pending. MV2-052 stays IN PROGRESS.
 The source-language audit also requires exact expression titles on event/evidence
 views and brief inputs; the shared multilingual work title is only a fallback.
 Italian articles alone must not create related-law candidates. Preserve bounded
@@ -2330,6 +2337,22 @@ activation or human acceptance is claimed; the parent remains IN PROGRESS.
 <a id="mv2-052"></a>
 
 ### MV2-052 — Operational metrics, degraded mode and source recovery
+
+**Specific-provision Ask recovery, 21 September 2026:** The live Basel IDG query
+about Besoldung in § 39 was misclassified as a general change question and reused
+unrelated cover/preamble excerpts. Recognize paragraph signs independently of
+word boundaries, select the exact provision and its bounded neighbours, and
+refresh the Ask router/cache revision. A reused partial impact report must retain
+its original coverage limits rather than claim complete document coverage.
+Acceptance requires numbered/suffixed provision routing, an unrelated-report
+regression, absent-provision handling, consistent plan/execution coverage and the
+real § 39 before/after replay. Preserve tenant/source binding, exact citations,
+bounded runtime requests and the independent human interpretation-quality gate.
+The existing saved-version and Ask contracts provide the required dependencies.
+Local acceptance: 148 related Ask, report, capability and history tests plus the
+backlog check passed. The retained real IDG versions select six bound passages,
+including both complete § 39 bodies, in one bounded batch. Production replay and
+independent interpretation review remain separate pending evidence.
 
 **Viewer evidence scope, 21 September 2026:** The native selected-evidence reader
 returns quoted existing fields with no model call or mutation, but its POST route

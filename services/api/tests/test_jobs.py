@@ -338,7 +338,7 @@ def test_retrying_ask_preserves_the_failed_history_record(harness):
         json={"old_version_id": old["id"], "new_version_id": law["current_version_id"]},
     ).json()
     service.settings.apertus_base_url = "https://model.example/v1"
-    payload = {"question": "Explain Article 1", "history": []}
+    payload = {"question": "Summarize the whole document", "history": []}
     model.fail = True
 
     failed_attempt = client.post(

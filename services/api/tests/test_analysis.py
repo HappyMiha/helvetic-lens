@@ -900,10 +900,11 @@ async def test_large_diff_uses_a_bounded_ai_dossier_for_ask_and_impact(harness):
 
 
 def test_invalid_json_is_validated_and_repaired_once_for_impact_and_ask(harness):
-    client, _, service, model = harness
+    client, fetcher, service, model = harness
     service.settings.apertus_base_url = "https://model.example/v1"
+    fetcher.values[LAW_URL] = policy(extra="<h2>Article 2</h2><p>Saved target wording.</p>")
     law = add_law(client)
-    old = import_old(client, law["id"])["version"]
+    old = import_old(client, law["id"], body=policy(10, extra="<h2>Article 2</h2><p>Earlier target wording.</p>"))["version"]
     comparison = client.post(
         "/api/comparisons",
         json={"old_version_id": old["id"], "new_version_id": law["current_version_id"]},
@@ -1146,6 +1147,10 @@ def test_vague_comment_and_numeric_gibberish_do_not_call_the_model(harness):
         ("Does this affect our organization?", "organization_impact"),
         ("Create a review checklist", "actions"),
         ("Explain Article 5", "specific_unit"),
+        ("Which wording changed about Besoldung in § 39?", "specific_unit"),
+        ("§39a: Was hat sich geändert?", "specific_unit"),
+        ("Поясни зміни у §\u00a039", "specific_unit"),
+        ("Explain §§ 39 and 40", "specific_unit"),
         ("Summarize the whole document", "whole_document"),
         ("Ничего не понятно но очень интересно", "vague"),
         ("Tell me a joke about the weather", "off_topic"),
@@ -1192,10 +1197,11 @@ def test_canonical_ask_reuses_current_validated_impact_report(harness):
 
 
 def test_specific_unit_ask_uses_only_target_and_neighbours(harness):
-    client, _, service, model = harness
+    client, fetcher, service, model = harness
     service.settings.apertus_base_url = "https://model.example/v1"
+    fetcher.values[LAW_URL] = policy(extra="<h2>Article 2</h2><p>Saved target wording.</p>")
     law = add_law(client)
-    old = import_old(client, law["id"])["version"]
+    old = import_old(client, law["id"], body=policy(extra="<h2>Article 2</h2><p>Earlier target wording.</p>"))["version"]
     comparison = client.post(
         "/api/comparisons",
         json={"old_version_id": old["id"], "new_version_id": law["current_version_id"]},
