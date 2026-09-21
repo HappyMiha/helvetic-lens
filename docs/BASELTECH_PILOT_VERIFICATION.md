@@ -546,3 +546,26 @@ The required full automatic deployment remains separate: no active release test
 or deployment was restarted or duplicated. The installed host manager's timeout
 reader was also checked read-only with the future cron setting and returned
 10,800 seconds; its current already-started run keeps its original deadline.
+
+## Removing geographic-only relation leads
+
+The retained demonstration inventory contained 22 active BaselTech candidates
+and 60 personal candidates. Replay of these exact retained pairs with retrieval
+revision v4 kept eight and twelve respectively, while rejecting fourteen and
+forty-eight that lacked a subject or exact norm reference after generic place
+and agreement words were removed. This is a retrieval filter, not a finding of
+legal impact or its absence. The captured inputs and result are retained privately.
+
+Only the relation vocabulary changed. Geographic topic interests still match
+their place names; meaningful migration, integration and procurement subjects,
+exact SR/RS references and confirmed publisher relations remain available.
+Existing bounded dry-run/apply recovery preserves source records, deliveries,
+workspace decisions and old analyses, and makes no inference calls. Rejected
+retrieval displays unknown severity and an explicit warning that it is not a
+legal no-impact judgment.
+
+Ninety-four geography, retrieval, reprocessing, evidence-gate, source-title,
+topic and backlog checks passed with one existing skip. Nine additional candidate
+benchmark and relation-graph checks passed with the repository on PYTHONPATH.
+Production recovery
+and final account verification remain pending normal automatic activation.

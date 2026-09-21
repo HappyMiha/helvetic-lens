@@ -273,6 +273,17 @@ The expanded relation/capability/inbox regression suite passed 220 checks with
 one existing skip, and the isolated production web build passed. Both retained
 live dossiers completed with actual Apertus in one call and exact saved quotes
 or an explicit empty selection. Production activation/replay remain pending.
+The retained pilot inventory also contains unrelated candidates supported only
+by Riehen/Bettingen or the instrument words “interkantonale Vereinbarung”. Extend
+only relation retrieval's non-subject terms for the requested Basel/Bern geography
+and generic agreements, version the rule and preview retained-candidate recovery.
+Preserve topic geography, meaningful subjects, exact norm references, confirmed
+official relations, workspace decisions and all historical evidence. Acceptance
+includes the actual retained pairs, unrelated and substantive multilingual cases,
+and bounded preview/apply with no inference or delivery recreation.
+Revision v4 passed 94 related checks with one existing skip; the exact retained
+inventory kept eight BaselTech and twelve personal leads and rejected fourteen
+and forty-eight unsupported pairs respectively. Production recovery is pending.
 The direct Basel BPG preflight additionally requires bounded support for its
 2.44 MB official metadata envelope, which embeds full XHTML. Retain publisher,
 language, version and PDF checks and prove oversized metadata still fails closed.
@@ -2365,6 +2376,29 @@ activation or human acceptance is claimed; the parent remains IN PROGRESS.
 <a id="mv2-052"></a>
 
 ### MV2-052 — Operational metrics, degraded mode and source recovery
+
+**Basel/Bern relation noise, 21 September 2026:** Read-only inventory of the
+demonstration watches found 22 BaselTech and 60 personal active candidates. Many
+personal candidates share only Riehen/Bettingen with the asylum contract; generic
+intercantonal-agreement titles also link unrelated higher education and procurement
+acts. These are jurisdiction/instrument context, not regulated subjects. Extend
+the relation-only exclusion vocabulary for these demonstrated terms and their
+generic jurisdiction/agreement counterparts without changing topic matching.
+Increment the retrieval rule, preserve exact SR/RS and confirmed official paths,
+and recheck retained pairs through the existing dry-run/apply workflow. Keep
+source data, deliveries, reviews and old analyses; rejection means unsupported
+retrieval, never a legal no-impact judgment. Verify meaningful subject matches
+within Basel/Bern, multilingual agreement terminology, actual retained-pair
+preflight and ordinary recovery after activation. No new source coverage or
+semantic-quality approval is implied.
+
+Revision v4 passed 94 relevant checks with one existing skip. Read-only replay of
+all 82 retained pilot pairs kept eight BaselTech and twelve personal candidates;
+fourteen and forty-eight respectively no longer meet retrieval evidence. Tests
+cover topic geography, substantive multilingual subjects, exact norm references,
+confirmed publisher relations and intact history through bounded dry-run/apply.
+Production reprocessing remains pending normal activation; the parent stays
+IN PROGRESS.
 
 **Relation-analysis pilot recovery, 21 September 2026:** Live Basel/Ukraine
 inboxes reproduce invalid structured replies and generated relation claims from

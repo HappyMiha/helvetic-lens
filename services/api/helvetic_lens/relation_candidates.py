@@ -26,7 +26,7 @@ from .models import (
 )
 from .regulatory_corpus import RegulatoryCorpus, RelationInput
 
-RULE_REVISION = "relation-candidate-v3"
+RULE_REVISION = "relation-candidate-v4"
 _WORD = re.compile(r"[a-z0-9]{3,}")
 _NORM = re.compile(r"\b(?:sr|rs)\s*([0-9]+(?:\.[0-9]+){1,4})\b", re.I)
 _ARTICLE = re.compile(r"\b(?:art(?:icle|ikel)?\.?)\s*([0-9]+[a-z]?)\b", re.I)
@@ -52,6 +52,21 @@ _RELATION_STOP = {"dei", "del", "dello", "dell", "degli", "della", "delle",
                   "nel", "nello", "nell", "nella", "nelle", "negli", "nei",
                   "sul", "sullo", "sull", "sulla", "sulle", "sugli", "sui",
                   "alla", "alle", "allo", "agli", "dal", "dallo", "dall", "dalla", "dalle", "dai", "dagli"}
+# The demonstrated Basel/Bern place names and jurisdiction/instrument words
+# describe where or what form an act has, not a shared regulated subject. Keep
+# these out of relation retrieval only: geographic interest topics still need
+# them. Exact citations and confirmed publisher relations bypass title overlap.
+_RELATION_STOP |= {
+    "basel", "basler", "baselstadt", "baselland", "bale", "basilea", "bern", "berner", "berne", "berna",
+    "riehen", "bettingen", "stadt", "gemeinde", "gemeinden", "kanton", "kantons",
+    "kantonal", "kantonale", "kantonalen", "canton", "cantonal", "cantonale",
+    "cantonales", "cantonaux", "cantone", "cantun", "commune", "comune", "vischnanca",
+    "municipal", "municipality", "interkantonal", "interkantonale", "interkantonalen",
+    "intercantonal", "intercantonale", "intercantonales", "intercantonaux",
+    "intercantunal", "intercantunala", "intercantunalas",
+    "vereinbarung", "vereinbarungen", "convention", "conventions", "accord", "accords",
+    "accordo", "accordi", "cunvegna", "cunvegnas", "agreement", "agreements",
+}
 
 
 def normalized_title_tokens(value: str) -> set[str]:
