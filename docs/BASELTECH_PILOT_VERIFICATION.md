@@ -369,3 +369,28 @@ checks enabled and a successful unchanged result. Its real saved-version
 comparison exposes the substantive section 39 difference and the referenced
 page-13 passage, with both the retained PDF and exact official PDF URL available.
 The Ukraine account's actual integration-event review state was saved separately.
+
+A read-only replay of all 54 active pilot documents using their retained current
+versions and exact observation metadata passed the v3 assignment check. Official
+law matches remain verified; guidance remains probable. This preflight does not
+change production assessment records or replace the required deployed replay.
+
+## Current source language in the registry
+
+The live Bern Ukrainian leaflet had the correct `uk` artifact identity but its
+registry row still combined a retained older German expression with a missing
+display label. Source-language filters now include Ukrainian. A monitored row
+uses its accessible, correctly bound current artifact's known language for both
+display and filtering, with the existing corpus fallback when that language is
+unknown. Event-level aggregation and historical expressions are retained.
+
+Thirty-nine registry, pagination, metadata, privacy and backlog tests passed.
+Coverage includes old German/new Ukrainian evidence, unknown-language fallback,
+wrong-law and foreign-owner version pointers, complete filtered cursor paging,
+and existing bounded queries without body hydration. A separate PostgreSQL
+preflight ran in an explicitly read-only transaction: the real Ukrainian leaflet
+matched `uk` and no longer matched `de`, without editing serving files or data.
+Exact API Ruff, diff checks and the complete root frontend build passed, including
+translations, shell, resource, report, help and TypeScript checks. The temporary
+build's generated type paths were removed. Live browser verification of the new
+label/filter awaits normal activation.

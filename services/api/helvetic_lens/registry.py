@@ -390,6 +390,9 @@ class RegistryReader:
                     languages=sorted(languages.get(item["work_id"], [])),
                 )
                 if prefix == "watch":
+                    current_language = row.pop("current_language", None)
+                    if current_language:
+                        row["languages"] = [current_language]
                     row.update(record_type="monitored", watched=True, languages=row["languages"] or ["und"])
                 else:
                     row.update(record_type="event", title=item["title"] or "Untitled regulatory document")
@@ -451,6 +454,10 @@ class RegistryReader:
         lifecycle = func.coalesce(func.nullif(RegulatoryWork.lifecycle_status, ""), "unknown")
         health = func.coalesce(RegulatoryEvent.connector_health, "unknown")
         impact = func.coalesce(RegulatoryEvent.impact, "unknown")
+        stated_language = Version.identity_json["language"].as_string()
+        current_language = case(
+            (stated_language.not_in(["", "unknown", "und"]), stated_language), else_=None,
+        )
         statement = (
             select(
                 DocumentWatch.id.label("watch_id"),
@@ -459,6 +466,7 @@ class RegistryReader:
                 Law.id.label("law_id"),
                 Law.url.label("law_url"),
                 Law.current_version_id,
+                current_language.label("current_language"),
                 RegulatoryWork.id.label("work_id"),
                 RegulatoryEvent.id.label("event_id"),
                 func.coalesce(RegulatoryEvent.event_type, "monitoring_started").label("event_type"),
@@ -475,6 +483,11 @@ class RegistryReader:
             )
             .select_from(DocumentWatch)
             .join(Law, and_(Law.id == DocumentWatch.law_id, visible(Law, self.organization_id)))
+            .outerjoin(
+                Version,
+                and_(Version.id == Law.current_version_id, Version.law_id == Law.id,
+                     visible(Version, self.organization_id)),
+            )
             .outerjoin(
                 LegacyDocumentMapping,
                 and_(
@@ -515,7 +528,10 @@ class RegistryReader:
             language = expression.where(RegulatoryExpression.language == filters.language).exists()
             if filters.language == "und":
                 language = or_(language, ~expression.exists())
-            statement = statement.where(language)
+            statement = statement.where(or_(
+                current_language == filters.language,
+                and_(current_language.is_(None), language),
+            ))
         if custom_start:
             statement = statement.where(
                 detected >= datetime.combine(custom_start, time.min, ZURICH).astimezone(UTC)

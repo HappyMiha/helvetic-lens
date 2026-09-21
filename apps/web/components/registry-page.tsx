@@ -91,7 +91,7 @@ const FILTERS = [
       "unclassified_document",
     ],
   ],
-  ["language", "filter.language", ["", "de", "fr", "it", "rm", "en", "und"]],
+  ["language", "filter.language", ["", "de", "fr", "it", "rm", "en", "uk", "und"]],
   [
     "lifecycle",
     "filter.lifecycle",

@@ -252,6 +252,9 @@ Daily scans of the new pilot guidance exposed false identities from unlabelled
 dates and contents numbering, and legal citations mistaken for document titles.
 Require explicit SR/RS labels and preserve short guidance titles/cover headings;
 refresh prior derived identity assessments without changing original evidence.
+The live Ukrainian registry also exposes an incomplete display/filter path:
+recognize Ukrainian as a source language and use a watch's current bound artifact
+language before the work's historical language aggregate, without rewriting it.
 The expanded live source audit also requires complete Fedlex HTML annex evidence
 and root-work-only catalogue discovery; historical dated members are versions.
 Shared language-specific watches must still bind to one official corpus work,
@@ -2383,6 +2386,16 @@ remains only probable for non-legal guidance; contradictory official identifiers
 wrong legal titles, cross-source assignment and existing tenant boundaries stay
 blocked. Acceptance includes the Basel employment page, SEM instruction/factsheet,
 Basel support guidelines and Bern leaflet, with a legacy-identity scan replay.
+
+**Current source language in the registry, 21 September 2026:** A newly acquired
+Ukrainian leaflet is correctly classified, but its work retains an older German
+expression and the UI omits Ukrainian from its filter vocabulary. Display and
+filter a monitored watch by its accessible current version's stated language
+when known, falling back to corpus languages when it is unknown. Preserve the
+historical corpus and event-language aggregation. Keep the list bounded, select
+only scalar metadata, and reject a forged current-version binding across laws or
+workspaces. Add Ukrainian to source-language filters without adding a UI locale.
+Verify current-language filtering, cursor paging, tenant isolation and live UI.
 
 **Native comparison guard, 21 September 2026:** Native corpus versions have
 immutable official-version keys and cannot use the direct-watch derived-version
