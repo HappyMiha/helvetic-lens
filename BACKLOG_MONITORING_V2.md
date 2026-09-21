@@ -185,6 +185,26 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ## Task index
 
+22 September SIMAP pilot recovery: scoped MV2-052 work repairs the public IWB
+abandonment record rejected by lot projection. The official SIMAP 1.5.1 schema
+uses `abandonedLot` for a specific cancelled lot. Preserve that exact identity,
+source locator and original hash; reject conflicting scope or reference IDs.
+Do not borrow procurement/geography from the project or reopen a cancelled lot.
+Dependencies are the existing public collector, retention and tenant contracts.
+Acceptance requires the real source replay, malformed-scope negatives and a
+durable collector regression with unchanged sibling lots and replay behavior.
+The four IT gaps reproduce the same contract: three specific lots and one
+explicit whole-project abandonment (`abandonedLot: null`). For the latter,
+update only existing scoped dossier identities; do not create inferred lots.
+Other pilot collection gaps must be diagnosed before claiming complete coverage;
+authenticated documents and Q&A remain separate source-access gates. MV2-052
+remains IN PROGRESS pending normal deployment and production verification.
+
+All 269 SIMAP/tender and required backlog checks passed; the final focused
+malformed-scope/collector/backlog selection passed 37 checks. Read-only replay of
+all five exact public originals succeeded. Exact API Ruff passed. These results
+do not imply activated production recovery or authenticated document access.
+
 21 September release-test performance follow-up: investigate the measured
 1h57m complete API gate without reducing its test selection. Profile repeated
 HTTP-fixture setup and reuse a session-local, empty SQLite schema created by the
@@ -2403,6 +2423,49 @@ activation or human acceptance is claimed; the parent remains IN PROGRESS.
 <a id="mv2-052"></a>
 
 ### MV2-052 — Operational metrics, degraded mode and source recovery
+
+**SIMAP abandonment recovery, 22 September 2026 (before implementation):** The
+IWB public collection recorded one `invalid_source_contract` gap for publication
+34356-02 (7 July 2026). Its original passes publication validation but projection
+expects `lot` or `lots`; SIMAP's official 1.5.1 specification instead defines
+`abandonedLot` for this lifecycle type. Accept only a valid specific-lot
+description with compatible `lotsType`, no competing lot container, and a
+matching `referencingLotId` when supplied. Keep exact JSON-pointer evidence,
+cancelled phase, immutable original hash and unknown procurement/location facts.
+Do not infer whole-project lot membership or manufacture an open opportunity.
+Validate malformed and conflicting records, original retention, discovery
+exclusion, ordinary collector progress, sibling isolation and idempotent replay.
+Inspect the four other pilot gaps rather than attributing them to this cause
+without evidence. Source readiness is the existing permitted public API; private
+SIMAP documents and Q&A are not covered. Existing source rights, leases, retry
+budgets and saved failure evidence remain unchanged. Full-gate activation and
+normal production recovery are separate acceptance requirements.
+
+Read-only replay matched all four IT gap hashes to exact public records: three
+specific-lot abandonments and one explicit whole-project abandonment. The official
+schema defines null `abandonedLot` as the latter. Extend recovery to that case:
+the public parser accepts the closed project without inventing lot IDs; ingestion
+projects its cancelled phase only onto already stored, tenant/monitor/project
+scoped dossiers permitted by the current work item. Preserve unknown lot titles,
+procurement and geography, exact source locators and original hashes. Add bounded
+identity selection, sibling/tenant exclusions, replay, malformed-reference and
+historical-discovery regressions. This is interpretation of explicit published
+scope, not inferred membership or a new opportunity.
+
+**Execution evidence:** All 269 SIMAP/tender and required backlog checks passed
+in 214 seconds, followed by 37 final malformed-scope, collector and backlog checks
+in 25 seconds. Exact API Ruff passed. Four specific-lot and one whole-project real
+originals passed read-only parser/material replay. Collector regressions completed
+without gaps, preserved an open sibling and excluded cancelled discovery results.
+Durable observation retained originals and prior versions, scoped cancellation to
+permitted existing IDs and kept other monitors and organizations unchanged.
+Full-gate activation and subsequent production recovery remain separate.
+
+The user subsequently authorized restarting stale or failed deployments without
+another permission request. Only verified isolated QA containers may be stopped;
+the serving application and normal release gates remain protected. The obsolete
+e66f272 run was stopped under that authorization; normal QA for 01016c4 began at
+22:14 UTC on 21 September. Cancelled runs remain incomplete evidence.
 
 **Measured release-test performance, 21 September 2026:** The successful
 81f1476 gate completed 4,967 tests with 18 skips in 7,034.89 seconds; the current

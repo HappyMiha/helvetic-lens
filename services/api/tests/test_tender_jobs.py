@@ -234,13 +234,22 @@ def test_following_runs_independently_of_new_discovery_matches(db):
     assert read(db, dossier)["review_state"] == "needs_review"
 
 
-def test_historical_open_notice_cannot_invent_a_new_opportunity_for_an_awarded_lot(db):
+@pytest.mark.parametrize("kind,field,whole_project", [
+    ("award", "lot", False), ("abandonment", "abandonedLot", False),
+    ("abandonment", "abandonedLot", True),
+])
+def test_historical_open_notice_cannot_invent_a_new_opportunity_for_a_closed_lot(
+    db, kind, field, whole_project,
+):
     monitor = create(db, active=True)
     initial = publication(lots=True)
     initial["lots"][1]["title"]["en"] = "Software development for the second lot"
     award = revised(initial)
-    award["type"] = award["base"]["type"] = "award"
-    award["lot"] = award.pop("lots")[0]
+    award["type"] = award["base"]["type"] = kind
+    award[field] = award.pop("lots")[0]
+    award["base"]["referencingLotId"] = LOT_A
+    if whole_project:
+        award[field] = award["base"]["referencingLotId"] = None
     source = Source(initial)
     source.records[award["id"]] = award
     source.search_pages = {
@@ -249,10 +258,11 @@ def test_historical_open_notice_cannot_invent_a_new_opportunity_for_an_awarded_l
                 "id": PROJECT,
                 "publicationId": award["id"],
                 "publicationDate": "2026-09-12",
-                "pubType": "award",
+                "pubType": kind,
                 "lots": [
                     {"lotId": LOT_A, "publicationId": award["id"], "publicationDate": "2026-09-12"},
-                    {"lotId": LOT_B, "publicationId": initial["id"], "publicationDate": "2026-09-12"},
+                    {"lotId": LOT_B, "publicationId": award["id"] if whole_project else initial["id"],
+                     "publicationDate": "2026-09-12"},
                 ],
             }
         )
@@ -263,7 +273,12 @@ def test_historical_open_notice_cannot_invent_a_new_opportunity_for_an_awarded_l
     cycle(db, monitor, source)
     with db.session() as session:
         rows = list(session.scalars(select(TenderDossier)))
-        assert len(rows) == 1 and rows[0].lot_key == LOT_B
+        assert len(rows) == (0 if whole_project else 1)
+        if rows:
+            assert rows[0].lot_key == LOT_B
+        state = session.get(TenderCollection, monitor["id"]).state
+        assert state["cycle_complete"] and state["gaps"] == []
+        assert session.get(TenderMonitor, monitor["id"]).health == "public_cycle_complete"
 
 
 @pytest.mark.parametrize("change", ["paused", "revoked", "policy"])

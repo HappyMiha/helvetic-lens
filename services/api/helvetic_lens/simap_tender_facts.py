@@ -50,7 +50,45 @@ def codes(block):
     return tuple(sorted(set(values))) if values else None
 
 
-def facts_from_publication(record, *, now, cpv_ancestry=(), authority_levels=None):
+def lot_reference(raw):
+    """Keep the source's specific-lot identity and exact JSON locator together."""
+    fields = [field for field in ("lot", "abandonedLot") if raw.get(field) is not None]
+    if not fields:
+        if raw["type"] == "abandonment" and raw.get("lots"):
+            raise ValueError("Abandonment conflicts with a multiple-lot container")
+        if raw["type"] == "abandonment" and raw["base"].get("referencingLotId") is not None:
+            raise ValueError("Abandonment omits its referenced lot")
+        return None
+    if len(fields) != 1 or raw.get("lots"):
+        raise ValueError("Conflicting specific and multiple lot scopes")
+    field = fields[0]
+    if field == "abandonedLot" and raw["type"] != "abandonment":
+        raise ValueError("Abandoned lot conflicts with publication type")
+    if raw["type"] == "abandonment" and field != "abandonedLot":
+        raise ValueError("Abandonment uses an unexpected lot field")
+    block, base = raw[field], raw["base"]
+    if base.get("lotsType") != "with" or not isinstance(block, dict):
+        raise ValueError("Specific lot conflicts with project scope")
+    identifier = source_id(block.get("id"))
+    if base.get("referencingLotId") is not None and source_id(base["referencingLotId"]) != identifier:
+        raise ValueError("Specific lot conflicts with referenced lot identity")
+    return block, f"/{field}"
+
+
+def project_abandonment(raw):
+    """SIMAP explicitly uses null abandonedLot for a whole-project cancellation."""
+    return (
+        raw["type"] == "abandonment"
+        and raw["base"].get("lotsType") == "with"
+        and "abandonedLot" in raw
+        and raw["abandonedLot"] is None
+        and raw["base"].get("referencingLotId") is None
+        and raw.get("lot") is None
+        and not raw.get("lots")
+    )
+
+
+def facts_from_publication(record, *, now, cpv_ancestry=(), authority_levels=None, existing_lot_ids=()):
     checked = parse_publication(
         record["original"],
         project_id=record["project_id"],
@@ -79,10 +117,17 @@ def facts_from_publication(record, *, now, cpv_ancestry=(), authority_levels=Non
     lot_mode = base.get("lotsType")
     if lot_mode not in {"with", "without"}:
         raise ValueError("Unknown lot scope")
-    if raw.get("lot"):
-        if lot_mode != "with" or not isinstance(raw["lot"], dict):
-            raise ValueError("Specific lot conflicts with project scope")
-        scoped = [(raw["lot"], "/lot", False)]
+    reference = lot_reference(raw)
+    whole_project = project_abandonment(raw)
+    if reference:
+        scoped = [(*reference, False)]
+    elif whole_project:
+        # The source closes the project but lists no lots. Only already stored
+        # dossier identities may be projected by the scoped observation caller.
+        if len(existing_lot_ids) > 1000:
+            raise ValueError("Too many existing lots for project abandonment")
+        identifiers = sorted({source_id(identifier) for identifier in existing_lot_ids})
+        scoped = [({"id": identifier}, "/abandonedLot", False) for identifier in identifiers]
     elif lot_mode == "with":
         lots = raw.get("lots")
         if not isinstance(lots, list) or not 1 <= len(lots) <= 1000:
@@ -102,7 +147,11 @@ def facts_from_publication(record, *, now, cpv_ancestry=(), authority_levels=Non
     if len(ancestry) != len(cpv_ancestry):
         raise ValueError("Duplicate taxonomy evidence")
     result, seen = [], set()
-    project_cpv = codes(raw.get("procurement") or {}) if lot_mode == "with" and not raw.get("lot") else None
+    project_cpv = (
+        codes(raw.get("procurement") or {})
+        if lot_mode == "with" and not reference and not whole_project
+        else None
+    )
     for block, locator, has_procurement in scoped:
         if not isinstance(block, dict):
             raise ValueError("Invalid scoped publication data")

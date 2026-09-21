@@ -599,6 +599,13 @@ untouched. The normal e66f272 run began at 21:48 UTC with the corrected fixture.
 The cancelled run is incomplete evidence; e66f272 must complete all gates before
 final production acceptance. This permission does not cover the new run.
 
+The user later authorized restarting stale or failed deployments without another
+approval request. The obsolete e66f272 QA container was then identified by exact
+SHA, purpose label and read-only checkout and stopped. The serving application
+remained on 81f1476 and its public readiness endpoint stayed healthy. The normal
+01016c4 run began at 22:14 UTC on 21 September. All normal release gates remain
+mandatory; neither cancelled run is treated as passed.
+
 ## Release-test duration and isolated schema reuse
 
 The last successful full gate for 81f1476 completed 4,967 tests with 18 existing
@@ -639,3 +646,46 @@ with one existing skip, in 341 seconds. This includes the original failed case
 and independent unknown-severity/revoked-approval cases. Exact API Ruff and the
 backlog structure check passed. The still-active e66f272 target contains the
 reproduced fixture failure; a corrected descendant requires the normal full gate.
+
+## SIMAP abandonment recovery
+
+The live IWB 90-day cycle recorded an `invalid_source_contract` gap. Matching its
+saved work hash to the public search response identified publication 34356-02,
+dated 7 July 2026: IWB's cancellation of one lot in
+“Tiefbauarbeiten Einzelmassnahmen G/W/E”. The original passed publication identity,
+date and hash validation, but lot projection accepted only `lot` and `lots`.
+
+The [official SIMAP API specification](https://www.simap.ch/api/specifications/simap.yaml)
+defines `PublicationAbandonmentDetail.abandonedLot` as the cancelled lot, or null
+when the whole project is abandoned. The bounded read-only investigation matched
+all four other IT-monitor gap hashes as well: three separate lots in project
+37307 and one whole-project cancellation in project 39142. No source cursor,
+failure history, access decision or production record was altered by diagnosis.
+
+Specific-lot projection now binds that exact UUID, the optional base reference,
+the original `/abandonedLot` locator and the retained source hash. Conflicting
+types, containers, lot scope or reference IDs are rejected. The phase is
+cancelled, and project/office geography or procurement is not borrowed. Whole-
+project cancellation uses only existing monitor/organization/project-scoped
+dossier IDs allowed by the current work item. It creates no inferred lot or new
+opportunity, keeps missing lot facts unknown and preserves previous evidence.
+
+The pre-fix regression run reproduced six failures across parsing, malformed
+scope, durable observation and ordinary collection. All five exact public
+originals then passed read-only replay: four specific-lot cancellations and one
+explicit whole-project cancellation. This verifies source interpretation; normal
+release activation and the next production collection cycle are still required
+before reporting recovered live collection. Public procurement coverage does not
+establish access to authenticated SIMAP documents or Q&A.
+
+The complete affected SIMAP/tender selection and required backlog check passed
+269 checks in 214 seconds. Collector regressions completed without gaps and
+excluded closed lots while retaining an open sibling. Durable observation tests
+preserved exact originals and old versions, replayed idempotently and enforced
+existing-lot, monitor and organization scope. An additional ambiguous
+whole-project/multiple-lot input is covered by the final focused check.
+
+The final focused malformed-scope, durable observation, collector and backlog
+selection passed all 37 checks in 25 seconds. Exact API Ruff passed. The active
+01016c4 QA run continues because it contains the complete legal-demo fixes;
+the additional SIMAP repair will use the subsequent normal full deployment gate.

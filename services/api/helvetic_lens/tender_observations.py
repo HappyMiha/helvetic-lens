@@ -10,7 +10,7 @@ from .business_monitor_access import collection_actor
 from .config import DomainError
 from .monitoring_subjects import _savepoint
 from .simap_sources import aware, parse_publication
-from .simap_tender_facts import facts_from_publication
+from .simap_tender_facts import facts_from_publication, lot_reference, project_abandonment
 from .tender_contracts import TenderProfile, match_lot
 from .tender_evidence import store_material, store_snapshot
 from .tender_models import TenderDossier, TenderDossierVersion, TenderMonitor
@@ -41,11 +41,14 @@ def normalized(value):
 def public_material(record, facts, shared=None):
     raw = record["original"]
     if facts.lot_id:
-        if raw.get("lot"):
-            block = raw["lot"]
+        reference = lot_reference(raw)
+        if reference:
+            block, prefix = reference
+        elif project_abandonment(raw):
+            block, prefix = {}, "/abandonedLot"
         else:
             block = next(lot for lot in raw["lots"] if lot["id"] == facts.lot_id)
-        prefix = "/lot" if raw.get("lot") else f"/lots/{raw['lots'].index(block)}"
+            prefix = f"/lots/{raw['lots'].index(block)}"
     else:
         block, prefix = raw.get("procurement") or {}, "/procurement"
 
@@ -100,7 +103,8 @@ def public_material(record, facts, shared=None):
         "phase": section(facts.phase, "/type"),
         "title": section(
             block.get("title") if facts.lot_id else (raw.get("project-info") or {}).get("title"),
-            prefix + "/title" if facts.lot_id else "/project-info/title",
+            "/abandonedLot" if project_abandonment(raw)
+            else prefix + "/title" if facts.lot_id else "/project-info/title",
         ),
         "deadline": section(
             {"utc": record["offer_deadline"]["utc"], "status": record["offer_deadline"]["status"]},
@@ -205,8 +209,20 @@ def observe_publication(
         raise ValueError("Publication evidence does not match its fingerprint")
     ordinal = publication_ordinal(checked)
     profile = TenderProfile.model_validate(monitor.configuration)
+    existing_lots = ()
+    if project_abandonment(checked["original"]):
+        query = select(TenderDossier.lot_key).where(
+            TenderDossier.organization_id == monitor.organization_id,
+            TenderDossier.monitor_id == monitor.id,
+            TenderDossier.project_id == checked["project_id"],
+            TenderDossier.lot_key != "",
+        )
+        if allowed_lot_ids is not None:
+            query = query.where(TenderDossier.lot_key.in_(allowed_lot_ids))
+        existing_lots = list(session.scalars(query.order_by(TenderDossier.lot_key).limit(1001)))
     lots = facts_from_publication(
-        checked, now=now, cpv_ancestry=cpv_ancestry, authority_levels=authority_levels
+        checked, now=now, cpv_ancestry=cpv_ancestry, authority_levels=authority_levels,
+        existing_lot_ids=existing_lots,
     )
     touched = []
     snapshot_id = None
