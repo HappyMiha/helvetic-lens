@@ -183,6 +183,15 @@ total timeout, captured output is redacted into the host log and its bounded las
 Subprocess output is captured until completion/timeout, not streamed to the UI.
 A timeout is always a failed gate; the running application is not stopped for it.
 
+The shared HTTP test fixture builds one empty schema with the real migration
+chain per pytest session, then copies that closed SQLite file into each test's
+temporary directory. Each test still initializes its own app and database and
+checks the migration head. Dedicated cold-start and migration round-trip tests
+remain independent. This removes repeated setup work without changing the full
+gate's test selection. The September 21 comparison of the same 54 affected cases
+was 95.97 seconds before and 50.98 seconds after; full-suite speed must be measured
+by a completed normal gate, not extrapolated from that selection.
+
 Every QA container gets a unique `helvetic-api-qa-...` name, a purpose label and
 `--init`. Success, test failure, timeout and handled interruption all attempt to
 remove only that container, because terminating a Docker CLI can leave its

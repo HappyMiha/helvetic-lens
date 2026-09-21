@@ -592,5 +592,50 @@ confirmation and its audit record afterward. Exact API Ruff passed.
 The same automatic 402b4ad run reached its original 7,200-second deadline at 93%
 on 21 September at 21:16 UTC. It is a failed gate, not completed QA. The following
 normal run for 8993ce1 began at 21:18 UTC before this fixture correction was
-published; it remains untouched. A later normal release must include the tested
-fixture correction and complete all gates before final production acceptance.
+published. At 21:47 UTC the user explicitly authorized stopping that obsolete
+run. Its exact SHA, QA-purpose label and read-only release mount were verified
+before stopping only its isolated test container. The serving application was
+untouched. The normal e66f272 run began at 21:48 UTC with the corrected fixture.
+The cancelled run is incomplete evidence; e66f272 must complete all gates before
+final production acceptance. This permission does not cover the new run.
+
+## Release-test duration and isolated schema reuse
+
+The last successful full gate for 81f1476 completed 4,967 tests with 18 existing
+skips in 7,034.89 seconds (1h57m14s). The e66f272 suite collects 5,077 cases and
+runs serially. The observed QA container used approximately one CPU on a host
+with 20 logical CPUs; its dependencies installed from cache in 411 ms. These
+observations do not suggest a slow dependency download or one hung test.
+
+A local instrumented setup put about 2.5 of 3.5 seconds in the complete migration
+chain. At least 627 test functions in 131 files directly use the common HTTP
+fixture, before parameter expansion. That fixture now creates one empty SQLite
+schema per pytest session through the real migrations, closes the connection,
+and makes an independent file copy for every test. It still creates a new app,
+database engine, settings, fetcher, model and data directory and runs ordinary
+initialization, including the migration-head check. Cold-start, upgrade/downgrade
+and migration-failure tests continue to execute their real migration paths.
+
+The unchanged workflow, measured-token, identity and guidance selection passed
+54 tests before and after the change: **95.97 seconds before, 50.98 seconds after**
+(46.9% less elapsed time). Both measurements ran on the same host while the normal
+release gate continued. They are a scoped single-run comparison, not a promised
+full-suite duration. The new behavior test proves separate app writes/fetchers,
+cross-copy record absence, unchanged schema bytes and enforced foreign keys.
+Database lifecycle, foreign-key migration, retained account history, tenant
+isolation and backlog checks also passed (15 checks including the new test).
+The subsequent normal full gate must establish the actual suite-wide duration.
+
+The cancelled run also retained a genuine offline-digest failure before it was
+stopped. A local replay reproduced its empty event list: the test requests a
+medium-severity digest from a relation model without an interpretation grant.
+The production policy correctly leaves that result unassessed. This specific
+recovery case now uses the existing explicitly approved synthetic relation
+fixture. Other unapproved-evidence tests remain in place; no production grant,
+severity exception or model approval is created.
+
+All 204 digest, relation-runtime and selected-evidence checks passed afterward,
+with one existing skip, in 341 seconds. This includes the original failed case
+and independent unknown-severity/revoked-approval cases. Exact API Ruff and the
+backlog structure check passed. The still-active e66f272 target contains the
+reproduced fixture failure; a corrected descendant requires the normal full gate.

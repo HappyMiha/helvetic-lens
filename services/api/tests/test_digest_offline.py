@@ -8,14 +8,14 @@ import pytest
 from sqlalchemy import select
 from test_digest_briefs import artifacts, execution, preview, ready
 from test_digest_resume import record_mail
-from test_relation_runtime import digest_job, local_relation, observation
+from test_relation_runtime import approved_local_relation, digest_job, local_relation, observation
 
 from helvetic_lens import digests
 from helvetic_lens.config import DomainError
 from helvetic_lens.digest_interest_copy import MESSAGES as COPY
 from helvetic_lens.models import DigestDelivery, DigestPreference, Job
 
-__all__ = ["artifacts", "execution", "local_relation"]
+__all__ = ["approved_local_relation", "artifacts", "execution", "local_relation"]
 
 
 @pytest.mark.parametrize("severities", [[], ["unknown"], ["high", "unknown"]])
@@ -51,7 +51,8 @@ def test_offline_worker_sends_sources_once_without_reusing_old_ai(local_relation
     assert len(sent) == 1
 
 
-def test_filtered_offline_period_is_recoverable_without_false_empty_result(local_relation, monkeypatch):
+def test_filtered_offline_period_is_recoverable_without_false_empty_result(approved_local_relation, monkeypatch):
+    local_relation = approved_local_relation
     _, service, model, _, state = local_relation
     job, saved = digest_job(local_relation)
     sent = record_mail(monkeypatch)

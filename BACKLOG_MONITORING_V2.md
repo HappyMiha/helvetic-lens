@@ -185,6 +185,26 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ## Task index
 
+21 September release-test performance follow-up: investigate the measured
+1h57m complete API gate without reducing its test selection. Profile repeated
+HTTP-fixture setup and reuse a session-local, empty SQLite schema created by the
+real migration chain, copying it into each test's private temporary directory.
+Keep ordinary application initialization and dedicated migration tests unchanged.
+Acceptance includes fresh-copy isolation, foreign-key enforcement, migration
+round trips, representative HTTP/identity regressions and comparable timings.
+This is scoped MV2-052 release recovery; full-gate activation remains separate.
+The user explicitly authorized stopping the obsolete 8993ce1 check. Only its
+verified isolated QA container was stopped; the normal e66f272 run continues.
+Its retained output also exposed an offline-digest fixture that expects an
+assessed medium-severity result without the required relation capability grant.
+Use the existing explicitly approved synthetic fixture only for that recovery
+case, retain unapproved-evidence cases, and run the complete related digest tests.
+The unchanged 54-case HTTP/identity selection passed in 95.97 seconds before
+schema reuse and 50.98 seconds after. Fifteen isolation, lifecycle, migration,
+retained-history and backlog checks passed. Full-suite speed remains unverified.
+All 204 related digest/runtime/evidence checks then passed, with one existing
+skip; the assessed offline-recovery fixture is corrected. Exact API Ruff passed.
+
 21 September BaselTech / Ukraine pilot recovery: scoped MV2-052 work verifies
 the existing legal connectors and live scenario readiness before populating two
 isolated demonstration workspaces. Basel-Stadt null publisher links must retain
@@ -2384,6 +2404,48 @@ activation or human acceptance is claimed; the parent remains IN PROGRESS.
 
 ### MV2-052 — Operational metrics, degraded mode and source recovery
 
+**Measured release-test performance, 21 September 2026:** The successful
+81f1476 gate completed 4,967 tests with 18 skips in 7,034.89 seconds; the current
+suite collects 5,077 cases and runs serially. A local setup profile found about
+2.5 seconds of migration work in a 3.5-second instrumented application setup.
+The common HTTP fixture is used directly by 627 test functions before parameter
+expansion. Build one empty schema per test session using the real migrations,
+close its connection, then copy it to each test's own directory. Do not share
+application objects, sessions, mutable data, settings, models or fetchers between
+tests. Normal initialization must still execute, including the migration head
+check. Dedicated migration/cold-start tests remain unchanged. Prove fresh-copy
+isolation and foreign keys, run representative HTTP/identity and migration
+regressions, and measure the same selection before/after. No tests are removed,
+no production database is used, and full-suite duration remains unverified until
+the next normal gate. Source permissions and AI capability gates are unaffected.
+
+The user explicitly authorized cancellation of the obsolete 8993ce1 run at
+21:47 UTC. Its exact target SHA, purpose label and read-only release mount were
+verified before stopping only that QA container. The running site was untouched;
+the manager cleaned up and the normal e66f272 run began at 21:48 UTC. The cancelled
+check is incomplete evidence, not a passing test result. This one-time override
+does not authorize interruption of the new run.
+
+**Assessed offline-digest fixture:** The cancelled run's log retained a real
+failure before interruption. It reproduced locally: after runtime recovery the
+test expects a medium-severity event from an unreviewed relation model, whose
+correct current result is unassessed. Use the already available synthetic
+`approved_local_relation` fixture for this specific assessed recovery scenario.
+Keep its failed-period/retry/no-duplicate assertions and the unapproved model
+tests. Run all digest and relation-runtime/selected-evidence regressions. No
+production capability grant, severity override or filtering exception is allowed.
+
+Schema reuse verification passed the same 54 HTTP/identity cases before/after
+in 95.97/50.98 seconds (46.9% less elapsed time). Fifteen additional isolation,
+database lifecycle, migration/foreign-key, retained-history and backlog checks
+passed. Fresh copies retain independent records, app doubles and enforced foreign
+keys, while the original schema bytes remain unchanged. These measurements do
+not establish the next full gate's time or complete the parent task.
+The complete digest/runtime/selected-evidence selection passed 204 checks with
+one existing skip in 341 seconds, including the original failed recovery case.
+Exact API Ruff passed. The active e66f272 target still contains the reproduced
+fixture failure; a corrected descendant must pass the normal full release gate.
+
 **Measured-token release fixture, 21 September 2026:** The full 402b4ad run
 reproduced three failures before any inference: importing the unnamed synthetic
 multi-article fixture correctly returns `document_identity_unknown`. The fixture
@@ -2508,8 +2570,9 @@ at the 7,200-second deadline without completing the API gate. Its known inbox
 query-budget failure was fixed separately; timeout is not a passing result.
 Use the existing validated `HELVETIC_LENS_API_TEST_TIMEOUT_SECONDS` operator knob
 to allow 10,800 seconds for future scheduled runs on this host. Preserve the
-two-minute cron schedule, deployment lock, all required tests, two QA CPUs and
-4 GB QA memory. Record the exact cron change and retain a private rollback copy.
+two-minute cron schedule, deployment lock, all required tests and the observed
+legacy QA resource configuration (no explicit container CPU/memory limit).
+Record the exact cron change and retain a private rollback copy.
 Never interrupt/restart an active run or alter its frozen test inputs. Acceptance
 requires a naturally completed full API result and ordinary release activation.
 

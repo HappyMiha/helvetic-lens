@@ -1,12 +1,14 @@
 """Deterministic doubles live only in tests; the app never substitutes a model."""
 
 import json
+import shutil
 from dataclasses import dataclass, field
 
 import pytest
 from fastapi.testclient import TestClient
 
 from helvetic_lens.config import DomainError, Settings
+from helvetic_lens.db import Database
 from helvetic_lens.extraction import Fetched, within_section
 from helvetic_lens.main import create_app
 
@@ -238,8 +240,28 @@ class ScriptedModel:
         )
 
 
+@pytest.fixture(scope="session")
+def migrated_schema(tmp_path_factory):
+    """One real empty migration chain; each HTTP test gets a private file copy."""
+    root = tmp_path_factory.mktemp("http-schema")
+    path = root / "schema.db"
+    database = Database(Settings(
+        _env_file=None,
+        database_url="sqlite:///" + path.as_posix(),
+        data_dir=root / "data",
+    ))
+    try:
+        database.migrate()
+    finally:
+        database.engine.dispose()
+    # No live connection or mutable application state is shared by the copies.
+    path.chmod(0o444)
+    return path
+
+
 @pytest.fixture
-def harness(tmp_path):
+def harness(tmp_path, migrated_schema):
+    shutil.copyfile(migrated_schema, tmp_path / "test.db")
     settings = Settings(
         _env_file=None,
         database_url="sqlite:///" + (tmp_path / "test.db").as_posix(),
