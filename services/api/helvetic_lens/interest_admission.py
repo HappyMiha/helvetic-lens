@@ -304,6 +304,7 @@ def assemble(session, organization_id: str, event_id: str, *, model, locale="en"
         raise DomainError("The event is not admitted to this organization.", 404, "not_found")
     work = session.scalar(select(RegulatoryWork).where(RegulatoryWork.id == event.work_id,
                                                       visible(RegulatoryWork, organization_id)))
+    expression = None
     if event.expression_id:
         expression = session.scalar(select(RegulatoryExpression).where(
             RegulatoryExpression.id == event.expression_id, RegulatoryExpression.work_id == event.work_id))
@@ -346,7 +347,8 @@ def assemble(session, organization_id: str, event_id: str, *, model, locale="en"
             "All material changes from the complete saved comparison are supplied with exact before/after evidence. Unchanged and presentation-only passages are excluded from AI input, not from the saved audit. Saved comparison order does not establish legal effective dates."
             if comparison else
             "This dossier contains complete saved document passages, not a before/after comparison. Do not enumerate changes from a prior version.")
-        return Dossier(organization_id=organization_id, event=Event(id=event.id, title=work.title, kind=work.kind,
+        title = (expression.title or "").strip() if expression else ""
+        return Dossier(organization_id=organization_id, event=Event(id=event.id, title=title or work.title, kind=work.kind,
             event_type=event.event_type, input_fingerprint=fingerprint(binding), limitations=[comparison_note,
                 "No independently bound official status/date facts are supplied. Do not infer enactment, repeal or deadlines."]),
             profile_revision=profile.revision if profile else 1, profile_facts=facts,

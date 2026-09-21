@@ -270,3 +270,24 @@ workflow and backlog tests passed, including multilingual/pinned edition reuse,
 private binding refusal, archive reference rejection and annex-only changes.
 Exact API Ruff passed. Repaired pilot extraction baselines must be established
 after activation before scheduled monitoring; these repairs are not legal changes.
+
+## Expression titles and related-law retrieval
+
+Two actual German federal-news artifacts appeared under the shared multilingual
+work's first-seen Italian title. Today, inbox, native evidence, comparison and
+brief inputs now use the exact bound expression title, with the work title only
+as an empty-title fallback. Scalar event lookups remain bounded to 100 and reject
+an expression belonging to another work. Source artifacts and multilingual work
+identities are unchanged.
+
+The same records exposed related-law candidates based solely on the Italian
+article `dei`. Relation retrieval revision `relation-candidate-v3` excludes these
+function words while retaining meaningful subject matches, exact norm references
+and official relations. The independent topic-matching rule contract is unchanged.
+The existing bounded operator recovery workflow will re-evaluate retained
+candidates after activation without deleting evidence or historical assessments.
+
+The affected corpus, feed, brief-admission, evidence-page, native-comparison,
+bounded-inbox, relation and backlog suites passed: 150 passed, one skipped. Exact
+API Ruff and `git diff --check` passed. Production verification remains pending
+the normal deployment queue.

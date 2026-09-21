@@ -233,6 +233,11 @@ The live Basel viewer scenario exposed a POST transport mismatch for the purely
 extractive native evidence reader. Permit that reader under existing source and
 ownership checks, retaining CSRF and all write/model restrictions. Exercise both
 administrator and viewer roles through real HTTP before release.
+The source-language audit also requires exact expression titles on event/evidence
+views and brief inputs; the shared multilingual work title is only a fallback.
+Italian articles alone must not create related-law candidates. Preserve bounded
+queries, ownership and exact-reference paths, version the relation retrieval rule,
+and use the existing recovery workflow for retained candidates.
 The expanded live source audit also requires complete Fedlex HTML annex evidence
 and root-work-only catalogue discovery; historical dated members are versions.
 Shared language-specific watches must still bind to one official corpus work,
@@ -2312,6 +2317,19 @@ to the read exception list. Preserve CSRF, current native source permissions,
 tenant/private ownership, input binding, and administrator-only writes. Verify
 HTTP access, citation resolution, stale binding and foreign-tenant denial under
 both supported organization roles. Existing source and sharing contracts suffice.
+
+**Source-language presentation and retrieval, 21 September 2026:** Real federal
+news retained correct German artifacts but displayed the shared work's first-seen
+Italian title. Use the exact bound expression title in Today, inbox, source
+evidence, native comparison and brief inputs, falling back only when it is empty.
+Keep scalar list queries bounded, work/tenant binding and multilingual work IDs.
+The same live records revealed relation candidates supported only by Italian
+articles such as `dei`. Filter these function words in relation retrieval and
+increment its rule revision, preserving exact norm/official-relation paths and
+topic matching's separate rule contract. Verify multilingual title provenance,
+foreign-work rejection, meaningful Italian subject matches and non-matches from
+function words. Recheck affected retained candidates through the existing bounded
+operator recovery workflow; do not erase evidence or manufacture approvals.
 
 **Native comparison guard, 21 September 2026:** Native corpus versions have
 immutable official-version keys and cannot use the direct-watch derived-version

@@ -6,9 +6,9 @@ from datetime import UTC
 from sqlalchemy import Integer, case, cast, func, select, true
 
 from .config import DomainError
-from .corpus_access import accessible_versions, visible
+from .corpus_access import accessible_versions, expression_title_column, visible
 from .corpus_evidence import artifact_path
-from .models import Law, RegulatoryDocumentVersion, RegulatoryExpression, RegulatoryWork, Version
+from .models import Law, RegulatoryDocumentVersion, RegulatoryExpression, Version
 
 TEXT_PAGE_SIZE = 16000
 
@@ -42,7 +42,7 @@ def detail(session, organization_id, version_id, settings, *, native=False, offs
     ]
     fields += (
         [
-            RegulatoryWork.title.label("law_name"),
+            expression_title_column().label("law_name"),
             RegulatoryExpression.language,
             model.metadata_json["synthetic"].as_string().label("synthetic"),
         ]

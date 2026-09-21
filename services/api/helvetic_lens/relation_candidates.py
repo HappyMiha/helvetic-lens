@@ -26,7 +26,7 @@ from .models import (
 )
 from .regulatory_corpus import RegulatoryCorpus, RelationInput
 
-RULE_REVISION = "relation-candidate-v2"
+RULE_REVISION = "relation-candidate-v3"
 _WORD = re.compile(r"[a-z0-9]{3,}")
 _NORM = re.compile(r"\b(?:sr|rs)\s*([0-9]+(?:\.[0-9]+){1,4})\b", re.I)
 _ARTICLE = re.compile(r"\b(?:art(?:icle|ikel)?\.?)\s*([0-9]+[a-z]?)\b", re.I)
@@ -46,6 +46,12 @@ _STOP = {
     "act", "acts", "ordinance", "ordinances", "regulation", "regulations",
     "council", "swiss", "amendment", "amendments", "concerning", "proposal",
 }
+# Tighten related-law retrieval without changing the separate topic rule
+# contract, which also imports the general title normalizer below.
+_RELATION_STOP = {"dei", "del", "dello", "dell", "degli", "della", "delle",
+                  "nel", "nello", "nell", "nella", "nelle", "negli", "nei",
+                  "sul", "sullo", "sull", "sulla", "sulle", "sugli", "sui",
+                  "alla", "alle", "allo", "agli", "dal", "dallo", "dall", "dalla", "dalle", "dai", "dagli"}
 
 
 def normalized_title_tokens(value: str) -> set[str]:
@@ -60,6 +66,10 @@ def normalized_title_tokens(value: str) -> set[str]:
             if token.endswith(suffix) and len(token) >= len(suffix) + 4:
                 tokens.add(token[: -len(suffix)])
     return tokens
+
+
+def _retrieval_tokens(value: str) -> set[str]:
+    return normalized_title_tokens(value) - _RELATION_STOP
 
 
 def _flatten_strings(value) -> list[str]:
@@ -101,8 +111,8 @@ def score_candidate(
     shared_norms: int = 0,
     shared_articles: int = 0,
 ) -> CandidateScore | None:
-    source_tokens = normalized_title_tokens(source_title)
-    target_tokens = normalized_title_tokens(target_title)
+    source_tokens = _retrieval_tokens(source_title)
+    target_tokens = _retrieval_tokens(target_title)
     overlap = source_tokens & target_tokens
     union = source_tokens | target_tokens
     title_score = len(overlap) / len(union) if union else 0.0
@@ -194,7 +204,7 @@ def _fts_work_ids(session: Session, work_ids: set[str], tokens: set[str]) -> set
     return {
         work.id
         for work in session.scalars(select(RegulatoryWork).where(RegulatoryWork.id.in_(work_ids)))
-        if normalized_title_tokens(work.title) & tokens
+        if _retrieval_tokens(work.title) & tokens
     }
 
 
@@ -245,7 +255,7 @@ def generate_for_events(
                 exact_by_target[target_id] = relation
 
         source_norms, source_articles = _references(source.title, source.metadata_json, event.evidence_json)
-        target_ids = _fts_work_ids(session, watched_ids - {source.id}, normalized_title_tokens(source.title))
+        target_ids = _fts_work_ids(session, watched_ids - {source.id}, _retrieval_tokens(source.title))
         # Exact official norm references must seed retrieval even when titles are
         # in different national languages and therefore share no search token.
         if source_norms:

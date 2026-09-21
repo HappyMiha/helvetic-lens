@@ -6,7 +6,7 @@ from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session, load_only
 
 from .config import DomainError
-from .corpus_access import event_evidence_links
+from .corpus_access import event_evidence_links, event_expression_labels
 from .corpus_access import visible as visible
 from .models import (
     Comparison,
@@ -33,6 +33,7 @@ class InboxContext:
     comparisons: dict[str, str]
     artifacts: dict[str, str]
     successors: dict[str, tuple[str, bool]]
+    expression_labels: dict[str, dict]
 
 
 def load_context(
@@ -186,5 +187,6 @@ def load_context(
             )
         }
     return InboxContext(
-        candidates, events, works, watches, law_ids, relations, comparisons, artifacts, successors
+        candidates, events, works, watches, law_ids, relations, comparisons, artifacts, successors,
+        event_expression_labels(session, organization_id, events),
     )

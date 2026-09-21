@@ -512,7 +512,8 @@ class ImpactInboxReader:
                     event.id,
                     {
                         "event_id": event.id,
-                        "title": source.title or "Untitled regulatory item",
+                        "title": context.expression_labels.get(event.id, {}).get("title")
+                        or source.title or "Untitled regulatory item",
                         "source": event.connector or event.authority,
                         "authority": event.authority,
                         "type": event.event_type,

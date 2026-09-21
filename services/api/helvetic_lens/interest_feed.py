@@ -15,7 +15,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from .config import DomainError
-from .corpus_access import event_evidence_links
+from .corpus_access import event_evidence_links, event_expression_labels
 from .impact_inbox import ImpactInboxFilters, ImpactInboxReader, _iso
 from .inbox_context import visible
 from .models import (
@@ -29,7 +29,6 @@ from .models import (
     RegulatoryEvent,
     RegulatoryEventState,
     RegulatoryEventUserState,
-    RegulatoryExpression,
     RegulatoryWork,
     RelationCandidate,
     TopicEventMatch,
@@ -94,9 +93,7 @@ class InterestFeedReader(ImpactInboxReader):
         works = {item.id: item for item in session.scalars(select(RegulatoryWork).where(
             RegulatoryWork.id.in_({item.work_id for item in events}), visible(RegulatoryWork, self.organization_id)))}
         evidence_links = event_evidence_links(session, self.organization_id, ids)
-        languages = dict(session.execute(select(RegulatoryEvent.id, RegulatoryExpression.language)
-            .join(RegulatoryExpression, RegulatoryExpression.id == RegulatoryEvent.expression_id)
-            .where(RegulatoryEvent.id.in_(ids), RegulatoryExpression.work_id == RegulatoryEvent.work_id)).all())
+        labels = event_expression_labels(session, self.organization_id, ids)
         states = dict(session.execute(select(RegulatoryEventUserState.event_id, RegulatoryEventUserState.state).where(
             RegulatoryEventUserState.organization_id == self.organization_id,
             RegulatoryEventUserState.principal_key == self.principal,
@@ -128,9 +125,10 @@ class InterestFeedReader(ImpactInboxReader):
             if not work or (not law and not relevant and not watches.get(event.work_id)):
                 continue
             result.append({
-                "event_id": event.id, "event_url": f"/?event={event.id}", "title": work.title, "type": event.event_type,
+                "event_id": event.id, "event_url": f"/?event={event.id}",
+                "title": labels.get(event.id, {}).get("title") or work.title, "type": event.event_type,
                 "jurisdictions": _jurisdictions(work, event),
-                "document_language": languages.get(event.id),
+                "document_language": labels.get(event.id, {}).get("language"),
                 "provenance_method": event.provenance_method,
                 "connector_health_at_detection": event.connector_health,
                 "document_kind": work.kind, "lifecycle_status": work.lifecycle_status,

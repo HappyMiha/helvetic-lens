@@ -4,10 +4,10 @@ from pydantic import ValidationError
 from sqlalchemy import select
 
 from .config import DomainError
-from .corpus_access import accessible_versions
+from .corpus_access import accessible_versions, event_expression_labels
 from .interest_assessment import fingerprint
 from .interest_material import audit
-from .models import NativeDocumentComparison, RegulatoryDocumentVersion, RegulatoryExpression, RegulatoryWork
+from .models import NativeDocumentComparison, RegulatoryDocumentVersion
 from .native_comparisons import _event, _pair, selection, unavailable
 from .topic_matching import _iso
 
@@ -47,9 +47,10 @@ def candidates(session, organization_id, event_id, *, after="", limit=30):
 def page(session, organization_id, event_id, *, offset=0, limit=20, material_only=True, comparison_id=""):
     event, current = _current(session, organization_id, event_id)
     chosen = selection(session, organization_id, event_id)
-    title = session.scalar(select(RegulatoryWork.title).where(RegulatoryWork.id == event.work_id))
+    label = event_expression_labels(session, organization_id, (event_id,)).get(event_id, {})
+    title = label.get("title")
     result = {"event_id": event.id, "title": title, "after": _version(current), "before": None,
-              "language": session.scalar(select(RegulatoryExpression.language).where(RegulatoryExpression.id == current.expression_id)),
+              "language": label.get("language"),
               "revision": chosen.revision if chosen else 0, "status": "unselected", "comparison_id": None,
               "counts": None, "material_count": None, "items": [], "pagination": None}
     if chosen is None or chosen.comparison_id is None:

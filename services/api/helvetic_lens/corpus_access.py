@@ -1,5 +1,5 @@
 """Shared saved-version access and scalar event links; never fetch document bodies for a list."""
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 
 from .models import (
     DocumentWatch,
@@ -18,6 +18,28 @@ from .models import (
 
 def visible(model, organization_id: str):
     return or_(model.owner_organization_id.is_(None), model.owner_organization_id == organization_id)
+
+
+def expression_title_column():
+    """A multilingual work's first-seen title is only a missing-title fallback."""
+    return func.coalesce(func.nullif(func.trim(RegulatoryExpression.title), ""), RegulatoryWork.title)
+
+
+def event_expression_labels(session, organization_id, event_ids):
+    """Internal bounded scalar read for already selected, authorized event pages."""
+    ids = tuple(set(event_ids))
+    if len(ids) > 100:
+        raise ValueError("Expression labels require batches of at most 100 events.")
+    if not ids:
+        return {}
+    query = (select(RegulatoryEvent.id, RegulatoryExpression.language, expression_title_column())
+        .select_from(RegulatoryEvent)
+        .join(RegulatoryExpression, RegulatoryExpression.id == RegulatoryEvent.expression_id)
+        .join(RegulatoryWork, RegulatoryWork.id == RegulatoryEvent.work_id)
+        .where(RegulatoryEvent.id.in_(ids), RegulatoryExpression.work_id == RegulatoryEvent.work_id,
+               visible(RegulatoryWork, organization_id)))
+    return {event_id: {"language": language, "title": title}
+            for event_id, language, title in session.execute(query)}
 
 
 def accessible_versions(organization_id):
@@ -46,7 +68,7 @@ def accessible_versions(organization_id):
         .where(Version.id == RegulatoryDocumentVersion.legacy_version_id,
                visible(Version, organization_id), visible(Law, organization_id))
         .correlate(RegulatoryDocumentVersion).exists())
-    return (select(RegulatoryDocumentVersion, RegulatoryExpression.language, RegulatoryWork.title)
+    return (select(RegulatoryDocumentVersion, RegulatoryExpression.language, expression_title_column())
         .select_from(RegulatoryDocumentVersion)
         .join(RegulatoryExpression, RegulatoryExpression.id == RegulatoryDocumentVersion.expression_id)
         .join(RegulatoryWork, RegulatoryWork.id == RegulatoryExpression.work_id)
