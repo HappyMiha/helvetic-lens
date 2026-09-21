@@ -75,6 +75,12 @@ class ScriptedModel:
         data = json.loads(user)
         task = data.get("task")
         if task == "relation_impact":
+            if data.get("mode") == "selected_evidence":
+                rows = data["evidence"]["rows"]
+                selected = [row[0] for row in rows if row[1] in {
+                    "official_relation", "event_source_passage", "monitored_work_passage",
+                }]
+                return json.dumps({"citation_rows": [999] if self.invalid else [] if self.unsupported else selected[:10]})
             if self.unsupported:
                 return json.dumps(
                     {

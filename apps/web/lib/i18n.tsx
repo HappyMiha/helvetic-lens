@@ -324,6 +324,12 @@ Object.assign(registryIt, { "registry.eyebrow": "ATTIVITÀ GIURIDICA SALVATA", "
 const registryRm: Messages = { ...registryEn };
 Object.assign(registryRm, { "registry.eyebrow": "ACTIVITAD GIURIDICA MEMORISADA", "registry.title": "Vesair tge ch’è capità e cura.", "registry.body": "Il temp da detecziun e las datas giuridicas uffizialas restan separads. Questa pagina mussa cumprovas memorisadas senza spetgar sin l’IA u la funtauna.", "registry.monitored": "Mes documents survegliads", "registry.events": "Tut ils eveniments chattads", "common.search": "Tschertgar", "common.clear": "Stizzar", "registry.loading": "Leger il register memorisà…", "registry.empty": "Nagins records correspundan als filters.", "common.timeline": "Cronologia", "common.comparison": "Cumparegliaziun", "common.evidence": "Cumprovas", "common.officialSource": "Funtauna uffiziala", "filter.language": "Lingua", "filter.severity": "Gravitad", "filter.type": "Tip", "filter.myState": "Mes status", "filter.watchedLaw": "Lescha survegliada", "impact.eyebrow": "POSTA DALS EFFECTS GIURIDICS", "impact.title": "Vesair tge che po esser impurtant per tias leschas.", "impact.body": "Mintga eveniment da funtauna cumpara ina giada. Las leschas pertutgadas e lur cumprovas èn gruppadas sutvart.", "impact.why": "PERTGE CHE QUEST CUMPARA", "impact.effect": "EFFECT PUSSAIVEL", "impact.next": "PROXIM PASS DA CONTROLLA", "impact.history": "Istorgia da las analisas ({count})", "impact.reanalyse": "Analisar danovamain", "impact.confirm": "Confermar l’indicaziun", "impact.reject": "Refusar l’indicaziun", "impact.monitorSuccessor": "Survegliar il successur", "impact.dismiss": "Allontanar", "impact.mute": "Metter sin mut", "impact.restore": "Restabilir sco betg legì", "status.confirmed_relation": "Relaziun confermada", "status.possible_impact": "Effect pussaivel", "status.awaiting_analysis": "Analisa pendenta", "status.analysis_failed": "Analisa betg reussida", "status.no_supported_impact": "Nagin effect cumprovà" });
 
+registryEn["status.evidence_only"] = "Selected evidence — impact not assessed";
+registryDe["status.evidence_only"] = "Ausgewählte Belege — Auswirkungen nicht beurteilt";
+registryFr["status.evidence_only"] = "Éléments sélectionnés — impact non évalué";
+registryIt["status.evidence_only"] = "Prove selezionate — impatto non valutato";
+registryRm["status.evidence_only"] = "Cumprovas tschernidas — influenza betg valitada";
+
 Object.assign(en, registryEn);
 Object.assign(de, registryDe);
 Object.assign(fr, registryFr);

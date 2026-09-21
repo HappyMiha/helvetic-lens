@@ -261,6 +261,18 @@ The host's full API suite reached 99% when its existing 7,200-second budget
 expired. Use the existing bounded operator setting for 10,800 seconds on future
 scheduled runs, retaining all required tests and the current CPU/memory budgets.
 An already-started run is not interrupted or reconfigured.
+The same live pilot reproduced relation-analysis schema failures and unsupported
+generated conclusions on an unreviewed small model. Apply the existing capability
+policy to the separate relation-impact task, use a compact cited-row selection
+when explanation is unapproved, and label its impact as unassessed. Keep official
+relation facts, private evidence, retained failure history and review decisions.
+Measure the bounded dossier against the observed context and reject invalid row
+references. Verify real Apertus output, capability/cache changes, source quotes,
+unknown severity and ordinary production replay; no quality approval is invented.
+The expanded relation/capability/inbox regression suite passed 220 checks with
+one existing skip, and the isolated production web build passed. Both retained
+live dossiers completed with actual Apertus in one call and exact saved quotes
+or an explicit empty selection. Production activation/replay remain pending.
 The direct Basel BPG preflight additionally requires bounded support for its
 2.44 MB official metadata envelope, which embeds full XHTML. Retain publisher,
 language, version and PDF checks and prove oversized metadata still fails closed.
@@ -2353,6 +2365,27 @@ activation or human acceptance is claimed; the parent remains IN PROGRESS.
 <a id="mv2-052"></a>
 
 ### MV2-052 — Operational metrics, degraded mode and source recovery
+
+**Relation-analysis pilot recovery, 21 September 2026:** Live Basel/Ukraine
+inboxes reproduce invalid structured replies and generated relation claims from
+an unreviewed model. The relation path currently omits the capability scope used
+by comparison reports and Ask. Add an independent `relation_impact` task scope;
+existing report approval must not authorize relation interpretation. Without an
+exact reviewed grant, request only bounded saved row numbers and render cited
+evidence with explicit unassessed impact, no severity estimate or action advice.
+Preserve confirmed official relations and organization review decisions as
+separate facts. Use measured prompt allocation, stable row IDs and exact saved
+quote windows; retain rejected replies as failures. Version result/cache rules
+so older interpretations remain history. Dependencies are the existing runtime,
+capability, evidence and tenant contracts. Acceptance covers small-context fit,
+invalid/invented citations, capability revocation, locale/cross-tenant behavior,
+truthful inbox status, actual Apertus execution and ordinary release activation.
+Broader MV2-052 and independent model-quality acceptance remain open.
+Verification: 220 expanded checks passed (one existing skip), exact API lint and
+the isolated production web build passed. The two real saved dossiers fit the
+observed 4,096-token runtime and each completed in one provider call. The prior
+failed attempt and prior unsupported interpretation remain retained history;
+ordinary production activation and replay are still separate acceptance steps.
 
 **Specific-provision Ask recovery, 21 September 2026:** The live Basel IDG query
 about Besoldung in § 39 was misclassified as a general change question and reused

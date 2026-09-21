@@ -4815,6 +4815,7 @@ class HelveticLens:
             output_locale=output_locale,
             relation_binding=relation_binding,
             evidence_binding=evidence_binding,
+            capability=self.model_capability("relation_impact", output_locale),
         )
         plan["runtime_fingerprint"] = runtime_fingerprint
         return {
@@ -4987,9 +4988,10 @@ class HelveticLens:
     ) -> dict:
         async with self.runtime_cache_scope():
             fingerprint = self._required_relation_runtime(runtime_fingerprint)
-            return await self._analyse_relation_candidate(
-                organization_candidate_id, fingerprint, force=force, output_locale=output_locale,
-            )
+            with self.model_capability_scope("relation_impact", output_locale):
+                return await self._analyse_relation_candidate(
+                    organization_candidate_id, fingerprint, force=force, output_locale=output_locale,
+                )
 
     async def _analyse_relation_candidate(
         self,

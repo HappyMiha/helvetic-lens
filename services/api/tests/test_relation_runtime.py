@@ -12,8 +12,10 @@ import httpx
 import pytest
 from runtime_fixtures import local_runtime
 from sqlalchemy import select
+from test_ai_capabilities import artifacts as artifacts_fixture
 from test_digest_periods import recipient
 from test_digest_resume import record_mail
+from test_prompt_token_measurements import measurement
 from test_relation_analysis import relation_delivery
 
 from helvetic_lens import digests
@@ -23,6 +25,8 @@ from helvetic_lens.impact_inbox import ImpactInboxFilters, ImpactInboxReader
 from helvetic_lens.model_settings import local_docker_base_url
 from helvetic_lens.models import DigestPreference, Job, RelationImpactAnalysis
 from helvetic_lens.relation_runtime import current_fingerprint
+
+artifacts = artifacts_fixture
 
 
 def configure_local_relation(harness, monkeypatch):
@@ -48,12 +52,23 @@ def configure_local_relation(harness, monkeypatch):
             if state["offline"]:
                 return httpx.Response(503)
             return httpx.Response(200, json=state["runtime"])
-        assert request.url.path.endswith("/chat/completions")
         assert request.headers["x-helvetic-runtime-binding"] == state["runtime"]["binding_fingerprint"]
         data = json.loads(request.content)
+        headers = {"x-helvetic-runtime-binding": state["runtime"]["binding_fingerprint"]}
+        if state["runtime"].get("prompt_budget_schema"):
+            content = json.loads(data["messages"][-1]["content"])
+            tokens = state.get("tokens", 123)
+            tokens = tokens(content) if callable(tokens) else tokens
+            measured = measurement(data, input_tokens=tokens, fits=tokens + data["max_tokens"] + 128 <= 4096,
+                                   binding_fingerprint=state["runtime"]["binding_fingerprint"],
+                                   deployment_id=state["runtime"]["deployment_id"])
+            headers["x-helvetic-token-budget"] = json.dumps(measured)
+        if request.url.path.endswith("/input_tokens"):
+            return httpx.Response(200, json={"object": "response.input_tokens", "input_tokens": tokens}, headers=headers)
+        assert request.url.path.endswith("/chat/completions")
         content = await model.complete(data["messages"][0]["content"], data["messages"][1]["content"])
         return httpx.Response(200, json={"choices": [{"message": {"content": content}}]}, headers={
-            "x-helvetic-runtime-binding": "f" * 64 if state["wrong_reply"] else state["runtime"]["binding_fingerprint"],
+            **headers, "x-helvetic-runtime-binding": "f" * 64 if state["wrong_reply"] else state["runtime"]["binding_fingerprint"],
         })
 
     monkeypatch.setattr(httpx, "AsyncClient", lambda **kwargs: real_client(transport=httpx.MockTransport(handler), **kwargs))
@@ -63,6 +78,21 @@ def configure_local_relation(harness, monkeypatch):
 @pytest.fixture
 def local_relation(harness, monkeypatch):
     return configure_local_relation(harness, monkeypatch)
+
+
+@pytest.fixture
+def approved_local_relation(local_relation, artifacts):
+    """Existing digest tests need a synthetic assessed medium-severity result."""
+    _, service, _, _, state = local_relation
+    root, identity, review, registry, write = artifacts
+    state["runtime"]["prompt_budget_schema"] = "local-prompt-budget-v1"
+    identity.clear()
+    identity.update(state["runtime"]["identity"])
+    review["task"] = registry["profiles"][0]["grants"][0]["task"] = "relation_impact"
+    service.settings.apertus_explanation_profile = review["profile_id"]
+    service.settings.ai_capability_registry = write()
+    service.settings.ai_capability_evidence_root = root
+    return local_relation
 
 def run(app):
     client, _, _, delivery, _ = app
@@ -208,7 +238,8 @@ def digest_job(app):
     return service.enqueue_digest_now(user_id), saved
 
 
-def test_digest_preparation_restarts_and_final_delivery_rejects_changed_runtime(local_relation, monkeypatch):
+def test_digest_preparation_restarts_and_final_delivery_rejects_changed_runtime(approved_local_relation, monkeypatch):
+    local_relation = approved_local_relation
     _, service, model, _, state = local_relation
     job, saved = digest_job(local_relation)
     sent = record_mail(monkeypatch)
@@ -228,7 +259,8 @@ def test_digest_preparation_restarts_and_final_delivery_rejects_changed_runtime(
 
 
 @pytest.mark.parametrize("change", [False, True])
-def test_digest_worker_observes_again_before_delivery(local_relation, monkeypatch, change):
+def test_digest_worker_observes_again_before_delivery(approved_local_relation, monkeypatch, change):
+    local_relation = approved_local_relation
     _, service, model, _, state = local_relation
     job, _ = digest_job(local_relation)
     sent = record_mail(monkeypatch)
@@ -241,7 +273,8 @@ def test_digest_worker_observes_again_before_delivery(local_relation, monkeypatc
     assert len(sent) == (0 if change else 1) and len(model.calls) == 1
 
 
-def test_offline_digest_does_not_consume_recipient_period(local_relation, monkeypatch):
+def test_offline_digest_does_not_consume_recipient_period(approved_local_relation, monkeypatch):
+    local_relation = approved_local_relation
     _, service, model, _, state = local_relation
     job, _ = digest_job(local_relation)
     sent = record_mail(monkeypatch)

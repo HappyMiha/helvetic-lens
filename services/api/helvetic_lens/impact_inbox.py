@@ -154,6 +154,8 @@ class ImpactInboxReader:
             return "confirmed_relation"
         if review and review.decision == "rejected":
             return "no_supported_impact"
+        if current and (current.result or {}).get("assessment_status") == "not_assessed":
+            return "evidence_only"
         if current and (current.result or {}).get("assessment_status") == "needs_review":
             return "stale"
         if not current and latest and latest.status == "succeeded":
@@ -177,7 +179,7 @@ class ImpactInboxReader:
         if status == "confirmed_relation" and event.event_type in {"repealed", "replaced"}:
             return "high"
         result = current.result if current else None
-        if result and result.get("assessment_status") != "needs_review":
+        if result and result.get("assessment_status") not in {"needs_review", "not_assessed"}:
             if result.get("potential_severity") in {"high", "medium", "low", "none"}:
                 return result["potential_severity"]
         return "unknown"

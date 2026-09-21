@@ -52,7 +52,7 @@ type InboxLaw = {
   law_id: string;
   law_title: string;
   law_active: boolean;
-  status: "confirmed_relation" | "possible_impact" | "awaiting_analysis" | "analysis_failed" | "no_supported_impact" | "stale";
+  status: "confirmed_relation" | "possible_impact" | "awaiting_analysis" | "analysis_failed" | "no_supported_impact" | "evidence_only" | "stale";
   severity: string;
   why: Array<Record<string, unknown> | string>;
   potential_effect: string;

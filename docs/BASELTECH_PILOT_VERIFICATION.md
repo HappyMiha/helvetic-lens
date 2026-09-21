@@ -500,3 +500,49 @@ copy of the original crontab and a timestamped exact-entry audit are retained.
 No serving checkout, active test input, timeout result or release status was
 rewritten. Existing operator-budget and invalid-value tests verify the bounded
 setting; activation still requires a naturally completed successful full gate.
+
+## Relation-analysis recovery during final pilot verification
+
+The live relation inbox reproduced the failure shown in the owner's screenshots.
+A Basel higher-education agreement was linked to the procurement agreement by
+shared title words; the unreviewed model produced a generic impact claim and
+action. A Riehen natural-bath regulation linked to the asylum contract by a place
+name instead failed structured-output validation. Source similarity is only a
+retrieval lead, and neither result establishes an organizational effect.
+
+The relation worker now captures the existing capability policy under its own
+`relation_impact` scope. A comparison-report approval cannot authorize relation
+interpretation. Without an exact reviewed task/locale/runtime grant, a compact
+request selects saved row numbers only. The server renders the selected quotes
+and explicit unassessed-impact copy; it supplies no model severity, proposed
+relation or action. Empty selection is valid and does not claim that passages
+were selected. Confirmed publisher relations, source urgency and actual workspace
+review decisions remain independent. The inbox uses a translated evidence-only
+status rather than implying a negative impact finding.
+
+Measured allocation preserves both document sides and discovery facts together,
+uses exact source windows and keeps stable row identities. Invalid or omitted
+row references fail validation; they cannot silently become an empty successful
+selection. No-fit requests fail before generation. Result/planner revision v5
+and capability-policy cache binding retain older output as history without
+presenting it as the current interpretation.
+
+The two retained real dossiers were replayed using development code against the
+running Apertus 8B without changing serving files, database records, model settings
+or quality approvals. Both completed in one provider call. The Basel case selected
+six bound source/context rows in the final replay; the unrelated Riehen case selected zero. Initial
+measured inputs were 771 and 782 tokens respectively, plus the existing 900-token
+output reserve and 128-token safety reserve within the observed 4,096-token
+context. Every returned quote matched the retained evidence. This proves bounded
+execution and citation integrity, not semantic-quality approval.
+
+The existing relation/runtime checks passed (33 passed, one existing skip), then
+the expanded relation, capability, cache/freshness and inbox suite passed 220
+checks with one existing skip. Exact API lint and the isolated production web
+build passed with all five interface languages. Production replay remains pending.
+Eighteen final empty-selection, shared selected-evidence-copy and backlog checks
+also passed after the empty-result wording was made explicit.
+The required full automatic deployment remains separate: no active release test
+or deployment was restarted or duplicated. The installed host manager's timeout
+reader was also checked read-only with the future cron setting and returned
+10,800 seconds; its current already-started run keeps its original deadline.
