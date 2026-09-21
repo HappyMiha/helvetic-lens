@@ -444,3 +444,23 @@ question-cache invalidation. Read-only preflight against the actual retained IDG
 PDFs selected six passages in one bounded batch, including old p00320 and new
 p00319 and the added Besoldung sentence. Normal deployed Ask replay remains
 pending; the earlier unhelpful answer is retained as audit history.
+
+## Retaining selected provision citations
+
+A development preflight using the real running Apertus 8B and the retained IDG
+evidence exposed a second issue: the model selected all six provision rows, but
+materialization silently retained only four citations. The two body quotations
+therefore lost their evidence links behind four heading/title links. The existing
+output contract already allows ten selected rows. Materialization now preserves
+up to those ten validated rows, retaining duplicate rejection and downstream
+quote/display/action bounds. Ask revision v3 invalidates earlier question caches.
+
+The real model replay then returned six exact bound citations, including both
+§ 39 bodies and the added Besoldung sentence, in one provider call. It remained
+selected-evidence mode with explicitly incomplete coverage and no interpretation
+approval. The preflight used development code and the same local model gateway;
+it did not change serving code, model configuration, source bytes or production
+history. The earlier preflight is retained privately. Ninety-four related tests
+passed, including citation retention beyond four rows, the ten-row bound, exact
+links, invalid-reference guards, AI history and Ask/report regressions. Exact API
+Ruff and backlog checks passed. The final production job replay remains pending.

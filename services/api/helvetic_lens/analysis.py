@@ -33,7 +33,7 @@ from .token_evidence import allocated_coverage, fit_numbered_evidence
 PROMPT_VERSION = "helvetic-lens-v12-evidenced-decision-review"
 IMPACT_REPORT_SCHEMA_VERSION = "impact-report-v5"
 DEFAULT_OUTPUT_LOCALE = "en-CH"
-ASK_ROUTER_VERSION = "ask-intent-v2"
+ASK_ROUTER_VERSION = "ask-intent-v3"
 MAX_IMPACT_BATCHES = 3
 MAX_ASK_BATCHES = 1
 MAX_IMPACT_HTTP_REQUESTS = 5
@@ -2275,7 +2275,7 @@ def materialize_digest_citations(result: dict, evidence: list[dict]) -> dict:
     selected = numbered_selection(
         result.pop("citation_rows", []),
         evidence,
-        4,
+        10,
         required=result.get("supported", True),
     )
     citations = [evidence_citation(passage) for passage in selected]

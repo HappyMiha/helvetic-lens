@@ -240,6 +240,11 @@ when reusing a limited report. Verify the actual saved before/after evidence;
 the independent interpretation-quality gate remains unchanged.
 The specific-provision implementation and retained-IDG preflight passed locally;
 the deployed question replay remains pending. MV2-052 stays IN PROGRESS.
+The real Apertus replay also exposed a four-citation materialization cap beneath
+the existing ten-row selection contract. Retain the validated selected body
+citations within that contract and verify exact quote links after replay.
+The real one-call model preflight now retains all six citations, including both
+§ 39 bodies; 94 related checks passed. Deployed replay remains pending.
 The source-language audit also requires exact expression titles on event/evidence
 views and brief inputs; the shared multilingual work title is only a fallback.
 Italian articles alone must not create related-law candidates. Preserve bounded
@@ -2353,6 +2358,19 @@ Local acceptance: 148 related Ask, report, capability and history tests plus the
 backlog check passed. The retained real IDG versions select six bound passages,
 including both complete § 39 bodies, in one bounded batch. Production replay and
 independent interpretation review remain separate pending evidence.
+
+**Selected-citation retention, 21 September 2026:** The real § 39 model call
+selected six rows and quoted the provision body, but materialization retained
+only the first four header/title citations. Align materialization with the
+existing ten-row validated output contract so saved body quotations retain their
+links. Preserve invalid-row rejection, deduplication, quote bounds and downstream
+display/action limits. Acceptance requires more than four valid selected rows,
+the old/new body citations and the real Apertus replay. No model-quality approval
+or runtime context allowance is expanded.
+The real running Apertus 8B returned all six bound citations after this repair
+in one selected-evidence call. Ninety-four related tests passed; Ask revision v3
+invalidates answers with the earlier citation limit. The original failed preflight
+is retained privately. No serving checkout or model setting was changed by it.
 
 **Viewer evidence scope, 21 September 2026:** The native selected-evidence reader
 returns quoted existing fields with no model call or mutation, but its POST route

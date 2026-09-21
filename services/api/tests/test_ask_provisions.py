@@ -6,7 +6,14 @@ import pytest
 from conftest import ScriptedModel
 
 from helvetic_lens import analysis
-from helvetic_lens.analysis import answer_question, ask_cache_key, build_ask_plan, targeted_version_evidence
+from helvetic_lens.analysis import (
+    answer_question,
+    ask_cache_key,
+    build_ask_plan,
+    local_answer_synthesis,
+    materialize_digest_citations,
+    targeted_version_evidence,
+)
 from helvetic_lens.config import Settings
 from helvetic_lens.diffing import compare_passages
 from helvetic_lens.models import Comparison, Profile, Version
@@ -118,3 +125,28 @@ def test_explicit_unit_does_not_consume_next_section():
     old, new, *_ = provision_case()
     evidence, _, _, _ = targeted_version_evidence(old, new, "Explain §39", 4000, force_targeted=True)
     assert {item["passage_id"] for item in evidence} == {"p1", "p2", "p3"}
+
+
+def test_selected_body_citations_survive_headers_and_local_synthesis():
+    old, new, *_ = provision_case()
+    evidence, _, _, _ = targeted_version_evidence(old, new, "Explain §39", 4000, force_targeted=True)
+    # The real local model selected all six rows; rows five and six are the bodies.
+    selected = materialize_digest_citations({
+        "supported": True, "answer": "Selected saved provision wording.",
+        "citation_rows": [1, 2, 3, 4, 5, 6, 6],
+    }, evidence)
+    result = local_answer_synthesis([selected])
+    assert len(result["citations"]) == 6
+    by_reference = {(item["version_id"], item["passage_id"]): item for item in result["citations"]}
+    for version in (old, new):
+        citation = by_reference[(version.id, "p3")]
+        assert citation["quote"] in version.passages[3]["text"]
+        assert citation["url"] == f"/evidence/{version.id}?passage=p3"
+    assert "Besoldung" in by_reference[("new", "p3")]["quote"]
+
+
+def test_materialized_citations_keep_the_existing_ten_row_bound():
+    evidence = [{"version_id": "new", "passage_id": f"p{i}", "text": f"Saved evidence {i}.",
+                 "side": "new", "page": 1} for i in range(12)]
+    selected = materialize_digest_citations({"supported": True, "citation_rows": list(range(1, 13))}, evidence)
+    assert len(selected["citations"]) == 10
