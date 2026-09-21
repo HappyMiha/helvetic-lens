@@ -325,7 +325,8 @@ class HelveticLens:
     @staticmethod
     def canonical_document_identity(url: str) -> str:
         reference = fedlex_eli_reference(url)
-        return reference.work_uri if reference else url.lower()
+        return ((reference.expression_uri or f"{reference.work_uri}/{reference.language}")
+                if reference else url.lower())
 
     def watch(self, session: Session, law_id: str, *, required: bool = True) -> DocumentWatch | None:
         record = session.scalar(select(DocumentWatch).where(DocumentWatch.law_id == law_id))
@@ -2215,15 +2216,21 @@ class HelveticLens:
         provider = data.get("provider", "native")
         shared_official = self.is_shared_official_url(url) and not data.get("synthetic", False)
         canonical_identity = self.canonical_document_identity(url)
+        reference = fedlex_eli_reference(url)
+        lookup_identities = {canonical_identity, reference.work_uri} if reference else {canonical_identity}
         with self.db.session() as session:
-            existing = session.scalar(
+            candidates = session.scalars(
                 select(Law).where(
-                    Law.canonical_identity == canonical_identity,
+                    Law.canonical_identity.in_(lookup_identities),
                     Law.owner_organization_id.is_(None)
                     if shared_official
                     else Law.owner_organization_id == self.organization_id,
                 )
             )
+            # Legacy records used one identity across all official languages.
+            # Reuse only the exact requested edition, without rewriting history.
+            existing = next((row for row in candidates
+                             if self.canonical_document_identity(row.url) == canonical_identity), None)
             if existing and self.watch(session, existing.id, required=False):
                 raise DomainError(
                     f"This document is already tracked as '{existing.name}'.", 409, "duplicate_law"

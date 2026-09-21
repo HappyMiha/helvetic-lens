@@ -98,3 +98,15 @@ baseline must be re-acquired after activation rather than presented as an actual
 legal amendment. All 60 focused extraction, LexWork, evidence-page and backlog
 tests passed, including sibling-answer changes and navigation exclusion; the
 exact API Ruff gate passed.
+
+## Requested Fedlex edition
+
+The German DSG watch initially reused an existing Italian artifact because direct
+document deduplication ignored language. New direct-watch identities include the
+requested language and any explicit version date. Legacy records are reused only
+when their URL resolves to that same edition; their IDs, watches and evidence are
+preserved. The native regulatory corpus still uses the multilingual ELI work.
+Eleven focused requested-edition, authentication, synchronization and backlog
+checks passed, including alias duplicates and preservation of a legacy Italian
+record. The exact API Ruff gate passed. The pilot DSG watch awaits correction
+through the normal document API after activation.

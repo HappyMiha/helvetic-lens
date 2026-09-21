@@ -200,6 +200,9 @@ This is direct document monitoring, not the deferred national/cantonal pack work
 The same pilot verifies complete SEM FAQ extraction: an explicit main-content
 container must include sibling answers instead of selecting the first embedded
 article. Tests preserve navigation exclusion and detect edits in later answers.
+Direct Fedlex watches must also retain the requested language and pinned date;
+existing work-wide records remain readable without being reused for another
+language or edition. The shared regulatory-work identity remains unchanged.
 
 15 September recurring-closure feature: MV2-040 and MV2-041 remain IN PROGRESS
 in this index and their details. The explicit-offset source/calendar, private
@@ -2295,6 +2298,14 @@ Prefer explicit main-content roots over embedded articles, retain collapsed
 answer text, and keep navigation excluded. Verify sibling-answer changes and
 discovery, record extraction provenance, and re-acquire affected demo baselines.
 This is an extraction correction, not evidence of a legal amendment.
+
+**Requested-edition scope, 21 September 2026:** Adding a German Fedlex DSG URL
+reused a previously saved Italian baseline. Separate direct document identities
+by requested language and explicit version date, with language/date-checked
+fallback to legacy records. Preserve all existing IDs, artifacts and watches;
+do not merge/delete records or change the native multilingual regulatory corpus.
+Acceptance verifies different-language and pinned-date isolation plus alias
+deduplication for both new and legacy records.
 
 **Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Operations + Backend · **Size:** M
 
