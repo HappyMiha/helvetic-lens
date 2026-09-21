@@ -685,8 +685,9 @@ def extract(
             root = (
                 court_root
                 or soup.find("main")
-                or soup.find("article")
                 or soup.find(attrs={"role": "main"})
+                or soup.select_one("#content.main-content")
+                or soup.find("article")
                 or soup.body
                 or soup
             )
@@ -732,7 +733,8 @@ def extract(
         raise DomainError("The extracted document exceeds the MVP text limit.", 413, "document_too_large")
     for number, passage in enumerate(passages, 1):
         passage["id"] = f"p{number:05d}"
-    extractor = f"{provider}-{PDF_EXTRACTOR_VERSION}" if mime == "application/pdf" else f"{provider}-v3"
+    extractor = (f"{provider}-{PDF_EXTRACTOR_VERSION}" if mime == "application/pdf"
+                 else f"{provider}-html-v4" if mime == "text/html" else f"{provider}-v3")
     return Extracted(title[:500], text, passages, mime, name, body, extractor)
 
 
@@ -742,7 +744,8 @@ def discover_links(fetched: Fetched, section: str = "/", limit: int = 50) -> dic
     soup = BeautifulSoup(fetched.body, "html.parser")
     for node in soup.select("nav, header, footer, aside, form, script, style, [role=navigation]"):
         node.decompose()
-    root = soup.find("main") or soup.find(attrs={"role": "main"}) or soup.find("article") or soup.body or soup
+    root = (soup.find("main") or soup.find(attrs={"role": "main"})
+            or soup.select_one("#content.main-content") or soup.find("article") or soup.body or soup)
     seen, candidates = set(), []
     for link in root.find_all("a", href=True):
         try:

@@ -84,3 +84,17 @@ that the same stable URL produces a real text difference when the publisher
 changes its selected version, historical selection is preserved, and mismatched
 law/version/language, foreign URLs, redirects and non-PDF responses fail closed.
 The exact API Ruff gate passed. Production activation is a separate pending gate.
+
+## SEM FAQ completeness
+
+A real baseline acquisition exposed silent partial extraction: the SEM Ukraine
+FAQ yielded only 118 characters from the first embedded article. Its explicit
+`#content.main-content` contains the complete FAQ and sibling articles. Extraction
+and discovery now prefer explicit main roots over article fragments and retain
+collapsed answers. The HTML extractor revision is recorded as `native-html-v4`.
+On the same downloaded official HTML, this yields 52,815 characters across 301
+passages. This is a parser correction, not a change in migration law. The pilot
+baseline must be re-acquired after activation rather than presented as an actual
+legal amendment. All 60 focused extraction, LexWork, evidence-page and backlog
+tests passed, including sibling-answer changes and navigation exclusion; the
+exact API Ruff gate passed.

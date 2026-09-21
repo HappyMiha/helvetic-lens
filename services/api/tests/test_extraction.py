@@ -59,6 +59,26 @@ def test_normalisation_removes_layout_noise_but_keeps_changed_numbers():
     assert "30" in diff["items"][1]["old"]["text"] and "60" in diff["items"][1]["new"]["text"]
 
 
+@pytest.mark.parametrize("container", ['id="content" class="main-content"', 'role="main"'])
+def test_faq_keeps_sibling_answers_and_detects_changes_outside_the_first_article(container):
+    body = (f'<html><body><nav><a href="/outside">Changing menu only</a></nav>'
+            f'<div {container}><h1>Synthetic FAQ</h1>'
+            '<article><p>First explanatory article with unchanged information.</p></article>'
+            '<div role="tabpanel" class="collapse" aria-expanded="false">'
+            '<h2>How long?</h2><p>The fictional review period is 30 days.</p>'
+            '<a href="/files/details.pdf">Details</a></div>'
+            '<article><p>Final answer with independent information.</p></article>'
+            '</div><footer>Not source evidence</footer></body></html>').encode()
+    before = extract(body, "text/html")
+    after = extract(body.replace(b"30 days", b"60 days"), "text/html")
+    assert "Final answer" in before.text and "30 days" in before.text
+    assert "Changing menu" not in before.text and "Not source evidence" not in before.text
+    assert compare_passages(before.passages, after.passages)["counts"]["modified"] == 1
+    links = discover_links(Fetched("https://example.com/faq", body, "text/html"))
+    assert [item["url"] for item in links["candidates"]] == ["https://example.com/files/details.pdf"]
+    assert before.extractor == "native-html-v4"
+
+
 def test_pdf_text_and_page_references_with_scanned_pdf_error():
     content = make_pdf([
         "Synthetic policy: retain records for 30 days. This is a test.",

@@ -197,6 +197,9 @@ open. See the task detail and `docs/BASELTECH_PILOT_VERIFICATION.md`.
 The explicit Basel/Bern request also includes bounded native resolution of a
 single LexWork law URL to its current official PDF, plus exact historical URLs.
 This is direct document monitoring, not the deferred national/cantonal pack work.
+The same pilot verifies complete SEM FAQ extraction: an explicit main-content
+container must include sibling answers instead of selecting the first embedded
+article. Tests preserve navigation exclusion and detect edits in later answers.
 
 15 September recurring-closure feature: MV2-040 and MV2-041 remain IN PROGRESS
 in this index and their details. The explicit-offset source/calendar, private
@@ -2284,6 +2287,14 @@ version; external URLs, mismatched identities and unavailable PDFs fail closed.
 Use the existing extraction, evidence, comparison and tenant contracts. Acceptance
 requires mock negative boundaries, a two-version lifecycle and real current-law
 probes. This bounded direct-URL repair does not activate the deferred MV2-066 pack.
+
+**FAQ extraction scope, 21 September 2026:** The real SEM Ukraine FAQ contains
+multiple article fragments inside `#content.main-content`. Selecting the first
+article retained only 118 characters and omitted the questions and answers.
+Prefer explicit main-content roots over embedded articles, retain collapsed
+answer text, and keep navigation excluded. Verify sibling-answer changes and
+discovery, record extraction provenance, and re-acquire affected demo baselines.
+This is an extraction correction, not evidence of a legal amendment.
 
 **Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Operations + Backend · **Size:** M
 
