@@ -495,11 +495,14 @@ interrupted or reconfigured.
 The host's existing validated operator setting is now 10,800 seconds for future
 scheduled API gates. Only the marked cron command received
 `HELVETIC_LENS_API_TEST_TIMEOUT_SECONDS=10800`; the two-minute cadence, process
-lock, complete test command, two-CPU and 4 GB limits remain in place. A private
+lock, complete test command and existing launch configuration remain in place. A private
 copy of the original crontab and a timestamped exact-entry audit are retained.
 No serving checkout, active test input, timeout result or release status was
 rewritten. Existing operator-budget and invalid-value tests verify the bounded
 setting; activation still requires a naturally completed successful full gate.
+Read-only container inspection confirmed that this host uses the legacy launch
+path without Docker CPU/memory limits. The selector-based two-CPU/4 GB defaults
+do not apply to that path; this timeout-only intervention did not change it.
 
 ## Relation-analysis recovery during final pilot verification
 
