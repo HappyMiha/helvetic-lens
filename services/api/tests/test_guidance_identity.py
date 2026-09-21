@@ -71,7 +71,7 @@ def test_daily_scan_refreshes_legacy_false_identity_without_replacing_saved_evid
     assert scan["items"][0]["result"] == "unchanged"
     with service.db.session() as session:
         version = session.get(Version, version_id)
-        assert version.identity_json["revision"] == "artifact-identity-v3"
+        assert version.identity_json["revision"] == "artifact-identity-v4"
         assert version.identity_json["canonical_work_id"] is None
         assert before == (version.content_hash, version.extractor, version.passages)
         assert session.scalar(select(func.count()).select_from(Version)) == 1

@@ -49,6 +49,21 @@ def test_ukrainian_attachment_language_is_not_its_german_hosting_directory():
     assert official["language"] == "de"
 
 
+def test_ukrainian_introduction_with_a_multilingual_directory_uses_its_actual_title():
+    from helvetic_lens.identity import build_artifact_identity
+
+    ukrainian = "Інформація для українців про соціальну допомогу, навчання дітей і роботу в кантоні Берн. "
+    german = "Weitere Informationen und Verweise auf offizielle Stellen in den Kantonen der Schweiz. "
+    args = dict(title="Інформація для біженців з України", source_url="https://www.sem.admin.ch/sem/de/ukraine-ukr.html",
+                extractor="native-html", content_type="text/html", filename="ukraine-ukr.html")
+    passages = [{"text": ukrainian}] * 8 + [{"text": german}] * 40
+    assert build_artifact_identity(**args, passages=passages)["language"] == "uk"
+    # An introductory quotation alone does not outweigh a German title/body.
+    assert build_artifact_identity(**{**args, "title": "Informationen für Geflüchtete"}, passages=passages)["language"] == "de"
+    assert build_artifact_identity(**args, passages=[{"text": german}] * 30)["language"] == "de"
+    assert build_artifact_identity(**args, passages=passages, metadata={"eli_language": "de"})["language"] == "de"
+
+
 def test_artifact_identity_is_persisted_with_official_metadata(harness):
     client, fetcher, _, _ = harness
     fetcher.values[NATURALIZATION_ELI] = policy()
@@ -56,7 +71,7 @@ def test_artifact_identity_is_persisted_with_official_metadata(harness):
     version = client.get("/api/versions/" + law["current_version_id"]).json()
     identity = version["identity_json"]
 
-    assert identity["revision"] == "artifact-identity-v3"
+    assert identity["revision"] == "artifact-identity-v4"
     assert identity["authority"] == "Swiss Confederation / Fedlex"
     assert identity["canonical_work_id"] == "/eli/oc/2017/259"
     assert identity["document_kind"] == "document"

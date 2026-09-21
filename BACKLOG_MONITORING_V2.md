@@ -255,6 +255,10 @@ refresh prior derived identity assessments without changing original evidence.
 The live Ukrainian registry also exposes an incomplete display/filter path:
 recognize Ukrainian as a source language and use a watch's current bound artifact
 language before the work's historical language aggregate, without rewriting it.
+The Ukrainian SEM page has Ukrainian introductory content plus a multilingual
+link directory. A clearly Ukrainian title and dominant Cyrillic introduction
+must not inherit German from its hosting path; mixed or ambiguous titles remain
+subject to the conservative language check and explicit publisher precedence.
 The expanded live source audit also requires complete Fedlex HTML annex evidence
 and root-work-only catalogue discovery; historical dated members are versions.
 Shared language-specific watches must still bind to one official corpus work,
@@ -2414,6 +2418,14 @@ verified publisher language metadata retains precedence. Verify German pages
 quoting Ukrainian and ambiguous samples, preserve the five UI locales, and
 re-acquire only the operator-created affected demo baselines after activation.
 Existing evidence and confirmed identities are not globally rewritten.
+
+The SEM Ukrainian information page also contains a large multilingual directory
+after its Ukrainian introduction. Extend the bounded script check only when both
+the actual title and the first eight passages are predominantly Cyrillic; require
+Ukrainian-specific letters and preserve explicit publisher language precedence.
+Reject a Ukrainian quotation on a German page and a Ukrainian title over a German
+body. Use a new identity revision so existing saved assessments refresh without
+replacing originals. Final pilot scans must refresh all current assignments.
 
 **Extraction-transition scope, 21 September 2026:** The pilot's complete-text
 repair must not compare a partial old extraction against a full new extraction.

@@ -394,3 +394,27 @@ Exact API Ruff, diff checks and the complete root frontend build passed, includi
 translations, shell, resource, report, help and TypeScript checks. The temporary
 build's generated type paths were removed. Live browser verification of the new
 label/filter awaits normal activation.
+
+## Translated introduction with a multilingual directory
+
+SEM's Ukrainian information page contains a clearly Ukrainian title and main
+introduction followed by a large multilingual link directory. Its whole-sample
+Cyrillic ratio is only 47%, so the earlier conservative detector fell back to the
+German hosting path. Identity revision v4 adds a bounded alternative requiring
+both a predominantly Cyrillic actual title and at least 80% Cyrillic introductory
+text in the first eight passages, plus Ukrainian-specific letters. Explicit
+publisher language still takes precedence. A Ukrainian quotation under a German
+title or a Ukrainian title over a German body cannot activate this alternative.
+
+Seventy-two identity, registry-language, daily-monitoring, LexWork, workflow and
+backlog tests passed. Exact API Ruff and diff checks passed. Read-only replay of
+all 54 active pilot assignments produced 30 official verified matches and 24
+probable assignments, including `uk` for the real SEM page. The final deployed
+scan will refresh all pilot current-version identities through ordinary jobs.
+
+Independent of these metadata changes, all 54 retained originals reproduced
+their current text hashes. All five actual Apertus results also passed citation
+replay: 33 distinct version/passage/quote tuples matched the owned saved evidence.
+Each result recorded three provider calls and explicitly partial selected-evidence
+coverage with impact not assessed. This does not satisfy an independent human
+quality gate or claim complete legal interpretation.
