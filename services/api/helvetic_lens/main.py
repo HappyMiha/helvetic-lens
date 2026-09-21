@@ -101,6 +101,7 @@ class LawInput(PreviewInput):
 class LawUpdate(Input):
     name: str | None = Field(default=None, min_length=1, max_length=300)
     active: bool | None = None
+    auto_check_enabled: bool | None = Field(default=None, strict=True)
 
 
 class CompareInput(Input):
@@ -1824,6 +1825,10 @@ def create_app(
                         law.name = value
                 elif key == "active":
                     watch.active = value
+                elif key == "auto_check_enabled":
+                    if value != watch.auto_check_enabled:
+                        watch.auto_check_enabled = value
+                        watch.next_auto_check_at = utcnow() if value else None
             session.commit()
             return service.law_summary(session, law, watch)
 

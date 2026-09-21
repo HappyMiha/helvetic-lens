@@ -2316,6 +2316,8 @@ class HelveticLens:
             **as_dict(law, {"owner_organization_id"}),
             "name": watch.display_name,
             "active": watch.active,
+            "auto_check_enabled": watch.auto_check_enabled,
+            "next_auto_check_at": as_dict(watch)["next_auto_check_at"],
             "last_checked": as_dict(watch)["last_checked"],
             "last_result": watch.last_result,
             "last_error": watch.last_error,
@@ -2776,6 +2778,10 @@ class HelveticLens:
                 raise DomainError("Resume paused laws before scanning them.")
             if baseline_id and get(session, Version, baseline_id).law_id != laws[0].id:
                 raise DomainError("The baseline must belong to the selected law.")
+            # Coordinate manual scans with the daily scheduler's watch locks.
+            list(session.scalars(select(DocumentWatch.id).where(
+                DocumentWatch.id.in_([watch.id for watch in watches])
+            ).order_by(DocumentWatch.id).with_for_update()))
             busy = session.scalar(
                 select(ScanItem.id)
                 .join(Scan)
@@ -2829,6 +2835,8 @@ class HelveticLens:
 
     async def run_scan(self, scan_id: str, job_id: str | None = None, worker: str = "inline"):
         with self.db.session() as session:
+            job = session.get(Job, job_id) if job_id else None
+            automatic = bool(job and (job.payload or {}).get("automatic"))
             scan = get(session, Scan, scan_id)
             scan.status = "running"
             ids = list(session.scalars(select(ScanItem.id).where(ScanItem.scan_id == scan_id)))
@@ -2867,7 +2875,7 @@ class HelveticLens:
                         session.commit()
                 continue
             try:
-                await self.run_scan_item(item_id)
+                await self.run_scan_item(item_id, automatic=automatic)
                 step_state, step_error = "succeeded", None
             except Exception as exc:
                 message = (
@@ -2882,6 +2890,9 @@ class HelveticLens:
                     item = get(session, ScanItem, item_id)
                     watch = self.watch(session, item.law_id)
                     watch.last_result, watch.last_error, watch.last_checked = "failed", message, utcnow()
+                    if watch.auto_check_enabled:
+                        from .document_monitoring import INTERVAL
+                        watch.next_auto_check_at = utcnow() + INTERVAL
                     session.commit()
                 step_state, step_error = "failed", message
             completed += 1
@@ -2909,9 +2920,17 @@ class HelveticLens:
             scan.finished_at = utcnow()
             session.commit()
 
-    async def run_scan_item(self, item_id: str):
+    async def run_scan_item(self, item_id: str, *, automatic: bool = False):
         with self.db.session() as session:
             item = get(session, ScanItem, item_id)
+            if automatic:
+                from .document_monitoring import can_run
+                if not can_run(session, item.law_id):
+                    item.stage, item.result, item.analysis_status = "complete", "skipped", "not_run"
+                    item.events = [*item.events, {"stage": "complete", "at": utcnow().isoformat(),
+                                                 "reason": "automatic_watch_disabled_or_operator_unavailable"}]
+                    session.commit()
+                    return
             law = get(session, Law, item.law_id)
             url, provider, live_baseline_id = law.url, law.provider, law.current_version_id
             prior = session.get(Version, live_baseline_id) if live_baseline_id else None
@@ -2969,6 +2988,9 @@ class HelveticLens:
             law.current_version_id = version.id
             watch = self.watch(session, law.id)
             watch.last_checked = utcnow()
+            if watch.auto_check_enabled:
+                from .document_monitoring import INTERVAL
+                watch.next_auto_check_at = utcnow() + INTERVAL
             watch.last_result, watch.last_error = item.live_result, None
             comparison_id = item.comparison_id
             changed = comparison.diff["changed"] if comparison else False
@@ -2976,9 +2998,13 @@ class HelveticLens:
         status, error = "not_needed", None
         if changed and comparison_id:
             if self.settings.model_configured:
-                self.stage(item_id, "analysing")
-                result = await self.analyse(comparison_id)
-                status, error = result["status"], result.get("error")
+                if automatic:
+                    self.enqueue_analysis(comparison_id)
+                    status = "queued"
+                else:
+                    self.stage(item_id, "analysing")
+                    result = await self.analyse(comparison_id)
+                    status, error = result["status"], result.get("error")
             else:
                 status = "not_configured"
         self.stage(item_id, "complete", analysis_status=status, error=error)

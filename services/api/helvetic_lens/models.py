@@ -304,6 +304,8 @@ class DocumentWatch(Base):
     law_id: Mapped[str] = mapped_column(ForeignKey("laws.id"), index=True)
     display_name: Mapped[str] = mapped_column(String(300))
     active: Mapped[bool] = mapped_column(Boolean, default=True)
+    auto_check_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
+    next_auto_check_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
     selected_baseline_version_id: Mapped[str | None] = mapped_column(ForeignKey("versions.id"))
     last_checked: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_result: Mapped[str] = mapped_column(String(40), default="baseline_created")

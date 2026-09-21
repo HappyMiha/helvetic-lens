@@ -486,6 +486,8 @@ export type Law = {
   url: string;
   source_id: string | null;
   active: boolean;
+  auto_check_enabled?: boolean;
+  next_auto_check_at?: string | null;
   current_version_id: string | null;
   current_version: Version | null;
   created_at: string;

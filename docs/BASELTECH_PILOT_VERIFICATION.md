@@ -144,3 +144,24 @@ official identities. Non-legal pages without official identifiers may establish
 only probable continuity at the exact watched URL. Conflicting legal identities,
 different page URLs and unknown uploads retain quarantine/confirmation behavior.
 Twenty-five identity, LexWork and backlog tests plus exact API Ruff passed.
+
+## Explicit daily document checks
+
+Direct document watches now have a five-language daily-check control and next
+eligible check state. Existing and newly created watches remain manual until an
+administrator opts in. The scheduler admits at most five documents per tenant
+and twenty tenants per pass through the existing durable ingest queue. It
+coordinates with manual scans, rechecks pause/opt-in/active administrator status
+before fetching, retains evidence on source failure and queues changed-document
+AI independently. The control sends no email. Historical selected comparison
+baselines do not replace the current live baseline for automatic checks.
+
+Thirty-four document/identity/workflow/backlog tests passed, plus an existing-watch
+migration round-trip test. Coverage includes CSRF, viewer denial, two populated
+tenant isolation, queued opt-out/pause/operator revocation, bounded/idempotent
+admission, source failure retention and separate AI work. Exact API Ruff and the
+full frontend build passed, including shell, translations, resources, reports,
+help and TypeScript checks. Browser verification against an isolated local app
+confirmed opt-in persistence after reload, paused state, opt-out and the 390px
+mobile layout. Test evidence was explicitly synthetic and never uploaded to the
+pilot accounts. Production scheduled execution remains pending activation.

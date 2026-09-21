@@ -6,6 +6,7 @@ import {
   useDocumentHistory,
 } from "./document-history-navigation";
 import { documentHistoryCopy } from "@/lib/document-history-copy";
+import { documentScheduleCopy } from "@/lib/document-schedule-copy";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -151,7 +152,11 @@ function LawDetailView({ id }: { id: string }) {
     if (target === "new") setNewId(version.id);
   }
 
-  async function update(payload: { active?: boolean; name?: string }) {
+  async function update(payload: {
+    active?: boolean;
+    name?: string;
+    auto_check_enabled?: boolean;
+  }) {
     setBusy("update");
     setError("");
     try {
@@ -394,6 +399,27 @@ function LawDetailView({ id }: { id: string }) {
               </div>
             </div>
             <ErrorNote message={law.last_error} />
+            <div className="info-note mb-5">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={!!law.auto_check_enabled}
+                  disabled={!canManage || !!busy || !!running}
+                  onChange={(event) =>
+                    void update({ auto_check_enabled: event.target.checked })
+                  }
+                />
+                <strong>{documentScheduleCopy[locale].label}</strong>
+              </label>
+              <p className="text-sm">{documentScheduleCopy[locale].help}</p>
+              <p className="text-sm">
+                {!law.active
+                  ? t("status.paused")
+                  : law.auto_check_enabled && law.next_auto_check_at
+                    ? `${documentScheduleCopy[locale].next}: ${dateTime(law.next_auto_check_at)}`
+                    : documentScheduleCopy[locale].manual}
+              </p>
+            </div>
             <div className="law-grid">
               <section className="panel">
                 <div className="panel-header">

@@ -209,6 +209,11 @@ Small-context AI requests must measure the actual batch count before admission;
 excess change units stay in the exact diff with explicitly limited AI coverage.
 Current/history cantonal scans must consume the resolver's verified publisher
 identity; ordinary FAQ URL continuity must not be confused with legal-work proof.
+The requested pilot also needs explicit daily direct-document checks: opt-in per
+watch, existing records off, bounded durable scans, pause/revocation checks, and
+visible next-check state. This does not complete the broader MV2-060 bridge.
+Daily-watch API, migration, frontend and local browser checks passed; production
+scheduled execution remains pending activation, with MV2-052 IN PROGRESS.
 
 15 September recurring-closure feature: MV2-040 and MV2-041 remain IN PROGRESS
 in this index and their details. The explicit-offset source/calendar, private
@@ -2331,6 +2336,21 @@ probable page continuity only, never verified legal identity. Changed legal
 titles, conflicting identifiers, foreign PDFs and unknown uploads retain the
 existing quarantine/confirmation behavior. Verify real current/historical probes
 and negative identity tests before activating daily document checks.
+
+**Daily direct-document scope, 21 September 2026:** Official packs already have
+scheduled collectors, but separately added Bern laws and FAQ pages had only a
+manual scan button. Add an explicit per-watch daily-check switch, disabled for
+all existing/new watches until selected. Enabling schedules a first real check;
+subsequent checks are at least 24 hours apart. Use bounded tenant-scoped durable
+scan jobs, skip busy/paused watches, and require an active organization admin at
+enqueue and execution. Disabling suppresses queued automatic fetches. Preserve
+source/identity gates, move any changed-document AI work to its existing queue,
+and send no email. Expose status and next eligible check in all five interface
+languages. Acceptance requires opt-in/tenant/role/pause/idempotence tests,
+migration compatibility, frontend checks and a live scheduled pilot check.
+Thirty-five affected API/migration/backlog checks, exact API Ruff and the full
+frontend build passed. Local browser verification covered persisted opt-in,
+pause/opt-out and mobile layout; production execution remains pending activation.
 
 **Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Operations + Backend · **Size:** M
 

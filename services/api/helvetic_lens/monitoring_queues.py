@@ -31,7 +31,7 @@ def durable_queue(job_type, fallback):
 
 PERIODIC_QUEUES = {
     **{f"helvetic_lens.{name}": CONTROL for name in (
-        "dispatch_outbox", "recover_jobs", "schedule_connectors", "schedule_digests",
+        "dispatch_outbox", "recover_jobs", "schedule_connectors", "schedule_digests", "schedule_document_watches",
         "schedule_pollen_monitoring", "schedule_river_monitoring", "schedule_air_monitoring",
         "schedule_tender_monitoring", "schedule_commute_monitoring", "schedule_road_monitoring",
         "schedule_hazard_monitoring", "schedule_river_email",
