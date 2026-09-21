@@ -248,6 +248,10 @@ and refuse removal while its related analysis is still running or queued.
 Replay of the enabled Fedlex RSS streams found an official relation targeting a
 dated JOLux Work URI. Resolve that verified parent work while retaining the exact
 dated reference as evidence; do not widen root discovery or accept foreign URLs.
+Daily scans of the new pilot guidance exposed false identities from unlabelled
+dates and contents numbering, and legal citations mistaken for document titles.
+Require explicit SR/RS labels and preserve short guidance titles/cover headings;
+refresh prior derived identity assessments without changing original evidence.
 The expanded live source audit also requires complete Fedlex HTML annex evidence
 and root-work-only catalogue discovery; historical dated members are versions.
 Shared language-specific watches must still bind to one official corpus work,
@@ -2368,6 +2372,17 @@ and version token without inferring a legal effective date. Keep ordinary work
 discovery strict, reject foreign/malformed/language/artifact paths, and omit
 version-to-parent self-edges. Acceptance includes all three live language paths
 and current RSS-page relation replay, not only the first discovered article.
+
+**Guidance identity repair, 21 September 2026:** Production daily checks wrongly
+interpreted bare dates and contents entries as federal SR numbers. Only explicitly
+labelled SR/RS values may become these identifiers. Short factual document titles
+and concise guidance cover headings must win over legal citations later in the
+body. Refresh existing derived identity assessments through the revisioned
+service path, retaining original artifacts and observations. Exact URL continuity
+remains only probable for non-legal guidance; contradictory official identifiers,
+wrong legal titles, cross-source assignment and existing tenant boundaries stay
+blocked. Acceptance includes the Basel employment page, SEM instruction/factsheet,
+Basel support guidelines and Bern leaflet, with a legacy-identity scan replay.
 
 **Native comparison guard, 21 September 2026:** Native corpus versions have
 immutable official-version keys and cannot use the direct-watch derived-version

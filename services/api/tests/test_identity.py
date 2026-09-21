@@ -56,7 +56,7 @@ def test_artifact_identity_is_persisted_with_official_metadata(harness):
     version = client.get("/api/versions/" + law["current_version_id"]).json()
     identity = version["identity_json"]
 
-    assert identity["revision"] == "artifact-identity-v2"
+    assert identity["revision"] == "artifact-identity-v3"
     assert identity["authority"] == "Swiss Confederation / Fedlex"
     assert identity["canonical_work_id"] == "/eli/oc/2017/259"
     assert identity["document_kind"] == "document"

@@ -6,10 +6,12 @@ from urllib.parse import quote, urlsplit
 
 from .lexwork import reference as lexwork_reference
 
-IDENTITY_REVISION = "artifact-identity-v2"
+IDENTITY_REVISION = "artifact-identity-v3"
 _ELI_WORK = re.compile(r"/eli/(?P<collection>cc|oc|fga)/(?P<year>[^/]+)/(?P<id>[^/]+)", re.I)
 _SR_RS = re.compile(r"\b(?:SR|RS)\s*([0-9]{1,4}(?:\.[0-9A-Za-z]+){1,4})\b", re.I)
-_BARE_SR = re.compile(r"^\s*([0-9]{1,4}(?:\.[0-9A-Za-z]+){1,4})\s*$")
+_GUIDANCE_TITLE_WORDS = re.compile(
+    r"\b(?:[\w-]*richtlinien|merkblatt|faktenblatt|weisung|faq|aide-mémoire|fiche)\b", re.I,
+)
 _LEGAL_TITLE_WORDS = re.compile(
     r"\b(?:gesetz|verordnung|bundesbeschluss|loi|ordonnance|decreto|legge|ordinanza|law|act|code)\b",
     re.I,
@@ -50,9 +52,22 @@ def _identity_title(title: str, passages: list[dict]) -> str:
         re.search(r"\.(?:pdf|txt|html?)$", title or "", re.I)
         or re.search(r"\b(?:pasted|uploaded|document|version)\b", title or "", re.I)
     )
-    if len(_tokens(title)) >= 3 and not generic and not re.fullmatch(r"[\d.\s-]+", title or ""):
+    if len(_tokens(title)) >= 2 and not generic and not re.fullmatch(r"[\d.\s-]+", title or ""):
         return title[:500]
     candidates = [str(item.get("text", "")) for item in passages[:24]]
+    # A leaflet's cover is stronger title evidence than the laws it cites later.
+    cover = [item for item in candidates[:8] if 1 <= len(_tokens(item)) <= 20 and len(item) <= 180]
+    guidance = [item for item in cover if _GUIDANCE_TITLE_WORDS.search(item)]
+    legal_cover = [item for item in cover if _LEGAL_TITLE_WORDS.match(item)]
+    if legal_cover and (not guidance or cover.index(legal_cover[0]) < cover.index(guidance[0])):
+        return legal_cover[0]
+    if guidance:
+        return guidance[0]
+    if generic and _GUIDANCE_TITLE_WORDS.search(title or ""):
+        filename_tokens = _tokens(re.sub(r"[_-]+", " ", title))
+        matching = [item for item in cover if len(_tokens(item) & filename_tokens) >= 2]
+        if matching:
+            return matching[0]
     legal = [item for item in candidates if _LEGAL_TITLE_WORDS.search(item) and 3 <= len(_tokens(item)) <= 35]
     descriptive = [item for item in candidates if 3 <= len(_tokens(item)) <= 35]
     return max(legal or descriptive, key=lambda item: min(len(item), 500), default=title)[:500]
@@ -69,9 +84,6 @@ def _sr_ids(title: str, passages: list[dict]) -> list[str]:
     values: list[str] = []
     for text in [title, *(str(item.get("text", "")) for item in passages[:20])]:
         values.extend(match.group(1).casefold() for match in _SR_RS.finditer(text))
-        bare = _BARE_SR.fullmatch(text)
-        if bare:
-            values.append(bare.group(1).casefold())
     return list(dict.fromkeys(values))[:5]
 
 

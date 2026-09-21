@@ -337,3 +337,35 @@ Fedlex, connector and backlog tests passed, including all three language paths,
 invalid dates, publisher/path rejection and numeric root IDs. Exact API Ruff and
 diff checks passed. Production schedules will retry after normal activation;
 their cursors and retained failure history are not rewritten.
+
+## Guidance identity and live daily checks
+
+The first production daily pass completed for 54 intended documents: 48 were
+unchanged and six stopped at identity checks. The paused mistaken Italian DSG
+watch is excluded from these counts. The six failures involved five distinct
+official sources: Basel employment guidance, the SEM legal-status instruction
+and factsheet, Basel's 2026 support guidelines and Bern's German welfare leaflet.
+Bare dates and contents entries were incorrectly treated as SR numbers; short
+guidance titles were also replaced by later legal citations.
+
+Identity revision v3 requires explicit SR/RS labels, preserves short descriptive
+titles and selects bounded guidance cover headings before later citations. A
+preceding legal heading and conflicting official identifiers still block a wrong
+assignment. Existing derived assessments refresh through the revisioned service
+path; original bytes, extraction, observations and previous analyses remain
+retained. Older analysis bindings may become stale and require a new analysis.
+The affected saved artifacts replay as probable exact-source continuity, never
+as a verified legal-work identity or an independent human quality approval.
+
+Sixty-three guidance, identity, daily-monitoring, LexWork, workflow and backlog
+tests passed, including a legacy assessment refresh through a real service scan,
+source mismatch rejection, unchanged evidence and existing tenant/CSRF checks.
+Exact API Ruff and diff checks passed. Production replay remains pending normal
+activation.
+
+Live browser checks on release 81f1476 confirmed that IDG daily opt-in, pause,
+resume and opt-out persist after reload; the document was left active with daily
+checks enabled and a successful unchanged result. Its real saved-version
+comparison exposes the substantive section 39 difference and the referenced
+page-13 passage, with both the retained PDF and exact official PDF URL available.
+The Ukraine account's actual integration-event review state was saved separately.
