@@ -2910,7 +2910,7 @@ Object.assign(en, {
   "topics.packScopeHelp": "Only currently enabled packs are selected by default. Selecting another pack here does not connect its sources. Manage source coverage separately.",
   "topics.scopeRequired": "Choose at least one source pack, jurisdiction, language, document type and event type in Sources and scope.",
   "topics.unknownPack": "Unavailable source pack",
-  "topics.kind.act": "Federal acts",
+  "topics.kind.act": "Laws",
   "topics.kind.ordinance": "Ordinances",
   "topics.kind.parliamentary_business": "Parliamentary business",
   "topics.kind.initiative": "Popular initiatives",
@@ -2939,7 +2939,7 @@ Object.assign(de, {
   "topics.packScopeHelp": "Nur bereits aktivierte Pakete sind vorausgewählt. Ein weiteres Paket hier auszuwählen verbindet dessen Quellen noch nicht. Verwalten Sie die Quellenabdeckung separat.",
   "topics.scopeRequired": "Wählen Sie unter Quellen und Umfang mindestens ein Quellenpaket, eine Rechtsordnung, eine Sprache sowie einen Dokument- und Ereignistyp.",
   "topics.unknownPack": "Nicht verfügbares Quellenpaket",
-  "topics.kind.act": "Bundesgesetze",
+  "topics.kind.act": "Gesetze",
   "topics.kind.ordinance": "Verordnungen",
   "topics.kind.parliamentary_business": "Parlamentsgeschäfte",
   "topics.kind.initiative": "Volksinitiativen",
@@ -2968,7 +2968,7 @@ Object.assign(fr, {
   "topics.packScopeHelp": "Seuls les packs déjà activés sont présélectionnés. Sélectionner un autre pack ici ne connecte pas ses sources. Gérez la couverture séparément.",
   "topics.scopeRequired": "Dans Sources et périmètre, choisissez au moins un pack, une juridiction, une langue, un type de document et un type d’événement.",
   "topics.unknownPack": "Pack de sources indisponible",
-  "topics.kind.act": "Lois fédérales",
+  "topics.kind.act": "Lois",
   "topics.kind.ordinance": "Ordonnances",
   "topics.kind.parliamentary_business": "Objets parlementaires",
   "topics.kind.initiative": "Initiatives populaires",
@@ -2997,7 +2997,7 @@ Object.assign(it, {
   "topics.packScopeHelp": "Solo i pacchetti già attivi sono preselezionati. Selezionarne un altro qui non collega le sue fonti. Gestisci la copertura separatamente.",
   "topics.scopeRequired": "In Fonti e ambito scegli almeno un pacchetto, una giurisdizione, una lingua, un tipo di documento e un tipo di evento.",
   "topics.unknownPack": "Pacchetto di fonti non disponibile",
-  "topics.kind.act": "Leggi federali",
+  "topics.kind.act": "Leggi",
   "topics.kind.ordinance": "Ordinanze",
   "topics.kind.parliamentary_business": "Oggetti parlamentari",
   "topics.kind.initiative": "Iniziative popolari",
@@ -3026,7 +3026,7 @@ Object.assign(rm, {
   "topics.packScopeHelp": "Mo pachets gia activads èn pretschernids. Tschernir in auter pachet qua na collia betg sias funtaunas. Administrai la cuvrida separadamain.",
   "topics.scopeRequired": "Tscherni en Funtaunas ed ambit almain in pachet, ina giurisdicziun, ina lingua, in tip da document ed in tip d’eveniment.",
   "topics.unknownPack": "Pachet da funtaunas betg disponibel",
-  "topics.kind.act": "Leschas federalas",
+  "topics.kind.act": "Leschas",
   "topics.kind.ordinance": "Ordinaziuns",
   "topics.kind.parliamentary_business": "Fatschentas parlamentaras",
   "topics.kind.initiative": "Iniziativas dal pievel",
@@ -4795,6 +4795,12 @@ const briefPolicyMessages: Record<Locale, Messages> = {
   }
 };
 for (const locale of locales) Object.assign(catalogTarget(locale), briefPolicyMessages[locale]);
+
+Object.assign(en, { "status.reprocessed": "Re-extracted original" });
+Object.assign(de, { "status.reprocessed": "Original erneut extrahiert" });
+Object.assign(fr, { "status.reprocessed": "Original extrait à nouveau" });
+Object.assign(it, { "status.reprocessed": "Originale estratto nuovamente" });
+Object.assign(rm, { "status.reprocessed": "Original extrat danovamain" });
 
 export function translate(locale: Locale, key: string, values: Values = {}): string | null {
   const message = key.startsWith("companion.monitoring.")

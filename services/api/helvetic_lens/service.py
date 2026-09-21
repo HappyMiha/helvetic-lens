@@ -56,6 +56,7 @@ from .db import Database, utcnow
 from .deployments import deployment_snapshot
 from .diffing import DIFF_SCHEMA_VERSION, compare_passages
 from .extraction import (
+    HTML_EXTRACTOR_VERSION,
     Extracted,
     Fetcher,
     canonical_url,
@@ -1032,9 +1033,49 @@ class HelveticLens:
                 logger.warning("Could not remove an unreferenced artifact: %s", artifact_key)
         return {"deleted": True, "version_id": version_id, "comparisons": len(comparison_ids)}
 
+    def comparison_extraction(self, session: Session, version: Version) -> Version:
+        """Keep parser repairs separate from changes in the retained source bytes."""
+        if version.content_type != "text/html" or version.extractor.endswith(
+            f"-{HTML_EXTRACTOR_VERSION}"
+        ):
+            return version
+        artifact = self.settings.storage_path / "artifacts" / version.artifact_key
+        try:
+            body = artifact.read_bytes()
+        except OSError as exc:
+            raise DomainError(
+                "The saved original is unavailable. The older extraction cannot be safely compared.",
+                409, "comparison_original_unavailable",
+            ) from exc
+        if hashlib.sha256(body).hexdigest() != artifact.stem:
+            raise DomainError(
+                "The saved original failed its integrity check. Comparison was stopped.",
+                409, "comparison_original_integrity",
+            )
+        document = extract(body, version.content_type, version.filename)
+        observation = session.scalar(
+            select(Observation).where(Observation.version_id == version.id)
+            .order_by(Observation.created_at).limit(1)
+        )
+        derived, _ = self.save_snapshot(
+            session, get(session, Law, version.law_id), document, "reprocessed",
+            version.source_url, version.declared_date, version.synthetic,
+            metadata={
+                **(observation.metadata_json if observation else {}),
+                "reextracted_from_version_id": version.id,
+                "prior_extractor": version.extractor,
+                "original_observed_at": (
+                    observation.created_at if observation else version.created_at
+                ).isoformat(),
+            },
+        )
+        return derived
+
     def ensure_comparison(self, session: Session, old: Version, new: Version, mode: str) -> Comparison:
         if old.law_id != new.law_id:
             raise DomainError("Both versions must belong to the same law.")
+        old = self.comparison_extraction(session, old)
+        new = self.comparison_extraction(session, new)
         law = get(session, Law, old.law_id)
         self.refresh_version_identity(session, law, old)
         self.refresh_version_identity(session, law, new)

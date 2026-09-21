@@ -4,6 +4,26 @@ This records operator preparation of demonstration workspaces with real public
 sources. It is not independent pilot feedback or evidence of legal completeness.
 Accounts, credentials and private workspace records are not repository artifacts.
 
+## HTML parser transition
+
+Direct-document scans and newly requested comparisons now re-extract older HTML
+from its retained, hash-verified original before computing differences. Derived
+versions are private to the requesting workspace and retain the parent version,
+previous parser and original observation time in provenance. The old version and
+original bytes remain readable. Current network content is never substituted for
+different historical bytes. An unchanged original produces no false amendment;
+concurrent real wording changes remain visible. Missing/corrupt originals stop
+the comparison and preserve the prior live pointer. Existing saved comparisons
+and native corpus events are not silently rewritten.
+
+The derived origin is named in all five interface languages. The shared `act`
+label is now jurisdiction-neutral because it also describes cantonal legislation.
+All 32 extraction-transition/workflow/daily-monitoring/backlog tests passed,
+including unchanged originals, a concurrent edit, retained old evidence,
+private derivation, unavailable/damaged originals and offline comparison replay.
+The exact API Ruff gate and full root frontend build passed. Production activation
+and rechecking the pilot's original snapshots remain separate gates.
+
 ## Source recovery
 
 The production symptoms were reproduced against the official services:

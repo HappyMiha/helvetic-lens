@@ -18,6 +18,7 @@ from .integration_logs import IntegrationLogger, response_snapshot
 from .pdf_reader import MAX_PDF_PAGES, PDF_EXTRACTOR_VERSION, read_pdf
 
 EXTRACTOR_VERSION = "native-v3"
+HTML_EXTRACTOR_VERSION = "html-v5"
 FEDLEX_DATA_ORIGIN = "https://fedlex.data.admin.ch"
 FEDLEX_SPARQL_ENDPOINT = FEDLEX_DATA_ORIGIN + "/sparqlendpoint"
 FEDLEX_ELI_HOSTS = {"fedlex.admin.ch", "www.fedlex.admin.ch", "fedlex.data.admin.ch"}
@@ -735,7 +736,7 @@ def extract(
     for number, passage in enumerate(passages, 1):
         passage["id"] = f"p{number:05d}"
     extractor = (f"{provider}-{PDF_EXTRACTOR_VERSION}" if mime == "application/pdf"
-                 else f"{provider}-html-v5" if mime == "text/html" else f"{provider}-v3")
+                 else f"{provider}-{HTML_EXTRACTOR_VERSION}" if mime == "text/html" else f"{provider}-v3")
     return Extracted(title[:500], text, passages, mime, name, body, extractor)
 
 

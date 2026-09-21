@@ -212,6 +212,12 @@ identity; ordinary FAQ URL continuity must not be confused with legal-work proof
 The requested pilot also needs explicit daily direct-document checks: opt-in per
 watch, existing records off, bounded durable scans, pause/revocation checks, and
 visible next-check state. This does not complete the broader MV2-060 bridge.
+Before comparing HTML captured by an older parser, derive a separately retained
+extraction from the saved original using the current parser. Preserve the old
+evidence and provenance; an extractor upgrade alone must not become a legal
+change, while concurrent source edits must still be detected. Missing or damaged
+originals must stop the comparison. Cantonal acts also need a jurisdiction-neutral
+document-type label in all five interface languages.
 Daily-watch API, migration, frontend and local browser checks passed; production
 scheduled execution remains pending activation, with MV2-052 IN PROGRESS.
 The expanded live source audit also requires complete Fedlex HTML annex evidence
@@ -2285,6 +2291,19 @@ activation or human acceptance is claimed; the parent remains IN PROGRESS.
 <a id="mv2-052"></a>
 
 ### MV2-052 — Operational metrics, degraded mode and source recovery
+
+**Extraction-transition scope, 21 September 2026:** The pilot's complete-text
+repair must not compare a partial old extraction against a full new extraction.
+For direct-document comparisons and scans, re-extract retained older HTML with
+the current parser into a separate private derived version, recording its parent,
+original observation and parser revision. Preserve the original version and bytes;
+never substitute current network content for historical bytes. Exact-original
+integrity failures stop comparison and retain the last good live pointer. Verify
+unchanged originals, simultaneous real edits, immutable old evidence, idempotent
+replay and missing/corrupt originals. Display the derived origin in all locales.
+This does not rewrite existing native corpus events or claim complete historical
+corpus reprocessing. Replace the federal-only act label with a neutral law label
+because the same type includes cantonal laws. Existing source rights are sufficient.
 
 **Scoped recovery, 21 September 2026 — IN PROGRESS:** Repair Basel-Stadt optional
 publisher-version metadata, Fedlex manifestation dereferencing and consultation
