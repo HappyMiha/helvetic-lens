@@ -1,8 +1,104 @@
-# BaselTech and Ukraine pilot verification — 21 September 2026
+# BaselTech and Ukraine pilot verification — 21–22 September 2026
 
 This records operator preparation of demonstration workspaces with real public
 sources. It is not independent pilot feedback or evidence of legal completeness.
 Accounts, credentials and private workspace records are not repository artifacts.
+
+## Verified production state — 22 September 2026
+
+Release `1890d66af09d49d0788ea97610cfe69d70237b9b` activated at 00:30 UTC.
+All twelve ordinary release stages succeeded in 4,928 seconds, including the
+pre-deploy backup, runtime restoration and public health check. Public `/api/ready`
+returned HTTP 200, database/Redis ready and `git-1890d66af09d`.
+
+The full API gate passed **5,075 tests**, with 18 existing environment-dependent
+skips and one Starlette deprecation warning, in **4,703.29 seconds (1h18m23s)**.
+The prior successful suite took 7,034.89 seconds (1h57m14s): 38m52s / 33.14% less
+elapsed time, despite 108 additional tests. These are different suite revisions
+on the same host, not an identical benchmark. The unchanged 54-case comparison
+improved from 95.97 to 50.98 seconds. The optimization reuses an empty migrated
+SQLite template while preserving a separate database per test; no tests or
+production policy were removed. The 18 skips comprise 13 optional PostgreSQL
+checks and five Docker/Compose checks unavailable inside that QA environment.
+The observed legacy QA container was uncapped, used approximately one CPU core
+and 1.75 GiB at the sample; a claimed two-CPU/four-GiB cap would be incorrect.
+
+Two isolated demonstration workspaces now contain 55 active daily document
+watches: ten BaselTech records and 45 personal migration/integration records
+(17 federal, 14 Basel-Stadt and 14 Bern). All 55 ordinary verification scans
+succeeded; retained originals were re-extracted and their text hashes checked.
+Six Topics and six website configurations complement these direct watches.
+There are five real historical comparisons: Basel IDG, Basel integration, Bern
+migration, AIG and AsylG. All five current Apertus reports succeeded with 33
+verified quotations. Three saved Ask examples contain 18 exact citations; one
+reuses the current report with zero inference calls. Article 66 has identical
+wording in the selected AsylG versions and is not presented as a new amendment.
+All outputs have selected-evidence / not-assessed scope and explicitly partial
+coverage. Independent legal interpretation approval remains open.
+
+All 15 enabled legal source streams reported healthy with zero failures in
+their latest completed jobs: three Basel-Stadt streams, federal news DE/EN/IT,
+FINMA DE/EN/IT, Fedlex consultations and DE/FR/IT publication feeds, and two
+Parliament streams. This verifies their configured bounded contracts, not the
+completeness of every Swiss legal source. Bern uses selected official direct
+watches, not a claimed full-canton catalogue.
+
+An inspected ordinary relation reprocessing preview and subsequent apply each
+processed 274 global candidates: 215 rejected, 59 retained, zero skipped, eleven
+batches and no model calls. These are global counts, not BaselTech-only counts.
+All 30 current pilot candidates (14 BaselTech / 16 personal) then completed
+normal Apertus jobs under the selected-evidence contract. Empty selection is a
+valid result requiring human review, not proof of no legal impact. The two
+selected retained examples have three and zero citations respectively. Prior
+reports and rejected geographic-only matches remain available in history;
+obsolete interpretations are not current reports.
+
+The shared tender viewer's exact query returned the same five source extracts
+as its administrator, without AI or writes. Its source reference binding matched;
+private-workspace requests returned 404, and viewer writes remained denied.
+Browser checks confirmed this workflow, exact German federal source titles and
+the registry's three Ukrainian-language documents. The Ukrainian filter also
+worked at mobile width without horizontal overflow. Earlier checks cover all
+nine visible navigation directions and personal read-state isolation.
+
+The three active owner-private native examples are Rhein/Rheinhalle, NABEL
+Basel-Binningen and official wind/thunderstorm warnings. Viewer and unrelated
+workspace access returns 404; two explicitly shared tender monitors are readable
+by the viewer and unavailable to the unrelated workspace. Email remains off.
+At 00:54 UTC, River and Hazard were ready. Air correctly marked four retained
+daily values dated 20 September stale, while all four hourly values were current.
+The daily cache had no fetch error and was next due at 01:31 UTC under its normal
+six-hour cadence. The official daily file already contained 21 September values;
+no cache cursor, threshold or health result was changed to conceal the lag.
+
+Serving-code replay passed all five original SIMAP abandonment records, including
+specific-lot and whole-project scope. Previous collection gaps remain recorded
+until normal cycles revisit those publications. Authenticated documents and Q&A
+coverage are still not verified. Pollen, Commute, Road, IP and Auctions retain
+applicable source credential, permission, scale or review gates. Auction support
+is for Ticino and is not Basel coverage. These limits and source dates are shown
+in the private Ukrainian demo guide.
+
+## Final saved-citation navigation repair
+
+The production browser exposed one remaining presentation defect: clicking a
+correct old-version Article 66 quote selected an Article 63 comparison row with
+the same passage number on the new side. Current reports, answers and AI history
+now resolve the immutable version before the passage ID. A missing, foreign or
+ambiguous target retains its exact evidence URL. A comparison-scoped React
+context supplies the versions; law-wide history outside that context keeps links.
+The selected tab, unchanged-context pagination and in-place focus behavior remain.
+
+Four behavioral collision/fallback tests and nine existing comparison/Ask checks
+passed. A read-only replay verified all twelve actual saved IDG/AsylG citations
+against the exact matching comparison text. The complete root frontend build,
+including 351 frontend checks and TypeScript, passed; the required backlog check
+passed. This final frontend repair still requires its own normal deployment and
+live browser click verification. The earlier verified backend workflows remain
+active on `1890d66` while that release runs.
+
+The sections below retain the historical implementation checkpoints. Their
+pending statements are superseded only by the corresponding evidence above.
 
 ## Read-only native evidence queries
 

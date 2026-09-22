@@ -185,6 +185,26 @@ Five historical conditional directions remain explicit DEFERRED tasks MV2-063…
 
 ## Task index
 
+22 September production verification: `1890d66` completed all twelve deployment
+stages and public readiness. Full QA passed 5,075 tests / 18 skips in 1h18m23s,
+33.14% less elapsed time than the prior successful suite on this host. All 55
+pilot watches and 15 enabled legal streams passed live checks; five comparisons,
+three Ask examples, 30 relation reports and tenant/viewer boundaries were verified.
+Native daily freshness, SIMAP cycle gaps and external source gates stay explicit.
+See [production evidence](docs/BASELTECH_PILOT_VERIFICATION.md). MV2-052 remains
+IN PROGRESS for its broader gates; these demo accounts do not complete MV2-058,
+which remains PLANNED. C4 remains DEFERRED.
+
+22 September saved-citation navigation recovery: the live AsylG answer quotes
+Article 66 correctly, but its old passage ID also exists in the newer version
+under Article 63. Scoped MV2-052 work must resolve comparison and AI-history
+citations by both immutable version and passage, retaining exact evidence links
+when no unambiguous in-comparison target exists. Dependencies are the existing
+comparison payload and citation URLs; no source access or AI rerun is required.
+Acceptance: colliding IDs on both sides, unrelated/missing versions and passages,
+history behavior, build checks and the real saved AsylG/IDG browser replay.
+MV2-052 remains IN PROGRESS; broader operational and human gates stay open.
+
 22 September AI-configuration release recovery: the full gate exposed interest-
 brief configuration tests whose synthetic client uses a reviewed capability
 registry while the fixture's environment resolver still sees the default registry.
@@ -2435,6 +2455,32 @@ activation or human acceptance is claimed; the parent remains IN PROGRESS.
 <a id="mv2-052"></a>
 
 ### MV2-052 — Operational metrics, degraded mode and source recovery
+
+22 September production verification: `1890d66` completed all twelve deployment
+stages and public readiness. Full QA passed 5,075 tests / 18 skips in 1h18m23s,
+33.14% less elapsed time than the prior successful suite on this host. All 55
+pilot watches and 15 enabled legal streams passed live checks; five comparisons,
+three Ask examples, 30 relation reports and tenant/viewer boundaries were verified.
+Native daily freshness, SIMAP cycle gaps and external source gates stay explicit.
+See [production evidence](docs/BASELTECH_PILOT_VERIFICATION.md). MV2-052 remains
+IN PROGRESS for its broader gates; these demo accounts do not complete MV2-058,
+which remains PLANNED. C4 remains DEFERRED.
+
+**Saved-citation navigation recovery, 22 September 2026 (before implementation):**
+Live browser verification of AsylG Article 66 found that a correct old-version
+citation jumps to Article 63 because the same passage number exists on the newer
+side. Resolve the immutable version before locating the passage in both current
+answers/reports and AI history. Unrelated versions, missing passages and ambiguous
+matches must retain their exact saved-evidence URL rather than substitute another
+row. Preserve in-place comparison navigation and existing tenant/identity gates.
+Verify opposite-side collisions, unchanged and removed evidence, law-wide history
+without a comparison context, frontend build and the real AsylG/IDG click paths.
+This is scoped MV2-052 completion; independent legal-quality approval is separate.
+
+The version-bound resolver passed four collision/fallback tests, nine existing
+comparison/Ask checks and twelve real saved citation targets. The complete root
+frontend build (351 checks and TypeScript) and required backlog check passed.
+Normal deployment and real browser clicks remain the final release gate.
 
 **Interest-brief configuration fixture recovery, 22 September 2026 (before
 implementation):** The 01016c4 full gate reported failures in persisted model-

@@ -3,7 +3,7 @@
 import { ActionDecisionHistory } from "./action-decision-history";
 import { MaterialChanges } from "./material-changes";
 import { MonitorThis, MonitorSavedAnswer } from "./monitor-this";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -61,6 +61,8 @@ import type {
 } from "@/lib/types";
 import { ErrorNote, Loading, Status } from "./common";
 import { AIHistory } from "./ai-history";
+import { ComparisonCitationContext } from "./comparison-citation-context";
+import { citationChange } from "@/lib/comparison-citations";
 import { AnalysisModeNotice } from "./analysis-mode-notice";
 import { ReportDates } from "./report-dates";
 import { ActionReviewNotice, ChangeExplanationBasis, DecisionReview } from "./decision-review";
@@ -584,7 +586,7 @@ export function ComparisonView({ id }: { id: string }) {
       {!data ? (
         !loadError && <Loading text={t("compare.loading")} />
       ) : (
-        <>
+        <ComparisonCitationContext.Provider value={data}>
           <MonitorThis kind="comparison" id={data.id} />
           <div className="page-heading">
             <div>
@@ -1383,7 +1385,7 @@ export function ComparisonView({ id }: { id: string }) {
               />
             </ComparisonPanel>
           </div>
-        </>
+        </ComparisonCitationContext.Provider>
       )}
     </Shell>
   );
@@ -1679,15 +1681,12 @@ function ComparisonCitations({
   onEvidence: (changeId: string) => void;
 }) {
   const { t } = useI18n();
+  const versions = useContext(ComparisonCitationContext);
   if (!values?.length) return null;
   return (
     <span className="citations comparison-citations">
       {values.map((citation, index) => {
-        const change = items.find(
-          (item) =>
-            item.old?.id === citation.passage_id ||
-            item.new?.id === citation.passage_id,
-        );
+        const change = citationChange(items, citation, versions);
         const accessibleLabel = t("common.citation", {
           number: index + 1,
           quote: citation.quote.slice(0, 80),

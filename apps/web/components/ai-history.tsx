@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useContext } from "react";
+import { ComparisonCitationContext } from "./comparison-citation-context";
+import { citationChange } from "@/lib/comparison-citations";
 import {
   ArrowUpRight,
   Clock3,
@@ -389,16 +392,13 @@ function HistoryCitations({
   onEvidence?: (changeId: string) => void;
 }) {
   const { t } = useI18n();
+  const versions = useContext(ComparisonCitationContext);
   if (!values?.length) return null;
   return (
     <span className="history-citations">
       {t("history.evidence")}:{" "}
       {values.map((citation, index) => {
-        const change = items.find(
-          (item) =>
-            item.old?.id === citation.passage_id ||
-            item.new?.id === citation.passage_id,
-        );
+        const change = citationChange(items, citation, versions);
         return change && onEvidence ? (
           <button
             type="button"
