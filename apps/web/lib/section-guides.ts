@@ -149,6 +149,82 @@ const riverReview = c(
 
 export const SECTION_GUIDES: SectionGuide[] = [
   {
+    id: "influence",
+    title: "Influence Graph",
+    purpose:
+      "Create workspace dossiers and inspect precisely sourced relationships, contested claims and recorded payments.",
+    first: [
+      "Open the public reference dossier or select a saved workspace dossier.",
+      "Choose a numbered graph connection or use the complete evidence list.",
+      "Read supporting evidence, counter-statements and limits before recording a review.",
+    ],
+    data: [
+      "Workspace dossiers, pasted source extracts and notes are retained in immutable revisions. Source links are not fetched automatically.",
+      "Documented means the claim has primary evidence; it does not establish motive, personal income or an independent fact-check. Editorial review is bound to one exact revision.",
+      "The confirmed-money filter excludes ownership, proposed payments and unproven financial paths.",
+    ],
+    wait: "If a request fails, the editor retains its draft. A revision conflict requires reconciling your changes with the latest saved version.",
+    setup:
+      "Sign in to access workspace dossiers. Workspace administrators may author dossiers and record reviews; viewers can inspect them. No API key or AI provider is required.",
+    controls: [
+      c(
+        "view",
+        "Graph / Evidence list / Show / Entity",
+        "Changes the view without changing saved evidence. Every graph relationship has a list alternative.",
+        "Use filters to inspect a claim's immediate connections or recorded payments.",
+      ),
+      c(
+        "author",
+        "New dossier / Copy to workspace / Edit dossier",
+        "Opens an unsaved editor for entities, sources, claims and counter-statements.",
+        "Enter dated sources and explicit limits. Only administrators can save.",
+        "Edit draft",
+        undefined,
+        "manager",
+      ),
+      c(
+        "save",
+        "Save revision",
+        "Appends an immutable version with a reason and document hash. Concurrent edits are rejected rather than overwritten.",
+        "Check the workspace and evidence before saving. Past source text and notes remain in history.",
+        "Save a change",
+        undefined,
+        "manager",
+      ),
+      c(
+        "review",
+        "Record review",
+        "Records a reviewed or needs-revision decision against the current version, without changing claim statuses.",
+        "Read the complete evidence before recording your review note.",
+        "Save a change",
+        undefined,
+        "manager",
+      ),
+      c(
+        "archive",
+        "Archive / Restore",
+        "Appends a version marking the dossier archived or active. Earlier evidence remains available.",
+        "Provide a reason. Archived dossiers cannot be edited until restored.",
+        "Save a change",
+        undefined,
+        "manager",
+      ),
+      c(
+        "history",
+        "Revision history / Load latest",
+        "Reads saved evidence and editorial history for an exact revision.",
+        "Historical versions are read-only; load the latest version to edit.",
+      ),
+      c(
+        "export",
+        "Download dossier JSON",
+        "Downloads the selected dossier and its current review metadata to your device.",
+        "The download can contain private workspace source text and notes.",
+      ),
+      official,
+    ],
+  },
+  {
     id: "partners",
     title: "Partner tools",
     purpose:
@@ -2874,6 +2950,7 @@ for (const guide of SECTION_GUIDES) {
 }
 
 export const GUIDE_ROUTES: Record<string, string> = {
+  "/influence": "influence",
   "/account": "account",
   "/auction-watch": "auction-watch",
   "/": "today",

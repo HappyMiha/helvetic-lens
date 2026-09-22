@@ -21,6 +21,7 @@ import {
   Flower2,
   Waves,
   Globe2,
+  GitFork,
   History,
   Inbox,
   Landmark,
@@ -53,6 +54,7 @@ import { marvinHistoryCopy } from "@/lib/marvin-history-copy";
 import { centreCopy } from "@/lib/monitoring-centre-copy";
 import { monitoringNavigation } from "@/lib/monitoring-navigation";
 import { relatedCopy } from "@/lib/related-copy";
+import { influenceCopy } from "@/lib/influence-copy";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "./ui/dialog";
 
 type NavigationItemProps = {
@@ -449,19 +451,21 @@ function ShellContent({
     ({ href }) => href === pathname,
   );
   const monitoringLabel =
-    pathname === "/related-developments"
-      ? relatedCopy[locale].title
-      : pathname === "/monitoring"
-        ? centreCopy[locale].title
-        : monitoringRoute
-          ? monitoringRoute.id === "pollen"
-            ? t("nav.pollenWatch")
-            : monitoringRoute.id === "river"
-              ? t("nav.riverWatch")
-              : monitoringRoute.id === "air"
-                ? t("nav.airWatch")
-                : centreCopy[locale].templates[monitoringRoute.id][0]
-          : null;
+    pathname === "/influence"
+      ? influenceCopy[locale].title
+      : pathname === "/related-developments"
+        ? relatedCopy[locale].title
+        : pathname === "/monitoring"
+          ? centreCopy[locale].title
+          : monitoringRoute
+            ? monitoringRoute.id === "pollen"
+              ? t("nav.pollenWatch")
+              : monitoringRoute.id === "river"
+                ? t("nav.riverWatch")
+                : monitoringRoute.id === "air"
+                  ? t("nav.airWatch")
+                  : centreCopy[locale].templates[monitoringRoute.id][0]
+            : null;
   const mobileOverflowActive =
     Boolean(mobileOverflowRoute || monitoringLabel) ||
     pathname === "/assistant-history";
@@ -520,6 +524,13 @@ function ShellContent({
             <NavigationItem active={pathname === "/discover"} href="/discover">
               <FileSearch size={17} />
               {t("nav.discover")}
+            </NavigationItem>
+            <NavigationItem
+              active={pathname === "/influence"}
+              href="/influence"
+            >
+              <GitFork size={17} />
+              {influenceCopy[locale].title}
             </NavigationItem>
             <NavigationItem active={pathname === "/sources"} href="/sources">
               <Globe2 size={17} />
@@ -682,6 +693,13 @@ function ShellContent({
                 {t("shell.mobileNavigation")}
               </DialogTitle>
               <span className="nav-heading">{t("shell.dailyWork")}</span>
+              <NavigationItem
+                active={pathname === "/influence"}
+                href="/influence"
+              >
+                <GitFork size={15} />
+                {influenceCopy[locale].title}
+              </NavigationItem>
               <NavigationItem active={pathname === "/sources"} href="/sources">
                 <Globe2 size={15} />
                 {t("nav.sources")}

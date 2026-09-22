@@ -1,5 +1,52 @@
 # Verification record
 
+## Influence Graph workspace — 22 September 2026 (release preparation)
+
+- [Usage, evidence sources and API](INFLUENCE_GRAPH.md),
+  [scope and acceptance](../BACKLOG_INFLUENCE_GRAPH.md). The original work based on
+  `33150b6` was safely integrated with 32 upstream commits through `bb233c9`.
+  The verified origin is `https://github.com/HappyMiha/helvetic-lens.git` and the
+  main-only commit/push hooks remain enabled.
+- `npm run build` passes with isolated output `.next-check-influence-main-push`:
+  the 1,994-key localization audit, 31 shell, 22 resource, 82 Monitoring, 212 report,
+  four contextual-help and six influence tests (**357 total**), TypeScript and
+  Next's production compilation. The production route list includes `/influence`.
+  Temporary Next type/config output was removed from the source diff afterward.
+- Six influence tests cover the dated reference, evidence/dispute boundaries,
+  exclusion of inferred money, intersecting filters, separate parallel/reverse
+  claims, unoccupied placement after deleting/copying entities, and complete
+  vocabulary in all five interface locales. The copied public reference also
+  passes the server's Pydantic document validator with all 12 relationships.
+- The final project-runtime Python selection passes **44 tests**: influence
+  contracts/router, full-app influence authentication/CSRF/restart, existing auth,
+  migration foreign-key, account-erasure and the exact required
+  backlog-consistency/customs-deferral gate. Project dependencies were synchronized
+  by `uv`; Shapely and pyproj now load normally. No import stubs, disabled features
+  or `--noconftest` were used. A fresh repository-local pytest temporary directory
+  avoids pre-existing Windows temporary-directory ownership failures. One existing
+  Starlette/httpx deprecation warning remains.
+- Tests use the complete Alembic chain on disposable SQLite. They prove immutable
+  revision history, revision-specific reviews, retries, stale-write rejection,
+  archive/restore, tenant/viewer/revoked-member denial, actor erasure and workspace
+  cascades. The router harness uses synthetic identities; the separate full-app
+  cases exercise real application cookie authentication and CSRF with synthetic
+  accounts, and reopen retained dossiers after application restart.
+- Migration `d1c495bef124` now follows upstream `e1c495bef124`. Alembic reports
+  exactly one head, preserving the upstream document-watch migration. No production
+  database was accessed or migrated by these tests.
+- The exact `ruff check services/api deploy/release_manager.py` gate passes.
+  Changed frontend files pass Prettier. Git whitespace checking passes; an existing
+  generated trademark-label JSON was normalized for the required i18n check with
+  no semantic Git diff. Browser interactions, screenshots, native-language review
+  and independent editorial acceptance were not performed.
+- The earlier Git, network and binary-dependency blockers are resolved. These
+  records cover local release checks; Git publication is verified separately.
+  PostgreSQL, browser/visual, independent editorial and production activation
+  acceptance remain open. Verify activation only on `helveticlens.ch` on
+  HappySnowman through the existing release pipeline.
+- IG-001/002 remain VERIFYING. MV2-064/HL-053 remains DEFERRED; its separate legal
+  relationship-graph usefulness experiment and review variants are unchanged.
+
 ## English contextual section help — 9 September 2026 (HappyDucky02)
 
 - Branch `codex/HappyDucky02/hl073-contextual-section-help` retains the local

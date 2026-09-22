@@ -3458,6 +3458,13 @@ Full-suite success, activation and broader 116-AC acceptance remain unverified.
 
 **Work:** Preserve HL-053: a list-versus-graph user experiment; existing relationship review remains available.
 
+**Separate user direction, 22 September 2026:** [Influence Graph IG-001/002](BACKLOG_INFLUENCE_GRAPH.md)
+scopes a political/corporate evidence explorer with private workspace authoring,
+version history and editorial review. The user explicitly requested the complete
+module and deployment through main. This separate workstream does not promote the
+legal relation graph, change review variants, or complete this task's experiment.
+Its source readiness, acceptance and pending release gates are recorded separately.
+
 **Acceptance criteria for possible future implementation:**
 
 1. A no-benefit result ends the experiment without requiring a graph to be built.

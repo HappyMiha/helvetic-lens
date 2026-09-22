@@ -6,6 +6,7 @@ Start with [PROJECT_MAP.md](PROJECT_MAP.md) and [the single-agent main workflow]
 |---|---|---|
 | Monitoring v2 | [Active backlog on main](BACKLOG_MONITORING_V2.md) | Complete feature delivery; Pollen followed by River / Lake Watch |
 | Legal Hackathon 2026 | [Preparation](docs/workstreams/HACKATHON_2026.md) | Main product |
+| Influence Graph | [Scope and acceptance](BACKLOG_INFLUENCE_GRAPH.md) | Evidence explorer, workspace authoring and revision review; release verification pending |
 | Support and infrastructure | [Support](docs/workstreams/SUPPORT.md) | Parked |
 
 All code is committed and pushed to main by one agent. Both sites retain isolated

@@ -46,6 +46,7 @@ from .config import DomainError, Settings
 from .db import utcnow
 from .hazard_api import hazard_router
 from .impact_inbox import ImpactInboxFilters
+from .influence_api import influence_router
 from .interest_policy import PolicyInput
 from .interest_requests import BriefRequest
 from .locales import locale_from_accept_language
@@ -642,7 +643,7 @@ def create_app(
             status = response.status_code
             if request.url.path.startswith(("/api/monitoring-subjects", "/api/onboarding")):
                 response.headers["Cache-Control"] = "private, no-store"
-            if request.url.path.startswith(("/api/admin/monitoring-sources", "/api/account/", "/api/auction-watch", "/api/tender-watch", "/api/commute-watch", "/api/road-watch", "/api/hazard-watch", "/api/trademark-watch", "/api/related-developments", "/api/monitoring-centre")):
+            if request.url.path.startswith(("/api/influence/", "/api/admin/monitoring-sources", "/api/account/", "/api/auction-watch", "/api/tender-watch", "/api/commute-watch", "/api/road-watch", "/api/hazard-watch", "/api/trademark-watch", "/api/related-developments", "/api/monitoring-centre")):
                 # Dependency response headers are lost when an exception
                 # handler creates a new response. Apply to denial/errors too.
                 response.headers["Cache-Control"] = "no-store"
@@ -2284,6 +2285,7 @@ def create_app(
     from .monitoring_connector_settings import RequestSettings
     source_settings = RequestSettings(service, settings)
     from .partner_tools import partner_router
+    app.include_router(influence_router(service))
     app.include_router(partner_router(service))
     app.include_router(connector_router(service))
     app.include_router(draft_router(service, source_settings))
