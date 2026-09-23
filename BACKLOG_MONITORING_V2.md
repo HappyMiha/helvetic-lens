@@ -629,12 +629,13 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 
 **Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Product + UX · **Size:** M
 
-**Legal first-value contribution, 23 September 2026 (H26-07):** integrate the
+**Legal first-value contribution, 23 September 2026 (H26-07, delivered):** integrated the
 user-supplied five-step legal monitoring profile journey with durable private
 drafts, actual topic matching/source coverage and existing personal delivery.
 See [scope, reference audit and acceptance](docs/LEGAL_MONITORING_PROFILES.md).
 This uses existing legal source packs; it neither creates unsupported court/EU
 coverage nor completes the nine native journeys or measured human acceptance.
+The bounded workflow was verified on main-site production release `cd32ee0`.
 
 **Whole-feature scope, 14 September 2026:** Give new users a persisted personal
 choice across all nine Monitoring directions on the first-run page, direct native

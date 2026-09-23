@@ -147,6 +147,19 @@ organization history and detach the erased actor.
   now remains stable across locale changes. The rebuilt UI preserved an exact
   unsaved refinement when switching French to English; saving and reload kept
   the refinement. UTC timestamps also retained the correct Zurich display.
+- Production: feature release `1278f50` completed at 15:20:31 UTC; the final
+  locale-preservation release `cd32ee05202b755e3c1571540dab007f04ee2a27`
+  completed at 15:26:32 UTC. Both normal release pipelines succeeded, including
+  their configured smoke/functional gates, backup, migration, model-runtime
+  restoration and public readiness. The 34 affected cases above supply the
+  separately run integration evidence; the automatic policy's integration skip
+  was not changed.
+- Public `/api/ready` returned `ready`, database/Redis healthy and
+  `git-cd32ee05202b`. An unauthenticated profile API request returned HTTP 401.
+  A freshly loaded authenticated production page in Legal Hackathon showed the
+  correct viewer boundary, real empty profile list, PostgreSQL connection and
+  all nine existing Monitoring directions. No production profile or subscription
+  was created for these checks. Test servers were stopped afterwards.
 
 ## Boundaries
 
@@ -159,5 +172,6 @@ reviewed search interests, not law analysis or legal evidence. There is no
 instant-email, Slack or Teams claim. Email remains the existing personal
 organization digest rather than independent per-client mailings.
 
-Status: VERIFYING — implementation and local acceptance complete; automatic
-production release and read-only verification pending publication.
+Status: DONE — H26-07's five-step legal workflow is implemented and verified on
+the main production site. The broader MV2-002 scope and measured human acceptance
+remain open in their own backlog.
