@@ -10,10 +10,12 @@ from conftest import run_scan
 from fastapi.testclient import TestClient
 from test_auth import _csrf, _register, _settings
 
-from helvetic_lens.article_selection import extract_document
+from helvetic_lens.article_selection import comparison_projection, extract_document
 from helvetic_lens.config import DomainError
+from helvetic_lens.diffing import DIFF_SCHEMA_VERSION, compare_passages
 from helvetic_lens.extraction import Fetched, extract
 from helvetic_lens.main import create_app
+from helvetic_lens.models import Comparison, Version
 
 URL = "https://www.fedlex.admin.ch/eli/cc/27/317_321_377/de"
 ARTIFACT = "https://fedlex.data.admin.ch/filestore/fedlex.data.admin.ch/eli/cc/27/317_321_377/20260101/de/html/retained-test-fixture.html"
@@ -291,3 +293,105 @@ def test_unknown_official_date_and_invalid_citation_are_not_fabricated(selected_
     response = client.post(f"/api/comparisons/{context['comparison_id']}/ask", json={"question": "Explain Art. 322d."})
     assert response.status_code >= 400
     assert "invented" not in response.text
+
+
+def editorial_revision(*, substantive=None, unpaired=False):
+    soup = BeautifulSoup(BODY, "html.parser")
+    article = soup.find(id="art_322_a")
+    note = article.select_one(".footnotes p[id]")
+    for link in article.select("sup a"):
+        link.string = "114"
+    if unpaired:
+        note.select_one("a")["href"] = "#missing-back-reference"
+    # Adjacent inline spans render the same word without added spaces.
+    wording = article.select("p.absatz")[-1].select_one("span")
+    wording.replace_with(BeautifulSoup(str(wording).replace("Erfolgsrechnung", "Erfolgsrec</span><span>h</span><span>nung"), "html.parser"))
+    if substantive == "paragraph_number":
+        article.select("p.absatz")[-1].select_one("sup").string = "4"
+    elif substantive == "effective_year":
+        text = note.find(string=lambda value: value and "2013" in value)
+        text.replace_with(text.replace("2013", "2014"))
+    elif substantive == "right":
+        text = article.find(string=lambda value: value and "nötigen Aufschlüsse" in value)
+        text.replace_with(text.replace("nötigen Aufschlüsse", "vollständigen Aufschlüsse"))
+    return str(soup).encode()
+
+
+def test_source_confirmed_footnotes_and_inline_layout_preserve_evidence():
+    changed = editorial_revision()
+    old, new = parsed().passages, parsed(changed).passages
+    retained = json.dumps([old, new], ensure_ascii=False)
+    assert compare_passages(old, new)["material_count"] == 1
+    diff = compare_passages(comparison_projection(old, BODY), comparison_projection(new, changed))
+    assert diff["material_count"] == 0
+    assert diff["classification_counts"]["formatting"] == 1
+    assert diff["counts"] == {"added": 0, "removed": 0, "modified": 1, "unchanged": 15}
+    assert json.dumps([old, new], ensure_ascii=False) == retained
+    assert "120" in old[9]["text"] and "114" in new[9]["text"]
+
+
+@pytest.mark.parametrize("change", ["paragraph_number", "effective_year", "right"])
+def test_editorial_projection_never_hides_changed_legal_numbers_or_wording(change):
+    changed = editorial_revision(substantive=change)
+    diff = compare_passages(comparison_projection(parsed().passages, BODY),
+                            comparison_projection(parsed(changed).passages, changed))
+    assert diff["material_count"] == 1
+    assert diff["classification_counts"]["substantive"] == 1
+
+
+def test_unpaired_footnote_is_not_silently_discarded():
+    changed = editorial_revision(unpaired=True)
+    projected = comparison_projection(parsed(changed).passages, changed)
+    assert "editorial_comparison_key" not in projected[9]
+    assert compare_passages(comparison_projection(parsed().passages, BODY), projected)["material_count"] == 1
+
+
+def test_saved_article_comparison_upgrade_preserves_versions_and_originals(selected_harness):
+    client, fetcher, service, _ = selected_harness
+    law = create(client)
+    old_id = law["current_version_id"]
+    fetcher.body = editorial_revision()
+    item = run_scan(client, [law["id"]])["items"][0]
+    comparison_id = item["comparison_id"]
+    with service.db.session() as session:
+        record = session.get(Comparison, comparison_id)
+        before = [(version.id, version.content_hash, version.text, version.passages, version.artifact_key)
+                  for version in (session.get(Version, old_id), session.get(Version, record.new_version_id))]
+        # Simulate a stored projection produced by the previous release.
+        record.diff = {**record.diff, "schema_version": DIFF_SCHEMA_VERSION - 1, "material_count": 1}
+        session.commit()
+    response = client.get(f"/api/comparisons/{comparison_id}")
+    assert response.status_code == 200, response.text
+    assert response.json()["diff"]["schema_version"] == DIFF_SCHEMA_VERSION
+    assert response.json()["diff"]["material_count"] == 0
+    assert response.json()["old_version"]["date_provenance"] == "fedlex"
+    with service.db.session() as session:
+        for version_id, digest, text, passages, key in before:
+            version = session.get(Version, version_id)
+            assert (version.content_hash, version.text, version.passages, version.artifact_key) == (digest, text, passages, key)
+            artifact = (service.settings.storage_path / "artifacts" / key).read_bytes()
+            assert hashlib.sha256(artifact).hexdigest() == version.selection_provenance["original_sha256"]
+
+
+@pytest.mark.parametrize("corrupt", [False, True])
+def test_article_comparison_stops_when_original_is_missing_or_corrupt(selected_harness, corrupt):
+    client, _, service, _ = selected_harness
+    law = create(client)
+    context = client.post(f"/api/laws/{law['id']}/question-context").json()
+    with service.db.session() as session:
+        record = session.get(Comparison, context["comparison_id"])
+        record.diff = {**record.diff, "schema_version": DIFF_SCHEMA_VERSION - 1}
+        version = session.get(Version, law["current_version_id"])
+        saved_text = version.text
+        artifact = service.settings.storage_path / "artifacts" / version.artifact_key
+        session.commit()
+    if corrupt:
+        artifact.write_bytes(BODY + b"<!-- altered -->")
+    else:
+        artifact.unlink()
+    response = client.get(f"/api/comparisons/{context['comparison_id']}")
+    assert response.status_code == 409
+    assert response.json()["code"] == ("comparison_original_integrity" if corrupt else "comparison_original_unavailable")
+    with service.db.session() as session:
+        assert session.get(Version, law["current_version_id"]).text == saved_text
+        assert session.get(Comparison, context["comparison_id"]).diff["schema_version"] == DIFF_SCHEMA_VERSION - 1

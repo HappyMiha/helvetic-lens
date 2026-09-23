@@ -167,3 +167,52 @@ def verify_article_continuity(previous: list[dict], current: list[dict]):
     if [p.get("article_number") for p in previous] != [p.get("article_number") for p in current]:
         raise DomainError("The selected article structure changed or an article disappeared. Review the official source; the last successful snapshot is preserved.",
                           422, "article_structure_changed")
+
+
+def comparison_projection(passages: list[dict], body: bytes) -> list[dict]:
+    """Project source-confirmed editorial layout; never rewrite retained evidence.
+
+    Inline HTML spans do not insert word spaces. Only paired numeric footnote
+    references/backlinks are removed; the full footnote wording remains evidence.
+    Ambiguous article/note structure receives no editorial-equivalence key.
+    """
+    soup = BeautifulSoup(body, "html.parser")
+    roots = soup.select("#lawcontent main#maintext")
+    nodes = roots[0].find_all("article") if len(roots) == 1 else []
+    output = []
+    for passage in passages:
+        item = dict(passage)
+        item.pop("editorial_comparison_key", None)
+        matches = [node for node in nodes if node.get("id") == passage.get("source_anchor")]
+        if len(matches) != 1 or not passage.get("article_number"):
+            output.append(item)
+            continue
+        containers = matches[0].select(":scope > .collapseable")
+        if len(containers) != 1:
+            output.append(item)
+            continue
+        container = containers[0]
+        valid = True
+        for note in container.select(".footnotes p[id]"):
+            refs = [link for link in container.select("sup a[href]") if link.get("href") == f"#{note['id']}"]
+            backlinks = note.select("sup a[href]")
+            if (len(refs) != 1 or len(backlinks) != 1
+                    or not refs[0].get("id") or not refs[0].get_text(strip=True).isdigit()
+                    or backlinks[0].get("href") != f"#{refs[0]['id']}"
+                    or refs[0].get_text(strip=True) != backlinks[0].get_text(strip=True)):
+                valid = False
+                break
+            refs[0].decompose()
+            backlinks[0].decompose()
+        if valid:
+            for br in container.find_all("br"):
+                br.replace_with(" ")
+            for block in container.find_all(["p", "li", "tr", "dt", "dd"]):
+                block.insert_after("\n")
+            projection = normalize(container.get_text())
+            item["editorial_comparison_key"] = hashlib.sha256(
+                (str(passage["article_number"]) + "\n" + passage.get("article_heading", "")
+                 + "\n" + projection).encode()
+            ).hexdigest()
+        output.append(item)
+    return output

@@ -1771,7 +1771,9 @@ function VersionCard({ version, side }: { version: Version; side: string }) {
         {translate(locale, `status.${version.origin}`) || label(version.origin)}{" "}
         ·{" "}
         {version.declared_date
-          ? t("compare.dateSupplied")
+          ? version.date_provenance === "fedlex"
+            ? articleSelectionCopy[locale].officialDate
+            : t("compare.dateSupplied")
           : t("compare.noPublicationDate")}
         {version.synthetic ? ` · ${t("law.syntheticDemo")}` : ""}
       </p>

@@ -3,7 +3,7 @@ import re
 import unicodedata
 from difflib import SequenceMatcher
 
-DIFF_SCHEMA_VERSION = 6
+DIFF_SCHEMA_VERSION = 7
 MIN_MODIFIED_SIMILARITY = 0.58
 ALIGNMENT_BAND = 12
 
@@ -306,6 +306,10 @@ def _classification(
         if _layout_noise(left or right or {}):
             return "formatting", "layout_only"
         return "substantive", kind
+    if (left.get("editorial_comparison_key")
+            and left["editorial_comparison_key"] == right.get("editorial_comparison_key")
+            and left.get("article_number") == right.get("article_number")):
+        return "formatting", "layout_only"
     if _evidentiary_numbers(left["text"]) != _evidentiary_numbers(right["text"]):
         return "substantive", "modified"
     if _layout_noise(left) and _layout_noise(right):

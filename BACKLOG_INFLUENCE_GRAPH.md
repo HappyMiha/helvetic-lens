@@ -9,7 +9,7 @@ by an explicit request for the complete module and a push to main for deployment
 | IG-001 — Evidence dossier explorer | VERIFYING | Graph and equivalent list; dated sources and counter-statements; strict money filter; five interface languages; keyboard/mobile support; production build |
 | IG-002 — Workspace authoring and editorial review | VERIFYING | Tenant-scoped authoring; permitted source extracts; immutable revisions and revision-specific reviews; stale-write protection; retries; archive/restore; JSON export; authorization and deployment checks |
 | IG-003 — Automated acquisition and entity resolution | PLANNED | Future approved connectors, duplicate review and source rights; the current module supports manual source entry without fetching URLs |
-| IG-004 — Document review brief and linked graph | IN PROGRESS | Organization-scoped document links; editable cited findings, discussions and assigned tasks; immutable revisions; explicit fictional contributors; exact graph links; production content verification |
+| IG-004 — Document review brief and linked graph | VERIFYING | Organization-scoped document links; editable cited findings, discussions and assigned tasks; immutable revisions; explicit fictional contributors; exact graph links; production content verification |
 
 ## IG-004 — Document review brief and linked graph
 
@@ -118,3 +118,31 @@ checks/build and the exact Ruff gate pass. Local authenticated browser validatio
 covers the actual English dossier, task editing and revision saves. Official
 historical HTML fetching now avoids Fedlex Virtuoso's constant-sort SQ200 error.
 Release activation and the Legal Hackathon population remain to be verified.
+
+**Final production verification refinement:** The populated comparison exposed
+footnote renumbering classified as substantive and Fedlex dates labelled as user
+supplied. Before completion, derive editorial comparison keys from the retained,
+hash-verified article HTML (paired footnote anchors and rendered inline text),
+without editing evidence or hiding changed legal numbers/footnote wording. Upgrade
+stored comparison projections lazily; missing/corrupt originals fail closed.
+Verify actual 2021/2023/2026 snapshots, substantive negative cases, exact evidence
+preservation, official-date labels and production activation.
+
+The production release `git-90cc31a22b57` is ready and its authenticated law and
+graph views have been verified. Authorized additive population contains three
+official OR editions, eight supporting documents, fifteen sources, twenty-two
+entities, twenty-eight connections, and five each of findings, discussion notes
+and tasks. Fictional contributors and the company scenario are explicit; actual
+organization profile, memberships and existing model analyses remain unchanged.
+No new content uses a demonstration label. Legal conclusions remain conditional
+on the unavailable contract. The 2013 amendment and the 2026 judgment are distinct
+from unchanged statutory wording across the saved 2021/2023/2026 editions.
+
+The final comparison correction passes 135 API tests (4 smoke, 44 functional,
+87 integration), exact Ruff, root frontend checks, TypeScript and a production
+build. Negative tests retain changed paragraph numbers, effective years and legal
+wording as substantive; unavailable or tampered originals stop projection upgrades.
+Existing snapshot IDs, text, hashes and artifacts remain intact. Real downloaded
+2021/2023/2026 articles and the local authenticated comparison show Material 0,
+Formatting only 1 and official-date labels. Activation of this final correction
+remains the last release check.

@@ -37,7 +37,12 @@ from . import analysis as ai
 from . import jobs as durable_jobs
 from . import relation_analysis as relation_ai
 from .ai_metrics import summarize_ai_triage_metrics
-from .article_selection import extract_document, validate_selection, verify_article_continuity
+from .article_selection import (
+    comparison_projection,
+    extract_document,
+    validate_selection,
+    verify_article_continuity,
+)
 from .assistant_contract import (
     ASSISTANT_CHAT_SCHEMA,
     ASSISTANT_PERSONA_VERSION,
@@ -1122,7 +1127,7 @@ class HelveticLens:
             self.refresh_comparison_identity(session, existing)
             return existing
         overview_started = time.perf_counter()
-        diff = compare_passages(old.passages, new.passages)
+        diff = compare_passages(self.diff_passages(old), self.diff_passages(new))
         diff["metrics"] = {
             "overview_ms": round((time.perf_counter() - overview_started) * 1000, 2),
             "measured_at": utcnow().isoformat(),
@@ -1144,9 +1149,25 @@ class HelveticLens:
         session.flush()
         return comparison
 
-    @staticmethod
+    def diff_passages(self, version: Version) -> list[dict]:
+        if not version.selection_provenance:
+            return version.passages
+        artifact = self.settings.storage_path / "artifacts" / version.artifact_key
+        try:
+            if artifact.stat().st_size > 8 * 1024 * 1024:
+                raise OSError("Article source exceeds the parser limit")
+            body = artifact.read_bytes()
+        except OSError as exc:
+            raise DomainError("The saved original is unavailable. Article comparison was stopped.",
+                              409, "comparison_original_unavailable") from exc
+        digest = hashlib.sha256(body).hexdigest()
+        if digest != artifact.stem or digest != version.selection_provenance.get("original_sha256"):
+            raise DomainError("The saved original failed its integrity check. Comparison was stopped.",
+                              409, "comparison_original_integrity")
+        return comparison_projection(version.passages, body)
+
     def ensure_complete_diff(
-        session: Session, comparison: Comparison, old: Version, new: Version
+        self, session: Session, comparison: Comparison, old: Version, new: Version
     ) -> bool:
         current = comparison.diff or {}
         complete = (
@@ -1158,7 +1179,7 @@ class HelveticLens:
         if complete:
             return False
         overview_started = time.perf_counter()
-        comparison.diff = compare_passages(old.passages, new.passages)
+        comparison.diff = compare_passages(self.diff_passages(old), self.diff_passages(new))
         comparison.diff["metrics"] = {
             "overview_ms": round((time.perf_counter() - overview_started) * 1000, 2),
             "measured_at": utcnow().isoformat(),

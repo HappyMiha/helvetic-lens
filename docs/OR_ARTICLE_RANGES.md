@@ -171,8 +171,11 @@ Welche Fragen entstehen, wenn bereits gevestete Ansprüche bei Kündigung verfal
   repeal IDs, `bis` numbering, other languages or arbitrary websites.
 - Strict structural boundaries, full article bodies and up to three ancestor
   headings. Paragraphs/lists and local editorial notes are retained. Editorial
-  changes may still produce a text change. Footnote markers are not legally
-  interpreted or silently discarded.
+  changes still produce an exact text change. Comparison classification can mark
+  paired footnote renumbering and inline HTML layout as formatting when verified
+  against the retained original. Exact evidence and footnote wording remain
+  intact; changed legal numbers or wording remain substantive. A missing or
+  corrupt original stops regeneration of that comparison.
 - Download timeout/size limits remain; the parser independently caps input at
   8 MiB and selections at 500 articles. The existing 1.2M-character/6,000-passage
   analyzed-text limits apply after selection. This is not full-OR ingestion.
@@ -188,3 +191,20 @@ Welche Fragen entstehen, wenn bereits gevestete Ansprüche bei Kündigung verfal
   deployment. This file records pre-publication acceptance; pushed code must be
   distinguished from subsequent public readiness/deployment verification.
   Broader MV2-068 and independent legal-quality acceptance remain open.
+
+### Production review walkthrough
+
+The English Legal Hackathon dossier is linked directly from the monitored OR
+document. Open its **Review brief**, inspect **Findings**, **Discussion** and
+**Tasks**, then follow **Open Influence Graph** to the exact same dossier.
+Select an edge to inspect its cited original, date, explanation and limitations.
+The graph connects the pre-2013 wording, accounting amendment and legislative
+history with related provisions, decisions and dated professional commentary.
+Company-specific effects are conditional; fictional contributors are identified.
+The organization retains its original profile and existing AI results.
+
+The three saved official HTML editions are 2021-01-01, 2023-01-01 and 2026-01-01.
+Use their comparisons to show editorial differences without suggesting a new
+employment-law amendment. The substantive historical change is documented with
+the official 2012 consolidated PDF and the amending act effective in 2013. These
+PDF sources belong to the review/graph evidence, not the selected-HTML parser.
