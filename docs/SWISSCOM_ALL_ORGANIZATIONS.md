@@ -1,6 +1,6 @@
 # Swisscom Apertus 70B for all organizations
 
-Status: VERIFYING. Owner request, 23 September 2026: use the issued remote
+Status: DONE. Owner request, 23 September 2026: use the issued remote
 Swisscom Apertus 1.5 70B integration across every organization and every AI
 request, to test the product with several users instead of local inference.
 H26-08 owns this rollout; MV2-023 receives the shared Marvin routing correction.
@@ -54,4 +54,51 @@ explicit future switch back.
   Swisscom connection without changing serving files: a valid private chat
   response in 1.06 seconds and a valid remark in 0.31 seconds, both reporting
   `swiss-ai/Apertus-v1.5-70B`, remote execution and no local fallback.
-- Production activation and all-organization/concurrency checks remain pending.
+
+## Verified production activation — 23 September 2026
+
+- Automatic release `8ec8884bd048` completed at 20:22:28 UTC. Public readiness
+  returned that release with healthy PostgreSQL and Redis. The release journal
+  records successful configuration validation, API lint and standard release
+  tests, image builds, backup, startup and public health checks. The separate
+  integration suite was run locally as described above.
+- Protected production environment and encrypted database snapshots preceded
+  activation. All seven existing organizations now have the issued Swisscom
+  connection saved and selected, using `swiss-ai/Apertus-v1.5-70B`. Existing user
+  memberships, laws, profiles, topics and source subscriptions retained their
+  counts. Other provider connections were preserved. Each activation has an
+  administrative audit entry attributed to the authorized operator.
+- The API, AI worker, CPU worker and scheduler each resolved the remote provider,
+  model and configured credential for all seven organizations. The persistent
+  default also supplies future organizations; authenticated registration and
+  inheritance are covered by the regression test. Requests use a 90-second
+  timeout, zero transport retries and batch concurrency of two.
+- Fresh, non-sensitive generative assistant requests succeeded in all seven
+  organization contexts: 0.660–1.117 seconds each. Four simultaneous requests
+  from distinct organization contexts all succeeded, each returning its own
+  marker: 0.710 / 0.614 / 0.537 / 0.525 seconds, 0.710 seconds total wall time.
+  These checks made no private history writes and reported remote provenance
+  with no local fallback. Authenticated two-user credential and history
+  separation is separately verified by the regression test. This bounded
+  sample is not a provider quota or sustained-load benchmark.
+- The AI worker independently completed a fresh structured connectivity request
+  through its deployed Swisscom configuration.
+- The authenticated production browser showed **AI configured**, **Remote AI
+  configured**, **Swisscom · swiss-ai/Apertus-v1.5-70B · remote**, the provider
+  disclosure and **Personal · remote AI**. A new harmless greeting completed
+  through the public site and appeared in the user's owned Marvin conversation.
+  No organization roles or permissions were changed.
+
+## Recovery and limits
+
+The previous deployment environment is retained with owner-only access under
+`~/.config/helvetic-lens/rollout-20260923/`; encrypted prior inference rows are in
+`/data/operations/swisscom-all-20260923/inference-before.json` in the application's
+persistent data volume. Restore only the intended provider configuration under
+an authorized operator session, preserving later unrelated changes, then use the
+normal release process for environment changes. Local model artifacts remain
+available for an explicit selection; remote errors do not select them.
+
+Source rights, independent model-capability approvals, legal review, and the
+broader MV2-023/MV2-051 acceptance gates are unchanged. Routing every generated
+request to the selected provider does not grant an unreviewed legal capability.

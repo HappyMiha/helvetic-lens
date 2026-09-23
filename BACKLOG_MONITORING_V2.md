@@ -1428,7 +1428,8 @@ Broader email/noise controls and live/human/release gates remain open.
 
 **Shared routing contribution, 23 September 2026:** H26-08 implements the owner's
 explicit switch to Swisscom 70B for all organizations and generative requests,
-including Marvin. [Scope and acceptance](docs/SWISSCOM_ALL_ORGANIZATIONS.md).
+including Marvin. Production `8ec8884` was verified for all seven organizations,
+API and workers, plus four concurrent live requests. [Scope and acceptance](docs/SWISSCOM_ALL_ORGANIZATIONS.md).
 Existing source readiness, evidence permissions and model capability review
 remain in force; this provider rollout does not complete MV2-023 or MV2-051.
 
