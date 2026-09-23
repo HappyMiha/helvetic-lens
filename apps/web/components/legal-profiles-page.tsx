@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import {
   api,
+  ApiError,
   errorText,
   invalidateResources,
   resourceTag,
@@ -363,7 +364,15 @@ function ProfileWizard({
     try {
       await operation();
     } catch (failure) {
-      setError(errorText(failure));
+      setError(
+        kind === "suggest" &&
+          failure instanceof ApiError &&
+          ["legal_profile_suggestions_invalid", "request_failed"].includes(
+            failure.code,
+          )
+          ? c.suggestionError
+          : errorText(failure),
+      );
     } finally {
       setBusy("");
     }

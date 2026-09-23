@@ -4,6 +4,48 @@ Requested on 23 September 2026. Scope: bring the uploaded RegWatch project's
 five-step user journey into the existing Helvetic Lens production application.
 H26-07 and the legal-first-value contribution to MV2-002 track this delivery.
 
+## Topic suggestion repair, 23 September 2026
+
+Status: VERIFYING production release. The reported Topics request returned HTTP 502.
+Three retained Swisscom exchanges succeeded with HTTP 200 but omitted the expected
+schema: the remote adapter discarded `response_schema`, so the model returned
+an array or `title`/`jurisdiction` fields instead of the validated topic contract.
+The original controlled model fixture did not exercise this provider boundary.
+
+Scope: send the schema to configured remote models, allow one bounded format
+repair, preserve draft/revision/ownership checks and show an actionable localized
+suggestion error. Dependencies are the existing organization inference settings;
+source readiness and source subscriptions do not change. Acceptance requires
+real adapter regression tests, failure/manual recovery, a live Swisscom request
+using the affected context, frontend checks, and verified main-site deployment.
+No monitoring activation or topic selection is part of this repair.
+
+Implemented: every remote provider receives the output schema in its system
+prompt, independent of optional JSON mode. Docker retains its constrained grammar.
+Topic proposals allow one format repair within a shared two-request/90-second
+budget and remain strictly validated before the revision-checked save. The five
+UI locales explain retry/manual recovery for invalid output and non-JSON gateway
+failures; provider-specific access/rate errors retain their existing messages.
+
+Verification before release:
+
+- 160 distinct affected API cases passed across legal profiles, partner adapters,
+  settings, analysis, local runtime and backlog validation. The ten new provider
+  contract cases passed after correcting their provider-specific test URLs and
+  product IDs. Actual saved-organization adapter tests cover valid output, the
+  observed incompatible output followed by repair, persistent invalid output,
+  provider rate limiting, unchanged draft/topic state and manual recovery.
+- The exact API Ruff gate and production frontend build passed, including the
+  repository's i18n, shell, resource, report, help, graph and TypeScript checks.
+- A live read-only candidate-code probe used the affected saved context and
+  Legal Hackathon's configured Swisscom Apertus 1.5 70B. One real request returned
+  six validated topics in 9.71 seconds; the profile revision, configuration,
+  proposals and linked topic IDs were unchanged. No canned response was used.
+- The rebuilt browser UI displayed the actionable error for both a controlled
+  invalid response and an HTML 502 gateway response. Retry displayed proposals;
+  applying and saving a proposal survived reload. This check used local data.
+- Exact production release identity and a fresh live generation remain pending.
+
 ## Reference audit
 
 The archive contains 76 files (371,852 uncompressed bytes): a TanStack Start /

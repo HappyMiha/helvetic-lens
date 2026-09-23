@@ -1,15 +1,17 @@
 import json
 from uuid import uuid4
 
+import httpx
 import pytest
 from conftest import FakeFetcher, ScriptedModel
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 from test_auth import _csrf, _register, _settings
 from test_monitoring_topics import add_candidate
+from test_settings import configuration, transport
 
 from helvetic_lens import monitoring_topics
-from helvetic_lens.config import DomainError
+from helvetic_lens.config import SWISSCOM_WEEKS_BASE_URL, SWISSCOM_WEEKS_MODEL, DomainError
 from helvetic_lens.db import utcnow
 from helvetic_lens.legal_profile_models import LegalMonitoringProfile
 from helvetic_lens.main import create_app
@@ -164,6 +166,69 @@ def test_model_failure_leaves_manual_draft_usable(signed):
     assert result.status_code == 504
     assert client.get(ROOT + "/" + profile["id"]).json()["revision"] == 1
     assert activate(client, profile).status_code == 200
+
+
+@pytest.mark.parametrize("outcome", ["valid", "repaired", "invalid", "unavailable"])
+def test_suggestions_through_saved_swisscom_adapter(signed, monkeypatch, outcome):
+    client, service, _ = signed
+    saved = client.patch("/api/settings/apertus", headers=_csrf(client), json=configuration(
+        provider="swisscom", base_url=SWISSCOM_WEEKS_BASE_URL, model=SWISSCOM_WEEKS_MODEL,
+        key_action="replace", api_key="test-only-swisscom-key", json_mode=False, request_retries=0))
+    assert saved.status_code == 200, saved.text
+    # Exercise persisted organization settings and the real production adapter;
+    # only the external HTTP transport is controlled.
+    service._provided_model_client = False
+    calls = []
+
+    def respond(request):
+        payload = json.loads(request.content)
+        calls.append(payload)
+        assert str(request.url) == SWISSCOM_WEEKS_BASE_URL + "/chat/completions"
+        assert request.headers["authorization"] == "Bearer test-only-swisscom-key"
+        assert "response_format" not in payload
+        schema = json.loads(payload["messages"][0]["content"].split("Return only JSON conforming to this schema:\n", 1)[1])
+        assert schema["required"] == ["topics"]
+        assert schema["$defs"]["TopicSuggestion"]["required"] == ["name", "description", "keywords"]
+        context = json.loads(payload["messages"][1]["content"])
+        assert context["context"]["goal"] == "Follow simplified naturalisation"
+        assert context["feedback"] == "Focus on procedure" and context["output_locale"] == "en-CH"
+        if outcome == "unavailable":
+            return httpx.Response(429, json={"error": "test-only-provider-private-detail"})
+        if outcome == "invalid" or (outcome == "repaired" and len(calls) == 1):
+            # The actual failing production response used this incompatible shape.
+            content = {"topics": [{"title": "Naturalisation", "keywords": ["Einbürgerung"],
+                                   "jurisdiction": "CH", "source_suggestions": []}]}
+        else:
+            if outcome == "repaired":
+                assert context["task"] == "repair_legal_profile_topics" and "previous_response" in context
+            content = {"topics": [{"name": "Citizenship procedure", "description": "Follow procedure changes.",
+                                   "keywords": ["Einbürgerung", "naturalisation"]}]}
+        return httpx.Response(200, json={"choices": [{"message": {"content": json.dumps(content)}}]})
+
+    transport(monkeypatch, respond)
+    profile, _ = create(client)
+    route = ROOT + "/" + profile["id"]
+    before = client.get(route).json()
+    result = post(client, route + "/suggest", {"expected_revision": 1, "feedback": "Focus on procedure"})
+    assert "test-only-swisscom-key" not in result.text and "test-only-provider-private-detail" not in result.text
+    assert len(calls) == (2 if outcome in {"repaired", "invalid"} else 1)
+    if outcome in {"valid", "repaired"}:
+        assert result.status_code == 200, result.text
+        assert result.json()["provider"] == "swisscom" and result.json()["model"] == SWISSCOM_WEEKS_MODEL
+        assert result.json()["suggestions"][0]["name"] == "Citizenship procedure"
+        assert result.json()["profile"]["revision"] == 2
+    else:
+        assert result.status_code == (502 if outcome == "invalid" else 503)
+        assert result.json()["code"] == ("legal_profile_suggestions_invalid" if outcome == "invalid" else "model_rate_limited")
+        assert client.get(route).json() == before
+        # A provider failure cannot prevent manual editing and saving.
+        changed = {**before["config"], "goal": "Manually refined monitoring goal"}
+        assert client.put(route, headers=_csrf(client), json={"expected_revision": 1, "config": changed, "step": 1}).status_code == 200
+    after = client.get(route).json()
+    assert after["config"]["topics"] == before["config"]["topics"] and after["status"] == "draft"
+    with service.db.session() as session:
+        assert session.scalar(select(func.count()).select_from(MonitoringTopic)) == 0
+        assert session.scalar(select(func.count()).select_from(SourcePackSubscription)) == 0
 
 
 def test_delivery_requires_explicit_consent_and_preserves_existing_filters(signed):

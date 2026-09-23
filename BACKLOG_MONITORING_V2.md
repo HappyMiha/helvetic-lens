@@ -636,6 +636,9 @@ See [scope, reference audit and acceptance](docs/LEGAL_MONITORING_PROFILES.md).
 This uses existing legal source packs; it neither creates unsupported court/EU
 coverage nor completes the nine native journeys or measured human acceptance.
 The bounded workflow was verified on main-site production release `cd32ee0`.
+The H26-07 Topics AI format repair is VERIFYING on 23 September: the remote schema
+contract, retained drafts and live Swisscom generation passed; exact main-site
+release acceptance is tracked in the same document. MV2-002 remains IN PROGRESS.
 
 **Whole-feature scope, 14 September 2026:** Give new users a persisted personal
 choice across all nine Monitoring directions on the first-run page, direct native

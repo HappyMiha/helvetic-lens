@@ -46,6 +46,8 @@ const en = {
   extraJurisdictions: "Other jurisdictions to request (optional)",
   suggest: "Suggest topics with AI",
   suggesting: "Preparing suggestions…",
+  suggestionError:
+    "AI could not prepare usable topics. Please retry or add a topic manually.",
   manual: "Add a topic",
   feedback: "Refine the suggestions (optional)",
   suggestions: "Proposed topics",
@@ -189,6 +191,8 @@ export const legalProfilesCopy: Record<Locale, Copy> = {
     extraJurisdictions: "Weitere gewünschte Rechtsräume (optional)",
     suggest: "Themen mit KI vorschlagen",
     suggesting: "Vorschläge werden erstellt…",
+    suggestionError:
+      "Die KI konnte keine brauchbaren Themen erstellen. Versuchen Sie es erneut oder fügen Sie ein Thema manuell hinzu.",
     manual: "Thema hinzufügen",
     feedback: "Vorschläge verfeinern (optional)",
     suggestions: "Vorgeschlagene Themen",
@@ -328,6 +332,8 @@ export const legalProfilesCopy: Record<Locale, Copy> = {
     extraJurisdictions: "Autres juridictions souhaitées (facultatif)",
     suggest: "Proposer des thèmes avec l'IA",
     suggesting: "Préparation des propositions…",
+    suggestionError:
+      "L’IA n’a pas pu préparer de sujets utilisables. Réessayez ou ajoutez un sujet manuellement.",
     manual: "Ajouter un thème",
     feedback: "Affiner les propositions (facultatif)",
     suggestions: "Thèmes proposés",
@@ -468,6 +474,8 @@ export const legalProfilesCopy: Record<Locale, Copy> = {
     extraJurisdictions: "Altre giurisdizioni richieste (facoltativo)",
     suggest: "Suggerisci temi con l'IA",
     suggesting: "Preparazione dei suggerimenti…",
+    suggestionError:
+      "L’IA non è riuscita a preparare argomenti utilizzabili. Riprova o aggiungi un argomento manualmente.",
     manual: "Aggiungi tema",
     feedback: "Affina i suggerimenti (facoltativo)",
     suggestions: "Temi proposti",
@@ -606,6 +614,8 @@ export const legalProfilesCopy: Record<Locale, Copy> = {
     extraJurisdictions: "Autras giurisdicziuns giavischadas (facultativ)",
     suggest: "Proponer temas cun IA",
     suggesting: "Preparar propostas…",
+    suggestionError:
+      "L’IA n’ha betg pudì preparar temas utilisabels. Emprova anc ina giada u agiunta in tema manualmain.",
     manual: "Agiuntar in tema",
     feedback: "Precisar las propostas (facultativ)",
     suggestions: "Temas proponids",

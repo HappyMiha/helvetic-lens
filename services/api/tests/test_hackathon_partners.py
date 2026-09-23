@@ -11,7 +11,13 @@ from test_auth import _csrf, _register, _settings
 from test_settings import configuration, transport
 
 from helvetic_lens.analysis import Answer, InferenceBudget, ModelClient, parse_response
-from helvetic_lens.config import ANTHROPIC_BASE_URL, DomainError, Settings
+from helvetic_lens.config import (
+    ANTHROPIC_BASE_URL,
+    OPENAI_BASE_URL,
+    SWISSCOM_WEEKS_BASE_URL,
+    DomainError,
+    Settings,
+)
 from helvetic_lens.main import create_app
 from helvetic_lens.models import IntegrationLog, OrganizationMembership, PartnerConfiguration
 from helvetic_lens.partner_tools import MAX_RESPONSE_BYTES, PartnerClient
@@ -124,6 +130,37 @@ async def test_swisscom_uses_issued_route_and_bearer_token(tmp_path, monkeypatch
     assert str(calls[0].url) == settings.apertus_base_url + "/chat/completions"
     assert json.loads(calls[0].content)["model"] == "issued-model-id"
     assert calls[0].headers["authorization"] == "Bearer test-only-swisscom"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("provider", ["swisscom", "custom", "infomaniak", "openai", "anthropic"])
+@pytest.mark.parametrize("json_mode", [False, True])
+async def test_remote_generation_receives_the_output_contract(tmp_path, monkeypatch, provider, json_mode):
+    """JSON mode alone cannot tell a remote model which fields to generate."""
+    schema = {"type": "object", "properties": {"topic": {"type": "string"}}, "required": ["topic"]}
+    calls = []
+
+    def respond(request):
+        payload = json.loads(request.content)
+        calls.append(payload)
+        system = payload["system"] if provider == "anthropic" else payload["messages"][0]["content"]
+        assert json.loads(system.split("Return only JSON conforming to this schema:\n", 1)[1]) == schema
+        assert system.startswith("Use the supplied context.")
+        if provider == "anthropic":
+            return httpx.Response(200, json={"stop_reason": "end_turn", "content": [
+                {"type": "text", "text": '{"topic":"citizenship"}'}]})
+        assert payload.get("response_format") == ({"type": "json_object"} if json_mode else None)
+        assert payload["messages"][1] == {"role": "user", "content": "Private context"}
+        return httpx.Response(200, json={"choices": [{"message": {"content": '{"topic":"citizenship"}'}}]})
+
+    transport(monkeypatch, respond)
+    base = {"swisscom": SWISSCOM_WEEKS_BASE_URL, "openai": OPENAI_BASE_URL,
+            "anthropic": ANTHROPIC_BASE_URL}.get(provider, "https://inference.example/v1")
+    settings = Settings(_env_file=None, data_dir=tmp_path, apertus_provider=provider,
+        apertus_base_url=base, apertus_product_id="12345", apertus_model="test-model",
+        apertus_api_key="test-only-key", apertus_json_mode=json_mode, apertus_request_retries=0)
+    result = await ModelClient(settings).complete("Use the supplied context.", "Private context", response_schema=schema)
+    assert json.loads(result) == {"topic": "citizenship"} and len(calls) == 1
 
 
 def test_provider_switch_does_not_reuse_a_different_providers_key(harness):
