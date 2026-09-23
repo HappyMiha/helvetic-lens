@@ -563,7 +563,7 @@ class RegistryReader:
                 )
                 .label("rank"),
             )
-            .where(Comparison.law_id.in_(law_ids), visible(Comparison, self.organization_id))
+            .where(Comparison.law_id.in_(law_ids), Comparison.mode != "snapshot", visible(Comparison, self.organization_id))
             .subquery()
         )
         comparisons = dict(

@@ -55,6 +55,7 @@ def detail(session, organization_id, version_id, settings, *, native=False, offs
             Version.declared_date,
             Version.date_provenance,
             Version.identity_json,
+            Version.selection_provenance,
         ]
     )
     row = session.execute(base.with_only_columns(*fields)).mappings().first()
@@ -136,6 +137,7 @@ def detail(session, organization_id, version_id, settings, *, native=False, offs
         "declared_date": None if native else row["declared_date"],
         "date_provenance": None if native else row["date_provenance"],
         "identity_json": {"language": row["language"]} if native else row["identity_json"],
+        "selection_provenance": {} if native else row["selection_provenance"],
         "characters": row["characters"],
         "passage_count": total,
         "passages": passages,

@@ -114,7 +114,23 @@ export type ApertusModelList = {
   count: number;
   saved: boolean;
 };
+export type ArticleSelection = { start: string; end: string; language: "de" };
+export type SelectionProvenance = {
+  scope?: string;
+  selection?: ArticleSelection;
+  articles: {
+    number: string;
+    heading: string;
+    anchor: string;
+    characters: number;
+  }[];
+  official_version_date?: string | null;
+  official_url?: string;
+  artifact_url?: string;
+};
 export type Preview = {
+  content_hash?: string;
+  selection_provenance?: SelectionProvenance;
   title: string;
   content_type: string;
   characters: number;
@@ -201,8 +217,9 @@ export type Source = {
   error: string | null;
   discovery: Partial<Discovery>;
 };
-export type Passage = { id: string; text: string; page: number | null };
+export type Passage = { id: string; text: string; page: number | null; source_anchor?: string };
 export type Version = {
+  selection_provenance?: SelectionProvenance;
   id: string;
   law_id: string;
   title: string;
@@ -481,6 +498,7 @@ export type Counts = {
   unchanged: number;
 };
 export type Law = {
+  article_selection?: Partial<ArticleSelection>;
   id: string;
   name: string;
   url: string;

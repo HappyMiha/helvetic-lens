@@ -167,6 +167,7 @@ class Extracted:
     filename: str
     body: bytes
     extractor: str = EXTRACTOR_VERSION
+    selection_provenance: dict = field(default_factory=dict)
 
     @property
     def content_hash(self) -> str:
@@ -179,9 +180,10 @@ class Extracted:
             "characters": len(self.text),
             "passage_count": len(self.passages),
             "page_count": max((p.get("page") or 0 for p in self.passages), default=0),
-            "excerpt": self.text[:6000],
+            "excerpt": self.text if self.selection_provenance else self.text[:6000],
             "content_hash": self.content_hash,
             "extractor": self.extractor,
+            "selection_provenance": self.selection_provenance,
         }
 
 

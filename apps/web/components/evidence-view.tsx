@@ -20,6 +20,8 @@ import type { Passage, Version } from "@/lib/types";
 import { ErrorNote, Loading, Status } from "./common";
 import { Shell } from "./shell";
 import { useEvidenceMilestone } from "@/lib/evidence-milestone";
+import { ArticleScope } from "./article-scope";
+import { articleSelectionCopy } from "@/lib/article-selection-copy";
 
 type Evidence = Omit<Version, "law_id" | "artifact_url"> & { law_id: string | null; artifact_url: string | null; law_name: string; passages: Passage[]; plain_text?: string | null; pagination: {offset:number;end:number;total:number;size:number;mode:"passages"|"text";next_offset:number|null;previous_offset:number|null;target_found:boolean|null} };
 
@@ -33,7 +35,7 @@ export function EvidenceView({
   passageId: string;
   native?: boolean;
 }) {
-  const { t, dateTime, number } = useI18n();
+  const { t, locale, dateTime, number } = useI18n();
   const {session}=useAuth();
   const scope=registryScope(session?.user?.id,session?.organization?.id,session?.anonymous_development);
   const returnIdentity=JSON.stringify([scope,id,native,passageId]);
@@ -98,6 +100,7 @@ export function EvidenceView({
                 {t("evidence.eyebrow")} · {data.id.slice(0, 8)}
               </span>
               <h1 lang={sourceLanguage}>{data.law_name}</h1>
+              <ArticleScope provenance={data.selection_provenance} />
               <p className="muted m-0">
                 {t("evidence.snapshotNotice")}
               </p>
@@ -130,7 +133,9 @@ export function EvidenceView({
               )}
               <span>
                 {data.declared_date
-                  ? t("evidence.statedDate", { date: data.declared_date })
+                  ? data.date_provenance === "fedlex"
+                    ? `${articleSelectionCopy[locale].officialDate}: ${data.declared_date}`
+                    : t("evidence.statedDate", { date: data.declared_date })
                   : t("evidence.unknownDate")}
               </span>
               <span>{t("evidence.firstSaved", { date: dateTime(data.created_at) })}</span>
@@ -205,7 +210,11 @@ export function EvidenceView({
                             <span>{label(data.origin)}</span>
                           )}
                         </div>
-                        <p data-evidence-display-text={passage.text.trim() ? true : undefined}>{passage.text}</p>
+                        {safeSource && passage.source_anchor && /^art_[0-9]+(?:_[a-z])?$/.test(passage.source_anchor) &&
+                          <a className="text-sm underline" href={safeSource.split("#")[0] + "#" + passage.source_anchor} target="_blank" rel="noreferrer">
+                            {articleSelectionCopy[locale].source} <ArrowUpRight size={11} />
+                          </a>}
+                        <p className={passage.source_anchor ? "whitespace-pre-line" : undefined} data-evidence-display-text={passage.text.trim() ? true : undefined}>{passage.text}</p>
                       </article>
                     ))}
                 </div>

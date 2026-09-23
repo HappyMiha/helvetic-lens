@@ -31,6 +31,7 @@ from . import (
     relation_reprocessing,
 )
 from .air_api import air_router
+from .article_selection import ArticleSelection
 from .assistant_contract import (
     AssistantChatInput,
     AssistantContextInput,
@@ -89,15 +90,20 @@ class PreviewInput(Input):
     provider: Literal["native", "firecrawl"] = "native"
 
 
+class DocumentPreviewInput(PreviewInput):
+    article_selection: ArticleSelection | None = None
+
+
 class SourceInput(PreviewInput):
     name: str = Field(default="", max_length=250)
     section: str = Field(default="/", max_length=1000)
 
 
-class LawInput(PreviewInput):
+class LawInput(DocumentPreviewInput):
     name: str = Field(default="", max_length=300)
     source_id: str | None = None
     synthetic: bool = False
+    preview_content_hash: str | None = Field(default=None, pattern="^[a-f0-9]{64}$")
 
 
 class LawUpdate(Input):
@@ -453,7 +459,8 @@ def create_app(
                     {"loc": list(item["loc"]), "msg": item["msg"], "type": item["type"]}
                     for item in error.errors()
                 ],
-                "code": "invalid_input",
+                "code": ("invalid_article_range" if all("article_selection" in item["loc"] for item in error.errors())
+                         else "invalid_input"),
                 "params": {
                     "fields": [
                         ".".join(str(part) for part in item["loc"] if part != "body")
@@ -1213,8 +1220,9 @@ def create_app(
         }, status)
 
     @app.post("/api/preview")
-    async def preview(data: PreviewInput):
-        return await service.preview(data.url, data.provider)
+    async def preview(data: DocumentPreviewInput):
+        return await service.preview(data.url, data.provider,
+                                     article_selection=data.article_selection.model_dump() if data.article_selection else None)
 
     @app.get("/api/sources")
     def sources():
@@ -1855,6 +1863,10 @@ def create_app(
     @app.get("/api/laws/{law_id}/ai-history")
     def law_ai_history(law_id: str, limit: int = Query(default=100, ge=1, le=500)):
         return service.ai_history(law_id=law_id, limit=limit)
+
+    @app.post("/api/laws/{law_id}/question-context")
+    def law_question_context(law_id: str):
+        return service.law_question_context(law_id)
 
     @app.delete("/api/laws/{law_id}")
     def delete_law(law_id: str):

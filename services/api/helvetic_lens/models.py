@@ -592,6 +592,7 @@ class Law(Base):
     name: Mapped[str] = mapped_column(String(300))
     url: Mapped[str] = mapped_column(Text)
     provider: Mapped[str] = mapped_column(String(30), default="native")
+    article_selection: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}")
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     # Updated only by validated live observations; avoids a cyclic insert dependency.
     current_version_id: Mapped[str | None] = mapped_column(String(36))
@@ -653,6 +654,7 @@ class Version(Base):
     date_provenance: Mapped[str | None] = mapped_column(String(30))
     synthetic: Mapped[bool] = mapped_column(Boolean, default=False)
     identity_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    selection_provenance: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 

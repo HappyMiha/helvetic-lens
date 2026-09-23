@@ -25,6 +25,8 @@ import { useI18n } from "@/lib/i18n";
 import { resources } from "@/lib/resource-keys";
 import type { Law, Preview, Source, Version } from "@/lib/types";
 import { ErrorNote } from "./common";
+import { ArticleScope } from "./article-scope";
+import { articleSelectionCopy } from "@/lib/article-selection-copy";
 
 function documentUrl(value: string) {
   try {
@@ -38,7 +40,9 @@ function documentUrl(value: string) {
 
 function PreviewBox({ preview }: { preview: Preview }) {
   const { t, number } = useI18n();
-  const pages = preview.page_count ? t("form.pages", { count: number(preview.page_count) }) : "";
+  const pages = preview.page_count
+    ? t("form.pages", { count: number(preview.page_count) })
+    : "";
   return (
     <div className="extraction-preview">
       <div className="flex items-center gap-2 mb-2 font-semibold text-sm">
@@ -46,9 +50,20 @@ function PreviewBox({ preview }: { preview: Preview }) {
         {preview.title}
       </div>
       <div className="text-xs muted mb-3">
-        {t("form.previewMeta", { type: preview.content_type, characters: number(preview.characters), passages: number(preview.passage_count), pages })}
+        {t("form.previewMeta", {
+          type: preview.content_type,
+          characters: number(preview.characters),
+          passages: number(preview.passage_count),
+          pages,
+        })}
       </div>
-      <div className="preview-text">{preview.excerpt}</div>
+      <ArticleScope provenance={preview.selection_provenance} />
+      <div
+        className="preview-text"
+        lang={preview.selection_provenance?.scope ? "de" : undefined}
+      >
+        {preview.excerpt}
+      </div>
     </div>
   );
 }
@@ -74,7 +89,19 @@ export function AddDocumentDialog({
   provider?: string;
   onCreated?: (record: Law | Source) => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const copy = articleSelectionCopy[locale];
+  const [selectedArticles, setSelectedArticles] = useState(false);
+  const [firstArticle, setFirstArticle] = useState("");
+  const [lastArticle, setLastArticle] = useState("");
+  const articleSelection =
+    mode === "law" && selectedArticles
+      ? {
+          start: firstArticle.trim().toLowerCase(),
+          end: lastArticle.trim().toLowerCase(),
+          language: "de",
+        }
+      : null;
   const { data: health } = useResource(open ? resources.health() : null);
   const { data: trackedLaws } = useResource<Law[]>(
     open && mode === "law" ? resources.laws() : null,
@@ -88,7 +115,12 @@ export function AddDocumentDialog({
     [busy, setBusy] = useState(""),
     [error, setError] = useState("");
   const existingLaw = trackedLaws?.find(
-    (law) => documentUrl(law.url) === documentUrl(url),
+    (law) =>
+      documentUrl(law.url) === documentUrl(url) &&
+      (articleSelection
+        ? law.article_selection?.start === articleSelection.start &&
+          law.article_selection?.end === articleSelection.end
+        : !law.article_selection?.start),
   );
   useEffect(() => {
     if (open) {
@@ -100,6 +132,9 @@ export function AddDocumentDialog({
       setError("");
       setBusy("");
       setSynthetic(false);
+      setSelectedArticles(false);
+      setFirstArticle("");
+      setLastArticle("");
     }
   }, [
     open,
@@ -119,7 +154,11 @@ export function AddDocumentDialog({
     try {
       const data = await api<Preview>("/preview", {
         method: "POST",
-        body: JSON.stringify({ url, provider }),
+        body: JSON.stringify({
+          url,
+          provider,
+          article_selection: articleSelection,
+        }),
       });
       setPreview(data);
       if (!name.trim())
@@ -143,7 +182,15 @@ export function AddDocumentDialog({
       const payload =
         mode === "source"
           ? { url, name, section, provider }
-          : { url, name, provider, source_id: sourceId || null, synthetic };
+          : {
+              url,
+              name,
+              provider,
+              source_id: sourceId || null,
+              synthetic,
+              article_selection: articleSelection,
+              preview_content_hash: preview.content_hash,
+            };
       const path =
         mode === "source"
           ? "/sources" + (source ? "/" + source.id : "")
@@ -214,9 +261,7 @@ export function AddDocumentDialog({
         </DialogHeader>
         <form onSubmit={save} className="form-stack">
           <label>
-            {mode === "source"
-              ? t("form.websiteUrl")
-              : t("form.currentUrl")}
+            {mode === "source" ? t("form.websiteUrl") : t("form.currentUrl")}
             <Input
               type="url"
               value={url}
@@ -230,7 +275,8 @@ export function AddDocumentDialog({
             />
           </label>
           <label>
-            {t("form.displayName")} <span className="muted font-normal">({t("common.optional")})</span>
+            {t("form.displayName")}{" "}
+            <span className="muted font-normal">({t("common.optional")})</span>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -246,10 +292,62 @@ export function AddDocumentDialog({
                 onChange={(e) => setSection(e.target.value)}
                 placeholder="/"
               />
-              <span className="field-help">
-                {t("form.sectionHelp")}
-              </span>
+              <span className="field-help">{t("form.sectionHelp")}</span>
             </label>
+          )}
+          {mode === "law" && (
+            <fieldset className="form-stack" disabled={!!busy}>
+              <legend className="font-semibold text-sm">{copy.mode}</legend>
+              <label>
+                <select
+                  aria-label={copy.mode}
+                  value={selectedArticles ? "articles" : "whole"}
+                  onChange={(event) => {
+                    setSelectedArticles(event.target.value === "articles");
+                    setProvider("native");
+                    setPreview(null);
+                  }}
+                >
+                  <option value="whole">{copy.whole}</option>
+                  <option value="articles">{copy.selected}</option>
+                </select>
+              </label>
+              {selectedArticles && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <label>
+                      {copy.from}
+                      <Input
+                        value={firstArticle}
+                        placeholder="319"
+                        required
+                        maxLength={6}
+                        pattern="[1-9][0-9]{0,4}[a-zA-Z]?"
+                        onChange={(event) => {
+                          setFirstArticle(event.target.value);
+                          setPreview(null);
+                        }}
+                      />
+                    </label>
+                    <label>
+                      {copy.to}
+                      <Input
+                        value={lastArticle}
+                        placeholder={copy.endExample}
+                        required
+                        maxLength={6}
+                        pattern="[1-9][0-9]{0,4}[a-zA-Z]?"
+                        onChange={(event) => {
+                          setLastArticle(event.target.value);
+                          setPreview(null);
+                        }}
+                      />
+                    </label>
+                  </div>
+                  <p className="field-help">{copy.help}</p>
+                </>
+              )}
+            </fieldset>
           )}
           <details className="text-xs muted">
             <summary className="cursor-pointer mb-3">
@@ -259,6 +357,7 @@ export function AddDocumentDialog({
               {t("form.provider")}
               <select
                 value={provider}
+                disabled={selectedArticles}
                 onChange={(e) => {
                   setProvider(e.target.value);
                   setPreview(null);
@@ -274,9 +373,7 @@ export function AddDocumentDialog({
                 </option>
               </select>
             </label>
-            <p className="field-help">
-              {t("form.providerHelp")}
-            </p>
+            <p className="field-help">{t("form.providerHelp")}</p>
           </details>
           {mode === "law" && (
             <label className="checkbox-label">
@@ -315,7 +412,9 @@ export function AddDocumentDialog({
               ) : (
                 <Search />
               )}
-              {mode === "source" ? t("form.testConnection") : t("form.previewDocument")}
+              {mode === "source"
+                ? t("form.testConnection")
+                : t("form.previewDocument")}
             </Button>
             <Button
               type="submit"
@@ -350,7 +449,7 @@ export function ImportDialog({
   law: Law;
   onImported: (version: Version, reused: boolean) => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [mode, setMode] = useState<"file" | "text" | "url">("file");
   const [file, setFile] = useState<File | null>(null),
     [text, setText] = useState(""),
@@ -363,7 +462,7 @@ export function ImportDialog({
     [error, setError] = useState("");
   useEffect(() => {
     if (open) {
-      setMode("file");
+      setMode(law.article_selection?.start ? "url" : "file");
       setFile(null);
       setText("");
       setUrl("");
@@ -373,7 +472,7 @@ export function ImportDialog({
       setPreview(null);
       setError("");
     }
-  }, [open]);
+  }, [open, law.article_selection?.start]);
   function payload() {
     const data = new FormData();
     if (mode === "file" && file) data.append("file", file);
@@ -444,7 +543,10 @@ export function ImportDialog({
         </DialogHeader>
         <form onSubmit={save} className="form-stack">
           <div className="segmented">
-            {(["file", "text", "url"] as const).map((value) => (
+            {(law.article_selection?.start
+              ? (["url"] as const)
+              : (["file", "text", "url"] as const)
+            ).map((value) => (
               <button
                 key={value}
                 type="button"
@@ -464,13 +566,16 @@ export function ImportDialog({
               </button>
             ))}
           </div>
+          {law.article_selection?.start && (
+            <p className="info-note">
+              {articleSelectionCopy[locale].historical}
+            </p>
+          )}
           {mode === "file" && (
             <label className="file-drop">
               <FileUp size={28} />
               <strong>{file?.name || t("form.chooseEarlier")}</strong>
-              <span className="text-xs muted">
-                {t("form.fileHelp")}
-              </span>
+              <span className="text-xs muted">{t("form.fileHelp")}</span>
               <Input
                 type="file"
                 accept=".pdf,.html,.htm,.txt"
@@ -525,9 +630,7 @@ export function ImportDialog({
               value={date}
               onChange={(e) => setDate(e.target.value)}
             />
-            <span className="field-help">
-              {t("form.versionDateHelp")}
-            </span>
+            <span className="field-help">{t("form.versionDateHelp")}</span>
           </label>
           <label className="checkbox-label">
             <input
@@ -566,7 +669,9 @@ export function ImportDialog({
                     </p>
                     {preview.identity.detected_title && (
                       <p>
-                        {t("form.detected", { title: preview.identity.detected_title })}
+                        {t("form.detected", {
+                          title: preview.identity.detected_title,
+                        })}
                       </p>
                     )}
                   </div>
@@ -583,9 +688,7 @@ export function ImportDialog({
               </label>
             </>
           )}
-          <p className="text-xs muted m-0">
-            {t("form.unverifiedHistory")}
-          </p>
+          <p className="text-xs muted m-0">{t("form.unverifiedHistory")}</p>
           <div className="form-actions">
             <Button
               type="button"

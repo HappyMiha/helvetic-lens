@@ -7,6 +7,8 @@ import {
 } from "./document-history-navigation";
 import { documentHistoryCopy } from "@/lib/document-history-copy";
 import { documentScheduleCopy } from "@/lib/document-schedule-copy";
+import { articleSelectionCopy } from "@/lib/article-selection-copy";
+import { ArticleScope } from "./article-scope";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -61,7 +63,9 @@ export function versionLabel(
 ) {
   return (
     (version.declared_date
-      ? t("law.versionStated", { date: version.declared_date })
+      ? version.date_provenance === "fedlex"
+        ? `${articleSelectionCopy[locale].officialDate}: ${version.declared_date}`
+        : t("law.versionStated", { date: version.declared_date })
       : t("law.dateUnknown")) +
     " · " +
     (translate(locale, `status.${version.origin}`) || label(version.origin)) +
@@ -221,6 +225,21 @@ function LawDetailView({ id }: { id: string }) {
       setBusy("");
     }
   }
+  async function askSaved() {
+    setBusy("ask");
+    setError("");
+    try {
+      const context = await api<{ comparison_id: string }>(
+        `/laws/${id}/question-context`,
+        { method: "POST" },
+      );
+      router.push(`/compare/${context.comparison_id}?task=ask`);
+    } catch (cause) {
+      setError(errorText(cause));
+    } finally {
+      setBusy("");
+    }
+  }
   async function removeDocument() {
     setBusy("delete");
     setError("");
@@ -374,6 +393,29 @@ function LawDetailView({ id }: { id: string }) {
               <div className="info-note mb-5">{t("law.pausedNotice")}</div>
             )}
             {note && <SuccessNote>{note}</SuccessNote>}
+            <ArticleScope
+              provenance={law.current_version?.selection_provenance}
+            />
+            {law.current_version && (
+              <div className="flex flex-wrap gap-3 mb-5">
+                {law.article_selection?.start && (
+                  <Button variant="outline" asChild>
+                    <Link href={`/evidence/${law.current_version.id}`}>
+                      {articleSelectionCopy[locale].text}
+                    </Link>
+                  </Button>
+                )}
+                {canManage && (
+                  <Button
+                    variant="outline"
+                    onClick={askSaved}
+                    disabled={!!busy}
+                  >
+                    {articleSelectionCopy[locale].ask}
+                  </Button>
+                )}
+              </div>
+            )}
             <div className="detail-overview">
               <div>
                 <span className="eyebrow">{t("law.lastResult")}</span>
@@ -625,7 +667,9 @@ function LawDetailView({ id }: { id: string }) {
                       </div>
                       <p className="text-xs muted mb-0 mt-2">
                         {version.declared_date
-                          ? t("law.statedDateUser", {
+                          ? version.date_provenance === "fedlex"
+                            ? `${articleSelectionCopy[locale].officialDate}: ${version.declared_date}`
+                            : t("law.statedDateUser", {
                               date: version.declared_date,
                             })
                           : t("law.versionDateUnknown")}{" "}

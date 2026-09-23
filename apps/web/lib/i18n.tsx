@@ -4802,6 +4802,45 @@ const briefPolicyMessages: Record<Locale, Messages> = {
 };
 for (const locale of locales) Object.assign(catalogTarget(locale), briefPolicyMessages[locale]);
 
+const articleRangeErrors: Record<Locale, Messages> = {
+  "en-CH": {
+    "error.invalid_article_range": "Enter a valid first and last article, for example 319 to 323b.",
+    "error.article_source_unsupported": "Use a German Fedlex consolidated-law HTML URL with native extraction. Historical imports must belong to the same law.",
+    "error.article_structure_changed": "The article structure is incomplete, ambiguous or has changed. Review the official source. The last successful snapshot is preserved.",
+    "error.article_boundary_missing": "The first or last selected article is missing or ambiguous. Check both boundaries. The last successful snapshot is preserved.",
+    "error.article_preview_changed": "The selected text changed after preview. Preview the articles again before saving."
+  },
+  "de-CH": {
+    "error.invalid_article_range": "Geben Sie einen gültigen ersten und letzten Artikel ein, zum Beispiel 319 bis 323b.",
+    "error.article_source_unsupported": "Verwenden Sie eine deutsche Fedlex-HTML-URL einer konsolidierten Fassung mit nativer Extraktion. Historische Importe müssen zum selben Gesetz gehören.",
+    "error.article_structure_changed": "Die Artikelstruktur ist unvollständig, mehrdeutig oder wurde geändert. Prüfen Sie die amtliche Quelle. Der letzte erfolgreiche Stand bleibt erhalten.",
+    "error.article_boundary_missing": "Der erste oder letzte ausgewählte Artikel fehlt oder ist mehrdeutig. Prüfen Sie beide Grenzen. Der letzte erfolgreiche Stand bleibt erhalten.",
+    "error.article_preview_changed": "Der ausgewählte Text hat sich seit der Vorschau geändert. Prüfen Sie die Vorschau erneut, bevor Sie speichern."
+  },
+  "fr-CH": {
+    "error.invalid_article_range": "Indiquez un premier et un dernier article valides, par exemple 319 à 323b.",
+    "error.article_source_unsupported": "Utilisez une URL HTML Fedlex en allemand d’une version consolidée avec extraction native. Les imports historiques doivent concerner la même loi.",
+    "error.article_structure_changed": "La structure des articles est incomplète, ambiguë ou a changé. Vérifiez la source officielle. Le dernier état enregistré avec succès est conservé.",
+    "error.article_boundary_missing": "Le premier ou le dernier article sélectionné est absent ou ambigu. Vérifiez les deux limites. Le dernier état enregistré avec succès est conservé.",
+    "error.article_preview_changed": "Le texte sélectionné a changé depuis l’aperçu. Vérifiez à nouveau l’aperçu avant d’enregistrer."
+  },
+  "it-CH": {
+    "error.invalid_article_range": "Inserisci un primo e un ultimo articolo validi, ad esempio da 319 a 323b.",
+    "error.article_source_unsupported": "Usa un URL HTML Fedlex in tedesco di una versione consolidata con estrazione nativa. Le importazioni storiche devono riguardare la stessa legge.",
+    "error.article_structure_changed": "La struttura degli articoli è incompleta, ambigua o è cambiata. Verifica la fonte ufficiale. L’ultima versione salvata correttamente viene conservata.",
+    "error.article_boundary_missing": "Il primo o l’ultimo articolo selezionato è assente o ambiguo. Verifica entrambi i limiti. L’ultima versione salvata correttamente viene conservata.",
+    "error.article_preview_changed": "Il testo selezionato è cambiato dopo l’anteprima. Verifica nuovamente l’anteprima prima di salvare."
+  },
+  "rm-CH": {
+    "error.invalid_article_range": "Inditgescha in emprim ed in ultim artitgel valid, per exempel 319 fin 323b.",
+    "error.article_source_unsupported": "Dovra ina URL HTML da Fedlex en tudestg d’ina versiun consolidada cun extracziun nativa. Imports istorics ston pertutgar la medema lescha.",
+    "error.article_structure_changed": "La structura dals artitgels è incumpletta, ambigua u midada. Controlla la funtauna uffiziala. L’ultim stadi memorisà cun success resta intact.",
+    "error.article_boundary_missing": "L’emprim u l’ultim artitgel tschernì manca u è ambigu. Controlla omadus cunfins. L’ultim stadi memorisà cun success resta intact.",
+    "error.article_preview_changed": "Il text tschernì è midà dapi la prevista. Controlla danovamain la prevista avant che memorisar."
+  }
+};
+for (const locale of locales) Object.assign(catalogTarget(locale), articleRangeErrors[locale]);
+
 Object.assign(en, { "status.reprocessed": "Re-extracted original" });
 Object.assign(de, { "status.reprocessed": "Original erneut extrahiert" });
 Object.assign(fr, { "status.reprocessed": "Original extrait à nouveau" });

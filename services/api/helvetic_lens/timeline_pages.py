@@ -74,7 +74,7 @@ def query(reader, header, law_id, kind):
                 literal("Comparison created").label("label"),
                 Comparison.mode.label("detail"),
                 (literal("/compare/") + Comparison.id).label("url"),
-            ).where(Comparison.law_id == law_id, visible(Comparison, org)),
+            ).where(Comparison.law_id == law_id, Comparison.mode != "snapshot", visible(Comparison, org)),
         ).subquery()
     if kind == "relations":
         return reader._timeline_relations_query(work).where(literal(work is not None)).subquery()

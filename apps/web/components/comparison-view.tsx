@@ -70,6 +70,8 @@ import { Shell } from "./shell";
 import { ComparisonPanel } from "./comparison-panel";
 import { useAuth } from "./auth-gate";
 import { storedLocale, translate, type Locale, useI18n } from "@/lib/i18n";
+import { articleSelectionCopy } from "@/lib/article-selection-copy";
+import { ArticleScope } from "./article-scope";
 
 const PAGE_SIZE = 40;
 const JOB_TERMINAL_STATES = new Set(["succeeded", "failed", "cancelled"]);
@@ -576,6 +578,43 @@ export function ComparisonView({ id }: { id: string }) {
     target.hash = "";
     window.history.replaceState(null, "", target);
   }
+  if (data?.mode === "snapshot") {
+    const copy = articleSelectionCopy[locale];
+    return (
+      <Shell section={copy.ask} showContextHelp={false}>
+        <Link className="back-link" href={`/laws/${data.law_id}`}>
+          {t("evidence.back")}
+        </Link>
+        <ComparisonCitationContext.Provider value={data}>
+          <div className="page-heading">
+            <div>
+              <h1>{data.law.name}</h1>
+              <p>{copy.snapshot}</p>
+            </div>
+          </div>
+          <ArticleScope provenance={data.new_version.selection_provenance} />
+          <Button asChild variant="outline" className="mb-5">
+            <Link href={`/evidence/${data.new_version.id}`}>{copy.text}</Link>
+          </Button>
+          <ErrorNote message={loadError} />
+          {identityBlocked ? (
+            <ErrorNote message={t("compare.identityGateBody")} />
+          ) : canManage ? (
+            <AskPanel
+                comparisonId={data.id}
+                snapshot
+              configured={!!health?.apertus.configured}
+              hidden={false}
+              evidenceItems={[]}
+              onEvidence={() => {}}
+            />
+          ) : (
+            <AIHistory lawId={data.law_id} />
+          )}
+        </ComparisonCitationContext.Provider>
+      </Shell>
+    );
+  }
   return (
     <Shell section={t("compare.section")} wide>
       <Link className="back-link" href={data ? "/laws/" + data.law_id : "/"}>
@@ -588,6 +627,7 @@ export function ComparisonView({ id }: { id: string }) {
       ) : (
         <ComparisonCitationContext.Provider value={data}>
           <MonitorThis kind="comparison" id={data.id} />
+          <ArticleScope provenance={data.new_version.selection_provenance} />
           <div className="page-heading">
             <div>
               <span className="eyebrow">{t("compare.eyebrow")}</span>
@@ -2269,6 +2309,7 @@ function AskPanel({
   hidden,
   evidenceItems,
   onEvidence,
+  snapshot = false,
 }: {
   comparisonId: string;
   configured: boolean;
@@ -2276,6 +2317,7 @@ function AskPanel({
   hidden: boolean;
   evidenceItems: Change[];
   onEvidence: (changeId: string) => void;
+  snapshot?: boolean;
 }) {
   const { locale, t } = useI18n();
   const [question, setQuestion] = useState(""),
@@ -2301,7 +2343,7 @@ function AskPanel({
     .slice(0, 20)
     .reverse();
   const ready = configured && !blockedReason;
-  const quickQuestions = askPrompts[promptLocale];
+  const quickQuestions = snapshot ? articleSelectionCopy[locale].questions : askPrompts[promptLocale];
   const jobs = askJobs.data || [];
   const activeJob = jobs.find((job) => !JOB_TERMINAL_STATES.has(job.state));
   const historyRecordIds = new Set(history.map((item) => item.id));
@@ -2457,10 +2499,10 @@ function AskPanel({
           <MessageSquare size={17} />
           {t("compare.ask")}
         </h2>
-        <span className="text-xs muted">{t("compare.thisComparison")}</span>
+        <span className="text-xs muted">{snapshot ? articleSelectionCopy[locale].singleVersion : t("compare.thisComparison")}</span>
       </div>
       <div className="panel-body">
-        <p className="text-xs muted mt-0">{t("compare.askBody")}</p>
+        <p className="text-xs muted mt-0">{snapshot ? articleSelectionCopy[locale].snapshot : t("compare.askBody")}</p>
         <div className="chat-history" aria-live="polite">
           {history.map((item) => (
             <SavedQuestionTurn
@@ -2515,7 +2557,7 @@ function AskPanel({
             onChange={(event) => setQuestion(event.target.value)}
             placeholder={
               ready
-                ? t("compare.askPlaceholder")
+                ? snapshot ? articleSelectionCopy[locale].ask : t("compare.askPlaceholder")
                 : blockedReason || t("compare.connectToAsk")
             }
             disabled={!ready || submitting || !!activeJob}
@@ -2746,8 +2788,9 @@ function SavedQuestionTurn({
             />
             {answer.intent && answer.context_mode && (
               <p className="ask-answer-route">
-                {translate(locale, `status.${answer.intent}`) ||
-                  label(answer.intent)}{" "}
+                {item.comparison?.mode === "snapshot" && answer.intent === "whole_document"
+                  ? articleSelectionCopy[locale].singleVersion
+                  : translate(locale, `status.${answer.intent}`) || label(answer.intent)}{" "}
                 ·{" "}
                 {answer.context_mode === "impact_report"
                   ? t("compare.reusedReport")

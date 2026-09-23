@@ -1152,6 +1152,25 @@ not replace the required observed human journeys or close MV2-002.
 
 ### MV2-068 — Complete legacy coverage verification and repair old artifacts
 
+**23 September scoped extension:** [Selected Fedlex articles and OR demo](docs/OR_ARTICLE_RANGES.md)
+adds a bounded structural import, independent range histories, retained evidence,
+safe repeat scans and first-snapshot questions for every organization. Source
+readiness, dependencies and acceptance are recorded before implementation.
+Production publication is explicitly authorized; broader MV2-068 acceptance
+remains open.
+
+**Scoped acceptance evidence:** real German OR 2026-01-01 imported in the browser
+as Art. 319–323b (16 complete articles, 10,846 characters); reload and a real
+unchanged rescan retained the evidence. First-version Ask used the real local
+model with validated 319/322/322d citations and a verified official article link.
+Local AI remains selected-evidence only; legal reasoning is not accepted by this
+check. Required Ruff/root build, 753 standard release cases, 130 affected cases
+and five subsequent range-validation cases passed. Synthetic tests prove
+inside/outside changes, failure preservation and organization/range isolation.
+See the linked protocol for source/fixture versions, commands, exact demo and
+limitations. Production activation must be verified by the main-site deployment
+journal and public readiness identity; broader parent completion is not claimed.
+
 **Status:** PLANNED · **Priority:** P0 · **Owner:** Integration + Backend + QA · **Size:** L
 
 **Dependencies:** [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-060](#mv2-060). **Requirements:** legacy HL-080,098,100; §§1,26,30.

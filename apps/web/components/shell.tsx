@@ -244,6 +244,7 @@ export function Shell(props: {
   children: React.ReactNode;
   section?: string;
   wide?: boolean;
+  showContextHelp?: boolean;
 }) {
   const embedded = useContext(EmbeddedMonitoring);
   return embedded ? <>{props.children}</> : <ShellContent {...props} />;
@@ -253,10 +254,12 @@ function ShellContent({
   children,
   section = "Overview",
   wide = false,
+  showContextHelp = true,
 }: {
   children: React.ReactNode;
   section?: string;
   wide?: boolean;
+  showContextHelp?: boolean;
 }) {
   const pathname = usePathname();
   const { data: health, error } = useResource(resources.health());
@@ -747,7 +750,7 @@ function ShellContent({
               {t("shell.readOnlyBody")}
             </div>
           )}
-          <SectionHelp />
+          {showContextHelp && <SectionHelp />}
           {children}
           <footer className="workspace-footer">
             <ShieldCheck size={13} />
@@ -755,6 +758,7 @@ function ShellContent({
           </footer>
         </div>
       </main>
+      {showContextHelp && <>
       {pathname !== "/assistant-history" &&
         (session?.authenticated || session?.anonymous_development) && (
           <MarvinCompanion
@@ -764,6 +768,7 @@ function ShellContent({
             open={assistantOpen}
           />
         )}
+      </>}
     </div>
   );
 }

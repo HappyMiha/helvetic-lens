@@ -37,6 +37,7 @@ from . import analysis as ai
 from . import jobs as durable_jobs
 from . import relation_analysis as relation_ai
 from .ai_metrics import summarize_ai_triage_metrics
+from .article_selection import extract_document, validate_selection, verify_article_continuity
 from .assistant_contract import (
     ASSISTANT_CHAT_SCHEMA,
     ASSISTANT_PERSONA_VERSION,
@@ -58,6 +59,7 @@ from .diffing import DIFF_SCHEMA_VERSION, compare_passages
 from .extraction import (
     HTML_EXTRACTOR_VERSION,
     Extracted,
+    Fetched,
     Fetcher,
     canonical_url,
     discover_links,
@@ -324,10 +326,11 @@ class HelveticLens:
         return fedlex_eli_reference(url) is not None
 
     @staticmethod
-    def canonical_document_identity(url: str) -> str:
+    def canonical_document_identity(url: str, selection: dict | None = None) -> str:
         reference = fedlex_eli_reference(url)
-        return ((reference.expression_uri or f"{reference.work_uri}/{reference.language}")
-                if reference else url.lower())
+        identity = ((reference.expression_uri or f"{reference.work_uri}/{reference.language}")
+                    if reference else url.lower())
+        return identity + (f"#articles={selection['start']}-{selection['end']}" if selection else "")
 
     def watch(self, session: Session, law_id: str, *, required: bool = True) -> DocumentWatch | None:
         record = session.scalar(select(DocumentWatch).where(DocumentWatch.law_id == law_id))
@@ -760,10 +763,13 @@ class HelveticLens:
             "saved": False,
         }
 
-    async def preview(self, url: str, provider: str = "native", *, boundary: tuple[str, str] | None = None):
+    async def preview(self, url: str, provider: str = "native", *, boundary: tuple[str, str] | None = None,
+                      article_selection: dict | None = None):
+        selection = validate_selection(url, provider, article_selection)
         fetched = await self.fetcher.fetch(canonical_url(url), provider, boundary=boundary)
         name = PurePosixPath(urlsplit(fetched.url).path).name or "document.html"
-        extracted = await asyncio.to_thread(extract, fetched.body, fetched.content_type, name, provider)
+        extracted = (await asyncio.to_thread(extract_document, fetched, name, provider, selection=selection, source_url=url)
+                     if selection else await asyncio.to_thread(extract, fetched.body, fetched.content_type, name, provider))
         return {**extracted.preview(), "url": fetched.url, "metadata": fetched.metadata}
 
     def save_snapshot(
@@ -823,7 +829,11 @@ class HelveticLens:
                 declared_date=declared_date,
                 date_provenance="user_supplied" if declared_date else None,
                 synthetic=synthetic,
+                selection_provenance=document.selection_provenance,
             )
+            if document.selection_provenance and not declared_date:
+                version.declared_date = document.selection_provenance.get("official_version_date")
+                version.date_provenance = "fedlex" if version.declared_date else None
             session.add(version)
             session.flush()
         if not reused or (version.identity_json or {}).get("revision") != IDENTITY_REVISION:
@@ -1035,6 +1045,8 @@ class HelveticLens:
 
     def comparison_extraction(self, session: Session, version: Version) -> Version:
         """Keep parser repairs separate from changes in the retained source bytes."""
+        if version.selection_provenance:
+            return version
         if version.content_type != "text/html" or version.extractor.endswith(
             f"-{HTML_EXTRACTOR_VERSION}"
         ):
@@ -2255,10 +2267,11 @@ class HelveticLens:
     async def add_law(self, data: dict, *, actor_user_id: str | None = None, record_onboarding: bool = False):
         url = canonical_url(data["url"])
         provider = data.get("provider", "native")
-        shared_official = self.is_shared_official_url(url) and not data.get("synthetic", False)
-        canonical_identity = self.canonical_document_identity(url)
+        selection = validate_selection(url, provider, data.get("article_selection"))
+        shared_official = self.is_shared_official_url(url) and not data.get("synthetic", False) and not selection
+        canonical_identity = self.canonical_document_identity(url, selection)
         reference = fedlex_eli_reference(url)
-        lookup_identities = {canonical_identity, reference.work_uri} if reference else {canonical_identity}
+        lookup_identities = {canonical_identity, reference.work_uri} if reference and not selection else {canonical_identity}
         with self.db.session() as session:
             candidates = session.scalars(
                 select(Law).where(
@@ -2271,7 +2284,7 @@ class HelveticLens:
             # Legacy records used one identity across all official languages.
             # Reuse only the exact requested edition, without rewriting history.
             editions = [row for row in candidates
-                        if self.canonical_document_identity(row.url) == canonical_identity]
+                        if self.canonical_document_identity(row.url, row.article_selection) == canonical_identity]
             existing = next((row for row in editions if self.watch(session, row.id, required=False)),
                             next(iter(editions), None))
             if existing and self.watch(session, existing.id, required=False):
@@ -2280,7 +2293,7 @@ class HelveticLens:
                 )
             if data.get("source_id"):
                 get(session, Source, data["source_id"])
-            if existing:
+            if existing and not selection:
                 watch = DocumentWatch(
                     law_id=existing.id,
                     display_name=data.get("name") or existing.name,
@@ -2294,7 +2307,10 @@ class HelveticLens:
                 return self.law_summary(session, existing, watch)
         fetched = await self.fetcher.fetch(url, provider)
         name = PurePosixPath(urlsplit(fetched.url).path).name or "document.html"
-        document = await asyncio.to_thread(extract, fetched.body, fetched.content_type, name, provider)
+        document = (await asyncio.to_thread(extract_document, fetched, name, provider, selection=selection, source_url=url)
+                    if selection else await asyncio.to_thread(extract, fetched.body, fetched.content_type, name, provider))
+        if selection and data.get("preview_content_hash") and data["preview_content_hash"] != document.content_hash:
+            raise DomainError("The selected text changed since preview. Preview the articles again before saving.", 409, "article_preview_changed")
         with self.write_guard, self.db.session() as session:
             if session.scalar(
                 select(Law.id).where(
@@ -2312,6 +2328,7 @@ class HelveticLens:
                 url=url,
                 source_id=None if shared_official else data.get("source_id"),
                 provider=provider,
+                article_selection=selection,
                 last_checked=utcnow(),
             )
             session.add(law)
@@ -2326,7 +2343,8 @@ class HelveticLens:
                 metadata=fetched.metadata,
             )
             law.current_version_id = version.id
-            self.regulatory_corpus.map_legacy_document(session, law, version)
+            if not selection:
+                self.regulatory_corpus.map_legacy_document(session, law, version)
             watch = DocumentWatch(
                 law_id=law.id,
                 display_name=data.get("name") or law.name,
@@ -2394,6 +2412,18 @@ class HelveticLens:
     def law_history_page(self, law_id: str, kind: law_history.HistoryKind, *, cursor="", limit=20):
         with self.db.session() as session:
             return law_history.page(session, self.organization_id, law_id, kind, cursor=cursor, limit=limit)
+
+    def law_question_context(self, law_id: str):
+        """Reuse cited Ask for one saved version without inventing a second edition."""
+        with self.write_guard, self.db.session() as session:
+            law = get(session, Law, law_id)
+            self.watch(session, law_id)
+            if not law.current_version_id:
+                raise DomainError("Save a source version before asking a question.", 422, "missing_version")
+            version = get(session, Version, law.current_version_id)
+            comparison = self.ensure_comparison(session, version, version, "snapshot")
+            session.commit()
+            return {"comparison_id": comparison.id, "version_id": version.id}
 
     def delete_law(self, law_id: str):
         artifact_keys: set[str] = set()
@@ -2565,6 +2595,11 @@ class HelveticLens:
         with self.db.session() as session:
             law = get(session, Law, law_id)
             law_identity = {"name": law.name, "url": law.url}
+            selection = law.article_selection
+        if selection and (not url.strip() or validate_selection(url, "native", selection) != selection
+                          or fedlex_eli_reference(url).work_uri != fedlex_eli_reference(law.url).work_uri):
+            raise DomainError("For a selected article range, import an official historical German Fedlex HTML URL of the same law.",
+                              422, "article_source_unsupported")
         count = int(body is not None) + int(bool(text.strip())) + int(bool(url.strip()))
         if count != 1:
             raise DomainError("Provide exactly one input: file, pasted text, or historical URL.")
@@ -2585,7 +2620,9 @@ class HelveticLens:
             mime, origin = "", "uploaded"
         if body is None or len(body) > self.settings.max_document_bytes:
             raise DomainError("The import exceeds the configured document limit.", 413)
-        document = await asyncio.to_thread(extract, body, mime, filename)
+        document = (await asyncio.to_thread(extract_document, Fetched(source_url or "", body, mime, metadata), filename,
+                                           selection=selection, source_url=url)
+                    if selection else await asyncio.to_thread(extract, body, mime, filename))
         identity = assess_document_identity(
             law_name=law_identity["name"],
             law_url=law_identity["url"],
@@ -2994,12 +3031,16 @@ class HelveticLens:
             url, provider, live_baseline_id = law.url, law.provider, law.current_version_id
             prior = session.get(Version, live_baseline_id) if live_baseline_id else None
             synthetic = prior.synthetic if prior else False
+            selection = law.article_selection
         enrich_correlation(document_id=law.id)
         self.stage(item_id, "fetching")
         fetched = await self.fetcher.fetch(url, provider)
         self.stage(item_id, "extracting")
         name = PurePosixPath(urlsplit(fetched.url).path).name or "document.html"
-        document = await asyncio.to_thread(extract, fetched.body, fetched.content_type, name, provider)
+        document = (await asyncio.to_thread(extract_document, fetched, name, provider, selection=selection, source_url=url)
+                    if selection else await asyncio.to_thread(extract, fetched.body, fetched.content_type, name, provider))
+        if selection and prior:
+            verify_article_continuity(prior.passages, document.passages)
         self.stage(item_id, "comparing")
         with self.write_guard, self.db.session() as session:
             item = get(session, ScanItem, item_id)

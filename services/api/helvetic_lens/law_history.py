@@ -38,6 +38,7 @@ def _scoped(statement, model, organization_id, law_id):
             model.organization_id == organization_id
             if model is Observation
             else visible(model, organization_id),
+            model.mode != "snapshot" if model is Comparison else True,
         )
     )
 
