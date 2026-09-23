@@ -18,7 +18,7 @@ not proof of participant credentials, credits, model access or allocated GPUs.
 | H26-03 | Supertext AI text translation and ElevenLabs speech | Encrypted organization credentials, explicit reviewed text submission, bounded responses, safe errors, usable UI and tenant/role tests | VERIFYING — software checked; live generation and language review open |
 | H26-04 | Lovable development handoff, compute activation instructions | Document supported integration paths; no invented import API, credits or server allocation | DONE — documented; no allocation claimed |
 | H26-05 | Participant preparation delivered outside Git | Presentation and personal coaching are excluded from main at the user's request | Delivered separately; participant rehearsal remains open |
-| H26-06 | Activate the participant's OpenAI, Swisscom Apertus 1.5 70B and Supertext access in production | Official organizer contracts; current Swisscom route; fixed OpenAI origin; independently stored encrypted inference connections; administrator activation; no credential disclosure; provider/tenant tests; live checks and verified deployment | IN PROGRESS — user authorized production activation on 23 September; personal access is being obtained |
+| H26-06 | Activate the participant's OpenAI, Swisscom Apertus 1.5 70B and Supertext access in production | Official organizer contracts; current Swisscom route; fixed OpenAI origin; independently stored encrypted inference connections; administrator activation; no credential disclosure; provider/tenant tests; live checks and verified deployment | VERIFYING — release 5171b17 deployed; Swisscom 70B active and tested in Legal Hackathon; OpenAI login/redemption/API key and Supertext key pending |
 
 H26-06 preserves the existing inference and translation workflows. Separate saved
 connections let the organization retain both OpenAI and Swisscom credentials;
@@ -29,6 +29,16 @@ details stay outside Git. OpenAI credit redemption is distinct from an API key
 and must target the participant's intended API organization. Supertext human
 verification is excluded from this grant. No account entitlement, lasting token
 validity or answer quality is inferred from documentation or a connection test.
+
+Production acceptance on 23 September: automatic deployment of `5171b17` succeeded,
+and public readiness reported `git-5171b17e5685` with healthy PostgreSQL/Redis.
+Legal Hackathon retains a separate encrypted Swisscom profile and uses its
+issued Apertus 1.5 70B model. Both the saved-profile test and a fresh persisted
+organization runtime returned the required status JSON from the production API
+container. The authenticated product page shows the saved key without revealing
+it; viewer actions remain disabled. Existing records and memberships were retained.
+OpenAI billing redemption and an application API key, plus the Supertext issued
+key, are still needed; H26-06 is not marked complete.
 
 Published contracts: [Anthropic Messages](https://platform.claude.com/docs/en/api/messages/create),
 [Supertext](https://www.supertext.com/en/documentation/api),

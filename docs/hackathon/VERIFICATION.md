@@ -32,8 +32,17 @@ Verified locally on Linux with Node 24 and Python 3.12:
   documented 2026 endpoint. This establishes technical access at check time;
   it does not measure lasting authorization, remaining quota or legal quality.
 
-Production activation and release verification are recorded separately after
-deployment. The OpenAI promotion still needs redemption in the participant's
+Automatic deployment of `5171b17e568507e123023f80b8639106a9c08f7d` succeeded.
+Public `/api/ready` returned `git-5171b17e5685`, status `ready`, PostgreSQL/Redis
+available. In Legal Hackathon the real Swisscom key is encrypted in saved profile
+revision 1 and the active inference configuration. The production saved-profile
+test succeeded before activation. A fresh organization runtime then read the
+persisted provider/model/key and passed its connection check (388 ms). Existing
+law rows and all three memberships were retained. Browser verification at
+`https://helveticlens.ch/settings/partners` shows the saved Swisscom connection,
+empty OpenAI/Supertext credentials and correctly disabled viewer controls.
+
+The OpenAI promotion still needs redemption in the participant's
 intended account/organization and a separate project API key. Supertext's issued
 key has not yet been supplied. Neither is claimed connected from public offer
 documentation alone. No redemption code, email address or API key is in Git.
