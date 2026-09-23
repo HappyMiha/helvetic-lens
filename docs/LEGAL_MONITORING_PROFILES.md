@@ -142,6 +142,11 @@ organization history and detach the erased actor.
   Desktop and 390 px mobile views were inspected; no horizontal document
   overflow occurred. Production acceptance will be read-only, without seeding
   test client records or changing an existing organization's monitoring.
+- A follow-up browser check found that changing language could remount the
+  wizard while the already multilingual source catalogue reloaded. Its cache
+  now remains stable across locale changes. The rebuilt UI preserved an exact
+  unsaved refinement when switching French to English; saving and reload kept
+  the refinement. UTC timestamps also retained the correct Zurich display.
 
 ## Boundaries
 

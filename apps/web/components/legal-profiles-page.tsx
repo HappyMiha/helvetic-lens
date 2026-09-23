@@ -133,7 +133,13 @@ function ProfileContent({
       ? legalProfileResource<LegalProfile>(identity, `/${profileId}`)
       : null,
   );
-  const packs = useResource(resources.sourcePacks());
+  // The catalogue carries every locale. Changing UI language must not replace
+  // this resource with an empty snapshot and unmount an unsaved wizard.
+  const packs = useResource({
+    ...resources.sourcePacks(),
+    id: "legal-profiles:source-packs",
+    varyByLocale: false,
+  });
   if (profiles.error || detail.error || packs.error)
     return (
       <>
