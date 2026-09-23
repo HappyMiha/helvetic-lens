@@ -1,5 +1,6 @@
 "use client";
 
+import { legalProfilesCopy } from "@/lib/legal-profiles-copy";
 import { AirToday } from "./air-watch";
 import { RiverToday } from "./river-today";
 import { TenderToday } from "./tender-today";
@@ -140,6 +141,7 @@ export function InterestFeedPage() {
   }
   return (
     <Shell section={t("nav.today")}>
+      <div className="mb-4"><Link className="inline-flex min-h-11 items-center gap-2 rounded-lg border px-4 text-sm font-medium" href="/monitoring-profiles">{legalProfilesCopy[locale].title}</Link></div>
       <header className="page-heading">
         <div>
           <h1>{t("feed.title")}</h1>

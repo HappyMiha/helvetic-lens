@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { legalProfilesCopy } from "@/lib/legal-profiles-copy";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   Archive,
@@ -594,6 +595,7 @@ function TopicEditor({
           <h1>{t("topics.title")}</h1>
           <p className="muted m-0">{t("topics.body")}</p>
         </div>
+        {canManage && <Button asChild variant="outline"><Link href="/monitoring-profiles/new">{legalProfilesCopy[locale].new}<Plus /></Link></Button>}
         {editing && (
           <Button
             data-topic-new

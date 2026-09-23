@@ -84,6 +84,8 @@ def direct_roots(table, user, organizations):
             conditions.append(column == user.id)
     if table.name == "organization_invitations":
         conditions.extend((table.c.invited_by_user_id == user.id, table.c.email == user.email))
+    if table.name == "legal_monitoring_profiles":
+        conditions.append(and_(table.c.created_by_user_id == user.id, table.c.status == "draft"))
     if table.name == "interest_brief_feedback":
         conditions.append(table.c.actor_user_id == user.id)
     if table.name == "jobs":

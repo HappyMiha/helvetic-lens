@@ -439,6 +439,8 @@ def create_topic(
     idempotency_key: str,
     actor_user_id: str | None,
     ai_draft_id: str | None = None,
+    commit: bool = True,
+    proposal_metadata: dict | None = None,
 ) -> dict:
     key = idempotency_key.strip()[:120]
     if not key:
@@ -448,6 +450,7 @@ def create_topic(
         return {**_topic_payload(session, existing, history=True), "reused": True}
     plan = normalize_plan(data, session)
     ai_metadata, draft = _draft_metadata(session, ai_draft_id)
+    ai_metadata = proposal_metadata or ai_metadata
     topic = MonitoringTopic(
         idempotency_key=key,
         status="active",
@@ -469,7 +472,10 @@ def create_topic(
     backfill_job = _enqueue_match_backfill(session, topic)
     from .onboarding import record as record_onboarding
     record_onboarding(session, topic.organization_id, actor_user_id, "interest_saved", "topic", topic.id)
-    session.commit()
+    if commit:
+        session.commit()
+    else:
+        session.flush()
     return {
         **_topic_payload(session, topic, history=True),
         "reused": False,
@@ -531,6 +537,7 @@ def change_status(
     *,
     expected_revision: int,
     actor_user_id: str | None,
+    commit: bool = True,
 ) -> dict:
     topic = session.get(MonitoringTopic, topic_id)
     if not topic:
@@ -553,7 +560,10 @@ def change_status(
         topic.archived_at = topic.updated_at
     _add_revision(session, topic, plan, status=status, actor_user_id=actor_user_id)
     backfill_job = _enqueue_match_backfill(session, topic) if status == "active" else None
-    session.commit()
+    if commit:
+        session.commit()
+    else:
+        session.flush()
     return {
         **_topic_payload(session, topic, history=True),
         "reused": False,

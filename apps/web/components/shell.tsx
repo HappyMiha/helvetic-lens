@@ -42,6 +42,7 @@ import {
 } from "lucide-react";
 import { api, errorText, resetResourceScope, useResource } from "@/lib/api";
 import { resources } from "@/lib/resource-keys";
+import { legalProfilesCopy } from "@/lib/legal-profiles-copy";
 import { type AuthSession, useAuth } from "./auth-gate";
 import type { Health } from "@/lib/types";
 import { ErrorNote } from "./common";
@@ -453,8 +454,9 @@ function ShellContent({
   const monitoringRoute = monitoringNavigation.find(
     ({ href }) => href === pathname,
   );
-  const monitoringLabel =
-    pathname === "/influence"
+  const monitoringLabel = pathname.startsWith("/monitoring-profiles")
+    ? legalProfilesCopy[locale].shortTitle
+    : pathname === "/influence"
       ? influenceCopy[locale].title
       : pathname === "/related-developments"
         ? relatedCopy[locale].title
@@ -515,6 +517,13 @@ function ShellContent({
             <NavigationItem active={monitoringActive} href="/registry">
               <Landmark size={17} />
               {t("nav.monitoring")}
+            </NavigationItem>
+            <NavigationItem
+              active={pathname.startsWith("/monitoring-profiles")}
+              href="/monitoring-profiles"
+            >
+              <Radar size={17} />
+              {legalProfilesCopy[locale].title}
             </NavigationItem>
             <NavigationItem active={pathname === "/topics"} href="/topics">
               <Radar size={17} />
@@ -706,6 +715,13 @@ function ShellContent({
               <NavigationItem active={pathname === "/sources"} href="/sources">
                 <Globe2 size={15} />
                 {t("nav.sources")}
+              </NavigationItem>
+              <NavigationItem
+                active={pathname.startsWith("/monitoring-profiles")}
+                href="/monitoring-profiles"
+              >
+                <Radar size={17} />
+                {legalProfilesCopy[locale].title}
               </NavigationItem>
               <NavigationItem active={pathname === "/topics"} href="/topics">
                 <Radar size={15} />

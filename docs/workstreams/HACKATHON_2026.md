@@ -19,6 +19,7 @@ not proof of participant credentials, credits, model access or allocated GPUs.
 | H26-04 | Lovable development handoff, compute activation instructions | Document supported integration paths; no invented import API, credits or server allocation | DONE — documented; no allocation claimed |
 | H26-05 | Participant preparation delivered outside Git | Presentation and personal coaching are excluded from main at the user's request | Delivered separately; participant rehearsal remains open |
 | H26-06 | Activate the participant's OpenAI, Swisscom Apertus 1.5 70B and Supertext access in production | Official organizer contracts; current Swisscom route; fixed OpenAI origin; independently stored encrypted inference connections; administrator activation; no credential disclosure; provider/tenant tests; live checks and verified deployment | VERIFYING — release 5171b17 deployed; Swisscom 70B active and tested in Legal Hackathon; OpenAI login/redemption/API key and Supertext key pending |
+| H26-07 | Integrate the uploaded five-step legal monitoring project | [Reference analysis, production contract and acceptance](../LEGAL_MONITORING_PROFILES.md): durable drafts, genuine suggestions, actual source coverage/preview, atomic activation, native matching and personal delivery, privacy and production verification | VERIFYING |
 
 H26-06 preserves the existing inference and translation workflows. Separate saved
 connections let the organization retain both OpenAI and Swisscom credentials;

@@ -12,13 +12,13 @@ function attentionCount(pack: TopicSourceCoverage["items"][number]) {
   ).length;
 }
 
-export function TopicSourceReadiness({ coverage }: { coverage: TopicSourceCoverage }) {
+export function TopicSourceReadiness({ coverage, boundary }: { coverage: TopicSourceCoverage; boundary?: string }) {
   const { t, locale, dateTime, number } = useI18n();
   const timestamp = (value: string) => dateTime(value, { dateStyle: "medium", timeStyle: "short" });
   return (
     <section className="mt-5 scroll-mt-24 rounded-lg border p-4 text-sm" data-topic-source-readiness aria-live="polite">
       <h3>{t("topicSources.title")}</h3>
-      <p>{t("topicSources.boundary")}</p>
+      <p>{boundary || t("topicSources.boundary")}</p>
       <p>{t("topicSources.enabled", { enabled: coverage.enabled_pack_count, total: coverage.items.length })}</p>
       {coverage.enabled_pack_count === 0 && <p className="font-medium" data-topic-sources-inactive>{t("topicSources.none")}</p>}
       <p>{t("topicSources.asOf")} <time dateTime={coverage.captured_at}>{timestamp(coverage.captured_at)}</time></p>

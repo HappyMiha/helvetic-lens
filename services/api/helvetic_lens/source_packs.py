@@ -327,7 +327,7 @@ def catalogue(session: Session, schedule_items: list[dict]) -> dict:
 
 
 def activate(
-    session: Session, pack_id: str, *, organization_id: str, actor_user_id: str | None
+    session: Session, pack_id: str, *, organization_id: str, actor_user_id: str | None, commit: bool = True
 ) -> dict:
     now = utcnow()
     jobs = []
@@ -386,7 +386,10 @@ def activate(
             )
         ):
             request.status, request.resolved_at = "fulfilled", now
-    session.commit()
+    if commit:
+        session.commit()
+    else:
+        session.flush()
     return {"pack_id": pack_id, "jobs": jobs, "reused": all_reused}
 
 

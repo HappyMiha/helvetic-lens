@@ -149,6 +149,80 @@ const riverReview = c(
 
 export const SECTION_GUIDES: SectionGuide[] = [
   {
+    id: "monitoring-profiles",
+    title: "Monitoring profiles",
+    purpose:
+      "Set up a legal monitoring profile in five steps: Context, Topics, Sources, Delivery and Activate.",
+    first: [
+      "Choose Set up monitoring, enter the client or organization context, then add or request topic suggestions.",
+      "Select available source packs, review personal delivery and activate after reviewing all five steps.",
+    ],
+    data: [
+      "Drafts are private to their author; activation shares the profile and creates native organization topics.",
+      "Source requests remain inactive. Preview shows bounded saved candidates, not confirmed legal impact.",
+      "Delivery changes apply to your personal digest for the entire organization; existing filters and schedule are retained.",
+    ],
+    wait: "Topic matching and source backfills use the existing job queue. Missing results or incomplete sources are not an all-clear.",
+    setup:
+      "An organization administrator creates and activates profiles. AI suggestions use the configured provider; manual topics remain available. Email needs a verified address and SMTP transport.",
+    controls: [
+      c(
+        "profile-new",
+        "Set up monitoring",
+        "Starts a clean private five-step draft.",
+        "Create a profile for a client or your own organization.",
+        "Edit draft",
+      ),
+      c(
+        "profile-save",
+        "Save draft / Continue / Back",
+        "Saves this draft and its current step with revision protection.",
+        "Save before leaving or return later using the profile list.",
+        "Save a change",
+      ),
+      c(
+        "profile-suggest",
+        "Suggest topics with AI",
+        "Sends the entered context and feedback to the configured AI provider. Suggestions do not replace cards until accepted.",
+        "Use as an optional starting point and review the proposed interests.",
+        "External action",
+      ),
+      c(
+        "profile-sources",
+        "Save source request",
+        "Adds an inactive request to the draft, without collecting its URL.",
+        "Record a publisher that needs separate connection and approval.",
+        "Edit draft",
+      ),
+      c(
+        "profile-preview",
+        "Preview saved matches",
+        "Reads up to 500 saved events per selected topic and displays at most ten candidate examples.",
+        "Check search relevance and source readiness before activation.",
+      ),
+      c(
+        "profile-activate",
+        "Activate monitoring",
+        "Atomically saves selected topics, source subscriptions and explicitly chosen personal delivery. Retries reuse the saved result.",
+        "Start after reviewing all choices.",
+        "Start background work",
+      ),
+      c(
+        "profile-pause",
+        "Pause / Resume profile topics",
+        "Updates non-archived linked topics together; shared source subscriptions and digest settings remain in place.",
+        "Temporarily stop or resume this profile's interests.",
+        "Save a change",
+      ),
+      c(
+        "profile-export",
+        "Export profile",
+        "Downloads the saved setup and current linked topic history, without credentials.",
+        "Keep a portable record of the saved configuration.",
+      ),
+    ],
+  },
+  {
     id: "influence",
     title: "Influence Graph",
     purpose:
@@ -2957,6 +3031,7 @@ export const GUIDE_ROUTES: Record<string, string> = {
   "/registry": "registry",
   "/discover": "discover",
   "/topics": "topics",
+  "/monitoring-profiles": "monitoring-profiles",
   "/pollen-watch": "pollen-watch",
   "/river-watch": "river-watch",
   "/air-watch": "air-watch",
@@ -2997,15 +3072,17 @@ export function guideForPath(pathname: string): SectionGuide | undefined {
   const path = pathname.split(/[?#]/, 1)[0].replace(/\/$/, "") || "/";
   const id =
     GUIDE_ROUTES[path] ||
-    (/^\/laws\/[^/]+$/.test(path)
-      ? "law"
-      : /^\/compare\/[^/]+$/.test(path)
-        ? "comparison"
-        : /^\/native-comparison\/[^/]+$/.test(path)
-          ? "native-comparison"
-          : /^\/(corpus-evidence|evidence)\/[^/]+$/.test(path)
-            ? "evidence"
-            : undefined);
+    (path.startsWith("/monitoring-profiles/")
+      ? "monitoring-profiles"
+      : /^\/laws\/[^/]+$/.test(path)
+        ? "law"
+        : /^\/compare\/[^/]+$/.test(path)
+          ? "comparison"
+          : /^\/native-comparison\/[^/]+$/.test(path)
+            ? "native-comparison"
+            : /^\/(corpus-evidence|evidence)\/[^/]+$/.test(path)
+              ? "evidence"
+              : undefined);
   return SECTION_GUIDES.find((guide) => guide.id === id);
 }
 export function permitted(
