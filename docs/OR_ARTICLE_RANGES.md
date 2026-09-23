@@ -188,8 +188,9 @@ Welche Fragen entstehen, wenn bereits gevestete Ansprüche bei Kündigung verfal
   approval limits explanations. The full law, case law, contract, tax treatment
   and legal validity were not reviewed.
 - Release is authorized for all organizations through normal automatic main-site
-  deployment. This file records pre-publication acceptance; pushed code must be
-  distinguished from subsequent public readiness/deployment verification.
+  deployment. Production activation and the real three-edition history were
+  verified on 23 September 2026, including official-date labels, formatting-only
+  comparisons and original-artifact integrity after the final deployment.
   Broader MV2-068 and independent legal-quality acceptance remain open.
 
 ### Production review walkthrough

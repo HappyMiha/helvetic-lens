@@ -9,7 +9,7 @@ by an explicit request for the complete module and a push to main for deployment
 | IG-001 — Evidence dossier explorer | VERIFYING | Graph and equivalent list; dated sources and counter-statements; strict money filter; five interface languages; keyboard/mobile support; production build |
 | IG-002 — Workspace authoring and editorial review | VERIFYING | Tenant-scoped authoring; permitted source extracts; immutable revisions and revision-specific reviews; stale-write protection; retries; archive/restore; JSON export; authorization and deployment checks |
 | IG-003 — Automated acquisition and entity resolution | PLANNED | Future approved connectors, duplicate review and source rights; the current module supports manual source entry without fetching URLs |
-| IG-004 — Document review brief and linked graph | VERIFYING | Organization-scoped document links; editable cited findings, discussions and assigned tasks; immutable revisions; explicit fictional contributors; exact graph links; production content verification |
+| IG-004 — Document review brief and linked graph | DONE | Organization-scoped document links; editable cited findings, discussions and assigned tasks; immutable revisions; explicit fictional contributors; exact graph links; production content verified on 23 September 2026 |
 
 ## IG-004 — Document review brief and linked graph
 
@@ -151,3 +151,16 @@ Production acceptance also requires neutral attribution for an imported review
 without an account ID. Such records must display an unavailable actor rather
 than imply that a real account was deleted. This copy change preserves all
 review history and fictional contributor labels.
+
+**Final production acceptance, 23 September 2026:** releases
+`git-9feeef394bdb` and `git-35ad485b2af3` completed their normal deployment checks.
+The authenticated production browser verified both historical comparisons with
+Material 0 / Formatting only 1, official-date labels, exact dossier navigation,
+clickable legislative evidence and neutral missing-actor attribution. A read-only
+PostgreSQL/artifact audit verified all three original SHA-256 values, the unchanged
+current-version pointer, the dossier revision hash and all fifteen review notes.
+The target organization still has three memberships and four pre-existing model
+analyses. Local editor verification and tenant-isolation tests cover writes;
+production viewing was verified with the existing viewer account. IG-004 is
+complete. Contract-specific legal sign-off and broader IG-001/002 editorial
+acceptance remain separate from this delivered feature and authored scenario.

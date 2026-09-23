@@ -6,9 +6,9 @@ Start with [PROJECT_MAP.md](PROJECT_MAP.md) and [the single-agent main workflow]
 |---|---|---|
 | Monitoring v2 | [Active backlog on main](BACKLOG_MONITORING_V2.md) | Complete feature delivery; Pollen followed by River / Lake Watch |
 | Legal Hackathon 2026 | [Preparation](docs/workstreams/HACKATHON_2026.md) | Main product |
-| Selected Fedlex articles / OR demo | [Scope, verification and demo](docs/OR_ARTICLE_RANGES.md) | VERIFIED in development; all organizations; normal production activation tracked in deployment journal |
+| Selected Fedlex articles / OR demo | [Scope, verification and demo](docs/OR_ARTICLE_RANGES.md) | VERIFIED in production; all organizations; official OR history and editorial comparisons checked on 23 September 2026 |
 | Influence Graph | [Scope and acceptance](BACKLOG_INFLUENCE_GRAPH.md) | Evidence explorer, workspace authoring and revision review; release verification pending |
-| Document review briefs | [IG-004](BACKLOG_INFLUENCE_GRAPH.md#ig-004--document-review-brief-and-linked-graph) | VERIFYING — production content and linked brief/graph verified; final editorial-comparison correction awaiting release |
+| Document review briefs | [IG-004](BACKLOG_INFLUENCE_GRAPH.md#ig-004--document-review-brief-and-linked-graph) | DONE — available to all organizations; private Legal Hackathon content, brief, graph and corrected comparisons verified in production |
 | Support and infrastructure | [Support](docs/workstreams/SUPPORT.md) | Parked |
 
 All code is committed and pushed to main by one agent. Both sites retain isolated
