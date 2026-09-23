@@ -77,6 +77,24 @@ def test_detail_preserves_error_phase_and_pinned_notes_without_executing_or_read
     assert error.value.status == 404
 
 
+@pytest.mark.parametrize("policy", [
+    {"profile": {}, "suites": []},
+    {"profile": "standard", "suites": [{}, "smoke", "unknown"], "workers": -1},
+    {"profile": "hotfix", "suites": None, "workers": True, "reason": "token=secret-value " + "x" * 600},
+])
+def test_malformed_policy_is_bounded_without_breaking_the_release_journal(tmp_path, policy):
+    row = record(1)
+    row["test_policy"] = policy
+    journal(tmp_path, [row])
+    result = history_detail(tmp_path, row["id"])
+    assert result["status"] == "succeeded" and result["activated_sha"] == "1" * 40
+    assert "secret-value" not in json.dumps(result)
+    if result["test_policy"]:
+        assert result["test_policy"]["workers"] is None
+        assert result["test_policy"]["suites"] in ([], ["smoke"])
+        assert len(result["test_policy"]["reason"] or "") <= 500
+
+
 def test_legacy_mode_has_honest_retention_and_complete_reachable_snapshot(tmp_path):
     (tmp_path / "history.json").write_text(json.dumps([record(i) for i in range(60)]))
     (tmp_path / "status.json").write_text(json.dumps({"last_run": record(61, "deploying")}))

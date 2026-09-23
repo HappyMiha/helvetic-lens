@@ -237,6 +237,25 @@ malformed-scope/collector/backlog selection passed 37 checks. Read-only replay o
 all five exact public originals succeeded. Exact API Ruff passed. These results
 do not imply activated production recovery or authenticated document access.
 
+23 September test-policy scope (MV2-052 / MV2-057): the owner requests faster,
+smaller routine release checks, separate platform smoke / functional / integration
+suites, and an explicit emergency deployment without tests. Implement a reviewed
+suite inventory, bounded parallel execution, standard and full release profiles,
+and a one-invocation hotfix pinned to the fetched main SHA with a recorded reason.
+Unknown tests stay in integration; retain the complete regression inventory.
+Dependencies are the existing isolated QA runner, release lock, backup/rollback,
+read-only administrator journal and immutable releases. No source activation is
+needed. Acceptance: suite coverage/disjointness, real smoke/functional results,
+bounded parallel integration evidence, failed-check blocking, exact-SHA rejection,
+honest skipped-test history, and retained build/backup/readiness/rollback behavior.
+Both parent tasks remain IN PROGRESS; this supersedes the older full-suite-on-
+every-release policy only for this user-requested change.
+Local verification: 726 standard checks passed in 35.59 seconds, 177 affected
+controller/migration/data/backlog checks passed, and 70 browser checkpoints
+covered five languages and both widths. All 5,119 existing cases are retained;
+the 4,420-case integration tier is separate. [Policy and measured evidence](docs/TESTING.md)
+distinguish local results from production activation and unmeasured full-suite time.
+
 21 September release-test performance follow-up: investigate the measured
 1h57m complete API gate without reducing its test selection. Profile repeated
 HTTP-fixture setup and reuse a session-local, empty SQLite schema created by the
@@ -2455,6 +2474,23 @@ activation or human acceptance is claimed; the parent remains IN PROGRESS.
 <a id="mv2-052"></a>
 
 ### MV2-052 — Operational metrics, degraded mode and source recovery
+
+**23 September test-policy scope:** Implement the owner-requested standard
+(platform smoke + functional), full (including integration) and one-shot hotfix
+(tests explicitly skipped) profiles. Preserve all test cases in the full suite,
+real fixture isolation, Git ancestry, release locking, configuration validation,
+compilation, backup, activation probes and rollback. Record the selected policy
+and skipped work in the exact attempt, including its administrator history view.
+The inventory, bounded workers and failure/skip transitions must be verified;
+timings and production activation will be recorded in `docs/TESTING.md`.
+No external source readiness changes are needed; MV2-052 remains IN PROGRESS.
+**Local acceptance:** The final 726-case standard gate passed in 35.59 seconds;
+177 affected release/data/migration checks and 29 final policy/history/backlog
+checks passed. Seventy desktop/mobile browser checkpoints cover all five locales,
+including honest skipped-test status, the emergency reason and administrator
+access. Exact Ruff and the root production web build pass. The final inventory
+retains all prior cases and adds policy regressions. See [commands, limits and
+activation evidence](docs/TESTING.md); full integration timing is not yet measured.
 
 22 September production verification: `1890d66` completed all twelve deployment
 stages and public readiness. Full QA passed 5,075 tests / 18 skips in 1h18m23s,

@@ -30,7 +30,7 @@
     "check:mobile:browser": "node scripts/check-mobile-browser.mjs",
     "format:web": "prettier --write apps/web",
     "format:check": "prettier --check apps/web",
-    "test:api": "uv run --project services/api pytest services/api/tests -q",
+    "test:api": "uv run --project services/api python scripts/run_tests.py --suite full",
     "test:ai-triage": "uv run --cache-dir services/api/.uv-cache --project services/api python scripts/check_ai_triage_regression.py",
     "test:ai-triage:full": "uv run --cache-dir services/api/.uv-cache --project services/api python scripts/check_ai_triage_regression.py --full",
     "test:ai-triage:acceptance": "uv run --cache-dir services/api/.uv-cache --project services/api pytest services/api/tests/test_ai_triage_acceptance.py -q",
@@ -76,7 +76,12 @@
     "check:basel:browser": "node scripts/check-basel-onboarding-browser.mjs",
     "check:help": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test scripts/section-guides.test.mjs",
     "check:help:browser": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/check-section-help-browser.mjs",
-    "check:monitoring-settings:browser": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/check-monitoring-settings-browser.mjs"
+    "check:monitoring-settings:browser": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/check-monitoring-settings-browser.mjs",
+    "test:smoke": "uv run --project services/api python scripts/run_tests.py --suite smoke",
+    "test:functional": "uv run --project services/api python scripts/run_tests.py --suite functional",
+    "test:integration": "uv run --project services/api python scripts/run_tests.py --suite integration",
+    "test:release": "uv run --project services/api python scripts/run_tests.py --suite release",
+    "test:full": "uv run --project services/api python scripts/run_tests.py --suite full"
   },
   "devDependencies": {
     "axe-core": "4.13.0",

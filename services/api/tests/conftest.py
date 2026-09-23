@@ -6,6 +6,11 @@ from dataclasses import dataclass, field
 
 import pytest
 from fastapi.testclient import TestClient
+from scripts.pytest_suites import (  # noqa: F401 -- pytest discovers imported hooks
+    pytest_addoption,
+    pytest_collection_modifyitems,
+    pytest_terminal_summary,
+)
 
 from helvetic_lens.config import DomainError, Settings
 from helvetic_lens.db import Database

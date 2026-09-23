@@ -16,6 +16,7 @@ import { Button } from "./ui/button";
 import { label, resources, useResource } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { deploymentHistoryCopy } from "@/lib/deployment-history-copy";
+import { deploymentTestsCopy } from "@/lib/deployment-tests-copy";
 import type {
   DeploymentRun,
   ProductionDeploymentStatus,
@@ -40,6 +41,7 @@ function statusVariant(value: string) {
 function RunDetails({ run }: { run: DeploymentRun }) {
   const { t, dateTime, locale } = useI18n();
   const copy = deploymentHistoryCopy[locale];
+  const testCopy = deploymentTestsCopy[locale];
   return (
     <div className="grid gap-5">
       <div className="flex flex-wrap items-center gap-3">
@@ -65,6 +67,21 @@ function RunDetails({ run }: { run: DeploymentRun }) {
           [copy.activated,run.activated_sha],[copy.host,[run.host,run.environment].filter(Boolean).join(" / ")]].map(([title,value]) =>
           <div key={title} className="min-w-0"><dt className="muted">{title}</dt><dd className="break-all font-medium">{value || copy.unknown}</dd></div>)}
       </dl>
+      {run.test_policy && (
+        <section data-deployment-test-policy={run.test_policy.profile} className="rounded-md border p-4 min-w-0">
+          <h3>{testCopy.title}</h3>
+          <Badge variant={run.test_policy.profile === "hotfix" ? "destructive" : "outline"}>
+            {testCopy.profiles[run.test_policy.profile]}
+          </Badge>
+          <p className="text-sm mt-2 mb-0">
+            {run.test_policy.profile === "hotfix"
+              ? testCopy.noTests
+              : run.test_policy.suites.map((suite) => testCopy.suites[suite] || label(suite)).join(" · ")}
+          </p>
+          {run.test_policy.profile === "standard" && <p className="text-sm mt-2 mb-0">{testCopy.separateIntegration}</p>}
+          {run.test_policy.reason && <p className="text-sm mt-2 mb-0 break-words">{run.test_policy.reason}</p>}
+        </section>
+      )}
       {run.details_truncated && <p className="notice">{copy.truncated}</p>}
       <section className="min-w-0">
         <h3>{copy.notes}</h3>
@@ -113,11 +130,12 @@ function RunDetails({ run }: { run: DeploymentRun }) {
             {run.steps.length ? (
               run.steps.map((step) => (
                 <div className="py-3 flex justify-between gap-4" key={`${step.name}:${step.started_at}`}>
-                  <span className="min-w-0">{label(step.name)}
+                  <span className="min-w-0">{testCopy.steps[step.name] || label(step.name)}
                     {step.error && <pre className="whitespace-pre-wrap break-words text-xs mt-2">{step.error}</pre>}
+                    {step.reason && <small className="block mt-2 break-words">{step.name === "integration_tests" ? testCopy.separateIntegration : step.reason}</small>}
                   </span>
                   <span className="text-right">
-                    <Badge variant={statusVariant(step.status)}>{copy.statuses[step.status] || label(step.status)}</Badge>
+                    <Badge variant={statusVariant(step.status)}>{step.status === "skipped" ? testCopy.skipped : copy.statuses[step.status] || label(step.status)}</Badge>
                     <small className="block muted mt-1">{duration(step.duration_seconds)}</small>
                   </span>
                 </div>

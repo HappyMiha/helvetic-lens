@@ -13,7 +13,14 @@ COPY apps/web apps/web
 ARG HELVETIC_LENS_API_URL=http://api:8000
 ENV HELVETIC_LENS_API_URL=$HELVETIC_LENS_API_URL
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
+ARG HELVETIC_LENS_SKIP_TESTS=0
+# Only the exact-SHA emergency invocation supplies 1. Compilation and TypeScript
+# still run; the normal root build retains every Node and localization check.
+RUN case "$HELVETIC_LENS_SKIP_TESTS" in \
+      0) npm run build ;; \
+      1) npm run build --workspace apps/web ;; \
+      *) echo "Invalid test bypass value" >&2; exit 2 ;; \
+    esac
 
 FROM node:24-alpine@sha256:e67514e5d0f6c46656005e1b693b2ec9d52e80b641307de684d4a015ba7a4eaf
 WORKDIR /app

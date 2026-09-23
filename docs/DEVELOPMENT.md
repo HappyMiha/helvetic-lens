@@ -19,6 +19,14 @@ If remote main moves, fetch, integrate carefully and retest affected behavior be
 retrying. Never force-push or bypass hooks. Keep the frozen MVP tag immutable.
 Code publication does not prove activation or human acceptance.
 
+From 23 September 2026 the owner's [test-suite policy](TESTING.md) makes smoke
+and functional checks the standard automatic release gate. Run affected
+integration tests before publishing their feature; use the full profile for
+broad release regression. Existing cases remain available in the separate
+integration/full suites. The exact-SHA, reason-bearing emergency invocation is
+the only test bypass and is recorded as skipped. It never becomes the next
+automatic invocation's policy. Bootstrap still uses the full suite.
+
 SQLite migrations require a connection without pending application writes when
 foreign-key enforcement is enabled. Commit or roll back fixture/application data
 before handing the connection to Alembic. The migration runner temporarily gates

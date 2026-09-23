@@ -979,6 +979,7 @@ export type DeploymentStep = {
   finished_at?: string | null;
   duration_seconds?: number | null;
   error?: string | null;
+  reason?: string | null;
 };
 export type DeploymentChange = {
   sha: string;
@@ -999,6 +1000,12 @@ export type DeploymentRun = {
   duration_seconds: number | null;
   changes: DeploymentChange[];
   steps: DeploymentStep[];
+  test_policy?: {
+    profile: "standard" | "full" | "hotfix";
+    suites: string[];
+    workers: number | null;
+    reason: string | null;
+  } | null;
   backup_id: string | null;
   model_id?: string | null;
   rollback: {

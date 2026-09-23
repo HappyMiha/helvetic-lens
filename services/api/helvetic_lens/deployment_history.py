@@ -53,8 +53,20 @@ def _detail(run):
     for key in ("error", "backup_id", "model_id"):
         value[key] = _text(run.get(key))
     value["steps"] = [{key: (_text(item.get(key)) if key != "duration_seconds" else item.get(key))
-                       for key in ("name", "status", "started_at", "finished_at", "duration_seconds", "error", "interrupted_at")}
+                       for key in ("name", "status", "started_at", "finished_at", "duration_seconds", "error", "reason", "interrupted_at")}
                       for item in run.get("steps", [])[:100] if isinstance(item, dict)]
+    policy = run.get("test_policy")
+    value["test_policy"] = None
+    if (isinstance(policy, dict) and isinstance(policy.get("profile"), str)
+            and policy["profile"] in {"standard", "full", "hotfix"}):
+        value["test_policy"] = {
+            "profile": policy["profile"], "reason": _text(policy.get("reason"), 500),
+            "suites": [tier for tier in policy.get("suites", [])[:3]
+                       if isinstance(tier, str) and tier in {"smoke", "functional", "integration", "full"}]
+            if isinstance(policy.get("suites"), list) else [],
+            "workers": policy.get("workers")
+            if type(policy.get("workers")) is int and 0 <= policy["workers"] <= 4 else None,
+        }
     value["changes"] = [{key: _text(item.get(key), 500) for key in ("sha", "short_sha", "subject", "author", "committed_at")}
                         for item in run.get("changes", [])[:100] if isinstance(item, dict)]
     rollback = run.get("rollback") if isinstance(run.get("rollback"), dict) else {}

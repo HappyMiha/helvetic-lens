@@ -284,7 +284,22 @@ class DeploymentError(RuntimeError):
 
 
 class ReleaseManager:
-    def __init__(self, config_path: Path | None = None, *, bootstrap: bool = False) -> None:
+    def __init__(self, config_path: Path | None = None, *, bootstrap: bool = False,
+                 test_profile: str = "standard", requested_sha: str | None = None,
+                 hotfix_reason: str | None = None) -> None:
+        if test_profile not in {"standard", "full", "hotfix"}:
+            raise ValueError("Unknown release test profile.")
+        if test_profile == "hotfix":
+            if bootstrap or not re.fullmatch(r"[0-9a-f]{40}", requested_sha or ""):
+                raise ValueError("Hotfix requires an exact full main commit SHA and an existing installation.")
+            if not hotfix_reason or not 10 <= len(hotfix_reason.strip()) <= 500:
+                raise ValueError("Hotfix requires a reason of 10–500 characters; do not include secrets.")
+        elif requested_sha is not None or hotfix_reason is not None:
+            raise ValueError("An emergency SHA and reason apply only to the hotfix invocation.")
+        # Invocation-only policy. Never persist a bypass in config or cron.
+        self.test_profile = "full" if bootstrap else test_profile
+        self.requested_sha = requested_sha
+        self.hotfix_reason = hotfix_reason.strip() if hotfix_reason else None
         config = load_config(config_path) if config_path else {}
         self.instance = config.get("instance")
         self.bootstrap = bootstrap
@@ -703,6 +718,47 @@ class ReleaseManager:
             item["duration_seconds"] = round(time.monotonic() - started, 1)
             self._save_status()
 
+    def _skip_step(self, name: str, reason: str) -> None:
+        observed = timestamp()
+        self.run_record["steps"].append({
+            "name": name, "status": "skipped", "reason": self._redact(reason),
+            "started_at": observed, "finished_at": observed, "duration_seconds": 0,
+        })
+        self._log(f"{name}: SKIPPED — {reason}")
+        self._save_status()
+
+    def _release_test_policy(self, target_dir: Path) -> dict[str, Any]:
+        profile = getattr(self, "test_profile", "standard")
+        if profile == "hotfix":
+            if not (target_dir / "scripts" / "run_tests.py").is_file():
+                raise DeploymentError("checkout", "This target predates audited hotfix support; use the full profile.")
+            return {"profile": profile, "suites": [], "workers": 0,
+                    "reason": self._redact(self.hotfix_reason)}
+        if not (target_dir / "scripts" / "run_tests.py").is_file():
+            # A previously reviewed controller can encounter an older target.
+            # Such a checkout must receive its original complete serial gate.
+            return {"profile": "full", "suites": ["full"], "workers": 0, "reason": None}
+        suites = ["smoke", "functional"] + (["integration"] if profile == "full" else [])
+        return {"profile": profile, "suites": suites, "workers": 2, "reason": None}
+
+    def _release_tests(self, target_dir: Path) -> None:
+        policy = self.run_record["test_policy"]
+        if policy["profile"] == "hotfix":
+            self._skip_step("api_tests", policy["reason"])
+            self._skip_step("web_tests", policy["reason"])
+            return
+        with self.step("api_tests"):
+            if policy["workers"]:
+                suite = "full" if policy["profile"] == "full" else "release"
+                command = ("--project services/api python scripts/run_tests.py "
+                           f"--suite {suite} --workers {policy['workers']} --fail-fast")
+            else:
+                command = ("--project services/api pytest -p no:cacheprovider services/api/tests "
+                           "-vv --durations=25 -o faulthandler_timeout=120")
+            self._run_api_quality_gate(target_dir, command, "api_tests")
+        if policy["profile"] == "standard":
+            self._skip_step("integration_tests", "Separate regression suite; use the full release profile to run it.")
+
     def _ensure_release(self, sha: str | None) -> Path:
         if not sha or not re.fullmatch(r"[0-9a-f]{40}", sha):
             raise DeploymentError("checkout", "The release commit is not a full Git SHA.")
@@ -866,10 +922,10 @@ class ReleaseManager:
             "-v", f"{self.cache_dir}:/cache",
             "-w", "/workspace", image, "uv", "run", "--frozen", *command.split(),
         ]
-        if getattr(self, "instance", None):
-            insertion = run_command.index("--user")
-            run_command[insertion:insertion] = ["--cpus", self.qa_cpus, "--memory", self.qa_memory,
-                                              "--memory-swap", self.qa_memory, "--pids-limit", "512"]
+        insertion = run_command.index("--user")
+        memory = getattr(self, "qa_memory", "4g")
+        run_command[insertion:insertion] = ["--cpus", getattr(self, "qa_cpus", "2"), "--memory", memory,
+                                          "--memory-swap", memory, "--pids-limit", "512"]
         failure = None
         try:
             self._run(run_command, step=step, timeout=timeout)
@@ -1168,6 +1224,8 @@ class ReleaseManager:
         self.cache_dir.mkdir(parents=True, exist_ok=True, mode=0o755)
         with deployment_lock(self.lock_path) as acquired:
             if not acquired:
+                if getattr(self, "requested_sha", None):
+                    raise DeploymentError("deployment_lock", "A deployment is active; hotfix was not started.")
                 return
             try:
                 self._poll_locked()
@@ -1207,6 +1265,11 @@ class ReleaseManager:
         )
         if not re.fullmatch(r"[0-9a-f]{40}", target_sha):
             raise DeploymentError("fetch", "Remote branch did not resolve to a full commit SHA.")
+        requested_sha = getattr(self, "requested_sha", None)
+        if requested_sha and target_sha != requested_sha:
+            raise DeploymentError("verify_history", "Hotfix SHA does not match fetched main; no release was started.")
+        if requested_sha and self.branch != "main":
+            raise DeploymentError("verify_history", "Hotfix is supported only for the main release channel.")
 
         deployed = self._bootstrap_deployed()
         first_install = bool(getattr(self, "instance", None) and getattr(self, "bootstrap", False))
@@ -1244,6 +1307,7 @@ class ReleaseManager:
         retry_at = last_finished + timedelta(seconds=self.retry_seconds) if last_finished else None
         if (
             last_run.get("status") in {"failed", "rollback_failed"}
+            and not requested_sha
             and last_run.get("target_sha") == target_sha
             and retry_at
             and now() < retry_at
@@ -1322,6 +1386,7 @@ class ReleaseManager:
         try:
             with self.step("checkout"):
                 target_dir = self._ensure_release(target_sha)
+                self.run_record["test_policy"] = self._release_test_policy(target_dir)
                 if previous_sha:
                     previous_dir = self._ensure_release(previous_sha)
                 elif not first_install:
@@ -1353,18 +1418,15 @@ class ReleaseManager:
                     "api_lint",
                 )
 
-            with self.step("api_tests"):
-                self._run_api_quality_gate(
-                    target_dir,
-                    "--project services/api pytest -p no:cacheprovider services/api/tests -vv --durations=25 -o faulthandler_timeout=120",
-                    "api_tests",
-                )
+            self._release_tests(target_dir)
 
             with self.step("build_images"):
                 self._compose_run(
                     target_dir,
                     release,
                     "build",
+                    *(["--build-arg", "HELVETIC_LENS_SKIP_TESTS=1"]
+                      if self.run_record["test_policy"]["profile"] == "hotfix" else []),
                     "migrate",
                     "model-manager",
                     "web",
@@ -1497,9 +1559,20 @@ def main() -> int:
     modes.add_argument("--poll", action="store_true", help="Check the configured Git branch and deploy a new commit.")
     modes.add_argument("--status", action="store_true", help="Print the current sanitized status JSON.")
     modes.add_argument("--bootstrap", action="store_true", help="Explicit first installation of an empty configured instance.")
+    modes.add_argument("--hotfix", metavar="FULL_MAIN_SHA",
+                       help="One emergency installation of this exact main SHA, without API or web tests.")
+    parser.add_argument("--reason", help="Required hotfix explanation (10–500 characters, no secrets).")
+    parser.add_argument("--test-profile", choices=("standard", "full"), default="standard",
+                        help="Standard: smoke + functional; full: also integration. Bootstrap always uses full.")
     arguments = parser.parse_args()
+    if arguments.reason is not None and not arguments.hotfix:
+        parser.error("--reason requires --hotfix.")
+    if arguments.hotfix and arguments.test_profile != "standard":
+        parser.error("--hotfix cannot be combined with --test-profile.")
     try:
-        manager = ReleaseManager(arguments.config, bootstrap=arguments.bootstrap)
+        manager = ReleaseManager(arguments.config, bootstrap=arguments.bootstrap,
+                                 test_profile="hotfix" if arguments.hotfix else arguments.test_profile,
+                                 requested_sha=arguments.hotfix, hotfix_reason=arguments.reason)
     except (OSError, ValueError) as exc:
         print(f"Invalid deployment configuration: {exc}", file=sys.stderr)
         return 2

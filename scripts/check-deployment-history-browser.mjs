@@ -9,6 +9,7 @@ import { createServer } from "node:net";
 import { Cdp, evaluate, sleep } from "./browser-cdp.mjs";
 import { AccessibilityAudit } from "./browser-accessibility.mjs";
 import { monitoringProgressFixture } from "./monitoring-progress-fixtures.mjs";
+import { deploymentTestsCopy } from "../apps/web/lib/deployment-tests-copy.ts";
 
 const root = resolve(import.meta.dirname, "..");
 const audit = new AccessibilityAudit("deployment-history");
@@ -24,12 +25,26 @@ const profile=await mkdtemp(join(tmpdir(),"helvetic-deployment-browser-"));
 const browser=spawn(chrome,["--headless=new","--no-first-run","--no-default-browser-check","--remote-debugging-port=0",`--user-data-dir=${profile}`,"about:blank"],{stdio:"ignore",windowsHide:true});
 let cdp,locale="en-CH",administrator=true,failDetail=true;
 let deploymentBranch="main";
+let deploymentPolicy = null;
 let deploymentProgress, serviceState="idle";
 const monitoringBranch="codex/HappyDucky02/monitoring-v2";
 const unknownBranch={"de-CH":"Unbekannt","fr-CH":"Inconnu","it-CH":"Sconosciuto","rm-CH":"Nunenconuschent","en-CH":"Unknown"};
 const requests=[],exceptions=[];
 async function waitFor(check,message){for(let i=0;i<180;i++){if(await check().catch(()=>false))return;await sleep(100);}throw new Error(message);}
-const run=(id,status="succeeded")=>({id,kind:"release",status,target_sha:"a".repeat(40),previous_sha:"b".repeat(40),activated_sha:status==="succeeded"?"a".repeat(40):null,host:"Synthetic-host",environment:"test",release:"test-release",started_at:"2026-09-08T08:00:00Z",finished_at:"2026-09-08T08:05:00Z",duration_seconds:300,changes:[{sha:"a".repeat(40),short_sha:"aaaaaaa",subject:"Synthetic pinned change",author:"QA",committed_at:"2026-09-08T07:00:00Z"}],steps:[{name:"api_tests",status,error:status==="failed"?"Synthetic gate diagnostics: a regression failed.":null}],rollback:{status:status==="failed"?"succeeded":"not_required",backup_restored:status==="failed"},error:status==="failed"?"Synthetic deployment failure":null,release_notes:{kind:"commit_summary",previous_sha:"b".repeat(40),target_sha:"a".repeat(40),text:"Synthetic pinned release notes\n- Improved source monitoring\n- Fixed a previous regression",captured_at:"2026-09-08T08:00:00Z",repository_notes_available:false,changes_may_be_truncated:false,text_truncated:false},compare_url:"https://github.com/HappyMiha/helvetic-lens/compare/"+"b".repeat(40)+"..."+"a".repeat(40)});
+const recordedRun=(id,status="succeeded")=>({id,kind:"release",status,target_sha:"a".repeat(40),previous_sha:"b".repeat(40),activated_sha:status==="succeeded"?"a".repeat(40):null,host:"Synthetic-host",environment:"test",release:"test-release",started_at:"2026-09-08T08:00:00Z",finished_at:"2026-09-08T08:05:00Z",duration_seconds:300,changes:[{sha:"a".repeat(40),short_sha:"aaaaaaa",subject:"Synthetic pinned change",author:"QA",committed_at:"2026-09-08T07:00:00Z"}],steps:[{name:"api_tests",status,error:status==="failed"?"Synthetic gate diagnostics: a regression failed.":null}],rollback:{status:status==="failed"?"succeeded":"not_required",backup_restored:status==="failed"},error:status==="failed"?"Synthetic deployment failure":null,release_notes:{kind:"commit_summary",previous_sha:"b".repeat(40),target_sha:"a".repeat(40),text:"Synthetic pinned release notes\n- Improved source monitoring\n- Fixed a previous regression",captured_at:"2026-09-08T08:00:00Z",repository_notes_available:false,changes_may_be_truncated:false,text_truncated:false},compare_url:"https://github.com/HappyMiha/helvetic-lens/compare/"+"b".repeat(40)+"..."+"a".repeat(40)});
+const run = (id, status = "succeeded") => {
+  const value = recordedRun(id, status);
+  if (deploymentPolicy) {
+    value.test_policy = deploymentPolicy;
+    if (deploymentPolicy.profile === "hotfix") {
+      value.steps = ["api_tests", "web_tests"].map(name => ({name, status: "skipped", reason: deploymentPolicy.reason}));
+    } else if (deploymentPolicy.profile === "standard") {
+      value.steps.push({name: "integration_tests", status: "skipped", reason: "Separate regression suite"});
+    }
+  }
+  return value;
+};
+
 try {
   await waitFor(async()=> (await fetch(base)).ok,"Frontend did not start");
   let debugPort;
@@ -102,6 +117,35 @@ try {
       await writeFile(join(root,"test-results/deployment-history",`${width}.png`),Buffer.from(shot.data,"base64"));
     }
   }
+
+  for (const width of [390, 1440]) for (locale of ["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"]) {
+    await cdp.send("Emulation.setDeviceMetricsOverride", {width, height: 960, deviceScaleFactor: 1, mobile: width === 390});
+    for (const profile of ["standard", "full", "hotfix"]) {
+      deploymentPolicy = {profile, suites: profile === "hotfix" ? [] : profile === "full" ? ["smoke", "functional", "integration"] : ["smoke", "functional"], workers: profile === "hotfix" ? 0 : 2, reason: profile === "hotfix" ? "Emergency incident 123" : null};
+      await cdp.send("Page.navigate", {url: `${base}/deployments?locale=${locale}&qa=${profile}`});
+      await waitFor(() => evaluate(cdp, `document.documentElement.lang===${JSON.stringify(locale)}&&!!document.querySelector('[data-deployment-run="success"]')`), "Profile history unavailable");
+      await click('[data-deployment-run="success"]');
+      await waitFor(() => evaluate(cdp, `!!document.querySelector('[data-deployment-detail="success"] [data-deployment-test-policy="${profile}"]')`), "Exact release test policy missing");
+      const text = await evaluate(cdp, `document.querySelector('[data-deployment-detail="success"]').innerText`);
+      const copy = deploymentTestsCopy[locale];
+      assert.ok(text.includes(copy.profiles[profile]), "Profile name must be localized");
+      if (profile === "hotfix") {
+        assert.ok(text.includes(copy.noTests) && text.includes(copy.skipped) && text.includes("Emergency incident 123"));
+      } else {
+        for (const suite of deploymentPolicy.suites) assert.ok(text.includes(copy.suites[suite]));
+      }
+      if (profile === "standard") assert.ok(text.includes(copy.separateIntegration) && text.includes(copy.skipped));
+      assert.ok(await evaluate(cdp, `document.documentElement.scrollWidth<=innerWidth+1`), "Release policy overflows page");
+      await audit.check(cdp, `test-policy-${profile}-${width}-${locale}`, '[data-deployment-detail="success"]');
+      if (profile === "hotfix" && locale === "en-CH") {
+        await evaluate(cdp, `document.querySelector('[data-deployment-detail="success"] [data-deployment-test-policy]').scrollIntoView({block:'start'})`);
+        await evaluate(cdp, `window.scrollBy(0, -100)`);
+        const shot = await cdp.send("Page.captureScreenshot", {format: "png"});
+        await writeFile(join(root, "test-results/deployment-history", `hotfix-${width}.png`), Buffer.from(shot.data, "base64"));
+      }
+    }
+  }
+  deploymentPolicy = null;
   deploymentBranch=null;
   await cdp.send("Emulation.setDeviceMetricsOverride",{width:390,height:960,deviceScaleFactor:1,mobile:true});
   for(locale of ["de-CH","fr-CH","it-CH","rm-CH","en-CH"]){
@@ -186,8 +230,8 @@ try {
   // POST on every route; those intercepted fixture calls do not deploy or infer.
   assert.deepEqual(requests.filter(r=>r.method!=="GET" && !["/api/assistant/context","/api/assistant/conversations"].includes(r.path)),[]);
   assert.deepEqual(exceptions,[]);
-  audit.finish(40);
-  console.log("Deployment history and Monitoring progress pass in five locales at desktop/mobile widths: distinct revisions/denominators, reopened tasks, Pollen, unavailable metadata, collapsed lists, main isolation and non-admin boundary.");
+  audit.finish(70);
+  console.log("Deployment history, three release-test profiles and Monitoring progress pass in five locales at desktop/mobile widths: explicit skipped checks, pinned hotfix reason, distinct revisions, unavailable metadata and non-admin boundary.");
 } catch(error){console.error({locale,requests:requests.slice(-10),exceptions,text:cdp?await evaluate(cdp,"document.body.innerText.slice(-2500)").catch(()=>"unavailable"):"none"});throw error;}
 finally{
   cdp?.close();
