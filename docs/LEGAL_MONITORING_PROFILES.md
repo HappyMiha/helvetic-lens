@@ -6,7 +6,7 @@ H26-07 and the legal-first-value contribution to MV2-002 track this delivery.
 
 ## Topic suggestion repair, 23 September 2026
 
-Status: VERIFYING production release. The reported Topics request returned HTTP 502.
+Status: DONE, verified on production release `64d1325`. The reported Topics request returned HTTP 502.
 Three retained Swisscom exchanges succeeded with HTTP 200 but omitted the expected
 schema: the remote adapter discarded `response_schema`, so the model returned
 an array or `title`/`jurisdiction` fields instead of the validated topic contract.
@@ -44,7 +44,17 @@ Verification before release:
 - The rebuilt browser UI displayed the actionable error for both a controlled
   invalid response and an HTML 502 gateway response. Retry displayed proposals;
   applying and saving a proposal survived reload. This check used local data.
-- Exact production release identity and a fresh live generation remain pending.
+- Production release `64d1325b083d54f2445253e67edaa108c3ac3b5d` completed the normal
+  automatic pipeline at 15:48:26 UTC on 23 September 2026. Public readiness
+  returned `git-64d1325b083d` with healthy database and Redis. The release policy's
+  integration skip is unchanged; the affected integration evidence is above.
+- A fresh read-only probe imported the deployed suggestion function and used
+  the same saved organization settings and affected profile context. Swisscom
+  returned six validated topics in one request (9.50 seconds). The complete
+  profile snapshot remained unchanged and draft; no monitoring was activated.
+  The production page loaded with its existing viewer/privacy boundary. Full
+  author mutation was tested locally through the authenticated API and browser,
+  rather than impersonating the profile owner in production.
 
 ## Reference audit
 
