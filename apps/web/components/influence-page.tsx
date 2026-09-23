@@ -497,7 +497,7 @@ function Workspace({
                       <strong>{c[review.decision]}</strong>
                       <span className={styles.meta}>
                         {new Date(review.createdAt).toLocaleString(locale)} ·{" "}
-                        {c.author}: {review.actorId || c.deletedActor}
+                        {c.author}: {review.actorId || c.unknownActor}
                       </span>
                       <p>{review.note}</p>
                     </li>
@@ -566,7 +566,7 @@ function Workspace({
                     </button>
                     <span className={styles.meta}>
                       {new Date(item.createdAt).toLocaleString(locale)} ·{" "}
-                      {c.author}: {item.actorId || c.deletedActor}
+                      {c.author}: {item.actorId || c.unknownActor}
                     </span>
                     <p>{item.note}</p>
                     <code>{item.documentHash}</code>

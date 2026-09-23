@@ -146,3 +146,8 @@ Existing snapshot IDs, text, hashes and artifacts remain intact. Real downloaded
 2021/2023/2026 articles and the local authenticated comparison show Material 0,
 Formatting only 1 and official-date labels. Activation of this final correction
 remains the last release check.
+
+Production acceptance also requires neutral attribution for an imported review
+without an account ID. Such records must display an unavailable actor rather
+than imply that a real account was deleted. This copy change preserves all
+review history and fictional contributor labels.
