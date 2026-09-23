@@ -1,6 +1,7 @@
 # Legal Hackathon resource contracts
 
-Verified on 19 September 2026. Scope: the **23 September Legal Hackathon at Novu
+Event inventory verified on 19 September 2026; participant API guides rechecked
+on 23 September 2026. Scope: the **23 September Legal Hackathon at Novu
 Campus**, not the separate Swisscom hackathon on 24–25 September or the 2025 event.
 
 ## Event and access
@@ -27,13 +28,40 @@ must be confirmed before entering this project in the competition.
 | Resource | Implemented integration | Still needed from the participant/provider |
 |---|---|---|
 | Anthropic | Native Messages adapter in the existing impact/Ask pipeline; model discovery; fixed official HTTPS origin; bounded existing request budget; incomplete/refused outputs rejected | Console API key scoped to one workspace, permitted model ID, quota; a Claude subscription alone does not establish API credits |
-| Swisscom | Explicit Swisscom provider using its documented bearer-authenticated Chat Completions protocol; issued endpoint entered in Settings | Exact 2026 endpoint, served model and key; which plan/model and limits the organizer grants |
+| OpenAI | Fixed official Chat Completions origin, encrypted saved cloud connection and explicit organization activation | Redeem the personal credit in the intended OpenAI organization; supply a separate project API key and a permitted model |
+| Swisscom | Bearer-authenticated Chat Completions; Swiss {ai} Weeks Apertus 1.5 70B preset; independently saved encrypted connection | Issued participant key; continued credential validity, remaining allocation and legal answer quality |
 | Supertext | Encrypted organization configuration; feature-access probe; AI text translation of a reviewed briefing | API key from Supertext cockpit, supported language pair, usable credits |
 | ElevenLabs | Encrypted organization configuration; configured-voice access probe; MP3 speech from reviewed text | API key with voice-read and speech permissions, permitted voice ID/model, usable credits |
 | Lovable | Development handoff below; existing GitHub repository remains authoritative | Organizer workspace/credits and a Lovable-created project if used for UI exploration |
 | Other tools, data or compute | Existing custom compatible endpoint and local model-manager paths can be configured when contracts are known | Names, documentation, license/rights, credentials, endpoints and allocations; no invented connectors |
 
 ## Verified protocols and setup
+
+**23 September participant offers:** the organizer's
+[OpenAI guide](https://zh.ai-weeks.ch/tools/openai-hacker-guide),
+[Swisscom guide](https://zh.ai-weeks.ch/tools/swisscom-hacker-guide) and
+[Supertext guide](https://zh.ai-weeks.ch/tools/supertext-hacker-guide) direct
+registered participants to [Keymaker](https://keymaker.ai-weeks.ch/).
+Request one allocation per person/provider using the registered email. Personal
+keys, one-time redemption URLs and contact details are never repository fixtures.
+
+**OpenAI:** the organizer offers USD 50 as a one-time billing promotion. Select
+the intended OpenAI API organization before opening the personal redemption link;
+the credit cannot be transferred after redemption. A promotion URL is not an API
+key. Use a separate project key and an available Chat Completions model. The
+[official API contract](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create)
+uses `https://api.openai.com/v1`, bearer authorization and
+`max_completion_tokens`. The adapter sets `store: false`, uses model-default
+sampling and retains existing response/citation validation. This does not claim
+zero provider retention or that the promotion has already been redeemed.
+
+**Saved cloud connections:** open **Settings → Partner tools**
+(`/settings/partners`). OpenAI and Swisscom profiles retain separate encrypted
+keys. Save a model and key, test the saved connection, then choose **Use for this
+organization**. Saving/testing alone leaves active inference unchanged. Activation
+copies the saved settings; subsequent profile edits/removal do not change that
+active copy. Change or disconnect active inference in Settings. Other organizations
+receive the same controls with their own empty credentials.
 
 **Anthropic:** [Messages reference](https://platform.claude.com/docs/en/api/messages/create)
 and [authentication](https://platform.claude.com/docs/en/manage-claude/authentication).
@@ -51,6 +79,13 @@ requested `{"status":"ok"}` object; this is not an answer-quality evaluation.
 
 **Swisscom:** [official product and example](https://digital.swisscom.com/products/swiss-ai-platform/info)
 and [Swisscom quickstart](https://docs.cloud.swisscom.ch/guide/cloud-services/aip/use/inference-endpoints/).
+The current organizer guide specifies
+`https://api.swisscom.com/products/swiss-ai-weeks/apertus-1.5-70b/v1`, model
+`swiss-ai/Apertus-v1.5-70B`, bearer authorization and `/chat/completions`.
+It lists five requests/second, ten million input tokens, 2.5 million output tokens
+and a 60-minute bearer-authorization expiry. These are published offer terms, not
+a measurement of a participant's remaining quota or token lifetime. No undocumented
+refresh flow or automatic retry of expired credentials is implemented.
 The official example uses a bearer-authenticated OpenAI client with a
 model-specific base URL under `https://api.swisscom.com/layer/swiss-ai-platform/`.
 Select Swisscom AI, enter the **issued** base URL ending in `/v1`, replace the key

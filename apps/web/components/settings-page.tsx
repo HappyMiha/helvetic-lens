@@ -137,20 +137,23 @@ export function SettingsPage() {
               {configuration.data?.configured
                 ? t("settings.configured", {
                     provider:
-                      configuration.data.provider === "anthropic"
-                        ? t("partners.anthropic")
-                        : configuration.data.provider === "swisscom"
-                          ? t("partners.swisscom")
-                          : configuration.data.provider === "infomaniak"
-                            ? t("settings.infomaniak")
-                            : configuration.data.provider === "docker"
-                              ? t("settings.local")
-                              : t("settings.custom"),
+                      configuration.data.provider === "openai"
+                        ? t("partners.openai")
+                        : configuration.data.provider === "anthropic"
+                          ? t("partners.anthropic")
+                          : configuration.data.provider === "swisscom"
+                            ? t("partners.swisscom")
+                            : configuration.data.provider === "infomaniak"
+                              ? t("settings.infomaniak")
+                              : configuration.data.provider === "docker"
+                                ? t("settings.local")
+                                : t("settings.custom"),
                   })
                 : t("settings.notConfigured")}
             </p>
             <p className="text-sm muted">
-              {configuration.data?.provider === "anthropic" ||
+              {configuration.data?.provider === "openai" ||
+              configuration.data?.provider === "anthropic" ||
               configuration.data?.provider === "swisscom"
                 ? `${t("settings.modelId")}: ${configuration.data.model || t("settings.notSelected")}`
                 : t("settings.currentModel", {
@@ -160,11 +163,13 @@ export function SettingsPage() {
             </p>
             <a
               href={
-                configuration.data?.provider === "anthropic"
-                  ? "https://platform.claude.com/docs/en/api/models/list"
-                  : configuration.data?.provider === "swisscom"
-                    ? "https://digital.swisscom.com/products/swiss-ai-platform/info"
-                    : `https://huggingface.co/${configuration.data?.model || "swiss-ai/Apertus-v1.5-8B"}`
+                configuration.data?.provider === "openai"
+                  ? "https://developers.openai.com/api/docs/models"
+                  : configuration.data?.provider === "anthropic"
+                    ? "https://platform.claude.com/docs/en/api/models/list"
+                    : configuration.data?.provider === "swisscom"
+                      ? "https://digital.swisscom.com/products/swiss-ai-platform/info"
+                      : `https://huggingface.co/${configuration.data?.model || "swiss-ai/Apertus-v1.5-8B"}`
               }
               target="_blank"
               rel="noreferrer"
@@ -245,13 +250,21 @@ function ApertusForm({
     setModels([]);
     setModelsMessage("");
     setDraft((current) => {
-      if (provider === "anthropic" || provider === "swisscom") {
+      if (
+        provider === "anthropic" ||
+        provider === "swisscom" ||
+        provider === "openai"
+      ) {
         return {
           ...current,
           provider,
           base_url:
-            provider === "anthropic" ? "https://api.anthropic.com/v1" : "",
-          model: "",
+            provider === "openai"
+              ? "https://api.openai.com/v1"
+              : provider === "anthropic"
+                ? "https://api.anthropic.com/v1"
+                : "https://api.swisscom.com/products/swiss-ai-weeks/apertus-1.5-70b/v1",
+          model: provider === "swisscom" ? "swiss-ai/Apertus-v1.5-70B" : "",
           explanation_profile: "",
           json_mode: false,
         };
@@ -454,6 +467,7 @@ function ApertusForm({
                 <option value="infomaniak">{t("settings.infomaniak")}</option>
                 <option value="docker">{t("settings.local")}</option>
                 <option value="custom">{t("settings.custom")}</option>
+                <option value="openai">{t("partners.openai")}</option>
                 <option value="anthropic">{t("partners.anthropic")}</option>
                 <option value="swisscom">{t("partners.swisscom")}</option>
               </select>
@@ -465,15 +479,17 @@ function ApertusForm({
             </label>
             <div className="rounded-lg border p-4 text-sm">
               <strong>
-                {draft.provider === "anthropic"
-                  ? t("partners.anthropic")
-                  : draft.provider === "swisscom"
-                    ? t("partners.swisscom")
-                    : draft.provider === "infomaniak"
-                      ? t("settings.infomaniak")
-                      : draft.provider === "docker"
-                        ? t("settings.local")
-                        : t("settings.custom")}
+                {draft.provider === "openai"
+                  ? t("partners.openai")
+                  : draft.provider === "anthropic"
+                    ? t("partners.anthropic")
+                    : draft.provider === "swisscom"
+                      ? t("partners.swisscom")
+                      : draft.provider === "infomaniak"
+                        ? t("settings.infomaniak")
+                        : draft.provider === "docker"
+                          ? t("settings.local")
+                          : t("settings.custom")}
               </strong>
               <p className="field-help !mb-0">{t("settings.activeProvider")}</p>
             </div>
@@ -712,7 +728,10 @@ function ApertusForm({
                   type="url"
                   autoComplete="url"
                   placeholder="https://…"
-                  readOnly={draft.provider === "anthropic"}
+                  readOnly={
+                    draft.provider === "anthropic" ||
+                    draft.provider === "openai"
+                  }
                   value={draft.base_url}
                   onChange={(event) => update("base_url", event.target.value)}
                   maxLength={2000}
@@ -731,7 +750,8 @@ function ApertusForm({
                   onChange={(event) => update("model", event.target.value)}
                   required={
                     draft.provider !== "anthropic" &&
-                    draft.provider !== "swisscom"
+                    draft.provider !== "swisscom" &&
+                    draft.provider !== "openai"
                   }
                   maxLength={300}
                 />
@@ -740,7 +760,8 @@ function ApertusForm({
             </>
           )}
           {(draft.provider === "anthropic" ||
-            draft.provider === "swisscom") && (
+            draft.provider === "swisscom" ||
+            draft.provider === "openai") && (
             <div className="grid gap-2">
               <Button
                 type="button"
@@ -938,7 +959,10 @@ function ApertusForm({
                   step="any"
                   required
                   value={draft.temperature}
-                  disabled={draft.provider === "anthropic"}
+                  disabled={
+                    draft.provider === "anthropic" ||
+                    draft.provider === "openai"
+                  }
                   onChange={(event) =>
                     update("temperature", event.target.value)
                   }
@@ -956,7 +980,10 @@ function ApertusForm({
                   step="any"
                   required
                   value={draft.top_p}
-                  disabled={draft.provider === "anthropic"}
+                  disabled={
+                    draft.provider === "anthropic" ||
+                    draft.provider === "openai"
+                  }
                   onChange={(event) => update("top_p", event.target.value)}
                 />
                 <span className="field-help">{t("settings.topPHelp")}</span>
@@ -970,7 +997,10 @@ function ApertusForm({
                   step="any"
                   required
                   value={draft.presence_penalty}
-                  disabled={draft.provider === "anthropic"}
+                  disabled={
+                    draft.provider === "anthropic" ||
+                    draft.provider === "openai"
+                  }
                   onChange={(event) =>
                     update("presence_penalty", event.target.value)
                   }

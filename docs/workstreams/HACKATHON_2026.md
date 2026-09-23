@@ -18,12 +18,25 @@ not proof of participant credentials, credits, model access or allocated GPUs.
 | H26-03 | Supertext AI text translation and ElevenLabs speech | Encrypted organization credentials, explicit reviewed text submission, bounded responses, safe errors, usable UI and tenant/role tests | VERIFYING — software checked; live generation and language review open |
 | H26-04 | Lovable development handoff, compute activation instructions | Document supported integration paths; no invented import API, credits or server allocation | DONE — documented; no allocation claimed |
 | H26-05 | Participant preparation delivered outside Git | Presentation and personal coaching are excluded from main at the user's request | Delivered separately; participant rehearsal remains open |
+| H26-06 | Activate the participant's OpenAI, Swisscom Apertus 1.5 70B and Supertext access in production | Official organizer contracts; current Swisscom route; fixed OpenAI origin; independently stored encrypted inference connections; administrator activation; no credential disclosure; provider/tenant tests; live checks and verified deployment | IN PROGRESS — user authorized production activation on 23 September; personal access is being obtained |
+
+H26-06 preserves the existing inference and translation workflows. Separate saved
+connections let the organization retain both OpenAI and Swisscom credentials;
+activating one remains an explicit administrator action. The organizer publishes
+the `/products/swiss-ai-weeks/apertus-1.5-70b/v1` endpoint and the exact
+`swiss-ai/Apertus-v1.5-70B` model. API keys, redemption links and participant contact
+details stay outside Git. OpenAI credit redemption is distinct from an API key
+and must target the participant's intended API organization. Supertext human
+verification is excluded from this grant. No account entitlement, lasting token
+validity or answer quality is inferred from documentation or a connection test.
 
 Published contracts: [Anthropic Messages](https://platform.claude.com/docs/en/api/messages/create),
 [Supertext](https://www.supertext.com/en/documentation/api),
 [ElevenLabs speech](https://elevenlabs.io/docs/api-reference/text-to-speech/convert),
 [Lovable GitHub](https://docs.lovable.dev/integrations/github).
-Swisscom participant endpoint/authentication and reuse rules require confirmation.
+The [Swisscom participant guide](https://zh.ai-weeks.ch/tools/swisscom-hacker-guide)
+now confirms the event endpoint, model and bearer authentication. Reuse eligibility
+and continued participant entitlement remain separate organizer checks.
 These tasks belong here, not in the Monitoring v2 backlog.
 
 **Event:** 23 September 2026. [Official event page](https://ai-weeks.ch/events/legal-hackathon) · [User-provided listing](https://www.hackevents.net/ch/events/legal-hackathon-jfvp4wc9).

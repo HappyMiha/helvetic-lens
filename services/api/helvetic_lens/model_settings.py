@@ -127,7 +127,7 @@ def resolve_key(
     previous = record.values if record else {}
     origin_provider = environment.apertus_provider if source == "environment" else previous.get("provider")
     origin_url = environment.apertus_base_url if source == "environment" else previous.get("base_url", "")
-    if data and data.provider != "docker" and effective_key and {data.provider, origin_provider} & {"anthropic", "swisscom"}:
+    if data and data.provider != "docker" and effective_key and {data.provider, origin_provider} & {"anthropic", "swisscom", "openai"}:
         if data.key_action != "replace" and (origin_provider != data.provider or origin_url.rstrip("/") != data.base_url):
             raise DomainError("Enter the credential issued for the selected provider and endpoint.", 422, "provider_key_required")
     return source, stored_key, SecretStr(effective_key)

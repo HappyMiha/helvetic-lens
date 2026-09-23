@@ -446,6 +446,8 @@ class ModelClient:
             return "Anthropic Claude"
         if self.settings.apertus_provider == "swisscom":
             return "Swisscom"
+        if self.settings.apertus_provider == "openai":
+            return "OpenAI"
         if self.settings.apertus_provider == "infomaniak":
             return "Infomaniak"
         if self.settings.apertus_provider == "docker":
@@ -723,8 +725,14 @@ class ModelClient:
             "n": 1,
         }
         token_field = (
-            "max_completion_tokens" if self.settings.apertus_provider == "infomaniak" else "max_tokens"
+            "max_completion_tokens" if self.settings.apertus_provider in {"infomaniak", "openai"} else "max_tokens"
         )
+        if self.settings.apertus_provider == "openai":
+            # Reasoning models do not share the sampling controls of every chat
+            # model. Use provider defaults and the explicit completion budget.
+            for field in ("temperature", "top_p", "presence_penalty"):
+                payload.pop(field, None)
+            payload["store"] = False
         payload[token_field] = self.settings.apertus_max_tokens
         if self.active_capability is not None and self.active_capability.budget is not None:
             payload[token_field] = min(payload[token_field], self.active_capability.budget.output_tokens)

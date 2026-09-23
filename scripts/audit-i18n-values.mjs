@@ -29,6 +29,7 @@ let failed = false;
 for (const allowed of Object.values(approvedIdentical)) allowed.add("nav.pollenWatch");
 // Provider brands retain their registered spelling in every language.
 for (const allowed of Object.values(approvedIdentical)) {
+  allowed.add("partners.openai");
   allowed.add("partners.anthropic");
   allowed.add("partners.swisscom");
 }

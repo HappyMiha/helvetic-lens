@@ -9,6 +9,7 @@ import { Shell } from "./shell";
 import { ErrorNote, Loading, SuccessNote } from "./common";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { CloudConnections } from "./cloud-connections";
 
 type Partner = {
   provider: "supertext" | "elevenlabs";
@@ -100,6 +101,7 @@ function PartnerWorkspace() {
   }
   return (
     <div className="grid gap-6 mt-6">
+      <CloudConnections />
       <ErrorNote message={resource.error} />
       {!resource.data ? (
         <Loading />

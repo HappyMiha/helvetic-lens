@@ -3,6 +3,41 @@
 Verification date: 20 September 2026. Development baseline: `8eb4d3b` on main.
 See [resource contracts](RESOURCES.md) and the [workstream](../workstreams/HACKATHON_2026.md).
 
+## 23 September: saved cloud connections (H26-06)
+
+OpenAI now has an explicit, pinned provider origin. Swisscom accepts the exact
+Swiss {ai} Weeks Apertus 1.5 70B endpoint. `/settings/partners` retains separate
+encrypted OpenAI/Swisscom profiles with administrator-only save, revision-checked
+test and explicit activation. Saving/testing never switches active inference;
+activation copies the saved profile. Later profile removal does not revoke the
+active copy; change active inference separately in Settings. The controls are
+available to every organization, with credentials isolated to their owner.
+
+Verified locally on Linux with Node 24 and Python 3.12:
+
+- 81 API tests passed: inference connections, existing partners, model settings,
+  authentication, integration-log redaction and the required backlog invariant.
+  These cover restart persistence, encryption, independent credentials, stale
+  revisions, pinned destinations, provider-key boundaries, bounded technical
+  calls, failed access without retry/fallback, tenant isolation, CSRF, viewer
+  denial and revoked membership.
+- Exact `ruff check services/api deploy/release_manager.py`, frontend typecheck
+  and production build passed, including localization/resource/shell checks.
+- Local built UI: disconnected profiles disable testing/activation; saving a
+  synthetic Swisscom credential clears the password field, shows saved status
+  and leaves inference unchanged. Explicit activation reports success. Desktop
+  card layout inspected; no participant credentials were used in browser tests.
+- The issued Swisscom credential returned the exact requested status JSON using
+  the application's actual ModelClient and `swiss-ai/Apertus-v1.5-70B` on the
+  documented 2026 endpoint. This establishes technical access at check time;
+  it does not measure lasting authorization, remaining quota or legal quality.
+
+Production activation and release verification are recorded separately after
+deployment. The OpenAI promotion still needs redemption in the participant's
+intended account/organization and a separate project API key. Supertext's issued
+key has not yet been supplied. Neither is claimed connected from public offer
+documentation alone. No redemption code, email address or API key is in Git.
+
 ## Delivered behavior
 
 - Anthropic Claude uses native Messages with a fixed official origin, version

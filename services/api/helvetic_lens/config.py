@@ -19,17 +19,25 @@ INFOMANIAK_API_ROOT = "https://api.infomaniak.com"
 LOCAL_DOCKER_HOST_URL = "http://127.0.0.1:12436/openai/v1"
 LOCAL_DOCKER_CONTAINER_URL = "http://model-manager:8090/openai/v1"
 ANTHROPIC_BASE_URL = "https://api.anthropic.com/v1"
-InferenceProvider = Literal["custom", "docker", "infomaniak", "anthropic", "swisscom"]
+OPENAI_BASE_URL = "https://api.openai.com/v1"
+SWISSCOM_WEEKS_BASE_URL = "https://api.swisscom.com/products/swiss-ai-weeks/apertus-1.5-70b/v1"
+SWISSCOM_WEEKS_MODEL = "swiss-ai/Apertus-v1.5-70B"
+InferenceProvider = Literal["custom", "docker", "infomaniak", "anthropic", "swisscom", "openai"]
 
 
 def partner_inference_url(provider: str, value: str) -> str:
     if provider == "anthropic":
         return ANTHROPIC_BASE_URL
+    if provider == "openai":
+        if value and value.rstrip("/") != OPENAI_BASE_URL:
+            raise ValueError("The OpenAI provider uses https://api.openai.com/v1.")
+        return OPENAI_BASE_URL
     if provider == "swisscom" and value:
         parsed = urlsplit(value)
         if (parsed.scheme != "https" or parsed.netloc != "api.swisscom.com"
                 or parsed.query or parsed.fragment
-                or not parsed.path.startswith(("/layer/swiss-ai-platform/", "/layer/swiss-ai-weeks/"))
+                or not (parsed.path.startswith(("/layer/swiss-ai-platform/", "/layer/swiss-ai-weeks/"))
+                        or value.rstrip("/") == SWISSCOM_WEEKS_BASE_URL)
                 or not parsed.path.rstrip("/").endswith("/v1")
                 or any(part in {".", ".."} for part in parsed.path.split("/"))):
             raise ValueError("Use the Swisscom-issued HTTPS inference base URL on api.swisscom.com ending in /v1.")
@@ -229,7 +237,7 @@ class Settings(BaseSettings):
         elif self.apertus_provider == "docker":
             self.apertus_product_id = ""
             self.apertus_base_url = local_docker_base_url()
-        elif self.apertus_provider in {"anthropic", "swisscom"}:
+        elif self.apertus_provider in {"anthropic", "swisscom", "openai"}:
             self.apertus_base_url = partner_inference_url(self.apertus_provider, self.apertus_base_url)
         return self
 

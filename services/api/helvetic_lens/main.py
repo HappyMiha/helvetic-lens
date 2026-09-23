@@ -342,7 +342,7 @@ class RelationReprocessingInput(Input):
 
 
 def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
-    if path.startswith(("/api/partner-tools/", "/api/settings/partners")):
+    if path.startswith(("/api/partner-tools/", "/api/settings/partners", "/api/settings/inference-connections")):
         return "partner_tools", 12 if method == "POST" else 30, 60
     if path == "/api/admin/monitoring-sources/history":
         return "monitoring_source_history", 60, 60
@@ -2316,6 +2316,10 @@ def create_app(
     from .partner_tools import partner_router
     app.include_router(influence_router(service))
     app.include_router(partner_router(service))
+
+    from .inference_connections import inference_connections_router
+
+    app.include_router(inference_connections_router(service))
     app.include_router(connector_router(service))
     app.include_router(draft_router(service, source_settings))
     app.include_router(river_router(service, source_settings))
