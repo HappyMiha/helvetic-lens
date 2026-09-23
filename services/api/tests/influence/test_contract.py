@@ -150,3 +150,19 @@ def test_dispute_and_proposal_are_retained_without_promoting_them():
     assert Document.model_validate(value).edges[0].status == "disputed"
     edge.update(kind="potential_impact", status="not_established")
     assert Document.model_validate(value).edges[0].status == "not_established"
+
+
+def test_editorial_notes_require_sources_and_separate_task_fields():
+    value = document()
+    value['reviewNotes'] = [{
+        'id': 'note', 'kind': 'finding', 'title': 'Read the source', 'author': 'Maya',
+        'role': 'Counsel', 'fictional': True, 'body': 'An editorial note.',
+        'sourceIds': ['missing'],
+    }]
+    with pytest.raises(ValidationError, match='missing source'):
+        Document.model_validate(value)
+    value['reviewNotes'][0]['sourceIds'] = ['annual-report']
+    Document.model_validate(value)
+    value['reviewNotes'][0]['dueOn'] = '2026-10-01'
+    with pytest.raises(ValidationError, match='Only tasks'):
+        Document.model_validate(value)

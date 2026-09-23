@@ -217,3 +217,51 @@ def test_account_erasure_detaches_actor_and_workspace_deletion_cascades(harness)
             session.scalar(select(InfluenceReview).where(InfluenceReview.dossier_id == created["id"])) is None
         )
         assert session.execute(text("PRAGMA foreign_key_check")).all() == []
+
+
+def test_document_brief_visibility_links_history_and_archive(harness):
+    from helvetic_lens.models import DocumentWatch, Law
+    client, db, actors = harness
+    law_id = str(uuid4())
+    with db.organization_context(actors['owner'].organization_id), db.session() as session:
+        session.add(Law(id=law_id, owner_organization_id=actors['owner'].organization_id,
+                        canonical_identity='brief-law', name='Test law', url='https://example.org/law'))
+        session.flush()
+        session.add(DocumentWatch(law_id=law_id, display_name='Test law'))
+        session.commit()
+    body = save_body()
+    body['document']['lawId'] = law_id
+    body['document']['reviewNotes'] = [{
+        'id': 'review', 'kind': 'task', 'title': 'Check the contract',
+        'author': 'Fictional colleague', 'role': 'Counsel', 'fictional': True,
+        'body': 'Inspect the actual signed plan before classifying the bonus.',
+        'sourceIds': ['annual-report'], 'status': 'open', 'dueOn': '2026-10-01',
+    }]
+    missing = save_body({**body['document'], 'lawId': str(uuid4())})
+    assert client.post('/api/influence/dossiers', json=missing).status_code == 404
+    assert client.post('/api/influence/dossiers', json=body, headers={'x-test-actor': 'other'}).status_code == 404
+    result = client.post('/api/influence/dossiers', json=body)
+    assert result.status_code == 201, result.text
+    row = result.json()
+    path = '/api/influence/dossiers/by-law/' + law_id
+    page = client.get(path, headers={'x-test-actor': 'viewer'})
+    assert page.status_code == 200
+    assert page.json()['items'][0]['document']['reviewNotes'][0]['fictional'] is True
+    assert 'snapshotText' not in page.json()['items'][0]['document']['sources'][0]
+    assert client.get(path, headers={'x-test-actor': 'other'}).status_code == 404
+    assert client.post('/api/influence/dossiers', json=body, headers={'x-test-actor': 'viewer'}).status_code == 403
+    updated = save_body(body['document'], 1)
+    updated['document']['reviewNotes'][0]['status'] = 'in_progress'
+    assert client.patch('/api/influence/dossiers/' + row['id'], json=updated).status_code == 200
+    old = client.get('/api/influence/dossiers/' + row['id'] + '?revision=1').json()
+    assert old['document']['reviewNotes'][0]['status'] == 'open'
+    assert old['revisionCreatedAt'] == row['revisionCreatedAt']
+    assert client.post('/api/influence/dossiers/' + row['id'] + '/archive', json={
+        'expectedRevision': 2, 'requestId': str(uuid4()), 'archived': True, 'note': 'Archive review',
+    }).status_code == 200
+    assert client.get(path).json()['items'] == []
+    with db.session(include_all_organizations=True) as session:
+        member = session.scalar(select(OrganizationMembership).where(OrganizationMembership.user_id == actors['viewer'].user_id))
+        session.delete(member)
+        session.commit()
+    assert client.get(path, headers={'x-test-actor': 'viewer'}).status_code == 403

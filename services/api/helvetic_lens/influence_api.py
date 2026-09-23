@@ -11,7 +11,7 @@ from .db import utcnow
 from .influence_contract import Archive, Review, Save, fingerprint
 from .influence_models import InfluenceDossier, InfluenceReview, InfluenceRevision
 from .membership_locks import require_current_admin
-from .models import OrganizationMembership, User
+from .models import DocumentWatch, Law, OrganizationMembership, User
 
 
 def conflict():
@@ -44,6 +44,17 @@ def get_dossier(session, actor, identifier):
     if row is None:
         raise DomainError("Dossier not found.", 404, "influence_not_found")
     return row
+
+
+def require_law(session, actor, identifier):
+    if identifier is None:
+        return
+    law = session.scalar(select(Law).join(DocumentWatch, DocumentWatch.law_id == Law.id).where(
+        Law.id == str(identifier), DocumentWatch.organization_id == actor.organization_id,
+        (Law.owner_organization_id.is_(None)) | (Law.owner_organization_id == actor.organization_id),
+    ))
+    if law is None:
+        raise DomainError("Monitored document not found.", 404, "law_not_found")
 
 
 def summary(row):
@@ -96,6 +107,7 @@ def detail(session, row, revision=None):
     return {
         **summary(row),
         "viewedRevision": number,
+        "revisionCreatedAt": version.created_at.isoformat(),
         "document": version.document,
         "documentHash": version.document_hash,
         "note": version.note,
@@ -181,6 +193,7 @@ def influence_router(service):
         request_hash = fingerprint(body.model_dump(mode="json", by_alias=True))
         with service.db.session() as session:
             require_current_admin(session, actor)
+            require_law(session, actor, body.document.lawId)
             existing = session.scalar(
                 select(InfluenceDossier).where(
                     InfluenceDossier.organization_id == actor.organization_id,
@@ -228,6 +241,26 @@ def influence_router(service):
             session.commit()
             return result
 
+    @router.get("/by-law/{law_id}")
+    def for_law(law_id: UUID, actor: Identity = Depends(identity)):
+        with service.db.session() as session:
+            require_member(session, actor)
+            require_law(session, actor, law_id)
+            rows = session.execute(select(InfluenceDossier, InfluenceRevision).join(
+                InfluenceRevision, (InfluenceRevision.dossier_id == InfluenceDossier.id)
+                & (InfluenceRevision.revision == InfluenceDossier.revision),
+            ).where(
+                InfluenceDossier.organization_id == actor.organization_id,
+                InfluenceRevision.organization_id == actor.organization_id,
+                InfluenceDossier.archived.is_(False),
+                InfluenceRevision.document["lawId"].as_string() == str(law_id),
+            ).order_by(InfluenceDossier.updated_at.desc()).limit(10)).all()
+            return {"items": [{**summary(row), "document": {
+                "reviewNotes": version.document.get("reviewNotes", []),
+                "sources": [{key: source[key] for key in ("id", "title", "url", "publisher")}
+                            for source in version.document["sources"]],
+            }} for row, version in rows]}
+
     @router.get("/{dossier_id}")
     def read(
         dossier_id: UUID,
@@ -241,6 +274,7 @@ def influence_router(service):
     def save(dossier_id: UUID, body: Save, actor: Identity = Depends(identity)):
         with service.db.session() as session:
             require_current_admin(session, actor)
+            require_law(session, actor, body.document.lawId)
             row = get_dossier(session, actor, dossier_id)
             request_hash = fingerprint(body.model_dump(mode="json", by_alias=True))
             replay = session.scalar(

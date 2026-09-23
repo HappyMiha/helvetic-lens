@@ -380,6 +380,14 @@ class Fetcher:
 """
         else:
             version_selection = f"BIND(<{title_uri}> AS ?expression)"
+        # Virtuoso rejects ORDER BY over a constant BIND/date or a single-row
+        # VALUES priority (SQ200). Only sort variable dimensions of this query.
+        ordering = []
+        if reference.collection == "cc" and not reference.expression_uri:
+            ordering.append("DESC(?date)")
+        if len(formats) > 1:
+            ordering.append("?priority")
+        ordering.append("?file")
         query = f"""
 PREFIX jolux: <http://data.legilux.public.lu/resource/ontology/jolux#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
@@ -393,7 +401,7 @@ SELECT ?expression ?date ?manifestation ?file ?title ?priority WHERE {{
   ?manifestation jolux:userFormat ?userFormat ;
                  jolux:isExemplifiedBy ?file .
 }}
-ORDER BY DESC(?date) ?priority
+ORDER BY {" ".join(ordering)}
 LIMIT 1
 """
         headers = {

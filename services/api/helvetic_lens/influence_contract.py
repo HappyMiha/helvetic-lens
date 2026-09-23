@@ -14,7 +14,8 @@ Short = Annotated[str, Field(min_length=1, max_length=240)]
 Paragraph = Annotated[str, Field(min_length=1, max_length=2000)]
 Status = Literal["documented", "reported", "disputed", "not_established"]
 Kind = Literal[
-    "family", "role", "campaign", "ownership", "business", "policy_proposal", "potential_impact", "dividend"
+    "family", "role", "campaign", "ownership", "business", "policy_proposal", "potential_impact", "dividend",
+    "legal_reference",
 ]
 
 
@@ -105,6 +106,25 @@ class Edge(Input):
     money: Money | None = None
 
 
+class ReviewNote(Input):
+    id: Identifier
+    kind: Literal["finding", "discussion", "task"]
+    title: Short
+    author: Short
+    role: Short
+    fictional: bool = Field(default=False, strict=True)
+    body: str = Field(min_length=1, max_length=6000)
+    sourceIds: list[Identifier] = Field(default_factory=list, max_length=12)
+    status: Literal["open", "in_progress", "complete", "recorded"] = "recorded"
+    dueOn: date | None = None
+
+    @model_validator(mode="after")
+    def task_fields(self):
+        if self.kind != "task" and (self.dueOn or self.status != "recorded"):
+            raise ValueError("Only tasks have a due date or workflow status.")
+        return self
+
+
 class Document(Input):
     id: Identifier
     title: Short
@@ -114,16 +134,21 @@ class Document(Input):
     entities: list[Entity] = Field(max_length=100)
     edges: list[Edge] = Field(max_length=250)
     gaps: list[Paragraph] = Field(max_length=30)
+    lawId: UUID | None = None
+    reviewNotes: list[ReviewNote] = Field(default_factory=list, max_length=50)
 
     @model_validator(mode="after")
     def evidence_integrity(self):
         if self.checkedOn > datetime.now(UTC).date():
             raise ValueError("The dossier review date cannot be in the future.")
-        for records in (self.sources, self.entities, self.edges):
+        for records in (self.sources, self.entities, self.edges, self.reviewNotes):
             if len({item.id for item in records}) != len(records):
                 raise ValueError("IDs must be unique within each record type.")
         sources = {item.id: item for item in self.sources}
         entities = {item.id for item in self.entities}
+        for note in self.reviewNotes:
+            if any(identifier not in sources for identifier in note.sourceIds):
+                raise ValueError("A review note refers to a missing source.")
         for source in self.sources:
             if source.checkedOn > self.checkedOn:
                 raise ValueError("A source review cannot follow the dossier review date.")

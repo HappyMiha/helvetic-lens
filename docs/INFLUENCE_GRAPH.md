@@ -144,3 +144,33 @@ deployment activation remain open; local checks do not establish those outcomes.
 The only release target is `helveticlens.ch` on HappySnowman. This module does not
 create another deployment. [MV2-064 / HL-053](../BACKLOG_MONITORING_V2.md#mv2-064)
 continues to require its separate legal relationship-graph usefulness experiment.
+
+## Document review briefs (23 September 2026)
+
+In **Edit dossier → Dossier**, choose a monitored document and add findings,
+discussion notes or tasks. Notes retain contributor names/roles, an explicit
+fictional-contributor flag and references to the dossier's sources. Tasks also
+have a status and an internal target date. Each save creates a dossier revision;
+a task date is not a statutory deadline and a fictional name is not a user account.
+These editorial records never populate AI analyses or authorize operational actions.
+
+The document page displays active linked briefs; its graph button opens the exact
+private dossier at `/influence?dossier=<id>`. The graph opens first, with the brief
+available below it. Legal connections participate in the policy filter. Original
+source texts retain their language while the controls support all five locales.
+
+`GET /api/influence/dossiers/by-law/{id}` checks fresh membership and the current
+organization's document watch. It returns at most ten latest active linked briefs,
+without retained source extracts. Create/edit also validate document visibility;
+private law identifiers cannot be linked across organizations. Existing dossier
+revisions store the optional fields, requiring no new database migration.
+
+Verification: 91 targeted API tests, exact repository Ruff gate, root frontend
+checks and production build. Local authenticated browser checks covered exact
+links, the 15-note editor, task status/save and law/graph navigation. Real Fedlex
+historical HTML exposed a Virtuoso SQ200 constant-sort error; the resolver now
+sorts only variable dimensions and retains deterministic artifact ordering.
+Native fetches of the 2021 and 2023 OR editions pass, alongside a regression test.
+The production dossier's source facts are distinct from fictional company and
+colleague content; production activation and populated-data checks are recorded
+separately in the delivery record.

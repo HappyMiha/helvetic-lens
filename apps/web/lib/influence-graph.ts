@@ -15,6 +15,7 @@ export type RelationKind =
   | "campaign"
   | "ownership"
   | "business"
+  | "legal_reference"
   | "policy_proposal"
   | "potential_impact"
   | "dividend";
@@ -68,6 +69,18 @@ export type InfluenceEdge = {
   limits: string[];
   money?: MoneyFlow | null;
 };
+export type DossierReviewNote = {
+  id: string;
+  kind: "finding" | "discussion" | "task";
+  title: string;
+  author: string;
+  role: string;
+  fictional: boolean;
+  body: string;
+  sourceIds: string[];
+  status: "open" | "in_progress" | "complete" | "recorded";
+  dueOn: string | null;
+};
 export type InfluenceDossier = {
   id: string;
   title: string;
@@ -77,6 +90,8 @@ export type InfluenceDossier = {
   entities: InfluenceEntity[];
   edges: InfluenceEdge[];
   gaps: string[];
+  lawId?: string | null;
+  reviewNotes?: DossierReviewNote[];
 };
 
 export const INFLUENCE_NODE_WIDTH = 230;
@@ -225,9 +240,12 @@ export function visibleInfluenceEdges(
       case "money":
         return isConfirmedMoneyFlow(edge, dossier.sources);
       case "policy":
-        return ["campaign", "policy_proposal", "potential_impact"].includes(
-          edge.kind,
-        );
+        return [
+          "campaign",
+          "policy_proposal",
+          "potential_impact",
+          "legal_reference",
+        ].includes(edge.kind);
       default:
         return true;
     }

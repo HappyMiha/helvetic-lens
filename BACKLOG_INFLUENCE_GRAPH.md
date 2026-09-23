@@ -9,6 +9,26 @@ by an explicit request for the complete module and a push to main for deployment
 | IG-001 — Evidence dossier explorer | VERIFYING | Graph and equivalent list; dated sources and counter-statements; strict money filter; five interface languages; keyboard/mobile support; production build |
 | IG-002 — Workspace authoring and editorial review | VERIFYING | Tenant-scoped authoring; permitted source extracts; immutable revisions and revision-specific reviews; stale-write protection; retries; archive/restore; JSON export; authorization and deployment checks |
 | IG-003 — Automated acquisition and entity resolution | PLANNED | Future approved connectors, duplicate review and source rights; the current module supports manual source entry without fetching URLs |
+| IG-004 — Document review brief and linked graph | IN PROGRESS | Organization-scoped document links; editable cited findings, discussions and assigned tasks; immutable revisions; explicit fictional contributors; exact graph links; production content verification |
+
+## IG-004 — Document review brief and linked graph
+
+User direction, 23 September 2026: populate Legal Hackathon in production in
+English with real OR sources/history, company implications, fictional colleagues,
+discussion and tasks, accessible from the monitored law and Influence Graph.
+Reuse private dossier revisions, authorization and citation validation. Add an
+optional monitored-document link and bounded editorial notes; never fabricate an
+AI result or grant model capabilities. Every organization can use the feature;
+the authored Legal Hackathon content remains private to that organization.
+Source readiness: official Fedlex OR HTML editions from 2021 onward, the 2011
+accounting amendment and official explanatory history, and BGer 4A_388/2025.
+Earlier consolidated editions need separate official PDF evidence; unchanged
+selected provisions must not be presented as a new amendment.
+Acceptance: fresh membership and document-visibility checks; viewer reads/admin
+writes; missing citation rejection; archived dossier exclusion; linked law and
+exact dossier navigation; notes remain separate from AI and retain their actual
+save times; English content with five-language controls; tested release and
+verified target-organization data. No external messages or fictional accounts.
 
 ## IG-001 — Evidence dossier explorer
 
@@ -85,3 +105,16 @@ checks; verify activation only on helveticlens.ch on HappySnowman.
 
 MV2-064 / HL-053 remains DEFERRED. This work does not change graph_review_v1 or
 satisfy the legal relation-list-versus-graph usefulness experiment.
+
+### IG-004 implementation evidence — 23 September 2026
+
+The document link, bounded cited notes, fictional-contributor labels, internal
+workflow dates, five-language editor/reader, legal-connection type and exact graph
+navigation are implemented. Private rows reuse the existing revision tables;
+there is no schema migration or model-output substitution. Ninety-one targeted
+API tests passed, including fresh visibility, revoked membership, viewer access,
+missing citations, archive exclusion and historical note retention. Root frontend
+checks/build and the exact Ruff gate pass. Local authenticated browser validation
+covers the actual English dossier, task editing and revision saves. Official
+historical HTML fetching now avoids Fedlex Virtuoso's constant-sort SQ200 error.
+Release activation and the Legal Hackathon population remain to be verified.

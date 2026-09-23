@@ -9,6 +9,7 @@ import { documentHistoryCopy } from "@/lib/document-history-copy";
 import { documentScheduleCopy } from "@/lib/document-schedule-copy";
 import { articleSelectionCopy } from "@/lib/article-selection-copy";
 import { ArticleScope } from "./article-scope";
+import { LawReviewBriefs } from "./dossier-review";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -441,6 +442,7 @@ function LawDetailView({ id }: { id: string }) {
               </div>
             </div>
             <ErrorNote message={law.last_error} />
+            <LawReviewBriefs lawId={law.id} />
             <div className="info-note mb-5">
               <label className="flex items-center gap-2">
                 <input
@@ -670,8 +672,8 @@ function LawDetailView({ id }: { id: string }) {
                           ? version.date_provenance === "fedlex"
                             ? `${articleSelectionCopy[locale].officialDate}: ${version.declared_date}`
                             : t("law.statedDateUser", {
-                              date: version.declared_date,
-                            })
+                                date: version.declared_date,
+                              })
                           : t("law.versionDateUnknown")}{" "}
                         ·{" "}
                         {t("law.firstSaved", {

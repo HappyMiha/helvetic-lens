@@ -11,6 +11,9 @@ import { useAuth } from "./auth-gate";
 import { Shell } from "./shell";
 import { InfluenceEditor } from "./influence-editor";
 import { InfluenceReader } from "./influence-reader";
+import { DossierReview } from "./dossier-review";
+import { dossierReviewCopy } from "@/lib/dossier-review-copy";
+import Link from "next/link";
 import styles from "./influence.module.css";
 
 type DossierSummary = {
@@ -30,6 +33,7 @@ type Review = {
 };
 type SavedDossier = DossierSummary & {
   viewedRevision: number;
+  revisionCreatedAt: string;
   document: InfluenceDossier;
   documentHash: string;
   note: string;
@@ -90,6 +94,7 @@ function Workspace({
   const pending = useRef(false);
   const retry = useRef({ body: "", id: "" });
   const listEpoch = useRef(0);
+  const initialChoice = useRef(false);
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -113,6 +118,22 @@ function Workspace({
           setItems(page.items);
           setCursor(page.nextCursor);
           setListReady(true);
+          if (!initialChoice.current) {
+            initialChoice.current = true;
+            const requested = new URL(window.location.href).searchParams.get(
+              "dossier",
+            );
+            const id = requested || page.items[0]?.id;
+            if (id && /^[a-f0-9-]{36}$/i.test(id)) {
+              api<SavedDossier>(`${ROOT}/${id}`, { signal: abort.signal })
+                .then((value) => {
+                  if (!abort.signal.aborted) setSaved(value);
+                })
+                .catch(() => {
+                  if (!abort.signal.aborted) setError(c.failed);
+                });
+            }
+          }
         }
       })
       .catch(() => {
@@ -154,6 +175,9 @@ function Workspace({
   }
   function choose(id: string, revision?: number) {
     if (id === "reference") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("dossier");
+      window.history.replaceState(null, "", url);
       setSaved(null);
       setHistory(null);
       setNote("");
@@ -167,6 +191,9 @@ function Workspace({
       );
       if (mounted.current) {
         setSaved(result);
+        const url = new URL(window.location.href);
+        url.searchParams.set("dossier", id);
+        window.history.replaceState(null, "", url);
         setNote("");
         if (!revision) setHistory(null);
       }
@@ -432,10 +459,28 @@ function Workspace({
             </p>
           )}
           {historical && <p className={styles.notice}>{c.historical}</p>}
+          {document.lawId && (
+            <Link className="text-link" href={`/laws/${document.lawId}`}>
+              {dossierReviewCopy[locale].law} ↗
+            </Link>
+          )}
           <InfluenceReader
             key={`${saved?.id || "reference"}:${saved?.viewedRevision || 0}`}
             dossier={document}
           />
+          {!!saved?.document.reviewNotes?.length && (
+            <details className={styles.reviewSection}>
+              <summary>{dossierReviewCopy[locale].title}</summary>
+              <DossierReview
+                key={`${saved.id}:${saved.viewedRevision}`}
+                brief={{
+                  ...saved,
+                  revision: saved.viewedRevision,
+                  updatedAt: saved.revisionCreatedAt,
+                }}
+              />
+            </details>
+          )}
           {saved && (
             <section className={styles.reviewSection}>
               <h2>{c.review}</h2>

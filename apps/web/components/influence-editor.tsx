@@ -12,6 +12,7 @@ import {
   type InfluenceSource,
 } from "@/lib/influence-graph";
 import styles from "./influence.module.css";
+import { DossierReviewEditor } from "./dossier-review-editor";
 
 type Area = "details" | "entities" | "sources" | "relations";
 function Field({ label, children }: { label: string; children: ReactNode }) {
@@ -200,6 +201,7 @@ export function InfluenceEditor({
       )) ||
     (area === "sources" &&
       source &&
+      !draft.reviewNotes?.some((item) => item.sourceIds.includes(source.id)) &&
       !draft.edges.some(
         (item) =>
           [...item.supporting, ...item.disputing].some(
@@ -284,6 +286,7 @@ export function InfluenceEditor({
         <div className={styles.formGrid}>
           {area === "details" && (
             <>
+              <DossierReviewEditor draft={draft} onChange={setDraft} />
               <Field label={c.name}>
                 <input
                   required

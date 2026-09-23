@@ -395,3 +395,29 @@ async def test_fedlex_resolver_rejects_missing_or_out_of_scope_metadata(
     with pytest.raises(DomainError) as error:
         await fetcher.fetch(source)
     assert error.value.code == code and len(requested) == 1
+
+
+@pytest.mark.asyncio
+async def test_historical_single_format_fedlex_avoids_virtuoso_constant_order_failure(monkeypatch):
+    expression = 'https://fedlex.data.admin.ch/eli/cc/27/317_321_377/20210101/de'
+    manifestation = expression + '/html'
+    artifact = 'https://fedlex.data.admin.ch/filestore/fedlex.data.admin.ch/eli/cc/27/317_321_377/20210101/de/html/or.html'
+    real_client = httpx.AsyncClient
+
+    def respond(request):
+        if request.url.path == '/sparqlendpoint':
+            order = request.url.params['query'].split('ORDER BY')[1].split('LIMIT')[0]
+            # Reproduce the real endpoint's SQ200 for constant sort columns.
+            if '?date' in order or '?priority' in order:
+                return httpx.Response(500, text='Virtuoso SQ200: index of column in order by out of range')
+            return httpx.Response(200, json={'results': {'bindings': [{
+                'expression': {'value': expression}, 'date': {'value': '2021-01-01'},
+                'manifestation': {'value': manifestation}, 'file': {'value': artifact},
+            }]}})
+        return httpx.Response(200, headers={'content-type': 'text/html'}, content=policy())
+
+    monkeypatch.setattr(httpx, 'AsyncClient', lambda **kw: real_client(transport=httpx.MockTransport(respond), **kw))
+    result = await Fetcher(Settings(_env_file=None, allow_private_sources=True)).fetch(expression + '/html')
+    assert result.metadata['eli_version_date'] == '2021-01-01'
+    assert result.metadata['eli_work_uri'].endswith('/cc/27/317_321_377')
+    assert result.url == artifact
