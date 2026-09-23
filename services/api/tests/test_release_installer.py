@@ -67,6 +67,8 @@ def test_update_only_installs_exact_commit_atomically_and_preserves_backup(insta
     assert len(backups) == 1 and backups[0].read_bytes() == original
     assert backups[0].stat().st_mode & 0o777 == 0o750
     assert not state.exists() and not (control / "uv-cache").exists()
+    assert (control / "policy").is_dir()
+    assert (control / "policy").stat().st_mode & 0o7777 == 0o2770
     assert cron.read_text() == "15 * * * * unrelated-command\n"
     assert not list(control.glob(".release-manager.*"))
     assert "do not execute" not in result.stdout  # Never starts the installed code.
@@ -89,7 +91,7 @@ def test_same_lock_as_running_manager_refuses_update_without_writing(installatio
         assert lock.stat().st_ino == inode
 
 
-@pytest.mark.parametrize("kind", ["untrusted", "not_in_main", "bad_syntax", "symlink"])
+@pytest.mark.parametrize("kind", ["untrusted", "not_in_main", "bad_syntax", "symlink", "policy_symlink"])
 def test_unreviewed_or_unsafe_install_preserves_previous_manager(installation, kind):
     source, control, _, _, sha, _ = installation
     installed = control / "release_manager.py"
@@ -102,6 +104,8 @@ def test_unreviewed_or_unsafe_install_preserves_previous_manager(installation, k
         sha = command("git", "rev-parse", "HEAD", cwd=source)
         if kind == "bad_syntax":
             command("git", "update-ref", "refs/remotes/origin/main", sha, cwd=source)
+    elif kind == "policy_symlink":
+        (control / "policy").symlink_to(control.parent, target_is_directory=True)
     else:
         external = control.parent / "other.py"
         external.write_bytes(original)
@@ -110,7 +114,8 @@ def test_unreviewed_or_unsafe_install_preserves_previous_manager(installation, k
     result = install(installation, "--update-only", "--revision", sha)
     assert result.returncode != 0
     assert {"untrusted": "Origin does not match", "not_in_main": "not in fetched origin/main",
-            "bad_syntax": "SyntaxError", "symlink": "symlink manager destination"}[kind] in result.stderr
+            "bad_syntax": "SyntaxError", "symlink": "symlink manager destination",
+            "policy_symlink": "symlink policy directory"}[kind] in result.stderr
     assert installed.read_bytes() == original
     assert not list(control.glob("release_manager.py.backup.*"))
     assert not list(control.glob(".release-manager.*"))

@@ -23,9 +23,12 @@ From 23 September 2026 the owner's [test-suite policy](TESTING.md) makes smoke
 and functional checks the standard automatic release gate. Run affected
 integration tests before publishing their feature; use the full profile for
 broad release regression. Existing cases remain available in the separate
-integration/full suites. The exact-SHA, reason-bearing emergency invocation is
-the only test bypass and is recorded as skipped. It never becomes the next
-automatic invocation's policy. Bootstrap still uses the full suite.
+integration/full suites. Platform administrators can save a default profile or
+one next-attempt override on `/deployments`, including a reason-bearing hotfix.
+The override is consumed at attempt start, even if that attempt fails, then the
+saved default applies again. An explicit CLI profile takes precedence without
+consuming a queued UI override. Skipped tests remain explicit in the journal.
+Bootstrap still uses the full suite.
 
 SQLite migrations require a connection without pending application writes when
 foreign-key enforcement is enabled. Commit or roll back fixture/application data

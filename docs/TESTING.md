@@ -72,9 +72,9 @@ the product-specific classification; there is no filename guessing at runtime.
 
 | Profile | API checks | Web checks | Invocation |
 |---|---|---|---|
-| Standard (automatic default) | Smoke + functional, fail on the first failure | Existing root build checks | `python3 /srv/helvetic-lens/deploy-control/release_manager.py --poll` |
+| Standard (initial default) | Smoke + functional, fail on the first failure | Existing root build checks | Add `--test-profile standard` to `--poll` for an explicit invocation |
 | Full | All three suites, fail on the first failure | Existing root build checks | Add `--test-profile full` to `--poll` |
-| Hotfix | Explicitly skipped | Explicitly skipped; Next compilation and TypeScript still run | Exact SHA and reason, below |
+| Hotfix | Explicitly skipped | Explicitly skipped; Next compilation and TypeScript still run | Saved/next mode in the page, or exact-SHA CLI below |
 
 Bootstrap uses full verification. An older target without the suite runner falls
 back to its complete serial API gate and cannot use audited hotfix mode. A standard release records integration as
@@ -88,6 +88,51 @@ commands can also verify an already deployed revision in a development checkout;
 `--poll` does not redeploy an already active SHA just to rerun tests. This change
 does not install a nightly scheduler or claim that deferred integration checks
 have run automatically.
+
+## Saved default and next deployment
+
+Platform administrators use **Deployments → Deployment mode**:
+
+1. Choose a **Default mode** and save it. Standard, full and hotfix are available.
+   This selection persists across application updates and controller restarts.
+2. Optionally choose **Next attempt only** and save it. The page shows both the
+   next effective mode and the default used for following deployments. Cancel the
+   override to use the default immediately for the next eligible attempt.
+3. A hotfix selection requires a reason of 10–500 characters. A hotfix **default**
+   skips tests for every subsequent deployment until an administrator changes it.
+   The initial default remains standard; installing this feature selects no bypass.
+
+An override belongs to the next eligible automatic **attempt**, not the next
+successful deployment. It is consumed atomically at attempt start, before checkout;
+a failed or interrupted attempt does not reuse it. Idle polls, fetch/ancestry
+failures, the deployment lock and the existing retry cooldown do not consume it.
+An active attempt keeps its pinned mode. Settings saved during that attempt apply
+to later attempts. Polling refreshes the page after consumption. Saving settings
+does not start a deployment or redeploy an already active SHA.
+
+Writes require an authenticated platform administrator and CSRF protection,
+including when anonymous development access is otherwise enabled. A revision
+conflict rejects stale saves instead of overwriting another administrator or
+recreating a consumed override. Reload the saved settings before choosing again.
+The per-attempt journal records the actual mode, its source and settings revision.
+
+The API can write only the separate `deploy-control/policy` bind mount; deployment
+history stays read-only and no Docker socket or controller code is exposed. SQLite
+protocol v1 stores settings, administrator edits and idempotent run-ID/SHA claims.
+The controller validates that data independently; an unreadable or invalid store
+blocks the candidate before runtime changes. An absent store retains standard.
+
+For the initial upgrade, install the reviewed controller with
+`deploy/install-auto-deploy.sh --update-only --revision FULL_SHA` while the release
+lock is idle, before the candidate is deployed. The installer also prepares the
+isolated policy directory with host-group inheritance so API-created SQLite files
+remain writable by the unprivileged host controller. It preserves the existing
+cron entry and release state. Normal subsequent polls/self-updates retain settings.
+
+Plain `--poll` follows saved policy. An explicit `--test-profile standard`,
+`--test-profile full` or `--hotfix SHA --reason ...` takes precedence for that host
+invocation and leaves the queued UI override intact. Bootstrap always uses full
+verification and likewise preserves queued settings.
 
 ## One-shot emergency installation
 
@@ -112,12 +157,11 @@ the existing pipeline. Build or readiness failures cannot become successful
 activation. The hotfix build argument only removes pre-deployment API and web
 test execution, not the operational activation check.
 
-The bypass exists only for this invocation. It is not saved in cron, an
-environment variable, application configuration or a repository label. A later
-automatic retry/update uses standard checks again. No actual hotfix deployment
-was needed to implement or verify this feature.
+This CLI bypass exists only for that invocation and does not edit the saved
+default or queued override. Later automatic attempts follow the saved policy
+described above. No actual hotfix deployment was needed to verify this feature.
 
-## Verification — 23 September 2026
+## Initial suite verification — 23 September 2026
 
 - Final standard suite: **726 passed in 35.59 seconds**, with two isolated local
   workers (68 smoke + 658 functional). These timings exclude Docker startup,
@@ -141,3 +185,29 @@ was needed to implement or verify this feature.
   incomplete accessibility results remain recorded, not certified resolved.
 - Production activation is verified separately after the reviewed main push
   and idle-lock-protected controller update. No active deployment is interrupted.
+
+## Deployment controls verification — 23 September 2026
+
+- The final standard gate includes the new release-policy regressions: **753 passed
+  in 44.59 seconds** (95 smoke + 658 functional), with two isolated workers. It
+  covers long Unicode reasons, bounded redaction and checkout-failure privacy.
+- **109 affected API/controller/history checks passed in 40.75 seconds**; the final
+  installer, controller, history and administration selection passed **73 checks
+  in 19.83 seconds**. Disposable fixtures cover all nine default/override pairs,
+  atomic consumption, cancellation, failed attempts, restarts, concurrent edits,
+  active-attempt isolation, idle/locked/retry polls, authentication and CSRF.
+- Exact API Ruff and the root production web build passed. Resolved Compose
+  verification confirms that only the API can write the policy mount, while
+  history stays read-only and no Docker socket is exposed.
+- All **90 browser/axe checkpoints** passed in five locales at 390px/1440px:
+  persistent defaults, next-only selection and cancellation, live reversion after
+  host consumption, save failure, conflict recovery, preserved unsaved drafts,
+  hotfix reasons, touch targets and the non-administrator boundary. All 64 policy
+  mutation requests came from explicit fixture actions and included CSRF; there
+  were no runtime exceptions or unexpected writes. Other incomplete accessibility
+  checks remain recorded rather than certified resolved.
+- A disposable production API container created settings in a temporary setgid
+  directory. The ordinary host user successfully consumed that SQLite override,
+  proving actual container/host permissions without changing production policy.
+- Production activation is verified separately after the reviewed main push and
+  idle-lock-protected controller installation. No hotfix release is used for QA.

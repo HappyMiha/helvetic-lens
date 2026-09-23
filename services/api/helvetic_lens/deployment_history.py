@@ -66,6 +66,10 @@ def _detail(run):
             if isinstance(policy.get("suites"), list) else [],
             "workers": policy.get("workers")
             if type(policy.get("workers")) is int and 0 <= policy["workers"] <= 4 else None,
+            "source": policy.get("source") if isinstance(policy.get("source"), str)
+            and policy["source"] in {"default", "next", "invocation", "bootstrap"} else None,
+            "settings_revision": policy.get("settings_revision")
+            if type(policy.get("settings_revision")) is int and policy["settings_revision"] >= 0 else None,
         }
     value["changes"] = [{key: _text(item.get(key), 500) for key in ("sha", "short_sha", "subject", "author", "committed_at")}
                         for item in run.get("changes", [])[:100] if isinstance(item, dict)]

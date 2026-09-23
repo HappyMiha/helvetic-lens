@@ -988,6 +988,15 @@ export type DeploymentChange = {
   author: string;
   committed_at: string;
 };
+export type DeploymentProfile = "standard" | "full" | "hotfix";
+export type DeploymentPolicyChoice = { profile: DeploymentProfile; reason: string | null };
+export type DeploymentPolicySettings = {
+  enabled: boolean;
+  revision: number;
+  default: DeploymentPolicyChoice;
+  next: DeploymentPolicyChoice | null;
+  updated_at: string | null;
+};
 export type DeploymentRun = {
   id: string;
   kind: "release" | "poll";
@@ -1001,10 +1010,12 @@ export type DeploymentRun = {
   changes: DeploymentChange[];
   steps: DeploymentStep[];
   test_policy?: {
-    profile: "standard" | "full" | "hotfix";
+    profile: DeploymentProfile;
     suites: string[];
     workers: number | null;
     reason: string | null;
+    source?: "default" | "next" | "invocation" | "bootstrap" | null;
+    settings_revision?: number | null;
   } | null;
   backup_id: string | null;
   model_id?: string | null;

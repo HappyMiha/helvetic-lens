@@ -3,7 +3,8 @@
 One agent develops complete features on **main**, following [the development cycle](docs/DEVELOPMENT.md).
 The only active site is **helveticlens.ch on HappySnowman**, including Monitoring features.
 The [test and release policy](docs/TESTING.md) separates platform smoke, functional
-and integration suites, and documents the explicit one-shot hotfix mode.
+and integration suites. The deployment page supports saved defaults and a
+next-attempt override, including an explicitly selected hotfix with a reason.
 
 | Activity | Queue | State |
 |---|---|---|

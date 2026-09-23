@@ -660,6 +660,9 @@ select:focus-visible {
   outline: 2px solid #315efb55;
   outline-offset: 2px;
 }
+[data-deployment-policy-settings] :is(button, select) {
+  min-height: 44px;
+}
 input[type="checkbox"] {
   accent-color: var(--primary);
   width: 14px;

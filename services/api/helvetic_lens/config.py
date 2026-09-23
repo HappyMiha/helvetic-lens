@@ -154,6 +154,9 @@ class Settings(BaseSettings):
         default=None,
         validation_alias="HELVETIC_LENS_DEPLOY_STATE_DIR",
     )
+    deployment_policy_dir: Path | None = Field(
+        default=None, validation_alias="HELVETIC_LENS_DEPLOY_POLICY_DIR"
+    )
     credential_encryption_key: SecretStr = Field(
         default=SecretStr(""),
         validation_alias=AliasChoices(

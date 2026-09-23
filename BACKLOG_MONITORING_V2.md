@@ -237,6 +237,23 @@ malformed-scope/collector/backlog selection passed 37 checks. Read-only replay o
 all five exact public originals succeeded. Exact API Ruff passed. These results
 do not imply activated production recovery or authenticated document access.
 
+23 September deployment mode controls (MV2-052 / MV2-057): extend the existing
+release profiles with a platform-administrator default and a cancellable next-attempt
+override in the deployment page. All three profiles are selectable; a hotfix needs
+an explicit reason. Consume the override atomically when an eligible attempt starts,
+including failed attempts, then use the saved default. Dependencies: authenticated
+administrator/CSRF controls, isolated host policy storage, the existing release lock
+and audited test profiles. No source activation is required. Acceptance: persistent
+defaults, single consumption, concurrent-edit rejection, unchanged active attempts,
+no consumption on idle/busy/retry polls, five-language desktop/mobile controls and
+exact release evidence. Both parent tasks remain IN PROGRESS.
+Local acceptance: 109 initial affected API/controller checks, 73 final installer/
+history/administration checks and 90 browser accessibility checkpoints passed.
+The final standard gate passed all 753 cases in 44.59 seconds.
+Real disposable container-to-host storage permissions were verified. Saved defaults,
+one-shot consumption, conflict handling and all five localized desktop/mobile forms
+are implemented; see `docs/TESTING.md` for final gate and activation evidence.
+
 23 September test-policy scope (MV2-052 / MV2-057): the owner requests faster,
 smaller routine release checks, separate platform smoke / functional / integration
 suites, and an explicit emergency deployment without tests. Implement a reviewed
@@ -2474,6 +2491,25 @@ activation or human acceptance is claimed; the parent remains IN PROGRESS.
 <a id="mv2-052"></a>
 
 ### MV2-052 — Operational metrics, degraded mode and source recovery
+
+**23 September deployment mode controls scope:** Add persistent standard/full/hotfix
+defaults and a next-attempt override to the administrator deployment page. The override
+is cleared at attempt start, even if that attempt later fails; changing settings must
+not change an active attempt. Require a reason for hotfix and retain build, backup,
+readiness and rollback. A separate writable policy mount must not expose controller
+code, deployment history or Docker control. Verify authenticated/CSRF writes, revision
+conflicts, restart durability, atomic consumption and idle/locked/retry preservation,
+plus localized desktop/mobile save, cancel, error and reversion states. Dependencies
+are the existing release profiles, host lock and platform administration. No source
+readiness changes are required. This explicitly supersedes the earlier invocation-only
+restriction for the owner's requested saved settings; parent acceptance stays open.
+**Local acceptance:** 109 initial affected checks and 73 final installer/history/
+administration checks passed; the final standard gate passed 753 cases in 44.59
+seconds. All 90 browser/axe checkpoints cover five locales,
+desktop/mobile, save and cancellation, live automatic reversion, stale drafts and
+conflict/failure recovery. Authentication, CSRF, disposable container/host write
+permissions and resolved Compose isolation were verified. Final gate measurements
+and the production verification boundary are recorded in [TESTING.md](docs/TESTING.md).
 
 **23 September test-policy scope:** Implement the owner-requested standard
 (platform smoke + functional), full (including integration) and one-shot hotfix

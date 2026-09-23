@@ -14,6 +14,7 @@ instance = test_release_instance.instance
 def test_profiles_select_checks_and_record_truthful_activation(instance, profile):
     manager, calls, _, target = pipeline(instance, bootstrap=False)
     manager.test_profile = profile
+    manager.profile_explicit = True
     if profile == "hotfix":
         manager.requested_sha = target
         manager.hotfix_reason = "Emergency repair for incident 123; token=synthetic-mail-secret"
@@ -49,6 +50,7 @@ def test_profiles_select_checks_and_record_truthful_activation(instance, profile
 def test_failed_checks_prevent_image_build_or_activation(instance, profile):
     manager, calls, previous, _ = pipeline(instance, bootstrap=False, failure="api_tests")
     manager.test_profile = profile
+    manager.profile_explicit = True
     with pytest.raises(release_manager.DeploymentError):
         manager.poll()
     assert manager._load_deployed()["sha"] == previous
@@ -60,6 +62,7 @@ def test_failed_checks_prevent_image_build_or_activation(instance, profile):
 def test_hotfix_still_rolls_back_when_readiness_fails(instance):
     manager, _, previous, target = pipeline(instance, bootstrap=False, failure="public_health_check")
     manager.test_profile, manager.requested_sha = "hotfix", target
+    manager.profile_explicit = True
     manager.hotfix_reason = "Emergency repair for incident 123"
     with pytest.raises(release_manager.DeploymentError):
         manager.poll()
@@ -94,6 +97,7 @@ def test_only_explicit_hotfix_can_bypass_a_failed_candidates_retry_delay(instanc
         "finished_at": release_manager.timestamp(), "steps": [],
     }
     manager.test_profile = profile
+    manager.profile_explicit = True
     if profile == "hotfix":
         manager.requested_sha = target
         manager.hotfix_reason = "Emergency retry for incident 123"

@@ -10,6 +10,7 @@ import { Cdp, evaluate, sleep } from "./browser-cdp.mjs";
 import { AccessibilityAudit } from "./browser-accessibility.mjs";
 import { monitoringProgressFixture } from "./monitoring-progress-fixtures.mjs";
 import { deploymentTestsCopy } from "../apps/web/lib/deployment-tests-copy.ts";
+import { deploymentPolicyCopy } from "../apps/web/lib/deployment-policy-copy.ts";
 
 const root = resolve(import.meta.dirname, "..");
 const audit = new AccessibilityAudit("deployment-history");
@@ -26,6 +27,9 @@ const browser=spawn(chrome,["--headless=new","--no-first-run","--no-default-brow
 let cdp,locale="en-CH",administrator=true,failDetail=true;
 let deploymentBranch="main";
 let deploymentPolicy = null;
+const initialPolicy = () => ({enabled: true, revision: 0, default: {profile: "standard", reason: null}, next: null, updated_at: null});
+let policySettings = initialPolicy(), failPolicySave = false;
+const policyWrites = [];
 let deploymentProgress, serviceState="idle";
 const monitoringBranch="codex/HappyDucky02/monitoring-v2";
 const unknownBranch={"de-CH":"Unbekannt","fr-CH":"Inconnu","it-CH":"Sconosciuto","rm-CH":"Nunenconuschent","en-CH":"Unknown"};
@@ -57,6 +61,21 @@ try {
     const url=new URL(request.url),path=url.pathname;
     requests.push({path,method:request.method,query:url.search});
     let body={},code=200;
+    if(path === "/api/admin/deployments/policy") {
+      if(request.method === "PATCH") {
+        const change = JSON.parse(request.postData);
+        policyWrites.push({change, csrf: request.headers["X-CSRF-Token"] ?? request.headers["x-csrf-token"]});
+        if(failPolicySave) { failPolicySave = false; code = 503; body = {code: "deployment_policy_unavailable"}; }
+        else if(change.expected_revision !== policySettings.revision) { code = 409; body = {code: "deployment_policy_conflict"}; }
+        else {
+          policySettings = {...policySettings, revision: policySettings.revision + 1,
+            [change.scope]: change.profile ? {profile: change.profile, reason: change.reason} : null};
+          body = policySettings;
+        }
+      } else body = policySettings;
+      await cdp.send("Fetch.fulfillRequest", {requestId, responseCode: code, responseHeaders: [{name: "content-type", value: "application/json"}], body: Buffer.from(JSON.stringify(body)).toString("base64")});
+      return;
+    }
     if(path==="/api/auth/session") body={authenticated:true,platform_admin:administrator,user:{id:`qa-${administrator}-${locale}`,email:"qa@example.invalid",name:"QA",locale},organization:{id:"qa-org",name:"QA"},role:"organization_admin"};
     else if(path==="/api/health")body={status:"ok",database:"postgresql",apertus:{configured:false},firecrawl:{configured:false}};
     else if(path==="/api/admin/deployments")body={schema_version:1,service:{enabled:deploymentBranch!==null,state:deploymentBranch===null?"status_unavailable":serviceState,poll_interval_seconds:120,last_checked_at:"2026-09-08T08:00:00Z"},remote:{branch:deploymentBranch,sha:deploymentBranch===null?null:"a".repeat(40)},current:{sha:"b".repeat(40),release:"test-release"},monitoring_progress:deploymentProgress,last_run:run("latest"),history:[]};
@@ -220,6 +239,84 @@ try {
   assert.equal(await progressText('[data-monitoring-card="git"] [data-monitoring-percent]'),"Not applicable");
   await openProgress("older-pollen");
   assert.equal(await progressText('[data-monitoring-pollen="true"][data-monitoring-task="MV2-071"] [data-monitoring-deployed-status]'),"Not present in this revision");
+  // Exercise saved defaults and next-only edits through the real client forms.
+  const chooseMode = async (scope, mode) => evaluate(cdp, `{
+    const element = document.querySelector('#deployment-${scope}');
+    element.value = ${JSON.stringify(mode)}; element.dispatchEvent(new Event('change', {bubbles: true}));
+  }`);
+  const enterReason = async scope => evaluate(cdp, `{
+    const element = document.querySelector('#deployment-${scope}-reason');
+    Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(element, 'Synthetic urgent incident repair');
+    element.dispatchEvent(new Event('input', {bubbles: true}));
+  }`);
+  const showPolicy = async suffix => {
+    await cdp.send("Page.navigate", {url: `${base}/deployments?locale=${locale}&qa=policy-${suffix}`});
+    await waitFor(() => evaluate(cdp, `document.documentElement.lang === ${JSON.stringify(locale)} && !!document.querySelector('#deployment-default')`), "Policy editor missing");
+    await evaluate(cdp, `document.cookie = 'helvetic_lens_csrf=synthetic-policy-csrf; path=/'`);
+  };
+  for(const width of [390, 1440]) for(locale of ["de-CH", "fr-CH", "it-CH", "rm-CH", "en-CH"]) {
+    deploymentBranch = "main"; administrator = true; policySettings = initialPolicy(); deploymentPolicy = null;
+    await cdp.send("Emulation.setDeviceMetricsOverride", {width, height: 960, deviceScaleFactor: 1, mobile: width === 390});
+    await showPolicy(`${width}`);
+    assert.equal(await evaluate(cdp, `document.querySelector('[data-deployment-policy-settings] h2').textContent`), deploymentPolicyCopy[locale].title);
+    await chooseMode("default", "full");
+    await click('[data-deployment-policy-save="default"]');
+    await waitFor(() => evaluate(cdp, `document.querySelector('[data-deployment-default]')?.dataset.deploymentDefault === 'full'`), "Saved default not shown");
+    await chooseMode("next", "hotfix");
+    assert.ok(await evaluate(cdp, `document.querySelector('[data-deployment-policy-save="next"]').disabled`), "Hotfix must require a reason");
+    await enterReason("next");
+    await click('[data-deployment-policy-save="next"]');
+    await waitFor(() => evaluate(cdp, `document.querySelector('[data-deployment-effective]')?.dataset.deploymentEffective === 'hotfix'`), "Next hotfix not saved");
+    assert.equal(policySettings.default.profile, "full");
+    assert.equal(policySettings.next.reason, "Synthetic urgent incident repair");
+    await showPolicy("persisted");
+    assert.equal(await evaluate(cdp, `document.querySelector('#deployment-default').value`), "full");
+    assert.equal(await evaluate(cdp, `document.querySelector('#deployment-next').value`), "hotfix");
+    assert.ok(await evaluate(cdp, `document.documentElement.scrollWidth <= innerWidth + 1`), "Policy editor overflows");
+    assert.deepEqual(await evaluate(cdp, `Array.from(document.querySelectorAll('[data-deployment-policy-settings] button, [data-deployment-policy-settings] select')).map(el => ({tag: el.tagName, id: el.id, height: el.getBoundingClientRect().height})).filter(el => el.height < 44)`), [], "Policy actions need touch targets");
+    await audit.check(cdp, `policy-${width}-${locale}`, '[data-deployment-policy-settings]');
+    if(locale === "en-CH") {
+      const clip = await evaluate(cdp, `(() => { const r = document.querySelector('[data-deployment-policy-settings]').getBoundingClientRect(); return {x: r.x + scrollX, y: r.y + scrollY, width: r.width, height: r.height, scale: 1}; })()`);
+      const shot = await cdp.send("Page.captureScreenshot", {format: "png", captureBeyondViewport: true, clip});
+      await writeFile(join(root, "test-results/deployment-history", `policy-${width}.png`), Buffer.from(shot.data, "base64"));
+    }
+    await click('[data-deployment-policy-cancel]');
+    await waitFor(() => evaluate(cdp, `document.querySelector('[data-deployment-effective]')?.dataset.deploymentEffective === 'full'`), "Cancellation did not restore default");
+    await chooseMode("next", "standard");
+    await click('[data-deployment-policy-save="next"]');
+    await waitFor(() => evaluate(cdp, `document.querySelector('[data-deployment-effective]')?.dataset.deploymentEffective === 'standard'`), "Standard override not saved");
+    // Host claims an attempt while this page is open; polling must show reversion.
+    policySettings = {...policySettings, next: null, revision: policySettings.revision + 1};
+    await waitFor(() => evaluate(cdp, `document.querySelector('[data-deployment-effective]')?.dataset.deploymentEffective === 'full' && document.querySelector('#deployment-next').value === ''`), "Consumed override did not revert in the live page");
+    await chooseMode("default", "standard");
+    failPolicySave = true;
+    await click('[data-deployment-policy-save="default"]');
+    await waitFor(() => evaluate(cdp, `document.querySelector('[data-deployment-policy-settings] [role="alert"]')?.textContent.includes(${JSON.stringify(deploymentPolicyCopy[locale].failed)})`), "Save failure missing");
+    assert.equal(policySettings.default.profile, "full", "Failed save changed the default");
+    // Another administrator changes settings after this form captured its revision.
+    policySettings = {...policySettings, revision: policySettings.revision + 1, next: {profile: "full", reason: null}};
+    await click('[data-deployment-policy-save="default"]');
+    await waitFor(() => evaluate(cdp, `document.querySelector('[data-deployment-policy-settings] [role="alert"]')?.textContent.includes(${JSON.stringify(deploymentPolicyCopy[locale].conflict)})`), "Concurrent edit conflict missing");
+    assert.equal(policySettings.default.profile, "full", "Conflict overwrote another administrator");
+    await audit.check(cdp, `policy-conflict-${width}-${locale}`, '[data-deployment-policy-settings]');
+    await click('[data-deployment-policy-reload]');
+    await waitFor(() => evaluate(cdp, `document.querySelector('#deployment-default').value === 'full' && !document.querySelector('[data-deployment-policy-settings] [role="alert"]')`), "Reload did not recover saved settings");
+    if(locale === "en-CH") {
+      await chooseMode("default", "standard");
+      policySettings = {...policySettings, revision: policySettings.revision + 1};
+      await waitFor(() => evaluate(cdp, `!!document.querySelector('[data-deployment-policy-reload]')`), "Stale draft needs an accessible reload action");
+      assert.equal(await evaluate(cdp, `document.querySelector('#deployment-default').value`), "standard", "Polling must preserve unsaved edits");
+      await click('[data-deployment-policy-reload]');
+      await waitFor(() => evaluate(cdp, `document.querySelector('#deployment-default').value === 'full'`), "Explicit reload did not reset stale draft");
+      await chooseMode("default", "hotfix"); await enterReason("default");
+      await click('[data-deployment-policy-save="default"]');
+      await waitFor(() => evaluate(cdp, `document.querySelector('[data-deployment-default]')?.dataset.deploymentDefault === 'hotfix'`), "Persistent hotfix not saved");
+      await chooseMode("default", "standard"); await click('[data-deployment-policy-save="default"]');
+      await waitFor(() => evaluate(cdp, `document.querySelector('[data-deployment-default]')?.dataset.deploymentDefault === 'standard'`), "Standard default not restored");
+    }
+  }
+  assert.equal(policyWrites.length, 64, "Only the explicit policy saves and cancellations may write");
+  assert.ok(policyWrites.every(write => write.csrf === "synthetic-policy-csrf"), "Policy mutations must carry CSRF");
   administrator=false;
   const before=requests.length;
   await cdp.send("Page.navigate",{url:`${base}/deployments?qa=nonadmin`});
@@ -228,9 +325,9 @@ try {
   assert.equal(await evaluate(cdp,`document.querySelector('[data-monitoring-progress]')`),null);
   // The existing companion initializes its private conversation/context via
   // POST on every route; those intercepted fixture calls do not deploy or infer.
-  assert.deepEqual(requests.filter(r=>r.method!=="GET" && !["/api/assistant/context","/api/assistant/conversations"].includes(r.path)),[]);
+  assert.deepEqual(requests.filter(r=>r.method!=="GET" && !["/api/assistant/context","/api/assistant/conversations"].includes(r.path) && !(r.method === "PATCH" && r.path === "/api/admin/deployments/policy")),[]);
   assert.deepEqual(exceptions,[]);
-  audit.finish(70);
+  audit.finish(90);
   console.log("Deployment history, three release-test profiles and Monitoring progress pass in five locales at desktop/mobile widths: explicit skipped checks, pinned hotfix reason, distinct revisions, unavailable metadata and non-admin boundary.");
 } catch(error){console.error({locale,requests:requests.slice(-10),exceptions,text:cdp?await evaluate(cdp,"document.body.innerText.slice(-2500)").catch(()=>"unavailable"):"none"});throw error;}
 finally{

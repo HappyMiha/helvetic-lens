@@ -27,6 +27,7 @@ import type {
   ProductionDeploymentStatus,
   DeploymentHistoryPage,
   DeploymentRun,
+  DeploymentPolicySettings,
   Scan,
   Source,
   SourceCapabilityCatalogue,
@@ -519,6 +520,11 @@ export const resources = {
       tags: ["deployments", "runtime", "administration"],
       staleMs: 10_000,
       pollMs: 10_000,
+    }),
+
+  deploymentPolicy: () =>
+    key<DeploymentPolicySettings>("platform:deployment-policy", "/admin/deployments/policy", {
+      scope: "platform", owner: "administration", tags: ["deployments"], staleMs: 5_000, pollMs: 5_000,
     }),
 
   deploymentHistory: (status = "", cursor = "") =>

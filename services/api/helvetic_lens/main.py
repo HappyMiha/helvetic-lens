@@ -44,6 +44,7 @@ from .business_monitor_api import business_monitor_router
 from .commute_api import commute_router
 from .config import DomainError, Settings
 from .db import utcnow
+from .deployment_policy import PolicyUpdate, read_policy, update_policy
 from .hazard_api import hazard_router
 from .impact_inbox import ImpactInboxFilters
 from .influence_api import influence_router
@@ -1428,6 +1429,22 @@ def create_app(
     @app.get("/api/admin/deployments")
     def deployment_status():
         return service.deployment_status()
+
+    def deployment_policy_admin(request: Request):
+        identity = request.state.identity
+        if not identity or not identity.platform_admin:
+            raise DomainError("A platform administrator must perform this action.", 403, "platform_admin_required")
+        return identity
+
+    @app.get("/api/admin/deployments/policy")
+    def deployment_policy(request: Request):
+        deployment_policy_admin(request)
+        return read_policy(service.environment_settings.deployment_policy_dir)
+
+    @app.patch("/api/admin/deployments/policy")
+    def save_deployment_policy(data: PolicyUpdate, request: Request):
+        identity = deployment_policy_admin(request)
+        return update_policy(service.environment_settings.deployment_policy_dir, data, actor=identity.user_id)
 
     @app.get("/api/admin/deployments/history")
     def deployment_history(status: str = "", cursor: str | None = None, limit: int = Query(20, ge=1, le=50)):

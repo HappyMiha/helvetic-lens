@@ -53,6 +53,10 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 git -C "$SOURCE_ROOT" show "$revision:deploy/release_manager.py" > "$candidate"
 python3 -c 'import pathlib,sys; p=pathlib.Path(sys.argv[1]); compile(p.read_bytes(), str(p), "exec")' "$candidate"
+[ ! -L "$CONTROL_ROOT/policy" ] || { echo 'Refusing a symlink policy directory.' >&2; exit 2; }
+# Only this directory is writable by the API. Setgid lets the unprivileged
+# controller consume API-created SQLite files without exposing controller code.
+install -d -m 2770 "$CONTROL_ROOT/policy"
 chmod 755 "$candidate"
 if cmp -s "$candidate" "$CONTROL_ROOT/release_manager.py"; then
     echo "Manager already matches reviewed commit $revision."

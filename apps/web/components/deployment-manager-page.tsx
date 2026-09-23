@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { Shell } from "./shell";
 import { DeploymentHistory } from "./deployment-history";
+import { DeploymentPolicyPanel } from "./deployment-policy-panel";
 import { MonitoringProgressPanel } from "./monitoring-progress";
 import { useAuth } from "./auth-gate";
 import { ErrorNote, Loading } from "./common";
@@ -17,6 +18,7 @@ import { label, resources, useResource } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { deploymentHistoryCopy } from "@/lib/deployment-history-copy";
 import { deploymentTestsCopy } from "@/lib/deployment-tests-copy";
+import { deploymentPolicyCopy } from "@/lib/deployment-policy-copy";
 import type {
   DeploymentRun,
   ProductionDeploymentStatus,
@@ -73,6 +75,7 @@ function RunDetails({ run }: { run: DeploymentRun }) {
           <Badge variant={run.test_policy.profile === "hotfix" ? "destructive" : "outline"}>
             {testCopy.profiles[run.test_policy.profile]}
           </Badge>
+          {run.test_policy.source && <p className="text-sm mt-2 mb-0">{deploymentPolicyCopy[locale].sources[run.test_policy.source]}</p>}
           <p className="text-sm mt-2 mb-0">
             {run.test_policy.profile === "hotfix"
               ? testCopy.noTests
@@ -130,7 +133,7 @@ function RunDetails({ run }: { run: DeploymentRun }) {
             {run.steps.length ? (
               run.steps.map((step) => (
                 <div className="py-3 flex justify-between gap-4" key={`${step.name}:${step.started_at}`}>
-                  <span className="min-w-0">{testCopy.steps[step.name] || label(step.name)}
+                  <span className="min-w-0">{step.name === "test_policy" ? deploymentPolicyCopy[locale].step : testCopy.steps[step.name] || label(step.name)}
                     {step.error && <pre className="whitespace-pre-wrap break-words text-xs mt-2">{step.error}</pre>}
                     {step.reason && <small className="block mt-2 break-words">{step.name === "integration_tests" ? testCopy.separateIntegration : step.reason}</small>}
                   </span>
@@ -237,6 +240,8 @@ export function DeploymentManagerPage() {
                   <small>{t("deploy.checked", { date: dateTime(data.service.last_checked_at) })}</small>
                 </div>
               </section>
+
+              <DeploymentPolicyPanel />
 
               <MonitoringProgressPanel progress={data.monitoring_progress} branch={branch} deploying={data.service.state === "deploying"} />
 

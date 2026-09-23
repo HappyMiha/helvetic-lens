@@ -6,6 +6,7 @@
     "test_production_deployment.py",
     "test_release_manager.py",
     "test_release_test_policy.py",
+    "test_deployment_policy.py",
     "test_test_suites.py",
     "test_monitoring_progress.py::test_actual_backlog_has_complete_unique_sections_and_preserves_customs_deferral",
     "test_organization_isolation.py::test_private_records_are_hidden_and_public_fedlex_artifacts_are_reused",

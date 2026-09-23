@@ -285,9 +285,9 @@ class DeploymentError(RuntimeError):
 
 class ReleaseManager:
     def __init__(self, config_path: Path | None = None, *, bootstrap: bool = False,
-                 test_profile: str = "standard", requested_sha: str | None = None,
+                 test_profile: str | None = None, requested_sha: str | None = None,
                  hotfix_reason: str | None = None) -> None:
-        if test_profile not in {"standard", "full", "hotfix"}:
+        if test_profile not in {None, "standard", "full", "hotfix"}:
             raise ValueError("Unknown release test profile.")
         if test_profile == "hotfix":
             if bootstrap or not re.fullmatch(r"[0-9a-f]{40}", requested_sha or ""):
@@ -296,8 +296,8 @@ class ReleaseManager:
                 raise ValueError("Hotfix requires a reason of 10–500 characters; do not include secrets.")
         elif requested_sha is not None or hotfix_reason is not None:
             raise ValueError("An emergency SHA and reason apply only to the hotfix invocation.")
-        # Invocation-only policy. Never persist a bypass in config or cron.
-        self.test_profile = "full" if bootstrap else test_profile
+        self.profile_explicit = test_profile is not None
+        self.test_profile = "full" if bootstrap else test_profile or "standard"
         self.requested_sha = requested_sha
         self.hotfix_reason = hotfix_reason.strip() if hotfix_reason else None
         config = load_config(config_path) if config_path else {}
@@ -352,6 +352,7 @@ class ReleaseManager:
         self.lock_path = self.control_dir / "deployment.lock"
         self.log_dir = self.state_dir / "logs"
         self.cache_dir = self.control_dir / "uv-cache"
+        self.policy_dir = self.control_dir / "policy"
         self.run_record: dict[str, Any] | None = None
         self.status = self._load_status()
         self.env_values = read_env(self.env_file)
@@ -727,13 +728,82 @@ class ReleaseManager:
         self._log(f"{name}: SKIPPED — {reason}")
         self._save_status()
 
+    def _claim_test_policy(self) -> dict[str, Any]:
+        """Pin one attempt and consume its override in one SQLite transaction.
+
+        Protocol v1 is created by helvetic_lens.deployment_policy in the API.
+        This controller stays standalone: no application imports or credentials.
+        A missing store means the original standard default; invalid storage
+        fails the attempt before checkout, checks or runtime changes.
+        """
+        if getattr(self, "bootstrap", False) or getattr(self, "profile_explicit", False):
+            return {"profile": self.test_profile,
+                    "reason": self._redact(self.hotfix_reason)[:500] if self.hotfix_reason else None,
+                    "source": "bootstrap" if self.bootstrap else "invocation", "settings_revision": None}
+        directory = self.policy_dir
+        path = directory / "policy.sqlite3"
+        connection = None
+        try:
+            if directory.is_symlink() or path.is_symlink():
+                raise ValueError("Symlink policy storage is not supported.")
+            if not path.exists():
+                return {"profile": "standard", "reason": None, "source": "default", "settings_revision": 0}
+            connection = sqlite3.connect(path.resolve().as_uri() + "?mode=rw", uri=True, timeout=3)
+            connection.row_factory = sqlite3.Row
+            connection.execute("BEGIN IMMEDIATE")
+            if connection.execute("PRAGMA user_version").fetchone()[0] != 1:
+                raise ValueError("Unsupported deployment policy schema.")
+            existing = connection.execute("SELECT * FROM claims WHERE run_id=?", (self.run_record["id"],)).fetchone()
+            if existing:
+                if existing["target_sha"] != self.run_record["target_sha"]:
+                    raise ValueError("Deployment policy claim does not match this attempt.")
+                return {key: existing[key] for key in ("profile", "reason", "source", "settings_revision")}
+            row = connection.execute("SELECT revision, document FROM settings WHERE id=1").fetchone()
+            if (row is None or type(row["revision"]) is not int or row["revision"] < 0
+                    or len(row["document"]) > 16_384):
+                raise ValueError("Malformed deployment settings.")
+            document = json.loads(row["document"])
+            if not isinstance(document, dict) or set(document) != {"default", "next", "updated_at"}:
+                raise ValueError("Malformed deployment settings.")
+            for scope in ("default", "next"):
+                choice = document[scope]
+                if choice is None and scope == "next":
+                    continue
+                if not isinstance(choice, dict) or set(choice) != {"profile", "reason"}:
+                    raise ValueError("Malformed deployment mode.")
+                profile, reason = choice["profile"], choice["reason"]
+                if not isinstance(profile, str) or profile not in {"standard", "full", "hotfix"}:
+                    raise ValueError("Unknown deployment mode.")
+                if ((profile == "hotfix" and (not isinstance(reason, str) or not 10 <= len(reason.strip()) <= 500))
+                        or (profile != "hotfix" and reason is not None)):
+                    raise ValueError("Invalid deployment reason.")
+            source = "next" if document["next"] else "default"
+            selected = document[source]
+            reason = self._redact(selected["reason"])[:500] if selected["reason"] else None
+            claimed_at = timestamp()
+            connection.execute("INSERT INTO claims VALUES (?, ?, ?, ?, ?, ?, ?)",
+                               (self.run_record["id"], self.run_record["target_sha"], selected["profile"],
+                                reason, source, row["revision"], claimed_at))
+            if source == "next":
+                document.update(next=None, updated_at=claimed_at)
+                connection.execute("UPDATE settings SET revision=revision+1, document=? WHERE id=1",
+                                   (json.dumps(document),))
+            connection.commit()
+            return {"profile": selected["profile"], "reason": reason,
+                    "source": source, "settings_revision": row["revision"]}
+        except (OSError, sqlite3.Error, ValueError, TypeError) as exc:
+            raise DeploymentError("test_policy", "Deployment mode settings are unavailable or invalid; no release was activated.") from exc
+        finally:
+            if connection is not None:
+                connection.close()
+
     def _release_test_policy(self, target_dir: Path) -> dict[str, Any]:
         profile = getattr(self, "test_profile", "standard")
         if profile == "hotfix":
             if not (target_dir / "scripts" / "run_tests.py").is_file():
                 raise DeploymentError("checkout", "This target predates audited hotfix support; use the full profile.")
             return {"profile": profile, "suites": [], "workers": 0,
-                    "reason": self._redact(self.hotfix_reason)}
+                    "reason": self._redact(self.hotfix_reason)[:500]}
         if not (target_dir / "scripts" / "run_tests.py").is_file():
             # A previously reviewed controller can encounter an older target.
             # Such a checkout must receive its original complete serial gate.
@@ -825,6 +895,8 @@ class ReleaseManager:
         environment["HELVETIC_LENS_RELEASE"] = release
         environment["HELVETIC_LENS_CONFIG_FILE"] = str(self.env_file)
         environment["HELVETIC_LENS_DEPLOY_STATE_DIR"] = str(self.state_dir)
+        environment["HELVETIC_LENS_DEPLOY_POLICY_DIR"] = str(
+            getattr(self, "policy_dir", self.state_dir.parent / "deploy-control" / "policy"))
         return environment
 
     def _compose(self, release_dir: Path, release: str, *arguments: str) -> list[str]:
@@ -1228,6 +1300,11 @@ class ReleaseManager:
                     raise DeploymentError("deployment_lock", "A deployment is active; hotfix was not started.")
                 return
             try:
+                self.policy_dir.mkdir(parents=True, exist_ok=True, mode=0o2770)
+                if self.policy_dir.is_symlink():
+                    raise ValueError("Symlink policy storage is not supported.")
+                if os.name != "nt":
+                    self.policy_dir.chmod(0o2770)
                 self._poll_locked()
             except (DeploymentError, OSError, ValueError, json.JSONDecodeError) as exc:
                 if self.run_record is None:
@@ -1384,9 +1461,13 @@ class ReleaseManager:
         backup_id: str | None = None
         active_model_id: str | None = None
         try:
+            with self.step("test_policy"):
+                selection = self._claim_test_policy()
+                self.test_profile, self.hotfix_reason = selection["profile"], selection["reason"]
+                self.run_record["test_policy"] = {**selection, "suites": [], "workers": 0}
             with self.step("checkout"):
                 target_dir = self._ensure_release(target_sha)
-                self.run_record["test_policy"] = self._release_test_policy(target_dir)
+                self.run_record["test_policy"].update(self._release_test_policy(target_dir))
                 if previous_sha:
                     previous_dir = self._ensure_release(previous_sha)
                 elif not first_install:
@@ -1562,12 +1643,12 @@ def main() -> int:
     modes.add_argument("--hotfix", metavar="FULL_MAIN_SHA",
                        help="One emergency installation of this exact main SHA, without API or web tests.")
     parser.add_argument("--reason", help="Required hotfix explanation (10–500 characters, no secrets).")
-    parser.add_argument("--test-profile", choices=("standard", "full"), default="standard",
-                        help="Standard: smoke + functional; full: also integration. Bootstrap always uses full.")
+    parser.add_argument("--test-profile", choices=("standard", "full"),
+                        help="Override saved policy for this invocation without consuming the next override. Bootstrap uses full.")
     arguments = parser.parse_args()
     if arguments.reason is not None and not arguments.hotfix:
         parser.error("--reason requires --hotfix.")
-    if arguments.hotfix and arguments.test_profile != "standard":
+    if arguments.hotfix and arguments.test_profile is not None:
         parser.error("--hotfix cannot be combined with --test-profile.")
     try:
         manager = ReleaseManager(arguments.config, bootstrap=arguments.bootstrap,

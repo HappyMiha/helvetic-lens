@@ -209,6 +209,14 @@ services:
 
   api:
     <<: *api-service
+    environment:
+      <<: *api-environment
+      HELVETIC_LENS_DEPLOY_POLICY_DIR: /operations/deployment-policy
+    volumes:
+      - document_data:/data
+      - backup_status:/data/backups:ro
+      - ${HELVETIC_LENS_DEPLOY_STATE_DIR:-/srv/helvetic-lens/deploy-state}:/operations/deployments:ro
+      - ${HELVETIC_LENS_DEPLOY_POLICY_DIR:-/srv/helvetic-lens/deploy-control/policy}:/operations/deployment-policy
     depends_on:
       migrate:
         condition: service_completed_successfully
