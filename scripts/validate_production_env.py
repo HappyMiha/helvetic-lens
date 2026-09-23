@@ -101,8 +101,22 @@ def validate(values: dict[str, str], *, host_platform: str = "posix") -> list[st
     if smtp_user and (_placeholder(smtp_user) or _placeholder(smtp_password)):
         errors.append("AUTH_SMTP_USERNAME/AUTH_SMTP_PASSWORD: replace placeholder credentials")
 
-    if values.get("APERTUS_PROVIDER", "docker").strip() != "docker":
-        errors.append("APERTUS_PROVIDER: the production baseline must default to docker")
+    provider = values.get("APERTUS_PROVIDER", "docker").strip()
+    if provider == "swisscom":
+        # A remote deployment default is an explicit operator selection. Never
+        # send its shared credential to an arbitrary or incomplete endpoint.
+        endpoint = urlsplit(require("APERTUS_BASE_URL"))
+        if (endpoint.scheme != "https" or endpoint.netloc != "api.swisscom.com"
+                or endpoint.query or endpoint.fragment
+                or not (endpoint.path == "/products/swiss-ai-weeks/apertus-1.5-70b/v1"
+                    or (endpoint.path.startswith("/layer/swiss-ai-platform/") and endpoint.path.endswith("/v1")))):
+            errors.append("APERTUS_BASE_URL: use the issued Swisscom HTTPS inference endpoint")
+        require("APERTUS_MODEL")
+        key = require("APERTUS_API_KEY")
+        if key and (_placeholder(key) or "\n" in key or "\r" in key):
+            errors.append("APERTUS_API_KEY: use the issued single-line credential")
+    elif provider != "docker":
+        errors.append("APERTUS_PROVIDER: select docker or swisscom for the deployment default")
     if require("JOB_EXECUTION_MODE") != "celery":
         errors.append("JOB_EXECUTION_MODE: production requires celery")
     if values.get("DEFAULT_LOCALE", "de-CH") not in LOCALES:

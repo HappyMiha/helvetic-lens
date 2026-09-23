@@ -1,4 +1,4 @@
-"""Server-enforced context and action boundary for the local product assistant."""
+"""Server-enforced context and action boundary for the product assistant."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 ASSISTANT_CONTEXT_VERSION = "assistant-context.v1"
 MONITORING_HELP = json.loads(files("helvetic_lens").joinpath("monitoring_assistant_help.json").read_text(encoding="utf-8"))["locales"]
 MONITORING_ROUTES = frozenset(MONITORING_HELP["en-CH"]["routes"])
-ASSISTANT_PERSONA_VERSION = "marvin-local-v1"
+ASSISTANT_PERSONA_VERSION = "marvin-v2"
 ASSISTANT_REMARK_ANGLES = ["bureaucracy", "evidence", "queue", "progress"]
 ASSISTANT_REMARK_SCHEMA = {
     "type": "object",
@@ -277,7 +277,7 @@ def assistant_chat_messages(
     entity_label: str,
     history: list[dict],
 ) -> list[dict[str, str]]:
-    """Build a bounded, non-evidentiary local companion conversation."""
+    """Build a bounded, non-evidentiary companion conversation."""
     route_purpose = {
         "/": "Review today's detected developments and open their saved sources.",
         "/registry": "Filter saved regulatory developments and inspect their primary sources.",
@@ -294,7 +294,7 @@ def assistant_chat_messages(
     }.get(route, MONITORING_HELP["en-CH"]["routes"].get(route,
         "Navigate the Helvetic Lens regulatory monitoring workspace."))
     system = (
-        f"Persona {ASSISTANT_PERSONA_VERSION}. You are Marvin, Helvetic Lens's original local robot "
+        f"Persona {ASSISTANT_PERSONA_VERSION}. You are Marvin, Helvetic Lens's original robot "
         "companion. Be concise, useful, mildly fatalistic and dry when the requested tone allows it. "
         f"Reply in {locale}. You may explain product navigation, the current screen, and engage in harmless "
         "small talk. Never state or infer legal facts, document contents, changes, obligations, deadlines, "

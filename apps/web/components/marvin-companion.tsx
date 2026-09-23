@@ -92,9 +92,11 @@ type AssistantEntityRef = {
 };
 
 type AssistantRuntime = {
+  execution?: "local" | "remote";
+  provider?: string;
   display_name: string;
   ready: boolean;
-  state: "ready" | "degraded" | "starting" | "stopped" | "needs_download";
+  state: "ready" | "degraded" | "starting" | "stopped" | "needs_download" | "unconfigured";
   selected_model: { display_name: string };
   policy: { cloud_fallback: boolean; single_runtime: boolean };
 };
@@ -102,7 +104,7 @@ type AssistantRuntime = {
 type AssistantRemarkResponse = {
   key: string;
   provenance: {
-    local: true;
+    local: boolean;
     cloud_fallback: false;
     persona_version: string;
   };
@@ -135,13 +137,16 @@ function runtimeStatusKey(
 ) {
   if (!runtime)
     return fallbackReady
-      ? "companion.localReady"
-      : "companion.localUnavailable";
+      ? "shell.localAiReady"
+      : "shell.localAiUnavailable";
+  if (runtime.execution === "remote")
+    return runtime.ready ? "companion.remoteReady" : "companion.remoteUnavailable";
   if (runtime.state === "ready") return "companion.localReady";
   if (runtime.state === "degraded") return "companion.localLimited";
   if (runtime.state === "starting") return "companion.localStarting";
   if (runtime.state === "stopped") return "companion.localStopped";
-  return "companion.localNeedsDownload";
+  if (runtime.state === "needs_download") return "companion.localNeedsDownload";
+  return "companion.localUnavailable";
 }
 
 function contractRoute(pathname: string) {
@@ -618,7 +623,6 @@ export function MarvinCompanion({
             },
           );
           if (
-            response.provenance.local &&
             response.provenance.cloud_fallback === false &&
             GENERATED_REMARK_KEYS.has(response.key) &&
             response.key !== "companion.generated.progress"
@@ -1161,11 +1165,14 @@ export function MarvinCompanion({
 
             {runtime && (
               <p className="marvin-runtime-detail">
-                {t("companion.runtimeProfile", {
+                {t(runtime.execution === "remote" ? "companion.runtimeRemote" : "companion.runtimeProfile", {
                   profile: runtime.display_name,
                   model: runtime.selected_model.display_name,
                 })}
               </p>
+            )}
+            {runtime?.execution === "remote" && (
+              <p className="marvin-runtime-detail">{t("companion.remoteDisclosure")}</p>
             )}
 
             {contextAttached ? (
@@ -1220,7 +1227,7 @@ export function MarvinCompanion({
                     <MessageCircle size={15} />
                     <strong>{t("companion.chatTitle")}</strong>
                   </span>
-                  <small>{t("companion.chatLocal")}</small>
+                  <small>{t(runtime?.execution === "remote" ? "companion.chatRemote" : runtime ? "companion.chatLocal" : "companion.chatTitle")}</small>
                 </div>
                 <div className="marvin-chat-log" aria-live="polite">
                   {chatMessages.length === 0 && (

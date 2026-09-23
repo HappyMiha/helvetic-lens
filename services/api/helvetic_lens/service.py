@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session
 from . import (
     action_history,
     analysis_selection,
+    assistant_inference,
     digests,
     law_history,
     monitoring_topics,
@@ -3561,21 +3562,24 @@ class HelveticLens:
         return await self.model_manager.inventory()
 
     async def assistant_runtime(self):
-        """Expose the local-only workload selection used by the product assistant."""
-        return await self.model_manager.profile("assistant-lite")
+        """Expose the organization's explicit assistant provider without fallback."""
+        return await assistant_inference.runtime(self.settings, self.model_manager)
 
     async def assistant_remark(self, data: AssistantRemarkInput):
         """Generate one bounded quip using only server-validated product context."""
         messages = assistant_remark_messages(data)
         completion = None
         last_error = None
+        budget = ai.InferenceBudget(max_requests=2, max_seconds=90)
         for attempt in range(2):
-            completion = await self.model_manager.complete_profile(
-                "assistant-lite",
+            completion = await assistant_inference.complete(
+                self.settings,
+                self.model_manager,
                 self.organization_id,
                 messages,
                 max_tokens=24,
                 response_schema=assistant_remark_schema(data),
+                budget=budget,
             )
             try:
                 payload = json.loads(completion["content"])
@@ -3604,24 +3608,15 @@ class HelveticLens:
                     ]
         else:
             raise DomainError(
-                "The local assistant returned an unusable remark.",
+                "The assistant returned an unusable remark.",
                 502,
                 "assistant_response_invalid",
             ) from last_error
-        profile = completion["profile"]
-        model = profile["selected_model"]
         return {
             "key": remark_key,
             "locale": data.locale,
             "trigger": data.trigger,
-            "provenance": {
-                "profile": profile["id"],
-                "persona_version": ASSISTANT_PERSONA_VERSION,
-                "model": model["served_model_id"],
-                "model_revision": model.get("immutable_revision"),
-                "local": True,
-                "cloud_fallback": False,
-            },
+            "provenance": assistant_inference.provenance(completion["profile"], ASSISTANT_PERSONA_VERSION),
         }
 
     async def assistant_chat(
@@ -3660,13 +3655,16 @@ class HelveticLens:
         )
         completion = None
         last_error = None
+        budget = ai.InferenceBudget(max_requests=2, max_seconds=90)
         for attempt in range(2):
-            completion = await self.model_manager.complete_profile(
-                "assistant-lite",
+            completion = await assistant_inference.complete(
+                self.settings,
+                self.model_manager,
                 self.organization_id,
                 messages,
                 max_tokens=260,
                 response_schema=ASSISTANT_CHAT_SCHEMA,
+                budget=budget,
             )
             try:
                 payload = json.loads(completion["content"])
@@ -3685,7 +3683,7 @@ class HelveticLens:
                     "screen_purpose",
                     "supplied schema",
                     "these instructions",
-                    "persona marvin-local",
+                    "persona marvin-",
                 )
                 if any(marker in lowered_reply for marker in leaked_markers):
                     raise ValueError("chat reply exposed an internal instruction")
@@ -3707,22 +3705,13 @@ class HelveticLens:
                     ]
         else:
             raise DomainError(
-                "The local assistant returned an unusable chat response.",
+                "The assistant returned an unusable chat response.",
                 502,
                 "assistant_response_invalid",
             ) from last_error
-        profile = completion["profile"]
-        model = profile["selected_model"]
         return {
             **payload,
-            "provenance": {
-                "profile": profile["id"],
-                "persona_version": ASSISTANT_PERSONA_VERSION,
-                "model": model["served_model_id"],
-                "model_revision": model.get("immutable_revision"),
-                "local": True,
-                "cloud_fallback": False,
-            },
+            "provenance": assistant_inference.provenance(completion["profile"], ASSISTANT_PERSONA_VERSION),
         }
 
     async def accept_model_license(self, model_id: str, accepted: bool):

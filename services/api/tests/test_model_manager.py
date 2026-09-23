@@ -76,6 +76,8 @@ class FakeModelManager:
 def test_admin_can_accept_download_start_and_remove_allowlisted_model(harness, monkeypatch):
     client, _, service, _ = harness
     manager = FakeModelManager()
+    service.environment_settings.apertus_provider = "docker"
+    service.settings.apertus_provider = "docker"
     service.model_manager = manager
 
     async def no_wait(_seconds):
@@ -112,6 +114,8 @@ def test_admin_can_accept_download_start_and_remove_allowlisted_model(harness, m
 
 def test_assistant_runtime_exposes_local_profile_without_admin_access(harness):
     client, _, service, _ = harness
+    service.environment_settings.apertus_provider = "docker"
+    service.settings.apertus_provider = "docker"
     service.model_manager = FakeModelManager()
 
     response = client.get("/api/assistant/runtime")

@@ -7,8 +7,9 @@
 ## Selected delivery and acceptance
 
 Track: Regulatory Change Monitor. Retain the existing saved-source → immutable
-versions → exact comparison → cited impact workflow. Keep local inference as the
-default and remote processing explicitly selected. Public partner mentions are
+versions → exact comparison → cited impact workflow. The owner's 23 September
+instruction explicitly selects Swisscom Apertus 1.5 70B for all organizations and
+all generative product requests, replacing the prior local default. Public partner mentions are
 not proof of participant credentials, credits, model access or allocated GPUs.
 
 | Task | Scope and dependency | Acceptance | State |
@@ -20,6 +21,7 @@ not proof of participant credentials, credits, model access or allocated GPUs.
 | H26-05 | Participant preparation delivered outside Git | Presentation and personal coaching are excluded from main at the user's request | Delivered separately; participant rehearsal remains open |
 | H26-06 | Activate the participant's OpenAI, Swisscom Apertus 1.5 70B and Supertext access in production | Official organizer contracts; current Swisscom route; fixed OpenAI origin; independently stored encrypted inference connections; administrator activation; no credential disclosure; provider/tenant tests; live checks and verified deployment | VERIFYING — release 5171b17 deployed; Swisscom 70B active and tested in Legal Hackathon; OpenAI login/redemption/API key and Supertext key pending |
 | H26-07 | Integrate the uploaded five-step legal monitoring project | [Reference analysis, production contract and acceptance](../LEGAL_MONITORING_PROFILES.md): workflow released as cd32ee0. Topics AI schema repair verified on production 64d1325, with 160 affected API cases, frontend build/browser checks and six topics from real Swisscom generation | DONE |
+| H26-08 | Switch every organization and generative product workload to Swisscom Apertus 70B | [Rollout scope and evidence](../SWISSCOM_ALL_ORGANIZATIONS.md): existing and future organizations, API and workers, Marvin routing/disclosure, private credentials and history, concurrent real-provider checks, verified production release | VERIFYING |
 
 H26-06 preserves the existing inference and translation workflows. Separate saved
 connections let the organization retain both OpenAI and Swisscom credentials;

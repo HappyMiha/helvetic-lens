@@ -98,6 +98,7 @@ def test_operator_values_reach_every_backend_and_source_kill_switch_is_effective
         assert config.tender_watch_enabled and config.simap_public_source_enabled
         assert not config.air_watch_enabled and not config.river_watch_enabled
         assert config.commute_gtfs_rt_key.get_secret_value() == "synthetic-rt-only"
+
         assert config.commute_gtfs_sa_key.get_secret_value() == "synthetic-sa-only"
         assert "synthetic-rt-only" not in repr(config)
         assert config.road_watch_enabled and not config.road_source_enabled
@@ -112,3 +113,18 @@ def test_operator_values_reach_every_backend_and_source_kill_switch_is_effective
     for service, spec in document["services"].items():
         if service not in SERVICES:
             assert not any(name.startswith(("COMMUTE_", "ROAD_")) for name in spec.get("environment", {}))
+
+def test_remote_inference_settings_reach_all_api_and_worker_processes(tmp_path):
+    overrides = {"APERTUS_PROVIDER": "swisscom",
+        "APERTUS_BASE_URL": "https://api.swisscom.com/products/swiss-ai-weeks/apertus-1.5-70b/v1",
+        "APERTUS_API_KEY": "synthetic-remote-key", "APERTUS_MODEL": "swiss-ai/Apertus-v1.5-70B",
+        "APERTUS_TIMEOUT_SECONDS": "90", "APERTUS_MAX_TOKENS": "1600",
+        "APERTUS_CONTEXT_CHARS": "24000", "APERTUS_REQUEST_RETRIES": "1",
+        "APERTUS_BATCH_CONCURRENCY": "2", "APERTUS_JSON_MODE": "false",
+        "APERTUS_REASONING_EFFORT": "default", "APERTUS_EXPLANATION_PROFILE": ""}
+    document = render(tmp_path, overrides)
+    for service in SERVICES:
+        values = document["services"][service]["environment"]
+        assert {key: values[key] for key in overrides} == overrides
+    for service in ("web", "model-manager"):
+        assert "APERTUS_API_KEY" not in document["services"][service].get("environment", {})

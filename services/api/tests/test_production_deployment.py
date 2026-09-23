@@ -53,6 +53,21 @@ def test_valid_production_environment_passes_without_cloud_credentials():
     assert validate(valid_environment()) == []
 
 
+def test_explicit_swisscom_default_requires_complete_protected_connection():
+    values = {**valid_environment(), "APERTUS_PROVIDER": "swisscom",
+        "APERTUS_BASE_URL": "https://api.swisscom.com/products/swiss-ai-weeks/apertus-1.5-70b/v1",
+        "APERTUS_MODEL": "swiss-ai/Apertus-v1.5-70B", "APERTUS_API_KEY": "synthetic-issued-key"}
+    assert validate(values) == []
+    for field in ("APERTUS_BASE_URL", "APERTUS_MODEL", "APERTUS_API_KEY"):
+        assert any(error.startswith(field + ":") for error in validate({**values, field: ""}))
+    for url in ("https://evil.invalid/v1", "https://api.swisscom.com@evil.invalid/v1",
+                "http://api.swisscom.com/layer/swiss-ai-platform/test/v1",
+                values["APERTUS_BASE_URL"] + "?key=synthetic-secret"):
+        errors = validate({**values, "APERTUS_BASE_URL": url})
+        assert any(error.startswith("APERTUS_BASE_URL:") for error in errors)
+        assert "synthetic" not in " ".join(errors)
+
+
 def test_deployment_status_mount_is_read_only_and_docker_socket_is_never_exposed():
     compose = (ROOT / "compose.production.yaml").read_text(encoding="utf-8")
 

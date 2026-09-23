@@ -270,6 +270,8 @@ def test_personal_assistant_chat_is_persisted_and_local(harness):
             }
 
     manager = ChatManager()
+    service.environment_settings.apertus_provider = "docker"
+    service.settings.apertus_provider = "docker"
     service.model_manager = manager
     response = client.post(
         f"/api/assistant/conversations/{conversation['id']}/messages",
@@ -290,6 +292,8 @@ def test_personal_assistant_chat_is_persisted_and_local(harness):
 def test_screen_help_chat_skips_model_and_persists_trusted_route_answer(harness):
     client, _, service, _ = harness
     manager = FakeAssistantManager()
+    service.environment_settings.apertus_provider = "docker"
+    service.settings.apertus_provider = "docker"
     service.model_manager = manager
     conversation = client.post(
         "/api/assistant/conversations",
@@ -369,6 +373,8 @@ class FakeAssistantManager:
 def test_remark_endpoint_uses_local_profile_and_returns_provenance(harness):
     client, _, service, _ = harness
     manager = FakeAssistantManager()
+    service.environment_settings.apertus_provider = "docker"
+    service.settings.apertus_provider = "docker"
     service.model_manager = manager
 
     response = client.post(
@@ -397,6 +403,8 @@ def test_remark_endpoint_uses_local_profile_and_returns_provenance(harness):
 def test_sensitive_state_rejects_remark_before_local_inference(harness):
     client, _, service, _ = harness
     manager = FakeAssistantManager()
+    service.environment_settings.apertus_provider = "docker"
+    service.settings.apertus_provider = "docker"
     service.model_manager = manager
 
     response = client.post(
@@ -426,6 +434,8 @@ def test_invalid_local_remark_gets_one_bounded_repair(harness):
             return result
 
     manager = RepairingManager()
+    service.environment_settings.apertus_provider = "docker"
+    service.settings.apertus_provider = "docker"
     service.model_manager = manager
 
     response = client.post(

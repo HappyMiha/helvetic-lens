@@ -89,12 +89,15 @@ test("comparison questions use a private draft and the existing cited Ask flow",
   assert.doesNotMatch(companion, /setQuestionDraft\(\s*comparisonId\s*\?/);
 });
 
-test("Marvin chat stays local, personal, voiced, and evidence-bound", () => {
+test("Marvin chat follows its configured provider and stays personal, voiced, and evidence-bound", () => {
   assert.match(
     companion,
     /\/assistant\/conversations\/\$\{conversationId\}\/messages/,
   );
   assert.match(companion, /requires_cited_ask/);
+  assert.match(companion, /runtime\.execution === "remote"/);
+  assert.match(companion, /companion\.remoteDisclosure/);
+  assert.doesNotMatch(companion, /response\.provenance\.local &&/);
   assert.match(companion, /window\.speechSynthesis/);
   assert.match(delivery, /new this\.Utterance/);
   assert.match(companion, /new window\.AudioContext/);

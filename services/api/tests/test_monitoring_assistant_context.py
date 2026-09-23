@@ -40,6 +40,8 @@ def params(record, message=None):
 def test_personal_message_context_reads_selected_user_text_without_sharing_or_inference(harness):
     client, _, service, model = harness
     manager = FakeAssistantManager()
+    service.environment_settings.apertus_provider = "docker"
+    service.settings.apertus_provider = "docker"
     service.model_manager = manager
     record = saved_message(client)
     with service.db.session() as session:
@@ -66,6 +68,8 @@ def test_personal_message_context_reads_selected_user_text_without_sharing_or_in
 @pytest.mark.parametrize("condition", ["other_user", "other_org", "reply", "missing", "expired", "blank", "oversize", "date", "duplicate", "too_many"])
 def test_personal_context_fails_closed_for_wrong_owner_role_or_unavailable_message(harness, condition):
     client, _, service, _ = harness
+    service.environment_settings.apertus_provider = "docker"
+    service.settings.apertus_provider = "docker"
     service.model_manager = FakeAssistantManager()
     record = saved_message(client)
     request_params = params(record)
@@ -104,6 +108,8 @@ def test_personal_context_fails_closed_for_wrong_owner_role_or_unavailable_messa
 
 def test_message_context_revalidates_document_owner_and_existing_watch(harness):
     client, _, service, _ = harness
+    service.environment_settings.apertus_provider = "docker"
+    service.settings.apertus_provider = "docker"
     service.model_manager = FakeAssistantManager()
     law = add_law(client)
     record = saved_message(client, entity=law["id"])
@@ -124,6 +130,8 @@ def test_logged_in_viewer_reads_own_message_but_cannot_share_topic_or_read_colle
     app = create_app(_settings(tmp_path), fetcher=FakeFetcher(), model_client=ScriptedModel())
     with TestClient(app) as client:
         registered = _register(client).json()
+        app.state.service.environment_settings.apertus_provider = "docker"
+        app.state.service.settings.apertus_provider = "docker"
         app.state.service.model_manager = FakeAssistantManager()
         with app.state.service.db.session(include_all_organizations=True) as session:
             membership = session.scalar(select(OrganizationMembership).where(OrganizationMembership.user_id == registered["user"]["id"]))
