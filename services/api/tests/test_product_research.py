@@ -148,7 +148,9 @@ def test_workspace_search_private_drafts_roles_and_product_isolation(signed):
         session.add(OrganizationMembership(user_id=reader['user']['id'], organization_id=identity['organization']['id'], role='viewer'))
         session.commit()
     assert post(client, '/api/auth/session/organization', {'organization_id': identity['organization']['id']}).status_code == 200
-    results = client.get('/api/products/pharma/discover?q=naturalisation').json()['items']
+    found = client.get('/api/products/pharma/discover?q=naturalisation').json()
+    results = found['items']
+    assert found['total'] == len(results) == 3
     assert results and all(item['dossier_id'] == shared['id'] for item in results)
     assert client.get(private_route+'/discussion').status_code == 404
     assert client.get(path).status_code == 200
@@ -158,7 +160,8 @@ def test_workspace_search_private_drafts_roles_and_product_isolation(signed):
     assert client.post(path+'/replies',json={'request_key':str(uuid4()),'body':'No csrf'}).status_code == 403
     client.cookies.clear()
     assert _register(client, 'other@example.ch').status_code == 201
-    assert client.get('/api/products/pharma/discover?q=naturalisation').json()['items'] == []
+    foreign_search = client.get('/api/products/pharma/discover?q=naturalisation').json()
+    assert foreign_search['items'] == [] and foreign_search['total'] == 0
     assert client.get(path).status_code == 404
 
 

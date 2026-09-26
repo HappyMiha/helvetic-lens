@@ -98,6 +98,22 @@ lint, TypeScript and production build in each client; both local preview routes 
 200. An additional cross-product rate-budget regression and the updated backlog gate both passed (36 unique affected cases across these runs). Client Sites publication is intentionally held for the final 08:00–09:00 release
 window requested by the owner. No production activation claim for this slice yet.
 
+Second slice — IMPLEMENTED / final client publication pending: improve retrieval inside existing professional workspaces.
+Users choose all-words matching across a record's visible fields or an exact phrase;
+rank title matches before older incidental matches and show actual matching totals with
+the existing 20-per-group cap. Dependencies/source readiness: existing private topic,
+question and contribution tables only; no external provider, new index or migration.
+Acceptance: reordered multiword and cross-field matches, exact-phrase behavior, literal
+SQL wildcard escaping, deterministic relevant ordering, truthful totals/caps, unchanged
+draft/organization/product visibility, both client controls and tested compatibility.
+Verification passed: 39 affected native product/backlog cases, exact API lint, seven
+gateway tests per client, both client lint/types/production builds and compiled local
+HTTP previews. Totals include only visible records; foreign organizations, other products
+and other authors’ drafts are excluded by the tested scope. No UI or professional
+acceptance is claimed. The first slice’s core release `git-9e6de7e5b466` succeeded at
+01:07 Zurich; both first client commit CI runs succeeded. Final Sites publication is
+still held for the owner’s requested end-of-night window.
+
 
 **MV2 collective product research contribution, 27 September 2026 — DONE (scoped release):** Develop
 Pharma and Loyer for small professional teams beyond monitor setup: a daily work

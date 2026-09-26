@@ -78,7 +78,7 @@ Only the entered question (5–300 characters) and the product name reach the co
 model. No private dossier context is fetched, no source request is issued and no record
 is mutated. The strict response admits 1–5 source-specific queries with a label/reason
 and up to four bounded scope clarifications. Provider IDs are limited to workspace,
-Fedlex and Europe PMC; the prompt reflects literal workspace matching, Fedlex title
+Fedlex and Europe PMC; the prompt reflects workspace word/phrase matching, Fedlex title
 substring matching and biomedical literature terms. Unknown fields/providers, fabricated
 result fields and invalid limits cause a visible 502 without a partial plan.
 
@@ -208,3 +208,30 @@ readiness endpoint identifies the expected release. No DNS or source approvals c
 
 This completes this scoped product iteration. It does not claim universal web indexing,
 browser interaction testing, or professional pilot acceptance.
+
+
+## Workspace retrieval — overnight development, 27 September
+
+Workspace discovery now accepts `mode=all` (default) or `mode=phrase`. All-words mode
+requires every distinct whitespace-separated word somewhere in the same visible record,
+across its title/name, body/goal or dossier subject; word order need not match. Exact phrase
+requires the full entered phrase in one field. Up to 12 distinct words are admitted;
+longer queries can use phrase mode. SQL wildcard characters remain literal, and trimmed
+queries must contain at least two characters.
+
+Each group ranks contiguous title matches, then all-word title matches, then recency and
+a stable ID tie-breaker. Visibility filtering precedes retrieval and counts. The response
+adds actual workspace `total` and `match_mode`, preserving existing result fields and the
+20-per-group limit. Public providers retain their own query syntax; their total remains
+unknown rather than fabricated. Both clients expose the match choice, explain it before
+searching, label the mode on returned results and show visible-versus-total counts with
+refinement guidance when a group is capped. There is no semantic or whole-workspace
+indexing claim and no added storage, source approval or schema migration.
+
+Validation: all 39 affected native product/backlog cases passed (38 integration, one
+smoke), including multi-field/reordered retrieval, phrase restriction, title relevance,
+literal wildcards, bounded terms, accurate capped totals, stable ordering and private
+visibility of counts. Seven gateway tests per client, lint, types and production builds
+passed; both local routes compiled and returned 200. An accessibility lint failure on a
+status paragraph was fixed by using the semantic output element before the final checks.
+Client publication remains pending the final overnight window.
