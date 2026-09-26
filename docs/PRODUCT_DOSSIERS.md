@@ -71,7 +71,7 @@ helveticlens.ch deployment remains the shared core. No retired Monitoring deploy
 is recreated, and existing private data, credentials and source approvals are preserved.
 The owner explicitly authorized these additional product sites on 26 September 2026.
 
-## Confirmed publication
+## Initial publication — 26 September 2026
 
 | Product | Public Apache-2.0 repository | Production | Validated source |
 |---|---|---|---|
@@ -101,7 +101,7 @@ AI/email providers keep their native readiness gates. Saved AI improvements requ
 review and explicit acceptance before changing topic revisions.
 
 
-## Collective research iteration — 27 September 2026 (VERIFYING publication)
+## Collective research iteration — 27 September 2026 (DONE, scoped release)
 
 The owner asked to develop both products around professional forums, with monitoring
 and information discovery as the primary job. The delivered model is a private living
@@ -155,3 +155,27 @@ are claimed. Product strategies and proposed pilot measures are in each client's
 Separate future gates: public communities, contributor-specific permissions, per-question
 email subscriptions, semantic retrieval evaluation and more source providers. Existing
 medical/legal professional validation and broader MV2 acceptance gates remain open.
+
+### Confirmed collective research publication
+
+The shared core activated `9137dcf2fd755d03150e1bc71f86325c452bb7ac`
+(`git-9137dcf2fd75`) at 22:20:05 UTC on 26 September (27 September in Zurich).
+The automatic release passed 755 tests (96 smoke, 659 functional), API lint, backup,
+startup/migration and public readiness. The configured integration gate remains separate;
+the 24 final affected cases were run locally before publication.
+
+| Product | Published source | Sites version | CI |
+|---|---|---|---|
+| [Pharma](https://pharma.helveticlens.ch) | `0c6e331b37f13dc98104ede839951e7726ccea16` | 2 | [Passed](https://github.com/HappyMiha/helveticlens-pharma/actions/runs/36275693671) |
+| [Loyer](https://loyer.helveticlens.ch) | `530261a872651aa901550de6c9c6f18055159181` | 2 | [Passed](https://github.com/HappyMiha/helveticlens-loyer/actions/runs/36275694674) |
+
+Both saved archives came from the exact validated/pushed source; both Sites deployments
+succeeded and retain public access at their existing custom production URLs. GitHub
+confirms both repositories PUBLIC with Apache-2.0. Twenty-seven HTTP checks per product
+passed: product title, every directly linked asset byte-for-byte against the validated
+build, anonymous session, private dossiers/queue/discovery/discussion/brief denial,
+cross-product discovery/queue denial and cross-origin mutation denial. The core public
+readiness endpoint identifies the expected release. No DNS or source approvals changed.
+
+This completes this scoped product iteration. It does not claim universal web indexing,
+browser interaction testing, or professional pilot acceptance.

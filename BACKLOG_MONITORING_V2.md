@@ -72,7 +72,7 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 ## Product decision
 
-**MV2 collective product research contribution, 27 September 2026 — VERIFYING:** Develop
+**MV2 collective product research contribution, 27 September 2026 — DONE (scoped release):** Develop
 Pharma and Loyer for small professional teams beyond monitor setup: a daily work
 queue, medicine/programme or client/matter context, accountable owners, review dates,
 evidence-linked actions, recorded outcomes and a printable decision brief. Reuse
@@ -85,6 +85,8 @@ both complete clients and verified production publication. Local validation: 51 
 regressions passed, followed by all 24 final product/backlog checks; six gateway
 tests, strict lint/types and production builds passed for both clients. Final source and
 activation evidence are tracked in [product dossier delivery](docs/PRODUCT_DOSSIERS.md).
+Core 9137dcf and both product Sites v2 releases are active: the normal 755-test release
+gate passed and 27 HTTP checks per product verified exact built assets and private routes.
 Existing MV2 and external
 professional acceptance gates remain separate.
 
