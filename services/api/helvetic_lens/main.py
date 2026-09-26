@@ -343,7 +343,7 @@ class RelationReprocessingInput(Input):
 
 def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
     if path.startswith("/api/products/"):
-        return "product_dossiers", 6 if path.endswith(("/improve", "/source-advice", "/research", "/discover")) else 60, 60
+        return "product_dossiers", 6 if path.endswith(("/improve", "/source-advice", "/research", "/discover", "/discover/plan")) else 60, 60
     if path.startswith("/api/monitoring-profiles"):
         return "legal_profiles", 6 if path.endswith("/suggest") else 60, 60
     if path.startswith(("/api/partner-tools/", "/api/settings/partners", "/api/settings/inference-connections")):
@@ -582,7 +582,7 @@ def create_app(
             try:
                 rate_path = "/api/monitoring-subjects" if path.startswith("/api/monitoring-subjects") else path
                 if path.startswith("/api/products/"):
-                    rate_path = "/api/products" + ("/ai" if path.endswith(("/improve", "/source-advice", "/research", "/discover")) else "")
+                    rate_path = "/api/products" + ("/ai" if path.endswith(("/improve", "/source-advice", "/research", "/discover", "/discover/plan")) else "")
                 if path.startswith("/api/monitoring-profiles"):
                     rate_path = "/api/monitoring-profiles" + ("/suggest" if path.endswith("/suggest") else "")
                 if path.startswith("/api/tender-watch"):

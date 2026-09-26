@@ -72,6 +72,33 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 ## Product decision
 
+**Overnight product development, 27 September 2026 — IN PROGRESS:** The owner authorized
+continued Pharma/Loyer improvements until 09:00 Europe/Zurich, at least hourly complete
+tested pushes to both public client main branches, and final Sites publication near the
+end. First bounded slice: natural-language AI search planning, restricted to supported
+workspace/Fedlex/Europe PMC providers, with explicit query review before external search.
+Dependencies: existing configured model client, authenticated product API, native privacy
+and rate limits. Acceptance: real model invocation on only the entered question; strict
+provider/query schema and no fabricated search results; private/role/CSRF/error handling;
+editable source-specific query choices in both clients; gateway isolation; tests and builds.
+Later slices must record their actual scope and evidence. The core's existing automatic
+release workflow remains intact; client compatibility is preserved until the final release.
+
+First slice implemented: `POST /api/products/{product}/discover/plan` receives only the
+explicit question and product, calls the configured model once, validates 1–5 supported
+source/query suggestions and up to four scope clarifications, and never searches or
+changes a dossier. Both clients show a labelled draft with source reasons and an explicit
+review-query action that fills the editable form; Search remains a separate action.
+Model/provider attribution, bounded inputs/output, editor/session/CSRF guards and the
+shared six-per-minute discovery/AI budget are retained. Invalid providers, extra findings,
+links, oversized strings and malformed output are refused. Manual discovery stays usable
+when AI is unavailable. No schema migration or additional provider access is required.
+Local verification: API lint; 35 affected product/backlog cases; seven gateway tests,
+lint, TypeScript and production build in each client; both local preview routes returned
+200. An additional cross-product rate-budget regression and the updated backlog gate both passed (36 unique affected cases across these runs). Client Sites publication is intentionally held for the final 08:00–09:00 release
+window requested by the owner. No production activation claim for this slice yet.
+
+
 **MV2 collective product research contribution, 27 September 2026 — DONE (scoped release):** Develop
 Pharma and Loyer for small professional teams beyond monitor setup: a daily work
 queue, medicine/programme or client/matter context, accountable owners, review dates,

@@ -71,6 +71,35 @@ helveticlens.ch deployment remains the shared core. No retired Monitoring deploy
 is recreated, and existing private data, credentials and source approvals are preserved.
 The owner explicitly authorized these additional product sites on 26 September 2026.
 
+## Reviewed search planning — overnight development, 27 September
+
+An administrator can submit a question to `POST /api/products/{product}/discover/plan`.
+Only the entered question (5–300 characters) and the product name reach the configured
+model. No private dossier context is fetched, no source request is issued and no record
+is mutated. The strict response admits 1–5 source-specific queries with a label/reason
+and up to four bounded scope clarifications. Provider IDs are limited to workspace,
+Fedlex and Europe PMC; the prompt reflects literal workspace matching, Fedlex title
+substring matching and biomedical literature terms. Unknown fields/providers, fabricated
+result fields and invalid limits cause a visible 502 without a partial plan.
+
+Both clients display the original question and model attribution. Selecting a suggestion
+prepares the editable search field and provider; the user separately presses Search.
+The UI explains which text reaches the model or public source. Plans are transient in
+the current search view; saved sources and monitoring still use their explicit flows.
+Read-only users retain manual discovery. Model errors do not disable it. The endpoint
+shares the existing authenticated six-per-minute AI/discovery budget across products,
+requires CSRF and administrator role, and returns private/no-store responses.
+
+Initial validation: 35 affected native product/backlog tests passed, covering explicit
+model input, private-context exclusion, no hidden search/mutation, strict output rejection,
+roles/session/CSRF and unavailable-model recovery alongside existing product workflows.
+Each client passed seven gateway contracts, strict lint/TypeScript and a production
+build; both development routes compiled and returned 200. The owner requested hourly
+main pushes with product Sites deployment near 09:00 Zurich; these client changes are
+awaiting that final deployment window, not claimed as published by this section. A follow-up
+cross-product shared-rate-budget regression and backlog gate also passed (36 unique
+affected cases across both runs).
+
 ## Initial publication — 26 September 2026
 
 | Product | Public Apache-2.0 repository | Production | Validated source |
