@@ -12,7 +12,7 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, File, Query, Request, Response, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import Field, field_validator
-from sqlalchemy import func, or_, select
+from sqlalchemy import case, func, or_, select
 
 from . import legal_profiles, monitoring_topics
 from .analysis import InferenceBudget
@@ -21,7 +21,7 @@ from .db import utcnow
 from .interest_jobs import lock_organization
 from .legal_profile_models import LegalMonitoringProfile
 from .models import DocumentWatch, Law, User
-from .product_models import DossierEntry, ProductDossier
+from .product_models import DossierEntry, ProductDossier, ResearchThread
 
 Product = Literal["pharma", "loyer"]
 MAX_FILE = 10 * 1024 * 1024
@@ -88,15 +88,23 @@ def dossier(session, product, identifier, user):
 
 def entry_payload(session, entry):
     author = session.get(User, entry.actor_user_id) if entry.actor_user_id else None
-    return {"id": entry.id, "kind": entry.kind, "title": entry.title, "body": entry.body,
+    return {"id": entry.id, "kind": entry.kind, "thread_id": entry.thread_id, "title": entry.title, "body": entry.body,
             "url": entry.url, "data": entry.data_json, "byte_size": entry.byte_size,
             "sha256": entry.sha256, "author": author.name if author else "Former member",
             "created_at": iso(entry.created_at)}
 
 
 def payload(session, row, profile, *, detail=True):
+    from .product_operations import work_payload
+
     result = {"id": row.id, "product": row.product, "created_at": iso(row.created_at),
-              "profile": legal_profiles.payload(session, profile, detail=detail)}
+              "profile": legal_profiles.payload(session, profile, detail=detail), "work": work_payload(session, row)}
+    result["discussion"] = {
+        "questions": session.scalar(select(func.count()).select_from(ResearchThread).where(ResearchThread.dossier_id == row.id)),
+        "open_questions": session.scalar(select(func.count()).select_from(ResearchThread).where(ResearchThread.dossier_id == row.id, ResearchThread.accepted_entry_id.is_(None))),
+    }
+    latest_entry = session.scalar(select(func.max(DossierEntry.created_at)).where(DossierEntry.dossier_id == row.id))
+    result["activity_at"] = max(iso(profile.updated_at), iso(latest_entry)) if latest_entry else iso(profile.updated_at)
     if detail:
         result["entries"] = [entry_payload(session, x) for x in session.scalars(select(DossierEntry)
             .where(DossierEntry.dossier_id == row.id).order_by(DossierEntry.created_at.desc(), DossierEntry.id).limit(100))]
@@ -128,7 +136,8 @@ def product_router(service):
         with service.db.session() as session:
             visible = or_(LegalMonitoringProfile.status != "draft", LegalMonitoringProfile.created_by_user_id == identity.user_id)
             query = select(ProductDossier, LegalMonitoringProfile).join(LegalMonitoringProfile).where(ProductDossier.product == product, visible)
-            rows = session.execute(query.order_by(LegalMonitoringProfile.updated_at.desc(), ProductDossier.id).offset(offset).limit(50))
+            last_activity = select(func.max(DossierEntry.created_at)).where(DossierEntry.dossier_id == ProductDossier.id).correlate(ProductDossier).scalar_subquery()
+            rows = session.execute(query.order_by(case((last_activity > LegalMonitoringProfile.updated_at, last_activity), else_=LegalMonitoringProfile.updated_at).desc(), ProductDossier.id).offset(offset).limit(50))
             total = session.scalar(select(func.count()).select_from(query.subquery()))
             return {"items": [payload(session, a, b, detail=False) for a, b in rows], "total": total}
 
@@ -387,6 +396,20 @@ def product_router(service):
             if len(result["entries"]) > 10000:
                 fail("This dossier exceeds the interactive export limit.")
             result["file_bytes_included"] = False
+            from .product_models import DossierAction
+            from .product_operations import action_payload
+            from .product_research import thread_payload
+
+            result["questions"] = [thread_payload(session, thread) for thread in session.scalars(select(ResearchThread)
+                .where(ResearchThread.dossier_id == row.id).order_by(ResearchThread.created_at, ResearchThread.id))]
+            result["actions"] = [action_payload(session, action) for action in session.scalars(select(DossierAction)
+                .where(DossierAction.dossier_id == row.id).order_by(DossierAction.created_at, DossierAction.id))]
             return result
 
+    from .product_operations import operations
+
+    operations(router, service, actor)
+    from .product_research import research_routes
+
+    research_routes(router, service, actor)
     return router

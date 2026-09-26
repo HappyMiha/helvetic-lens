@@ -99,3 +99,59 @@ and personal email digest, and require sign-in for private work. Source page wat
 individual URLs rather than whole-domain coverage. Source availability and configured
 AI/email providers keep their native readiness gates. Saved AI improvements require
 review and explicit acceptance before changing topic revisions.
+
+
+## Collective research iteration — 27 September 2026 (VERIFYING publication)
+
+The owner asked to develop both products around professional forums, with monitoring
+and information discovery as the primary job. The delivered model is a private living
+topic: a shared research goal, focused questions, source-linked contributions,
+human-accepted working answers and continuing monitoring. Operational work supports
+that loop. The existing public clients and private organizations retain their boundaries.
+
+The new primary Topics screen shows collective activity and open questions. Workspace
+search is visibility-filtered; external discovery sends only the explicitly submitted
+query to fixed Fedlex or Europe PMC endpoints. Fedlex is title-based official catalogue
+search; Europe PMC returns literature records. The live neutral-query checks returned
+20 and 19 records respectively. Up to 20 records are exposed, with honest empty/error
+states and no universal web-coverage claim. Results can seed monitoring or be saved to
+a topic; individual page watching remains an explicit native operation.
+
+Questions and replies have durable request keys, conflict detection and human acceptance
+with reopening. The native configured model receives at most 18 bounded topic snapshots
+(team text, saved nonsynthetic page extracts and admitted event metadata). Every finding
+requires a known source ID and a quote present in the exact saved input. Invalid
+citations and results produced while the topic/evidence changes are rejected. Notes
+retain source snapshots, hashes, model/provider, unknowns and suggested searches. Exact
+quotes prove attribution, not professional correctness. Files are not parsed for AI.
+
+Accepted answers keep their acceptance/review time. New saved contributions, watched-page
+versions or admitted matching events prompt human review without automatically changing
+the accepted answer. A contributor can reconfirm after reviewing, select another answer
+or reopen the question. Open gaps can enter the existing reviewed monitoring refinement.
+
+Product context adds medicine/programme/markets/lifecycle for Pharma and
+client/matter/jurisdiction/practice for Loyer. Actions have current-member assignment,
+priority, team deadlines, current match fingerprints and immutable source pointers,
+revision guards and required completion outcomes. Review dates and decisions persist.
+The work queue has real counts, team/personal filters and pagination. Private printable
+briefs include accepted answers, quoted evidence, unresolved gaps, new-material review
+signals, actions and references; JSON exports retain the structured history.
+
+Schema f4c495bef124 adds product context, actions and research threads. The migration
+was tested on populated dossiers: notes and file bytes survive downgrade/upgrade, FK
+enforcement remains active, and deleting an author detaches identity/assignment while
+retaining shared answers. No private content or credentials enter the public repositories.
+
+Final local verification: exact API lint passed; 51 affected product/legal-profile/
+erasure/migration regressions passed. After the acceptance-time refinements, the final
+product research/operations/dossier/backlog run passed all 24 cases (23 integration and
+one smoke). This includes new watched-page material prompting answer review. Both
+product clients passed six gateway tests, lint, TypeScript and production builds.
+Native tests use deterministic model/HTTP doubles; live provider discovery uses neutral
+public phrases. No authenticated production records or browser-interaction acceptance
+are claimed. Product strategies and proposed pilot measures are in each client's PRODUCT.md.
+
+Separate future gates: public communities, contributor-specific permissions, per-question
+email subscriptions, semantic retrieval evaluation and more source providers. Existing
+medical/legal professional validation and broader MV2 acceptance gates remain open.

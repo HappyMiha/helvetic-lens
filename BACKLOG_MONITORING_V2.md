@@ -72,6 +72,32 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 ## Product decision
 
+**MV2 collective product research contribution, 27 September 2026 — VERIFYING:** Develop
+Pharma and Loyer for small professional teams beyond monitor setup: a daily work
+queue, medicine/programme or client/matter context, accountable owners, review dates,
+evidence-linked actions, recorded outcomes and a printable decision brief. Reuse
+native identity, tenant boundaries, topic evidence validity and monitoring. No new
+source coverage or independent email channel is implied. Acceptance: server-persisted
+context/actions, optimistic conflict protection, exact request retry handling,
+cross-tenant/product/author-private denial, current-member assignment, current-evidence
+checks for generated actions, accurate paginated daily work and escaped private brief,
+both complete clients and verified production publication. Local validation: 51 affected
+regressions passed, followed by all 24 final product/backlog checks; six gateway
+tests, strict lint/types and production builds passed for both clients. Final source and
+activation evidence are tracked in [product dossier delivery](docs/PRODUCT_DOSSIERS.md).
+Existing MV2 and external
+professional acceptance gates remain separate.
+
+**Owner refinement during this contribution:** Make a living, collectively developed
+professional topic the primary product surface. Add questions, attributed replies,
+team-accepted working answers, source discovery and bounded AI research with verified
+source references; turn knowledge gaps into reviewed monitoring refinements. Operational
+actions remain a supporting workflow. Keep existing private workspace visibility;
+public cross-organization discussion is not implied. External discovery sends only the
+search terms explicitly submitted to the selected public provider. Never claim whole-web
+coverage, silently send private discussion to search providers, or present AI synthesis
+as an accepted professional conclusion.
+
 The user specifies **what matters to them**. Setup follows Create Monitor → Personal/Business → understandable fields → preview of expected data/matches → explicit Start. A single ongoing loop follows: Today → What changed → Why received → Evidence → Decision → ongoing monitoring. Ordinary users do not need to enter a source API key or design a crawler.
 
 | ID | User outcome | Main required tasks |

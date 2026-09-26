@@ -1815,6 +1815,8 @@ from .monitoring_connector_models import MonitoringConnectorConfiguration  # noq
 ORGANIZATION_SCOPED_MODELS = (
     product_models.ProductDossier,
     product_models.DossierEntry,
+    product_models.DossierAction,
+    product_models.ResearchThread,
     legal_profile_models.LegalMonitoringProfile,
     influence_models.InfluenceDossier,
     influence_models.InfluenceRevision,
