@@ -19,6 +19,8 @@ next-attempt override, including an explicitly selected hotfix with a reason.
 | Instance | Code | Website |
 |---|---|---|
 | Main product and Monitoring features (HappySnowman) | main | helveticlens.ch |
+| Pharma client (Sites, shared native core) | [helveticlens-pharma/main](https://github.com/HappyMiha/helveticlens-pharma) | [pharma.helveticlens.ch](https://pharma.helveticlens.ch) |
+| Loyer client (Sites, shared native core) | [helveticlens-loyer/main](https://github.com/HappyMiha/helveticlens-loyer) | [loyer.helveticlens.ch](https://loyer.helveticlens.ch) |
 
 The user retired `monitoring.helveticlens.ch` on 12 September 2026. Do not restart
 its HappyDucky02 deployment, Windows task, `helvetic-lens-v2` Docker project, tunnel

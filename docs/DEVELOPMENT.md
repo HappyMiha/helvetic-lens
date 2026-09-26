@@ -65,8 +65,11 @@ Historical branches and worktrees remain history; this policy does not delete th
 
 ## Active deployment
 
-Deploy and verify only **helveticlens.ch on HappySnowman**, including Monitoring
-features, from main. Never develop in serving checkouts.
+Deploy and verify this shared core on **helveticlens.ch on HappySnowman**, including
+Monitoring features, from main. Never develop in serving checkouts. The owner's
+26 September 2026 instruction also authorizes independent Pharma and Loyer clients
+in their own public repositories and Sites projects at `pharma.helveticlens.ch` and
+`loyer.helveticlens.ch`; see [publication evidence](PRODUCT_DOSSIERS.md).
 
 The user retired the separate monitoring.helveticlens.ch site on 12 September
 2026. Do not recreate or restart its HappyDucky02 deployment, Windows scheduled

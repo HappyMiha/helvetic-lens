@@ -1,6 +1,7 @@
 # Pharma and Loyer monitoring dossiers
 
-Status: VERIFYING production publication. Requested on 26 September 2026.
+Status: DONE for the scoped product implementation and production publication,
+verified on 26 September 2026. Broader MV2 and professional pilot acceptance remain separate.
 
 Two dedicated Apache-2.0 clients share this platform's identity, organization access,
 source catalogue, topic matching, AI adapters, durable jobs, notifications and evidence
@@ -54,9 +55,13 @@ application. Source rights, source freshness and professional interpretation rem
 - Frontend clients have strict contracts, TypeScript/lint/build gates and five gateway
   contract tests per product for cookie filtering/forwarding, route and mutation-origin
   checks, streamed upload bounds, private binary responses and visible upstream failure.
-- Production activation, repository publication and custom-domain checks are recorded
-  below only after their deployment results are confirmed. No test client records are
-  seeded into the production database for release verification.
+- The normal production release also passed 755 tests (96 smoke, 659 functional),
+  exact API lint, backup, migration/startup and public health verification. Its separately
+  configured integration suite was skipped by the existing release policy.
+- No test client records were seeded into the production database. Authenticated
+  workflow/privacy evidence comes from the native tests; production checks below use
+  anonymous HTTP requests. Browser interaction and professional usefulness acceptance
+  are not claimed by this release record.
 
 ## Deployment contract
 
@@ -65,3 +70,32 @@ Production hosts: pharma.helveticlens.ch and loyer.helveticlens.ch. The original
 helveticlens.ch deployment remains the shared core. No retired Monitoring deployment
 is recreated, and existing private data, credentials and source approvals are preserved.
 The owner explicitly authorized these additional product sites on 26 September 2026.
+
+## Confirmed publication
+
+| Product | Public Apache-2.0 repository | Production | Validated source |
+|---|---|---|---|
+| Pharma | [helveticlens-pharma](https://github.com/HappyMiha/helveticlens-pharma) | [pharma.helveticlens.ch](https://pharma.helveticlens.ch) | `36c778deab0b71a4f52654462f1bcedc0bd8ddf2` |
+| Loyer | [helveticlens-loyer](https://github.com/HappyMiha/helveticlens-loyer) | [loyer.helveticlens.ch](https://loyer.helveticlens.ch) | `74f2d7b464cd86ab1fa3c33e52ade15e49a9be8e` |
+
+The shared core deployed `a34269fc87b14873bd25ffc9341c00fa3bb427d6`
+(`git-a34269fc87b1`) at 20:37:29 UTC on 26 September 2026. Both independent
+client builds passed local tests, lint, TypeScript and production builds. Their
+[Pharma CI](https://github.com/HappyMiha/helveticlens-pharma/actions/runs/36270220064)
+and [Loyer CI](https://github.com/HappyMiha/helveticlens-loyer/actions/runs/36270225118)
+also completed successfully. GitHub reports both repositories PUBLIC and Apache-2.0.
+
+Both Sites deployments succeeded. Custom hostnames and SSL certificates report active.
+On each requested HTTPS hostname, the product page returned 200 with its correct title;
+four linked CSS/JavaScript assets returned 200; `/api/auth/session` returned 200 and an
+unauthenticated identity; its own private dossier route returned 401 and `private,
+no-store`; the other product's route returned 404; a cross-origin login mutation was
+refused with 403 by the product gateway before reaching the core. CNAME and validation
+records were added only for the two requested subdomains; the apex and mail DNS were
+not changed.
+
+Operational boundaries: the clients currently use English, share the existing organization
+and personal email digest, and require sign-in for private work. Source page watches are
+individual URLs rather than whole-domain coverage. Source availability and configured
+AI/email providers keep their native readiness gates. Saved AI improvements require
+review and explicit acceptance before changing topic revisions.

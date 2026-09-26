@@ -13,8 +13,9 @@
 The main-branch copy of this file is the sole active Monitoring backlog. The user's
 12 September 2026 instruction replaces multi-computer, host-alias, task-branch and
 separate Monitoring integration rules: **one agent, complete features, commit and
-push main**. Only `helveticlens.ch` on HappySnowman is active. The user retired
-the separate Monitoring site; do not recreate its deployment. Preserve retained
+push main**. The shared core is `helveticlens.ch` on HappySnowman; on 26 September
+the owner authorized separate Pharma and Loyer product clients (see below). The user
+retired the separate Monitoring site; do not recreate its deployment. Preserve retained
 private data and source approvals.
 See [the development cycle](docs/DEVELOPMENT.md) and [release evidence](docs/monitoring-v2/DEPLOYMENT_STATUS.md).
 
@@ -56,7 +57,7 @@ Statuses: **PLANNED → READY → IN PROGRESS → VERIFYING → DONE**. **BLOCKE
 Roles identify responsibility, not an already staffed team. S/M/L indicates relative uncertainty and effort, not a calendar estimate. L-sized tasks require refinement before implementation.
 
 
-**MV2 product dossier contribution, 26 September 2026 — VERIFYING:** The owner
+**MV2 product dossier contribution, 26 September 2026 — DONE (scoped release):** The owner
 requested independent Pharma and Loyer public Apache-2.0 products at their own
 subdomains, reusing this platform and the Legal Hackathon five-step setup. Scope:
 organization/vertical-isolated dossiers, durable profile links, primary-source

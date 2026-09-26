@@ -20,7 +20,10 @@ host-alias, task-branch and separate Monitoring integration workflow.
 - Routine tested commits, pushes and normal automatic deployments are already
   authorized. Continue the next ready feature while a previous deployment runs;
   never duplicate, interrupt or restart active checks or deployment jobs.
-- The only active product site is `helveticlens.ch` on HappySnowman. The user
+- The shared core is `helveticlens.ch` on HappySnowman. On 26 September 2026 the
+  owner authorized separate Pharma and Loyer clients at `pharma.helveticlens.ch`
+  and `loyer.helveticlens.ch`, with their own public repositories and Sites projects;
+  see `docs/PRODUCT_DOSSIERS.md`. The user
   retired `monitoring.helveticlens.ch` on 12 September 2026. Do not recreate or
   restart the HappyDucky02 Monitoring deployment, its Windows task, Docker project
   `helvetic-lens-v2`, tunnel or hostname. Verify releases only on the main site.
