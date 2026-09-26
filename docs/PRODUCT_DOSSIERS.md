@@ -235,3 +235,40 @@ visibility of counts. Seven gateway tests per client, lint, types and production
 passed; both local routes compiled and returned 200. An accessibility lint failure on a
 status paragraph was fixed by using the semantic output element before the final checks.
 Client publication remains pending the final overnight window.
+
+## Accountable research follow-up — overnight development, 27 September
+
+A professional can create an ordinary assigned action from a question or from one
+specific gap in a saved AI research note. The client opens an editable draft; nothing
+is created until the person saves it. The existing administrator/member assignment,
+deadline, revision and required completion-outcome rules remain authoritative.
+
+The optional `research_origin` on action creation contains only a thread ID and, for a
+gap, a saved note ID plus a zero-based gap index. The server resolves the visible parent,
+requires the thread to belong to that dossier and the note to be a research entry in
+that exact thread, validates the gap, and captures the question title and exact saved gap
+in immutable evidence JSON with a timestamp. Browser-supplied snapshot text is rejected.
+A monitoring-match origin and a research origin cannot be combined in one action. No
+schema migration, source request, model call or notification subscription is introduced.
+
+Question-filtered action reads validate thread ownership before returning their real
+total and a stable 50-record page. Both clients show these follow-ups beside the question,
+including responsibility, deadline, status and recorded outcome. Actions in the shared
+queue and action detail link back to their research question; the printable topic brief
+and JSON export retain the origin. Brief text is escaped. Ordinary action updates cannot
+replace the origin, and completing a follow-up does not accept or close a working answer.
+
+Action idempotency retains the exact pre-feature fingerprint when no research origin
+is provided, including explicit null. Existing published clients can safely retry their
+previously created actions throughout the overnight backend deployment. A changed origin
+under the same request key is a conflict. Viewers can read visible shared follow-up, while
+CSRF, organization, product and private-draft boundaries still guard reads and writes.
+
+Validation: 44 affected native product/backlog cases passed (43 integration, one smoke)
+and exact API lint passed. Five new cases cover exact saved origins and retained outcomes,
+no automatic answer acceptance, wrong question/note/dossier/gap rejection, private roles
+and organizations, real 55-action filtered pagination, escaped briefs and legacy action
+retry fingerprints. Both clients passed seven gateway tests, lint, TypeScript and builds.
+This background heartbeat did not run browser interaction QA; client production deployment
+remains reserved for the final overnight window. The previous search core release
+`git-914695a40c9c` was verified active at 01:15 Zurich on 27 September.

@@ -11,7 +11,7 @@ from zoneinfo import ZoneInfo
 
 from fastapi import Query, Request
 from fastapi.responses import HTMLResponse
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from sqlalchemy import case, func, or_, select
 
 from . import legal_profiles, topic_matching
@@ -67,11 +67,30 @@ class ActionFields(legal_profiles.Input):
         return value.strip()
 
 
+class ResearchOrigin(legal_profiles.Input):
+    thread_id: UUID
+    entry_id: UUID | None = None
+    gap_index: int | None = Field(default=None, ge=0, le=7, strict=True)
+
+    @model_validator(mode="after")
+    def complete_gap_reference(self):
+        if (self.entry_id is None) != (self.gap_index is None):
+            raise ValueError("A research gap requires both its saved note and gap index.")
+        return self
+
+
 class ActionCreate(ActionFields):
     creation_key: UUID
     source_url: str = Field(default="", max_length=2000)
     match_id: UUID | None = None
     evaluation_fingerprint: str = Field(default="", max_length=100)
+    research_origin: ResearchOrigin | None = None
+
+    @model_validator(mode="after")
+    def one_origin(self):
+        if self.research_origin and self.match_id:
+            raise ValueError("Choose a research question or a monitoring match as this action's origin.")
+        return self
 
     @field_validator("source_url")
     @classmethod
@@ -172,6 +191,22 @@ def linked_evidence(session, profile, data):
             "captured_at": iso(utcnow()), "title": evidence["evidence"].get("title", "")}, source
 
 
+def research_action_evidence(session, parent, origin):
+    thread = session.get(ResearchThread, str(origin.thread_id))
+    if not thread or thread.dossier_id != parent.id:
+        fail("Research question not found in this topic.", 404)
+    snapshot = {"thread_id": thread.id, "question": thread.title, "captured_at": iso(utcnow())}
+    if origin.entry_id:
+        entry = session.get(DossierEntry, str(origin.entry_id))
+        if not entry or entry.dossier_id != parent.id or entry.thread_id != thread.id or entry.kind != "research":
+            fail("Research note not found in this question.", 404)
+        gaps = entry.data_json.get("unknowns", [])
+        if not isinstance(gaps, list) or origin.gap_index >= len(gaps) or not isinstance(gaps[origin.gap_index], str):
+            fail("This saved research gap is unavailable. Reload the question.", 409)
+        snapshot.update({"entry_id": entry.id, "gap_index": origin.gap_index, "gap": gaps[origin.gap_index]})
+    return snapshot
+
+
 def operations(router, service, actor):
     def editor(request):
         identity = actor(request)
@@ -225,11 +260,17 @@ def operations(router, service, actor):
             return work_payload(session, row)
 
     @router.get("/dossiers/{identifier}/actions")
-    def list_actions(product: Product, identifier: str, request: Request, offset: int = Query(0, ge=0, le=100000)):
+    def list_actions(product: Product, identifier: str, request: Request, offset: int = Query(0, ge=0, le=100000),
+                     thread_id: UUID | None = None):
         identity = actor(request)
         with service.db.session() as session:
             row, _ = dossier(session, product, identifier, identity.user_id)
             query = select(DossierAction).where(DossierAction.dossier_id == row.id)
+            if thread_id:
+                thread = session.get(ResearchThread, str(thread_id))
+                if not thread or thread.dossier_id != row.id:
+                    fail("Research question not found in this topic.", 404)
+                query = query.where(DossierAction.evidence_json["research"]["thread_id"].as_string() == str(thread_id))
             total = session.scalar(select(func.count()).select_from(query.subquery()))
             records = session.scalars(query.order_by(DossierAction.created_at.desc(), DossierAction.id).offset(offset).limit(50))
             return {"items": [action_payload(session, x) for x in records], "total": total}
@@ -237,7 +278,10 @@ def operations(router, service, actor):
     @router.post("/dossiers/{identifier}/actions", status_code=201)
     def create_action(product: Product, identifier: str, data: ActionCreate, request: Request):
         identity = editor(request)
-        signature = fingerprint(data.model_dump(mode="json", exclude={"creation_key"}))
+        values = data.model_dump(mode="json", exclude={"creation_key"})
+        if data.research_origin is None:
+            values.pop("research_origin")  # Preserve request fingerprints from previously published clients.
+        signature = fingerprint(values)
         with service.write_guard, service.db.session() as session:
             lock_organization(session, service.organization_id)
             parent, profile = dossier(session, product, identifier, identity.user_id)
@@ -251,6 +295,8 @@ def operations(router, service, actor):
                 fail("This dossier has reached its 1,000-action limit.")
             member(session, data.assignee_user_id, assigning=True)
             evidence, source = linked_evidence(session, profile, data)
+            if data.research_origin:
+                evidence["research"] = research_action_evidence(session, parent, data.research_origin)
             row = DossierAction(dossier_id=parent.id, creation_key=str(data.creation_key), creation_fingerprint=signature,
                 title=data.title, detail=data.detail, priority=data.priority,
                 assignee_user_id=str(data.assignee_user_id) if data.assignee_user_id else None, due_on=data.due_on,
@@ -353,9 +399,13 @@ def operations(router, service, actor):
             cards = []
             for action in actions:
                 assigned = member(session, action.assignee_user_id)
+                research = action.evidence_json.get("research")
+                origin = (f'<p><b>Research question:</b> {esc(research["question"])}</p>'
+                    + (f'<p><b>Gap to establish:</b> {esc(research.get("gap"))}</p>' if research.get("gap") else "")
+                    + f'<p><a href="/?dossier={esc(row.id)}&amp;question={esc(research["thread_id"])}">Open research question</a></p>') if research else ""
                 cards.append(f'<article><h3>{esc(action.title)}</h3><p class="meta">{esc(action.status)} · '
                     f'{esc(action.priority)} · Owner: {esc((assigned or {}).get("name"))} · Due: {esc(action.due_on)}</p>'
-                    f'<p>{esc(action.detail)}</p><p><b>Outcome:</b> {esc(action.outcome)}</p><p>{link(action.source_url)}</p></article>')
+                    f'{origin}<p>{esc(action.detail)}</p><p><b>Outcome:</b> {esc(action.outcome)}</p><p>{link(action.source_url)}</p></article>')
             decisions = ''.join(f'<article><h3>{esc(note.title or "Note")}</h3><p class="meta">{esc(iso(note.created_at))}</p><p>{esc(note.body)}</p></article>' for note in notes)
             sources = ''.join(f'<li>{esc(ref.title)} — {link(ref.url)}</li>' for ref in references)
             questions = session.scalars(select(ResearchThread).where(ResearchThread.dossier_id == row.id)

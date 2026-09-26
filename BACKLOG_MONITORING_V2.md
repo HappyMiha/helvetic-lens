@@ -114,6 +114,27 @@ acceptance is claimed. The first slice’s core release `git-9e6de7e5b466` succe
 01:07 Zurich; both first client commit CI runs succeeded. Final Sites publication is
 still held for the owner’s requested end-of-night window.
 
+Third slice — IMPLEMENTED / final client publication pending: accountable follow-up directly from a research question or
+an AI note's specific evidence gap. Reuse existing private DossierAction ownership,
+deadlines, status/outcomes, request idempotency and evidence JSON; no schema migration,
+external integration or notification subscription. The server must resolve and capture
+the question/gap from the same visible dossier, never trust a browser-supplied origin
+snapshot, and retain the immutable origin through edits/exports/briefs. Both clients must
+offer an editable action draft, show a paginated question follow-up list with outcomes,
+and link actions back to the question. Acceptance: exact saved gap provenance,
+cross-question/dossier/product/organization and viewer/CSRF denial, invalid gap rejection,
+legacy action-retry compatibility, accurate filtered totals/pagination, escaped brief,
+both client gates and the existing product regression suite. The second core release
+`git-914695a40c9c` was verified active at 01:15 Zurich; final client publication remains
+reserved for 08:00–09:00.
+Verification: all 44 affected native product/backlog cases passed (43 integration, one
+smoke); exact API lint passed. New cases prove exact question/gap snapshots, immutable
+origins through outcomes/exports/escaped briefs, no automatic answer acceptance, invalid
+and cross-question origins, CSRF/role/private-draft/tenant/product guards, filtered
+55-record pagination and pre-feature retry fingerprints. Both clients passed seven
+gateway tests, lint, TypeScript and production builds. This heartbeat used background
+code/build verification; no browser UI or professional acceptance is claimed.
+
 
 **MV2 collective product research contribution, 27 September 2026 — DONE (scoped release):** Develop
 Pharma and Loyer for small professional teams beyond monitor setup: a daily work
