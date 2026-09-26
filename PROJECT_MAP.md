@@ -1,7 +1,9 @@
 # Helvetic Lens project map
 
 One agent develops complete features on **main**, following [the development cycle](docs/DEVELOPMENT.md).
-The only active site is **helveticlens.ch on HappySnowman**, including Monitoring features.
+The shared platform is **helveticlens.ch on HappySnowman**, including Monitoring features.
+On 26 September 2026 the owner authorized separate Pharma and Loyer product clients;
+see [delivery and release evidence](docs/PRODUCT_DOSSIERS.md).
 The [test and release policy](docs/TESTING.md) separates platform smoke, functional
 and integration suites. The deployment page supports saved defaults and a
 next-attempt override, including an explicitly selected hotfix with a reason.

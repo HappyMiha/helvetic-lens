@@ -491,6 +491,7 @@ def update_topic(
     expected_revision: int,
     actor_user_id: str | None,
     ai_draft_id: str | None = None,
+    commit: bool = True,
 ) -> dict:
     topic = session.get(MonitoringTopic, topic_id)
     if not topic:
@@ -522,7 +523,10 @@ def update_topic(
     if draft:
         draft.used_at = utcnow()
     backfill_job = _enqueue_match_backfill(session, topic)
-    session.commit()
+    if commit:
+        session.commit()
+    else:
+        session.flush()
     return {
         **_topic_payload(session, topic, history=True),
         "reused": False,

@@ -30,6 +30,7 @@ from . import hazard_source_models as hazard_source_models
 from . import influence_models as influence_models
 from . import ipi_models as ipi_models
 from . import legal_profile_models as legal_profile_models
+from . import product_models as product_models
 from . import related_models as related_models
 from . import river_email_models as river_email_models
 from . import road_models as road_models
@@ -1812,6 +1813,8 @@ from .business_monitor_models import BusinessMonitorScopeEvent  # noqa: E402
 from .monitoring_connector_models import MonitoringConnectorConfiguration  # noqa: E402, F401
 
 ORGANIZATION_SCOPED_MODELS = (
+    product_models.ProductDossier,
+    product_models.DossierEntry,
     legal_profile_models.LegalMonitoringProfile,
     influence_models.InfluenceDossier,
     influence_models.InfluenceRevision,

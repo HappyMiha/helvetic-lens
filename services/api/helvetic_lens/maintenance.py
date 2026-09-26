@@ -105,7 +105,10 @@ def cleanup_operational_data(
                 delete(TopicEventMatch).where(TopicEventMatch.id.in_(expired_topic_match_ids))
             )
 
-        referenced_artifacts = set(
+        from .product_models import DossierEntry
+
+        referenced_artifacts = set(session.scalars(select(DossierEntry.artifact_key).where(DossierEntry.artifact_key.is_not(None))))
+        referenced_artifacts.update(
             session.scalars(select(Version.artifact_key).where(Version.artifact_key != ""))
         )
         referenced_artifacts.update(

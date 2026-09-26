@@ -55,6 +55,20 @@ Statuses: **PLANNED → READY → IN PROGRESS → VERIFYING → DONE**. **BLOCKE
 
 Roles identify responsibility, not an already staffed team. S/M/L indicates relative uncertainty and effort, not a calendar estimate. L-sized tasks require refinement before implementation.
 
+
+**MV2 product dossier contribution, 26 September 2026 — VERIFYING:** The owner
+requested independent Pharma and Loyer public Apache-2.0 products at their own
+subdomains, reusing this platform and the Legal Hackathon five-step setup. Scope:
+organization/vertical-isolated dossiers, durable profile links, primary-source
+references, bounded file attachments, team notes, relevance feedback and explicit
+revisioned monitoring improvement. Native source packs, document scans, AI providers
+and personal delivery retain their existing readiness and consent gates. Dependencies:
+H26-07, native auth/membership, PostgreSQL/evidence storage and worker scheduling.
+Acceptance: real end-to-end APIs, cross-tenant/vertical denial, private draft rules,
+file access/size safety, stale-revision protection, native monitoring/delivery reuse,
+two independent builds/repositories and verified production URLs. Evidence:
+[product dossier delivery](docs/PRODUCT_DOSSIERS.md). Broader MV2 gates stay separate.
+
 ## Product decision
 
 The user specifies **what matters to them**. Setup follows Create Monitor → Personal/Business → understandable fields → preview of expected data/matches → explicit Start. A single ongoing loop follows: Today → What changed → Why received → Evidence → Decision → ongoing monitoring. Ordinary users do not need to enter a source API key or design a crawler.

@@ -342,6 +342,8 @@ class RelationReprocessingInput(Input):
 
 
 def _rate_policy(path: str, method: str) -> tuple[str, int, int] | None:
+    if path.startswith("/api/products/"):
+        return "product_dossiers", 6 if path.endswith(("/improve", "/source-advice")) else 60, 60
     if path.startswith("/api/monitoring-profiles"):
         return "legal_profiles", 6 if path.endswith("/suggest") else 60, 60
     if path.startswith(("/api/partner-tools/", "/api/settings/partners", "/api/settings/inference-connections")):
@@ -579,6 +581,8 @@ def create_app(
         if rate:
             try:
                 rate_path = "/api/monitoring-subjects" if path.startswith("/api/monitoring-subjects") else path
+                if path.startswith("/api/products/"):
+                    rate_path = "/api/products" + ("/ai" if path.endswith(("/improve", "/source-advice")) else "")
                 if path.startswith("/api/monitoring-profiles"):
                     rate_path = "/api/monitoring-profiles" + ("/suggest" if path.endswith("/suggest") else "")
                 if path.startswith("/api/tender-watch"):
@@ -655,7 +659,7 @@ def create_app(
             status = response.status_code
             if request.url.path.startswith(("/api/monitoring-subjects", "/api/onboarding")):
                 response.headers["Cache-Control"] = "private, no-store"
-            if request.url.path.startswith(("/api/influence/", "/api/admin/monitoring-sources", "/api/account/", "/api/auction-watch", "/api/tender-watch", "/api/commute-watch", "/api/road-watch", "/api/hazard-watch", "/api/trademark-watch", "/api/related-developments", "/api/monitoring-centre")):
+            if request.url.path.startswith(("/api/products/", "/api/influence/", "/api/admin/monitoring-sources", "/api/account/", "/api/auction-watch", "/api/tender-watch", "/api/commute-watch", "/api/road-watch", "/api/hazard-watch", "/api/trademark-watch", "/api/related-developments", "/api/monitoring-centre")):
                 # Dependency response headers are lost when an exception
                 # handler creates a new response. Apply to denial/errors too.
                 response.headers["Cache-Control"] = "no-store"
@@ -2319,6 +2323,9 @@ def create_app(
     source_settings = RequestSettings(service, settings)
     from .legal_profiles import legal_profiles_router
     from .partner_tools import partner_router
+    from .product_api import product_router
+
+    app.include_router(product_router(service))
     app.include_router(legal_profiles_router(service))
     app.include_router(influence_router(service))
     app.include_router(partner_router(service))
