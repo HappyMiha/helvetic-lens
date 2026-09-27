@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from sqlalchemy import (
     JSON,
+    Boolean,
     CheckConstraint,
     Date,
     DateTime,
@@ -210,3 +211,43 @@ class PublicContributionMutation(Base):
     action: Mapped[str] = mapped_column(String(16))
     reason: Mapped[str] = mapped_column(String(600), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class PublicDossierFollow(Base):
+    """Personal across workspaces; every query must constrain owner_user_id."""
+    __tablename__ = "product_public_follows"
+    __table_args__ = (UniqueConstraint("owner_user_id", "publication_id", name="uq_public_follow_owner"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    owner_user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    publication_id: Mapped[str] = mapped_column(ForeignKey("product_publications.id", ondelete="CASCADE"), index=True)
+    following: Mapped[bool] = mapped_column(Boolean, default=True)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    seen_marker: Mapped[str] = mapped_column(String(64))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class PublicDossierCopy(Base):
+    """Reviewed public snapshot retained inside its new private native dossier."""
+    __tablename__ = "product_public_copies"
+    __table_args__ = (
+        ForeignKeyConstraint(["dossier_id", "organization_id"],
+            ["product_dossiers.id", "product_dossiers.organization_id"], ondelete="CASCADE"),
+    )
+    dossier_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    organization_id: Mapped[str] = mapped_column(String(36), index=True)
+    source_url: Mapped[str] = mapped_column(String(2000))
+    snapshot_json: Mapped[dict] = mapped_column(JSON)
+    snapshot_sha256: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class PublicReuseReceipt(Base):
+    """Minimal durable retry tombstone; deleting the draft cannot recreate it."""
+    __tablename__ = "product_public_reuse_receipts"
+    __table_args__ = (UniqueConstraint("organization_id", "request_key", name="uq_public_reuse_request"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"), index=True)
+    actor_user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    dossier_id: Mapped[str | None] = mapped_column(ForeignKey("product_dossiers.id", ondelete="SET NULL"))
+    request_key: Mapped[str] = mapped_column(String(36))
+    fingerprint: Mapped[str] = mapped_column(String(64))

@@ -116,6 +116,11 @@ def payload(session, row, profile, *, detail=True):
     latest_entry = session.scalar(select(func.max(DossierEntry.created_at)).where(DossierEntry.dossier_id == row.id))
     result["activity_at"] = max(iso(profile.updated_at), iso(latest_entry)) if latest_entry else iso(profile.updated_at)
     if detail:
+        from .product_models import PublicDossierCopy
+        from .product_reuse import origin_payload
+
+        origin = session.get(PublicDossierCopy, row.id)
+        result["public_origin"] = origin_payload(origin) if origin else None
         result["entries"] = [entry_payload(session, x) for x in session.scalars(select(DossierEntry)
             .where(DossierEntry.dossier_id == row.id).order_by(DossierEntry.created_at.desc(), DossierEntry.id).limit(100))]
         result["entry_count"] = session.scalar(select(func.count()).select_from(DossierEntry).where(DossierEntry.dossier_id == row.id))
@@ -435,4 +440,9 @@ def product_router(service):
     from .product_community import community_routes
 
     community_routes(router, service, actor)
+    from .product_following import following_routes
+    from .product_reuse import reuse_routes
+
+    following_routes(router, service, actor)
+    reuse_routes(router, service, actor)
     return router

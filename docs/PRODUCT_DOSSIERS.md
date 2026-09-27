@@ -936,3 +936,38 @@ final-client-publication gate. Existing domain/audience/project identities, priv
 workspace data, native monitoring and digest behavior remain intact. Broader source
 coverage, contributor/community design, semantic retrieval and professional validation
 remain separate product gates.
+
+## Personal following and private reuse — planned 1.5.0
+
+**Personal following and private reuse — 27 September 2026: VERIFYING.**
+Next scoped Pharma/Loyer cycle under the public research direction: personal saved
+following with paginated visible-change indicators and explicit acknowledgement;
+reviewed creation of an author-private native draft from a public projection.
+Dependencies: native current identity and locks, publications/contributions,
+durable SQLAlchemy migration, existing product gateways and setup wizard. Source
+readiness: only already deliberately published text and HTTPS links; no provider
+credentials, fetching or outbound delivery is required. Acceptance: follows are
+user-owned even between colleagues, viewer members may follow but cannot create
+private drafts, withdrawn text is redacted, hidden comment edits reveal nothing,
+stale acknowledgements cannot swallow new changes, account/parent erasure handles
+ownership; copied content and setup are previewed exactly with expiry/revision/
+actor binding, retries never duplicate, original attribution and public revision
+remain inspectable in draft and active workspaces, no private parent data or files
+are copied and nothing activates, republishes or subscribes to email implicitly.
+Native/migration/privacy tests, both client gates and exact production verification
+are required. Open-web discovery, semantic retrieval and recurring delivery remain
+separate open gates. Detail: [product delivery](docs/PRODUCT_DOSSIERS.md).
+
+Implementation evidence (local, 27 September): migration `f8c495bef124` adds
+personal follow ownership, a contained public snapshot and a minimal durable
+private-copy retry tombstone. Twenty new cases cover owner/colleague/product
+isolation, viewer/CSRF/principal denial, visible versus hidden changes, stale
+acknowledgements, exact preview/session/expiry/consent, full 30,000-character
+snapshots, inactive native setup, migration integrity, erasure, source withdrawal
+and deletion, and non-resurrection of deleted copies. The affected native gate
+passed **204 cases** (203 integration, one backlog smoke); exact API lint passed.
+Both clients provide the personal list, explicit follow/read actions, reviewed
+private-copy setup and retained origin in draft, active detail and export. Their
+60 contracts/SSR checks, lint, strict types and production builds passed. Main
+publication and exact deployment verification are the remaining release gates;
+no browser interaction QA or professional acceptance is claimed.
