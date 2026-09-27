@@ -72,6 +72,39 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 ## Product decision
 
+**Public research and open discovery cycles — 27 September 2026: IN PROGRESS.**
+The owner explicitly authorized iterative implementation, main pushes and production
+releases for both products. This supersedes the completed overnight deadline only
+for this new product direction. First scope: an explicitly authored public dossier
+projection, anonymous catalogue/search and reader, exact-content preview and public
+consent, optimistic revision checks, idempotent publication/update/withdraw and a
+private revision audit. Existing private material remains private; no automatic
+publication, attachment exposure or fabricated public examples. Dependencies are
+native identity/membership, product dossiers, durable SQLAlchemy migrations and
+the two existing Sites gateways. No new external source access is needed.
+Acceptance: anonymous and cross-organization reads expose only currently published
+allowlisted fields; private endpoints stay authenticated; cross-product/tenant writes,
+viewer writes, stale previews and stale mutations fail; retries do not duplicate;
+withdrawal and dossier deletion remove anonymous access; query/pagination and honest
+empty/error states work; both clients provide preview/publish/update/withdraw and
+public navigation; required API, migration, client and exact production checks pass.
+Later complete slices cover public discussion/moderation and private reuse, open-web
+provider discovery, evaluated multilingual hybrid semantic retrieval and scheduled
+rediscovery/delivery. These remain open; unavailable provider credentials or rights
+must remain explicit. Broader MV2 tasks and deferred directions retain their status.
+
+**Public projection implementation evidence — 27 September 2026:** Dedicated
+tenant-owned projection/revision tables and migration `f6c495bef124`; public-only
+anonymous reader/catalogue, 20-item literal-search pages, signed exact preview,
+explicit consent, current-principal locks, idempotent update/withdraw and cascading
+private ownership are implemented. Eleven new publication cases and existing
+product/migration/backlog checks passed: 171 cases total, with exact API lint clean.
+Both clients have 49 passing contracts and public catalogue, reader, publishing
+editor, revision history and recovery states. Final client/build/CI and production
+verification remain VERIFYING; public discussion and subsequent discovery cycles
+remain IN PROGRESS. See `docs/PRODUCT_DOSSIERS.md` for the precise boundary.
+
+
 **Final 1.2.0 activation verified at 08:02:45 Europe/Zurich, 27 September 2026.**
 [Pharma](https://pharma.helveticlens.ch) and [Loyer](https://loyer.helveticlens.ch) are
 publicly deployed from their exact validated client commits. Both public GitHub

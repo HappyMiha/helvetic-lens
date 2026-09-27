@@ -429,4 +429,7 @@ def product_router(service):
     from .product_document_history import document_history_routes
 
     document_history_routes(router, service, actor)
+    from .product_publications import publication_routes
+
+    publication_routes(router, service, actor)
     return router

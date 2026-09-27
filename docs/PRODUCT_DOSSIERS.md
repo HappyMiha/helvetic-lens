@@ -1,5 +1,36 @@
 # Pharma and Loyer monitoring dossiers
 
+## Public publication cycle — 27 September 2026
+
+The owner authorized iterative product implementation, main publication and normal
+production deployment. Release 1.3.0 adds a separate explicitly authored public
+projection to each private dossier. Administrators enter a public title, summary,
+plain text, attribution label and up to 30 HTTPS links. A session-bound 30-minute
+preview signs exactly those fields and the current publication revision; a distinct
+consent action publishes them. Private context, files, discussions and credentials
+are never implicitly copied or queried by anonymous readers.
+
+`/api/products/{product}/public-dossiers` provides anonymous literal all-word search
+and 20-item pages across current public projections. The exact UUID reader exposes
+only allowlisted fields. The clients render `/public-dossiers` and its item pages
+on the server without forwarding identity cookies. Errors remain distinguishable
+from empty results, missing/withdrawn pages are unavailable, and private working
+routes retain native authorization. Responses are uncached. Search is currently
+literal; public discussion, subscriptions, external web discovery and semantic
+retrieval are separate remaining cycles.
+
+Publishing/updating and withdrawal use current-admin/session locks, revision checks,
+request identity and a private immutable audit. Old retries return current status
+without republishing withdrawn content. Migration `f6c495bef124` adds the projection
+and revision tables with tenant-consistent cascading ownership. Dossier deletion
+removes both. Withdrawal cannot erase copies previously retained by third parties.
+
+Pre-publication validation: 171 native cases passed (170 integration, 1 backlog
+smoke), including eleven public publication cases and migration regressions. Exact
+API lint passed. Each client has 49 passing contracts. Client build/CI and exact
+production activation are recorded separately when completed; these checks are
+not a public professional pilot or browser interaction QA.
+
 Status: DONE for the scoped product implementation and production publication,
 verified on 26 September 2026. Broader MV2 and professional pilot acceptance remain separate.
 

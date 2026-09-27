@@ -498,6 +498,9 @@ def create_app(
         }
         public_path = path in {"/api/health", "/api/ready"} or path in public_auth_paths
         public_path = public_path or path in {"/docs", "/openapi.json", "/redoc"}
+        from .product_publications import PUBLIC_READ
+
+        public_path = public_path or (request.method == "GET" and PUBLIC_READ.fullmatch(path) is not None)
         if path.startswith("/api/") and not public_path and not identity and not settings.allow_anonymous_dev:
             return JSONResponse(
                 status_code=401,

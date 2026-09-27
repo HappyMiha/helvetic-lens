@@ -115,3 +115,49 @@ class ResearchThread(Base):
     created_by_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class ProductPublication(Base):
+    """Explicitly authored public projection; never serialize its private parent."""
+    __tablename__ = "product_publications"
+    __table_args__ = (
+        ForeignKeyConstraint(["dossier_id", "organization_id"],
+                             ["product_dossiers.id", "product_dossiers.organization_id"], ondelete="CASCADE"),
+        UniqueConstraint("id", "organization_id", name="uq_product_publication_org"),
+        UniqueConstraint("dossier_id", name="uq_product_publication_dossier"),
+        CheckConstraint("status IN ('published', 'withdrawn')", name="ck_product_publication_status"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    organization_id: Mapped[str] = mapped_column(String(36), index=True)
+    dossier_id: Mapped[str] = mapped_column(String(36))
+    product: Mapped[str] = mapped_column(String(20), index=True)
+    status: Mapped[str] = mapped_column(String(20), index=True)
+    revision: Mapped[int] = mapped_column(Integer)
+    title: Mapped[str] = mapped_column(String(240))
+    summary: Mapped[str] = mapped_column(String(1500))
+    body: Mapped[str] = mapped_column(Text)
+    author_label: Mapped[str] = mapped_column(String(100))
+    sources_json: Mapped[list] = mapped_column(JSON, default=list)
+    first_published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class PublicationRevision(Base):
+    """Private immutable audit including idempotency and explicit public consent."""
+    __tablename__ = "product_publication_revisions"
+    __table_args__ = (
+        ForeignKeyConstraint(["publication_id", "organization_id"],
+                             ["product_publications.id", "product_publications.organization_id"], ondelete="CASCADE"),
+        UniqueConstraint("publication_id", "revision", name="uq_product_publication_revision"),
+        UniqueConstraint("publication_id", "request_key", name="uq_product_publication_request"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    organization_id: Mapped[str] = mapped_column(String(36), index=True)
+    publication_id: Mapped[str] = mapped_column(String(36), index=True)
+    revision: Mapped[int] = mapped_column(Integer)
+    request_key: Mapped[str] = mapped_column(String(36))
+    fingerprint: Mapped[str] = mapped_column(String(64))
+    action: Mapped[str] = mapped_column(String(20))
+    content_json: Mapped[dict] = mapped_column(JSON)
+    actor_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
