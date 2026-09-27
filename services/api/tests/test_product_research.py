@@ -214,6 +214,6 @@ def test_new_saved_material_reopens_need_for_human_review(signed):
     assert post(client, route+'/sources/'+reference['id']+'/monitor', {}).status_code == 200
     assert client.get(path).json()['answer_needs_review']
     brief = client.get(route+'/brief')
-    assert 'Review needed:' in brief.text and 'New saved material' in brief.text
+    assert 'Review needed:' in brief.text and 'New saved page versions' in brief.text
     assert post(client, path+'/accept', {'expected_revision':4,'entry_id':reply['id']}).status_code == 200
     assert not client.get(path).json()['answer_needs_review']

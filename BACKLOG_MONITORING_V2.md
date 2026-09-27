@@ -471,6 +471,44 @@ also passed. Both clients passed 36 tests (three source-target contracts and one
 locator gateway case added), lint, strict TypeScript and Sites-helper production builds.
 No browser interaction QA or final product Sites activation is claimed.
 
+Fourteenth slice — IMPLEMENTED / final client publication pending: explain when
+an accepted answer needs human review after a saved source correction or lost access.
+Reuse the existing private answer-acceptance review audit to retain a bounded metadata
+baseline for the accepted AI note's saved-page sources; no migration or note rewrite.
+Compare current exact Version/Law/watch/monitor ownership and evidence revision against
+the last explicit acceptance/reconfirmation baseline. For legacy acceptances without a
+baseline, use the note's captured revision when known and label unknown source revisions
+as needing one human review. Preserve existing newer-contribution, source-decision,
+new-page and current-match signals. Return explicit reason codes/messages and source IDs,
+plus a deterministic review fingerprint. Reconfirmation from both clients must send that
+fingerprint and reject newly changed evidence/material before recording the review;
+old clients remain supported by making it optional. Initial acceptance/reconfirmation
+records current metadata in the existing attributed review event; reopening clears the
+working answer without changing historical notes. Reconfirmation acknowledges review,
+not source truth, restored access, an updated AI answer or new collection. Update the
+private printable brief with the same reasons. Dependencies: native private source
+metadata, existing review audit, optimistic question revision, no new provider, model,
+source fetch, scheduler, notification or public surface. Acceptance: correction with
+unchanged created_at, loss/restoration/reassignment of source access, explicit and legacy
+reconfirmation, fresh new changes after a reviewed baseline, stale fingerprint/CSRF/
+viewer/tenant/product/draft denial, no read side effects/body loads or automatic answer
+changes, unchanged AI snapshots, brief/export evidence and both client/API gates.
+Thirteenth core git-216211437b08 is active since 06:15:28 Zurich; final Sites release
+remains 08:00–09:00.
+
+Verification: exact API lint and all 147 product/backlog tests passed (146 integration,
+one smoke). Eleven new answer-review cases cover both products, corrections without a
+new capture timestamp, zero read/model/source/entry side effects and no full Version ORM
+loads, specific brief reasons, attributed exported acknowledgement states, unchanged
+historical AI snapshots, repeated corrections, Law/Version/watch/monitor access loss and
+restoration, reassignment and reopening, legacy acceptance/source revisions, stale source
+and new-material fingerprints, duplicate stale confirmation, CSRF/viewer/private-draft/
+product/tenant denial and unauthenticated reads. Existing newer-material and reconfirmation
+regressions passed; the brief expectation now names the precise new-page reason. Each
+client passed 39 tests (two reviewed-request cases and one gateway conflict case added),
+lint, strict TypeScript and final Sites-helper production builds. No browser interaction
+QA or final product Sites activation is claimed.
+
 **MV2 collective product research contribution, 27 September 2026 — DONE (scoped release):** Develop
 Pharma and Loyer for small professional teams beyond monitor setup: a daily work
 queue, medicine/programme or client/matter context, accountable owners, review dates,

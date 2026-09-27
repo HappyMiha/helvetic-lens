@@ -438,7 +438,7 @@ def operations(router, service, actor):
             sources = ''.join(sources)
             questions = session.scalars(select(ResearchThread).where(ResearchThread.dossier_id == row.id)
                 .order_by(ResearchThread.updated_at.desc(), ResearchThread.id).limit(50)).all()
-            from .product_research import answer_needs_review
+            from .product_answer_review import review_state
 
             discussion = []
             for question in questions:
@@ -456,8 +456,11 @@ def operations(router, service, actor):
                     gaps = ''.join(f'<li>{esc(gap)}</li>' for gap in accepted.data_json.get("unknowns", []))
                     answer = f'<h4>Team’s working answer</h4><p>{esc(accepted.body)}</p><p>{link(accepted.url)}</p>'
                     answer += f'<p class="meta">Accepted / reviewed {esc(iso(question.accepted_at)) if question.accepted_at else "—"}.</p>'
-                    if answer_needs_review(session, row, profile, question, identity.organization_id):
-                        answer += '<p><b>Review needed:</b> New saved material appeared after this answer was accepted.</p>'
+                    state = review_state(session, row, profile, question, identity.organization_id, accepted=accepted)
+                    if state["reasons"]:
+                        answer += '<p><b>Review needed:</b></p><ul>' + ''.join(
+                            f'<li>{esc(reason["message"])}' + (f' Sources: {esc(", ".join(reason["source_ids"]))}.' if reason["source_ids"] else '') + '</li>'
+                            for reason in state["reasons"]) + '</ul>'
                     if citations:
                         answer += f'<h4>Quoted evidence</h4><ul>{"".join(citations)}</ul>'
                     if gaps:

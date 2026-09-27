@@ -705,3 +705,56 @@ the excerpt text/hash stays identical. Existing saved-reader and research regres
 also passed. Both clients passed 36 tests (three source-target contracts and one private
 locator gateway case added), lint, strict TypeScript and Sites-helper production builds.
 No browser interaction QA or final product Sites activation is claimed.
+
+## Human review after saved-evidence changes — overnight development, 27 September
+
+An accepted AI answer now has explicit review reasons when one of its saved-page
+snapshots changes revision, loses current dossier/monitor/watch/Law/Version access or
+becomes accessible again after an acknowledged absence. Only scalar source metadata is
+read; no full Version body, source request or model call is required. Original AI text,
+quotes, hashes and captured source identities stay unchanged. Existing newer-contribution,
+source-decision, new-page and current-match signals remain, with separate reason codes.
+
+Each explicit acceptance/reconfirmation stores `answer_evidence` schema 1 and the current
+saved-page states in the existing attributed private review audit. The newest matching
+acceptance audit is selected by question revision, scoped to parent/question/accepted
+entry. No migration is required. Ordinary contribution acceptance has no AI page snapshot
+baseline. Reopening clears the accepted answer and its current warning state, without
+removing the note or historical reviews. Audit export retains the acknowledged metadata.
+
+The warning compares current states against the last human acknowledgement. Acknowledging
+missing evidence records that known limitation; it does not restore access or update the
+AI note. A later correction, disappearance or restoration requires another review. Older
+acceptances without the new baseline compare the note's captured revisions where known;
+an unrecorded original revision needs one explicit review. Reading or refreshing cannot
+acknowledge evidence or silently change the accepted answer.
+
+Private question reads return `answer_review` with reasons, affected source IDs, last
+review time and a deterministic fingerprint. Its identity includes workspace, product,
+dossier, question/revision, accepted entry/time, current page states and prior baseline,
+plus counts and latest-time/ID watermarks for newer material. Reconfirmation can provide
+optional `expected_review`; current admin/session checks, question revision and the
+review fingerprint must still match before the audit is recorded. A stale request
+returns 409 without updating acceptance. Old clients omitting the optional field retain
+explicit legacy acceptance/reconfirmation behavior.
+
+Both clients show the specific reasons and source IDs beside the working answer, keep
+the exact-source reader available in the note, and provide Refresh review and explicit
+Reconfirm after review. Their request includes only question revision, accepted entry ID
+and the displayed fingerprint; missing/malformed state cannot downgrade to an unchecked
+request. Failed/conflicting requests retain the warning and a refresh route. The private
+printable brief uses the same escaped reason messages. These signals concern saved
+material and current access, not comprehensive external change detection or source truth.
+
+Verification: exact API lint and all 147 product/backlog tests passed (146 integration,
+one smoke). Eleven new answer-review cases cover both products, corrections without a
+new capture timestamp, zero read/model/source/entry side effects and no full Version ORM
+loads, specific brief reasons, attributed exported acknowledgement states, unchanged
+historical AI snapshots, repeated corrections, Law/Version/watch/monitor access loss and
+restoration, reassignment and reopening, legacy acceptance/source revisions, stale source
+and new-material fingerprints, duplicate stale confirmation, CSRF/viewer/private-draft/
+product/tenant denial and unauthenticated reads. Existing newer-material and reconfirmation
+regressions passed; the brief expectation now names the precise new-page reason. Each
+client passed 39 tests (two reviewed-request cases and one gateway conflict case added),
+lint, strict TypeScript and final Sites-helper production builds. No browser interaction
+QA or final product Sites activation is claimed.

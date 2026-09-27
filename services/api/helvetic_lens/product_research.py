@@ -19,7 +19,8 @@ from .db import utcnow
 from .extraction import FEDLEX_SPARQL_ENDPOINT
 from .interest_jobs import lock_organization
 from .legal_profile_models import LegalMonitoringProfile
-from .models import DocumentWatch, Law, RegulatoryEventState, TopicEventMatch, User, Version
+from .models import DocumentWatch, Law, User, Version
+from .product_answer_review import page_states, review_state
 from .product_api import EntryInput, Product, dossier, entry_payload, fail, iso
 from .product_models import DossierEntry, ProductDossier, ResearchThread
 from .product_operations import audit, fingerprint, require_revision, visible_query
@@ -48,6 +49,7 @@ class Reply(legal_profiles.Input):
 class Accept(legal_profiles.Input):
     expected_revision: int = Field(ge=1)
     entry_id: UUID | None = None
+    expected_review: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
 
 
 class ResearchInput(legal_profiles.Input):
@@ -292,20 +294,7 @@ def require_research_retry(existing, row, data, identity):
 
 
 def answer_needs_review(session, parent, profile, row, organization_id):
-    if row.accepted_entry_id and row.accepted_at:
-        contributions = select(DossierEntry.id).where(DossierEntry.dossier_id == parent.id,
-            DossierEntry.kind.in_(("reference", "note", "discussion", "research", "feedback", "source_review")),
-            DossierEntry.created_at > row.accepted_at).limit(1)
-        watched_laws = select(DossierEntry.data_json["law_id"].as_string()).where(
-            DossierEntry.dossier_id == parent.id, DossierEntry.kind == "monitor")
-        versions = select(Version.id).where(Version.law_id.in_(watched_laws),
-            visible(Version, organization_id), Version.synthetic.is_(False), Version.created_at > row.accepted_at).limit(1)
-        matches = select(TopicEventMatch.id).join(RegulatoryEventState,
-            (RegulatoryEventState.event_id == TopicEventMatch.event_id)
-            & (RegulatoryEventState.organization_id == TopicEventMatch.organization_id)).where(
-            TopicEventMatch.topic_id.in_(profile.topic_ids_json), TopicEventMatch.matched_at > row.accepted_at).limit(1)
-        return bool(session.scalar(contributions) or session.scalar(versions) or session.scalar(matches))
-    return False
+    return bool(review_state(session, parent, profile, row, organization_id)["reasons"])
 
 
 def research_routes(router, service, actor):
@@ -404,13 +393,15 @@ def research_routes(router, service, actor):
     def read_question(product: Product, identifier: str, thread_id: str, request: Request, offset: int = Query(0, ge=0, le=100000)):
         identity = actor(request)
         with service.db.session() as session:
+            principal(session, identity, utcnow())
             parent, profile, row = thread_record(session, product, identifier, thread_id, identity)
             result = thread_payload(session, row)
             result["replies"] = [entry_payload(session, post) for post in session.scalars(select(DossierEntry)
                 .where(DossierEntry.thread_id == row.id).order_by(DossierEntry.created_at, DossierEntry.id).offset(offset).limit(50))]
             accepted = session.get(DossierEntry, row.accepted_entry_id) if row.accepted_entry_id else None
             result["accepted"] = entry_payload(session, accepted) if accepted and accepted.thread_id == row.id else None
-            result["answer_needs_review"] = answer_needs_review(session, parent, profile, row, identity.organization_id)
+            result["answer_review"] = review_state(session, parent, profile, row, identity.organization_id, accepted=accepted)
+            result["answer_needs_review"] = bool(result["answer_review"]["reasons"])
             return result
 
     @router.post("/dossiers/{identifier}/discussion/{thread_id}/replies", status_code=201)
@@ -442,8 +433,12 @@ def research_routes(router, service, actor):
         identity = editor(request)
         with service.write_guard, service.db.session() as session:
             lock_organization(session, service.organization_id)
-            parent, _, row = thread_record(session, product, identifier, thread_id, identity)
+            principal(session, identity, utcnow(), write=True)
+            parent, profile, row = thread_record(session, product, identifier, thread_id, identity)
             require_revision(row, data.expected_revision)
+            if data.expected_review is not None and (str(data.entry_id) != row.accepted_entry_id
+                    or review_state(session, parent, profile, row, identity.organization_id)["fingerprint"] != data.expected_review):
+                fail("The working answer or its evidence changed. Refresh the question and review the latest state before reconfirming.", 409)
             post = session.get(DossierEntry, str(data.entry_id)) if data.entry_id else None
             if data.entry_id and (not post or post.thread_id != row.id or post.kind not in ("discussion", "research")):
                 fail("Choose a contribution from this question.", 404)
@@ -452,7 +447,8 @@ def research_routes(router, service, actor):
             row.revision += 1
             row.updated_at = utcnow()
             audit(session, parent, identity.user_id, "review", "Working answer accepted" if post else "Question reopened",
-                  row.title, {"thread_id": row.id, "accepted_entry_id": row.accepted_entry_id, "revision": row.revision})
+                  row.title, {"thread_id": row.id, "accepted_entry_id": row.accepted_entry_id, "revision": row.revision,
+                    "answer_evidence": {"schema_version": 1, "sources": page_states(session, parent, post, identity.organization_id)} if post else None})
             session.commit()
             return thread_payload(session, row)
 
