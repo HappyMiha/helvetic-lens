@@ -470,3 +470,48 @@ activation remains reserved for 08:00–09:00 Zurich.
 Validation: all 92 affected native cases passed (91 integration and the backlog smoke
 gate), including ten new review cases. Exact API lint passed. Each client passed 20
 tests, lint, TypeScript and final production builds. No browser interaction QA.
+
+
+## Complete source library — overnight development, 27 September
+
+The Evidence & sources tab now retrieves saved references independently of the latest
+100 mixed activity entries. A long-running collective topic can accumulate notes,
+actions and review history without hiding its older source references. The dedicated
+private GET `/api/products/{product}/dossiers/{id}/references` provides 30-reference pages
+with stable newest-first ordering and an ID tie-breaker. Duplicate references remain
+separate saved records and share the existing per-URL current review.
+
+Search uses literal case-insensitive all-word matching across reference title, notes,
+URL, imported query and catalogue title/provider/identifier. All words must match
+somewhere in the same reference; percent and underscore are literal, not wildcard
+operators. The request is bounded to 300 characters, 12 distinct words and a nonnegative
+32-bit offset. A blank query lists all saved references. Review filters use the latest
+numeric review revision, with absent or reset reviews classified as Needs review.
+Counts are calculated from the complete server-side reference set. `dossier_total` is
+all saved references; `counts` contains current review facets within the submitted text
+query; `total` additionally applies the selected review filter. Counts never derive
+from just the loaded page or recent activity.
+
+Both clients keep query/filter editing separate from the displayed search. Search and
+Clear filters return to page one; Previous/Next use the displayed query and decision,
+not unsubmitted edits. The library has explicit refresh/retry, initial-empty and
+no-match messages, and a first-page recovery if concurrent activity empties a later
+page. Failed reads hide stale library content while preserving filter inputs. Source
+additions and reviews refresh server state, while provenance, review history and native
+page-watch controls remain on each card. The unrelated older-activity control is no
+longer shown beneath this source library; other dossier tabs retain it.
+
+All source reads preserve session, organization, product, author-private draft and
+viewer boundaries. They do not call a source provider or model, write records, start
+monitoring or alter email. No migration, external service, full-text indexing or browser
+storage was introduced. Native `no-store` and the client gateway's `private, no-store`
+responses remain intact. This library searches saved reference metadata, not attached
+files or the full external source text. Source coverage and the final Sites publication
+window are unchanged.
+
+Validation: all 98 affected native cases passed (97 integration and the backlog smoke
+gate), including six source-library cases. A fixture with 125 older references and 120
+newer mixed entries proves complete source retrieval and stable five-page traversal.
+Current-review facets, reset behavior, literal text/catalogue lookup, both products and
+access boundaries passed. Exact API lint and both clients' 22 tests, lint, TypeScript
+and production builds passed. No browser interaction QA is claimed.

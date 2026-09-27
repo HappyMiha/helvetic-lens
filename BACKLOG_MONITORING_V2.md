@@ -283,6 +283,39 @@ Sites-helper production build. Responsive source review layout was checked in co
 no browser interaction QA or premature client activation is claimed.
 
 
+Ninth slice — IMPLEMENTED / final client publication pending (scope recorded before implementation): a complete saved-source
+library independent of the most recent 100 mixed dossier entries. Add a private read
+endpoint with 30-reference pages, stable newest-first ordering, literal all-words search
+across title, note, URL and imported catalogue/query metadata, a 12-word/300-character
+bound, and current team-review filters (all/include/exclude/unreviewed). Counts come
+from all saved references, with facet counts for the submitted text query; duplicate
+references remain separate records but share their existing exact-URL review decision.
+Use the highest numeric review revision, not an older inclusion decision. Both clients
+replace the activity-derived source list with a dedicated library, retained query/filter
+inputs, explicit search/reset/retry, truthful counts/empty states and page navigation.
+Keep provenance, review history and native page-watch actions on each source. Refresh
+from server state after additions/reviews without silently applying unsubmitted search
+text. Hide stale library content after a failed read and keep a visible retry; preserve
+current workspace/product/private-draft and viewer boundaries. No external requests,
+model calls, new source coverage, schema, schedules or browser persistence. Dependencies:
+existing reference entries, current per-URL reviews, native identity and scoped dossier
+reads. Acceptance: more than 100 references behind newer non-reference activity,
+complete deterministic pagination/counts, literal/wildcard/multi-field/catalogue lookup,
+all current-review filters and their counts, reset/review refresh behavior, input bounds,
+tenant/product/private-draft/viewer access, no source/model side effects, client contract
+checks/lint/types/build and native regressions. Eighth core `git-6a3471f583a2` verified
+active since 04:11; final Sites activation stays in 08:00–09:00 Zurich.
+
+Verification: all 98 native product/backlog cases passed (97 integration, one smoke).
+Six new library cases cover 125 archived references behind 120 newer activity entries,
+all five deterministic pages, actual totals, literal wildcards/quotes, multi-field and
+imported-query/catalogue search, current-review filters and facets, duplicate references,
+review reset, input limits and both products' private/read-only access. Exact API lint
+passed. Each client passed 22 tests (nine gateway, three source-status and two each for
+recipes, continuation, import, review state and library navigation), lint, TypeScript
+and Sites-helper production builds. No browser interaction QA was performed.
+
+
 **MV2 collective product research contribution, 27 September 2026 — DONE (scoped release):** Develop
 Pharma and Loyer for small professional teams beyond monitor setup: a daily work
 queue, medicine/programme or client/matter context, accountable owners, review dates,

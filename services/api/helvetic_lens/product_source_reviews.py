@@ -27,12 +27,15 @@ def review_query(identifier, url=None):
     return query.where(DossierEntry.url == url) if url is not None else query
 
 
-def current_reviews(session, identifier):
+def latest_review_query(identifier):
     ranked = review_query(identifier).with_only_columns(DossierEntry.id, func.row_number().over(
         partition_by=DossierEntry.url,
         order_by=(DossierEntry.data_json["revision"].as_integer().desc(), DossierEntry.id.desc())).label("position")).subquery()
-    return {row.url: row for row in session.scalars(select(DossierEntry).join(ranked, ranked.c.id == DossierEntry.id)
-        .where(ranked.c.position == 1))}
+    return select(DossierEntry).join(ranked, ranked.c.id == DossierEntry.id).where(ranked.c.position == 1)
+
+
+def current_reviews(session, identifier):
+    return {row.url: row for row in session.scalars(latest_review_query(identifier))}
 
 
 def review_vector(reviews):

@@ -423,4 +423,7 @@ def product_router(service):
     from .product_source_reviews import source_review_routes
 
     source_review_routes(router, service, actor)
+    from .product_reference_library import reference_routes
+
+    reference_routes(router, service, actor)
     return router
