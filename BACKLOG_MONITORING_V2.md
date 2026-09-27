@@ -93,7 +93,7 @@ Sixteen authored color pairs exceed 4.5:1. No browser/human visual acceptance is
 claimed. [Implementation and remaining migration](docs/PRODUCT_VISUAL_LANGUAGE.md),
 [exact evidence](docs/product-releases/2026-09-27-1.9.0.json).
 
-**Private contribution ingestion — 27 September 2026: VERIFYING (stage 2a).**
+**Private contribution ingestion — 27 September 2026: DONE (scoped stage 2a).**
 Scoped MV2-019/021/023 follow-up: one contribution composer in both clients for
 comments, source URLs, corrections, research requests and original files. Explicit
 submission saves the original and atomically queues bounded private evidence
@@ -114,7 +114,10 @@ claim reconciliation remain later stages. Detailed acceptance:
 [contribution ingestion](docs/PRODUCT_CONTRIBUTIONS.md). Local implementation is
 validated: 324 broad native tests and a final 46 focused tests pass, including
 20 new contribution cases and migration preservation. Both clients pass 80 tests,
-lint, types and builds. Exact native/Sites activation remains the release gate.
+lint, types and builds. Native `git-2ef86dedae63` and both Sites 13 releases
+are verified: 51 HTTP checks and 39 exact assets per custom domain, 14 native module
+hashes, migrated scope constraints and a deployed synthetic parser fixture.
+[Exact release evidence](docs/product-releases/2026-09-27-1.10.0.json).
 
 **Dynamic collaborative investigation — 27 September 2026: IN PROGRESS.** The
 owner supplied a complete living-dossier specification, preserved in

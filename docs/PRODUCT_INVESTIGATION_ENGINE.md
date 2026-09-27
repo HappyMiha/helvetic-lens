@@ -31,8 +31,9 @@ machine output are proposals, never proof of identity or fact.
    with a dossier-first research surface; retain existing tools in an expandable
    section. Both product clients, failure/privacy/restart tests and exact release
    verification are required before this slice is complete.
-2. Unified URL/file/comment/correction/research-request contributions and source
-   extraction using retained originals, then per-dossier OWNER/EDITOR/CONTRIBUTOR/
+2. DONE, scoped private contribution stage 2a in release 1.10: unified URL/file/
+   comment/correction/research-request ingestion using retained originals. Next:
+   per-dossier OWNER/EDITOR/CONTRIBUTOR/
    VIEWER roles and invitation boundaries. Existing workspace-wide access must be
    audited across native profile, source, document and monitoring paths before
    migration; guarding only the product route is insufficient. Preserve drafts.
@@ -158,8 +159,8 @@ per-dossier access, living public research and automatic material-change reopeni
 remain IN PROGRESS. The visual reference is ready for those next capabilities.
 
 
-Stage 2a contribution ingestion is locally complete in release 1.10 and awaiting
-exact production verification. Both clients provide a unified composer; original
+Stage 2a contribution ingestion is DONE as a scoped release 1.10, with exact
+native and both-client production verification. Both clients provide a unified composer; original
 text/files/author identity feed bounded private investigations with a serialized
 queue and explicit failed-step retry. Native scopes, source exclusions, original
 integrity and no-public-discovery boundaries are verified. See

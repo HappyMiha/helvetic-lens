@@ -1,6 +1,6 @@
 # Private dossier contributions
 
-Status: VERIFYING (implementation and local acceptance complete; exact deployment pending). Dynamic dossier stage 2a; the full specification remains open.
+Status: DONE (scoped release 1.10.0). Dynamic dossier stage 2a; the full specification remains open.
 
 ## Scope and boundaries
 
@@ -78,3 +78,26 @@ checks prove explicit disclosure/submission, read-only controls, escaped origina
 text and contained download links. Each build has 121 files with no configured
 provider-key values. No browser interaction or independent professional-quality
 acceptance is claimed. Production verification is recorded separately.
+
+## Exact production acceptance
+
+Native `2ef86dedae63b1776c22a91bf2b4ee6fd0e24388` activated as
+`git-2ef86dedae63` at 16:04:26 UTC on 27 September. Pharma
+`d262e998e1037e52bc86a1f56d0e168b921795fb` and Loyer
+`8fd93057f68198ada41be2b0cfbe1ff4fb6ce59b` are both Sites version 13;
+both GitHub CI runs and deployments succeeded. The existing public audience,
+custom domains and environment revision 0 are preserved.
+
+Each custom domain passed 51 HTTP/authentication/gateway/guide checks and 39 exact
+served-asset hash comparisons. Fourteen native module hashes match validated
+source; migration `fbc495bef124`, all nine research tables and the composite
+contribution foreign key are present. API/CPU worker health checks pass; the AI
+worker is running without a configured Docker health check. A synthetic stdin-only
+parser fixture passed in the deployed AI worker. Local Laya is healthy. No private
+production records were read or created, no paid research was triggered, and no
+browser/human-quality acceptance is claimed.
+
+[Immutable activation receipt](product-releases/2026-09-27-1.10.0.json).
+The complete dynamic-dossier specification remains IN PROGRESS: per-dossier
+roles/invitations, living public research, cross-investigation reconciliation and
+monitoring-triggered reopening are not delivered by this scoped release.
