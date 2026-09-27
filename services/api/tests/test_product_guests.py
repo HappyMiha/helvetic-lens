@@ -179,7 +179,7 @@ def test_guest_schema_migration_and_erasure_preserve_native_cascade(signed):
 
     from alembic import command
     from helvetic_lens.db import Base
-    from helvetic_lens.product_models import DossierInvitation
+    from helvetic_lens.product_models import DossierInvitation, ProductDossier
 
     client, service, identity, _ = signed
     with service.db.engine.connect() as connection:
@@ -220,6 +220,8 @@ def test_guest_schema_migration_and_erasure_preserve_native_cascade(signed):
         assert session.get(User, account["user"]["id"]) is None
         assert session.get(DossierMember, (doc["id"], account["user"]["id"])) is None
         assert session.get(DossierInvitation, item["id"]) is None
+        assert session.get(ProductDossier, doc["id"]) is not None
+        assert session.get(DossierMember, (doc["id"], identity["user"]["id"])).role == "OWNER"
 
 
 
