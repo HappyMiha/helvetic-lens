@@ -340,3 +340,48 @@ TypeScript and their production build. Sites 0.1.70 execution-profile configurat
 preserved the existing custom checkouts; its build helper ran the existing build script.
 No browser handoff/interaction QA was performed in this background run. Both client
 deployments remain intentionally reserved for the final overnight publication window.
+
+## Public result continuation — overnight development, 27 September
+
+Explicit discovery can continue in 20-record pages, up to 1,000 provider records per
+interactive search. The shared API preserves its original first-page response fields
+and adds continuation/page/omission metadata. Europe PMC's cursor and source-reported
+hit count are used when supplied; an unknown total remains null. An exhausted known
+total, missing cursor, empty page or repeated cursor cannot create an infinite next-page
+loop. If the reported total suggests more results but continuation is missing, the
+client explains that limit instead of treating it as complete coverage.
+
+Fedlex title discovery groups records by legal-work URI, chooses one matching title,
+orders by URI and requests one extra work to determine whether another page exists.
+No full count is inferred. Exact query literals remain escaped, and source identifiers
+retain existing URL validation. Dropped invalid or duplicate provider rows are counted.
+The native response byte/timeout limits and shared discovery rate budget remain intact.
+
+Continuation values contain only bounded public pagination state: provider, query hash,
+page offset and the provider cursor. They confer no authority and are validated as
+untrusted input; they cannot specify a host, arbitrary URL or private context. Changing
+the query/provider, using a workspace cursor, malformed data or exceeding the interactive
+limit is rejected before any provider request. The client's next-page request uses the
+displayed result's query rather than any newly typed, unsubmitted query. Earlier visited
+pages remain in this open view; a failed request preserves them and the current result.
+A new explicit Search resets the page sequence only after a successful response.
+
+This follows the [Europe PMC REST contract](https://europepmc.org/RestfulWebService),
+its [cursor/end-of-results announcement](https://groups.google.com/a/ebi.ac.uk/g/epmc-webservices/c/yG8kMl1R3cI),
+the [official Fedlex-JOLux query examples](https://swiss.github.io/fedlex-jolux/introduction.html)
+and [SPARQL 1.1 solution modifiers](https://www.w3.org/TR/sparql11-query/#solutionModifiers).
+These are live catalogue pages, not reproducible search receipts, comprehensive web
+indexing or standing query monitors. Saved search recipes still exclude result records,
+retrieval times and continuation state. No new source, model call, storage or schedule
+is introduced.
+
+Validation: all 64 affected native cases passed (63 integration, one smoke), followed
+by eleven focused source cases after the final known-total exhaustion guard; exact API
+lint passed. Both clients passed fourteen tests, lint, TypeScript and production builds.
+The existing discovery rate budget remains six requests per minute in its shared bucket.
+A bounded read-only live probe traversed two Fedlex pages for `Datenschutz` (20/20 works)
+and two Europe PMC pages for `GLP-1 safety` (19/20 usable records; one first-page record
+omitted). Neither traversal overlapped across pages. Europe PMC supplied a live count
+of 34,662; no Fedlex total was inferred. These counts are probe-time observations, not
+fixed product claims. Final Sites publication remains pending the end-of-night window;
+this background run performed no browser interaction QA.

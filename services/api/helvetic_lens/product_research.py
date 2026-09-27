@@ -23,6 +23,7 @@ from .models import RegulatoryEventState, TopicEventMatch, User, Version
 from .product_api import EntryInput, Product, dossier, entry_payload, fail, iso
 from .product_models import DossierEntry, ProductDossier, ResearchThread
 from .product_operations import audit, fingerprint, require_revision, visible_query
+from .product_pagination import MAX_RECORDS, PAGE_SIZE, cursor_position, next_cursor
 
 
 class Question(legal_profiles.Input):
@@ -105,17 +106,18 @@ def thread_record(session, product, identifier, thread_id, identity):
     return parent, profile, thread
 
 
-async def public_search(provider, terms):
+async def public_search(provider, terms, cursor=None):
     """Only the explicitly entered query leaves the workspace; hosts are fixed."""
+    offset, mark = cursor_position(provider, terms, cursor)
     if provider == "europepmc":
         url = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
-        params = {"query": terms, "format": "json", "pageSize": "20", "resultType": "lite"}
+        params = {"query": terms, "format": "json", "pageSize": str(PAGE_SIZE), "resultType": "lite", "cursorMark": mark}
     else:
         literal = json.dumps(terms.lower(), ensure_ascii=False)
         query = f'''PREFIX jolux: <http://data.legilux.public.lu/resource/ontology/jolux#>
-SELECT DISTINCT ?work ?title WHERE {{ ?work jolux:isRealizedBy ?expression .
-?expression jolux:title ?title . FILTER(CONTAINS(LCASE(STR(?title)), {literal}))
-}} LIMIT 20'''
+SELECT ?work (MIN(STR(?label)) AS ?title) WHERE {{ ?work jolux:isRealizedBy ?expression .
+?expression jolux:title ?label . FILTER(CONTAINS(LCASE(STR(?label)), {literal}))
+}} GROUP BY ?work ORDER BY STR(?work) LIMIT {PAGE_SIZE + 1} OFFSET {offset}'''
         url, params = FEDLEX_SPARQL_ENDPOINT, {"query": query, "format": "application/sparql-results+json"}
     try:
         async with httpx.AsyncClient(timeout=25, follow_redirects=False) as client:
@@ -127,9 +129,20 @@ SELECT DISTINCT ?work ?title WHERE {{ ?work jolux:isRealizedBy ?expression .
                     if len(content) > 1_000_000:
                         fail("The source returned too much data. Narrow the search.", 502)
         body = json.loads(content)
-        items = []
+        items, total, following, continuation_missing = [], None, "", False
         if provider == "europepmc":
-            for record in body.get("resultList", {}).get("result", [])[:20]:
+            records = body["resultList"]["result"]
+            total = body.get("hitCount")
+            following = body.get("nextCursorMark") or ""
+            if not isinstance(records, list) or len(records) > PAGE_SIZE:
+                raise ValueError
+            if total is not None and (type(total) is not int or total < 0):
+                raise ValueError
+            if not isinstance(following, str) or (following not in ("", mark) and not re.fullmatch(r"[A-Za-z0-9+/=_-]{1,512}", following)):
+                raise ValueError
+            more = bool(records and following and following != mark and (total is None or total > offset + len(records)))
+            continuation_missing = bool(total is not None and total > offset + len(records) and not more)
+            for record in records:
                 source, identifier = record.get("source", ""), record.get("id", "")
                 if not re.fullmatch(r"[A-Za-z0-9_-]{1,50}", source) or not re.fullmatch(r"[A-Za-z0-9_-]{1,50}", identifier):
                     continue
@@ -139,7 +152,11 @@ SELECT DISTINCT ?work ?title WHERE {{ ?work jolux:isRealizedBy ?expression .
                     "url": f"https://europepmc.org/article/{quote(source)}/{quote(identifier)}",
                     "date": record.get("firstPublicationDate") or record.get("pubYear")})
         else:
-            for record in body.get("results", {}).get("bindings", [])[:20]:
+            records = body["results"]["bindings"]
+            if not isinstance(records, list) or len(records) > PAGE_SIZE + 1:
+                raise ValueError
+            more = len(records) > PAGE_SIZE
+            for record in records[:PAGE_SIZE]:
                 url = record.get("work", {}).get("value", "")
                 if urlsplit(url).netloc != "fedlex.data.admin.ch" or urlsplit(url).scheme != "https":
                     continue
@@ -147,7 +164,13 @@ SELECT DISTINCT ?work ?title WHERE {{ ?work jolux:isRealizedBy ?expression .
                     "title": str(record.get("title", {}).get("value", "Official legal work"))[:700],
                     "summary": "Official catalogue title match. Open the source to inspect the text and current status.",
                     "url": url, "date": None})
-        return list({item["id"]: item for item in items}.values())
+        items = list({item["id"]: item for item in items}.values())
+        limit_reached = more and offset + PAGE_SIZE >= MAX_RECORDS
+        return {"items": items, "total": total,
+                "next_cursor": next_cursor(provider, terms, offset + PAGE_SIZE, following) if more and not limit_reached else None,
+                "page_number": offset // PAGE_SIZE + 1, "page_size": PAGE_SIZE,
+                "omitted_records": len(records[:PAGE_SIZE]) - len(items),
+                "limit_reached": limit_reached, "continuation_unavailable": continuation_missing}
     except (httpx.HTTPError, ValueError, TypeError, AttributeError, KeyError):
         fail("This source is temporarily unavailable. Keep the query and try again; no results does not mean no relevant information exists.", 503)
 
@@ -267,23 +290,26 @@ def research_routes(router, service, actor):
     @router.get("/discover")
     async def discover(product: Product, request: Request, q: str = Query(min_length=2, max_length=300),
                        provider: Literal["workspace", "fedlex", "europepmc"] = "workspace",
-                       mode: Literal["all", "phrase"] = "all"):
+                       mode: Literal["all", "phrase"] = "all",
+                       cursor: str | None = Query(default=None, min_length=1, max_length=2048)):
         identity = actor(request)
         if len(q.strip()) < 2:
             fail("Enter at least two search characters.", 422)
-        total = None
         if provider == "workspace":
+            if cursor is not None:
+                fail("Public search cursors cannot be used for workspace search.", 422)
             with service.db.session() as session:
                 items, total = search_workspace(session, product, identity.user_id, q.strip(), mode)
+            details = {"items": items, "total": total}
         else:
-            items = await public_search(provider, q.strip())
-        return {"query": q.strip(), "provider": provider, "items": items, "checked_at": iso(utcnow()),
-                "total": total, "match_mode": mode if provider == "workspace" else None,
+            details = await public_search(provider, q.strip(), cursor)
+        return {"query": q.strip(), "provider": provider, **details, "checked_at": iso(utcnow()),
+                "match_mode": mode if provider == "workspace" else None,
                 "coverage": ("All words can appear across a record\'s title, content or topic subject. " if mode == "all" else "The complete phrase must appear in one field. ")
                 + "Literal case-insensitive matching in visible topics, questions and contributions. Up to 20 per group, title matches first; narrow your terms if the total is larger." if provider == "workspace"
-                else ("Live Fedlex title search, up to 20 matching catalogue records. Try the language used by the source. " if provider == "fedlex"
-                      else "Live Europe PMC literature search, up to 20 records. ")
-                     + "A search result is not automatic monitoring or an assessed conclusion."}
+                else ("Live Fedlex title search: one matching title per work, ordered by official identifier. Total matches are not supplied. Try the source language. " if provider == "fedlex"
+                      else "Live Europe PMC literature search in the provider's order; totals are reported by Europe PMC when available. ")
+                     + "20 records per page, up to 1,000 per interactive search; refine the query for more. Live indexes may change between pages. A result is not automatic monitoring or an assessed conclusion."}
 
     @router.get("/dossiers/{identifier}/discussion")
     def questions(product: Product, identifier: str, request: Request, status: Literal["all", "open", "answered"] = "all",

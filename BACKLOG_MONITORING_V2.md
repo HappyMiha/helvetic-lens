@@ -186,6 +186,37 @@ enter AI evidence nor trigger an answer-review warning. Both clients passed twel
 (seven gateway, three source-status, two saved-query contracts), lint, strict TypeScript
 and production builds. The background run skipped browser handoff/interaction QA.
 
+Sixth slice — IMPLEMENTED / final client publication pending: continue public discovery beyond the first page. Reuse the
+existing fixed Europe PMC REST and Fedlex SPARQL hosts, 20-record pages, source URL
+validation and bounded responses. Europe PMC supplies its opaque cursor and hit count;
+Fedlex uses grouped works with stable URI ordering and one extra row to establish more
+results without inventing a total. Bind bounded continuation data to the exact provider
+and query; reject workspace/malformed/mismatched cursors before a source call. Allow up
+to 1,000 provider records per interactive search with a visible refinement boundary.
+Both clients retain visited pages, use returned query/provider for continuation and keep
+the current results after a failed next-page request. No background fetching, new source,
+stored results history, AI call or monitoring change. Dependencies/readiness: official
+[Europe PMC REST documentation](https://europepmc.org/RestfulWebService), its cursor
+contract/release notes, [Fedlex-JOLux introduction](https://swiss.github.io/fedlex-jolux/introduction.html)
+and [SPARQL 1.1 solution modifiers](https://www.w3.org/TR/sparql11-query/#solutionModifiers).
+Acceptance: two-page provider traversal, final/empty/repeated-cursor behavior, truthful
+known/unknown totals, grouped deterministic Fedlex pages, safe cursor bounds/query
+binding, no arbitrary next-page URLs or private context forwarding, malformed-response
+and transport failures, preserved existing routes/recipes/privacy, both client gates and
+a small read-only live provider probe. Prior saved-search core `git-73a5108b43d9` verified
+active at 02:37 Zurich; final client publication remains reserved for 08:00–09:00.
+
+Verification: exact API lint and all 64 affected native cases passed (63 integration,
+one smoke). Eleven focused source cases were rerun successfully after adding the final
+known-total exhaustion guard. New coverage includes both provider traversals, safe
+cursor bounds/query binding, unknown/zero/known totals, malformed responses, missing or
+repeated continuation, 1,000-record cap and retriable page failure. Invalid-cursor tests
+respect the unchanged six-request discovery budget. Both clients passed fourteen tests,
+lint, TypeScript and production builds. A read-only live probe returned Fedlex pages
+of 20/20 works and Europe PMC pages of 19/20 usable records (one first-page record omitted),
+without overlap in either traversal. Europe PMC reported 34,662 matches for the probe;
+Fedlex total remained unknown. No browser interaction or final client activation is claimed.
+
 
 **MV2 collective product research contribution, 27 September 2026 — DONE (scoped release):** Develop
 Pharma and Loyer for small professional teams beyond monitor setup: a daily work
