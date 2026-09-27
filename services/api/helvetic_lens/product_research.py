@@ -355,16 +355,32 @@ def research_routes(router, service, actor):
 
     @router.get("/dossiers/{identifier}/discussion")
     def questions(product: Product, identifier: str, request: Request, status: Literal["all", "open", "answered"] = "all",
-                  offset: int = Query(0, ge=0, le=100000)):
+                  offset: int = Query(0, ge=0, le=100000), q: str = Query(default="", max_length=300)):
         identity = actor(request)
+        terms = list(dict.fromkeys(q.strip().lower().split()))
+        if len(terms) > 12:
+            fail("Use up to 12 distinct words to find questions.", 422)
         with service.db.session() as session:
+            principal(session, identity, utcnow())
             parent, _ = dossier(session, product, identifier, identity.user_id)
             query = select(ResearchThread).where(ResearchThread.dossier_id == parent.id)
+            total = session.scalar(select(func.count()).select_from(query.subquery()))
+            ordering = []
+            if terms:
+                query = query.where(and_(*(or_(ResearchThread.title.icontains(term, autoescape=True),
+                    ResearchThread.body.icontains(term, autoescape=True)) for term in terms)))
+                ordering.append(sum(case((ResearchThread.title.icontains(term, autoescape=True), 1), else_=0)
+                    for term in terms).desc())
+            answered = ResearchThread.accepted_entry_id.is_not(None)
+            facets = dict(session.execute(query.with_only_columns(answered, func.count()).group_by(answered)).all())
+            counts = {"open": facets.get(False, 0), "answered": facets.get(True, 0)}
+            counts["all"] = sum(counts.values())
             if status != "all":
-                query = query.where(ResearchThread.accepted_entry_id.is_(None) if status == "open" else ResearchThread.accepted_entry_id.is_not(None))
+                query = query.where(~answered if status == "open" else answered)
             return {"items": [thread_payload(session, row) for row in session.scalars(query.order_by(
-                ResearchThread.updated_at.desc(), ResearchThread.id).offset(offset).limit(30))],
-                "total": session.scalar(select(func.count()).select_from(query.subquery()))}
+                *ordering, ResearchThread.updated_at.desc(), ResearchThread.id).offset(offset).limit(30))],
+                "total": counts[status], "dossier_total": total, "counts": counts, "query": q.strip(),
+                "status": status, "offset": offset, "page_size": 30}
 
     @router.post("/dossiers/{identifier}/discussion", status_code=201)
     def create_question(product: Product, identifier: str, data: Question, request: Request):

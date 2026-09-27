@@ -509,6 +509,49 @@ client passed 39 tests (two reviewed-request cases and one gateway conflict case
 lint, strict TypeScript and final Sites-helper production builds. No browser interaction
 QA or final product Sites activation is claimed.
 
+Fifteenth slice — IMPLEMENTED / FINAL CLIENT RELEASE PENDING (scope recorded before implementation): retrieve older
+questions inside a single private topic. Extend the existing question-list read with an
+optional literal all-word query across question title/context only, max 300 characters
+and 12 distinct words, with escaped wildcard characters. Rank title matches before
+updated-time/ID order, retain 30-record pages and existing all/open/answered filters,
+and return actual topic total, matching status counts and displayed query/page metadata.
+Old clients with no query keep their existing ordering and fields. Apply fresh session,
+current parent/draft/tenant/product visibility and viewer read rules, with no model,
+external source or record changes. Both clients need explicit submit/clear/reset,
+accurate filtered totals/pages, navigation based on the displayed query rather than
+unsent edits, sensible no-match/empty-page recovery, retry/refresh, hidden stale data on
+list failures and truthful title/context-only search scope. Existing exact-question
+links and creation remain; failed initial question links must retry that question or
+return to the list, and late question reads must not reopen a left view. Dependencies:
+existing native ResearchThread metadata and private endpoints only; no migration,
+provider, AI, scheduler or notification. Acceptance: old questions behind newer noise,
+all complete tied-time pages and title ranking, literal/cross-field matching, open/
+answered facets and totals, body/reply scope boundaries, query/offset validation,
+private-product/tenant/draft/viewer denial, no read side effects, client query/navigation
+contracts, lint/types/build and all affected native regressions. Fourteenth core
+`git-c38a4959a7b8` is active since 06:49:27 Zurich. Final publication remains 08:00–09:00.
+
+Implemented the optional private question query, exact matching facets and title-first
+retrieval in the existing endpoint, with fresh principal and parent visibility checks.
+Both clients now expose explicit query/clear/reset, displayed-query pagination, precise
+empty-page recovery and failed-list hiding/retry. Exact-question failures retain their
+own retry target, and the shared read sequence ignores superseded/cancelled results and
+errors. English product scope and verification documentation are current. No migration,
+provider, model call, notification or scheduled activity was added.
+
+Acceptance: exact API lint and all 152 product/backlog tests passed (151 integration,
+one smoke), including five new question-library cases. These cover 65 tied-time old
+questions behind 70 newer records with complete unique pages; literal wildcard/quoted
+and cross-field terms; title ranking; reply exclusion; empty/both-product lists; accurate
+open/answered facets after acceptance and reopening; length/word/offset/status bounds;
+product/tenant/private-draft denial, viewer reads and write denial, current membership
+revocation, anonymous denial, private caching and no entry/source/model read side effects.
+Each client passed 44 tests, lint, strict TypeScript and final Sites-helper builds. Four
+new client contracts prove query/page whitelisting, displayed-query navigation, cancelled
+and superseded reads, stale failure suppression and exact retry; a gateway case preserves
+literal terms, status/offset, membership cookies and validation failures while blocking
+the other product. No browser interaction QA or final client Sites activation is claimed.
+
 **MV2 collective product research contribution, 27 September 2026 — DONE (scoped release):** Develop
 Pharma and Loyer for small professional teams beyond monitor setup: a daily work
 queue, medicine/programme or client/matter context, accountable owners, review dates,

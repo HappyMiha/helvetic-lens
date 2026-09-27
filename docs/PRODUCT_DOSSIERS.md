@@ -758,3 +758,32 @@ regressions passed; the brief expectation now names the precise new-page reason.
 client passed 39 tests (two reviewed-request cases and one gateway conflict case added),
 lint, strict TypeScript and final Sites-helper production builds. No browser interaction
 QA or final product Sites activation is claimed.
+
+## Private question retrieval — overnight development, 27 September
+
+The existing `GET /products/{product}/dossiers/{id}/discussion` supports optional `q`
+with up to 300 characters and 12 distinct words. All words must match the title or
+question context, with escaped literal wildcard characters. Title matches rank before
+updated time and ID; requests without terms retain the prior ordering. Existing
+all/open/answered filters and 30-record pages remain. The response adds `dossier_total`,
+matching `counts`, displayed `query`, `status`, `offset` and `page_size` beside the
+compatible `items` and `total`. Replies, attachments and external pages are outside this
+search. Fresh session/membership and the existing product, tenant and private-draft
+parent checks apply on every read. No stored data, model call or source request changes.
+
+Both clients provide explicit search, clear/reset, answer-status counts, refresh/retry,
+correct empty/no-match/out-of-page states and first-page recovery. Paging uses the
+returned query/filter, so unfinished form edits cannot change its meaning. List read
+failures hide retained results. A failed exact-question read retries its original ID and
+reply page or returns to the list. Cancelled and superseded question reads and errors
+cannot replace the current view. Product-specific example terms retain the two verticals.
+
+Verification: exact API lint and all 152 product/backlog cases passed (151 integration,
+one smoke), including five new cases for complete tied-date pagination behind newer
+activity, literal and cross-field matching, title relevance, query-only scope, both
+products, changing answer facets, validation limits, private/viewer/revoked-member reads,
+write denial and no read side effects. Each client passed 44 checks, authored-source lint,
+strict TypeScript and Sites-helper production builds. Four new client contracts cover
+query/page identities and delayed-read recovery; one gateway case retains literal search,
+filters/pages and private validation failures. Browser interaction QA and final product
+Sites activation remain unclaimed until separately verified.
