@@ -17,7 +17,7 @@ from .product_api import EntryInput, Product, dossier, fail, iso
 from .product_models import ProductPublication, PublicationRevision
 from .product_provenance import canonical, principal, signature
 
-PUBLIC_READ = re.compile(r"^/api/products/(pharma|loyer)/public-dossiers(?:/[0-9a-f-]{36})?$")
+PUBLIC_READ = re.compile(r"^/api/products/(pharma|loyer)/public-dossiers(?:/[0-9a-f-]{36}(?:/discussion)?)?$")
 LIFETIME = timedelta(minutes=30)
 
 

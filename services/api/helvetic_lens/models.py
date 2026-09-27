@@ -1814,6 +1814,8 @@ from .business_monitor_models import BusinessMonitorScopeEvent  # noqa: E402
 from .monitoring_connector_models import MonitoringConnectorConfiguration  # noqa: E402, F401
 
 ORGANIZATION_SCOPED_MODELS = (
+    product_models.PublicContribution,
+    product_models.PublicContributionMutation,
     product_models.ProductPublication,
     product_models.PublicationRevision,
     product_models.ProductDossier,

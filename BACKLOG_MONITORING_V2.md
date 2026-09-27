@@ -72,6 +72,31 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 ## Product decision
 
+**Public discussion slice — 27 September 2026: VERIFYING.** Next complete
+product cycle: anonymous paginated reading of explicitly submitted contributions
+under a published dossier; native account sign-in on the reader; reviewed public
+display name, text and HTTPS sources; author editing/removal; owner-workspace
+administrator hide/restore with reasons and a private mutation audit. Contributions
+are personal public actions, including for current viewer members; existing private
+workspace write permissions are unchanged. Dependencies: native current-session and
+membership locks, published projection, durable migrations, existing product HTTP
+gateways. No external source/provider or notification access is needed. Acceptance:
+cross-organization contributions work only on the selected published product;
+public serializers expose no private dossier, account identifiers or hidden text;
+consent, current membership, CSRF, publication/comment revisions and durable retry
+checks apply; authors cannot edit others' work or undo moderation; moderators cannot
+rewrite an author's contribution; withdrawal/deletion closes public access; account
+erasure removes that person's contributions; pagination, recovery and accessible
+forms work in both clients; affected native, migration, client and production checks
+pass. Following/private reuse and all discovery/semantic/scheduled-search work remain
+separate subsequent slices, not acceptance claims of this discussion release.
+
+Implementation evidence: `f7c495bef124` adds public contributions and private
+moderation/retry receipts. Native checks passed 184 cases (183 integration + one
+backlog smoke), including 13 new discussion cases. Exact API lint passed. Both
+1.4.0 clients passed 56 checks, lint, strict types and production builds. Production
+activation and exact GitHub CI remain VERIFYING; see `docs/PRODUCT_DOSSIERS.md`.
+
 **Public research and open discovery cycles — 27 September 2026: IN PROGRESS.**
 The owner explicitly authorized iterative implementation, main pushes and production
 releases for both products. This supersedes the completed overnight deadline only

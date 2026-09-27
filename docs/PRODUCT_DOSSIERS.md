@@ -1,5 +1,47 @@
 # Pharma and Loyer monitoring dossiers
 
+## Public discussion cycle — 27 September 2026
+
+The 1.4.0 discussion slice adds separately authored public contributions below a
+published projection. Anonymous readers receive only current visible text, the
+chosen public display name, source links, timestamps and revisions. Signed-in
+current members can contribute personally, including workspace viewers, without
+gaining private workspace write permissions. Native sign-in is reused on the
+public page. No private research thread, file, account identifier, email address or
+workspace name is copied into a public response.
+
+Authors preview their display name, text and up to ten HTTPS source links, explicitly
+confirm public submission, then can edit/remove their own work. Dossier-workspace
+administrators can hide/restore with a reason; they cannot rewrite someone else's
+contribution. Author edits retain hidden status. Private participant views reveal
+hidden text only to its author and the owning workspace administrators; private
+revision history records the latest ten decisions per contribution. Public and
+personal lists have real counts and bounded 20-item chronological pages.
+
+Migration `f7c495bef124` adds contained contribution and mutation tables. Mutation
+receipts bind the request to its actor, action and exact content fingerprint;
+retrying an old create/edit cannot restore a removed contribution. Current sessions,
+membership, CSRF, publication and contribution revisions are checked. Sorted
+organization locks coordinate cross-workspace contributions with withdrawal,
+membership changes and erasure. Withdrawing the publication closes public reading
+and contributions. Parent erasure cascades, and physical account erasure removes
+that person's contributions while preserving other authors. Removal clears the
+current text, display name and links; mutation receipts never store that text.
+
+Local evidence: 184 native checks passed (183 integration, one backlog smoke),
+including 13 new discussion cases, real persistence, account-erasure selection,
+existing private workflows and migration regressions. Exact API lint passed. Both
+clients have 56 passing checks, including actual anonymous React SSR, escaped
+contributed text, source-link isolation, gateway/CSRF boundaries and existing product
+contracts. Both client lint/type/build gates passed. Exact-source GitHub CI and
+production activation remain VERIFYING until the release receipts are recorded.
+No authenticated production records or public fixtures have been created.
+
+Following, private reuse, open-web discovery, semantic ranking and scheduled search
+remain separate subsequent cycles. No outgoing notification or provider call is
+triggered by participation. This is scoped discussion acceptance, not completion of
+the broader public research/search direction or a professional user pilot.
+
 ## Public publication cycle — 27 September 2026
 
 **Verified release 1.3.1:** both public custom domains passed 32 HTTP/SSR checks

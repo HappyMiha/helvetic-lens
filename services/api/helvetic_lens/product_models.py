@@ -10,6 +10,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
+    Index,
     Integer,
     String,
     Text,
@@ -160,4 +161,52 @@ class PublicationRevision(Base):
     action: Mapped[str] = mapped_column(String(20))
     content_json: Mapped[dict] = mapped_column(JSON)
     actor_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class PublicContribution(Base):
+    """Deliberately public personal contribution, contained by the publication."""
+    __tablename__ = "product_public_contributions"
+    __table_args__ = (
+        ForeignKeyConstraint(["publication_id", "organization_id"],
+                             ["product_publications.id", "product_publications.organization_id"], ondelete="CASCADE"),
+        UniqueConstraint("id", "publication_id", "organization_id", name="uq_public_contribution_scope"),
+        CheckConstraint("status IN ('visible', 'hidden', 'removed')", name="ck_public_contribution_status"),
+        Index("ix_public_contribution_page", "publication_id", "status", "created_at", "id"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    organization_id: Mapped[str] = mapped_column(String(36), index=True)
+    publication_id: Mapped[str] = mapped_column(String(36))
+    author_user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    publication_revision: Mapped[int] = mapped_column(Integer)
+    revision: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(12), default="visible")
+    author_label: Mapped[str] = mapped_column(String(100))
+    body: Mapped[str] = mapped_column(Text)
+    sources_json: Mapped[list] = mapped_column(JSON, default=list)
+    moderation_reason: Mapped[str] = mapped_column(String(600), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class PublicContributionMutation(Base):
+    """Private retry and moderation evidence; never retain removed text here."""
+    __tablename__ = "product_public_contribution_mutations"
+    __table_args__ = (
+        ForeignKeyConstraint(["contribution_id", "publication_id", "organization_id"],
+                             ["product_public_contributions.id", "product_public_contributions.publication_id",
+                              "product_public_contributions.organization_id"], ondelete="CASCADE"),
+        UniqueConstraint("publication_id", "request_key", name="uq_public_contribution_request"),
+        UniqueConstraint("contribution_id", "revision", name="uq_public_contribution_revision"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    organization_id: Mapped[str] = mapped_column(String(36), index=True)
+    publication_id: Mapped[str] = mapped_column(String(36))
+    contribution_id: Mapped[str] = mapped_column(String(36))
+    actor_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    request_key: Mapped[str] = mapped_column(String(36))
+    fingerprint: Mapped[str] = mapped_column(String(64))
+    revision: Mapped[int] = mapped_column(Integer)
+    action: Mapped[str] = mapped_column(String(16))
+    reason: Mapped[str] = mapped_column(String(600), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

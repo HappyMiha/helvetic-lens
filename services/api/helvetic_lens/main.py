@@ -498,6 +498,7 @@ def create_app(
         }
         public_path = path in {"/api/health", "/api/ready"} or path in public_auth_paths
         public_path = public_path or path in {"/docs", "/openapi.json", "/redoc"}
+        from .product_community import COMMUNITY_WRITE
         from .product_publications import PUBLIC_READ
 
         public_path = public_path or (request.method == "GET" and PUBLIC_READ.fullmatch(path) is not None)
@@ -561,6 +562,7 @@ def create_app(
             and path not in viewer_allowed_mutations
             and not viewer_assistant_state
             and not viewer_personal_state
+            and not (request.method == "POST" and COMMUNITY_WRITE.fullmatch(path) is not None)
             and not (request.method == "POST" and path.startswith("/api/interest-feed/events/") and path.endswith("/brief/requests"))
             and not (request.method == "POST" and path.startswith("/api/interest-briefs/") and path.endswith("/feedback"))
         ):

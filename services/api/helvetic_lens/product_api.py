@@ -432,4 +432,7 @@ def product_router(service):
     from .product_publications import publication_routes
 
     publication_routes(router, service, actor)
+    from .product_community import community_routes
+
+    community_routes(router, service, actor)
     return router
