@@ -22,7 +22,7 @@ machine output are proposals, never proof of identity or fact.
 
 ## Delivery sequence and acceptance
 
-1. VERIFYING release 1.8: Ask / Investigate within an existing dossier, persisted coordinator
+1. DONE, scoped release 1.8: Ask / Investigate within an existing dossier, persisted coordinator
    plan/branch/step state and existing job dispatch, automatic available-source
    routing, bounded public query search/inspection and existing saved evidence,
    evidence-linked claims/entities/relationships and revision history, dynamic
@@ -128,4 +128,19 @@ monitoring/contribution-triggered reopening remain the next stages. Claims are
 currently grouped by their durable investigation within the existing dossier;
 cross-investigation claim reconciliation remains part of automatic reopening.
 No vector retrieval capability or comprehensive internet coverage is claimed.
-Production activation remains VERIFYING until the release receipt is recorded.
+Production release `git-f67af9885d07` activated on 27 September at 14:29:33 UTC.
+Pharma `0d8bba9257610a9e1c0c644a28401dafb2303318` and Loyer
+`414857e04cf4315b6611b01d27051ad09f61c0dd` are both published as Sites version 10
+at their existing public custom domains. Both GitHub CI runs succeeded. Each
+production origin passed 46 HTTP/gateway/guide checks and 36 exact JS/CSS asset
+hash comparisons. Eleven native deployed modules match the validated source;
+migration `fac495bef124` and all nine research tables are present. Native API and
+CPU worker health checks pass; the AI worker is running (it has no configured
+Docker health check). Its live Celery control reply confirms consumption of
+`ai_interactive` and `ai_background`; local Laya is healthy.
+
+[Exact release receipt](product-releases/2026-09-27-1.8.0.json). Verification used
+anonymous HTTP, source hashes, schema and process health. No authenticated
+production user records were created or read; no browser interaction QA or
+independent factual-quality pilot is claimed. The first slice is complete; the
+full specification and next three delivery stages remain IN PROGRESS.

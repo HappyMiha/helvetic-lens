@@ -85,13 +85,19 @@ No fixed agent roster or user-facing model/engine configuration. Scope, source
 readiness, incremental acceptance and the complete 20-point scenario are tracked
 in [investigation implementation](docs/PRODUCT_INVESTIGATION_ENGINE.md). Partial
 releases must not close the full specification or broader MV2 quality gates.
-Scoped release 1.8 is VERIFYING: native durable plan/branch checkpoints, bounded
+Scoped release 1.8 is DONE (scoped release): native durable plan/branch checkpoints, bounded
 Jev/Laya-backed source discovery and reading, quote-validated claims and contested
 history, evidence-triggered entity branches/replanning, SSE and pause/resume/cancel,
 with both clients switched to a dossier-first Ask surface. Broad affected validation
 passed 300 tests; each client has 70 contracts plus lint/types/build checks.
 Current access, generation fencing, query budgets and immutable source evidence
-are covered; the full supplied scenario remains open.
+are covered. Native `git-f67af9885d07` activated at 14:29:33 UTC; both products
+published Sites version 10. Each origin passed 46 HTTP checks and 36 exact asset
+hashes; 11 native modules and the nine-table migration match source. The final
+focused suite passed 53 tests; both client CI runs succeeded. Exact evidence:
+[1.8 release receipt](docs/product-releases/2026-09-27-1.8.0.json). The full supplied
+scenario remains open, including dossier roles/invitations, file/contribution
+ingestion, living public URLs/search and automatic monitoring-triggered reopening.
 
 
 **Multilingual query bundles — 27 September 2026: DONE (scoped release).** Scoped follow-up
