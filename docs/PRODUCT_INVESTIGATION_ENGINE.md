@@ -33,7 +33,7 @@ machine output are proposals, never proof of identity or fact.
    verification are required before this slice is complete.
 2. DONE, scoped private contribution stage 2a in release 1.10: unified URL/file/
    comment/correction/research-request ingestion using retained originals. Scoped
-   stage 2b workspace teams are VERIFYING in release 1.11: four dossier roles,
+   stage 2b1 workspace teams are DONE in release 1.11: four dossier roles,
    account-bound invitations and collaborative drafts across native access paths.
    See [team architecture and acceptance](PRODUCT_TEAMS.md). Members-only active
    monitoring and outside-workspace invitations remain IN PROGRESS; their native
@@ -173,6 +173,6 @@ migration remain IN PROGRESS.
 
 Release 1.11 adds the workspace collaboration portion of stage 2b: creator-enabled
 OWNER/EDITOR/CONTRIBUTOR/VIEWER roles, account-bound invitations, ownership
-handover and retained private collaborative drafts. Local checks pass; exact
-production activation is VERIFYING. Activated monitoring keeps its disclosed
+handover and retained private collaborative drafts. Local checks and exact
+production activation pass for both products and the shared native core. Activated monitoring keeps its disclosed
 workspace audience. See [bounds and acceptance](PRODUCT_TEAMS.md).

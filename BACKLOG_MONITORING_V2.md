@@ -93,7 +93,7 @@ Sixteen authored color pairs exceed 4.5:1. No browser/human visual acceptance is
 claimed. [Implementation and remaining migration](docs/PRODUCT_VISUAL_LANGUAGE.md),
 [exact evidence](docs/product-releases/2026-09-27-1.9.0.json).
 
-**Dossier team roles — 27 September 2026: VERIFYING (scoped stage 2b, workspace collaboration).**
+**Dossier team roles — 27 September 2026: DONE (scoped stage 2b1, workspace collaboration).**
 Scoped MV2-021/023 continuation: OWNER/EDITOR/CONTRIBUTOR/VIEWER roles,
 account-bound seven-day invitations for existing workspace colleagues, pending
 invitations inbox, revocation and explicit ownership handover in both clients.
@@ -117,8 +117,12 @@ projection and nine Monitoring sections remain unchanged. Test native behavior,
 migration/erasure and both clients, then verify exact production before DONE.
 Local acceptance: native team/access/lifecycle regressions pass, including 30 final
 team/provenance cases. Both clients pass 83 tests each, lint, strict types and final
-production builds. Exact deployment verification remains pending; see
-[team architecture and acceptance](docs/PRODUCT_TEAMS.md).
+production builds. Sites 14 and both CI runs succeeded. Each custom domain passes
+63 HTTP/auth checks and 39 exact served asset hashes. Native git-034f3a8344f2
+activated at 17:12:24 UTC with 25 matching modules, migration fcc495bef124, scoped
+foreign keys, worker health and local parser acceptance. See
+[team architecture and acceptance](docs/PRODUCT_TEAMS.md),
+[exact release receipt](docs/product-releases/2026-09-27-1.11.0.json).
 Full stage 2b still requires restricted active monitoring and invitations
 outside the current workspace, with all derived topics, feeds and delivery scoped.
 
@@ -2176,7 +2180,7 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-021 — Workspace: Impact Inbox, decisions and Impact Matrix
 
-**Product follow-up, 27 September:** scoped workspace dossier teams are VERIFYING;
+**Product follow-up, 27 September:** scoped workspace dossier teams (stage 2b1) are DONE;
 see the scoped acceptance, dependencies and preserved active audience above.
 This does not complete MV2-021 or the full dynamic-dossier specification.
 

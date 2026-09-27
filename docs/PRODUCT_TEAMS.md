@@ -1,6 +1,6 @@
 # Dossier teams and workspace invitations
 
-Status: VERIFYING exact production activation. Scoped release 1.11.
+Status: DONE within the scoped workspace-collaboration release 1.11.
 This is the workspace-collaboration part of dynamic dossier stage 2b. The full
 [dynamic specification](DYNAMIC_DOSSIER_SPEC.md) remains IN PROGRESS.
 
@@ -88,8 +88,14 @@ Earlier broad coverage exercised 381 cases with two conditional skips; all six
 failures were addressed and retested in the focused runs. Both clients pass 83
 tests each, source lint, strict type checking and final production builds. Each
 build contains 121 files; configured provider secrets were absent from both.
-Exact production acceptance is pending normal publication and will be recorded
-with the deployed revisions, schema, worker health and served asset hashes. Automated
+Exact production acceptance passes on both custom domains: 63 HTTP/auth/gateway
+checks and 39 exact emitted JS/CSS hashes each. Native `git-034f3a8344f2` activated
+at 17:12:24 UTC. Pharma and Loyer published Sites version 14 at 17:11:57 and
+17:12:33 UTC; both GitHub CI runs succeeded. All 25 native module hashes match,
+migration `fcc495bef124` and the scoped foreign keys are present. API and CPU
+worker health pass; the AI worker is running without a configured Docker health
+check. Its local extraction fixture passes and local Laya is healthy.
+[Exact release receipt](product-releases/2026-09-27-1.11.0.json). Automated
 fixtures exercise native HTTP/database/job paths without reading production user
 records or making paid provider calls. Browser interaction, whole-page visual QA,
 professional factual-quality acceptance and a complete dynamic-spec DoD are not
