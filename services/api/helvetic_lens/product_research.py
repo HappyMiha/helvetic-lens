@@ -19,7 +19,7 @@ from .db import utcnow
 from .extraction import FEDLEX_SPARQL_ENDPOINT
 from .interest_jobs import lock_organization
 from .legal_profile_models import LegalMonitoringProfile
-from .models import RegulatoryEventState, TopicEventMatch, User, Version
+from .models import DocumentWatch, Law, RegulatoryEventState, TopicEventMatch, User, Version
 from .product_api import EntryInput, Product, dossier, entry_payload, fail, iso
 from .product_models import DossierEntry, ProductDossier, ResearchThread
 from .product_operations import audit, fingerprint, require_revision, visible_query
@@ -245,11 +245,15 @@ def research_sources(session, parent, question, organization_id, *, reviews=None
         DossierEntry.url.not_in(excluded), DossierEntry.kind == "monitor")
         .order_by(DossierEntry.created_at.desc(), DossierEntry.id).limit(20))
     for monitor in monitors:
-        version = session.scalar(select(Version).where(Version.law_id == monitor.data_json.get("law_id"),
-            visible(Version, organization_id), Version.synthetic.is_(False))
+        version = session.scalar(select(Version).join(Law, Law.id == Version.law_id)
+            .join(DocumentWatch, DocumentWatch.law_id == Law.id)
+            .where(Version.law_id == monitor.data_json.get("law_id"), visible(Law, organization_id),
+                   DocumentWatch.organization_id == organization_id,
+                   visible(Version, organization_id), Version.synthetic.is_(False))
             .order_by(Version.created_at.desc(), Version.id).limit(1))
         if version and version.text:
             candidates.append({"key": version.id, "kind": "saved_page_extract", "title": version.title or monitor.title,
+                "document_id": version.law_id, "evidence_revision": version.evidence_revision,
                 "text": research_excerpt(version.text, words), "url": version.source_url or monitor.url,
                 "date": iso(version.created_at)})
     profile = session.get(LegalMonitoringProfile, parent.profile_id)

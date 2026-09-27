@@ -41,6 +41,31 @@ def document(session, product, identifier, law_id, identity):
 
 
 def document_history_routes(router, service, actor):
+    @router.get("/dossiers/{identifier}/discussion/{thread_id}/research/{entry_id}/sources/{source_id}/document")
+    def research_document(product: Product, identifier: str, thread_id: str, entry_id: str,
+                          source_id: str, request: Request):
+        identity = actor(request)
+        with service.db.session() as session:
+            principal(session, identity, utcnow())
+            parent, _ = dossier(session, product, identifier, identity.user_id)
+            data = session.scalar(select(DossierEntry.data_json).where(DossierEntry.id == entry_id,
+                DossierEntry.dossier_id == parent.id, DossierEntry.thread_id == thread_id, DossierEntry.kind == "research"))
+            sources = data.get("sources") if isinstance(data, dict) else None
+            source = next((item for item in sources if isinstance(item, dict) and item.get("id") == source_id), None) if isinstance(sources, list) else None
+            if not source or source.get("kind") != "saved_page_extract" or not isinstance(source.get("key"), str):
+                fail("This research source has no accessible saved page.", 404)
+            version = session.execute(select(Version.id, Version.law_id, Version.evidence_revision)
+                .where(Version.id == source["key"], visible(Version, identity.organization_id))).mappings().first()
+            if version is None:
+                fail("The saved page used by this research note is no longer accessible.", 404)
+            recorded = "document_id" in source or "evidence_revision" in source
+            revision = source.get("evidence_revision")
+            if recorded and (source.get("document_id") != version["law_id"] or type(revision) is not int or not 1 <= revision <= 2147483647):
+                fail("The original document identity for this research source is unavailable.", 404)
+            linked = document(session, product, identifier, version["law_id"], identity)
+            return {"document_id": linked["id"], "version_id": version["id"],
+                    "expected_revision": revision if recorded else None, "revision_recorded": recorded}
+
     @router.get("/dossiers/{identifier}/documents/{law_id}/versions")
     def history(product: Product, identifier: str, law_id: str, request: Request,
                 cursor: str = Query(default="", max_length=2048)):

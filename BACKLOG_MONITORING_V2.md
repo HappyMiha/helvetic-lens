@@ -433,6 +433,44 @@ case added), lint, strict TypeScript and Sites-helper production builds. No brow
 interaction QA or final product Sites activation is claimed.
 
 
+Thirteenth slice — IMPLEMENTED / final client publication pending: inspect the
+full saved page behind an AI citation or preview excerpt. Persist document_id and
+Version evidence_revision in new saved_page_extract snapshots, included in the existing
+preview/inference fingerprint. Eligible page candidates must still have a current
+organization DocumentWatch and visible Law as well as a visible nonsynthetic Version.
+Add a read-only saved-note source locator that resolves only an exact research entry,
+question and source ID inside the visible parent; never accept document/version IDs
+from a browser-supplied source payload. Recheck native document linkage and ownership.
+New recorded identities must retain their original document relation and revision;
+old source snapshots with no recorded revision can open the currently accessible saved
+version with an explicit legacy warning. Preserve immutable note text and hashes; no
+backfill or automatic re-generation. Both clients should offer Read saved document
+beside eligible preview/note citations and source snapshots, opening the existing
+bounded reader at the selected version/revision and retaining the exact AI excerpt as
+context. A revised version requires the existing explicit current-revision recovery;
+no silent fallback to a newer version, original URL or another document. Failed locator
+reads must remain visible/retryable and late responses must not open a reader after
+navigation. Dependencies: existing private research snapshots and saved-page readers,
+no migration, provider, external fetch, model call, writes or notification changes.
+Acceptance: exact future/legacy citation targets, captured revisions and stale preview
+rejection after evidence/ownership/watch changes, current linkage and source ownership,
+wrong source/kind/question/note/dossier/product/tenant/private-draft and viewer boundaries,
+zero locator source/model/write side effects, original snapshots unchanged, both client
+contracts/lint/types/build and affected API regressions. Twelfth core git-de88bab856f9
+verified active since 05:55:25 Zurich; final product Sites publication remains 08:00–09:00.
+
+Verification: exact API lint and all 136 product/backlog cases passed (135 integration,
+one smoke), including twelve new citation-reader cases. They cover both products,
+recorded source identity/revision through inference and export, unchanged historical
+snapshots after correction, explicit legacy resolution without backfill, private drafts,
+wrong source/kind/note/question/parent/product/tenant and viewer boundaries, malformed
+revision rejection, reassignment, removed monitor/watch/Law/Version access, no locator
+source/model/entry side effects, and stale previews before or during inference even when
+the excerpt text/hash stays identical. Existing saved-reader and research regressions
+also passed. Both clients passed 36 tests (three source-target contracts and one private
+locator gateway case added), lint, strict TypeScript and Sites-helper production builds.
+No browser interaction QA or final product Sites activation is claimed.
+
 **MV2 collective product research contribution, 27 September 2026 — DONE (scoped release):** Develop
 Pharma and Loyer for small professional teams beyond monitor setup: a daily work
 queue, medicine/programme or client/matter context, accountable owners, review dates,

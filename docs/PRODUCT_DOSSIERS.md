@@ -658,3 +658,50 @@ passed (31 in the focused run, including the eight new cases; 23 additional uniq
 Both clients passed 32 tests (three history/text navigation cases and a private gateway
 case added), lint, strict TypeScript and Sites-helper production builds. No browser
 interaction QA or final product Sites activation is claimed.
+
+## Open the saved document behind research — overnight development, 27 September
+
+New saved_page_extract candidates retain document_id and evidence_revision with their
+exact text, hash and source identity. These fields participate in the existing preview
+and inference fingerprint, so even a corrected passage extraction with unchanged
+excerpt text requires a fresh preview. Candidates now require the current organization's
+DocumentWatch and a visible Law in addition to a visible nonsynthetic Version. Losing
+that access removes the candidate and invalidates an earlier preview before inference.
+The existing post-inference fingerprint check also rejects a changed saved revision.
+
+GET `/dossiers/{id}/discussion/{thread_id}/research/{entry_id}/sources/{source_id}/document`
+resolves a saved note's exact source. Current session/membership and visible private
+parent are required; the stored entry must be research belonging to the same question
+and dossier. Only its actual saved_page_extract source can resolve a visible Version,
+and the native dossier-monitor/watch/Law relationship is checked again. Browser-supplied
+source metadata cannot replace the target. A recorded original document ID cannot follow
+a version reassigned elsewhere, and malformed recorded revisions fail closed.
+
+The locator returns only the document/version identities and recorded revision status.
+It does not fetch text, invoke the model, write a record, alter the note or change a watch.
+New sources open their captured evidence revision using the existing bounded reader;
+corrections require explicit first-page reload. Older notes lacking both new fields
+return an explicit unrecorded-revision status and open only a currently accessible saved
+version. They are not backfilled or treated as verified matches to a historic revision.
+Original excerpt text, findings, hashes and exports remain unchanged.
+
+Both clients offer Read saved document beside page citations, retained page-source
+snapshots and page excerpts in the AI preview. The reader keeps the exact research
+excerpt available for comparison and explains when the legacy revision is unknown.
+Preview wording makes clear that opening a source does not generate a research note.
+The full reader starts at the first page; automatic quote location is not claimed.
+Failed lookups retain an explicit retry, and a request sequence suppresses a late reader
+opening after navigation. Existing reader ownership/revision guards apply to every page.
+No schema migration, provider, public sharing, notification or external request is added.
+
+Verification: exact API lint and all 136 product/backlog cases passed (135 integration,
+one smoke), including twelve new citation-reader cases. They cover both products,
+recorded source identity/revision through inference and export, unchanged historical
+snapshots after correction, explicit legacy resolution without backfill, private drafts,
+wrong source/kind/note/question/parent/product/tenant and viewer boundaries, malformed
+revision rejection, reassignment, removed monitor/watch/Law/Version access, no locator
+source/model/entry side effects, and stale previews before or during inference even when
+the excerpt text/hash stays identical. Existing saved-reader and research regressions
+also passed. Both clients passed 36 tests (three source-target contracts and one private
+locator gateway case added), lint, strict TypeScript and Sites-helper production builds.
+No browser interaction QA or final product Sites activation is claimed.
