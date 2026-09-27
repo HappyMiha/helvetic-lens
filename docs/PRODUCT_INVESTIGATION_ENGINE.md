@@ -31,10 +31,13 @@ machine output are proposals, never proof of identity or fact.
    with a dossier-first research surface; retain existing tools in an expandable
    section. Both product clients, failure/privacy/restart tests and exact release
    verification are required before this slice is complete.
-2. Private dossier member roles OWNER/EDITOR/CONTRIBUTOR/VIEWER with invitation
-   boundaries, unified URL/file/comment/correction/research-request contributions
-   and source extraction using retained originals. Existing workspace-wide access
-   must be migrated deliberately, without losing existing access or exposing drafts.
+2. Unified URL/file/comment/correction/research-request contributions and source
+   extraction using retained originals, then per-dossier OWNER/EDITOR/CONTRIBUTOR/
+   VIEWER roles and invitation boundaries. Existing workspace-wide access must be
+   audited across native profile, source, document and monitoring paths before
+   migration; guarding only the product route is insufficient. Preserve drafts.
+   Before this stage, apply the owner's visual-language steering to both clients'
+   reference dossier and global interaction foundation (see VISUAL_LANGUAGE_SPEC.md).
 3. Public living view with stable human-readable slugs and claim/source anchors,
    anonymous search across public knowledge, same coordinator/UI, public
    contributions and scoped research. Existing published snapshots remain explicit;
@@ -144,3 +147,12 @@ anonymous HTTP, source hashes, schema and process health. No authenticated
 production user records were created or read; no browser interaction QA or
 independent factual-quality pilot is claimed. The first slice is complete; the
 full specification and next three delivery stages remain IN PROGRESS.
+
+
+The owner's later visual brief adds a validated two-client research interface.
+Release 1.9 now provides the global Ask/Search, reference dossier, token-based
+light/dark themes, source/provenance reader and real checkpoint Lens activity;
+see [visual implementation and exact acceptance](PRODUCT_VISUAL_LANGUAGE.md).
+This is a frontend-only slice on the same 1.8.1 native code. Contribution ingestion,
+per-dossier access, living public research and automatic material-change reopening
+remain IN PROGRESS. The visual reference is ready for those next capabilities.

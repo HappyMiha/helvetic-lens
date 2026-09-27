@@ -108,3 +108,10 @@ reviewer evidence and broader MV2-051 acceptance remain open.
 cover the 116 active criteria with source prerequisites, concrete reviewer steps
 and existing test entry points. The traceability table links each criterion;
 procedures and test references remain distinct from executed acceptance evidence.
+
+
+The Pharma/Loyer [visual-language reference](docs/PRODUCT_VISUAL_LANGUAGE.md)
+ships shared light/dark tokens, a global Ask/Search and an evidence-first dossier
+in release 1.9. Its exact client production proof is separate from the ongoing
+[dynamic investigation engine](docs/PRODUCT_INVESTIGATION_ENGINE.md) and the
+remaining native-platform page migration.

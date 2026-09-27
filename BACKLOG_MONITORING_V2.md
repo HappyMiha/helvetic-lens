@@ -72,6 +72,27 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 ## Product decision
 
+**Visual language refresh — 27 September 2026: IN PROGRESS (reference slice DONE).** The owner's
+[complete brief](docs/VISUAL_LANGUAGE_SPEC.md) now steers both product clients.
+Scope: token-based light/dark themes, shared shell and restrained glass sidebar,
+global keyboard Ask/Search using existing authorized retrieval, and a complete
+reference dossier with large evidence counts, readable claims, prominent captured
+sources, provenance, real checkpoint-derived Lens states and transparency.
+Dependencies: release 1.8.1 native investigation/source contracts and existing
+public/workspace discovery; no new providers or access grants. Acceptance: both
+clients preserve existing workflows and source/privacy boundaries, expose no fake
+analysis or fabricated primary-source classification, support reduced motion,
+keyboard access and responsive document layouts, pass existing and meaningful
+state/privacy tests, lint, types, builds and exact production checks. Broader
+native-platform page migration remains incremental under brief §22. The next
+functional investigation stage stays open; no backend ingestion code had started
+when this owner steering arrived. Scoped 1.9 acceptance is now DONE: both clients
+pass 77 tests, lint, strict types and final builds; Sites12 and both CI runs
+succeeded. Each production origin passes 50 HTTP checks and 39 exact asset hashes.
+Sixteen authored color pairs exceed 4.5:1. No browser/human visual acceptance is
+claimed. [Implementation and remaining migration](docs/PRODUCT_VISUAL_LANGUAGE.md),
+[exact evidence](docs/product-releases/2026-09-27-1.9.0.json).
+
 **Dynamic collaborative investigation — 27 September 2026: IN PROGRESS.** The
 owner supplied a complete living-dossier specification, preserved in
 [the source document](docs/DYNAMIC_DOSSIER_SPEC.md). It now guides Pharma/Loyer

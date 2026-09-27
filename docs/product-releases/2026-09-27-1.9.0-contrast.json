@@ -1,0 +1,117 @@
+{
+  "scope": "Calculated authored token pairs; not browser-computed or whole-page contrast audit",
+  "pairs": [
+    {
+      "theme": "light",
+      "foreground": "text-primary",
+      "background": "background",
+      "ratio": 17.44,
+      "wcag_aa_normal_text": true
+    },
+    {
+      "theme": "light",
+      "foreground": "text-secondary",
+      "background": "background",
+      "ratio": 5.59,
+      "wcag_aa_normal_text": true
+    },
+    {
+      "theme": "light",
+      "foreground": "text-secondary",
+      "background": "surface-secondary",
+      "ratio": 5.26,
+      "wcag_aa_normal_text": true
+    },
+    {
+      "theme": "light",
+      "foreground": "brand",
+      "background": "surface",
+      "ratio": 6.88,
+      "wcag_aa_normal_text": true
+    },
+    {
+      "theme": "light",
+      "foreground": "brand-ink",
+      "background": "brand",
+      "ratio": 6.88,
+      "wcag_aa_normal_text": true
+    },
+    {
+      "theme": "light",
+      "foreground": "success",
+      "background": "success-soft",
+      "ratio": 6.79,
+      "wcag_aa_normal_text": true
+    },
+    {
+      "theme": "light",
+      "foreground": "warning",
+      "background": "warning-soft",
+      "ratio": 6.66,
+      "wcag_aa_normal_text": true
+    },
+    {
+      "theme": "light",
+      "foreground": "danger",
+      "background": "danger-soft",
+      "ratio": 6.16,
+      "wcag_aa_normal_text": true
+    },
+    {
+      "theme": "dark",
+      "foreground": "text-primary",
+      "background": "background",
+      "ratio": 17.77,
+      "wcag_aa_normal_text": true
+    },
+    {
+      "theme": "dark",
+      "foreground": "text-secondary",
+      "background": "background",
+      "ratio": 8.22,
+      "wcag_aa_normal_text": true
+    },
+    {
+      "theme": "dark",
+      "foreground": "text-secondary",
+      "background": "surface-secondary",
+      "ratio": 7.32,
+      "wcag_aa_normal_text": true
+    },
+    {
+      "theme": "dark",
+      "foreground": "brand",
+      "background": "surface",
+      "ratio": 10.22,
+      "wcag_aa_normal_text": true
+    },
+    {
+      "theme": "dark",
+      "foreground": "brand-ink",
+      "background": "brand",
+      "ratio": 10.05,
+      "wcag_aa_normal_text": true
+    },
+    {
+      "theme": "dark",
+      "foreground": "success",
+      "background": "success-soft",
+      "ratio": 8.68,
+      "wcag_aa_normal_text": true
+    },
+    {
+      "theme": "dark",
+      "foreground": "warning",
+      "background": "warning-soft",
+      "ratio": 8.32,
+      "wcag_aa_normal_text": true
+    },
+    {
+      "theme": "dark",
+      "foreground": "danger",
+      "background": "danger-soft",
+      "ratio": 8.41,
+      "wcag_aa_normal_text": true
+    }
+  ]
+}
