@@ -74,11 +74,14 @@ class Database:
             from urllib.parse import urlsplit
 
             from .models import ORGANIZATION_SCOPED_MODELS, Law
+            from .product_models import DossierInvitation, DossierMember
 
             organization_id = session.info.setdefault("organization_id", organization_context.get())
             for record in session.new:
                 if isinstance(record, ORGANIZATION_SCOPED_MODELS) and not record.organization_id:
                     record.organization_id = organization_id
+                if isinstance(record, (DossierMember, DossierInvitation)) and not record.is_guest:
+                    record.membership_organization_id = record.membership_organization_id or record.organization_id
                 if isinstance(record, Law):
                     record.canonical_identity = record.canonical_identity or record.url.lower()
                     if record.owner_organization_id is None and (

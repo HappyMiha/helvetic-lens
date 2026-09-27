@@ -35,9 +35,10 @@ machine output are proposals, never proof of identity or fact.
    comment/correction/research-request ingestion using retained originals. Scoped
    stage 2b1 workspace teams are DONE in release 1.11: four dossier roles,
    account-bound invitations and collaborative drafts across native access paths.
-   See [team architecture and acceptance](PRODUCT_TEAMS.md). Members-only active
-   monitoring and outside-workspace invitations remain IN PROGRESS; their native
-   topics, feeds, delivery and derived contexts require complete scope migration.
+   See [team architecture and acceptance](PRODUCT_TEAMS.md). Scoped members-only
+   active monitoring is DONE in 1.12; dossier-only outside-workspace invitations
+   are VERIFYING as stage 2b3, preserving native organization isolation.
+   See [guest architecture and acceptance](PRODUCT_GUEST_ACCESS.md).
    Before this stage, apply the owner's visual-language steering to both clients'
    reference dossier and global interaction foundation (see VISUAL_LANGUAGE_SPEC.md).
 3. Public living view with stable human-readable slugs and claim/source anchors,
@@ -185,3 +186,9 @@ unchanged. Shared AI briefs exclude private topics; workspace page watches are
 explicitly unavailable in private dossiers. See [architecture, bounds and release
 acceptance](PRODUCT_PRIVATE_MONITORING.md). Outside-workspace invitations and
 the remaining stages are still IN PROGRESS.
+
+Release 1.13 implements dossier-only invitations for existing verified accounts,
+scoped guest readers, original-session research authorization and both clients.
+Local acceptance passes; exact production acceptance is pending. The updated
+Brandbook v1.0 governs both shells. Living public dossiers and the remaining
+stages remain IN PROGRESS.

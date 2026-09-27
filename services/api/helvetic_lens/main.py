@@ -617,7 +617,10 @@ def create_app(
                     status_code=error.status,
                     content={"detail": error.message, "code": error.code, "params": error.params},
                 )
-        organization_id = identity.organization_id if identity else service.default_organization_id
+        from .product_guest_access import request_organization
+
+        guest_organization = await asyncio.to_thread(request_organization, service.db, identity, path, request.method)
+        organization_id = guest_organization or (identity.organization_id if identity else service.default_organization_id)
         with (
             correlation_context(organization_id=organization_id),
             service.db.organization_context(organization_id),

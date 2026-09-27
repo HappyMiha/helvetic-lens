@@ -274,12 +274,12 @@ def research_sources(session, parent, question, organization_id, *, reviews=None
 
 def research_bundle(session, parent, profile, row, identity, settings):
     reviews = current_reviews(session, parent.id)
-    sources = research_sources(session, parent, row.title + " " + row.body, identity.organization_id, reviews=reviews)
+    sources = research_sources(session, parent, row.title + " " + row.body, parent.organization_id, reviews=reviews)
     payload = {"dossier_id": parent.id, "question_id": row.id, "expected_revision": row.revision,
                "profile_revision": profile.revision, "provider": settings.apertus_provider, "model": settings.apertus_model,
                "input": {"title": row.title, "context": row.body, "monitoring_goal": profile.config_json.get("goal"), "sources": sources},
                "source_review_ids": review_vector(reviews)}
-    payload["evidence_fingerprint"] = fingerprint({"product": parent.product, "organization_id": identity.organization_id, **payload})
+    payload["evidence_fingerprint"] = fingerprint({"product": parent.product, "organization_id": parent.organization_id, **payload})
     payload["selection"] = {"team_candidate_limit": 30, "linked_page_limit": 20, "topic_limit": 6,
                             "matches_per_topic": 20, "snapshot_limit": 18, "excerpt_char_limit": 1800,
                             "excluded_urls": sum(review.data_json["decision"] == "exclude" for review in reviews.values())}
@@ -418,7 +418,7 @@ def research_routes(router, service, actor):
                 .where(DossierEntry.thread_id == row.id).order_by(DossierEntry.created_at, DossierEntry.id).offset(offset).limit(50))]
             accepted = session.get(DossierEntry, row.accepted_entry_id) if row.accepted_entry_id else None
             result["accepted"] = entry_payload(session, accepted) if accepted and accepted.thread_id == row.id else None
-            result["answer_review"] = review_state(session, parent, profile, row, identity.organization_id, accepted=accepted)
+            result["answer_review"] = review_state(session, parent, profile, row, parent.organization_id, accepted=accepted)
             result["answer_needs_review"] = bool(result["answer_review"]["reasons"])
             return result
 
@@ -455,7 +455,7 @@ def research_routes(router, service, actor):
             parent, profile, row = thread_record(session, product, identifier, thread_id, identity)
             require_revision(row, data.expected_revision)
             if data.expected_review is not None and (str(data.entry_id) != row.accepted_entry_id
-                    or review_state(session, parent, profile, row, identity.organization_id)["fingerprint"] != data.expected_review):
+                    or review_state(session, parent, profile, row, parent.organization_id)["fingerprint"] != data.expected_review):
                 fail("The working answer or its evidence changed. Refresh the question and review the latest state before reconfirming.", 409)
             post = session.get(DossierEntry, str(data.entry_id)) if data.entry_id else None
             if data.entry_id and (not post or post.thread_id != row.id or post.kind not in ("discussion", "research")):
@@ -466,7 +466,7 @@ def research_routes(router, service, actor):
             row.updated_at = utcnow()
             audit(session, parent, identity.user_id, "review", "Working answer accepted" if post else "Question reopened",
                   row.title, {"thread_id": row.id, "accepted_entry_id": row.accepted_entry_id, "revision": row.revision,
-                    "answer_evidence": {"schema_version": 1, "sources": page_states(session, parent, post, identity.organization_id)} if post else None})
+                    "answer_evidence": {"schema_version": 1, "sources": page_states(session, parent, post, parent.organization_id)} if post else None})
             session.commit()
             return thread_payload(session, row)
 

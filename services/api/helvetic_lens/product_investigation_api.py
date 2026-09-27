@@ -51,7 +51,7 @@ def routes(router, service, actor):
     def create(product: Product, dossier_id: str, data: Ask, request: Request):
         identity = actor(request)
         with service.write_guard, service.db.session() as session:
-            lock_organization(session, identity.organization_id)
+            lock_organization(session, service.organization_id)
             access(session, identity, product, dossier_id, write=True)
             previous = session.scalar(select(Investigation).where(Investigation.dossier_id == dossier_id,
                                                                   Investigation.request_key == str(data.request_key)))
@@ -62,9 +62,9 @@ def routes(router, service, actor):
             if session.scalar(select(func.count()).select_from(Investigation).where(
                     Investigation.dossier_id == dossier_id, Investigation.status.in_(ACTIVE))):
                 fail("An investigation is already running in this dossier. Pause or finish it before starting another.", 409)
-            run = Investigation(dossier_id=dossier_id, organization_id=identity.organization_id,
+            run = Investigation(dossier_id=dossier_id, organization_id=service.organization_id,
                 request_key=str(data.request_key), question=data.question, created_by_user_id=identity.user_id, actor_user_id=identity.user_id,
-                session_id=identity.session_id)
+                session_id=identity.session_id, session_organization_id=identity.organization_id)
             session.add(run)
             session.flush()
             enqueue(session, run)
@@ -94,7 +94,7 @@ def routes(router, service, actor):
     def control(product: Product, dossier_id: str, identifier: str, data: Control, request: Request):
         identity = actor(request)
         with service.write_guard, service.db.session() as session:
-            lock_organization(session, identity.organization_id)
+            lock_organization(session, service.organization_id)
             run = record(session, identity, product, dossier_id, identifier, write=True)
             if data.expected_revision != run.revision:
                 fail("The investigation changed. Refresh before applying this action.", 409)
@@ -110,6 +110,7 @@ def routes(router, service, actor):
                     fail("Pause the active investigation before resuming this one.", 409)
                 run.generation += 1
                 run.actor_user_id, run.session_id = identity.user_id, identity.session_id
+                run.session_organization_id = identity.organization_id
                 run.status, run.stop_reason = "queued", ""
                 enqueue(session, run)
             else:

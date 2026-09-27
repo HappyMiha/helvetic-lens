@@ -118,6 +118,13 @@ def member(session, user_id, *, assigning=False):
     identifier = str(user_id)
     person = session.scalar(select(User).join(OrganizationMembership).where(
         User.id == identifier, User.active.is_(True), OrganizationMembership.role == "organization_admin"))
+    if assigning:
+        from .product_guest_access import guest_request
+        from .product_guest_api import assignees
+
+        guest_dossier = guest_request(session)
+        if guest_dossier and not session.scalar(assignees(session, guest_dossier).where(User.id == identifier)):
+            fail("Choose an administrator already shared with this dossier.")
     if not person and assigning:
         fail("Choose a current administrator from this workspace.")
     return {"id": person.id, "name": person.name or person.email} if person else None
@@ -463,7 +470,7 @@ def operations(router, service, actor):
                     gaps = ''.join(f'<li>{esc(gap)}</li>' for gap in accepted.data_json.get("unknowns", []))
                     answer = f'<h4>Team’s working answer</h4><p>{esc(accepted.body)}</p><p>{link(accepted.url)}</p>'
                     answer += f'<p class="meta">Accepted / reviewed {esc(iso(question.accepted_at)) if question.accepted_at else "—"}.</p>'
-                    state = review_state(session, row, profile, question, identity.organization_id, accepted=accepted)
+                    state = review_state(session, row, profile, question, row.organization_id, accepted=accepted)
                     if state["reasons"]:
                         answer += '<p><b>Review needed:</b></p><ul>' + ''.join(
                             f'<li>{esc(reason["message"])}' + (f' Sources: {esc(", ".join(reason["source_ids"]))}.' if reason["source_ids"] else '') + '</li>'

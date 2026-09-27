@@ -49,9 +49,12 @@ def canonical(value):
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
-def principal(session, identity, now, *, write=False, lock=False):
-    if session.info.get("organization_id") != identity.organization_id:
-        fail("Sign in to search or save sources.", 401)
+def principal(session, identity, now, *, write=False, lock=False, dossier_id=None):
+    from .product_guest_access import principal_scope
+
+    foreign = session.info.get("organization_id") != identity.organization_id
+    if foreign and not principal_scope(session, identity, dossier_id):
+        fail("Dossier access is no longer available.", 401)
     from .product_access import current_principal_grant
 
     delegated = write and current_principal_grant(session, identity)
@@ -63,7 +66,10 @@ def principal(session, identity, now, *, write=False, lock=False):
             or login.organization_id != identity.organization_id or login.revoked_at
             or login.expires_at.replace(tzinfo=UTC) <= now):
         fail("Your session changed. Sign in again before saving sources.", 401)
-    _actor(session, identity.user_id, write=write and not delegated)
+    if foreign and not principal_scope(session, identity, dossier_id):
+        fail("Dossier access is no longer available.", 401)
+    if not foreign:
+        _actor(session, identity.user_id, write=write and not delegated)
     return user
 
 

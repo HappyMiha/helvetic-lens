@@ -23,7 +23,7 @@ def queue(session, parent, entry, identity):
     run = Investigation(dossier_id=parent.id, organization_id=parent.organization_id,
         request_key=str(uuid4()), trigger_entry_id=entry.id, external_discovery=False,
         question=question, created_by_user_id=identity.user_id, actor_user_id=identity.user_id,
-        session_id=identity.session_id)
+        session_id=identity.session_id, session_organization_id=identity.organization_id)
     session.add(run)
     session.flush()
     enqueue(session, run)

@@ -1,14 +1,15 @@
-"""Owner-managed teams and invitations to existing native workspace accounts."""
+"""Owner-managed teams and account-bound native or dossier-only guest invitations."""
 from datetime import UTC, timedelta
 from typing import Literal
 from uuid import UUID
 
 from fastapi import Query, Request
-from pydantic import Field
-from sqlalchemy import func, select
+from pydantic import Field, model_validator
+from sqlalchemy import func, or_, select
 
 from . import legal_profiles
 from . import product_access as access
+from .auth import normalize_email
 from .db import utcnow
 from .membership_locks import lock_organization
 from .models import OrganizationMembership, User
@@ -24,8 +25,17 @@ class Revision(legal_profiles.Input):
 
 class Invite(Revision):
     request_key: UUID
-    user_id: UUID
+    user_id: UUID | None = None
+    email: str | None = Field(default=None, max_length=320)
     role: Literal["EDITOR", "CONTRIBUTOR", "VIEWER"]
+
+    @model_validator(mode="after")
+    def recipient(self):
+        if (self.user_id is None) == (self.email is None):
+            raise ValueError("Choose one workspace colleague or enter one guest email address.")
+        if self.email is not None:
+            self.email = normalize_email(self.email)
+        return self
 
 
 class ChangeRole(Revision):
@@ -48,7 +58,7 @@ def team(session, row, profile, user_id):
     members = list(session.execute(select(DossierMember, User).join(User, User.id == DossierMember.user_id)
         .where(DossierMember.dossier_id == row.id).order_by(DossierMember.created_at, DossierMember.user_id)))
     result = {**permissions, "members": [{"user_id": member.user_id, "name": user.name,
-        "role": member.role, "active": user.active, "is_you": member.user_id == user_id} for member, user in members],
+        "role": member.role, "is_guest": member.is_guest, "active": user.active, "is_you": member.user_id == user_id} for member, user in members],
         "colleagues": [], "invitations": []}
     if permissions["can_manage"]:
         result["colleagues"] = [{"user_id": user.id, "name": user.name} for user in session.scalars(
@@ -64,7 +74,7 @@ def team(session, row, profile, user_id):
 
 def invitation(session, row):
     recipient = session.get(User, row.recipient_user_id)
-    return {"id": row.id, "role": row.role, "recipient_name": recipient.name if recipient else "Former member",
+    return {"id": row.id, "role": row.role, "is_guest": row.is_guest, "recipient_name": recipient.name if recipient else "Former member",
         "recipient_user_id": row.recipient_user_id, "expires_at": iso(row.expires_at),
         "accepted_at": iso(row.accepted_at) if row.accepted_at else None,
         "revoked_at": iso(row.revoked_at) if row.revoked_at else None}
@@ -90,7 +100,7 @@ def routes(router, service, actor):
     def enable(product: Product, identifier: str, data: Revision, request: Request):
         identity = actor(request)
         with service.write_guard, service.db.session() as session:
-            lock_organization(session, identity.organization_id)
+            lock_organization(session, service.organization_id)
             principal(session, identity, utcnow())
             row, profile = dossier(session, product, identifier, identity.user_id)
             if not row.team_managed:
@@ -106,33 +116,39 @@ def routes(router, service, actor):
     def invite(product: Product, identifier: str, data: Invite, request: Request):
         identity = actor(request)
         with service.write_guard, service.db.session() as session:
-            lock_organization(session, identity.organization_id)
+            lock_organization(session, service.organization_id)
             principal(session, identity, utcnow())
             row, profile = dossier(session, product, identifier, identity.user_id)
             if not row.team_managed:
                 fail("Enable team management first.", 409)
+            recipient = session.scalar(select(User).where(User.email == data.email, User.active.is_(True),
+                User.email_verified_at.is_not(None))) if data.email is not None else None
+            if data.email is not None and not recipient:
+                fail("An invitation requires an existing account with this verified email address.", 404)
+            recipient_id = recipient.id if recipient else str(data.user_id)
+            is_guest = data.email is not None
             previous = session.scalar(select(DossierInvitation).where(DossierInvitation.dossier_id == row.id,
                 DossierInvitation.request_key == str(data.request_key)))
             if previous:
-                if (previous.recipient_user_id, previous.role, previous.invited_by_user_id) != (str(data.user_id), data.role, identity.user_id):
+                if (previous.recipient_user_id, previous.role, previous.invited_by_user_id, previous.is_guest) != (recipient_id, data.role, identity.user_id, is_guest):
                     fail("This invitation request key was already used.", 409)
                 return {"invitation": invitation(session, previous), "team": team(session, row, profile, identity.user_id)}
             revision(row, data.expected_revision)
-            if not access.organization_member(session, str(data.user_id), row.organization_id):
+            if not is_guest and not access.organization_member(session, recipient_id, row.organization_id):
                 fail("Select an active colleague in this workspace.", 404)
-            if session.get(DossierMember, (row.id, str(data.user_id))):
+            if session.get(DossierMember, (row.id, recipient_id)):
                 fail("This colleague already has a dossier role. Change it in the team list.", 409)
             pending = select(DossierInvitation).where(DossierInvitation.dossier_id == row.id,
                 DossierInvitation.accepted_at.is_(None), DossierInvitation.revoked_at.is_(None), DossierInvitation.expires_at > utcnow())
             if session.scalar(select(func.count()).select_from(pending.subquery())) >= 100:
                 fail("This dossier has 100 pending invitations. Revoke one before inviting another colleague.", 409)
-            if session.scalar(pending.where(DossierInvitation.recipient_user_id == str(data.user_id))):
+            if session.scalar(pending.where(DossierInvitation.recipient_user_id == recipient_id)):
                 fail("This colleague already has a pending invitation. Revoke it before changing the role.", 409)
             item = DossierInvitation(dossier_id=row.id, organization_id=row.organization_id,
-                request_key=str(data.request_key), recipient_user_id=str(data.user_id), role=data.role,
+                request_key=str(data.request_key), recipient_user_id=recipient_id, role=data.role, is_guest=is_guest,
                 invited_by_user_id=identity.user_id, expires_at=utcnow() + timedelta(days=7))
             session.add(item)
-            changed(session, row, identity.user_id, "Colleague invited", {"user_id": str(data.user_id), "role": data.role})
+            changed(session, row, identity.user_id, "Colleague invited", {"user_id": recipient_id, "role": data.role, "is_guest": is_guest})
             session.commit()
             return {"invitation": invitation(session, item), "team": team(session, row, profile, identity.user_id)}
 
@@ -140,7 +156,7 @@ def routes(router, service, actor):
     def revoke(product: Product, identifier: str, invitation_id: str, data: Revision, request: Request):
         identity = actor(request)
         with service.write_guard, service.db.session() as session:
-            lock_organization(session, identity.organization_id)
+            lock_organization(session, service.organization_id)
             principal(session, identity, utcnow())
             row, profile = dossier(session, product, identifier, identity.user_id)
             item = session.get(DossierInvitation, invitation_id)
@@ -166,14 +182,14 @@ def routes(router, service, actor):
     def member_change(product, identifier, user_id, data, request, role):
         identity = actor(request)
         with service.write_guard, service.db.session() as session:
-            lock_organization(session, identity.organization_id)
+            lock_organization(session, service.organization_id)
             principal(session, identity, utcnow())
             row, profile = dossier(session, product, identifier, identity.user_id)
             revision(row, data.expected_revision)
             member = session.get(DossierMember, (row.id, user_id), populate_existing=True)
             if not member:
                 fail("Dossier member not found.", 404)
-            if role == "OWNER" and not access.organization_member(session, user_id, row.organization_id):
+            if role == "OWNER" and (member.is_guest or not access.organization_member(session, user_id, row.organization_id)):
                 fail("Ownership needs an active workspace colleague.", 409)
             if member.role == "OWNER" and role != "OWNER" and any(
                     item.dossier_id == row.id for item in access.owner_blockers(session, user_id, row.organization_id)):
@@ -198,7 +214,7 @@ def routes(router, service, actor):
     @router.get("/dossier-invitations")
     def inbox(product: Product, request: Request, offset: int = Query(default=0, ge=0, le=100000)):
         identity = actor(request)
-        with service.db.session() as session:
+        with service.db.session(include_all_organizations=True) as session:
             principal(session, identity, utcnow())
             query = select(DossierInvitation, ProductDossier, legal_profiles.LegalMonitoringProfile).join(
                 ProductDossier, ProductDossier.id == DossierInvitation.dossier_id).join(legal_profiles.LegalMonitoringProfile)
@@ -206,7 +222,11 @@ def routes(router, service, actor):
             issuer_user = User
             query = query.join(issuer, (issuer.dossier_id == ProductDossier.id)
                 & (issuer.user_id == DossierInvitation.invited_by_user_id)).join(issuer_user, issuer_user.id == issuer.user_id)
-            query = query.where(issuer.role == "OWNER", issuer_user.active.is_(True),
+            recipient = session.get(User, identity.user_id)
+            query = query.where(or_(
+                (DossierInvitation.is_guest.is_(True) & bool(recipient.email_verified_at)),
+                (DossierInvitation.is_guest.is_(False) & (DossierInvitation.organization_id == identity.organization_id))),
+                issuer.role == "OWNER", issuer.is_guest.is_(False), issuer_user.active.is_(True),
                 ProductDossier.product == product, DossierInvitation.recipient_user_id == identity.user_id,
                 DossierInvitation.accepted_at.is_(None), DossierInvitation.revoked_at.is_(None), DossierInvitation.expires_at > utcnow())
             result = []
@@ -220,12 +240,15 @@ def routes(router, service, actor):
     def accept(product: Product, invitation_id: str, request: Request):
         identity = actor(request)
         with service.write_guard, service.db.session() as session:
-            lock_organization(session, identity.organization_id)
+            lock_organization(session, service.organization_id)
             principal(session, identity, utcnow(), lock=True)
             item = session.get(DossierInvitation, invitation_id, populate_existing=True)
             row = session.get(ProductDossier, item.dossier_id, populate_existing=True) if item else None
             if not item or not row or row.product != product or item.recipient_user_id != identity.user_id:
                 fail("Invitation not found for this account and workspace.", 404)
+            recipient = session.get(User, identity.user_id, populate_existing=True)
+            if item.is_guest and not recipient.email_verified_at:
+                fail("Verify your email address before accepting a guest invitation.", 403)
             member = session.get(DossierMember, (row.id, identity.user_id))
             if item.accepted_at:
                 if not member or member.role != item.role:
@@ -239,7 +262,7 @@ def routes(router, service, actor):
                 fail("Your dossier role changed since this invitation. Ask an owner to review it.", 409)
             if session.scalar(select(func.count()).select_from(DossierMember).where(DossierMember.dossier_id == row.id)) >= 100:
                 fail("This dossier has reached its 100-member limit.", 409)
-            session.add(DossierMember(dossier_id=row.id, organization_id=row.organization_id, user_id=identity.user_id, role=item.role))
+            session.add(DossierMember(dossier_id=row.id, organization_id=row.organization_id, user_id=identity.user_id, role=item.role, is_guest=item.is_guest))
             item.accepted_at = utcnow()
             changed(session, row, identity.user_id, "Invitation accepted", {"user_id": identity.user_id, "role": item.role})
             session.commit()

@@ -72,7 +72,7 @@ release receipt after publication.
 
 The full dynamic dossier engine stays IN PROGRESS. Retained-original contribution
 extraction is delivered in release 1.10; [workspace dossier teams](PRODUCT_TEAMS.md)
-are delivered in 1.11. Members-only active monitoring, outside-workspace invitations,
+are delivered in 1.11, and private active monitoring in 1.12. Outside-workspace invitations,
 living public slugs/search and material-change reopening with cross-investigation
 history remain open.
 Native helveticlens.ch legacy screens should adopt the validated design foundation
@@ -96,3 +96,7 @@ brief, implementation boundary and acceptance only.
 [authored contrast calculation](product-releases/2026-09-27-1.9.0-contrast.json).
 The two-client foundation/reference-dossier slice is DONE within this scope;
 full native-platform visual migration and dynamic-dossier acceptance stay open.
+
+## Brandbook v1.0 update — 1.13
+
+The owner supplied `docs/BRANDBOOK_V1.md` and the matching 18-page PDF on 27 September 2026. The Markdown is retained unchanged; both were reviewed. The newer brandbook controls palette, typography, H monogram, glass and motion where earlier visual guidance differs. The client shell now uses Carbon/Obsidian/Frost, a 1440px content limit, Inter-compatible neutral typography, structural 30px glass and one 560ms analysis transition. Dark is the initial theme; existing explicit light/system preferences remain available. Refraction appears only with actual investigation activity. Native platform-wide visual migration remains OPEN.

@@ -79,13 +79,19 @@ class DossierMember(Base):
     __table_args__ = (
         ForeignKeyConstraint(["dossier_id", "organization_id"],
                              ["product_dossiers.id", "product_dossiers.organization_id"], ondelete="CASCADE"),
-        ForeignKeyConstraint(["organization_id", "user_id"],
-                             ["organization_memberships.organization_id", "organization_memberships.user_id"], ondelete="CASCADE"),
+        ForeignKeyConstraint(["membership_organization_id", "user_id"],
+                             ["organization_memberships.organization_id", "organization_memberships.user_id"],
+                             name="fk_dossier_member_native_membership", ondelete="CASCADE"),
+        CheckConstraint("(is_guest AND membership_organization_id IS NULL AND role <> 'OWNER') OR "
+            "(NOT is_guest AND membership_organization_id IS NOT NULL AND membership_organization_id = organization_id)",
+            name="ck_dossier_member_membership_scope"),
         CheckConstraint("role IN ('OWNER', 'EDITOR', 'CONTRIBUTOR', 'VIEWER')", name="ck_dossier_member_role"),
     )
     dossier_id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True, index=True)
     organization_id: Mapped[str] = mapped_column(String(36), index=True)
+    membership_organization_id: Mapped[str | None] = mapped_column(String(36))
+    is_guest: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     role: Mapped[str] = mapped_column(String(16))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
@@ -96,14 +102,20 @@ class DossierInvitation(Base):
     __table_args__ = (
         ForeignKeyConstraint(["dossier_id", "organization_id"],
                              ["product_dossiers.id", "product_dossiers.organization_id"], ondelete="CASCADE"),
-        ForeignKeyConstraint(["organization_id", "recipient_user_id"],
-                             ["organization_memberships.organization_id", "organization_memberships.user_id"], ondelete="CASCADE"),
+        ForeignKeyConstraint(["membership_organization_id", "recipient_user_id"],
+                             ["organization_memberships.organization_id", "organization_memberships.user_id"],
+                             name="fk_dossier_invitation_native_membership", ondelete="CASCADE"),
+        CheckConstraint("(is_guest AND membership_organization_id IS NULL) OR "
+            "(NOT is_guest AND membership_organization_id IS NOT NULL AND membership_organization_id = organization_id)",
+            name="ck_dossier_invitation_membership_scope"),
         UniqueConstraint("dossier_id", "request_key", name="uq_dossier_invitation_request"),
         CheckConstraint("role IN ('EDITOR', 'CONTRIBUTOR', 'VIEWER')", name="ck_dossier_invitation_role"),
     )
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     dossier_id: Mapped[str] = mapped_column(String(36), index=True)
     organization_id: Mapped[str] = mapped_column(String(36), index=True)
+    membership_organization_id: Mapped[str | None] = mapped_column(String(36))
+    is_guest: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     recipient_user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     invited_by_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     request_key: Mapped[str] = mapped_column(String(36))

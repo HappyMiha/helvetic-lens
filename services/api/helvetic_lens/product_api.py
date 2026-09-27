@@ -469,9 +469,11 @@ def product_router(service):
     from .product_operations import operations
 
     operations(router, service, actor)
+    from .product_guest_api import routes as guest_routes
     from .product_research import research_routes
     from .product_team_api import routes as team_routes
 
+    guest_routes(router, service, actor)
     team_routes(router, service, actor)
     research_routes(router, service, actor)
     from .product_investigation_api import routes as investigation_routes

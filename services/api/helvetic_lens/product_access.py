@@ -18,7 +18,7 @@ from .product_models import DossierMember, ProductDossier
 
 _request = ContextVar("dossier_request", default=None)
 RANK = {"VIEWER": 0, "CONTRIBUTOR": 1, "EDITOR": 2, "OWNER": 3}
-LEVEL = {"read": 0, "contribute": 1, "edit": 2, "owner": 3, "activate": 3, "monitor": 2}
+LEVEL = {"read": 0, "contribute": 1, "edit": 2, "owner": 3, "activate": 3, "monitor": 2, "configure": 2}
 PRODUCT_PATH = re.compile(r"/api/products/(pharma|loyer)/dossiers/([a-zA-Z0-9-]+)(?:/(.*))?")
 PROFILE_PATH = re.compile(r"/api/monitoring-profiles/([a-zA-Z0-9-]+)(?:/(.*))?")
 TOPIC_PATH = re.compile(r"/api/monitoring-topics/([a-zA-Z0-9-]+)(?:/(.*))?")
@@ -61,6 +61,8 @@ def request_grant(path=None, method=None):
         action = "contribute"
     elif re.fullmatch(r"sources/[^/]+/monitor", suffix) or suffix == "improvements/apply":
         action = "monitor"
+    elif suffix in {"source-advice", "improve"}:
+        action = "configure"
     elif re.fullmatch(r"investigations/[^/]+/control", suffix):
         # The endpoint additionally requires EDITOR, or CONTRIBUTOR for its own
         # retained contribution. Other people's investigations are not writable.
@@ -95,7 +97,7 @@ def action_for(row, user_id):
         return grant[2]
     match = PROFILE_PATH.fullmatch(path)
     if match and match[1] == row.profile_id and method != "GET":
-        return "activate" if match[2] == "activate" else "monitor" if match[2] == "status" else "edit"
+        return "activate" if match[2] == "activate" else "monitor" if match[2] == "status" else "configure"
     return "read"
 
 
@@ -106,6 +108,11 @@ def organization_member(session, user_id, organization_id):
 
 
 def role(session, row, profile, user_id):
+    from .product_guest_access import guest_member
+
+    explicit = session.get(DossierMember, (row.id, user_id), populate_existing=True)
+    if row.team_managed and explicit and explicit.is_guest:
+        return explicit.role if guest_member(session, row.id, user_id) else None
     member = organization_member(session, user_id, row.organization_id)
     if not member:
         return None
@@ -133,12 +140,16 @@ def require(session, row, profile, user_id, action=None):
             from .db import utcnow
             from .product_provenance import principal
 
-            principal(session, context[2], utcnow(), lock=True)
+            principal(session, context[2], utcnow(), lock=True, dossier_id=row.id)
         session.refresh(row)
         session.refresh(profile)
     effective = role(session, row, profile, user_id)
     if effective is None:
         fail("Dossier not found.", 404)
+    from .product_guest_access import guest_member
+
+    if action in {"owner", "activate", "monitor", "configure"} and guest_member(session, row.id, user_id):
+        fail("Guest access does not include workspace monitoring or ownership.")
     minimum = LEVEL[action]
     if not row.team_managed and action in {"owner", "activate"}:
         minimum = LEVEL["edit"]  # Preserve legacy explicit publication rights.
@@ -146,7 +157,7 @@ def require(session, row, profile, user_id, action=None):
         fail()
     if action in {"activate", "monitor"}:
         member = organization_member(session, user_id, row.organization_id)
-        if member.role != "organization_admin":
+        if not member or member.role != "organization_admin":
             fail("Shared monitoring changes also require a workspace administrator.")
     return effective
 
@@ -187,8 +198,12 @@ def summary(session, row, profile, user_id):
     effective = role(session, row, profile, user_id)
     rank = RANK.get(effective, -1)
     member = organization_member(session, user_id, row.organization_id)
-    admin = bool(member and member.role == "organization_admin")
-    return {"managed": row.team_managed, "revision": row.access_revision,
+    from .product_guest_access import guest_member
+
+    guest = bool(guest_member(session, row.id, user_id))
+    admin = bool(not guest and member and member.role == "organization_admin")
+    return {"managed": row.team_managed, "revision": row.access_revision, "is_guest": guest,
+        "can_configure": rank >= 2 and not guest,
         "role": effective, "audience": "invited_team" if row.team_managed and profile.status == "draft"
             else "author" if profile.status == "draft" else row.monitoring_audience,
         "can_contribute": rank >= 1, "can_edit": rank >= 2,

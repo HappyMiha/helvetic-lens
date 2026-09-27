@@ -52,6 +52,7 @@ class Investigation(Contained, Base):
     created_by_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     actor_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     session_id: Mapped[str | None] = mapped_column(ForeignKey("user_sessions.id", ondelete="SET NULL"))
+    session_organization_id: Mapped[str | None] = mapped_column(String(36))
     status: Mapped[str] = mapped_column(String(16), default="queued")
     revision: Mapped[int] = mapped_column(Integer, default=1)
     generation: Mapped[int] = mapped_column(Integer, default=1)

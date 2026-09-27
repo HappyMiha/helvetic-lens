@@ -93,6 +93,48 @@ Sixteen authored color pairs exceed 4.5:1. No browser/human visual acceptance is
 claimed. [Implementation and remaining migration](docs/PRODUCT_VISUAL_LANGUAGE.md),
 [exact evidence](docs/product-releases/2026-09-27-1.9.0.json).
 
+**Dossier-only guest invitations — 27 September 2026: VERIFYING (stage 2b3).**
+Scoped MV2-019/021/023 continuation after verified 1.12: an owner can invite an
+existing verified native account by its exact email as VIEWER, CONTRIBUTOR or
+EDITOR. Acceptance grants only this dossier; it must not add a native organization
+membership, switch the recipient's active workspace or expose unrelated records.
+Reuse DossierMember/DossierInvitation with explicit guest scope and an optional
+native-membership binding; retain composite dossier/organization integrity and
+workspace-membership cascade for legacy members. Keep workspace owners, native
+monitoring setup/activation, source administration and explicit publication under
+their existing authority. No guest OWNER or automatic email is in this scope.
+Dependencies: 1.12 private topics, 1.11 current-role/session checks, native verified
+accounts, retained originals and durable investigation jobs. Source readiness and
+providers remain unchanged. Dossier references/material explicitly shared by its
+owner may be read; no new source access or broad organization grant is inferred.
+Both clients need an exact-email invitation, clear guest role/limits, recipient
+inbox and Shared with you directory, and the same scoped reading/contribution/
+research UI. Scoped topic matches and assignee choices must work without calling
+the recipient's unrelated native workspace. Jobs retain the actual initiating
+login-workspace binding and pause after role/session revocation. Native feeds and
+personal digests remain within their existing workspace; no guest subscriptions
+are created implicitly. Outside accounts must already exist with verified email.
+Acceptance: actual cross-workspace HTTP/DB/worker journeys for all three roles in
+both products; no extra membership/session switch; denial of sibling dossiers,
+files, topics, searches, jobs, counts, organization administration and publication;
+CSRF/account-bound retry/expiry/revocation; current-role checks around inference;
+scoped original/source access, active topic reads, ownership/erasure preservation;
+real migration equivalence and legacy behavior. Run native and both-client gates
+and exact production verification before scoped DONE. The complete dynamic/visual
+specifications, living public research and material-change evolution remain open.
+
+Implementation is complete across the native core and both clients; exact
+production acceptance is pending. Native affected checks pass 368 distinct cases
+(366 in the broad run plus two provenance fault-injection cases after adapting
+the fixture to the explicit dossier argument), plus two guest stream/viewer cases.
+The 50-case focused guest/team/private/research/work run overlaps that coverage.
+Both clients pass 85 tests, lint, strict types and production builds. Seven authored
+light/dark text pairs exceed 4.5:1; configured secrets are absent from both 121-file
+builds. No browser/human visual acceptance is claimed in this background cycle.
+See [guest architecture and acceptance](docs/PRODUCT_GUEST_ACCESS.md). Brandbook
+v1.0 is retained in [BRANDBOOK_V1.md](docs/BRANDBOOK_V1.md) and applied to both
+client shells. Full dynamic/visual specifications remain IN PROGRESS.
+
 **Members-only active dossier monitoring — 27 September 2026: DONE (scoped stage 2b2).**
 Scoped MV2-019/021/023 continuation after verified 1.11 workspace teams: owners can
 activate a managed dossier for its accepted team, using the same native topics,
@@ -2212,6 +2254,9 @@ above supersedes the River-only count limitation for readable Today queues.
 <a id="mv2-021"></a>
 
 ### MV2-021 — Workspace: Impact Inbox, decisions and Impact Matrix
+
+**Current product stage, 27 September:** dossier-only guest invitations (2b3) are
+VERIFYING under the explicit scope, source boundaries and acceptance above.
 
 **Active follow-up, 27 September:** members-only active dossier monitoring (stage
 2b2) is DONE within the scope and exact acceptance above. Preserve existing
@@ -4541,3 +4586,7 @@ Its source readiness, acceptance and pending release gates are recorded separate
 
 
 **Integration history:** MV2-031 shared Monitoring code with main on 12 September. The later single-agent instruction makes main the sole active development and backlog branch; instance isolation remains mandatory.
+
+### 1.13 visual steering — Brandbook v1.0 (27 September 2026)
+
+The supplied Markdown and 18-page PDF supersede the earlier palette and motion defaults for Pharma/Loyer. This release also aligns their shared tokens with Carbon/Obsidian/Frost, a geometric H identity, restrained structural glass, Inter-compatible typography, 1440px layout and a single 560ms source lens transition. Preserve visible evidence, accessible contrast, reduced motion and user theme settings. Native platform-wide visual migration remains OPEN; no unrelated section may be hidden. Acceptance: client test/lint/type/build, compiled CSS/markup and production asset parity; no claim of full specification completion.
