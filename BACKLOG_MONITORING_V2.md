@@ -163,6 +163,29 @@ boundaries. Each client passed ten tests (seven gateway, three status semantics)
 lint, strict TypeScript and production build. No browser interaction QA or final Sites
 publication is claimed in this background heartbeat. Migration head is `f5c495bef124`.
 
+Fifth slice — IMPLEMENTED / final client publication pending: reusable shared searches inside a professional dossier.
+Save a reviewed query, supported provider, workspace match mode and optional purpose as
+an attributed private dossier entry. List saved searches with true totals and stable
+50-record pagination; open them in an editable search form without an automatic external
+request. Saving records a search recipe, not execution evidence, complete results or a
+scheduled query. Export and the printable brief retain the recipe and purpose. Reuse
+native entry storage, identity, organization locking and exact request retry semantics;
+no migration, new source, model call or scheduler. Acceptance: persistence, accurate
+pagination, exact/mismatched retries, validation of provider/mode/terms/extra claims,
+organization/product/private-draft and viewer/CSRF boundaries, no source/model activity
+on save/read, no false answer-review signal, escaped brief/export, both interfaces and
+client/native regression gates. Previous source-health core `git-7a728ab4dba8` is verified
+active since 02:12 Zurich; client publication remains reserved for 08:00–09:00.
+
+Verification: exact API lint passed and all 54 unique affected cases are verified
+(53 passed in the regression run; the remaining new case passed after correcting its
+test-helper arguments). Five new cases prove persistence, unchanged/rejected retries,
+strict recipe validation, 55-record pagination, private roles/drafts/tenants/products,
+CSRF, escaped brief/export and zero source/model activity on save/read. Recipes neither
+enter AI evidence nor trigger an answer-review warning. Both clients passed twelve tests
+(seven gateway, three source-status, two saved-query contracts), lint, strict TypeScript
+and production builds. The background run skipped browser handoff/interaction QA.
+
 
 **MV2 collective product research contribution, 27 September 2026 — DONE (scoped release):** Develop
 Pharma and Loyer for small professional teams beyond monitor setup: a daily work

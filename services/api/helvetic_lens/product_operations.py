@@ -384,6 +384,8 @@ def operations(router, service, actor):
                 DossierEntry.kind.in_(("review", "note"))).order_by(DossierEntry.created_at.desc(), DossierEntry.id).limit(20)).all()
             references = session.scalars(select(DossierEntry).where(DossierEntry.dossier_id == row.id,
                 DossierEntry.kind == "reference").order_by(DossierEntry.created_at.desc(), DossierEntry.id).limit(100)).all()
+            searches = session.scalars(select(DossierEntry).where(DossierEntry.dossier_id == row.id,
+                DossierEntry.kind == "saved_search").order_by(DossierEntry.created_at.desc(), DossierEntry.id).limit(50)).all()
             def esc(value):
                 return html.escape(str(value or "—"), quote=True)
             def link(url):
@@ -438,6 +440,12 @@ def operations(router, service, actor):
                         answer += '<p class="meta">AI research note accepted by the team; citations are saved snapshots.</p>'
                 discussion.append(f'<article><h3>{esc(question.title)}</h3><p>{esc(question.body)}</p>{answer}</article>')
             title = profile.config_json.get("name", "Monitoring dossier")
+            saved_searches = []
+            for search in searches:
+                recipe = search.data_json
+                provider = {"workspace": "Team knowledge", "fedlex": "Fedlex", "europepmc": "Europe PMC"}.get(recipe.get("provider"), "Unknown source")
+                mode = (" · Exact phrase" if recipe.get("match_mode") == "phrase" else " · All words") if recipe.get("provider") == "workspace" else ""
+                saved_searches.append(f'<article><h3>{esc(recipe.get("query"))}</h3><p class="meta">{esc(provider + mode)} · Saved {esc(iso(search.created_at))}</p><p>{esc(search.body)}</p></article>')
             page = f'''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{esc(title)} — Topic brief</title>
 <style>body{{font:16px/1.55 system-ui,sans-serif;color:#172640;max-width:900px;margin:40px auto;padding:0 24px}}h1{{font-size:32px}}h2{{margin-top:36px}}h3{{font-size:18px;margin-bottom:8px}}.meta,footer{{font-size:14px;color:#475569}}dl{{display:grid;grid-template-columns:210px 1fr;gap:8px}}dt{{font-weight:600}}dd{{margin:0}}article{{border-top:1px solid #cbd5e1;break-inside:avoid}}p{{white-space:pre-wrap}}a{{color:#174fb2;overflow-wrap:anywhere}}footer{{border-top:1px solid #cbd5e1;margin-top:36px;padding-top:16px}}@media print{{body{{max-width:none;margin:0;padding:0}}.print-tip{{display:none}}@page{{margin:18mm}}}}</style>
 <p class="meta">HELVETICLENS {esc(product.upper())} · INTERNAL TOPIC BRIEF</p><h1>{esc(title)}</h1><p>{esc(profile.config_json.get("goal"))}</p>
@@ -446,7 +454,8 @@ def operations(router, service, actor):
 <h2>Actions and outcomes</h2>{''.join(cards) or '<p>No actions recorded.</p>'}
 <h2>Review decisions and notes</h2>{decisions or '<p>No review decisions recorded.</p>'}
 <h2>Original-source references</h2><ul>{sources or '<li>No additional references saved.</li>'}</ul>
-<footer>Generated {esc(iso(utcnow()))}. Snapshot of this workspace's recorded work: latest 50 questions, 100 actions, 20 notes/reviews and 100 saved references. Attachments are not included. This brief records team decisions; it does not establish complete source coverage or professional validation. Monitoring remains {esc(profile.status)}. Dates use Europe/Zurich for the work queue.</footer></html>'''
+<h2>Saved searches</h2><p class="meta">Reusable search queries, not scheduled monitors or records of retrieved results. Review each query before searching again.</p>{''.join(saved_searches) or '<p>No searches saved.</p>'}
+<footer>Generated {esc(iso(utcnow()))}. Snapshot of this workspace's recorded work: latest 50 questions, 100 actions, 20 notes/reviews, 100 saved references and 50 saved searches. Attachments are not included. This brief records team decisions; it does not establish complete source coverage or professional validation. Monitoring remains {esc(profile.status)}. Dates use Europe/Zurich for the work queue.</footer></html>'''
             return HTMLResponse(page, headers={"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff",
                 "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'",
                 "Referrer-Policy": "no-referrer"})

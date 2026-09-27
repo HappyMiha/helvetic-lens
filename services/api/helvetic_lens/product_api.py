@@ -405,4 +405,7 @@ def product_router(service):
     from .product_research import research_routes
 
     research_routes(router, service, actor)
+    from .product_searches import search_routes
+
+    search_routes(router, service, actor)
     return router

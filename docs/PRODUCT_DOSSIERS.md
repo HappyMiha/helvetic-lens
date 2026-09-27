@@ -304,3 +304,39 @@ diagnostics/settings. Each client passed seven gateway and three status-semantic
 lint, TypeScript and production build. The previous follow-up core `git-d558b4cabe5c`
 was verified active at 01:35 Zurich. Final client publication remains reserved for
 08:00–09:00; this background heartbeat did not perform browser interaction QA.
+
+## Shared saved searches — overnight development, 27 September
+
+Teams can keep a useful search with its dossier: exact trimmed query, supported provider,
+workspace match mode and optional purpose. The server records the author and save time
+in an ordinary private `saved_search` entry. Saving is a recipe operation, not proof of
+executing that query, a copy of search results or a scheduled search. The input contract
+rejects execution/result/schedule claims, unsupported providers and incompatible modes.
+All-words workspace recipes retain the 12-distinct-word limit; exact phrase and public
+provider syntax keep their existing behavior.
+
+The saved-search view has accurate totals and stable 50-record pages with loading/error
+recovery. In both clients, Review search opens the existing editable discovery form with
+its provider and mode selected. Opening it does not make a source request; pressing
+Search remains explicit. Save search uses the displayed result's query, even when the
+unsubmitted input has since changed, and excludes result records and retrieval timestamps.
+Failed saves retain the visible result, purpose and same request key for retry.
+
+The new `/dossiers/{identifier}/searches` GET/POST routes reuse private parent visibility,
+organization locking, administrator write access, viewer reads and CSRF. Reusing a request
+key with a changed query, mode or purpose is a conflict; collisions with other entry kinds
+cannot overwrite them. JSON export retains the recipes within the existing export limit,
+and the printable brief includes the latest 50 with escaped queries and purpose text.
+Saved queries are excluded from research evidence and do not alone mark an accepted
+working answer for review. There is no migration, additional provider, AI call, source
+fetch, subscription or monitoring activation on save/read.
+
+Validation: 54 unique affected native cases passed across the regression run and one
+corrected test-helper rerun (53 integration, one smoke); exact API lint passed. Five
+new cases cover persistence, validation and key conflicts, 55-record pagination,
+organization/product/draft/role/CSRF boundaries, safe brief/export and separation from
+AI evidence and answer-review signals. Both clients passed twelve tests, lint, strict
+TypeScript and their production build. Sites 0.1.70 execution-profile configuration
+preserved the existing custom checkouts; its build helper ran the existing build script.
+No browser handoff/interaction QA was performed in this background run. Both client
+deployments remain intentionally reserved for the final overnight publication window.
