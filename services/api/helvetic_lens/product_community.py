@@ -5,7 +5,7 @@ from typing import Literal
 from uuid import UUID
 
 from fastapi import Query, Request
-from pydantic import Field
+from pydantic import Field, StrictBool
 from sqlalchemy import func, or_, select
 
 from .db import utcnow
@@ -19,8 +19,8 @@ from .product_publications import PublicSource
 
 # Only these personal public actions are exempt from workspace viewer write denial.
 COMMUNITY_WRITE = re.compile(
-    r"^/api/products/(pharma|loyer)/public-dossiers/[0-9a-f-]{36}/discussion"
-    r"(?:/[0-9a-f-]{36}(?:/action)?)?$")
+    r"^/api/products/(pharma|loyer)/public-dossiers/[0-9a-f-]{36}/(?:discussion"
+    r"(?:/[0-9a-f-]{36}(?:/action)?)?|files|research/[0-9a-f-]{36}/control)$")
 
 
 class ContributionContent(Input):
@@ -34,6 +34,9 @@ class ContributionInput(Input):
     publication_revision: int = Field(ge=1)
     confirm_public: bool
     content: ContributionContent
+    kind: Literal["comment", "url", "correction", "research_request", "file"] = "comment"
+    analyse_publicly: StrictBool = False
+    public_query_confirmed: StrictBool = False
 
 
 class ContributionEdit(ContributionInput):
@@ -73,11 +76,20 @@ def participant(session, identity, product, identifier, *, write=False):
         OrganizationMembership.user_id == identity.user_id).execution_options(populate_existing=True))
     row = publication(session, product, identifier, lock=write)
     moderator = row.organization_id == identity.organization_id and membership.role == "organization_admin"
+    if not moderator:
+        from .legal_profile_models import LegalMonitoringProfile
+        from .product_access import RANK, role
+        from .product_models import ProductDossier
+
+        parent = session.get(ProductDossier, row.dossier_id)
+        profile = session.get(LegalMonitoringProfile, parent.profile_id)
+        moderator = RANK.get(role(session, parent, profile, identity.user_id), -1) >= 2
     return row, moderator
 
 
 def public_contribution(row):
     return {"id": row.id, "revision": row.revision, "publication_revision": row.publication_revision,
+        "kind": row.kind, "file_name": row.file_name, "byte_size": row.byte_size, "sha256": row.sha256,
         "author_label": row.author_label, "body": row.body,
         "sources": [{"title": value["title"], "url": value["url"]} for value in row.sources_json],
         "created_at": iso(row.created_at), "updated_at": iso(row.updated_at)}
@@ -86,6 +98,11 @@ def public_contribution(row):
 def contribution_payload(session, row, user_id=None, moderator=False):
     owned = row.author_user_id == user_id
     result = public_contribution(row)
+    from .product_investigation_models import Investigation
+    from .product_public_research import eligible, summary
+
+    run = session.scalar(select(Investigation).where(Investigation.public_contribution_id == row.id, eligible()))
+    result["research"] = summary(session, run) if run else None
     if user_id:
         result.update(status=row.status, can_edit=owned and row.status != "removed",
             can_remove=owned and row.status != "removed", can_moderate=moderator and row.status != "removed")
@@ -136,6 +153,12 @@ def changed(session, row, identity, data, action, fingerprint, moderator):
     session.add(PublicContributionMutation(organization_id=row.organization_id, publication_id=row.publication_id,
         contribution_id=row.id, actor_user_id=identity.user_id, request_key=str(data.request_key),
         fingerprint=fingerprint, revision=row.revision, action=action, reason=getattr(data, "reason", "")))
+    from .product_public_research import invalidate, queue
+
+    invalidate(session, row.publication_id, contribution_id=row.id)
+    if action in {"create", "edit", "upload"} and getattr(data, "analyse_publicly", False):
+        queue(session, session.get(ProductPublication, row.publication_id), row, identity,
+              external=row.kind == "research_request" and data.public_query_confirmed)
     session.commit()
     return {"contribution": contribution_payload(session, row, identity.user_id, moderator)}
 
@@ -147,6 +170,10 @@ def check_content(row, data):
         fail("Review your contribution and confirm it may be published for everyone.", 409)
     if len({source.url for source in data.content.sources}) != len(data.content.sources):
         fail("List each source address once.")
+    if row.living_research and not data.analyse_publicly:
+        fail("Confirm public analysis: this contribution and its findings will be visible to everyone.", 409)
+    if row.living_research and data.kind == "research_request" and (not data.public_query_confirmed or len(data.content.body) > 300):
+        fail("Use a question of at most 300 characters and confirm public-source discovery.")
 
 
 def check_edit(row, expected):
@@ -180,10 +207,12 @@ def community_routes(router, service, actor):
                 return {"contribution": contribution_payload(session,
                     contribution(session, row, event.contribution_id), identity.user_id, moderator)}
             check_content(row, data)
+            if data.kind == "file":
+                fail("Use the public file upload to contribute an original.")
             item = PublicContribution(organization_id=row.organization_id, publication_id=row.id,
                 author_user_id=identity.user_id, publication_revision=row.revision, revision=1,
                 author_label=data.content.author_label, body=data.content.body,
-                sources_json=[source.model_dump() for source in data.content.sources])
+                sources_json=[source.model_dump() for source in data.content.sources], kind=data.kind)
             session.add(item)
             return changed(session, item, identity, data, "create", fingerprint, moderator)
 
@@ -201,6 +230,8 @@ def community_routes(router, service, actor):
                 return {"contribution": contribution_payload(session, item, identity.user_id, moderator)}
             check_edit(item, data.expected_revision)
             check_content(row, data)
+            if data.kind != item.kind:
+                fail("A contribution's kind cannot change. Submit a new contribution instead.")
             item.author_label, item.body = data.content.author_label, data.content.body
             item.sources_json = [source.model_dump() for source in data.content.sources]
             item.publication_revision, item.updated_at, item.revision = row.revision, utcnow(), item.revision + 1
@@ -225,9 +256,12 @@ def community_routes(router, service, actor):
             if event:
                 return {"contribution": contribution_payload(session, item, identity.user_id, moderator)}
             check_edit(item, data.expected_revision)
+            artifact_to_remove = ""
             if data.action == "remove":
                 item.status, item.body, item.author_label, item.sources_json = "removed", "", "", []
                 item.moderation_reason = ""
+                artifact_to_remove = item.artifact_key
+                item.artifact_key, item.file_name, item.sha256, item.content_type, item.byte_size = "", "", "", "", 0
             else:
                 expected = "visible" if data.action == "hide" else "hidden"
                 if item.status != expected:
@@ -235,4 +269,9 @@ def community_routes(router, service, actor):
                 item.status = "hidden" if data.action == "hide" else "visible"
                 item.moderation_reason = data.reason if data.action == "hide" else ""
             item.updated_at, item.revision = utcnow(), item.revision + 1
-            return changed(session, item, identity, data, data.action, fingerprint, moderator)
+            result = changed(session, item, identity, data, data.action, fingerprint, moderator)
+            if artifact_to_remove:
+                from .maintenance import remove_public_originals
+
+                remove_public_originals(service.environment_settings, [artifact_to_remove])
+            return result

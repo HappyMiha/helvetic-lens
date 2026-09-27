@@ -1,12 +1,13 @@
 import os
 from datetime import timedelta
+from pathlib import Path
 
 from conftest import add_law
 from sqlalchemy import select
 
 from helvetic_lens import jobs
 from helvetic_lens.db import utcnow
-from helvetic_lens.maintenance import cleanup_operational_data
+from helvetic_lens.maintenance import cleanup_operational_data, remove_public_originals
 from helvetic_lens.models import (
     DigestDelivery,
     DigestPreference,
@@ -149,3 +150,27 @@ def test_cleanup_bounds_operational_data_without_deleting_evidence_or_active_wor
         assert session.get(DigestDelivery, current_digest_id) is not None
         assert session.scalar(select(JobStep).where(JobStep.job_id == expired_job_id)) is None
         assert session.scalar(select(OutboxMessage).where(OutboxMessage.job_id == expired_job_id)) is None
+
+
+def test_public_original_erasure_keeps_other_namespaces_and_retries_filesystem_failure(harness, monkeypatch):
+    _, _, service, _ = harness
+    folder = service.settings.storage_path / "artifacts"
+    folder.mkdir(parents=True, exist_ok=True)
+    original = folder / ("public-contribution-" + "a" * 32 + ".bin")
+    shared = folder / "retained-shared.txt"
+    outside = folder.parent / "outside.txt"
+    for path in (original, shared, outside):
+        path.write_bytes(b"Synthetic retention fixture")
+    old = (utcnow() - timedelta(hours=service.settings.orphan_artifact_retention_hours + 1)).timestamp()
+    os.utime(original, (old, old))
+    unlink = Path.unlink
+    def denied(path, *args, **kwargs):
+        if path == original:
+            raise PermissionError("Synthetic temporary filesystem failure")
+        return unlink(path, *args, **kwargs)
+    with monkeypatch.context() as patch:
+        patch.setattr(Path, "unlink", denied)
+        remove_public_originals(service.settings, {original.name, shared.name, "../outside.txt"})
+    assert all(path.is_file() for path in (original, shared, outside))
+    assert cleanup_operational_data(service.db, service.settings)["orphan_artifacts"] == 1
+    assert not original.exists() and shared.is_file() and outside.is_file()

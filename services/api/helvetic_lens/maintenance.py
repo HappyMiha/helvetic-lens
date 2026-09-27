@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -26,6 +27,22 @@ from .models import (
 )
 
 TERMINAL_JOB_STATES = ("succeeded", "failed", "cancelled")
+
+
+def remove_public_originals(settings: Settings, artifact_keys) -> None:
+    """Remove uniquely owned public uploads after their database erasure commits.
+
+    Other artifact namespaces can be shared and retain their existing orphan
+    policy. A filesystem failure is retried by scheduled orphan cleanup; it must
+    not turn a committed account deletion into a misleading failed response.
+    """
+    folder = settings.storage_path / "artifacts"
+    for key in artifact_keys:
+        if re.fullmatch(r"public-contribution-[a-f0-9]{32}\.bin", key):
+            try:
+                (folder / key).unlink(missing_ok=True)
+            except OSError:
+                continue
 
 
 def _remove_old_files(folder: Path, cutoff: datetime, *, allowed_names: set[str] | None = None) -> int:
@@ -105,9 +122,11 @@ def cleanup_operational_data(
                 delete(TopicEventMatch).where(TopicEventMatch.id.in_(expired_topic_match_ids))
             )
 
-        from .product_models import DossierEntry
+        from .product_models import DossierEntry, PublicContribution
 
         referenced_artifacts = set(session.scalars(select(DossierEntry.artifact_key).where(DossierEntry.artifact_key.is_not(None))))
+        referenced_artifacts.update(session.scalars(select(PublicContribution.artifact_key)
+            .where(PublicContribution.artifact_key != "")))
         referenced_artifacts.update(
             session.scalars(select(Version.artifact_key).where(Version.artifact_key != ""))
         )

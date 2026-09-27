@@ -211,6 +211,7 @@ class ProductPublication(Base):
         ForeignKeyConstraint(["dossier_id", "organization_id"],
                              ["product_dossiers.id", "product_dossiers.organization_id"], ondelete="CASCADE"),
         UniqueConstraint("id", "organization_id", name="uq_product_publication_org"),
+        UniqueConstraint("id", "dossier_id", "organization_id", name="uq_product_publication_research_scope"),
         UniqueConstraint("dossier_id", name="uq_product_publication_dossier"),
         CheckConstraint("status IN ('published', 'withdrawn')", name="ck_product_publication_status"),
     )
@@ -218,6 +219,8 @@ class ProductPublication(Base):
     organization_id: Mapped[str] = mapped_column(String(36), index=True)
     dossier_id: Mapped[str] = mapped_column(String(36))
     product: Mapped[str] = mapped_column(String(20), index=True)
+    slug: Mapped[str | None] = mapped_column(String(180), unique=True)
+    living_research: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     status: Mapped[str] = mapped_column(String(20), index=True)
     revision: Mapped[int] = mapped_column(Integer)
     title: Mapped[str] = mapped_column(String(240))
@@ -270,6 +273,12 @@ class PublicContribution(Base):
     author_label: Mapped[str] = mapped_column(String(100))
     body: Mapped[str] = mapped_column(Text)
     sources_json: Mapped[list] = mapped_column(JSON, default=list)
+    kind: Mapped[str] = mapped_column(String(24), default="comment", server_default="comment")
+    artifact_key: Mapped[str] = mapped_column(String(240), default="", server_default="")
+    file_name: Mapped[str] = mapped_column(String(200), default="", server_default="")
+    byte_size: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    sha256: Mapped[str] = mapped_column(String(64), default="", server_default="")
+    content_type: Mapped[str] = mapped_column(String(100), default="", server_default="")
     moderation_reason: Mapped[str] = mapped_column(String(600), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

@@ -155,7 +155,7 @@ def select_private_rows(session, user, organizations):
                 fail("account_deletion_inventory_too_large", 422)
         selected[table.name] = keys
         total += len(keys)
-        if table.name in {"versions", "observations", "regulatory_document_versions", "product_dossier_entries"}:
+        if table.name in {"versions", "observations", "regulatory_document_versions", "product_dossier_entries", "product_public_contributions"}:
             for part in chunks(keys):
                 artifacts.update(session.scalars(select(table.c.artifact_key).where(keys_in(table, part))))
     dates = Base.metadata.tables["regulatory_dates"]

@@ -81,6 +81,10 @@ def access(session, identity, product, dossier_id, *, write=False, action="edit"
 
 
 def worker_access(session, run, product):
+    if run.publication_id:
+        from .product_public_research import worker_access as public_worker_access
+
+        return public_worker_access(session, run)
     if not run.actor_user_id or not run.session_id:
         fail("An active member must resume this investigation.", 403)
     identity = SimpleNamespace(user_id=run.actor_user_id, session_id=run.session_id,
@@ -94,6 +98,11 @@ def record(session, identity, product, dossier_id, identifier, *, write=False):
     if not run or run.dossier_id != dossier_id:
         fail("Investigation not found.", 404, "not_found")
     if write:
+        if run.publication_id:
+            from .product_models import ProductPublication
+            from .product_public_research import public_run
+
+            public_run(session, session.get(ProductPublication, run.publication_id), run.id)
         action = "contribute" if run.trigger_entry_id and run.created_by_user_id == identity.user_id else "edit"
         access(session, identity, product, dossier_id, write=True, action=action)
     return run
@@ -134,7 +143,7 @@ def plan(session, run, reason, *, trigger=None):
 def enqueue(session, run):
     job, _ = jobs.enqueue(session, job_type=TYPE, target_type=TYPE, target_id=run.id,
         queue="ai_background", idempotency_key=f"investigation:{run.id}:{run.generation}",
-        payload={}, max_attempts=3)
+        payload={}, max_attempts=3, organization_id=run.organization_id)
     run.job_id = job.id
     return job
 

@@ -506,6 +506,11 @@ def product_router(service):
     from .product_community import community_routes
 
     community_routes(router, service, actor)
+    from .product_public_research_api import routes as public_research_routes
+    from .product_public_search import routes as public_search_routes
+
+    public_research_routes(router, service, actor)
+    public_search_routes(router, service, actor)
     from .product_following import following_routes
     from .product_reuse import reuse_routes
 

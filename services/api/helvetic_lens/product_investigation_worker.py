@@ -60,6 +60,10 @@ def excluded(session, parent):
 
 
 def seed(session, run, parent, settings):
+    if run.publication_id:
+        from .product_public_research import seed as seed_public
+
+        return seed_public(session, run, parent, settings)
     if run.trigger_entry_id:
         from .product_contributions import seed as seed_contribution
 
@@ -208,6 +212,13 @@ async def execute(service, job_id, worker):
                             entry = session.get(DossierEntry, state["contribution_entry_id"])
                             work["file"] = {"artifact_key": entry.artifact_key, "sha256": entry.sha256,
                                 "title": entry.title, "content_type": entry.data_json.get("content_type", "")}
+                        if state.get("public_file_id"):
+                            from .product_models import PublicContribution
+
+                            entry = session.get(PublicContribution, state["public_file_id"])
+                            work["public_file_id"] = entry.id
+                            work["file"] = {"artifact_key": entry.artifact_key, "sha256": entry.sha256,
+                                "title": entry.file_name, "content_type": entry.content_type}
                     else:
                         source = session.get(InvestigationSource, state["source_ids"][state.get("extract_index", 0)])
                         work.update(source_id=source.id, skip=source.url in blocked,
@@ -295,7 +306,11 @@ async def execute(service, job_id, worker):
                 if result.get("status") != "complete" or not result.get("excerpts"):
                     failed = True
                 else:
-                    if work.get("contribution_entry_id"):
+                    if work.get("public_file_id"):
+                        source, fresh = snapshot(session, run, {**result, "kind": "public_file",
+                            "title": work["file"]["title"], "url": "", "key": work["public_file_id"],
+                            "allow_discovery": False}, captured=True)
+                    elif work.get("contribution_entry_id"):
                         from .product_contributions import capture
 
                         entry = session.get(DossierEntry, work["contribution_entry_id"])

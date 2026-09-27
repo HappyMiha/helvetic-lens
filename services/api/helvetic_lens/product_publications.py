@@ -3,12 +3,13 @@ import hashlib
 import hmac
 import ipaddress
 import re
+import unicodedata
 from datetime import datetime, timedelta
 from urllib.parse import urlsplit
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import Query, Request
-from pydantic import Field, field_validator
+from pydantic import Field, StrictBool, field_validator
 from sqlalchemy import case, func, or_, select
 
 from . import legal_profiles
@@ -17,7 +18,8 @@ from .product_api import EntryInput, Product, dossier, fail, iso
 from .product_models import ProductPublication, PublicationRevision
 from .product_provenance import canonical, principal, signature
 
-PUBLIC_READ = re.compile(r"^/api/products/(pharma|loyer)/public-dossiers(?:/[0-9a-f-]{36}(?:/discussion)?)?$")
+PUBLIC_READ = re.compile(r"^/api/products/(pharma|loyer)/(?:public-knowledge|public-dossiers"
+    r"(?:/[\w-]{1,180}(?:/discussion|/files/[0-9a-f-]{36}|/research(?:/[0-9a-f-]{36}(?:/events)?)?)?)?)$")
 LIFETIME = timedelta(minutes=30)
 
 
@@ -59,6 +61,7 @@ class PublicContent(legal_profiles.Input):
 class PublicationDraft(legal_profiles.Input):
     expected_revision: int = Field(ge=0)
     content: PublicContent
+    living_research: StrictBool = False
 
 
 class PublishInput(PublicationDraft):
@@ -82,6 +85,7 @@ def content(row):
 
 def public_payload(row, *, detail=True):
     result = {"id": row.id, "product": row.product, "revision": row.revision,
+              "slug": row.slug or row.id, "living_research": row.living_research,
               "title": row.title, "summary": row.summary, "author_label": row.author_label,
               "first_published_at": iso(row.first_published_at), "updated_at": iso(row.updated_at)}
     if detail:
@@ -120,7 +124,8 @@ def replay(session, row, data, action, actor_id):
 def record(session, row, data, action, actor_id, fingerprint):
     session.add(PublicationRevision(organization_id=row.organization_id, publication_id=row.id,
         revision=row.revision, request_key=str(data.request_key), fingerprint=fingerprint, action=action,
-        content_json={"content": content(row), "public_consent": action == "publish"}, actor_user_id=actor_id))
+        content_json={"content": content(row), "public_consent": action == "publish",
+                      "living_research": row.living_research}, actor_user_id=actor_id))
     session.commit()
     return {"publication": owner_payload(row)}
 
@@ -151,9 +156,9 @@ def publication_routes(router, service, actor):
                     "offset": offset, "page_size": 20, "query": q.strip()}
 
     @router.get("/public-dossiers/{publication_id}")
-    def reader(product: Product, publication_id: UUID):
+    def reader(product: Product, publication_id: str):
         with service.db.session(include_all_organizations=True) as session:
-            row = session.scalar(select(ProductPublication).where(ProductPublication.id == str(publication_id),
+            row = session.scalar(select(ProductPublication).where(or_(ProductPublication.id == publication_id, ProductPublication.slug == publication_id),
                 ProductPublication.product == product, ProductPublication.status == "published"))
             if not row:
                 fail("This public dossier is not available.", 404)
@@ -198,16 +203,24 @@ def publication_routes(router, service, actor):
             expires = data.preview_expires_at
             if (not data.confirm_public or expires.tzinfo is None or expires <= now or expires > now + LIFETIME):
                 fail("Preview the current text and confirm that it may be published for everyone.", 409)
-            draft = PublicationDraft(expected_revision=data.expected_revision, content=data.content)
+            draft = PublicationDraft(expected_revision=data.expected_revision, content=data.content, living_research=data.living_research)
             expected = signature(user, identity, preview_value(product, identifier, draft, expires))
             if not hmac.compare_digest(expected, data.preview_token):
                 fail("Your preview no longer matches this content or session. Preview it again.", 409)
             if not row:
-                row = ProductPublication(organization_id=parent.organization_id, dossier_id=parent.id,
+                row = ProductPublication(id=str(uuid4()), organization_id=parent.organization_id, dossier_id=parent.id,
                     product=product, revision=0, first_published_at=now)
                 session.add(row)
             for key, value in data.content.model_dump().items():
                 setattr(row, "sources_json" if key == "sources" else key, value)
+            if not row.slug:
+                title = re.sub(r"[\W_]+", "-", unicodedata.normalize("NFKC", row.title).casefold()).strip("-")[:110] or "dossier"
+                row.slug = title + "-" + row.id
+            from .product_public_research import invalidate
+
+            if row.revision:
+                invalidate(session, row.id)
+            row.living_research = data.living_research
             row.status, row.updated_at, row.revision = "published", now, row.revision + 1
             session.flush()
             return record(session, row, data, "publish", identity.user_id, fingerprint)
@@ -228,4 +241,7 @@ def publication_routes(router, service, actor):
             if row.status != "published":
                 fail("This version has already been withdrawn.", 409)
             row.status, row.updated_at, row.revision = "withdrawn", utcnow(), row.revision + 1
+            from .product_public_research import invalidate
+
+            invalidate(session, row.id)
             return record(session, row, data, "withdraw", identity.user_id, fingerprint)

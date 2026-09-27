@@ -19,6 +19,7 @@ from .account_erasure_store import (
 )
 from .auth import _PASSWORD_HASHER
 from .config import DomainError
+from .maintenance import remove_public_originals
 from .membership_locks import lock_organization, lock_platform_users
 from .models import OrganizationMembership, User, UserSession
 from .monitoring_centre import MODELS
@@ -151,6 +152,7 @@ def erase(auth, identity, *, password, confirmation_token, confirmed, erase_work
                 fail("account_deletion_workspace_confirmation_required", 422)
             erase_selected(session, user, selection)
             session.commit()
+            remove_public_originals(auth.settings, selection.artifacts)
             return {"deleted": True, "authenticated": False,
                 "private_artifact_files": len(selection.artifacts),
                 "artifact_retention_hours": auth.settings.orphan_artifact_retention_hours,

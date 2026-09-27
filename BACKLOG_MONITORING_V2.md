@@ -93,6 +93,40 @@ Sixteen authored color pairs exceed 4.5:1. No browser/human visual acceptance is
 claimed. [Implementation and remaining migration](docs/PRODUCT_VISUAL_LANGUAGE.md),
 [exact evidence](docs/product-releases/2026-09-27-1.9.0.json).
 
+**Living public research — 27 September 2026: VERIFYING (stage 3, release 1.14).**
+Scoped MV2-019/021/023 continuation: an owner explicitly enables living research
+in the signed public-publication preview. Existing snapshots remain snapshots.
+Stable title-based public URLs, anonymous evidence/claim/entity search and durable
+research readers reuse the existing coordinator, ledger, source reader, Jev/Laya
+routing and job machinery. Public comments, URLs, corrections, research questions
+and supported original files enter as attributed candidate evidence, never fact.
+Only explicitly disclosed public questions and public-source entity names enter
+external discovery. Research can use this exact published revision and the exact
+visible, consented contribution; no private parent entries, profile, files, saved
+search context or previous private investigations enter public work.
+Dependencies: signed snapshot publication, native public participation/moderation,
+retained-original extraction, bounded durable coordinator, source exclusions and
+current native identity. Source/provider readiness remains unchanged; no new
+signup, key, provider or paid probe required. Public contributions require current
+verified accounts and explicit public analysis consent. Cross-workspace participants
+never receive host memberships. Current owners/editors retain research controls;
+authors control their own public research. Moderation, withdrawal, contribution
+revision, source exclusion and erasure must fence work before/after network calls
+and remove affected findings from every anonymous reader/search/stream/download.
+Publication edits establish a fresh research revision; old derived work is retained
+privately, never silently republished. Both clients disclose this boundary.
+Acceptance: actual public/private isolation and opt-in, native worker execution,
+public file integrity/limits, current-role/session checks, replay/cancel/restart,
+source/author revocation including in-flight results, anonymous search and stable
+claim/source anchors, live observable events, migration/erasure integrity, both
+client workflow gates and exact production verification. No private material may
+become public through an alternate endpoint. Cross-run reconciliation, recurring
+discovery and full native visual migration remain separate open outcomes.
+Implementation is complete: both clients pass 89 tests, lint, strict types and
+final builds. The native broad suite passed 386 tests; three discovered failures
+were fixed and passed in the subsequent 39-test public/migration/erasure gate.
+Exact production acceptance remains VERIFYING. [Implementation and evidence](docs/PRODUCT_PUBLIC_RESEARCH.md).
+
 **Dossier-only guest invitations — 27 September 2026: DONE (scoped stage 2b3).**
 Scoped MV2-019/021/023 continuation after verified 1.12: an owner can invite an
 existing verified native account by its exact email as VIEWER, CONTRIBUTOR or
@@ -1392,7 +1426,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS — nine-category settings implemented | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
 | [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
-| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — native batch review implemented | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
+| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — public research activation VERIFYING; native batch review implemented | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
 | [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — native evidence and configuration drafts implemented | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
 | [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
@@ -2258,6 +2292,10 @@ above supersedes the River-only count limitation for readable Today queues.
 <a id="mv2-021"></a>
 
 ### MV2-021 — Workspace: Impact Inbox, decisions and Impact Matrix
+
+**Active product stage, 27 September:** living public research (stage 3) is
+implemented and VERIFYING production activation under the explicit scope,
+dependencies and acceptance above.
 
 **Current product stage, 27 September:** dossier-only guest invitations (2b3) are
 DONE under the explicit scope, source boundaries and acceptance above.

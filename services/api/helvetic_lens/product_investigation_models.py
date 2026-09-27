@@ -44,8 +44,23 @@ class Investigation(Contained, Base):
             ["product_dossier_entries.id", "product_dossier_entries.dossier_id", "product_dossier_entries.organization_id"],
             name="fk_investigation_contribution", ondelete="CASCADE"),
         UniqueConstraint("trigger_entry_id", name="uq_investigation_contribution"),
+        ForeignKeyConstraint(["publication_id", "dossier_id", "organization_id"],
+            ["product_publications.id", "product_publications.dossier_id", "product_publications.organization_id"],
+            name="fk_investigation_publication", ondelete="CASCADE"),
+        ForeignKeyConstraint(["public_contribution_id", "publication_id", "organization_id"],
+            ["product_public_contributions.id", "product_public_contributions.publication_id", "product_public_contributions.organization_id"],
+            name="fk_investigation_public_contribution", ondelete="CASCADE"),
+        UniqueConstraint("public_contribution_id", "public_contribution_revision", name="uq_public_contribution_investigation"),
+        CheckConstraint("(publication_id IS NULL AND publication_revision IS NULL AND public_contribution_id IS NULL AND public_contribution_revision IS NULL) OR "
+            "(publication_id IS NOT NULL AND publication_revision IS NOT NULL AND publication_revision > 0 AND "
+            "public_contribution_id IS NOT NULL AND public_contribution_revision IS NOT NULL AND public_contribution_revision > 0 AND trigger_entry_id IS NULL)",
+            name="ck_investigation_public_scope"),
         CheckConstraint("status IN ('queued','running','paused','completed','failed','cancelled')"))
     trigger_entry_id: Mapped[str | None] = mapped_column(String(36))
+    publication_id: Mapped[str | None] = mapped_column(String(36), index=True)
+    publication_revision: Mapped[int | None] = mapped_column(Integer)
+    public_contribution_id: Mapped[str | None] = mapped_column(String(36))
+    public_contribution_revision: Mapped[int | None] = mapped_column(Integer)
     external_discovery: Mapped[bool] = mapped_column(Boolean, default=True, server_default="1")
     request_key: Mapped[str] = mapped_column(String(36))
     question: Mapped[str] = mapped_column(String(300))

@@ -41,10 +41,12 @@ machine output are proposals, never proof of identity or fact.
    See [guest architecture and acceptance](PRODUCT_GUEST_ACCESS.md).
    Before this stage, apply the owner's visual-language steering to both clients'
    reference dossier and global interaction foundation (see VISUAL_LANGUAGE_SPEC.md).
-3. Public living view with stable human-readable slugs and claim/source anchors,
+3. IMPLEMENTED, production VERIFYING in release 1.14: public living view with
+   stable human-readable slugs and claim/source anchors,
    anonymous search across public knowledge, same coordinator/UI, public
    contributions and scoped research. Existing published snapshots remain explicit;
    owner-selected living publication authorizes updates within the public scope.
+   See [public-research architecture and acceptance](PRODUCT_PUBLIC_RESEARCH.md).
 4. Monitoring observations/contributions trigger bounded material-change review,
    claim supersession/contradictions and research reopening, reusing native jobs
    and consented delivery. Full specification acceptance is required before DONE.

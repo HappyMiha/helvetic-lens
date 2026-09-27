@@ -56,7 +56,7 @@ def test_cross_organization_public_read_and_personal_viewer_contribution(signed)
     assert response.status_code == 200 and response.headers["cache-control"] == "no-store"
     public = response.json()
     assert public["total"] == 1 and not public["can_post"]
-    assert set(public["items"][0]) == {"id", "revision", "publication_revision", "author_label", "body", "sources", "created_at", "updated_at"}
+    assert set(public["items"][0]) == {"id", "revision", "publication_revision", "author_label", "body", "sources", "created_at", "updated_at", "kind", "file_name", "byte_size", "sha256", "research"}
     for private in (doc["id"], owner["organization"]["id"], person["user"]["id"], person["user"]["email"], "history", "moderation_reason"):
         assert private not in response.text
     assert client.get(path + "/workspace").status_code == 401

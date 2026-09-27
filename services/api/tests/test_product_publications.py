@@ -45,7 +45,7 @@ def test_anonymous_reader_exposes_only_explicit_projection_and_withdraws(signed)
     client.cookies.clear()
     response = client.get(public_path)
     assert response.status_code == 200 and response.headers["cache-control"] == "no-store"
-    assert set(response.json()) == {"id", "product", "revision", "title", "summary", "body", "author_label", "sources", "first_published_at", "updated_at"}
+    assert set(response.json()) == {"id", "product", "revision", "title", "summary", "body", "author_label", "sources", "first_published_at", "updated_at", "slug", "living_research"}
     for private in (doc["id"], identity["organization"]["id"], identity["user"]["name"], "PRIVATE-MARKER", "profile", "artifact_key"):
         assert private not in response.text
     assert client.get(PUBLIC).json()["total"] == 1
