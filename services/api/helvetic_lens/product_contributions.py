@@ -122,17 +122,17 @@ async def read_file(folder, data):
 
 
 def retry(session, run):
-    if not (run.trigger_entry_id or run.public_contribution_id) or run.status not in {"failed", "completed"}:
-        fail("Retry is available for finished contribution reviews with unavailable steps.", 409)
+    if run.status not in {"failed", "completed"}:
+        fail("Retry is available for finished investigations with unavailable steps.", 409)
     failed = [branch for branch in rows(session, InvestigationBranch, run) if branch.status == "failed"]
     if not failed:
-        fail("There are no unavailable contribution steps to retry.", 409)
+        fail("There are no unavailable investigation steps to retry.", 409)
     for branch in failed:
         state = deepcopy(branch.checkpoint)
         state.pop("inflight", None)
         state.pop("error", None)
-        if branch.phase == "search":
-            pass  # Explicit retry authorizes another bounded public search attempt.
+        if branch.phase in {"search", "compare"}:
+            state.pop("comparison_done", None)
         elif state.get("source_ids"):
             # Only advance() skips a failed extraction index. Revisit unavailable
             # extraction steps, retaining successful indices and all evidence.
@@ -147,4 +147,4 @@ def retry(session, run):
             state["read_index"] = 0
             branch.phase = "read"
         branch.status, branch.checkpoint = "queued", state
-    plan(session, run, "Editor requested another attempt at unavailable contribution steps; completed evidence is retained.")
+    plan(session, run, "An authorized participant requested another attempt at unavailable steps; completed evidence is retained.")

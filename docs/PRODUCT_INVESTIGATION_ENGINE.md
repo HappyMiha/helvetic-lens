@@ -199,3 +199,14 @@ stages remain IN PROGRESS.
 370 native cases, both 85-test client gates, Sites 16,33 native hashes and 66 HTTP
 checks plus 39 exact assets per client. The existing hourly heartbeat remains ACTIVE
 for the remaining full-spec outcomes; no browser/human visual acceptance is claimed.
+
+Release 1.15 implements scoped stage 4a, source-linked evidence evolution across
+independently extracted investigations. Both products retain the earlier finding
+and exact citations, show later-evidence status separately, and support current
+editor dismiss/restore with visible history. Public/private audience containment
+and source withdrawal apply before comparison inputs and reader counts. See
+[architecture, bounds and release acceptance](PRODUCT_CLAIM_EVOLUTION.md).
+Production verification is pending in that record. Monitoring-triggered reopening
+(stage 4b), recurring discovery, private semantic indexing, independent evaluation
+and full native visual migration remain open; the full specifications remain
+IN PROGRESS.

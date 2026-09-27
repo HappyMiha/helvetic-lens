@@ -123,6 +123,7 @@ def capabilities(settings, product):
         {"id": "source_reader", "available": True, "description": "Permitted anonymous HTML, text and PDF excerpts; robots and size limits apply"},
         {"id": "saved_evidence", "available": True, "description": "Current dossier contributions and saved monitored extracts"},
         {"id": "evidence_analysis", "available": settings.model_configured, "description": "Configured workspace model; source-grounded proposals, availability checked during execution"},
+        {"id": "evidence_comparison", "available": settings.model_configured, "description": "Compare independently captured findings with earlier claims in the same dossier audience"},
         {"id": "authenticated_sources", "available": False, "description": "No authenticated archive or paid database connector attached"},
         {"id": "ocr", "available": False, "description": "Scanned-image OCR is not available in this workflow"},
     ]
@@ -134,7 +135,8 @@ def plan(session, run, reason, *, trigger=None):
     document = {"branches": [{"id": b.id, "query": b.query, "phase": b.phase, "status": b.status}
                              for b in rows(session, InvestigationBranch, run)],
                 "trigger": trigger, "budgets": {"public_branches": MAX_BRANCHES if run.external_discovery else 0,
-                    "sources_per_branch": MAX_SOURCES, "saved_snapshots": MAX_SOURCES},
+                    "sources_per_branch": MAX_SOURCES, "saved_snapshots": MAX_SOURCES,
+                    "comparison_requests": 1, "claims_per_comparison_side": 24},
                 "stop_rule": "Stop when pending branches finish or the explicit evidence/query budgets are reached."}
     session.add(InvestigationPlan(**scope(run), version=run.plan_version, reason=reason, document=document))
     event(session, run, "plan_updated", version=run.plan_version, reason=reason, trigger=trigger)
@@ -243,8 +245,10 @@ def summary(run):
 
 
 def payload(session, run):
+    from .product_claim_evolution import projection
     from .product_contributions import original
 
+    changes = projection(session, run)
     return {**summary(run), "original": original(session, run.trigger_entry_id),
         "plans": [{"id": p.id, "version": p.version, "reason": p.reason, "document": p.document,
                    "created_at": iso(p.created_at)} for p in rows(session, InvestigationPlan, run)],
@@ -254,7 +258,7 @@ def payload(session, run):
         "sources": [{"id": s.id, "kind": s.kind, "title": s.title, "url": s.url, "sha256": s.sha256,
                      "snapshot": s.snapshot, "original": original(session, s.snapshot.get("origin_entry_id")), "created_at": iso(s.created_at)} for s in rows(session, InvestigationSource, run)],
         "claims": [{"id": c.id, "statement": c.statement, "status": c.status, "revision": c.revision,
-                    "history": c.history} for c in rows(session, DossierClaim, run)],
+                    "history": c.history, "later_evidence": changes.get(c.id)} for c in rows(session, DossierClaim, run)],
         "evidence": [{"id": e.id, "claim_id": e.claim_id, "source_id": e.source_id, "relation": e.relation,
                       "quote": e.quote, "locator": e.locator} for e in rows(session, ClaimEvidence, run)],
         "entities": [{"id": e.id, "name": e.name, "kind": e.kind, "evidence": e.evidence}

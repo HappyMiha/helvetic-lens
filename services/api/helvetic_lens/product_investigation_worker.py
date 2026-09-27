@@ -91,7 +91,7 @@ def next_extraction(state):
 
 
 def advance(branch, state, *, interrupted=False):
-    if branch.phase == "search":
+    if branch.phase in {"search", "compare"}:
         branch.status = "failed"
     elif branch.phase == "read":
         state["read_index"] = state.get("read_index", 0) + 1
@@ -103,6 +103,8 @@ def advance(branch, state, *, interrupted=False):
 
 
 def settle(branch, state):
+    if branch.phase == "compare" and state.get("comparison_done"):
+        branch.status = "completed"
     if branch.phase == "read" and state.get("read_index", 0) >= len(state.get("items", [])):
         branch.phase = "extract"
     if branch.phase == "extract" and state.get("extract_index", 0) >= len(state.get("source_ids", [])):
@@ -116,8 +118,12 @@ def checkpoint(session, run, branch, kind, state, **details):
 
 
 def finish_or_yield(session, run, job):
+    from .product_claim_evolution import schedule
+
     session.flush()
     branches = rows(session, InvestigationBranch, run)
+    if schedule(session, run, branches):
+        branches = rows(session, InvestigationBranch, run)
     if run.status in ACTIVE and any(b.status in ACTIVE for b in branches):
         jobs.yield_batch(session, job)
     else:
@@ -219,6 +225,10 @@ async def execute(service, job_id, worker):
                             work["public_file_id"] = entry.id
                             work["file"] = {"artifact_key": entry.artifact_key, "sha256": entry.sha256,
                                 "title": entry.file_name, "content_type": entry.content_type}
+                    elif branch.phase == "compare":
+                        from .product_claim_evolution import prepare
+
+                        work["input"] = prepare(session, run)
                     else:
                         source = session.get(InvestigationSource, state["source_ids"][state.get("extract_index", 0)])
                         work.update(source_id=source.id, skip=source.url in blocked,
@@ -256,6 +266,18 @@ async def execute(service, job_id, worker):
                 result = await read_file(service.environment_settings.storage_path / "artifacts", work["file"])
             elif work["phase"] == "read":
                 result = await decision_sources.safe_inspect(service.settings, work["query"], work["item"], "auto")
+            elif work["phase"] == "compare":
+                from .product_claim_evolution import SYSTEM as COMPARE_SYSTEM
+                from .product_claim_evolution import Comparison
+
+                if not work["input"]["current"] or not work["input"]["previous"]:
+                    result = Comparison()
+                else:
+                    raw = await service.model_client.complete(COMPARE_SYSTEM, json.dumps(work["input"], ensure_ascii=False),
+                        response_schema=Comparison.model_json_schema(), budget=InferenceBudget(max_requests=1, max_seconds=seconds))
+                    if not isinstance(raw, str) or len(raw) > 10000:
+                        raise ValueError("Unbounded comparison")
+                    result = Comparison.model_validate_json(re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip()))
             else:
                 raw = await service.model_client.complete(SYSTEM, json.dumps(work["input"], ensure_ascii=False),
                     response_schema=Extraction.model_json_schema(), budget=InferenceBudget(max_requests=1, max_seconds=seconds))
@@ -323,6 +345,15 @@ async def execute(service, job_id, worker):
                     if fresh:
                         state.setdefault("source_ids", []).append(source.id)
                     state["read_index"] = state.get("read_index", 0) + 1
+            elif work["phase"] == "compare":
+                from .product_claim_evolution import apply as apply_comparison
+
+                try:
+                    apply_comparison(session, run, work["input"], result)
+                except DomainError:
+                    failed = True
+                if not failed:
+                    state["comparison_done"] = True
             else:
                 try:
                     apply_extraction(session, run, source, result)

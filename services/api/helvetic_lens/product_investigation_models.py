@@ -125,6 +125,7 @@ class DossierClaim(ResearchRecord, Base):
 class ClaimEvidence(ResearchRecord, Base):
     __tablename__ = "product_claim_evidence"
     __table_args__ = (research_scope(),
+        UniqueConstraint("id", "claim_id", "investigation_id", "dossier_id", "organization_id", name="uq_claim_evidence_change_scope"),
         ForeignKeyConstraint(["claim_id", "investigation_id", "dossier_id", "organization_id"],
             ["product_dossier_claims.id", "product_dossier_claims.investigation_id", "product_dossier_claims.dossier_id", "product_dossier_claims.organization_id"], ondelete="CASCADE"),
         ForeignKeyConstraint(["source_id", "investigation_id", "dossier_id", "organization_id"],
@@ -135,6 +136,40 @@ class ClaimEvidence(ResearchRecord, Base):
     relation: Mapped[str] = mapped_column(String(16))
     quote: Mapped[str] = mapped_column(Text)
     locator: Mapped[str] = mapped_column(String(100))
+
+
+class ClaimChange(ResearchRecord, Base):
+    __tablename__ = "product_claim_changes"
+    __table_args__ = (research_scope(),
+        ForeignKeyConstraint(["evidence_id", "claim_id", "investigation_id", "dossier_id", "organization_id"],
+            ["product_claim_evidence.id", "product_claim_evidence.claim_id", "product_claim_evidence.investigation_id",
+             "product_claim_evidence.dossier_id", "product_claim_evidence.organization_id"], ondelete="CASCADE"),
+        ForeignKeyConstraint(["previous_claim_id", "previous_investigation_id", "dossier_id", "organization_id"],
+            ["product_dossier_claims.id", "product_dossier_claims.investigation_id", "product_dossier_claims.dossier_id",
+             "product_dossier_claims.organization_id"], ondelete="CASCADE"),
+        ForeignKeyConstraint(["previous_evidence_id", "previous_claim_id", "previous_investigation_id", "dossier_id", "organization_id"],
+            ["product_claim_evidence.id", "product_claim_evidence.claim_id", "product_claim_evidence.investigation_id",
+             "product_claim_evidence.dossier_id", "product_claim_evidence.organization_id"], ondelete="CASCADE"),
+        UniqueConstraint("evidence_id", "previous_claim_id", name="uq_claim_change_evidence"),
+        CheckConstraint("kind IN ('CORROBORATES','CONTRADICTS','UPDATES')", name="ck_claim_change_kind"),
+        CheckConstraint("status IN ('active','dismissed')", name="ck_claim_change_status"),
+        CheckConstraint("previous_investigation_id <> investigation_id", name="ck_claim_change_other_run"))
+    evidence_id: Mapped[str] = mapped_column(String(36))
+    claim_id: Mapped[str] = mapped_column(String(36), index=True)
+    previous_claim_id: Mapped[str] = mapped_column(String(36), index=True)
+    previous_evidence_id: Mapped[str] = mapped_column(String(36))
+    previous_investigation_id: Mapped[str] = mapped_column(String(36))
+    previous_revision: Mapped[int] = mapped_column(Integer)
+    previous_status: Mapped[str] = mapped_column(String(16))
+    kind: Mapped[str] = mapped_column(String(16))
+    explanation: Mapped[str] = mapped_column(String(500))
+    status: Mapped[str] = mapped_column(String(16), default="active", server_default="active")
+    revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    history: Mapped[list] = mapped_column(JSON, default=list, server_default="[]")
+    reviewed_by_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    last_request_key: Mapped[str] = mapped_column(String(36), default="", server_default="")
+    last_request_fingerprint: Mapped[str] = mapped_column(String(64), default="", server_default="")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 class DossierEntity(ResearchRecord, Base):
@@ -166,4 +201,4 @@ class InvestigationEvent(ResearchRecord, Base):
 
 
 SCOPED = (Investigation, InvestigationPlan, InvestigationBranch, InvestigationSource,
-          DossierClaim, ClaimEvidence, DossierEntity, DossierRelationship, InvestigationEvent)
+          DossierClaim, ClaimEvidence, ClaimChange, DossierEntity, DossierRelationship, InvestigationEvent)

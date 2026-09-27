@@ -40,6 +40,8 @@ def model_output(monkeypatch, model, *, invalid=False):
     async def extract(system, user, **kwargs):
         data = json.loads(user)
         calls.append(data)
+        if "current" in data:
+            return json.dumps({"changes": []})
         source = data["source"]
         part = source["excerpts"][0]
         quote = "Invented evidence never present in the document." if invalid else part["text"][:500]
@@ -196,7 +198,8 @@ def test_queued_contributions_serialize_without_losing_original_or_consuming_att
         job.available_at = utcnow() - timedelta(seconds=1)
         session.commit()
     assert complete(client, service, route + "/investigations", second["analysis"])["status"] == "completed"
-    assert len(calls) == 2
+    assert len([call for call in calls if "source" in call]) == 2
+    assert len([call for call in calls if "current" in call]) == 1
 
 
 def test_revoke_during_file_read_discards_capture_but_retains_original(signed, monkeypatch):

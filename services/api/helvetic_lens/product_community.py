@@ -20,7 +20,7 @@ from .product_publications import PublicSource
 # Only these personal public actions are exempt from workspace viewer write denial.
 COMMUNITY_WRITE = re.compile(
     r"^/api/products/(pharma|loyer)/public-dossiers/[0-9a-f-]{36}/(?:discussion"
-    r"(?:/[0-9a-f-]{36}(?:/action)?)?|files|research/[0-9a-f-]{36}/control)$")
+    r"(?:/[0-9a-f-]{36}(?:/action)?)?|files|research/[0-9a-f-]{36}/control|evidence-changes/[0-9a-f-]{36}/review)$")
 
 
 class ContributionContent(Input):

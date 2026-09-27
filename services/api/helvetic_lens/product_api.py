@@ -464,6 +464,15 @@ def product_router(service):
             if len(investigations) > 100:
                 fail("This dossier exceeds the interactive investigation export limit.")
             result["investigations"] = [investigation_payload(session, run) for run in investigations]
+            from .product_claim_evolution import payload as change_payload
+            from .product_claim_evolution import query as changes_query
+            from .product_investigation_models import ClaimChange
+
+            changes = list(session.scalars(changes_query(row.id)
+                .order_by(ClaimChange.created_at, ClaimChange.id).limit(2001)))
+            if len(changes) > 2000:
+                fail("This dossier exceeds the interactive evidence-change export limit.")
+            result["evidence_changes"] = [change_payload(session, change) for change in changes]
             return result
 
     from .product_operations import operations
@@ -511,6 +520,9 @@ def product_router(service):
 
     public_research_routes(router, service, actor)
     public_search_routes(router, service, actor)
+    from .product_claim_evolution_api import routes as evidence_change_routes
+
+    evidence_change_routes(router, service, actor)
     from .product_following import following_routes
     from .product_reuse import reuse_routes
 

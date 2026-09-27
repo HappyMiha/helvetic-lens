@@ -19,7 +19,7 @@ from .product_models import ProductPublication, PublicationRevision
 from .product_provenance import canonical, principal, signature
 
 PUBLIC_READ = re.compile(r"^/api/products/(pharma|loyer)/(?:public-knowledge|public-dossiers"
-    r"(?:/[\w-]{1,180}(?:/discussion|/files/[0-9a-f-]{36}|/research(?:/[0-9a-f-]{36}(?:/events)?)?)?)?)$")
+    r"(?:/[\w-]{1,180}(?:/discussion|/evidence-changes|/files/[0-9a-f-]{36}|/research(?:/[0-9a-f-]{36}(?:/events)?)?)?)?)$")
 LIFETIME = timedelta(minutes=30)
 
 

@@ -115,3 +115,8 @@ ships shared light/dark tokens, a global Ask/Search and an evidence-first dossie
 in release 1.9. Its exact client production proof is separate from the ongoing
 [dynamic investigation engine](docs/PRODUCT_INVESTIGATION_ENGINE.md) and the
 remaining native-platform page migration.
+
+Cross-investigation [evidence evolution](docs/PRODUCT_CLAIM_EVOLUTION.md) adds
+independent comparison jobs, exact citation pairs and visibility-safe editor
+review in the shared core and both Pharma/Loyer readers. Stage 4b monitoring
+reopening remains separate from this release's acceptance.

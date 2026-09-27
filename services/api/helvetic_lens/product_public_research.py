@@ -20,8 +20,8 @@ from .product_investigations import ACTIVE, MAX_SOURCES, enqueue, event, plan, s
 from .product_models import DossierEntry, ProductPublication, PublicContribution
 
 
-def eligible():
-    """SQL predicate: apply before anonymous counts, pagination and search."""
+def sources_visible(run=Investigation):
+    """The same latest source exclusions apply to every derived evidence reader."""
     source = aliased(InvestigationSource)
     review, newer = aliased(DossierEntry), aliased(DossierEntry)
     has_newer = exists(select(newer.id).where(newer.dossier_id == review.dossier_id,
@@ -30,16 +30,21 @@ def eligible():
         ((newer.data_json["revision"].as_integer() == review.data_json["revision"].as_integer()) & (newer.id > review.id))))
     excluded = exists(select(source.id).join(review, and_(review.dossier_id == source.dossier_id,
         review.url == source.url, review.kind == "source_review"))
-        .where(source.investigation_id == Investigation.id, review.data_json["decision"].as_string() == "exclude", ~has_newer))
+        .where(source.investigation_id == run.id, review.data_json["decision"].as_string() == "exclude", ~has_newer))
+    return ~excluded
+
+
+def eligible(run=Investigation):
+    """SQL predicate: apply before anonymous counts, pagination and search."""
     visible = exists(select(PublicContribution.id).join(ProductPublication,
         ProductPublication.id == PublicContribution.publication_id).join(User, User.id == PublicContribution.author_user_id)
-        .where(PublicContribution.id == Investigation.public_contribution_id,
-            PublicContribution.revision == Investigation.public_contribution_revision,
-            PublicContribution.status == "visible", ProductPublication.id == Investigation.publication_id,
-            ProductPublication.revision == Investigation.publication_revision,
+        .where(PublicContribution.id == run.public_contribution_id,
+            PublicContribution.revision == run.public_contribution_revision,
+            PublicContribution.status == "visible", ProductPublication.id == run.publication_id,
+            ProductPublication.revision == run.publication_revision,
             ProductPublication.status == "published", ProductPublication.living_research.is_(True),
             User.active.is_(True), User.email_verified_at.is_not(None)))
-    return and_(Investigation.publication_id.is_not(None), visible, ~excluded)
+    return and_(run.publication_id.is_not(None), visible, sources_visible(run))
 
 
 def public_run(session, publication, identifier):
