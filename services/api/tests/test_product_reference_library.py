@@ -136,3 +136,62 @@ def test_empty_source_library_and_isolated_product_lists(signed, product):
     ref = reference(client, path)
     read = client.get(path + "/references").json()
     assert read["total"] == read["dossier_total"] == 1 and read["items"][0] == ref
+
+
+@pytest.mark.parametrize("product", ["pharma", "loyer"])
+def test_exact_old_reference_read_has_current_provenance_and_no_side_effects(signed, product):
+    client, service, _, model = signed
+    _, initial = create(client)
+    doc = post(client, ROOT.replace("pharma", product), {**initial, "creation_key": str(uuid4())}).json()
+    path = ROOT.replace("pharma", product) + "/" + doc["id"]
+    provenance = {"provider": "europepmc", "query": "renal safety", "page_number": 2,
+        "retrieved_at": "2026-09-27T01:00:00Z", "record": {"id": "MED:321", "title": "Archive catalogue record"}}
+    with service.db.session() as session:
+        source = seed(session, doc["id"], title="Archived exact source", data={"discovery": provenance},
+            created_at=utcnow() - timedelta(days=2))
+        session.flush()
+        source_id = source.id
+        for i in range(110):
+            seed(session, doc["id"], title=f"Newer source {i}", url=f"https://example.ch/new/{i}")
+        session.commit()
+    assert source_id not in {row["id"] for row in client.get(path + "/references").json()["items"]}
+    review_path = path + "/sources/" + source_id + "/reviews"
+    prior = post(client, review_path, request(decision="include")).json()
+    current = post(client, review_path, request(expected_review_id=prior["id"], decision="exclude")).json()
+    before = client.get(path).json()["entry_count"]
+    route = path + "/references/" + source_id
+    response = client.get(route)
+    assert response.status_code == 200 and "no-store" in response.headers["cache-control"]
+    exact = response.json()
+    assert exact["id"] == source_id and exact["title"] == "Archived exact source"
+    assert exact["data"]["discovery"] == provenance and exact["source_review"]["id"] == current["id"]
+    assert client.get(route).json() == exact
+    assert post(client, route, {}).status_code == 405
+    assert client.get(path).json()["entry_count"] == before
+    assert not model.calls and not service.fetcher.calls
+
+
+def test_exact_reference_links_do_not_grant_parent_kind_or_workspace_access(signed):
+    client, service, identity, _ = signed
+    private, _ = create(client)
+    shared, _ = create(client)
+    private_path = ROOT + "/" + private["id"]
+    path = ROOT + "/" + shared["id"]
+    hidden = reference(client, private_path)
+    ref = reference(client, path)
+    note = post(client, path + "/entries", {"request_key": str(uuid4()), "kind": "note", "body": "Private note"}).json()
+    route = path + "/references/" + ref["id"]
+    for wrong in (private_path + "/references/" + ref["id"], path + "/references/" + note["id"],
+                  path + "/references/" + str(uuid4()), route.replace("pharma", "loyer")):
+        assert client.get(wrong).status_code == 404
+    active(client, shared)
+    reader = _register(client, "permalink-reader@example.ch").json()
+    assert client.get(route).status_code == 404
+    with service.db.session(include_all_organizations=True) as session:
+        session.add(OrganizationMembership(user_id=reader["user"]["id"], organization_id=identity["organization"]["id"], role="viewer"))
+        session.commit()
+    assert post(client, "/api/auth/session/organization", {"organization_id": identity["organization"]["id"]}).status_code == 200
+    assert client.get(route).status_code == 200
+    assert client.get(private_path + "/references/" + hidden["id"]).status_code == 404
+    client.cookies.clear()
+    assert client.get(route).status_code == 401

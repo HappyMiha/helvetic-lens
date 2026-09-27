@@ -316,6 +316,39 @@ recipes, continuation, import, review state and library navigation), lint, TypeS
 and Sites-helper production builds. No browser interaction QA was performed.
 
 
+Tenth slice — IMPLEMENTED / final client publication pending (scope recorded before implementation): open the exact saved
+reference found by workspace search, with durable private links containing only dossier
+and reference identifiers. Add a scoped single-reference GET independent of source
+library pagination or recent activity; return existing provenance and current team
+review. Both clients route saved-reference hits into Evidence & sources and display the
+specific record with its existing review and page-watch actions. Source cards expose a
+private permalink; copied/opened links still require the current authorized workspace.
+Reload, login continuation and browser back/forward must preserve the target without
+inserting extra history entries. Failed or inaccessible reads show a clear retry and
+return-to-library path, with no stale source displayed. Preserve question/topic links,
+viewer reads, private draft/tenant/product boundaries and narrow gateway routes. No
+source fetch, model call, new public visibility, schema, schedule or outgoing message.
+Dependencies/source readiness: existing saved references, native identity, source reviews
+and client navigation only. Acceptance: old-reference exact retrieval, current decisions
+and metadata, cross-parent/non-reference/tenant/product/private/viewer denial, read-only
+behavior, safe ID-only URL round trips, source-versus-question routing, no history push
+on replay, client contract/lint/type/build checks and native regression gates. Ninth core
+`git-f5966bc22d75` verified active since 04:39 Zurich; final Sites release stays 08:00–09:00.
+
+
+Verification: all 101 native product/backlog cases passed (100 integration, one smoke),
+including three new exact-reference cases covering both products, 110 newer references,
+provenance/current decisions, read-only behavior and no source/model side effects.
+Cross-parent, non-reference, absent, product, tenant and private-draft references remain
+inaccessible; authorized viewers can read. Exact API lint passed. Both clients passed
+25 tests (three new navigation cases plus existing gateway/workflow coverage), lint,
+TypeScript and Sites-helper production builds. Navigation tests cover ID-only escaped
+links, source/question/topic destinations and replay preserving forward history. Client
+lint identified synchronous effect resets; navigation now remounts dossier state on
+actual transitions and clears review dialogs in user actions, without bypassing checks.
+No browser interaction QA or final Sites activation is claimed.
+
+
 **MV2 collective product research contribution, 27 September 2026 — DONE (scoped release):** Develop
 Pharma and Loyer for small professional teams beyond monitor setup: a daily work
 queue, medicine/programme or client/matter context, accountable owners, review dates,

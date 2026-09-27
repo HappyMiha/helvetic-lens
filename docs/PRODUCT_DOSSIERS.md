@@ -515,3 +515,40 @@ newer mixed entries proves complete source retrieval and stable five-page traver
 Current-review facets, reset behavior, literal text/catalogue lookup, both products and
 access boundaries passed. Exact API lint and both clients' 22 tests, lint, TypeScript
 and production builds passed. No browser interaction QA is claimed.
+
+
+## Exact saved-source links — overnight development, 27 September
+
+Workspace discovery opens a matching reference directly in Evidence & sources. The
+private GET `/api/products/{product}/dossiers/{id}/references/{reference_id}` resolves
+only an actual reference with a URL in the visible parent dossier. It returns existing
+catalogue provenance and the latest per-URL review, independent of mixed activity,
+source-library text filters or pagination. Fresh session/membership, private-draft,
+organization and product checks apply on every read. Viewers can read; the endpoint
+cannot create or change a record, fetch an external source or invoke the model.
+
+Each saved source has an ordinary product-domain `?dossier=...&source=...` link. Only
+identifiers appear in it; knowledge of the URL grants no access. The same route survives
+reload and signing in. Source links take precedence over a conflicting question argument;
+question and discussion-result links retain their question destination. User navigation
+creates history entries; boot, login continuation, refresh and popstate replay do not.
+A navigation sequence prevents a late dossier request from replacing a newer target.
+
+Both clients display the exact source with its existing provenance, decision/history
+and explicit page-watch controls. A failed read hides any previous record and offers
+retry/return to library. The library remains accessible with its search/filter state
+in the current component. Source focus is announced by focusing its heading; the library
+precedes other Evidence content. No private content is copied to clipboard automatically,
+shared publicly, sent to a provider or added to a notification subscription.
+
+Verification: all 101 native product/backlog cases passed (100 integration, one smoke),
+including three new exact-reference cases covering both products, 110 newer references,
+provenance/current decisions, read-only behavior and no source/model side effects.
+Cross-parent, non-reference, absent, product, tenant and private-draft references remain
+inaccessible; authorized viewers can read. Exact API lint passed. Both clients passed
+25 tests (three new navigation cases plus existing gateway/workflow coverage), lint,
+TypeScript and Sites-helper production builds. Navigation tests cover ID-only escaped
+links, source/question/topic destinations and replay preserving forward history. Client
+lint identified synchronous effect resets; navigation now remounts dossier state on
+actual transitions and clears review dialogs in user actions, without bypassing checks.
+No browser interaction QA or final Sites activation is claimed.

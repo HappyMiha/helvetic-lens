@@ -8,12 +8,20 @@ from .db import utcnow
 from .product_api import Product, dossier, entry_payload, fail
 from .product_models import DossierEntry
 from .product_provenance import principal
-from .product_source_reviews import latest_review_query
+from .product_source_reviews import latest_review_query, source_record
 
 PAGE_SIZE = 30
 
 
 def reference_routes(router, service, actor):
+    @router.get("/dossiers/{identifier}/references/{reference_id}")
+    def reference(product: Product, identifier: str, reference_id: str, request: Request):
+        identity = actor(request)
+        with service.db.session() as session:
+            principal(session, identity, utcnow())
+            parent, _ = dossier(session, product, identifier, identity.user_id)
+            return entry_payload(session, source_record(session, parent, reference_id))
+
     @router.get("/dossiers/{identifier}/references")
     def references(product: Product, identifier: str, request: Request,
                    q: str = Query(default="", max_length=300),
