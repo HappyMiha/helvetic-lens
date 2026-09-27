@@ -72,7 +72,7 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 ## Product decision
 
-**Jev/Laya discovery — 27 September 2026: IN PROGRESS.** The owner explicitly
+**Jev/Laya discovery — 27 September 2026: DONE (scoped release).** The owner explicitly
 requested a shared decision interface, hosted TypeSafe Jev as primary, local
 Apache-2.0 Laya as fallback, and their use in actual Pharma/Loyer search. This is
 a scoped contribution to MV2 shared source discovery, evidence quality and search;
@@ -82,10 +82,13 @@ Source readiness: published TypeSafe System One and Laya HTTP contracts are veri
 both are decision engines, so public web retrieval additionally requires a search
 index. Search1API registration and Jev registration are authorized by the owner;
 Search1API credentials and pinned local multilingual Laya inference are verified.
-TypeSafe registration is complete, but its $0 balance prevents key creation; Jev
-live comparison remains open. Protected production configuration is prepared.
-Implemented federation, BM25/semantic rank fusion, explicit source reading/link
-exploration and private evaluation are in regression; publication is pending. Acceptance:
+The owner accepted and funded TypeSafe; its key is active in the protected shared
+core and Jev/Laya real same-candidate comparison passed. Federation, BM25/semantic
+rank fusion, explicit source reading/link exploration and private evaluation are
+published in both clients. Evidence: 234 native affected cases, both clients' 63
+contracts/lint/types/builds, successful exact-head CI, Sites version 8, 36 HTTP and
+33 asset checks per custom domain, ready core `git-6df711fc0842` after 755 standard
+release checks. [Immutable 1.6.0 proof](docs/product-releases/2026-09-27-1.6.0.json). Acceptance:
 explicit public-query submission, bounded real retrieval and semantic reranking,
 Jev-to-Laya failure fallback with visible engine provenance, optional same-candidate
 comparison, measured latency/usage and honestly unknown cost, reviewed relevance

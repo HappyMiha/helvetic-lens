@@ -978,7 +978,7 @@ no browser interaction QA or professional acceptance is claimed. Immutable proof
 [1.5.0 release evidence](product-releases/2026-09-27-1.5.0.json).
 
 
-## Federated decision search — 1.6.0 prepared, 27 September 2026
+## Federated decision search — 1.6.0 verified, 27 September 2026
 
 Both products now have a complete public-query search journey: federated web
 indexes, hybrid semantic/BM25 ranking, typed Jev/Laya adapters, visible fallback
@@ -986,7 +986,10 @@ and same-candidate comparison, private result history, human-label measurements,
 explicit bounded source reading and link exploration, signed source import and
 reviewed monitoring setup. Native migration `f9c495bef124`, 234 affected checks
 and both clients' 63 checks/lint/types/builds pass. Search1API and pinned local
-Laya were tested live; TypeSafe refuses a key until the owner funds the account.
-Production activation is pending exact release verification. Implementation and
+Laya were tested live; after the owner funded TypeSafe, the named key was securely
+configured and actual same-candidate Jev/Laya comparison succeeded. Both clients'
+version 8 deployments and exact-head CI succeeded. Each custom domain passed 36
+HTTP/gateway and 33 asset checks against healthy core `git-6df711fc0842`, whose
+normal release passed 755 checks. [Immutable release evidence](product-releases/2026-09-27-1.6.0.json). Implementation and
 limits: [decision search](PRODUCT_DECISION_SEARCH.md). This scoped release does
 not complete semantic private-corpus indexing, recurring query discovery or pilots.

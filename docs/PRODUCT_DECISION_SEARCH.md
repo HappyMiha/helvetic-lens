@@ -1,6 +1,7 @@
 # Jev and Laya decision search
 
-Status: IN PROGRESS, scoped Pharma/Loyer discovery release, 27 September 2026.
+Status: DONE for the scoped Pharma/Loyer discovery release, 27 September 2026.
+Broader semantic private-corpus and recurring-search/pilot gates remain open.
 
 The owner requested one decision abstraction with hosted Jev as primary and local
 Laya as fallback, including actual search and an inspectable comparison of latency,
@@ -17,14 +18,13 @@ review and delivery consent remain in force. Broader Monitoring acceptance stays
 - Reference architecture: https://github.com/superagents-lab/jev-search (MIT),
   inspected for documented provider contracts; no branded frontend is copied.
 
-Account creation and key generation are explicitly authorized. At scope recording,
-registration was pending. Search1API registration and issued credentials are now
-verified; actual web retrieval and pinned local Laya inference work. TypeSafe
-registration is complete and the owner accepted its terms on their own device.
-The account has no credits or payment method; TypeSafe refuses key creation until
-funded. Jev live inference therefore remains unverified, with no simulated success.
-Secrets belong in protected operator configuration, never public source or client code.
-Local serving must remain separate from native API dependency/runtime and resource use.
+Account registration and key generation were explicitly authorized. The owner
+accepted TypeSafe's terms and funded its account on their own device; the named
+Helvetic Lens Pharma and Loyer API key was then created and configured. Both
+products use the same protected native core credentials. Search1API retrieval,
+Jev 1.13.0 and the pinned local multilingual Laya checkpoint all passed actual
+inference. No credential, model weights or private document is in public source.
+Local serving remains separate from the native API's generative model runtime.
 
 ## Acceptance
 
@@ -92,10 +92,25 @@ Live samples on 27 September 2026: Google/Bing/Europe PMC retrieval plus Laya se
 Swissmedic's Safety Update page extracted 5,544 characters and three passages with
 Laya, preserving its SHA-256. These are controlled latency/functionality probes,
 not accuracy benchmarks; no human relevance labels or Jev live comparison are claimed.
-Search1API has startup credits and auto top-up is off. TypeSafe remains unfunded.
+Search1API has startup credits and auto top-up is off. TypeSafe was subsequently
+funded by the owner; its key is active and auto-recharge remains off.
 
 Local verification passed: 234 native cases (233 integration and one backlog smoke),
 including 30 new decision-search cases; exact API lint passed. Both clients passed
 63 contracts/SSR cases, authored-source lint, strict TypeScript and production builds.
-Exact pushed source, Sites versions and production checks will be recorded after
-normal publication. Jev live availability/comparison remains an explicit open gate.
+Main publication and production verification are complete: both Sites version 8
+releases succeeded and exact-head GitHub checks passed. Each custom domain passed
+36 HTTP/gateway checks and 33 exact served-asset comparisons. Core
+`git-6df711fc0842` is ready after all 755 standard release checks.
+
+A paired Pharma probe used the same 24 cached public candidates: Jev 1.13.0 took
+12.61 seconds and Laya 6.76 seconds, with no second index request. A separate actual
+public legal query inside the deployed core returned eight candidates in 5.16
+seconds, Jev selected, both engines successful. Reported Jev inference usage for
+that run was 3,744 input / 279 output tokens, an estimated $0.000157248 at the
+configured rates. Search/hosting costs remain unknown. These latency samples are
+not general benchmarks and no labelled accuracy is invented.
+
+Immutable release evidence: [1.6.0](product-releases/2026-09-27-1.6.0.json).
+No authenticated customer record was created, and browser interaction QA or a
+professional user pilot is not claimed.
