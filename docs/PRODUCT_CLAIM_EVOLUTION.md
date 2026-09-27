@@ -1,6 +1,6 @@
 # Evidence evolution across investigations
 
-Release 1.15, scoped stage 4a. Implementation complete; production VERIFYING. This does not complete
+Release 1.15, scoped stage 4a. DONE within the scoped automated acceptance below. This does not complete
 monitoring-triggered reopening, the full dynamic dossier spec or native visual migration.
 
 After extraction, one durable comparison step may link up to 24 current claims
@@ -69,20 +69,32 @@ independently captured host evidence.
 
 ## Release acceptance
 
-Implementation is complete in the development checkouts. Production acceptance
-remains pending until the exact native commit and both saved client versions are
-verified. Client checks: 95 cases per product, lint, TypeScript and production
+Implementation and exact native/both-client production acceptance are complete. Client checks: 95 cases per product, lint, TypeScript and production
 builds passed. The 420-case broader native regression passed 419 cases and identified one old
 queue test expecting two model calls. That fixture now explicitly accepts the
 one bounded comparison step. After binding both exact supporting quotations,
 all 100 affected native cases passed, including the 34 new comparison cases,
 contribution queue/retry, public visibility, guest roles, migration/metadata,
 account erasure and the exact Monitoring backlog gate. The exact API Ruff gate
-passed. Production receipts follow after activation. No browser interaction QA or real production
+passed. Exact activation and production receipts follow below. No browser interaction QA or real production
 user records are part of these checks.
 
 Validated client sources are Pharma `41884f2273436c8747fb6b6adaf868852575fa6d`
 and Loyer `1552cb881f275c34633fd89f954eef639b0c0ca7`, saved as Sites version 18
 in each existing project. Both builds contain 137 files; source and built output
 were scanned against the three configured secret values with zero matches.
-Public production activation is still pending at this implementation checkpoint.
+Both versions are now published at their existing public custom domains. Native
+`git-2eb7d5ccc256` activated at 21:20:24 UTC on 27 September. Pharma and Loyer
+published at 21:22:18 and 21:22:50 UTC respectively. Both exact-head GitHub CI
+runs succeeded (36350878940 and 36350885909). Each production origin passed 90
+HTTP/gateway/guide checks and 47 exact asset hash comparisons. All 42 checked
+native modules match source; migration `01d495bef125`, both exact-quotation
+composite foreign keys and current scope constraints are present. Three API/worker
+checks, the stdin-only synthetic file parser and local Laya health passed.
+
+[Exact release receipt](product-releases/2026-09-27-1.15.0.json) contains the source,
+version, deployment and runtime evidence. Verification created no real production
+user records or paid model probes. Browser interaction QA and independent
+professional accuracy/human acceptance are not claimed. Stage 4a is DONE; stage 4b
+monitoring-triggered reopening and both full specifications remain IN PROGRESS.
+The existing hourly heartbeat remains ACTIVE.

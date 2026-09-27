@@ -206,7 +206,8 @@ and exact citations, show later-evidence status separately, and support current
 editor dismiss/restore with visible history. Public/private audience containment
 and source withdrawal apply before comparison inputs and reader counts. See
 [architecture, bounds and release acceptance](PRODUCT_CLAIM_EVOLUTION.md).
-Production verification is pending in that record. Monitoring-triggered reopening
+Exact native and both-client production acceptance passed; see the linked record
+and [release receipt](product-releases/2026-09-27-1.15.0.json). Monitoring-triggered reopening
 (stage 4b), recurring discovery, private semantic indexing, independent evaluation
 and full native visual migration remain open; the full specifications remain
 IN PROGRESS.
