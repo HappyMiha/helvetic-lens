@@ -1,8 +1,8 @@
 # Private team monitoring
 
-Status: VERIFYING — scoped dynamic dossier stage 2b2, release 1.12.
+Status: DONE — scoped dynamic dossier stage 2b2, release 1.12.
 Local implementation uses the shared core and both existing product clients.
-Production acceptance is pending. The complete dynamic and visual specifications
+Exact native and both-client production acceptance passes. The complete dynamic and visual specifications
 remain IN PROGRESS.
 
 ## Audience and native authority
@@ -79,8 +79,18 @@ equivalence and legacy preservation, cross-organization foreign-key rejection,
 and page-watch denial before any fetch. The broad affected native suite passes 661 cases with two conditional
 PostgreSQL concurrency skips. The final private/job/live-matching run passes 31
 cases; these counts overlap. Exact API lint and the required backlog gate pass.
-Both client suites pass 84 cases, lint and types; final builds and production
-receipts are verified separately before release acceptance. No paid provider calls or production
+Both final client suites pass 84 cases, lint, strict types and production builds;
+each build contains 121 files. Configured provider credentials are absent. Both
+GitHub CI runs succeed. Production verification passes 63 HTTP/auth/gateway checks
+and 39 exact served JS/CSS hashes per custom domain. Native source hashes match
+all 30 checked modules; private/team composite foreign keys, migration
+`fdc495bef124` and the nine research tables are present. API and CPU worker health
+pass; the AI worker is running without a configured Docker health check and its
+local extraction fixture passes. Local Laya is healthy. Native functional release
+`git-3378e6d33ada` activated at 18:06:26 UTC; Sites 15 Pharma and Loyer published at
+18:07:42/18:08:14 UTC. [Exact release receipt](product-releases/2026-09-27-1.12.0.json).
+No browser interaction, whole-page visual QA or professional factual-quality
+acceptance is claimed. No paid provider calls or production
 user records are needed for these checks.
 
 Once private active monitoring exists, rolling back to code predating this policy

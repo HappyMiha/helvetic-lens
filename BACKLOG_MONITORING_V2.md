@@ -93,7 +93,7 @@ Sixteen authored color pairs exceed 4.5:1. No browser/human visual acceptance is
 claimed. [Implementation and remaining migration](docs/PRODUCT_VISUAL_LANGUAGE.md),
 [exact evidence](docs/product-releases/2026-09-27-1.9.0.json).
 
-**Members-only active dossier monitoring — 27 September 2026: VERIFYING (stage 2b2).**
+**Members-only active dossier monitoring — 27 September 2026: DONE (scoped stage 2b2).**
 Scoped MV2-019/021/023 continuation after verified 1.11 workspace teams: owners can
 activate a managed dossier for its accepted team, using the same native topics,
 matching, investigations, Today feed and consented digests. Existing activated
@@ -119,8 +119,12 @@ Outside-workspace invitations, living public research and automatic cross-run
 material-change reconciliation remain separate unfinished outcomes.
 Implementation: [private monitoring architecture and acceptance](docs/PRODUCT_PRIVATE_MONITORING.md).
 Native checks pass 661 affected cases (two conditional PostgreSQL skips) and 31
-final private/job/live-matching cases, with overlap. Exact production acceptance
-is pending; no broader parent task is complete.
+final private/job/live-matching cases, with overlap. Both clients pass 84 tests,
+lint, types and production builds. Exact production acceptance passes 63 HTTP
+checks and 39 asset hashes per product; all 30 native module hashes, scoped foreign
+keys, research tables, workers and local Laya pass. Native git-3378e6d33ada and
+both Sites 15 versions are live. [Exact evidence](docs/product-releases/2026-09-27-1.12.0.json).
+No broader parent task or complete specification is marked DONE.
 
 **Dossier team roles — 27 September 2026: DONE (scoped stage 2b1, workspace collaboration).**
 Scoped MV2-021/023 continuation: OWNER/EDITOR/CONTRIBUTOR/VIEWER roles,
@@ -2210,7 +2214,7 @@ above supersedes the River-only count limitation for readable Today queues.
 ### MV2-021 — Workspace: Impact Inbox, decisions and Impact Matrix
 
 **Active follow-up, 27 September:** members-only active dossier monitoring (stage
-2b2) is VERIFYING under the scope and acceptance above. Preserve existing
+2b2) is DONE within the scope and exact acceptance above. Preserve existing
 workspace audiences and all shared source/delivery boundaries.
 
 **Product follow-up, 27 September:** scoped workspace dossier teams (stage 2b1) are DONE;
