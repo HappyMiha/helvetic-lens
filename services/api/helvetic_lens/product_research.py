@@ -25,6 +25,7 @@ from .product_models import DossierEntry, ProductDossier, ResearchThread
 from .product_operations import audit, fingerprint, require_revision, visible_query
 from .product_pagination import MAX_RECORDS, PAGE_SIZE, cursor_position, next_cursor
 from .product_provenance import SourceRecord, prepare
+from .product_source_reviews import current_reviews, review_vector
 
 
 class Question(legal_profiles.Input):
@@ -217,14 +218,18 @@ def search_workspace(session, product, user, terms, mode="all"):
     return results, count(topic_query) + count(question_query) + count(entry_query)
 
 
-def research_sources(session, parent, question, organization_id):
+def research_sources(session, parent, question, organization_id, *, reviews=None):
     """Bounded exact snapshots: saved team text and monitored page extracts, never uploads."""
+    reviews = current_reviews(session, parent.id) if reviews is None else reviews
+    excluded = {url for url, row in reviews.items() if row.data_json["decision"] == "exclude"}
     rows = list(session.scalars(select(DossierEntry).where(DossierEntry.dossier_id == parent.id,
+        DossierEntry.url.not_in(excluded),
         DossierEntry.kind.in_(("reference", "note", "discussion", "review", "feedback")))
         .order_by(DossierEntry.created_at.desc(), DossierEntry.id).limit(30)))
     candidates = [{"key": row.id, "kind": "team_contribution", "title": row.title or "Team contribution",
                    "text": row.body[:1800], "url": row.url, "date": iso(row.created_at)} for row in rows if row.body.strip()]
-    monitors = session.scalars(select(DossierEntry).where(DossierEntry.dossier_id == parent.id, DossierEntry.kind == "monitor")
+    monitors = session.scalars(select(DossierEntry).where(DossierEntry.dossier_id == parent.id,
+        DossierEntry.url.not_in(excluded), DossierEntry.kind == "monitor")
         .order_by(DossierEntry.created_at.desc(), DossierEntry.id).limit(20))
     words = re.findall(r"\w{4,}", question.lower())[:20]
     for monitor in monitors:
@@ -246,6 +251,7 @@ def research_sources(session, parent, question, organization_id):
             text = json.dumps({key: evidence.get(key) for key in ("work_title", "expression_title", "event_type", "detected_at", "source_evidence")}, ensure_ascii=False)
             candidates.append({"key": match["id"], "kind": "official_event_metadata", "title": evidence.get("work_title") or "Saved source event",
                 "text": text[:1800], "url": evidence.get("source_url", ""), "date": match["matched_at"]})
+    candidates = [item for item in candidates if item["url"] not in excluded]
     candidates.sort(key=lambda item: sum(word in (item["title"] + " " + item["text"]).lower() for word in words), reverse=True)
     return [{**item, "id": f"S{i + 1}", "sha256": hashlib.sha256(item["text"].encode()).hexdigest()} for i, item in enumerate(candidates[:18])]
 
@@ -253,7 +259,7 @@ def research_sources(session, parent, question, organization_id):
 def answer_needs_review(session, parent, profile, row, organization_id):
     if row.accepted_entry_id and row.accepted_at:
         contributions = select(DossierEntry.id).where(DossierEntry.dossier_id == parent.id,
-            DossierEntry.kind.in_(("reference", "note", "discussion", "research", "feedback")),
+            DossierEntry.kind.in_(("reference", "note", "discussion", "research", "feedback", "source_review")),
             DossierEntry.created_at > row.accepted_at).limit(1)
         watched_laws = select(DossierEntry.data_json["law_id"].as_string()).where(
             DossierEntry.dossier_id == parent.id, DossierEntry.kind == "monitor")
@@ -429,7 +435,9 @@ def research_routes(router, service, actor):
             require_revision(row, data.expected_revision)
             if session.scalar(select(func.count()).select_from(DossierEntry).where(DossierEntry.thread_id == row.id)) >= 1000:
                 fail("This question has reached its 1,000-contribution limit.")
-            sources = research_sources(session, parent, row.title + " " + row.body, identity.organization_id)
+            reviews = current_reviews(session, parent.id)
+            review_snapshot = review_vector(reviews)
+            sources = research_sources(session, parent, row.title + " " + row.body, identity.organization_id, reviews=reviews)
             captured = fingerprint(sources)
             question = {"title": row.title, "context": row.body, "monitoring_goal": profile.config_json.get("goal"),
                         "sources": sources}
@@ -463,11 +471,13 @@ def research_routes(router, service, actor):
                     fail("This research request belongs to a different question revision.", 409)
                 return entry_payload(session, existing)
             require_revision(row, data.expected_revision)
-            if profile.revision != profile_revision or fingerprint(research_sources(session, parent, row.title + " " + row.body, identity.organization_id)) != captured:
+            reviews = current_reviews(session, parent.id)
+            if (profile.revision != profile_revision or review_vector(reviews) != review_snapshot
+                    or fingerprint(research_sources(session, parent, row.title + " " + row.body, identity.organization_id, reviews=reviews)) != captured):
                 fail("The topic or its evidence changed while AI worked. Request a fresh research note.", 409)
             post = DossierEntry(dossier_id=parent.id, thread_id=row.id, request_key=key, kind="research",
                 title="AI research note · requires review", body="\n\n".join(item.claim for item in result.findings) or "The saved evidence is insufficient to answer this question.",
-                actor_user_id=identity.user_id, data_json={**result.model_dump(), "sources": sources,
+                actor_user_id=identity.user_id, data_json={**result.model_dump(), "sources": sources, "source_review_ids": review_snapshot,
                     "input_revision": data.expected_revision, "provider": service.settings.apertus_provider, "model": service.settings.apertus_model})
             session.add(post)
             row.revision += 1

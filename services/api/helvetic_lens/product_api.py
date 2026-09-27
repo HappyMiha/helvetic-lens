@@ -88,10 +88,19 @@ def dossier(session, product, identifier, user):
 
 def entry_payload(session, entry):
     author = session.get(User, entry.actor_user_id) if entry.actor_user_id else None
-    return {"id": entry.id, "kind": entry.kind, "thread_id": entry.thread_id, "title": entry.title, "body": entry.body,
+    result = {"id": entry.id, "kind": entry.kind, "thread_id": entry.thread_id, "title": entry.title, "body": entry.body,
             "url": entry.url, "data": entry.data_json, "byte_size": entry.byte_size,
             "sha256": entry.sha256, "author": author.name if author else "Former member",
             "created_at": iso(entry.created_at)}
+    if entry.kind == "reference":
+        from .product_source_reviews import current_reviews
+
+        cache = session.info.setdefault("product_source_reviews", {})
+        if entry.dossier_id not in cache:
+            cache[entry.dossier_id] = current_reviews(session, entry.dossier_id)
+        review = cache[entry.dossier_id].get(entry.url)
+        result["source_review"] = entry_payload(session, review) if review else None
+    return result
 
 
 def payload(session, row, profile, *, detail=True):
@@ -411,4 +420,7 @@ def product_router(service):
     from .product_provenance import provenance_routes
 
     provenance_routes(router, service, actor)
+    from .product_source_reviews import source_review_routes
+
+    source_review_routes(router, service, actor)
     return router

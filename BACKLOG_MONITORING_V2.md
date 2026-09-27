@@ -247,6 +247,42 @@ gateway, three source-status, two recipe, two continuation, two import), authore
 strict TypeScript and the Sites-helper production build. No browser interaction QA.
 
 
+Eighth slice — IMPLEMENTED / final client publication pending (scope recorded before implementation): accountable source
+review for collective dossiers. An administrator can explicitly include, exclude or
+reset to unreviewed an existing reference's exact URL within that dossier, with a
+required explanation. Retain append-only attributed history using existing entries,
+monotonic per-URL revisions, an expected latest review ID and exact request retries.
+Duplicate references to that exact URL share the decision; other URLs, products and
+dossiers remain independent. Viewers can read current decisions and paginated history.
+Both clients show the current decision and a review dialog that retains unsaved text,
+never silently rebases a conflict, and allows explicit refresh/review before retry.
+New AI research excludes saved material at excluded exact URLs, including connected
+page extracts and event metadata. Unreviewed remains eligible for backward compatibility.
+Recheck the review snapshot after inference and reject stale notes. Retain past AI
+snapshots/accepted answers, mark answers for review after decisions change, and preserve
+current decisions/history in escaped briefs and JSON export. No source fetch, AI call,
+watch/schedule/email change occurs when reviewing; no decision establishes medical or
+legal correctness. Dependencies: native identity, dossier visibility, entry storage,
+workspace locks and existing research fingerprint checks; no source expansion or schema
+migration. Acceptance: per-URL scope, review history/pagination, duplicate references,
+concurrent/stale decisions, exact retries and key collisions, fresh role/session and
+CSRF/tenant/product/private-draft denial, exclusion and restoration across candidate
+kinds, inference-time changes, retained old evidence, escaped brief/export, both clients'
+contracts/lint/types/build and native regression gates. Seventh core `git-e8a0dae4dd8e`
+verified active since 03:39; final client publication stays in 08:00–09:00 Zurich.
+
+Verification: all 92 affected native cases passed (91 integration, one smoke), including
+ten new source-review cases. Coverage includes both products, duplicate/exact-URL scope,
+immutable attributed history and 55-record pagination, monotonic decisions despite
+clock order, stale/idempotent/conflicting requests, malformed inputs, role/session/CSRF
+and private-parent boundaries, exclusion/restoration across reference/page/event
+candidates, retained accepted snapshots and inference-time review changes. Exact API
+lint passed. Each client passed 20 tests (nine gateway, three source-status, two recipe,
+two continuation, two import, two review-state), lint, TypeScript and the final
+Sites-helper production build. Responsive source review layout was checked in code;
+no browser interaction QA or premature client activation is claimed.
+
+
 **MV2 collective product research contribution, 27 September 2026 — DONE (scoped release):** Develop
 Pharma and Loyer for small professional teams beyond monitor setup: a daily work
 queue, medicine/programme or client/matter context, accountable owners, review dates,

@@ -409,6 +409,20 @@ def operations(router, service, actor):
                     f'{esc(action.priority)} · Owner: {esc((assigned or {}).get("name"))} · Due: {esc(action.due_on)}</p>'
                     f'{origin}<p>{esc(action.detail)}</p><p><b>Outcome:</b> {esc(action.outcome)}</p><p>{link(action.source_url)}</p></article>')
             decisions = ''.join(f'<article><h3>{esc(note.title or "Note")}</h3><p class="meta">{esc(iso(note.created_at))}</p><p>{esc(note.body)}</p></article>' for note in notes)
+            from .product_source_reviews import LABELS, current_reviews, review_query
+
+            reviews = current_reviews(session, row.id)
+            def review_html(review):
+                if review is None:
+                    return '<p>Needs review; eligible for AI research.</p>'
+                reviewer = session.get(User, review.actor_user_id) if review.actor_user_id else None
+                return (f'<p><b>{esc(LABELS[review.data_json["decision"]])}</b> · '
+                    f'{esc(reviewer.name if reviewer else "Former member")} · {esc(iso(review.created_at))} · '
+                    f'Revision {esc(review.data_json["revision"])}</p><p>{esc(review.body)}</p>')
+            review_history = session.scalars(review_query(row.id).order_by(
+                DossierEntry.created_at.desc(), DossierEntry.id.desc()).limit(50)).all()
+            review_count = session.scalar(select(func.count()).select_from(review_query(row.id).subquery()))
+            review_history_html = ''.join(f'<article>{link(review.url)}{review_html(review)}</article>' for review in review_history)
             sources = []
             for ref in references:
                 provenance = ref.data_json.get("discovery")
@@ -420,7 +434,7 @@ def operations(router, service, actor):
                         f'<p>Catalogue record: {esc(record["id"])}. {esc(record["title"])} '
                         f'({esc(record.get("date") or "date unavailable")}).</p>'
                         '<p>Search provenance was verified on import. Catalogue metadata only; full text and conclusions are not verified.</p>')
-                sources.append(f'<li>{esc(ref.title)} — {link(ref.url)}{origin}</li>')
+                sources.append(f'<li>{esc(ref.title)} — {link(ref.url)}{origin}{review_html(reviews.get(ref.url))}</li>')
             sources = ''.join(sources)
             questions = session.scalars(select(ResearchThread).where(ResearchThread.dossier_id == row.id)
                 .order_by(ResearchThread.updated_at.desc(), ResearchThread.id).limit(50)).all()
@@ -466,6 +480,7 @@ def operations(router, service, actor):
 <h2>Actions and outcomes</h2>{''.join(cards) or '<p>No actions recorded.</p>'}
 <h2>Review decisions and notes</h2>{decisions or '<p>No review decisions recorded.</p>'}
 <h2>Original-source references</h2><ul>{sources or '<li>No additional references saved.</li>'}</ul>
+<h2>Source review history</h2><p class="meta">Latest {len(review_history)} of {review_count} reviews. Decisions apply to the exact URL in this dossier's new AI research. Unreviewed sources remain eligible. Existing answers, page watches and notifications are retained.</p>{review_history_html or '<p>No source reviews recorded.</p>'}
 <h2>Saved searches</h2><p class="meta">Reusable search queries, not scheduled monitors or records of retrieved results. Review each query before searching again.</p>{''.join(saved_searches) or '<p>No searches saved.</p>'}
 <footer>Generated {esc(iso(utcnow()))}. Snapshot of this workspace's recorded work: latest 50 questions, 100 actions, 20 notes/reviews, 100 saved references and 50 saved searches. Attachments are not included. This brief records team decisions; it does not establish complete source coverage or professional validation. Monitoring remains {esc(profile.status)}. Dates use Europe/Zurich for the work queue.</footer></html>'''
             return HTMLResponse(page, headers={"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff",

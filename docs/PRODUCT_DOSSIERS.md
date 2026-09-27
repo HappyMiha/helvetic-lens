@@ -422,3 +422,51 @@ Validation: all 82 affected native cases passed (81 integration and the backlog 
 gate), including 18 dedicated provenance cases and a verified second-page import.
 Exact API lint passed. Both clients passed 17 tests, lint, TypeScript and production
 builds through the Sites helper. No browser interaction verification is claimed.
+
+
+## Team source decisions — overnight development, 27 September
+
+Saved references now expose the current team's source review. An administrator chooses
+Include, Exclude or Needs review and explains why. The decision applies to an exact URL
+within one dossier, including duplicate references to that same URL. Different URL
+strings, dossiers, products and organizations remain independent. These are relevance
+decisions, not validation of medical/legal correctness. Unreviewed remains eligible for
+new AI research to preserve existing behavior; eligibility is not a promise that the
+bounded relevance selection will choose that source.
+
+`product_source_reviews.py` uses existing append-only `source_review` entries. GET/POST
+`/api/products/{product}/dossiers/{id}/sources/{reference_id}/reviews` resolve a real
+reference under ordinary parent access, reread current membership/session, and serialize
+writes under native workspace/account locks. A required expected review ID protects
+against concurrent edits, including through a duplicate reference. Per-URL monotonic
+revisions determine the current decision even when timestamps do not sort the same way.
+Exact retries return the original saved review without overwriting a later decision;
+reusing a request key with a different body cannot overwrite an earlier entry. History has true totals
+and 50-record pages. Erased authors use the existing Former member attribution.
+
+Both clients show the current decision, author, explanation and time on source cards.
+The review dialog preserves draft explanations after errors and conflicts. Refreshing
+history never silently changes the draft's expected revision; the user explicitly
+reviews the latest decision and chooses it as a new starting point. Retry identity is
+retained for the same submission. Viewers can read history but cannot review sources.
+The dialog uses existing accessible primitives and a bounded responsive scrolling area.
+No browser interaction verification is claimed in this background run.
+
+New AI research excludes saved contributions, connected-page extracts and saved event
+metadata at excluded exact URLs. Review explanations themselves are not AI evidence.
+The review vector is captured before inference, checked again before saving, and stored
+with the saved research note; any intervening review decision rejects a stale result,
+even when selected text happened to stay the same. Old accepted answers and citation
+snapshots are retained, with the existing answer-review signal after a source decision.
+Neither this review operation nor listing history fetches sources, calls a model,
+changes topic revisions, pauses a watch or alters email behavior.
+
+The private brief shows current decisions next to references and the latest 50 review
+records with the actual total; HTML is escaped. JSON export retains current decisions
+and review entries within its existing 10,000-entry limit. No new schema, external
+service, provider coverage or public collaboration surface was introduced. Final Sites
+activation remains reserved for 08:00–09:00 Zurich.
+
+Validation: all 92 affected native cases passed (91 integration and the backlog smoke
+gate), including ten new review cases. Exact API lint passed. Each client passed 20
+tests, lint, TypeScript and final production builds. No browser interaction QA.
