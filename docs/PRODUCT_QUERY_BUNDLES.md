@@ -1,6 +1,6 @@
 # Reviewed multilingual query bundles
 
-Status: IN PROGRESS, scoped discovery follow-up, 27 September 2026.
+Status: DONE (scoped release), verified 1.7.0, 27 September 2026.
 
 ## Product outcome
 
@@ -39,8 +39,7 @@ malformed drafts are explicit and never substituted with fabricated suggestions.
 
 ## Verification
 
-Implementation and local validation are prepared; exact production activation is
-still pending. Both product clients have 66 passing workflow/render/gateway cases,
+Implementation and exact production activation are verified. Both product clients have 66 passing workflow/render/gateway cases,
 clean authored lint, strict TypeScript and successful Sites production builds.
 The full affected native suite passed 255 cases (254 integration plus the backlog
 smoke). Final interrupted-run provenance and legacy receipt coverage passed 53
@@ -61,6 +60,11 @@ Jev decision-token cost was estimated at USD 0.000442596; retrieval, drafting an
 hosting costs remain unmeasured. No private query, customer record or provider key
 is included in public evidence.
 
-The next release proof must identify exact core/client sources, terminal Sites
-deployments and served assets. Private-corpus semantic retrieval, representative
+Core `git-437c58938841` deployed successfully at 13:28:03 UTC after 755 standard
+release checks. Pharma/Loyer Sites version 9 deployments and their exact-head
+GitHub checks succeeded. Both custom domains passed 39 HTTP/gateway/guide checks
+and 36 exact JavaScript/CSS asset comparisons each. All six affected deployed
+native modules match the verified development source; Jev, Laya, retrieval and
+planner credentials remain configured. [Immutable release proof](product-releases/2026-09-27-1.7.0.json)
+records source identities, deployment outcomes, runtime hashes and boundaries. Private-corpus semantic retrieval, representative
 professional evaluation and recurring rediscovery remain separate acceptance.

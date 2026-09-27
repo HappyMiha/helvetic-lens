@@ -995,7 +995,7 @@ limits: [decision search](PRODUCT_DECISION_SEARCH.md). This scoped release does
 not complete semantic private-corpus indexing, recurring query discovery or pilots.
 
 
-## Reviewed multilingual search — 1.7.0 prepared, 27 September 2026
+## Reviewed multilingual search — 1.7.0 verified, 27 September 2026
 
 The main question now supports two reviewed alternatives with bounded federated
 retrieval, one Jev/Laya candidate pool and exact found-by-query provenance in
@@ -1006,4 +1006,9 @@ their reviewed bundle. Both clients pass 66 tests, lint/types and Sites builds;
 the native affected suite passed 255 cases and final targeted correction passed
 53 cases. Real DE/FR drafting and five retrieval lanes with paired Jev/Laya ranking
 passed an operator public-query probe. Details and source limits:
-[query bundles](PRODUCT_QUERY_BUNDLES.md). Exact release activation remains pending.
+[query bundles](PRODUCT_QUERY_BUNDLES.md). Core `git-437c58938841` completed its
+755 standard checks and healthy release; both Sites version 9 deployments and
+exact-head GitHub checks succeeded. Each custom domain passed 39 HTTP/gateway
+checks and 36 exact served-asset hashes, with six native module hashes verified.
+[Immutable release evidence](product-releases/2026-09-27-1.7.0.json). Broader private
+semantic retrieval, recurring discovery and professional acceptance remain open.

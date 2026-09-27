@@ -72,7 +72,7 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 ## Product decision
 
-**Multilingual query bundles — 27 September 2026: IN PROGRESS.** Scoped follow-up
+**Multilingual query bundles — 27 September 2026: DONE (scoped release).** Scoped follow-up
 to MV2 shared discovery: users review up to three complementary public queries,
 optionally drafted in selected languages by the existing configured generative
 planner. Jev/Laya retain shared decision/ranking duties. Dependencies: verified
@@ -85,7 +85,9 @@ same final candidate pool for comparison, precise found-by-query provenance in
 history/import/brief/export, budgets counting query units, no automatic retrieval
 from plans, current-session checks after generation, privacy/retry/failure tests,
 both client gates and exact verified production. Details:
-[query bundles](docs/PRODUCT_QUERY_BUNDLES.md). Broader semantic workspace indexing,
+[query bundles](docs/PRODUCT_QUERY_BUNDLES.md). Core437c58938841, both Sites9
+deployments and exact-head CI are verified; each product passed39 HTTP and36
+served-asset checks. [Immutable release proof](docs/product-releases/2026-09-27-1.7.0.json). Broader semantic workspace indexing,
 independent professional evaluation and recurring discovery remain open.
 
 **Jev/Laya discovery — 27 September 2026: DONE (scoped release).** The owner explicitly
