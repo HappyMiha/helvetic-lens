@@ -393,6 +393,46 @@ browser interaction QA or final Sites activation is claimed. Tenth core `git-581
 was verified active since 04:59:28 Zurich; final client publication remains 08:00–09:00.
 
 
+Twelfth slice — IMPLEMENTED / final client publication pending: read the captured
+versions of a connected page inside each product. Reuse native law_history.page for
+20-record version metadata pages/cutoff cursors and evidence_pages.detail for 50-passage
+or 16,000-character text pages, without hydrating entire version bodies. New product
+read routes must require a visible dossier, its actual monitor entry, the current
+organization's DocumentWatch, visible Law and exact visible Version/law relation.
+Use fresh session/membership checks and retain viewer/private-draft/product isolation.
+Return only relevant metadata, exact saved text and provenance, stripping native artifact
+and unrelated application routes. Reading is not a fetch, model call, write, acknowledgement,
+watch/schedule/email change or original-artifact download. Retain the existing full-history
+link for advanced tools. Show saved-versus-declared dates, synthetic/imported caveats,
+selected-article scope, language, missing/unreadable text and truthful page counts.
+Both clients open a responsive history/reader dialog from each connected watch, with
+stable older/newer history pages, explicit refresh, read retry, first-page recovery and
+text-page navigation using server offsets. Hide stale content after failed reads. Pin
+continued text pages to the Version evidence_revision and reject a changed version or
+changed law relation instead of mixing pages; explicit first-page reload adopts the
+current revision. Dependencies/source readiness: existing approved native snapshots,
+visibility rules, monitor links and SQL pagination only; no migration or new source.
+Acceptance: full multi-page history, tied saved times/cursor scope and no full body loads,
+exact Unicode text/structured passage pages, synthetic/import/article-scope metadata,
+empty/unreadable/missing records, revision and relation changes, private/version-owner/
+watch/tenant/product/dossier/viewer denial, no source/model/write side effects, gateway and
+client navigation contracts, lint/types/build and native regressions. Eleventh core
+`git-c5a209462fb3` is verified active since 05:19:26 Zurich; final Sites release stays 08:00–09:00.
+
+Verification: exact API lint and all 124 native product/backlog cases passed (123
+integration, one smoke). Eight new reader cases cover both products, complete 47-version
+history with tied saved times, stable cutoff/backtracking, no full Version ORM loads,
+111 exact passages and Unicode text reconstruction, synthetic/imported/selected-article
+provenance, missing/empty/unreadable evidence, changed revisions during/between reads,
+version reassignment, private drafts, removed monitor links, watch/Law/Version ownership,
+wrong parent/product/tenant, viewer reads and write denial, cursor/offset bounds and no
+source/model/entry side effects. The additional native history/evidence regressions also
+passed (31 in the focused run, including the eight new cases; 23 additional unique cases).
+Both clients passed 32 tests (three history/text navigation cases and a private gateway
+case added), lint, strict TypeScript and Sites-helper production builds. No browser
+interaction QA or final product Sites activation is claimed.
+
+
 **MV2 collective product research contribution, 27 September 2026 — DONE (scoped release):** Develop
 Pharma and Loyer for small professional teams beyond monitor setup: a daily work
 queue, medicine/programme or client/matter context, accountable owners, review dates,

@@ -611,3 +611,50 @@ one new gateway case), lint, strict TypeScript and Sites-helper production build
 Responsive layout, failure recovery and source-link guards were reviewed in code; no
 browser interaction QA or final Sites activation is claimed. Tenth core `git-581218bf6a9b`
 was verified active since 04:59:28 Zurich; final client publication remains 08:00–09:00.
+
+## Saved source history and reader — overnight development, 27 September
+
+Read-only product routes `/dossiers/{id}/documents/{law_id}/versions` and
+`/dossiers/{id}/documents/{law_id}/versions/{version_id}` reuse native law-history
+metadata and the native SQL evidence pager. They require fresh current membership,
+the same visible product dossier, an actual monitor entry, the organization's
+DocumentWatch, visible Law and an exact visible Version/law relation. These checks
+also apply before returning the read; viewer access and author-private drafts keep
+their existing meaning. No schema, source request, model inference, acknowledgement,
+read milestone, saved entry, watch setting, schedule or notification is added.
+
+History uses fixed 20-record pages with native scoped cutoff cursors, stable saved-time
+and ID ordering, true accessible totals and explicit refresh. Going back retains the
+original first-page cursor. The cutoff excludes newer captures; later corrections and
+backdated imports can change the list. Metadata projection strips native application
+routes and artifact keys/URLs and does not hydrate saved text or passage bodies.
+
+A saved version loads at most 50 passage records or 16,000 Unicode characters, using
+server offsets rather than JavaScript string lengths. The reader sends the selected
+metadata's evidence_revision from the first page onward; the API checks that revision
+and exact law relation before and after reading. Corrections and reassignment cannot
+silently combine text from different saved revisions. Explicit first-page reload can
+adopt the current revision. Unreadable passage records are counted separately without
+changing the native positions or total. Empty text remains visibly empty.
+
+Both clients open the responsive history/reader from connected page watches. They
+show capture and declared-document dates, provenance, synthetic/imported status,
+selected-article scope and source version date, language when available, page counts
+and exact escaped text. Original-source links allow only HTTP(S). Reading is not a live
+check; the original page may have changed. The advanced native history link remains.
+Every resource transition mounts a fresh read and failed reads hide previous content;
+retry, refresh, older/newer history, previous/next text and return-to-history controls
+remain available. The reader does not expose raw original-artifact downloads.
+
+Verification: exact API lint and all 124 native product/backlog cases passed (123
+integration, one smoke). Eight new reader cases cover both products, complete 47-version
+history with tied saved times, stable cutoff/backtracking, no full Version ORM loads,
+111 exact passages and Unicode text reconstruction, synthetic/imported/selected-article
+provenance, missing/empty/unreadable evidence, changed revisions during/between reads,
+version reassignment, private drafts, removed monitor links, watch/Law/Version ownership,
+wrong parent/product/tenant, viewer reads and write denial, cursor/offset bounds and no
+source/model/entry side effects. The additional native history/evidence regressions also
+passed (31 in the focused run, including the eight new cases; 23 additional unique cases).
+Both clients passed 32 tests (three history/text navigation cases and a private gateway
+case added), lint, strict TypeScript and Sites-helper production builds. No browser
+interaction QA or final product Sites activation is claimed.
