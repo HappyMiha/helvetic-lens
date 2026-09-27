@@ -75,6 +75,7 @@ def _topics(session, organization_id, event_id):
         .join(MonitoringTopic, MonitoringTopic.id == TopicEventMatch.topic_id)
         .join(MonitoringTopicRevision, MonitoringTopicRevision.id == TopicEventMatch.topic_revision_id)
         .where(TopicEventMatch.organization_id == organization_id, TopicEventMatch.event_id == event_id,
+               MonitoringTopic.dossier_id.is_(None),
                MonitoringTopic.organization_id == organization_id,
                MonitoringTopicRevision.organization_id == organization_id,
                MonitoringTopicRevision.topic_id == MonitoringTopic.id))

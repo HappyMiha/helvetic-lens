@@ -55,6 +55,7 @@ class ProductDossier(Base):
     __table_args__ = (
         UniqueConstraint("id", "organization_id", name="uq_product_dossier_org"),
         UniqueConstraint("organization_id", "product", "creation_key", name="uq_product_dossier_creation"),
+        CheckConstraint("monitoring_audience IN ('workspace', 'team')", name="ck_dossier_monitoring_audience"),
     )
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"), index=True)
@@ -62,6 +63,7 @@ class ProductDossier(Base):
     profile_id: Mapped[str] = mapped_column(ForeignKey("legal_monitoring_profiles.id", ondelete="CASCADE"), unique=True)
     creation_key: Mapped[str] = mapped_column(String(36))
     team_managed: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
+    monitoring_audience: Mapped[str] = mapped_column(String(16), default="workspace", server_default="workspace")
     access_revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     context_json: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}")

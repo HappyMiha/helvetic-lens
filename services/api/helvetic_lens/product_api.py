@@ -302,6 +302,8 @@ def product_router(service):
         identity = actor(request)
         with service.db.session() as session:
             row, profile = dossier(session, product, identifier, identity.user_id)
+            if row.monitoring_audience == "team":
+                fail("Page watches use the shared workspace library. This private dossier monitors its selected source topics; adding a workspace page watch here is unavailable.", 409)
             if profile.status != "active":
                 fail("Activate the dossier before starting a document watch.")
             entry = session.get(DossierEntry, entry_id)

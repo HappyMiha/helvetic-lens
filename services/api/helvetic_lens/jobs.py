@@ -546,7 +546,16 @@ def serialize(session: Session, job: Job) -> dict:
     if job.type == "relation_candidate_reprocess":
         payload = job.payload or {}
         maintenance = {name: payload.get(name) for name in ("dry_run", "rule_revision", "captured_at")}
-    return {
+    result_data = job.result_json
+    if job.target_type == "digest_delivery" and isinstance(result_data, dict) and "summary" in result_data:
+        from .models import DigestDelivery
+        from .product_access import current_user_id
+        from .product_topic_access import retained_delivery
+
+        if current_user_id():
+            delivery = session.get(DigestDelivery, job.target_id)
+            result_data = retained_delivery(session, delivery) if delivery and delivery.user_id == current_user_id() else {}
+    result = {
         "id": job.id,
         "organization_id": job.organization_id,
         "type": job.type,
@@ -567,7 +576,7 @@ def serialize(session: Session, job: Job) -> dict:
             "type": job.result_type,
             "id": job.result_id,
             "url": job.result_url,
-            "data": job.result_json,
+            "data": result_data,
         }
         if job.result_type or job.result_json
         else None,
@@ -597,3 +606,9 @@ def serialize(session: Session, job: Job) -> dict:
         "started_at": job.started_at,
         "finished_at": job.finished_at,
     }
+
+    if job.type == "topic_match_event":
+        from .product_topic_access import shared_matching_job
+
+        return shared_matching_job(result)
+    return result

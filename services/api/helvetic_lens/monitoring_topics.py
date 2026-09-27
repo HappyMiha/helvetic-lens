@@ -445,6 +445,7 @@ def create_topic(
     ai_draft_id: str | None = None,
     commit: bool = True,
     proposal_metadata: dict | None = None,
+    dossier_id: str | None = None,
 ) -> dict:
     key = idempotency_key.strip()[:120]
     if not key:
@@ -457,6 +458,7 @@ def create_topic(
     ai_metadata = proposal_metadata or ai_metadata
     topic = MonitoringTopic(
         idempotency_key=key,
+        dossier_id=dossier_id,
         status="active",
         current_revision=1,
         created_by_user_id=actor_user_id,

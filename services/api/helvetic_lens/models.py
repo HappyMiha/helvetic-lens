@@ -414,6 +414,9 @@ class MonitoringTopic(Base):
 
     __tablename__ = "monitoring_topics"
     __table_args__ = (
+        ForeignKeyConstraint(["dossier_id", "organization_id"],
+            ["product_dossiers.id", "product_dossiers.organization_id"],
+            name="fk_topic_private_dossier", ondelete="CASCADE"),
         UniqueConstraint(
             "organization_id", "idempotency_key", name="uq_monitoring_topic_org_idempotency"
         ),
@@ -425,6 +428,7 @@ class MonitoringTopic(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
     idempotency_key: Mapped[str] = mapped_column(String(120))
+    dossier_id: Mapped[str | None] = mapped_column(String(36), index=True)
     status: Mapped[str] = mapped_column(String(20), default="active", index=True)
     current_revision: Mapped[int] = mapped_column(Integer, default=1)
     created_by_user_id: Mapped[str | None] = mapped_column(

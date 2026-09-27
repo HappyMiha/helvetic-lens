@@ -1,4 +1,4 @@
-"""Dossier roles within the native workspace; no new active-monitoring audience.
+"""Dossier roles and fixed team/workspace monitoring audiences in the native workspace.
 
 Request context only selects the action. Every authorization decision reads the
 current database membership under the shared organization lock for mutations.
@@ -113,7 +113,7 @@ def role(session, row, profile, user_id):
         explicit = session.get(DossierMember, (row.id, user_id), populate_existing=True)
         if explicit:
             return explicit.role
-        if profile.status == "draft":
+        if profile.status == "draft" or row.monitoring_audience == "team":
             return None
     elif profile.status == "draft" and profile.created_by_user_id != user_id:
         return None
@@ -171,13 +171,16 @@ def visible_profile(user_id):
     member = DossierMember.__table__
     managed = exists(select(1).where(dossier.c.profile_id == LegalMonitoringProfile.id,
         dossier.c.organization_id == LegalMonitoringProfile.organization_id, dossier.c.team_managed.is_(True)).correlate(LegalMonitoringProfile))
+    private = exists(select(1).where(dossier.c.profile_id == LegalMonitoringProfile.id,
+        dossier.c.organization_id == LegalMonitoringProfile.organization_id,
+        dossier.c.monitoring_audience == "team").correlate(LegalMonitoringProfile))
     invited = exists(select(1).select_from(dossier.join(member,
         and_(member.c.dossier_id == dossier.c.id, member.c.organization_id == dossier.c.organization_id)))
         .where(dossier.c.profile_id == LegalMonitoringProfile.id,
                dossier.c.organization_id == LegalMonitoringProfile.organization_id,
                dossier.c.team_managed.is_(True), member.c.user_id == user_id).correlate(LegalMonitoringProfile))
-    return or_(LegalMonitoringProfile.status != "draft", invited,
-               and_(~managed, LegalMonitoringProfile.created_by_user_id == user_id))
+    return or_(and_(LegalMonitoringProfile.status != "draft", ~private), invited,
+               and_(LegalMonitoringProfile.status == "draft", ~managed, LegalMonitoringProfile.created_by_user_id == user_id))
 
 
 def summary(session, row, profile, user_id):
@@ -187,12 +190,13 @@ def summary(session, row, profile, user_id):
     admin = bool(member and member.role == "organization_admin")
     return {"managed": row.team_managed, "revision": row.access_revision,
         "role": effective, "audience": "invited_team" if row.team_managed and profile.status == "draft"
-            else "author" if profile.status == "draft" else "workspace",
+            else "author" if profile.status == "draft" else row.monitoring_audience,
         "can_contribute": rank >= 1, "can_edit": rank >= 2,
         "can_manage": rank == 3 and row.team_managed,
         "can_enable": not row.team_managed and profile.created_by_user_id == user_id and admin,
         "can_publish": rank == 3 if row.team_managed else admin,
         "can_monitor": rank >= 2 and admin,
+        "can_watch_pages": rank >= 2 and admin and row.monitoring_audience != "team",
         "can_activate": admin and (rank == 3 if row.team_managed else rank >= 2)}
 
 
@@ -209,8 +213,8 @@ def current_principal_grant(session, identity):
 
 
 def require_topic(session, topic_id, user_id):
-    # Only activated dossiers contain topic IDs; their read audience remains the
-    # workspace. Role overrides still apply to native topic mutation endpoints.
+    # Activated dossiers retain their chosen read audience. Explicit dossier roles
+    # also govern native topic mutation endpoints, alongside native admin rights.
     for row, profile in session.execute(select(ProductDossier, LegalMonitoringProfile).join(LegalMonitoringProfile)
             .where(ProductDossier.team_managed.is_(True), LegalMonitoringProfile.status != "draft")):
         if topic_id in profile.topic_ids_json:

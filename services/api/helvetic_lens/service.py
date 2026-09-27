@@ -1376,7 +1376,7 @@ class HelveticLens:
                 "preview": preview,
                 "source_options": source_options,
                 "delivery_mode": self.environment_settings.auth_email_mode,
-                "deliveries": [digests.serialize_delivery(item) for item in deliveries],
+                "deliveries": [digests.retained_delivery(session, item) for item in deliveries],
             }
         from .brief_reuse import observe
         observe(self.db, self.organization_id, [item["brief"] for item in preview["events"]], "digest_preview")
@@ -3547,6 +3547,9 @@ class HelveticLens:
 
     def cancel_job(self, job_id: str):
         with self.write_guard, self.db.session() as session:
+            from .product_topic_access import guard_job_write
+
+            guard_job_write(session, job_id)
             try:
                 job = durable_jobs.request_cancel(session, job_id)
             except LookupError as exc:
@@ -3898,6 +3901,9 @@ class HelveticLens:
 
     def retry_job(self, job_id: str, *, actor_id=None):
         with self.write_guard, self.db.session() as session:
+            from .product_topic_access import guard_job_write
+
+            guard_job_write(session, job_id)
             brief = session.scalar(select(Job.id).where(Job.id == job_id,
                 Job.organization_id == self.organization_id, Job.type == "interest_event_brief"))
             if brief:

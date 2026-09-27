@@ -168,6 +168,12 @@ def serialize_delivery(delivery: DigestDelivery) -> dict:
     }
 
 
+def retained_delivery(session, delivery):
+    from .product_topic_access import retained_delivery as scoped_delivery
+
+    return scoped_delivery(session, delivery)
+
+
 def inbox_filters(preference: DigestPreference, period_start: datetime, period_end: datetime) -> ImpactInboxFilters:
     return ImpactInboxFilters(
         detected_from=_aware(period_start), detected_before=_aware(period_end),
@@ -581,6 +587,11 @@ def deliver(database: Database, settings: Settings, delivery_id: str, *, selecti
             job_id: str | None = None, worker: str | None = None, analysis_settings: Settings | None = None, runtime: RelationRuntimeObservation | None = None,
             brief_context=None) -> dict | None:
     with database.session() as session:
+        from .membership_locks import lock_organization
+
+        # Membership changes and the final recipient projection share one lock.
+        # Acquire it before delivery/job rows, matching account-erasure order.
+        lock_organization(session, database.current_organization_id)
         if job_id:
             owned_job = session.scalar(select(Job).where(Job.id == job_id).with_for_update())
             if not owned_job or owned_job.type != "digest_delivery" or owned_job.target_id != delivery_id or owned_job.state != "running" or owned_job.lease_owner != worker:

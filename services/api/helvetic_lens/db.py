@@ -88,6 +88,10 @@ class Database:
 
         @event.listens_for(self._session_factory, "do_orm_execute")
         def restrict_organization(execute_state):
+            if execute_state.is_select:
+                from .product_topic_access import request_policy
+
+                execute_state.statement = request_policy(execute_state.statement)
             if (
                 not execute_state.is_select
                 or execute_state.execution_options.get("include_all_organizations")
@@ -104,7 +108,7 @@ class Database:
                 statement = statement.options(
                     with_loader_criteria(
                         model,
-                        model.organization_id == organization_id,
+                        lambda cls: cls.organization_id == organization_id,
                         include_aliases=True,
                     )
                 )
@@ -112,8 +116,8 @@ class Database:
                 statement = statement.options(
                     with_loader_criteria(
                         model,
-                        (model.owner_organization_id.is_(None))
-                        | (model.owner_organization_id == organization_id),
+                        lambda cls: (cls.owner_organization_id.is_(None))
+                        | (cls.owner_organization_id == organization_id),
                         include_aliases=True,
                     )
                 )

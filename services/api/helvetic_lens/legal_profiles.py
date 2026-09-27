@@ -232,6 +232,7 @@ def apply_delivery(session, row, user_id, settings):
 
 class ActivationInput(RevisionInput):
     share_with_workspace_confirmed: StrictBool = False
+    monitoring_audience: Literal["workspace", "team"] = "workspace"
 
 
 def legal_profiles_router(service):
@@ -339,10 +340,14 @@ def legal_profiles_router(service):
             from .product_models import DossierMember, ProductDossier
 
             parent = session.scalar(select(ProductDossier).where(ProductDossier.profile_id == row.id))
-            if parent and parent.team_managed and session.scalar(select(func.count()).select_from(DossierMember)
+            if data.monitoring_audience == "team" and (not parent or not parent.team_managed):
+                fail("Enable dossier team management before activating members-only monitoring.", "dossier_team_required", 409)
+            if data.monitoring_audience == "workspace" and parent and parent.team_managed and session.scalar(select(func.count()).select_from(DossierMember)
                     .where(DossierMember.dossier_id == parent.id)) > 1 and not data.share_with_workspace_confirmed:
                 fail("Activating this team draft makes the dossier and its monitoring visible to everyone in the workspace. Confirm this audience change.",
                      "dossier_workspace_confirmation", 409)
+            if parent:
+                parent.monitoring_audience = data.monitoring_audience
             plans = selected_plans(session, row.config_json)
             apply_delivery(session, row, identity.user_id, service.environment_settings)
             for pack_id in row.config_json["source_pack_ids"]:
@@ -352,7 +357,8 @@ def legal_profiles_router(service):
             for card, plan in plans:
                 created = monitoring_topics.create_topic(session, plan,
                     idempotency_key=f"legal-profile:{row.id}:{card['id']}", actor_user_id=identity.user_id,
-                    proposal_metadata=row.proposals_json.get(card["id"]), commit=False)
+                    proposal_metadata=row.proposals_json.get(card["id"]), commit=False,
+                    dossier_id=parent.id if parent and parent.monitoring_audience == "team" else None)
                 ids.append(created["id"])
             row.topic_ids_json, row.status, row.step = ids, "active", 4
             row.activated_at = row.updated_at = utcnow()

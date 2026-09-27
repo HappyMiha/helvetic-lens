@@ -176,3 +176,12 @@ OWNER/EDITOR/CONTRIBUTOR/VIEWER roles, account-bound invitations, ownership
 handover and retained private collaborative drafts. Local checks and exact
 production activation pass for both products and the shared native core. Activated monitoring keeps its disclosed
 workspace audience. See [bounds and acceptance](PRODUCT_TEAMS.md).
+
+
+Release 1.12 implements stage 2b2, members-only active monitoring, currently
+VERIFYING. New private topics, native readers, recipient feeds and consented
+digests share current dossier membership. Legacy workspace audiences remain
+unchanged. Shared AI briefs exclude private topics; workspace page watches are
+explicitly unavailable in private dossiers. See [architecture, bounds and release
+acceptance](PRODUCT_PRIVATE_MONITORING.md). Outside-workspace invitations and
+the remaining stages are still IN PROGRESS.

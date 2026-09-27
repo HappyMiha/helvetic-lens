@@ -93,6 +93,35 @@ Sixteen authored color pairs exceed 4.5:1. No browser/human visual acceptance is
 claimed. [Implementation and remaining migration](docs/PRODUCT_VISUAL_LANGUAGE.md),
 [exact evidence](docs/product-releases/2026-09-27-1.9.0.json).
 
+**Members-only active dossier monitoring — 27 September 2026: VERIFYING (stage 2b2).**
+Scoped MV2-019/021/023 continuation after verified 1.11 workspace teams: owners can
+activate a managed dossier for its accepted team, using the same native topics,
+matching, investigations, Today feed and consented digests. Existing activated
+dossiers preserve workspace visibility; no automatic public publication or silent
+narrowing/expansion. Record the activation audience explicitly and show it in both
+clients. Private audience must apply to native profile/product readers, topic
+plans/revisions/matches/reviews/jobs, lists/counts/search, assistant and inference
+contexts, exports/live activity and digest selection through final delivery.
+Dependencies: 1.11 roles/session/organization locks and retained originals, native
+topic lifecycle, InterestFeedReader/DigestReader, job dispatch and account erasure.
+Sources: existing approved source packs and providers; no signup, new key or paid
+probe required. Independently shared documents remain shared. Workspace-wide page
+watch configuration must not be silently presented as private monitoring; trace
+that boundary and expose only capabilities that preserve the selected audience.
+Acceptance: invite/activate/contribute/research/monitor end to end for accepted
+roles in both products; deny nonmember discovery and alternate native reads/writes;
+filter before pagination/counts; revoke access during queued/in-flight research
+and before digest delivery; retain original evidence/history and protect last
+ownership; verify migration equivalence and legacy workspace compatibility. Run
+native behavior/lifecycle suites, both client tests/lint/types/builds, exact core
+lint/backlog checks and production route/assets/runtime validation before DONE.
+Outside-workspace invitations, living public research and automatic cross-run
+material-change reconciliation remain separate unfinished outcomes.
+Implementation: [private monitoring architecture and acceptance](docs/PRODUCT_PRIVATE_MONITORING.md).
+Native checks pass 661 affected cases (two conditional PostgreSQL skips) and 31
+final private/job/live-matching cases, with overlap. Exact production acceptance
+is pending; no broader parent task is complete.
+
 **Dossier team roles — 27 September 2026: DONE (scoped stage 2b1, workspace collaboration).**
 Scoped MV2-021/023 continuation: OWNER/EDITOR/CONTRIBUTOR/VIEWER roles,
 account-bound seven-day invitations for existing workspace colleagues, pending
@@ -2179,6 +2208,10 @@ above supersedes the River-only count limitation for readable Today queues.
 <a id="mv2-021"></a>
 
 ### MV2-021 — Workspace: Impact Inbox, decisions and Impact Matrix
+
+**Active follow-up, 27 September:** members-only active dossier monitoring (stage
+2b2) is VERIFYING under the scope and acceptance above. Preserve existing
+workspace audiences and all shared source/delivery boundaries.
 
 **Product follow-up, 27 September:** scoped workspace dossier teams (stage 2b1) are DONE;
 see the scoped acceptance, dependencies and preserved active audience above.

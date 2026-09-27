@@ -47,12 +47,15 @@ def _jurisdictions(work, event):
 
 class InterestFeedReader(ImpactInboxReader):
     def _topics(self, captured: datetime):
+        from .product_topic_access import visible as topic_visible
+
         return (select(TopicEventMatch)
             .join(MonitoringTopic, MonitoringTopic.id == TopicEventMatch.topic_id)
             .join(MonitoringTopicRevision, MonitoringTopicRevision.id == TopicEventMatch.topic_revision_id)
             .join(RegulatoryEventState, (RegulatoryEventState.event_id == TopicEventMatch.event_id)
                   & (RegulatoryEventState.organization_id == self.organization_id))
             .where(TopicEventMatch.organization_id == self.organization_id,
+                   topic_visible(self.user_id),
                    MonitoringTopic.organization_id == self.organization_id,
                    MonitoringTopicRevision.organization_id == self.organization_id,
                    MonitoringTopicRevision.topic_id == MonitoringTopic.id,

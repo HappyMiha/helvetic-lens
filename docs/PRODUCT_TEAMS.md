@@ -4,6 +4,10 @@ Status: DONE within the scoped workspace-collaboration release 1.11.
 This is the workspace-collaboration part of dynamic dossier stage 2b. The full
 [dynamic specification](DYNAMIC_DOSSIER_SPEC.md) remains IN PROGRESS.
 
+Release 1.12 extends this historical workspace-collaboration baseline with
+[private active monitoring](PRODUCT_PRIVATE_MONITORING.md); its acceptance is
+tracked separately. The audience rules below describe release 1.11.
+
 ## Audience and compatibility
 
 The creator explicitly enables team management on an existing or new dossier.

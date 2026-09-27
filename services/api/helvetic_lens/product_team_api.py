@@ -213,7 +213,7 @@ def routes(router, service, actor):
             for item, row, profile in session.execute(query.order_by(DossierInvitation.created_at.desc(), DossierInvitation.id).offset(offset).limit(50)):
                 inviter = session.get(User, item.invited_by_user_id) if item.invited_by_user_id else None
                 result.append({**invitation(session, item), "dossier_id": row.id, "title": profile.config_json.get("name", "Dossier"),
-                    "invited_by": inviter.name if inviter else "Former member", "audience": "invited_team" if profile.status == "draft" else "workspace"})
+                    "invited_by": inviter.name if inviter else "Former member", "audience": "invited_team" if profile.status == "draft" else row.monitoring_audience})
             return {"items": result, "total": session.scalar(select(func.count()).select_from(query.subquery()))}
 
     @router.post("/dossier-invitations/{invitation_id}/accept")
