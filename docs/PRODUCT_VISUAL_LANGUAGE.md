@@ -116,3 +116,14 @@ reduced motion and the original snapshots remain intact. Both clients pass 89
 tests, lint, strict types and final builds. Both existing public Sites17 are verified: 80 HTTP checks and 47 exact served
 assets per product. [Exact release receipt](product-releases/2026-09-27-1.14.0.json).
 No browser or human visual acceptance is claimed.
+
+
+## Ongoing private monitoring research — 1.16
+
+Both clients now expose standing research settings, actual last-check/daily-usage
+state and source-linked trigger history through the same Brandbook typography,
+accessible controls and existing Lens. No animation runs merely because a policy
+is enabled. Both99-test gates, builds and exact production Sites19 pass; each
+origin has97 HTTP checks and47 exact assets. See
+[acceptance and limits](PRODUCT_MONITORING_RESEARCH.md). Native page-wide migration,
+watched-page triggers and remaining full-spec work remain IN PROGRESS.

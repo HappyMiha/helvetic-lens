@@ -93,7 +93,7 @@ Sixteen authored color pairs exceed 4.5:1. No browser/human visual acceptance is
 claimed. [Implementation and remaining migration](docs/PRODUCT_VISUAL_LANGUAGE.md),
 [exact evidence](docs/product-releases/2026-09-27-1.9.0.json).
 
-**Monitoring-triggered research — 27 September 2026: IN PROGRESS (scoped stage 4b1, release 1.16).**
+**Monitoring-triggered research — 27 September 2026: DONE (scoped stage 4b1, release 1.16).**
 Scoped MV2-019/021/023 continuation: explicitly enable ongoing private research for
 new native topic-match evidence in an active Pharma/Loyer dossier. Reuse native
 matching/admission/current-fingerprint checks, current dossier roles and workspace
@@ -121,6 +121,16 @@ Stage 4b1 covers native topic-match metadata; watched-page-version triggers,
 recurring open-web discovery, private semantic indexing, independent evaluation
 and native visual migration remain subsequent complete outcomes. Full specs and
 MV2 parent tasks remain IN PROGRESS; nine sections/C4 deferrals are unchanged.
+
+Stage 4b1 acceptance: native functional `git-4bcbdeedf6b6` and both Sites19 are
+verified on the exact production domains. Native160 broader/34 final affected
+cases, both99-test client gates, lint/types/builds and both exact-head GitHub CI
+passed. Each origin passed97 HTTP checks and47 exact assets; runtime46 module
+hashes, scheduler/contained schema/migration and four native processes passed.
+No production user records, paid probes or browser/human QA were created/claimed.
+[Architecture and bounds](docs/PRODUCT_MONITORING_RESEARCH.md),
+[exact receipt](docs/product-releases/2026-09-27-1.16.0.json). Full specifications
+remain IN PROGRESS and the existing hourly heartbeat stays ACTIVE.
 
 **Evidence evolution across investigations — 27 September 2026: DONE (scoped stage 4a, release 1.15).**
 Scoped MV2-019/021/023 continuation: after extraction, one durable comparison step
@@ -1501,7 +1511,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS — nine-category settings implemented | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
 | [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
-| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — stage 4b1 native monitoring-triggered research | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
+| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — stage 4b1 DONE; watched-page research next | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
 | [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — native evidence and configuration drafts implemented | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
 | [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
@@ -2368,16 +2378,17 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-021 — Workspace: Impact Inbox, decisions and Impact Matrix
 
-**Active product stage, 27 September:** stage 4b1 monitoring-triggered private
-research is IN PROGRESS under the scope, dependencies and acceptance above.
+**Completed product stage, 27 September:** stage 4b1 monitoring-triggered private
+research is DONE under the scope, dependencies and exact acceptance above.
 
 **Completed product stage, 27 September:** cross-investigation evidence evolution
 (stage 4a) is DONE within the scope, dependencies and acceptance above.
 
 **Completed product stage, 27 September:** living public research (stage 3) is
 DONE within the explicit scope, dependencies and production acceptance above.
-Cross-investigation comparison is verified in stage 4a. Monitoring-triggered
-reopening remains the next stage 4b; MV2-021 and both full specifications remain open.
+Cross-investigation comparison is verified in stage 4a and native topic-match
+research in stage 4b1. Watched-page triggers remain stage 4b2; MV2-021 and both full
+specifications remain open.
 
 **Current product stage, 27 September:** dossier-only guest invitations (2b3) are
 DONE under the explicit scope, source boundaries and acceptance above.

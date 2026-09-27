@@ -1,7 +1,6 @@
 # Monitoring-triggered private dossier research
 
-Release 1.16, scoped stage 4b1. IN PROGRESS until exact native and both-client
-production acceptance is recorded. Full dynamic dossier and visual specifications
+Release 1.16, scoped stage 4b1. DONE within the scoped automated and production acceptance below. Full dynamic dossier and visual specifications
 remain IN PROGRESS. This scope covers native topic-match metadata, not recurring
 web discovery or changed-page-body research.
 
@@ -86,8 +85,32 @@ membership races, editor/guest/CSRF/consent boundaries, schema equivalence,
 foreign keys, retained migration and complete paginated export. The broader affected
 regression passed 160 cases. After the final request-identity/check-timestamp
 corrections, all 34 affected monitoring/coordinator cases passed. Exact API Ruff
-passed. Exact production acceptance remains VERIFYING until recorded below.
+passed. Exact production acceptance passed, as recorded below.
 Client tests/lint/types and production builds pass with 99 cases each.
 This automated evidence is not independent professional factual-quality or human
 visual acceptance. The background cycle does not open a browser-only preview or
 perform browser interaction QA.
+
+## Exact production acceptance — 27 September 2026 UTC
+
+Native functional `4bcbdeedf6b6d0a337f4e1daf57e9202ffde4937` activated at
+22:05:38 UTC. Pharma `9ce13ba7165ab6ab2d4e4ae98a2f114e96189323` and Loyer
+`ebc605887a924c3d862b92c9e9ef0118185b578d` published as existing public Sites19
+at 22:06:42 and 22:07:14 UTC. Each exact custom origin passed 97 HTTP/auth/gateway/
+guide checks and 47 served JS/CSS hash comparisons. Both exact-head GitHub CI
+runs succeeded (36353813699 and 36353814238).
+
+Read-only native inspection confirms 46 module hashes, migration `02d495bef125`,
+contained policy/trigger foreign keys and unique receipts, the registered one-minute
+scheduler task on `monitoring_control`, four required native runtime containers,
+the scheduler's own three module hashes, the existing stdin-only parser fixture
+and healthy local Laya. No authenticated production user records or paid provider
+probes were created. Each client build's137 files and188 source files contained
+none of the three configured provider secrets. The broader native160-case gate
+and final affected34-case gate passed, as did both99-test client gates, lint,
+strict types and builds. Browser interaction and professional factual-quality
+acceptance remain unclaimed. The existing hourly heartbeat stays ACTIVE.
+
+[Exact release evidence](product-releases/2026-09-27-1.16.0.json). Future complete
+outcomes include watched-page-version triggers, recurring open-web discovery,
+private semantic indexing, independent evaluation and full native visual migration.

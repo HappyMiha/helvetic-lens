@@ -212,7 +212,7 @@ and [release receipt](product-releases/2026-09-27-1.15.0.json). Monitoring-trigg
 and full native visual migration remain open; the full specifications remain
 IN PROGRESS.
 
-Stage 4b1 is IN PROGRESS in release 1.16: standing private research authority
+Stage 4b1 is DONE within scoped production acceptance in release 1.16: standing private research authority
 connects new native topic-match metadata to durable investigations, independently
 extracted evidence and paired-citation comparisons in both clients. See
 [architecture, limits and acceptance](PRODUCT_MONITORING_RESEARCH.md). Changed-page
