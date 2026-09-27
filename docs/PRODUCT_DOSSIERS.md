@@ -993,3 +993,17 @@ HTTP/gateway and 33 asset checks against healthy core `git-6df711fc0842`, whose
 normal release passed 755 checks. [Immutable release evidence](product-releases/2026-09-27-1.6.0.json). Implementation and
 limits: [decision search](PRODUCT_DECISION_SEARCH.md). This scoped release does
 not complete semantic private-corpus indexing, recurring query discovery or pilots.
+
+
+## Reviewed multilingual search — 1.7.0 prepared, 27 September 2026
+
+The main question now supports two reviewed alternatives with bounded federated
+retrieval, one Jev/Laya candidate pool and exact found-by-query provenance in
+history, signed source import, brief and export. Optional native AI drafts cover
+EN/DE/FR/IT/UK and never run a search automatically. Quotas count requested query
+units, durable retries remain compatible with 1.6, and interrupted searches retain
+their reviewed bundle. Both clients pass 66 tests, lint/types and Sites builds;
+the native affected suite passed 255 cases and final targeted correction passed
+53 cases. Real DE/FR drafting and five retrieval lanes with paired Jev/Laya ranking
+passed an operator public-query probe. Details and source limits:
+[query bundles](PRODUCT_QUERY_BUNDLES.md). Exact release activation remains pending.

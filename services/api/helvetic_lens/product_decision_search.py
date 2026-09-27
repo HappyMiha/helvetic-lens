@@ -2,11 +2,11 @@
 import asyncio
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import Query, Request
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from sqlalchemy import func, select, text
 
 from . import decision_search, legal_profiles
@@ -24,6 +24,7 @@ class SearchInput(legal_profiles.Input):
     query: str = Field(min_length=2, max_length=300)
     mode: Literal["auto", "jev", "laya", "compare"] = "auto"
     depth: Literal["quick", "balanced", "deep"] = "balanced"
+    alternatives: list[Annotated[str, Field(min_length=2, max_length=300)]] = Field(default_factory=list, max_length=2)
     public_query_confirmed: Literal[True]
 
     @field_validator("public_query_confirmed", mode="before")
@@ -32,6 +33,13 @@ class SearchInput(legal_profiles.Input):
         if value is not True:
             raise ValueError("Confirm this public search explicitly.")
         return value
+
+    @model_validator(mode="after")
+    def unique_queries(self):
+        values = [self.query.casefold(), *(v.casefold() for v in self.alternatives)]
+        if len(set(values)) != len(values):
+            raise ValueError("Each alternative should use different search terms.")
+        return self
 
 
 class LabelInput(legal_profiles.Input):
@@ -81,6 +89,7 @@ def payload(session, identity, product, row):
         data["status"] = "interrupted"
         data["error"] = "This search was interrupted. Submit a new search to retry. No completed result is claimed."
     data.setdefault("items", [])
+    data.setdefault("queries", [row.query])
     for inspected in data.get("inspections", {}).values():
         if inspected.get("status") == "running" and datetime.fromisoformat(inspected["started_at"]) < now - timedelta(minutes=2):
             inspected.update(status="interrupted", error="This inspection was interrupted. Open the original source, or inspect it in a new search.")
@@ -136,8 +145,9 @@ def decision_search_routes(router, service, actor):
                 "laya_configured": bool(s.laya_base_url and s.laya_api_key.get_secret_value()),
                 "search_configured": bool(s.search1api_api_key.get_secret_value()),
                 "daily_limit": s.decision_search_daily_limit,
+                "budget_unit": "Each reviewed query counts once; a bundle uses one to three units.",
                 "configuration_scope": "Operator-managed credentials. Configured does not guarantee provider availability.",
-                "privacy": "The submitted query goes to Search1API. Jev also receives it and result snippets in Auto, Jev and Compare modes. "
+                "privacy": "The main question and every reviewed alternative go to Search1API. Jev receives the main question and result snippets in Auto, Jev and Compare modes. "
                     "Laya decisions remain on this server; Laya mode still uses remote web retrieval. No private dossier material is added.",
                 "retention": "Your last 50 searches in this product/workspace. Account deletion removes them. Colleagues cannot read them."}
 
@@ -185,7 +195,12 @@ def decision_search_routes(router, service, actor):
         query = data.query.strip()
         if len(query) < 2:
             fail("Enter at least two search characters.")
-        mark = fingerprint({"query": query, "mode": data.mode, "depth": data.depth, "consent": data.public_query_confirmed})
+        marked = {"query": query, "mode": data.mode, "depth": data.depth, "consent": data.public_query_confirmed}
+        if data.alternatives:
+            marked["alternatives"] = data.alternatives
+        # Preserve existing single-query retry fingerprints across this release.
+        mark = fingerprint(marked)
+        units = 1 + len(data.alternatives)
         with service.write_guard, service.db.session() as session:
             lock_organization(session, identity.organization_id)
             principal(session, identity, utcnow(), write=True)
@@ -201,8 +216,8 @@ def decision_search_routes(router, service, actor):
             now = utcnow()
             base = select(func.count()).select_from(DecisionSearchRun).execution_options(include_all_organizations=True)
             budget = session.get(DecisionSearchBudget, now.date())
-            if (budget.used if budget else 0) >= service.settings.decision_search_daily_limit:
-                fail("The platform's daily web-search budget is used. Saved searches and source catalogues remain available; try tomorrow.", 429)
+            if (budget.used if budget else 0) + units > service.settings.decision_search_daily_limit:
+                fail("The platform's daily query budget cannot cover this bundle. Use fewer alternatives or try tomorrow; saved searches remain available.", 429)
             active = session.scalar(base.where(DecisionSearchRun.status == "running", DecisionSearchRun.created_at >= now - timedelta(minutes=2)))
             if active >= 3:
                 fail("Search is busy. Please retry shortly.", 429)
@@ -214,20 +229,22 @@ def decision_search_routes(router, service, actor):
             if session.scalar(select(func.count()).select_from(visible(identity, product).subquery())) >= 50:
                 fail("This workspace search history is full for today. Continue tomorrow.", 429)
             row = DecisionSearchRun(product=product, owner_user_id=identity.user_id, request_key=str(data.request_key),
-                fingerprint=mark, query=query, mode=data.mode, created_at=now)
+                fingerprint=mark, query=query, mode=data.mode, created_at=now,
+                result_json={"queries": [query, *data.alternatives]})
             if budget is None:
                 budget = DecisionSearchBudget(day=now.date(), used=0)
                 session.add(budget)
-            budget.used += 1
+            budget.used += units
             session.add(row)
             session.commit()
             identifier = row.id
         try:
             async with asyncio.timeout(100):
-                result = await decision_search.execute(service.settings, query, data.mode, data.depth, product)
+                result = await decision_search.execute(service.settings, query, data.mode, data.depth, product, data.alternatives)
         except (DecisionUnavailable, TimeoutError) as exc:
             result = {"items": [], "error": "Search could not complete. Check provider setup or credits, then submit a new search.",
                       "error_code": exc.code if isinstance(exc, DecisionUnavailable) else "timeout"}
+        result["queries"] = [query, *data.alternatives]
         with service.write_guard, service.db.session() as session:
             lock_organization(session, identity.organization_id)
             principal(session, identity, utcnow(), write=True)

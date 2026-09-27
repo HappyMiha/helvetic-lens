@@ -72,6 +72,22 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 ## Product decision
 
+**Multilingual query bundles — 27 September 2026: IN PROGRESS.** Scoped follow-up
+to MV2 shared discovery: users review up to three complementary public queries,
+optionally drafted in selected languages by the existing configured generative
+planner. Jev/Laya retain shared decision/ranking duties. Dependencies: verified
+1.6 providers and local runtime, native current identity, provenance and both
+product gateways. Source readiness: Search1API and Europe PMC are active; query
+drafting uses the existing model and may fail visibly without blocking manual
+search. No new provider registration, private corpus or source permissions implied.
+Acceptance: explicit editable alternatives, bounded/deduplicated per-query retrieval,
+same final candidate pool for comparison, precise found-by-query provenance in
+history/import/brief/export, budgets counting query units, no automatic retrieval
+from plans, current-session checks after generation, privacy/retry/failure tests,
+both client gates and exact verified production. Details:
+[query bundles](docs/PRODUCT_QUERY_BUNDLES.md). Broader semantic workspace indexing,
+independent professional evaluation and recurring discovery remain open.
+
 **Jev/Laya discovery — 27 September 2026: DONE (scoped release).** The owner explicitly
 requested a shared decision interface, hosted TypeSafe Jev as primary, local
 Apache-2.0 Laya as fallback, and their use in actual Pharma/Loyer search. This is

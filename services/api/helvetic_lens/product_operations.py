@@ -434,6 +434,9 @@ def operations(router, service, actor):
                         f'<p>Catalogue record: {esc(record["id"])}. {esc(record["title"])} '
                         f'({esc(record.get("date") or "date unavailable")}).</p>'
                         '<p>Search provenance was verified on import. Catalogue metadata only; full text and conclusions are not verified.</p>')
+                    if record.get("retrieval_queries"):
+                        origin += '<p>Retrieved by these exact queries:</p><ul>' + ''.join(
+                            f'<li>{esc(query)}</li>' for query in record["retrieval_queries"]) + '</ul>'
                 sources.append(f'<li>{esc(ref.title)} — {link(ref.url)}{origin}{review_html(reviews.get(ref.url))}</li>')
             sources = ''.join(sources)
             questions = session.scalars(select(ResearchThread).where(ResearchThread.dossier_id == row.id)

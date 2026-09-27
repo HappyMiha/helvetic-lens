@@ -85,22 +85,24 @@ def reciprocal_fusion(rankings):
     return weights
 
 
-async def federated_retrieve(settings, query, index, depth, product):
+async def federated_retrieve(settings, query, index, depth, product, alternatives=()):
     from .product_research import public_search
 
     started = perf_counter()
     limit = 8 if depth == "quick" else 20 if depth == "deep" else 12
-    lanes = [("Google " + index, retrieve(settings, query, index, limit=limit))]
+    lanes = [("Google " + index, query, retrieve(settings, query, index, limit=limit))]
     if depth != "quick":
-        lanes.append(("Bing web", retrieve(settings, query, "web", service="bing", limit=limit)))
+        lanes.append(("Bing web", query, retrieve(settings, query, "web", service="bing", limit=limit)))
         if product == "pharma":
-            lanes.append(("Europe PMC literature", public_search("europepmc", query)))
-    outcomes = await asyncio.gather(*(work for _, work in lanes), return_exceptions=True)
-    items, rankings, coverage, origins = {}, [], [], {}
+            lanes.append(("Europe PMC literature", query, public_search("europepmc", query)))
+    for number, alternative in enumerate(alternatives, 1):
+        lanes.append((f"Google alternative {number}", alternative, retrieve(settings, alternative, "web", limit=limit)))
+    outcomes = await asyncio.gather(*(work for _, _, work in lanes), return_exceptions=True)
+    items, rankings, coverage, origins, found_by = {}, [], [], {}, {}
     omitted = 0
-    for (name, _), result in zip(lanes, outcomes):
+    for (name, lane_query, _), result in zip(lanes, outcomes):
         if isinstance(result, Exception):
-            coverage.append({"name": name, "status": "unavailable", "count": 0})
+            coverage.append({"name": name, "query": lane_query, "status": "unavailable", "count": 0})
             continue
         ranking = []
         for item in result["items"]:
@@ -117,14 +119,18 @@ async def federated_retrieve(settings, query, index, depth, product):
                 ranking.append(identifier)
             if name not in origins.setdefault(identifier, []):
                 origins[identifier].append(name)
+            if lane_query not in found_by.setdefault(identifier, []):
+                found_by[identifier].append(lane_query)
         rankings.append(ranking)
         omitted += result.get("omitted_records", 0)
-        coverage.append({"name": name, "status": "complete", "count": len(ranking)})
+        coverage.append({"name": name, "query": lane_query, "status": "complete", "count": len(ranking)})
     if not rankings:
         raise decision.DecisionUnavailable("search_unavailable")
     fusion = reciprocal_fusion(rankings)
     maximum = 8 if depth == "quick" else 36 if depth == "deep" else 24
     candidates = sorted(items.values(), key=lambda item: -fusion[item["id"]])[:maximum]
+    for item in candidates:
+        item["retrieval_queries"] = found_by[item["id"]]
     return {"items": candidates, "index": index, "service": "federated", "provider": "Search1API / public catalogues",
         "latency_ms": round((perf_counter() - started) * 1000, 2), "cost_usd": None,
         "omitted_records": omitted, "candidate_limit": maximum, "discovered_count": len(items),
@@ -132,7 +138,7 @@ async def federated_retrieve(settings, query, index, depth, product):
         "search_requests": len(lanes), "depth": depth}
 
 
-async def execute(settings, query, mode, depth="balanced", product="pharma"):
+async def execute(settings, query, mode, depth="balanced", product="pharma", alternatives=()):
     """Auto falls back on any disclosed provider failure, never on confidence alone."""
     started = perf_counter()
     available = decision.engines(settings)
@@ -178,7 +184,7 @@ async def execute(settings, query, mode, depth="balanced", product="pharma"):
         return {"items": [], "error": "No decision engine is available. Check provider setup and try again.",
                 "engines": [{**decision.measurement(name, [], settings, error=errors.get(name)),
                              "latency_ms": round(times.get(name, 0), 2), "scores": {}} for name in asked]}
-    retrieval = await federated_retrieve(settings, query, plans[selected], depth, product)
+    retrieval = await federated_retrieve(settings, query, plans[selected], depth, product, alternatives)
     items = retrieval.pop("items")
     candidates_sha256 = hashlib.sha256(canonical({"query": query, "items": items}).encode()).hexdigest()
     if mode == "compare":

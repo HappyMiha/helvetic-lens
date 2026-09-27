@@ -1,0 +1,89 @@
+{
+  "verified_at": "2026-09-27T13:17:03.326499+00:00",
+  "scope": "Operator public-query probe of development source in a separate process with native provider settings. No user records, private context or notifications.",
+  "source_sha256": {
+    "query_module": "7d06aae81b37dd133c827dcf8fe93132e26e9303781325d50f6d32df332f37af",
+    "retrieval_module": "c75b4d086975881f6e6724d72b90bb529bf2df7467541ea1f66d84b658e34450"
+  },
+  "planner": {
+    "status": "complete",
+    "model_provider": "swisscom",
+    "model": "swiss-ai/Apertus-v1.5-70B",
+    "languages": [
+      "de",
+      "fr"
+    ],
+    "latency_ms": 2627.04
+  },
+  "retrieval": {
+    "queries": [
+      "Swissmedic GLP-1 medicine safety",
+      "Swissmedic GLP-1 Arzneimittelsicherheit",
+      "Swissmedic GLP-1 sécurité médicaments"
+    ],
+    "status": "complete",
+    "result_count": 24,
+    "selected_engine": "jev",
+    "latency_ms": 15992.17,
+    "candidate_sha256": "28959a8136f55ee53cea3eb77e3dac921921476b6f394af1d4542b1b5176ab1b",
+    "lanes": [
+      {
+        "name": "Google web",
+        "query": "Swissmedic GLP-1 medicine safety",
+        "status": "complete",
+        "count": 12
+      },
+      {
+        "name": "Bing web",
+        "query": "Swissmedic GLP-1 medicine safety",
+        "status": "complete",
+        "count": 10
+      },
+      {
+        "name": "Europe PMC literature",
+        "query": "Swissmedic GLP-1 medicine safety",
+        "status": "complete",
+        "count": 20
+      },
+      {
+        "name": "Google alternative 1",
+        "query": "Swissmedic GLP-1 Arzneimittelsicherheit",
+        "status": "complete",
+        "count": 10
+      },
+      {
+        "name": "Google alternative 2",
+        "query": "Swissmedic GLP-1 sécurité médicaments",
+        "status": "complete",
+        "count": 12
+      }
+    ],
+    "search_requests": 5,
+    "sources_with_query_provenance": 24,
+    "sources_found_by_multiple_queries": 5,
+    "engines": [
+      {
+        "engine": "jev",
+        "models": [
+          "jev-1.13.0"
+        ],
+        "error": null,
+        "latency_ms": 10801.53,
+        "input_tokens": 10538,
+        "output_tokens": 775,
+        "estimated_cost_usd": 0.000442596
+      },
+      {
+        "engine": "laya",
+        "models": [
+          "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67"
+        ],
+        "error": null,
+        "latency_ms": 6858.15,
+        "input_tokens": 3055,
+        "output_tokens": 0,
+        "estimated_cost_usd": null
+      }
+    ]
+  }
+}

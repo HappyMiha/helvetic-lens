@@ -4,7 +4,7 @@ import hashlib
 import hmac
 import json
 from datetime import UTC, datetime, timedelta
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import Request
@@ -32,6 +32,7 @@ class SourceRecord(legal_profiles.Input):
     summary: str = Field(max_length=700)
     url: str = Field(min_length=1, max_length=2000)
     date: str | None = Field(default=None, max_length=40)
+    retrieval_queries: list[Annotated[str, Field(min_length=2, max_length=300)]] = Field(default_factory=list, max_length=3)
 
     @field_validator("url")
     @classmethod

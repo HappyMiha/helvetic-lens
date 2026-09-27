@@ -39,7 +39,7 @@ def fake_result():
 
 def mock_pipeline(monkeypatch):
     calls = []
-    async def execute(settings, query, mode, depth, product):
+    async def execute(settings, query, mode, depth, product, alternatives=()):
         calls.append((query, mode, depth, product))
         return fake_result()
     monkeypatch.setattr(decision_search, "execute", execute)
