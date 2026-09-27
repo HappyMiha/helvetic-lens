@@ -93,6 +93,35 @@ Sixteen authored color pairs exceed 4.5:1. No browser/human visual acceptance is
 claimed. [Implementation and remaining migration](docs/PRODUCT_VISUAL_LANGUAGE.md),
 [exact evidence](docs/product-releases/2026-09-27-1.9.0.json).
 
+**Monitoring-triggered research — 27 September 2026: IN PROGRESS (scoped stage 4b1, release 1.16).**
+Scoped MV2-019/021/023 continuation: explicitly enable ongoing private research for
+new native topic-match evidence in an active Pharma/Loyer dossier. Reuse native
+matching/admission/current-fingerprint checks, current dossier roles and workspace
+administrator authority, retained event metadata, the investigation coordinator,
+independent comparison, durable outbox/leases and existing consented delivery.
+A revocable saved policy authorizes work after sign-out without manufacturing a
+session. Disablement, policy/profile changes, source exclusion/admission changes
+and authority revocation fence queued/in-flight results. No private external
+queries, public research inheritance, new provider registrations or new emails.
+Dependencies/source readiness: 1.12 native private monitoring and permissions,
+1.13 current account-bound roles, 1.15 paired citation comparisons; current admitted
+topic matches and the existing configured workspace model. Missing source text
+remains event metadata, never an invented full-document extract.
+One minute scheduling, durable per-fingerprint trigger receipts, current-source
+rechecks and explicit daily limits (default 3, maximum 6 starts/retries per UTC day)
+bound cost and make unchanged deliveries free. Each run has one metadata extraction
+and at most one comparison request; no automatic paid retry. Both clients expose
+policy, last check/readiness, source-trigger history, investigation and change links.
+Acceptance: real native matching -> scheduler -> job -> evidence -> comparison in
+both products, duplicates/restarts, budget deferral, disable/revoke/in-flight races,
+private/public/guest isolation, source change and migration retention, editor retry,
+both-client gates and exact native/Sites production proof. Existing personal digest
+consent remains unchanged and signals are not automatically material conclusions.
+Stage 4b1 covers native topic-match metadata; watched-page-version triggers,
+recurring open-web discovery, private semantic indexing, independent evaluation
+and native visual migration remain subsequent complete outcomes. Full specs and
+MV2 parent tasks remain IN PROGRESS; nine sections/C4 deferrals are unchanged.
+
 **Evidence evolution across investigations — 27 September 2026: DONE (scoped stage 4a, release 1.15).**
 Scoped MV2-019/021/023 continuation: after extraction, one durable comparison step
 compares bounded earlier/current claims in the same dossier and visibility scope, preserving the original claims,
@@ -1472,7 +1501,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS — nine-category settings implemented | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
 | [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
-| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — evidence evolution stage 4a DONE; monitoring reopening next | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
+| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — stage 4b1 native monitoring-triggered research | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
 | [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — native evidence and configuration drafts implemented | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
 | [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
@@ -2338,6 +2367,9 @@ above supersedes the River-only count limitation for readable Today queues.
 <a id="mv2-021"></a>
 
 ### MV2-021 — Workspace: Impact Inbox, decisions and Impact Matrix
+
+**Active product stage, 27 September:** stage 4b1 monitoring-triggered private
+research is IN PROGRESS under the scope, dependencies and acceptance above.
 
 **Completed product stage, 27 September:** cross-investigation evidence evolution
 (stage 4a) is DONE within the scope, dependencies and acceptance above.

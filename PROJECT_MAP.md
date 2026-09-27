@@ -120,3 +120,8 @@ Cross-investigation [evidence evolution](docs/PRODUCT_CLAIM_EVOLUTION.md) adds
 independent comparison jobs, exact citation pairs and visibility-safe editor
 review in the shared core and both Pharma/Loyer readers. Stage 4b monitoring
 reopening remains separate from this release's acceptance.
+
+[Monitoring-triggered dossier research](docs/PRODUCT_MONITORING_RESEARCH.md)
+connects explicitly enabled private native topic-match follow-up to the same
+investigation and evidence-evolution engine in Pharma and Loyer. Its standing
+account authority, bounded usage and exact production acceptance remain explicit.

@@ -34,6 +34,9 @@ celery_app.conf.update(
     task_default_queue="maintenance",
     task_routes={name: {"queue": queue} for name, queue in PERIODIC_QUEUES.items()},
     beat_schedule={
+        "schedule-product-monitoring-research": {
+            "task": "helvetic_lens.schedule_product_monitoring_research", "schedule": 60.0,
+        },
         "schedule-document-watches": {
             "task": "helvetic_lens.schedule_document_watches", "schedule": 60.0,
         },
@@ -209,6 +212,17 @@ def schedule_connectors():
         session.commit()
     database.engine.dispose()
     return result
+
+
+@celery_app.task(name="helvetic_lens.schedule_product_monitoring_research")
+def schedule_product_monitoring_research():
+    from .product_monitoring_research import enqueue_due
+
+    database = Database(settings)
+    try:
+        return enqueue_due(database, settings)
+    finally:
+        database.engine.dispose()
 
 
 @celery_app.task(name="helvetic_lens.schedule_document_watches")

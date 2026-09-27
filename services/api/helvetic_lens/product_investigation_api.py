@@ -56,7 +56,7 @@ def routes(router, service, actor):
             previous = session.scalar(select(Investigation).where(Investigation.dossier_id == dossier_id,
                                                                   Investigation.request_key == str(data.request_key)))
             if previous:
-                if previous.trigger_entry_id or previous.question != data.question or previous.created_by_user_id != identity.user_id:
+                if not previous.external_discovery or previous.trigger_entry_id or previous.question != data.question or previous.created_by_user_id != identity.user_id:
                     fail("This request key belongs to a different investigation.", 409)
                 return payload(session, previous)
             if session.scalar(select(func.count()).select_from(Investigation).where(
@@ -99,6 +99,9 @@ def routes(router, service, actor):
             if data.expected_revision != run.revision:
                 fail("The investigation changed. Refresh before applying this action.", 409)
             if data.action in {"resume", "retry"}:
+                from .product_monitoring_research import retry_authority
+
+                retry_authority(session, run)
                 if data.action == "retry":
                     from .product_contributions import retry
 

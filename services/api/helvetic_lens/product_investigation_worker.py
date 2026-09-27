@@ -60,6 +60,12 @@ def excluded(session, parent):
 
 
 def seed(session, run, parent, settings):
+    from .product_monitoring_research import seed as monitoring_seed
+    from .product_monitoring_research import trigger_for
+
+    trigger = trigger_for(session, run)
+    if trigger:
+        return monitoring_seed(session, run, parent, settings, trigger)
     if run.publication_id:
         from .product_public_research import seed as seed_public
 
@@ -142,9 +148,12 @@ def authorize_or_pause(session, run, parent):
     try:
         worker_access(session, run, parent.product)
         return True
-    except DomainError:
+    except DomainError as exc:
+        from .product_monitoring_research import trigger_for
+
         run.status = "paused"
-        run.stop_reason = "Access or session changed. An authorized member must resume."
+        run.stop_reason = (exc.message[:500] if trigger_for(session, run)
+            else "Access or session changed. An authorized member must resume.")
         event(session, run, "investigation_paused", reason=run.stop_reason)
         return False
 

@@ -211,3 +211,10 @@ and [release receipt](product-releases/2026-09-27-1.15.0.json). Monitoring-trigg
 (stage 4b), recurring discovery, private semantic indexing, independent evaluation
 and full native visual migration remain open; the full specifications remain
 IN PROGRESS.
+
+Stage 4b1 is IN PROGRESS in release 1.16: standing private research authority
+connects new native topic-match metadata to durable investigations, independently
+extracted evidence and paired-citation comparisons in both clients. See
+[architecture, limits and acceptance](PRODUCT_MONITORING_RESEARCH.md). Changed-page
+body triggers, recurring web discovery, semantic indexing and the full-spec gates
+remain distinct; this does not complete stage 4 or either full specification.

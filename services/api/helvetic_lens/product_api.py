@@ -473,6 +473,17 @@ def product_router(service):
             if len(changes) > 2000:
                 fail("This dossier exceeds the interactive evidence-change export limit.")
             result["evidence_changes"] = [change_payload(session, change) for change in changes]
+            from .product_investigation_models import MonitoringResearchPolicy, MonitoringResearchTrigger
+            from .product_monitoring_research import payload as monitoring_payload
+            from .product_monitoring_research import trigger_payload
+
+            policy = session.scalar(select(MonitoringResearchPolicy).where(MonitoringResearchPolicy.dossier_id == row.id))
+            triggers = list(session.scalars(select(MonitoringResearchTrigger).where(MonitoringResearchTrigger.dossier_id == row.id)
+                .order_by(MonitoringResearchTrigger.created_at, MonitoringResearchTrigger.id).limit(2001)))
+            if len(triggers) > 2000:
+                fail("This dossier exceeds the interactive monitoring history export limit.")
+            result["monitoring_research"] = monitoring_payload(session, row, policy, False)
+            result["monitoring_research"]["items"] = [trigger_payload(session, trigger) for trigger in triggers]
             return result
 
     from .product_operations import operations
@@ -488,6 +499,9 @@ def product_router(service):
     from .product_investigation_api import routes as investigation_routes
 
     investigation_routes(router, service, actor)
+    from .product_monitoring_research_api import routes as monitoring_research_routes
+
+    monitoring_research_routes(router, service, actor)
     from .product_decision_search import decision_search_routes
 
     decision_search_routes(router, service, actor)

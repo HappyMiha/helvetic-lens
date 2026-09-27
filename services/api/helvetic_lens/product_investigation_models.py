@@ -9,6 +9,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
+    Index,
     Integer,
     String,
     Text,
@@ -200,5 +201,51 @@ class InvestigationEvent(ResearchRecord, Base):
     detail: Mapped[dict] = mapped_column(JSON)
 
 
-SCOPED = (Investigation, InvestigationPlan, InvestigationBranch, InvestigationSource,
+class MonitoringResearchPolicy(Contained, Base):
+    __tablename__ = "product_monitoring_research_policies"
+    __table_args__ = (contained(), UniqueConstraint("dossier_id"),
+        UniqueConstraint("id", "dossier_id", "organization_id"),
+        CheckConstraint("daily_limit BETWEEN 1 AND 6", name="ck_monitor_research_limit"),
+        Index("ix_monitor_research_due", "enabled", "next_check_at", "id"))
+    enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    authorized_by_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    profile_fingerprint: Mapped[str] = mapped_column(String(64), default="")
+    starts_on: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    daily_limit: Mapped[int] = mapped_column(Integer, default=3)
+    budget_day: Mapped[str] = mapped_column(String(10), default="")
+    budget_used: Mapped[int] = mapped_column(Integer, default=0)
+    next_check_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    reason: Mapped[str] = mapped_column(String(500), default="Automatic research is off.")
+    history: Mapped[list] = mapped_column(JSON, default=list)
+    last_request_key: Mapped[str] = mapped_column(String(36), default="")
+    last_request_fingerprint: Mapped[str] = mapped_column(String(64), default="")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class MonitoringResearchTrigger(Contained, Base):
+    __tablename__ = "product_monitoring_research_triggers"
+    __table_args__ = (contained(),
+        ForeignKeyConstraint(["policy_id", "dossier_id", "organization_id"],
+            ["product_monitoring_research_policies.id", "product_monitoring_research_policies.dossier_id",
+             "product_monitoring_research_policies.organization_id"], ondelete="CASCADE"),
+        research_scope(), UniqueConstraint("investigation_id"),
+        UniqueConstraint("dossier_id", "match_id", "evaluation_fingerprint", name="uq_monitor_research_trigger"),
+        CheckConstraint("state IN ('pending','started','skipped')", name="ck_monitor_research_trigger_state"),
+        Index("ix_monitor_research_pending", "policy_id", "state", "created_at", "id"))
+    policy_id: Mapped[str] = mapped_column(String(36))
+    policy_revision: Mapped[int] = mapped_column(Integer)
+    investigation_id: Mapped[str | None] = mapped_column(String(36))
+    # Historical identity, deliberately retained after the live match expires.
+    match_id: Mapped[str] = mapped_column(String(36))
+    evaluation_fingerprint: Mapped[str] = mapped_column(String(64))
+    matched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    state: Mapped[str] = mapped_column(String(16), default="pending")
+    reason: Mapped[str] = mapped_column(String(500), default="Waiting for research capacity.")
+    source_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+SCOPED = (MonitoringResearchPolicy, MonitoringResearchTrigger, Investigation, InvestigationPlan, InvestigationBranch, InvestigationSource,
           DossierClaim, ClaimEvidence, ClaimChange, DossierEntity, DossierRelationship, InvestigationEvent)

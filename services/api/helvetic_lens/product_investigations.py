@@ -81,6 +81,12 @@ def access(session, identity, product, dossier_id, *, write=False, action="edit"
 
 
 def worker_access(session, run, product):
+    from .product_monitoring_research import trigger_for
+    from .product_monitoring_research import worker_access as monitoring_access
+
+    trigger = trigger_for(session, run)
+    if trigger:
+        return monitoring_access(session, run, trigger)
     if run.publication_id:
         from .product_public_research import worker_access as public_worker_access
 
@@ -247,9 +253,12 @@ def summary(run):
 def payload(session, run):
     from .product_claim_evolution import projection
     from .product_contributions import original
+    from .product_monitoring_research import trigger_for, trigger_payload
 
+    trigger = trigger_for(session, run)
     changes = projection(session, run)
-    return {**summary(run), "original": original(session, run.trigger_entry_id),
+    return {**summary(run), "monitoring_trigger": trigger_payload(session, trigger) if trigger else None,
+        "original": original(session, run.trigger_entry_id),
         "plans": [{"id": p.id, "version": p.version, "reason": p.reason, "document": p.document,
                    "created_at": iso(p.created_at)} for p in rows(session, InvestigationPlan, run)],
         "branches": [{"id": b.id, "query": b.query, "status": b.status, "phase": b.phase, "reason": b.reason,
