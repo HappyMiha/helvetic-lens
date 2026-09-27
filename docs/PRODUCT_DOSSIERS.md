@@ -787,3 +787,31 @@ strict TypeScript and Sites-helper production builds. Four new client contracts 
 query/page identities and delayed-read recovery; one gateway case retains literal search,
 filters/pages and private validation failures. Browser interaction QA and final product
 Sites activation remain unclaimed until separately verified.
+
+## Product guide and 1.2.0 preparation — 27 September
+
+Each client now has a public `/guide` with its own product title, canonical URL, domain,
+example goal and medicine/programme or client/matter vocabulary. A persistent sidebar
+link opens help in another tab so the working view is retained. The eight-part guide
+explains the current ask/discover/monitor/collaborate/research/review/action loop and
+six recovery cases. It documents actual coverage, current roles and private drafts,
+local unsent question/reply text, saved monitoring drafts, catalogue provenance, source
+review decisions, bounded AI input review, saved-evidence revision reading, explicit
+answer acknowledgement and personal organisation digest scope. No application data or
+new source, provider, model, authentication or notification behavior is introduced.
+
+Both public repositories include a 1.2.0 change record and guide links; the package
+version is 1.2.0 with unchanged dependencies/lockfiles and Apache attribution. The change
+record explicitly separates validated/pushed source from later production activation.
+All 44 client contracts, authored lint, strict TypeScript and Sites-helper builds passed
+in each client. Local read-only HTTP verified 200 responses, exact guide titles/canonical
+URLs and all eight sections. The shared API source remains the validated 152-case
+baseline; only its release documentation changes in this slice. No new low-value tests
+were added for static guide copy and no browser interaction or visual QA is claimed.
+
+Public Sites audience, current version 2 and the original project IDs were verified
+before the final window. A private final verification script requires exact expected
+source SHAs and core release, checks guide/root HTTP responses, compares served asset
+hashes with the validated builds and exercises anonymous private-route and gateway
+boundaries without an authenticated session, external search or model call. Its live
+receipt is pending final production publication in the 08:00–09:00 Zurich window.

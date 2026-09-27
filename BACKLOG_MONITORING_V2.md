@@ -552,6 +552,43 @@ and superseded reads, stale failure suppression and exact retry; a gateway case 
 literal terms, status/offset, membership cookies and validation failures while blocking
 the other product. No browser interaction QA or final client Sites activation is claimed.
 
+Sixteenth slice — IMPLEMENTED / FINAL CLIENT RELEASE PENDING (scope recorded before implementation): make the final
+Pharma/Loyer release easier to use with a public, product-specific `/guide` linked from
+the persistent sidebar and repository README. Explain the actual ask/discover/setup/
+collaborate/research/review/action loop, source coverage and recovery, private workspace
+roles, manual source decisions, saved evidence versus live pages and personal digest
+scope. Use existing product names/examples and UI labels; no new data, providers,
+external calls, authentication, telemetry or AI behavior. Preserve an open working tab
+when opening help. Add an honest 1.2.0 change record covering shipped capabilities and
+pending final activation. Dependencies: the existing product config and completed native
+contracts only. Acceptance: both product-specific guide routes build with exact titles,
+real headings, keyboard-readable links and no starter/fake results; existing gateway and
+workflow checks, authored lint, strict types and Sites-helper builds pass; public source
+and Apache attribution are retained. Publication remains in the 08:00–09:00 final window,
+with production verification of the new guide route and exact served assets. Fifteenth
+core `git-a45e81592377` is active since 07:19:27 Zurich. Feature scope freezes at 08:00.
+
+Both clients now include the public `/guide`, persistent sidebar help opening in a
+separate tab, product-specific titles/canonical URLs/examples and a responsive eight-part
+working-loop guide with six recovery scenarios. The guide covers private roles/drafts,
+manual versus durable drafts, saved source provenance and reviews, bounded AI inputs,
+exact saved readers, human acceptance/reconfirmation, actionable follow-up and personal
+digest scope. It makes no new source/AI/delivery claims. README links and the 1.2.0 change
+record distinguish prepared source from separately verified production activation.
+Package version is 1.2.0; dependencies, lockfiles, licenses and project IDs are unchanged.
+
+Acceptance: each product passed all 44 existing client contracts, authored lint, strict
+TypeScript and Sites-helper production builds including `/guide`. Read-only local HTTP
+checks returned 200 with the exact Pharma/Loyer guide titles, canonical URLs and all
+eight section identifiers. Internal guide navigation uses the framework's Link component;
+no browser interaction/visual QA was performed. The unchanged API retains the verified
+152-case product/backlog baseline; the final backlog uniqueness gate is required after
+this evidence edit. Existing public Sites access and owner/project identity were rechecked
+without changing either audience or publication. A private read-only final verifier was
+prepared to pin expected source SHAs/core release, verify root/guide content, hash served
+assets against the validated build and exercise anonymous private-route/gateway denial.
+It has only been syntax checked; production execution remains after final publication.
+
 **MV2 collective product research contribution, 27 September 2026 — DONE (scoped release):** Develop
 Pharma and Loyer for small professional teams beyond monitor setup: a daily work
 queue, medicine/programme or client/matter context, accountable owners, review dates,
