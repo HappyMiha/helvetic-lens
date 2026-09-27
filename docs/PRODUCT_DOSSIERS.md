@@ -937,10 +937,10 @@ workspace data, native monitoring and digest behavior remain intact. Broader sou
 coverage, contributor/community design, semantic retrieval and professional validation
 remain separate product gates.
 
-## Personal following and private reuse — planned 1.5.0
+## Verified 1.5.0 — personal following and private reuse
 
-**Personal following and private reuse — 27 September 2026: VERIFYING.**
-Next scoped Pharma/Loyer cycle under the public research direction: personal saved
+**Personal following and private reuse — 27 September 2026: DONE (scoped release).**
+Completed scoped Pharma/Loyer cycle under the public research direction: personal saved
 following with paginated visible-change indicators and explicit acknowledgement;
 reviewed creation of an author-private native draft from a public projection.
 Dependencies: native current identity and locks, publications/contributions,
@@ -956,7 +956,7 @@ remain inspectable in draft and active workspaces, no private parent data or fil
 are copied and nothing activates, republishes or subscribes to email implicitly.
 Native/migration/privacy tests, both client gates and exact production verification
 are required. Open-web discovery, semantic retrieval and recurring delivery remain
-separate open gates. Detail: [product delivery](docs/PRODUCT_DOSSIERS.md).
+separate open gates.
 
 Implementation evidence (local, 27 September): migration `f8c495bef124` adds
 personal follow ownership, a contained public snapshot and a minimal durable
@@ -969,5 +969,10 @@ passed **204 cases** (203 integration, one backlog smoke); exact API lint passed
 Both clients provide the personal list, explicit follow/read actions, reviewed
 private-copy setup and retained origin in draft, active detail and export. Their
 60 contracts/SSR checks, lint, strict types and production builds passed. Main
-publication and exact deployment verification are the remaining release gates;
-no browser interaction QA or professional acceptance is claimed.
+and original Sites source repositories were pushed at exact validated heads;
+both exact-head CI runs and Sites version 7 deployments succeeded. Each custom
+domain passed 58 HTTP/SSR/authentication/gateway checks and 32 exact served-asset
+comparisons against ready core `git-79a0b94f7b25` (755 standard release checks).
+No authenticated production record or fabricated public example was created;
+no browser interaction QA or professional acceptance is claimed. Immutable proof:
+[1.5.0 release evidence](product-releases/2026-09-27-1.5.0.json).

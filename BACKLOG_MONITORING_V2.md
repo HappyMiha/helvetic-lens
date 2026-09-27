@@ -72,8 +72,8 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 ## Product decision
 
-**Personal following and private reuse — 27 September 2026: VERIFYING.**
-Next scoped Pharma/Loyer cycle under the public research direction: personal saved
+**Personal following and private reuse — 27 September 2026: DONE (scoped release).**
+Completed scoped Pharma/Loyer cycle under the public research direction: personal saved
 following with paginated visible-change indicators and explicit acknowledgement;
 reviewed creation of an author-private native draft from a public projection.
 Dependencies: native current identity and locks, publications/contributions,
@@ -102,8 +102,13 @@ passed **204 cases** (203 integration, one backlog smoke); exact API lint passed
 Both clients provide the personal list, explicit follow/read actions, reviewed
 private-copy setup and retained origin in draft, active detail and export. Their
 60 contracts/SSR checks, lint, strict types and production builds passed. Main
-publication and exact deployment verification are the remaining release gates;
-no browser interaction QA or professional acceptance is claimed.
+and original Sites source repositories were pushed at exact validated heads;
+both exact-head CI runs and Sites version 7 deployments succeeded. Each custom
+domain passed 58 HTTP/SSR/authentication/gateway checks and 32 exact served-asset
+comparisons against ready core `git-79a0b94f7b25` (755 standard release checks).
+No authenticated production record or fabricated public example was created;
+no browser interaction QA or professional acceptance is claimed. Immutable proof:
+[1.5.0 release evidence](docs/product-releases/2026-09-27-1.5.0.json).
 
 
 **Public discussion slice — 27 September 2026: DONE (scoped release).** Completed
