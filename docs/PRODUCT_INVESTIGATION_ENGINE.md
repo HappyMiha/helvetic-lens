@@ -37,7 +37,7 @@ machine output are proposals, never proof of identity or fact.
    account-bound invitations and collaborative drafts across native access paths.
    See [team architecture and acceptance](PRODUCT_TEAMS.md). Scoped members-only
    active monitoring is DONE in 1.12; dossier-only outside-workspace invitations
-   are VERIFYING as stage 2b3, preserving native organization isolation.
+   are DONE in 1.13 as scoped stage 2b3, preserving native organization isolation.
    See [guest architecture and acceptance](PRODUCT_GUEST_ACCESS.md).
    Before this stage, apply the owner's visual-language steering to both clients'
    reference dossier and global interaction foundation (see VISUAL_LANGUAGE_SPEC.md).
@@ -134,7 +134,7 @@ monitoring/contribution-triggered reopening remain the next stages. Claims are
 currently grouped by their durable investigation within the existing dossier;
 cross-investigation claim reconciliation remains part of automatic reopening.
 No vector retrieval capability or comprehensive internet coverage is claimed.
-Production release `git-f67af9885d07` activated on 27 September at 14:29:33 UTC.
+Production release `git-f67af9885d07` activated on 27 September at 14:29:33  UTC.
 Pharma `0d8bba9257610a9e1c0c644a28401dafb2303318` and Loyer
 `414857e04cf4315b6611b01d27051ad09f61c0dd` are both published as Sites version 10
 at their existing public custom domains. Both GitHub CI runs succeeded. Each
@@ -189,6 +189,11 @@ the remaining stages are still IN PROGRESS.
 
 Release 1.13 implements dossier-only invitations for existing verified accounts,
 scoped guest readers, original-session research authorization and both clients.
-Local acceptance passes; exact production acceptance is pending. The updated
+Local and exact production acceptance pass for the core and both public clients. The updated
 Brandbook v1.0 governs both shells. Living public dossiers and the remaining
 stages remain IN PROGRESS.
+
+[Release 1.13 production evidence](product-releases/2026-09-27-1.13.0.json) records
+370 native cases, both 85-test client gates, Sites 16,33 native hashes and 66 HTTP
+checks plus 39 exact assets per client. The existing hourly heartbeat remains ACTIVE
+for the remaining full-spec outcomes; no browser/human visual acceptance is claimed.

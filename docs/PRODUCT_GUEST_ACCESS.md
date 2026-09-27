@@ -1,6 +1,6 @@
 # Dossier-only guests — release 1.13
 
-Status: local acceptance passed; exact production acceptance pending.
+Status: DONE for scoped stage 2b3; local and exact production acceptance passed.
 
 An owner can invite an existing account by its verified email address to one
 managed Pharma or Loyer dossier. The account accepts a seven-day invitation as a
@@ -75,5 +75,17 @@ archives contain 121 files each and none of the three configured provider keys.
 Seven text/background pairs exceed 4.5:1. The supplied brandbook Markdown is
 unchanged (SHA-256 `5cde494278854f7190a33ae8b11742c61149904225e337463a17c66e53e0b006`).
 PDF pages were visually inspected; client browser/human visual acceptance is not
-claimed by this background cycle. Site versions are saved; production acceptance
-will be recorded only after the new native policy and both sites are active.
+claimed by this background cycle. Both public Site versions 16 and the new native policy are active.
+
+
+## Production acceptance
+
+Native functional source `7c17fec853adb1001cd4419da00eda0878255a07` activated at
+19:12:26UTC on 27 September 2026, migration `fec495bef124`. Both Sites 16 are public
+and succeeded by 19:15:09 UTC. Each custom domain passes 66 anonymous HTTP/gateway
+checks and 39 exact served asset comparisons. Runtime proof checks 33 native module
+hashes, scoped guest/native membership constraints, private topic links, all nine
+research tables, three worker checks, the local extractor fixture and healthy
+Laya. No production user records or paid research probes were created. See
+[exact release evidence](product-releases/2026-09-27-1.13.0.json). Browser handoff
+and client interaction QA were skipped for the background cycle.

@@ -83,7 +83,7 @@ do not introduce a second UI framework or new data store for this migration.
 
 Both existing public Sites projects published version 12 successfully:
 Pharma main `2a10c11bc053bb958dd62a9ac0c0522519ca63a1` at 15:16:04 UTC and
-Loyer main `cf6ce3134d5113b1e6f7c2ab5c583c0159e5522e` at 15:16:32 UTC.
+Loyer main `cf6ce3134d5113b1e6f7c2ab5c583c0159e5522e` at 15:16:32  UTC.
 Each custom domain passed 50 anonymous HTTP/auth/gateway/content checks and
 39 exact emitted asset hashes. Global Ask and theme controls are present on
 home, guide, public catalogue and following routes. Compiled shared tokens,
@@ -100,3 +100,5 @@ full native-platform visual migration and dynamic-dossier acceptance stay open.
 ## Brandbook v1.0 update — 1.13
 
 The owner supplied `docs/BRANDBOOK_V1.md` and the matching 18-page PDF on 27 September 2026. The Markdown is retained unchanged; both were reviewed. The newer brandbook controls palette, typography, H monogram, glass and motion where earlier visual guidance differs. The client shell now uses Carbon/Obsidian/Frost, a 1440px content limit, Inter-compatible neutral typography, structural 30px glass and one 560ms analysis transition. Dark is the initial theme; existing explicit light/system preferences remain available. Refraction appears only with actual investigation activity. Native platform-wide visual migration remains OPEN.
+
+Brandbook client acceptance is recorded in [release 1.13](product-releases/2026-09-27-1.13.0.json): both public Sites 16,85 tests per client, seven checked contrast pairs, and exact production asset parity. This establishes the client shell and controls; native page-wide migration and human visual acceptance remain open.

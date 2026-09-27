@@ -93,7 +93,7 @@ Sixteen authored color pairs exceed 4.5:1. No browser/human visual acceptance is
 claimed. [Implementation and remaining migration](docs/PRODUCT_VISUAL_LANGUAGE.md),
 [exact evidence](docs/product-releases/2026-09-27-1.9.0.json).
 
-**Dossier-only guest invitations — 27 September 2026: VERIFYING (stage 2b3).**
+**Dossier-only guest invitations — 27 September 2026: DONE (scoped stage 2b3).**
 Scoped MV2-019/021/023 continuation after verified 1.12: an owner can invite an
 existing verified native account by its exact email as VIEWER, CONTRIBUTOR or
 EDITOR. Acceptance grants only this dossier; it must not add a native organization
@@ -123,8 +123,8 @@ real migration equivalence and legacy behavior. Run native and both-client gates
 and exact production verification before scoped DONE. The complete dynamic/visual
 specifications, living public research and material-change evolution remain open.
 
-Implementation is complete across the native core and both clients; exact
-production acceptance is pending. Native affected checks pass 368 distinct cases
+Implementation and exact production acceptance are complete for the native core
+and both clients. Native affected checks pass 368 distinct cases
 (366 in the broad run plus two provenance fault-injection cases after adapting
 the fixture to the explicit dossier argument), plus two guest stream/viewer cases.
 The 50-case focused guest/team/private/research/work run overlaps that coverage.
@@ -134,6 +134,10 @@ builds. No browser/human visual acceptance is claimed in this background cycle.
 See [guest architecture and acceptance](docs/PRODUCT_GUEST_ACCESS.md). Brandbook
 v1.0 is retained in [BRANDBOOK_V1.md](docs/BRANDBOOK_V1.md) and applied to both
 client shells. Full dynamic/visual specifications remain IN PROGRESS.
+Production: native `7c17fec853ad` activated at 19:12:26 UTC with migration `fec495bef124`;
+both public Sites 16 succeeded by 19:15:09 UTC. Each client passes 66 HTTP checks and 39
+exact asset hashes;33 native module hashes, guest/native/private foreign-key scope,
+three worker checks, the local parser and Laya health pass. [Exact release evidence](docs/product-releases/2026-09-27-1.13.0.json).
 
 **Members-only active dossier monitoring — 27 September 2026: DONE (scoped stage 2b2).**
 Scoped MV2-019/021/023 continuation after verified 1.11 workspace teams: owners can
@@ -194,7 +198,7 @@ Local acceptance: native team/access/lifecycle regressions pass, including 30 fi
 team/provenance cases. Both clients pass 83 tests each, lint, strict types and final
 production builds. Sites 14 and both CI runs succeeded. Each custom domain passes
 63 HTTP/auth checks and 39 exact served asset hashes. Native git-034f3a8344f2
-activated at 17:12:24 UTC with 25 matching modules, migration fcc495bef124, scoped
+activated at 17:12:24  UTC with 25 matching modules, migration fcc495bef124, scoped
 foreign keys, worker health and local parser acceptance. See
 [team architecture and acceptance](docs/PRODUCT_TEAMS.md),
 [exact release receipt](docs/product-releases/2026-09-27-1.11.0.json).
@@ -395,7 +399,7 @@ product/migration/backlog checks passed: 171 cases total, with exact API lint cl
 Both clients have 50 passing contracts and public catalogue, reader, publishing
 editor, revision history and recovery states. Client lint/types/builds and exact-head
 GitHub CI passed. The initial 1.3.0 edge-fetch issue was corrected in 1.3.1; both
-Sites version 5 deployments succeeded at 09:50 UTC. Final live verification passed
+Sites version 5 deployments succeeded at 09:50  UTC. Final live verification passed
 32 HTTP checks and 26 exact served-asset hashes per site against core
 `git-4af28afd66f7`, whose normal release passed 755 checks. This first publication
 slice is DONE; public discussion and subsequent discovery cycles remain IN PROGRESS.
@@ -1469,7 +1473,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 
 **Verification:** platform/unit and existing release regressions; rendered Compose isolation; first-install and rollback rehearsal against only the new instance; public HTTPS and automatic second-revision checks.
 
-**Explicit subtask — dated digest fixtures (IN PROGRESS, 2026-09-11):** Investigate the 49 digest/brief failures in automatic candidate 9034523, separately from its already repaired backlog mismatch. The shared topic fixture is dated 2026-09-04 08:00 UTC and falls outside the real seven-day digest window after 2026-09-11 08:00 UTC. Reproduce the failure, anchor synthetic current-event fixtures relative to the test clock before evidence is generated, and verify real period boundaries plus affected topic/brief/delivery tests. Preserve application filtering and all quality gates. This supports acceptance criterion 4; no production digest behavior or main-branch update is authorized by this repair.
+**Explicit subtask — dated digest fixtures (IN PROGRESS, 2026-09-11):** Investigate the 49 digest/brief failures in automatic candidate 9034523, separately from its already repaired backlog mismatch. The shared topic fixture is dated 2026-09-04 08:00 UTC and falls outside the real seven-day digest window after 2026-09-11 08:00  UTC. Reproduce the failure, anchor synthetic current-event fixtures relative to the test clock before evidence is generated, and verify real period boundaries plus affected topic/brief/delivery tests. Preserve application filtering and all quality gates. This supports acceptance criterion 4; no production digest behavior or main-branch update is authorized by this repair.
 
 **Dated-fixture evidence, 2026-09-11 (implemented/tested; release pending):** The paging failure reproduced before changing the shared synthetic detection timestamp to five minutes before fixture creation. All 81 focused regressions passed, including the 49 previously failing digest/brief cases, shared topic matching and real digest-period boundaries. Mandatory backlog consistency, Ruff and diff checks passed. [Evidence and limits](docs/monitoring-v2/evidence/MV2-072-digest-clock.md). Current automatic tests continue independently; parent status and live acceptance remain open.
 
@@ -2256,7 +2260,7 @@ above supersedes the River-only count limitation for readable Today queues.
 ### MV2-021 — Workspace: Impact Inbox, decisions and Impact Matrix
 
 **Current product stage, 27 September:** dossier-only guest invitations (2b3) are
-VERIFYING under the explicit scope, source boundaries and acceptance above.
+DONE under the explicit scope, source boundaries and acceptance above.
 
 **Active follow-up, 27 September:** members-only active dossier monitoring (stage
 2b2) is DONE within the scope and exact acceptance above. Preserve existing
@@ -2706,7 +2710,7 @@ Actual release and human/source acceptance remain open.
 
 **Execution evidence — complete Basel feature, 12 September 2026:** [Air Quality Watch](docs/monitoring-v2/AIR_QUALITY_WATCH.md) records the licensed source, six additive tables, private lifecycle/revisions, explicit hourly or complete 24-hour rules, hysteresis/cooldown, pollutant mute, immutable corrections, Today/review/reopen, history and five-language reader. The actual collector retrieved 384 samples and all four current Basel pollutants into an isolated scratch database. Focused behavior, worker, migration and privacy tests, affected regressions, full frontend build and eight browser accessibility checkpoints passed. The first enabled footprint is Basel-Binningen; Lugano and other areas explicitly remain unsupported pending their source contracts. Numeric user thresholds do not claim an official category scale. Exact release activation and applicable field/human acceptance remain unverified, so the task stays VERIFYING. Broader shared parents and national source coverage are not completed by this scoped feature.
 
-**Lugano feature evidence — 14 September 2026:** The complete station feature adds independently checked NABEL data-query rights, bounded hourly collection and revision history for O3/NO2/PM10/PM2.5, fixed CET source labels, station selection/attribution in five languages, and the existing private lifecycle, Today/history and consented digest. The actual collector retained 384 readings, including all four metrics at 07:00 UTC. Root build and the Lugano browser journey passed nine full-document axe checkpoints. See [scope, rights and evidence](docs/monitoring-v2/AIR_QUALITY_WATCH.md#lugano-station-feature-scope--14-september-2026). Exact activation and human acceptance remain VERIFYING; other national stations and official category/daily-max interpretations are not claimed.
+**Lugano feature evidence — 14 September 2026:** The complete station feature adds independently checked NABEL data-query rights, bounded hourly collection and revision history for O3/NO2/PM10/PM2.5, fixed CET source labels, station selection/attribution in five languages, and the existing private lifecycle, Today/history and consented digest. The actual collector retained 384 readings, including all four metrics at 07:00  UTC. Root build and the Lugano browser journey passed nine full-document axe checkpoints. See [scope, rights and evidence](docs/monitoring-v2/AIR_QUALITY_WATCH.md#lugano-station-feature-scope--14-september-2026). Exact activation and human acceptance remain VERIFYING; other national stations and official category/daily-max interpretations are not claimed.
 
 **Official daily feature evidence — 14 September 2026:** Native Basel and Lugano daily acquisition, period-separated immutable history, O3 daily maximum of hourly means and other pollutant daily means, completed-source-date display, independent thresholds/recency/gaps and consented final-send checks are implemented. Actual collectors retrieved seven complete dated reports per station (28 readings each). The full Air suite passed 96 tests; root build and two nine-checkpoint browser journeys passed. See [daily scope and evidence](docs/monitoring-v2/AIR_QUALITY_WATCH.md#official-daily-air-feature-scope--14-september-2026). Exact activation and applicable human acceptance remain VERIFYING; no official risk category is invented.
 
@@ -2716,7 +2720,7 @@ Actual release and human/source acceptance remain open.
 
 **Official daily feature evidence — 14 September 2026:** Native Basel and Lugano daily acquisition, period-separated immutable history, O3 daily maximum of hourly means and other pollutant daily means, completed-source-date display, independent thresholds/recency/gaps and consented final-send checks are implemented. Actual collectors retrieved seven complete dated reports per station (28 readings each). The full Air suite passed 96 tests; root build and two nine-checkpoint browser journeys passed. See [daily scope and evidence](docs/monitoring-v2/AIR_QUALITY_WATCH.md#official-daily-air-feature-scope--14-september-2026). Exact activation and applicable human acceptance remain VERIFYING; no official risk category is invented.
 
-**Lugano feature evidence — 14 September 2026:** The complete station feature adds independently checked NABEL data-query rights, bounded hourly collection and revision history for O3/NO2/PM10/PM2.5, fixed CET source labels, station selection/attribution in five languages, and the existing private lifecycle, Today/history and consented digest. The actual collector retained 384 readings, including all four metrics at 07:00 UTC. Root build and the Lugano browser journey passed nine full-document axe checkpoints. See [scope, rights and evidence](docs/monitoring-v2/AIR_QUALITY_WATCH.md#lugano-station-feature-scope--14-september-2026). Exact activation and human acceptance remain VERIFYING; other national stations and official category/daily-max interpretations are not claimed.
+**Lugano feature evidence — 14 September 2026:** The complete station feature adds independently checked NABEL data-query rights, bounded hourly collection and revision history for O3/NO2/PM10/PM2.5, fixed CET source labels, station selection/attribution in five languages, and the existing private lifecycle, Today/history and consented digest. The actual collector retained 384 readings, including all four metrics at 07:00  UTC. Root build and the Lugano browser journey passed nine full-document axe checkpoints. See [scope, rights and evidence](docs/monitoring-v2/AIR_QUALITY_WATCH.md#lugano-station-feature-scope--14-september-2026). Exact activation and human acceptance remain VERIFYING; other national stations and official category/daily-max interpretations are not claimed.
 
 **Active whole-feature scope, 14 September 2026:** Complete the §14.8 Air digest
 with explicit owner consent, saved preview, durable delivery and exact private
@@ -3597,9 +3601,9 @@ no production database is used, and full-suite duration remains unverified until
 the next normal gate. Source permissions and AI capability gates are unaffected.
 
 The user explicitly authorized cancellation of the obsolete 8993ce1 run at
-21:47 UTC. Its exact target SHA, purpose label and read-only release mount were
+21:47  UTC. Its exact target SHA, purpose label and read-only release mount were
 verified before stopping only that QA container. The running site was untouched;
-the manager cleaned up and the normal e66f272 run began at 21:48 UTC. The cancelled
+the manager cleaned up and the normal e66f272 run began at 21:48  UTC. The cancelled
 check is incomplete evidence, not a passing test result. This one-time override
 does not authorize interruption of the new run.
 
