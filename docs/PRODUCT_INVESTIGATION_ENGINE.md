@@ -220,7 +220,7 @@ body triggers, recurring web discovery, semantic indexing and the full-spec gate
 remain distinct; this does not complete stage 4 or either full specification.
 
 
-Stage 4b2 is IN PROGRESS: explicit standing-policy scope can research future
+Stage 4b2 is DONE within scoped release 1.17 production acceptance: explicit standing-policy scope researches future
 retained changes from linked workspace page watches. Existing topic-only
 authorizations stay unchanged; members-only dossiers retain their page-watch
 restriction. Exact typed receipts, old/new version references and bounded change

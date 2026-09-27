@@ -72,7 +72,7 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 ## Product decision
 
-**Watched-page research — 28 September 2026: VERIFYING (stage 4b2 / release 1.17).**
+**Watched-page research — 28 September 2026: DONE (scoped stage 4b2 / release 1.17).**
 Scoped MV2-019/021/023 continuation after verified 1.16: an explicit policy choice
 adds future retained changes from dossier-linked workspace page watches to private
 research. Existing topic-only authorizations remain topic-only. Dependencies:
@@ -97,7 +97,9 @@ recurring open-web discovery, semantic indexing, professional evaluation and
 native visual migration remain IN PROGRESS. Local gates: 169 broader native cases,
 25 final affected cases (24 new page cases), exact API Ruff, both clients 101 tests,
 lint, strict types and final builds; configured-secret scans have zero matches.
-Exact production source/schema/assets acceptance is pending.
+Exact native and both-client production acceptance passes: 47 native hashes,
+migration and runtime gates, Sites 20, 98 HTTP checks and 47 served assets per
+product. [Evidence](docs/PRODUCT_WATCHED_PAGE_RESEARCH.md).
 
 **Visual language refresh — 27 September 2026: IN PROGRESS (reference slice DONE).** The owner's
 [complete brief](docs/VISUAL_LANGUAGE_SPEC.md) now steers both product clients.
@@ -1538,7 +1540,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS — nine-category settings implemented | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
 | [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
-| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — watched-page research stage 4b2 in verification | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
+| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — stage 4b2 DONE; recurring discovery next | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
 | [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — native evidence and configuration drafts implemented | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
 | [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
@@ -2405,7 +2407,7 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-021 — Workspace: Impact Inbox, decisions and Impact Matrix
 
-**Active product stage, 28 September:** watched-page research (4b2) follows the
+**Completed product stage, 28 September:** watched-page research (4b2) is DONE under the
 explicit scope, dependencies, source readiness and acceptance recorded above.
 Architecture and local/production evidence: [watched-page research](docs/PRODUCT_WATCHED_PAGE_RESEARCH.md).
 
@@ -2418,7 +2420,7 @@ research is DONE under the scope, dependencies and exact acceptance above.
 **Completed product stage, 27 September:** living public research (stage 3) is
 DONE within the explicit scope, dependencies and production acceptance above.
 Cross-investigation comparison is verified in stage 4a and native topic-match
-research in stage 4b1. Watched-page triggers remain stage 4b2; MV2-021 and both full
+research in stage 4b1 and watched-page triggers in stage 4b2. MV2-021 and both full
 specifications remain open.
 
 **Current product stage, 27 September:** dossier-only guest invitations (2b3) are

@@ -136,3 +136,9 @@ are reused in both products. The paired text stacks on mobile, quotations stay
 escaped and no new Lens animation or evidence-quality metric is invented.
 Validation and exact release acceptance remain tracked in
 [watched-page research](PRODUCT_WATCHED_PAGE_RESEARCH.md).
+
+Release 1.17 scoped production acceptance passes: both clients 101 tests, lint,
+types/builds, exact Sites 20 origins with 98 HTTP checks and 47 exact assets each.
+Native saved-page fixtures and source/corpus revocation cases pass. No browser
+interaction or human visual acceptance is claimed. Full native migration remains
+IN PROGRESS; see the linked watched-page release receipt.

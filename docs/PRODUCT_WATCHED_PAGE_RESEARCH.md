@@ -1,6 +1,6 @@
 # Research from saved page changes
 
-Status: VERIFYING, scoped stage 4b2 / release 1.17. Full dynamic and visual
+Status: DONE within scoped stage 4b2 / release 1.17 production acceptance. Full dynamic and visual
 specifications remain IN PROGRESS. The next complete outcome is recurring
 open-web discovery; private semantic indexing, independent quality evaluation
 and native visual migration remain separate directions.
@@ -78,10 +78,36 @@ clients pass 101 behavior contracts, lint, strict type checking and final Sites
 production builds. Exact native API Ruff passes. Configured-secret scans checked
 137 built and 188 source files per client against all 3 configured provider values,
 with zero matches. The final 25 native cases pass, including all 24 new page cases and the retained
-monitoring schema contract. Exact production acceptance is pending. Native
+monitoring schema contract. Exact production acceptance passed, as recorded below. Native
 integration fixtures use the real page acquisition/version, scheduler, durable
 job, extraction and paired-comparison paths with controlled model responses.
 Production checks use read-only code/schema/process and anonymous route/asset
 evidence. They do not create authenticated production user records or establish
 professional factual accuracy. Browser interaction and human visual acceptance
 are not claimed in this background cycle.
+
+
+## Exact production acceptance — 27 September 2026 UTC
+
+Native functional `210e5bf81e33a3665e5d1f546493d7f60806209c` activated at
+23:08:29 UTC. Pharma `74f693bd1f47806e0bd65801042d8a7670f4dc48` and Loyer
+`b2862842abec13a6237730b4dffae204ce222633` published as existing public Sites 20
+at 23:09:14 and 23:09:48 UTC. Each custom domain passed 98 HTTP/auth/gateway/guide
+checks and 47 exact served JS/CSS hashes. Both exact-source GitHub CI runs passed
+(36357327464 and 36357338157).
+
+Read-only native inspection confirms all 47 module hashes, migration
+`03d495bef125`, false page-scope defaults, typed source identities and their unique
+constraint, preserved topic receipts and dossier/organization foreign keys,
+one-minute scheduling, four required native runtime containers, four scheduler
+module hashes, the local parser fixture and healthy Laya. Evidence uses no
+production user records or paid model probes. The 169-case broader native gate,
+25-case final affected gate and both 101-test client gates pass; source lint,
+types, builds and configured-secret scans pass. Browser interaction and
+professional factual-quality acceptance remain unclaimed.
+
+[Exact release receipt](product-releases/2026-09-28-1.17.0.json).
+The existing hourly heartbeat remains ACTIVE. Recurring open-web discovery,
+private semantic indexing, independent evaluation and full native visual migration
+are still open; this completes the scoped saved-page outcome, not either full
+specification.
