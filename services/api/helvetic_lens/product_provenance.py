@@ -49,18 +49,21 @@ def canonical(value):
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
-def principal(session, identity, now, *, write=False):
+def principal(session, identity, now, *, write=False, lock=False):
     if session.info.get("organization_id") != identity.organization_id:
         fail("Sign in to search or save sources.", 401)
-    if write:
+    from .product_access import current_principal_grant
+
+    delegated = write and current_principal_grant(session, identity)
+    if write and not delegated:
         require_current_admin(session, identity)
-    user = session.get(User, identity.user_id, populate_existing=True)
-    login = session.get(UserSession, identity.session_id, populate_existing=True, with_for_update=write)
+    user = session.get(User, identity.user_id, populate_existing=True, with_for_update=write or lock)
+    login = session.get(UserSession, identity.session_id, populate_existing=True, with_for_update=write or lock)
     if (not user or not user.active or not login or login.user_id != user.id
             or login.organization_id != identity.organization_id or login.revoked_at
             or login.expires_at.replace(tzinfo=UTC) <= now):
         fail("Your session changed. Sign in again before saving sources.", 401)
-    _actor(session, identity.user_id, write=write)
+    _actor(session, identity.user_id, write=write and not delegated)
     return user
 
 

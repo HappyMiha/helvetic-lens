@@ -12,7 +12,7 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, File, Form, Query, Request, Response, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import Field, StrictBool, field_validator
-from sqlalchemy import case, func, or_, select
+from sqlalchemy import case, func, select
 
 from . import legal_profiles, monitoring_topics
 from .analysis import InferenceBudget
@@ -83,7 +83,10 @@ def dossier(session, product, identifier, user):
     row = session.get(ProductDossier, identifier)
     if not row or row.product != product:
         fail("Dossier not found.", 404, "not_found")
-    profile = legal_profiles.record(session, row.profile_id, user)
+    from .product_access import require
+
+    profile = session.get(LegalMonitoringProfile, row.profile_id, populate_existing=True)
+    require(session, row, profile, user)
     return row, profile
 
 
@@ -112,6 +115,11 @@ def payload(session, row, profile, *, detail=True):
 
     result = {"id": row.id, "product": row.product, "created_at": iso(row.created_at),
               "profile": legal_profiles.payload(session, profile, detail=detail), "work": work_payload(session, row)}
+    from .product_access import current_user_id, summary
+
+    user_id = current_user_id()
+    if user_id:
+        result["access"] = summary(session, row, profile, user_id)
     result["discussion"] = {
         "questions": session.scalar(select(func.count()).select_from(ResearchThread).where(ResearchThread.dossier_id == row.id)),
         "open_questions": session.scalar(select(func.count()).select_from(ResearchThread).where(ResearchThread.dossier_id == row.id, ResearchThread.accepted_entry_id.is_(None))),
@@ -144,7 +152,9 @@ def product_router(service):
     def listing(product: Product, request: Request, offset: int = Query(default=0, ge=0, le=100000)):
         identity = actor(request)
         with service.db.session() as session:
-            visible = or_(LegalMonitoringProfile.status != "draft", LegalMonitoringProfile.created_by_user_id == identity.user_id)
+            from .product_access import visible_profile
+
+            visible = visible_profile(identity.user_id)
             query = select(ProductDossier, LegalMonitoringProfile).join(LegalMonitoringProfile).where(ProductDossier.product == product, visible)
             last_activity = select(func.max(DossierEntry.created_at)).where(DossierEntry.dossier_id == ProductDossier.id).correlate(ProductDossier).scalar_subquery()
             rows = session.execute(query.order_by(case((last_activity > LegalMonitoringProfile.updated_at, last_activity), else_=LegalMonitoringProfile.updated_at).desc(), ProductDossier.id).offset(offset).limit(50))
@@ -203,7 +213,7 @@ def product_router(service):
             fail("Describe the correction or research request.")
         with service.write_guard, service.db.session() as session:
             lock_organization(session, service.organization_id)
-            row = access(session, identity, product, identifier, write=True)
+            row = access(session, identity, product, identifier, write=True, action="contribute")
             previous = session.scalar(select(DossierEntry).where(DossierEntry.dossier_id == row.id, DossierEntry.request_key == str(data.request_key)))
             if previous:
                 if previous.actor_user_id != identity.user_id or (previous.kind, previous.title, previous.body, previous.url, previous.data_json) != (
@@ -228,7 +238,7 @@ def product_router(service):
         if analyse and request_key is None:
             fail("An upload request key is required for safe analysis retries.")
         with service.db.session() as session:
-            access(session, identity, product, identifier, write=True)
+            access(session, identity, product, identifier, write=True, action="contribute")
         body = await file.read(MAX_FILE + 1)
         await file.close()
         if not body or len(body) > MAX_FILE:
@@ -246,7 +256,7 @@ def product_router(service):
         path = folder / key
         with service.write_guard, service.db.session() as session:
             lock_organization(session, service.organization_id)
-            row = access(session, identity, product, identifier, write=True)
+            row = access(session, identity, product, identifier, write=True, action="contribute")
             previous = session.scalar(select(DossierEntry).where(DossierEntry.dossier_id == row.id,
                 DossierEntry.request_key == creation_key))
             if previous:
@@ -458,7 +468,9 @@ def product_router(service):
 
     operations(router, service, actor)
     from .product_research import research_routes
+    from .product_team_api import routes as team_routes
 
+    team_routes(router, service, actor)
     research_routes(router, service, actor)
     from .product_investigation_api import routes as investigation_routes
 

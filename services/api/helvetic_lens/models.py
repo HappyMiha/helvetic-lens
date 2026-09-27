@@ -1824,6 +1824,8 @@ ORGANIZATION_SCOPED_MODELS = (
     product_models.ProductPublication,
     product_models.PublicationRevision,
     product_models.ProductDossier,
+    product_models.DossierMember,
+    product_models.DossierInvitation,
     product_models.DossierEntry,
     product_models.DossierAction,
     product_models.ResearchThread,

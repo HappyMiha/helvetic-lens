@@ -61,6 +61,8 @@ class ProductDossier(Base):
     product: Mapped[str] = mapped_column(String(20))
     profile_id: Mapped[str] = mapped_column(ForeignKey("legal_monitoring_profiles.id", ondelete="CASCADE"), unique=True)
     creation_key: Mapped[str] = mapped_column(String(36))
+    team_managed: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
+    access_revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     context_json: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}")
     priority: Mapped[str] = mapped_column(String(12), default="normal", server_default="normal")
@@ -68,6 +70,46 @@ class ProductDossier(Base):
     next_review_on: Mapped[date | None] = mapped_column(Date)
     last_reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class DossierMember(Base):
+    __tablename__ = "product_dossier_members"
+    __table_args__ = (
+        ForeignKeyConstraint(["dossier_id", "organization_id"],
+                             ["product_dossiers.id", "product_dossiers.organization_id"], ondelete="CASCADE"),
+        ForeignKeyConstraint(["organization_id", "user_id"],
+                             ["organization_memberships.organization_id", "organization_memberships.user_id"], ondelete="CASCADE"),
+        CheckConstraint("role IN ('OWNER', 'EDITOR', 'CONTRIBUTOR', 'VIEWER')", name="ck_dossier_member_role"),
+    )
+    dossier_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    organization_id: Mapped[str] = mapped_column(String(36), index=True)
+    role: Mapped[str] = mapped_column(String(16))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class DossierInvitation(Base):
+    """An account-bound invitation, not a bearer grant or organization invitation."""
+    __tablename__ = "product_dossier_invitations"
+    __table_args__ = (
+        ForeignKeyConstraint(["dossier_id", "organization_id"],
+                             ["product_dossiers.id", "product_dossiers.organization_id"], ondelete="CASCADE"),
+        ForeignKeyConstraint(["organization_id", "recipient_user_id"],
+                             ["organization_memberships.organization_id", "organization_memberships.user_id"], ondelete="CASCADE"),
+        UniqueConstraint("dossier_id", "request_key", name="uq_dossier_invitation_request"),
+        CheckConstraint("role IN ('EDITOR', 'CONTRIBUTOR', 'VIEWER')", name="ck_dossier_invitation_role"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    dossier_id: Mapped[str] = mapped_column(String(36), index=True)
+    organization_id: Mapped[str] = mapped_column(String(36), index=True)
+    recipient_user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    invited_by_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    request_key: Mapped[str] = mapped_column(String(36))
+    role: Mapped[str] = mapped_column(String(16))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class DossierEntry(Base):

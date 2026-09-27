@@ -32,11 +32,12 @@ machine output are proposals, never proof of identity or fact.
    section. Both product clients, failure/privacy/restart tests and exact release
    verification are required before this slice is complete.
 2. DONE, scoped private contribution stage 2a in release 1.10: unified URL/file/
-   comment/correction/research-request ingestion using retained originals. Next:
-   per-dossier OWNER/EDITOR/CONTRIBUTOR/
-   VIEWER roles and invitation boundaries. Existing workspace-wide access must be
-   audited across native profile, source, document and monitoring paths before
-   migration; guarding only the product route is insufficient. Preserve drafts.
+   comment/correction/research-request ingestion using retained originals. Scoped
+   stage 2b workspace teams are VERIFYING in release 1.11: four dossier roles,
+   account-bound invitations and collaborative drafts across native access paths.
+   See [team architecture and acceptance](PRODUCT_TEAMS.md). Members-only active
+   monitoring and outside-workspace invitations remain IN PROGRESS; their native
+   topics, feeds, delivery and derived contexts require complete scope migration.
    Before this stage, apply the owner's visual-language steering to both clients'
    reference dossier and global interaction foundation (see VISUAL_LANGUAGE_SPEC.md).
 3. Public living view with stable human-readable slugs and claim/source anchors,
@@ -168,3 +169,10 @@ integrity and no-public-discovery boundaries are verified. See
 private contribution-triggered analysis, not the full stage 2 roles/invitations or
 stage 4 cross-investigation reconciliation. Those and the remaining visual/native
 migration remain IN PROGRESS.
+
+
+Release 1.11 adds the workspace collaboration portion of stage 2b: creator-enabled
+OWNER/EDITOR/CONTRIBUTOR/VIEWER roles, account-bound invitations, ownership
+handover and retained private collaborative drafts. Local checks pass; exact
+production activation is VERIFYING. Activated monitoring keeps its disclosed
+workspace audience. See [bounds and acceptance](PRODUCT_TEAMS.md).

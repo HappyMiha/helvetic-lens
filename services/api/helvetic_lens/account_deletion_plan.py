@@ -138,6 +138,25 @@ def inventory(session, user_id, organization_id):
                     "membership_required": row.organization_id not in member_orgs})
         categories.append({"domain": domain, "owned": len(rows), "handover_required": blocked})
 
+    from .legal_profile_models import LegalMonitoringProfile
+    from .product_access import owner_blockers
+    from .product_models import DossierMember, ProductDossier
+
+    dossier_roles = [list(item) for item in session.execute(select(DossierMember.dossier_id, DossierMember.user_id, DossierMember.role)
+        .where(DossierMember.dossier_id.in_(select(DossierMember.dossier_id).where(DossierMember.user_id == user_id)))
+        .order_by(DossierMember.dossier_id, DossierMember.user_id).limit(MAX_INVENTORY + 1))]
+    if len(dossier_roles) > MAX_INVENTORY:
+        fail("account_deletion_inventory_too_large", 422)
+    for ownership in owner_blockers(session, user_id):
+        if ownership.organization_id in erase:
+            continue
+        dossier = session.get(ProductDossier, ownership.dossier_id)
+        profile = session.get(LegalMonitoringProfile, dossier.profile_id)
+        colleagues = session.scalar(select(DossierMember.user_id).where(DossierMember.dossier_id == dossier.id, DossierMember.user_id != user_id))
+        if profile.status != "draft" or colleagues:
+            blockers.append({"kind": "dossier_owner", "dossier_id": dossier.id, "product": dossier.product,
+                "organization_id": ownership.organization_id})
+
     principal = f"user:{user_id}"
     own = {}
     for label, model in (("sessions", UserSession), ("account_tokens", AccountToken),
@@ -155,7 +174,7 @@ def inventory(session, user_id, organization_id):
     # a user's consent to erase a whole private monitor and its dependent rows.
     binding = {"version": 1, "user": user_id, "organization": organization_id,
         "platform_admin": user.platform_admin, "rosters": rosters,
-        "monitors": monitors, "personal": own, "erase": erase, "blockers": blockers}
+        "monitors": monitors, "dossier_roles": dossier_roles, "personal": own, "erase": erase, "blockers": blockers}
     fingerprint = hashlib.sha256(json.dumps(binding, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     return DeletionPlan(public={"version": 1, "fingerprint": fingerprint,
         "categories": categories, "workspaces": workspaces, "blockers": blockers,

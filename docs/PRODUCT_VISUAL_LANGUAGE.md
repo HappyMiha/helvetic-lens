@@ -70,9 +70,11 @@ release receipt after publication.
 
 ## Remaining work
 
-The full dynamic dossier engine stays IN PROGRESS: retained-original contribution
-extraction, comprehensive per-dossier roles/invitations, living public slugs and
-search, and bounded material-change reopening with cross-investigation history.
+The full dynamic dossier engine stays IN PROGRESS. Retained-original contribution
+extraction is delivered in release 1.10; [workspace dossier teams](PRODUCT_TEAMS.md)
+are VERIFYING in 1.11. Members-only active monitoring, outside-workspace invitations,
+living public slugs/search and material-change reopening with cross-investigation
+history remain open.
 Native helveticlens.ch legacy screens should adopt the validated design foundation
 incrementally. Keep every source/access boundary and preserve functional parity;
 do not introduce a second UI framework or new data store for this migration.

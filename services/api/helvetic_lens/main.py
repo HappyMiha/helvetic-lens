@@ -498,6 +498,7 @@ def create_app(
         }
         public_path = path in {"/api/health", "/api/ready"} or path in public_auth_paths
         public_path = public_path or path in {"/docs", "/openapi.json", "/redoc"}
+        from .product_access import current_principal_grant, request_context, viewer_route
         from .product_community import COMMUNITY_WRITE
         from .product_following import FOLLOW_WRITE
         from .product_publications import PUBLIC_READ
@@ -563,6 +564,7 @@ def create_app(
             and path not in viewer_allowed_mutations
             and not viewer_assistant_state
             and not viewer_personal_state
+            and not viewer_route(path, request.method)
             and not (request.method == "POST" and (COMMUNITY_WRITE.fullmatch(path) is not None or FOLLOW_WRITE.fullmatch(path) is not None))
             and not (request.method == "POST" and path.startswith("/api/interest-feed/events/") and path.endswith("/brief/requests"))
             and not (request.method == "POST" and path.startswith("/api/interest-briefs/") and path.endswith("/feedback"))
@@ -619,8 +621,19 @@ def create_app(
         with (
             correlation_context(organization_id=organization_id),
             service.db.organization_context(organization_id),
+            request_context(path, request.method, identity),
             service.organization_runtime(),
         ):
+            if identity and request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+                def dossier_mutation_access():
+                    with service.db.session() as session:
+                        current_principal_grant(session, identity)
+                try:
+                    await asyncio.to_thread(dossier_mutation_access)
+                except DomainError as error:
+                    return JSONResponse(status_code=error.status,
+                        content={"detail": error.message, "code": error.code, "params": error.params},
+                        headers={"Cache-Control": "private, no-store"})
             response = await call_next(request)
         if path.startswith("/api/") and request.method in {"POST", "PUT", "PATCH", "DELETE"}:
             excluded = {"/api/auth/login", "/api/auth/register"}

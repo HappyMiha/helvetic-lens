@@ -413,6 +413,10 @@ def history_scan(session: Session, topic: MonitoringTopic) -> dict:
 
 
 def request_history_scan(session: Session, topic_id: str) -> dict:
+    from .product_access import current_user_id, require_topic
+
+    if current_user_id():
+        require_topic(session, topic_id, current_user_id())
     topic = session.scalar(select(MonitoringTopic).where(MonitoringTopic.id == topic_id).with_for_update())
     if not topic:
         raise DomainError("The monitoring topic was not found.", 404, "monitoring_topic_not_found")
@@ -493,6 +497,10 @@ def update_topic(
     ai_draft_id: str | None = None,
     commit: bool = True,
 ) -> dict:
+    from .product_access import require_topic
+
+    if actor_user_id:
+        require_topic(session, topic_id, actor_user_id)
     topic = session.get(MonitoringTopic, topic_id)
     if not topic:
         raise DomainError("The monitoring topic was not found.", 404, "monitoring_topic_not_found")
@@ -543,6 +551,10 @@ def change_status(
     actor_user_id: str | None,
     commit: bool = True,
 ) -> dict:
+    from .product_access import require_topic
+
+    if actor_user_id:
+        require_topic(session, topic_id, actor_user_id)
     topic = session.get(MonitoringTopic, topic_id)
     if not topic:
         raise DomainError("The monitoring topic was not found.", 404, "monitoring_topic_not_found")

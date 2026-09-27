@@ -94,6 +94,11 @@ def save(session: Session, organization_id: str, match_id: str, *, actor_user_id
     if decision not in {"confirmed", "rejected"} or not 3 <= len(note.strip()) <= 2000:
         raise DomainError("Choose a decision and explain it in 3 to 2000 characters.", 422, "invalid_topic_review")
     # Lock the same row as the matching worker: a decision cannot overwrite a newer evaluation/review.
+    from .product_access import require_topic
+
+    record = get_match(session, organization_id, match_id)
+    if actor_user_id:
+        require_topic(session, record.topic_id, actor_user_id)
     record = get_match(session, organization_id, match_id, lock=True)
     request_fingerprint = _fingerprint([match_id, actor_user_id, decision, note.strip(),
                                         expected_evaluation_fingerprint, expected_review_id])

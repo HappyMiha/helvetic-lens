@@ -165,9 +165,11 @@ def require_revision(row, expected):
 
 
 def visible_query(product, user):
+    from .product_access import visible_profile
+
     return select(ProductDossier, LegalMonitoringProfile).join(LegalMonitoringProfile).where(
         ProductDossier.product == product,
-        or_(LegalMonitoringProfile.status != "draft", LegalMonitoringProfile.created_by_user_id == user))
+        visible_profile(user))
 
 
 def linked_evidence(session, profile, data):
@@ -210,7 +212,9 @@ def research_action_evidence(session, parent, origin):
 def operations(router, service, actor):
     def editor(request):
         identity = actor(request)
-        if identity.role != "organization_admin":
+        from .product_access import request_grant
+
+        if identity.role != "organization_admin" and not request_grant():
             fail("Your workspace role is read-only.", 403, "role_required")
         return identity
 

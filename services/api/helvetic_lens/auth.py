@@ -630,6 +630,10 @@ class AuthService:
                 )
             if membership.role == "organization_admin":
                 self._require_another_admin(session, identity.organization_id, membership.id)
+            from .product_access import owner_blockers
+
+            if owner_blockers(session, membership.user_id, identity.organization_id):
+                raise DomainError("Transfer dossier ownership before removing this workspace member.", 409, "dossier_owner_handover_required")
             session.query(UserSession).filter(
                 UserSession.organization_id == identity.organization_id,
                 UserSession.user_id == membership.user_id,

@@ -93,6 +93,35 @@ Sixteen authored color pairs exceed 4.5:1. No browser/human visual acceptance is
 claimed. [Implementation and remaining migration](docs/PRODUCT_VISUAL_LANGUAGE.md),
 [exact evidence](docs/product-releases/2026-09-27-1.9.0.json).
 
+**Dossier team roles — 27 September 2026: VERIFYING (scoped stage 2b, workspace collaboration).**
+Scoped MV2-021/023 continuation: OWNER/EDITOR/CONTRIBUTOR/VIEWER roles,
+account-bound seven-day invitations for existing workspace colleagues, pending
+invitations inbox, revocation and explicit ownership handover in both clients.
+Managed drafts become readable only by accepted dossier members; accepting an
+invitation never joins an organization or grants access to another dossier.
+Activated dossiers retain their existing workspace audience and native shared
+monitoring. This release does not add a members-only active-monitoring mode.
+Explicit dossier roles override inherited workspace write roles; activation and
+public publication require the owner, and shared source/monitoring operations
+retain native administrator requirements. Existing unmanaged dossiers preserve
+legacy rights until the creator enables team management. No emails are sent.
+Dependencies: native sessions/membership locks, profile and dossier readers,
+workbench/search predicates, durable investigation workers, erasure and membership
+removal. Sources: no new acquisition, provider, credential or paid query needed.
+Acceptance: complete owner invitation/accept/contribution/review/handover workflow;
+expired/revoked/wrong-account/wrong-product invites fail; stale revisions conflict;
+last owner and retained collaborative drafts survive account changes; every draft
+reader/list/export/file/search and worker rechecks current access; role-specific
+write denial includes alternate native profile/topic routes. Existing public
+projection and nine Monitoring sections remain unchanged. Test native behavior,
+migration/erasure and both clients, then verify exact production before DONE.
+Local acceptance: native team/access/lifecycle regressions pass, including 30 final
+team/provenance cases. Both clients pass 83 tests each, lint, strict types and final
+production builds. Exact deployment verification remains pending; see
+[team architecture and acceptance](docs/PRODUCT_TEAMS.md).
+Full stage 2b still requires restricted active monitoring and invitations
+outside the current workspace, with all derived topics, feeds and delivery scoped.
+
 **Private contribution ingestion — 27 September 2026: DONE (scoped stage 2a).**
 Scoped MV2-019/021/023 follow-up: one contribution composer in both clients for
 comments, source URLs, corrections, research requests and original files. Explicit
@@ -2146,6 +2175,10 @@ above supersedes the River-only count limitation for readable Today queues.
 <a id="mv2-021"></a>
 
 ### MV2-021 — Workspace: Impact Inbox, decisions and Impact Matrix
+
+**Product follow-up, 27 September:** scoped workspace dossier teams are VERIFYING;
+see the scoped acceptance, dependencies and preserved active audience above.
+This does not complete MV2-021 or the full dynamic-dossier specification.
 
 **Whole-feature implementation, 14 September 2026:** Explicit bounded batch review
 from the nine native notification queues, with previewed evidence, domain-specific

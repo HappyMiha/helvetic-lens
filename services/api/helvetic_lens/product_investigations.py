@@ -66,11 +66,18 @@ def rows(session, model, run):
         .order_by(model.created_at, model.id)))
 
 
-def access(session, identity, product, dossier_id, *, write=False):
+def access(session, identity, product, dossier_id, *, write=False, action="edit"):
     # Native account/session + current membership, then draft visibility.
     session.connection()
-    principal(session, identity, utcnow(), write=write)
-    return dossier(session, product, dossier_id, identity.user_id)[0]
+    from .membership_locks import lock_organization
+    from .product_access import require
+
+    if write:
+        lock_organization(session, identity.organization_id)
+    principal(session, identity, utcnow(), lock=write)
+    row, profile = dossier(session, product, dossier_id, identity.user_id)
+    require(session, row, profile, identity.user_id, action if write else "read")
+    return row
 
 
 def worker_access(session, run, product):
@@ -78,14 +85,17 @@ def worker_access(session, run, product):
         fail("An active member must resume this investigation.", 403)
     identity = SimpleNamespace(user_id=run.actor_user_id, session_id=run.session_id,
                                organization_id=run.organization_id)
-    return access(session, identity, product, run.dossier_id, write=True)
+    return access(session, identity, product, run.dossier_id, write=True, action="contribute" if run.trigger_entry_id else "edit")
 
 
 def record(session, identity, product, dossier_id, identifier, *, write=False):
-    access(session, identity, product, dossier_id, write=write)
+    access(session, identity, product, dossier_id)
     run = session.get(Investigation, identifier)
     if not run or run.dossier_id != dossier_id:
         fail("Investigation not found.", 404, "not_found")
+    if write:
+        action = "contribute" if run.trigger_entry_id and run.created_by_user_id == identity.user_id else "edit"
+        access(session, identity, product, dossier_id, write=True, action=action)
     return run
 
 

@@ -300,7 +300,9 @@ def answer_needs_review(session, parent, profile, row, organization_id):
 def research_routes(router, service, actor):
     def editor(request):
         identity = actor(request)
-        if identity.role != "organization_admin":
+        from .product_access import request_grant
+
+        if identity.role != "organization_admin" and not request_grant():
             fail("Your workspace role is read-only.", 403)
         return identity
 

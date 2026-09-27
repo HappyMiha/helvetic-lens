@@ -186,7 +186,7 @@ def test_import_rechecks_authorization_inside_write_transaction(signed, monkeypa
     doc, _ = create(client)
     data = payload(discover(client, monkeypatch))
     original = product_provenance.principal
-    def changed(session, actor, now, *, write=False):
+    def changed(session, actor, now, *, write=False, lock=False):
         if write:
             with service.db.session() as other:
                 if change == "role":
@@ -194,7 +194,7 @@ def test_import_rechecks_authorization_inside_write_transaction(signed, monkeypa
                 else:
                     other.scalar(select(UserSession).where(UserSession.user_id == identity["user"]["id"])).revoked_at = utcnow()
                 other.commit()
-        return original(session, actor, now, write=write)
+        return original(session, actor, now, write=write, lock=lock)
     monkeypatch.setattr(product_provenance, "principal", changed)
     result = post(client, ROOT + "/" + doc["id"] + "/discovery-references", data)
     assert result.status_code in (401, 403)

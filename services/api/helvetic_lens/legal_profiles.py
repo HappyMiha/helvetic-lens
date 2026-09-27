@@ -8,8 +8,8 @@ from urllib.parse import urlsplit
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Query, Request, Response
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
-from sqlalchemy import func, or_, select
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, ValidationError, field_validator
+from sqlalchemy import func, select
 
 from . import digests, monitoring_topics, onboarding, source_packs
 from .analysis import InferenceBudget
@@ -155,7 +155,9 @@ async def suggest_topics(model_client, config: dict, context: dict, data: Sugges
 
 def record(session, profile_id, user_id, revision=None, *, draft=False):
     row = session.get(LegalMonitoringProfile, profile_id)
-    if not row or (row.status == "draft" and row.created_by_user_id != user_id):
+    from .product_access import profile_access
+
+    if not row or (not profile_access(session, row, user_id) and row.status == "draft" and row.created_by_user_id != user_id):
         fail("This monitoring profile was not found.", "not_found", 404)
     if revision is not None and row.revision != revision:
         fail("This profile changed in another session. Reload its saved version before continuing.",
@@ -228,6 +230,10 @@ def apply_delivery(session, row, user_id, settings):
     onboarding.record(session, row.organization_id, user_id, "notifications_saved", "digest_preferences")
 
 
+class ActivationInput(RevisionInput):
+    share_with_workspace_confirmed: StrictBool = False
+
+
 def legal_profiles_router(service):
     router = APIRouter(prefix="/api/monitoring-profiles", tags=["monitoring-profiles"])
 
@@ -242,7 +248,9 @@ def legal_profiles_router(service):
     def listing(request: Request, response: Response, offset: int = Query(default=0, ge=0, le=100000)):
         identity = actor(request, response)
         with service.db.session() as session:
-            visible = or_(LegalMonitoringProfile.status != "draft", LegalMonitoringProfile.created_by_user_id == identity.user_id)
+            from .product_access import visible_profile
+
+            visible = visible_profile(identity.user_id)
             query = select(LegalMonitoringProfile).where(visible)
             rows = session.scalars(query.order_by(LegalMonitoringProfile.updated_at.desc(), LegalMonitoringProfile.id).offset(offset).limit(50))
             total = session.scalar(select(func.count()).select_from(LegalMonitoringProfile).where(visible))
@@ -320,7 +328,7 @@ def legal_profiles_router(service):
                                for card, plan in selected_plans(session, row.config_json)]}
 
     @router.post("/{profile_id}/activate")
-    def activate(profile_id: str, data: RevisionInput, request: Request, response: Response):
+    def activate(profile_id: str, data: ActivationInput, request: Request, response: Response):
         identity = actor(request, response)
         with service.write_guard, service.db.session() as session:
             lock_organization(session, service.organization_id)
@@ -328,6 +336,13 @@ def legal_profiles_router(service):
             if row.status != "draft":
                 return {**payload(session, row), "reused": True}
             record(session, profile_id, identity.user_id, data.expected_revision, draft=True)
+            from .product_models import DossierMember, ProductDossier
+
+            parent = session.scalar(select(ProductDossier).where(ProductDossier.profile_id == row.id))
+            if parent and parent.team_managed and session.scalar(select(func.count()).select_from(DossierMember)
+                    .where(DossierMember.dossier_id == parent.id)) > 1 and not data.share_with_workspace_confirmed:
+                fail("Activating this team draft makes the dossier and its monitoring visible to everyone in the workspace. Confirm this audience change.",
+                     "dossier_workspace_confirmation", 409)
             plans = selected_plans(session, row.config_json)
             apply_delivery(session, row, identity.user_id, service.environment_settings)
             for pack_id in row.config_json["source_pack_ids"]:

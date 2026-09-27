@@ -85,7 +85,17 @@ def direct_roots(table, user, organizations):
     if table.name == "organization_invitations":
         conditions.extend((table.c.invited_by_user_id == user.id, table.c.email == user.email))
     if table.name == "legal_monitoring_profiles":
-        conditions.append(and_(table.c.created_by_user_id == user.id, table.c.status == "draft"))
+        from .product_models import DossierMember, ProductDossier
+
+        dossier = ProductDossier.__table__
+        member = DossierMember.__table__
+        retained_team = select(1).select_from(dossier.join(member, member.c.dossier_id == dossier.c.id)).where(
+            dossier.c.profile_id == table.c.id, dossier.c.team_managed.is_(True), member.c.user_id != user.id).exists()
+        sole_owned_team = select(1).select_from(dossier.join(member, member.c.dossier_id == dossier.c.id)).where(
+            dossier.c.profile_id == table.c.id, dossier.c.team_managed.is_(True),
+            member.c.user_id == user.id, member.c.role == "OWNER").exists()
+        conditions.append(and_(or_(table.c.created_by_user_id == user.id, sole_owned_team),
+            table.c.status == "draft", ~retained_team))
     if table.name == "interest_brief_feedback":
         conditions.append(table.c.actor_user_id == user.id)
     if table.name == "jobs":
