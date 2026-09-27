@@ -74,7 +74,7 @@ The full dynamic dossier engine stays IN PROGRESS. Retained-original contributio
 extraction is delivered in release 1.10; [workspace dossier teams](PRODUCT_TEAMS.md)
 are delivered in 1.11, private active monitoring in 1.12 and outside-workspace
 invitations in 1.13. Living public slugs/search and the shared public evidence
-reader are implemented in 1.14 with production acceptance VERIFYING.
+reader are delivered in 1.14 with exact production acceptance.
 Material-change reopening and cross-investigation history remain open.
 Native helveticlens.ch legacy screens should adopt the validated design foundation
 incrementally. Keep every source/access boundary and preserve functional parity;
@@ -113,5 +113,6 @@ The same global Ask prepares a public question; explicit authorship and external
 discovery consent precede submission. Signed owner publication enables this mode,
 and changed publication revisions fence stale public findings. Brandbook tokens,
 reduced motion and the original snapshots remain intact. Both clients pass 89
-tests, lint, strict types and final builds. Exact production acceptance is VERIFYING;
-no browser or human visual acceptance is claimed.
+tests, lint, strict types and final builds. Both existing public Sites17 are verified: 80 HTTP checks and 47 exact served
+assets per product. [Exact release receipt](product-releases/2026-09-27-1.14.0.json).
+No browser or human visual acceptance is claimed.

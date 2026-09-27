@@ -41,7 +41,7 @@ machine output are proposals, never proof of identity or fact.
    See [guest architecture and acceptance](PRODUCT_GUEST_ACCESS.md).
    Before this stage, apply the owner's visual-language steering to both clients'
    reference dossier and global interaction foundation (see VISUAL_LANGUAGE_SPEC.md).
-3. IMPLEMENTED, production VERIFYING in release 1.14: public living view with
+3. DONE, scoped public research stage 3 in release 1.14: public living view with
    stable human-readable slugs and claim/source anchors,
    anonymous search across public knowledge, same coordinator/UI, public
    contributions and scoped research. Existing published snapshots remain explicit;

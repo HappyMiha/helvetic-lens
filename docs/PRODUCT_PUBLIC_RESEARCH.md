@@ -1,7 +1,7 @@
 # Living public dossier research
 
-Release 1.14, scoped stage 3. Implementation is complete and production acceptance
-is VERIFYING; exact activation evidence is recorded separately. The complete dynamic-dossier and
+Release 1.14, scoped stage 3. The scoped implementation and exact production
+acceptance are DONE; activation evidence is recorded below. The complete dynamic-dossier and
 visual-language specifications remain IN PROGRESS.
 
 ## Public author choice
@@ -117,3 +117,21 @@ integrity, explicit host job scope and real account erasure preserving its host.
 No authenticated production record or paid research probe is required. Browser
 interaction, whole-page accessibility and independent professional accuracy are
 not claimed by these automated gates.
+
+## Exact production acceptance — 27 September 2026
+
+Native functional main `d54511e8e06c3fcc9ed9ee038cab5c4d0931856c` activated at
+20:14:25 UTC. Migration `ffc495bef124`, all 40 checked native module hashes,
+public/private/team/guest/contribution constraints and research tables match;
+three worker checks, the isolated local parser fixture and local Laya pass.
+
+Both existing public Sites published version 17 successfully: Pharma main
+`4b9c8ad92263424218df3389bdfdb799f309f470` at 20:16:22 UTC and Loyer main
+`1664781fa1f479423ebc5cb0549b54fed608ac91` at 20:17:04 UTC. Each custom
+domain passes 80 anonymous HTTP/auth/gateway/reader checks and all 47 exact
+served JS/CSS/favicon hashes. Both GitHub client CI runs succeeded (36347009248
+and 36347020945). The existing hourly heartbeat remains ACTIVE.
+
+[Exact release receipt](product-releases/2026-09-27-1.14.0.json). This completes
+scoped public research stage 3; the complete dynamic-dossier and visual-language
+specifications remain IN PROGRESS with the remaining outcomes listed above.

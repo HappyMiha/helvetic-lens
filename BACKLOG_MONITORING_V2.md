@@ -93,7 +93,7 @@ Sixteen authored color pairs exceed 4.5:1. No browser/human visual acceptance is
 claimed. [Implementation and remaining migration](docs/PRODUCT_VISUAL_LANGUAGE.md),
 [exact evidence](docs/product-releases/2026-09-27-1.9.0.json).
 
-**Living public research — 27 September 2026: VERIFYING (stage 3, release 1.14).**
+**Living public research — 27 September 2026: DONE (scoped stage 3, release 1.14).**
 Scoped MV2-019/021/023 continuation: an owner explicitly enables living research
 in the signed public-publication preview. Existing snapshots remain snapshots.
 Stable title-based public URLs, anonymous evidence/claim/entity search and durable
@@ -125,7 +125,12 @@ discovery and full native visual migration remain separate open outcomes.
 Implementation is complete: both clients pass 89 tests, lint, strict types and
 final builds. The native broad suite passed 386 tests; three discovered failures
 were fixed and passed in the subsequent 39-test public/migration/erasure gate.
-Exact production acceptance remains VERIFYING. [Implementation and evidence](docs/PRODUCT_PUBLIC_RESEARCH.md).
+Production acceptance passes: native functional d54511e8e06c activated at
+20:14:25 UTC, migration ffc495bef124 and 40 native hashes match, three worker
+checks/local extraction/Laya pass. Both existing public Sites17 and client CI
+succeeded; each custom origin passes 80 HTTP checks and 47 exact asset hashes.
+[Implementation and evidence](docs/PRODUCT_PUBLIC_RESEARCH.md),
+[exact release receipt](docs/product-releases/2026-09-27-1.14.0.json).
 
 **Dossier-only guest invitations — 27 September 2026: DONE (scoped stage 2b3).**
 Scoped MV2-019/021/023 continuation after verified 1.12: an owner can invite an
@@ -1426,7 +1431,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS — nine-category settings implemented | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
 | [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
-| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — public research activation VERIFYING; native batch review implemented | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
+| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — scoped public research DONE; native batch review implemented | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
 | [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — native evidence and configuration drafts implemented | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
 | [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
@@ -2294,8 +2299,9 @@ above supersedes the River-only count limitation for readable Today queues.
 ### MV2-021 — Workspace: Impact Inbox, decisions and Impact Matrix
 
 **Active product stage, 27 September:** living public research (stage 3) is
-implemented and VERIFYING production activation under the explicit scope,
-dependencies and acceptance above.
+DONE within the explicit scope, dependencies and production acceptance above.
+Cross-investigation reconciliation and monitoring-triggered material-change
+reopening remain the next open functional outcomes.
 
 **Current product stage, 27 September:** dossier-only guest invitations (2b3) are
 DONE under the explicit scope, source boundaries and acceptance above.
