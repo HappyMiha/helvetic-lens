@@ -419,6 +419,9 @@ def product_router(service):
     from .product_research import research_routes
 
     research_routes(router, service, actor)
+    from .product_decision_search import decision_search_routes
+
+    decision_search_routes(router, service, actor)
     from .product_searches import search_routes
 
     search_routes(router, service, actor)

@@ -1,0 +1,39 @@
+name: helvetic-lens-decisions
+services:
+  laya:
+    image: helvetic-lens-laya:0.3.20-4066d5d
+    build: .
+    restart: unless-stopped
+    cpus: 2
+    mem_limit: 4g
+    pids_limit: 128
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: [/tmp:size=128m]
+    ports: [127.0.0.1:18761:8000]
+    volumes:
+      - models:/models
+      - ${LAYA_SECRET_FILE:?Set a private Laya token file}:/run/secrets/laya_key:ro
+    networks:
+      model-control:
+        aliases: [helvetic-lens-laya]
+      outbound: {}
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10m
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: '2'}
+volumes:
+  models: {}
+networks:
+  model-control:
+    external: true
+    name: helvetic-lens_model-control
+  outbound:
+    external: true
+    name: helvetic-lens_outbound

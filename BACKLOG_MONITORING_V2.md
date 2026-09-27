@@ -72,6 +72,28 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 ## Product decision
 
+**Jev/Laya discovery — 27 September 2026: IN PROGRESS.** The owner explicitly
+requested a shared decision interface, hosted TypeSafe Jev as primary, local
+Apache-2.0 Laya as fallback, and their use in actual Pharma/Loyer search. This is
+a scoped contribution to MV2 shared source discovery, evidence quality and search;
+it does not complete the wider semantic/pilot/delivery gates. Dependencies: native
+current identity, encrypted configuration, product provenance and existing gateways.
+Source readiness: published TypeSafe System One and Laya HTTP contracts are verified;
+both are decision engines, so public web retrieval additionally requires a search
+index. Search1API registration and Jev registration are authorized by the owner;
+Search1API credentials and pinned local multilingual Laya inference are verified.
+TypeSafe registration is complete, but its $0 balance prevents key creation; Jev
+live comparison remains open. Protected production configuration is prepared.
+Implemented federation, BM25/semantic rank fusion, explicit source reading/link
+exploration and private evaluation are in regression; publication is pending. Acceptance:
+explicit public-query submission, bounded real retrieval and semantic reranking,
+Jev-to-Laya failure fallback with visible engine provenance, optional same-candidate
+comparison, measured latency/usage and honestly unknown cost, reviewed relevance
+labels separate from model confidence, private account isolation, current membership,
+safe source URLs and signed imports, no implicit disclosure of dossier material,
+no fabricated coverage, durable recovery/configuration, regression gates and verified
+production for both products. Details: [decision search](docs/PRODUCT_DECISION_SEARCH.md).
+
 **Personal following and private reuse — 27 September 2026: DONE (scoped release).**
 Completed scoped Pharma/Loyer cycle under the public research direction: personal saved
 following with paginated visible-change indicators and explicit acknowledgement;

@@ -180,6 +180,13 @@ class Settings(BaseSettings):
     ai_capability_registry: Path = Path(__file__).with_name("ai-capability-profiles.json")
     ai_capability_evidence_root: Path = Path(__file__).parent
     apertus_api_key: SecretStr = SecretStr("")
+    typesafe_api_key: SecretStr = SecretStr("")
+    search1api_api_key: SecretStr = SecretStr("")
+    laya_api_key: SecretStr = SecretStr("")
+    laya_base_url: str = ""
+    decision_search_daily_limit: int = Field(default=25, ge=0, le=10000)
+    jev_input_usd_per_million: float | None = Field(default=None, ge=0, le=1000)
+    jev_output_usd_per_million: float | None = Field(default=None, ge=0, le=1000)
     apertus_timeout_seconds: int = Field(default=90, ge=5, le=300)
     apertus_request_retries: int = Field(default=2, ge=0, le=5)
     apertus_batch_concurrency: int = Field(default=1, ge=1, le=4)

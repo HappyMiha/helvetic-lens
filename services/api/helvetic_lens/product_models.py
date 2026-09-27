@@ -22,6 +22,34 @@ from sqlalchemy.orm import Mapped, mapped_column
 from .db import Base, utcnow
 
 
+class DecisionSearchBudget(Base):
+    """Aggregate operator spend guard; no account or query data."""
+    __tablename__ = "product_decision_search_budgets"
+    day: Mapped[date] = mapped_column(Date, primary_key=True)
+    used: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class DecisionSearchRun(Base):
+    __tablename__ = "product_decision_search_runs"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "owner_user_id", "product", "request_key", name="uq_decision_search_request"),
+        CheckConstraint("product IN ('pharma', 'loyer')", name="ck_decision_search_product"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"), index=True)
+    owner_user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    product: Mapped[str] = mapped_column(String(12))
+    request_key: Mapped[str] = mapped_column(String(36))
+    fingerprint: Mapped[str] = mapped_column(String(64))
+    query: Mapped[str] = mapped_column(String(300))
+    mode: Mapped[str] = mapped_column(String(12))
+    status: Mapped[str] = mapped_column(String(16), default="running")
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    result_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    labels_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
 class ProductDossier(Base):
     __tablename__ = "product_dossiers"
     __table_args__ = (

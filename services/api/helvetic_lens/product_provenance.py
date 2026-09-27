@@ -26,8 +26,8 @@ MAX_RECEIPT = 24576
 
 class SourceRecord(legal_profiles.Input):
     id: str = Field(min_length=1, max_length=2000)
-    kind: Literal["literature", "official_metadata"]
-    provider: Literal["Europe PMC", "Fedlex"]
+    kind: Literal["literature", "official_metadata", "web_source"]
+    provider: Literal["Europe PMC", "Fedlex", "Search1API"]
     title: str = Field(max_length=700)
     summary: str = Field(max_length=700)
     url: str = Field(min_length=1, max_length=2000)
@@ -68,12 +68,13 @@ def signature(user, identity, value):
     return hmac.new(user.password_hash.encode(), canonical(scoped).encode(), hashlib.sha256).hexdigest()
 
 
-def prepare(session, identity, product, provider, query, details, now):
+def prepare(session, identity, product, provider, query, details, now, *, retrieved_at=None):
     user = principal(session, identity, now)
+    retrieved_at = retrieved_at or now
     for item in details["items"]:
         record = SourceRecord.model_validate(item).model_dump()
         value = {"format": FORMAT, "product": product, "provider": provider, "query": query,
-                 "retrieved_at": now.isoformat(), "expires_at": (now + LIFETIME).isoformat(),
+                 "retrieved_at": retrieved_at.isoformat(), "expires_at": (retrieved_at + LIFETIME).isoformat(),
                  "page_number": details["page_number"], "record": record}
         receipt = base64.urlsafe_b64encode(canonical({**value, "signature": signature(user, identity, value)}).encode()).decode()
         if len(receipt) > MAX_RECEIPT:
