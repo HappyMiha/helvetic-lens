@@ -2094,6 +2094,10 @@ def create_app(
 
     def check_job_access(request: Request, job_id: str):
         job = service.job_detail(job_id)
+        if job["target_type"] == "product_investigation":
+            # Private dossier job metadata is available only through its scoped
+            # API. Generic retry/cancel must not bypass coordinator generations.
+            raise DomainError("Use the dossier investigation controls.", 404, "not_found")
         if job["target_type"] == "hazard_monitor":
             from .hazard_repository import owned as owned_hazard
             actor = request.state.identity

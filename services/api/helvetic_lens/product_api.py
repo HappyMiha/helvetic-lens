@@ -411,6 +411,14 @@ def product_router(service):
                 .where(ResearchThread.dossier_id == row.id).order_by(ResearchThread.created_at, ResearchThread.id))]
             result["actions"] = [action_payload(session, action) for action in session.scalars(select(DossierAction)
                 .where(DossierAction.dossier_id == row.id).order_by(DossierAction.created_at, DossierAction.id))]
+            from .product_investigation_models import Investigation
+            from .product_investigations import payload as investigation_payload
+
+            investigations = list(session.scalars(select(Investigation).where(Investigation.dossier_id == row.id)
+                .order_by(Investigation.created_at, Investigation.id).limit(101)))
+            if len(investigations) > 100:
+                fail("This dossier exceeds the interactive investigation export limit.")
+            result["investigations"] = [investigation_payload(session, run) for run in investigations]
             return result
 
     from .product_operations import operations
@@ -419,6 +427,9 @@ def product_router(service):
     from .product_research import research_routes
 
     research_routes(router, service, actor)
+    from .product_investigation_api import routes as investigation_routes
+
+    investigation_routes(router, service, actor)
     from .product_decision_search import decision_search_routes
 
     decision_search_routes(router, service, actor)

@@ -72,6 +72,28 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 ## Product decision
 
+**Dynamic collaborative investigation — 27 September 2026: IN PROGRESS.** The
+owner supplied a complete living-dossier specification, preserved in
+[the source document](docs/DYNAMIC_DOSSIER_SPEC.md). It now guides Pharma/Loyer
+work: one Ask / Investigate action, dynamic capability/source routing and
+replanning, durable branches, evidence-linked claim/relationship history,
+observable live activity, public/private collaboration and monitoring triggers.
+Reuse ProductDossier, native authorization, source safety, storage, jobs/outbox,
+Apertus and the verified Jev/Laya interface. Preserve existing private material;
+normal research evolution may run automatically inside the selected audience.
+No fixed agent roster or user-facing model/engine configuration. Scope, source
+readiness, incremental acceptance and the complete 20-point scenario are tracked
+in [investigation implementation](docs/PRODUCT_INVESTIGATION_ENGINE.md). Partial
+releases must not close the full specification or broader MV2 quality gates.
+Scoped release 1.8 is VERIFYING: native durable plan/branch checkpoints, bounded
+Jev/Laya-backed source discovery and reading, quote-validated claims and contested
+history, evidence-triggered entity branches/replanning, SSE and pause/resume/cancel,
+with both clients switched to a dossier-first Ask surface. Broad affected validation
+passed 300 tests; each client has 70 contracts plus lint/types/build checks.
+Current access, generation fencing, query budgets and immutable source evidence
+are covered; the full supplied scenario remains open.
+
+
 **Multilingual query bundles — 27 September 2026: DONE (scoped release).** Scoped follow-up
 to MV2 shared discovery: users review up to three complementary public queries,
 optionally drafted in selected languages by the existing configured generative

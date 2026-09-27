@@ -157,6 +157,9 @@ def claim(session: Session, job_id: str, worker: str) -> Job | None:
     if job.attempts >= job.max_attempts:
         job.state, job.finished_at, job.updated_at = "failed", now, now
         job.error_code = "attempts_exhausted"
+        if job.type == "product_investigation":
+            from .product_investigations import worker_exhausted
+            worker_exhausted(session, job)
         job.error_detail = "The durable job exhausted its configured attempt limit."
         if job.type == "interest_event_brief":
             from .interest_jobs import close_unfinished
@@ -278,6 +281,9 @@ def fail(session: Session, job_id: str, *, code: str, detail: str, retry_delay: 
         _enqueue_outbox(session, job)
     else:
         job.state, job.finished_at = "failed", now
+        if job.type == "product_investigation":
+            from .product_investigations import worker_exhausted
+            worker_exhausted(session, job)
         if job.type == "interest_event_brief":
             from .interest_jobs import close_unfinished
             close_unfinished(session, job)
@@ -428,6 +434,9 @@ def reconcile(session: Session, lease_seconds: int) -> dict:
         if job.attempts >= job.max_attempts:
             job.state, job.finished_at = "failed", now
             job.error_code = "stale_lease_exhausted"
+            if job.type == "product_investigation":
+                from .product_investigations import worker_exhausted
+                worker_exhausted(session, job)
             job.error_detail = "The worker lease expired and the attempt limit was exhausted."
             if job.type == "interest_event_brief":
                 from .interest_jobs import close_unfinished

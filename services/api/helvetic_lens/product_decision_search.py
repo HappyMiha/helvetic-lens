@@ -7,16 +7,17 @@ from uuid import UUID
 
 from fastapi import Query, Request
 from pydantic import Field, field_validator, model_validator
-from sqlalchemy import func, select, text
+from sqlalchemy import func, select
 
 from . import decision_search, legal_profiles
 from .db import utcnow
 from .decision_engines import DecisionUnavailable
 from .membership_locks import lock_organization
 from .product_api import Product, fail, iso
-from .product_models import DecisionSearchBudget, DecisionSearchRun
+from .product_models import DecisionSearchRun
 from .product_operations import fingerprint
 from .product_provenance import prepare, principal
+from .product_search_budget import reserve
 
 
 class SearchInput(legal_profiles.Input):
@@ -209,15 +210,9 @@ def decision_search_routes(router, service, actor):
                 if previous.fingerprint != mark:
                     fail("This request key belongs to different search text or mode.", 409)
                 return payload(session, identity, product, previous)
-            # Cross-workspace aggregate only, under a transaction lock. No private
-            # search data leaves this budget check. SQLite uses the write guard above.
-            if session.get_bind().dialect.name == "postgresql":
-                session.execute(text("SELECT pg_advisory_xact_lock(1279607635)"))
             now = utcnow()
             base = select(func.count()).select_from(DecisionSearchRun).execution_options(include_all_organizations=True)
-            budget = session.get(DecisionSearchBudget, now.date())
-            if (budget.used if budget else 0) + units > service.settings.decision_search_daily_limit:
-                fail("The platform's daily query budget cannot cover this bundle. Use fewer alternatives or try tomorrow; saved searches remain available.", 429)
+            reserve(session, service.settings, units)
             active = session.scalar(base.where(DecisionSearchRun.status == "running", DecisionSearchRun.created_at >= now - timedelta(minutes=2)))
             if active >= 3:
                 fail("Search is busy. Please retry shortly.", 429)
@@ -231,10 +226,6 @@ def decision_search_routes(router, service, actor):
             row = DecisionSearchRun(product=product, owner_user_id=identity.user_id, request_key=str(data.request_key),
                 fingerprint=mark, query=query, mode=data.mode, created_at=now,
                 result_json={"queries": [query, *data.alternatives]})
-            if budget is None:
-                budget = DecisionSearchBudget(day=now.date(), used=0)
-                session.add(budget)
-            budget.used += units
             session.add(row)
             session.commit()
             identifier = row.id

@@ -3161,7 +3161,7 @@ class HelveticLens:
 
     def jobs(self, limit: int = 50, *, workload: str = "all", include_platform: bool = False, job_type: str | None = None, monitoring_owner_id: str | None = None):
         with self.db.session() as session:
-            statement = select(Job)
+            statement = select(Job).where(Job.target_type != "product_investigation")
             from .air_models import AirMonitor
             from .commute_models import CommuteMonitor
             from .hazard_models import HazardMonitor
@@ -4014,6 +4014,12 @@ class HelveticLens:
         return await self.interest_runner().schedule(event_id, locale=locale)
 
     async def execute_job(self, job_id: str, worker: str = "inline"):
+        from . import product_investigation_worker
+        from .product_investigations import TYPE as INVESTIGATION_TYPE
+        with self.db.session() as session:
+            investigation = session.scalar(select(Job.id).where(Job.id == job_id, Job.type == INVESTIGATION_TYPE))
+        if investigation:
+            return await product_investigation_worker.execute(self, job_id, worker)
         from .interest_automation import TYPE as ADMISSION_JOB_TYPE
         from .interest_automation import AdmissionJobs
         from .interest_jobs import TYPE as BRIEF_JOB_TYPE

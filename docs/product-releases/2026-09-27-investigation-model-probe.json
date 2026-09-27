@@ -1,0 +1,13 @@
+{
+  "status": "complete",
+  "provider": "swisscom",
+  "model": "swiss-ai/Apertus-v1.5-70B",
+  "latency_ms": 3917,
+  "schema_valid": true,
+  "exact_quotes_valid": true,
+  "claims": 1,
+  "entities": 2,
+  "relationships": 0,
+  "synthetic": true,
+  "accuracy_measured": false
+}
