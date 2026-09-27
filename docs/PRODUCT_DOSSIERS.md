@@ -815,3 +815,30 @@ source SHAs and core release, checks guide/root HTTP responses, compares served 
 hashes with the validated builds and exercises anonymous private-route and gateway
 boundaries without an authenticated session, external search or model call. Its live
 receipt is pending final production publication in the 08:00–09:00 Zurich window.
+
+## Verified 1.2.0 production release — 27 September 2026, 08:02 Zurich
+
+Both final products are live on their original custom domains. Pharma published at
+08:01:32 Zurich from `b1d1dbdb9efba5971c5ea5e7e63e47f6eac9dbed`; Loyer at 08:02:07 from
+`ea82b3f5934b38955be6360b3e798f676a4326a9`. Each is Sites version 3 and both deployment
+operations succeeded. The public source repositories remain on `main` with Apache-2.0.
+Their exact-head GitHub CI runs 36297821977 and 36297838903 passed. Source-identical
+builds were reused, pushed to each original Sites repository and packaged separately;
+no credentials entered source, remotes, configuration, receipts or public output.
+
+At 08:02:45, both custom origins passed 25 HTTP checks and 21 SHA-256 comparisons of
+referenced root/guide assets and favicon against the validated builds. Checks include
+root/guide title and canonical/section content, 17 anonymous private-route denials with
+no-store, anonymous session state, cross-product/admin rejection and a blocked empty
+cross-origin login. No authenticated production mutation, external source search or
+model call was made. Core `git-14e470b96440` returned ready. This adds live deployment
+proof to the 152 native checks and 44 contracts/lint/types/build per client; it does not
+claim browser interaction QA or professional pilot acceptance.
+
+[Public machine-readable release evidence](product-releases/2026-09-27-1.2.0.json)
+retains exact source, version/deployment identities, CI, checks and asset hashes. Earlier
+sections preserve their original pre-publication evidence; this release resolves their
+final-client-publication gate. Existing domain/audience/project identities, private
+workspace data, native monitoring and digest behavior remain intact. Broader source
+coverage, contributor/community design, semantic retrieval and professional validation
+remain separate product gates.

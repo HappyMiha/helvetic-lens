@@ -72,7 +72,30 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 ## Product decision
 
-**Overnight product development, 27 September 2026 — IN PROGRESS:** The owner authorized
+**Final 1.2.0 activation verified at 08:02:45 Europe/Zurich, 27 September 2026.**
+[Pharma](https://pharma.helveticlens.ch) and [Loyer](https://loyer.helveticlens.ch) are
+publicly deployed from their exact validated client commits. Both public GitHub
+repositories retain Apache-2.0 and `main`; all sixteen overnight slices below are
+included. [Machine-readable release evidence](docs/product-releases/2026-09-27-1.2.0.json)
+records exact source, CI, version/deployment identities, live private-route checks and
+served asset hashes. Pharma source `b1d1dbdb9efba5971c5ea5e7e63e47f6eac9dbed`, Sites
+version 3, succeeded at 08:01:32; Loyer source
+`ea82b3f5934b38955be6360b3e798f676a4326a9`, Sites version 3, succeeded at 08:02:07.
+Core `git-14e470b96440` was ready throughout verification, with the native API unchanged
+from the 152-case validated baseline. Each client passed 44 contracts, lint, strict
+TypeScript, production build and exact-head GitHub CI. Each live custom domain passed
+25 HTTP checks plus 21 asset SHA-256 comparisons, including the new public guide,
+anonymous private-read denial/no-store, session state, cross-product/admin isolation and
+cross-origin write rejection. No authenticated production data was modified. Existing
+project IDs, public audiences, custom domains and platform identity/storage remain.
+Browser/visual QA and external professional pilot acceptance are not claimed. The
+scoped overnight delivery does not complete broader MV2 or source-readiness gates.
+
+The following implementation log retains the original scope and point-in-time checks.
+References to publication being held or unclaimed describe those earlier runs; final
+activation evidence above resolves the overnight client release gate.
+
+**Overnight product development, 27 September 2026 — DONE (scoped delivery):** The owner authorized
 continued Pharma/Loyer improvements until 09:00 Europe/Zurich, at least hourly complete
 tested pushes to both public client main branches, and final Sites publication near the
 end. First bounded slice: natural-language AI search planning, restricted to supported
@@ -84,7 +107,7 @@ editable source-specific query choices in both clients; gateway isolation; tests
 Later slices must record their actual scope and evidence. The core's existing automatic
 release workflow remains intact; client compatibility is preserved until the final release.
 
-First slice implemented: `POST /api/products/{product}/discover/plan` receives only the
+First slice — DONE / final publication verified above: `POST /api/products/{product}/discover/plan` receives only the
 explicit question and product, calls the configured model once, validates 1–5 supported
 source/query suggestions and up to four scope clarifications, and never searches or
 changes a dossier. Both clients show a labelled draft with source reasons and an explicit
@@ -98,7 +121,7 @@ lint, TypeScript and production build in each client; both local preview routes 
 200. An additional cross-product rate-budget regression and the updated backlog gate both passed (36 unique affected cases across these runs). Client Sites publication is intentionally held for the final 08:00–09:00 release
 window requested by the owner. No production activation claim for this slice yet.
 
-Second slice — IMPLEMENTED / final client publication pending: improve retrieval inside existing professional workspaces.
+Second slice — DONE / final publication verified above: improve retrieval inside existing professional workspaces.
 Users choose all-words matching across a record's visible fields or an exact phrase;
 rank title matches before older incidental matches and show actual matching totals with
 the existing 20-per-group cap. Dependencies/source readiness: existing private topic,
@@ -114,7 +137,7 @@ acceptance is claimed. The first slice’s core release `git-9e6de7e5b466` succe
 01:07 Zurich; both first client commit CI runs succeeded. Final Sites publication is
 still held for the owner’s requested end-of-night window.
 
-Third slice — IMPLEMENTED / final client publication pending: accountable follow-up directly from a research question or
+Third slice — DONE / final publication verified above: accountable follow-up directly from a research question or
 an AI note's specific evidence gap. Reuse existing private DossierAction ownership,
 deadlines, status/outcomes, request idempotency and evidence JSON; no schema migration,
 external integration or notification subscription. The server must resolve and capture
@@ -135,7 +158,7 @@ and cross-question origins, CSRF/role/private-draft/tenant/product guards, filte
 gateway tests, lint, TypeScript and production builds. This heartbeat used background
 code/build verification; no browser UI or professional acceptance is claimed.
 
-Fourth slice — IMPLEMENTED / final client publication pending: trustworthy connected-page monitoring status and recovery.
+Fourth slice — DONE / final publication verified above: trustworthy connected-page monitoring status and recovery.
 Separate last attempted check from last accepted nonsynthetic source check; preserve the
 successful timestamp when a later fetch fails. Add a nullable native watch timestamp with
 a conservative migration that backfills only known successful latest attempts and leaves
@@ -163,7 +186,7 @@ boundaries. Each client passed ten tests (seven gateway, three status semantics)
 lint, strict TypeScript and production build. No browser interaction QA or final Sites
 publication is claimed in this background heartbeat. Migration head is `f5c495bef124`.
 
-Fifth slice — IMPLEMENTED / final client publication pending: reusable shared searches inside a professional dossier.
+Fifth slice — DONE / final publication verified above: reusable shared searches inside a professional dossier.
 Save a reviewed query, supported provider, workspace match mode and optional purpose as
 an attributed private dossier entry. List saved searches with true totals and stable
 50-record pagination; open them in an editable search form without an automatic external
@@ -186,7 +209,7 @@ enter AI evidence nor trigger an answer-review warning. Both clients passed twel
 (seven gateway, three source-status, two saved-query contracts), lint, strict TypeScript
 and production builds. The background run skipped browser handoff/interaction QA.
 
-Sixth slice — IMPLEMENTED / final client publication pending: continue public discovery beyond the first page. Reuse the
+Sixth slice — DONE / final publication verified above: continue public discovery beyond the first page. Reuse the
 existing fixed Europe PMC REST and Fedlex SPARQL hosts, 20-record pages, source URL
 validation and bounded responses. Europe PMC supplies its opaque cursor and hit count;
 Fedlex uses grouped works with stable URI ordering and one extra row to establish more
@@ -218,7 +241,7 @@ without overlap in either traversal. Europe PMC reported 34,662 matches for the 
 Fedlex total remained unknown. No browser interaction or final client activation is claimed.
 
 
-Seventh slice — IMPLEMENTED / final client publication pending (scope recorded before implementation): preserve the
+Seventh slice — DONE / final publication verified above (scope recorded before implementation): preserve the
 provenance of an explicitly imported public discovery record. The API signs bounded
 Fedlex/Europe PMC result metadata together with the exact query, product, page and UTC
 retrieval time. Receipts expire after 30 minutes and are bound to the current actor,
@@ -247,7 +270,7 @@ gateway, three source-status, two recipe, two continuation, two import), authore
 strict TypeScript and the Sites-helper production build. No browser interaction QA.
 
 
-Eighth slice — IMPLEMENTED / final client publication pending (scope recorded before implementation): accountable source
+Eighth slice — DONE / final publication verified above (scope recorded before implementation): accountable source
 review for collective dossiers. An administrator can explicitly include, exclude or
 reset to unreviewed an existing reference's exact URL within that dossier, with a
 required explanation. Retain append-only attributed history using existing entries,
@@ -283,7 +306,7 @@ Sites-helper production build. Responsive source review layout was checked in co
 no browser interaction QA or premature client activation is claimed.
 
 
-Ninth slice — IMPLEMENTED / final client publication pending (scope recorded before implementation): a complete saved-source
+Ninth slice — DONE / final publication verified above (scope recorded before implementation): a complete saved-source
 library independent of the most recent 100 mixed dossier entries. Add a private read
 endpoint with 30-reference pages, stable newest-first ordering, literal all-words search
 across title, note, URL and imported catalogue/query metadata, a 12-word/300-character
@@ -316,7 +339,7 @@ recipes, continuation, import, review state and library navigation), lint, TypeS
 and Sites-helper production builds. No browser interaction QA was performed.
 
 
-Tenth slice — IMPLEMENTED / final client publication pending (scope recorded before implementation): open the exact saved
+Tenth slice — DONE / final publication verified above (scope recorded before implementation): open the exact saved
 reference found by workspace search, with durable private links containing only dossier
 and reference identifiers. Add a scoped single-reference GET independent of source
 library pagination or recent activity; return existing provenance and current team
@@ -349,7 +372,7 @@ actual transitions and clears review dialogs in user actions, without bypassing 
 No browser interaction QA or final Sites activation is claimed.
 
 
-Eleventh slice — IMPLEMENTED / final client publication pending (scope recorded before implementation): inspect the exact
+Eleventh slice — DONE / final publication verified above (scope recorded before implementation): inspect the exact
 saved evidence before asking AI for a research note. Rank eligible team contributions
 by literal question-word relevance before the 30-record candidate limit, then date/ID;
 choose a bounded relevant excerpt so old useful text can survive newer unrelated activity.
@@ -393,7 +416,7 @@ browser interaction QA or final Sites activation is claimed. Tenth core `git-581
 was verified active since 04:59:28 Zurich; final client publication remains 08:00–09:00.
 
 
-Twelfth slice — IMPLEMENTED / final client publication pending: read the captured
+Twelfth slice — DONE / final publication verified above: read the captured
 versions of a connected page inside each product. Reuse native law_history.page for
 20-record version metadata pages/cutoff cursors and evidence_pages.detail for 50-passage
 or 16,000-character text pages, without hydrating entire version bodies. New product
@@ -433,7 +456,7 @@ case added), lint, strict TypeScript and Sites-helper production builds. No brow
 interaction QA or final product Sites activation is claimed.
 
 
-Thirteenth slice — IMPLEMENTED / final client publication pending: inspect the
+Thirteenth slice — DONE / final publication verified above: inspect the
 full saved page behind an AI citation or preview excerpt. Persist document_id and
 Version evidence_revision in new saved_page_extract snapshots, included in the existing
 preview/inference fingerprint. Eligible page candidates must still have a current
@@ -471,7 +494,7 @@ also passed. Both clients passed 36 tests (three source-target contracts and one
 locator gateway case added), lint, strict TypeScript and Sites-helper production builds.
 No browser interaction QA or final product Sites activation is claimed.
 
-Fourteenth slice — IMPLEMENTED / final client publication pending: explain when
+Fourteenth slice — DONE / final publication verified above: explain when
 an accepted answer needs human review after a saved source correction or lost access.
 Reuse the existing private answer-acceptance review audit to retain a bounded metadata
 baseline for the accepted AI note's saved-page sources; no migration or note rewrite.
@@ -509,7 +532,7 @@ client passed 39 tests (two reviewed-request cases and one gateway conflict case
 lint, strict TypeScript and final Sites-helper production builds. No browser interaction
 QA or final product Sites activation is claimed.
 
-Fifteenth slice — IMPLEMENTED / FINAL CLIENT RELEASE PENDING (scope recorded before implementation): retrieve older
+Fifteenth slice — DONE / final publication verified above (scope recorded before implementation): retrieve older
 questions inside a single private topic. Extend the existing question-list read with an
 optional literal all-word query across question title/context only, max 300 characters
 and 12 distinct words, with escaped wildcard characters. Rank title matches before
@@ -552,7 +575,7 @@ and superseded reads, stale failure suppression and exact retry; a gateway case 
 literal terms, status/offset, membership cookies and validation failures while blocking
 the other product. No browser interaction QA or final client Sites activation is claimed.
 
-Sixteenth slice — IMPLEMENTED / FINAL CLIENT RELEASE PENDING (scope recorded before implementation): make the final
+Sixteenth slice — DONE / final publication verified above (scope recorded before implementation): make the final
 Pharma/Loyer release easier to use with a public, product-specific `/guide` linked from
 the persistent sidebar and repository README. Explain the actual ask/discover/setup/
 collaborate/research/review/action loop, source coverage and recovery, private workspace

@@ -1,0 +1,604 @@
+{
+  "version": "1.2.0",
+  "verified_at": "2026-09-27T06:02:45.799540+00:00",
+  "scope": "Anonymous HTTP route isolation, core readiness, guide content and exact referenced build assets; no browser interaction or authenticated workflow QA.",
+  "core_at_verification": {
+    "url": "https://helveticlens.ch",
+    "release": "git-14e470b96440",
+    "status": "ready"
+  },
+  "validation": {
+    "native_product_and_backlog_tests": 152,
+    "client_tests_per_product": 44,
+    "client_lint": "passed",
+    "client_types": "passed",
+    "client_build": "passed",
+    "browser_interaction_qa": "not performed"
+  },
+  "products": [
+    {
+      "product": "pharma",
+      "url": "https://pharma.helveticlens.ch",
+      "guide_url": "https://pharma.helveticlens.ch/guide",
+      "repository": "https://github.com/HappyMiha/helveticlens-pharma",
+      "public_repository": true,
+      "license": "Apache-2.0",
+      "source_sha": "b1d1dbdb9efba5971c5ea5e7e63e47f6eac9dbed",
+      "github_ci": {
+        "run_id": 36297821977,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "site_version_number": 3,
+      "site_version_id": "appgprj_6ab8226587a88191b5af66fdc998f7fd~appgver_7725517cfcd08191a707e8a04155a32f",
+      "deployment_id": "appgdep_6ab8b128e8988191ab9a69763e5633db",
+      "deployed_at": "2026-09-27T06:01:32.743373+00:00",
+      "http_checks": [
+        {
+          "path": "/",
+          "status": 200,
+          "title": "HelveticLens Pharma"
+        },
+        {
+          "path": "/guide",
+          "status": 200,
+          "title": "Product guide | HelveticLens Pharma"
+        },
+        {
+          "path": "/api/products/pharma/dossiers",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/pharma/workbench",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/pharma/discover?q=neutral",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/pharma/dossiers/unknown/discussion?q=renal&status=answered&offset=30",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/pharma/dossiers/unknown/discussion/unknown",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/pharma/dossiers/unknown/discussion/unknown/research-preview",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/pharma/dossiers/unknown/references?q=neutral&decision=include&offset=30",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/pharma/dossiers/unknown/references/unknown",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/pharma/dossiers/unknown/searches",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/pharma/dossiers/unknown/sources/unknown/reviews",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/pharma/dossiers/unknown/documents/unknown/versions",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/pharma/dossiers/unknown/documents/unknown/versions/unknown?offset=0&expected_revision=1",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/pharma/dossiers/unknown/discussion/unknown/research/unknown/sources/S1/document",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/pharma/dossiers/unknown/actions",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/pharma/dossiers/unknown/brief",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/pharma/dossiers/unknown/export",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/pharma/dossiers/unknown/files/unknown",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/auth/session",
+          "status": 200,
+          "authenticated": false,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/loyer/workbench",
+          "status": 404,
+          "expected": 404
+        },
+        {
+          "path": "/api/products/loyer/dossiers/unknown/discussion?q=neutral",
+          "status": 404,
+          "expected": 404
+        },
+        {
+          "path": "/api/products/loyer/dossiers/unknown/documents/unknown/versions",
+          "status": 404,
+          "expected": 404
+        },
+        {
+          "path": "/api/admin/settings",
+          "status": 404,
+          "expected": 404
+        },
+        {
+          "path": "/api/auth/login",
+          "method": "POST",
+          "cross_origin_denied": true,
+          "status": 403
+        }
+      ],
+      "verified_assets": [
+        {
+          "path": "/_next/static/chunks/Icon-Dsrrr-Ct.js",
+          "status": 200,
+          "sha256": "f3426f714786f25ed8a9e72c49b02957d2ff43e926a6c25381c556ef6b2d96d7",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/app-elements-H_Dr48wG.js",
+          "status": 200,
+          "sha256": "d8ccfb80cfa806cf9cae4413268bee663723cbdf183b3f078e93c82c27a6ff88",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/app-route-prefetch-policy-Bo3QqLqR.js",
+          "status": 200,
+          "sha256": "1e3ecabb3344df7bd8a6ebe2acf342d83dae8b4a766cced7ca764a91bce7848c",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/app-rsc-cache-busting-CAF8LjMv.js",
+          "status": 200,
+          "sha256": "53e4b8441580414334406fe0c8eb19672086b29ccdafdb37cc4a4bee71b082e3",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/app-rsc-render-mode-CvTCGruk.js",
+          "status": 200,
+          "sha256": "b9db37ffe7d7e3f76c7e6bdffc078b9da7b799d56513d9bb5387f887b4d658dc",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/deployment-id-DFhHa9wO.js",
+          "status": 200,
+          "sha256": "cff727c88395e970914fe0fd68f0d2f78c51dc9ec13c7b6e6db8e5104ecb240b",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/framework-D_rUT4EX.js",
+          "status": 200,
+          "sha256": "939d0fabebb3b2f01753bb866b067d8d3384fb06da19f0e6557609d3b1a9f4f7",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/hash-Cp347hhd.js",
+          "status": 200,
+          "sha256": "fba69692645d8206561e12edf1653f0f7931d0f14f8f753ec3be5031dfd004d1",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/headers-C_MtfdF4.js",
+          "status": 200,
+          "sha256": "d84532fc42b9a35aa8ebc1a2659d97cfecc4fc341718a0cf9f7c42f763ced4be",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/index-BnbmGvzB.js",
+          "status": 200,
+          "sha256": "5494a3043d27d6b21d846e1768ed3e185015f19a84af03788b266759cdede691",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/layout-segment-context-Cd3bNGdK.js",
+          "status": 200,
+          "sha256": "0f2e08530ed374db05a787c3c021c91e9229d97b47fbfbf17635fd46ba9c72df",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/link-CgHXf-g5.js",
+          "status": 200,
+          "sha256": "421e3ec409cb2ff967d88c8a923d06d55a2059938afdf47659b7513410019de3",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/navigation-errors-D5LMQqDL.js",
+          "status": 200,
+          "sha256": "8079365b302385be914b5750316813c78cdbb88f897349ecec72f5998fb65500",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/protocol-headers-B9-bVeat.js",
+          "status": 200,
+          "sha256": "9b15d2c8452ddb9df5d6f2cfb3a23dd576a10dc0450fb72565d9f293abab0edd",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/query-DDhZxhdQ.js",
+          "status": 200,
+          "sha256": "0a1973f3c6175c2655da2d796c0b590a07352ee8c22aed1a49cd90513fa34b02",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/record-uXSNv6cl.js",
+          "status": 200,
+          "sha256": "b9bdb7b7d0e4844d241dba61104d18111d61ef92af3f137d15749531d276f9cf",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/rolldown-runtime-C60lm6uB.js",
+          "status": 200,
+          "sha256": "5db5ba82eef00d1dee7e86e663098c9427d01183a88d357437daff295aec3e75",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/workspace-COMTBYOU.js",
+          "status": 200,
+          "sha256": "dbda5580f021b2a4eb86360c082b2caf35ac86aa45943455f9f0ae18bf1faa57",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/css/index.CBWJgTPT.css",
+          "status": 200,
+          "sha256": "b280e5fde7c7c9f88ff4014f600641d320b75938533d7fe127484bc63b867bc8",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/css/page.DzXDogor.css",
+          "status": 200,
+          "sha256": "015ea46a0d913e7880804a84c6c7081653dea25162804bcd2541d19500c0b67a",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/favicon.svg",
+          "status": 200,
+          "sha256": "04e9c9259d13817e0221a3de90097d09a0b8e9ba75dbf285ac389f3cfa2afb8e",
+          "matches_validated_build": true
+        }
+      ]
+    },
+    {
+      "product": "loyer",
+      "url": "https://loyer.helveticlens.ch",
+      "guide_url": "https://loyer.helveticlens.ch/guide",
+      "repository": "https://github.com/HappyMiha/helveticlens-loyer",
+      "public_repository": true,
+      "license": "Apache-2.0",
+      "source_sha": "ea82b3f5934b38955be6360b3e798f676a4326a9",
+      "github_ci": {
+        "run_id": 36297838903,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "site_version_number": 3,
+      "site_version_id": "appgprj_6ab822dc86708191b2562a8d66c65bc9~appgver_af7517ed348c819182b25223c9387a12",
+      "deployment_id": "appgdep_6ab8b14e00b88191be3231dae7224a0a",
+      "deployed_at": "2026-09-27T06:02:07.577835+00:00",
+      "http_checks": [
+        {
+          "path": "/",
+          "status": 200,
+          "title": "HelveticLens Loyer"
+        },
+        {
+          "path": "/guide",
+          "status": 200,
+          "title": "Product guide | HelveticLens Loyer"
+        },
+        {
+          "path": "/api/products/loyer/dossiers",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/loyer/workbench",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/loyer/discover?q=neutral",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/loyer/dossiers/unknown/discussion?q=renal&status=answered&offset=30",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/loyer/dossiers/unknown/discussion/unknown",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/loyer/dossiers/unknown/discussion/unknown/research-preview",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/loyer/dossiers/unknown/references?q=neutral&decision=include&offset=30",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/loyer/dossiers/unknown/references/unknown",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/loyer/dossiers/unknown/searches",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/loyer/dossiers/unknown/sources/unknown/reviews",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/loyer/dossiers/unknown/documents/unknown/versions",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/loyer/dossiers/unknown/documents/unknown/versions/unknown?offset=0&expected_revision=1",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/loyer/dossiers/unknown/discussion/unknown/research/unknown/sources/S1/document",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/loyer/dossiers/unknown/actions",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/loyer/dossiers/unknown/brief",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/loyer/dossiers/unknown/export",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/loyer/dossiers/unknown/files/unknown",
+          "status": 401,
+          "expected": 401,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/auth/session",
+          "status": 200,
+          "authenticated": false,
+          "private_no_store": true
+        },
+        {
+          "path": "/api/products/pharma/workbench",
+          "status": 404,
+          "expected": 404
+        },
+        {
+          "path": "/api/products/pharma/dossiers/unknown/discussion?q=neutral",
+          "status": 404,
+          "expected": 404
+        },
+        {
+          "path": "/api/products/pharma/dossiers/unknown/documents/unknown/versions",
+          "status": 404,
+          "expected": 404
+        },
+        {
+          "path": "/api/admin/settings",
+          "status": 404,
+          "expected": 404
+        },
+        {
+          "path": "/api/auth/login",
+          "method": "POST",
+          "cross_origin_denied": true,
+          "status": 403
+        }
+      ],
+      "verified_assets": [
+        {
+          "path": "/_next/static/chunks/Icon-Dsrrr-Ct.js",
+          "status": 200,
+          "sha256": "f3426f714786f25ed8a9e72c49b02957d2ff43e926a6c25381c556ef6b2d96d7",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/app-elements-H_Dr48wG.js",
+          "status": 200,
+          "sha256": "d8ccfb80cfa806cf9cae4413268bee663723cbdf183b3f078e93c82c27a6ff88",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/app-route-prefetch-policy-7EtO-Zm1.js",
+          "status": 200,
+          "sha256": "2d0051c85806321fff30517394db860cd3f400b4224991daa18c9aed35242121",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/app-rsc-cache-busting-yoNJ_hHQ.js",
+          "status": 200,
+          "sha256": "0abb149e2645e9baa7d4fe86a1aed488e21f88de0812201664133c27899860d5",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/app-rsc-render-mode-CvTCGruk.js",
+          "status": 200,
+          "sha256": "b9db37ffe7d7e3f76c7e6bdffc078b9da7b799d56513d9bb5387f887b4d658dc",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/deployment-id-DFhHa9wO.js",
+          "status": 200,
+          "sha256": "cff727c88395e970914fe0fd68f0d2f78c51dc9ec13c7b6e6db8e5104ecb240b",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/framework-D_rUT4EX.js",
+          "status": 200,
+          "sha256": "939d0fabebb3b2f01753bb866b067d8d3384fb06da19f0e6557609d3b1a9f4f7",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/hash-Cp347hhd.js",
+          "status": 200,
+          "sha256": "fba69692645d8206561e12edf1653f0f7931d0f14f8f753ec3be5031dfd004d1",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/headers-C_MtfdF4.js",
+          "status": 200,
+          "sha256": "d84532fc42b9a35aa8ebc1a2659d97cfecc4fc341718a0cf9f7c42f763ced4be",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/index-CfhbCdDq.js",
+          "status": 200,
+          "sha256": "0e643eaa80d7a5c86f84c9eeddd539eb5886cc267fc49eae5804d7256d8f7580",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/layout-segment-context-BDKqUoZ7.js",
+          "status": 200,
+          "sha256": "49f395c790ff1c185468c9642811a6c3cd2c0f78c6dda170e0ef5e78beaacd6a",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/link-BTMY_CQt.js",
+          "status": 200,
+          "sha256": "800a72c8b9c6d300256ccb290f6ef80f6e2eb028dc64ca7ecc6e00079bb26145",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/navigation-errors-D5LMQqDL.js",
+          "status": 200,
+          "sha256": "8079365b302385be914b5750316813c78cdbb88f897349ecec72f5998fb65500",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/protocol-headers-B9-bVeat.js",
+          "status": 200,
+          "sha256": "9b15d2c8452ddb9df5d6f2cfb3a23dd576a10dc0450fb72565d9f293abab0edd",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/query-DDhZxhdQ.js",
+          "status": 200,
+          "sha256": "0a1973f3c6175c2655da2d796c0b590a07352ee8c22aed1a49cd90513fa34b02",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/record-uXSNv6cl.js",
+          "status": 200,
+          "sha256": "b9bdb7b7d0e4844d241dba61104d18111d61ef92af3f137d15749531d276f9cf",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/rolldown-runtime-C60lm6uB.js",
+          "status": 200,
+          "sha256": "5db5ba82eef00d1dee7e86e663098c9427d01183a88d357437daff295aec3e75",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/chunks/workspace-BeXL32dX.js",
+          "status": 200,
+          "sha256": "09e5b42b6f4759628fc298cfbba6b731f21f138300ebd114ab83a5e4fa2a7de7",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/css/index.BRX7Rd1d.css",
+          "status": 200,
+          "sha256": "924d24a340f0ac9163321cee8cb42b6b150fe3e1fd6ef9fb97d92fbd9ae87844",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/_next/static/css/page.DzXDogor.css",
+          "status": 200,
+          "sha256": "015ea46a0d913e7880804a84c6c7081653dea25162804bcd2541d19500c0b67a",
+          "matches_validated_build": true
+        },
+        {
+          "path": "/favicon.svg",
+          "status": 200,
+          "sha256": "8f2a004d56acbb6dced4ea5b1013c1477c28768fb63fdce86c8a1fd6c645f72f",
+          "matches_validated_build": true
+        }
+      ]
+    }
+  ]
+}
