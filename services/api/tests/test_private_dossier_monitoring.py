@@ -232,7 +232,7 @@ def test_migration_preserves_existing_workspace_monitoring_and_refuses_privacy_d
     with service.db.engine.connect() as connection:
         with pytest.raises(RuntimeError, match="private dossier monitoring"):
             command.downgrade(migration_config(connection), "fcc495bef124")
-        assert connection.exec_driver_sql("SELECT version_num FROM alembic_version").scalar() == "02d495bef125"
+        assert connection.exec_driver_sql("SELECT version_num FROM alembic_version").scalar() == "03d495bef125"
         assert connection.exec_driver_sql("PRAGMA foreign_key_check").all() == []
     assert client.get("/api/monitoring-topics/" + topic["id"]).status_code == 200
 

@@ -114,3 +114,10 @@ acceptance remain unclaimed. The existing hourly heartbeat stays ACTIVE.
 [Exact release evidence](product-releases/2026-09-27-1.16.0.json). Future complete
 outcomes include watched-page-version triggers, recurring open-web discovery,
 private semantic indexing, independent evaluation and full native visual migration.
+
+
+Release 1.17 extends this policy through an explicit watched-page scope, retaining
+topic-only defaults for existing authorizations. Source bodies, exact old/new
+version references and corpus visibility are governed by the separate
+[watched-page architecture and acceptance](PRODUCT_WATCHED_PAGE_RESEARCH.md).
+This does not add recurring web discovery or complete either full specification.

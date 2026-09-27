@@ -22,6 +22,8 @@ from .product_models import DossierEntry, ProductPublication, PublicContribution
 
 def sources_visible(run=Investigation):
     """The same latest source exclusions apply to every derived evidence reader."""
+    from .product_page_research import retained_visible
+
     source = aliased(InvestigationSource)
     review, newer = aliased(DossierEntry), aliased(DossierEntry)
     has_newer = exists(select(newer.id).where(newer.dossier_id == review.dossier_id,
@@ -31,7 +33,11 @@ def sources_visible(run=Investigation):
     excluded = exists(select(source.id).join(review, and_(review.dossier_id == source.dossier_id,
         review.url == source.url, review.kind == "source_review"))
         .where(source.investigation_id == run.id, review.data_json["decision"].as_string() == "exclude", ~has_newer))
-    return ~excluded
+    page = source.snapshot["saved_page"]
+    unavailable_page = exists(select(source.id).where(source.investigation_id == run.id,
+        page["version_id"].as_string().is_not(None), ~retained_visible(source.dossier_id, source.organization_id,
+            page["document_id"].as_string(), page["version_id"].as_string())))
+    return and_(~excluded, ~unavailable_page)
 
 
 def eligible(run=Investigation):

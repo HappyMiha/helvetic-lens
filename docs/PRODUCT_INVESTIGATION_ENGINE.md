@@ -218,3 +218,11 @@ extracted evidence and paired-citation comparisons in both clients. See
 [architecture, limits and acceptance](PRODUCT_MONITORING_RESEARCH.md). Changed-page
 body triggers, recurring web discovery, semantic indexing and the full-spec gates
 remain distinct; this does not complete stage 4 or either full specification.
+
+
+Stage 4b2 is IN PROGRESS: explicit standing-policy scope can research future
+retained changes from linked workspace page watches. Existing topic-only
+authorizations stay unchanged; members-only dossiers retain their page-watch
+restriction. Exact typed receipts, old/new version references and bounded change
+excerpts connect the same private extraction and independent comparison engine.
+See [architecture and scoped acceptance](PRODUCT_WATCHED_PAGE_RESEARCH.md).

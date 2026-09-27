@@ -24,6 +24,7 @@ class PolicyInput(legal_profiles.Input):
     enabled: StrictBool
     daily_limit: int = Field(ge=1, le=6, strict=True)
     standing_authority_confirmed: StrictBool = False
+    include_page_changes: StrictBool = False
 
 
 def routes(router, service, actor):
@@ -53,7 +54,9 @@ def routes(router, service, actor):
             policy = session.scalar(select(Policy).where(Policy.dossier_id == parent.id))
             key = fingerprint({**data.model_dump(mode="json"), "actor": identity.user_id})
             if policy and policy.last_request_key == str(data.request_key):
-                if policy.last_request_fingerprint != key:
+                legacy_key = fingerprint({**data.model_dump(mode="json", exclude={"include_page_changes"}), "actor": identity.user_id})
+                if policy.last_request_fingerprint != key and not (
+                        not data.include_page_changes and not policy.include_page_changes and policy.last_request_fingerprint == legacy_key):
                     fail("This request key belongs to different research settings.", 409)
                 return payload(session, parent, policy, True)
             if data.expected_revision != (policy.revision if policy else 0):
@@ -62,6 +65,8 @@ def routes(router, service, actor):
                 fail("Confirm ongoing private research using the configured workspace model.", 422)
             if data.enabled and (profile.status != "active" or not profile.topic_ids_json):
                 fail("Activate dossier monitoring before enabling ongoing research.", 409)
+            if data.enabled and data.include_page_changes and parent.monitoring_audience == "team":
+                fail("Workspace page watches are unavailable in members-only dossiers. Use topic-match research here.", 409)
             if not policy:
                 policy = Policy(dossier_id=parent.id, organization_id=parent.organization_id)
                 session.add(policy)
@@ -70,6 +75,7 @@ def routes(router, service, actor):
                 fence(session, policy, "Automatic research settings changed. Previous pending work was cancelled.")
                 policy.revision += 1
             policy.enabled, policy.daily_limit = data.enabled, data.daily_limit
+            policy.include_page_changes = data.include_page_changes
             policy.authorized_by_user_id = identity.user_id
             policy.profile_fingerprint = profile_key(parent, profile)
             policy.checked_at = None

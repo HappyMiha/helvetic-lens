@@ -127,3 +127,12 @@ is enabled. Both99-test gates, builds and exact production Sites19 pass; each
 origin has97 HTTP checks and47 exact assets. See
 [acceptance and limits](PRODUCT_MONITORING_RESEARCH.md). Native page-wide migration,
 watched-page triggers and remaining full-spec work remain IN PROGRESS.
+
+
+Release 1.17 adds an opt-in saved-page scope to Keep this dossier current, readable
+source readiness and paired earlier/newer excerpts with revision-pinned source
+readers. Existing shared tokens, disclosure controls and DocumentHistory dialog
+are reused in both products. The paired text stacks on mobile, quotations stay
+escaped and no new Lens animation or evidence-quality metric is invented.
+Validation and exact release acceptance remain tracked in
+[watched-page research](PRODUCT_WATCHED_PAGE_RESEARCH.md).

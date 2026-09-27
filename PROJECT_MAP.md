@@ -125,3 +125,9 @@ reopening remains separate from this release's acceptance.
 connects explicitly enabled private native topic-match follow-up to the same
 investigation and evidence-evolution engine in Pharma and Loyer. Its standing
 account authority, bounded usage and exact production acceptance remain explicit.
+
+
+[Saved-page research](docs/PRODUCT_WATCHED_PAGE_RESEARCH.md) extends the same
+standing private research policy with an explicit scope choice, exact retained
+page versions, paired change excerpts and revision-safe source readers in both
+products. Its scoped acceptance remains separate from recurring open-web discovery.

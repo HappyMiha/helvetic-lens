@@ -103,6 +103,8 @@ def record(session, identity, product, dossier_id, identifier, *, write=False):
     run = session.get(Investigation, identifier)
     if not run or run.dossier_id != dossier_id:
         fail("Investigation not found.", 404, "not_found")
+    if not page_result_visible(session, run):
+        fail("This investigation's retained page evidence is no longer accessible.", 404)
     if write:
         if run.publication_id:
             from .product_models import ProductPublication
@@ -163,6 +165,11 @@ def snapshot(session, run, item, *, public=False, captured=False):
         "excerpts": [{"text": item["text"], "passage": "saved-excerpt"}],
         "origin_key": item["key"], "captured_from": item["kind"], "origin_date": item["date"],
         "scope": "Bounded snapshot of saved dossier material; original author text is not a machine finding."}
+    if item.get("page"):
+        # Only the new-source excerpt enters extraction. The earlier text is
+        # inspectable through the private trigger, not supplied to this model.
+        data["saved_page"] = {key: item["page"][key] for key in (
+            "document_id", "version_id", "revision", "content_hash", "excerpt_start", "partial")}
     key = hashlib.sha256((item.get("url", "") + item.get("key", "") + data["sha256"]).encode()).hexdigest()
     old = session.scalar(select(InvestigationSource).where(InvestigationSource.investigation_id == run.id,
                                                           InvestigationSource.source_key == key))
@@ -250,12 +257,26 @@ def summary(run):
         "stop_reason": run.stop_reason, "created_at": iso(run.created_at), "updated_at": iso(run.updated_at)}
 
 
+def page_result_visible(session, run):
+    from .product_models import ProductDossier
+    from .product_monitoring_research import trigger_for
+    from .product_page_research import readable
+
+    trigger = trigger_for(session, run)
+    return not trigger or trigger.source_kind != "watched_page" or readable(
+        session, session.get(ProductDossier, run.dossier_id), trigger.source_json)
+
+
 def payload(session, run):
     from .product_claim_evolution import projection
     from .product_contributions import original
     from .product_monitoring_research import trigger_for, trigger_payload
 
     trigger = trigger_for(session, run)
+    if not page_result_visible(session, run):
+        return {**summary(run), "evidence_unavailable": True, "monitoring_trigger": trigger_payload(session, trigger),
+            "original": None, "evidence_basis": "The retained page evidence is no longer accessible.", "coverage": "Unavailable",
+            **{key: [] for key in ("plans", "branches", "sources", "claims", "evidence", "entities", "relationships", "activity")}}
     changes = projection(session, run)
     return {**summary(run), "monitoring_trigger": trigger_payload(session, trigger) if trigger else None,
         "original": original(session, run.trigger_entry_id),

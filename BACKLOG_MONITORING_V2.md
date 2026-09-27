@@ -72,6 +72,33 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 ## Product decision
 
+**Watched-page research — 28 September 2026: VERIFYING (stage 4b2 / release 1.17).**
+Scoped MV2-019/021/023 continuation after verified 1.16: an explicit policy choice
+adds future retained changes from dossier-linked workspace page watches to private
+research. Existing topic-only authorizations remain topic-only. Dependencies:
+native DocumentWatch/Law/Version acquisition and revision-safe history, standing
+actor authority, durable investigation jobs and independent paired-citation
+comparison. Source readiness: current visible, non-synthetic live versions from
+active daily watches, linked before capture; current source exclusions apply.
+Members-only dossiers retain their existing prohibition on workspace page watches.
+Persist kind/identity/revision trigger receipts without changing old match receipts;
+pin both versions and bounded before/after excerpts. Extract only the new excerpt,
+then independently compare with earlier claims. Recheck watch, corpus, policy,
+actor and both revisions around inference; share the existing daily quota, outbox
+and explicit interruption/retry rules. No source fetching or external query is
+introduced by this research scheduler. Bounded text comparison must disclose
+unavailable/oversized/unchanged sources instead of inventing a meaningful change.
+Acceptance: both products expose deliberate scope selection, current readiness,
+exact source/version causes and inspectable changes; native saved-page acquisition
+-> trigger -> job -> evidence -> comparison fixture, migration preservation,
+metadata compatibility, audience isolation and revocation/quota races; required
+client/native gates and exact production source/schema/asset proof. Full specs,
+recurring open-web discovery, semantic indexing, professional evaluation and
+native visual migration remain IN PROGRESS. Local gates: 169 broader native cases,
+25 final affected cases (24 new page cases), exact API Ruff, both clients 101 tests,
+lint, strict types and final builds; configured-secret scans have zero matches.
+Exact production source/schema/assets acceptance is pending.
+
 **Visual language refresh — 27 September 2026: IN PROGRESS (reference slice DONE).** The owner's
 [complete brief](docs/VISUAL_LANGUAGE_SPEC.md) now steers both product clients.
 Scope: token-based light/dark themes, shared shell and restrained glass sidebar,
@@ -1511,7 +1538,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS — nine-category settings implemented | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
 | [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
-| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — stage 4b1 DONE; watched-page research next | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
+| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — watched-page research stage 4b2 in verification | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
 | [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — native evidence and configuration drafts implemented | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
 | [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
@@ -2377,6 +2404,10 @@ above supersedes the River-only count limitation for readable Today queues.
 <a id="mv2-021"></a>
 
 ### MV2-021 — Workspace: Impact Inbox, decisions and Impact Matrix
+
+**Active product stage, 28 September:** watched-page research (4b2) follows the
+explicit scope, dependencies, source readiness and acceptance recorded above.
+Architecture and local/production evidence: [watched-page research](docs/PRODUCT_WATCHED_PAGE_RESEARCH.md).
 
 **Completed product stage, 27 September:** stage 4b1 monitoring-triggered private
 research is DONE under the scope, dependencies and exact acceptance above.

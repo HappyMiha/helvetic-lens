@@ -14,6 +14,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -208,6 +209,7 @@ class MonitoringResearchPolicy(Contained, Base):
         CheckConstraint("daily_limit BETWEEN 1 AND 6", name="ck_monitor_research_limit"),
         Index("ix_monitor_research_due", "enabled", "next_check_at", "id"))
     enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    include_page_changes: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
     revision: Mapped[int] = mapped_column(Integer, default=1)
     authorized_by_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     profile_fingerprint: Mapped[str] = mapped_column(String(64), default="")
@@ -232,14 +234,19 @@ class MonitoringResearchTrigger(Contained, Base):
              "product_monitoring_research_policies.organization_id"], ondelete="CASCADE"),
         research_scope(), UniqueConstraint("investigation_id"),
         UniqueConstraint("dossier_id", "match_id", "evaluation_fingerprint", name="uq_monitor_research_trigger"),
+        UniqueConstraint("dossier_id", "source_kind", "source_identifier", "source_revision", name="uq_monitor_research_source"),
+        CheckConstraint("source_kind IN ('topic_match','watched_page')", name="ck_monitor_research_source_kind"),
         CheckConstraint("state IN ('pending','started','skipped')", name="ck_monitor_research_trigger_state"),
         Index("ix_monitor_research_pending", "policy_id", "state", "created_at", "id"))
     policy_id: Mapped[str] = mapped_column(String(36))
     policy_revision: Mapped[int] = mapped_column(Integer)
     investigation_id: Mapped[str | None] = mapped_column(String(36))
     # Historical identity, deliberately retained after the live match expires.
-    match_id: Mapped[str] = mapped_column(String(36))
-    evaluation_fingerprint: Mapped[str] = mapped_column(String(64))
+    match_id: Mapped[str | None] = mapped_column(String(36))
+    evaluation_fingerprint: Mapped[str | None] = mapped_column(String(64))
+    source_kind: Mapped[str] = mapped_column(String(20), default="topic_match", server_default="topic_match")
+    source_identifier: Mapped[str] = mapped_column(String(80), default=lambda ctx: ctx.get_current_parameters()["match_id"])
+    source_revision: Mapped[str] = mapped_column(String(64), default=lambda ctx: ctx.get_current_parameters()["evaluation_fingerprint"])
     matched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     state: Mapped[str] = mapped_column(String(16), default="pending")
     reason: Mapped[str] = mapped_column(String(500), default="Waiting for research capacity.")
