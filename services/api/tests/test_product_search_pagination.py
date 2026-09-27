@@ -47,6 +47,11 @@ def test_europe_pmc_two_pages_real_total_fixed_host_no_private_context(signed, m
     second = second.json()
     assert second["total"] == 21 and second["page_number"] == 2 and second["items"][0]["id"] == "MED:20"
     assert second["next_cursor"] is None and not second["continuation_unavailable"] and len(seen) == 2
+    saved = post(client, ROOT + "/" + doc["id"] + "/discovery-references", {
+        "request_key": str(uuid4()), "receipt": second["items"][0]["discovery_receipt"]})
+    assert saved.status_code == 201, saved.text
+    assert saved.json()["data"]["discovery"]["page_number"] == 2
+    assert saved.json()["data"]["discovery"]["query"] == "GLP-1 safety" and len(seen) == 2
 
 
 def test_fedlex_grouped_ordered_lookahead_pages_leave_total_unknown(signed, monkeypatch):

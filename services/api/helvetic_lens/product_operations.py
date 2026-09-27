@@ -409,7 +409,19 @@ def operations(router, service, actor):
                     f'{esc(action.priority)} · Owner: {esc((assigned or {}).get("name"))} · Due: {esc(action.due_on)}</p>'
                     f'{origin}<p>{esc(action.detail)}</p><p><b>Outcome:</b> {esc(action.outcome)}</p><p>{link(action.source_url)}</p></article>')
             decisions = ''.join(f'<article><h3>{esc(note.title or "Note")}</h3><p class="meta">{esc(iso(note.created_at))}</p><p>{esc(note.body)}</p></article>' for note in notes)
-            sources = ''.join(f'<li>{esc(ref.title)} — {link(ref.url)}</li>' for ref in references)
+            sources = []
+            for ref in references:
+                provenance = ref.data_json.get("discovery")
+                origin = "<p>No search provenance recorded for this reference.</p>"
+                if provenance:
+                    record = provenance["record"]
+                    origin = (f'<p>Found in {esc(record["provider"])} for “{esc(provenance["query"])}”, '
+                        f'page {esc(provenance["page_number"])}, retrieved {esc(provenance["retrieved_at"])}.</p>'
+                        f'<p>Catalogue record: {esc(record["id"])}. {esc(record["title"])} '
+                        f'({esc(record.get("date") or "date unavailable")}).</p>'
+                        '<p>Search provenance was verified on import. Catalogue metadata only; full text and conclusions are not verified.</p>')
+                sources.append(f'<li>{esc(ref.title)} — {link(ref.url)}{origin}</li>')
+            sources = ''.join(sources)
             questions = session.scalars(select(ResearchThread).where(ResearchThread.dossier_id == row.id)
                 .order_by(ResearchThread.updated_at.desc(), ResearchThread.id).limit(50)).all()
             from .product_research import answer_needs_review

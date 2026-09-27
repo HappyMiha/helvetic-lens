@@ -385,3 +385,40 @@ omitted). Neither traversal overlapped across pages. Europe PMC supplied a live 
 of 34,662; no Fedlex total was inferred. These counts are probe-time observations, not
 fixed product claims. Final Sites publication remains pending the end-of-night window;
 this background run performed no browser interaction QA.
+
+
+## Imported source provenance — overnight development, 27 September
+
+Explicitly importing a public Discovery hit now preserves its exact query, provider,
+page, retrieval time and normalized catalogue record. `product_provenance.py` signs
+these bounded values using the native actor/session-scoped HMAC pattern with a distinct
+format and a 30-minute lifetime. The current user, workspace, login and product are
+bound into verification. The receipt grants no access and never supplies an arbitrary
+network target. Membership and session validity are reread after the awaited public
+search; imports recheck current administrator membership and session under the native
+workspace/account locks and enforce ordinary dossier visibility.
+
+`POST /api/products/{product}/dossiers/{id}/discovery-references` accepts only a UUID
+request key and receipt. It performs no source or model request. An authorized exact
+retry returns the same entry; a completed import can be retried after expiry in the
+same valid session. A new expired import, changed body, reused key with a different
+receipt, wrong actor/session/workspace/product or invisible parent fails without a write.
+The saved ordinary reference contains the validated origin and a receipt hash; the
+receipt and signature are not persisted. Existing manual references remain supported
+and do not acquire a provenance claim. No database migration is needed.
+
+Both clients send only the receipt, retain a request key per receipt for lost-response
+recovery, and prompt a fresh search if it is missing or expired. Evidence & sources
+shows the original query, catalogue record and retrieval time. The escaped brief and
+JSON export retain that origin; full catalogue titles remain available when the entry
+title needs the existing 240-character limit. This proves the application's recorded
+search/import path, not source correctness, full-text capture, current legal/medical
+validity, completeness or active monitoring. Connecting a page watch remains explicit.
+Client browser storage, automated search reruns, new providers and email behavior are
+unchanged. The background run performs no browser interaction QA or premature Sites
+activation; the final client release remains reserved for 08:00–09:00 Zurich.
+
+Validation: all 82 affected native cases passed (81 integration and the backlog smoke
+gate), including 18 dedicated provenance cases and a verified second-page import.
+Exact API lint passed. Both clients passed 17 tests, lint, TypeScript and production
+builds through the Sites helper. No browser interaction verification is claimed.

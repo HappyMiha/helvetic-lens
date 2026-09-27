@@ -9,7 +9,7 @@ from uuid import UUID
 
 import httpx
 from fastapi import Query, Request
-from pydantic import Field, field_validator
+from pydantic import Field, ValidationError, field_validator
 from sqlalchemy import and_, case, func, or_, select
 
 from . import legal_profiles, topic_matching
@@ -24,6 +24,7 @@ from .product_api import EntryInput, Product, dossier, entry_payload, fail, iso
 from .product_models import DossierEntry, ProductDossier, ResearchThread
 from .product_operations import audit, fingerprint, require_revision, visible_query
 from .product_pagination import MAX_RECORDS, PAGE_SIZE, cursor_position, next_cursor
+from .product_provenance import SourceRecord, prepare
 
 
 class Question(legal_profiles.Input):
@@ -150,7 +151,8 @@ SELECT ?work (MIN(STR(?label)) AS ?title) WHERE {{ ?work jolux:isRealizedBy ?exp
                     "title": str(record.get("title", "Untitled record"))[:700],
                     "summary": (str(record.get("authorString", "")) + " · " + str(record.get("journalTitle", "")))[:700],
                     "url": f"https://europepmc.org/article/{quote(source)}/{quote(identifier)}",
-                    "date": record.get("firstPublicationDate") or record.get("pubYear")})
+                    "date": str(record.get("firstPublicationDate") or record.get("pubYear"))[:40]
+                        if record.get("firstPublicationDate") or record.get("pubYear") else None})
         else:
             records = body["results"]["bindings"]
             if not isinstance(records, list) or len(records) > PAGE_SIZE + 1:
@@ -164,7 +166,13 @@ SELECT ?work (MIN(STR(?label)) AS ?title) WHERE {{ ?work jolux:isRealizedBy ?exp
                     "title": str(record.get("title", {}).get("value", "Official legal work"))[:700],
                     "summary": "Official catalogue title match. Open the source to inspect the text and current status.",
                     "url": url, "date": None})
-        items = list({item["id"]: item for item in items}.values())
+        usable = {}
+        for item in items:
+            try:
+                usable[item["id"]] = SourceRecord.model_validate(item).model_dump()
+            except ValidationError:
+                continue
+        items = list(usable.values())
         limit_reached = more and offset + PAGE_SIZE >= MAX_RECORDS
         return {"items": items, "total": total,
                 "next_cursor": next_cursor(provider, terms, offset + PAGE_SIZE, following) if more and not limit_reached else None,
@@ -303,7 +311,11 @@ def research_routes(router, service, actor):
             details = {"items": items, "total": total}
         else:
             details = await public_search(provider, q.strip(), cursor)
-        return {"query": q.strip(), "provider": provider, **details, "checked_at": iso(utcnow()),
+        checked = utcnow()
+        if provider != "workspace":
+            with service.db.session() as session:
+                prepare(session, identity, product, provider, q.strip(), details, checked)
+        return {"query": q.strip(), "provider": provider, **details, "checked_at": iso(checked),
                 "match_mode": mode if provider == "workspace" else None,
                 "coverage": ("All words can appear across a record\'s title, content or topic subject. " if mode == "all" else "The complete phrase must appear in one field. ")
                 + "Literal case-insensitive matching in visible topics, questions and contributions. Up to 20 per group, title matches first; narrow your terms if the total is larger." if provider == "workspace"

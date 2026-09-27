@@ -218,6 +218,35 @@ without overlap in either traversal. Europe PMC reported 34,662 matches for the 
 Fedlex total remained unknown. No browser interaction or final client activation is claimed.
 
 
+Seventh slice — IMPLEMENTED / final client publication pending (scope recorded before implementation): preserve the
+provenance of an explicitly imported public discovery record. The API signs bounded
+Fedlex/Europe PMC result metadata together with the exact query, product, page and UTC
+retrieval time. Receipts expire after 30 minutes and are bound to the current actor,
+workspace and login; they confer no access. Import rechecks current authorization,
+private parent visibility and product, then stores an ordinary immutable reference with
+server-validated provenance. Exact authorized retries reuse the same reference, including
+a previously completed import whose receipt has since expired. New expired, altered,
+wrong-scope and conflicting-key imports fail without writing. Preserve manual reference
+compatibility and distinguish catalogue metadata from a fetched full-text snapshot.
+Both clients import the receipt, retain retry identity, display origin in Evidence &
+sources, and retain provenance in JSON export and escaped printable briefs. No new
+source, AI call, monitoring, external request on import, database schema or client-side
+persistence. Acceptance: both provider round trips, tampering/expiry/retry/key collision,
+fresh membership/session checks after awaited retrieval, role/CSRF/tenant/product/private
+draft denial, bounded metadata, no receipt leakage into saved entries, escaped export/brief,
+legacy manual references, client tests/lint/types/build and native regressions. The sixth
+core slice `git-7156cb0c84b8` is verified active; client publication stays in 08:00–09:00.
+
+Verification: all 82 affected native cases passed (81 integration, one smoke), including
+18 new provenance cases, second-page import without refetch, oversized-source omission,
+old manual references, metadata tampering, expiry/idempotence, fresh role/session checks
+inside import and after awaited retrieval, scope/CSRF denial and escaped brief/export.
+Initial new-test failures were a repeated HTTP-mock setup error, corrected before the
+complete passing regression. Exact API lint passed. Each client passed 17 tests (eight
+gateway, three source-status, two recipe, two continuation, two import), authored lint,
+strict TypeScript and the Sites-helper production build. No browser interaction QA.
+
+
 **MV2 collective product research contribution, 27 September 2026 — DONE (scoped release):** Develop
 Pharma and Loyer for small professional teams beyond monitor setup: a daily work
 queue, medicine/programme or client/matter context, accountable owners, review dates,
