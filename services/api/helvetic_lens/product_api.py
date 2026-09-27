@@ -20,7 +20,7 @@ from .config import DomainError
 from .db import utcnow
 from .interest_jobs import lock_organization
 from .legal_profile_models import LegalMonitoringProfile
-from .models import DocumentWatch, Law, User
+from .models import DocumentWatch, User
 from .product_models import DossierEntry, ProductDossier, ResearchThread
 
 Product = Literal["pharma", "loyer"]
@@ -96,6 +96,7 @@ def entry_payload(session, entry):
 
 def payload(session, row, profile, *, detail=True):
     from .product_operations import work_payload
+    from .product_sources import document_statuses
 
     result = {"id": row.id, "product": row.product, "created_at": iso(row.created_at),
               "profile": legal_profiles.payload(session, profile, detail=detail), "work": work_payload(session, row)}
@@ -109,15 +110,7 @@ def payload(session, row, profile, *, detail=True):
         result["entries"] = [entry_payload(session, x) for x in session.scalars(select(DossierEntry)
             .where(DossierEntry.dossier_id == row.id).order_by(DossierEntry.created_at.desc(), DossierEntry.id).limit(100))]
         result["entry_count"] = session.scalar(select(func.count()).select_from(DossierEntry).where(DossierEntry.dossier_id == row.id))
-        result["documents"] = []
-        for entry in session.scalars(select(DossierEntry).where(DossierEntry.dossier_id == row.id, DossierEntry.kind == "monitor")):
-            law = session.get(Law, entry.data_json.get("law_id"))
-            watch = session.scalar(select(DocumentWatch).where(DocumentWatch.law_id == law.id)) if law else None
-            if law and watch:
-                result["documents"].append({"id": law.id, "name": law.name, "url": law.url,
-                    "last_checked": iso(law.last_checked) if law.last_checked else None,
-                    "last_result": watch.last_result, "auto_check_enabled": watch.auto_check_enabled,
-                    "active": watch.active})
+        result["documents"] = document_statuses(session, row)
     return result
 
 

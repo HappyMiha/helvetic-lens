@@ -135,6 +135,34 @@ and cross-question origins, CSRF/role/private-draft/tenant/product guards, filte
 gateway tests, lint, TypeScript and production builds. This heartbeat used background
 code/build verification; no browser UI or professional acceptance is claimed.
 
+Fourth slice — IMPLEMENTED / final client publication pending: trustworthy connected-page monitoring status and recovery.
+Separate last attempted check from last accepted nonsynthetic source check; preserve the
+successful timestamp when a later fetch fails. Add a nullable native watch timestamp with
+a conservative migration that backfills only known successful latest attempts and leaves
+unknown history unknown. Reuse native Scan/ScanItem queue state, watch schedules, operator
+eligibility and existing scan/settings commands. Both clients should show attempt/result,
+successful-check time, due/queued/paused/manual states, failures and older-than-48-hours
+checks without implying whole-domain coverage; make manual retry, refresh, pause/resume
+and daily-check settings explicit. Settings affect the organization-level document watch
+wherever reused. Dependencies: existing native watch/scheduler/identity gates, new nullable
+column; no new sources, AI calls, notifications or scheduler. Acceptance: actual initial
+fetch, failure then recovery, synthetic and reused-baseline unknowns, conservative populated
+migration, queue/due/disabled/private states, role/CSRF/tenant boundaries, both client gates
+and affected native regression tests. Prior research-follow-up core release
+`git-d558b4cabe5c` verified active at 01:35 Zurich; final clients remain unpublished until
+08:00–09:00 as requested.
+
+Verification: exact API lint and all 59 affected cases passed (58 integration, one
+smoke), including five new source-health cases plus native document scheduling and
+the product regression suite. A populated downgrade/upgrade preserves four watches,
+saved evidence, schedules and foreign keys while backfilling only a known nonsynthetic
+successful latest attempt. Failure then recovery preserves/advances the appropriate
+timestamps; duplicate topic references show one native watch. Queue, operator, paused,
+manual and older-than-48-hour states preserve existing role, tenant, product and CSRF
+boundaries. Each client passed ten tests (seven gateway, three status semantics),
+lint, strict TypeScript and production build. No browser interaction QA or final Sites
+publication is claimed in this background heartbeat. Migration head is `f5c495bef124`.
+
 
 **MV2 collective product research contribution, 27 September 2026 — DONE (scoped release):** Develop
 Pharma and Loyer for small professional teams beyond monitor setup: a daily work

@@ -311,6 +311,7 @@ class DocumentWatch(Base):
     next_auto_check_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
     selected_baseline_version_id: Mapped[str | None] = mapped_column(ForeignKey("versions.id"))
     last_checked: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_success_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_result: Mapped[str] = mapped_column(String(40), default="baseline_created")
     last_error: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

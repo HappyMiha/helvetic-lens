@@ -2373,6 +2373,8 @@ class HelveticLens:
                 active=True,
                 last_checked=utcnow(),
             )
+            if not version.synthetic:
+                watch.last_success_at = watch.last_checked
             session.add(watch)
             if record_onboarding:
                 onboarding.record(session, self.organization_id, actor_user_id, "interest_saved", "document", law.id)
@@ -2400,6 +2402,7 @@ class HelveticLens:
             "auto_check_enabled": watch.auto_check_enabled,
             "next_auto_check_at": as_dict(watch)["next_auto_check_at"],
             "last_checked": as_dict(watch)["last_checked"],
+            "last_success_at": as_dict(watch)["last_success_at"],
             "last_result": watch.last_result,
             "last_error": watch.last_error,
             "watch_id": watch.id,
@@ -3110,6 +3113,8 @@ class HelveticLens:
             law.current_version_id = version.id
             watch = self.watch(session, law.id)
             watch.last_checked = utcnow()
+            if not version.synthetic:
+                watch.last_success_at = watch.last_checked
             if watch.auto_check_enabled:
                 from .document_monitoring import INTERVAL
                 watch.next_auto_check_at = utcnow() + INTERVAL

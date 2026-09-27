@@ -272,3 +272,35 @@ retry fingerprints. Both clients passed seven gateway tests, lint, TypeScript an
 This background heartbeat did not run browser interaction QA; client production deployment
 remains reserved for the final overnight window. The previous search core release
 `git-914695a40c9c` was verified active at 01:15 Zurich on 27 September.
+
+## Connected-page health and recovery — overnight development, 27 September
+
+Both product clients distinguish the last native check attempt, last successful accepted
+nonsynthetic check, saved version time and next automatic check. A failed attempt keeps
+the previous successful-check timestamp and saved evidence. Saved content can be older
+than a successful unchanged check, so these dates are deliberately separate. The new
+nullable `DocumentWatch.last_success_at` uses migration `f5c495bef124`; only a known
+successful latest attempt with an accepted nonsynthetic current version is backfilled.
+Historical failures, reused baselines and unknown times remain unknown.
+
+Connected references are deduplicated by native document. The private dossier payload
+exposes its organization watch's failure diagnostic, pending scan state and schedule:
+paused, manual, missing administrator, unscheduled, due or scheduled. A successful check
+older than 48 hours is labelled for review. This age threshold describes one page check;
+it does not measure whole-topic coverage or certify the source's current correctness.
+Synthetic versions and missing success history remain visibly distinct from live checks.
+
+The clients reuse native commands to retry/check, refresh status, pause/resume a watch,
+and toggle daily checks. Queued or paused watches cannot admit another check from the
+card. Settings apply to the organization document wherever reused, with explanatory
+copy distinguishing them from topic matching. There is no new source, scheduler,
+automatic browser refresh, AI request or notification channel. Existing native role,
+organization, CSRF, operator eligibility and duplicate-admission guards remain in force.
+
+Validation: exact API lint and all 59 affected native cases passed (58 integration, one
+smoke), including real failure/recovery, synthetic handling, conservative populated
+migration with intact foreign keys, deduplication, queue/schedule states and private
+diagnostics/settings. Each client passed seven gateway and three status-semantic tests,
+lint, TypeScript and production build. The previous follow-up core `git-d558b4cabe5c`
+was verified active at 01:35 Zurich. Final client publication remains reserved for
+08:00–09:00; this background heartbeat did not perform browser interaction QA.
