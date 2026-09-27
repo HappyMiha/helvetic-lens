@@ -2,6 +2,14 @@
 
 ## Public discussion cycle — 27 September 2026
 
+**Verified 1.4.0 release:** both custom domains passed 42 HTTP/SSR/route checks
+and 28 exact served-asset comparisons per site, including the public discussion
+component. Core `git-ba1b9d41ebd7` completed its normal 755-case release at 10:39:29
+UTC. Both Sites version 6 deployments succeeded at 10:40 UTC. Pharma source
+`7359c957ea5e87ea24a2fc11616fcde91a1fb4eb` and Loyer source
+`ee16b8740c956c1531aa98ea075b032e2f1d6ca9` passed exact-head GitHub CI. See
+[immutable release evidence](product-releases/2026-09-27-1.4.0.json).
+
 The 1.4.0 discussion slice adds separately authored public contributions below a
 published projection. Anonymous readers receive only current visible text, the
 chosen public display name, source links, timestamps and revisions. Signed-in
@@ -34,7 +42,7 @@ existing private workflows and migration regressions. Exact API lint passed. Bot
 clients have 56 passing checks, including actual anonymous React SSR, escaped
 contributed text, source-link isolation, gateway/CSRF boundaries and existing product
 contracts. Both client lint/type/build gates passed. Exact-source GitHub CI and
-production activation remain VERIFYING until the release receipts are recorded.
+production activation are verified in the immutable receipt above.
 No authenticated production records or public fixtures have been created.
 
 Following, private reuse, open-web discovery, semantic ranking and scheduled search

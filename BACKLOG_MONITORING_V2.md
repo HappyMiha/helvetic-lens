@@ -72,7 +72,7 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 ## Product decision
 
-**Public discussion slice — 27 September 2026: VERIFYING.** Next complete
+**Public discussion slice — 27 September 2026: DONE (scoped release).** Completed
 product cycle: anonymous paginated reading of explicitly submitted contributions
 under a published dossier; native account sign-in on the reader; reviewed public
 display name, text and HTTPS sources; author editing/removal; owner-workspace
@@ -94,8 +94,11 @@ separate subsequent slices, not acceptance claims of this discussion release.
 Implementation evidence: `f7c495bef124` adds public contributions and private
 moderation/retry receipts. Native checks passed 184 cases (183 integration + one
 backlog smoke), including 13 new discussion cases. Exact API lint passed. Both
-1.4.0 clients passed 56 checks, lint, strict types and production builds. Production
-activation and exact GitHub CI remain VERIFYING; see `docs/PRODUCT_DOSSIERS.md`.
+1.4.0 clients passed 56 checks, lint, strict types and production builds. Exact-head GitHub CI and both Sites version 6 releases succeeded. Each custom
+domain passed 42 HTTP/SSR/route checks and 28 served-asset comparisons against
+healthy core `git-ba1b9d41ebd7` (755 standard release checks passed). See immutable
+`docs/product-releases/2026-09-27-1.4.0.json`. Following/private reuse and the broader
+search direction remain IN PROGRESS.
 
 **Public research and open discovery cycles — 27 September 2026: IN PROGRESS.**
 The owner explicitly authorized iterative implementation, main pushes and production
