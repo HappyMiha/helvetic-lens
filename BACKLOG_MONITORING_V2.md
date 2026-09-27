@@ -99,10 +99,14 @@ anonymous reader/catalogue, 20-item literal-search pages, signed exact preview,
 explicit consent, current-principal locks, idempotent update/withdraw and cascading
 private ownership are implemented. Eleven new publication cases and existing
 product/migration/backlog checks passed: 171 cases total, with exact API lint clean.
-Both clients have 49 passing contracts and public catalogue, reader, publishing
-editor, revision history and recovery states. Final client/build/CI and production
-verification remain VERIFYING; public discussion and subsequent discovery cycles
-remain IN PROGRESS. See `docs/PRODUCT_DOSSIERS.md` for the precise boundary.
+Both clients have 50 passing contracts and public catalogue, reader, publishing
+editor, revision history and recovery states. Client lint/types/builds and exact-head
+GitHub CI passed. The initial 1.3.0 edge-fetch issue was corrected in 1.3.1; both
+Sites version 5 deployments succeeded at 09:50 UTC. Final live verification passed
+32 HTTP checks and 26 exact served-asset hashes per site against core
+`git-4af28afd66f7`, whose normal release passed 755 checks. This first publication
+slice is DONE; public discussion and subsequent discovery cycles remain IN PROGRESS.
+See `docs/product-releases/2026-09-27-1.3.1.json` for immutable release evidence.
 
 
 **Final 1.2.0 activation verified at 08:02:45 Europe/Zurich, 27 September 2026.**

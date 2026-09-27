@@ -2,6 +2,19 @@
 
 ## Public publication cycle — 27 September 2026
 
+**Verified release 1.3.1:** both public custom domains passed 32 HTTP/SSR checks
+and 26 exact build-asset comparisons each. Pharma main is
+`a24a0449fa6ea377e08d6d84f24d622deac544bd`; Loyer main is
+`2180efefe47843150b2cb75bec11677fdd7cad8d`. Both exact GitHub CI runs passed and
+Sites version 5 deployments succeeded at 09:50 UTC. Native core
+`git-4af28afd66f7` passed its 755 normal release checks. Both clients passed 50
+contracts, lint, strict types and builds. See [immutable release evidence](product-releases/2026-09-27-1.3.1.json).
+
+The initial 1.3.0 public SSR check exposed an unsupported edge fetch redirect mode.
+1.3.1 uses supported manual handling while refusing unexpected redirects. Targeted
+HTTP checks and the complete live verifier passed after correction. No production
+dossier was created, modified or made public during verification.
+
 The owner authorized iterative product implementation, main publication and normal
 production deployment. Release 1.3.0 adds a separate explicitly authored public
 projection to each private dossier. Administrators enter a public title, summary,
