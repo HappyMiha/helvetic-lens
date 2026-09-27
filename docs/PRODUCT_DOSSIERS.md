@@ -552,3 +552,62 @@ links, source/question/topic destinations and replay preserving forward history.
 lint identified synchronous effect resets; navigation now remounts dossier state on
 actual transitions and clears review dialogs in user actions, without bypassing checks.
 No browser interaction QA or final Sites activation is claimed.
+
+
+## Reviewed AI inputs — overnight development, 27 September
+
+Eligible saved team contributions are ranked by literal question-word matches across
+title/body before the 30-record candidate limit, with date/ID tie breaks. Up to 20 distinct
+question words of at least four characters participate. Blank space-only bodies are
+skipped before selection; final snapshots require nonblank text. Team and page excerpts
+start up to 180 characters before their first matching word and retain at most 1,800
+characters. This helps old relevant text survive newer unrelated activity and preserves
+exact contiguous excerpts. It is not semantic search or complete evidence coverage.
+Existing latest-20 connected-page, six-topic, 20-matches-per-topic and 18-final-snapshot
+bounds, current-event gates and exact-URL source exclusions remain explicit.
+
+GET `/api/products/{product}/dossiers/{id}/discussion/{question_id}/research-preview`
+returns the exact question/context/monitoring goal and selected saved snapshots, provider,
+model, preparation time and limits. A deterministic fingerprint binds the organization,
+product, dossier, question and revisions, exact input and current source-review vector.
+Preparation time is excluded from the fingerprint, so unchanged previews remain stable.
+The native private viewer/read rules apply. Reading makes no model/source request, entry,
+watch or notification change, and uses the normal read budget rather than the AI budget.
+
+Both clients now open this preview before AI generation. The dialog shows source kinds,
+exact excerpts, the question/goal, original URLs and saved-reference links. It explains
+selection limits and empty evidence, supports explicit refresh/retry, and hides stale
+preview content after a read error. Generation is a separate administrator action; the
+browser sends only expected revision, preview fingerprint and a stable request UUID.
+It cannot replace server-side excerpts with edited browser text. Old clients that omit
+the new optional expected_evidence field remain supported through final publication.
+
+The server checks current session/membership before inference, recomputes the preview
+identity and rejects changed inputs before calling the model. It checks current write
+access again after inference, then the complete captured identity before saving. Existing
+exact-quotation validation, bounded output and human answer acceptance remain intact.
+Saved notes retain input_fingerprint and the supplied preview_fingerprint (null for
+legacy requests). Same-author exact retries return the original note without another
+model call; different preview, revision, question or author cannot reuse the key. A
+fingerprint is an optimistic input check, not an authorization token or evidence that a
+human certified source truth. No schema migration, new provider or file parsing.
+
+A successful note followed by a failed topic refresh remains visibly saved in the dialog;
+retry opens it without generating again. Leaving the view suppresses stale completion
+callbacks, and dossier refresh checks the navigation sequence before replacing a newer
+selection. Responsive dialog layout uses existing primitives and scrolls within the
+viewport.
+
+Verification: all 116 native product/backlog cases passed (115 integration, one smoke),
+including fifteen new preview/retrieval cases. These cover both products, old relevant
+long text behind 60 newer unrelated records and 35 blank references, stable deterministic
+previews, exact model inputs and excerpt hashes, exclusions/empty evidence, legacy and
+same-author retries, question/actor key conflicts, strict payload/CSRF/private/viewer
+boundaries, five kinds of pre-inference input changes, and role/session revocation before
+and after inference. Preview reads leave entries, source/model activity and the AI budget
+unchanged. Existing exact-citation and inference-time change regressions also passed.
+Exact API lint passed. Both clients passed 28 tests (two new preview request cases and
+one new gateway case), lint, strict TypeScript and Sites-helper production builds.
+Responsive layout, failure recovery and source-link guards were reviewed in code; no
+browser interaction QA or final Sites activation is claimed. Tenth core `git-581218bf6a9b`
+was verified active since 04:59:28 Zurich; final client publication remains 08:00–09:00.

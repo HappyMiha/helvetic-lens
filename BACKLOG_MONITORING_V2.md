@@ -349,6 +349,50 @@ actual transitions and clears review dialogs in user actions, without bypassing 
 No browser interaction QA or final Sites activation is claimed.
 
 
+Eleventh slice — IMPLEMENTED / final client publication pending (scope recorded before implementation): inspect the exact
+saved evidence before asking AI for a research note. Rank eligible team contributions
+by literal question-word relevance before the 30-record candidate limit, then date/ID;
+choose a bounded relevant excerpt so old useful text can survive newer unrelated activity.
+Retain existing 20-page/6-topic/20-matches-per-topic and 18-snapshot/1,800-character bounds,
+exact-URL exclusions, attribution and explicit limitations; no semantic/full-corpus claim.
+Add private read-only research-preview for the current question: exact title/context,
+monitoring goal, selected snapshots, provider/model and a deterministic fingerprint bound
+to product/dossier/question, revisions, current source decisions and inputs. Preview must
+not invoke AI, fetch sources, write entries or consume the AI-specific request budget.
+Both clients open a responsive preview dialog before generation, with visible exact
+excerpts, source links, provenance kind, limits, empty evidence, refresh/retry and a
+separate explicit Generate action. Failed preview reads hide stale content. Generation
+accepts an optional expected preview fingerprint for old-client compatibility, recomputes
+it under fresh authorization before inference, rejects stale inputs without calling AI,
+and retains existing post-inference revision/evidence checks. Persist the preview identity
+with the immutable note; exact retries must not regenerate or accept another actor/input
+under the same key. Recheck current role/session before inference and before saving.
+Dependencies/source readiness: existing saved team entries, native page/event snapshots,
+configured model, private topic visibility and current source reviews only. No migration,
+new source, autonomous browsing, parsing uploads, watch/email changes or public exposure.
+Acceptance: old relevant/long text before recent noise, deterministic bounded excerpts,
+exclusions, exact preview-to-model inputs and hashes, empty state, both products' private
+and viewer boundaries, no preview side effects, stale question/profile/evidence/review
+rejection before inference, role/session changes during inference, model/citation failures,
+exact/legacy retries and conflicting request keys, client contracts/lint/types/build and
+native regressions. Final client Sites publication remains 08:00–09:00 Zurich.
+
+
+Verification: all 116 native product/backlog cases passed (115 integration, one smoke),
+including fifteen new preview/retrieval cases. These cover both products, old relevant
+long text behind 60 newer unrelated records and 35 blank references, stable deterministic
+previews, exact model inputs and excerpt hashes, exclusions/empty evidence, legacy and
+same-author retries, question/actor key conflicts, strict payload/CSRF/private/viewer
+boundaries, five kinds of pre-inference input changes, and role/session revocation before
+and after inference. Preview reads leave entries, source/model activity and the AI budget
+unchanged. Existing exact-citation and inference-time change regressions also passed.
+Exact API lint passed. Both clients passed 28 tests (two new preview request cases and
+one new gateway case), lint, strict TypeScript and Sites-helper production builds.
+Responsive layout, failure recovery and source-link guards were reviewed in code; no
+browser interaction QA or final Sites activation is claimed. Tenth core `git-581218bf6a9b`
+was verified active since 04:59:28 Zurich; final client publication remains 08:00–09:00.
+
+
 **MV2 collective product research contribution, 27 September 2026 — DONE (scoped release):** Develop
 Pharma and Loyer for small professional teams beyond monitor setup: a daily work
 queue, medicine/programme or client/matter context, accountable owners, review dates,
