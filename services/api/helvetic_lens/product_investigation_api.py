@@ -41,7 +41,7 @@ class Ask(legal_profiles.Input):
 
 class Control(legal_profiles.Input):
     expected_revision: int = Field(ge=1)
-    action: Literal["pause", "resume", "cancel"]
+    action: Literal["pause", "resume", "cancel", "retry"]
 
 
 def routes(router, service, actor):
@@ -56,7 +56,7 @@ def routes(router, service, actor):
             previous = session.scalar(select(Investigation).where(Investigation.dossier_id == dossier_id,
                                                                   Investigation.request_key == str(data.request_key)))
             if previous:
-                if previous.question != data.question or previous.created_by_user_id != identity.user_id:
+                if previous.trigger_entry_id or previous.question != data.question or previous.created_by_user_id != identity.user_id:
                     fail("This request key belongs to a different investigation.", 409)
                 return payload(session, previous)
             if session.scalar(select(func.count()).select_from(Investigation).where(
@@ -98,10 +98,14 @@ def routes(router, service, actor):
             run = record(session, identity, product, dossier_id, identifier, write=True)
             if data.expected_revision != run.revision:
                 fail("The investigation changed. Refresh before applying this action.", 409)
-            if data.action == "resume":
-                if run.status != "paused":
+            if data.action in {"resume", "retry"}:
+                if data.action == "retry":
+                    from .product_contributions import retry
+
+                    retry(session, run)
+                elif run.status != "paused":
                     fail("Only a paused investigation can resume. Start a new question for completed work.", 409)
-                if session.scalar(select(Investigation.id).where(Investigation.dossier_id == dossier_id,
+                if not run.trigger_entry_id and session.scalar(select(Investigation.id).where(Investigation.dossier_id == dossier_id,
                         Investigation.id != run.id, Investigation.status.in_(ACTIVE)).limit(1)):
                     fail("Pause the active investigation before resuming this one.", 409)
                 run.generation += 1

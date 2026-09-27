@@ -93,6 +93,29 @@ Sixteen authored color pairs exceed 4.5:1. No browser/human visual acceptance is
 claimed. [Implementation and remaining migration](docs/PRODUCT_VISUAL_LANGUAGE.md),
 [exact evidence](docs/product-releases/2026-09-27-1.9.0.json).
 
+**Private contribution ingestion — 27 September 2026: VERIFYING (stage 2a).**
+Scoped MV2-019/021/023 follow-up: one contribution composer in both clients for
+comments, source URLs, corrections, research requests and original files. Explicit
+submission saves the original and atomically queues bounded private evidence
+analysis. Reuse DossierEntry, artifact storage, native investigations/jobs and the
+configured workspace model. Dependencies/source readiness: existing native access,
+source reader and extraction libraries; no new providers. Uploaded TXT/Markdown,
+HTML and text PDF get bounded local extraction; other formats, OCR, inaccessible
+URLs and absent inference remain explicitly unavailable with original downloads.
+Acceptance: authorship/hash/original retention, uncertain-save idempotency,
+serialized dossier work, exact-quote evidence, visible progress and explicit retry
+of unavailable steps without replaying completed work; current-access and tenant
+checks before/after work, no private text or URL objective sent to public search,
+no automatic publication/delivery. Both clients and native integration/privacy/
+recovery/migration gates plus exact production verification are required. Existing
+legacy save-only routes retain their default behavior; the new composer discloses
+analysis on submission. Per-dossier roles, living public research and cross-run
+claim reconciliation remain later stages. Detailed acceptance:
+[contribution ingestion](docs/PRODUCT_CONTRIBUTIONS.md). Local implementation is
+validated: 324 broad native tests and a final 46 focused tests pass, including
+20 new contribution cases and migration preservation. Both clients pass 80 tests,
+lint, types and builds. Exact native/Sites activation remains the release gate.
+
 **Dynamic collaborative investigation — 27 September 2026: IN PROGRESS.** The
 owner supplied a complete living-dossier specification, preserved in
 [the source document](docs/DYNAMIC_DOSSIER_SPEC.md). It now guides Pharma/Loyer

@@ -156,3 +156,14 @@ see [visual implementation and exact acceptance](PRODUCT_VISUAL_LANGUAGE.md).
 This is a frontend-only slice on the same 1.8.1 native code. Contribution ingestion,
 per-dossier access, living public research and automatic material-change reopening
 remain IN PROGRESS. The visual reference is ready for those next capabilities.
+
+
+Stage 2a contribution ingestion is locally complete in release 1.10 and awaiting
+exact production verification. Both clients provide a unified composer; original
+text/files/author identity feed bounded private investigations with a serialized
+queue and explicit failed-step retry. Native scopes, source exclusions, original
+integrity and no-public-discovery boundaries are verified. See
+[implementation, bounds and acceptance](PRODUCT_CONTRIBUTIONS.md). This delivers
+private contribution-triggered analysis, not the full stage 2 roles/invitations or
+stage 4 cross-investigation reconciliation. Those and the remaining visual/native
+migration remain IN PROGRESS.

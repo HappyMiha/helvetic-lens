@@ -4,6 +4,7 @@ from uuid import uuid4
 
 from sqlalchemy import (
     JSON,
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
@@ -39,7 +40,13 @@ class Investigation(Contained, Base):
     __tablename__ = "product_investigations"
     __table_args__ = (contained(), UniqueConstraint("id", "dossier_id", "organization_id"),
         UniqueConstraint("dossier_id", "request_key"),
+        ForeignKeyConstraint(["trigger_entry_id", "dossier_id", "organization_id"],
+            ["product_dossier_entries.id", "product_dossier_entries.dossier_id", "product_dossier_entries.organization_id"],
+            name="fk_investigation_contribution", ondelete="CASCADE"),
+        UniqueConstraint("trigger_entry_id", name="uq_investigation_contribution"),
         CheckConstraint("status IN ('queued','running','paused','completed','failed','cancelled')"))
+    trigger_entry_id: Mapped[str | None] = mapped_column(String(36))
+    external_discovery: Mapped[bool] = mapped_column(Boolean, default=True, server_default="1")
     request_key: Mapped[str] = mapped_column(String(36))
     question: Mapped[str] = mapped_column(String(300))
     created_by_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))

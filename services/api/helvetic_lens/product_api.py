@@ -9,9 +9,9 @@ from typing import Literal
 from urllib.parse import urlsplit
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, File, Query, Request, Response, UploadFile
+from fastapi import APIRouter, File, Form, Query, Request, Response, UploadFile
 from fastapi.responses import FileResponse
-from pydantic import Field, field_validator
+from pydantic import Field, StrictBool, field_validator
 from sqlalchemy import case, func, or_, select
 
 from . import legal_profiles, monitoring_topics
@@ -33,7 +33,8 @@ class Create(legal_profiles.CreateInput):
 
 class EntryInput(legal_profiles.Input):
     request_key: UUID
-    kind: Literal["note", "reference", "feedback"]
+    kind: Literal["note", "reference", "feedback", "correction", "research_request"]
+    analyse: StrictBool = False
     title: str = Field(default="", max_length=240)
     body: str = Field(default="", max_length=10000)
     url: str = Field(default="", max_length=2000)
@@ -87,11 +88,13 @@ def dossier(session, product, identifier, user):
 
 
 def entry_payload(session, entry):
+    from .product_contributions import analysis
+
     author = session.get(User, entry.actor_user_id) if entry.actor_user_id else None
     result = {"id": entry.id, "kind": entry.kind, "thread_id": entry.thread_id, "title": entry.title, "body": entry.body,
             "url": entry.url, "data": entry.data_json, "byte_size": entry.byte_size,
             "sha256": entry.sha256, "author": author.name if author else "Former member",
-            "created_at": iso(entry.created_at)}
+            "created_at": iso(entry.created_at), "analysis": analysis(session, entry)}
     if entry.kind == "reference":
         from .product_source_reviews import current_reviews
 
@@ -186,54 +189,84 @@ def product_router(service):
     @router.post("/dossiers/{identifier}/entries", status_code=201)
     def add_entry(product: Product, identifier: str, data: EntryInput, request: Request):
         identity = actor(request)
-        if not data.body and not data.url:
+        if not data.body.strip() and not data.url:
             fail("Add a comment or an original source URL.")
         if data.kind == "reference" and not data.url:
             fail("A reference needs its original source URL.")
+        from .product_contributions import queue
+        from .product_investigations import access
+
+        values = {"relevance": data.relevance}
+        if data.analyse:
+            values["analysis_requested"] = True
+        if data.kind in {"correction", "research_request"} and not data.body.strip():
+            fail("Describe the correction or research request.")
         with service.write_guard, service.db.session() as session:
             lock_organization(session, service.organization_id)
-            row, _ = dossier(session, product, identifier, identity.user_id)
+            row = access(session, identity, product, identifier, write=True)
             previous = session.scalar(select(DossierEntry).where(DossierEntry.dossier_id == row.id, DossierEntry.request_key == str(data.request_key)))
             if previous:
-                if (previous.kind, previous.title, previous.body, previous.url, previous.data_json) != (
-                    data.kind, data.title, data.body, data.url, {"relevance": data.relevance}):
+                if previous.actor_user_id != identity.user_id or (previous.kind, previous.title, previous.body, previous.url, previous.data_json) != (
+                    data.kind, data.title, data.body, data.url, values):
                     fail("This request key belongs to a different entry.", 409)
                 return entry_payload(session, previous)
             entry = DossierEntry(dossier_id=row.id, request_key=str(data.request_key), kind=data.kind,
-                title=data.title, body=data.body, url=data.url, data_json={"relevance": data.relevance}, actor_user_id=identity.user_id)
+                title=data.title, body=data.body, url=data.url, data_json=values,
+                sha256=hashlib.sha256(data.body.encode()).hexdigest(), actor_user_id=identity.user_id)
             session.add(entry)
+            if data.analyse:
+                queue(session, row, entry, identity)
             session.commit()
             return entry_payload(session, entry)
 
     @router.post("/dossiers/{identifier}/files", status_code=201)
-    async def upload(product: Product, identifier: str, request: Request, file: UploadFile = File(...)):
+    async def upload(product: Product, identifier: str, request: Request, file: UploadFile = File(...),
+                     request_key: UUID | None = Form(default=None), analyse: bool = Form(default=False)):
+        from .product_contributions import queue
+        from .product_investigations import access
         identity = actor(request)
+        if analyse and request_key is None:
+            fail("An upload request key is required for safe analysis retries.")
         with service.db.session() as session:
-            dossier(session, product, identifier, identity.user_id)
+            access(session, identity, product, identifier, write=True)
         body = await file.read(MAX_FILE + 1)
         await file.close()
         if not body or len(body) > MAX_FILE:
             fail("Choose a non-empty file of at most 10 MB.", 413)
         name = PurePath((file.filename or "attachment").replace("\\", "/")).name
         name = "".join(c for c in name if ord(c) >= 32)[:200] or "attachment"
+        digest = hashlib.sha256(body).hexdigest()
+        values = {"content_type": (file.content_type or "application/octet-stream")[:100]}
+        if analyse:
+            values["analysis_requested"] = True
+        creation_key = str(request_key or uuid4())
         key = f"dossier-{uuid4().hex}.bin"
         folder = service.environment_settings.storage_path / "artifacts"
         folder.mkdir(parents=True, exist_ok=True)
         path = folder / key
         with service.write_guard, service.db.session() as session:
             lock_organization(session, service.organization_id)
-            row, _ = dossier(session, product, identifier, identity.user_id)
+            row = access(session, identity, product, identifier, write=True)
+            previous = session.scalar(select(DossierEntry).where(DossierEntry.dossier_id == row.id,
+                DossierEntry.request_key == creation_key))
+            if previous:
+                if (previous.actor_user_id, previous.kind, previous.title, previous.sha256, previous.data_json) != (
+                        identity.user_id, "file", name, digest, values):
+                    fail("This request key belongs to a different upload.", 409)
+                return entry_payload(session, previous)
             count = session.scalar(select(func.count()).select_from(DossierEntry).where(DossierEntry.dossier_id == row.id, DossierEntry.kind == "file"))
             total_bytes = session.scalar(select(func.coalesce(func.sum(DossierEntry.byte_size), 0)))
             if total_bytes + len(body) > 500 * 1024 * 1024:
                 fail("This workspace has reached its 500 MB dossier attachment limit.", 413)
             if count >= 50:
                 fail("This dossier already contains 50 files.")
-            entry = DossierEntry(dossier_id=row.id, request_key=str(uuid4()), kind="file", title=name,
-                artifact_key=key, byte_size=len(body), sha256=hashlib.sha256(body).hexdigest(), actor_user_id=identity.user_id)
+            entry = DossierEntry(dossier_id=row.id, request_key=creation_key, kind="file", title=name, data_json=values,
+                artifact_key=key, byte_size=len(body), sha256=digest, actor_user_id=identity.user_id)
             try:
                 path.write_bytes(body)
                 session.add(entry)
+                if analyse:
+                    queue(session, row, entry, identity)
                 session.commit()
             except Exception:
                 path.unlink(missing_ok=True)

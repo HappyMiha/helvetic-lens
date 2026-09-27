@@ -6,7 +6,7 @@ from copy import deepcopy
 from datetime import UTC, timedelta
 from uuid import uuid4
 
-from sqlalchemy import select
+from sqlalchemy import case, select
 
 from . import decision_search, decision_sources, jobs
 from .analysis import InferenceBudget
@@ -34,7 +34,7 @@ from .product_investigations import (
     snapshot,
     worker_access,
 )
-from .product_models import ProductDossier
+from .product_models import DossierEntry, ProductDossier
 from .product_research import research_sources
 from .product_search_budget import reserve
 from .product_source_reviews import current_reviews
@@ -60,8 +60,12 @@ def excluded(session, parent):
 
 
 def seed(session, run, parent, settings):
+    if run.trigger_entry_id:
+        from .product_contributions import seed as seed_contribution
+
+        return seed_contribution(session, run, parent, settings)
     available = capabilities(settings, parent.product)
-    if any(v["available"] and v["id"] in {"public_web", "scientific_literature"} for v in available):
+    if run.external_discovery and any(v["available"] and v["id"] in {"public_web", "scientific_literature"} for v in available):
         session.add(InvestigationBranch(**scope(run), query=run.question,
             reason="Find accessible source evidence for the submitted question.", checkpoint={}))
     saved = research_sources(session, parent, run.question, run.organization_id)[:MAX_SOURCES]
@@ -75,13 +79,21 @@ def seed(session, run, parent, settings):
     event(session, run, "capabilities_resolved", capabilities=available)
 
 
+def next_extraction(state):
+    if "retry_indices" in state:
+        state["extract_index"] = state["retry_indices"].pop(0) if state["retry_indices"] else len(state.get("source_ids", []))
+    else:
+        state["extract_index"] = state.get("extract_index", 0) + 1
+
+
 def advance(branch, state, *, interrupted=False):
     if branch.phase == "search":
         branch.status = "failed"
     elif branch.phase == "read":
         state["read_index"] = state.get("read_index", 0) + 1
     elif branch.phase == "extract":
-        state["extract_index"] = state.get("extract_index", 0) + 1
+        state.setdefault("failed_extract_indices", []).append(state.get("extract_index", 0))
+        next_extraction(state)
     state["error"] = ("A worker was interrupted; that in-flight request was not automatically repeated."
                       if interrupted else "This step could not produce validated evidence. Other branches continue.")
 
@@ -90,7 +102,7 @@ def settle(branch, state):
     if branch.phase == "read" and state.get("read_index", 0) >= len(state.get("items", [])):
         branch.phase = "extract"
     if branch.phase == "extract" and state.get("extract_index", 0) >= len(state.get("source_ids", [])):
-        branch.status = "completed" if state.get("analysed", 0) else "failed"
+        branch.status = "completed" if state.get("analysed", 0) and not state.get("failed_extract_indices") else "failed"
     branch.checkpoint = deepcopy(state)
 
 
@@ -146,6 +158,14 @@ async def execute(service, job_id, worker):
             finish_or_yield(session, run, job)
             session.commit()
             return {"id": job_id, "state": run.status}
+        first = session.scalar(select(Investigation.id).where(Investigation.dossier_id == run.dossier_id,
+            Investigation.status.in_(ACTIVE)).order_by(case((Investigation.status == "running", 0), else_=1),
+                Investigation.created_at, Investigation.id).limit(1))
+        if first != run.id:
+            jobs.defer_until(session, job, utcnow() + timedelta(seconds=20), code="dossier_queue",
+                detail="Waiting for the current dossier investigation to finish or pause.")
+            session.commit()
+            return {"id": job_id, "state": "queued"}
         if not run.plan_version:
             seed(session, run, parent, service.settings)
             finish_or_yield(session, run, job)
@@ -167,6 +187,8 @@ async def execute(service, job_id, worker):
                     work = {"run_id": run.id, "branch_id": branch.id, "query": branch.query,
                         "phase": branch.phase, "product": parent.product, "generation": run.generation}
                     if branch.phase == "search":
+                        if not run.external_discovery:
+                            raise RuntimeError("Private contribution cannot contain a discovery branch")
                         try:
                             reserve(session, service.settings)
                         except DomainError as error:
@@ -177,6 +199,15 @@ async def execute(service, job_id, worker):
                         item = state["items"][state.get("read_index", 0)]
                         work["item"] = item
                         work["skip"] = item["url"] in blocked
+                        if state.get("contribution_entry_id"):
+                            from .product_contributions import PUBLIC_READ_PURPOSE
+
+                            work["query"] = PUBLIC_READ_PURPOSE
+                            work["contribution_entry_id"] = state["contribution_entry_id"]
+                        if state.get("file"):
+                            entry = session.get(DossierEntry, state["contribution_entry_id"])
+                            work["file"] = {"artifact_key": entry.artifact_key, "sha256": entry.sha256,
+                                "title": entry.title, "content_type": entry.data_json.get("content_type", "")}
                     else:
                         source = session.get(InvestigationSource, state["source_ids"][state.get("extract_index", 0)])
                         work.update(source_id=source.id, skip=source.url in blocked,
@@ -208,6 +239,10 @@ async def execute(service, job_id, worker):
                 failed = True
             elif work["phase"] == "search":
                 result = await decision_search.execute(service.settings, work["query"], "auto", "balanced", work["product"])
+            elif work["phase"] == "read" and work.get("file"):
+                from .product_contributions import read_file
+
+                result = await read_file(service.environment_settings.storage_path / "artifacts", work["file"])
             elif work["phase"] == "read":
                 result = await decision_sources.safe_inspect(service.settings, work["query"], work["item"], "auto")
             else:
@@ -260,8 +295,16 @@ async def execute(service, job_id, worker):
                 if result.get("status") != "complete" or not result.get("excerpts"):
                     failed = True
                 else:
-                    source, fresh = snapshot(session, run, {**result, "title": work["item"]["title"],
-                        "retrieval_queries": work["item"].get("retrieval_queries", [work["query"]])}, public=True)
+                    if work.get("contribution_entry_id"):
+                        from .product_contributions import capture
+
+                        entry = session.get(DossierEntry, work["contribution_entry_id"])
+                        source = capture(session, run, entry, result,
+                            kind="uploaded_file" if work.get("file") else "contributed_url")
+                        fresh = source.id not in state.get("source_ids", [])
+                    else:
+                        source, fresh = snapshot(session, run, {**result, "title": work["item"]["title"],
+                            "retrieval_queries": work["item"].get("retrieval_queries", [work["query"]])}, public=True)
                     if fresh:
                         state.setdefault("source_ids", []).append(source.id)
                     state["read_index"] = state.get("read_index", 0) + 1
@@ -271,10 +314,12 @@ async def execute(service, job_id, worker):
                 except DomainError:
                     failed = True
                 if not failed:
-                    state["extract_index"] = state.get("extract_index", 0) + 1
+                    next_extraction(state)
                     state["analysed"] = state.get("analysed", 0) + 1
         if failed:
             advance(branch, state)
+            if work.get("file") and isinstance(result, dict) and result.get("error"):
+                state["error"] = result["error"]
         state.pop("inflight", None)
         state["steps"][-1].update(status="unavailable" if failed else "completed", finished_at=iso(utcnow()))
         settle(branch, state)

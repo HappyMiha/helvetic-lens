@@ -76,6 +76,7 @@ class DossierEntry(Base):
         ForeignKeyConstraint(["dossier_id", "organization_id"],
                              ["product_dossiers.id", "product_dossiers.organization_id"], ondelete="CASCADE"),
         UniqueConstraint("dossier_id", "request_key", name="uq_product_entry_request"),
+        UniqueConstraint("id", "dossier_id", "organization_id", name="uq_product_entry_scope"),
     )
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     organization_id: Mapped[str] = mapped_column(String(36), index=True)

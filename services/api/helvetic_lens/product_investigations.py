@@ -114,7 +114,7 @@ def plan(session, run, reason, *, trigger=None):
     run.plan_version += 1
     document = {"branches": [{"id": b.id, "query": b.query, "phase": b.phase, "status": b.status}
                              for b in rows(session, InvestigationBranch, run)],
-                "trigger": trigger, "budgets": {"public_branches": MAX_BRANCHES,
+                "trigger": trigger, "budgets": {"public_branches": MAX_BRANCHES if run.external_discovery else 0,
                     "sources_per_branch": MAX_SOURCES, "saved_snapshots": MAX_SOURCES},
                 "stop_rule": "Stop when pending branches finish or the explicit evidence/query budgets are reached."}
     session.add(InvestigationPlan(**scope(run), version=run.plan_version, reason=reason, document=document))
@@ -129,10 +129,10 @@ def enqueue(session, run):
     return job
 
 
-def snapshot(session, run, item, *, public=False):
+def snapshot(session, run, item, *, public=False, captured=False):
     # Search snippets never become evidence. Only verified reader excerpts or
     # access-scoped saved-text snapshots enter the claim ledger.
-    data = item if public else {"status": "complete", "sha256": item["sha256"],
+    data = item if public or captured else {"status": "complete", "sha256": item["sha256"],
         "excerpts": [{"text": item["text"], "passage": "saved-excerpt"}],
         "origin_key": item["key"], "captured_from": item["kind"], "origin_date": item["date"],
         "scope": "Bounded snapshot of saved dossier material; original author text is not a machine finding."}
@@ -201,7 +201,7 @@ def apply_extraction(session, run, source, data):
         session.flush()
         entities[value.name] = entity
         event(session, run, "entity_discovered", entity_id=entity.id, name=entity.name, source_id=source.id)
-        if value.investigate and source.kind == "public_source":
+        if value.investigate and run.external_discovery and source.kind == "public_source" and source.snapshot.get("allow_discovery", True):
             branches = rows(session, InvestigationBranch, run)
             public = [b for b in branches if not b.checkpoint.get("saved")]
             # Only an exact public-source entity name may extend the user's
@@ -218,20 +218,22 @@ def apply_extraction(session, run, source, data):
 
 
 def summary(run):
-    return {"id": run.id, "created_by_user_id": run.created_by_user_id, "question": run.question, "status": run.status, "revision": run.revision,
+    return {"id": run.id, "trigger_entry_id": run.trigger_entry_id, "external_discovery": run.external_discovery, "created_by_user_id": run.created_by_user_id, "question": run.question, "status": run.status, "revision": run.revision,
         "plan_version": run.plan_version, "event_sequence": run.event_sequence,
         "stop_reason": run.stop_reason, "created_at": iso(run.created_at), "updated_at": iso(run.updated_at)}
 
 
 def payload(session, run):
-    return {**summary(run),
+    from .product_contributions import original
+
+    return {**summary(run), "original": original(session, run.trigger_entry_id),
         "plans": [{"id": p.id, "version": p.version, "reason": p.reason, "document": p.document,
                    "created_at": iso(p.created_at)} for p in rows(session, InvestigationPlan, run)],
         "branches": [{"id": b.id, "query": b.query, "status": b.status, "phase": b.phase, "reason": b.reason,
             "steps": b.checkpoint.get("steps", []), "error": b.checkpoint.get("error"),
             "coverage": b.checkpoint.get("coverage")} for b in rows(session, InvestigationBranch, run)],
         "sources": [{"id": s.id, "kind": s.kind, "title": s.title, "url": s.url, "sha256": s.sha256,
-                     "snapshot": s.snapshot, "created_at": iso(s.created_at)} for s in rows(session, InvestigationSource, run)],
+                     "snapshot": s.snapshot, "original": original(session, s.snapshot.get("origin_entry_id")), "created_at": iso(s.created_at)} for s in rows(session, InvestigationSource, run)],
         "claims": [{"id": c.id, "statement": c.statement, "status": c.status, "revision": c.revision,
                     "history": c.history} for c in rows(session, DossierClaim, run)],
         "evidence": [{"id": e.id, "claim_id": e.claim_id, "source_id": e.source_id, "relation": e.relation,
@@ -245,7 +247,8 @@ def payload(session, run):
         "evidence_basis": "Supported means the linked source supports the statement, not independently established truth. "
             "Machine extraction may be wrong. Contradictions remain visible. Entity mentions are not resolved identities.",
         "coverage": "Bounded investigation of accessible sources, not exhaustive internet coverage. "
-            "Saved notes and page extracts can be analysed; original uploads and authenticated archives are not yet analysed here."}
+            "Submitted text and supported file excerpts can be analysed; OCR and authenticated archives are unavailable. "
+            "Contribution reviews never perform public discovery; source reading and file extraction have explicit bounds."}
 
 
 def worker_exhausted(session, job):
