@@ -1,6 +1,6 @@
 # Global Ask/Search and retained command drafts
 
-Status: VERIFYING — scoped release 1.24 under MV2-002/023/024. Scope,
+Status: DONE — scoped production release 1.24 under MV2-002/023/024. Scope,
 dependencies, source readiness and acceptance were recorded before code in the
 sole Monitoring backlog. The full dynamic/visual specifications and broader
 MV2 tasks remain IN PROGRESS.
@@ -55,3 +55,42 @@ accuracy have not been claimed. Existing Radix and Base UI primitives remain
 unchanged. No backend/provider/model/schema/source-rights/publication/delivery
 change, private production record access, paid research probe or outgoing message
 is part of this release. No new accounts or provider keys are created.
+
+
+## Exact production acceptance — 28 September 2026
+
+Initial native implementation 6266d1761930877af371fce59b552804b14eab36 was
+committed, immediately pushed and activated at 06:34:30 UTC. Final busy-context
+correction c3f63e0fa83e46c1449565b929f18e927dbc2620 was committed and immediately pushed,
+then activated normally at 2026-09-28T06:42:20+00:00. It prevents a late failed
+Marvin send from restoring an earlier question over a newly prepared draft.
+All 380 native frontend cases, types, format and production build passed again.
+Public readiness returns exact git-c3f63e0fa83e; the healthy immutable web
+image serves 46 matching global-command/navigation/theme assets, including
+all CSS. Its 49 HTTP checks confirm login entry, first-paint themes and the
+source-identical H favicon. Nine navigation directions and five native locale
+contracts remain present. These are programmatic checks, not browser acceptance.
+
+Pharma 184675368384227344694b1db968318d980a208f and Loyer
+721fb82343f3296ee19d879172ab5145ee977b1f were immediately pushed to GitHub
+main and their exact existing Sites source repositories. Both archive-backed
+Sites 27 publications succeeded. Every one of the 136 files in each local archive
+matches its validated build; transport and Sites-reported archive hashes are
+recorded separately. Each custom origin passes 129 HTTP/auth/guide/command checks
+and 47 exact served assets. Four entry routes have one accessible global command.
+GitHub CI 36386697250 and 36386710408 passed. An initial origin verification met
+HTTP 530 during native activation; the complete rerun after readiness passed.
+
+The unchanged backend matches 57 source module hashes, migration 06d495bef125,
+current-rights schemas/queries, four native runtimes, five scheduler modules and
+the minute schedule. Laya and the pinned local E5 retrieval service are healthy.
+Model/parser probes use only synthetic local input. No private production records,
+paid research requests or outgoing messages were used. No source approvals,
+credentials, providers, models or API/schema contracts changed.
+
+[Sanitized exact-release receipt](product-releases/2026-09-28-1.24.0.json) records
+source, archives, terminal deployments, native/runtime/origin evidence and the
+remaining limits. The scoped command journey is DONE. Full dynamic/visual,
+professional and human language/accessibility acceptance remains IN PROGRESS;
+the existing hourly heartbeat continues. C4 and the separately deferred tasks
+remain deferred.

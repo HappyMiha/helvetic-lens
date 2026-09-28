@@ -74,7 +74,7 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 
 **Global Ask/Search and retained command drafts — 28 September 2026:
-IN PROGRESS (scoped visual continuation / release 1.24).** Scope: MV2-002/023/024.
+DONE (scoped production contribution / release 1.24).** Scope: MV2-002/023/024.
 Deliver a persistent native global entry, including login/history routes, with
 Cmd/Ctrl+K, accessible dialog focus, useful saved-source and explicitly public
 Pharma/Loyer knowledge results, and a local draft handoff into existing Marvin
@@ -102,7 +102,11 @@ styles. Run meaningful helper/adapter/SSR behavior checks, all native frontend/
 localization/types/build/format gates, both client tests/lint/types/portable
 builds, final backlog smoke, provider-value scans, immediate main pushes and
 exact native/Sites/origin/asset verification. Browser/human/professional and the
-remaining full-spec acceptance stay open. Evidence: docs/PRODUCT_GLOBAL_ASK.md.
+remaining full-spec acceptance stay open. Evidence: [Global Ask/Search](docs/PRODUCT_GLOBAL_ASK.md): native 380 cases,
+135 tests per client, final builds, protected-value scans and backlog smoke;
+both Sites 27, 129 origin checks and 47 exact assets each, plus exact corrected
+native activation/assets and unchanged runtime proof. Full specifications and
+broader MV2-002/023/024 remain IN PROGRESS.
 
 
 **Native reading themes and shared preference resilience — 28 September 2026:
@@ -1815,7 +1819,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | ID | Task | Phase | Priority | Size | Status | Dependencies |
 |---|---|---|---|---|---|---|
 | [MV2-001](#mv2-001) | Establish extension contracts and MVP compatibility | F0 | P0 | M | DONE | None |
-| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS — global Ask/Search active; navigation/themes DONE | None |
+| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS — scoped global Ask/navigation/themes DONE | None |
 | [MV2-003](#mv2-003) | Verify source rights, coverage and contracts for the nine active scenarios | F0 | P0 | L | PLANNED | [MV2-001](#mv2-001) |
 | [MV2-004](#mv2-004) | Personal workspace and team monitoring permissions | F1 | P0 | M | IN PROGRESS | [MV2-001](#mv2-001) |
 | [MV2-005](#mv2-005) | MonitoringSubject and versioned Monitoring Templates | F1 | P0 | L | PLANNED | [MV2-001](#mv2-001), [MV2-004](#mv2-004) |
@@ -1836,8 +1840,8 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
 | [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — scoped stages 4c/4d/4e/4f DONE | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented; dossier research updates DONE within scope | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
-| [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — global Ask/Search active; retrieval 4f DONE | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
-| [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS — global Ask/Search active; identity/themes DONE | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
+| [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — scoped global Ask and retrieval 4f DONE | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
+| [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS — scoped global Ask/identity/themes DONE | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
 | [MV2-025](#mv2-025) | Admin: accurate source capabilities and access management | F2 | P0 | M | IN PROGRESS — encrypted connector settings implemented | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-018](#mv2-018) |
 | [MV2-026](#mv2-026) | Possible future implementation: C4 official customs-rate connector | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011) |
 | [MV2-027](#mv2-027) | Possible future implementation: C4 currency, thresholds, history and digest | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-008](#mv2-008), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-022](#mv2-022), [MV2-026](#mv2-026) |
@@ -1986,9 +1990,10 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 
 ### MV2-002 — Validate first-value journeys and shared navigation
 
-**Active scoped continuation, 28 September:** global Ask/Search and retained
-command drafts, with scope/dependencies/readiness/acceptance in the Product
-decision above. Existing reading/navigation/retrieval acceptance stays DONE.
+**Completed scoped continuation, 28 September:** global Ask/Search and retained
+command drafts are DONE under the recorded Product decision and exact
+[production acceptance](docs/PRODUCT_GLOBAL_ASK.md). Existing reading/navigation/
+retrieval acceptance stays DONE; broader human and full-spec gates remain open.
 
 **Completed scoped continuation, 28 September:** native reading themes and
 resilient shared preferences are DONE under the recorded scope and exact
@@ -2853,9 +2858,10 @@ Broader email/noise controls and live/human/release gates remain open.
 
 ### MV2-023 — Ask and Marvin in the context of v2 evidence
 
-**Active scoped continuation, 28 September:** global Ask/Search and retained
-command drafts, with scope/dependencies/readiness/acceptance in the Product
-decision above. Existing reading/navigation/retrieval acceptance stays DONE.
+**Completed scoped continuation, 28 September:** global Ask/Search and retained
+command drafts are DONE under the recorded Product decision and exact
+[production acceptance](docs/PRODUCT_GLOBAL_ASK.md). Existing reading/navigation/
+retrieval acceptance stays DONE; broader human and full-spec gates remain open.
 
 **Shared routing contribution, 23 September 2026:** H26-08 implements the owner's
 explicit switch to Swisscom 70B for all organizations and generative requests,
@@ -2904,9 +2910,10 @@ contract. Broader draft/generative/human acceptance remains open.
 
 ### MV2-024 — Clear guidance, accessibility and five languages
 
-**Active scoped continuation, 28 September:** global Ask/Search and retained
-command drafts, with scope/dependencies/readiness/acceptance in the Product
-decision above. Existing reading/navigation/retrieval acceptance stays DONE.
+**Completed scoped continuation, 28 September:** global Ask/Search and retained
+command drafts are DONE under the recorded Product decision and exact
+[production acceptance](docs/PRODUCT_GLOBAL_ASK.md). Existing reading/navigation/
+retrieval acceptance stays DONE; broader human and full-spec gates remain open.
 
 **Completed scoped continuation, 28 September:** native reading themes and
 resilient shared preferences are DONE under the recorded scope and exact

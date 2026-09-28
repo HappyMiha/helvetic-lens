@@ -185,5 +185,7 @@ across native login, history and research routes. It uses existing saved/public
 readers and Marvin context; typed questions are retained on dismissal and scoped
 state clears when authority or page context changes. The same shortcut ownership
 contract applies in both products. Reading tokens, five native locales and
-existing accessible dialogs are reused. Exact release acceptance remains
-VERIFYING until publication; browser/human and full-specification gates stay open.
+existing accessible dialogs are reused. Scoped exact production acceptance is DONE: both Sites 27, 129 origin checks
+and 47 exact assets each; corrected native release serves 46 matching assets
+and passes 49 HTTP checks. Browser/human and full-specification gates remain
+open, as detailed in the linked command acceptance record.
