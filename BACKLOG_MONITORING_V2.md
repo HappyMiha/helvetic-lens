@@ -60,6 +60,16 @@ guidance on the existing shared dossier. Core and both products are published
 and verified; 116 API checks and 179 client tests each passed. See [scope and acceptance](docs/PRODUCT_DOSSIER_TEMPLATES.md).
 This does not complete source readiness or the Market Access proving journey.
 
+## Research continuation — 1.35 bounded evaluation
+
+VERIFYING publication; implementation and measurements complete. MV2-002/020/023/051 reuse the pinned public
+NoMIRACL cache, existing local Laya adapter, 1.34 gate instructions and saved
+controlled-worker traces. Freeze a disjoint sample and explicit call/time budgets;
+measure three-way relevance outcomes and deterministic citation/follow-up integrity.
+Publish IDs/hashes/metrics only. No paid probes or private production records.
+[Scope, readiness and acceptance](docs/PRODUCT_RESEARCH_EVALUATION.md).
+Live hosted/full-workflow quality and all broader parent gates remain OPEN.
+
 ## Owner priority — 1.34 iterative dossier research
 
 DONE within the verified 1.34 scope; scope defined before implementation. MV2-002/020/023 and the new
@@ -2010,7 +2020,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | ID | Task | Phase | Priority | Size | Status | Dependencies |
 |---|---|---|---|---|---|---|
 | [MV2-001](#mv2-001) | Establish extension contracts and MVP compatibility | F0 | P0 | M | DONE | None |
-| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS — iterative research 1.34 DONE — dossier coverage 1.33 DONE; dossier templates 1.32 DONE; structured context 1.31 DONE; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped read recovery/version context/Legal rename/saved comparison/source reading DONE | None |
+| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS — research evaluation 1.35 VERIFYING — iterative research 1.34 DONE — dossier coverage 1.33 DONE; dossier templates 1.32 DONE; structured context 1.31 DONE; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped read recovery/version context/Legal rename/saved comparison/source reading DONE | None |
 | [MV2-003](#mv2-003) | Verify source rights, coverage and contracts for the nine active scenarios | F0 | P0 | L | PLANNED | [MV2-001](#mv2-001) |
 | [MV2-004](#mv2-004) | Personal workspace and team monitoring permissions | F1 | P0 | M | IN PROGRESS | [MV2-001](#mv2-001) |
 | [MV2-005](#mv2-005) | MonitoringSubject and versioned Monitoring Templates | F1 | P0 | L | PLANNED | [MV2-001](#mv2-001), [MV2-004](#mv2-004) |
@@ -2028,10 +2038,10 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-017](#mv2-017) | Create Monitor: nine understandable templates | F2 | P1 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-005](#mv2-005), [MV2-010](#mv2-010), [MV2-015](#mv2-015) |
 | [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS — nine-category settings implemented | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
-| [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | IN PROGRESS — iterative research 1.34 DONE — dossier coverage 1.33 DONE; dossier templates 1.32 DONE; structured context 1.31 DONE; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped version context/Legal rename/saved comparison/source reading DONE | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
+| [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | IN PROGRESS — research evaluation 1.35 VERIFYING — iterative research 1.34 DONE — dossier coverage 1.33 DONE; dossier templates 1.32 DONE; structured context 1.31 DONE; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped version context/Legal rename/saved comparison/source reading DONE | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
 | [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — scoped stages 4c/4d/4e/4f DONE | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented; dossier research updates DONE within scope | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
-| [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — iterative research 1.34 DONE — dossier templates 1.32 DONE; structured context 1.31 DONE; domain setup 1.29 DONE; scoped global Ask and retrieval 4f DONE | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
+| [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — research evaluation 1.35 VERIFYING — iterative research 1.34 DONE — dossier templates 1.32 DONE; structured context 1.31 DONE; domain setup 1.29 DONE; scoped global Ask and retrieval 4f DONE | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
 | [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS — dossier coverage 1.33 DONE; dossier clarity 1.30 DONE; scoped version context/Legal rename/saved comparison/source reading DONE | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
 | [MV2-025](#mv2-025) | Admin: accurate source capabilities and access management | F2 | P0 | M | IN PROGRESS — encrypted connector settings implemented | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-018](#mv2-018) |
 | [MV2-026](#mv2-026) | Possible future implementation: C4 official customs-rate connector | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011) |
@@ -2059,7 +2069,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-048](#mv2-048) | B7: IP review, review deadlines, register changes and consented digest | F5 | P1 | L | IN PROGRESS | [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-046](#mv2-046), [MV2-047](#mv2-047) |
 | [MV2-049](#mv2-049) | B8: Official Ticino auctions — native collection implemented; access/coverage open | F5 | P1 | L | IN PROGRESS | [MV2-003](#mv2-003), [MV2-006](#mv2-006), [MV2-007](#mv2-007), [MV2-011](#mv2-011), [MV2-071](#mv2-071) |
 | [MV2-050](#mv2-050) | B8: Auction profiles, price limits and ending-soon alerts | F5 | P1 | L | IN PROGRESS — adapter conformance checked | [MV2-008](#mv2-008), [MV2-013](#mv2-013), [MV2-016](#mv2-016), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022), [MV2-043](#mv2-043), [MV2-044](#mv2-044), [MV2-049](#mv2-049) |
-| [MV2-051](#mv2-051) | Independent matching and local AI evaluation | F6 | P0 | L | IN PROGRESS | [MV2-023](#mv2-023), [MV2-043](#mv2-043), [MV2-047](#mv2-047) |
+| [MV2-051](#mv2-051) | Independent matching and local AI evaluation | F6 | P0 | L | IN PROGRESS — research evaluation 1.35 VERIFYING | [MV2-023](#mv2-023), [MV2-043](#mv2-043), [MV2-047](#mv2-047) |
 | [MV2-052](#mv2-052) | Operational metrics, degraded mode and source recovery | F6 | P0 | M | IN PROGRESS | [MV2-011](#mv2-011), [MV2-012](#mv2-012), [MV2-025](#mv2-025) |
 | [MV2-053](#mv2-053) | Personal-location privacy and access control | F6 | P0 | M | IN PROGRESS — account erasure and ownership handover implemented | [MV2-004](#mv2-004), [MV2-005](#mv2-005), [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-023](#mv2-023) |
 | [MV2-054](#mv2-054) | Single-server capacity and queues with different priorities | F6 | P0 | L | IN PROGRESS — queue fairness, native batching and scan health verified locally | [MV2-011](#mv2-011), [MV2-014](#mv2-014), [MV2-043](#mv2-043), [MV2-052](#mv2-052) |
@@ -2180,6 +2190,12 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 <a id="mv2-002"></a>
 
 ### MV2-002 — Validate first-value journeys and shared navigation
+
+**Scoped continuation 1.35 — VERIFYING, recorded before code:** bounded public
+relevance evaluation and saved-trace integrity audit. Reuse existing local adapters,
+pinned public inputs and production validators; no private records or paid probes.
+See [scope, budgets and acceptance](docs/PRODUCT_RESEARCH_EVALUATION.md).
+
 
 **Owner priority 1.34 — DONE within scoped implementation/release:** the first
 iterative research slice is published and verified in Core and both clients.
@@ -2951,6 +2967,12 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-020 — Investigate: states, diffs, evidence and history
 
+**Scoped continuation 1.35 — VERIFYING, recorded before code:** bounded public
+relevance evaluation and saved-trace integrity audit. Reuse existing local adapters,
+pinned public inputs and production validators; no private records or paid probes.
+See [scope, budgets and acceptance](docs/PRODUCT_RESEARCH_EVALUATION.md).
+
+
 **Owner priority 1.34 — DONE within scoped implementation/release:** the first
 iterative research slice is published and verified in Core and both clients.
 64 API checks and 189 client tests each passed; exact runtime/assets verified.
@@ -3172,6 +3194,12 @@ Broader email/noise controls and live/human/release gates remain open.
 <a id="mv2-023"></a>
 
 ### MV2-023 — Ask and Marvin in the context of v2 evidence
+
+**Scoped continuation 1.35 — VERIFYING, recorded before code:** bounded public
+relevance evaluation and saved-trace integrity audit. Reuse existing local adapters,
+pinned public inputs and production validators; no private records or paid probes.
+See [scope, budgets and acceptance](docs/PRODUCT_RESEARCH_EVALUATION.md).
+
 
 **Owner priority 1.34 — DONE within scoped implementation/release:** the first
 iterative research slice is published and verified in Core and both clients.
@@ -4304,6 +4332,12 @@ The broader task remains IN PROGRESS pending live source and human acceptance.
 <a id="mv2-051"></a>
 
 ### MV2-051 — Independent matching and local AI evaluation
+
+**Scoped continuation 1.35 — VERIFYING, recorded before code:** bounded public
+relevance evaluation and saved-trace integrity audit. Reuse existing local adapters,
+pinned public inputs and production validators; no private records or paid probes.
+See [scope, budgets and acceptance](docs/PRODUCT_RESEARCH_EVALUATION.md).
+
 
 **Product retrieval evidence, 28 September:** scoped stage 4f uses the independent
 human-labeled NoMIRACL development/fresh held-out protocol above and the linked

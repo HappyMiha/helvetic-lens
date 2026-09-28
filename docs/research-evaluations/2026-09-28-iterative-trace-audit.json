@@ -1,0 +1,65 @@
+{
+  "recorded_at": "2026-09-28T16:34:39.510026+00:00",
+  "results": [
+    {
+      "receipt": "docs/research-evaluations/2026-09-28-iterative-pharma-fixture.json",
+      "sha256": "37fdb63bba1fcbd2c6cc26c0d253a421f928904d20c73d666fe36a73d5cab672",
+      "product": "pharma",
+      "run_id": "9e60022f-d371-4601-b525-3b2bac4b3831",
+      "passed": true,
+      "verified_citation_links": 14,
+      "errors": [],
+      "source_count": 3,
+      "unique_body_hashes": 3,
+      "duplicate_bodies": 0,
+      "contradicted_claim_ids": [
+        "ad8d748f-d951-41a3-a85c-7b0e6b258281"
+      ],
+      "followups": [
+        {
+          "question_id": "4ad7ca86-e99f-4e76-bc64-8ec880f6cd79",
+          "valid_linkage": true,
+          "new_evidence_count": 1,
+          "same_claim_revision_changed": true
+        }
+      ],
+      "unresolved_questions": 1,
+      "reported_active_seconds": 2.258,
+      "estimated_cost_usd": null,
+      "independent_publisher_count": null,
+      "factual_accuracy": null,
+      "scope": "Deterministic structural audit of fictional controlled-adapter trace; exact citation is not entailment or independent factual verification."
+    },
+    {
+      "receipt": "docs/research-evaluations/2026-09-28-iterative-legal-fixture.json",
+      "sha256": "6f008f4a1531d3919ece63e71ca642c2cb6968cdc90e275cc00362a0a57b5d36",
+      "product": "legal",
+      "run_id": "fc7e32ff-f233-4385-b014-c49323bee302",
+      "passed": true,
+      "verified_citation_links": 14,
+      "errors": [],
+      "source_count": 3,
+      "unique_body_hashes": 3,
+      "duplicate_bodies": 0,
+      "contradicted_claim_ids": [
+        "d675bc0d-c87d-4d27-96f5-6085a551ea0e"
+      ],
+      "followups": [
+        {
+          "question_id": "db9851be-714a-4a76-8322-e8aa578c2058",
+          "valid_linkage": true,
+          "new_evidence_count": 1,
+          "same_claim_revision_changed": true
+        }
+      ],
+      "unresolved_questions": 1,
+      "reported_active_seconds": 2.07,
+      "estimated_cost_usd": null,
+      "independent_publisher_count": null,
+      "factual_accuracy": null,
+      "scope": "Deterministic structural audit of fictional controlled-adapter trace; exact citation is not entailment or independent factual verification."
+    }
+  ],
+  "passed": true,
+  "external_calls": 0
+}
