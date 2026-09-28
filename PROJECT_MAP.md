@@ -2,6 +2,18 @@
 
 One agent develops complete features on **main**, following [the development cycle](docs/DEVELOPMENT.md).
 The shared platform is **helveticlens.ch on HappySnowman**, including Monitoring features.
+
+The owner's 28 September [Unified Target Architecture](docs/UNIFIED_TARGET_ARCHITECTURE_SPEC.md)
+sets one Core with LegalPack and PharmaPack. Start with the
+[current-state audit](docs/architecture/current-state.md),
+[target map and nine-question proposal](docs/architecture/target-architecture.md),
+[capability gap matrix](docs/architecture/core-gap-analysis.md),
+[Legal audit](docs/domains/legal-current-state.md) and
+[Pharma implementation plan](docs/domains/pharma-implementation-plan.md).
+Phase 0 documents reality and the migration path; target implementation and
+domain acceptance remain open. Existing product client repositories and working
+native workflows are preserved during incremental migration.
+
 The owner authorized separate Pharma and Legal product clients; Legal is the confirmed name from 28 September 2026.
 see [delivery and release evidence](docs/PRODUCT_DOSSIERS.md).
 The [test and release policy](docs/TESTING.md) separates platform smoke, functional
