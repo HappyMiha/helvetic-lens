@@ -180,5 +180,5 @@ visual/product acceptance remains separate.
 
 [Source reading and inspectable provenance](docs/PRODUCT_SOURCE_READING.md) aligns
 native saved/corpus evidence and both product readers with Brandbook hierarchy.
-Exact release verification remains pending; broader source-editor and visual
+Exact scoped release verification passes; broader source-editor and visual
 acceptance stays open.

@@ -197,5 +197,7 @@ The [source-reading migration](PRODUCT_SOURCE_READING.md) applies Brandbook type
 reading measure and progressive provenance to native saved/corpus evidence and
 both product source readers. Retained counts, capture/document dates and unknown
 source classification stay distinct. Exact references and authority are retained.
-Scoped local and production verification is pending; full visual acceptance stays
-IN PROGRESS.
+Scoped exact production acceptance is DONE: both Sites 28, 130 origin checks
+and 47 exact assets each, plus 46 native assets and 51 native HTTP
+checks. All 391 native frontend, 142 cases per client and 55 affected API cases
+pass. Full visual/human acceptance stays IN PROGRESS.
