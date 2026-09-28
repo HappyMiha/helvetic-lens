@@ -5,6 +5,7 @@ import "./reading-themes.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { THEME_BOOTSTRAP } from "@/lib/theme-preference";
 import { AuthGate } from "@/components/auth-gate";
+import { NativeAskSearchProvider } from "@/components/native-ask-search";
 import { I18nProvider } from "@/lib/i18n";
 
 export const metadata: Metadata = {
@@ -31,7 +32,9 @@ export default function RootLayout({
       <body>
         <I18nProvider>
           <ThemeProvider>
-            <AuthGate>{children}</AuthGate>
+            <AuthGate>
+              <NativeAskSearchProvider>{children}</NativeAskSearchProvider>
+            </AuthGate>
           </ThemeProvider>
         </I18nProvider>
       </body>

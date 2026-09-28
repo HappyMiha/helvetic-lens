@@ -170,3 +170,10 @@ stay separate.
 surfaces and login to shared Brandbook palettes. The native platform and both
 clients use the same device-local preference behavior. Scoped local and exact
 production acceptance are distinct from the remaining full visual/product gates.
+
+
+[Global Ask/Search](docs/PRODUCT_GLOBAL_ASK.md) adds a native entry for authorized
+saved readers, author-published product knowledge and conflict-safe preparation
+in existing Marvin context. Both product commands retain dismissed questions and
+share safe keyboard ownership. Context transitions reset only the command; full
+visual/product acceptance remains separate.

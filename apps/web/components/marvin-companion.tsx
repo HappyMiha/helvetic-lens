@@ -5,8 +5,14 @@ import { createPortal } from "react-dom";
 import { MonitorThis } from "@/components/monitor-this";
 import { MarvinPanel } from "@/components/marvin-panel";
 import { SavedBriefContent } from "@/components/feed-interest-brief";
-import {ASSISTANT_BRIEF_EVENT,assistantBriefEventId,assistantBriefCopy} from "@/lib/assistant-brief";
+import {
+  ASSISTANT_BRIEF_EVENT,
+  assistantBriefEventId,
+  assistantBriefCopy,
+} from "@/lib/assistant-brief";
 import { useAuth } from "./auth-gate";
+import { useNativeAsk } from "./native-ask-search";
+import { askBoundary, askDraftDecision } from "@/lib/ask-interaction";
 import { marvinPrivacyCopy } from "@/lib/marvin-privacy-copy";
 import { monitoringAssistantRoute } from "@/lib/monitoring-assistant";
 import { marvinHistoryCopy } from "@/lib/marvin-history-copy";
@@ -96,7 +102,13 @@ type AssistantRuntime = {
   provider?: string;
   display_name: string;
   ready: boolean;
-  state: "ready" | "degraded" | "starting" | "stopped" | "needs_download" | "unconfigured";
+  state:
+    | "ready"
+    | "degraded"
+    | "starting"
+    | "stopped"
+    | "needs_download"
+    | "unconfigured";
   selected_model: { display_name: string };
   policy: { cloud_fallback: boolean; single_runtime: boolean };
 };
@@ -136,11 +148,11 @@ function runtimeStatusKey(
   fallbackReady: boolean,
 ) {
   if (!runtime)
-    return fallbackReady
-      ? "shell.localAiReady"
-      : "shell.localAiUnavailable";
+    return fallbackReady ? "shell.localAiReady" : "shell.localAiUnavailable";
   if (runtime.execution === "remote")
-    return runtime.ready ? "companion.remoteReady" : "companion.remoteUnavailable";
+    return runtime.ready
+      ? "companion.remoteReady"
+      : "companion.remoteUnavailable";
   if (runtime.state === "ready") return "companion.localReady";
   if (runtime.state === "degraded") return "companion.localLimited";
   if (runtime.state === "starting") return "companion.localStarting";
@@ -182,16 +194,21 @@ function routeEntity(pathname: string): AssistantEntityRef | null {
 
 function routeContext(pathname: string): RouteContext {
   const monitoring = monitoringAssistantRoute(pathname);
-  if (monitoring) return {
-    actionHref: "/monitoring",
-    actionKey: "companion.monitoring.action",
-    descriptionKey: `companion.monitoring.${monitoring}.description`,
-    titleKey: monitoring === "/pollen-watch" ? "nav.pollenWatch"
-      : monitoring === "/river-watch" ? "nav.riverWatch"
-      : monitoring === "/air-watch" ? "nav.airWatch"
-      : `companion.monitoring.${monitoring}.title`,
-    quipKey: "companion.monitoring.boundary",
-  };
+  if (monitoring)
+    return {
+      actionHref: "/monitoring",
+      actionKey: "companion.monitoring.action",
+      descriptionKey: `companion.monitoring.${monitoring}.description`,
+      titleKey:
+        monitoring === "/pollen-watch"
+          ? "nav.pollenWatch"
+          : monitoring === "/river-watch"
+            ? "nav.riverWatch"
+            : monitoring === "/air-watch"
+              ? "nav.airWatch"
+              : `companion.monitoring.${monitoring}.title`,
+      quipKey: "companion.monitoring.boundary",
+    };
   if (pathname.startsWith("/compare/")) {
     return {
       actionHref: `${pathname}?task=impact`,
@@ -330,6 +347,9 @@ export function MarvinCompanion({
   const pathname = usePathname();
   const { locale, t } = useI18n();
   const { session } = useAuth();
+  const { register } = useNativeAsk();
+  const preparedFocus = useRef(false);
+  const preparedInput = useRef<HTMLTextAreaElement>(null);
   const privacyCopy = marvinPrivacyCopy[locale];
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [preferences, setPreferences] =
@@ -370,11 +390,25 @@ export function MarvinCompanion({
   const deliveryRef = useRef<RemarkDelivery | null>(null);
   const knownAiJobStates = useRef<Map<string, string> | null>(null);
   const context = useMemo(() => routeContext(pathname), [pathname]);
-  const selectionScope = JSON.stringify([pathname, session?.organization?.id, session?.user?.id]);
-  const [briefSelection,setBriefSelection] = useState<{eventId:string;scope:string}|null>(null);
-  const briefEventId = briefSelection?.scope === selectionScope ? briefSelection.eventId : null;
-  const entity = useMemo<AssistantEntityRef|null>(() => briefEventId ? {kind:"regulatory_event",id:briefEventId} : routeEntity(pathname), [pathname,briefEventId]);
-  useEffect(()=>setBriefSelection(null),[selectionScope]);
+  const selectionScope = JSON.stringify([
+    pathname,
+    session?.organization?.id,
+    session?.user?.id,
+  ]);
+  const [briefSelection, setBriefSelection] = useState<{
+    eventId: string;
+    scope: string;
+  } | null>(null);
+  const briefEventId =
+    briefSelection?.scope === selectionScope ? briefSelection.eventId : null;
+  const entity = useMemo<AssistantEntityRef | null>(
+    () =>
+      briefEventId
+        ? { kind: "regulatory_event", id: briefEventId }
+        : routeEntity(pathname),
+    [pathname, briefEventId],
+  );
+  useEffect(() => setBriefSelection(null), [selectionScope]);
   const comparisonId = pathname.startsWith("/compare/")
     ? pathname.slice("/compare/".length)
     : "";
@@ -423,17 +457,21 @@ export function MarvinCompanion({
     setHydrated(true);
   }, []);
 
-  useEffect(()=>{
-    const receive=(event:Event)=>{
-      const eventId=assistantBriefEventId(event);
-      if(!eventId)return;
-      setBriefSelection({eventId,scope:selectionScope});
-      setPreferences(current=>({...current,enabled:true,contextAttached:true}));
+  useEffect(() => {
+    const receive = (event: Event) => {
+      const eventId = assistantBriefEventId(event);
+      if (!eventId) return;
+      setBriefSelection({ eventId, scope: selectionScope });
+      setPreferences((current) => ({
+        ...current,
+        enabled: true,
+        contextAttached: true,
+      }));
       onOpenChange(true);
     };
-    window.addEventListener(ASSISTANT_BRIEF_EVENT,receive);
-    return ()=>window.removeEventListener(ASSISTANT_BRIEF_EVENT,receive);
-  },[selectionScope,onOpenChange]);
+    window.addEventListener(ASSISTANT_BRIEF_EVENT, receive);
+    return () => window.removeEventListener(ASSISTANT_BRIEF_EVENT, receive);
+  }, [selectionScope, onOpenChange]);
 
   useEffect(() => {
     let active = true;
@@ -448,6 +486,7 @@ export function MarvinCompanion({
     setRuntime(null);
     setQuestionDraft("");
     setQuestionRevision(0);
+    preparedFocus.current = false;
     draftTouched.current = false;
     setChatDraft("");
     setChatPending(false);
@@ -518,7 +557,15 @@ export function MarvinCompanion({
       }
     });
     return cleanup;
-  }, [comparisonId, contextActive, draftKey, entity, locale, pathname,briefEventId]);
+  }, [
+    comparisonId,
+    contextActive,
+    draftKey,
+    entity,
+    locale,
+    pathname,
+    briefEventId,
+  ]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -938,6 +985,65 @@ export function MarvinCompanion({
     }
   }
 
+  useEffect(
+    () =>
+      register({
+        boundary: askBoundary(
+          pathname,
+          session?.organization?.id,
+          session?.user?.id,
+          locale,
+          JSON.stringify([
+            session?.authenticated,
+            session?.anonymous_development,
+            session?.role,
+            session?.platform_admin,
+          ]),
+        ),
+        prepare: (question) => {
+          const decision = askDraftDecision(
+            comparisonId ? questionDraft : chatDraft,
+            question,
+            contextActive && conversationLoaded,
+          );
+          if (decision === "ready") {
+            if (comparisonId) updateQuestionDraft(question.trim());
+            else setChatDraft(question.trim());
+            preparedFocus.current = true;
+          }
+          return decision;
+        },
+        open: () => onOpenChange(true),
+        close: () => onOpenChange(false),
+      }),
+    [
+      register,
+      pathname,
+      session?.organization?.id,
+      session?.user?.id,
+      session?.authenticated,
+      session?.anonymous_development,
+      session?.role,
+      session?.platform_admin,
+      locale,
+      comparisonId,
+      questionDraft,
+      chatDraft,
+      contextActive,
+      conversationLoaded,
+      onOpenChange,
+    ],
+  );
+
+  useEffect(() => {
+    if (!open || !preparedFocus.current) return;
+    const frame = requestAnimationFrame(() => {
+      preparedInput.current?.focus({ preventScroll: true });
+      preparedFocus.current = false;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [open]);
+
   async function handQuestionToCitedAsk(event: React.FormEvent) {
     event.preventDefault();
     const question = questionDraft.trim();
@@ -1126,12 +1232,30 @@ export function MarvinCompanion({
 
           <div className="marvin-drawer-body">
             {voiceControls}
-            {contextActive && open && briefEventId && <section data-marvin-saved-brief className="space-y-3 min-w-0 break-words">
-              {contextLabel && <h3 className="font-semibold">{contextLabel}</h3>}
-              <p className="text-sm">{assistantBriefCopy[locale].help}</p>
-              <button type="button" className="underline min-h-11" data-marvin-page-context onClick={()=>setBriefSelection(null)}>{assistantBriefCopy[locale].back}</button>
-              <SavedBriefContent key={`${selectionScope}:${briefEventId}:${locale}`} eventId={briefEventId} readOnly/>
-            </section>}
+            {contextActive && open && briefEventId && (
+              <section
+                data-marvin-saved-brief
+                className="space-y-3 min-w-0 break-words"
+              >
+                {contextLabel && (
+                  <h3 className="font-semibold">{contextLabel}</h3>
+                )}
+                <p className="text-sm">{assistantBriefCopy[locale].help}</p>
+                <button
+                  type="button"
+                  className="underline min-h-11"
+                  data-marvin-page-context
+                  onClick={() => setBriefSelection(null)}
+                >
+                  {assistantBriefCopy[locale].back}
+                </button>
+                <SavedBriefContent
+                  key={`${selectionScope}:${briefEventId}:${locale}`}
+                  eventId={briefEventId}
+                  readOnly
+                />
+              </section>
+            )}
             <div className="marvin-status-row">
               <button
                 aria-label={
@@ -1165,14 +1289,21 @@ export function MarvinCompanion({
 
             {runtime && (
               <p className="marvin-runtime-detail">
-                {t(runtime.execution === "remote" ? "companion.runtimeRemote" : "companion.runtimeProfile", {
-                  profile: runtime.display_name,
-                  model: runtime.selected_model.display_name,
-                })}
+                {t(
+                  runtime.execution === "remote"
+                    ? "companion.runtimeRemote"
+                    : "companion.runtimeProfile",
+                  {
+                    profile: runtime.display_name,
+                    model: runtime.selected_model.display_name,
+                  },
+                )}
               </p>
             )}
             {runtime?.execution === "remote" && (
-              <p className="marvin-runtime-detail">{t("companion.remoteDisclosure")}</p>
+              <p className="marvin-runtime-detail">
+                {t("companion.remoteDisclosure")}
+              </p>
             )}
 
             {contextAttached ? (
@@ -1197,7 +1328,9 @@ export function MarvinCompanion({
             {contextAttached && (
               <Link
                 className="marvin-primary-action"
-                href={briefEventId ? `/?event=${briefEventId}` : context.actionHref}
+                href={
+                  briefEventId ? `/?event=${briefEventId}` : context.actionHref
+                }
                 onClick={() => onOpenChange(false)}
               >
                 <span>
@@ -1227,7 +1360,15 @@ export function MarvinCompanion({
                     <MessageCircle size={15} />
                     <strong>{t("companion.chatTitle")}</strong>
                   </span>
-                  <small>{t(runtime?.execution === "remote" ? "companion.chatRemote" : runtime ? "companion.chatLocal" : "companion.chatTitle")}</small>
+                  <small>
+                    {t(
+                      runtime?.execution === "remote"
+                        ? "companion.chatRemote"
+                        : runtime
+                          ? "companion.chatLocal"
+                          : "companion.chatTitle",
+                    )}
+                  </small>
                 </div>
                 <div className="marvin-chat-log" aria-live="polite">
                   {chatMessages.length === 0 && (
@@ -1300,13 +1441,19 @@ export function MarvinCompanion({
                     className="button secondary"
                     data-monitoring-assistant-help
                     disabled={chatPending || !conversationLoaded}
-                    onClick={(event) => void chatWithMarvin(event, t("companion.monitoring.question"))}
+                    onClick={(event) =>
+                      void chatWithMarvin(
+                        event,
+                        t("companion.monitoring.question"),
+                      )
+                    }
                   >
                     {t("companion.monitoring.help")}
                   </button>
                 )}
                 <form onSubmit={chatWithMarvin}>
                   <textarea
+                    ref={comparisonId ? undefined : preparedInput}
                     aria-label={t("companion.chatPlaceholder")}
                     maxLength={2000}
                     onChange={(event) => setChatDraft(event.target.value)}
@@ -1345,6 +1492,7 @@ export function MarvinCompanion({
                 </label>
                 <textarea
                   id="marvin-question"
+                  ref={preparedInput}
                   maxLength={2000}
                   onChange={(event) => updateQuestionDraft(event.target.value)}
                   placeholder={t("companion.askPlaceholder")}

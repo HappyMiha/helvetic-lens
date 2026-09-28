@@ -176,3 +176,14 @@ git-8ea723c934b8 serves 40 matching reading/navigation assets and passes 43 HTTP
 checks. The final control-boundary correction uses the stronger tested input
 token. Exact source, publication evidence and remaining gates are in the linked
 reading-theme record. The full visual specification remains IN PROGRESS.
+
+
+## Native global Ask/Search and retained commands — 1.24
+
+The [global command journey](PRODUCT_GLOBAL_ASK.md) extends Brandbook controls
+across native login, history and research routes. It uses existing saved/public
+readers and Marvin context; typed questions are retained on dismissal and scoped
+state clears when authority or page context changes. The same shortcut ownership
+contract applies in both products. Reading tokens, five native locales and
+existing accessible dialogs are reused. Exact release acceptance remains
+VERIFYING until publication; browser/human and full-specification gates stay open.
