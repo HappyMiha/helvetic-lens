@@ -1,6 +1,6 @@
 # Saved comparison clarity and selection safety
 
-Status: VERIFYING — scoped release 1.26 under MV2-002/020/024. Scope,
+Status: DONE — scoped production release 1.26 under MV2-002/020/024. Scope,
 dependencies, source readiness and acceptance were recorded before implementation.
 The broader MV2 tasks and complete dynamic/visual specifications remain IN PROGRESS.
 
@@ -48,11 +48,43 @@ The full native frontend/localization/typecheck tree passes 403 cases, including
 builds pass. The exact API Ruff gate, current backlog smoke and protected-value
 source/build scan pass. All 71 affected API contract cases pass, covering complete native pairs,
 concurrent choices, authorization/CSRF/viewers, revoked evidence, watched-page
-captures and the backlog smoke. Exact production verification remains pending
-before scoped DONE.
+captures and the backlog smoke. Exact production verification passes as recorded below.
 
 No browser/preview/DOM/screenshot QA, production private records, paid provider
 probes, new registrations/keys or outgoing messages are used in this background
 cycle. Human visual, language and professional acceptance remains open. Provider,
 model, source-rights, publication and delivery contracts are unchanged. All nine
 Monitoring directions and existing deferred work remain intact.
+
+
+## Exact production acceptance — 28 September 2026
+
+Native implementation e12898b3d23ba13d2780ae67de3f844e80e5e156 was committed, immediately pushed and
+activated normally at 2026-09-28T08:24:31+00:00. Exact public readiness and the
+healthy immutable web image agree on git-e12898b3d23b. Saved-comparison,
+source-reader, command, navigation and theme bundles include 47 matching
+served assets and pass 54 HTTP checks, including anonymous denial of native
+comparison/candidate and private source metadata. All nine directions, five
+comparison locales, the H identity and early themes remain present. This is
+programmatic evidence, not browser QA.
+
+Pharma 1b7370b9077e2f5b18ccad008986bb8548875c53 and Loyer
+0f6cf83054777e5345cd08af82c27cd80ecc1edd were immediately pushed to GitHub main and the existing
+Sites source repositories. Both exact archive-backed Sites 29 publications
+succeeded. All 136 files per archive match the validated local build; transport
+and Sites-reported hashes remain separate. Both custom origins pass 131 HTTP,
+auth, guide and compiled-contract checks and 47 exact assets each. Both exact
+GitHub CI runs passed.
+
+Runtime proof matches 60 source modules, including native comparison views,
+selection writes and product watched-page capture, unchanged migration
+06d495bef125, current-rights queries, four native runtimes, five scheduler modules
+and the minute cadence. Laya and pinned local E5 remain healthy. Model/parser
+probes use synthetic local input only. No API, schema, provider, model, key,
+source-rights, publication or delivery contract changed.
+
+The [sanitized release receipt](product-releases/2026-09-28-1.26.0.json) records
+source, archives, activation and exact verification. This scoped comparison
+journey is DONE; complete dynamic/visual specifications, broader MV2-002/020/024
+and human/professional acceptance remain IN PROGRESS. The hourly heartbeat stays
+ACTIVE; deferred work remains deferred.

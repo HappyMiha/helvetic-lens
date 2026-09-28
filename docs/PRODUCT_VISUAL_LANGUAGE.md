@@ -209,5 +209,7 @@ baseline from the persisted native comparison. Actual counts, capture times and
 exact version identities precede readable paired quotations. Both product watch
 readers distinguish full retained-text counts from bounded excerpts and expose
 revision-pinned old/new versions. Brandbook hierarchy, neutral surfaces, 16/26 body
-type, responsive pairs and progressive details are used. Local gates and exact
-production verification remain pending; full visual/human acceptance stays open.
+type, responsive pairs and progressive details are used. All 403 native frontend, 147 cases per client and 71 affected API cases
+pass. Scoped exact production acceptance is DONE: both Sites 29, 131 origin
+checks/47 assets each, 47 native assets/54 HTTP checks and 60-module
+runtime proof. Full visual/human acceptance stays open.

@@ -186,5 +186,5 @@ acceptance stays open.
 [Saved comparison clarity and selection safety](docs/PRODUCT_SAVED_COMPARISONS.md)
 separates native baseline drafts from persisted evidence and makes both product
 page-change captures inspectable. Server receipts and exact saved-version actions
-retain existing access and revision boundaries; scoped production acceptance is
-separate from the full visual and professional review gates.
+retain existing access and revision boundaries. Scoped exact production acceptance
+passes; full visual and professional review gates remain open.
