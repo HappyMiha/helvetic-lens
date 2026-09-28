@@ -1,0 +1,5260 @@
+{
+  "study": {
+    "schema": "research-gate-policy-study/v1",
+    "created_at": "2026-09-28T17:37:56.653592+00:00",
+    "policy": "laya-rejection-guard/v1",
+    "thresholds": [
+      0.5,
+      0.65,
+      0.8,
+      0.9,
+      0.95
+    ],
+    "policy_sha256": "d17e54a7841f2985dbc69ab82d56873045970969ff6633f3dbfd3cd1210a97fe",
+    "plans": {
+      "development": {
+        "plan_sha256": "5eb9f09d92e0af0b7c3fa192b1416789597b322c1780a7f1280a717cb8192013",
+        "cases": 121,
+        "queries": 12
+      },
+      "validation": {
+        "plan_sha256": "1b993c4c50bc396f9dc5e89ff0c052970326cbcf4144ce65c7d4c79ff32a809d",
+        "cases": 120,
+        "queries": 12
+      }
+    },
+    "limits": {
+      "local_calls": 241,
+      "seconds": 480,
+      "per_stage": {
+        "development": {
+          "calls": 121,
+          "seconds": 240,
+          "per_call_seconds": 12
+        },
+        "validation": {
+          "calls": 120,
+          "seconds": 240,
+          "per_call_seconds": 12
+        }
+      }
+    },
+    "heldout_reuse": false,
+    "prior_query_overlap": 0,
+    "split_overlap": 0,
+    "sha256": "0ec4a6f3b78003a43ecc9375f38e9e1eec790462642b97a42058b0c02ffed7e1"
+  },
+  "selection": {
+    "study_sha256": "0ec4a6f3b78003a43ecc9375f38e9e1eec790462642b97a42058b0c02ffed7e1",
+    "development_journal_sha256": "dc68b1eabf4365707c47305b80a80179af92a7f105ed3b0031679e2e2c6b0646",
+    "selected_at": "2026-09-28T17:40:01.564395+00:00",
+    "result": {
+      "policy": "laya-rejection-guard/v1",
+      "threshold": null,
+      "selected_from": "development_only",
+      "candidates": [
+        {
+          "threshold": 0.5,
+          "baseline": {
+            "groups": {
+              "all": {
+                "planned": 121,
+                "positive_labels": 21,
+                "negative_labels": 100,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 15,
+                    "uncertain": 60,
+                    "unrelated": 25,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 10,
+                    "uncertain": 10,
+                    "unrelated": 1,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.47619,
+                "positive_harmful_rejection_rate": 0.047619,
+                "negative_rejection_rate": 0.25,
+                "negative_false_admission_rate": 0.15,
+                "admission_precision": 0.4
+              },
+              "english": {
+                "planned": 41,
+                "positive_labels": 13,
+                "negative_labels": 28,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 6,
+                    "uncertain": 17,
+                    "unrelated": 5,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 9,
+                    "uncertain": 3,
+                    "unrelated": 1,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.692308,
+                "positive_harmful_rejection_rate": 0.076923,
+                "negative_rejection_rate": 0.178571,
+                "negative_false_admission_rate": 0.214286,
+                "admission_precision": 0.6
+              },
+              "french": {
+                "planned": 40,
+                "positive_labels": 2,
+                "negative_labels": 38,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 6,
+                    "uncertain": 17,
+                    "unrelated": 15,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 0,
+                    "uncertain": 2,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.0,
+                "positive_harmful_rejection_rate": 0.0,
+                "negative_rejection_rate": 0.394737,
+                "negative_false_admission_rate": 0.157895,
+                "admission_precision": 0.0
+              },
+              "german": {
+                "planned": 40,
+                "positive_labels": 6,
+                "negative_labels": 34,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 3,
+                    "uncertain": 26,
+                    "unrelated": 5,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 1,
+                    "uncertain": 5,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.166667,
+                "positive_harmful_rejection_rate": 0.0,
+                "negative_rejection_rate": 0.147059,
+                "negative_false_admission_rate": 0.088235,
+                "admission_precision": 0.25
+              }
+            },
+            "observed": 121,
+            "latency_ms": {
+              "count": 121,
+              "mean": 564.94,
+              "p95_nearest_rank": 709.613
+            },
+            "estimated_cost_usd": null,
+            "cost_basis": "Local CPU/hosting unmetered; unknown, not zero.",
+            "interpretation": "Agreement with full-passage human relevance labels given bounded candidate prefixes. Uncertain, unavailable, interrupted and unrun are separate; no truth, professional quality or whole-web recall score."
+          },
+          "guarded": {
+            "groups": {
+              "all": {
+                "planned": 121,
+                "positive_labels": 21,
+                "negative_labels": 100,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 15,
+                    "uncertain": 65,
+                    "unrelated": 20,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 10,
+                    "uncertain": 10,
+                    "unrelated": 1,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.47619,
+                "positive_harmful_rejection_rate": 0.047619,
+                "negative_rejection_rate": 0.2,
+                "negative_false_admission_rate": 0.15,
+                "admission_precision": 0.4
+              },
+              "english": {
+                "planned": 41,
+                "positive_labels": 13,
+                "negative_labels": 28,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 6,
+                    "uncertain": 19,
+                    "unrelated": 3,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 9,
+                    "uncertain": 3,
+                    "unrelated": 1,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.692308,
+                "positive_harmful_rejection_rate": 0.076923,
+                "negative_rejection_rate": 0.107143,
+                "negative_false_admission_rate": 0.214286,
+                "admission_precision": 0.6
+              },
+              "french": {
+                "planned": 40,
+                "positive_labels": 2,
+                "negative_labels": 38,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 6,
+                    "uncertain": 19,
+                    "unrelated": 13,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 0,
+                    "uncertain": 2,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.0,
+                "positive_harmful_rejection_rate": 0.0,
+                "negative_rejection_rate": 0.342105,
+                "negative_false_admission_rate": 0.157895,
+                "admission_precision": 0.0
+              },
+              "german": {
+                "planned": 40,
+                "positive_labels": 6,
+                "negative_labels": 34,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 3,
+                    "uncertain": 27,
+                    "unrelated": 4,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 1,
+                    "uncertain": 5,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.166667,
+                "positive_harmful_rejection_rate": 0.0,
+                "negative_rejection_rate": 0.117647,
+                "negative_false_admission_rate": 0.088235,
+                "admission_precision": 0.25
+              }
+            },
+            "observed": 121,
+            "latency_ms": {
+              "count": 121,
+              "mean": 564.94,
+              "p95_nearest_rank": 709.613
+            },
+            "estimated_cost_usd": null,
+            "cost_basis": "Local CPU/hosting unmetered; unknown, not zero.",
+            "interpretation": "Agreement with full-passage human relevance labels given bounded candidate prefixes. Uncertain, unavailable, interrupted and unrun are separate; no truth, professional quality or whole-web recall score."
+          },
+          "complete": true,
+          "deferred_rejections": 5,
+          "extra_review_fraction": 0.04132231404958678,
+          "negative_rejections_retained": 20,
+          "negative_rejections_baseline": 25,
+          "positive_rejections": 1,
+          "positive_rejections_baseline": 1,
+          "positive_labels": 21
+        },
+        {
+          "threshold": 0.65,
+          "baseline": {
+            "groups": {
+              "all": {
+                "planned": 121,
+                "positive_labels": 21,
+                "negative_labels": 100,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 15,
+                    "uncertain": 60,
+                    "unrelated": 25,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 10,
+                    "uncertain": 10,
+                    "unrelated": 1,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.47619,
+                "positive_harmful_rejection_rate": 0.047619,
+                "negative_rejection_rate": 0.25,
+                "negative_false_admission_rate": 0.15,
+                "admission_precision": 0.4
+              },
+              "english": {
+                "planned": 41,
+                "positive_labels": 13,
+                "negative_labels": 28,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 6,
+                    "uncertain": 17,
+                    "unrelated": 5,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 9,
+                    "uncertain": 3,
+                    "unrelated": 1,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.692308,
+                "positive_harmful_rejection_rate": 0.076923,
+                "negative_rejection_rate": 0.178571,
+                "negative_false_admission_rate": 0.214286,
+                "admission_precision": 0.6
+              },
+              "french": {
+                "planned": 40,
+                "positive_labels": 2,
+                "negative_labels": 38,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 6,
+                    "uncertain": 17,
+                    "unrelated": 15,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 0,
+                    "uncertain": 2,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.0,
+                "positive_harmful_rejection_rate": 0.0,
+                "negative_rejection_rate": 0.394737,
+                "negative_false_admission_rate": 0.157895,
+                "admission_precision": 0.0
+              },
+              "german": {
+                "planned": 40,
+                "positive_labels": 6,
+                "negative_labels": 34,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 3,
+                    "uncertain": 26,
+                    "unrelated": 5,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 1,
+                    "uncertain": 5,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.166667,
+                "positive_harmful_rejection_rate": 0.0,
+                "negative_rejection_rate": 0.147059,
+                "negative_false_admission_rate": 0.088235,
+                "admission_precision": 0.25
+              }
+            },
+            "observed": 121,
+            "latency_ms": {
+              "count": 121,
+              "mean": 564.94,
+              "p95_nearest_rank": 709.613
+            },
+            "estimated_cost_usd": null,
+            "cost_basis": "Local CPU/hosting unmetered; unknown, not zero.",
+            "interpretation": "Agreement with full-passage human relevance labels given bounded candidate prefixes. Uncertain, unavailable, interrupted and unrun are separate; no truth, professional quality or whole-web recall score."
+          },
+          "guarded": {
+            "groups": {
+              "all": {
+                "planned": 121,
+                "positive_labels": 21,
+                "negative_labels": 100,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 15,
+                    "uncertain": 69,
+                    "unrelated": 16,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 10,
+                    "uncertain": 10,
+                    "unrelated": 1,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.47619,
+                "positive_harmful_rejection_rate": 0.047619,
+                "negative_rejection_rate": 0.16,
+                "negative_false_admission_rate": 0.15,
+                "admission_precision": 0.4
+              },
+              "english": {
+                "planned": 41,
+                "positive_labels": 13,
+                "negative_labels": 28,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 6,
+                    "uncertain": 19,
+                    "unrelated": 3,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 9,
+                    "uncertain": 3,
+                    "unrelated": 1,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.692308,
+                "positive_harmful_rejection_rate": 0.076923,
+                "negative_rejection_rate": 0.107143,
+                "negative_false_admission_rate": 0.214286,
+                "admission_precision": 0.6
+              },
+              "french": {
+                "planned": 40,
+                "positive_labels": 2,
+                "negative_labels": 38,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 6,
+                    "uncertain": 20,
+                    "unrelated": 12,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 0,
+                    "uncertain": 2,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.0,
+                "positive_harmful_rejection_rate": 0.0,
+                "negative_rejection_rate": 0.315789,
+                "negative_false_admission_rate": 0.157895,
+                "admission_precision": 0.0
+              },
+              "german": {
+                "planned": 40,
+                "positive_labels": 6,
+                "negative_labels": 34,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 3,
+                    "uncertain": 30,
+                    "unrelated": 1,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 1,
+                    "uncertain": 5,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.166667,
+                "positive_harmful_rejection_rate": 0.0,
+                "negative_rejection_rate": 0.029412,
+                "negative_false_admission_rate": 0.088235,
+                "admission_precision": 0.25
+              }
+            },
+            "observed": 121,
+            "latency_ms": {
+              "count": 121,
+              "mean": 564.94,
+              "p95_nearest_rank": 709.613
+            },
+            "estimated_cost_usd": null,
+            "cost_basis": "Local CPU/hosting unmetered; unknown, not zero.",
+            "interpretation": "Agreement with full-passage human relevance labels given bounded candidate prefixes. Uncertain, unavailable, interrupted and unrun are separate; no truth, professional quality or whole-web recall score."
+          },
+          "complete": true,
+          "deferred_rejections": 9,
+          "extra_review_fraction": 0.0743801652892562,
+          "negative_rejections_retained": 16,
+          "negative_rejections_baseline": 25,
+          "positive_rejections": 1,
+          "positive_rejections_baseline": 1,
+          "positive_labels": 21
+        },
+        {
+          "threshold": 0.8,
+          "baseline": {
+            "groups": {
+              "all": {
+                "planned": 121,
+                "positive_labels": 21,
+                "negative_labels": 100,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 15,
+                    "uncertain": 60,
+                    "unrelated": 25,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 10,
+                    "uncertain": 10,
+                    "unrelated": 1,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.47619,
+                "positive_harmful_rejection_rate": 0.047619,
+                "negative_rejection_rate": 0.25,
+                "negative_false_admission_rate": 0.15,
+                "admission_precision": 0.4
+              },
+              "english": {
+                "planned": 41,
+                "positive_labels": 13,
+                "negative_labels": 28,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 6,
+                    "uncertain": 17,
+                    "unrelated": 5,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 9,
+                    "uncertain": 3,
+                    "unrelated": 1,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.692308,
+                "positive_harmful_rejection_rate": 0.076923,
+                "negative_rejection_rate": 0.178571,
+                "negative_false_admission_rate": 0.214286,
+                "admission_precision": 0.6
+              },
+              "french": {
+                "planned": 40,
+                "positive_labels": 2,
+                "negative_labels": 38,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 6,
+                    "uncertain": 17,
+                    "unrelated": 15,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 0,
+                    "uncertain": 2,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.0,
+                "positive_harmful_rejection_rate": 0.0,
+                "negative_rejection_rate": 0.394737,
+                "negative_false_admission_rate": 0.157895,
+                "admission_precision": 0.0
+              },
+              "german": {
+                "planned": 40,
+                "positive_labels": 6,
+                "negative_labels": 34,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 3,
+                    "uncertain": 26,
+                    "unrelated": 5,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 1,
+                    "uncertain": 5,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.166667,
+                "positive_harmful_rejection_rate": 0.0,
+                "negative_rejection_rate": 0.147059,
+                "negative_false_admission_rate": 0.088235,
+                "admission_precision": 0.25
+              }
+            },
+            "observed": 121,
+            "latency_ms": {
+              "count": 121,
+              "mean": 564.94,
+              "p95_nearest_rank": 709.613
+            },
+            "estimated_cost_usd": null,
+            "cost_basis": "Local CPU/hosting unmetered; unknown, not zero.",
+            "interpretation": "Agreement with full-passage human relevance labels given bounded candidate prefixes. Uncertain, unavailable, interrupted and unrun are separate; no truth, professional quality or whole-web recall score."
+          },
+          "guarded": {
+            "groups": {
+              "all": {
+                "planned": 121,
+                "positive_labels": 21,
+                "negative_labels": 100,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 15,
+                    "uncertain": 74,
+                    "unrelated": 11,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 10,
+                    "uncertain": 11,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.47619,
+                "positive_harmful_rejection_rate": 0.0,
+                "negative_rejection_rate": 0.11,
+                "negative_false_admission_rate": 0.15,
+                "admission_precision": 0.4
+              },
+              "english": {
+                "planned": 41,
+                "positive_labels": 13,
+                "negative_labels": 28,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 6,
+                    "uncertain": 19,
+                    "unrelated": 3,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 9,
+                    "uncertain": 4,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.692308,
+                "positive_harmful_rejection_rate": 0.0,
+                "negative_rejection_rate": 0.107143,
+                "negative_false_admission_rate": 0.214286,
+                "admission_precision": 0.6
+              },
+              "french": {
+                "planned": 40,
+                "positive_labels": 2,
+                "negative_labels": 38,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 6,
+                    "uncertain": 24,
+                    "unrelated": 8,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 0,
+                    "uncertain": 2,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.0,
+                "positive_harmful_rejection_rate": 0.0,
+                "negative_rejection_rate": 0.210526,
+                "negative_false_admission_rate": 0.157895,
+                "admission_precision": 0.0
+              },
+              "german": {
+                "planned": 40,
+                "positive_labels": 6,
+                "negative_labels": 34,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 3,
+                    "uncertain": 31,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 1,
+                    "uncertain": 5,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.166667,
+                "positive_harmful_rejection_rate": 0.0,
+                "negative_rejection_rate": 0.0,
+                "negative_false_admission_rate": 0.088235,
+                "admission_precision": 0.25
+              }
+            },
+            "observed": 121,
+            "latency_ms": {
+              "count": 121,
+              "mean": 564.94,
+              "p95_nearest_rank": 709.613
+            },
+            "estimated_cost_usd": null,
+            "cost_basis": "Local CPU/hosting unmetered; unknown, not zero.",
+            "interpretation": "Agreement with full-passage human relevance labels given bounded candidate prefixes. Uncertain, unavailable, interrupted and unrun are separate; no truth, professional quality or whole-web recall score."
+          },
+          "complete": true,
+          "deferred_rejections": 15,
+          "extra_review_fraction": 0.12396694214876033,
+          "negative_rejections_retained": 11,
+          "negative_rejections_baseline": 25,
+          "positive_rejections": 0,
+          "positive_rejections_baseline": 1,
+          "positive_labels": 21
+        },
+        {
+          "threshold": 0.9,
+          "baseline": {
+            "groups": {
+              "all": {
+                "planned": 121,
+                "positive_labels": 21,
+                "negative_labels": 100,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 15,
+                    "uncertain": 60,
+                    "unrelated": 25,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 10,
+                    "uncertain": 10,
+                    "unrelated": 1,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.47619,
+                "positive_harmful_rejection_rate": 0.047619,
+                "negative_rejection_rate": 0.25,
+                "negative_false_admission_rate": 0.15,
+                "admission_precision": 0.4
+              },
+              "english": {
+                "planned": 41,
+                "positive_labels": 13,
+                "negative_labels": 28,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 6,
+                    "uncertain": 17,
+                    "unrelated": 5,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 9,
+                    "uncertain": 3,
+                    "unrelated": 1,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.692308,
+                "positive_harmful_rejection_rate": 0.076923,
+                "negative_rejection_rate": 0.178571,
+                "negative_false_admission_rate": 0.214286,
+                "admission_precision": 0.6
+              },
+              "french": {
+                "planned": 40,
+                "positive_labels": 2,
+                "negative_labels": 38,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 6,
+                    "uncertain": 17,
+                    "unrelated": 15,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 0,
+                    "uncertain": 2,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.0,
+                "positive_harmful_rejection_rate": 0.0,
+                "negative_rejection_rate": 0.394737,
+                "negative_false_admission_rate": 0.157895,
+                "admission_precision": 0.0
+              },
+              "german": {
+                "planned": 40,
+                "positive_labels": 6,
+                "negative_labels": 34,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 3,
+                    "uncertain": 26,
+                    "unrelated": 5,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 1,
+                    "uncertain": 5,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.166667,
+                "positive_harmful_rejection_rate": 0.0,
+                "negative_rejection_rate": 0.147059,
+                "negative_false_admission_rate": 0.088235,
+                "admission_precision": 0.25
+              }
+            },
+            "observed": 121,
+            "latency_ms": {
+              "count": 121,
+              "mean": 564.94,
+              "p95_nearest_rank": 709.613
+            },
+            "estimated_cost_usd": null,
+            "cost_basis": "Local CPU/hosting unmetered; unknown, not zero.",
+            "interpretation": "Agreement with full-passage human relevance labels given bounded candidate prefixes. Uncertain, unavailable, interrupted and unrun are separate; no truth, professional quality or whole-web recall score."
+          },
+          "guarded": {
+            "groups": {
+              "all": {
+                "planned": 121,
+                "positive_labels": 21,
+                "negative_labels": 100,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 15,
+                    "uncertain": 80,
+                    "unrelated": 5,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 10,
+                    "uncertain": 11,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.47619,
+                "positive_harmful_rejection_rate": 0.0,
+                "negative_rejection_rate": 0.05,
+                "negative_false_admission_rate": 0.15,
+                "admission_precision": 0.4
+              },
+              "english": {
+                "planned": 41,
+                "positive_labels": 13,
+                "negative_labels": 28,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 6,
+                    "uncertain": 22,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 9,
+                    "uncertain": 4,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.692308,
+                "positive_harmful_rejection_rate": 0.0,
+                "negative_rejection_rate": 0.0,
+                "negative_false_admission_rate": 0.214286,
+                "admission_precision": 0.6
+              },
+              "french": {
+                "planned": 40,
+                "positive_labels": 2,
+                "negative_labels": 38,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 6,
+                    "uncertain": 27,
+                    "unrelated": 5,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 0,
+                    "uncertain": 2,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.0,
+                "positive_harmful_rejection_rate": 0.0,
+                "negative_rejection_rate": 0.131579,
+                "negative_false_admission_rate": 0.157895,
+                "admission_precision": 0.0
+              },
+              "german": {
+                "planned": 40,
+                "positive_labels": 6,
+                "negative_labels": 34,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 3,
+                    "uncertain": 31,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 1,
+                    "uncertain": 5,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.166667,
+                "positive_harmful_rejection_rate": 0.0,
+                "negative_rejection_rate": 0.0,
+                "negative_false_admission_rate": 0.088235,
+                "admission_precision": 0.25
+              }
+            },
+            "observed": 121,
+            "latency_ms": {
+              "count": 121,
+              "mean": 564.94,
+              "p95_nearest_rank": 709.613
+            },
+            "estimated_cost_usd": null,
+            "cost_basis": "Local CPU/hosting unmetered; unknown, not zero.",
+            "interpretation": "Agreement with full-passage human relevance labels given bounded candidate prefixes. Uncertain, unavailable, interrupted and unrun are separate; no truth, professional quality or whole-web recall score."
+          },
+          "complete": true,
+          "deferred_rejections": 21,
+          "extra_review_fraction": 0.17355371900826447,
+          "negative_rejections_retained": 5,
+          "negative_rejections_baseline": 25,
+          "positive_rejections": 0,
+          "positive_rejections_baseline": 1,
+          "positive_labels": 21
+        },
+        {
+          "threshold": 0.95,
+          "baseline": {
+            "groups": {
+              "all": {
+                "planned": 121,
+                "positive_labels": 21,
+                "negative_labels": 100,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 15,
+                    "uncertain": 60,
+                    "unrelated": 25,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 10,
+                    "uncertain": 10,
+                    "unrelated": 1,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.47619,
+                "positive_harmful_rejection_rate": 0.047619,
+                "negative_rejection_rate": 0.25,
+                "negative_false_admission_rate": 0.15,
+                "admission_precision": 0.4
+              },
+              "english": {
+                "planned": 41,
+                "positive_labels": 13,
+                "negative_labels": 28,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 6,
+                    "uncertain": 17,
+                    "unrelated": 5,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 9,
+                    "uncertain": 3,
+                    "unrelated": 1,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.692308,
+                "positive_harmful_rejection_rate": 0.076923,
+                "negative_rejection_rate": 0.178571,
+                "negative_false_admission_rate": 0.214286,
+                "admission_precision": 0.6
+              },
+              "french": {
+                "planned": 40,
+                "positive_labels": 2,
+                "negative_labels": 38,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 6,
+                    "uncertain": 17,
+                    "unrelated": 15,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 0,
+                    "uncertain": 2,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.0,
+                "positive_harmful_rejection_rate": 0.0,
+                "negative_rejection_rate": 0.394737,
+                "negative_false_admission_rate": 0.157895,
+                "admission_precision": 0.0
+              },
+              "german": {
+                "planned": 40,
+                "positive_labels": 6,
+                "negative_labels": 34,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 3,
+                    "uncertain": 26,
+                    "unrelated": 5,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 1,
+                    "uncertain": 5,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.166667,
+                "positive_harmful_rejection_rate": 0.0,
+                "negative_rejection_rate": 0.147059,
+                "negative_false_admission_rate": 0.088235,
+                "admission_precision": 0.25
+              }
+            },
+            "observed": 121,
+            "latency_ms": {
+              "count": 121,
+              "mean": 564.94,
+              "p95_nearest_rank": 709.613
+            },
+            "estimated_cost_usd": null,
+            "cost_basis": "Local CPU/hosting unmetered; unknown, not zero.",
+            "interpretation": "Agreement with full-passage human relevance labels given bounded candidate prefixes. Uncertain, unavailable, interrupted and unrun are separate; no truth, professional quality or whole-web recall score."
+          },
+          "guarded": {
+            "groups": {
+              "all": {
+                "planned": 121,
+                "positive_labels": 21,
+                "negative_labels": 100,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 15,
+                    "uncertain": 81,
+                    "unrelated": 4,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 10,
+                    "uncertain": 11,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.47619,
+                "positive_harmful_rejection_rate": 0.0,
+                "negative_rejection_rate": 0.04,
+                "negative_false_admission_rate": 0.15,
+                "admission_precision": 0.4
+              },
+              "english": {
+                "planned": 41,
+                "positive_labels": 13,
+                "negative_labels": 28,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 6,
+                    "uncertain": 22,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 9,
+                    "uncertain": 4,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.692308,
+                "positive_harmful_rejection_rate": 0.0,
+                "negative_rejection_rate": 0.0,
+                "negative_false_admission_rate": 0.214286,
+                "admission_precision": 0.6
+              },
+              "french": {
+                "planned": 40,
+                "positive_labels": 2,
+                "negative_labels": 38,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 6,
+                    "uncertain": 28,
+                    "unrelated": 4,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 0,
+                    "uncertain": 2,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.0,
+                "positive_harmful_rejection_rate": 0.0,
+                "negative_rejection_rate": 0.105263,
+                "negative_false_admission_rate": 0.157895,
+                "admission_precision": 0.0
+              },
+              "german": {
+                "planned": 40,
+                "positive_labels": 6,
+                "negative_labels": 34,
+                "outcomes_by_label": {
+                  "0": {
+                    "relevant": 3,
+                    "uncertain": 31,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  },
+                  "1": {
+                    "relevant": 1,
+                    "uncertain": 5,
+                    "unrelated": 0,
+                    "unavailable": 0,
+                    "interrupted": 0,
+                    "not_run": 0
+                  }
+                },
+                "positive_admission_rate": 0.166667,
+                "positive_harmful_rejection_rate": 0.0,
+                "negative_rejection_rate": 0.0,
+                "negative_false_admission_rate": 0.088235,
+                "admission_precision": 0.25
+              }
+            },
+            "observed": 121,
+            "latency_ms": {
+              "count": 121,
+              "mean": 564.94,
+              "p95_nearest_rank": 709.613
+            },
+            "estimated_cost_usd": null,
+            "cost_basis": "Local CPU/hosting unmetered; unknown, not zero.",
+            "interpretation": "Agreement with full-passage human relevance labels given bounded candidate prefixes. Uncertain, unavailable, interrupted and unrun are separate; no truth, professional quality or whole-web recall score."
+          },
+          "complete": true,
+          "deferred_rejections": 22,
+          "extra_review_fraction": 0.18181818181818182,
+          "negative_rejections_retained": 4,
+          "negative_rejections_baseline": 25,
+          "positive_rejections": 0,
+          "positive_rejections_baseline": 1,
+          "positive_labels": 21
+        }
+      ]
+    },
+    "sha256": "0ad116e9b0cea6df8f8c08eac72913aa3607c7563b03fa820194d14de34262ab"
+  },
+  "recorded_at": "2026-09-28T17:40:54.528276+00:00",
+  "professional_acceptance": "OPEN",
+  "cost_usd": null,
+  "confidence_is_accuracy": false,
+  "scope": "NoMIRACL full-passage judgments compared with short-snippet topical decisions; no professional accuracy or whole-web recall claim.",
+  "development": {
+    "protocol": {
+      "schema": "research-gate-evaluation/v1",
+      "dataset": "miracl/nomiracl",
+      "revision": "ecd08778d0426a5ca28ac99763b0c9ddc2c78e68",
+      "sampling": {
+        "split": "dev",
+        "offset": 12,
+        "queries_per_subset_language": 2,
+        "languages": [
+          "english",
+          "german",
+          "french"
+        ]
+      },
+      "limits": {
+        "calls": 121,
+        "seconds": 240,
+        "per_call_seconds": 12
+      },
+      "endpoint": "http://127.0.0.1:18761/v1/systemone",
+      "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+      "gate_sha256": "43176ee2cf9243965d6a830acfb9c8226d319742f6a2babc05b4c251d5263231",
+      "adapter_sha256": "7c357ba9ab9bf868f91b7d9bc9c6eda21db1fb9ced65612140061dc29ef6e35b",
+      "prompt_sha256": "90b67111888215c023e37915f905f4a4c6ce987c5821ba94febe25b3d1797c70",
+      "representation": {
+        "title_characters": 240,
+        "snippet_characters": 600,
+        "question_and_branch": "same original dataset query"
+      }
+    },
+    "plan_sha256": "5eb9f09d92e0af0b7c3fa192b1416789597b322c1780a7f1280a717cb8192013",
+    "sources": [
+      {
+        "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/english/topics/dev.relevant.tsv",
+        "sha256": "25d9e6d17656674fd7aa3b67ee912c71545e664a842b147bfc17e9ff391db3da",
+        "bytes": 36782
+      },
+      {
+        "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/english/qrels/dev.relevant.tsv",
+        "sha256": "a0af836c300e85088c4d73449492e2378280f967cac032853c9e11f3bc8a8d81",
+        "bytes": 167817
+      },
+      {
+        "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/english/topics/dev.non_relevant.tsv",
+        "sha256": "9b487e39ba57001c538c82f48b28a4d6a1abd221eb438e89ff973286af16104a",
+        "bytes": 14956
+      },
+      {
+        "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/english/qrels/dev.non_relevant.tsv",
+        "sha256": "d8eb1e654b74f7a770b19fb6767769daa0473e5de59c8c2c614e81f41d017af7",
+        "bytes": 59725
+      },
+      {
+        "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/english/corpus.jsonl.gz",
+        "sha256": "f333c75491c8dac69f946b021511a67666318efb799dff3a6d927a841f8148eb",
+        "bytes": 9692742
+      },
+      {
+        "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/german/topics/dev.relevant.tsv",
+        "sha256": "6b66ec2cfb4af383e6fe18a08899bfa3a0deeb5e6010758743fa93ab598321c9",
+        "bytes": 17620
+      },
+      {
+        "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/german/qrels/dev.relevant.tsv",
+        "sha256": "5d4a0d7ac42c7839a0513ba6deb6b27fc62803f318be8a7c411e10dbbde7578c",
+        "bytes": 77351
+      },
+      {
+        "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/german/topics/dev.non_relevant.tsv",
+        "sha256": "e43af700d860d9869ae20de33d271a62e0ffe4152bd9f9cedc84e27e73dd1f23",
+        "bytes": 10411
+      },
+      {
+        "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/german/qrels/dev.non_relevant.tsv",
+        "sha256": "66d7d2e8cd6560066d9ba7d5cecd51a8530a61c18e5b850ae7e6c69cd7393007",
+        "bytes": 42598
+      },
+      {
+        "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/german/corpus.jsonl.gz",
+        "sha256": "781f14d7df9f39edda0cebf3df52ddbdcab82e9748bddd76bfb6c62db2e69dd3",
+        "bytes": 3729466
+      },
+      {
+        "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/french/topics/dev.relevant.tsv",
+        "sha256": "dd471f3a0a594d212b30495f8b1d9759451aea399b44e02de6ca9c5550930106",
+        "bytes": 19375
+      },
+      {
+        "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/french/qrels/dev.relevant.tsv",
+        "sha256": "823e8f6fd297064d67efe37991cd3953414dc040c290f249b0895925f03509ad",
+        "bytes": 84975
+      },
+      {
+        "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/french/topics/dev.non_relevant.tsv",
+        "sha256": "e01cf9ebd73ccfc619f841a20e8e5bfc620306763ad5ff9fc8df8298eca3585f",
+        "bytes": 40679
+      },
+      {
+        "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/french/qrels/dev.non_relevant.tsv",
+        "sha256": "8cee6e5239aaa23b151383d672b11e47cb4c78107c8301d1b67a0203161a425b",
+        "bytes": 165244
+      },
+      {
+        "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/french/corpus.jsonl.gz",
+        "sha256": "55da3cbe8861a3a6e81fc9899d2a0afb3b9573de5f4846eac8e955f8a4152cd7",
+        "bytes": 5855775
+      }
+    ],
+    "observations": [
+      {
+        "id": "french:1595430-0/1217170#3",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:27.562220+00:00",
+        "outcome": "unrelated",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.009,
+          "uncertain": 0.1677,
+          "unrelated": 0.8233
+        },
+        "selected_probability": 0.8233,
+        "confidence": 0.5432,
+        "provider_latency_ms": 614.49,
+        "input_tokens": 303,
+        "output_tokens": 0,
+        "wall_ms": 614.566
+      },
+      {
+        "id": "french:7718737-0/14734186#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:28.185991+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0682,
+          "uncertain": 0.929,
+          "unrelated": 0.0029
+        },
+        "selected_probability": 0.929,
+        "confidence": 0.7558,
+        "provider_latency_ms": 527.06,
+        "input_tokens": 275,
+        "output_tokens": 0,
+        "wall_ms": 527.106
+      },
+      {
+        "id": "french:7718737-0/6094448#8",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:28.721403+00:00",
+        "outcome": "relevant",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.6054,
+          "uncertain": 0.3809,
+          "unrelated": 0.0137
+        },
+        "selected_probability": 0.6054,
+        "confidence": 0.3354,
+        "provider_latency_ms": 503.33,
+        "input_tokens": 258,
+        "output_tokens": 0,
+        "wall_ms": 503.4
+      },
+      {
+        "id": "french:8113528#0/664499#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:29.233607+00:00",
+        "outcome": "unrelated",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0557,
+          "uncertain": 0.1079,
+          "unrelated": 0.8363
+        },
+        "selected_probability": 0.8363,
+        "confidence": 0.4987,
+        "provider_latency_ms": 416.68,
+        "input_tokens": 203,
+        "output_tokens": 0,
+        "wall_ms": 416.729
+      },
+      {
+        "id": "german:4725485#0/3031232#13",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:29.660083+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.4343,
+          "uncertain": 0.5251,
+          "unrelated": 0.0406
+        },
+        "selected_probability": 0.5251,
+        "confidence": 0.2439,
+        "provider_latency_ms": 658.14,
+        "input_tokens": 327,
+        "output_tokens": 0,
+        "wall_ms": 658.193
+      },
+      {
+        "id": "english:733/1598074#5",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:30.329982+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0674,
+          "uncertain": 0.5173,
+          "unrelated": 0.4154
+        },
+        "selected_probability": 0.5173,
+        "confidence": 0.1921,
+        "provider_latency_ms": 491.77,
+        "input_tokens": 255,
+        "output_tokens": 0,
+        "wall_ms": 491.812
+      },
+      {
+        "id": "french:7259667#0/205788#1",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:30.834111+00:00",
+        "outcome": "unrelated",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0206,
+          "uncertain": 0.287,
+          "unrelated": 0.6924
+        },
+        "selected_probability": 0.6924,
+        "confidence": 0.3696,
+        "provider_latency_ms": 476.4,
+        "input_tokens": 244,
+        "output_tokens": 0,
+        "wall_ms": 476.44
+      },
+      {
+        "id": "french:1595430-0/13361269#3",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:31.322866+00:00",
+        "outcome": "unrelated",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0059,
+          "uncertain": 0.0237,
+          "unrelated": 0.9704
+        },
+        "selected_probability": 0.9704,
+        "confidence": 0.8653,
+        "provider_latency_ms": 709.56,
+        "input_tokens": 345,
+        "output_tokens": 0,
+        "wall_ms": 709.613
+      },
+      {
+        "id": "french:7259667#0/356774#35",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:32.042669+00:00",
+        "outcome": "relevant",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.5149,
+          "uncertain": 0.3843,
+          "unrelated": 0.1008
+        },
+        "selected_probability": 0.5149,
+        "confidence": 0.1438,
+        "provider_latency_ms": 573.59,
+        "input_tokens": 278,
+        "output_tokens": 0,
+        "wall_ms": 573.646
+      },
+      {
+        "id": "english:34/162597#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:32.630461+00:00",
+        "outcome": "relevant",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.8207,
+          "uncertain": 0.1308,
+          "unrelated": 0.0485
+        },
+        "selected_probability": 0.8207,
+        "confidence": 0.4766,
+        "provider_latency_ms": 582.93,
+        "input_tokens": 272,
+        "output_tokens": 0,
+        "wall_ms": 582.98
+      },
+      {
+        "id": "german:7915063#0/10194570#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:33.223347+00:00",
+        "outcome": "relevant",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.7354,
+          "uncertain": 0.2328,
+          "unrelated": 0.0318
+        },
+        "selected_probability": 0.7354,
+        "confidence": 0.3855,
+        "provider_latency_ms": 490.74,
+        "input_tokens": 246,
+        "output_tokens": 0,
+        "wall_ms": 490.785
+      },
+      {
+        "id": "english:12256509#0/2438772#14",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:33.725269+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.1768,
+          "uncertain": 0.6106,
+          "unrelated": 0.2126
+        },
+        "selected_probability": 0.6106,
+        "confidence": 0.1474,
+        "provider_latency_ms": 622.59,
+        "input_tokens": 312,
+        "output_tokens": 0,
+        "wall_ms": 622.644
+      },
+      {
+        "id": "english:4082/53883304#15",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:34.359217+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.17,
+          "uncertain": 0.6907,
+          "unrelated": 0.1393
+        },
+        "selected_probability": 0.6907,
+        "confidence": 0.2432,
+        "provider_latency_ms": 567.74,
+        "input_tokens": 286,
+        "output_tokens": 0,
+        "wall_ms": 567.791
+      },
+      {
+        "id": "german:4725485#0/3027963#4",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:34.939031+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.3957,
+          "uncertain": 0.4706,
+          "unrelated": 0.1337
+        },
+        "selected_probability": 0.4706,
+        "confidence": 0.0983,
+        "provider_latency_ms": 614.36,
+        "input_tokens": 320,
+        "output_tokens": 0,
+        "wall_ms": 614.425
+      },
+      {
+        "id": "english:4082/38175442#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:35.563954+00:00",
+        "outcome": "relevant",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.8671,
+          "uncertain": 0.0709,
+          "unrelated": 0.0619
+        },
+        "selected_probability": 0.8671,
+        "confidence": 0.5598,
+        "provider_latency_ms": 497.42,
+        "input_tokens": 248,
+        "output_tokens": 0,
+        "wall_ms": 497.471
+      },
+      {
+        "id": "english:34/1656574#16",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:36.072477+00:00",
+        "outcome": "relevant",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.9227,
+          "uncertain": 0.0566,
+          "unrelated": 0.0207
+        },
+        "selected_probability": 0.9227,
+        "confidence": 0.7113,
+        "provider_latency_ms": 573.31,
+        "input_tokens": 282,
+        "output_tokens": 0,
+        "wall_ms": 573.366
+      },
+      {
+        "id": "english:4082/5121584#7",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:36.657812+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.4352,
+          "uncertain": 0.5152,
+          "unrelated": 0.0497
+        },
+        "selected_probability": 0.5152,
+        "confidence": 0.2237,
+        "provider_latency_ms": 560.53,
+        "input_tokens": 289,
+        "output_tokens": 0,
+        "wall_ms": 560.591
+      },
+      {
+        "id": "french:7718737-0/7505947#5",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:37.228526+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.2042,
+          "uncertain": 0.7261,
+          "unrelated": 0.0697
+        },
+        "selected_probability": 0.7261,
+        "confidence": 0.3242,
+        "provider_latency_ms": 458.91,
+        "input_tokens": 230,
+        "output_tokens": 0,
+        "wall_ms": 458.966
+      },
+      {
+        "id": "english:12256509#0/42497300#1",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:37.697078+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0273,
+          "uncertain": 0.7523,
+          "unrelated": 0.2204
+        },
+        "selected_probability": 0.7523,
+        "confidence": 0.4122,
+        "provider_latency_ms": 897.31,
+        "input_tokens": 380,
+        "output_tokens": 0,
+        "wall_ms": 897.362
+      },
+      {
+        "id": "german:7915063#0/9247720#8",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:38.603190+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0189,
+          "uncertain": 0.9798,
+          "unrelated": 0.0014
+        },
+        "selected_probability": 0.9798,
+        "confidence": 0.9054,
+        "provider_latency_ms": 598.09,
+        "input_tokens": 298,
+        "output_tokens": 0,
+        "wall_ms": 598.13
+      },
+      {
+        "id": "english:12256509#0/53122929#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:39.211754+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0433,
+          "uncertain": 0.9185,
+          "unrelated": 0.0382
+        },
+        "selected_probability": 0.9185,
+        "confidence": 0.6918,
+        "provider_latency_ms": 654.3,
+        "input_tokens": 334,
+        "output_tokens": 0,
+        "wall_ms": 654.349
+      },
+      {
+        "id": "french:1595430-0/13361269#2",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:39.877099+00:00",
+        "outcome": "unrelated",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0058,
+          "uncertain": 0.164,
+          "unrelated": 0.8302
+        },
+        "selected_probability": 0.8302,
+        "confidence": 0.5622,
+        "provider_latency_ms": 686.06,
+        "input_tokens": 345,
+        "output_tokens": 0,
+        "wall_ms": 686.093
+      },
+      {
+        "id": "french:7259667#0/158872#3",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:40.572574+00:00",
+        "outcome": "unrelated",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0282,
+          "uncertain": 0.4842,
+          "unrelated": 0.4876
+        },
+        "selected_probability": 0.4876,
+        "confidence": 0.2699,
+        "provider_latency_ms": 482.52,
+        "input_tokens": 233,
+        "output_tokens": 0,
+        "wall_ms": 482.575
+      },
+      {
+        "id": "english:4082/42205615#10",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:41.064383+00:00",
+        "outcome": "unrelated",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0402,
+          "uncertain": 0.2804,
+          "unrelated": 0.6794
+        },
+        "selected_probability": 0.6794,
+        "confidence": 0.3187,
+        "provider_latency_ms": 540.69,
+        "input_tokens": 279,
+        "output_tokens": 0,
+        "wall_ms": 540.734
+      },
+      {
+        "id": "english:733/11247268#8",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:41.619606+00:00",
+        "outcome": "relevant",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.6063,
+          "uncertain": 0.2808,
+          "unrelated": 0.1129
+        },
+        "selected_probability": 0.6063,
+        "confidence": 0.1751,
+        "provider_latency_ms": 503.33,
+        "input_tokens": 253,
+        "output_tokens": 0,
+        "wall_ms": 503.374
+      },
+      {
+        "id": "french:7259667#0/1133445#1",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:42.136567+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0823,
+          "uncertain": 0.6232,
+          "unrelated": 0.2945
+        },
+        "selected_probability": 0.6232,
+        "confidence": 0.217,
+        "provider_latency_ms": 552.85,
+        "input_tokens": 272,
+        "output_tokens": 0,
+        "wall_ms": 552.904
+      },
+      {
+        "id": "english:733/19477084#6",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:42.702016+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.2592,
+          "uncertain": 0.6012,
+          "unrelated": 0.1397
+        },
+        "selected_probability": 0.6012,
+        "confidence": 0.1527,
+        "provider_latency_ms": 675.35,
+        "input_tokens": 335,
+        "output_tokens": 0,
+        "wall_ms": 675.4
+      },
+      {
+        "id": "french:1595430-0/75096#8",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:43.389375+00:00",
+        "outcome": "unrelated",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.2797,
+          "uncertain": 0.2987,
+          "unrelated": 0.4216
+        },
+        "selected_probability": 0.4216,
+        "confidence": 0.0157,
+        "provider_latency_ms": 426.32,
+        "input_tokens": 210,
+        "output_tokens": 0,
+        "wall_ms": 426.387
+      },
+      {
+        "id": "german:7915063#0/10079168#11",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:43.829864+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0315,
+          "uncertain": 0.9654,
+          "unrelated": 0.003
+        },
+        "selected_probability": 0.9654,
+        "confidence": 0.8539,
+        "provider_latency_ms": 650.91,
+        "input_tokens": 327,
+        "output_tokens": 0,
+        "wall_ms": 650.965
+      },
+      {
+        "id": "french:1595430-0/75096#2",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:44.495511+00:00",
+        "outcome": "relevant",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.5689,
+          "uncertain": 0.3198,
+          "unrelated": 0.1113
+        },
+        "selected_probability": 0.5689,
+        "confidence": 0.1536,
+        "provider_latency_ms": 651.99,
+        "input_tokens": 336,
+        "output_tokens": 0,
+        "wall_ms": 652.044
+      },
+      {
+        "id": "french:7259667#0/3739410#1",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:45.161683+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0295,
+          "uncertain": 0.9266,
+          "unrelated": 0.0439
+        },
+        "selected_probability": 0.9266,
+        "confidence": 0.7163,
+        "provider_latency_ms": 608.93,
+        "input_tokens": 309,
+        "output_tokens": 0,
+        "wall_ms": 608.975
+      },
+      {
+        "id": "german:7915063#0/10194570#1",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:45.780679+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.1784,
+          "uncertain": 0.8135,
+          "unrelated": 0.0081
+        },
+        "selected_probability": 0.8135,
+        "confidence": 0.5317,
+        "provider_latency_ms": 667.07,
+        "input_tokens": 346,
+        "output_tokens": 0,
+        "wall_ms": 667.125
+      },
+      {
+        "id": "german:4725485#0/6550769#3",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:46.458350+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0517,
+          "uncertain": 0.7563,
+          "unrelated": 0.192
+        },
+        "selected_probability": 0.7563,
+        "confidence": 0.3799,
+        "provider_latency_ms": 415.37,
+        "input_tokens": 212,
+        "output_tokens": 0,
+        "wall_ms": 415.409
+      },
+      {
+        "id": "english:34/446536#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:46.884076+00:00",
+        "outcome": "relevant",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.7979,
+          "uncertain": 0.1823,
+          "unrelated": 0.0198
+        },
+        "selected_probability": 0.7979,
+        "confidence": 0.4829,
+        "provider_latency_ms": 568.44,
+        "input_tokens": 285,
+        "output_tokens": 0,
+        "wall_ms": 568.48
+      },
+      {
+        "id": "french:8113528#0/13790448#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:47.465725+00:00",
+        "outcome": "unrelated",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0523,
+          "uncertain": 0.2855,
+          "unrelated": 0.6622
+        },
+        "selected_probability": 0.6622,
+        "confidence": 0.2853,
+        "provider_latency_ms": 501.43,
+        "input_tokens": 256,
+        "output_tokens": 0,
+        "wall_ms": 501.476
+      },
+      {
+        "id": "french:7259667#0/1227994#13",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:47.978639+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.099,
+          "uncertain": 0.8369,
+          "unrelated": 0.0641
+        },
+        "selected_probability": 0.8369,
+        "confidence": 0.4956,
+        "provider_latency_ms": 665.71,
+        "input_tokens": 333,
+        "output_tokens": 0,
+        "wall_ms": 665.755
+      },
+      {
+        "id": "french:8113528#0/14257341#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:48.657409+00:00",
+        "outcome": "unrelated",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0046,
+          "uncertain": 0.0133,
+          "unrelated": 0.982
+        },
+        "selected_probability": 0.982,
+        "confidence": 0.9087,
+        "provider_latency_ms": 446.91,
+        "input_tokens": 225,
+        "output_tokens": 0,
+        "wall_ms": 446.955
+      },
+      {
+        "id": "german:8228750-0/95106#79",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:49.117738+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0574,
+          "uncertain": 0.6719,
+          "unrelated": 0.2707
+        },
+        "selected_probability": 0.6719,
+        "confidence": 0.2855,
+        "provider_latency_ms": 558.71,
+        "input_tokens": 282,
+        "output_tokens": 0,
+        "wall_ms": 558.749
+      },
+      {
+        "id": "german:11581522-0/4142627#1",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:49.687906+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0079,
+          "uncertain": 0.9879,
+          "unrelated": 0.0042
+        },
+        "selected_probability": 0.9879,
+        "confidence": 0.9334,
+        "provider_latency_ms": 731.04,
+        "input_tokens": 355,
+        "output_tokens": 0,
+        "wall_ms": 731.077
+      },
+      {
+        "id": "english:4082/8798949#80",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:50.429480+00:00",
+        "outcome": "relevant",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.7997,
+          "uncertain": 0.1705,
+          "unrelated": 0.0298
+        },
+        "selected_probability": 0.7997,
+        "confidence": 0.4675,
+        "provider_latency_ms": 608.47,
+        "input_tokens": 304,
+        "output_tokens": 0,
+        "wall_ms": 608.514
+      },
+      {
+        "id": "german:8228750-0/233627#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:51.048732+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0646,
+          "uncertain": 0.9052,
+          "unrelated": 0.0303
+        },
+        "selected_probability": 0.9052,
+        "confidence": 0.6606,
+        "provider_latency_ms": 582.25,
+        "input_tokens": 299,
+        "output_tokens": 0,
+        "wall_ms": 582.309
+      },
+      {
+        "id": "german:4725485#0/3027963#7",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:51.643108+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0086,
+          "uncertain": 0.8973,
+          "unrelated": 0.0941
+        },
+        "selected_probability": 0.8973,
+        "confidence": 0.6718,
+        "provider_latency_ms": 649.99,
+        "input_tokens": 326,
+        "output_tokens": 0,
+        "wall_ms": 650.038
+      },
+      {
+        "id": "english:34/41959688#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:52.304498+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0367,
+          "uncertain": 0.8561,
+          "unrelated": 0.1073
+        },
+        "selected_probability": 0.8561,
+        "confidence": 0.5506,
+        "provider_latency_ms": 594.62,
+        "input_tokens": 301,
+        "output_tokens": 0,
+        "wall_ms": 594.679
+      },
+      {
+        "id": "german:8228750-0/4203159#35",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:52.915114+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0258,
+          "uncertain": 0.8449,
+          "unrelated": 0.1293
+        },
+        "selected_probability": 0.8449,
+        "confidence": 0.5439,
+        "provider_latency_ms": 613.43,
+        "input_tokens": 307,
+        "output_tokens": 0,
+        "wall_ms": 613.48
+      },
+      {
+        "id": "english:34/17131451#7",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:53.543142+00:00",
+        "outcome": "unrelated",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0141,
+          "uncertain": 0.1302,
+          "unrelated": 0.8558
+        },
+        "selected_probability": 0.8558,
+        "confidence": 0.5825,
+        "provider_latency_ms": 558.98,
+        "input_tokens": 287,
+        "output_tokens": 0,
+        "wall_ms": 559.05
+      },
+      {
+        "id": "french:8113528#0/13792356#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:54.116109+00:00",
+        "outcome": "unrelated",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0593,
+          "uncertain": 0.2876,
+          "unrelated": 0.6532
+        },
+        "selected_probability": 0.6532,
+        "confidence": 0.2681,
+        "provider_latency_ms": 490.72,
+        "input_tokens": 256,
+        "output_tokens": 0,
+        "wall_ms": 490.766
+      },
+      {
+        "id": "french:7718737-0/1416234#193",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:54.620827+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.2636,
+          "uncertain": 0.6853,
+          "unrelated": 0.0511
+        },
+        "selected_probability": 0.6853,
+        "confidence": 0.3061,
+        "provider_latency_ms": 538.88,
+        "input_tokens": 261,
+        "output_tokens": 0,
+        "wall_ms": 538.945
+      },
+      {
+        "id": "french:7718737-0/14004370#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:55.172981+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.1249,
+          "uncertain": 0.8724,
+          "unrelated": 0.0028
+        },
+        "selected_probability": 0.8724,
+        "confidence": 0.6402,
+        "provider_latency_ms": 504.67,
+        "input_tokens": 264,
+        "output_tokens": 0,
+        "wall_ms": 504.704
+      },
+      {
+        "id": "english:12256509#0/59631424#1",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:55.690180+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0878,
+          "uncertain": 0.8659,
+          "unrelated": 0.0463
+        },
+        "selected_probability": 0.8659,
+        "confidence": 0.5625,
+        "provider_latency_ms": 594.97,
+        "input_tokens": 297,
+        "output_tokens": 0,
+        "wall_ms": 595.035
+      },
+      {
+        "id": "french:8113528#0/12996858#16",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:56.300413+00:00",
+        "outcome": "relevant",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.5441,
+          "uncertain": 0.1203,
+          "unrelated": 0.3356
+        },
+        "selected_probability": 0.5441,
+        "confidence": 0.1332,
+        "provider_latency_ms": 625.95,
+        "input_tokens": 308,
+        "output_tokens": 0,
+        "wall_ms": 625.999
+      },
+      {
+        "id": "french:7718737-0/8554500#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:56.940263+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.1066,
+          "uncertain": 0.8885,
+          "unrelated": 0.0049
+        },
+        "selected_probability": 0.8885,
+        "confidence": 0.6636,
+        "provider_latency_ms": 477.64,
+        "input_tokens": 247,
+        "output_tokens": 0,
+        "wall_ms": 477.681
+      },
+      {
+        "id": "french:7259667#0/205788#3",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:57.430107+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0536,
+          "uncertain": 0.5106,
+          "unrelated": 0.4358
+        },
+        "selected_probability": 0.5106,
+        "confidence": 0.2154,
+        "provider_latency_ms": 479.66,
+        "input_tokens": 242,
+        "output_tokens": 0,
+        "wall_ms": 479.707
+      },
+      {
+        "id": "english:733/49690912#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:57.921571+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.3058,
+          "uncertain": 0.3528,
+          "unrelated": 0.3414
+        },
+        "selected_probability": 0.3528,
+        "confidence": 0.0017,
+        "provider_latency_ms": 392.19,
+        "input_tokens": 191,
+        "output_tokens": 0,
+        "wall_ms": 392.253
+      },
+      {
+        "id": "german:8228750-0/95106#81",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:58.327361+00:00",
+        "outcome": "unrelated",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0137,
+          "uncertain": 0.3218,
+          "unrelated": 0.6645
+        },
+        "selected_probability": 0.6645,
+        "confidence": 0.3673,
+        "provider_latency_ms": 495.69,
+        "input_tokens": 239,
+        "output_tokens": 0,
+        "wall_ms": 495.748
+      },
+      {
+        "id": "french:1595430-0/1654045#14",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:58.836941+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.4304,
+          "uncertain": 0.5411,
+          "unrelated": 0.0284
+        },
+        "selected_probability": 0.5411,
+        "confidence": 0.2751,
+        "provider_latency_ms": 662.98,
+        "input_tokens": 337,
+        "output_tokens": 0,
+        "wall_ms": 663.016
+      },
+      {
+        "id": "german:7915063#0/10055976#1",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:38:59.513179+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.2231,
+          "uncertain": 0.7651,
+          "unrelated": 0.0118
+        },
+        "selected_probability": 0.7651,
+        "confidence": 0.4614,
+        "provider_latency_ms": 571.36,
+        "input_tokens": 285,
+        "output_tokens": 0,
+        "wall_ms": 571.409
+      },
+      {
+        "id": "french:7718737-0/13380587#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:00.099529+00:00",
+        "outcome": "relevant",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.7241,
+          "uncertain": 0.211,
+          "unrelated": 0.0649
+        },
+        "selected_probability": 0.7241,
+        "confidence": 0.3269,
+        "provider_latency_ms": 668.24,
+        "input_tokens": 339,
+        "output_tokens": 0,
+        "wall_ms": 668.281
+      },
+      {
+        "id": "french:8113528#0/1138008#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:00.782580+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.1445,
+          "uncertain": 0.8477,
+          "unrelated": 0.0078
+        },
+        "selected_probability": 0.8477,
+        "confidence": 0.5837,
+        "provider_latency_ms": 482.12,
+        "input_tokens": 248,
+        "output_tokens": 0,
+        "wall_ms": 482.159
+      },
+      {
+        "id": "german:11581522-0/9657215#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:01.277696+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0482,
+          "uncertain": 0.9421,
+          "unrelated": 0.0097
+        },
+        "selected_probability": 0.9421,
+        "confidence": 0.7748,
+        "provider_latency_ms": 479.15,
+        "input_tokens": 237,
+        "output_tokens": 0,
+        "wall_ms": 479.194
+      },
+      {
+        "id": "german:4725485#0/5107131#108",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:01.769703+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.1844,
+          "uncertain": 0.6193,
+          "unrelated": 0.1963
+        },
+        "selected_probability": 0.6193,
+        "confidence": 0.1552,
+        "provider_latency_ms": 593.63,
+        "input_tokens": 302,
+        "output_tokens": 0,
+        "wall_ms": 593.675
+      },
+      {
+        "id": "german:11581522-0/10940384#1",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:02.378650+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0121,
+          "uncertain": 0.7514,
+          "unrelated": 0.2366
+        },
+        "selected_probability": 0.7514,
+        "confidence": 0.4455,
+        "provider_latency_ms": 717.07,
+        "input_tokens": 334,
+        "output_tokens": 0,
+        "wall_ms": 717.106
+      },
+      {
+        "id": "english:4082/32544339#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:03.108533+00:00",
+        "outcome": "relevant",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.7636,
+          "uncertain": 0.1249,
+          "unrelated": 0.1115
+        },
+        "selected_probability": 0.7636,
+        "confidence": 0.3534,
+        "provider_latency_ms": 579.18,
+        "input_tokens": 291,
+        "output_tokens": 0,
+        "wall_ms": 579.238
+      },
+      {
+        "id": "french:7259667#0/46#4",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:03.703175+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.1464,
+          "uncertain": 0.8356,
+          "unrelated": 0.018
+        },
+        "selected_probability": 0.8356,
+        "confidence": 0.5415,
+        "provider_latency_ms": 492.56,
+        "input_tokens": 245,
+        "output_tokens": 0,
+        "wall_ms": 492.615
+      },
+      {
+        "id": "french:1595430-0/3203557#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:04.210484+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.2821,
+          "uncertain": 0.6843,
+          "unrelated": 0.0336
+        },
+        "selected_probability": 0.6843,
+        "confidence": 0.3349,
+        "provider_latency_ms": 620.08,
+        "input_tokens": 310,
+        "output_tokens": 0,
+        "wall_ms": 620.149
+      },
+      {
+        "id": "english:733/31576006#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:04.844959+00:00",
+        "outcome": "relevant",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.7855,
+          "uncertain": 0.1508,
+          "unrelated": 0.0637
+        },
+        "selected_probability": 0.7855,
+        "confidence": 0.4081,
+        "provider_latency_ms": 614.34,
+        "input_tokens": 307,
+        "output_tokens": 0,
+        "wall_ms": 614.392
+      },
+      {
+        "id": "english:12256509#0/1269403#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:05.472773+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0767,
+          "uncertain": 0.8483,
+          "unrelated": 0.075
+        },
+        "selected_probability": 0.8483,
+        "confidence": 0.5168,
+        "provider_latency_ms": 727.39,
+        "input_tokens": 343,
+        "output_tokens": 0,
+        "wall_ms": 727.463
+      },
+      {
+        "id": "german:11581522-0/6212890#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:06.217395+00:00",
+        "outcome": "relevant",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.6875,
+          "uncertain": 0.2772,
+          "unrelated": 0.0353
+        },
+        "selected_probability": 0.6875,
+        "confidence": 0.3343,
+        "provider_latency_ms": 628.38,
+        "input_tokens": 308,
+        "output_tokens": 0,
+        "wall_ms": 628.449
+      },
+      {
+        "id": "german:8228750-0/323041#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:06.863762+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.1015,
+          "uncertain": 0.7848,
+          "unrelated": 0.1137
+        },
+        "selected_probability": 0.7848,
+        "confidence": 0.3905,
+        "provider_latency_ms": 502.84,
+        "input_tokens": 253,
+        "output_tokens": 0,
+        "wall_ms": 502.901
+      },
+      {
+        "id": "german:11581522-0/4860472#3",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:07.383506+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0539,
+          "uncertain": 0.9166,
+          "unrelated": 0.0295
+        },
+        "selected_probability": 0.9166,
+        "confidence": 0.6895,
+        "provider_latency_ms": 695.2,
+        "input_tokens": 336,
+        "output_tokens": 0,
+        "wall_ms": 695.259
+      },
+      {
+        "id": "german:11581522-0/4273688#7",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:08.095269+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0237,
+          "uncertain": 0.9654,
+          "unrelated": 0.0109
+        },
+        "selected_probability": 0.9654,
+        "confidence": 0.8436,
+        "provider_latency_ms": 849.42,
+        "input_tokens": 359,
+        "output_tokens": 0,
+        "wall_ms": 849.471
+      },
+      {
+        "id": "english:733/25607023#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:08.959505+00:00",
+        "outcome": "relevant",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.4754,
+          "uncertain": 0.2717,
+          "unrelated": 0.2529
+        },
+        "selected_probability": 0.4754,
+        "confidence": 0.0395,
+        "provider_latency_ms": 389.23,
+        "input_tokens": 191,
+        "output_tokens": 0,
+        "wall_ms": 389.281
+      },
+      {
+        "id": "german:8228750-0/8139090#1",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:09.361219+00:00",
+        "outcome": "unrelated",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0911,
+          "uncertain": 0.3453,
+          "unrelated": 0.5636
+        },
+        "selected_probability": 0.5636,
+        "confidence": 0.1729,
+        "provider_latency_ms": 596.51,
+        "input_tokens": 310,
+        "output_tokens": 0,
+        "wall_ms": 596.553
+      },
+      {
+        "id": "german:7915063#0/9424364#2",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:09.969549+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.2111,
+          "uncertain": 0.7389,
+          "unrelated": 0.05
+        },
+        "selected_probability": 0.7389,
+        "confidence": 0.3614,
+        "provider_latency_ms": 448.81,
+        "input_tokens": 225,
+        "output_tokens": 0,
+        "wall_ms": 448.854
+      },
+      {
+        "id": "german:11581522-0/2632357#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:10.432598+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.1137,
+          "uncertain": 0.8829,
+          "unrelated": 0.0034
+        },
+        "selected_probability": 0.8829,
+        "confidence": 0.6573,
+        "provider_latency_ms": 544.17,
+        "input_tokens": 261,
+        "output_tokens": 0,
+        "wall_ms": 544.234
+      },
+      {
+        "id": "french:7718737-0/4018447#3",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:10.992305+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.3713,
+          "uncertain": 0.591,
+          "unrelated": 0.0377
+        },
+        "selected_probability": 0.591,
+        "confidence": 0.2697,
+        "provider_latency_ms": 433.8,
+        "input_tokens": 212,
+        "output_tokens": 0,
+        "wall_ms": 433.852
+      },
+      {
+        "id": "english:12256509#0/50535834#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:11.439436+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0067,
+          "uncertain": 0.9415,
+          "unrelated": 0.0518
+        },
+        "selected_probability": 0.9415,
+        "confidence": 0.7783,
+        "provider_latency_ms": 744.37,
+        "input_tokens": 365,
+        "output_tokens": 0,
+        "wall_ms": 744.44
+      },
+      {
+        "id": "french:7259667#0/7938646#1",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:12.197887+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0576,
+          "uncertain": 0.673,
+          "unrelated": 0.2694
+        },
+        "selected_probability": 0.673,
+        "confidence": 0.2861,
+        "provider_latency_ms": 457.99,
+        "input_tokens": 227,
+        "output_tokens": 0,
+        "wall_ms": 458.045
+      },
+      {
+        "id": "german:11581522-0/8560035#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:12.670254+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.2755,
+          "uncertain": 0.6798,
+          "unrelated": 0.0447
+        },
+        "selected_probability": 0.6798,
+        "confidence": 0.3115,
+        "provider_latency_ms": 461.18,
+        "input_tokens": 222,
+        "output_tokens": 0,
+        "wall_ms": 461.264
+      },
+      {
+        "id": "english:733/30124885#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:13.147429+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.1924,
+          "uncertain": 0.7131,
+          "unrelated": 0.0945
+        },
+        "selected_probability": 0.7131,
+        "confidence": 0.289,
+        "provider_latency_ms": 591.8,
+        "input_tokens": 287,
+        "output_tokens": 0,
+        "wall_ms": 591.851
+      },
+      {
+        "id": "german:8228750-0/232547#13",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:13.754908+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.3305,
+          "uncertain": 0.429,
+          "unrelated": 0.2405
+        },
+        "selected_probability": 0.429,
+        "confidence": 0.0245,
+        "provider_latency_ms": 570.8,
+        "input_tokens": 297,
+        "output_tokens": 0,
+        "wall_ms": 570.87
+      },
+      {
+        "id": "english:34/24938530#4",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:14.343084+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.1461,
+          "uncertain": 0.673,
+          "unrelated": 0.1809
+        },
+        "selected_probability": 0.673,
+        "confidence": 0.2201,
+        "provider_latency_ms": 572.82,
+        "input_tokens": 270,
+        "output_tokens": 0,
+        "wall_ms": 572.885
+      },
+      {
+        "id": "german:11581522-0/100812#27",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:14.935465+00:00",
+        "outcome": "unrelated",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0086,
+          "uncertain": 0.4865,
+          "unrelated": 0.5049
+        },
+        "selected_probability": 0.5049,
+        "confidence": 0.3294,
+        "provider_latency_ms": 583.33,
+        "input_tokens": 288,
+        "output_tokens": 0,
+        "wall_ms": 583.39
+      },
+      {
+        "id": "english:34/3491729#2",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:15.537690+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.3997,
+          "uncertain": 0.5065,
+          "unrelated": 0.0938
+        },
+        "selected_probability": 0.5065,
+        "confidence": 0.1507,
+        "provider_latency_ms": 597.18,
+        "input_tokens": 279,
+        "output_tokens": 0,
+        "wall_ms": 597.243
+      },
+      {
+        "id": "german:7915063#0/10079168#9",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:16.156028+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.037,
+          "uncertain": 0.9459,
+          "unrelated": 0.0171
+        },
+        "selected_probability": 0.9459,
+        "confidence": 0.7778,
+        "provider_latency_ms": 632.24,
+        "input_tokens": 313,
+        "output_tokens": 0,
+        "wall_ms": 632.314
+      },
+      {
+        "id": "german:4725485#0/464004#21",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:16.808271+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0261,
+          "uncertain": 0.9595,
+          "unrelated": 0.0144
+        },
+        "selected_probability": 0.9595,
+        "confidence": 0.8216,
+        "provider_latency_ms": 622.06,
+        "input_tokens": 303,
+        "output_tokens": 0,
+        "wall_ms": 622.127
+      },
+      {
+        "id": "english:4082/22131#66",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:17.449152+00:00",
+        "outcome": "relevant",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.62,
+          "uncertain": 0.2271,
+          "unrelated": 0.153
+        },
+        "selected_probability": 0.62,
+        "confidence": 0.1624,
+        "provider_latency_ms": 605.56,
+        "input_tokens": 303,
+        "output_tokens": 0,
+        "wall_ms": 605.613
+      },
+      {
+        "id": "german:7915063#0/11280183#1",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:18.072164+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0647,
+          "uncertain": 0.8593,
+          "unrelated": 0.076
+        },
+        "selected_probability": 0.8593,
+        "confidence": 0.5418,
+        "provider_latency_ms": 653.39,
+        "input_tokens": 327,
+        "output_tokens": 0,
+        "wall_ms": 653.439
+      },
+      {
+        "id": "french:1595430-0/1654045#16",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:18.739022+00:00",
+        "outcome": "relevant",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.4573,
+          "uncertain": 0.3639,
+          "unrelated": 0.1788
+        },
+        "selected_probability": 0.4573,
+        "confidence": 0.0593,
+        "provider_latency_ms": 635.01,
+        "input_tokens": 330,
+        "output_tokens": 0,
+        "wall_ms": 635.058
+      },
+      {
+        "id": "french:8113528#0/11062098#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:19.388037+00:00",
+        "outcome": "unrelated",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0097,
+          "uncertain": 0.0457,
+          "unrelated": 0.9445
+        },
+        "selected_probability": 0.9445,
+        "confidence": 0.7815,
+        "provider_latency_ms": 445.18,
+        "input_tokens": 232,
+        "output_tokens": 0,
+        "wall_ms": 445.227
+      },
+      {
+        "id": "english:12256509#0/21237995#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:19.852884+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.38,
+          "uncertain": 0.5356,
+          "unrelated": 0.0844
+        },
+        "selected_probability": 0.5356,
+        "confidence": 0.171,
+        "provider_latency_ms": 687.83,
+        "input_tokens": 355,
+        "output_tokens": 0,
+        "wall_ms": 687.857
+      },
+      {
+        "id": "english:733/49690867#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:20.555820+00:00",
+        "outcome": "unrelated",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.2468,
+          "uncertain": 0.3691,
+          "unrelated": 0.384
+        },
+        "selected_probability": 0.384,
+        "confidence": 0.0163,
+        "provider_latency_ms": 377.69,
+        "input_tokens": 191,
+        "output_tokens": 0,
+        "wall_ms": 377.744
+      },
+      {
+        "id": "english:733/14046416#2",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:20.949584+00:00",
+        "outcome": "unrelated",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.09,
+          "uncertain": 0.0806,
+          "unrelated": 0.8294
+        },
+        "selected_probability": 0.8294,
+        "confidence": 0.4768,
+        "provider_latency_ms": 689.53,
+        "input_tokens": 350,
+        "output_tokens": 0,
+        "wall_ms": 689.569
+      },
+      {
+        "id": "german:4725485#0/1078964#9",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:21.652950+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0895,
+          "uncertain": 0.8825,
+          "unrelated": 0.028
+        },
+        "selected_probability": 0.8825,
+        "confidence": 0.6119,
+        "provider_latency_ms": 432.3,
+        "input_tokens": 220,
+        "output_tokens": 0,
+        "wall_ms": 432.335
+      },
+      {
+        "id": "french:7718737-0/10032939#9",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:22.097589+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.2026,
+          "uncertain": 0.7723,
+          "unrelated": 0.0251
+        },
+        "selected_probability": 0.7723,
+        "confidence": 0.4397,
+        "provider_latency_ms": 535.34,
+        "input_tokens": 282,
+        "output_tokens": 0,
+        "wall_ms": 535.395
+      },
+      {
+        "id": "english:4082/32425726#5",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:22.645718+00:00",
+        "outcome": "relevant",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.3588,
+          "uncertain": 0.3217,
+          "unrelated": 0.3195
+        },
+        "selected_probability": 0.3588,
+        "confidence": 0.0013,
+        "provider_latency_ms": 558.64,
+        "input_tokens": 285,
+        "output_tokens": 0,
+        "wall_ms": 558.691
+      },
+      {
+        "id": "french:1595430-0/78746#1",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:23.219779+00:00",
+        "outcome": "unrelated",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.2666,
+          "uncertain": 0.125,
+          "unrelated": 0.6084
+        },
+        "selected_probability": 0.6084,
+        "confidence": 0.1674,
+        "provider_latency_ms": 447.85,
+        "input_tokens": 225,
+        "output_tokens": 0,
+        "wall_ms": 447.891
+      },
+      {
+        "id": "english:12256509#0/11258671#2",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:23.685920+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.2451,
+          "uncertain": 0.7181,
+          "unrelated": 0.0368
+        },
+        "selected_probability": 0.7181,
+        "confidence": 0.3593,
+        "provider_latency_ms": 510.15,
+        "input_tokens": 255,
+        "output_tokens": 0,
+        "wall_ms": 510.198
+      },
+      {
+        "id": "german:8228750-0/583711#4",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:24.213213+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.2583,
+          "uncertain": 0.7066,
+          "unrelated": 0.0351
+        },
+        "selected_probability": 0.7066,
+        "confidence": 0.3514,
+        "provider_latency_ms": 578.11,
+        "input_tokens": 282,
+        "output_tokens": 0,
+        "wall_ms": 578.177
+      },
+      {
+        "id": "german:4725485#0/9923973#7",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:24.806945+00:00",
+        "outcome": "relevant",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.4661,
+          "uncertain": 0.4625,
+          "unrelated": 0.0715
+        },
+        "selected_probability": 0.4661,
+        "confidence": 0.1799,
+        "provider_latency_ms": 515.96,
+        "input_tokens": 270,
+        "output_tokens": 0,
+        "wall_ms": 516.015
+      },
+      {
+        "id": "english:12256509#0/48739436#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:25.338317+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.05,
+          "uncertain": 0.9374,
+          "unrelated": 0.0126
+        },
+        "selected_probability": 0.9374,
+        "confidence": 0.7582,
+        "provider_latency_ms": 591.27,
+        "input_tokens": 304,
+        "output_tokens": 0,
+        "wall_ms": 591.332
+      },
+      {
+        "id": "french:8113528#0/13792382#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:25.946429+00:00",
+        "outcome": "unrelated",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0317,
+          "uncertain": 0.1842,
+          "unrelated": 0.7841
+        },
+        "selected_probability": 0.7841,
+        "confidence": 0.4432,
+        "provider_latency_ms": 524.04,
+        "input_tokens": 258,
+        "output_tokens": 0,
+        "wall_ms": 524.105
+      },
+      {
+        "id": "german:8228750-0/1011295#13",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:26.491156+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0715,
+          "uncertain": 0.7634,
+          "unrelated": 0.1651
+        },
+        "selected_probability": 0.7634,
+        "confidence": 0.37,
+        "provider_latency_ms": 573.43,
+        "input_tokens": 274,
+        "output_tokens": 0,
+        "wall_ms": 573.476
+      },
+      {
+        "id": "english:4082/8798949#71",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:27.084676+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.2246,
+          "uncertain": 0.7187,
+          "unrelated": 0.0567
+        },
+        "selected_probability": 0.7187,
+        "confidence": 0.3305,
+        "provider_latency_ms": 566.03,
+        "input_tokens": 273,
+        "output_tokens": 0,
+        "wall_ms": 566.082
+      },
+      {
+        "id": "french:1595430-0/78746#10",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:27.669104+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.1689,
+          "uncertain": 0.739,
+          "unrelated": 0.0921
+        },
+        "selected_probability": 0.739,
+        "confidence": 0.3232,
+        "provider_latency_ms": 539.84,
+        "input_tokens": 259,
+        "output_tokens": 0,
+        "wall_ms": 539.892
+      },
+      {
+        "id": "french:7259667#0/1194348#4",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:28.222104+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0213,
+          "uncertain": 0.7849,
+          "unrelated": 0.1938
+        },
+        "selected_probability": 0.7849,
+        "confidence": 0.4629,
+        "provider_latency_ms": 511.95,
+        "input_tokens": 256,
+        "output_tokens": 0,
+        "wall_ms": 511.981
+      },
+      {
+        "id": "french:7718737-0/14495449#8",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:28.750310+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.1193,
+          "uncertain": 0.877,
+          "unrelated": 0.0037
+        },
+        "selected_probability": 0.877,
+        "confidence": 0.6456,
+        "provider_latency_ms": 522.25,
+        "input_tokens": 261,
+        "output_tokens": 0,
+        "wall_ms": 522.315
+      },
+      {
+        "id": "english:34/12720#3",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:29.292585+00:00",
+        "outcome": "relevant",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.9052,
+          "uncertain": 0.0615,
+          "unrelated": 0.0333
+        },
+        "selected_probability": 0.9052,
+        "confidence": 0.6587,
+        "provider_latency_ms": 548.25,
+        "input_tokens": 286,
+        "output_tokens": 0,
+        "wall_ms": 548.296
+      },
+      {
+        "id": "french:8113528#0/14257352#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:29.860465+00:00",
+        "outcome": "unrelated",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0037,
+          "uncertain": 0.0217,
+          "unrelated": 0.9745
+        },
+        "selected_probability": 0.9745,
+        "confidence": 0.8823,
+        "provider_latency_ms": 425.08,
+        "input_tokens": 225,
+        "output_tokens": 0,
+        "wall_ms": 425.116
+      },
+      {
+        "id": "english:34/32412462#1",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:30.303871+00:00",
+        "outcome": "unrelated",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0305,
+          "uncertain": 0.1261,
+          "unrelated": 0.8434
+        },
+        "selected_probability": 0.8434,
+        "confidence": 0.5348,
+        "provider_latency_ms": 398.04,
+        "input_tokens": 194,
+        "output_tokens": 0,
+        "wall_ms": 398.089
+      },
+      {
+        "id": "german:7915063#0/76611#2",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:30.719038+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.1763,
+          "uncertain": 0.8176,
+          "unrelated": 0.006
+        },
+        "selected_probability": 0.8176,
+        "confidence": 0.5436,
+        "provider_latency_ms": 652.39,
+        "input_tokens": 327,
+        "output_tokens": 0,
+        "wall_ms": 652.442
+      },
+      {
+        "id": "german:4725485#0/130#18",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:31.385752+00:00",
+        "outcome": "relevant",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.5327,
+          "uncertain": 0.3149,
+          "unrelated": 0.1524
+        },
+        "selected_probability": 0.5327,
+        "confidence": 0.1024,
+        "provider_latency_ms": 581.82,
+        "input_tokens": 306,
+        "output_tokens": 0,
+        "wall_ms": 581.86
+      },
+      {
+        "id": "french:8113528#0/14257332#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:31.981988+00:00",
+        "outcome": "unrelated",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0025,
+          "uncertain": 0.0165,
+          "unrelated": 0.981
+        },
+        "selected_probability": 0.981,
+        "confidence": 0.9078,
+        "provider_latency_ms": 465.3,
+        "input_tokens": 225,
+        "output_tokens": 0,
+        "wall_ms": 465.35
+      },
+      {
+        "id": "german:4725485#0/2612499#21",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:32.467458+00:00",
+        "outcome": "unrelated",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.2626,
+          "uncertain": 0.2794,
+          "unrelated": 0.4579
+        },
+        "selected_probability": 0.4579,
+        "confidence": 0.0305,
+        "provider_latency_ms": 578.48,
+        "input_tokens": 286,
+        "output_tokens": 0,
+        "wall_ms": 578.54
+      },
+      {
+        "id": "english:4082/8798949#68",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:33.066241+00:00",
+        "outcome": "relevant",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.4612,
+          "uncertain": 0.4137,
+          "unrelated": 0.1251
+        },
+        "selected_probability": 0.4612,
+        "confidence": 0.1061,
+        "provider_latency_ms": 534.36,
+        "input_tokens": 281,
+        "output_tokens": 0,
+        "wall_ms": 534.408
+      },
+      {
+        "id": "english:12256509#0/27970563#18",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:33.615992+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0119,
+          "uncertain": 0.9409,
+          "unrelated": 0.0472
+        },
+        "selected_probability": 0.9409,
+        "confidence": 0.7688,
+        "provider_latency_ms": 671.34,
+        "input_tokens": 348,
+        "output_tokens": 0,
+        "wall_ms": 671.375
+      },
+      {
+        "id": "german:8228750-0/20729#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:34.303870+00:00",
+        "outcome": "unrelated",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.1396,
+          "uncertain": 0.3093,
+          "unrelated": 0.5511
+        },
+        "selected_probability": 0.5511,
+        "confidence": 0.1205,
+        "provider_latency_ms": 478.15,
+        "input_tokens": 254,
+        "output_tokens": 0,
+        "wall_ms": 478.202
+      },
+      {
+        "id": "german:7915063#0/6309183#1",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:34.804005+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0206,
+          "uncertain": 0.9491,
+          "unrelated": 0.0303
+        },
+        "selected_probability": 0.9491,
+        "confidence": 0.7856,
+        "provider_latency_ms": 655.0,
+        "input_tokens": 336,
+        "output_tokens": 0,
+        "wall_ms": 655.052
+      },
+      {
+        "id": "english:34/22634730#60",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:35.481057+00:00",
+        "outcome": "relevant",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.6222,
+          "uncertain": 0.2954,
+          "unrelated": 0.0824
+        },
+        "selected_probability": 0.6222,
+        "confidence": 0.2162,
+        "provider_latency_ms": 590.84,
+        "input_tokens": 298,
+        "output_tokens": 0,
+        "wall_ms": 590.887
+      },
+      {
+        "id": "english:4082/34494017#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:36.089964+00:00",
+        "outcome": "relevant",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.7581,
+          "uncertain": 0.1304,
+          "unrelated": 0.1114
+        },
+        "selected_probability": 0.7581,
+        "confidence": 0.3445,
+        "provider_latency_ms": 593.93,
+        "input_tokens": 294,
+        "output_tokens": 0,
+        "wall_ms": 593.984
+      },
+      {
+        "id": "german:11581522-0/10940384#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:36.699451+00:00",
+        "outcome": "uncertain",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.0277,
+          "uncertain": 0.9691,
+          "unrelated": 0.0032
+        },
+        "selected_probability": 0.9691,
+        "confidence": 0.8651,
+        "provider_latency_ms": 537.32,
+        "input_tokens": 284,
+        "output_tokens": 0,
+        "wall_ms": 537.368
+      },
+      {
+        "id": "english:733/37367511#0",
+        "status": "completed",
+        "reserved_seconds": 12,
+        "started_at": "2026-09-28T17:39:37.254633+00:00",
+        "outcome": "unrelated",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "probabilities": {
+          "relevant": 0.3084,
+          "uncertain": 0.3382,
+          "unrelated": 0.3534
+        },
+        "selected_probability": 0.3534,
+        "confidence": 0.0014,
+        "provider_latency_ms": 378.9,
+        "input_tokens": 191,
+        "output_tokens": 0,
+        "wall_ms": 378.958
+      }
+    ],
+    "cases": [
+      {
+        "id": "french:1595430-0/1217170#3",
+        "query_id": "french:1595430-0",
+        "document_id": "french:1217170#3",
+        "language": "french",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "1dba83e7384ff7391bb5ae44bdf849dd1e6bbf2f545297d1a865907699e81851",
+        "passage_sha256": "45062a0e5efa6823b2b13651a7293c2d59b2abe766cf34669cb7b1ea4f4dcc22",
+        "passage_characters": 413,
+        "truncated": false
+      },
+      {
+        "id": "french:7718737-0/14734186#0",
+        "query_id": "french:7718737-0",
+        "document_id": "french:14734186#0",
+        "language": "french",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "b8e893e87a287a8126b02a29c966fba41adaaafe30f64b09f6e5df936e23100c",
+        "passage_sha256": "5b07dfbcef4d5f6bec9a26e966d78fca00e6f54ee3dffc8d2d1ca57e416a5804",
+        "passage_characters": 388,
+        "truncated": false
+      },
+      {
+        "id": "french:7718737-0/6094448#8",
+        "query_id": "french:7718737-0",
+        "document_id": "french:6094448#8",
+        "language": "french",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "00ab6fa7f813cc4abc2d3f6eedf640cfdc076b7109f417f3e38ba0caae4d2374",
+        "passage_sha256": "72224c4ecd3ef9e5d7e8070499046bc4e9165c20ed235f1afacf034c6c63cc6b",
+        "passage_characters": 348,
+        "truncated": false
+      },
+      {
+        "id": "french:8113528#0/664499#0",
+        "query_id": "french:8113528#0",
+        "document_id": "french:664499#0",
+        "language": "french",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "9057898a8a831aa24e75792d194bb982fce4ac121c4a47022d760885e0bb2899",
+        "passage_sha256": "ff33061330aac14b38f47d8c024b7c6aeb341a4791c1a9d27fcad49e5b03757a",
+        "passage_characters": 76,
+        "truncated": false
+      },
+      {
+        "id": "german:4725485#0/3031232#13",
+        "query_id": "german:4725485#0",
+        "document_id": "german:3031232#13",
+        "language": "german",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "a9f82cdfe2c6ab3c33bd75dd7cd59967b2958251568b2b67f1dc9d61e5f5a3b8",
+        "passage_sha256": "9695ceebc5aa0c122928c8db2f981b5b6a8dd89087922e6ad25cab379413f787",
+        "passage_characters": 1631,
+        "truncated": true
+      },
+      {
+        "id": "english:733/1598074#5",
+        "query_id": "english:733",
+        "document_id": "english:1598074#5",
+        "language": "english",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "28bc89e22de7a73c1aa8a8acd891b1b3c49b2637cab74004170740a358d116de",
+        "passage_sha256": "7a86516d523563eead9dbaf73481082c50f3b6c43622646113795a78ecca843f",
+        "passage_characters": 410,
+        "truncated": false
+      },
+      {
+        "id": "french:7259667#0/205788#1",
+        "query_id": "french:7259667#0",
+        "document_id": "french:205788#1",
+        "language": "french",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "0526db6b508debca6ce5537c72d68e3c24def6f9fe91cf8ecad7a3411d48f5b6",
+        "passage_sha256": "db53e6e4c2d02b5c4b008718743c41baf56c326a40c8392c27990e373c424f2c",
+        "passage_characters": 260,
+        "truncated": false
+      },
+      {
+        "id": "french:1595430-0/13361269#3",
+        "query_id": "french:1595430-0",
+        "document_id": "french:13361269#3",
+        "language": "french",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "06aa1fc384487038fa9f6b8b0fef55056d134ae5a59936029623c8fe215d00e5",
+        "passage_sha256": "b6f07db182758bf765074a803a178d986a1ca89db4f7314df2414cbe2274fdac",
+        "passage_characters": 1434,
+        "truncated": true
+      },
+      {
+        "id": "french:7259667#0/356774#35",
+        "query_id": "french:7259667#0",
+        "document_id": "french:356774#35",
+        "language": "french",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "ffc4daeaa1a40c09f3baee91b1eb89b07f2e6eb9289660b7b30458ffe33030e6",
+        "passage_sha256": "c39351c38573c82dbbf64cf0572cdba05cb7486c7c81e33d4b51028858da3745",
+        "passage_characters": 448,
+        "truncated": false
+      },
+      {
+        "id": "english:34/162597#0",
+        "query_id": "english:34",
+        "document_id": "english:162597#0",
+        "language": "english",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "e755fe5eeeb262c72ed56e265186bf89177a5d8d29ec2b87bd2a7301eb4bd185",
+        "passage_sha256": "8ff5d265e48d521b3d690f9b9a46457adbf620363b56cb22ecefa1454d3e7778",
+        "passage_characters": 822,
+        "truncated": true
+      },
+      {
+        "id": "german:7915063#0/10194570#0",
+        "query_id": "german:7915063#0",
+        "document_id": "german:10194570#0",
+        "language": "german",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "36e149c282ff87e54ffd72739dcfdb0e4ec520aa0cd8b24b5bebac7d18a823b5",
+        "passage_sha256": "31333304878dcdb422a2bbbea876bb888aff29ac1a5efc9660317b38292fb76a",
+        "passage_characters": 218,
+        "truncated": false
+      },
+      {
+        "id": "english:12256509#0/2438772#14",
+        "query_id": "english:12256509#0",
+        "document_id": "english:2438772#14",
+        "language": "english",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "29b34a9636be71a969a3c4f1b42aaf986ad17b003a6f58fff5ed87cd8e1abd1e",
+        "passage_sha256": "d465a74d68ccfd5d2e58a02805f729b0ca1283de997260b5964e61fbe4e78b67",
+        "passage_characters": 841,
+        "truncated": true
+      },
+      {
+        "id": "english:4082/53883304#15",
+        "query_id": "english:4082",
+        "document_id": "english:53883304#15",
+        "language": "english",
+        "subset": "relevant",
+        "label": 1,
+        "input_sha256": "d22a195bba53e37aea6b075049b22b656a8dbbd971aa217d35c7b1d88bc80f8c",
+        "passage_sha256": "01d067998f42f0c5963f2df3aa2fd21d7128306b02007bf129d34d3f8d2467b0",
+        "passage_characters": 948,
+        "truncated": true
+      },
+      {
+        "id": "german:4725485#0/3027963#4",
+        "query_id": "german:4725485#0",
+        "document_id": "german:3027963#4",
+        "language": "german",
+        "subset": "relevant",
+        "label": 1,
+        "input_sha256": "ea87d656785a1818474840499d33a6302fd5e22a365b9d399751061cd1a6c777",
+        "passage_sha256": "fdb369a5a685755ec123aea63a8d78b53a4be438e82a16ecb1224977edaee1b5",
+        "passage_characters": 864,
+        "truncated": true
+      },
+      {
+        "id": "english:4082/38175442#0",
+        "query_id": "english:4082",
+        "document_id": "english:38175442#0",
+        "language": "english",
+        "subset": "relevant",
+        "label": 1,
+        "input_sha256": "261ef0859c6db8bca1270c97fc7f55d007577d50b16035ea82e34e94965e6dc3",
+        "passage_sha256": "e3fd6ba782fe0d5f68e37c950b82a000e05b7ef7e60aa5dcb2c6cd88f0436b31",
+        "passage_characters": 306,
+        "truncated": false
+      },
+      {
+        "id": "english:34/1656574#16",
+        "query_id": "english:34",
+        "document_id": "english:1656574#16",
+        "language": "english",
+        "subset": "relevant",
+        "label": 1,
+        "input_sha256": "07b09a59d0469083741462008bd2928afce624163fe3783aa1d7d1096ded6ff3",
+        "passage_sha256": "cd638872e321654fa1ec401b7a64ee5a69996a4ced33a6b42627845c1d7c33fa",
+        "passage_characters": 789,
+        "truncated": true
+      },
+      {
+        "id": "english:4082/5121584#7",
+        "query_id": "english:4082",
+        "document_id": "english:5121584#7",
+        "language": "english",
+        "subset": "relevant",
+        "label": 1,
+        "input_sha256": "1a93bee30e4ab3d0f45c501136ee6c78771eb38febd2da9374efbc1fb996ea1f",
+        "passage_sha256": "c116f263cdf176c93b124ef87b2a02f91222ba3a39da4dbb789dc08347d9bd66",
+        "passage_characters": 781,
+        "truncated": true
+      },
+      {
+        "id": "french:7718737-0/7505947#5",
+        "query_id": "french:7718737-0",
+        "document_id": "french:7505947#5",
+        "language": "french",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "f69a0fc8b4c22432f0e78d6dc7e612b34787b3e60d4bbc954b677df0f63d55e3",
+        "passage_sha256": "43a9847e0f76b939afd208037159a55044ae1a2297731a460640148fea96e8cd",
+        "passage_characters": 194,
+        "truncated": false
+      },
+      {
+        "id": "english:12256509#0/42497300#1",
+        "query_id": "english:12256509#0",
+        "document_id": "english:42497300#1",
+        "language": "english",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "21d3332f05f0080dce8eca16cf6bfeab1f1909d9eb80bcd0e6dfb80b99e06ea9",
+        "passage_sha256": "b62ccdc97108a1365c7ef3e3e8a5864804b014a2f4929cae357dc4696a7a7093",
+        "passage_characters": 1200,
+        "truncated": true
+      },
+      {
+        "id": "german:7915063#0/9247720#8",
+        "query_id": "german:7915063#0",
+        "document_id": "german:9247720#8",
+        "language": "german",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "9a07f948d633b9bbb7f0174cb2ea04ed5dce97da278ec9ea9480cb3ff49d55f1",
+        "passage_sha256": "2bdce826ca4fc8f1e5db0e82c48ec2101c3042b369313d82ec1ce745bbf86f0f",
+        "passage_characters": 502,
+        "truncated": false
+      },
+      {
+        "id": "english:12256509#0/53122929#0",
+        "query_id": "english:12256509#0",
+        "document_id": "english:53122929#0",
+        "language": "english",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "a887657751c48e0b932c61bbc82c7a8e069991c61219c3fad5e72088047f9479",
+        "passage_sha256": "8add27c81bb54a2ea71b91c93e69116ad65f03f98f70602a968d23f113efa8da",
+        "passage_characters": 473,
+        "truncated": false
+      },
+      {
+        "id": "french:1595430-0/13361269#2",
+        "query_id": "french:1595430-0",
+        "document_id": "french:13361269#2",
+        "language": "french",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "a73355131cdbf7b2b8cb7f19a96eea171e1eddef4a4d61112eefcaf687e93726",
+        "passage_sha256": "4e811891c99cf22fce401f42abdbbee8754ea79bde61ca9cc2a2a5936107e6cc",
+        "passage_characters": 658,
+        "truncated": true
+      },
+      {
+        "id": "french:7259667#0/158872#3",
+        "query_id": "french:7259667#0",
+        "document_id": "french:158872#3",
+        "language": "french",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "ec0c75a7231c1c7d93f3b7a991054998dacf2b251f25b593a860d14fde20c8dd",
+        "passage_sha256": "609203e6be9d43dc59e83f6280052ecb506925dd22afb9379ece7b49764dfde0",
+        "passage_characters": 166,
+        "truncated": false
+      },
+      {
+        "id": "english:4082/42205615#10",
+        "query_id": "english:4082",
+        "document_id": "english:42205615#10",
+        "language": "english",
+        "subset": "relevant",
+        "label": 1,
+        "input_sha256": "4086a1970c417b5f8eaf33dc85458d4cc7537971a76be34a1502af1c3e1ac565",
+        "passage_sha256": "c7d1449c000fbbe378f3a3427a96990fbb2cff93b6443231690cbea68f74b967",
+        "passage_characters": 1086,
+        "truncated": true
+      },
+      {
+        "id": "english:733/11247268#8",
+        "query_id": "english:733",
+        "document_id": "english:11247268#8",
+        "language": "english",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "f92a8ca28a169b3b134e30449856903a886a2fd0a770b6f15525e40378df9e06",
+        "passage_sha256": "734365d58f6dbdd95bdfc12414505097cb5a4da7e64a6b038241bcd132127e94",
+        "passage_characters": 361,
+        "truncated": false
+      },
+      {
+        "id": "french:7259667#0/1133445#1",
+        "query_id": "french:7259667#0",
+        "document_id": "french:1133445#1",
+        "language": "french",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "6d9ccdb581913c273b18afddf50b1ca4d10058e7a87d132f18148b2e57b5758b",
+        "passage_sha256": "0708e453f4abf97dfc1988fed29409eedc728c90c5cd16d9fc100d16b104758f",
+        "passage_characters": 359,
+        "truncated": false
+      },
+      {
+        "id": "english:733/19477084#6",
+        "query_id": "english:733",
+        "document_id": "english:19477084#6",
+        "language": "english",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "5cc35b4c16f4f106e121cdf4b75ea1fd7d88b00234f0adc626c9e9ad11e88f0f",
+        "passage_sha256": "238dee36fb96a0fdeca9a17aa72284a2eb4527919341bdf3c94006272cecc0ca",
+        "passage_characters": 718,
+        "truncated": true
+      },
+      {
+        "id": "french:1595430-0/75096#8",
+        "query_id": "french:1595430-0",
+        "document_id": "french:75096#8",
+        "language": "french",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "b73ed4cc1db9f379e104c73f98b9975e3761b785b724fddc3fde066c59dbc90b",
+        "passage_sha256": "1c6cd042015ca20e7c5cc33ba517b21e438388c661fbb819cc535691268694ef",
+        "passage_characters": 133,
+        "truncated": false
+      },
+      {
+        "id": "german:7915063#0/10079168#11",
+        "query_id": "german:7915063#0",
+        "document_id": "german:10079168#11",
+        "language": "german",
+        "subset": "relevant",
+        "label": 1,
+        "input_sha256": "d10638a244763c585d03eca1764cd3f4b2fb00f6bd05770ce2480b7a8c9301c0",
+        "passage_sha256": "579686cd51108a08bec5f5b1ce3d4afa76380b6e2f581041e22d35f10b41f425",
+        "passage_characters": 1429,
+        "truncated": true
+      },
+      {
+        "id": "french:1595430-0/75096#2",
+        "query_id": "french:1595430-0",
+        "document_id": "french:75096#2",
+        "language": "french",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "d2e556754cd49acb0edad5cf85c7b395c4a9e589c4721d42ec4bbc00b2f431d0",
+        "passage_sha256": "0efe8768dbc638d64978444f6f09d4012912f6189b40ff6293c5fb3025657066",
+        "passage_characters": 755,
+        "truncated": true
+      },
+      {
+        "id": "french:7259667#0/3739410#1",
+        "query_id": "french:7259667#0",
+        "document_id": "french:3739410#1",
+        "language": "french",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "4fd5ad787ffec90c2f1e73e7221dd52e10af39d5a7074984a364122dd831d2a8",
+        "passage_sha256": "e5e365d0bd358fa14abc23d36c2dea0c2f28921bac7273812ae58fe619909e90",
+        "passage_characters": 527,
+        "truncated": false
+      },
+      {
+        "id": "german:7915063#0/10194570#1",
+        "query_id": "german:7915063#0",
+        "document_id": "german:10194570#1",
+        "language": "german",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "ae6298f31b324b9faf59da6e1ee1f6ce7b11484a0eb64dc7c5a8c5bcb43070eb",
+        "passage_sha256": "0ec9726cb4f81e64d488be7177cff49b2a6b817bc5d4ac174e48f678772eeff5",
+        "passage_characters": 663,
+        "truncated": true
+      },
+      {
+        "id": "german:4725485#0/6550769#3",
+        "query_id": "german:4725485#0",
+        "document_id": "german:6550769#3",
+        "language": "german",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "df3df8e4287a91d41f0d29af5634cdcfc91837a5c4deaffd764b74a6eff36021",
+        "passage_sha256": "d25d5e4da7574e2a166374ae5d71261a5f5b8e6dce41ac6f6d0086189c59a258",
+        "passage_characters": 119,
+        "truncated": false
+      },
+      {
+        "id": "english:34/446536#0",
+        "query_id": "english:34",
+        "document_id": "english:446536#0",
+        "language": "english",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "a89e55b5b2b8c2659e010fd62284ac6482bd59dc518d8450fb196b1d90f82708",
+        "passage_sha256": "494917c4de9600b8770aa0fd94f6d128c65cf17b31cedeee548fc1bcacd54af5",
+        "passage_characters": 877,
+        "truncated": true
+      },
+      {
+        "id": "french:8113528#0/13790448#0",
+        "query_id": "french:8113528#0",
+        "document_id": "french:13790448#0",
+        "language": "french",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "87574443aea6dcb57c90b58fbfef182e8b10bbe645198f01e1cc96541e5f5f74",
+        "passage_sha256": "156ff73e06af631eac90964655537f7fe10a8ad547c5e8c38d52013be5d99c76",
+        "passage_characters": 227,
+        "truncated": false
+      },
+      {
+        "id": "french:7259667#0/1227994#13",
+        "query_id": "french:7259667#0",
+        "document_id": "french:1227994#13",
+        "language": "french",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "1d87555a5d8b75ec5ae08feaffce9f15d2ba73d255320cdc243fab7fdd3d37c2",
+        "passage_sha256": "78a468e2919b49c0673f3aa891f66c437e18803712e943aefff11fb46005f64e",
+        "passage_characters": 715,
+        "truncated": true
+      },
+      {
+        "id": "french:8113528#0/14257341#0",
+        "query_id": "french:8113528#0",
+        "document_id": "french:14257341#0",
+        "language": "french",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "8ebd6193de82b2a05de8a1550bd960ff890eb6d41d6d6cf417b640ad47230ffa",
+        "passage_sha256": "eff26d3b87d3306db67fceccc41ea9549ef7386e8c6b532f6e70742b0ee85ef8",
+        "passage_characters": 167,
+        "truncated": false
+      },
+      {
+        "id": "german:8228750-0/95106#79",
+        "query_id": "german:8228750-0",
+        "document_id": "german:95106#79",
+        "language": "german",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "e6fa9db2bbbdac933a9b421aafc31421c8e64e9a86dba9c03932022078c27ee9",
+        "passage_sha256": "91043b4e41b4c84e65f20a3dc3a22d6bff08eb3fd8c07b970d0e87adc312e302",
+        "passage_characters": 466,
+        "truncated": false
+      },
+      {
+        "id": "german:11581522-0/4142627#1",
+        "query_id": "german:11581522-0",
+        "document_id": "german:4142627#1",
+        "language": "german",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "e9184ccee06f7a748675a0177fdb699dfad7508d93b1b0440cf8f29bb4351b1f",
+        "passage_sha256": "2c60f1edb5395e857dc47ea65510fa2c595ca6698e9272cfad98192565b9e8e9",
+        "passage_characters": 994,
+        "truncated": true
+      },
+      {
+        "id": "english:4082/8798949#80",
+        "query_id": "english:4082",
+        "document_id": "english:8798949#80",
+        "language": "english",
+        "subset": "relevant",
+        "label": 1,
+        "input_sha256": "0fd853fc0aa751e0043bcae3fc257911663cdc44120a092fae3e60b998404d99",
+        "passage_sha256": "4707f576ca3db6b4d986083f8de9921bcb003d4540677120d7ee0d26dfe2d2c3",
+        "passage_characters": 836,
+        "truncated": true
+      },
+      {
+        "id": "german:8228750-0/233627#0",
+        "query_id": "german:8228750-0",
+        "document_id": "german:233627#0",
+        "language": "german",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "d04c9117fe79d3d0e1c2126753060fcf478b87845a867b45da9b077e046313c8",
+        "passage_sha256": "200b95c5cf59dce8adcb8f485da3fbbbeb6f3262dbdebcc14de99597780ce910",
+        "passage_characters": 511,
+        "truncated": false
+      },
+      {
+        "id": "german:4725485#0/3027963#7",
+        "query_id": "german:4725485#0",
+        "document_id": "german:3027963#7",
+        "language": "german",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "2e2406e6378987a4ea6e4616a0c6929fccdd20e5d3225ade4288ed9f58b8dbde",
+        "passage_sha256": "d412b47b6a1b35b76846729e88e6c086a9f344bdb1988c53cfdd198ced25b4d4",
+        "passage_characters": 934,
+        "truncated": true
+      },
+      {
+        "id": "english:34/41959688#0",
+        "query_id": "english:34",
+        "document_id": "english:41959688#0",
+        "language": "english",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "c4e25d4d3458c4c696cbfb000c49496b0bcf16c5f98c241cb284dd42aa987f58",
+        "passage_sha256": "992869ee589d4e6e6490cb05106fd27b299d8be2e05ea6f51c58c6baf6bce6bd",
+        "passage_characters": 522,
+        "truncated": false
+      },
+      {
+        "id": "german:8228750-0/4203159#35",
+        "query_id": "german:8228750-0",
+        "document_id": "german:4203159#35",
+        "language": "german",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "8814a27e7fb3beb1e9a686775f6baf307069bf5360dd4a37dd12341e59327aeb",
+        "passage_sha256": "0a4bec0ae26c58d42081a9bd5f8b53a29f373e5570096b9d26121fd4f02dd945",
+        "passage_characters": 792,
+        "truncated": true
+      },
+      {
+        "id": "english:34/17131451#7",
+        "query_id": "english:34",
+        "document_id": "english:17131451#7",
+        "language": "english",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "64cb78a0ead2f68a958fab08f54fb7a0c93a376262e6c030df612eaba48b3c4b",
+        "passage_sha256": "2e66fd83246356d7a27d242110bec21a2087aaf8789b953f63a67c9922953f54",
+        "passage_characters": 836,
+        "truncated": true
+      },
+      {
+        "id": "french:8113528#0/13792356#0",
+        "query_id": "french:8113528#0",
+        "document_id": "french:13792356#0",
+        "language": "french",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "a689322348cc6158f2a0fdeea01282fa2036cac1a8de8c822afd330f46fef023",
+        "passage_sha256": "c048a1945332ec8b8bb4bcce1f811e109f893220937caf9dfbf3e96191638fad",
+        "passage_characters": 227,
+        "truncated": false
+      },
+      {
+        "id": "french:7718737-0/1416234#193",
+        "query_id": "french:7718737-0",
+        "document_id": "french:1416234#193",
+        "language": "french",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "9ed7df9a91908848938b54256f96b0d33dc5f574c4685d6fc0ee218cbacc6796",
+        "passage_sha256": "c483f11b68f6ef2096f09169ba86d770675b389697637242a77bb098340cb88a",
+        "passage_characters": 368,
+        "truncated": false
+      },
+      {
+        "id": "french:7718737-0/14004370#0",
+        "query_id": "french:7718737-0",
+        "document_id": "french:14004370#0",
+        "language": "french",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "105c1cd4302a750065880239fc20f5d2e4db2874a9d2f27f9bdd61e8c2075ff7",
+        "passage_sha256": "daf11c112402bd7bb9c8af38f2647321ad9bde284708a6c53165e5b26a9bcb87",
+        "passage_characters": 343,
+        "truncated": false
+      },
+      {
+        "id": "english:12256509#0/59631424#1",
+        "query_id": "english:12256509#0",
+        "document_id": "english:59631424#1",
+        "language": "english",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "526a64fd0f3776e955274cae47d213144959bee7b452112b897d579d83ddf362",
+        "passage_sha256": "3b3ad19ed3b4697f360dd449eb0e6f9578270612d5cf7374397bc82da6ba9882",
+        "passage_characters": 362,
+        "truncated": false
+      },
+      {
+        "id": "french:8113528#0/12996858#16",
+        "query_id": "french:8113528#0",
+        "document_id": "french:12996858#16",
+        "language": "french",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "7c9ad228ab33fb45eb71c2659edd7d951ce81af69a7d08291b379b5701496487",
+        "passage_sha256": "4c822e507c898b254f7b46bbced58dc9cc2014065f78b1d4f74583ea2d5aa5ac",
+        "passage_characters": 658,
+        "truncated": true
+      },
+      {
+        "id": "french:7718737-0/8554500#0",
+        "query_id": "french:7718737-0",
+        "document_id": "french:8554500#0",
+        "language": "french",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "125043c40410687bff96b85f22945bf312aa08adaf09af5ab371a01700bb1689",
+        "passage_sha256": "24e7295132d88416290d40024cbe8f8def5306b83a7cf179ee98d47f26c02640",
+        "passage_characters": 221,
+        "truncated": false
+      },
+      {
+        "id": "french:7259667#0/205788#3",
+        "query_id": "french:7259667#0",
+        "document_id": "french:205788#3",
+        "language": "french",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "8887a842a649edf58f2db70facaae76c2a55f3dad4f8f34a803528e159d4bc97",
+        "passage_sha256": "68d3b71da52ef41d3e26b674b36520ab242c7ad23463ac56d9129910bded436a",
+        "passage_characters": 294,
+        "truncated": false
+      },
+      {
+        "id": "english:733/49690912#0",
+        "query_id": "english:733",
+        "document_id": "english:49690912#0",
+        "language": "english",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "72b74d97464b5e34b1b8f10b77ad125f74ddceff1dd231a9c0dd82f58e878833",
+        "passage_sha256": "368a3d7b53013074047fbc369ba95b934e17362626b0ed0cd96dc3b7ed39b3c1",
+        "passage_characters": 59,
+        "truncated": false
+      },
+      {
+        "id": "german:8228750-0/95106#81",
+        "query_id": "german:8228750-0",
+        "document_id": "german:95106#81",
+        "language": "german",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "a3fce39fd7ee11a425ee40d16043ea00a134f5ae6183eeeb4d5fefb40dabc3fc",
+        "passage_sha256": "59a200df353a9ce9d3647e70ff6bd22fdc5ef28cd2a9dc5fde911fcafa4f1e64",
+        "passage_characters": 252,
+        "truncated": false
+      },
+      {
+        "id": "french:1595430-0/1654045#14",
+        "query_id": "french:1595430-0",
+        "document_id": "french:1654045#14",
+        "language": "french",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "51cd3dfbddfbdaa6d0091330eed561768cf7408ed95046d9e1b72551ad8c95c4",
+        "passage_sha256": "b76ddfc6460716a954017af74e686fb1f88c022baca305e1be1fec9590aef8d8",
+        "passage_characters": 602,
+        "truncated": true
+      },
+      {
+        "id": "german:7915063#0/10055976#1",
+        "query_id": "german:7915063#0",
+        "document_id": "german:10055976#1",
+        "language": "german",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "98a8dbe205ae469aec4c4e4d51739a7a9e889b5acf1cc48d1bd5a29a332afe8d",
+        "passage_sha256": "36ab4f84bd7124be2d9816968e057ac4063c2da51089b8c24ff40d36f2c5d6e8",
+        "passage_characters": 416,
+        "truncated": false
+      },
+      {
+        "id": "french:7718737-0/13380587#0",
+        "query_id": "french:7718737-0",
+        "document_id": "french:13380587#0",
+        "language": "french",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "647882af8dd7a69ba309e5f21a9f0c43c128d1a6947b760b15f8fba8b9ad29f1",
+        "passage_sha256": "51dc225501445fc68e776e3659397f6297e9c8223ebc39f4f083a1a6b9441a46",
+        "passage_characters": 775,
+        "truncated": true
+      },
+      {
+        "id": "french:8113528#0/1138008#0",
+        "query_id": "french:8113528#0",
+        "document_id": "french:1138008#0",
+        "language": "french",
+        "subset": "relevant",
+        "label": 1,
+        "input_sha256": "2b789ea7784310a73e90ce0dabd2bf6a062e13687f7426b109d0dd466035829d",
+        "passage_sha256": "74269a4ddb88beeb8f783d61f27c26df379785c22cedf681b569adf57e0ef04a",
+        "passage_characters": 281,
+        "truncated": false
+      },
+      {
+        "id": "german:11581522-0/9657215#0",
+        "query_id": "german:11581522-0",
+        "document_id": "german:9657215#0",
+        "language": "german",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "7863d89509e9879165f3552ba487a84f05f6077e803f6a7007dfef73368e9e90",
+        "passage_sha256": "e0508c4422ff69619f32360f94fd41e1a889b98a6bd9c994404eda09d9e81b35",
+        "passage_characters": 123,
+        "truncated": false
+      },
+      {
+        "id": "german:4725485#0/5107131#108",
+        "query_id": "german:4725485#0",
+        "document_id": "german:5107131#108",
+        "language": "german",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "591d4db6252ad622a3306084b42cd4d14a59f0f8051eb0a2aeb1f7d18313864e",
+        "passage_sha256": "ce6caf291a7c144448ed4cd3a6846a61d7353ced6acf75d8318ac54ad981e82c",
+        "passage_characters": 1084,
+        "truncated": true
+      },
+      {
+        "id": "german:11581522-0/10940384#1",
+        "query_id": "german:11581522-0",
+        "document_id": "german:10940384#1",
+        "language": "german",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "d0aa4e5141ce985ce0717d9b13bb908a1fa7e50921e37891e0c6b0655b1b48e7",
+        "passage_sha256": "0a6b3a8819d5f814d9d132d03900f4a33b79b9025f0dfdfe30e4dd7e3bde075a",
+        "passage_characters": 903,
+        "truncated": true
+      },
+      {
+        "id": "english:4082/32544339#0",
+        "query_id": "english:4082",
+        "document_id": "english:32544339#0",
+        "language": "english",
+        "subset": "relevant",
+        "label": 1,
+        "input_sha256": "29fd6f450bcddbde07d2059a04d3022cce9e9b33b4c031df787da424ba934222",
+        "passage_sha256": "4bf6bdbb652eccab66f8aa6312a4e80b61de10bf41053077b8d3db02648f7f9d",
+        "passage_characters": 632,
+        "truncated": true
+      },
+      {
+        "id": "french:7259667#0/46#4",
+        "query_id": "french:7259667#0",
+        "document_id": "french:46#4",
+        "language": "french",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "28ea94ec80662b93592bcc7124f525db0d9b0208bcebaa6b22b8af390587afe8",
+        "passage_sha256": "06159b68b45ed9ea7a0327a4869a04bc34dadffa149729668e946cb18d4fe604",
+        "passage_characters": 269,
+        "truncated": false
+      },
+      {
+        "id": "french:1595430-0/3203557#0",
+        "query_id": "french:1595430-0",
+        "document_id": "french:3203557#0",
+        "language": "french",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "01a4798f3e5e86e17db414cab81b4c18fabea8129ca11aec20e2871585dd3efb",
+        "passage_sha256": "ce053fe1e7d95583af6108739f010a598f7b1a9e36b7498fdd01f0fb8b3a0f10",
+        "passage_characters": 465,
+        "truncated": false
+      },
+      {
+        "id": "english:733/31576006#0",
+        "query_id": "english:733",
+        "document_id": "english:31576006#0",
+        "language": "english",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "16960fcda9d258feee664dbfc20cad8aebff57ec2db4a9b1a3cde5cd0188fdcc",
+        "passage_sha256": "9d82e8b39fe11127fb06eed9951da930f67ea300dca2c59161939eb91744fab8",
+        "passage_characters": 616,
+        "truncated": true
+      },
+      {
+        "id": "english:12256509#0/1269403#0",
+        "query_id": "english:12256509#0",
+        "document_id": "english:1269403#0",
+        "language": "english",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "860cf120dd9e031d1a8dc282e92f95f5e764d08c54752952debe119de68a41ae",
+        "passage_sha256": "87e5b3199be0ba52e05c9387b554dbe935957f8e5fb16e6b6e37ea5fb9eb3348",
+        "passage_characters": 1462,
+        "truncated": true
+      },
+      {
+        "id": "german:11581522-0/6212890#0",
+        "query_id": "german:11581522-0",
+        "document_id": "german:6212890#0",
+        "language": "german",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "6a7a6229132003173c7ca8da0f2662aba763fe05de1655fbd84459f2dcd72ab3",
+        "passage_sha256": "308213e4f71f9de37e7b827aae2cc959b95f5ee5a8e506e8b8539206de0102b6",
+        "passage_characters": 404,
+        "truncated": false
+      },
+      {
+        "id": "german:8228750-0/323041#0",
+        "query_id": "german:8228750-0",
+        "document_id": "german:323041#0",
+        "language": "german",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "66e7b41c63b2816d9ec94bad64565a73e5391bb90d9f4571c76e3ffee5d897ae",
+        "passage_sha256": "4cf8dbb1d967156abaeda40ed1911184c516611586c85ee19ccd3cf76c35c89a",
+        "passage_characters": 304,
+        "truncated": false
+      },
+      {
+        "id": "german:11581522-0/4860472#3",
+        "query_id": "german:11581522-0",
+        "document_id": "german:4860472#3",
+        "language": "german",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "99febfb66a78112d18ef27846b2651e4052a3037d745b00378bf9535507dcf26",
+        "passage_sha256": "b109c76108521a4da0a5d0bc3ac0089706bcc1a62afde8ec71e359389458ee00",
+        "passage_characters": 1409,
+        "truncated": true
+      },
+      {
+        "id": "german:11581522-0/4273688#7",
+        "query_id": "german:11581522-0",
+        "document_id": "german:4273688#7",
+        "language": "german",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "80b58d0e3e53d8e5eddc1a9cb47afaf5e6dd9d237fd1c32e547631544ba50418",
+        "passage_sha256": "0cafcef4e23316ab63996c694d2502bc38c7f510967712b053076b16d8660d07",
+        "passage_characters": 593,
+        "truncated": false
+      },
+      {
+        "id": "english:733/25607023#0",
+        "query_id": "english:733",
+        "document_id": "english:25607023#0",
+        "language": "english",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "95495129e061c91925368288868164885dbf014bd41681bd3aab925b971481ce",
+        "passage_sha256": "830c7229a8179c4a3d55cf8c5c34db1a79d9cb0a24b652269edad85261d3845b",
+        "passage_characters": 59,
+        "truncated": false
+      },
+      {
+        "id": "german:8228750-0/8139090#1",
+        "query_id": "german:8228750-0",
+        "document_id": "german:8139090#1",
+        "language": "german",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "e74ae806c367016bb88d343065bfadb96e0f242d2e54fd9da6553afc415ed726",
+        "passage_sha256": "3285e8b2fd152986b9a1a09409976420ca5bee9a783a62156486762463922735",
+        "passage_characters": 979,
+        "truncated": true
+      },
+      {
+        "id": "german:7915063#0/9424364#2",
+        "query_id": "german:7915063#0",
+        "document_id": "german:9424364#2",
+        "language": "german",
+        "subset": "relevant",
+        "label": 1,
+        "input_sha256": "23e443ccfea15dd7f39fcbb64d767c68c772aae91f9e8e3d0cc4c8318caf0ef3",
+        "passage_sha256": "545fb6419eb146bec895d2f5debd347e10378e4cfbd3d7b495b525a582331396",
+        "passage_characters": 185,
+        "truncated": false
+      },
+      {
+        "id": "german:11581522-0/2632357#0",
+        "query_id": "german:11581522-0",
+        "document_id": "german:2632357#0",
+        "language": "german",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "820729deadea025036c3aeb356d1d17ec5e4e03d4daab7267f4481907281a454",
+        "passage_sha256": "c717fdfec0bd789e7e492664b7af831c9d930922cd8aa39912af8011a6388632",
+        "passage_characters": 237,
+        "truncated": false
+      },
+      {
+        "id": "french:7718737-0/4018447#3",
+        "query_id": "french:7718737-0",
+        "document_id": "french:4018447#3",
+        "language": "french",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "11855e2632fa49985d2a489ce6206af43e86504cb7410fa2138079dd7c8ce69e",
+        "passage_sha256": "66894563e2a205b305ef8a568eff079994b3106dff70e65e29c2b51b72bb3c1b",
+        "passage_characters": 120,
+        "truncated": false
+      },
+      {
+        "id": "english:12256509#0/50535834#0",
+        "query_id": "english:12256509#0",
+        "document_id": "english:50535834#0",
+        "language": "english",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "f96e94a7e7bf1eb5f8b5a09457e4294135b451384a14029897e6672b12ec9010",
+        "passage_sha256": "3d64a17964e36d36ff29ecba4747382a38717935c51020c0ef27af29f2e68537",
+        "passage_characters": 746,
+        "truncated": true
+      },
+      {
+        "id": "french:7259667#0/7938646#1",
+        "query_id": "french:7259667#0",
+        "document_id": "french:7938646#1",
+        "language": "french",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "e3725e571112d34b6edcce22814316f6109eefc88e6cdd7cb91553a2ca648a0c",
+        "passage_sha256": "8a9524af3d7c4e557f75ee188e472488d62f53b874dc8d99394e8d9bafabdf5b",
+        "passage_characters": 162,
+        "truncated": false
+      },
+      {
+        "id": "german:11581522-0/8560035#0",
+        "query_id": "german:11581522-0",
+        "document_id": "german:8560035#0",
+        "language": "german",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "0f05d784013855e447954ec0542789597bb2369f3c68c8b086a9289a45acdb4c",
+        "passage_sha256": "354e2eaf23629aab87e3215f66c9c967dcbc7f610d19ebde383acbe691dd451e",
+        "passage_characters": 156,
+        "truncated": false
+      },
+      {
+        "id": "english:733/30124885#0",
+        "query_id": "english:733",
+        "document_id": "english:30124885#0",
+        "language": "english",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "39a486b8a908f8182e399d95ed34c913fb2b1b3d1d62cfdffb01f9990db7509c",
+        "passage_sha256": "d5c7ad82947b4b05d179ac9376955c2fd9d308efe59db3229a46d841c67fd84b",
+        "passage_characters": 496,
+        "truncated": false
+      },
+      {
+        "id": "german:8228750-0/232547#13",
+        "query_id": "german:8228750-0",
+        "document_id": "german:232547#13",
+        "language": "german",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "015f8e7b34f07e68e2109326e680555a7dfeb82b7a478b4de91f760edcf3dc2e",
+        "passage_sha256": "a8bf53b14b371f7dbf517f4e36fb9b2b43238f4b50a3b14a9f5fc9d0060a089d",
+        "passage_characters": 538,
+        "truncated": false
+      },
+      {
+        "id": "english:34/24938530#4",
+        "query_id": "english:34",
+        "document_id": "english:24938530#4",
+        "language": "english",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "bff2474c1142b16d158db5a81fe99b60f52e67a4263f05b3fab03d7b9e743c60",
+        "passage_sha256": "8bbf500eadf547cf5028f49ae9d3a19b99535cb8abf84fbbbe7de257f0ab2e27",
+        "passage_characters": 457,
+        "truncated": false
+      },
+      {
+        "id": "german:11581522-0/100812#27",
+        "query_id": "german:11581522-0",
+        "document_id": "german:100812#27",
+        "language": "german",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "6002d17a285bc73766f042ebd662f1e72c213cf39bdbb136ac95ccdb45623234",
+        "passage_sha256": "fadf1b100b94270f37567eb8a8392342ac5a09cc4d03783d33e6338483773f84",
+        "passage_characters": 401,
+        "truncated": false
+      },
+      {
+        "id": "english:34/3491729#2",
+        "query_id": "english:34",
+        "document_id": "english:3491729#2",
+        "language": "english",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "47c8efc8d6443a7cca3028e8132ee5d9585c07a836cb3a6c4b828d4a83581b01",
+        "passage_sha256": "6efcbd9763a8cebd30812ab744f0a842ad8f95963d77786583f390c79a311845",
+        "passage_characters": 740,
+        "truncated": true
+      },
+      {
+        "id": "german:7915063#0/10079168#9",
+        "query_id": "german:7915063#0",
+        "document_id": "german:10079168#9",
+        "language": "german",
+        "subset": "relevant",
+        "label": 1,
+        "input_sha256": "349eb01adb0fadb5459f1c0ab560fbe1ea740b84d94b6479bc10fbe797fa1dfd",
+        "passage_sha256": "8ba7cd078a82d5485f6fab6cb254aa6c6e824860e2a3059b638415aa1ac546c7",
+        "passage_characters": 996,
+        "truncated": true
+      },
+      {
+        "id": "german:4725485#0/464004#21",
+        "query_id": "german:4725485#0",
+        "document_id": "german:464004#21",
+        "language": "german",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "1d744f27cbb8a1c55d87442857606c84d5d1065538c769ba581e42cb7aac155f",
+        "passage_sha256": "43182531987dba52c1b395c0a3a584b05a8ea467cf4b3050cdf62f08cc9868ea",
+        "passage_characters": 798,
+        "truncated": true
+      },
+      {
+        "id": "english:4082/22131#66",
+        "query_id": "english:4082",
+        "document_id": "english:22131#66",
+        "language": "english",
+        "subset": "relevant",
+        "label": 1,
+        "input_sha256": "6f676aa7566f200eaa2a1d938c2e8cbaa2b162ad35a65ad0421ddacdb2f1b55d",
+        "passage_sha256": "66006bf1d9682c6126663e8504dd97f0165800372f3f30bedaeaa063006ac004",
+        "passage_characters": 955,
+        "truncated": true
+      },
+      {
+        "id": "german:7915063#0/11280183#1",
+        "query_id": "german:7915063#0",
+        "document_id": "german:11280183#1",
+        "language": "german",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "0710a6d1c7271c6c70118399b5289ec06a97278450d789a36a402a44e9c09375",
+        "passage_sha256": "43cc8afd76e5a96fd642cbe50dad0763c882d61518c9823201496b4f4b427732",
+        "passage_characters": 1601,
+        "truncated": true
+      },
+      {
+        "id": "french:1595430-0/1654045#16",
+        "query_id": "french:1595430-0",
+        "document_id": "french:1654045#16",
+        "language": "french",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "15135f200e719a571ac85eb66838115550ce697574d0d30b4f16d759dd52bd21",
+        "passage_sha256": "a0752133d75a1784572f4046a9a817938da3f50a4429883bccc7e16c958735c2",
+        "passage_characters": 1544,
+        "truncated": true
+      },
+      {
+        "id": "french:8113528#0/11062098#0",
+        "query_id": "french:8113528#0",
+        "document_id": "french:11062098#0",
+        "language": "french",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "8fb26d6d9cf42396fd0bcd9cd6cb4b3e77a15d4903504ac13ff45d06f2019f3b",
+        "passage_sha256": "f3f5663d00d5a1f5e31a2d84be8c76c92a5e0b4e407581a22e8be92b84a2a7ba",
+        "passage_characters": 196,
+        "truncated": false
+      },
+      {
+        "id": "english:12256509#0/21237995#0",
+        "query_id": "english:12256509#0",
+        "document_id": "english:21237995#0",
+        "language": "english",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "995042fdb1632675dba8d3e8053715a93d8e1efb0af3c08da1445b39758f3ef2",
+        "passage_sha256": "381b0b53c6744714afdbcfd1f83da9fa60352d482b3dc15cb488715daeac5058",
+        "passage_characters": 574,
+        "truncated": false
+      },
+      {
+        "id": "english:733/49690867#0",
+        "query_id": "english:733",
+        "document_id": "english:49690867#0",
+        "language": "english",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "9c5b2bf67ba4d047487f136ff1fd8aec590c443a91dc8f54b948255ee04ea318",
+        "passage_sha256": "1fb09aba1ec54ad8f95c9b92d958e81cc75c817efca3596edf54cde322a1fdbb",
+        "passage_characters": 59,
+        "truncated": false
+      },
+      {
+        "id": "english:733/14046416#2",
+        "query_id": "english:733",
+        "document_id": "english:14046416#2",
+        "language": "english",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "553b4c993dc63880520240226c2fa7d66c145ba85badc8a111411c833d1cec69",
+        "passage_sha256": "49cbf3e11b29fe403808b427ceb787d924f1e1fc4a01fbebfe9cf08281b30e90",
+        "passage_characters": 782,
+        "truncated": true
+      },
+      {
+        "id": "german:4725485#0/1078964#9",
+        "query_id": "german:4725485#0",
+        "document_id": "german:1078964#9",
+        "language": "german",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "916ae61472f8a7f6a47e53fec3f0436853cc63368c81f0a3d7a920dae6cc5285",
+        "passage_sha256": "5375430b97e00fce4f8967caf0b10f083bcd45c09a8a779db7b5dc5b6ecbc805",
+        "passage_characters": 122,
+        "truncated": false
+      },
+      {
+        "id": "french:7718737-0/10032939#9",
+        "query_id": "french:7718737-0",
+        "document_id": "french:10032939#9",
+        "language": "french",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "651786d4e92c0438c58db0d1d2e7eeb5308cd2e24a124684cf22474da2565b53",
+        "passage_sha256": "976ff6940d56227391026bde7a84bbef14798a9beb8c53bbbea42a504c125061",
+        "passage_characters": 360,
+        "truncated": false
+      },
+      {
+        "id": "english:4082/32425726#5",
+        "query_id": "english:4082",
+        "document_id": "english:32425726#5",
+        "language": "english",
+        "subset": "relevant",
+        "label": 1,
+        "input_sha256": "708996762e582e359bffe020b92334cc2f8badceb64d17f4f11fca907686dccf",
+        "passage_sha256": "7be32b98bcddda811dcb5be39721929e5e831334310cca87917385c76bf9e0a2",
+        "passage_characters": 652,
+        "truncated": true
+      },
+      {
+        "id": "french:1595430-0/78746#1",
+        "query_id": "french:1595430-0",
+        "document_id": "french:78746#1",
+        "language": "french",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "bef8b374974f82fc56ff2da02abda791abfae5c21772ad4a091751e049189c83",
+        "passage_sha256": "ef329001d2843de01b5f9e7e8da048bfdf2723abfe6d4dbeaea47eda17a2e166",
+        "passage_characters": 205,
+        "truncated": false
+      },
+      {
+        "id": "english:12256509#0/11258671#2",
+        "query_id": "english:12256509#0",
+        "document_id": "english:11258671#2",
+        "language": "english",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "cb2e3524e5844a7ff8b1600555a976044064537ce2f55aaac8c3807dd3be3b48",
+        "passage_sha256": "5fe4aadc35b445c846c978ff375e970ef0b5cdb3bc1e6d9f6dd81dd8909f3b07",
+        "passage_characters": 219,
+        "truncated": false
+      },
+      {
+        "id": "german:8228750-0/583711#4",
+        "query_id": "german:8228750-0",
+        "document_id": "german:583711#4",
+        "language": "german",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "04b1a87857f644de65203b68597020cabeaef069d9fa2a2a7d4f0ef2acda9b94",
+        "passage_sha256": "21c9a7903e59370c12d98eae1e8c45177507c6b8195c0793886a7e0dd540f7f9",
+        "passage_characters": 510,
+        "truncated": false
+      },
+      {
+        "id": "german:4725485#0/9923973#7",
+        "query_id": "german:4725485#0",
+        "document_id": "german:9923973#7",
+        "language": "german",
+        "subset": "relevant",
+        "label": 1,
+        "input_sha256": "d41b3511441549b89d38c4ca00071400a117ea7679679e4fce92eecc93dab2b0",
+        "passage_sha256": "504d34c21937b9123a71926c947b70984e81d8686f475eb7aedabb86fefd3f4c",
+        "passage_characters": 438,
+        "truncated": false
+      },
+      {
+        "id": "english:12256509#0/48739436#0",
+        "query_id": "english:12256509#0",
+        "document_id": "english:48739436#0",
+        "language": "english",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "b76278b6f47170225c9046deaba08c99fd50a6d330bea522d7ab8bccf5f8bd9b",
+        "passage_sha256": "31381e5ac0466db8b9a0556f18ebeec56236d49ae1287ec51178ce4883b100bc",
+        "passage_characters": 537,
+        "truncated": false
+      },
+      {
+        "id": "french:8113528#0/13792382#0",
+        "query_id": "french:8113528#0",
+        "document_id": "french:13792382#0",
+        "language": "french",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "3716ff40c2925c62fdae1aee4e63c5d03966a25a479bd08fe8008f9d4a79326a",
+        "passage_sha256": "7b5d127c82105f5e35ee11c043ce12ea5700bed9e77a3fbb1712fc2a24048e0c",
+        "passage_characters": 233,
+        "truncated": false
+      },
+      {
+        "id": "german:8228750-0/1011295#13",
+        "query_id": "german:8228750-0",
+        "document_id": "german:1011295#13",
+        "language": "german",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "1587b8058b68c39b5b373fccbb6969e52b4312a51db828e1f5a20b401de6979e",
+        "passage_sha256": "86be8964a63cf6e28ada6c43c4b6c53799e1075e34eaeae9cd90174179527a53",
+        "passage_characters": 454,
+        "truncated": false
+      },
+      {
+        "id": "english:4082/8798949#71",
+        "query_id": "english:4082",
+        "document_id": "english:8798949#71",
+        "language": "english",
+        "subset": "relevant",
+        "label": 1,
+        "input_sha256": "af268e40bd22a722d45d393f289b2726b700d69161e55cb247bc56c001a829be",
+        "passage_sha256": "e833d6886063c691c807b7cfac7678671c5b8a6ff9f31d1fd3e9437d6b5945ca",
+        "passage_characters": 555,
+        "truncated": false
+      },
+      {
+        "id": "french:1595430-0/78746#10",
+        "query_id": "french:1595430-0",
+        "document_id": "french:78746#10",
+        "language": "french",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "bd4e02747f4f5dc4668d6a54bb37fdadb15d2dc9a8335a1ff829c6f97ca3ac9f",
+        "passage_sha256": "af6cab9f4abfb47dc42f83bd5860147745c680710517cdda080cf2529c77a1cd",
+        "passage_characters": 338,
+        "truncated": false
+      },
+      {
+        "id": "french:7259667#0/1194348#4",
+        "query_id": "french:7259667#0",
+        "document_id": "french:1194348#4",
+        "language": "french",
+        "subset": "relevant",
+        "label": 1,
+        "input_sha256": "59e439d81f08a1bd2c6afa26414fb07562a0c85ca035da8239be3add255c8fd3",
+        "passage_sha256": "7998dbee5b3feb602ae7fd802ba386bbbebc158411ab929bfa3664154f448224",
+        "passage_characters": 289,
+        "truncated": false
+      },
+      {
+        "id": "french:7718737-0/14495449#8",
+        "query_id": "french:7718737-0",
+        "document_id": "french:14495449#8",
+        "language": "french",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "cdeb769aaf048ee255f8fccc951821b755e7f9e0cbe8577269d6ae898c717cd1",
+        "passage_sha256": "be80edfb620c7deff4cf5cd78f643f7d20b7c27bf3e45e2c6013d861bc4c4789",
+        "passage_characters": 319,
+        "truncated": false
+      },
+      {
+        "id": "english:34/12720#3",
+        "query_id": "english:34",
+        "document_id": "english:12720#3",
+        "language": "english",
+        "subset": "relevant",
+        "label": 1,
+        "input_sha256": "75d4de092d0db9c802fe96c1af92f2e269570403711050736a3831feeb644270",
+        "passage_sha256": "25a01f19a5d9abc88b5a77af42d07e7d16b1437ffd9271d536c9e5d2cced6c22",
+        "passage_characters": 1458,
+        "truncated": true
+      },
+      {
+        "id": "french:8113528#0/14257352#0",
+        "query_id": "french:8113528#0",
+        "document_id": "french:14257352#0",
+        "language": "french",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "c4fdad756f223a99cf3977e14c3332c8eca5dd871639e512ef31c02f34113e6c",
+        "passage_sha256": "57cca79c3f8ccff974a39a8e1daee124671b5dd06a7df3683e438161b070f2b4",
+        "passage_characters": 167,
+        "truncated": false
+      },
+      {
+        "id": "english:34/32412462#1",
+        "query_id": "english:34",
+        "document_id": "english:32412462#1",
+        "language": "english",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "d8cd18c72090f1801a036ddec27e4c3c64b32a0f4bfb3ba547b2b3ef0c1ca1f7",
+        "passage_sha256": "0a98fada33c6b11d292491c8998e2fcdf7021d08e9157c2af9ecb3a29a78c623",
+        "passage_characters": 98,
+        "truncated": false
+      },
+      {
+        "id": "german:7915063#0/76611#2",
+        "query_id": "german:7915063#0",
+        "document_id": "german:76611#2",
+        "language": "german",
+        "subset": "relevant",
+        "label": 1,
+        "input_sha256": "dc7be3504b13520c5d894259cacf27bbb6e9419c52d7f28cc4b57226950189c0",
+        "passage_sha256": "7b6b531a3c2884088159f7a39abe83caccf1ac8cd23ff9a217d201372adbb83d",
+        "passage_characters": 539,
+        "truncated": false
+      },
+      {
+        "id": "german:4725485#0/130#18",
+        "query_id": "german:4725485#0",
+        "document_id": "german:130#18",
+        "language": "german",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "3b3eb432a418f00e6787a737f68d6e34340659420f72d897bc2195f401d62377",
+        "passage_sha256": "b80ba2288ff83d8430b92cfb5be53f43d6a425a2dca038b055ba4cc78edb0523",
+        "passage_characters": 538,
+        "truncated": false
+      },
+      {
+        "id": "french:8113528#0/14257332#0",
+        "query_id": "french:8113528#0",
+        "document_id": "french:14257332#0",
+        "language": "french",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "547c805925cd52614da957ed2ecbffe308927c077c62c1f1761aba651f8360af",
+        "passage_sha256": "a91e76e287fc15a6091e286d0ae213a0b9fbc2e6ad38cc2831e5a56f273b0516",
+        "passage_characters": 167,
+        "truncated": false
+      },
+      {
+        "id": "german:4725485#0/2612499#21",
+        "query_id": "german:4725485#0",
+        "document_id": "german:2612499#21",
+        "language": "german",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "52e7e769a1a8a5132cf2d00faeec401d7302f07aa7892db34ca4658283e26a0b",
+        "passage_sha256": "7adeaabbe6377884d41c8c681b63fde22d420bf0f658cc427532c0d7c861c677",
+        "passage_characters": 469,
+        "truncated": false
+      },
+      {
+        "id": "english:4082/8798949#68",
+        "query_id": "english:4082",
+        "document_id": "english:8798949#68",
+        "language": "english",
+        "subset": "relevant",
+        "label": 1,
+        "input_sha256": "37eaef17bc6f0459c69537adbc418fd19636d107d723d2e2b708dcb514f639a7",
+        "passage_sha256": "a731436dce7ce1e34d71e5a851b11ed8e335bd56f234c35d5cfb8c184a69c11b",
+        "passage_characters": 639,
+        "truncated": true
+      },
+      {
+        "id": "english:12256509#0/27970563#18",
+        "query_id": "english:12256509#0",
+        "document_id": "english:27970563#18",
+        "language": "english",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "bb2b5261ca6517683f23e950b9a2f30e07ccf6fd38205fd3b04ce3e1d4407921",
+        "passage_sha256": "3888036f48fa843a539359960b03bad388f0dcb4c1c6c860a7e99570bb2806fe",
+        "passage_characters": 648,
+        "truncated": true
+      },
+      {
+        "id": "german:8228750-0/20729#0",
+        "query_id": "german:8228750-0",
+        "document_id": "german:20729#0",
+        "language": "german",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "c0dd937dd979977d2e1c2c13a18526d790e8a0e4a94ec1d92e373a14291b374f",
+        "passage_sha256": "ccf81642049a8b53ea48ffd7ce045e26585f09945c382261be52a7e5871d550d",
+        "passage_characters": 294,
+        "truncated": false
+      },
+      {
+        "id": "german:7915063#0/6309183#1",
+        "query_id": "german:7915063#0",
+        "document_id": "german:6309183#1",
+        "language": "german",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "b79c31745a1dba7a7134e19f21d39d8bf44487497d34fd88f8e2a883b587ed8c",
+        "passage_sha256": "f0563f7593dc2800b794d1d3f6ff8bc41887c61842d4b23bf1ca30183413cc6e",
+        "passage_characters": 945,
+        "truncated": true
+      },
+      {
+        "id": "english:34/22634730#60",
+        "query_id": "english:34",
+        "document_id": "english:22634730#60",
+        "language": "english",
+        "subset": "relevant",
+        "label": 0,
+        "input_sha256": "b2c997cb12e808ee31b1a9933db958ec90623ebc5f4d5845e725cbd7d68f1fbf",
+        "passage_sha256": "abd576007bcc42e3478b81d799612e123be163bf6c1845b510f2bebc8f1512d3",
+        "passage_characters": 809,
+        "truncated": true
+      },
+      {
+        "id": "english:4082/34494017#0",
+        "query_id": "english:4082",
+        "document_id": "english:34494017#0",
+        "language": "english",
+        "subset": "relevant",
+        "label": 1,
+        "input_sha256": "0cb1a100e4e56f356e7123a5815e2b3a8be8708b5ff488bac245917660c9ae9f",
+        "passage_sha256": "cb2ddbd402d47e2b2dadbc6758f6aae349b84cbc0e712d5a66235a991706993d",
+        "passage_characters": 939,
+        "truncated": true
+      },
+      {
+        "id": "german:11581522-0/10940384#0",
+        "query_id": "german:11581522-0",
+        "document_id": "german:10940384#0",
+        "language": "german",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "9fc5886fd390f7a039d42f8529ebd442573f1fb199342753917e2b745315b1f4",
+        "passage_sha256": "827302ccfabb5a480cbeb722ec47e4a3f37022c2162bacc7a740eeecde0cac58",
+        "passage_characters": 310,
+        "truncated": false
+      },
+      {
+        "id": "english:733/37367511#0",
+        "query_id": "english:733",
+        "document_id": "english:37367511#0",
+        "language": "english",
+        "subset": "non_relevant",
+        "label": 0,
+        "input_sha256": "e1ca6ff0eb5867993cb8b4754a22eca53d3301420bc5b5b2a4ea84a8707778f0",
+        "passage_sha256": "9836cde7be1dbb0b3d3ba971bb0f30ec60e81009a3b3860f1b7a84f31971ebb5",
+        "passage_characters": 59,
+        "truncated": false
+      }
+    ],
+    "reserved_or_elapsed_seconds": 68.358049
+  },
+  "validation": {
+    "status": "not_run_development_gate_failed",
+    "planned_cases": 120
+  },
+  "promotion": {
+    "passed": false,
+    "reason": "No development candidate met the fixed gates."
+  },
+  "calls": {
+    "local_attempts": 121,
+    "hosted": 0,
+    "web_search": 0,
+    "source_fetch": 0,
+    "reasoning": 0
+  },
+  "runtime": {
+    "container": "helvetic-lens-decisions-laya-1",
+    "image": "sha256:7815b50cbf204c92b92c1b201690579336187ba7bc09873fc6e33c415aa4f441",
+    "running": true,
+    "health": "healthy",
+    "cpu_limit": 2000000000,
+    "memory_bytes": 4294967296,
+    "read_only": true
+  }
+}

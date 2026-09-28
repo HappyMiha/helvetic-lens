@@ -53,17 +53,23 @@ def outside_repository(path):
     return path
 
 
-def protocol():
+def protocol(*, split="test", offset=40, call_limit=None):
+    if split not in {"dev", "test"} or type(offset) is not int or offset < 0:
+        raise ValueError("Invalid sampling protocol")
+    limits = {**LIMITS, "calls": LIMITS["calls"] if call_limit is None else call_limit}
+    if type(limits["calls"]) is not int or not 1 <= limits["calls"] <= 121:
+        raise ValueError("Invalid call budget")
     return {"schema": "research-gate-evaluation/v1", "dataset": "miracl/nomiracl", "revision": DATA_REVISION,
-        "sampling": {"split": "test", "offset": 40, "queries_per_subset_language": 2, "languages": list(LANGUAGES)},
-        "limits": LIMITS, "endpoint": LOCAL_URL, "model": MODEL,
+        "sampling": {"split": split, "offset": offset, "queries_per_subset_language": 2, "languages": list(LANGUAGES)},
+        "limits": limits, "endpoint": LOCAL_URL, "model": MODEL,
         "gate_sha256": file_hash(Path(product_research_gate.__file__)),
         "adapter_sha256": file_hash(Path(decision_engines.__file__)),
         "prompt_sha256": fingerprint({"instructions": product_research_gate.INSTRUCTIONS, "criteria": product_research_gate.CRITERIA}),
         "representation": {"title_characters": 240, "snippet_characters": 600, "question_and_branch": "same original dataset query"}}
 
 
-def prepare(cache, directory):
+def prepare(cache, directory, *, split="test", offset=40, prior_queries=(), call_limit=None):
+    settings = protocol(split=split, offset=offset, call_limit=call_limit)
     outside_repository(directory).mkdir(parents=True, exist_ok=True)
     if (directory / "plan.json").exists():
         raise ValueError("Frozen plan already exists; reuse it")
@@ -84,12 +90,12 @@ def prepare(cache, directory):
             return path
         selected = []
         for subset in ("relevant", "non_relevant"):
-            topics = dict(line.split("\t", 1) for line in verified(f"topics/test.{subset}.tsv").read_text().splitlines())
+            topics = dict(line.split("\t", 1) for line in verified(f"topics/{split}.{subset}.tsv").read_text().splitlines())
             labels = {}
-            for line in verified(f"qrels/test.{subset}.tsv").read_text().splitlines():
+            for line in verified(f"qrels/{split}.{subset}.tsv").read_text().splitlines():
                 query, _, document, label = line.split()
                 labels.setdefault(query, {})[document] = int(label)
-            keys = sorted(topics, key=lambda k: digest((language + ":" + k).encode()))[40:42]
+            keys = sorted(topics, key=lambda k: digest((language + ":" + k).encode()))[offset:offset + 2]
             if len(keys) != 2:
                 raise ValueError("Insufficient held-out queries")
             for key in keys:
@@ -116,30 +122,39 @@ def prepare(cache, directory):
                     "truncated": len(row["text"]) > 600 or len(row["title"]) > 240})
     # Freeze request order independent of model answers and balance languages over time.
     cases.sort(key=lambda row: digest(row["id"].encode()))
-    if not cases or len(cases) > LIMITS["calls"]:
+    if not cases or len(cases) > settings["limits"]["calls"]:
         raise ValueError("Sample exceeds the predeclared call budget")
     gate_metrics(cases, [])
-    previous = set()
+    previous = set(prior_queries)
     for name in ("initial", "dev", "final"):
         name = "2026-09-28-dossier-retrieval" + ("" if name == "final" else "-" + name) + ".json"
         previous.update(row["id"] for row in json.loads((ROOT / "docs/product-evaluations" / name).read_text())["rows"])
     if previous.intersection(row["query_id"] for row in cases):
         raise ValueError("Sample overlaps earlier project measurements")
-    payload = {"protocol": protocol(), "sources": inputs, "cases": cases,
+    payload = {"protocol": settings, "sources": inputs, "cases": cases,
         "earlier_project_query_overlap": 0, "created_at": datetime.now(timezone.utc).isoformat()}
     plan = {**payload, "plan_sha256": fingerprint(payload)}
     atomic_write(directory / "plan.json", plan)
     return {"plan_sha256": plan["plan_sha256"], "cases": len(cases), "queries": len({r['query_id'] for r in cases})}
 
 
-def load_plan(directory):
+def load_plan(directory, *, verify_runtime=True):
     outside_repository(directory)
     plan = json.loads((directory / "plan.json").read_text())
     if fingerprint({k: v for k, v in plan.items() if k != "plan_sha256"}) != plan["plan_sha256"]:
         raise ValueError("Frozen plan changed")
-    if plan["protocol"] != protocol():
+    sampling = plan["protocol"]["sampling"]
+    actual = dict(plan["protocol"])
+    expected = protocol(split=sampling["split"], offset=sampling["offset"], call_limit=plan["protocol"]["limits"]["calls"])
+    if not verify_runtime:
+        # An offline report may read a historical plan. Inference/resume always
+        # checks the current contract and cannot use this reporting exception.
+        for key in ("gate_sha256", "adapter_sha256", "prompt_sha256"):
+            actual.pop(key)
+            expected.pop(key)
+    if actual != expected:
         raise ValueError("Gate, adapter or protocol changed; this trial cannot be resumed")
-    if not plan["cases"] or len(plan["cases"]) > LIMITS["calls"]:
+    if not plan["cases"] or len(plan["cases"]) > plan["protocol"]["limits"]["calls"]:
         raise ValueError("Invalid planned size")
     for row in plan["cases"]:
         if row["input_sha256"] != fingerprint(row["state"]):
@@ -149,15 +164,16 @@ def load_plan(directory):
 
 
 def journal(directory, plan):
+    limits = plan.get("protocol", {}).get("limits", LIMITS)
     path = directory / "journal.json"
     value = json.loads(path.read_text()) if path.exists() else {"plan_sha256": plan["plan_sha256"], "rows": []}
-    if value["plan_sha256"] != plan["plan_sha256"] or len(value["rows"]) > LIMITS["calls"]:
+    if value["plan_sha256"] != plan["plan_sha256"] or len(value["rows"]) > limits["calls"]:
         raise ValueError("Journal does not match its frozen budget/input")
     for row in value["rows"]:
         if row.get("status") == "started":
             row.update(status="interrupted", outcome="interrupted", wall_ms=None)
         reserved = row.get("reserved_seconds")
-        if type(reserved) not in (int, float) or not math.isfinite(reserved) or not 0 < reserved <= LIMITS["per_call_seconds"]:
+        if type(reserved) not in (int, float) or not math.isfinite(reserved) or not 0 < reserved <= limits["per_call_seconds"]:
             raise ValueError("Invalid reserved deadline")
     gate_metrics(plan["cases"], value["rows"])
     return value
@@ -169,6 +185,7 @@ def spent(rows):
 
 async def collect(directory, plan, choose):
     """One journal owns this experiment; reserve each attempt before network I/O."""
+    limits = plan.get("protocol", {}).get("limits", LIMITS)
     with (directory / "run.lock").open("w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         state = journal(directory, plan)
@@ -178,10 +195,10 @@ async def collect(directory, plan, choose):
         for case in plan["cases"]:
             if case["id"] in completed:
                 continue
-            remaining = LIMITS["seconds"] - carried - (time.monotonic() - started)
-            if len(state["rows"]) >= LIMITS["calls"] or remaining <= .01:
+            remaining = limits["seconds"] - carried - (time.monotonic() - started)
+            if len(state["rows"]) >= limits["calls"] or remaining <= .01:
                 break
-            timeout = min(LIMITS["per_call_seconds"], remaining)
+            timeout = min(limits["per_call_seconds"], remaining)
             row = {"id": case["id"], "status": "started", "reserved_seconds": timeout,
                 "started_at": datetime.now(timezone.utc).isoformat()}
             state["rows"].append(row)
@@ -193,6 +210,7 @@ async def collect(directory, plan, choose):
                 if answer.model != MODEL or answer.choice not in product_research_gate.CRITERIA:
                     raise decision_engines.DecisionUnavailable("model_or_contract_mismatch")
                 row.update(status="completed", outcome=answer.choice, model=answer.model,
+                    probabilities=answer.probabilities, selected_probability=answer.selected_probability,
                     confidence=answer.confidence, provider_latency_ms=answer.latency_ms,
                     input_tokens=answer.input_tokens, output_tokens=answer.output_tokens)
             except (decision_engines.DecisionUnavailable, TimeoutError) as error:

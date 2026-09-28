@@ -113,8 +113,10 @@ def apply(session, run, branch, state, work, result):
                 state.setdefault("items", []).append(item)
             state["gate_index"] = state.get("gate_index", 0) + 1
             branch.phase = "gate"
-            event(session, run, "candidate_accepted" if decision["verdict"] == "relevant" else "candidate_rejected",
-                branch_id=branch.id, candidate_id=item["id"], verdict=decision["verdict"], engine=decision.get("engine"))
+            event(session, run, {"relevant": "candidate_accepted", "unrelated": "candidate_rejected",
+                "uncertain": "candidate_uncertain", "unavailable": "candidate_unavailable"}[decision["verdict"]],
+                branch_id=branch.id, candidate_id=item["id"], verdict=decision["verdict"],
+                engine=decision.get("engine"), phase=phase)
     elif phase == "reflect":
         research.apply_reflection(session, run, branch, work["input"], result)
         state.update(reflection_done=True, outcome=result.outcome)

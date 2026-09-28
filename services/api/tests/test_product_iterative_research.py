@@ -169,6 +169,35 @@ def test_fallback_and_uncertainty_are_visible_before_fetch(signed, monkeypatch, 
     assert all(s["snapshot"]["relevance_gate"]["verdict"] == "relevant" for s in result["sources"])
 
 
+@pytest.mark.parametrize("verdict", ["uncertain", "unavailable"])
+def test_unresolved_candidate_remains_distinct_from_rejection_without_source_fetch(signed, monkeypatch, verdict):
+    client, service, _, model = signed
+    trace = pipeline(monkeypatch, service, model)
+    original_model = model.complete
+
+    async def unresolved(*args):
+        return {"verdict": verdict, "engine": "laya" if verdict == "uncertain" else None,
+            "basis": "Controlled unresolved candidate fixture"}
+
+    async def assess(system, user, **kwargs):
+        if kwargs["response_schema"]["title"] == "CandidateAssessment":
+            return json.dumps({"verdict": "uncertain", "reason": "This snippet cannot establish the relationship."})
+        return await original_model(system, user, **kwargs)
+
+    monkeypatch.setattr(product_iterative_steps, "evaluate", unresolved)
+    monkeypatch.setattr(model, "complete", assess)
+    root, run, _ = start(client)
+    result = complete(client, service, root, run)
+    assert not result["sources"] and not result["claims"] and not trace["reads"]
+    decisions = [d for b in result["branches"] for d in b["decisions"]]
+    assert decisions and all(d["verdict"] == verdict for d in decisions)
+    activity = [a for a in result["activity"] if a["detail"].get("verdict") == verdict]
+    assert activity and all(a["kind"] == "candidate_" + verdict for a in activity)
+    assert not any(a["kind"] in {"candidate_accepted", "candidate_rejected"} for a in result["activity"])
+    assert result["research"]["used"].get("source_fetches", 0) == 0
+    assert result["research"]["used"]["model_calls"] <= result["research"]["limits"]["model_calls"]
+
+
 def test_budget_stops_before_queries_and_explicit_continuation_keeps_plan(signed, monkeypatch):
     client, service, _, model = signed
     trace = pipeline(monkeypatch, service, model)
