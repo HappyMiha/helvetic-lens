@@ -8,9 +8,10 @@ import httpx
 import pytest
 from conftest import add_law, import_old
 from runtime_fixtures import local_runtime
+from sqlalchemy import select
 
 from helvetic_lens.analysis import ModelClient
-from helvetic_lens.models import Job
+from helvetic_lens.models import Job, Profile
 from helvetic_lens.runtime_binding import RuntimeSnapshot
 
 
@@ -278,3 +279,37 @@ def test_runtime_observation_is_scoped_to_client_and_cleared_on_cancellation(bou
 
     asyncio.run(scopes())
     assert [call.method for call in state["calls"]] == ["GET", "GET"]
+
+
+@pytest.mark.parametrize("changed", ["profile", "runtime", "locale"])
+def test_comparison_recovery_rechecks_current_context_without_replaying_analysis(bound_app, changed):
+    client, service, _, comparison, state = bound_app
+    finished = run(client, comparison, "analyse-jobs").json()
+    assert finished["state"] == "succeeded"
+    route = f"/api/comparisons/{comparison['id']}?paged_actions=true"
+    current = client.get(route, headers={"Accept-Language": "en-CH"}).json()
+    assert current["analysis_job"]["id"] == finished["id"]
+    assert current["analysis"]["id"] == finished["result"]["id"]
+    assert current["analysis"]["stale"] is False
+    generated = sum(call.method == "POST" for call in state["calls"])
+    locale = "en-CH"
+    if changed == "profile":
+        with service.db.session() as session:
+            profile = session.scalar(select(Profile).where(Profile.organization_id == service.organization_id))
+            profile.revision += 1
+            session.commit()
+    elif changed == "runtime":
+        state["runtime"] = local_runtime(generation="b", revision="5")
+    else:
+        locale = "fr-CH"
+    recovered = client.get(route, headers={"Accept-Language": locale})
+    assert recovered.status_code == 200
+    recovered = recovered.json()
+    assert recovered["analysis_job"] is None
+    assert recovered["analysis"]["id"] == finished["result"]["id"]
+    assert recovered["analysis"]["stale"] is True
+    assert recovered["old_version"]["id"] == current["old_version"]["id"]
+    assert recovered["new_version"]["id"] == current["new_version"]["id"]
+    assert recovered["diff"] == current["diff"]
+    assert client.get(f"/api/jobs/{finished['id']}").json()["result"] == finished["result"]
+    assert sum(call.method == "POST" for call in state["calls"]) == generated

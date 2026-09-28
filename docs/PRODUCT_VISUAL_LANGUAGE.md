@@ -228,3 +228,12 @@ PRODUCT_LEGAL_RENAME.md for scoped acceptance, not whole-specification completio
 Release 1.27 production acceptance: both clients published as Sites version 30;
 47 exact assets each, plus the old Legal hostname; native 48 assets/57 HTTP checks
 and 62 backend modules. See [receipt](product-releases/2026-09-28-1.27.0.json).
+
+
+### 1.28 evidence read recovery
+
+Local acceptance passes for clear retry/error states in the native comparison
+and both product readers. Existing Brandbook surfaces, typography and accessible
+buttons are reused; failure removes retained evidence until a successful current
+read. All five native locales carry recovery copy. See PRODUCT_READ_RECOVERY.md
+for scoped automated and production acceptance. Full visual/human gates stay open.

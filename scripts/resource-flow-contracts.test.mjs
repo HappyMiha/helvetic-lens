@@ -115,55 +115,22 @@ test("Ask completion refreshes history only and preserves comparison evidence", 
   cleanup(store, subscriptions);
 });
 
-test("impact completion patches its report without refetching the saved diff", async () => {
+test("impact completion rechecks only its comparison and history without a global refresh", async () => {
   const store = new ResourceStore();
   const comparison = flowKey("comparison:cmp-2", { tags: ["comparison"] });
-  const history = flowKey("comparison:history:cmp-2", {
-    tags: ["ai-history"],
-    owner: "comparison",
-  });
-  const job = flowKey("monitoring:job:impact-1", {
-    tags: ["job", "jobs"],
-  });
-  const health = flowKey("runtime:health", {
-    tags: ["health"],
-    owner: "runtime",
-  });
-  const settings = flowKey("organization:settings", {
-    tags: ["settings"],
-    owner: "organization",
-  });
-  const diff = { items: [{ id: "article-7", kind: "added" }] };
-  const comparisonValue = {
-    id: "cmp-2",
-    diff,
-    analysis: null,
-    analysis_job: null,
-  };
-  const completedJob = { id: "impact-1", state: "succeeded" };
-  const analysis = { id: "analysis-1", summary: "Material amendment" };
+  const history = flowKey("comparison:history:cmp-2", { tags: ["ai-history"], owner: "comparison" });
+  const health = flowKey("runtime:health", { tags: ["health"], owner: "runtime" });
+  const settings = flowKey("organization:settings", { tags: ["settings"], owner: "organization" });
   const requests = {};
   const subscriptions = [
-    observe(store, comparison, requests, comparisonValue),
+    observe(store, comparison, requests, { id: "cmp-2", analysis: null }),
     observe(store, history, requests, { items: [] }),
-    observe(store, job, requests, { id: "impact-1", state: "running" }),
     observe(store, health, requests, { status: "ok" }),
     observe(store, settings, requests, { provider: "local" }),
   ];
-
-  store.prime(job, LOCALE, completedJob);
-  store.mutate(comparison, LOCALE, (current) => ({
-    ...current,
-    analysis,
-    analysis_job: completedJob,
-  }));
-  await store.invalidate(history);
-
-  const updated = store.getSnapshot(comparison, LOCALE).data;
-  assertOnlyRequests(requests, { [history.id]: 1 });
-  assert.strictEqual(updated.diff, diff);
-  assert.strictEqual(updated.analysis, analysis);
-  assert.strictEqual(updated.analysis_job, completedJob);
+  await store.invalidate(comparison, history);
+  assertOnlyRequests(requests, { [comparison.id]: 1, [history.id]: 1 });
+  assert.equal(store.getSnapshot(comparison, LOCALE).data.refreshed, comparison.id);
   cleanup(store, subscriptions);
 });
 
@@ -371,7 +338,7 @@ test("flow call sites use targeted cache contracts instead of global refresh bro
       "primeResourceForLocale(resources.job(next.id), locale, next)",
     ),
   );
-  assert.ok(comparison.includes("askJobs.setData"));
+  assert.ok(comparison.includes("invalidateResources(resources.comparisonAskJobs(comparisonId))"));
   assert.ok(
     comparison.includes(
       "analysisJobActive && effectiveAnalysisJob ? resources.job(effectiveAnalysisJob.id) : null",
@@ -382,17 +349,9 @@ test("flow call sites use targeted cache contracts instead of global refresh bro
     /(?:current|next)\s*=\s*await\s+api<Job>\(["'`]\/jobs\//,
   );
   assert.doesNotMatch(comparison, /setInterval\(async/);
-  assert.ok(
-    comparison.includes(
-      "mutateResourceForLocale<Comparison>( resources.comparison(id), effectiveAnalysisJobLocale,",
-    ),
-  );
-  assert.ok(
-    comparison.includes(
-      "setAnalysisJobs((current) => ({ ...current, [requestLocale]: queued })); mutateResourceForLocale<Comparison>( resources.comparison(id), requestLocale,",
-    ),
-    "an enqueued Impact job must be recorded before the component can navigate away",
-  );
+  assert.doesNotMatch(comparison, /mutateResource(?:ForLocale)?<Comparison>/);
+  assert.ok(comparison.includes("invalidateResources(resources.comparison(id), resources.comparisonHistory(id))"));
+  assert.ok(comparison.includes("if (!isCurrent() || !comparisonJob(queued, id, requestLocale)) return"));
   assert.ok(
     comparison.includes(
       "primeResourceForLocale(resources.job(queued.id), requestLocale, queued)",

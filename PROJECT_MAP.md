@@ -2,7 +2,7 @@
 
 One agent develops complete features on **main**, following [the development cycle](docs/DEVELOPMENT.md).
 The shared platform is **helveticlens.ch on HappySnowman**, including Monitoring features.
-On 26 September 2026 the owner authorized separate Pharma and Loyer product clients;
+The owner authorized separate Pharma and Legal product clients; Legal is the confirmed name from 28 September 2026.
 see [delivery and release evidence](docs/PRODUCT_DOSSIERS.md).
 The [test and release policy](docs/TESTING.md) separates platform smoke, functional
 and integration suites. The deployment page supports saved defaults and a
@@ -20,7 +20,7 @@ next-attempt override, including an explicitly selected hotfix with a reason.
 |---|---|---|
 | Main product and Monitoring features (HappySnowman) | main | helveticlens.ch |
 | Pharma client (Sites, shared native core) | [helveticlens-pharma/main](https://github.com/HappyMiha/helveticlens-pharma) | [pharma.helveticlens.ch](https://pharma.helveticlens.ch) |
-| Loyer client (Sites, shared native core) | [helveticlens-loyer/main](https://github.com/HappyMiha/helveticlens-loyer) | [loyer.helveticlens.ch](https://loyer.helveticlens.ch) |
+| Legal client (Sites, shared native core) | [helveticlens-legal/main](https://github.com/HappyMiha/helveticlens-legal) | [legal.helveticlens.ch](https://legal.helveticlens.ch) |
 
 The user retired `monitoring.helveticlens.ch` on 12 September 2026. Do not restart
 its HappyDucky02 deployment, Windows task, `helvetic-lens-v2` Docker project, tunnel
@@ -199,3 +199,5 @@ repository `HappyMiha/helveticlens-legal`. Legacy Loyer URLs and the internal
 and historical release receipts retain their original spelling. Both slices
 are DONE within scope with exact production evidence in release 1.27; full
 investigation/visual specifications remain IN PROGRESS.
+
+[Evidence read recovery](docs/PRODUCT_READ_RECOVERY.md) is the active 1.28 slice: scoped retry, request ownership and server-authoritative comparison results. Full specifications remain IN PROGRESS.

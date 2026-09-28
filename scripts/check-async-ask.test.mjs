@@ -13,7 +13,7 @@ const css = read("apps/web/app/globals.css");
 test("Ask returns control after enqueue and observes persisted jobs", () => {
   assert.doesNotMatch(comparison, /waitForJob/);
   assert.match(comparison, /resources\.comparisonAskJobs\(comparisonId\)/);
-  assert.match(comparison, /askJobs\.setData/);
+  assert.match(comparison, /invalidateResources\(resources\.comparisonAskJobs\(comparisonId\)\)/);
   assert.match(
     resources,
     /comparisonAskJobs:[\s\S]*?\/comparisons\/\$\{id\}\/ask-jobs/,

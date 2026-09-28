@@ -19,6 +19,14 @@ See `docs/PRODUCT_LEGAL_RENAME.md`. Verified evidence includes alias idempotency
 private/public/guest/CSRF boundaries, exact production assets and renamed remote
 identity. This addition does not complete the full investigation/visual specs.
 
+## Product decision — 1.28 evidence read recovery
+
+IN PROGRESS, recorded before implementation on 28 September. Scope and acceptance
+are in [PRODUCT_READ_RECOVERY.md](docs/PRODUCT_READ_RECOVERY.md): native comparison
+and snapshot retry with server-authoritative result recovery; both product clients
+cancel and fence obsolete reads. This contributes to MV2-002/020 and preserves
+current source rights, nine directions and full-specification open gates.
+
 ## Development and deployment
 
 The main-branch copy of this file is the sole active Monitoring backlog. The user's
@@ -1948,7 +1956,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | ID | Task | Phase | Priority | Size | Status | Dependencies |
 |---|---|---|---|---|---|---|
 | [MV2-001](#mv2-001) | Establish extension contracts and MVP compatibility | F0 | P0 | M | DONE | None |
-| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS — scoped version context/Legal rename/saved comparison/source reading DONE | None |
+| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS — read recovery active; scoped version context/Legal rename/saved comparison/source reading DONE | None |
 | [MV2-003](#mv2-003) | Verify source rights, coverage and contracts for the nine active scenarios | F0 | P0 | L | PLANNED | [MV2-001](#mv2-001) |
 | [MV2-004](#mv2-004) | Personal workspace and team monitoring permissions | F1 | P0 | M | IN PROGRESS | [MV2-001](#mv2-001) |
 | [MV2-005](#mv2-005) | MonitoringSubject and versioned Monitoring Templates | F1 | P0 | L | PLANNED | [MV2-001](#mv2-001), [MV2-004](#mv2-004) |
@@ -2118,6 +2126,9 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 <a id="mv2-002"></a>
 
 ### MV2-002 — Validate first-value journeys and shared navigation
+
+**Active scoped continuation, 28 September:** evidence read recovery under the
+recorded 1.28 Product decision; see [scope and acceptance](docs/PRODUCT_READ_RECOVERY.md).
 
 **Completed scoped continuation, 28 September:** saved document context, exact
 source links and the owner-confirmed Legal rename are DONE under the Product
@@ -2842,6 +2853,9 @@ above supersedes the River-only count limitation for readable Today queues.
 <a id="mv2-020"></a>
 
 ### MV2-020 — Investigate: states, diffs, evidence and history
+
+**Active scoped continuation, 28 September:** evidence read recovery under the
+recorded 1.28 Product decision; see [scope and acceptance](docs/PRODUCT_READ_RECOVERY.md).
 
 **Completed scoped continuation, 28 September:** saved document context, exact
 source links and the owner-confirmed Legal rename are DONE under the Product

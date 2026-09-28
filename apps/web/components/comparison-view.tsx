@@ -33,8 +33,7 @@ import {
   errorText,
   invalidateResources,
   label,
-  mutateResource,
-  mutateResourceForLocale,
+  resourceScopeEpoch,
   primeResourceForLocale,
   useResource,
 } from "@/lib/api";
@@ -69,11 +68,14 @@ import { ActionReviewNotice, ChangeExplanationBasis, DecisionReview } from "./de
 import { Shell } from "./shell";
 import { ComparisonPanel } from "./comparison-panel";
 import { useAuth } from "./auth-gate";
-import { storedLocale, translate, type Locale, useI18n } from "@/lib/i18n";
+import { translate, type Locale, useI18n } from "@/lib/i18n";
 import { articleSelectionCopy } from "@/lib/article-selection-copy";
 import { ArticleScope } from "./article-scope";
 import { VersionContext, ReportVersionReferences } from "./version-context";
 import { savedEvidenceHref } from "@/lib/saved-evidence-link";
+import { useRequestOwner } from "@/lib/use-request-owner";
+import { comparisonJob, readableComparison } from "@/lib/comparison-read";
+import { ReadRecovery } from "./read-recovery";
 
 const PAGE_SIZE = 40;
 const JOB_TERMINAL_STATES = new Set(["succeeded", "failed", "cancelled"]);
@@ -245,28 +247,26 @@ function localLabel(value: string, locale: ComparisonLocale) {
   );
 }
 
-function completedAnalysis(job: Job): Analysis | null {
-  const result = job.result?.data;
-  if (
-    job.state !== "succeeded" ||
-    job.result?.type !== "analysis" ||
-    !result ||
-    typeof result !== "object"
-  )
-    return null;
-  return result as Analysis;
+export function ComparisonView({ id }: { id: string }) {
+  const { session } = useAuth();
+  const { locale } = useI18n();
+  const owner = JSON.stringify([id, locale, session?.user?.id, session?.organization?.id,
+    session?.role, resourceScopeEpoch("session"), resourceScopeEpoch("organization")]);
+  return <ComparisonWorkspace key={owner} id={id} />;
 }
 
-export function ComparisonView({ id }: { id: string }) {
+function ComparisonWorkspace({ id }: { id: string }) {
   const { canManage } = useAuth();
   const { locale, t, dateTime, number } = useI18n();
   const searchParams = useSearchParams();
   const linkedTask = searchParams.get("task");
   const uiLocale = locale.slice(0, 2) as ComparisonLocale;
   const ui = comparisonCopy[uiLocale];
-  const { data, error: loadError } = useResource<Comparison>(
-    resources.comparison(id),
-  );
+  const read = useResource<Comparison>(resources.comparison(id));
+  const loadError = read.error;
+  const data = readableComparison(read.data, loadError, id);
+  const readReady = !!data && !read.validating && !read.stale;
+  const captureOwner = useRequestOwner(`${id}:${locale}`);
   const { data: health } = useResource(resources.health());
   const [filter, setFilter] = useState("substantive"),
     [context, setContext] = useState(false),
@@ -275,9 +275,8 @@ export function ComparisonView({ id }: { id: string }) {
   useEffect(() => setMaterialState({query:"",page:0}), [id]);
   const [jumpTarget, setJumpTarget] = useState(""),
     [jumpRevision, setJumpRevision] = useState(0),
-    [analysisJobs, setAnalysisJobs] = useState<Partial<Record<Locale, Job>>>(
-      {},
-    ),
+    [localAnalysisJob, setLocalAnalysisJob] = useState<{ basis: Comparison; job: Job } | null>(null),
+    [submittingAnalysis, setSubmittingAnalysis] = useState(false),
     [analysisNotice, setAnalysisNotice] = useState(""),
     [confirmingIdentity, setConfirmingIdentity] = useState(""),
     [error, setError] = useState("");
@@ -341,84 +340,42 @@ export function ComparisonView({ id }: { id: string }) {
     ? data.diff.classification_counts.structural +
       data.diff.classification_counts.formatting
     : 0;
-  const analysisJob = analysisJobs[locale] || null;
-  const effectiveAnalysisJob = analysisJob || data?.analysis_job || null;
+  const handledAnalysisJobs = useRef(new Set<string>());
+  const completedReport = useRef<string | null>(null);
+  const effectiveAnalysisJob = comparisonJob(
+    localAnalysisJob?.basis === data ? localAnalysisJob.job : data?.analysis_job, id, locale,
+  );
   const effectiveAnalysisJobLocale = locale;
-  const analysisJobActive =
-    !!effectiveAnalysisJob &&
+  const analysisJobActive = readReady && !!effectiveAnalysisJob &&
     !JOB_TERMINAL_STATES.has(effectiveAnalysisJob.state);
   const polledAnalysisJob = useResource<Job>(
-    analysisJobActive && effectiveAnalysisJob
-      ? resources.job(effectiveAnalysisJob.id)
-      : null,
+    analysisJobActive && effectiveAnalysisJob ? resources.job(effectiveAnalysisJob.id) : null,
   );
   useEffect(() => {
-    setAnalysisJobs((current) => {
-      const saved = data?.analysis_job || null;
-      const local = current[locale] || null;
-      if (!saved || saved === local) return current;
-      if (
-        local &&
-        new Date(local.updated_at).getTime() >=
-          new Date(saved.updated_at).getTime()
-      )
-        return current;
-      return { ...current, [locale]: saved };
-    });
-  }, [data?.analysis_job, locale]);
-  useEffect(() => {
-    if (polledAnalysisJob.error) setError(polledAnalysisJob.error);
-  }, [polledAnalysisJob.error]);
-  useEffect(() => {
-    const next = polledAnalysisJob.data;
-    if (!next || next.id !== effectiveAnalysisJob?.id) return;
-    setAnalysisJobs((current) => ({
-      ...current,
-      [effectiveAnalysisJobLocale]: next,
-    }));
+    const next = comparisonJob(polledAnalysisJob.data, id, locale);
+    if (!data || !readReady || polledAnalysisJob.error || !next || next.id !== effectiveAnalysisJob?.id) return;
+    setLocalAnalysisJob({ basis: data, job: next });
     if (!JOB_TERMINAL_STATES.has(next.state)) return;
-    const completed = completedAnalysis(next);
-    mutateResourceForLocale<Comparison>(
-      resources.comparison(id),
-      effectiveAnalysisJobLocale,
-      (current) =>
-        current
-          ? {
-              ...current,
-              analysis_job: next,
-              analysis: completed || current.analysis,
-            }
-          : current,
-    );
-    void invalidateResources(resources.comparisonHistory(id));
-    if (
-      next.state === "succeeded" &&
-      storedLocale() === effectiveAnalysisJobLocale
-    ) {
+    const terminal = `${next.id}:${next.updated_at}:${next.state}`;
+    if (handledAnalysisJobs.current.has(terminal)) return;
+    handledAnalysisJobs.current.add(terminal);
+    completedReport.current = next.state === "succeeded" ? next.result?.id || null : null;
+    // Job completion is a signal to re-read, not authority to restore evidence or
+    // choose an analysis for a changed business profile/runtime.
+    void invalidateResources(resources.comparison(id), resources.comparisonHistory(id));
+    setAnalysisNotice(next.state === "succeeded" ? t("compare.reportFinished") :
+      t("compare.analysisEnded", { state: localLabel(next.state, uiLocale) }));
+  }, [data, readReady, polledAnalysisJob.data, polledAnalysisJob.error,
+    effectiveAnalysisJob?.id, id, locale, t, uiLocale]);
+  useEffect(() => {
+    if (!readReady || !completedReport.current) return;
+    if (data?.analysis?.id === completedReport.current && data.analysis.status === "succeeded" && !data.analysis.stale) {
       setAnalysisNotice(t("compare.reportReady"));
-      if (
-        document.hidden &&
-        "Notification" in window &&
-        Notification.permission === "granted"
-      )
-        new Notification("Helvetic Lens", {
-          body: t("compare.reportReadyShort"),
-        });
-    } else if (storedLocale() === effectiveAnalysisJobLocale) {
-      setAnalysisNotice(
-        t("compare.analysisEnded", {
-          state: localLabel(next.state, uiLocale),
-        }),
-      );
+      if (document.hidden && "Notification" in window && Notification.permission === "granted")
+        new Notification("Helvetic Lens", { body: t("compare.reportReadyShort") });
     }
-  }, [
-    effectiveAnalysisJob?.id,
-    effectiveAnalysisJobLocale,
-    id,
-    polledAnalysisJob.data,
-    t,
-    uiLocale,
-  ]);
+    completedReport.current = null;
+  }, [data, readReady, t]);
   useEffect(() => {
     if (!jumpTarget) return;
     const target = document.getElementById(jumpTarget);
@@ -440,82 +397,47 @@ export function ComparisonView({ id }: { id: string }) {
   const changes =
     data?.diff.items.filter((item) => item.kind !== "unchanged") || [];
   async function analyse() {
+    if (!data || !readReady || submittingAnalysis) return;
+    const isCurrent = captureOwner();
     const requestLocale = locale;
+    setSubmittingAnalysis(true);
     setError("");
     try {
       const queued = await api<Job>("/comparisons/" + id + "/analyse-jobs", {
         method: "POST",
         body: JSON.stringify({ output_locale: requestLocale }),
       });
+      if (!isCurrent() || !comparisonJob(queued, id, requestLocale)) return;
       primeResourceForLocale(resources.job(queued.id), requestLocale, queued);
-      setAnalysisJobs((current) => ({ ...current, [requestLocale]: queued }));
-      mutateResourceForLocale<Comparison>(
-        resources.comparison(id),
-        requestLocale,
-        (current) => (current ? { ...current, analysis_job: queued } : current),
-      );
-      if (storedLocale() === requestLocale) {
-        setAnalysisNotice(
-          JOB_TERMINAL_STATES.has(queued.state)
-            ? t("compare.reportFinished")
-            : t("compare.analysisSubmitted"),
-        );
-        if (queued.state === "failed")
-          setError(queued.error?.detail || t("compare.analysisFailed"));
-      }
-      if (JOB_TERMINAL_STATES.has(queued.state)) {
-        const completed = completedAnalysis(queued);
-        mutateResourceForLocale<Comparison>(
-          resources.comparison(id),
-          requestLocale,
-          (current) =>
-            current
-              ? {
-                  ...current,
-                  analysis_job: queued,
-                  analysis: completed || current.analysis,
-                }
-              : current,
-        );
-        void invalidateResources(resources.comparisonHistory(id));
-      }
+      setLocalAnalysisJob({ basis: data, job: queued });
+      completedReport.current = queued.state === "succeeded" ? queued.result?.id || null : null;
+      setAnalysisNotice(JOB_TERMINAL_STATES.has(queued.state)
+        ? t("compare.reportFinished") : t("compare.analysisSubmitted"));
+      if (queued.state === "failed") setError(queued.error?.detail || t("compare.analysisFailed"));
+      // Also recover queued work from the server after returning to this view.
+      void invalidateResources(resources.comparison(id), resources.comparisonHistory(id));
     } catch (cause) {
-      if (storedLocale() === requestLocale) setError(errorText(cause));
+      if (isCurrent()) setError(errorText(cause));
+    } finally {
+      if (isCurrent()) setSubmittingAnalysis(false);
     }
   }
   async function cancelAnalysis() {
-    if (!effectiveAnalysisJob) return;
+    if (!effectiveAnalysisJob || !readReady) return;
+    const isCurrent = captureOwner();
     try {
-      const cancelled = await api<Job>(
-        `/jobs/${effectiveAnalysisJob.id}/cancel`,
-        {
-          method: "POST",
-        },
-      );
-      primeResourceForLocale(
-        resources.job(cancelled.id),
-        effectiveAnalysisJobLocale,
-        cancelled,
-      );
-      setAnalysisJobs((current) => ({
-        ...current,
-        [effectiveAnalysisJobLocale]: cancelled,
-      }));
-      if (storedLocale() === effectiveAnalysisJobLocale)
-        setAnalysisNotice(t("compare.analysisCancelled"));
-      mutateResourceForLocale<Comparison>(
-        resources.comparison(id),
-        effectiveAnalysisJobLocale,
-        (current) =>
-          current ? { ...current, analysis_job: cancelled } : current,
-      );
-      void invalidateResources(resources.comparisonHistory(id));
+      const cancelled = await api<Job>(`/jobs/${effectiveAnalysisJob.id}/cancel`, { method: "POST" });
+      if (!isCurrent() || !comparisonJob(cancelled, id, locale)) return;
+      primeResourceForLocale(resources.job(cancelled.id), effectiveAnalysisJobLocale, cancelled);
+      if (data) setLocalAnalysisJob({ basis: data, job: cancelled });
+      setAnalysisNotice(t("compare.analysisCancelled"));
+      void invalidateResources(resources.comparison(id), resources.comparisonHistory(id));
     } catch (cause) {
-      if (storedLocale() === effectiveAnalysisJobLocale)
-        setError(errorText(cause));
+      if (isCurrent()) setError(errorText(cause));
     }
   }
   async function confirmIdentity(versionId: string) {
+    const isCurrent = captureOwner();
     setConfirmingIdentity(versionId);
     setError("");
     try {
@@ -525,23 +447,23 @@ export function ComparisonView({ id }: { id: string }) {
           note: t("compare.identityConfirmedNote"),
         }),
       });
-      await invalidateResources(resources.comparison(id));
+      if (isCurrent()) await invalidateResources(resources.comparison(id));
     } catch (cause) {
-      setError(errorText(cause));
+      if (isCurrent()) setError(errorText(cause));
     } finally {
-      setConfirmingIdentity("");
+      if (isCurrent()) setConfirmingIdentity("");
     }
   }
   async function removeMistakenImport(versionId: string) {
     if (!window.confirm(t("compare.removeImportConfirm"))) return;
+    const isCurrent = captureOwner();
     setConfirmingIdentity(versionId);
     setError("");
     try {
       await api("/versions/" + versionId, { method: "DELETE" });
-      window.location.href = "/laws/" + data?.law_id;
+      if (isCurrent()) window.location.href = "/laws/" + data?.law_id;
     } catch (cause) {
-      setError(errorText(cause));
-      setConfirmingIdentity("");
+      if (isCurrent()) { setError(errorText(cause)); setConfirmingIdentity(""); }
     }
   }
   function jump(value: string) {
@@ -580,6 +502,9 @@ export function ComparisonView({ id }: { id: string }) {
     target.hash = "";
     window.history.replaceState(null, "", target);
   }
+  if (loadError) return <Shell section={t("compare.section")}>
+    <ReadRecovery error={loadError} busy={read.validating} retry={read.reload} locale={locale} />
+  </Shell>;
   if (data?.mode === "snapshot") {
     const copy = articleSelectionCopy[locale];
     return (
@@ -1065,6 +990,8 @@ export function ComparisonView({ id }: { id: string }) {
                 </div>
                 <div className="panel-body">
                   <span className="eyebrow">{t("compare.reportFlow")}</span>
+                  <ReadRecovery error={polledAnalysisJob.error} busy={polledAnalysisJob.validating}
+                    retry={polledAnalysisJob.reload} locale={locale} />
                   {analysisNotice && (
                     <div
                       className="analysis-notice"
@@ -1349,7 +1276,7 @@ export function ComparisonView({ id }: { id: string }) {
                       className="w-full mt-3"
                       variant="outline"
                       disabled={
-                        analysisJobActive ||
+                        !readReady || submittingAnalysis || analysisJobActive ||
                         (analysis?.status === "succeeded" &&
                           !analysis.stale &&
                           effectiveAnalysisJob?.state === "succeeded") ||
@@ -1668,6 +1595,7 @@ function ActionsPanel({
                     />
                     {action.action_key && (
                       <ReviewActionControls
+                        key={`${comparisonId}:${analysis.id}:${action.action_key}`}
                         comparisonId={comparisonId}
                         analysisId={analysis.id}
                         action={action}
@@ -1946,6 +1874,7 @@ function ReviewActionControls({
 }) {
   const { locale: productLocale, t, dateTime, number } = useI18n();
   const locale = productLocale.slice(0, 2) as ComparisonLocale;
+  const captureOwner = useRequestOwner(`${comparisonId}:${analysisId}:${productLocale}`);
   const [saved, setSaved] = useState<ActionDecision | undefined>(current);
   const [events, setEvents] = useState(history);
   const [busy, setBusy] = useState("");
@@ -1981,6 +1910,7 @@ function ReviewActionControls({
       rationale = window.prompt(t("compare.reasonPrompt"))?.trim() || null;
       if (!rationale) return;
     }
+    const isCurrent = captureOwner();
     setBusy(decision);
     setError("");
     try {
@@ -1996,31 +1926,16 @@ function ReviewActionControls({
           }),
         },
       );
+      if (!isCurrent()) return;
       setSaved(page.current[action.action_key || ""]);
       setEvents(
         page.history.filter((item) => item.action_key === action.action_key),
       );
-      mutateResource<Comparison>(
-        resources.comparison(comparisonId),
-        (currentComparison) => {
-          if (
-            !currentComparison?.analysis ||
-            currentComparison.analysis.id !== analysisId
-          )
-            return currentComparison;
-          return {
-            ...currentComparison,
-            analysis: {
-              ...currentComparison.analysis,
-              action_decisions: page,
-            },
-          };
-        },
-      );
+      void invalidateResources(resources.comparison(comparisonId));
     } catch (cause) {
-      setError(errorText(cause));
+      if (isCurrent()) setError(errorText(cause));
     } finally {
-      setBusy("");
+      if (isCurrent()) setBusy("");
     }
   }
   return (
@@ -2321,6 +2236,7 @@ function AskPanel({
   snapshot?: boolean;
 }) {
   const { locale, t } = useI18n();
+  const captureOwner = useRequestOwner(`${comparisonId}:${locale}`);
   const [question, setQuestion] = useState(""),
     [submitting, setSubmitting] = useState(false),
     [error, setError] = useState(""),
@@ -2334,7 +2250,7 @@ function AskPanel({
     resources.comparisonHistory(comparisonId),
   );
   const askJobs = useResource<Job[]>(resources.comparisonAskJobs(comparisonId));
-  const history = (savedHistory.data?.items || [])
+  const history = (savedHistory.error ? [] : savedHistory.data?.items || [])
     .filter((item) => item.type === "question")
     .sort(
       (left, right) =>
@@ -2343,9 +2259,10 @@ function AskPanel({
     )
     .slice(0, 20)
     .reverse();
-  const ready = configured && !blockedReason;
+  const ready = configured && !blockedReason && !savedHistory.error && !askJobs.error;
   const quickQuestions = snapshot ? articleSelectionCopy[locale].questions : askPrompts[promptLocale];
-  const jobs = askJobs.data || [];
+  const jobs = (askJobs.error ? [] : askJobs.data || []).filter((job) =>
+    job.target_type === "comparison" && job.target_id === comparisonId && job.type === "ask");
   const activeJob = jobs.find((job) => !JOB_TERMINAL_STATES.has(job.state));
   const historyRecordIds = new Set(history.map((item) => item.id));
   const visibleJobs = jobs
@@ -2409,15 +2326,13 @@ function AskPanel({
 
   function updateJob(next: Job) {
     primeResourceForLocale(resources.job(next.id), locale, next);
-    askJobs.setData((current) => [
-      next,
-      ...(current || []).filter((item) => item.id !== next.id),
-    ]);
+    void invalidateResources(resources.comparisonAskJobs(comparisonId));
   }
 
   async function ask(event: React.FormEvent) {
     event.preventDefault();
-    if (!question.trim()) return;
+    if (!question.trim() || !ready || submitting) return;
+    const isCurrent = captureOwner();
     setSubmitting(true);
     setError("");
     setNotice("");
@@ -2444,6 +2359,7 @@ function AskPanel({
           }),
         },
       );
+      if (!isCurrent()) return;
       updateJob(queued);
       setQuestion("");
       setNotice(
@@ -2456,35 +2372,39 @@ function AskPanel({
       if (JOB_TERMINAL_STATES.has(queued.state))
         void invalidateResources(resources.comparisonHistory(comparisonId));
     } catch (cause) {
-      setError(errorText(cause));
+      if (isCurrent()) setError(errorText(cause));
     } finally {
-      setSubmitting(false);
+      if (isCurrent()) setSubmitting(false);
     }
   }
 
   async function cancel(job: Job) {
+    const isCurrent = captureOwner();
     setError("");
     try {
-      updateJob(await api<Job>(`/jobs/${job.id}/cancel`, { method: "POST" }));
+      const cancelled = await api<Job>(`/jobs/${job.id}/cancel`, { method: "POST" });
+      if (!isCurrent()) return;
+      updateJob(cancelled);
       setNotice(t("compare.askCancelled"));
     } catch (cause) {
-      setError(errorText(cause));
+      if (isCurrent()) setError(errorText(cause));
     }
   }
 
   async function retry(job: Job) {
+    const isCurrent = captureOwner();
     setError("");
     setNotice("");
     try {
       const retried = await api<Job>(`/jobs/${job.id}/retry`, {
         method: "POST",
       });
+      if (!isCurrent()) return;
       handledTerminalJobs.current.delete(job.id);
       updateJob(retried);
       setNotice(t("compare.askResubmitted"));
     } catch (cause) {
-      setError(errorText(cause));
-      setQuestion(job.request?.question || question);
+      if (isCurrent()) { setError(errorText(cause)); setQuestion(job.request?.question || question); }
     }
   }
   return (
@@ -2527,8 +2447,10 @@ function AskPanel({
         {savedHistory.loading && !savedHistory.data && (
           <Loading text={t("compare.loadingQuestions")} />
         )}
-        <ErrorNote message={savedHistory.error} />
-        <ErrorNote message={askJobs.error} />
+        <ReadRecovery error={savedHistory.error} busy={savedHistory.validating}
+          retry={savedHistory.reload} locale={locale} />
+        <ReadRecovery error={askJobs.error} busy={askJobs.validating}
+          retry={askJobs.reload} locale={locale} />
         {blockedReason && <ErrorNote message={blockedReason} />}
         <div
           className="ask-intents"
