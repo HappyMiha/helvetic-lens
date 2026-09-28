@@ -1,6 +1,7 @@
 """Current-permission direct retrieval of private captured passages and citations.
 
-No embedding index, hosted inference, external search, query persistence or cache.
+Direct windows do not persist data or use hosted inference/external search.
+Whole-ledger mode delegates to the permission-scoped derived local cache.
 Semantic windows deliberately have no lexical candidate gate. Literal mode scans
 the same eligible ledger at the database before counting and pagination.
 """
@@ -40,7 +41,7 @@ def semantic_state(query, item):
 
 class Search(Input):
     query: str = Field(min_length=2, max_length=300)
-    mode: Literal["semantic", "literal"] = "semantic"
+    mode: Literal["semantic", "literal", "corpus"] = "semantic"
     offset: int = Field(default=0, ge=0, le=1000000, strict=True)
     as_of: datetime | None = None
     check_only: StrictBool = False
@@ -102,28 +103,35 @@ def capture(service, identity, product, dossier_id, command):
         if session.get_bind().dialect.name == "postgresql":
             session.connection().exec_driver_sql("SET LOCAL statement_timeout = '3000ms'")
         row = access(session, identity, product, dossier_id)
-        table = ledger(session.get_bind().dialect.name, row.id, row.organization_id, command.as_of)
-        query = select(table)
-        total = session.scalar(select(func.count()).select_from(table))
-        if command.mode == "literal":
-            for word in dict.fromkeys(command.query.lower().split()):
-                query = query.where(or_(*(func.lower(field).contains(word, autoescape=True)
-                    for field in (table.c.quote, table.c.statement, table.c.title))))
-        matching = session.scalar(select(func.count()).select_from(query.subquery())) if command.mode == "literal" else total
-        rows = session.execute(query.order_by(table.c.created_at.desc(), table.c.kind, table.c.id)
-            .offset(command.offset).limit(BATCH_SIZE)).mappings()
-        items = []
-        for record in rows:
-            item = dict(record)
-            item["created_at"] = iso(item["created_at"])
-            # Preserve the full excerpt's hash in the fence even when the model
-            # and preview receive only its declared prefix.
-            item["text_sha256"] = hashlib.sha256(item["quote"].encode()).hexdigest()
-            item["text_characters"] = len(item["quote"])
-            item["quote"] = item["quote"][:TEXT_LIMIT]
-            item["text_truncated"] = item["text_characters"] > TEXT_LIMIT
-            items.append(item)
-        return {"items": items, "total": total, "matching": matching}
+        return capture_rows(session, row, command)
+
+
+def capture_rows(session, row, command):
+    table = ledger(session.get_bind().dialect.name, row.id, row.organization_id, command.as_of)
+    query = select(table)
+    total = session.scalar(select(func.count()).select_from(table))
+    if command.mode == "literal":
+        for word in dict.fromkeys(command.query.lower().split()):
+            query = query.where(or_(*(func.lower(field).contains(word, autoescape=True)
+                for field in (table.c.quote, table.c.statement, table.c.title))))
+    matching = session.scalar(select(func.count()).select_from(query.subquery())) if command.mode == "literal" else total
+    from .evidence_embeddings import MAX_RECORDS
+
+    rows = session.execute(query.order_by(table.c.created_at.desc(), table.c.kind, table.c.id)
+        .offset(0 if command.mode == "corpus" else command.offset)
+        .limit(MAX_RECORDS + 1 if command.mode == "corpus" else BATCH_SIZE)).mappings()
+    items = []
+    for record in rows:
+        item = dict(record)
+        item["created_at"] = iso(item["created_at"])
+        # Preserve the full excerpt's hash in the fence even when the model
+        # and preview receive only its declared prefix.
+        item["text_sha256"] = hashlib.sha256(item["quote"].encode()).hexdigest()
+        item["text_characters"] = len(item["quote"])
+        item["quote"] = item["quote"][:TEXT_LIMIT]
+        item["text_truncated"] = item["text_characters"] > TEXT_LIMIT
+        items.append(item)
+    return {"items": items, "total": total, "matching": matching}
 
 
 def fingerprint(page):
@@ -185,6 +193,15 @@ def routes(router, service, actor):
             current = await read()
             if fingerprint(current) != captured_fingerprint:
                 fail("The saved evidence or its permissions changed during search. Search again.", 409, "evidence_changed")
+        if command.mode == "corpus":
+            from .product_corpus_search import search_corpus
+
+            try:
+                async with asyncio.timeout(40):
+                    return await search_corpus(service, identity, product, dossier_id, command, request,
+                        before, captured_fingerprint, revalidate, limiter, started)
+            except TimeoutError:
+                fail("Meaning search reached its time limit. Prepared evidence is retained; try again or use Words.", 503, "search_timeout")
         answers, error = [], None
         if command.mode == "semantic" and before["items"]:
             await asyncio.to_thread(limiter.check, "private_evidence_user", identity.user_id, limit=6, window_seconds=60)

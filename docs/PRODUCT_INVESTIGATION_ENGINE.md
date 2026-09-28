@@ -247,3 +247,9 @@ completion/evidence records feed private/public following, current-permission
 history and personal read markers in both clients. See the pre-implementation
 [scope and acceptance contract](PRODUCT_RESEARCH_NOTIFICATIONS.md). This does not
 complete native email/noise controls, source review or either full specification.
+
+Stage4f whole-dossier retrieval is IN PROGRESS pending exact production acceptance.
+The [implementation and independent sample](PRODUCT_CORPUS_SEARCH.md) recover
+older evidence across the current private ledger, with source-contained local
+preparation, unchanged-input reuse and current-rights ranking. The full product,
+professional evaluation and native visual migration remain open.

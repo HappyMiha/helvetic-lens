@@ -32,6 +32,7 @@ from . import ipi_models as ipi_models
 from . import legal_profile_models as legal_profile_models
 from . import product_investigation_models as product_investigation_models
 from . import product_models as product_models
+from . import product_retrieval_models as product_retrieval_models
 from . import related_models as related_models
 from . import river_email_models as river_email_models
 from . import road_models as road_models
@@ -1821,6 +1822,7 @@ from .monitoring_connector_models import MonitoringConnectorConfiguration  # noq
 ORGANIZATION_SCOPED_MODELS = (
     product_models.PrivateDossierFollow,
     *product_investigation_models.SCOPED,
+    product_retrieval_models.EvidenceVector,
     product_models.DecisionSearchRun,
     product_models.PublicDossierCopy,
     product_models.PublicReuseReceipt,

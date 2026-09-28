@@ -184,6 +184,7 @@ class Settings(BaseSettings):
     search1api_api_key: SecretStr = SecretStr("")
     laya_api_key: SecretStr = SecretStr("")
     laya_base_url: str = ""
+    evidence_embedding_url: str = ""
     decision_search_daily_limit: int = Field(default=25, ge=0, le=10000)
     jev_input_usd_per_million: float | None = Field(default=None, ge=0, le=1000)
     jev_output_usd_per_million: float | None = Field(default=None, ge=0, le=1000)

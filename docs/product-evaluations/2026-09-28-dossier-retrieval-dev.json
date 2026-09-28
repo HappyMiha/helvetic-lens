@@ -1,0 +1,5591 @@
+{
+  "dataset": "miracl/nomiracl",
+  "revision": "ecd08778d0426a5ca28ac99763b0c9ddc2c78e68",
+  "sources": [
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/english/topics/dev.relevant.tsv",
+      "sha256": "25d9e6d17656674fd7aa3b67ee912c71545e664a842b147bfc17e9ff391db3da",
+      "bytes": 36782
+    },
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/english/qrels/dev.relevant.tsv",
+      "sha256": "a0af836c300e85088c4d73449492e2378280f967cac032853c9e11f3bc8a8d81",
+      "bytes": 167817
+    },
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/english/topics/dev.non_relevant.tsv",
+      "sha256": "9b487e39ba57001c538c82f48b28a4d6a1abd221eb438e89ff973286af16104a",
+      "bytes": 14956
+    },
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/english/qrels/dev.non_relevant.tsv",
+      "sha256": "d8eb1e654b74f7a770b19fb6767769daa0473e5de59c8c2c614e81f41d017af7",
+      "bytes": 59725
+    },
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/english/topics/test.relevant.tsv",
+      "sha256": "ab30dc5e0062c05f9102dad3ed37a989f3415f496d5731c19a27a3cc4918bdae",
+      "bytes": 109792
+    },
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/english/qrels/test.relevant.tsv",
+      "sha256": "bec1a5dd3a47a6c7f4014ddc62a1605f4df02825a4ecca7d5993c7a78b2d2aeb",
+      "bytes": 471772
+    },
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/english/topics/test.non_relevant.tsv",
+      "sha256": "ffb12286dacb67048f6f9a47e812180b0dcf8878f95c1337de9cd2d1f28dd8bf",
+      "bytes": 18758
+    },
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/english/qrels/test.non_relevant.tsv",
+      "sha256": "4ee2b9a0581135f634041d1ed67615cf09c320eddd24786b78fa24b979d6c236",
+      "bytes": 74923
+    },
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/english/corpus.jsonl.gz",
+      "sha256": "f333c75491c8dac69f946b021511a67666318efb799dff3a6d927a841f8148eb",
+      "bytes": 9692742
+    },
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/german/topics/dev.relevant.tsv",
+      "sha256": "6b66ec2cfb4af383e6fe18a08899bfa3a0deeb5e6010758743fa93ab598321c9",
+      "bytes": 17620
+    },
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/german/qrels/dev.relevant.tsv",
+      "sha256": "5d4a0d7ac42c7839a0513ba6deb6b27fc62803f318be8a7c411e10dbbde7578c",
+      "bytes": 77351
+    },
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/german/topics/dev.non_relevant.tsv",
+      "sha256": "e43af700d860d9869ae20de33d271a62e0ffe4152bd9f9cedc84e27e73dd1f23",
+      "bytes": 10411
+    },
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/german/qrels/dev.non_relevant.tsv",
+      "sha256": "66d7d2e8cd6560066d9ba7d5cecd51a8530a61c18e5b850ae7e6c69cd7393007",
+      "bytes": 42598
+    },
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/german/topics/test.relevant.tsv",
+      "sha256": "450757a2af9b9e0d810f7ce1871d7570efb1d2d9ef14a8384a58ea4109b876c6",
+      "bytes": 40042
+    },
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/german/qrels/test.relevant.tsv",
+      "sha256": "b6debb1ce2fb17d2eba821a51781e1cb94192e723d70f415b0c19e5ccf891d7b",
+      "bytes": 180232
+    },
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/german/topics/test.non_relevant.tsv",
+      "sha256": "d737a41b5c46239ab2127641d302901c6705522e8a6126a3aadb1c9ae9d66e63",
+      "bytes": 12996
+    },
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/german/qrels/test.non_relevant.tsv",
+      "sha256": "bb6522e0863f8f16cdeaea43d3c1673583eece35b9f41e2c28e83ff6003b06dc",
+      "bytes": 53865
+    },
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/german/corpus.jsonl.gz",
+      "sha256": "781f14d7df9f39edda0cebf3df52ddbdcab82e9748bddd76bfb6c62db2e69dd3",
+      "bytes": 3729466
+    },
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/french/topics/dev.relevant.tsv",
+      "sha256": "dd471f3a0a594d212b30495f8b1d9759451aea399b44e02de6ca9c5550930106",
+      "bytes": 19375
+    },
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/french/qrels/dev.relevant.tsv",
+      "sha256": "823e8f6fd297064d67efe37991cd3953414dc040c290f249b0895925f03509ad",
+      "bytes": 84975
+    },
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/french/topics/dev.non_relevant.tsv",
+      "sha256": "e01cf9ebd73ccfc619f841a20e8e5bfc620306763ad5ff9fc8df8298eca3585f",
+      "bytes": 40679
+    },
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/french/qrels/dev.non_relevant.tsv",
+      "sha256": "8cee6e5239aaa23b151383d672b11e47cb4c78107c8301d1b67a0203161a425b",
+      "bytes": 165244
+    },
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/french/topics/test.relevant.tsv",
+      "sha256": "983302af8d219d100045ba3eb918ad321a616d8250a46d62c3a6500fd636f784",
+      "bytes": 45335
+    },
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/french/qrels/test.relevant.tsv",
+      "sha256": "30dd3eb682cb2f7a41766c654a86d6e29f7b094223c7619ff260d58c4efa0ec0",
+      "bytes": 199341
+    },
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/french/topics/test.non_relevant.tsv",
+      "sha256": "0458b319036aebca3e15357e5696ae88382d499820616a8e5fa5f30968ef6856",
+      "bytes": 51134
+    },
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/french/qrels/test.non_relevant.tsv",
+      "sha256": "be09dfd2cb5385acf46da93ef4e6c10b08239ca84ddb4f4188dbd3e17baf7d6a",
+      "bytes": 210382
+    },
+    {
+      "url": "https://huggingface.co/datasets/miracl/nomiracl/resolve/ecd08778d0426a5ca28ac99763b0c9ddc2c78e68/data/french/corpus.jsonl.gz",
+      "sha256": "55da3cbe8861a3a6e81fc9899d2a0afb3b9573de5f4846eac8e955f8a4152cd7",
+      "bytes": 5855775
+    }
+  ],
+  "model": "intfloat/multilingual-e5-small@614241f622f53c4eeff9890bdc4f31cfecc418b3",
+  "laya_models": [
+    "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67"
+  ],
+  "sampling": "SHA256(language:query_id), first 12 dev /20 test relevant +4 non-relevant each; labels unchanged; no fitting.",
+  "limits": "Judged encyclopedia candidate pools, not full-corpus benchmark or professional quality. Pooled recall covers known positives only; other-query passages are unjudged, not negatives. E5 trained on MIRACL train; project test is untouched for selection, model pretraining contamination is unknown. No Italian/Ukrainian quality claim. Corpus restricted to captured 2400-character prefixes; E5 truncates at512 tokens. Recency ceiling is an artificial deterministic ordering, not real user history.",
+  "documents": 1207,
+  "queries": 48,
+  "requests": 488,
+  "failures": 0,
+  "estimated_cost_usd": null,
+  "cost_basis": "Local 2-CPU inference; compute/hosting not metered, unknown not zero. No paid or private-data calls.",
+  "latency": {
+    "laya_mean_ms": 530.5,
+    "laya_max_ms": 1666.48,
+    "e5_prepare_all_ms": 154772.68,
+    "e5_query_mean_ms": 13.79
+  },
+  "groups": {
+    "dev/english": {
+      "queries": 16,
+      "answerable_queries": 12,
+      "candidate_metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.70102,
+          "recall3": 0.34187,
+          "top1": 0.33333
+        },
+        "laya": {
+          "ndcg10": 0.81009,
+          "recall3": 0.53036,
+          "top1": 0.75
+        },
+        "e5": {
+          "ndcg10": 0.80937,
+          "recall3": 0.55516,
+          "top1": 0.58333
+        },
+        "e5_bm25": {
+          "ndcg10": 0.86165,
+          "recall3": 0.57599,
+          "top1": 0.66667
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_false_negatives": 16,
+      "laya_false_positives": 35
+    },
+    "dev/german": {
+      "queries": 16,
+      "answerable_queries": 12,
+      "candidate_metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.71227,
+          "recall3": 0.39167,
+          "top1": 0.5
+        },
+        "laya": {
+          "ndcg10": 0.71259,
+          "recall3": 0.33889,
+          "top1": 0.66667
+        },
+        "e5": {
+          "ndcg10": 0.82705,
+          "recall3": 0.59861,
+          "top1": 0.75
+        },
+        "e5_bm25": {
+          "ndcg10": 0.8141,
+          "recall3": 0.52917,
+          "top1": 0.66667
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 0.97222,
+        "bm25": 0.91667,
+        "e5_bm25": 0.97222,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_false_negatives": 24,
+      "laya_false_positives": 32
+    },
+    "dev/french": {
+      "queries": 16,
+      "answerable_queries": 12,
+      "candidate_metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.62764,
+          "recall3": 0.27877,
+          "top1": 0.41667
+        },
+        "laya": {
+          "ndcg10": 0.69391,
+          "recall3": 0.53571,
+          "top1": 0.33333
+        },
+        "e5": {
+          "ndcg10": 0.75178,
+          "recall3": 0.52381,
+          "top1": 0.58333
+        },
+        "e5_bm25": {
+          "ndcg10": 0.73601,
+          "recall3": 0.52381,
+          "top1": 0.58333
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 0.95833,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_false_negatives": 12,
+      "laya_false_positives": 29
+    },
+    "dev/all": {
+      "queries": 48,
+      "answerable_queries": 36,
+      "candidate_metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.68031,
+          "recall3": 0.33743,
+          "top1": 0.41667
+        },
+        "laya": {
+          "ndcg10": 0.73886,
+          "recall3": 0.46832,
+          "top1": 0.58333
+        },
+        "e5": {
+          "ndcg10": 0.79606,
+          "recall3": 0.55919,
+          "top1": 0.63889
+        },
+        "e5_bm25": {
+          "ndcg10": 0.80392,
+          "recall3": 0.54299,
+          "top1": 0.63889
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 0.99074,
+        "bm25": 0.95833,
+        "e5_bm25": 0.99074,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_false_negatives": 52,
+      "laya_false_positives": 96
+    }
+  },
+  "rows": [
+    {
+      "id": "english:2003",
+      "language": "english",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "english:2076622#7": 1,
+        "english:2076622#2": 1,
+        "english:2076622#0": 1,
+        "english:398573#6": 0,
+        "english:397335#11": 0,
+        "english:35316843#1": 0,
+        "english:30980953#4": 0,
+        "english:38185244#0": 0,
+        "english:847519#1": 0,
+        "english:41717823#0": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "english:847519#1",
+          "english:2076622#2",
+          "english:398573#6",
+          "english:397335#11",
+          "english:38185244#0",
+          "english:30980953#4",
+          "english:2076622#7",
+          "english:35316843#1",
+          "english:2076622#0",
+          "english:41717823#0"
+        ],
+        "laya": [
+          "english:2076622#2",
+          "english:398573#6",
+          "english:41717823#0",
+          "english:397335#11",
+          "english:30980953#4",
+          "english:35316843#1",
+          "english:847519#1",
+          "english:38185244#0",
+          "english:2076622#7",
+          "english:2076622#0"
+        ],
+        "e5": [
+          "english:2076622#0",
+          "english:2076622#2",
+          "english:38185244#0",
+          "english:398573#6",
+          "english:397335#11",
+          "english:41717823#0",
+          "english:35316843#1",
+          "english:2076622#7",
+          "english:30980953#4",
+          "english:847519#1"
+        ],
+        "e5_bm25": [
+          "english:2076622#2",
+          "english:2076622#0",
+          "english:38185244#0",
+          "english:398573#6",
+          "english:397335#11",
+          "english:847519#1",
+          "english:41717823#0",
+          "english:35316843#1",
+          "english:2076622#7",
+          "english:30980953#4"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.5937751258332797,
+          "recall3": 0.3333333333333333,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "laya": {
+          "ndcg10": 0.7461976723150332,
+          "recall3": 0.3333333333333333,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5": {
+          "ndcg10": 0.9134015924715543,
+          "recall3": 0.6666666666666666,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5_bm25": {
+          "ndcg10": 0.9066276098484507,
+          "recall3": 0.6666666666666666,
+          "recall12": 1.0,
+          "top1": 1
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 2,
+      "laya_binary_false_positives": 2
+    },
+    {
+      "id": "english:735",
+      "language": "english",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "english:8269855#37": 1,
+        "english:26162755#0": 1,
+        "english:242099#60": 1,
+        "english:3722#96": 0,
+        "english:7844974#104": 0,
+        "english:856852#4": 0,
+        "english:3722#103": 0,
+        "english:32842267#13": 0,
+        "english:3329930#7": 0,
+        "english:3291023#0": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "english:8269855#37",
+          "english:26162755#0",
+          "english:856852#4",
+          "english:3329930#7",
+          "english:3722#96",
+          "english:7844974#104",
+          "english:32842267#13",
+          "english:3291023#0",
+          "english:3722#103",
+          "english:242099#60"
+        ],
+        "laya": [
+          "english:3291023#0",
+          "english:7844974#104",
+          "english:32842267#13",
+          "english:3722#103",
+          "english:26162755#0",
+          "english:8269855#37",
+          "english:856852#4",
+          "english:242099#60",
+          "english:3722#96",
+          "english:3329930#7"
+        ],
+        "e5": [
+          "english:242099#60",
+          "english:32842267#13",
+          "english:3722#96",
+          "english:3291023#0",
+          "english:8269855#37",
+          "english:3722#103",
+          "english:7844974#104",
+          "english:26162755#0",
+          "english:856852#4",
+          "english:3329930#7"
+        ],
+        "e5_bm25": [
+          "english:32842267#13",
+          "english:8269855#37",
+          "english:3722#96",
+          "english:242099#60",
+          "english:3291023#0",
+          "english:26162755#0",
+          "english:7844974#104",
+          "english:856852#4",
+          "english:3722#103",
+          "english:3329930#7"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.9010126104210695,
+          "recall3": 0.6666666666666666,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "laya": {
+          "ndcg10": 0.4967432029864876,
+          "recall3": 0.0,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5": {
+          "ndcg10": 0.7988614740430418,
+          "recall3": 0.3333333333333333,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5_bm25": {
+          "ndcg10": 0.6653497124326151,
+          "recall3": 0.3333333333333333,
+          "recall12": 1.0,
+          "top1": 0
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 1,
+      "laya_binary_false_positives": 4
+    },
+    {
+      "id": "english:2295",
+      "language": "english",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "english:23974535#9": 1,
+        "english:56607353#17": 0,
+        "english:9293352#1": 0,
+        "english:18952739#60": 0,
+        "english:11299#19": 0,
+        "english:23974535#5": 0,
+        "english:18952739#70": 0,
+        "english:18838#68": 0,
+        "english:12049028#1": 0,
+        "english:4269567#36": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "english:11299#19",
+          "english:56607353#17",
+          "english:4269567#36",
+          "english:23974535#9",
+          "english:9293352#1",
+          "english:18952739#60",
+          "english:18838#68",
+          "english:23974535#5",
+          "english:12049028#1",
+          "english:18952739#70"
+        ],
+        "laya": [
+          "english:11299#19",
+          "english:4269567#36",
+          "english:23974535#9",
+          "english:56607353#17",
+          "english:18952739#70",
+          "english:9293352#1",
+          "english:23974535#5",
+          "english:12049028#1",
+          "english:18952739#60",
+          "english:18838#68"
+        ],
+        "e5": [
+          "english:23974535#5",
+          "english:23974535#9",
+          "english:18838#68",
+          "english:9293352#1",
+          "english:11299#19",
+          "english:4269567#36",
+          "english:12049028#1",
+          "english:56607353#17",
+          "english:18952739#70",
+          "english:18952739#60"
+        ],
+        "e5_bm25": [
+          "english:23974535#9",
+          "english:23974535#5",
+          "english:11299#19",
+          "english:18838#68",
+          "english:9293352#1",
+          "english:4269567#36",
+          "english:56607353#17",
+          "english:12049028#1",
+          "english:18952739#60",
+          "english:18952739#70"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.43067655807339306,
+          "recall3": 0.0,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "laya": {
+          "ndcg10": 0.5,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5": {
+          "ndcg10": 0.6309297535714575,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5_bm25": {
+          "ndcg10": 1.0,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 1
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 0,
+      "laya_binary_false_positives": 2
+    },
+    {
+      "id": "english:4226",
+      "language": "english",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "english:12940960#19": 1,
+        "english:18567040#9": 1,
+        "english:26494#4": 1,
+        "english:225971#15": 1,
+        "english:70655#0": 1,
+        "english:12940960#24": 0,
+        "english:12940960#10": 0,
+        "english:14892#93": 0,
+        "english:12940960#35": 0,
+        "english:29331449#4": 0,
+        "english:17874491#4": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "english:12940960#24",
+          "english:26494#4",
+          "english:12940960#19",
+          "english:70655#0",
+          "english:12940960#10",
+          "english:12940960#35",
+          "english:225971#15",
+          "english:18567040#9",
+          "english:17874491#4",
+          "english:29331449#4",
+          "english:14892#93"
+        ],
+        "laya": [
+          "english:17874491#4",
+          "english:12940960#19",
+          "english:70655#0",
+          "english:12940960#10",
+          "english:12940960#24",
+          "english:26494#4",
+          "english:14892#93",
+          "english:18567040#9",
+          "english:12940960#35",
+          "english:225971#15",
+          "english:29331449#4"
+        ],
+        "e5": [
+          "english:70655#0",
+          "english:17874491#4",
+          "english:18567040#9",
+          "english:26494#4",
+          "english:12940960#19",
+          "english:12940960#35",
+          "english:225971#15",
+          "english:12940960#10",
+          "english:12940960#24",
+          "english:29331449#4",
+          "english:14892#93"
+        ],
+        "e5_bm25": [
+          "english:70655#0",
+          "english:26494#4",
+          "english:17874491#4",
+          "english:12940960#19",
+          "english:18567040#9",
+          "english:12940960#35",
+          "english:12940960#24",
+          "english:12940960#10",
+          "english:225971#15",
+          "english:29331449#4",
+          "english:14892#93"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.7496812513391778,
+          "recall3": 0.4,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "laya": {
+          "ndcg10": 0.7094100882694506,
+          "recall3": 0.4,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5": {
+          "ndcg10": 0.8990671370233444,
+          "recall3": 0.4,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5_bm25": {
+          "ndcg10": 0.9325172924861036,
+          "recall3": 0.4,
+          "recall12": 1.0,
+          "top1": 1
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 1,
+      "laya_binary_false_positives": 4
+    },
+    {
+      "id": "english:49",
+      "language": "english",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "english:1572240#0": 1,
+        "english:1572240#6": 0,
+        "english:3097822#23": 0,
+        "english:2021319#13": 0,
+        "english:1572240#5": 0,
+        "english:1572240#10": 0,
+        "english:1572240#14": 0,
+        "english:1572240#7": 0,
+        "english:25737977#9": 0,
+        "english:32539958#4": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "english:3097822#23",
+          "english:32539958#4",
+          "english:2021319#13",
+          "english:1572240#6",
+          "english:1572240#0",
+          "english:25737977#9",
+          "english:1572240#10",
+          "english:1572240#14",
+          "english:1572240#7",
+          "english:1572240#5"
+        ],
+        "laya": [
+          "english:1572240#0",
+          "english:1572240#10",
+          "english:2021319#13",
+          "english:1572240#6",
+          "english:32539958#4",
+          "english:1572240#5",
+          "english:25737977#9",
+          "english:1572240#14",
+          "english:3097822#23",
+          "english:1572240#7"
+        ],
+        "e5": [
+          "english:1572240#0",
+          "english:1572240#7",
+          "english:25737977#9",
+          "english:1572240#6",
+          "english:1572240#14",
+          "english:1572240#5",
+          "english:1572240#10",
+          "english:32539958#4",
+          "english:2021319#13",
+          "english:3097822#23"
+        ],
+        "e5_bm25": [
+          "english:1572240#0",
+          "english:25737977#9",
+          "english:1572240#6",
+          "english:1572240#7",
+          "english:32539958#4",
+          "english:1572240#14",
+          "english:3097822#23",
+          "english:2021319#13",
+          "english:1572240#10",
+          "english:1572240#5"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.38685280723454163,
+          "recall3": 0.0,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "laya": {
+          "ndcg10": 1.0,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5": {
+          "ndcg10": 1.0,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5_bm25": {
+          "ndcg10": 1.0,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 1
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 0,
+      "laya_binary_false_positives": 2
+    },
+    {
+      "id": "english:1819",
+      "language": "english",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "english:35494376#34": 1,
+        "english:18582230#38": 1,
+        "english:19480112#1": 1,
+        "english:50525886#136": 1,
+        "english:1646739#10": 0,
+        "english:5676885#33": 0,
+        "english:67458#3": 0,
+        "english:1816518#5": 0,
+        "english:23092516#80": 0,
+        "english:54137#19": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "english:5676885#33",
+          "english:1646739#10",
+          "english:54137#19",
+          "english:35494376#34",
+          "english:50525886#136",
+          "english:18582230#38",
+          "english:19480112#1",
+          "english:67458#3",
+          "english:23092516#80",
+          "english:1816518#5"
+        ],
+        "laya": [
+          "english:19480112#1",
+          "english:1816518#5",
+          "english:5676885#33",
+          "english:23092516#80",
+          "english:1646739#10",
+          "english:67458#3",
+          "english:18582230#38",
+          "english:35494376#34",
+          "english:50525886#136",
+          "english:54137#19"
+        ],
+        "e5": [
+          "english:5676885#33",
+          "english:18582230#38",
+          "english:1816518#5",
+          "english:19480112#1",
+          "english:23092516#80",
+          "english:54137#19",
+          "english:67458#3",
+          "english:35494376#34",
+          "english:50525886#136",
+          "english:1646739#10"
+        ],
+        "e5_bm25": [
+          "english:5676885#33",
+          "english:18582230#38",
+          "english:54137#19",
+          "english:19480112#1",
+          "english:1816518#5",
+          "english:23092516#80",
+          "english:35494376#34",
+          "english:1646739#10",
+          "english:67458#3",
+          "english:50525886#136"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.5883300173403988,
+          "recall3": 0.0,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "laya": {
+          "ndcg10": 0.7611740324495944,
+          "recall3": 0.25,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5": {
+          "ndcg10": 0.6550972241386396,
+          "recall3": 0.25,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5_bm25": {
+          "ndcg10": 0.6574017496914832,
+          "recall3": 0.25,
+          "recall12": 1.0,
+          "top1": 0
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 3,
+      "laya_binary_false_positives": 2
+    },
+    {
+      "id": "english:3523",
+      "language": "english",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "english:8376683#4": 1,
+        "english:48756#0": 1,
+        "english:48756#3": 1,
+        "english:48756#15": 0,
+        "english:48756#9": 0,
+        "english:40811678#0": 0,
+        "english:48756#14": 0,
+        "english:48756#8": 0,
+        "english:48756#7": 0,
+        "english:48756#18": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "english:8376683#4",
+          "english:48756#14",
+          "english:48756#0",
+          "english:48756#9",
+          "english:48756#18",
+          "english:48756#7",
+          "english:48756#3",
+          "english:48756#15",
+          "english:48756#8",
+          "english:40811678#0"
+        ],
+        "laya": [
+          "english:8376683#4",
+          "english:48756#7",
+          "english:48756#0",
+          "english:48756#9",
+          "english:48756#15",
+          "english:48756#3",
+          "english:40811678#0",
+          "english:48756#8",
+          "english:48756#18",
+          "english:48756#14"
+        ],
+        "e5": [
+          "english:48756#0",
+          "english:48756#14",
+          "english:48756#15",
+          "english:40811678#0",
+          "english:48756#7",
+          "english:48756#8",
+          "english:48756#9",
+          "english:48756#3",
+          "english:8376683#4",
+          "english:48756#18"
+        ],
+        "e5_bm25": [
+          "english:48756#0",
+          "english:48756#14",
+          "english:48756#15",
+          "english:48756#7",
+          "english:40811678#0",
+          "english:48756#9",
+          "english:8376683#4",
+          "english:48756#8",
+          "english:48756#3",
+          "english:48756#18"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.86034433104172,
+          "recall3": 0.6666666666666666,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "laya": {
+          "ndcg10": 0.8710785440003369,
+          "recall3": 0.6666666666666666,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5": {
+          "ndcg10": 0.758586654365518,
+          "recall3": 0.3333333333333333,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5_bm25": {
+          "ndcg10": 0.7669719408901708,
+          "recall3": 0.3333333333333333,
+          "recall12": 1.0,
+          "top1": 1
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 1,
+      "laya_binary_false_positives": 1
+    },
+    {
+      "id": "english:1364",
+      "language": "english",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "english:374331#6": 1,
+        "english:12832#0": 1,
+        "english:501376#8": 0,
+        "english:10212490#2": 0,
+        "english:38084797#1": 0,
+        "english:14427879#1": 0,
+        "english:14316449#3": 0,
+        "english:14754286#2": 0,
+        "english:23789332#7": 0,
+        "english:11247268#8": 0,
+        "english:41959688#0": 0,
+        "english:12832#49": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "english:12832#0",
+          "english:374331#6",
+          "english:501376#8",
+          "english:38084797#1",
+          "english:14427879#1",
+          "english:14754286#2",
+          "english:23789332#7",
+          "english:10212490#2",
+          "english:14316449#3",
+          "english:12832#49",
+          "english:11247268#8",
+          "english:41959688#0"
+        ],
+        "laya": [
+          "english:12832#0",
+          "english:374331#6",
+          "english:38084797#1",
+          "english:501376#8",
+          "english:14316449#3",
+          "english:10212490#2",
+          "english:14427879#1",
+          "english:14754286#2",
+          "english:12832#49",
+          "english:23789332#7",
+          "english:41959688#0",
+          "english:11247268#8"
+        ],
+        "e5": [
+          "english:10212490#2",
+          "english:374331#6",
+          "english:12832#0",
+          "english:14427879#1",
+          "english:501376#8",
+          "english:23789332#7",
+          "english:38084797#1",
+          "english:14316449#3",
+          "english:12832#49",
+          "english:14754286#2",
+          "english:41959688#0",
+          "english:11247268#8"
+        ],
+        "e5_bm25": [
+          "english:374331#6",
+          "english:12832#0",
+          "english:10212490#2",
+          "english:501376#8",
+          "english:14427879#1",
+          "english:38084797#1",
+          "english:23789332#7",
+          "english:14316449#3",
+          "english:14754286#2",
+          "english:12832#49",
+          "english:41959688#0",
+          "english:11247268#8"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 1.0,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "laya": {
+          "ndcg10": 1.0,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5": {
+          "ndcg10": 0.6934264036172708,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5_bm25": {
+          "ndcg10": 1.0,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 1
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 0,
+      "laya_binary_false_positives": 1
+    },
+    {
+      "id": "english:653",
+      "language": "english",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "english:27113732#13": 1,
+        "english:16767#7": 1,
+        "english:173400#24": 1,
+        "english:174117#5": 1,
+        "english:5410115#6": 1,
+        "english:3827155#4": 1,
+        "english:37669#5": 1,
+        "english:14805868#2": 0,
+        "english:16767#1": 0,
+        "english:16408640#14": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "english:16408640#14",
+          "english:14805868#2",
+          "english:5410115#6",
+          "english:173400#24",
+          "english:27113732#13",
+          "english:16767#1",
+          "english:37669#5",
+          "english:3827155#4",
+          "english:16767#7",
+          "english:174117#5"
+        ],
+        "laya": [
+          "english:27113732#13",
+          "english:37669#5",
+          "english:16408640#14",
+          "english:174117#5",
+          "english:14805868#2",
+          "english:3827155#4",
+          "english:16767#1",
+          "english:16767#7",
+          "english:5410115#6",
+          "english:173400#24"
+        ],
+        "e5": [
+          "english:16767#1",
+          "english:27113732#13",
+          "english:16408640#14",
+          "english:16767#7",
+          "english:173400#24",
+          "english:14805868#2",
+          "english:174117#5",
+          "english:37669#5",
+          "english:5410115#6",
+          "english:3827155#4"
+        ],
+        "e5_bm25": [
+          "english:16408640#14",
+          "english:16767#1",
+          "english:27113732#13",
+          "english:14805868#2",
+          "english:173400#24",
+          "english:16767#7",
+          "english:5410115#6",
+          "english:37669#5",
+          "english:174117#5",
+          "english:3827155#4"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.702700013979709,
+          "recall3": 0.14285714285714285,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "laya": {
+          "ndcg10": 0.9135166374400683,
+          "recall3": 0.2857142857142857,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5": {
+          "ndcg10": 0.7386895045108031,
+          "recall3": 0.14285714285714285,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5_bm25": {
+          "ndcg10": 0.6822301463743139,
+          "recall3": 0.14285714285714285,
+          "recall12": 1.0,
+          "top1": 0
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 4,
+      "laya_binary_false_positives": 2
+    },
+    {
+      "id": "english:4028",
+      "language": "english",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "english:169713#2": 1,
+        "english:27938384#5": 1,
+        "english:1786688#4": 1,
+        "english:1786700#7": 1,
+        "english:30120#3": 1,
+        "english:552748#13": 1,
+        "english:72979#1": 1,
+        "english:61943#1": 0,
+        "english:341943#0": 0,
+        "english:1854#27": 0,
+        "english:632354#0": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "english:341943#0",
+          "english:61943#1",
+          "english:72979#1",
+          "english:27938384#5",
+          "english:1786700#7",
+          "english:1786688#4",
+          "english:169713#2",
+          "english:632354#0",
+          "english:30120#3",
+          "english:552748#13",
+          "english:1854#27"
+        ],
+        "laya": [
+          "english:552748#13",
+          "english:1786700#7",
+          "english:1786688#4",
+          "english:72979#1",
+          "english:169713#2",
+          "english:341943#0",
+          "english:27938384#5",
+          "english:30120#3",
+          "english:61943#1",
+          "english:1854#27",
+          "english:632354#0"
+        ],
+        "e5": [
+          "english:341943#0",
+          "english:552748#13",
+          "english:72979#1",
+          "english:632354#0",
+          "english:169713#2",
+          "english:27938384#5",
+          "english:1786688#4",
+          "english:1786700#7",
+          "english:30120#3",
+          "english:61943#1",
+          "english:1854#27"
+        ],
+        "e5_bm25": [
+          "english:341943#0",
+          "english:72979#1",
+          "english:552748#13",
+          "english:632354#0",
+          "english:27938384#5",
+          "english:169713#2",
+          "english:1786688#4",
+          "english:1786700#7",
+          "english:61943#1",
+          "english:30120#3",
+          "english:1854#27"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.7138991108355571,
+          "recall3": 0.14285714285714285,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "laya": {
+          "ndcg10": 0.9888009031441519,
+          "recall3": 0.42857142857142855,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5": {
+          "ndcg10": 0.7762007239297859,
+          "recall3": 0.2857142857142857,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5_bm25": {
+          "ndcg10": 0.7729117820572333,
+          "recall3": 0.2857142857142857,
+          "recall12": 1.0,
+          "top1": 0
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 0,
+      "laya_binary_false_positives": 1
+    },
+    {
+      "id": "english:2302",
+      "language": "english",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "english:11291214#2": 1,
+        "english:11291214#0": 1,
+        "english:734019#0": 0,
+        "english:11291214#6": 0,
+        "english:11291214#4": 0,
+        "english:2364540#9": 0,
+        "english:22507490#4": 0,
+        "english:58481603#0": 0,
+        "english:8346715#21": 0,
+        "english:11291214#18": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "english:11291214#2",
+          "english:11291214#18",
+          "english:11291214#4",
+          "english:2364540#9",
+          "english:22507490#4",
+          "english:11291214#0",
+          "english:734019#0",
+          "english:58481603#0",
+          "english:11291214#6",
+          "english:8346715#21"
+        ],
+        "laya": [
+          "english:11291214#2",
+          "english:11291214#6",
+          "english:58481603#0",
+          "english:22507490#4",
+          "english:11291214#0",
+          "english:11291214#18",
+          "english:734019#0",
+          "english:8346715#21",
+          "english:11291214#4",
+          "english:2364540#9"
+        ],
+        "e5": [
+          "english:11291214#0",
+          "english:58481603#0",
+          "english:734019#0",
+          "english:11291214#2",
+          "english:22507490#4",
+          "english:11291214#6",
+          "english:11291214#18",
+          "english:11291214#4",
+          "english:2364540#9",
+          "english:8346715#21"
+        ],
+        "e5_bm25": [
+          "english:11291214#0",
+          "english:11291214#2",
+          "english:58481603#0",
+          "english:734019#0",
+          "english:22507490#4",
+          "english:11291214#18",
+          "english:11291214#4",
+          "english:11291214#6",
+          "english:2364540#9",
+          "english:8346715#21"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.8315546295836225,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "laya": {
+          "ndcg10": 0.8503449055347546,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5": {
+          "ndcg10": 0.8772153153380493,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5_bm25": {
+          "ndcg10": 1.0,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 1
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 2,
+      "laya_binary_false_positives": 0
+    },
+    {
+      "id": "english:1467",
+      "language": "english",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "english:21456588#3": 1,
+        "english:1626358#3": 1,
+        "english:1631590#27": 1,
+        "english:1631590#1": 1,
+        "english:1631590#7": 0,
+        "english:1631590#8": 0,
+        "english:17574075#9": 0,
+        "english:1631590#33": 0,
+        "english:1631590#29": 0,
+        "english:1631590#31": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "english:1631590#7",
+          "english:1631590#8",
+          "english:1626358#3",
+          "english:1631590#1",
+          "english:1631590#27",
+          "english:21456588#3",
+          "english:1631590#29",
+          "english:17574075#9",
+          "english:1631590#33",
+          "english:1631590#31"
+        ],
+        "laya": [
+          "english:21456588#3",
+          "english:1631590#7",
+          "english:1631590#1",
+          "english:1631590#27",
+          "english:17574075#9",
+          "english:1631590#8",
+          "english:1626358#3",
+          "english:1631590#29",
+          "english:1631590#31",
+          "english:1631590#33"
+        ],
+        "e5": [
+          "english:1631590#1",
+          "english:21456588#3",
+          "english:1631590#27",
+          "english:1631590#8",
+          "english:1631590#29",
+          "english:1626358#3",
+          "english:17574075#9",
+          "english:1631590#7",
+          "english:1631590#31",
+          "english:1631590#33"
+        ],
+        "e5_bm25": [
+          "english:1631590#1",
+          "english:21456588#3",
+          "english:1631590#8",
+          "english:1631590#27",
+          "english:1626358#3",
+          "english:1631590#7",
+          "english:1631590#29",
+          "english:17574075#9",
+          "english:1631590#31",
+          "english:1631590#33"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.6533933590057491,
+          "recall3": 0.25,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "laya": {
+          "ndcg10": 0.8838242945899706,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5": {
+          "ndcg10": 0.9709286432396581,
+          "recall3": 0.75,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5_bm25": {
+          "ndcg10": 0.9558295932317544,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 1
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 2,
+      "laya_binary_false_positives": 1
+    },
+    {
+      "id": "english:529",
+      "language": "english",
+      "split": "dev",
+      "subset": "non_relevant",
+      "labels": {
+        "english:16349144#3": 0,
+        "english:240146#0": 0,
+        "english:427476#1": 0,
+        "english:18984#33": 0,
+        "english:8970144#1": 0,
+        "english:47506641#1": 0,
+        "english:325708#1": 0,
+        "english:34296034#1": 0,
+        "english:18984#30": 0,
+        "english:427476#13": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "english:427476#1",
+          "english:325708#1",
+          "english:8970144#1",
+          "english:16349144#3",
+          "english:427476#13",
+          "english:47506641#1",
+          "english:34296034#1",
+          "english:18984#33",
+          "english:240146#0",
+          "english:18984#30"
+        ],
+        "laya": [
+          "english:47506641#1",
+          "english:240146#0",
+          "english:34296034#1",
+          "english:18984#33",
+          "english:8970144#1",
+          "english:325708#1",
+          "english:427476#1",
+          "english:16349144#3",
+          "english:18984#30",
+          "english:427476#13"
+        ],
+        "e5": [
+          "english:240146#0",
+          "english:47506641#1",
+          "english:8970144#1",
+          "english:18984#33",
+          "english:325708#1",
+          "english:16349144#3",
+          "english:427476#13",
+          "english:427476#1",
+          "english:34296034#1",
+          "english:18984#30"
+        ],
+        "e5_bm25": [
+          "english:8970144#1",
+          "english:47506641#1",
+          "english:240146#0",
+          "english:325708#1",
+          "english:18984#33",
+          "english:16349144#3",
+          "english:427476#1",
+          "english:427476#13",
+          "english:34296034#1",
+          "english:18984#30"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "bm25": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "laya": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "e5": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "e5_bm25": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": null,
+        "bm25": null,
+        "e5_bm25": null,
+        "recency12_upper_bound": null
+      },
+      "laya_binary_false_negatives": 0,
+      "laya_binary_false_positives": 2
+    },
+    {
+      "id": "english:2526",
+      "language": "english",
+      "split": "dev",
+      "subset": "non_relevant",
+      "labels": {
+        "english:312806#4": 0,
+        "english:981460#8": 0,
+        "english:954764#22": 0,
+        "english:38365939#1": 0,
+        "english:71831#3": 0,
+        "english:3213407#4": 0,
+        "english:8273958#147": 0,
+        "english:8976548#3": 0,
+        "english:90558#4": 0,
+        "english:8976548#0": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "english:3213407#4",
+          "english:312806#4",
+          "english:90558#4",
+          "english:954764#22",
+          "english:8976548#0",
+          "english:8976548#3",
+          "english:71831#3",
+          "english:981460#8",
+          "english:38365939#1",
+          "english:8273958#147"
+        ],
+        "laya": [
+          "english:8976548#3",
+          "english:981460#8",
+          "english:8976548#0",
+          "english:312806#4",
+          "english:38365939#1",
+          "english:8273958#147",
+          "english:71831#3",
+          "english:3213407#4",
+          "english:954764#22",
+          "english:90558#4"
+        ],
+        "e5": [
+          "english:312806#4",
+          "english:8976548#3",
+          "english:8976548#0",
+          "english:8273958#147",
+          "english:71831#3",
+          "english:981460#8",
+          "english:90558#4",
+          "english:3213407#4",
+          "english:38365939#1",
+          "english:954764#22"
+        ],
+        "e5_bm25": [
+          "english:312806#4",
+          "english:8976548#3",
+          "english:8976548#0",
+          "english:3213407#4",
+          "english:90558#4",
+          "english:71831#3",
+          "english:8273958#147",
+          "english:981460#8",
+          "english:954764#22",
+          "english:38365939#1"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "bm25": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "laya": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "e5": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "e5_bm25": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": null,
+        "bm25": null,
+        "e5_bm25": null,
+        "recency12_upper_bound": null
+      },
+      "laya_binary_false_negatives": 0,
+      "laya_binary_false_positives": 4
+    },
+    {
+      "id": "english:590",
+      "language": "english",
+      "split": "dev",
+      "subset": "non_relevant",
+      "labels": {
+        "english:34395955#3": 0,
+        "english:34395955#22": 0,
+        "english:34395955#1": 0,
+        "english:34396165#9": 0,
+        "english:34395955#34": 0,
+        "english:34395955#0": 0,
+        "english:34396165#1": 0,
+        "english:34396165#8": 0,
+        "english:34395955#33": 0,
+        "english:34395955#16": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "english:34395955#3",
+          "english:34395955#34",
+          "english:34396165#9",
+          "english:34395955#22",
+          "english:34395955#33",
+          "english:34395955#1",
+          "english:34396165#1",
+          "english:34395955#0",
+          "english:34395955#16",
+          "english:34396165#8"
+        ],
+        "laya": [
+          "english:34396165#1",
+          "english:34395955#34",
+          "english:34395955#1",
+          "english:34395955#16",
+          "english:34395955#3",
+          "english:34395955#22",
+          "english:34395955#0",
+          "english:34396165#8",
+          "english:34396165#9",
+          "english:34395955#33"
+        ],
+        "e5": [
+          "english:34395955#1",
+          "english:34395955#0",
+          "english:34395955#16",
+          "english:34396165#8",
+          "english:34396165#1",
+          "english:34395955#22",
+          "english:34395955#3",
+          "english:34396165#9",
+          "english:34395955#33",
+          "english:34395955#34"
+        ],
+        "e5_bm25": [
+          "english:34395955#1",
+          "english:34395955#0",
+          "english:34395955#3",
+          "english:34395955#16",
+          "english:34395955#22",
+          "english:34396165#1",
+          "english:34396165#8",
+          "english:34396165#9",
+          "english:34395955#34",
+          "english:34395955#33"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "bm25": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "laya": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "e5": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "e5_bm25": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": null,
+        "bm25": null,
+        "e5_bm25": null,
+        "recency12_upper_bound": null
+      },
+      "laya_binary_false_negatives": 0,
+      "laya_binary_false_positives": 1
+    },
+    {
+      "id": "english:2494",
+      "language": "english",
+      "split": "dev",
+      "subset": "non_relevant",
+      "labels": {
+        "english:586357#8": 0,
+        "english:1882828#1": 0,
+        "english:25136770#5": 0,
+        "english:12851074#3": 0,
+        "english:25602480#0": 0,
+        "english:48869056#2": 0,
+        "english:8572928#1": 0,
+        "english:3548574#1": 0,
+        "english:11247268#8": 0,
+        "english:14162036#2": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "english:12851074#3",
+          "english:8572928#1",
+          "english:3548574#1",
+          "english:586357#8",
+          "english:25136770#5",
+          "english:48869056#2",
+          "english:25602480#0",
+          "english:11247268#8",
+          "english:1882828#1",
+          "english:14162036#2"
+        ],
+        "laya": [
+          "english:25602480#0",
+          "english:3548574#1",
+          "english:586357#8",
+          "english:8572928#1",
+          "english:25136770#5",
+          "english:12851074#3",
+          "english:48869056#2",
+          "english:1882828#1",
+          "english:11247268#8",
+          "english:14162036#2"
+        ],
+        "e5": [
+          "english:586357#8",
+          "english:8572928#1",
+          "english:25136770#5",
+          "english:3548574#1",
+          "english:12851074#3",
+          "english:25602480#0",
+          "english:48869056#2",
+          "english:1882828#1",
+          "english:11247268#8",
+          "english:14162036#2"
+        ],
+        "e5_bm25": [
+          "english:586357#8",
+          "english:8572928#1",
+          "english:12851074#3",
+          "english:25136770#5",
+          "english:3548574#1",
+          "english:25602480#0",
+          "english:48869056#2",
+          "english:1882828#1",
+          "english:11247268#8",
+          "english:14162036#2"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "bm25": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "laya": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "e5": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "e5_bm25": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": null,
+        "bm25": null,
+        "e5_bm25": null,
+        "recency12_upper_bound": null
+      },
+      "laya_binary_false_negatives": 0,
+      "laya_binary_false_positives": 6
+    },
+    {
+      "id": "german:965479#0",
+      "language": "german",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "german:5632#19": 1,
+        "german:5632#0": 1,
+        "german:5632#21": 1,
+        "german:54722#0": 1,
+        "german:77358#2": 0,
+        "german:5632#12": 0,
+        "german:5632#20": 0,
+        "german:5632#17": 0,
+        "german:4620784#2": 0,
+        "german:5632#14": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "german:77358#2",
+          "german:5632#20",
+          "german:54722#0",
+          "german:5632#17",
+          "german:4620784#2",
+          "german:5632#12",
+          "german:5632#19",
+          "german:5632#21",
+          "german:5632#14",
+          "german:5632#0"
+        ],
+        "laya": [
+          "german:4620784#2",
+          "german:5632#21",
+          "german:5632#12",
+          "german:5632#17",
+          "german:5632#19",
+          "german:5632#20",
+          "german:5632#0",
+          "german:77358#2",
+          "german:54722#0",
+          "german:5632#14"
+        ],
+        "e5": [
+          "german:5632#0",
+          "german:5632#12",
+          "german:5632#21",
+          "german:4620784#2",
+          "german:5632#19",
+          "german:5632#14",
+          "german:54722#0",
+          "german:5632#20",
+          "german:5632#17",
+          "german:77358#2"
+        ],
+        "e5_bm25": [
+          "german:5632#12",
+          "german:5632#0",
+          "german:4620784#2",
+          "german:5632#21",
+          "german:54722#0",
+          "german:5632#19",
+          "german:5632#20",
+          "german:77358#2",
+          "german:5632#14",
+          "german:5632#17"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.5613130440460516,
+          "recall3": 0.25,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "laya": {
+          "ndcg10": 0.644964795055663,
+          "recall3": 0.25,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5": {
+          "ndcg10": 0.8667163765466583,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5_bm25": {
+          "ndcg10": 0.7045057227504283,
+          "recall3": 0.25,
+          "recall12": 1.0,
+          "top1": 0
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 3,
+      "laya_binary_false_positives": 1
+    },
+    {
+      "id": "german:2655362#0",
+      "language": "german",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "german:275991#0": 1,
+        "german:3956889#0": 1,
+        "german:192065#0": 0,
+        "german:192065#1": 0,
+        "german:141212#18": 0,
+        "german:4236264#0": 0,
+        "german:4779096#0": 0,
+        "german:3956889#32": 0,
+        "german:6506586#0": 0,
+        "german:3956889#6": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "german:192065#0",
+          "german:4779096#0",
+          "german:192065#1",
+          "german:3956889#6",
+          "german:141212#18",
+          "german:3956889#32",
+          "german:275991#0",
+          "german:3956889#0",
+          "german:4236264#0",
+          "german:6506586#0"
+        ],
+        "laya": [
+          "german:3956889#0",
+          "german:192065#0",
+          "german:6506586#0",
+          "german:4779096#0",
+          "german:4236264#0",
+          "german:3956889#32",
+          "german:275991#0",
+          "german:3956889#6",
+          "german:141212#18",
+          "german:192065#1"
+        ],
+        "e5": [
+          "german:3956889#0",
+          "german:275991#0",
+          "german:6506586#0",
+          "german:4236264#0",
+          "german:192065#0",
+          "german:192065#1",
+          "german:4779096#0",
+          "german:3956889#6",
+          "german:3956889#32",
+          "german:141212#18"
+        ],
+        "e5_bm25": [
+          "german:3956889#0",
+          "german:275991#0",
+          "german:192065#0",
+          "german:192065#1",
+          "german:6506586#0",
+          "german:4779096#0",
+          "german:4236264#0",
+          "german:3956889#6",
+          "german:3956889#32",
+          "german:141212#18"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.39780880120575696,
+          "recall3": 0.0,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "laya": {
+          "ndcg10": 0.8175295903539445,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5": {
+          "ndcg10": 1.0,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5_bm25": {
+          "ndcg10": 1.0,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 1
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 1,
+      "laya_binary_false_positives": 5
+    },
+    {
+      "id": "german:7200189#0",
+      "language": "german",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "german:1346862#45": 1,
+        "german:11685494#6": 1,
+        "german:925637#0": 1,
+        "german:5862658#1": 0,
+        "german:6035867#0": 0,
+        "german:2899166#0": 0,
+        "german:9882529#0": 0,
+        "german:4950127#0": 0,
+        "german:11188067#6": 0,
+        "german:9553576#7": 0,
+        "german:2843032#0": 0,
+        "german:925637#8": 0,
+        "german:5161#3": 0,
+        "german:7200189#6": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "german:11685494#6",
+          "german:5862658#1",
+          "german:1346862#45",
+          "german:11188067#6",
+          "german:2843032#0",
+          "german:2899166#0",
+          "german:4950127#0",
+          "german:5161#3",
+          "german:6035867#0",
+          "german:7200189#6",
+          "german:925637#0",
+          "german:925637#8",
+          "german:9553576#7",
+          "german:9882529#0"
+        ],
+        "laya": [
+          "german:1346862#45",
+          "german:11188067#6",
+          "german:11685494#6",
+          "german:5862658#1",
+          "german:2899166#0",
+          "german:2843032#0",
+          "german:9882529#0",
+          "german:9553576#7",
+          "german:925637#0",
+          "german:6035867#0",
+          "german:4950127#0",
+          "german:5161#3",
+          "german:7200189#6",
+          "german:925637#8"
+        ],
+        "e5": [
+          "german:11685494#6",
+          "german:1346862#45",
+          "german:5862658#1",
+          "german:925637#8",
+          "german:5161#3",
+          "german:11188067#6",
+          "german:2843032#0",
+          "german:7200189#6",
+          "german:9882529#0",
+          "german:2899166#0",
+          "german:925637#0",
+          "german:9553576#7",
+          "german:4950127#0",
+          "german:6035867#0"
+        ],
+        "e5_bm25": [
+          "german:11685494#6",
+          "german:1346862#45",
+          "german:5862658#1",
+          "german:11188067#6",
+          "german:5161#3",
+          "german:2843032#0",
+          "german:925637#8",
+          "german:2899166#0",
+          "german:7200189#6",
+          "german:9882529#0",
+          "german:4950127#0",
+          "german:925637#0",
+          "german:6035867#0",
+          "german:9553576#7"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.7039180890341347,
+          "recall3": 0.6666666666666666,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "laya": {
+          "ndcg10": 0.8451850618939637,
+          "recall3": 0.6666666666666666,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5": {
+          "ndcg10": 0.7653606369886217,
+          "recall3": 0.6666666666666666,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5_bm25": {
+          "ndcg10": 0.7653606369886217,
+          "recall3": 0.6666666666666666,
+          "recall12": 1.0,
+          "top1": 1
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 0.6666666666666666,
+        "bm25": 0.6666666666666666,
+        "e5_bm25": 0.6666666666666666,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 2,
+      "laya_binary_false_positives": 0
+    },
+    {
+      "id": "german:1621450#0",
+      "language": "german",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "german:21883#1": 1,
+        "german:3849#10": 1,
+        "german:42454#8": 1,
+        "german:21883#0": 0,
+        "german:5277023#4": 0,
+        "german:650882#3": 0,
+        "german:22279#19": 0,
+        "german:3849#9": 0,
+        "german:7610459#8": 0,
+        "german:3849#0": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "german:3849#10",
+          "german:7610459#8",
+          "german:21883#0",
+          "german:5277023#4",
+          "german:3849#0",
+          "german:42454#8",
+          "german:650882#3",
+          "german:3849#9",
+          "german:21883#1",
+          "german:22279#19"
+        ],
+        "laya": [
+          "german:42454#8",
+          "german:5277023#4",
+          "german:650882#3",
+          "german:3849#9",
+          "german:21883#0",
+          "german:3849#10",
+          "german:21883#1",
+          "german:7610459#8",
+          "german:22279#19",
+          "german:3849#0"
+        ],
+        "e5": [
+          "german:42454#8",
+          "german:21883#1",
+          "german:21883#0",
+          "german:7610459#8",
+          "german:3849#0",
+          "german:3849#10",
+          "german:3849#9",
+          "german:22279#19",
+          "german:5277023#4",
+          "german:650882#3"
+        ],
+        "e5_bm25": [
+          "german:42454#8",
+          "german:21883#0",
+          "german:7610459#8",
+          "german:21883#1",
+          "german:3849#10",
+          "german:3849#0",
+          "german:5277023#4",
+          "german:3849#9",
+          "german:22279#19",
+          "german:650882#3"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.7777061538487877,
+          "recall3": 0.3333333333333333,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "laya": {
+          "ndcg10": 0.7928654229965442,
+          "recall3": 0.3333333333333333,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5": {
+          "ndcg10": 0.9325210919548239,
+          "recall3": 0.6666666666666666,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5_bm25": {
+          "ndcg10": 0.8529278650606567,
+          "recall3": 0.3333333333333333,
+          "recall12": 1.0,
+          "top1": 1
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 0.6666666666666666,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 3,
+      "laya_binary_false_positives": 0
+    },
+    {
+      "id": "german:2738109#0",
+      "language": "german",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "german:2770786#8": 1,
+        "german:2770786#7": 1,
+        "german:2770786#24": 1,
+        "german:2770786#1": 0,
+        "german:2770786#36": 0,
+        "german:2770786#0": 0,
+        "german:290#84": 0,
+        "german:7599771#7": 0,
+        "german:50638#79": 0,
+        "german:2770786#35": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "german:290#84",
+          "german:2770786#7",
+          "german:2770786#35",
+          "german:2770786#8",
+          "german:2770786#1",
+          "german:7599771#7",
+          "german:2770786#0",
+          "german:2770786#36",
+          "german:50638#79",
+          "german:2770786#24"
+        ],
+        "laya": [
+          "german:290#84",
+          "german:50638#79",
+          "german:2770786#24",
+          "german:2770786#1",
+          "german:2770786#8",
+          "german:2770786#0",
+          "german:2770786#35",
+          "german:2770786#36",
+          "german:2770786#7",
+          "german:7599771#7"
+        ],
+        "e5": [
+          "german:2770786#36",
+          "german:2770786#1",
+          "german:2770786#0",
+          "german:7599771#7",
+          "german:2770786#8",
+          "german:2770786#7",
+          "german:50638#79",
+          "german:2770786#35",
+          "german:290#84",
+          "german:2770786#24"
+        ],
+        "e5_bm25": [
+          "german:2770786#1",
+          "german:2770786#36",
+          "german:2770786#0",
+          "german:2770786#7",
+          "german:7599771#7",
+          "german:2770786#8",
+          "german:290#84",
+          "german:2770786#35",
+          "german:50638#79",
+          "german:2770786#24"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.6338412308988606,
+          "recall3": 0.3333333333333333,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "laya": {
+          "ndcg10": 0.55744812840856,
+          "recall3": 0.3333333333333333,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5": {
+          "ndcg10": 0.4843542209360027,
+          "recall3": 0.0,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5_bm25": {
+          "ndcg10": 0.5049197748991976,
+          "recall3": 0.0,
+          "recall12": 1.0,
+          "top1": 0
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 3,
+      "laya_binary_false_positives": 2
+    },
+    {
+      "id": "german:9776413#0",
+      "language": "german",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "german:90492#8": 1,
+        "german:44910#33": 1,
+        "german:150544#0": 1,
+        "german:715331#1": 1,
+        "german:149851#43": 1,
+        "german:149851#1": 1,
+        "german:9907760#0": 0,
+        "german:387937#23": 0,
+        "german:1081923#0": 0,
+        "german:2781919#0": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "german:90492#8",
+          "german:150544#0",
+          "german:9907760#0",
+          "german:149851#43",
+          "german:44910#33",
+          "german:715331#1",
+          "german:387937#23",
+          "german:149851#1",
+          "german:1081923#0",
+          "german:2781919#0"
+        ],
+        "laya": [
+          "german:149851#1",
+          "german:150544#0",
+          "german:44910#33",
+          "german:387937#23",
+          "german:715331#1",
+          "german:9907760#0",
+          "german:149851#43",
+          "german:1081923#0",
+          "german:2781919#0",
+          "german:90492#8"
+        ],
+        "e5": [
+          "german:150544#0",
+          "german:44910#33",
+          "german:715331#1",
+          "german:149851#43",
+          "german:149851#1",
+          "german:90492#8",
+          "german:2781919#0",
+          "german:1081923#0",
+          "german:9907760#0",
+          "german:387937#23"
+        ],
+        "e5_bm25": [
+          "german:150544#0",
+          "german:44910#33",
+          "german:715331#1",
+          "german:149851#43",
+          "german:90492#8",
+          "german:149851#1",
+          "german:9907760#0",
+          "german:2781919#0",
+          "german:1081923#0",
+          "german:387937#23"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.9441592263400607,
+          "recall3": 0.3333333333333333,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "laya": {
+          "ndcg10": 0.9502262648327979,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5": {
+          "ndcg10": 1.0,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5_bm25": {
+          "ndcg10": 1.0,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 1
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 3,
+      "laya_binary_false_positives": 0
+    },
+    {
+      "id": "german:2291444#0",
+      "language": "german",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "german:11786#33": 1,
+        "german:8142214#2": 0,
+        "german:129623#29": 0,
+        "german:15679#4": 0,
+        "german:1311182#5": 0,
+        "german:10687407#4": 0,
+        "german:2503246#2": 0,
+        "german:4298782#9": 0,
+        "german:11786#39": 0,
+        "german:316592#3": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "german:8142214#2",
+          "german:2503246#2",
+          "german:316592#3",
+          "german:11786#33",
+          "german:15679#4",
+          "german:129623#29",
+          "german:1311182#5",
+          "german:11786#39",
+          "german:10687407#4",
+          "german:4298782#9"
+        ],
+        "laya": [
+          "german:316592#3",
+          "german:2503246#2",
+          "german:8142214#2",
+          "german:129623#29",
+          "german:11786#39",
+          "german:1311182#5",
+          "german:10687407#4",
+          "german:11786#33",
+          "german:15679#4",
+          "german:4298782#9"
+        ],
+        "e5": [
+          "german:11786#33",
+          "german:15679#4",
+          "german:8142214#2",
+          "german:11786#39",
+          "german:129623#29",
+          "german:1311182#5",
+          "german:4298782#9",
+          "german:316592#3",
+          "german:10687407#4",
+          "german:2503246#2"
+        ],
+        "e5_bm25": [
+          "german:11786#33",
+          "german:8142214#2",
+          "german:15679#4",
+          "german:11786#39",
+          "german:129623#29",
+          "german:316592#3",
+          "german:1311182#5",
+          "german:2503246#2",
+          "german:4298782#9",
+          "german:10687407#4"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.43067655807339306,
+          "recall3": 0.0,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "laya": {
+          "ndcg10": 0.31546487678572877,
+          "recall3": 0.0,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5": {
+          "ndcg10": 1.0,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5_bm25": {
+          "ndcg10": 1.0,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 1
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 1,
+      "laya_binary_false_positives": 7
+    },
+    {
+      "id": "german:11310397#0",
+      "language": "german",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "german:15770#20": 1,
+        "german:13604#6": 1,
+        "german:25136#8": 1,
+        "german:742139#4": 1,
+        "german:348017#1": 0,
+        "german:4306376#1": 0,
+        "german:9243205#1": 0,
+        "german:8533593#1": 0,
+        "german:3625170#0": 0,
+        "german:2991388#0": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "german:742139#4",
+          "german:15770#20",
+          "german:13604#6",
+          "german:3625170#0",
+          "german:8533593#1",
+          "german:4306376#1",
+          "german:348017#1",
+          "german:2991388#0",
+          "german:25136#8",
+          "german:9243205#1"
+        ],
+        "laya": [
+          "german:15770#20",
+          "german:3625170#0",
+          "german:8533593#1",
+          "german:2991388#0",
+          "german:25136#8",
+          "german:742139#4",
+          "german:4306376#1",
+          "german:13604#6",
+          "german:348017#1",
+          "german:9243205#1"
+        ],
+        "e5": [
+          "german:15770#20",
+          "german:13604#6",
+          "german:25136#8",
+          "german:8533593#1",
+          "german:9243205#1",
+          "german:348017#1",
+          "german:742139#4",
+          "german:4306376#1",
+          "german:3625170#0",
+          "german:2991388#0"
+        ],
+        "e5_bm25": [
+          "german:15770#20",
+          "german:13604#6",
+          "german:8533593#1",
+          "german:742139#4",
+          "german:25136#8",
+          "german:348017#1",
+          "german:9243205#1",
+          "german:3625170#0",
+          "german:4306376#1",
+          "german:2991388#0"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.9493885684853096,
+          "recall3": 0.75,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "laya": {
+          "ndcg10": 0.8036070421010475,
+          "recall3": 0.25,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5": {
+          "ndcg10": 0.961999147059583,
+          "recall3": 0.75,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5_bm25": {
+          "ndcg10": 0.9558295932317544,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 1
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 1,
+      "laya_binary_false_positives": 3
+    },
+    {
+      "id": "german:4104038#0",
+      "language": "german",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "german:96377#0": 1,
+        "german:4107589#0": 1,
+        "german:5487482#0": 0,
+        "german:96377#6": 0,
+        "german:96377#3": 0,
+        "german:96377#7": 0,
+        "german:96377#9": 0,
+        "german:96377#10": 0,
+        "german:4922009#9": 0,
+        "german:5540241#0": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "german:5487482#0",
+          "german:4107589#0",
+          "german:5540241#0",
+          "german:96377#7",
+          "german:96377#0",
+          "german:96377#9",
+          "german:96377#3",
+          "german:96377#6",
+          "german:4922009#9",
+          "german:96377#10"
+        ],
+        "laya": [
+          "german:96377#0",
+          "german:5487482#0",
+          "german:96377#3",
+          "german:96377#7",
+          "german:96377#9",
+          "german:4107589#0",
+          "german:96377#6",
+          "german:5540241#0",
+          "german:4922009#9",
+          "german:96377#10"
+        ],
+        "e5": [
+          "german:5487482#0",
+          "german:96377#0",
+          "german:96377#7",
+          "german:96377#3",
+          "german:96377#6",
+          "german:96377#10",
+          "german:96377#9",
+          "german:4107589#0",
+          "german:4922009#9",
+          "german:5540241#0"
+        ],
+        "e5_bm25": [
+          "german:5487482#0",
+          "german:96377#0",
+          "german:96377#7",
+          "german:96377#3",
+          "german:4107589#0",
+          "german:96377#6",
+          "german:96377#9",
+          "german:96377#10",
+          "german:5540241#0",
+          "german:4922009#9"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.6240505200038379,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "laya": {
+          "ndcg10": 0.8315546295836225,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5": {
+          "ndcg10": 0.5802792108518124,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5_bm25": {
+          "ndcg10": 0.6240505200038379,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 0
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 1,
+      "laya_binary_false_positives": 1
+    },
+    {
+      "id": "german:6818976#0",
+      "language": "german",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "german:46080#1": 1,
+        "german:7825838#3": 1,
+        "german:182597#0": 1,
+        "german:94209#55": 0,
+        "german:94209#39": 0,
+        "german:2800460#6": 0,
+        "german:3544#29": 0,
+        "german:8164410#19": 0,
+        "german:165335#4": 0,
+        "german:5979#18": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "german:7825838#3",
+          "german:5979#18",
+          "german:3544#29",
+          "german:8164410#19",
+          "german:46080#1",
+          "german:182597#0",
+          "german:165335#4",
+          "german:94209#39",
+          "german:2800460#6",
+          "german:94209#55"
+        ],
+        "laya": [
+          "german:182597#0",
+          "german:165335#4",
+          "german:5979#18",
+          "german:2800460#6",
+          "german:46080#1",
+          "german:94209#55",
+          "german:94209#39",
+          "german:7825838#3",
+          "german:3544#29",
+          "german:8164410#19"
+        ],
+        "e5": [
+          "german:182597#0",
+          "german:7825838#3",
+          "german:46080#1",
+          "german:94209#39",
+          "german:94209#55",
+          "german:2800460#6",
+          "german:165335#4",
+          "german:3544#29",
+          "german:5979#18",
+          "german:8164410#19"
+        ],
+        "e5_bm25": [
+          "german:7825838#3",
+          "german:182597#0",
+          "german:46080#1",
+          "german:94209#39",
+          "german:3544#29",
+          "german:5979#18",
+          "german:94209#55",
+          "german:2800460#6",
+          "german:165335#4",
+          "german:8164410#19"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.8179809735263114,
+          "recall3": 0.3333333333333333,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "laya": {
+          "ndcg10": 0.7988614740430418,
+          "recall3": 0.3333333333333333,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5": {
+          "ndcg10": 1.0,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5_bm25": {
+          "ndcg10": 1.0,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 1
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 0.6666666666666666,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 2,
+      "laya_binary_false_positives": 2
+    },
+    {
+      "id": "german:4985655#0",
+      "language": "german",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "german:19074#0": 1,
+        "german:19074#61": 1,
+        "german:19074#73": 1,
+        "german:19074#34": 1,
+        "german:374622#9": 1,
+        "german:621177#15": 0,
+        "german:3233237#4": 0,
+        "german:19074#36": 0,
+        "german:624173#0": 0,
+        "german:7328261#1": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "german:3233237#4",
+          "german:19074#34",
+          "german:19074#36",
+          "german:374622#9",
+          "german:19074#0",
+          "german:624173#0",
+          "german:19074#61",
+          "german:621177#15",
+          "german:19074#73",
+          "german:7328261#1"
+        ],
+        "laya": [
+          "german:19074#0",
+          "german:3233237#4",
+          "german:19074#34",
+          "german:7328261#1",
+          "german:374622#9",
+          "german:19074#36",
+          "german:19074#61",
+          "german:19074#73",
+          "german:624173#0",
+          "german:621177#15"
+        ],
+        "e5": [
+          "german:19074#0",
+          "german:374622#9",
+          "german:19074#34",
+          "german:19074#61",
+          "german:19074#73",
+          "german:19074#36",
+          "german:624173#0",
+          "german:7328261#1",
+          "german:621177#15",
+          "german:3233237#4"
+        ],
+        "e5_bm25": [
+          "german:19074#0",
+          "german:374622#9",
+          "german:19074#34",
+          "german:19074#36",
+          "german:19074#61",
+          "german:19074#73",
+          "german:624173#0",
+          "german:3233237#4",
+          "german:7328261#1",
+          "german:621177#15"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.7064104889703594,
+          "recall3": 0.2,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "laya": {
+          "ndcg10": 0.8599919195479018,
+          "recall3": 0.4,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5": {
+          "ndcg10": 1.0,
+          "recall3": 0.6,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5_bm25": {
+          "ndcg10": 0.9747429528567877,
+          "recall3": 0.6,
+          "recall12": 1.0,
+          "top1": 1
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 3,
+      "laya_binary_false_positives": 2
+    },
+    {
+      "id": "german:2301093#0",
+      "language": "german",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "german:11221235#41": 1,
+        "german:2056221#14": 0,
+        "german:11230437#28": 0,
+        "german:11204023#8": 0,
+        "german:11224243#20": 0,
+        "german:11177966#191": 0,
+        "german:11656530#10": 0,
+        "german:11184422#71": 0,
+        "german:94950#27": 0,
+        "german:11543973#100": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "german:11221235#41",
+          "german:11204023#8",
+          "german:11177966#191",
+          "german:2056221#14",
+          "german:11224243#20",
+          "german:11656530#10",
+          "german:11230437#28",
+          "german:11543973#100",
+          "german:94950#27",
+          "german:11184422#71"
+        ],
+        "laya": [
+          "german:94950#27",
+          "german:11656530#10",
+          "german:11543973#100",
+          "german:2056221#14",
+          "german:11230437#28",
+          "german:11184422#71",
+          "german:11221235#41",
+          "german:11224243#20",
+          "german:11177966#191",
+          "german:11204023#8"
+        ],
+        "e5": [
+          "german:11204023#8",
+          "german:11177966#191",
+          "german:11230437#28",
+          "german:2056221#14",
+          "german:11224243#20",
+          "german:94950#27",
+          "german:11221235#41",
+          "german:11543973#100",
+          "german:11656530#10",
+          "german:11184422#71"
+        ],
+        "e5_bm25": [
+          "german:11204023#8",
+          "german:11177966#191",
+          "german:2056221#14",
+          "german:11230437#28",
+          "german:11221235#41",
+          "german:11224243#20",
+          "german:94950#27",
+          "german:11656530#10",
+          "german:11543973#100",
+          "german:11184422#71"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 1.0,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "laya": {
+          "ndcg10": 0.3333333333333333,
+          "recall3": 0.0,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5": {
+          "ndcg10": 0.3333333333333333,
+          "recall3": 0.0,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5_bm25": {
+          "ndcg10": 0.38685280723454163,
+          "recall3": 0.0,
+          "recall12": 1.0,
+          "top1": 0
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 1,
+      "laya_binary_false_positives": 0
+    },
+    {
+      "id": "german:173783-0",
+      "language": "german",
+      "split": "dev",
+      "subset": "non_relevant",
+      "labels": {
+        "german:2994508#11": 0,
+        "german:4891390#7": 0,
+        "german:4891390#3": 0,
+        "german:2677#123": 0,
+        "german:10145041#3": 0,
+        "german:5749912#0": 0,
+        "german:5749912#7": 0,
+        "german:1764325#2": 0,
+        "german:2677#122": 0,
+        "german:6429305#2": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "german:2994508#11",
+          "german:1764325#2",
+          "german:6429305#2",
+          "german:4891390#7",
+          "german:5749912#0",
+          "german:2677#123",
+          "german:5749912#7",
+          "german:4891390#3",
+          "german:2677#122",
+          "german:10145041#3"
+        ],
+        "laya": [
+          "german:2677#122",
+          "german:5749912#7",
+          "german:6429305#2",
+          "german:2994508#11",
+          "german:1764325#2",
+          "german:4891390#7",
+          "german:4891390#3",
+          "german:2677#123",
+          "german:10145041#3",
+          "german:5749912#0"
+        ],
+        "e5": [
+          "german:1764325#2",
+          "german:2677#122",
+          "german:10145041#3",
+          "german:2677#123",
+          "german:4891390#7",
+          "german:4891390#3",
+          "german:5749912#0",
+          "german:6429305#2",
+          "german:5749912#7",
+          "german:2994508#11"
+        ],
+        "e5_bm25": [
+          "german:1764325#2",
+          "german:2677#122",
+          "german:2677#123",
+          "german:4891390#7",
+          "german:10145041#3",
+          "german:6429305#2",
+          "german:5749912#0",
+          "german:4891390#3",
+          "german:2994508#11",
+          "german:5749912#7"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "bm25": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "laya": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "e5": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "e5_bm25": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": null,
+        "bm25": null,
+        "e5_bm25": null,
+        "recency12_upper_bound": null
+      },
+      "laya_binary_false_negatives": 0,
+      "laya_binary_false_positives": 1
+    },
+    {
+      "id": "german:8853457-0",
+      "language": "german",
+      "split": "dev",
+      "subset": "non_relevant",
+      "labels": {
+        "german:297020#2": 0,
+        "german:11203007#7": 0,
+        "german:1263379#4": 0,
+        "german:916426#4": 0,
+        "german:481491#0": 0,
+        "german:31115#29": 0,
+        "german:8139090#11": 0,
+        "german:506385#6": 0,
+        "german:297020#9": 0,
+        "german:1928469#0": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "german:8139090#11",
+          "german:481491#0",
+          "german:297020#9",
+          "german:1928469#0",
+          "german:916426#4",
+          "german:506385#6",
+          "german:1263379#4",
+          "german:31115#29",
+          "german:11203007#7",
+          "german:297020#2"
+        ],
+        "laya": [
+          "german:481491#0",
+          "german:297020#2",
+          "german:1928469#0",
+          "german:11203007#7",
+          "german:916426#4",
+          "german:31115#29",
+          "german:8139090#11",
+          "german:1263379#4",
+          "german:506385#6",
+          "german:297020#9"
+        ],
+        "e5": [
+          "german:481491#0",
+          "german:297020#9",
+          "german:916426#4",
+          "german:297020#2",
+          "german:1928469#0",
+          "german:506385#6",
+          "german:1263379#4",
+          "german:31115#29",
+          "german:8139090#11",
+          "german:11203007#7"
+        ],
+        "e5_bm25": [
+          "german:481491#0",
+          "german:297020#9",
+          "german:916426#4",
+          "german:1928469#0",
+          "german:297020#2",
+          "german:506385#6",
+          "german:8139090#11",
+          "german:1263379#4",
+          "german:31115#29",
+          "german:11203007#7"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "bm25": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "laya": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "e5": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "e5_bm25": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": null,
+        "bm25": null,
+        "e5_bm25": null,
+        "recency12_upper_bound": null
+      },
+      "laya_binary_false_negatives": 0,
+      "laya_binary_false_positives": 3
+    },
+    {
+      "id": "german:3333972-0",
+      "language": "german",
+      "split": "dev",
+      "subset": "non_relevant",
+      "labels": {
+        "german:2985#0": 0,
+        "german:568670#1": 0,
+        "german:106244#1": 0,
+        "german:5185898#11": 0,
+        "german:10783181#47": 0,
+        "german:367236#17": 0,
+        "german:11446#154": 0,
+        "german:11018#93": 0,
+        "german:11446#54": 0,
+        "german:2985#16": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "german:106244#1",
+          "german:367236#17",
+          "german:11018#93",
+          "german:2985#0",
+          "german:5185898#11",
+          "german:10783181#47",
+          "german:11446#54",
+          "german:11446#154",
+          "german:568670#1",
+          "german:2985#16"
+        ],
+        "laya": [
+          "german:367236#17",
+          "german:568670#1",
+          "german:2985#16",
+          "german:2985#0",
+          "german:11018#93",
+          "german:106244#1",
+          "german:10783181#47",
+          "german:11446#154",
+          "german:11446#54",
+          "german:5185898#11"
+        ],
+        "e5": [
+          "german:2985#16",
+          "german:2985#0",
+          "german:5185898#11",
+          "german:11446#54",
+          "german:106244#1",
+          "german:568670#1",
+          "german:11446#154",
+          "german:10783181#47",
+          "german:11018#93",
+          "german:367236#17"
+        ],
+        "e5_bm25": [
+          "german:2985#0",
+          "german:106244#1",
+          "german:5185898#11",
+          "german:2985#16",
+          "german:11446#54",
+          "german:11018#93",
+          "german:568670#1",
+          "german:367236#17",
+          "german:10783181#47",
+          "german:11446#154"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "bm25": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "laya": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "e5": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "e5_bm25": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": null,
+        "bm25": null,
+        "e5_bm25": null,
+        "recency12_upper_bound": null
+      },
+      "laya_binary_false_negatives": 0,
+      "laya_binary_false_positives": 3
+    },
+    {
+      "id": "german:5725312-0",
+      "language": "german",
+      "split": "dev",
+      "subset": "non_relevant",
+      "labels": {
+        "german:3158205#2": 0,
+        "german:4775#8": 0,
+        "german:9200898#16": 0,
+        "german:9052180#1": 0,
+        "german:2099406#2": 0,
+        "german:5632#16": 0,
+        "german:11182383#0": 0,
+        "german:1697670#38": 0,
+        "german:4775#7": 0,
+        "german:4775#63": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "german:1697670#38",
+          "german:9200898#16",
+          "german:4775#8",
+          "german:11182383#0",
+          "german:5632#16",
+          "german:4775#63",
+          "german:9052180#1",
+          "german:4775#7",
+          "german:2099406#2",
+          "german:3158205#2"
+        ],
+        "laya": [
+          "german:11182383#0",
+          "german:1697670#38",
+          "german:9200898#16",
+          "german:4775#8",
+          "german:4775#63",
+          "german:5632#16",
+          "german:2099406#2",
+          "german:4775#7",
+          "german:9052180#1",
+          "german:3158205#2"
+        ],
+        "e5": [
+          "german:4775#8",
+          "german:4775#7",
+          "german:3158205#2",
+          "german:4775#63",
+          "german:1697670#38",
+          "german:9052180#1",
+          "german:11182383#0",
+          "german:9200898#16",
+          "german:5632#16",
+          "german:2099406#2"
+        ],
+        "e5_bm25": [
+          "german:4775#8",
+          "german:1697670#38",
+          "german:4775#7",
+          "german:4775#63",
+          "german:3158205#2",
+          "german:9200898#16",
+          "german:11182383#0",
+          "german:9052180#1",
+          "german:5632#16",
+          "german:2099406#2"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "bm25": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "laya": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "e5": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "e5_bm25": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": null,
+        "bm25": null,
+        "e5_bm25": null,
+        "recency12_upper_bound": null
+      },
+      "laya_binary_false_negatives": 0,
+      "laya_binary_false_positives": 2
+    },
+    {
+      "id": "french:13098432#0",
+      "language": "french",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "french:1661071#0": 1,
+        "french:1661071#10": 1,
+        "french:1661071#12": 0,
+        "french:19211#16": 0,
+        "french:10577715#23": 0,
+        "french:1661071#16": 0,
+        "french:25796#3": 0,
+        "french:1661071#26": 0,
+        "french:19211#27": 0,
+        "french:1298984#1": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "french:25796#3",
+          "french:19211#16",
+          "french:1298984#1",
+          "french:1661071#12",
+          "french:10577715#23",
+          "french:1661071#0",
+          "french:19211#27",
+          "french:1661071#10",
+          "french:1661071#26",
+          "french:1661071#16"
+        ],
+        "laya": [
+          "french:10577715#23",
+          "french:1661071#10",
+          "french:1661071#0",
+          "french:19211#27",
+          "french:19211#16",
+          "french:25796#3",
+          "french:1661071#26",
+          "french:1661071#16",
+          "french:1661071#12",
+          "french:1298984#1"
+        ],
+        "e5": [
+          "french:1661071#10",
+          "french:1661071#12",
+          "french:1661071#0",
+          "french:10577715#23",
+          "french:1298984#1",
+          "french:1661071#26",
+          "french:19211#16",
+          "french:1661071#16",
+          "french:19211#27",
+          "french:25796#3"
+        ],
+        "e5_bm25": [
+          "french:1661071#12",
+          "french:1661071#10",
+          "french:1661071#0",
+          "french:1298984#1",
+          "french:10577715#23",
+          "french:19211#16",
+          "french:25796#3",
+          "french:1661071#26",
+          "french:19211#27",
+          "french:1661071#16"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.41183384043543503,
+          "recall3": 0.0,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "laya": {
+          "ndcg10": 0.6934264036172708,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5": {
+          "ndcg10": 0.9197207891481876,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5_bm25": {
+          "ndcg10": 0.6934264036172708,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 0
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 0,
+      "laya_binary_false_positives": 2
+    },
+    {
+      "id": "french:408315#0",
+      "language": "french",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "french:318949#69": 1,
+        "french:91826#1": 1,
+        "french:183847#50": 0,
+        "french:194419#24": 0,
+        "french:535727#14": 0,
+        "french:183847#70": 0,
+        "french:555962#39": 0,
+        "french:105764#6": 0,
+        "french:332322#13": 0,
+        "french:410798#24": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "french:535727#14",
+          "french:183847#50",
+          "french:555962#39",
+          "french:91826#1",
+          "french:105764#6",
+          "french:183847#70",
+          "french:332322#13",
+          "french:410798#24",
+          "french:194419#24",
+          "french:318949#69"
+        ],
+        "laya": [
+          "french:194419#24",
+          "french:183847#50",
+          "french:91826#1",
+          "french:318949#69",
+          "french:183847#70",
+          "french:332322#13",
+          "french:555962#39",
+          "french:535727#14",
+          "french:410798#24",
+          "french:105764#6"
+        ],
+        "e5": [
+          "french:555962#39",
+          "french:183847#70",
+          "french:91826#1",
+          "french:535727#14",
+          "french:183847#50",
+          "french:194419#24",
+          "french:105764#6",
+          "french:318949#69",
+          "french:332322#13",
+          "french:410798#24"
+        ],
+        "e5_bm25": [
+          "french:555962#39",
+          "french:535727#14",
+          "french:183847#70",
+          "french:91826#1",
+          "french:183847#50",
+          "french:105764#6",
+          "french:194419#24",
+          "french:332322#13",
+          "french:318949#69",
+          "french:410798#24"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.44130740935663865,
+          "recall3": 0.0,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "laya": {
+          "ndcg10": 0.5706417189553201,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5": {
+          "ndcg10": 0.5,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5_bm25": {
+          "ndcg10": 0.448643819352159,
+          "recall3": 0.0,
+          "recall12": 1.0,
+          "top1": 0
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 0.5,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 2,
+      "laya_binary_false_positives": 0
+    },
+    {
+      "id": "french:7583855#0",
+      "language": "french",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "french:1412130#6": 1,
+        "french:1412130#8": 1,
+        "french:1412130#17": 1,
+        "french:1412130#9": 0,
+        "french:1412130#0": 0,
+        "french:15353#83": 0,
+        "french:1412130#4": 0,
+        "french:1412130#7": 0,
+        "french:1412130#19": 0,
+        "french:1412130#2": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "french:1412130#19",
+          "french:1412130#6",
+          "french:15353#83",
+          "french:1412130#4",
+          "french:1412130#0",
+          "french:1412130#2",
+          "french:1412130#17",
+          "french:1412130#9",
+          "french:1412130#8",
+          "french:1412130#7"
+        ],
+        "laya": [
+          "french:1412130#9",
+          "french:1412130#8",
+          "french:1412130#17",
+          "french:1412130#0",
+          "french:1412130#6",
+          "french:1412130#4",
+          "french:1412130#2",
+          "french:15353#83",
+          "french:1412130#7",
+          "french:1412130#19"
+        ],
+        "e5": [
+          "french:1412130#0",
+          "french:1412130#8",
+          "french:1412130#6",
+          "french:1412130#9",
+          "french:15353#83",
+          "french:1412130#4",
+          "french:1412130#2",
+          "french:1412130#7",
+          "french:1412130#17",
+          "french:1412130#19"
+        ],
+        "e5_bm25": [
+          "french:1412130#0",
+          "french:1412130#6",
+          "french:1412130#8",
+          "french:15353#83",
+          "french:1412130#9",
+          "french:1412130#4",
+          "french:1412130#2",
+          "french:1412130#19",
+          "french:1412130#17",
+          "french:1412130#7"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.5937751258332797,
+          "recall3": 0.3333333333333333,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "laya": {
+          "ndcg10": 0.7122630665145961,
+          "recall3": 0.6666666666666666,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5": {
+          "ndcg10": 0.6719882468370725,
+          "recall3": 0.6666666666666666,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5_bm25": {
+          "ndcg10": 0.6719882468370725,
+          "recall3": 0.6666666666666666,
+          "recall12": 1.0,
+          "top1": 0
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 0,
+      "laya_binary_false_positives": 6
+    },
+    {
+      "id": "french:4835346#0",
+      "language": "french",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "french:1477#7": 1,
+        "french:13634964#12": 0,
+        "french:119019#66": 0,
+        "french:1494677#44": 0,
+        "french:10764015#35": 0,
+        "french:4193481#58": 0,
+        "french:10764015#26": 0,
+        "french:1219912#75": 0,
+        "french:4438678#68": 0,
+        "french:880432#39": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "french:1219912#75",
+          "french:4438678#68",
+          "french:4193481#58",
+          "french:880432#39",
+          "french:10764015#35",
+          "french:13634964#12",
+          "french:10764015#26",
+          "french:1494677#44",
+          "french:1477#7",
+          "french:119019#66"
+        ],
+        "laya": [
+          "french:119019#66",
+          "french:1219912#75",
+          "french:880432#39",
+          "french:10764015#26",
+          "french:1477#7",
+          "french:1494677#44",
+          "french:10764015#35",
+          "french:4438678#68",
+          "french:4193481#58",
+          "french:13634964#12"
+        ],
+        "e5": [
+          "french:1219912#75",
+          "french:13634964#12",
+          "french:1494677#44",
+          "french:119019#66",
+          "french:10764015#26",
+          "french:4438678#68",
+          "french:10764015#35",
+          "french:4193481#58",
+          "french:1477#7",
+          "french:880432#39"
+        ],
+        "e5_bm25": [
+          "french:1219912#75",
+          "french:13634964#12",
+          "french:1494677#44",
+          "french:4438678#68",
+          "french:10764015#26",
+          "french:119019#66",
+          "french:4193481#58",
+          "french:10764015#35",
+          "french:880432#39",
+          "french:1477#7"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.3010299956639812,
+          "recall3": 0.0,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "laya": {
+          "ndcg10": 0.38685280723454163,
+          "recall3": 0.0,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5": {
+          "ndcg10": 0.3010299956639812,
+          "recall3": 0.0,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5_bm25": {
+          "ndcg10": 0.2890648263178879,
+          "recall3": 0.0,
+          "recall12": 1.0,
+          "top1": 0
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 1,
+      "laya_binary_false_positives": 0
+    },
+    {
+      "id": "french:821265#0",
+      "language": "french",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "french:27504#88": 1,
+        "french:920894#31": 1,
+        "french:920894#22": 1,
+        "french:27504#92": 0,
+        "french:27504#89": 0,
+        "french:920894#46": 0,
+        "french:920894#49": 0,
+        "french:920894#33": 0,
+        "french:357335#31": 0,
+        "french:76006#97": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "french:27504#88",
+          "french:27504#92",
+          "french:920894#33",
+          "french:76006#97",
+          "french:920894#49",
+          "french:920894#31",
+          "french:27504#89",
+          "french:357335#31",
+          "french:920894#46",
+          "french:920894#22"
+        ],
+        "laya": [
+          "french:27504#89",
+          "french:27504#88",
+          "french:920894#49",
+          "french:920894#22",
+          "french:27504#92",
+          "french:920894#46",
+          "french:357335#31",
+          "french:76006#97",
+          "french:920894#31",
+          "french:920894#33"
+        ],
+        "e5": [
+          "french:27504#88",
+          "french:27504#92",
+          "french:27504#89",
+          "french:920894#31",
+          "french:920894#46",
+          "french:920894#22",
+          "french:920894#49",
+          "french:920894#33",
+          "french:357335#31",
+          "french:76006#97"
+        ],
+        "e5_bm25": [
+          "french:27504#88",
+          "french:27504#92",
+          "french:27504#89",
+          "french:920894#31",
+          "french:920894#33",
+          "french:920894#46",
+          "french:920894#49",
+          "french:920894#22",
+          "french:76006#97",
+          "french:357335#31"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.7720911544214064,
+          "recall3": 0.3333333333333333,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "laya": {
+          "ndcg10": 0.6394562303262419,
+          "recall3": 0.3333333333333333,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5": {
+          "ndcg10": 0.8385465274895063,
+          "recall3": 0.3333333333333333,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5_bm25": {
+          "ndcg10": 0.8194270280062366,
+          "recall3": 0.3333333333333333,
+          "recall12": 1.0,
+          "top1": 1
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 1,
+      "laya_binary_false_positives": 2
+    },
+    {
+      "id": "french:3497784#0",
+      "language": "french",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "french:1163075#0": 1,
+        "french:134499#0": 1,
+        "french:1163075#17": 1,
+        "french:66558#1": 1,
+        "french:1057308#0": 0,
+        "french:134499#1": 0,
+        "french:12782717#3": 0,
+        "french:12011341#4": 0,
+        "french:9148959#0": 0,
+        "french:9373471#2": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "french:66558#1",
+          "french:134499#1",
+          "french:9373471#2",
+          "french:12782717#3",
+          "french:9148959#0",
+          "french:12011341#4",
+          "french:134499#0",
+          "french:1163075#0",
+          "french:1163075#17",
+          "french:1057308#0"
+        ],
+        "laya": [
+          "french:12011341#4",
+          "french:66558#1",
+          "french:1163075#17",
+          "french:1163075#0",
+          "french:12782717#3",
+          "french:134499#1",
+          "french:9148959#0",
+          "french:134499#0",
+          "french:9373471#2",
+          "french:1057308#0"
+        ],
+        "e5": [
+          "french:134499#0",
+          "french:1163075#0",
+          "french:9148959#0",
+          "french:66558#1",
+          "french:134499#1",
+          "french:1163075#17",
+          "french:12011341#4",
+          "french:12782717#3",
+          "french:9373471#2",
+          "french:1057308#0"
+        ],
+        "e5_bm25": [
+          "french:134499#0",
+          "french:66558#1",
+          "french:9148959#0",
+          "french:1163075#0",
+          "french:134499#1",
+          "french:12782717#3",
+          "french:12011341#4",
+          "french:9373471#2",
+          "french:1163075#17",
+          "french:1057308#0"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.7611740324495944,
+          "recall3": 0.25,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "laya": {
+          "ndcg10": 0.7327711443782633,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5": {
+          "ndcg10": 0.9438661545147247,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5_bm25": {
+          "ndcg10": 0.9223260797603763,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 1
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 1,
+      "laya_binary_false_positives": 4
+    },
+    {
+      "id": "french:10041885#0",
+      "language": "french",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "french:7589156#0": 1,
+        "french:208338#44": 1,
+        "french:13532393#16": 0,
+        "french:4424455#7": 0,
+        "french:11302019#4": 0,
+        "french:11218767#4": 0,
+        "french:14377#2": 0,
+        "french:5236842#181": 0,
+        "french:11218767#3": 0,
+        "french:514732#1": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "french:11302019#4",
+          "french:7589156#0",
+          "french:13532393#16",
+          "french:4424455#7",
+          "french:11218767#3",
+          "french:11218767#4",
+          "french:208338#44",
+          "french:14377#2",
+          "french:514732#1",
+          "french:5236842#181"
+        ],
+        "laya": [
+          "french:514732#1",
+          "french:7589156#0",
+          "french:14377#2",
+          "french:13532393#16",
+          "french:11302019#4",
+          "french:11218767#4",
+          "french:4424455#7",
+          "french:5236842#181",
+          "french:11218767#3",
+          "french:208338#44"
+        ],
+        "e5": [
+          "french:7589156#0",
+          "french:514732#1",
+          "french:208338#44",
+          "french:14377#2",
+          "french:13532393#16",
+          "french:4424455#7",
+          "french:11302019#4",
+          "french:11218767#4",
+          "french:5236842#181",
+          "french:11218767#3"
+        ],
+        "e5_bm25": [
+          "french:7589156#0",
+          "french:514732#1",
+          "french:208338#44",
+          "french:13532393#16",
+          "french:11302019#4",
+          "french:14377#2",
+          "french:4424455#7",
+          "french:11218767#4",
+          "french:11218767#3",
+          "french:5236842#181"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.5912352048230277,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "laya": {
+          "ndcg10": 0.5640920940185894,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5": {
+          "ndcg10": 0.9197207891481876,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5_bm25": {
+          "ndcg10": 0.9197207891481876,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 1
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 1,
+      "laya_binary_false_positives": 1
+    },
+    {
+      "id": "french:3392685#0",
+      "language": "french",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "french:467050#0": 1,
+        "french:467050#63": 1,
+        "french:467050#6": 0,
+        "french:467050#41": 0,
+        "french:467050#55": 0,
+        "french:467050#60": 0,
+        "french:467050#50": 0,
+        "french:467050#11": 0,
+        "french:467050#46": 0,
+        "french:467050#40": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "french:467050#63",
+          "french:467050#55",
+          "french:467050#60",
+          "french:467050#6",
+          "french:467050#0",
+          "french:467050#50",
+          "french:467050#40",
+          "french:467050#46",
+          "french:467050#41",
+          "french:467050#11"
+        ],
+        "laya": [
+          "french:467050#0",
+          "french:467050#6",
+          "french:467050#60",
+          "french:467050#11",
+          "french:467050#40",
+          "french:467050#41",
+          "french:467050#63",
+          "french:467050#55",
+          "french:467050#50",
+          "french:467050#46"
+        ],
+        "e5": [
+          "french:467050#0",
+          "french:467050#63",
+          "french:467050#11",
+          "french:467050#41",
+          "french:467050#55",
+          "french:467050#60",
+          "french:467050#40",
+          "french:467050#50",
+          "french:467050#46",
+          "french:467050#6"
+        ],
+        "e5_bm25": [
+          "french:467050#63",
+          "french:467050#0",
+          "french:467050#55",
+          "french:467050#60",
+          "french:467050#11",
+          "french:467050#41",
+          "french:467050#40",
+          "french:467050#50",
+          "french:467050#6",
+          "french:467050#46"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.8503449055347546,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "laya": {
+          "ndcg10": 0.8175295903539445,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5": {
+          "ndcg10": 1.0,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5_bm25": {
+          "ndcg10": 1.0,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 1
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 1,
+      "laya_binary_false_positives": 5
+    },
+    {
+      "id": "french:108191#0",
+      "language": "french",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "french:1095898#7": 1,
+        "french:8755615#0": 1,
+        "french:8755615#17": 1,
+        "french:5551343#0": 1,
+        "french:8755615#14": 1,
+        "french:180621#0": 1,
+        "french:4434107#0": 1,
+        "french:1095898#0": 0,
+        "french:1095898#13": 0,
+        "french:1095898#15": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "french:8755615#14",
+          "french:1095898#7",
+          "french:8755615#17",
+          "french:1095898#15",
+          "french:180621#0",
+          "french:5551343#0",
+          "french:8755615#0",
+          "french:1095898#13",
+          "french:4434107#0",
+          "french:1095898#0"
+        ],
+        "laya": [
+          "french:5551343#0",
+          "french:4434107#0",
+          "french:8755615#17",
+          "french:8755615#0",
+          "french:180621#0",
+          "french:1095898#0",
+          "french:1095898#7",
+          "french:1095898#13",
+          "french:1095898#15",
+          "french:8755615#14"
+        ],
+        "e5": [
+          "french:1095898#0",
+          "french:5551343#0",
+          "french:8755615#0",
+          "french:4434107#0",
+          "french:1095898#7",
+          "french:8755615#17",
+          "french:1095898#13",
+          "french:180621#0",
+          "french:8755615#14",
+          "french:1095898#15"
+        ],
+        "e5_bm25": [
+          "french:5551343#0",
+          "french:1095898#0",
+          "french:1095898#7",
+          "french:8755615#0",
+          "french:8755615#17",
+          "french:4434107#0",
+          "french:8755615#14",
+          "french:180621#0",
+          "french:1095898#13",
+          "french:1095898#15"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.9643632283499571,
+          "recall3": 0.42857142857142855,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "laya": {
+          "ndcg10": 0.9815441540827996,
+          "recall3": 0.42857142857142855,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5": {
+          "ndcg10": 0.8029580725803853,
+          "recall3": 0.2857142857142857,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5_bm25": {
+          "ndcg10": 0.9132861715058802,
+          "recall3": 0.2857142857142857,
+          "recall12": 1.0,
+          "top1": 1
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 2,
+      "laya_binary_false_positives": 0
+    },
+    {
+      "id": "french:6934780#0",
+      "language": "french",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "french:394034#3": 1,
+        "french:394034#1": 1,
+        "french:2466528#0": 0,
+        "french:95832#14": 0,
+        "french:394034#15": 0,
+        "french:3574751#16": 0,
+        "french:9554904#0": 0,
+        "french:3574751#12": 0,
+        "french:394034#5": 0,
+        "french:7644346#0": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "french:394034#3",
+          "french:394034#1",
+          "french:3574751#12",
+          "french:2466528#0",
+          "french:3574751#16",
+          "french:394034#15",
+          "french:95832#14",
+          "french:7644346#0",
+          "french:9554904#0",
+          "french:394034#5"
+        ],
+        "laya": [
+          "french:394034#3",
+          "french:2466528#0",
+          "french:394034#1",
+          "french:95832#14",
+          "french:394034#15",
+          "french:9554904#0",
+          "french:3574751#16",
+          "french:7644346#0",
+          "french:3574751#12",
+          "french:394034#5"
+        ],
+        "e5": [
+          "french:394034#3",
+          "french:2466528#0",
+          "french:394034#15",
+          "french:95832#14",
+          "french:394034#1",
+          "french:3574751#16",
+          "french:3574751#12",
+          "french:394034#5",
+          "french:9554904#0",
+          "french:7644346#0"
+        ],
+        "e5_bm25": [
+          "french:394034#3",
+          "french:2466528#0",
+          "french:394034#1",
+          "french:394034#15",
+          "french:95832#14",
+          "french:3574751#12",
+          "french:3574751#16",
+          "french:394034#5",
+          "french:9554904#0",
+          "french:7644346#0"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 1.0,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "laya": {
+          "ndcg10": 0.9197207891481876,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5": {
+          "ndcg10": 0.8503449055347546,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5_bm25": {
+          "ndcg10": 0.9197207891481876,
+          "recall3": 1.0,
+          "recall12": 1.0,
+          "top1": 1
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 0,
+      "laya_binary_false_positives": 3
+    },
+    {
+      "id": "french:3505883#0",
+      "language": "french",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "french:3179959#2": 1,
+        "french:182#1": 1,
+        "french:182#0": 0,
+        "french:3179959#6": 0,
+        "french:3179959#0": 0,
+        "french:3179959#3": 0,
+        "french:3179959#19": 0,
+        "french:3179959#8": 0,
+        "french:10440603#1": 0,
+        "french:293915#1": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "french:293915#1",
+          "french:3179959#8",
+          "french:3179959#6",
+          "french:10440603#1",
+          "french:3179959#2",
+          "french:182#0",
+          "french:182#1",
+          "french:3179959#0",
+          "french:3179959#3",
+          "french:3179959#19"
+        ],
+        "laya": [
+          "french:3179959#2",
+          "french:3179959#19",
+          "french:3179959#3",
+          "french:3179959#0",
+          "french:182#0",
+          "french:3179959#6",
+          "french:182#1",
+          "french:3179959#8",
+          "french:293915#1",
+          "french:10440603#1"
+        ],
+        "e5": [
+          "french:3179959#2",
+          "french:182#0",
+          "french:3179959#0",
+          "french:3179959#3",
+          "french:182#1",
+          "french:3179959#19",
+          "french:3179959#6",
+          "french:3179959#8",
+          "french:293915#1",
+          "french:10440603#1"
+        ],
+        "e5_bm25": [
+          "french:3179959#2",
+          "french:182#0",
+          "french:3179959#0",
+          "french:3179959#3",
+          "french:3179959#6",
+          "french:182#1",
+          "french:3179959#8",
+          "french:293915#1",
+          "french:3179959#19",
+          "french:10440603#1"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.4415801103577823,
+          "recall3": 0.0,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "laya": {
+          "ndcg10": 0.8175295903539445,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5": {
+          "ndcg10": 0.8503449055347546,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 1
+        },
+        "e5_bm25": {
+          "ndcg10": 0.8315546295836225,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 1
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 1,
+      "laya_binary_false_positives": 4
+    },
+    {
+      "id": "french:2461147#0",
+      "language": "french",
+      "split": "dev",
+      "subset": "relevant",
+      "labels": {
+        "french:61462#12": 1,
+        "french:61462#8": 1,
+        "french:61462#10": 0,
+        "french:61462#17": 0,
+        "french:3579382#0": 0,
+        "french:61462#58": 0,
+        "french:61462#118": 0,
+        "french:1278306#0": 0,
+        "french:61462#1": 0,
+        "french:61462#69": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "french:3579382#0",
+          "french:61462#58",
+          "french:61462#118",
+          "french:61462#17",
+          "french:1278306#0",
+          "french:61462#12",
+          "french:61462#10",
+          "french:61462#1",
+          "french:61462#8",
+          "french:61462#69"
+        ],
+        "laya": [
+          "french:61462#118",
+          "french:3579382#0",
+          "french:61462#12",
+          "french:61462#10",
+          "french:1278306#0",
+          "french:61462#58",
+          "french:61462#1",
+          "french:61462#17",
+          "french:61462#8",
+          "french:61462#69"
+        ],
+        "e5": [
+          "french:3579382#0",
+          "french:61462#1",
+          "french:1278306#0",
+          "french:61462#118",
+          "french:61462#10",
+          "french:61462#12",
+          "french:61462#8",
+          "french:61462#17",
+          "french:61462#69",
+          "french:61462#58"
+        ],
+        "e5_bm25": [
+          "french:3579382#0",
+          "french:1278306#0",
+          "french:61462#118",
+          "french:61462#1",
+          "french:61462#10",
+          "french:61462#12",
+          "french:61462#17",
+          "french:61462#58",
+          "french:61462#8",
+          "french:61462#69"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": 0.0,
+          "recall3": 0.0,
+          "recall12": 0.0,
+          "top1": 0
+        },
+        "bm25": {
+          "ndcg10": 0.40298313359773236,
+          "recall3": 0.0,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "laya": {
+          "ndcg10": 0.4911492931622974,
+          "recall3": 0.5,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5": {
+          "ndcg10": 0.4227898344066503,
+          "recall3": 0.0,
+          "recall12": 1.0,
+          "top1": 0
+        },
+        "e5_bm25": {
+          "ndcg10": 0.40298313359773236,
+          "recall3": 0.0,
+          "recall12": 1.0,
+          "top1": 0
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": 1.0,
+        "bm25": 1.0,
+        "e5_bm25": 1.0,
+        "recency12_upper_bound": 0.0
+      },
+      "laya_binary_false_negatives": 2,
+      "laya_binary_false_positives": 0
+    },
+    {
+      "id": "french:13520327-0",
+      "language": "french",
+      "split": "dev",
+      "subset": "non_relevant",
+      "labels": {
+        "french:5639661#21": 0,
+        "french:615088#5": 0,
+        "french:10863#18": 0,
+        "french:10863#30": 0,
+        "french:117617#12": 0,
+        "french:10917963#2": 0,
+        "french:14200600#2": 0,
+        "french:6234350#15": 0,
+        "french:14642661#12": 0,
+        "french:6234350#24": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "french:10917963#2",
+          "french:6234350#15",
+          "french:615088#5",
+          "french:10863#18",
+          "french:10863#30",
+          "french:117617#12",
+          "french:14200600#2",
+          "french:14642661#12",
+          "french:5639661#21",
+          "french:6234350#24"
+        ],
+        "laya": [
+          "french:10917963#2",
+          "french:10863#30",
+          "french:117617#12",
+          "french:10863#18",
+          "french:6234350#15",
+          "french:5639661#21",
+          "french:14200600#2",
+          "french:6234350#24",
+          "french:615088#5",
+          "french:14642661#12"
+        ],
+        "e5": [
+          "french:10863#30",
+          "french:10863#18",
+          "french:14642661#12",
+          "french:6234350#24",
+          "french:6234350#15",
+          "french:615088#5",
+          "french:14200600#2",
+          "french:117617#12",
+          "french:5639661#21",
+          "french:10917963#2"
+        ],
+        "e5_bm25": [
+          "french:10863#30",
+          "french:10863#18",
+          "french:6234350#15",
+          "french:14642661#12",
+          "french:615088#5",
+          "french:6234350#24",
+          "french:10917963#2",
+          "french:14200600#2",
+          "french:117617#12",
+          "french:5639661#21"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "bm25": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "laya": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "e5": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "e5_bm25": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": null,
+        "bm25": null,
+        "e5_bm25": null,
+        "recency12_upper_bound": null
+      },
+      "laya_binary_false_negatives": 0,
+      "laya_binary_false_positives": 0
+    },
+    {
+      "id": "french:5632797-0",
+      "language": "french",
+      "split": "dev",
+      "subset": "non_relevant",
+      "labels": {
+        "french:1336989#31": 0,
+        "french:5200953#0": 0,
+        "french:5671518#4": 0,
+        "french:1366781#41": 0,
+        "french:7166502#9": 0,
+        "french:429778#44": 0,
+        "french:24527#11": 0,
+        "french:100478#24": 0,
+        "french:5111356#50": 0,
+        "french:4033426#53": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "french:5671518#4",
+          "french:1336989#31",
+          "french:429778#44",
+          "french:4033426#53",
+          "french:5200953#0",
+          "french:7166502#9",
+          "french:100478#24",
+          "french:5111356#50",
+          "french:24527#11",
+          "french:1366781#41"
+        ],
+        "laya": [
+          "french:5200953#0",
+          "french:5111356#50",
+          "french:7166502#9",
+          "french:24527#11",
+          "french:4033426#53",
+          "french:1366781#41",
+          "french:100478#24",
+          "french:429778#44",
+          "french:5671518#4",
+          "french:1336989#31"
+        ],
+        "e5": [
+          "french:5200953#0",
+          "french:5671518#4",
+          "french:100478#24",
+          "french:5111356#50",
+          "french:4033426#53",
+          "french:24527#11",
+          "french:1366781#41",
+          "french:1336989#31",
+          "french:7166502#9",
+          "french:429778#44"
+        ],
+        "e5_bm25": [
+          "french:5671518#4",
+          "french:5200953#0",
+          "french:100478#24",
+          "french:4033426#53",
+          "french:5111356#50",
+          "french:1336989#31",
+          "french:24527#11",
+          "french:429778#44",
+          "french:7166502#9",
+          "french:1366781#41"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "bm25": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "laya": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "e5": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "e5_bm25": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": null,
+        "bm25": null,
+        "e5_bm25": null,
+        "recency12_upper_bound": null
+      },
+      "laya_binary_false_negatives": 0,
+      "laya_binary_false_positives": 1
+    },
+    {
+      "id": "french:10401503-0",
+      "language": "french",
+      "split": "dev",
+      "subset": "non_relevant",
+      "labels": {
+        "french:43226#35": 0,
+        "french:43226#90": 0,
+        "french:43226#96": 0,
+        "french:830352#1": 0,
+        "french:10401503#0": 0,
+        "french:10140453#0": 0,
+        "french:43226#59": 0,
+        "french:830352#0": 0,
+        "french:12045195#1": 0,
+        "french:43226#31": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "french:830352#1",
+          "french:43226#59",
+          "french:830352#0",
+          "french:10401503#0",
+          "french:43226#90",
+          "french:43226#31",
+          "french:43226#35",
+          "french:10140453#0",
+          "french:43226#96",
+          "french:12045195#1"
+        ],
+        "laya": [
+          "french:43226#90",
+          "french:830352#0",
+          "french:10401503#0",
+          "french:43226#59",
+          "french:43226#31",
+          "french:12045195#1",
+          "french:10140453#0",
+          "french:43226#35",
+          "french:830352#1",
+          "french:43226#96"
+        ],
+        "e5": [
+          "french:830352#0",
+          "french:830352#1",
+          "french:10401503#0",
+          "french:43226#31",
+          "french:43226#35",
+          "french:43226#90",
+          "french:43226#59",
+          "french:43226#96",
+          "french:12045195#1",
+          "french:10140453#0"
+        ],
+        "e5_bm25": [
+          "french:830352#0",
+          "french:830352#1",
+          "french:10401503#0",
+          "french:43226#31",
+          "french:43226#59",
+          "french:43226#35",
+          "french:43226#90",
+          "french:43226#96",
+          "french:10140453#0",
+          "french:12045195#1"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "bm25": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "laya": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "e5": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "e5_bm25": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": null,
+        "bm25": null,
+        "e5_bm25": null,
+        "recency12_upper_bound": null
+      },
+      "laya_binary_false_negatives": 0,
+      "laya_binary_false_positives": 1
+    },
+    {
+      "id": "french:10375237-0",
+      "language": "french",
+      "split": "dev",
+      "subset": "non_relevant",
+      "labels": {
+        "french:978385#4": 0,
+        "french:9672632#0": 0,
+        "french:14262890#6": 0,
+        "french:14558049#5": 0,
+        "french:10545942#4": 0,
+        "french:13209699#6": 0,
+        "french:13867146#3": 0,
+        "french:1776888#6": 0,
+        "french:14256714#8": 0,
+        "french:2951397#31": 0
+      },
+      "rankings": {
+        "words": [],
+        "bm25": [
+          "french:10545942#4",
+          "french:9672632#0",
+          "french:14558049#5",
+          "french:14262890#6",
+          "french:978385#4",
+          "french:13867146#3",
+          "french:2951397#31",
+          "french:14256714#8",
+          "french:1776888#6",
+          "french:13209699#6"
+        ],
+        "laya": [
+          "french:10545942#4",
+          "french:978385#4",
+          "french:9672632#0",
+          "french:13209699#6",
+          "french:2951397#31",
+          "french:14262890#6",
+          "french:1776888#6",
+          "french:14558049#5",
+          "french:14256714#8",
+          "french:13867146#3"
+        ],
+        "e5": [
+          "french:14558049#5",
+          "french:1776888#6",
+          "french:14256714#8",
+          "french:10545942#4",
+          "french:13209699#6",
+          "french:13867146#3",
+          "french:978385#4",
+          "french:2951397#31",
+          "french:14262890#6",
+          "french:9672632#0"
+        ],
+        "e5_bm25": [
+          "french:14558049#5",
+          "french:10545942#4",
+          "french:1776888#6",
+          "french:14256714#8",
+          "french:13867146#3",
+          "french:978385#4",
+          "french:13209699#6",
+          "french:9672632#0",
+          "french:14262890#6",
+          "french:2951397#31"
+        ]
+      },
+      "metrics": {
+        "words": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "bm25": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "laya": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "e5": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        },
+        "e5_bm25": {
+          "ndcg10": null,
+          "recall3": null,
+          "recall12": null,
+          "top1": null
+        }
+      },
+      "pool_known_positive_recall12": {
+        "e5": null,
+        "bm25": null,
+        "e5_bm25": null,
+        "recency12_upper_bound": null
+      },
+      "laya_binary_false_negatives": 0,
+      "laya_binary_false_positives": 0
+    }
+  ]
+}

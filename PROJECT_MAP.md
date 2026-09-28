@@ -151,3 +151,9 @@ completed source-bearing investigations into the existing Pharma/Loyer Following
 journey, with opt-in private subscriptions, public living-research markers,
 current-audience history and exact source/comparison links. Native source review
 and consented external delivery remain separate.
+
+[Whole-dossier saved-evidence retrieval](docs/PRODUCT_CORPUS_SEARCH.md) adds
+resumable local preparation, an exact-input source-contained cache and complete
+permission-filtered ranking in Pharma/Loyer. Independent multilingual sample
+results, model limits, source rights and scoped release acceptance are explicit;
+pgvector and broader professional-quality approval remain separate gates.
