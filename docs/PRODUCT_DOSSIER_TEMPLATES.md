@@ -1,6 +1,6 @@
 # Versioned dossier templates — release 1.32
 
-Status: IN PROGRESS. Scope recorded before code on 28 September 2026.
+Status: DONE within the bounded 1.32 scope. Recorded before code on 28 September 2026.
 Bounded C33/C44/C48 contribution; MV2-002/020/023. Depends on verified 1.29
 pack selection, 1.30 document UX and 1.31 optional structured subject context.
 
@@ -79,5 +79,17 @@ assertions (new UUID/default normalization and anonymous CSRF helper usage).
 Both client suites: 179 passed each, lint/types and Sites builds passed. Six new
 checks cover actual template rendering, retained versions, empty-field-only
 starters, history, roles and same-product gateway boundaries. Exact API Ruff,
-source parity and protected-value checks passed. Full affected API regression passed: 116 checks (115 integration and
-one backlog smoke) in 610.88 seconds. Production verification remains pending.
+source parity and protected-value checks passed. Full affected API regression
+passed: 116 checks (115 integration and one backlog smoke) in 610.88 seconds.
+
+Core implementation d1c0334a5a8d21f46454867fbcd9f38194a35a82 was immediately pushed and activated normally as git-d1c0334a5a8d at 14:04:37 UTC on 28 September.
+Pharma 5ae4a8544fb165381179b3cc048a1731ca499d85 and Legal
+8e9c6d1cff9d150a7d55d6f6e478c1b56edc4947 were immediately pushed to main and
+published as existing Sites version 35. Each canonical origin passed 30
+public/access checks (including anonymous template read/write rejection) and
+47 exact static asset hashes. Eleven native module hashes, all five containers,
+nine native navigation directions, pack descriptors and migration 08d495bef125
+were verified. The former Loyer public hostname remains retired.
+See the [frozen release receipt](product-releases/2026-09-28-1.32.0.json).
+Full DomainPack/GENERAL, source readiness, the validated Market Access journey,
+professional and human usability acceptance remain open.
