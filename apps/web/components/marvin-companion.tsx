@@ -1004,7 +1004,7 @@ export function MarvinCompanion({
           const decision = askDraftDecision(
             comparisonId ? questionDraft : chatDraft,
             question,
-            contextActive && conversationLoaded,
+            contextActive && conversationLoaded && !chatPending,
           );
           if (decision === "ready") {
             if (comparisonId) updateQuestionDraft(question.trim());
@@ -1031,6 +1031,7 @@ export function MarvinCompanion({
       chatDraft,
       contextActive,
       conversationLoaded,
+      chatPending,
       onOpenChange,
     ],
   );

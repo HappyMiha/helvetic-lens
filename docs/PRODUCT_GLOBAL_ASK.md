@@ -23,8 +23,9 @@ Typing makes no request. Existing APIs remain authoritative for access.
 
 On pages that mount Marvin, a question can be prepared in its existing private
 conversation/comparison draft. A different existing draft causes a visible
-conflict and remains intact. Paused/detached or still-loading context stays
-unavailable. Preparation does not submit inference, change preferences, reattach
+conflict and remains intact. Paused/detached, still-loading or busy context stays unavailable. A pending
+conversation cannot accept a new prepared draft that a late failure could
+replace when restoring its previous question. Preparation does not submit inference, change preferences, reattach
 context or create a second assistant. The existing private draft mechanisms are
 reused, including their normal autosave. Focus transfers only after the command
 closes and only while the same context is still mounted.
