@@ -1,5 +1,5 @@
 .card {
-  border: 1px solid #738595;
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 16px;
   margin: 16px 0;
@@ -17,7 +17,7 @@
 .card fieldset {
   min-width: 0;
   padding: 12px;
-  border: 1px solid #738595;
+  border: 1px solid var(--border);
   border-radius: 8px;
 }
 .card label {
@@ -34,12 +34,12 @@
 .card select {
   min-height: 44px;
   max-width: 100%;
-  border: 1px solid #738595;
+  border: 1px solid var(--input-border);
   border-radius: 8px;
   padding: 8px 12px;
 }
 .card :is(button, select, input, summary):focus-visible {
-  outline: 3px solid #328cc1;
+  outline: 3px solid var(--focus);
   outline-offset: 3px;
 }
 .card button:disabled {

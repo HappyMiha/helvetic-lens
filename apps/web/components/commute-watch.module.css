@@ -22,7 +22,7 @@
   line-height: 1.6;
 }
 .root button {
-  border: 1px solid #738595;
+  border: 1px solid var(--input-border);
   border-radius: 8px;
   padding: 9px 12px;
   background: transparent;
@@ -34,12 +34,12 @@
   cursor: not-allowed;
 }
 .root :is(button, input, select, summary, a):focus-visible {
-  outline: 3px solid #328cc1;
+  outline: 3px solid var(--focus);
   outline-offset: 3px;
 }
 .root button[aria-pressed="true"] {
-  border-color: #147bae;
-  box-shadow: inset 3px 0 #147bae;
+  border-color: var(--input-border);
+  box-shadow: inset 3px 0 var(--focus);
 }
 .root a {
   text-decoration: underline;
@@ -52,7 +52,7 @@
   margin: 10px 0;
 }
 .root :is(input:not([type="checkbox"]), select) {
-  border: 1px solid #738595;
+  border: 1px solid var(--input-border);
   border-radius: 6px;
   padding: 9px;
   background: transparent;
@@ -61,11 +61,11 @@
   min-width: 0;
 }
 .root select option {
-  color: #172b39;
-  background: #fff;
+  color: var(--foreground);
+  background: var(--card);
 }
 .root fieldset {
-  border: 1px solid #738595;
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px;
   margin: 14px 0;
@@ -108,7 +108,7 @@
   min-width: 0;
 }
 .card {
-  border: 1px solid #73859566;
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 20px;
   min-width: 0;
@@ -127,8 +127,8 @@
 }
 .notice {
   padding: 12px 16px;
-  border-left: 3px solid #147bae;
-  background: #147bae0a;
+  border-left: 3px solid var(--border);
+  background: var(--muted);
 }
 .source {
   white-space: pre-wrap;

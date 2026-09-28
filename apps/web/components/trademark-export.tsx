@@ -64,7 +64,7 @@ function Prepared({ path, id }: { path: string; id: string }) {
         sandbox=""
         referrerPolicy="no-referrer"
         srcDoc={prepared.document}
-        className="w-full h-[600px] border rounded-lg bg-white"
+        className="w-full h-[600px] border rounded-lg bg-card"
       />
       <p>{c.static}</p>
       <button

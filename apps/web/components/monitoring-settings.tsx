@@ -128,7 +128,7 @@ function Settings({ allowed }: { allowed: boolean }) {
               key={item.id}
               href={`/monitoring/settings?category=${item.id}`}
               aria-current={domain === item.id ? "page" : undefined}
-              className={`min-h-11 rounded-xl border p-3 ${domain === item.id ? "border-emerald-700 bg-emerald-50 font-semibold text-emerald-950" : ""}`}
+              className={`min-h-11 rounded-xl border p-3 ${domain === item.id ? "hl-tone-success font-semibold" : ""}`}
             >
               {names.templates[item.id][0]}
             </Link>

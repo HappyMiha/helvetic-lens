@@ -2,7 +2,7 @@
   max-width: 1100px;
   margin: 0 auto;
   padding: 24px;
-  color: #24334a;
+  color: var(--foreground);
 }
 .reader h1 {
   font-size: 1.8rem;
@@ -39,7 +39,7 @@
 .channelTable td {
   text-align: left;
   vertical-align: top;
-  border: 1px solid #b7c6d2;
+  border: 1px solid var(--border);
   padding: 8px;
   overflow-wrap: anywhere;
 }
@@ -52,7 +52,7 @@
   max-width: 100%;
 }
 .backupFile input:focus-visible {
-  outline: 3px solid #176c71;
+  outline: 3px solid var(--focus);
   outline-offset: 3px;
 }
 .creator button {
@@ -66,7 +66,7 @@
 .formFields fieldset {
   min-width: 0;
   padding: 12px;
-  border: 1px solid #b7c6d2;
+  border: 1px solid var(--border);
   border-radius: 8px;
   margin-top: 12px;
 }
@@ -91,8 +91,8 @@
 }
 .formFields input:not([type="checkbox"]),
 .formFields select {
-  background: white;
-  border: 1px solid #718096;
+  background: var(--card);
+  border: 1px solid var(--input-border);
   border-radius: 6px;
   min-height: 44px;
   padding: 8px 10px;
@@ -103,10 +103,10 @@
   width: 18px;
   height: 18px;
   flex: 0 0 18px;
-  accent-color: #176c71;
+  accent-color: var(--primary);
 }
 .formFields input:focus-visible {
-  outline: 3px solid #176c71;
+  outline: 3px solid var(--focus);
   outline-offset: 2px;
 }
 .numericFields {
@@ -134,10 +134,10 @@
   min-width: 0;
 }
 .button {
-  border: 1px solid #718096;
+  border: 1px solid var(--input-border);
   border-radius: 8px;
-  background: white;
-  color: #24334a;
+  background: var(--card);
+  color: var(--foreground);
   padding: 11px 15px;
   text-align: left;
   min-height: 44px;
@@ -147,16 +147,16 @@
 }
 .button:focus-visible,
 .history summary:focus-visible {
-  outline: 3px solid #176c71;
+  outline: 3px solid var(--focus);
   outline-offset: 3px;
 }
 .button:disabled {
   cursor: default;
-  background: #e8edf2;
+  background: var(--muted);
 }
 .button[aria-pressed="true"] {
-  border: 2px solid #176c71;
-  background: #edf7f6;
+  border: 2px solid var(--input-border);
+  background: var(--secondary);
 }
 .list {
   list-style: none;
@@ -171,21 +171,21 @@
   gap: 5px;
 }
 .settings {
-  background: white;
-  border: 1px solid #cad4de;
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 16px;
   margin: 12px 0;
 }
 .rule {
   padding-left: 12px;
-  border-left: 3px solid #bdd7d4;
+  border-left: 3px solid var(--border);
 }
 .notice {
   padding: 12px;
-  border: 1px solid #a2b6b8;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #f1f6f5;
+  background: var(--muted);
 }
 .history {
   margin: 12px 0;
@@ -194,7 +194,7 @@
   cursor: pointer;
   padding: 12px;
   min-height: 44px;
-  border-bottom: 1px solid #cad4de;
+  border-bottom: 1px solid var(--border);
 }
 @media (max-width: 700px) {
   .reader {

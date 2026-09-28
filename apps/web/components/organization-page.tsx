@@ -337,7 +337,7 @@ function CompanyProfileSection({ canManage }: { canManage: boolean }) {
                 {t("profile.discard")}
               </Button>
               {dirty && (
-                <span className="text-xs text-amber-700" role="status">
+                <span className="text-xs hl-warning-text" role="status">
                   {t("profile.unsavedShort")}
                 </span>
               )}
@@ -469,9 +469,9 @@ export function OrganizationPage() {
       <CompanyProfileSection canManage={canManage} />
 
       {session.user && !session.user.email_verified && (
-        <section className="card p-5 mb-5 flex flex-wrap items-center justify-between gap-4 border-amber-200 bg-amber-50/60">
+        <section className="card p-5 mb-5 flex flex-wrap items-center justify-between gap-4 hl-tone-warning">
           <div className="flex items-start gap-3">
-            <MailCheck className="mt-0.5 text-amber-700" size={20} />
+            <MailCheck className="mt-0.5 hl-warning-text" size={20} />
             <div>
               <strong className="block">{t("org.verify")}</strong>
               <p className="text-sm muted">
@@ -628,7 +628,7 @@ export function OrganizationPage() {
                 {canManage && !member.current ? (
                   <>
                     <select
-                      className="h-9 rounded-md border bg-white px-3 text-sm"
+                      className="h-9 rounded-md border bg-card px-3 text-sm"
                       value={member.role}
                       disabled={!!busy}
                       onChange={(event) =>
@@ -745,7 +745,7 @@ export function OrganizationPage() {
             <label>
               {t("org.role")}
               <select
-                className="h-10 w-full rounded-md border bg-white px-3"
+                className="h-10 w-full rounded-md border bg-card px-3"
                 value={role}
                 onChange={(e) => setRole(e.target.value as typeof role)}
               >
@@ -756,7 +756,7 @@ export function OrganizationPage() {
             <label>
               {t("org.inviteLanguage")}
               <select
-                className="h-10 w-full rounded-md border bg-white px-3"
+                className="h-10 w-full rounded-md border bg-card px-3"
                 value={recipientLocale}
                 onChange={(e) => setRecipientLocale(e.target.value as Locale)}
               >

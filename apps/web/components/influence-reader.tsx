@@ -19,10 +19,10 @@ import {
 import styles from "./influence.module.css";
 
 const tones = {
-  documented: "#245f97",
-  reported: "#806006",
-  disputed: "#a44521",
-  not_established: "#677083",
+  documented: "var(--info)",
+  reported: "var(--warning)",
+  disputed: "var(--danger)",
+  not_established: "var(--muted-foreground)",
 };
 export function InfluenceReader({ dossier }: { dossier: InfluenceDossier }) {
   const { locale } = useI18n();
@@ -349,14 +349,14 @@ export function InfluenceReader({ dossier }: { dossier: InfluenceDossier }) {
                               width="48"
                               height="30"
                               rx="6"
-                              fill={active ? tones[edge.status] : "#fff"}
+                              fill={active ? tones[edge.status] : "var(--card)"}
                               stroke={tones[edge.status]}
                             />
                             <text
                               x={geometry.x}
                               y={geometry.y + 5}
                               textAnchor="middle"
-                              fill={active ? "#fff" : tones[edge.status]}
+                              fill={active ? "var(--card)" : tones[edge.status]}
                               fontSize="14"
                               fontWeight="650"
                             >

@@ -270,7 +270,7 @@ export function InterestFeedPage() {
           <article
             key={item.event_id}
             data-feed-event={item.event_id}
-            className="interest-feed-event rounded-xl border bg-white p-4 sm:p-6 min-w-0 break-words"
+            className="interest-feed-event rounded-xl border bg-card p-4 sm:p-6 min-w-0 break-words"
           >
             <div className="flex flex-wrap items-center gap-2 text-sm">
               <Status value={item.read_state} />

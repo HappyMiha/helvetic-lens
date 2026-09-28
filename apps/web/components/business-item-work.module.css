@@ -1,5 +1,5 @@
 .panel {
-  border: 1px solid var(--border, #718096);
+  border: 1px solid var(--border);
   border-radius: 0.6rem;
   padding: 1rem;
   margin-block: 1rem;
@@ -27,9 +27,9 @@
   box-sizing: border-box;
   font: inherit;
   color: inherit;
-  background: var(--surface, #fff);
+  background: var(--card);
   padding: 0.65rem;
-  border: 1px solid var(--border, #718096);
+  border: 1px solid var(--border);
   border-radius: 0.4rem;
 }
 .form textarea {
@@ -50,7 +50,7 @@
 }
 .history li {
   padding-block: 0.75rem;
-  border-bottom: 1px solid var(--border, #718096);
+  border-bottom: 1px solid var(--border);
 }
 .comment {
   white-space: pre-wrap;

@@ -1,0 +1,299 @@
+/* Brandbook reading surfaces. Appearance never changes evidence or access. */
+:root {
+  color-scheme: dark;
+  --background: #090b0e;
+  --foreground: #e6e3e1;
+  --card: #111418;
+  --surface: var(--card);
+  --secondary: #242a32;
+  --muted: #1b2026;
+  --muted-foreground: #a7adb5;
+  --border: #434a55;
+  --input-border: #768798;
+  --primary: #e6e3e1;
+  --primary-foreground: #090b0e;
+  --primary-hover: #ffffff;
+  --focus: #bdcbd9;
+  --focus-soft: #434a55;
+  --selection: #e6e3e1;
+  --selection-text: #090b0e;
+  --success: #a7d5bc;
+  --success-surface: #16291f;
+  --success-border: #47785a;
+  --warning: #e6c791;
+  --warning-surface: #302619;
+  --warning-border: #977743;
+  --danger: #ffb5b0;
+  --danger-surface: #361c20;
+  --danger-border: #ae6664;
+  --danger-fill: #b52f28;
+  --info: #b3cade;
+  --info-surface: #192936;
+  --info-border: #557e9c;
+  --inverse: #111418;
+  --inverse-text: #e6e3e1;
+  --inverse-muted: #a7adb5;
+  --shadow: rgb(0 0 0 / 24%);
+  --overlay: rgb(0 0 0 / 55%);
+  --grid-line: #434a55;
+  --nav-surface: #111418;
+  --nav-card: #090b0e;
+  --nav-hover: #343a44;
+  --nav-text: #e6e3e1;
+  --nav-muted: #a7adb5;
+  --nav-border: #434a55;
+  --nav-glass: rgb(17 20 24 / 94%);
+  --hl-glass: var(--nav-glass);
+}
+:root[data-theme="light"],
+:root[data-theme="system"]:not(.dark) {
+  color-scheme: light;
+  --background: #f6f6f3;
+  --foreground: #111418;
+  --card: #ffffff;
+  --secondary: #e6e7e8;
+  --muted: #efefed;
+  --muted-foreground: #55575c;
+  --border: #c5c8cd;
+  --input-border: #7b828b;
+  --primary: #111418;
+  --primary-foreground: #ffffff;
+  --primary-hover: #343a44;
+  --focus: #343a44;
+  --focus-soft: #c5c8cd;
+  --selection: #343a44;
+  --selection-text: #ffffff;
+  --success: #24563c;
+  --success-surface: #eef7f0;
+  --success-border: #8ba998;
+  --warning: #71500c;
+  --warning-surface: #fff5df;
+  --warning-border: #b09562;
+  --danger: #9e302a;
+  --danger-surface: #fff0ef;
+  --danger-border: #c88d89;
+  --info: #245f97;
+  --info-surface: #eff5fb;
+  --info-border: #829fbb;
+  --shadow: rgb(9 11 14 / 12%);
+  --overlay: rgb(9 11 14 / 48%);
+  --grid-line: #c5c8cd;
+  --nav-surface: #ffffff;
+  --nav-card: #f6f6f3;
+  --nav-hover: #e6e7e8;
+  --nav-text: #111418;
+  --nav-muted: #55575c;
+  --nav-border: #c5c8cd;
+  --nav-glass: rgb(255 255 255 / 94%);
+}
+
+body {
+  font-size: 16px;
+  line-height: 1.625;
+}
+:is(input, textarea, select) {
+  color: var(--foreground);
+  background-color: var(--card);
+}
+:is(input, textarea)::placeholder {
+  color: var(--muted-foreground);
+  opacity: 1;
+}
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--primary);
+}
+:is(button, a, input, textarea, select, summary):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+::selection {
+  color: var(--selection-text);
+  background: var(--selection);
+}
+.text-link,
+.source-url,
+.matrix-evidence-link {
+  text-underline-offset: 3px;
+}
+.text-link:hover,
+.source-url:hover,
+.matrix-evidence-link:hover {
+  text-decoration: underline;
+}
+.native-theme-control {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  border-color: var(--input-border);
+  color: var(--foreground);
+  background: var(--card);
+}
+.native-theme-control:hover {
+  background: var(--secondary);
+}
+.topbar {
+  gap: 12px;
+  flex-wrap: wrap;
+  height: auto;
+  min-height: 64px;
+  padding-block: 8px;
+}
+.language-selector select {
+  min-height: 44px;
+}
+.hl-tone-warning {
+  color: var(--warning);
+  background: var(--warning-surface);
+  border-color: var(--warning-border);
+}
+.hl-tone-success {
+  color: var(--success);
+  background: var(--success-surface);
+  border-color: var(--success-border);
+}
+.hl-tone-danger {
+  color: var(--danger);
+  background: var(--danger-surface);
+  border-color: var(--danger-border);
+}
+.hl-warning-text {
+  color: var(--warning);
+}
+.hl-danger-text {
+  color: var(--danger);
+}
+.hl-chart-series {
+  color: var(--info);
+}
+.hl-chart-missing {
+  background: var(--warning);
+}
+.hl-primary-action {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.hl-primary-action:hover {
+  background: var(--primary-hover);
+}
+.status-dot-error {
+  background: var(--danger-fill) !important;
+}
+@media (max-width: 640px) {
+  .topbar .native-theme-control {
+    padding: 8px;
+  }
+  .topbar .native-theme-control .theme-name {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+  .native-theme-control {
+    transition: none;
+  }
+}
+@media (forced-colors: active) {
+  :root:root:root {
+    --background: Canvas;
+    --foreground: CanvasText;
+    --card: Canvas;
+    --secondary: Canvas;
+    --muted: Canvas;
+    --muted-foreground: CanvasText;
+    --border: ButtonBorder;
+    --input-border: ButtonBorder;
+    --primary: Highlight;
+    --primary-foreground: HighlightText;
+    --primary-hover: Highlight;
+    --focus: Highlight;
+    --focus-soft: Highlight;
+    --selection: Highlight;
+    --selection-text: HighlightText;
+    --success: CanvasText;
+    --success-surface: Canvas;
+    --success-border: ButtonBorder;
+    --warning: CanvasText;
+    --warning-surface: Canvas;
+    --warning-border: ButtonBorder;
+    --danger: CanvasText;
+    --danger-surface: Canvas;
+    --danger-border: ButtonBorder;
+    --danger-fill: CanvasText;
+    --info: CanvasText;
+    --info-surface: Canvas;
+    --info-border: ButtonBorder;
+    --inverse: Canvas;
+    --inverse-text: CanvasText;
+    --inverse-muted: CanvasText;
+    --nav-surface: Canvas;
+    --nav-card: Canvas;
+    --nav-hover: Canvas;
+    --nav-text: CanvasText;
+    --nav-muted: CanvasText;
+    --nav-border: ButtonBorder;
+    --nav-glass: Canvas;
+    --grid-line: GrayText;
+  }
+}
+@media print {
+  :root:root:root {
+    color-scheme: light;
+    --background: #ffffff;
+    --foreground: #111418;
+    --card: #ffffff;
+    --secondary: #efefed;
+    --muted: #efefed;
+    --muted-foreground: #55575c;
+    --border: #7b828b;
+    --input-border: #7b828b;
+    --primary: #111418;
+    --primary-foreground: #ffffff;
+    --success: #24563c;
+    --success-surface: #ffffff;
+    --success-border: #24563c;
+    --warning: #71500c;
+    --warning-surface: #ffffff;
+    --warning-border: #71500c;
+    --danger: #9e302a;
+    --danger-surface: #ffffff;
+    --danger-border: #9e302a;
+    --info: #245f97;
+    --info-surface: #ffffff;
+    --info-border: #245f97;
+    --inverse: #ffffff;
+    --inverse-text: #111418;
+    --inverse-muted: #55575c;
+  }
+  .shell,
+  .main,
+  .content {
+    position: static;
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+  .content {
+    max-width: none;
+    padding: 0;
+  }
+  .sidebar,
+  .topbar,
+  .mobile-nav,
+  .native-theme-control,
+  .marvin-companion,
+  .hl-products {
+    display: none !important;
+  }
+  a {
+    text-decoration: underline;
+  }
+}

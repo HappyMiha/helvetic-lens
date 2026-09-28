@@ -22,7 +22,7 @@
   line-height: 1.6;
 }
 .root button {
-  border: 1px solid #738595;
+  border: 1px solid var(--input-border);
   border-radius: 8px;
   padding: 8px 12px;
   background: transparent;
@@ -35,12 +35,12 @@
 .root button:focus-visible,
 .root input:focus-visible,
 .root select:focus-visible {
-  outline: 3px solid #328cc1;
+  outline: 3px solid var(--focus);
   outline-offset: 2px;
 }
 .root button[aria-pressed="true"] {
-  border-color: #147bae;
-  box-shadow: inset 3px 0 #147bae;
+  border-color: var(--input-border);
+  box-shadow: inset 3px 0 var(--focus);
 }
 .root a {
   text-decoration: underline;
@@ -54,7 +54,7 @@
 }
 .root input:not([type="checkbox"]),
 .root select {
-  border: 1px solid #738595;
+  border: 1px solid var(--input-border);
   border-radius: 6px;
   padding: 9px;
   background: transparent;
@@ -63,12 +63,12 @@
   min-width: 0;
 }
 .root select option {
-  color: #172b39;
-  background: #fff;
+  color: var(--foreground);
+  background: var(--card);
 }
 .root fieldset {
   min-width: 0;
-  border: 1px solid #738595;
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px;
   margin: 14px 0;
@@ -100,7 +100,7 @@
   margin-top: 5px;
 }
 .card {
-  border: 1px solid #73859566;
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 20px;
   min-width: 0;
@@ -135,7 +135,7 @@
 }
 .samples .sample,
 .event {
-  border-bottom: 1px solid #73859555;
+  border-bottom: 1px solid var(--border);
   padding-bottom: 16px;
   margin-bottom: 16px;
 }

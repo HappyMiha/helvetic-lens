@@ -13,6 +13,7 @@ import type { AuthSession } from "@/components/auth-gate";
 import { BrandLockup } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ThemeControl } from "@/components/theme-provider";
 import { LanguageSelector, useI18n } from "@/lib/i18n";
 import styles from "./login.module.css";
 import { SectionHelp } from "@/components/section-help";
@@ -156,6 +157,7 @@ export default function LoginPage() {
   return (
     <main className={styles.page}>
       <div className={`${styles.language} language-selector`}>
+        <ThemeControl locale={locale} className="native-theme-control" />
         <LanguageSelector />
       </div>
       <div className={styles.card}>

@@ -50,6 +50,7 @@ import { BrandLockup } from "./brand";
 import { ProductDestinations } from "./product-destinations";
 import { productNavigationCopy } from "@/lib/product-navigation";
 import { LanguageSelector, useI18n } from "@/lib/i18n";
+import { ThemeControl } from "./theme-provider";
 import { MarvinCompanion } from "./marvin-companion";
 import { NotificationCentre } from "./notification-centre";
 import { SectionHelp } from "./section-help";
@@ -581,7 +582,7 @@ function ShellContent({
         </nav>
         <div className="sidebar-bottom">
           <div className="model-card" role="status">
-            <span className={`status-dot ${error ? "!bg-red-500" : ""}`} />
+            <span className={`status-dot ${error ? "!hl-tone-danger0" : ""}`} />
             <div>
               <strong>
                 {error ? t("shell.apiUnavailable") : t("shell.systemStatus")}
@@ -616,10 +617,13 @@ function ShellContent({
           </span>
           <div className="flex items-center gap-2 sm:gap-5">
             <NotificationCentre />
+            <ThemeControl locale={locale} className="native-theme-control" />
             <LanguageSelector compact />
             <span id="marvin-resume-slot" />
             <span className="hidden sm:inline text-xs">
-              <span className={`status-dot ${error ? "!bg-red-500" : ""}`} />
+              <span
+                className={`status-dot ${error ? "!hl-tone-danger0" : ""}`}
+              />
               {error
                 ? t("shell.apiUnavailable")
                 : health
@@ -771,7 +775,7 @@ function ShellContent({
         >
           {error && <ErrorNote message={t("shell.apiError")} />}
           {session?.authenticated && session.role === "viewer" && (
-            <div className="mb-5 rounded-xl border border-[#d6decf] bg-[#f3f6ef] px-4 py-3 text-sm text-[#50604c]">
+            <div className="mb-5 rounded-xl border hl-tone-success px-4 py-3 text-sm">
               <strong>{t("shell.readOnlyTitle")}</strong>{" "}
               {t("shell.readOnlyBody")}
             </div>

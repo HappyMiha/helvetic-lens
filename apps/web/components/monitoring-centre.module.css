@@ -2,7 +2,7 @@
   max-width: 1180px;
   margin: 0 auto;
   padding: 1rem;
-  color: var(--text, #18342d);
+  color: var(--foreground);
 }
 .root h1 {
   font-size: clamp(1.65rem, 4vw, 2.3rem);
@@ -32,10 +32,10 @@
   gap: 1rem;
 }
 .card {
-  border: 1px solid #bacbc5;
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 1rem;
-  background: #fff;
+  background: var(--card);
   overflow-wrap: anywhere;
   display: flex;
   flex-direction: column;
@@ -49,7 +49,7 @@
   padding-top: 0.8rem;
 }
 .root a {
-  color: #145944;
+  color: var(--foreground);
   text-decoration: underline;
   text-underline-offset: 3px;
   font-weight: 600;
@@ -57,10 +57,10 @@
 .badge {
   display: inline-block;
   border-radius: 6px;
-  background: #e8efec;
+  background: var(--muted);
   padding: 0.2rem 0.55rem;
   font-size: 0.85rem;
-  color: #29483e;
+  color: var(--foreground);
 }
 .badges,
 .filters {
@@ -83,11 +83,11 @@
 .filters select,
 .button {
   min-height: 44px;
-  border: 1px solid #708f82;
+  border: 1px solid var(--input-border);
   border-radius: 8px;
   padding: 0.5rem 0.8rem;
-  background: white;
-  color: #18342d;
+  background: var(--card);
+  color: var(--foreground);
 }
 .button {
   cursor: pointer;
@@ -98,7 +98,7 @@
   cursor: default;
 }
 .root :is(a, button, select):focus-visible {
-  outline: 3px solid #116c50;
+  outline: 3px solid var(--focus);
   outline-offset: 3px;
 }
 .card dl {

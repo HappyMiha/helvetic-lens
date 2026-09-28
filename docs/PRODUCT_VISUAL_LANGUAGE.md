@@ -159,3 +159,15 @@ remain open. Local and exact production acceptance pass: Sites 25 on both
 products, 121 origin checks and 47 exact assets each; the native immutable web
 image serves 37 matching navigation/frame assets and the new H favicon. See the
 linked scoped acceptance and release receipt.
+
+
+## Native reading themes and shared preference resilience — 1.23
+
+The [reading-theme migration](PRODUCT_READING_THEMES.md) applies Brandbook
+light/dark/system palettes to native reading surfaces, forms, evidence tables,
+comparisons, graph, dialogs, navigation and login. Both clients share the same
+first-paint and persistent-preference contract, retaining an in-memory choice
+when saving is unavailable. Theme changes preserve current research and drafts.
+Native universal Ask/Search, full visual hierarchy/interaction review and human
+acceptance remain open. Local frontend/type/lint, all three final production builds and authored contrast
+checks pass. Exact production acceptance is pending in the linked record.

@@ -284,7 +284,7 @@ function Workspace({ eventId }: { eventId: string }) {
                 <div className="flex flex-wrap gap-3 mt-4" aria-busy={busy}>
                   <Button
                     data-native-save
-                    className="bg-[#3159dc] text-white hover:bg-[#2548ba]"
+                    className="hl-primary-action"
                     onClick={() => void save()}
                     disabled={!draft || !valid || busy}
                   >
@@ -357,7 +357,7 @@ function Workspace({ eventId }: { eventId: string }) {
                           </h4>
                           <p
                             lang={item[side] ? data.language : undefined}
-                            className={`whitespace-pre-wrap break-words ${item.kind === "unchanged" ? "bg-muted/30" : side === "old" ? "bg-red-50" : "bg-green-50"}`}
+                            className={`whitespace-pre-wrap break-words ${item.kind === "unchanged" ? "bg-muted/30" : side === "old" ? "hl-tone-danger" : "hl-tone-success"}`}
                           >
                             {item[side]?.text || copy.none}
                           </p>

@@ -159,7 +159,7 @@ function History({ item }: { item: InboxLaw }) {
           {history.loading && <span className="muted text-sm">{t("impact.historyLoading")}</span>}
           <ErrorNote message={history.error} />
           {history.data?.items.map((record) => (
-            <div className="rounded-md border bg-white p-3 text-sm" key={record.id}>
+            <div className="rounded-md border bg-card p-3 text-sm" key={record.id}>
               <div className="flex flex-wrap justify-between gap-2">
                 <span><Status value={record.stale ? "stale" : record.status} /> {dateTime(record.created_at)}</span>
                 <span className="muted">{record.model}</span>
@@ -226,7 +226,7 @@ function ReviewPanel({ item, onChanged }: { item: InboxLaw; onChanged: (change: 
   }
 
   return (
-    <div className="mt-4 rounded-md border bg-white p-3">
+    <div className="mt-4 rounded-md border bg-card p-3">
       <button
         className="flex w-full items-center justify-between gap-3 text-left text-sm font-medium"
         onClick={() => {
@@ -257,7 +257,7 @@ function ReviewPanel({ item, onChanged }: { item: InboxLaw; onChanged: (change: 
             </Button>
           )}
           <textarea
-            className="min-h-24 w-full rounded-md border bg-white p-3 text-sm"
+            className="min-h-24 w-full rounded-md border bg-card p-3 text-sm"
             value={note}
             onChange={(event) => setNote(event.target.value)}
             placeholder={t("impact.reviewReasonPlaceholder")}
@@ -279,7 +279,7 @@ function ReviewPanel({ item, onChanged }: { item: InboxLaw; onChanged: (change: 
           {history.loading && <span className="muted text-sm">{t("impact.reviewHistoryLoading")}</span>}
           <ErrorNote message={history.error} />
           {history.data?.items.map((review) => (
-            <div className="rounded-md border bg-[#fbfcf8] p-3 text-sm" key={review.id}>
+            <div className="rounded-md border bg-muted p-3 text-sm" key={review.id}>
               <div className="flex flex-wrap justify-between gap-2">
                 <strong>
                   {review.decision === "confirmed"
@@ -330,7 +330,7 @@ function LawImpact({
     }
   }
   return (
-    <section className="rounded-lg border bg-[#fbfcf8] p-4">
+    <section className="rounded-lg border bg-muted p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap gap-2 mb-2">
@@ -360,12 +360,12 @@ function LawImpact({
         </div>
       </div>
       {item.latest_attempt_status === "failed" && item.current_analysis_id && (
-        <p className="mt-3 mb-0 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+        <p className="mt-3 mb-0 rounded-md border hl-tone-warning p-3 text-sm hl-warning-text">
           {t("impact.latestFailed")}
         </p>
       )}
       {item.replacement && (
-        <div className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm">
+        <div className="mt-4 rounded-md border hl-tone-success p-3 text-sm">
           <strong>{t("impact.officialReplacement")}</strong> {item.replacement.predecessor.title} → {item.replacement.successor.title}.{" "}
           {item.replacement.successor.monitored ? t("impact.replacementMonitored") : t("impact.replacementAvailable")}
         </div>

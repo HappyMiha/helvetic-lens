@@ -1,4 +1,4 @@
-/* Brandbook v1.0 navigation frame. Legacy evidence-page themes migrate separately. */
+/* Brandbook v1.0 navigation frame; reading-themes.css supplies both palettes. */
 :root {
   --hl-carbon: #090b0e;
   --hl-obsidian: #111418;
@@ -8,9 +8,6 @@
   --hl-paper: #f6f6f3;
   --hl-glass: rgb(17 20 24 / 94%);
   --hl-blur: 30px;
-  --background: var(--hl-paper);
-  --foreground: var(--hl-obsidian);
-  --muted-foreground: #55575c;
 }
 .brand-lockup {
   color: var(--foreground);
@@ -24,12 +21,12 @@
   min-height: 24px;
 }
 .sidebar {
-  --foreground: var(--hl-frost);
-  --muted-foreground: var(--hl-muted);
-  --border: var(--hl-slate);
+  --foreground: var(--nav-text);
+  --muted-foreground: var(--nav-muted);
+  --border: var(--nav-border);
   color: var(--foreground);
-  background: var(--hl-obsidian);
-  border-color: var(--hl-slate);
+  background: var(--nav-surface);
+  border-color: var(--nav-border);
   gap: 24px;
 }
 @supports (backdrop-filter: blur(1px)) {
@@ -40,7 +37,7 @@
 }
 .sidebar :is(.workspace, .workspace-menu, .model-card) {
   color: var(--foreground);
-  background: var(--hl-carbon);
+  background: var(--nav-card);
   border-color: var(--border);
   box-shadow: none;
 }
@@ -52,37 +49,37 @@
     .nav-admin > summary:hover,
     .nav-admin[open] > summary
   ) {
-  background: var(--hl-slate);
-  border-color: var(--hl-muted);
+  background: var(--nav-hover);
+  border-color: var(--nav-muted);
 }
 .sidebar .workspace-error {
-  color: #ffb5b0;
+  color: var(--danger);
 }
 .sidebar .model-card span {
   color: var(--muted-foreground);
 }
 .sidebar ::selection {
-  color: var(--hl-carbon);
-  background: var(--hl-frost);
+  color: var(--selection-text);
+  background: var(--selection);
 }
 .sidebar .nav-item.active {
-  color: var(--hl-frost);
-  background: var(--hl-slate);
-  box-shadow: inset 2px 0 var(--hl-frost);
+  color: var(--nav-text);
+  background: var(--nav-hover);
+  box-shadow: inset 2px 0 var(--nav-text);
 }
 .sidebar :is(a, button):focus-visible {
-  outline: 2px solid var(--hl-frost);
+  outline: 2px solid var(--nav-text);
   outline-offset: 2px;
 }
 .sidebar :is(.nav-item, .nav-admin > summary, .workspace) {
   min-height: 44px;
 }
 .sidebar .nav-item:hover {
-  color: var(--hl-frost);
-  background: var(--hl-slate);
+  color: var(--nav-text);
+  background: var(--nav-hover);
 }
 .topbar {
-  background: var(--hl-paper);
+  background: var(--background);
 }
 .content:not(.content-wide) {
   max-width: 1440px;
@@ -93,12 +90,12 @@
   font-weight: 600;
 }
 .mobile-nav :is(.nav-item.active, .mobile-nav-more.active) {
-  color: var(--hl-obsidian);
-  background: var(--hl-frost);
+  color: var(--nav-surface);
+  background: var(--selection);
 }
 .mobile-nav-menu .nav-item.active {
-  color: var(--hl-obsidian);
-  background: var(--hl-frost);
+  color: var(--nav-surface);
+  background: var(--selection);
 }
 .hl-products {
   color: var(--foreground);

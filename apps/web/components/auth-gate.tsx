@@ -84,8 +84,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   if (loading && !publicPage) {
     return (
-      <main className="min-h-screen grid place-items-center bg-[#f3f5f9]">
-        <div className="flex items-center gap-3 text-sm text-[#687083]">
+      <main className="min-h-screen grid place-items-center bg-background">
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
           <Loader2 className="animate-spin" size={18} /> {t("auth.opening")}
         </div>
       </main>

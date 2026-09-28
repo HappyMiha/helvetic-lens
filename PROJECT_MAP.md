@@ -164,3 +164,9 @@ the native Monitoring platform through fixed public destinations, retaining
 current work and destination permissions. The native H identity and navigation
 frame adopt Brandbook v1.0; remaining native page themes and human acceptance
 stay separate.
+
+
+[Reading themes](docs/PRODUCT_READING_THEMES.md) migrate native evidence/work
+surfaces and login to shared Brandbook palettes. The native platform and both
+clients use the same device-local preference behavior. Scoped local and exact
+production acceptance are distinct from the remaining full visual/product gates.

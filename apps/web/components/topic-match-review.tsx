@@ -91,7 +91,7 @@ function ReviewContent({ matchId }: { matchId: string }) {
     {cursor && !match && <Button variant="outline" onClick={() => setCursor("")}>{t("inboxPaging.newest")}</Button>}
     {resource.loading && !match && <Loading />}
     {match && <>
-      <section className="rounded-xl border bg-white p-5 my-4 break-words" data-topic-review-evidence>
+      <section className="rounded-xl border bg-card p-5 my-4 break-words" data-topic-review-evidence>
         <h2>{match.evidence.work_title}</h2>
         <p>{t("topics.matchReason", { reasons: terms(match.reasons) })}</p>
         <p>{t("feed.confidence")}: <Status value={match.confidence} /></p>
@@ -99,7 +99,7 @@ function ReviewContent({ matchId }: { matchId: string }) {
         {officialUrl(match.evidence.source_url) && <a className="underline inline-flex min-h-[44px] items-center" target="_blank" rel="noopener noreferrer" href={officialUrl(match.evidence.source_url)}>{t("common.officialSource")}</a>}
         <details className="mt-2"><summary className="cursor-pointer min-h-[44px]">{t("common.evidence")}</summary><pre className="whitespace-pre-wrap break-words text-xs overflow-auto max-h-80">{JSON.stringify(match.evidence, null, 2)}</pre></details>
       </section>
-      {canManage ? <section className="rounded-xl border bg-white p-5 my-4" data-topic-review-form>
+      {canManage ? <section className="rounded-xl border bg-card p-5 my-4" data-topic-review-form>
         {stale && <p role="status">{t("topicReview.stale")}</p>}
         <Button variant="outline" disabled={busy} onClick={async () => { setBusy(true); setFailure(""); try { await invalidateResources(resourceTag("topic-matches", "organization")); setExpected(null); attempt.current = null; } finally { setBusy(false); } }}>{t("topicReview.reload")}</Button>
         <label className="block mt-4">{t("topicReview.note")}<Textarea value={note} minLength={3} maxLength={2000} disabled={busy} onChange={event => setNote(event.target.value)} className="mt-2" /></label>

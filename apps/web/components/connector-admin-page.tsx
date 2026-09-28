@@ -259,12 +259,12 @@ function ScheduleCard({
           </div>
         </div>
         {item.partial_coverage && (
-          <p className="text-xs text-amber-800 mb-0">
+          <p className="text-xs hl-warning-text mb-0">
             {t("connectors.partial")}
           </p>
         )}
         {capability && capabilityCopy && (
-          <details className="capability-contract rounded-lg border bg-stone-50/60 p-4">
+          <details className="capability-contract rounded-lg border bg-muted p-4">
             <summary className="cursor-pointer font-semibold">
               {t("connectors.capabilityContract")}
             </summary>

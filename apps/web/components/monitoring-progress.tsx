@@ -44,7 +44,7 @@ export function MonitoringProgressPanel({ progress, branch, deploying }: {
 
   function completionCard(kind: "git" | "deployed", title: string, snapshot: MonitoringSnapshot | null | undefined) {
     const counts = kind === "git" ? gitCounts : deployedCounts;
-    return <div className="rounded-lg border bg-white p-4 min-w-0" data-monitoring-card={kind}>
+    return <div className="rounded-lg border bg-card p-4 min-w-0" data-monitoring-card={kind}>
       <h3 className="text-sm font-medium">{title}</h3>
       <p className={`my-2 font-semibold break-words ${counts?.percent != null ? "text-2xl" : "text-base"}`} data-monitoring-percent>
         {counts ? counts.percent === null ? copy.notApplicable : `≈${counts.percent}%` : copy.unavailable}
@@ -67,7 +67,7 @@ export function MonitoringProgressPanel({ progress, branch, deploying }: {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 min-w-0">
         {completionCard("git", copy.git, latest)}
         {completionCard("deployed", deployedLabel, deployed)}
-        <div className="rounded-lg border bg-white p-4 min-w-0 col-span-2 lg:col-span-1" data-monitoring-card="remaining">
+        <div className="rounded-lg border bg-card p-4 min-w-0 col-span-2 lg:col-span-1" data-monitoring-card="remaining">
           <h3 className="text-sm font-medium">{copy.remaining}</h3>
           <p className="my-2 text-2xl font-semibold" data-monitoring-remaining-count>{gitCounts ? gitCounts.remaining.length : copy.unavailable}</p>
           {gitCounts && <p className="text-sm mb-0" data-monitoring-in-progress>{gitCounts.inProgress} {copy.inProgress}</p>}

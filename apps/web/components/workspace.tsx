@@ -175,7 +175,7 @@ function SourcePacks({
                   <div><dt>{t("sourcePacks.lastSync")}</dt><dd>{pack.last_success_at ? dateTime(pack.last_success_at) : t("sourcePacks.notYet")}</dd></div>
                   <div><dt>{t("sourcePacks.savedEvents")}</dt><dd>{pack.subscription.included_event_count}</dd></div>
                 </dl>
-                <div className="mt-4 rounded-md bg-stone-50 p-3 text-sm">
+                <div className="mt-4 rounded-md bg-muted p-3 text-sm">
                   <p className="mb-1 font-semibold">{t("sourcePacks.firstData")}</p>
                   <p className="muted mb-0">{text(pack.expected_first_data)}</p>
                 </div>
@@ -1030,7 +1030,7 @@ function DiscoveryDialog({
                           : t("discover.unverified", { type: candidate.format_hint || "document" })}
                       </span>
                       {candidate.error && (
-                        <p className="text-sm text-red-700">
+                        <p className="text-sm hl-danger-text">
                           {candidate.error}
                         </p>
                       )}

@@ -28,14 +28,14 @@ function Unsubscribe() {
       });
   }, []);
   return (
-    <main className="min-h-screen grid place-items-center bg-[#f7f7f3] p-6">
+    <main className="min-h-screen grid place-items-center bg-background p-6">
       <section className="panel p-8 max-w-lg text-center">
         {state === "working" ? (
           <Loader2 className="animate-spin mx-auto" />
         ) : state === "done" ? (
           <CheckCircle2 className="mx-auto text-primary" />
         ) : (
-          <MailX className="mx-auto text-red-600" />
+          <MailX className="mx-auto hl-danger-text" />
         )}
         <h1 className="mt-4">
           {state === "done"

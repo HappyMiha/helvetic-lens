@@ -44,7 +44,7 @@
 .categories > div,
 .workspaces > li {
   padding: 16px;
-  border: 1px solid #738595;
+  border: 1px solid var(--border);
   border-radius: 10px;
 }
 .categories dd {
@@ -57,7 +57,7 @@
   justify-content: space-between;
   gap: 20px;
   padding: 10px 0;
-  border-bottom: 1px solid #b5bdc7;
+  border-bottom: 1px solid var(--border);
 }
 .summary dd {
   font-weight: 600;
@@ -72,7 +72,7 @@
   padding-left: 24px;
 }
 .page fieldset {
-  border: 1px solid #a94332;
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 20px;
   min-width: 0;
@@ -102,13 +102,13 @@
 }
 .page input[type="password"] {
   min-height: 44px;
-  border: 1px solid #738595;
+  border: 1px solid var(--input-border);
   border-radius: 8px;
   padding: 8px 12px;
   width: 100%;
 }
 .page :is(a, button, input):focus-visible {
-  outline: 3px solid #328cc1;
+  outline: 3px solid var(--focus);
   outline-offset: 3px;
 }
 @media (max-width: 600px) {

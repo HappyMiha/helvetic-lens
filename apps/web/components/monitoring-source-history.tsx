@@ -243,7 +243,7 @@ export function MonitoringSourceHistory({ denied }: { denied: () => void }) {
             )}
           </p>
           <svg
-            className="block w-full h-40 my-3 text-[#174ea6]"
+            className="block w-full h-40 my-3 hl-chart-series"
             viewBox="0 0 720 150"
             preserveAspectRatio="none"
             role="img"
@@ -275,7 +275,7 @@ export function MonitoringSourceHistory({ denied }: { denied: () => void }) {
                       y={135}
                       width={Math.max(0.5, width - 0.5)}
                       height={8}
-                      fill="#795000"
+                      fill="var(--warning)"
                     />
                   )}
                 </g>
@@ -291,7 +291,7 @@ export function MonitoringSourceHistory({ denied }: { denied: () => void }) {
           <p className="my-3">
             <span
               aria-hidden="true"
-              className="inline-block w-3 h-3 mr-2 bg-[#795000]"
+              className="inline-block w-3 h-3 mr-2 hl-chart-missing"
             />
             {c.gap}
           </p>
