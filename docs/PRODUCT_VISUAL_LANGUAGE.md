@@ -75,7 +75,10 @@ extraction is delivered in release 1.10; [workspace dossier teams](PRODUCT_TEAMS
 are delivered in 1.11, private active monitoring in 1.12 and outside-workspace
 invitations in 1.13. Living public slugs/search and the shared public evidence
 reader are delivered in 1.14 with exact production acceptance.
-Material-change reopening and cross-investigation history remain open.
+Material-change reopening and cross-investigation history are delivered within
+scoped releases 1.15–1.17. Recurring web discovery, personal research updates and
+whole-dossier retrieval are delivered in 1.18–1.21; their evidence and limits
+remain separate from full-spec acceptance.
 Native helveticlens.ch legacy screens should adopt the validated design foundation
 incrementally. Keep every source/access boundary and preserve functional parity;
 do not introduce a second UI framework or new data store for this migration.
@@ -142,3 +145,14 @@ types/builds, exact Sites 20 origins with 98 HTTP checks and 47 exact assets eac
 Native saved-page fixtures and source/corpus revocation cases pass. No browser
 interaction or human visual acceptance is claimed. Full native migration remains
 IN PROGRESS; see the linked watched-page release receipt.
+
+
+## Shared product navigation and native identity — 1.22
+
+The [shared navigation journey](PRODUCT_NAVIGATION.md) connects both products and
+the native platform without transferring a question, dossier or unsaved work.
+Both product command surfaces and sidebars retain their Brandbook themes. The
+native H identity, neutral reading frame and structural glass sidebar are the
+first bounded native visual migration; all nine directions remain directly
+navigable. Existing native evidence pages and the full dark/light migration
+remain open. Local checks pass; exact production acceptance is pending here.

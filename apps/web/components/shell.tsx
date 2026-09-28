@@ -47,6 +47,8 @@ import { type AuthSession, useAuth } from "./auth-gate";
 import type { Health } from "@/lib/types";
 import { ErrorNote } from "./common";
 import { BrandLockup } from "./brand";
+import { ProductDestinations } from "./product-destinations";
+import { productNavigationCopy } from "@/lib/product-navigation";
 import { LanguageSelector, useI18n } from "@/lib/i18n";
 import { MarvinCompanion } from "./marvin-companion";
 import { NotificationCentre } from "./notification-centre";
@@ -550,6 +552,10 @@ function ShellContent({
             </NavigationItem>
           </section>
           <MonitoringNavigation pathname={pathname} />
+          <ProductDestinations
+            current="platform"
+            copy={productNavigationCopy[locale]}
+          />
           <section className="nav-section">
             <span className="nav-heading">{t("shell.workspaceSettings")}</span>
             {workspaceItems}
@@ -728,6 +734,10 @@ function ShellContent({
                 {t("nav.topics")}
               </NavigationItem>
               <MonitoringNavigation pathname={pathname} />
+              <ProductDestinations
+                current="platform"
+                copy={productNavigationCopy[locale]}
+              />
               <span className="nav-heading">
                 {t("shell.workspaceSettings")}
               </span>
@@ -774,17 +784,19 @@ function ShellContent({
           </footer>
         </div>
       </main>
-      {showContextHelp && <>
-      {pathname !== "/assistant-history" &&
-        (session?.authenticated || session?.anonymous_development) && (
-          <MarvinCompanion
-            key={`${session?.organization?.id || "local-development"}:${session?.user?.id || "local-development"}`}
-            localAiReady={Boolean(health?.apertus.configured)}
-            onOpenChange={setAssistantOpen}
-            open={assistantOpen}
-          />
-        )}
-      </>}
+      {showContextHelp && (
+        <>
+          {pathname !== "/assistant-history" &&
+            (session?.authenticated || session?.anonymous_development) && (
+              <MarvinCompanion
+                key={`${session?.organization?.id || "local-development"}:${session?.user?.id || "local-development"}`}
+                localAiReady={Boolean(health?.apertus.configured)}
+                onOpenChange={setAssistantOpen}
+                open={assistantOpen}
+              />
+            )}
+        </>
+      )}
     </div>
   );
 }

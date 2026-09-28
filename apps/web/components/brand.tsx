@@ -13,30 +13,7 @@ export function BrandMark({ className = "", title }: BrandMarkProps) {
       xmlns="http://www.w3.org/2000/svg"
     >
       {title && <title>{title}</title>}
-      <rect width="48" height="48" rx="14" fill="#101936" />
-      <circle
-        cx="23"
-        cy="24"
-        r="11.5"
-        fill="none"
-        stroke="#86A5FF"
-        strokeWidth="2.25"
-      />
-      <path
-        d="M23 16.5v15M15.5 24h15"
-        fill="none"
-        stroke="white"
-        strokeLinecap="round"
-        strokeWidth="3.75"
-      />
-      <path
-        d="M31.1 32.2 37 38"
-        fill="none"
-        stroke="#86A5FF"
-        strokeLinecap="round"
-        strokeWidth="3"
-      />
-      <circle cx="37" cy="11" r="3.5" fill="#FF5A5F" />
+      <path fill="currentColor" d="M6 6h8v15h20V6h8v36h-8V27H14v15H6z" />
     </svg>
   );
 }

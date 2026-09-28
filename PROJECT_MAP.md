@@ -157,3 +157,10 @@ resumable local preparation, an exact-input source-contained cache and complete
 permission-filtered ranking in Pharma/Loyer. Independent multilingual sample
 results, model limits, source rights and scoped release acceptance are explicit;
 pgvector and broader professional-quality approval remain separate gates.
+
+
+[Shared product navigation](docs/PRODUCT_NAVIGATION.md) links Pharma, Loyer and
+the native Monitoring platform through fixed public destinations, retaining
+current work and destination permissions. The native H identity and navigation
+frame adopt Brandbook v1.0; remaining native page themes and human acceptance
+stay separate.

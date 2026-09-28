@@ -72,6 +72,32 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 ## Product decision
 
+**Shared product navigation and native identity — 28 September 2026: IN PROGRESS
+(scoped visual continuation / release 1.22).** Scope: MV2-002/024. Give anonymous
+and signed-in readers a consistent route among Pharma, Loyer and the main
+Monitoring platform, using the existing global Ask/Search in both products and
+native desktop/mobile navigation. Links use only fixed public origins, preserve
+the current tab/draft, suppress referrers and never forward dossier IDs, questions,
+account details or credentials. Destination authentication/access stays authoritative.
+The native H monogram, favicon and navigation frame adopt Brandbook v1.0, with
+Carbon/Obsidian/Frost, structural glass only on the sidebar, readable contrast,
+keyboard focus and all nine visible Monitoring sections. Legacy native evidence
+pages retain their existing functional layout; complete dark/light page migration
+and human visual acceptance remain separate, explicit work.
+Readiness/dependencies: all three existing production origins and routing are
+active; both product command surfaces, native shell/i18n, the five supported
+native locale contracts and shared brand primitives are available. No API/model,
+permission, storage, source, provider, publication or inference change is needed.
+Acceptance: exact public destinations and current-product labels in both clients
+and native desktop/mobile shell; retained draft/authority boundaries; five native
+locale strings, semantic accessible link labels and reduced-motion behavior;
+shared H identity and authored navigation contrast; existing native shell/i18n/
+resource checks, native types/build and both clients' tests/lint/types/builds;
+main pushes, exact native and Sites publication, origin/assets/auth verification.
+No browser interaction or human/language sign-off is claimed in this background
+cycle. Parent MV2-002/024 and both full specifications remain IN PROGRESS.
+
+
 **Whole-dossier retrieval — 28 September 2026: DONE (scoped stage 4f / release 1.21).**
 Scope: MV2-021/023/051, with existing private dossiers, native permission-filtered
 captured evidence, exact citations and the shared Jev/Laya decision boundary.
@@ -1711,7 +1737,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | ID | Task | Phase | Priority | Size | Status | Dependencies |
 |---|---|---|---|---|---|---|
 | [MV2-001](#mv2-001) | Establish extension contracts and MVP compatibility | F0 | P0 | M | DONE | None |
-| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS | None |
+| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS — scoped product navigation active | None |
 | [MV2-003](#mv2-003) | Verify source rights, coverage and contracts for the nine active scenarios | F0 | P0 | L | PLANNED | [MV2-001](#mv2-001) |
 | [MV2-004](#mv2-004) | Personal workspace and team monitoring permissions | F1 | P0 | M | IN PROGRESS | [MV2-001](#mv2-001) |
 | [MV2-005](#mv2-005) | MonitoringSubject and versioned Monitoring Templates | F1 | P0 | L | PLANNED | [MV2-001](#mv2-001), [MV2-004](#mv2-004) |
@@ -1733,7 +1759,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — scoped stages 4c/4d/4e/4f DONE | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented; dossier research updates DONE within scope | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
 | [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — native evidence/configuration; scoped whole-dossier retrieval 4f DONE | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
-| [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
+| [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS — scoped native identity active | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
 | [MV2-025](#mv2-025) | Admin: accurate source capabilities and access management | F2 | P0 | M | IN PROGRESS — encrypted connector settings implemented | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-018](#mv2-018) |
 | [MV2-026](#mv2-026) | Possible future implementation: C4 official customs-rate connector | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011) |
 | [MV2-027](#mv2-027) | Possible future implementation: C4 currency, thresholds, history and digest | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-008](#mv2-008), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-022](#mv2-022), [MV2-026](#mv2-026) |
@@ -1881,6 +1907,11 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 <a id="mv2-002"></a>
 
 ### MV2-002 — Validate first-value journeys and shared navigation
+
+**Active product contribution, 28 September:** shared product navigation and
+native Brandbook identity, with scope/readiness/dependencies and acceptance
+recorded under Product decision above. Broader human and full-page acceptance
+remains open.
 
 **Status:** IN PROGRESS · **Priority:** P0 · **Owner:** Product + UX · **Size:** M
 
@@ -2780,6 +2811,11 @@ contract. Broader draft/generative/human acceptance remains open.
 <a id="mv2-024"></a>
 
 ### MV2-024 — Clear guidance, accessibility and five languages
+
+**Active product contribution, 28 September:** shared product navigation and
+native Brandbook identity, with scope/readiness/dependencies and acceptance
+recorded under Product decision above. Broader human and full-page acceptance
+remains open.
 
 **Status:** IN PROGRESS · **Priority:** P0 · **Owner:** UX + Frontend + Language reviewers · **Size:** L
 

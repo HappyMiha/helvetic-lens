@@ -1,0 +1,222 @@
+/* Brandbook v1.0 navigation frame. Legacy evidence-page themes migrate separately. */
+:root {
+  --hl-carbon: #090b0e;
+  --hl-obsidian: #111418;
+  --hl-slate: #343a44;
+  --hl-frost: #e6e3e1;
+  --hl-muted: #a7adb5;
+  --hl-paper: #f6f6f3;
+  --hl-glass: rgb(17 20 24 / 94%);
+  --hl-blur: 30px;
+  --background: var(--hl-paper);
+  --foreground: var(--hl-obsidian);
+  --muted-foreground: #55575c;
+}
+.brand-lockup {
+  color: var(--foreground);
+}
+.brand-lockup-name {
+  font-weight: 600;
+  letter-spacing: -0.035em;
+}
+.brand-lockup-mark {
+  min-width: 24px;
+  min-height: 24px;
+}
+.sidebar {
+  --foreground: var(--hl-frost);
+  --muted-foreground: var(--hl-muted);
+  --border: var(--hl-slate);
+  color: var(--foreground);
+  background: var(--hl-obsidian);
+  border-color: var(--hl-slate);
+  gap: 24px;
+}
+@supports (backdrop-filter: blur(1px)) {
+  .sidebar {
+    background: var(--hl-glass);
+    backdrop-filter: blur(var(--hl-blur));
+  }
+}
+.sidebar :is(.workspace, .workspace-menu, .model-card) {
+  color: var(--foreground);
+  background: var(--hl-carbon);
+  border-color: var(--border);
+  box-shadow: none;
+}
+.sidebar
+  :is(
+    .workspace:hover,
+    .workspace[aria-expanded="true"],
+    .workspace-option:not(:disabled):hover,
+    .nav-admin > summary:hover,
+    .nav-admin[open] > summary
+  ) {
+  background: var(--hl-slate);
+  border-color: var(--hl-muted);
+}
+.sidebar .workspace-error {
+  color: #ffb5b0;
+}
+.sidebar .model-card span {
+  color: var(--muted-foreground);
+}
+.sidebar ::selection {
+  color: var(--hl-carbon);
+  background: var(--hl-frost);
+}
+.sidebar .nav-item.active {
+  color: var(--hl-frost);
+  background: var(--hl-slate);
+  box-shadow: inset 2px 0 var(--hl-frost);
+}
+.sidebar :is(a, button):focus-visible {
+  outline: 2px solid var(--hl-frost);
+  outline-offset: 2px;
+}
+.sidebar :is(.nav-item, .nav-admin > summary, .workspace) {
+  min-height: 44px;
+}
+.sidebar .nav-item:hover {
+  color: var(--hl-frost);
+  background: var(--hl-slate);
+}
+.topbar {
+  background: var(--hl-paper);
+}
+.content:not(.content-wide) {
+  max-width: 1440px;
+}
+.page-heading h1 {
+  font-size: clamp(28px, 3vw, 36px);
+  line-height: 1.17;
+  font-weight: 600;
+}
+.mobile-nav :is(.nav-item.active, .mobile-nav-more.active) {
+  color: var(--hl-obsidian);
+  background: var(--hl-frost);
+}
+.mobile-nav-menu .nav-item.active {
+  color: var(--hl-obsidian);
+  background: var(--hl-frost);
+}
+.hl-products {
+  color: var(--foreground);
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar *,
+  .hl-products * {
+    transition: none;
+    animation: none;
+  }
+}
+@media (forced-colors: active) {
+  .sidebar {
+    background: Canvas;
+    color: CanvasText;
+    --foreground: CanvasText;
+    --muted-foreground: CanvasText;
+    --border: ButtonBorder;
+    backdrop-filter: none;
+  }
+  .sidebar
+    :is(
+      .workspace,
+      .workspace-menu,
+      .model-card,
+      .nav-item,
+      .nav-item.active,
+      .nav-item:hover,
+      .workspace:hover,
+      .workspace[aria-expanded="true"],
+      .workspace-option:not(:disabled):hover,
+      .nav-admin > summary:hover,
+      .nav-admin[open] > summary
+    ) {
+    background: Canvas;
+    color: CanvasText;
+    box-shadow: none;
+  }
+  .sidebar .nav-item.active {
+    border: 1px solid Highlight;
+  }
+  .sidebar :is(a, button):focus-visible {
+    outline-color: Highlight;
+  }
+}
+
+/* Product destinations use fixed public origins; no query or dossier transfer. */
+.hl-products {
+  --product-text: var(--text-primary, var(--foreground));
+  --product-muted: var(--text-secondary, var(--muted-foreground));
+  --product-line: var(--line, var(--border));
+  color: var(--product-text);
+  min-width: 0;
+  padding: 16px 12px;
+}
+.hl-products-title {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.hl-products ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 4px;
+}
+.hl-products li {
+  min-width: 0;
+}
+.hl-products a,
+.hl-product-current {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px;
+  border-radius: 8px;
+  color: var(--product-text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.hl-products strong {
+  font-weight: 600;
+}
+.hl-products svg {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.hl-product-current {
+  border-left: 2px solid var(--product-muted);
+}
+.hl-product-current small {
+  color: var(--product-muted);
+  font-size: 11px;
+}
+.hl-products a:hover strong {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.hl-products a:focus-visible {
+  outline: 2px solid var(--product-text);
+  outline-offset: 2px;
+}
+.hl-products-note {
+  margin: 10px 0 0;
+  color: var(--product-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+@media print {
+  .hl-products {
+    display: none !important;
+  }
+}

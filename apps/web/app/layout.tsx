@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./native-brand.css";
 import { AuthGate } from "@/components/auth-gate";
 import { I18nProvider } from "@/lib/i18n";
 

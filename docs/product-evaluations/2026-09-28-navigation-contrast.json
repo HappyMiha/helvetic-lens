@@ -1,0 +1,72 @@
+{
+  "scope": "Authored palette pairs only; not browser-computed layout, focus or whole-page certification. Glass uses rounded 94% Obsidian over the light paper canvas.",
+  "normal_text_threshold": 4.5,
+  "pairs": [
+    {
+      "name": "navigation primary",
+      "foreground": "#e6e3e1",
+      "background": "#111418",
+      "ratio": 14.46
+    },
+    {
+      "name": "navigation secondary",
+      "foreground": "#a7adb5",
+      "background": "#111418",
+      "ratio": 8.17
+    },
+    {
+      "name": "glass primary",
+      "foreground": "#e6e3e1",
+      "background": "#1f2225",
+      "ratio": 12.51
+    },
+    {
+      "name": "glass secondary",
+      "foreground": "#a7adb5",
+      "background": "#1f2225",
+      "ratio": 7.07
+    },
+    {
+      "name": "current product",
+      "foreground": "#e6e3e1",
+      "background": "#343a44",
+      "ratio": 8.96
+    },
+    {
+      "name": "current metadata",
+      "foreground": "#a7adb5",
+      "background": "#343a44",
+      "ratio": 5.06
+    },
+    {
+      "name": "workspace metadata",
+      "foreground": "#a7adb5",
+      "background": "#090b0e",
+      "ratio": 8.71
+    },
+    {
+      "name": "error",
+      "foreground": "#ffb5b0",
+      "background": "#111418",
+      "ratio": 10.98
+    },
+    {
+      "name": "paper text",
+      "foreground": "#111418",
+      "background": "#f6f6f3",
+      "ratio": 17.06
+    },
+    {
+      "name": "paper metadata",
+      "foreground": "#55575c",
+      "background": "#f6f6f3",
+      "ratio": 6.68
+    },
+    {
+      "name": "selection",
+      "foreground": "#090b0e",
+      "background": "#e6e3e1",
+      "ratio": 15.42
+    }
+  ]
+}
