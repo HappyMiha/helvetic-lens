@@ -216,7 +216,7 @@ runtime proof. Full visual/human acceptance stays open.
 
 ### 1.27 saved document context and product naming
 
-IN PROGRESS: native comparison versions/report references and both clients'
+DONE within verified 1.27 scope: native comparison versions/report references and both clients'
 saved-document history/reader follow the Brandbook's readable typography,
 progressive metadata and mobile reading treatment. Exact identity, source origin,
 dates and capture fingerprints remain available; unknown values are explicit.
@@ -224,3 +224,7 @@ The owner confirmed the legal product name **Helvetic Lens Legal**. Current
 product navigation and search use its canonical origin while preserving prior
 links and all existing dossier access. See PRODUCT_VERSION_CONTEXT.md and
 PRODUCT_LEGAL_RENAME.md for scoped acceptance, not whole-specification completion.
+
+Release 1.27 production acceptance: both clients published as Sites version 30;
+47 exact assets each, plus the old Legal hostname; native 48 assets/57 HTTP checks
+and 62 backend modules. See [receipt](product-releases/2026-09-28-1.27.0.json).

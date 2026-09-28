@@ -197,4 +197,5 @@ repository `HappyMiha/helveticlens-legal`. Legacy Loyer URLs and the internal
 [Legal rename](docs/PRODUCT_LEGAL_RENAME.md) and
 [saved document context](docs/PRODUCT_VERSION_CONTEXT.md). Supplied specifications
 and historical release receipts retain their original spelling. Both slices
-remain IN PROGRESS until exact production verification.
+are DONE within scope with exact production evidence in release 1.27; full
+investigation/visual specifications remain IN PROGRESS.

@@ -1,6 +1,6 @@
 # Saved document context and exact source links — release 1.27
 
-Status: IN PROGRESS. Scope MV2-002/020/024 was recorded before implementation.
+Status: DONE within the verified 1.27 scope. Scope MV2-002/020/024 was recorded before implementation.
 
 The native comparison workspace now displays the full saved version identity,
 file metadata, capture fingerprint, retained text counts and distinct capture
@@ -25,8 +25,8 @@ The legacy comparison resource/job-cache refactor is outside this slice.
 
 Implementation includes pure helper and actual server-rendered component tests
 for five native locales, exact links, malformed metadata, original text escaping,
-selection limits and unsafe URL rejection. Full gates, native API regression,
-builds, exact production assets and release acceptance remain pending.
+selection limits and unsafe URL rejection. Full gates, native API regression, builds, exact production assets and release
+acceptance passed as recorded below.
 No browser QA, private production records or paid provider probes are used.
 The complete investigation and visual specifications remain IN PROGRESS.
 
@@ -49,5 +49,33 @@ The complete investigation and visual specifications remain IN PROGRESS.
   rename. The Legal custom domain has active DNS/TLS on the existing Sites project.
   The old hostname remains active.
 
-Source pushes and exact production activation remain to be recorded; this local
-validation is not browser, human visual or professional acceptance.
+Exact source pushes and production activation are recorded below. Local validation
+is not browser, human visual or professional acceptance.
+
+## Verified production acceptance — 28 September 2026
+
+DONE within release 1.27 scope. Native implementation
+`50a18c2895b17ae442a047cc4826ea25733cd6ba` activated normally at 09:34:54 UTC.
+Both existing Sites projects published exact source as version 30; Pharma
+`8b77ce1e4181943e5cb1691975df7bed2ffc489a` and Legal
+`675136ca28ddf953299febac2c1cdf06e46ebeb1` passed their exact GitHub CI runs.
+All 136 packaged members per product matched the validated output.
+
+Pharma passed 28 public route/auth/guide checks and 47 exact asset comparisons.
+Legal passed 55 checks and 47 exact assets; every legal asset also matched on the
+old hostname. Both API spellings preserve anonymous public reading and private
+denial. The guide on both legal origins declares the new canonical URL.
+The same GitHub repository identity, public visibility and Apache-2.0 licence
+remain; the old GitHub URL resolves to the renamed repository. DNS/TLS is active
+for both legal hostnames on the same Sites worker. The existing hourly automation
+was updated in place and remains ACTIVE.
+
+Native proof covers 48 exact web assets, 57 HTTP checks, five interface languages,
+all nine navigation directions, 62 exact API modules, four healthy native runtimes,
+five scheduler modules, unchanged migration `06d495bef125`, local Laya health and
+the pinned local retrieval runtime using synthetic input. No private production
+records or paid provider requests were used.
+
+[Immutable release receipt](product-releases/2026-09-28-1.27.0.json) contains
+source, deployment, artifact, CI and access evidence. The full investigation and
+visual specifications and human/professional gates remain IN PROGRESS.
