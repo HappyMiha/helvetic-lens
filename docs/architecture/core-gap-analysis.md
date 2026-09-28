@@ -16,7 +16,8 @@ Implementation update, 28 September 2026: [domain-aware setup 1.29](../PRODUCT_D
 [structured subject context 1.31](../PRODUCT_STRUCTURED_CONTEXT.md) and
 [versioned templates 1.32](../PRODUCT_DOSSIER_TEMPLATES.md) and
 [readable coverage 1.33](../PRODUCT_DOSSIER_COVERAGE.md) and
-[reviewed entity mentions 1.39](../PRODUCT_ENTITY_IDENTITY.md) extend the
+[reviewed entity mentions 1.39](../PRODUCT_ENTITY_IDENTITY.md) and
+[source-pinned human claim review 1.40](../PRODUCT_CLAIM_REVIEW.md) extend the
 Phase 0 baseline. Rows below identify those bounded additions; the frozen audit
 receipt remains historical. Full target and human acceptance remain open.
 
@@ -35,10 +36,10 @@ The linked [current-state map](current-state.md) locates the corresponding code.
 | C06 | Evidence graph (§7) | PARTIAL | ClaimEvidence, DossierEntity/Relationship and ClaimChange use relational containment. 1.39 adds contained cross-run pair reviews without merging originals; no unified Finding/Review/Note graph projection |
 | C07 | Versioned evidence and originals (§8,9,60) | PARTIAL | Version/regulatory versions/artifacts and InvestigationSource snapshots exist; no one typed evidence/source/version reference across every representation |
 | C08 | Retained native versions and comparisons (§9,20) | EXISTS | `models.Version`, `RegulatoryDocumentVersion`, `NativeDocumentComparison`, `product_document_history.py`, `law_history.py` |
-| C09 | Durable structured claims (§10) | PARTIAL | DossierClaim/ClaimEvidence persist assertion and evidence links. Typed subject/predicate/object, validity and separate acceptance axis are absent |
+| C09 | Durable structured claims (§10) | PARTIAL | DossierClaim/ClaimEvidence persist assertion and evidence links. 1.40 adds a separate source-pinned human acceptance axis on the same claim via ClaimReview; typed subject/predicate/object and validity remain open |
 | C10 | Domain claim types / fact versus interpretation (§11,39) | TODO | Current claim schema has statement/evidence status, not Legal/Pharma claim-type registries |
-| C11 | Finding lifecycle (§12) | PARTIAL | Research answer findings and ClaimChange are useful precursors; no durable general Finding with target review/materiality lifecycle |
-| C12 | Human Review service (§13,50) | PARTIAL | Answer, source, relationship and native match reviews exist. 1.39 records append-only editor decisions for exact cited entity pairs with evidence fingerprints and reviewer erasure; common Finding acceptance and source/skill/model review contracts remain open |
+| C11 | Finding lifecycle (§12) | PARTIAL | 1.40 treats existing extracted DossierClaim proposals as findings with explicit pending/accepted/dismissed/needs-more-evidence review. General materiality, domain types and source-change lifecycle remain open |
+| C12 | Human Review service (§13,50) | PARTIAL | Answer, source, relationship and native match reviews exist. 1.39 records append-only editor decisions for exact cited entity pairs with evidence fingerprints and reviewer erasure; 1.40 adds explicit acceptance/dismissal/more-evidence decisions on retained claims with source/comparison fingerprints, append-only history, public consent and erasure-aware reviewers. Known extraction routes are pinned; historical missing versions stay unknown. General/domain review policies remain open |
 | C13 | Accepted finding creates/updates claim (§13,71.4) | TODO | Existing relationship dismissal is not a transaction that accepts a finding and produces a reviewed claim |
 | C14 | Source Registry / adapter interface (§14) | PARTIAL | SourceCapability, SourcePackDefinition, connectors and subscriptions exist. Unify discovery/document/version/health capabilities and domain membership |
 | C15 | Skill Registry (§15,37,48) | PARTIAL | Explicit deterministic functions and reviewed AI capability profiles exist; no general versioned domain task registry with input/output contracts |
@@ -53,7 +54,7 @@ The linked [current-state map](current-state.md) locates the corresponding code.
 | C24 | Source Health (§22) | PARTIAL | 1.33 exposes last attempt/success separately and retains missing/inactive selected packs and unsupported stream IDs. Page, feed and search states remain separate. Full normalized rate-limit/auth/source-version states remain open |
 | C25 | Audit / Provenance (§23) | PARTIAL | DossierEntry audits, immutable publication revisions, InvestigationEvent and review histories; unify target-reference/version semantics |
 | C26 | Universal dossier Ask / Search (§24,59) | PARTIAL | Shared product Ask, saved local retrieval and external search exist. Accepted-claim priority and cross-source coverage integration are incomplete |
-| C27 | Structured dossier memory (§25) | PARTIAL | Claims/entities/evidence/history/preferences persist outside chat; durable cross-run aliases, accepted claims and generic dismissed Findings need work |
+| C27 | Structured dossier memory (§25) | PARTIAL | Claims/entities/evidence/history/preferences persist outside chat; 1.40 persists accepted/rejected/unresolved human claim projections and review history. Durable cross-run aliases and generic/domain Findings remain open |
 | C28 | Collaboration (§26) | EXISTS | Shared comments/contributions/files, source suggestions, assignments, questions and dossier roles. New Finding review requests can extend this |
 | C29 | Shared frontend source (§27,54) | PARTIAL | 152/153 common tracked component/lib TypeScript files identical; still copied across repositories, not one versioned package |
 | C30 | Visual direction (§28) | PARTIAL | Brandbook tokens, themes, Lens state and global Ask delivered in scoped releases; all-page and human visual acceptance remain open |
@@ -64,7 +65,7 @@ The linked [current-state map](current-state.md) locates the corresponding code.
 | C35 | Legal source packs (§36) | PARTIAL | Fedlex, parliamentary/court/official and Basel-Stadt connector modules; each stream has bounded readiness. Requested countries/municipalities are not implied coverage |
 | C36 | Registered Legal skills (§37) | PARTIAL | Retrieval, version comparison, citation/impact analysis functions exist; explicit skill versions and applicability/holding interpretation contracts are missing |
 | C37 | Legal authority classification (§38,39) | PARTIAL | Authority/document kind/official source metadata exist; target binding/guidance/argument/AI taxonomy is not consistently attached to claims or trust UI |
-| C38 | Legal change-to-reviewed-claim journey (§40,73,76) | PARTIAL | Native monitoring and product investigation operate; typed applicability plus Finding acceptance are needed |
+| C38 | Legal change-to-reviewed-claim journey (§40,73,76) | PARTIAL | Native monitoring and product investigation operate; 1.40 proves controlled extraction→comparison→human review on both product aliases; typed applicability and the complete live Legal journey remain open |
 | C39 | Pharma uses existing Core (§44) | EXISTS | Existing Pharma client uses ProductDossier and shared investigation/search/monitoring engine |
 | C40 | Pharma product/substance/indication identity (§45,48) | PARTIAL | 1.31 separates user-provided product/substance/indication/country names and regulatory/market-access/trial identifiers. 1.39 permits source-cited exact-namespace pair suggestions and explicit same/different/unresolved editor review within one dossier/audience; a canonical identity registry and general alias resolution remain open |
 | C41 | Pharma monitoring-first workflow (§46) | PARTIAL | Saved page, topic and recurring-web research exist; template-driven domain findings/review are incomplete |
@@ -77,11 +78,11 @@ The linked [current-state map](current-state.md) locates the corresponding code.
 | C48 | Configurable templates/composable capabilities (§55,56) | PARTIAL | 1.32 provides six registered Legal/Pharma templates, versioned retained guidance, explicit choice/change/clear and history. Source/skill/monitoring/review-policy capability composition remains open |
 | C49 | Explainable relevance (§57) | PARTIAL | Matching rationale, citations, BM25/fusion and decision measurements exist. Legal applicability and exact Pharma identity/materiality factors need typed evidence |
 | C50 | Meaningful notifications (§58) | PARTIAL | In-app Following updates and separate native daily/weekly digest consent exist; not all target immediate/digest modes for reviewed Findings and coverage warnings |
-| C51 | API targets (§62) | PARTIAL | Existing product dossier/research/evidence/team/publication APIs and the 1.33 shared saved-coverage reader cover much of the intent. Generic pack discovery, complete per-scan manifests and Finding Review remain open |
+| C51 | API targets (§62) | PARTIAL | Existing product dossier/research/evidence/team/publication APIs and the 1.33 shared saved-coverage reader cover much of the intent. 1.40 adds audience-fenced claim review pages/writes on existing product routes. Generic pack discovery and complete per-scan manifests remain open |
 | C52 | Full historical dossier reconstruction (§65) | PARTIAL | Retained versions, snapshots, plan/claim/publication histories exist; not one tested “everything known at date X” query across all object types |
 | C53 | Observability (§67) | PARTIAL | Jobs, scan health, inference measurements and history exist; consistent scan→finding→review→claim aggregate metrics are missing |
 | C54 | Incremental performance (§68) | PARTIAL | Hash/dedup, bounded jobs, source cache and E5 cache exist; proposed unified flows need no-op/duplicate/cost regression tests |
-| C55 | Safe incremental migration (§69) | PARTIAL | 1.31/1.32 add context/template columns in migrations 07d495bef125 and 08d495bef125 with empty defaults, preserved legacy content, revision fences and refusal of destructive downgrade after saved data exists. 1.39 adds the contained entity review table in 0ad495bef125, preserving originals and refusing destructive downgrade of retained reviews. Broader target migrations/flags/rollback coverage remain open |
+| C55 | Safe incremental migration (§69) | PARTIAL | 1.31/1.32 add context/template columns in migrations 07d495bef125 and 08d495bef125 with empty defaults, preserved legacy content, revision fences and refusal of destructive downgrade after saved data exists. 1.39 adds the contained entity review table in 0ad495bef125, preserving originals and refusing destructive downgrade of retained reviews. 1.40 adds ClaimReview in 0bd495bef125 without rewriting machine statuses, with guarded downgrade. Broader target migrations/flags/rollback coverage remain open |
 | C56 | Guaranteed professional correctness/certification (§66) | NOT_NEEDED | Explicitly outside the target promise. Implement human review (C12/C45); neither fixtures nor HTTP success confer professional certification |
 | C57 | New graph DB, copied engines, fixed lens services (§7,56,78) | NOT_NEEDED | Relational contained models and common engine already provide the foundation |
 
@@ -113,7 +114,7 @@ These are inspected regression entry points, not tests newly executed in Phase 0
 | `test_product_dossiers.py`, `test_product_identity.py`, `test_legal_profiles.py` | Existing creation/profile and alias contracts | Pack/template selection and typed context preserve old clients |
 | `test_product_investigations.py` | Restart, quote validation, contradictions, tenant scope and bounded paid retry | Versioned skills and normalized durable Finding |
 | `test_product_document_history.py`, `test_law_history_metadata.py` | Retained source versions and metadata | Uniform cross-source evidence reference |
-| `test_product_claim_evolution.py` | Independent comparisons, current audience and editor review | Human acceptance creates claim and preserves semantic supersession |
+| `test_product_claim_evolution.py`, `test_product_claim_review.py` | Independent comparisons and source-pinned human decisions on the same durable claim; source/publication/guest boundaries, stale evidence and reviewer erasure | Domain typing, reviewed semantic supersession and end-to-end live acceptance |
 | `test_product_source_health.py`, `test_topic_coverage.py` | Last success survives failure; explicit saved source state | All configured sources in one durable scan manifest |
 | `test_product_monitoring_research.py`, `test_product_page_research.py`, `test_product_web_research.py` | Scoped repeat monitoring and source-change research | Domain materiality and reviewed-Finding notifications |
 | `test_product_publications.py`, `test_product_public_research.py`, `test_product_guests.py` | Public projection and current source/member boundaries | Mixed-source derived Claim cannot become public implicitly |

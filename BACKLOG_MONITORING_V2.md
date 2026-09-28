@@ -19,6 +19,14 @@ See `docs/PRODUCT_LEGAL_RENAME.md`. Verified evidence includes alias idempotency
 private/public/guest/CSRF boundaries, exact production assets and renamed remote
 identity. This addition does not complete the full investigation/visual specs.
 
+## Research continuation — 1.40 human claim review
+
+IMPLEMENTED / VERIFYING publication; 52 affected Core checks and 209 tests/lint/types/build per client passed; recorded before code. MV2-002/020/024: explicit source-pinned
+accept/dismiss/needs-more-evidence on the existing DossierClaim, separate from
+machine support. Reuse native evidence, roles, visibility and publication consent;
+no new source access or inference. See [scope, dependencies, source readiness and
+acceptance](docs/PRODUCT_CLAIM_REVIEW.md). Full architecture/human acceptance OPEN.
+
 ## Product decision — 1.28 evidence read recovery
 
 DONE within verified 1.28 scope; recorded before implementation on 28 September. Scope and acceptance
@@ -29,57 +37,27 @@ current source rights, nine directions and full-specification open gates.
 
 ## Product decision — 1.29 domain-aware dossier setup
 
-DONE within verified 1.29 scope; recorded before implementation on 28 September. Scope, dependencies,
-source readiness and acceptance are in [PRODUCT_DOMAIN_SETUP.md](docs/PRODUCT_DOMAIN_SETUP.md).
-MV2-002/020/023: server-selected LegalPack/PharmaPack for common profile suggestions,
-refinement, source advice and honest discovery capabilities; visible saved direction
-in both clients. Full target architecture and broader parent gates remain open.
+DONE within bounded verified scope; [complete release commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 
 ## Owner priority — 1.30 readable dossier
 
-DONE within verified 1.30 implementation/release scope; recorded before code
-on 28 September. The owner requested a document-like dossier before further
-architecture work. Human usability and broader parent gates remain open. See
-[PRODUCT_DOSSIER_CLARITY.md](docs/PRODUCT_DOSSIER_CLARITY.md) for MV2-002/020/024
-scope, dependencies, unchanged source readiness and acceptance. Separate reading,
-human discussion, AI research and original sources while preserving every workflow.
+DONE within bounded verified scope; [complete release commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 
 ## Architecture continuation — 1.31 structured dossier context
 
-DONE within the bounded 1.31 scope; recorded before code on 28 September.
-C03/C33 and MV2-002/020/023 now include optional, versioned Legal/Pharma subject
-fields on the common dossier with existing roles and audit. Both clients and the
-shared Core are published and verified; 105 API checks and 173 tests per client passed. See [scope and acceptance](docs/PRODUCT_STRUCTURED_CONTEXT.md).
-This does not establish entity resolution, applicability or source coverage.
+DONE within bounded verified scope; [complete release commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 
 ## Architecture continuation — 1.32 versioned dossier templates
 
-DONE within the bounded 1.32 scope; recorded before code. C33/C44/C48 and
-MV2-002/020/023 now include optional versioned template selection and retained
-guidance on the existing shared dossier. Core and both products are published
-and verified; 116 API checks and 179 client tests each passed. See [scope and acceptance](docs/PRODUCT_DOSSIER_TEMPLATES.md).
-This does not complete source readiness or the Market Access proving journey.
+DONE within bounded verified scope; [complete release commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 
 ## Research continuation — 1.39 reviewed entity identity
 
-DONE within verified pair-review/publication scope; recorded before code.
-61 affected Core checks and 203 tests/lint/types/build per client passed. Core
-git-5b03c488e5bf and both existing Sites 39 are live; 38 HTTP/access checks and
-47 exact assets per client plus native runtime/schema verified. MV2-002/020/024: exact cited cross-run entity
-suggestions and explicit reversible editor decisions in the same dossier/audience.
-Reuse original mentions, sources and native review/visibility contracts. Existing
-captured identifiers only; no source acquisition or model call. See
-[scope, dependencies and acceptance](docs/PRODUCT_ENTITY_IDENTITY.md).
-Full canonical registry, professional quality and broader parent acceptance OPEN.
+DONE within bounded verified scope; [complete release commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 
 ## Research continuation — 1.38 captured-source relationships
 
-DONE within the verified source-provenance scope; recorded before code. MV2-002/020: explain matching captured content,
-same-address versions and unknown source independence beside exact paired quotes
-in Changes over time. Capture time is distinct from publication/effective time.
-Reuse existing comparisons, source snapshots, visibility, review and client basis
-rendering. No provider call, schema change or automatic claim merge. See
-[scope, source readiness and acceptance](docs/PRODUCT_SOURCE_RELATIONSHIPS.md).
+DONE within bounded verified scope; [complete release commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 
 ## Research continuation — 1.37 conservative local rejection
 
@@ -2065,7 +2043,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | ID | Task | Phase | Priority | Size | Status | Dependencies |
 |---|---|---|---|---|---|---|
 | [MV2-001](#mv2-001) | Establish extension contracts and MVP compatibility | F0 | P0 | M | DONE | None |
-| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS — entity identity 1.39 DONE — source relationships 1.38 DONE — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier coverage 1.33 DONE; dossier templates 1.32 DONE; structured context 1.31 DONE; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped read recovery/version context/Legal rename/saved comparison/source reading DONE | None |
+| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS — human claim review 1.40 VERIFYING — entity identity 1.39 DONE — source relationships 1.38 DONE — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier coverage 1.33 DONE; dossier templates 1.32 DONE; structured context 1.31 DONE; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped read recovery/version context/Legal rename/saved comparison/source reading DONE | None |
 | [MV2-003](#mv2-003) | Verify source rights, coverage and contracts for the nine active scenarios | F0 | P0 | L | PLANNED | [MV2-001](#mv2-001) |
 | [MV2-004](#mv2-004) | Personal workspace and team monitoring permissions | F1 | P0 | M | IN PROGRESS | [MV2-001](#mv2-001) |
 | [MV2-005](#mv2-005) | MonitoringSubject and versioned Monitoring Templates | F1 | P0 | L | PLANNED | [MV2-001](#mv2-001), [MV2-004](#mv2-004) |
@@ -2083,11 +2061,11 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-017](#mv2-017) | Create Monitor: nine understandable templates | F2 | P1 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-005](#mv2-005), [MV2-010](#mv2-010), [MV2-015](#mv2-015) |
 | [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS — nine-category settings implemented | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
-| [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | IN PROGRESS — entity identity 1.39 DONE — source relationships 1.38 DONE — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier coverage 1.33 DONE; dossier templates 1.32 DONE; structured context 1.31 DONE; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped version context/Legal rename/saved comparison/source reading DONE | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
+| [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | IN PROGRESS — human claim review 1.40 VERIFYING — entity identity 1.39 DONE — source relationships 1.38 DONE — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier coverage 1.33 DONE; dossier templates 1.32 DONE; structured context 1.31 DONE; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped version context/Legal rename/saved comparison/source reading DONE | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
 | [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — scoped stages 4c/4d/4e/4f DONE | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented; dossier research updates DONE within scope | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
 | [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier templates 1.32 DONE; structured context 1.31 DONE; domain setup 1.29 DONE; scoped global Ask and retrieval 4f DONE | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
-| [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS — entity identity 1.39 DONE — research reader 1.36 DONE — dossier coverage 1.33 DONE; dossier clarity 1.30 DONE; scoped version context/Legal rename/saved comparison/source reading DONE | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
+| [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS — human claim review 1.40 VERIFYING — entity identity 1.39 DONE — research reader 1.36 DONE — dossier coverage 1.33 DONE; dossier clarity 1.30 DONE; scoped version context/Legal rename/saved comparison/source reading DONE | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
 | [MV2-025](#mv2-025) | Admin: accurate source capabilities and access management | F2 | P0 | M | IN PROGRESS — encrypted connector settings implemented | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-018](#mv2-018) |
 | [MV2-026](#mv2-026) | Possible future implementation: C4 official customs-rate connector | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011) |
 | [MV2-027](#mv2-027) | Possible future implementation: C4 currency, thresholds, history and digest | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-008](#mv2-008), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-022](#mv2-022), [MV2-026](#mv2-026) |
@@ -2235,6 +2213,13 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 <a id="mv2-002"></a>
 
 ### MV2-002 — Validate first-value journeys and shared navigation
+
+**Scoped continuation 1.40 — VERIFYING publication, recorded before code:**
+Source-pinned human decisions on existing claims; preserve machine evidence states,
+contradictions, explicit consent, current editor/source fences and erasure-aware
+history. Existing retained citations only; no new providers or inference.
+See [dependencies, source readiness and acceptance](docs/PRODUCT_CLAIM_REVIEW.md).
+Broader parent and human acceptance remain OPEN.
 
 **Scoped continuation 1.39 — DONE within pair-review/release scope, recorded before code:**
 Exact identifier/issuer/jurisdiction/kind pairs across completed runs; current
@@ -3040,6 +3025,13 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-020 — Investigate: states, diffs, evidence and history
 
+**Scoped continuation 1.40 — VERIFYING publication, recorded before code:**
+Source-pinned human decisions on existing claims; preserve machine evidence states,
+contradictions, explicit consent, current editor/source fences and erasure-aware
+history. Existing retained citations only; no new providers or inference.
+See [dependencies, source readiness and acceptance](docs/PRODUCT_CLAIM_REVIEW.md).
+Broader parent and human acceptance remain OPEN.
+
 **Scoped continuation 1.39 — DONE within pair-review/release scope, recorded before code:**
 Exact identifier/issuer/jurisdiction/kind pairs across completed runs; current
 editor decisions retain both original citations, revisioned history and audience
@@ -3389,6 +3381,13 @@ contract. Broader draft/generative/human acceptance remains open.
 <a id="mv2-024"></a>
 
 ### MV2-024 — Clear guidance, accessibility and five languages
+
+**Scoped continuation 1.40 — VERIFYING publication, recorded before code:**
+Source-pinned human decisions on existing claims; preserve machine evidence states,
+contradictions, explicit consent, current editor/source fences and erasure-aware
+history. Existing retained citations only; no new providers or inference.
+See [dependencies, source readiness and acceptance](docs/PRODUCT_CLAIM_REVIEW.md).
+Broader parent and human acceptance remain OPEN.
 
 **Scoped continuation 1.39 — DONE within pair-review/release scope, recorded before code:**
 Exact identifier/issuer/jurisdiction/kind pairs across completed runs; current

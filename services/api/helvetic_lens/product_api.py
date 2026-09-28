@@ -495,6 +495,15 @@ def product_router(service):
             if len(identities) > 2000:
                 fail("This dossier exceeds the interactive entity-review export limit.")
             result["entity_identity_reviews"] = [identity_payload(session, value) for value in identities]
+            from .product_claim_review import claims as reviewed_claims
+            from .product_claim_review import payload as claim_review_payload
+            from .product_investigation_models import DossierClaim
+
+            ledger = list(session.scalars(reviewed_claims(row.id)
+                .order_by(DossierClaim.created_at, DossierClaim.id).limit(2001)))
+            if len(ledger) > 2000:
+                fail("This dossier exceeds the interactive claim-ledger export limit.")
+            result["claim_ledger"] = [claim_review_payload(session, value) for value in ledger]
             from .product_investigation_models import MonitoringResearchPolicy, MonitoringResearchTrigger
             from .product_monitoring_research import payload as monitoring_payload
             from .product_monitoring_research import trigger_payload
@@ -588,6 +597,9 @@ def product_router(service):
     from .product_entity_identity_api import routes as entity_identity_routes
 
     entity_identity_routes(router, service, actor)
+    from .product_claim_review_api import routes as claim_review_routes
+
+    claim_review_routes(router, service, actor)
     from .product_following import following_routes
     from .product_reuse import reuse_routes
 

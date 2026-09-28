@@ -22,7 +22,8 @@ domain acceptance remain open. The first bounded implementation is
 [research reader recovery](docs/PRODUCT_RESEARCH_REPAIR.md) and
 [honest uncertainty and local gate evaluation](docs/PRODUCT_RESEARCH_GATE_POLICY.md) and
 [captured-source relationships](docs/PRODUCT_SOURCE_RELATIONSHIPS.md) and
-[reviewed entity mentions](docs/PRODUCT_ENTITY_IDENTITY.md). Existing product client repositories and working
+[reviewed entity mentions](docs/PRODUCT_ENTITY_IDENTITY.md) and
+[source-pinned human finding review](docs/PRODUCT_CLAIM_REVIEW.md). Existing product client repositories and working
 native workflows are preserved during incremental migration.
 
 The owner authorized separate Pharma and Legal product clients; Legal is the confirmed name from 28 September 2026.

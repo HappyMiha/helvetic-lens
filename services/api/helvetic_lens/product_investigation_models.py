@@ -227,6 +227,28 @@ class EntityIdentityReview(ResearchRecord, Base):
     request_fingerprint: Mapped[str] = mapped_column(String(64))
 
 
+class ClaimReview(ResearchRecord, Base):
+    """Explicit human decisions; the original claim's evidence status is unchanged."""
+    __tablename__ = "product_claim_reviews"
+    __table_args__ = (research_scope(),
+        ForeignKeyConstraint(["claim_id", "investigation_id", "dossier_id", "organization_id"],
+            ["product_dossier_claims.id", "product_dossier_claims.investigation_id",
+             "product_dossier_claims.dossier_id", "product_dossier_claims.organization_id"], ondelete="CASCADE"),
+        UniqueConstraint("claim_id", "revision", name="uq_claim_review_revision"),
+        UniqueConstraint("dossier_id", "request_key", name="uq_claim_review_request"),
+        CheckConstraint("decision IN ('accepted','dismissed','needs_more_evidence')", name="ck_claim_review_decision"),
+        CheckConstraint("revision BETWEEN 1 AND 100", name="ck_claim_review_revision"))
+    claim_id: Mapped[str] = mapped_column(String(36), index=True)
+    decision: Mapped[str] = mapped_column(String(24))
+    reason: Mapped[str] = mapped_column(String(500))
+    revision: Mapped[int] = mapped_column(Integer)
+    evidence_fingerprint: Mapped[str] = mapped_column(String(64))
+    basis: Mapped[dict] = mapped_column(JSON)
+    reviewed_by_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    request_key: Mapped[str] = mapped_column(String(36))
+    request_fingerprint: Mapped[str] = mapped_column(String(64))
+
+
 class InvestigationEvent(ResearchRecord, Base):
     __tablename__ = "product_investigation_events"
     __table_args__ = (research_scope(), UniqueConstraint("investigation_id", "sequence"))

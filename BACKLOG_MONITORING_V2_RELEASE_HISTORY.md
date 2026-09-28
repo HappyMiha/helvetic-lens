@@ -37,3 +37,69 @@ Core git-09ab8bcfff5f is verified live; both clients retain verified 1.36 assets
 Native health, 25 module hashes, five containers, nine routes and schema passed.
 See [scope](docs/PRODUCT_RESEARCH_GATE_POLICY.md). Parents and professional quality OPEN.
 
+
+
+## Product decision — 1.29 domain-aware dossier setup
+
+DONE within verified 1.29 scope; recorded before implementation on 28 September. Scope, dependencies,
+source readiness and acceptance are in [PRODUCT_DOMAIN_SETUP.md](docs/PRODUCT_DOMAIN_SETUP.md).
+MV2-002/020/023: server-selected LegalPack/PharmaPack for common profile suggestions,
+refinement, source advice and honest discovery capabilities; visible saved direction
+in both clients. Full target architecture and broader parent gates remain open.
+
+
+
+## Owner priority — 1.30 readable dossier
+
+DONE within verified 1.30 implementation/release scope; recorded before code
+on 28 September. The owner requested a document-like dossier before further
+architecture work. Human usability and broader parent gates remain open. See
+[PRODUCT_DOSSIER_CLARITY.md](docs/PRODUCT_DOSSIER_CLARITY.md) for MV2-002/020/024
+scope, dependencies, unchanged source readiness and acceptance. Separate reading,
+human discussion, AI research and original sources while preserving every workflow.
+
+
+
+## Architecture continuation — 1.31 structured dossier context
+
+DONE within the bounded 1.31 scope; recorded before code on 28 September.
+C03/C33 and MV2-002/020/023 now include optional, versioned Legal/Pharma subject
+fields on the common dossier with existing roles and audit. Both clients and the
+shared Core are published and verified; 105 API checks and 173 tests per client passed. See [scope and acceptance](docs/PRODUCT_STRUCTURED_CONTEXT.md).
+This does not establish entity resolution, applicability or source coverage.
+
+
+
+## Architecture continuation — 1.32 versioned dossier templates
+
+DONE within the bounded 1.32 scope; recorded before code. C33/C44/C48 and
+MV2-002/020/023 now include optional versioned template selection and retained
+guidance on the existing shared dossier. Core and both products are published
+and verified; 116 API checks and 179 client tests each passed. See [scope and acceptance](docs/PRODUCT_DOSSIER_TEMPLATES.md).
+This does not complete source readiness or the Market Access proving journey.
+
+
+
+## Research continuation — 1.38 captured-source relationships
+
+DONE within the verified source-provenance scope; recorded before code. MV2-002/020: explain matching captured content,
+same-address versions and unknown source independence beside exact paired quotes
+in Changes over time. Capture time is distinct from publication/effective time.
+Reuse existing comparisons, source snapshots, visibility, review and client basis
+rendering. No provider call, schema change or automatic claim merge. See
+[scope, source readiness and acceptance](docs/PRODUCT_SOURCE_RELATIONSHIPS.md).
+
+
+
+## Research continuation — 1.39 reviewed entity identity
+
+DONE within verified pair-review/publication scope; recorded before code.
+61 affected Core checks and 203 tests/lint/types/build per client passed. Core
+git-5b03c488e5bf and both existing Sites 39 are live; 38 HTTP/access checks and
+47 exact assets per client plus native runtime/schema verified. MV2-002/020/024: exact cited cross-run entity
+suggestions and explicit reversible editor decisions in the same dossier/audience.
+Reuse original mentions, sources and native review/visibility contracts. Existing
+captured identifiers only; no source acquisition or model call. See
+[scope, dependencies and acceptance](docs/PRODUCT_ENTITY_IDENTITY.md).
+Full canonical registry, professional quality and broader parent acceptance OPEN.
+
