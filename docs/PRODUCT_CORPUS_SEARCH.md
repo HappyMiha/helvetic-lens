@@ -1,6 +1,7 @@
 # Whole-dossier saved-evidence retrieval
 
-Status: IN PROGRESS — stage 4f / proposed release 1.21. The pre-implementation
+Status: DONE — scoped stage 4f / release 1.21, with local and exact production
+acceptance. Broader product and professional-quality work remains IN PROGRESS. The pre-implementation
 scope, readiness, dependencies, method selection and acceptance gates are in
 BACKLOG_MONITORING_V2.md under MV2-021/023/051. MV2-063/pgvector remains DEFERRED.
 This scoped feature does not close the dynamic or visual specifications.
@@ -115,23 +116,52 @@ The new native integration/adapter/service and existing affected suites, both
 client test/lint/type/build gates, exact native schema/module/runtime, exact
 both-origin assets and GitHub CI must pass before scoped DONE. No browser or
 human visual QA, authenticated production user exercise or full-spec completion
-is claimed. Production activation remains pending at this checkpoint.
+is claimed. Exact scoped production acceptance is recorded below.
 
 
-Local acceptance:196 affected native integration cases passed, including the new
+Local acceptance: 196 affected native integration cases passed, including the new
 whole-ledger, guest, concurrent-preparation, cache-migration/cascade, source/page
 withdrawal and three-phase revocation cases, plus strict local adapter failures.
 The isolated service's two auth/limit/concurrency/cancellation contracts pass.
-Both clients have119 passing tests; final lint/types/build and production
-acceptance are recorded in the release receipt when complete.
+Both clients have 119 passing tests; final lint, type checks and portable builds
+pass. GitHub CI passed for each exact published client revision.
 
 The [actual local native probe](product-evaluations/2026-09-28-corpus-native-probe.json)
-uses a synthetic64-record dossier per product, real native HTTP/SQLite and both
-actual pinned local services. Checkpoints16/32/48/64 complete, the older exact
+uses a synthetic 64-record dossier per product, real native HTTP/SQLite and both
+actual pinned local services. Checkpoints 16/32/48/64 complete, the older exact
 quote ranks first for a German question and a later English question, and the
-warm request performs one query embedding plus12 Laya opinions. Pharma cold
-journey11.04s / warm5.94s; Loyer10.65s /5.93s. These are fixture measurements,
+warm request performs one query embedding plus 12 Laya opinions. Pharma cold
+journey 11.04s / warm 5.94s; Loyer 10.65s / 5.93s. These are fixture measurements,
 not professional relevance evidence or an authenticated production user workflow.
 The service is reachable only on the private Docker network; no host port is
 published. The fixture resolver mapped only the fixed local service alias to its
 observed bridge address. No production accounts/data were involved.
+
+## Exact production acceptance — 28 September 2026
+
+Native functional revision `52cb35ef028ff2b58aad74e96d2d639493390b4e` activated
+at 03:37:41 UTC. Both public Sites version 24 deployments succeeded from their
+exact validated source and archives: Pharma `8c91e617f9052f9c0a852e6f3f17edb29538a15c`,
+Loyer `4c903cb2444256bc1e8af52dc9af23f39dba5254`. Each custom origin passed
+120 HTTP/auth/gateway/guide checks and 47 exact served JS/CSS asset hashes.
+
+Read-only native verification matched 57 current source modules, migration
+`06d495bef125`, cache ownership/source/claim cascades, unique record keys and
+permission-filtered SQL on nonexistent scopes. Four native runtime containers,
+five scheduler modules, the minute schedule and retained research schema gates
+passed. The existing Laya service remains healthy. The isolated retrieval image,
+service/notice hashes and pinned weight SHA-256 match; it runs with a read-only
+root, two CPUs, 3 GiB and no published host port. A synthetic authenticated call
+through the actual native embedding adapter returns the pinned 384-dimensional
+model; the service rejects unauthenticated inference. No production user records
+were accessed or created.
+
+Public source and final client builds contain none of the three actual protected
+provider values. GitHub CI runs 36374171378 and 36374173757 passed. This evidence
+verifies deployment and bounded mechanics, not browser/human visual acceptance,
+a private production user journey or professional relevance. Full dynamic and
+visual specifications, remaining native visual migration and broader MV2 parent
+tasks stay IN PROGRESS. The existing hourly continuation remains active.
+
+[Sanitized release receipt](product-releases/2026-09-28-1.21.0.json) records exact
+source, archives, deployments, runtime, source checks and validation limits.

@@ -72,7 +72,7 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 ## Product decision
 
-**Whole-dossier retrieval — 28 September 2026: IN PROGRESS (scoped stage 4f).**
+**Whole-dossier retrieval — 28 September 2026: DONE (scoped stage 4f / release 1.21).**
 Scope: MV2-021/023/051, with existing private dossiers, native permission-filtered
 captured evidence, exact citations and the shared Jev/Laya decision boundary.
 An older relevant passage must be discoverable without manually reviewing every
@@ -135,7 +135,7 @@ labels are now exposed. Validate the corrected rule on a fresh deterministic
 Do not call the reused development rows or original test a new independent test.
 No model fitting, threshold or relevance-label changes are authorized by this fix.
 
-**Stage4f local acceptance, production pending:** the fresh disjoint72-query
+**Stage 4f local acceptance (before production):** the fresh disjoint72-query
 held-out slice passes the fixed aggregate gate: selected hybrid nDCG0.78913,
 Laya0.72839, BM250.60347; known-positive pooled recall@12 is0.96667 vs0.90444.
 No claim of full-corpus, professional or Italian/Ukrainian quality follows.
@@ -144,6 +144,21 @@ native/model probes recover the older record at rank1 in both synthetic64-record
 product dossiers, with reusable preparation and warm requests around5.9s.
 Both clients have119 passing tests; final publication gates remain required.
 [Architecture, evidence and remaining limits](docs/PRODUCT_CORPUS_SEARCH.md).
+
+**Stage 4f production acceptance:** native `git-52cb35ef028f` activated at
+03:37:41 UTC; both public Sites 24 deployments succeeded. Each custom origin
+passed 120 HTTP/auth/gateway/guide checks and 47 exact JS/CSS asset hashes.
+Runtime matches 57 native modules, migration `06d495bef125`, source-contained
+cache cascades and permission-filtered SQL, all retained research gates,
+five scheduler hashes, four native runtimes and the existing healthy Laya.
+The isolated embedding image/source/pinned weights match, with private-network
+access and a real synthetic adapter probe. Both exact client GitHub CI runs pass;
+119 client tests each, lint/types/build, 196 affected native cases, two isolated
+service contracts, exact API Ruff, backlog smoke and protected-value scans pass.
+[Scoped acceptance and limits](docs/PRODUCT_CORPUS_SEARCH.md),
+[release receipt](docs/product-releases/2026-09-28-1.21.0.json).
+Full dynamic/visual specifications, professional evaluation and parent
+MV2-021/023/051 remain IN PROGRESS; MV2-063/pgvector stays DEFERRED.
 
 **Personal research updates — 28 September 2026: DONE (scoped stage 4e / release 1.20).**
 MV2-021/022 scope, dependencies, source readiness and acceptance were recorded
@@ -1715,9 +1730,9 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS — nine-category settings implemented | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
 | [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
-| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — stage 4f corpus retrieval; stages 4c/4d/4e DONE | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
+| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — scoped stages 4c/4d/4e/4f DONE | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented; dossier research updates DONE within scope | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
-| [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — native evidence/configuration; whole-dossier retrieval 4f verifying | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
+| [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — native evidence/configuration; scoped whole-dossier retrieval 4f DONE | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
 | [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
 | [MV2-025](#mv2-025) | Admin: accurate source capabilities and access management | F2 | P0 | M | IN PROGRESS — encrypted connector settings implemented | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-018](#mv2-018) |
 | [MV2-026](#mv2-026) | Possible future implementation: C4 official customs-rate connector | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011) |
@@ -2582,8 +2597,9 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-021 — Workspace: Impact Inbox, decisions and Impact Matrix
 
-**Active product stage, 28 September:** whole-dossier retrieval (4f) is IN PROGRESS
-under the measured implementation decision, dependencies and acceptance above.
+**Completed product stage, 28 September:** whole-dossier retrieval (4f) is DONE
+within the measured decision and exact native/both-client release acceptance
+in [Whole-dossier retrieval](docs/PRODUCT_CORPUS_SEARCH.md).
 This does not complete MV2-021/023/051 or activate deferred MV2-063.
 
 **Completed product stage, 28 September:** personal research updates (4e) are
@@ -2742,7 +2758,7 @@ references, source-unit context, locale bindings and access/changed-evidence
 redaction. Scoped checks and publication evidence are recorded in the linked
 contract. Broader draft/generative/human acceptance remains open.
 
-**Status:** IN PROGRESS — native evidence/configuration; whole-dossier retrieval 4f verifying · **Priority:** P1 · **Owner:** AI + Frontend · **Size:** M
+**Status:** IN PROGRESS — native evidence/configuration; scoped whole-dossier retrieval 4f DONE · **Priority:** P1 · **Owner:** AI + Frontend · **Size:** M
 
 **Dependencies:** [MV2-010](#mv2-010), [MV2-020](#mv2-020). **Requirements:** §§21–22,26.3,31; legacy HL-083–087,089.
 
@@ -3771,7 +3787,7 @@ The broader task remains IN PROGRESS pending live source and human acceptance.
 
 ### MV2-051 — Independent matching and local AI evaluation
 
-**Product retrieval evidence,28 September:** stage4f uses the independent
+**Product retrieval evidence, 28 September:** scoped stage 4f uses the independent
 human-labeled NoMIRACL development/fresh held-out protocol above and the linked
 PRODUCT_CORPUS_SEARCH.md receipts. This is a bounded multilingual encyclopedia
 retrieval experiment, not professional B2/B7/B8 model approval or full MV2-051

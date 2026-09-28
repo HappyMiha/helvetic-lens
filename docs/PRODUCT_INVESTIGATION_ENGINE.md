@@ -248,7 +248,8 @@ history and personal read markers in both clients. See the pre-implementation
 [scope and acceptance contract](PRODUCT_RESEARCH_NOTIFICATIONS.md). This does not
 complete native email/noise controls, source review or either full specification.
 
-Stage4f whole-dossier retrieval is IN PROGRESS pending exact production acceptance.
+Stage 4f whole-dossier retrieval is DONE within scoped release 1.21, with
+local and exact native/both-client production acceptance.
 The [implementation and independent sample](PRODUCT_CORPUS_SEARCH.md) recover
 older evidence across the current private ledger, with source-contained local
 preparation, unchanged-input reuse and current-rights ranking. The full product,
