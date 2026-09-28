@@ -10,6 +10,7 @@ from time import perf_counter
 from urllib.parse import urlsplit, urlunsplit
 
 from . import decision_engines as decision
+from .domain_packs import for_product
 from .product_provenance import canonical
 
 MAX_RESULTS = 12
@@ -88,12 +89,13 @@ def reciprocal_fusion(rankings):
 async def federated_retrieve(settings, query, index, depth, product, alternatives=()):
     from .product_research import public_search
 
+    pack = for_product(product)
     started = perf_counter()
     limit = 8 if depth == "quick" else 20 if depth == "deep" else 12
     lanes = [("Google " + index, query, retrieve(settings, query, index, limit=limit))]
     if depth != "quick":
         lanes.append(("Bing web", query, retrieve(settings, query, "web", service="bing", limit=limit)))
-        if product == "pharma":
+        if pack.scientific_literature:
             lanes.append(("Europe PMC literature", query, public_search("europepmc", query)))
     for number, alternative in enumerate(alternatives, 1):
         lanes.append((f"Google alternative {number}", alternative, retrieve(settings, alternative, "web", limit=limit)))

@@ -6,7 +6,7 @@ from typing import Literal
 from pydantic import Field
 from sqlalchemy import select, update
 
-from . import jobs, legal_profiles
+from . import domain_packs, jobs, legal_profiles
 from .db import utcnow
 from .product_api import dossier, fail, iso
 from .product_investigation_models import (
@@ -131,9 +131,10 @@ def event(session, run, kind, **detail):
 
 def capabilities(settings, product):
     search = bool(settings.search1api_api_key.get_secret_value())
+    pack = domain_packs.for_product(product)
     return [
         {"id": "public_web", "available": search, "description": "Search1API Google/Bing discovery across the public web"},
-        {"id": "scientific_literature", "available": product == "pharma", "description": "Europe PMC literature discovery"},
+        {"id": "scientific_literature", "available": pack.scientific_literature, "description": "Europe PMC literature discovery"},
         {"id": "source_reader", "available": True, "description": "Permitted anonymous HTML, text and PDF excerpts; robots and size limits apply"},
         {"id": "saved_evidence", "available": True, "description": "Current dossier contributions and saved monitored extracts"},
         {"id": "evidence_analysis", "available": settings.model_configured, "description": "Configured workspace model; source-grounded proposals, availability checked during execution"},
