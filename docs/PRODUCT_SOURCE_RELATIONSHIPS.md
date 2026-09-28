@@ -1,6 +1,6 @@
 # Captured-source relationships across research runs — 1.38
 
-Status: implementation/tests complete; VERIFYING normal production publication.
+Status: DONE within the bounded source-provenance implementation and verified release.
 Scope recorded before implementation, 28 September 2026.
 Parents MV2-002/020 remain open. Investigation Engine sections 33–39 and Unified
 Target Architecture sections 8–9, 23, 29 and 65 guide this bounded outcome.
@@ -86,4 +86,17 @@ render `value.basis`, and both typed API contracts accept that existing string.
 Their source files are identical and remain at the verified 1.36/Sites 38 commits.
 No client tests/builds/publication were repeated. No browser, private production
 record, external source request or paid/local inference was used for verification.
-Normal Core activation and fresh anonymous product access remain the release gate.
+Core `54abe70f79686aa65c08472e7cd9ec9a3f04a601` was immediately pushed to main
+and activated normally as `git-54abe70f7968` at 2026-09-28T18:45:52Z. Read-only
+production verification confirmed 28 exact module hashes including the new source
+projection and both evolution modules, five running containers, nine navigation
+routes and unchanged schema 09d495bef125. Each canonical client passed home/guide,
+private comparison/research authentication and absent-public-comparison checks.
+The exact 1.36 client assets remain frozen by checksum; both source commits are
+unchanged. All three main checkouts were freshly fetched, clean and aligned.
+
+The [release receipt](product-releases/2026-09-28-1.38-source-relationships.json)
+freezes this observation. The parent checkpoint tracks later documentation-only
+activation separately. No private production record, browser or inference probe
+was used. The 1.37 validation set remains unopened. Full architecture, source
+independence/temporal verification and professional/human acceptance remain OPEN.
