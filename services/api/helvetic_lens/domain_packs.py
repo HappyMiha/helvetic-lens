@@ -22,25 +22,26 @@ class DomainPack:
     focus: str
     topic_instructions: str
     topic_task: str
+    context_schema_id: str
     scientific_literature: bool = False
 
     def descriptor(self):
         return {"id": self.id, "version": self.version, "domain": self.domain,
-                "label": self.label, "focus": self.focus}
+                "label": self.label, "focus": self.focus, "context_schema_id": self.context_schema_id}
 
 
 LEGAL = DomainPack(
-    id="LegalPack", version="1.0.0", domain="LEGAL", label="Legal monitoring",
+    id="LegalPack", version="1.1.0", domain="LEGAL", label="Legal monitoring",
     focus="Legal developments, proceedings and regulatory changes relevant to your question.",
     topic_instructions=(
         "Propose up to six distinct legal monitoring topics for the supplied context and feedback. "
         "These are editable search interests, not legal conclusions. "
         "Do not invent law citations, legal requirements, events or source coverage. "
     ),
-    topic_task="legal_profile_topics",
+    topic_task="legal_profile_topics", context_schema_id="legal-context/v1",
 )
 PHARMA = DomainPack(
-    id="PharmaPack", version="1.0.0", domain="PHARMA", label="Pharmaceutical monitoring",
+    id="PharmaPack", version="1.1.0", domain="PHARMA", label="Pharmaceutical monitoring",
     focus="Medicines, safety, clinical evidence, regulation and market access relevant to your question.",
     topic_instructions=(
         "Propose up to six distinct pharmaceutical monitoring topics for the supplied context and feedback. "
@@ -50,7 +51,7 @@ PHARMA = DomainPack(
         "Do not invent studies, efficacy or safety findings, approvals, reimbursement decisions, "
         "events or source coverage. Separate research signals from authoritative decisions. "
     ),
-    topic_task="pharma_profile_topics", scientific_literature=True,
+    topic_task="pharma_profile_topics", context_schema_id="pharma-context/v1", scientific_literature=True,
 )
 _PRODUCTS = MappingProxyType({"legal": LEGAL, "loyer": LEGAL, "pharma": PHARMA})
 

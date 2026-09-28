@@ -446,6 +446,7 @@ def product_router(service):
             response.headers["Content-Disposition"] = f'attachment; filename="{product}-dossier-{row.id}.json"'
             result["exported_at"] = iso(utcnow())
             result["schema"] = "helveticlens.product-dossier/v1"
+            result["domain_context"] = row.domain_context_json or {}
             result["entries"] = [entry_payload(session, x) for x in session.scalars(select(DossierEntry)
                 .where(DossierEntry.dossier_id == row.id).order_by(DossierEntry.created_at, DossierEntry.id).limit(10001))]
             if len(result["entries"]) > 10000:
@@ -503,6 +504,9 @@ def product_router(service):
     from .product_operations import operations
 
     operations(router, service, actor)
+    from .product_domain_context import routes as domain_context_routes
+
+    domain_context_routes(router, service, actor)
     from .product_guest_api import routes as guest_routes
     from .product_research import research_routes
     from .product_team_api import routes as team_routes

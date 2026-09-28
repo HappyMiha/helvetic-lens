@@ -67,6 +67,7 @@ class ProductDossier(Base):
     access_revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     context_json: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}")
+    domain_context_json: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}")
     priority: Mapped[str] = mapped_column(String(12), default="normal", server_default="normal")
     owner_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     next_review_on: Mapped[date | None] = mapped_column(Date)

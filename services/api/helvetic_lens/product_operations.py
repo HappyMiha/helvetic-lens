@@ -408,6 +408,11 @@ def operations(router, service, actor):
                       ("Lifecycle / practice area", context["context"]["category"]),
                       ("Owner", (context["owner"] or {}).get("name")), ("Priority", context["priority"]),
                       ("Last review", context["last_reviewed_at"]), ("Next review", context["next_review_on"])]
+            from .product_domain_context import brief_fields
+
+            domain_fields = brief_fields(row)
+            if domain_fields:
+                fields += [("Dossier subject", "User-provided context; not verified source facts.")] + domain_fields
             facts = ''.join(f'<dt>{esc(a)}</dt><dd>{esc(b)}</dd>' for a, b in fields)
             cards = []
             for action in actions:
