@@ -1,6 +1,6 @@
 # Bounded research evaluation — 1.35
 
-Status: implementation and measurements complete; VERIFYING normal publication.
+Status: DONE within the bounded evaluation tooling, measurement and publication scope. Professional/live end-to-end quality remains OPEN.
 Scope recorded before code, 28 September 2026.
 Parents MV2-002/020/023/051 remain IN PROGRESS. This stage evaluates the shared
 1.34 research contract; it does not publish a new client or change provider routing.
@@ -155,7 +155,7 @@ real cancellation deadlines, cumulative limits, concurrent invocation, restart
 without duplicated calls, model mismatch, fabricated citations, foreign IDs,
 duplicate evidence and retained contradiction/follow-up structure. Required API
 lint and the runner lint pass. The retained 1.34 runtime and clients are unchanged.
-Normal Core activation and final clean main/source checks remain the release gate.
+Normal Core activation and clean main/source checks passed as recorded below.
 
 Next quality work: review candidate-relevance versus answerability objectives,
 then develop and validate a policy that avoids discarding useful evidence while
@@ -163,3 +163,21 @@ bounding uncertain-candidate analysis. Use development data and a new untouched
 test slice. A paid hosted comparison is outside background-cycle authority.
 Continue independent Source/Version/identity/review work while that live gate
 remains open. Full MV2 parents and architecture/human acceptance remain OPEN.
+
+
+## Verified publication
+
+Core `ec0c39d39193e9dd5fdbe78a60c99ab2c5ddc32d` was immediately pushed to main and activated
+normally as `git-ec0c39d39193` at 2026-09-28T16:43:55+00:00.
+Twenty-four native module hashes, five containers, schema 09d495bef125 and nine
+Monitoring navigation routes matched the tested source. Both canonical product
+origins passed home/guide/auth boundary checks and retain their exact 1.34 main
+sources. The original 47-asset-per-client receipt was retained with its checksum;
+unchanged clients were not rebuilt or republished. All three main checkouts were
+freshly fetched, clean and aligned with origin. No model calls were repeated for
+release verification. See the [frozen release receipt](product-releases/2026-09-28-1.35-evaluation.json).
+
+Final documentation activation is observed separately. This closes evaluation
+implementation/publication only; the measured relevance disagreements, hosted
+comparison, professional source quality, human acceptance and full architecture
+remain open. The next run must not repeat this 120-call evaluation.

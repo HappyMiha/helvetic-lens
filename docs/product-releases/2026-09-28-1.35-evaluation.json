@@ -1,0 +1,278 @@
+{
+  "version": "1.35-evaluation",
+  "recorded_at": "2026-09-28T16:49:16.669122+00:00",
+  "implementation_sha": "ec0c39d39193e9dd5fdbe78a60c99ab2c5ddc32d",
+  "scope": "docs/PRODUCT_RESEARCH_EVALUATION.md",
+  "production": {
+    "verified_at": "2026-09-28T16:44:46.682746+00:00",
+    "current": {
+      "sha": "ec0c39d39193e9dd5fdbe78a60c99ab2c5ddc32d",
+      "release": "git-ec0c39d39193",
+      "summary": "Add bounded research quality evaluation and publish local gate measurements",
+      "deployed_at": "2026-09-28T16:43:55+00:00"
+    },
+    "native": {
+      "release": "git-ec0c39d39193",
+      "containers": [
+        {
+          "name": "api",
+          "image": "helvetic-lens-api:git-ec0c39d39193",
+          "running": true
+        },
+        {
+          "name": "worker-cpu",
+          "image": "helvetic-lens-api:git-ec0c39d39193",
+          "running": true
+        },
+        {
+          "name": "worker-ai",
+          "image": "helvetic-lens-api:git-ec0c39d39193",
+          "running": true
+        },
+        {
+          "name": "scheduler",
+          "image": "helvetic-lens-api:git-ec0c39d39193",
+          "running": true
+        },
+        {
+          "name": "web",
+          "image": "helvetic-lens-web:git-ec0c39d39193",
+          "running": true
+        }
+      ],
+      "runtime": {
+        "hashes": {
+          "domain_packs": "24e5a63868e6908f0739d5e52ae37a49ef86a34f7e706e0a33c929044e031704",
+          "legal_profiles": "177ea873ed2b47c4fd1a8c3cb7edf5790964093f84463bd2eba589487fa0bb31",
+          "product_api": "1b5f1e3c5d0dd5674c0ce00de555ba09cfafd7e3f9fb9dfa3ce200227fd1ac30",
+          "decision_search": "7a48bde4be19475d3ffeccd73fd825be4155cb37ebc916e88412310098b2c99a",
+          "product_investigations": "5293ac7de0766f272c38e7e8723b4f7adc951172e13b7b1b1c9cbb80abf6fc11",
+          "product_domain_context": "4e3f0824a066b6733063163e1ed7d3c622773113bcae054c32fe378295d34a25",
+          "product_models": "26478fa5f3b63daec451768b629ce2c38ef6a89599bc787e6341f00232aaa4f0",
+          "product_access": "3ea89c42f776a3f60eca7a4aa2909f6edc700671414147381b1da8b609c57f6c",
+          "product_operations": "a624f54df352c047f8f2b2c1ec266f516750d4d33a9097e332094fb7c3da1505",
+          "dossier_templates": "3907660133c9f8122b3aa2f96437703fc3579d10506c56c560039ee21a0b0959",
+          "product_templates": "188845b78716c18a80c850a500bcf9913b3e9b98f806ca6e2291b4f54a62bfe2",
+          "product_coverage": "ed81f4ffb515e5f8532f3694075c4f9ad8f4dbd0dc461347ac9eafc6f6ea85d1",
+          "topic_coverage": "7bab70d8959d19ebb4ea9cb3f7970c8510d45596c44eba09dc31a653f2cb8c55",
+          "product_sources": "27a4d991e0dcf68ff2ebab84a034f415d4b021cc451ba56f17a03636f284ec27",
+          "product_investigation_models": "f2951ecefbf101d7e0d3bc356d9aea1fce5ce8dd58ac456c25a74dcf14e6ec17",
+          "product_investigation_worker": "d5d430ca76aaea2b005c044466087b594e3c07dd3c02c49ee69b0ff096aaa6dd",
+          "product_investigation_api": "e94c4f3222adfcad2fcffedce41dd1baf0ab9e462274552c1689948e86277d58",
+          "product_iterative_research": "042259c9775cf7b70f5895d7921eccdf7dc1f7b0727ac5db75dad346c44e63b2",
+          "product_iterative_steps": "24bb00b1f7874d2f41df0e071e71c2c74310bbeedefba285d5c244b6e8cd66ee",
+          "product_research_gate": "43176ee2cf9243965d6a830acfb9c8226d319742f6a2babc05b4c251d5263231",
+          "decision_sources": "b584f466ecee6340ca694932158cc7c34b7289b2513b7295c831a50fdd628e1e",
+          "decision_engines": "7c357ba9ab9bf868f91b7d9bc9c6eda21db1fb9ced65612140061dc29ef6e35b",
+          "product_contributions": "26a4e3b9b71d04be249956208ed5ab98002e4ea241fef316ffd4f9b5cd479abc",
+          "research_evaluation": "6f4dac20a2ba713e253b7ec57f78fd64bfb859e0853b6f7ca9583da0b9304880"
+        },
+        "packs": {
+          "pharma": {
+            "id": "PharmaPack",
+            "version": "1.2.0",
+            "domain": "PHARMA",
+            "label": "Pharmaceutical monitoring",
+            "focus": "Medicines, safety, clinical evidence, regulation and market access relevant to your question.",
+            "context_schema_id": "pharma-context/v1",
+            "template_ids": [
+              "market-access",
+              "regulatory-monitor",
+              "safety"
+            ]
+          },
+          "legal": {
+            "id": "LegalPack",
+            "version": "1.2.0",
+            "domain": "LEGAL",
+            "label": "Legal monitoring",
+            "focus": "Legal developments, proceedings and regulatory changes relevant to your question.",
+            "context_schema_id": "legal-context/v1",
+            "template_ids": [
+              "legal-question",
+              "legislative-monitor",
+              "case-dispute"
+            ]
+          },
+          "loyer": {
+            "id": "LegalPack",
+            "version": "1.2.0",
+            "domain": "LEGAL",
+            "label": "Legal monitoring",
+            "focus": "Legal developments, proceedings and regulatory changes relevant to your question.",
+            "context_schema_id": "legal-context/v1",
+            "template_ids": [
+              "legal-question",
+              "legislative-monitor",
+              "case-dispute"
+            ]
+          }
+        }
+      },
+      "nine_navigation_routes": true,
+      "checks": [
+        {
+          "path": "/api/monitoring-profiles/00000000-0000-0000-0000-000000000000",
+          "status": 401
+        },
+        {
+          "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/coverage",
+          "status": 401
+        },
+        {
+          "path": "/api/products/legal/dossiers/00000000-0000-0000-0000-000000000000/coverage",
+          "status": 401
+        },
+        {
+          "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/coverage",
+          "status": 401
+        },
+        {
+          "path": "/api/products/pharma/dossiers",
+          "status": 401
+        },
+        {
+          "path": "/api/products/legal/dossiers",
+          "status": 401
+        },
+        {
+          "path": "/api/products/loyer/dossiers",
+          "status": 401
+        }
+      ],
+      "retired_legacy_host": {
+        "unavailable": true
+      },
+      "schema": {
+        "migration": "09d495bef125",
+        "research_state_column": true,
+        "context_column": true,
+        "template_column": true
+      }
+    },
+    "products": [
+      {
+        "product": "pharma",
+        "sha": "3005402fa0050ff9d6bcc49f037bdccb1010e628",
+        "url": "https://pharma.helveticlens.ch",
+        "republished": false,
+        "checks": [
+          {
+            "path": "/",
+            "status": 200
+          },
+          {
+            "path": "/guide",
+            "status": 200
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/investigations",
+            "status": 401
+          }
+        ],
+        "asset_evidence": "iterative-research-1.34.0-production-checks.json",
+        "asset_evidence_sha256": "3a799b948b516a4d7a3ddf99cb762207d60bb7c2aca902497226323912e9aeae"
+      },
+      {
+        "product": "legal",
+        "sha": "5644800999f4477746ec96a1c85b1003ef99b4c2",
+        "url": "https://legal.helveticlens.ch",
+        "republished": false,
+        "checks": [
+          {
+            "path": "/",
+            "status": 200
+          },
+          {
+            "path": "/guide",
+            "status": 200
+          },
+          {
+            "path": "/api/products/legal/dossiers/00000000-0000-0000-0000-000000000000/investigations",
+            "status": 401
+          }
+        ],
+        "asset_evidence": "iterative-research-1.34.0-production-checks.json",
+        "asset_evidence_sha256": "3a799b948b516a4d7a3ddf99cb762207d60bb7c2aca902497226323912e9aeae"
+      }
+    ],
+    "repositories": [
+      {
+        "repository": "helvetic-lens",
+        "sha": "ec0c39d39193e9dd5fdbe78a60c99ab2c5ddc32d",
+        "clean": true,
+        "ahead_behind": [
+          0,
+          0
+        ]
+      },
+      {
+        "repository": "helveticlens-pharma",
+        "sha": "3005402fa0050ff9d6bcc49f037bdccb1010e628",
+        "clean": true,
+        "ahead_behind": [
+          0,
+          0
+        ]
+      },
+      {
+        "repository": "helveticlens-legal",
+        "sha": "5644800999f4477746ec96a1c85b1003ef99b4c2",
+        "clean": true,
+        "ahead_behind": [
+          0,
+          0
+        ]
+      }
+    ],
+    "scope": "Native source hashes, health/schema, unchanged product sources and anonymous HTTP boundaries. Original exact client assets remain frozen; no new inference or private production access."
+  },
+  "checks": {
+    "evaluation_cases": 21,
+    "backlog_invariant": "passed",
+    "api_lint": "ruff check services/api deploy/release_manager.py passed",
+    "script_lint": "passed"
+  },
+  "source_scan": {
+    "verified_at": "2026-09-28T16:39:00.421859+00:00",
+    "results": [
+      {
+        "repository": "helvetic-lens",
+        "files_checked": 3282,
+        "protected_values_checked": 3,
+        "credential_scan": "passed",
+        "diff_check": "passed"
+      },
+      {
+        "repository": "helveticlens-pharma",
+        "files_checked": 369,
+        "protected_values_checked": 3,
+        "credential_scan": "passed",
+        "diff_check": "passed"
+      },
+      {
+        "repository": "helveticlens-legal",
+        "files_checked": 369,
+        "protected_values_checked": 3,
+        "credential_scan": "passed",
+        "diff_check": "passed"
+      }
+    ],
+    "client_reader_source_parity": "passed"
+  },
+  "measurements": [
+    {
+      "path": "docs/research-evaluations/2026-09-28-research-gate-laya.json",
+      "sha256": "ec64296ec5ba5adb99d815335b39afb09d25c0d294d350113cea8d2d5fb87c10"
+    },
+    {
+      "path": "docs/research-evaluations/2026-09-28-iterative-trace-audit.json",
+      "sha256": "6a78b20c320788dc480bd8a8f3624e8d372c650f94117fc7c6fc91b02b69651d"
+    }
+  ],
+  "paid_calls": 0,
+  "private_production_dossiers_used": 0,
+  "professional_quality": "OPEN; observed disagreements recorded without tuning",
+  "full_architecture_acceptance": "OPEN",
+  "clients_republished": false
+}
